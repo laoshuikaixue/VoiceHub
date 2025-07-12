@@ -1,0 +1,68 @@
+// 这是Prisma数据库模型定义文件
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  password  String
+  votes     Vote[]
+  songs     Song[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// 歌曲表
+model Song {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  title       String
+  artist      String
+  requesterId Int
+  requester   User     @relation(fields: [requesterId], references: [id])
+  played      Boolean  @default(false)
+  playedAt    DateTime?
+  semester    String?  // 当前学期标识
+  votes       Vote[]
+  schedules   Schedule[]
+}
+
+// 投票表
+model Vote {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  songId    Int
+  song      Song     @relation(fields: [songId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([songId, userId]) // 确保一个用户只能对一首歌投一次票
+}
+
+// 排期表
+model Schedule {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  songId    Int
+  song      Song     @relation(fields: [songId], references: [id])
+  playDate  DateTime
+  played    Boolean  @default(false)
+  sequence  Int      @default(1) // 播放顺序
+} 

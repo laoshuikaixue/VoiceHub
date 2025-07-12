@@ -1,0 +1,9 @@
+{
+  "name": "admin-scripts",
+  "version": "1.0.0",
+  "description": "Admin scripts for VoiceHub",
+  "type": "module",
+  "scripts": {
+    "create-admin": "node create-admin.js"
+  }
+} 
