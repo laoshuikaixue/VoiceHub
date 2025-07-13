@@ -14,18 +14,21 @@ export default defineNuxtConfig({
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
     // 公共键（会暴露到客户端）
     public: {
-      apiBase: '/api'
+      apiBase: '/api',
+      siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
+      siteLogo: process.env.NUXT_PUBLIC_SITE_LOGO || '',
+      siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见'
     }
   },
   
   // 配置环境变量
   app: {
     head: {
-      title: '校园广播站点歌系统',
+      title: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: '校园广播站点歌系统 - 让你的声音被听见' }
+        { name: 'description', content: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },

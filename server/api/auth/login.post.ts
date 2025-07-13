@@ -70,7 +70,7 @@ export default defineEventHandler(async (event) => {
           message: '数据库服务暂时不可用，请稍后再试'
         })
       }
-    }
+  }
   
   // 查找用户
     let user

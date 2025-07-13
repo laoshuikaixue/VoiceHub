@@ -6,7 +6,13 @@
         <div class="left-content">
           <!-- 标题区域 -->
           <div class="logo-section text-center mb-6">
-            <h1 class="text-4xl font-bold animated-title">VoiceHub</h1>
+            <div v-if="config.public.siteLogo" class="site-logo-container mb-3">
+              <img :src="config.public.siteLogo" :alt="config.public.siteTitle" class="site-logo mx-auto" />
+            </div>
+            <h1 class="text-4xl font-bold animated-title">{{ config.public.siteTitle || 'VoiceHub' }}</h1>
+            <p v-if="config.public.siteDescription" class="site-description mt-2 text-gray-600">
+              {{ config.public.siteDescription }}
+            </p>
           </div>
 
           <!-- 上部信息和投稿区域 -->
@@ -209,8 +215,8 @@
 
         <div class="modal-body">
           <div class="about-content">
-            <h3 class="font-bold mb-2">关于VoiceHub</h3>
-            <p class="mb-4">VoiceHub是由LaoShui开发，计划服务于舟山市六横中学的点歌系统。</p>
+            <h3 class="font-bold mb-2">关于{{ config.public.siteTitle || 'VoiceHub' }}</h3>
+            <p class="mb-4">{{ config.public.siteDescription || 'VoiceHub是由LaoShui开发，计划服务于舟山市六横中学的点歌系统。' }}</p>
 
             <h3 class="font-bold mb-2">联系方式</h3>
             <p>邮箱：contact@lao-shui.top</p>
@@ -254,6 +260,9 @@ import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
 import ScheduleList from '~/components/Songs/ScheduleList.vue'
 import SongList from '~/components/Songs/SongList.vue'
 import RequestForm from '~/components/Songs/RequestForm.vue'
+
+// 获取运行时配置
+const config = useRuntimeConfig()
 
 // 服务器端安全的认证状态管理
 const isClientAuthenticated = ref(false)
@@ -1116,5 +1125,15 @@ const refreshSongs = async () => {
   to {
     background-position: 200% center;
   }
+}
+
+.site-logo {
+  max-height: 80px;
+  width: auto;
+}
+
+.site-description {
+  font-size: 1rem;
+  opacity: 0.8;
 }
 </style>
