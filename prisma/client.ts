@@ -1,3 +1,10 @@
+/**
+ * 注意：此文件不再被直接使用，而是被server/models/schema.ts替代。
+ * 保留此文件是为了向后兼容和可能的未来使用。
+ * 
+ * 如果需要修改Prisma客户端配置，请修改server/models/schema.ts文件。
+ */
+
 import { PrismaClient, Prisma } from '@prisma/client'
 
 // PrismaClient 是附加到 `global` 对象的，以防止在开发过程中

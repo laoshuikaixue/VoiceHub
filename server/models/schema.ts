@@ -1,4 +1,11 @@
-import { prisma } from '../../prisma/client'
+import { PrismaClient } from '@prisma/client'
+
+// 为了避免循环引用，我们直接从@prisma/client导入PrismaClient
+// 并在这里创建一个实例，而不是从prisma/client.ts导入
+const prisma = new PrismaClient({
+  log: ['error'],
+  errorFormat: 'pretty'
+})
 
 // 添加数据库连接状态检查函数
 export async function checkDatabaseConnection() {

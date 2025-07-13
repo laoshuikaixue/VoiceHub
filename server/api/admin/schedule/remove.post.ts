@@ -1,5 +1,3 @@
-import { PrismaClient } from '@prisma/client'
-
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
   const user = event.context.user
@@ -21,7 +19,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    const prisma = new PrismaClient()
+    const prisma = event.context.prisma
     
     // 删除排期
     const deletedSchedule = await prisma.schedule.delete({
@@ -29,8 +27,6 @@ export default defineEventHandler(async (event) => {
         id: Number(scheduleId)
       }
     })
-    
-    await prisma.$disconnect()
     
     return {
       success: true,

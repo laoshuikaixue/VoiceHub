@@ -1,5 +1,3 @@
-import { PrismaClient } from '@prisma/client'
-
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
   const user = event.context.user
@@ -21,7 +19,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    const prisma = new PrismaClient()
+    const prisma = event.context.prisma
     
     // 批量更新排期顺序
     const results = await Promise.all(
@@ -36,8 +34,6 @@ export default defineEventHandler(async (event) => {
         })
       })
     )
-    
-    await prisma.$disconnect()
     
     return {
       success: true,
