@@ -59,8 +59,9 @@ DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
 JWT_SECRET="your-very-secure-jwt-secret-key"
 ```
 
-5. 初始化数据库
+5. 初始化数据库和Prisma客户端
 ```bash
+npx prisma generate
 npx prisma migrate deploy
 ```
 
@@ -131,6 +132,28 @@ VoiceHub/
 3. 通过拖拽将歌曲从左侧添加到右侧的排期列表
 4. 可以在右侧拖拽调整歌曲播放顺序
 5. 点击"保存顺序"按钮保存排期
+
+## 常见问题
+
+### Prisma客户端初始化错误
+
+如果您在首次运行项目时遇到以下错误：
+```
+Error: @prisma/client did not initialize yet. Please run "prisma generate" and try to import it again.
+```
+
+这是因为需要先生成Prisma客户端代码。请按以下步骤解决：
+
+1. 确保已正确配置根目录的`.env`文件（包含有效的DATABASE_URL）
+2. 运行以下命令生成Prisma客户端：
+   ```bash
+   npx prisma generate
+   ```
+3. 如果在Windows系统上遇到PowerShell执行策略限制，请先运行：
+   ```bash
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+   ```
+   然后再执行`npx prisma generate`
 
 ## 开发指南
 
