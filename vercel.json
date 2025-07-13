@@ -4,10 +4,5 @@
     "DATABASE_URL": "@database_url",
     "JWT_SECRET": "@jwt_secret",
     "NODE_ENV": "production"
-  },
-  "buildEnvironment": {
-    "DATABASE_URL": "@database_url",
-    "JWT_SECRET": "@jwt_secret",
-    "NODE_ENV": "production"
   }
 } 
