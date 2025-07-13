@@ -41,13 +41,26 @@ export const useSongs = () => {
       // 显式传递认证头
       const authHeaders = getAuthHeader()
       
-      const data = await $fetch('/api/songs', {
-        headers: authHeaders.headers
+      console.log('获取歌曲列表，认证头:', authHeaders.headers ? '已设置' : '未设置')
+      
+      // 使用fetch代替$fetch，以确保认证头被正确发送
+      const response = await fetch('/api/songs', {
+        headers: {
+          ...authHeaders.headers,
+          'Content-Type': 'application/json'
+        }
       })
       
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `获取歌曲列表失败: ${response.status}`)
+      }
+      
+      const data = await response.json()
       songs.value = data as Song[]
     } catch (err: any) {
       error.value = err.message || '获取歌曲列表失败'
+      console.error('获取歌曲列表错误:', err)
     } finally {
       loading.value = false
     }
@@ -179,11 +192,22 @@ export const useSongs = () => {
       // 显式传递认证头
       const authHeaders = getAuthHeader()
       
-      const data = await $fetch('/api/songs/request', {
+      // 使用fetch代替$fetch，以确保认证头被正确发送
+      const response = await fetch('/api/songs/request', {
         method: 'POST',
-        body: { title, artist },
-        headers: authHeaders.headers
+        headers: {
+          ...authHeaders.headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title, artist })
       })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `点歌失败: ${response.status}`)
+      }
+      
+      const data = await response.json()
       
       // 更新歌曲列表
       await fetchSongs()
@@ -191,7 +215,7 @@ export const useSongs = () => {
       showNotification('点歌成功！', 'success')
       return data
     } catch (err: any) {
-      const errorMsg = err.data?.message || err.message || '点歌失败'
+      const errorMsg = err.message || '点歌失败'
       error.value = errorMsg
       showNotification(errorMsg, 'error')
       return null
