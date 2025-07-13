@@ -1,8 +1,21 @@
 {
-  "framework": "nuxtjs",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "JWT_SECRET": "@jwt_secret",
-    "NODE_ENV": "production"
-  }
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".output",
+  "framework": "nuxt",
+  "functions": {
+    "api/**/*.js": {
+      "memory": 1024
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
 } 
