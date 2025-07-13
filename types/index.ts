@@ -2,6 +2,8 @@ export interface User {
   id: number
   username: string
   name: string | null
+  grade?: string | null
+  class?: string | null
   role: 'USER' | 'ADMIN'
   lastLoginAt?: Date | null
   lastLoginIp?: string | null

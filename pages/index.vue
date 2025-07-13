@@ -63,15 +63,14 @@
                   <div class="avatar">{{ user?.name?.charAt(0) || '游' }}</div>
                   <div class="user-name">
                     <h3 class="font-bold">{{ user?.name || '游客' }}</h3>
+                    <p v-if="user?.grade || user?.class" class="text-xs text-gray-500">
+                      {{ user.grade }} {{ user.class }}
+                    </p>
                   </div>
                 </div>
                 
                 <div class="user-actions">
-                  <button @click="toggleTheme" class="icon-button">
-                    <span>🌓</span>
-                  </button>
-                  
-                  <NuxtLink v-if="isAdmin" to="/dashboard" class="icon-button">
+                  <NuxtLink v-if="isAdmin" to="/dashboard" class="icon-button" title="后台管理">
                     <span>⚙️</span>
                   </NuxtLink>
                   
@@ -87,10 +86,6 @@
               
               <div v-else class="login-options">
                 <NuxtLink to="/login" class="btn btn-outline">登录</NuxtLink>
-                
-                <button @click="toggleTheme" class="icon-button ml-4">
-                  <span>🌓</span>
-                </button>
               </div>
             </ClientOnly>
           </div>
@@ -151,71 +146,83 @@
     </div>
     
     <!-- 投稿弹窗 -->
-    <div v-if="showRequestModal" class="modal-overlay" @click.self="closeRequestModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="text-xl font-bold">投稿点歌</h2>
-          <button @click="closeRequestModal" class="close-button">×</button>
+    <Teleport to="body">
+      <Transition name="modal-animation">
+        <div v-if="showRequestModal" class="modal-overlay" @click.self="closeRequestModal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2 class="text-xl font-bold">投稿点歌</h2>
+              <button @click="closeRequestModal" class="close-button">×</button>
+            </div>
+            
+            <div class="modal-body">
+              <RequestForm 
+                :loading="loading" 
+                @request="handleRequest"
+                @vote="handleVote"
+              />
+            </div>
+          </div>
         </div>
-        
-        <div class="modal-body">
-          <RequestForm 
-            :loading="loading" 
-            @request="handleRequest"
-            @vote="handleVote"
-          />
-        </div>
-      </div>
-    </div>
+      </Transition>
+    </Teleport>
     
     <!-- 规则弹窗 -->
-    <div v-if="showRules" class="modal-overlay" @click.self="showRules = false">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="text-xl font-bold">点歌规则</h2>
-          <button @click="showRules = false" class="close-button">×</button>
-        </div>
-        
-        <div class="modal-body">
-          <div class="rules-content">
-            <h3 class="font-bold mb-2">投稿须知</h3>
-            <ul class="list-disc pl-5 mb-4">
-              <li>投稿时无需加入书名号</li>
-              <li>除DJ外 其他类型歌曲均接收（包含日语 韩语等小语种）</li>
-              <li>禁止投递含有违规内容的歌曲</li>
-              <li>点播的歌曲将由管理员进行审核</li>
-              <li>审核通过后将安排在播放时段播出</li>
-            </ul>
+    <Teleport to="body">
+      <Transition name="modal-animation">
+        <div v-if="showRules" class="modal-overlay" @click.self="showRules = false">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2 class="text-xl font-bold">点歌规则</h2>
+              <button @click="showRules = false" class="close-button">×</button>
+            </div>
             
-            <h3 class="font-bold mb-2">播放时间</h3>
-            <p>每天夜自修静班前</p>
+            <div class="modal-body">
+              <div class="rules-content">
+                <h3 class="font-bold mb-2">投稿须知</h3>
+                <ul class="list-disc pl-5 mb-4">
+                  <li>投稿时无需加入书名号</li>
+                  <li>除DJ外 其他类型歌曲均接收（包含日语 韩语等小语种）</li>
+                  <li>禁止投递含有违规内容的歌曲</li>
+                  <li>点播的歌曲将由管理员进行审核</li>
+                  <li>审核通过后将安排在播放时段播出</li>
+                </ul>
+                
+                <h3 class="font-bold mb-2">播放时间</h3>
+                <p>每天夜自修静班前</p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </Transition>
+    </Teleport>
     
     <!-- 关于我们弹窗 -->
-    <div v-if="showAbout" class="modal-overlay" @click.self="showAbout = false">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="text-xl font-bold">关于我们</h2>
-          <button @click="showAbout = false" class="close-button">×</button>
-        </div>
-        
-        <div class="modal-body">
-          <div class="about-content">
-            <h3 class="font-bold mb-2">关于VoiceHub</h3>
-            <p class="mb-4">VoiceHub是由LaoShui开发，计划服务于舟山市六横中学的点歌系统。</p>
+    <Teleport to="body">
+      <Transition name="modal-animation">
+        <div v-if="showAbout" class="modal-overlay" @click.self="showAbout = false">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2 class="text-xl font-bold">关于我们</h2>
+              <button @click="showAbout = false" class="close-button">×</button>
+            </div>
             
-            <h3 class="font-bold mb-2">联系方式</h3>
-            <p>邮箱：contact@lao-shui.top</p>
-            <br>
-            <p>Powered by LaoShui @ 2025 | All Rights Reserved.</p>
-            <p>项目开源地址：<a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" class="github-link">https://github.com/laoshuikaixue/VoiceHub</a></p>
+            <div class="modal-body">
+              <div class="about-content">
+                <h3 class="font-bold mb-2">关于VoiceHub</h3>
+                <p class="mb-4">VoiceHub是由LaoShui开发，计划服务于舟山市六横中学的点歌系统。</p>
+                
+                <h3 class="font-bold mb-2">联系方式</h3>
+                <p>邮箱：contact@lao-shui.top</p>
+                <br>
+                <p>Powered by LaoShui @ 2025 | All Rights Reserved.</p>
+                <p>项目开源地址：<a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" class="github-link">https://github.com/laoshuikaixue/VoiceHub</a></p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </Transition>
+    </Teleport>
     
     <!-- 通知组件 -->
     <Transition-group 
@@ -1019,5 +1026,24 @@ const refreshSongs = async () => {
 .github-link:hover {
   transform: translateY(-3px);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* 弹窗动画 */
+.modal-animation-enter-active,
+.modal-animation-leave-active {
+  transition: opacity 0.3s cubic-bezier(0.52, 0.02, 0.19, 1.02);
+}
+.modal-animation-enter-from,
+.modal-animation-leave-to {
+  opacity: 0;
+}
+.modal-animation-enter-active .modal-content,
+.modal-animation-leave-active .modal-content {
+  transition: all 0.3s cubic-bezier(0.52, 0.02, 0.19, 1.02);
+  transform: scale(1);
+}
+.modal-animation-enter-from .modal-content,
+.modal-animation-leave-to .modal-content {
+  transform: scale(0.95) translateY(20px);
 }
 </style> 

@@ -1282,7 +1282,7 @@ const handleUnmarkPlayed = async (song) => {
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 1rem;
-  height: 500px;
+  height: 500px; /* 保持一个足够的高度 */
 }
 
 .song-list-panel, .sequence-panel {
@@ -1774,9 +1774,29 @@ const handleUnmarkPlayed = async (song) => {
 }
 
 @media (max-width: 768px) {
+  .dashboard {
+    padding: 1rem;
+  }
+  
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .dashboard-tabs {
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+  
   .schedule-container {
     grid-template-columns: 1fr;
-    grid-template-rows: 200px 1fr;
+    height: auto; /* 在移动端自动高度 */
+    gap: 2rem; /* 增加垂直间距 */
+  }
+
+  .song-list-panel, .sequence-panel {
+    min-height: 300px; /* 给拖拽区域一个最小高度 */
   }
   
   .notifications-container {

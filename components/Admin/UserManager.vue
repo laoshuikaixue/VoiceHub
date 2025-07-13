@@ -1249,6 +1249,7 @@ const importUsers = async () => {
 
 .modal-header h3 {
   margin: 0;
+  font-size: 1.25rem;
   color: var(--light);
 }
 
@@ -1256,8 +1257,46 @@ const importUsers = async () => {
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: var(--gray);
   cursor: pointer;
+  color: var(--gray);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .controls > .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pagination-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .pagination-controls {
+    justify-content: center;
+  }
+
+  .actions {
+    gap: 0.5rem;
+  }
 }
 
 .modal-body {
@@ -1391,7 +1430,6 @@ const importUsers = async () => {
   .card-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
   }
   
   .header-left {
