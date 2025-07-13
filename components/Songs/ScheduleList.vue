@@ -11,7 +11,10 @@
         >
           &lt;
         </button>
-        <span class="date-display">{{ currentDateFormatted }}</span>
+        <div class="date-display" @click="showDatePicker = true">
+          {{ currentDateFormatted }}
+          <span class="date-picker-icon">▼</span>
+        </div>
         <button 
           @click="nextDate" 
           class="nav-button"
@@ -19,6 +22,26 @@
         >
           &gt;
         </button>
+      </div>
+    </div>
+    
+    <!-- 日期选择器弹窗 -->
+    <div v-if="showDatePicker" class="date-picker-overlay" @click.self="showDatePicker = false">
+      <div class="date-picker-container">
+        <div class="date-picker-header">
+          <h3>选择日期</h3>
+          <button @click="showDatePicker = false" class="close-btn">×</button>
+        </div>
+        <div class="date-picker-content">
+          <div 
+            v-for="(date, index) in availableDates" 
+            :key="date"
+            :class="['date-option', { active: currentDateIndex === index }]"
+            @click="selectDate(index)"
+          >
+            {{ formatDate(date) }}
+          </div>
+        </div>
       </div>
     </div>
     
@@ -49,6 +72,7 @@
         v-for="schedule in currentDateSchedules" 
         :key="schedule.id" 
         class="schedule-card"
+        :class="{ 'played': schedule.song.played }"
       >
         <div class="schedule-title-row">
           <h3 class="song-title">{{ schedule.song.title }} - {{ schedule.song.artist }}</h3>
@@ -60,7 +84,9 @@
         
         <div class="schedule-meta">
           <span class="requester">投稿人：{{ schedule.song.requester }}</span>
-          <span class="play-time">{{ formatPlayTime(schedule.playDate) }}</span>
+          <span class="play-time" :class="{ 'played-status': schedule.song.played }">
+            {{ formatPlayTime(schedule) }}
+          </span>
         </div>
       </div>
     </div>
@@ -87,6 +113,9 @@ const props = defineProps({
 
 // 确保schedules不为null
 const safeSchedules = computed(() => props.schedules || [])
+
+// 日期选择器状态
+const showDatePicker = ref(false)
 
 // 按日期分组排期
 const safeGroupedSchedules = computed(() => {
@@ -154,6 +183,12 @@ const nextDate = () => {
   }
 }
 
+// 选择特定日期
+const selectDate = (index) => {
+  currentDateIndex.value = index
+  showDatePicker.value = false
+}
+
 // 重置日期到第一天
 const resetDate = () => {
   currentDateIndex.value = 0
@@ -177,10 +212,14 @@ const formatDate = (dateStr) => {
 }
 
 // 格式化播放时间
-const formatPlayTime = (dateStr) => {
+const formatPlayTime = (schedule) => {
   try {
-    // 不再显示具体时间，只显示"已排期"
-    return "已排期"
+    // 根据歌曲播放状态显示不同文本
+    if (schedule.song && schedule.song.played) {
+      return "已播放"
+    } else {
+      return "已排期"
+    }
   } catch (e) {
     console.error('时间格式化错误:', e)
     return '时间未定'
@@ -191,6 +230,7 @@ const formatPlayTime = (dateStr) => {
 <style scoped>
 .schedule-list {
   width: 100%;
+  position: relative;
 }
 
 .schedule-header {
@@ -234,6 +274,27 @@ const formatPlayTime = (dateStr) => {
   min-width: 180px;
   text-align: center;
   font-weight: 600;
+  padding: 0.5rem 1rem;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.date-display:hover {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.date-picker-icon {
+  font-size: 0.75rem;
+  opacity: 0.6;
 }
 
 .loading, .error, .empty {
@@ -249,8 +310,9 @@ const formatPlayTime = (dateStr) => {
   color: var(--danger);
 }
 
-.empty {
-  color: var(--gray);
+.empty .icon {
+  font-size: 3rem;
+  opacity: 0.5;
 }
 
 .schedule-items {
@@ -270,6 +332,10 @@ const formatPlayTime = (dateStr) => {
 .schedule-card:hover {
   transform: translateY(-2px);
   border-color: rgba(99, 102, 241, 0.3);
+}
+
+.schedule-card.played {
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .schedule-title-row {
@@ -313,22 +379,93 @@ const formatPlayTime = (dateStr) => {
   color: var(--gray);
 }
 
-.icon {
-  font-size: 2rem;
+.played-status {
+  color: var(--success);
+}
+
+/* 日期选择器样式 */
+.date-picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.date-picker-container {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.date-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.date-picker-header h3 {
+  margin: 0;
+  color: var(--light);
+  font-size: 1.25rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--gray);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+.close-btn:hover {
+  color: var(--light);
+}
+
+.date-picker-content {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.date-option {
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.date-option:hover {
+  background: rgba(30, 41, 59, 0.6);
+  transform: translateY(-1px);
+}
+
+.date-option.active {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 @media (max-width: 639px) {
-  .schedule-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .date-nav {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
   .schedule-title-row {
     flex-direction: column;
     align-items: flex-start;
@@ -341,7 +478,7 @@ const formatPlayTime = (dateStr) => {
   
   .votes {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-end;
   }
 }
 </style> 

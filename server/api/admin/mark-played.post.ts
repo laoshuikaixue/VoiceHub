@@ -42,27 +42,35 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  // 检查歌曲是否已经播放
-  if (song.played) {
+  // 检查是否是撤回操作
+  const isUnmark = body.unmark === true
+  
+  // 检查歌曲播放状态
+  if (!isUnmark && song.played) {
     throw createError({
       statusCode: 400,
       message: '歌曲已经标记为已播放'
     })
+  } else if (isUnmark && !song.played) {
+    throw createError({
+      statusCode: 400,
+      message: '歌曲尚未标记为已播放'
+    })
   }
   
-  // 更新歌曲状态为已播放
+  // 更新歌曲状态
   const updatedSong = await prisma.song.update({
     where: {
       id: body.songId
     },
     data: {
-      played: true,
-      playedAt: new Date()
+      played: !isUnmark,
+      playedAt: isUnmark ? null : new Date()
     }
   })
   
   return {
-    message: '歌曲已成功标记为已播放',
+    message: isUnmark ? '歌曲已成功撤回已播放状态' : '歌曲已成功标记为已播放',
     song: {
       id: updatedSong.id,
       title: updatedSong.title,

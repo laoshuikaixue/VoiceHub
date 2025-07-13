@@ -26,8 +26,24 @@
         <button :class="{ active: sortBy === 'popularity' }" @click="sortBy = 'popularity'">
           按热度排序
         </button>
-        <button :class="{ active: sortBy === 'date' }" @click="sortBy = 'date'">
-          按时间排序
+        <div class="date-sort-container">
+          <button :class="{ active: sortBy === 'date' }" @click="sortBy = 'date'">
+            按时间排序
+          </button>
+          <button 
+            v-if="sortBy === 'date'" 
+            class="sort-order-toggle" 
+            @click="toggleSortOrder"
+            :title="sortOrder === 'desc' ? '当前：最新在前' : '当前：最早在前'"
+          >
+            <span v-if="sortOrder === 'desc'">↓</span>
+            <span v-else>↑</span>
+          </button>
+        </div>
+        <button @click="$emit('refresh')" class="refresh-button" title="刷新歌曲列表">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
         </button>
       </div>
       
@@ -86,6 +102,17 @@
                 标记为已播放
               </button>
             </div>
+            
+            <!-- 管理员撤回已播放歌曲按钮 -->
+            <div v-if="isAdmin && song.played" class="admin-actions">
+              <button 
+                class="admin-action unmark-played"
+                @click="handleUnmarkPlayed(song)"
+                :disabled="actionInProgress"
+              >
+                撤回已播放
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -142,10 +169,11 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['vote', 'withdraw', 'delete', 'markPlayed'])
+const emit = defineEmits(['vote', 'withdraw', 'delete', 'markPlayed', 'unmarkPlayed', 'refresh'])
 const voteInProgress = ref(false)
 const actionInProgress = ref(false)
 const sortBy = ref('popularity')
+const sortOrder = ref('desc') // 'desc' for newest first, 'asc' for oldest first
 const filterBy = ref('all')
 const auth = useAuth()
 
@@ -170,6 +198,11 @@ const isMySong = (song) => {
   return auth.user.value && song.requesterId === auth.user.value.id
 }
 
+// Toggle sort order between ascending and descending
+const toggleSortOrder = () => {
+  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
+}
+
 // 按照选择的方式过滤和排序歌曲
 const filteredSongs = computed(() => {
   let result = [...props.songs]
@@ -183,9 +216,18 @@ const filteredSongs = computed(() => {
   if (sortBy.value === 'popularity') {
     return result.sort((a, b) => b.voteCount - a.voteCount)
   } else {
-    return result.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
+    // 按时间排序，考虑排序方向
+    if (sortOrder.value === 'desc') {
+      // 降序 - 最新的在前面
+      return result.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+    } else {
+      // 升序 - 最早的在前面
+      return result.sort((a, b) => 
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      )
+    }
   }
 })
 
@@ -234,6 +276,17 @@ const handleMarkPlayed = (song) => {
   }
 }
 
+// 管理员操作：撤回已播放状态
+const handleUnmarkPlayed = (song) => {
+  confirmDialog.value = {
+    show: true,
+    title: '撤回已播放状态',
+    message: `确定要撤回《${song.title}》的已播放状态吗？`,
+    action: 'unmarkPlayed',
+    data: song
+  }
+}
+
 // 确认操作
 const confirmAction = async () => {
   if (actionInProgress.value) return
@@ -248,6 +301,8 @@ const confirmAction = async () => {
       await emit('delete', data)
     } else if (action === 'markPlayed') {
       await emit('markPlayed', data)
+    } else if (action === 'unmarkPlayed') {
+      await emit('unmarkPlayed', data)
     }
     
     // 关闭对话框
@@ -332,6 +387,7 @@ const cancelConfirm = () => {
   margin-bottom: 1rem;
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
 .sort-controls button {
@@ -369,6 +425,57 @@ const cancelConfirm = () => {
   color: var(--primary);
   border-color: var(--primary);
   box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+.date-sort-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.sort-order-toggle {
+  margin-left: 0.25rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  padding: 0 !important;
+}
+
+.sort-order-toggle:hover {
+  background: rgba(99, 102, 241, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(99, 102, 241, 0.2);
+}
+
+.refresh-button {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0 !important;
+}
+
+.refresh-button:hover {
+  background: rgba(16, 185, 129, 0.2);
+  transform: rotate(30deg);
+  box-shadow: 0 2px 5px rgba(16, 185, 129, 0.2);
 }
 
 .songs-grid {
@@ -572,6 +679,16 @@ const cancelConfirm = () => {
 
 .admin-action.delete-button:hover {
   box-shadow: 0 4px 8px rgba(231, 76, 60, 0.2);
+}
+
+.admin-action.unmark-played {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: var(--primary);
+}
+
+.admin-action.unmark-played:hover {
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
 }
 
 .admin-action[disabled] {

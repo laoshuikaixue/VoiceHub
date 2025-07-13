@@ -140,6 +140,8 @@
                   @withdraw="handleWithdraw"
                   @delete="handleDelete"
                   @markPlayed="handleMarkPlayed"
+                  @unmarkPlayed="handleUnmarkPlayed"
+                  @refresh="refreshSongs"
                 />
               </div>
             </ClientOnly>
@@ -209,7 +211,7 @@
             <p>邮箱：contact@lao-shui.top</p>
             <br>
             <p>Powered by LaoShui @ 2025 | All Rights Reserved.</p>
-            <p>项目开源地址：https://github.com/laoshuikaixue/VoiceHub</p>
+            <p>项目开源地址：<a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" class="github-link">https://github.com/laoshuikaixue/VoiceHub</a></p>
           </div>
         </div>
       </div>
@@ -373,6 +375,8 @@ const handleRequest = async (songData) => {
       // 更新歌曲统计
       await songs.fetchSongs()
       updateSongCounts()
+      // 自动刷新歌曲列表
+      refreshSongs()
       return true
     }
     return false
@@ -392,12 +396,28 @@ const handleVote = async (song) => {
   try {
     if (!songs) return
     
+    // 检查是否已经投过票
+    if (song.voted) {
+      showNotification(`您已经为歌曲《${song.title}》投过票了`, 'info')
+      return
+    }
+    
     const result = await songs.voteSong(song.id)
     if (result) {
       showNotification(`为歌曲《${song.title}》投票成功！`, 'success')
+      // 手动刷新歌曲列表以获取最新状态，但不影响当前视图
+      setTimeout(() => {
+        songs.fetchSongs().catch(err => {
+          console.error('刷新歌曲列表失败', err)
+        })
+      }, 500)
     }
   } catch (err) {
-    showNotification(err.message || '投票失败', 'error')
+    if (err.message && err.message.includes('已经为这首歌投过票')) {
+      showNotification(`您已经为歌曲《${song.title}》投过票了`, 'info')
+    } else {
+      showNotification(err.message || '投票失败', 'error')
+    }
   }
 }
 
@@ -467,6 +487,30 @@ const handleMarkPlayed = async (song) => {
   }
 }
 
+// 处理撤回已播放状态（管理员）
+const handleUnmarkPlayed = async (song) => {
+  if (!isClientAuthenticated.value || !isAdmin.value) {
+    showNotification('只有管理员可以撤回歌曲已播放状态', 'error')
+    return
+  }
+  
+  try {
+    if (!songs || !songs.unmarkPlayed) {
+      showNotification('功能未实现', 'error')
+      return
+    }
+    
+    const result = await songs.unmarkPlayed(song.id)
+    if (result) {
+      showNotification(`已成功撤回《${song.title}》的已播放状态`, 'success')
+      await songs.fetchSongs()
+      updateSongCounts()
+    }
+  } catch (err) {
+    showNotification(err.message || '操作失败', 'error')
+  }
+}
+
 // 打开投稿弹窗
 const openRequestModal = () => {
   if (!isClientAuthenticated.value) {
@@ -497,6 +541,24 @@ const toggleTheme = () => {
 const handleLogout = () => {
   if (auth) {
     auth.logout()
+  }
+}
+
+// 刷新歌曲列表
+const refreshSongs = async () => {
+  try {
+    showNotification('正在刷新歌曲列表...', 'info')
+    
+    if (isClientAuthenticated.value) {
+      await songs.fetchSongs()
+    } else {
+      await songs.fetchPublicSchedules()
+    }
+    
+    updateSongCounts()
+    showNotification('歌曲列表已刷新', 'success')
+  } catch (err) {
+    showNotification('刷新歌曲列表失败', 'error')
   }
 }
 </script>
@@ -915,5 +977,43 @@ const handleLogout = () => {
     opacity: 1;
     transform: translateX(0);
   }
+}
+
+/* GitHub链接样式 */
+.github-link {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--primary);
+  border-radius: 0.5rem;
+  color: var(--primary);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.github-link:before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+  z-index: 0;
+}
+
+.github-link:hover:before {
+  width: 300%;
+  height: 300%;
+}
+
+.github-link:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 </style> 

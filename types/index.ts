@@ -18,6 +18,7 @@ export interface Song {
   playedAt: string | null
   semester: string | null
   createdAt: string
+  voted?: boolean
 }
 
 export interface Schedule {
@@ -29,5 +30,6 @@ export interface Schedule {
     artist: string
     requester: string
     voteCount: number
+    played?: boolean
   }
 } 

@@ -107,7 +107,15 @@ export const useSongs = () => {
     try {
       const data = await $fetch('/api/songs/public')
       
-      publicSchedules.value = data as Schedule[]
+      // 确保每个排期的歌曲都有played属性
+      const processedData = data.map((schedule: Schedule) => {
+        if (schedule.song && schedule.song.played === undefined) {
+          schedule.song.played = false
+        }
+        return schedule
+      })
+      
+      publicSchedules.value = processedData as Schedule[]
       
       // 同时从排期中提取歌曲信息
       await fetchPublicSongs()
@@ -203,6 +211,14 @@ export const useSongs = () => {
     error.value = ''
     
     try {
+      // 检查是否已经投过票
+      const targetSong = songs.value.find(s => s.id === songId)
+      if (targetSong && targetSong.voted) {
+        showNotification('您已经为这首歌投过票了', 'info')
+        loading.value = false
+        return null
+      }
+      
       // 显式传递认证头
       const authHeaders = getAuthHeader()
       
@@ -215,9 +231,7 @@ export const useSongs = () => {
         headers: authHeaders.headers
       })
       
-      // 更新歌曲列表
-      await fetchSongs()
-      
+      // 不再自动更新歌曲列表，只显示通知
       showNotification('投票成功！', 'success')
       return data
     } catch (err: any) {
@@ -335,6 +349,41 @@ export const useSongs = () => {
     }
   }
   
+  // 撤回歌曲已播放状态（管理员专用）
+  const unmarkPlayed = async (songId: number) => {
+    if (!isAuthenticated.value) {
+      showNotification('需要登录才能撤回歌曲已播放状态', 'error')
+      return null
+    }
+    
+    loading.value = true
+    error.value = ''
+    
+    try {
+      // 显式传递认证头
+      const authHeaders = getAuthHeader()
+      
+      const data = await $fetch('/api/admin/mark-played', {
+        method: 'POST',
+        body: { songId, unmark: true },
+        headers: authHeaders.headers
+      })
+      
+      // 更新歌曲列表
+      await fetchSongs()
+      
+      showNotification('歌曲已成功撤回已播放状态！', 'success')
+      return data
+    } catch (err: any) {
+      const errorMsg = err.data?.message || err.message || '撤回歌曲已播放状态失败'
+      error.value = errorMsg
+      showNotification(errorMsg, 'error')
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+  
   // 按热度排序的歌曲
   const songsByPopularity = computed(() => {
     return [...songs.value].sort((a, b) => b.voteCount - a.voteCount)
@@ -389,6 +438,7 @@ export const useSongs = () => {
     withdrawSong,
     deleteSong,
     markPlayed,
+    unmarkPlayed,
     checkSimilarSongs,
     showNotification,
     songsByPopularity,

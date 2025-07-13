@@ -44,6 +44,8 @@
             @withdraw="handleWithdraw"
             @delete="handleDelete"
             @markPlayed="handleMarkPlayed"
+            @unmarkPlayed="handleUnmarkPlayed"
+            @refresh="refreshSongs"
           />
         </div>
         
@@ -955,14 +957,30 @@ const updateScrollButtonState = () => {
 // 处理投票
 const handleVote = async (song) => {
   try {
+    // 检查是否已经投过票
+    if (song.voted) {
+      showNotification(`您已经为歌曲《${song.title}》投过票了`, 'info')
+      return
+    }
+    
     const result = await songsService.voteSong(song.id)
     if (result) {
       showNotification('投票成功！', 'success')
-      await songsService.fetchSongs()
-      songs.value = songsService.songs.value
+      // 手动刷新歌曲列表以获取最新状态，但不影响当前视图
+      setTimeout(() => {
+        songsService.fetchSongs().then(data => {
+          songs.value = songsService.songs.value
+        }).catch(err => {
+          console.error('刷新歌曲列表失败', err)
+        })
+      }, 500)
     }
   } catch (err) {
-    showNotification(err.message || '投票失败', 'error')
+    if (err.message && err.message.includes('已经为这首歌投过票')) {
+      showNotification(`您已经为歌曲《${song.title}》投过票了`, 'info')
+    } else {
+      showNotification(err.message || '投票失败', 'error')
+    }
   }
 }
 
@@ -1046,6 +1064,32 @@ const markAllAsPlayed = async () => {
   } catch (err) {
     // 显示错误通知
     showNotification('标记所有歌曲为已播放失败: ' + (err.message || '未知错误'), 'error')
+  }
+}
+
+// 刷新歌曲列表
+const refreshSongs = async () => {
+  try {
+    showNotification('正在刷新歌曲列表...', 'info')
+    await songsService.fetchSongs()
+    songs.value = songsService.songs.value
+    showNotification('歌曲列表已刷新', 'success')
+  } catch (err) {
+    showNotification('刷新歌曲列表失败', 'error')
+  }
+}
+
+// 处理撤回已播放状态
+const handleUnmarkPlayed = async (song) => {
+  try {
+    const result = await songsService.unmarkPlayed(song.id)
+    if (result) {
+      showNotification('歌曲已成功撤回已播放状态！', 'success')
+      await songsService.fetchSongs()
+      songs.value = songsService.songs.value
+    }
+  } catch (err) {
+    showNotification(err.message || '操作失败', 'error')
   }
 }
 </script>
@@ -1487,6 +1531,7 @@ const markAllAsPlayed = async () => {
   margin-top: 1rem;
   display: flex;
   justify-content: flex-end;
+  gap: 1rem;
 }
 
 .save-btn {
