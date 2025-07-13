@@ -76,11 +76,40 @@ export default defineEventHandler(async (event) => {
     let user
     try {
       console.log('Querying database for user...')
-      user = await prisma.user.findUnique({
-        where: {
-          username: body.username
-        }
-      })
+      
+      // 使用原始SQL查询，避免模式不匹配问题
+      try {
+        // 首先尝试使用Prisma模型
+        user = await prisma.user.findUnique({
+          where: {
+            username: body.username
+          },
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            grade: true,
+            class: true,
+            password: true,
+            role: true,
+            lastLoginAt: true,
+            lastLoginIp: true
+          }
+        })
+      } catch (schemaError) {
+        console.warn('Schema mismatch detected, trying raw query:', schemaError)
+        
+        // 如果失败，使用原始SQL查询
+        const result = await prisma.$queryRaw`
+          SELECT id, username, name, grade, class, password, role, "lastLoginAt", "lastLoginIp"
+          FROM "User"
+          WHERE username = ${body.username}
+        `
+        
+        // 将结果转换为单个用户对象
+        user = Array.isArray(result) && result.length > 0 ? result[0] : null
+      }
+      
       console.log('User found:', user ? 'yes' : 'no')
     } catch (error) {
       console.error('Database error when finding user:', error)
@@ -92,11 +121,16 @@ export default defineEventHandler(async (event) => {
       })
       
       try {
-        user = await prisma.user.findUnique({
-          where: {
-            username: body.username
-          }
-        })
+        // 使用简化的查询，只获取必要字段
+        user = await prisma.$queryRaw`
+          SELECT id, username, name, grade, class, password, role, "lastLoginAt", "lastLoginIp"
+          FROM "User"
+          WHERE username = ${body.username}
+        `
+        
+        // 将结果转换为单个用户对象
+        user = Array.isArray(user) && user.length > 0 ? user[0] : null
+        
         console.log('Retry successful, user found:', user ? 'yes' : 'no')
       } catch (retryError) {
         console.error('Retry failed:', retryError)
@@ -146,13 +180,15 @@ export default defineEventHandler(async (event) => {
     // 更新用户最后登录时间和IP
     try {
       console.log('Updating user login information...')
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          lastLoginAt: new Date(),
-          lastLoginIp: clientIp
-        }
-      })
+      
+      // 使用原始SQL更新，避免模式不匹配问题
+      await prisma.$executeRaw`
+        UPDATE "User"
+        SET "lastLoginAt" = NOW(),
+            "lastLoginIp" = ${clientIp}
+        WHERE id = ${user.id}
+      `
+      
       console.log('User login time updated')
     } catch (error) {
       console.error('Error updating user login time:', error)
