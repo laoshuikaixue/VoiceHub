@@ -45,7 +45,7 @@
             </div>
             
             <div class="song-meta">
-              <span class="requester">由 {{ song.requester }} 点播</span>
+              <span class="requester">投稿人：{{ song.requester }} 时间：{{ formatDate(song.createdAt) }}</span>
               <span class="song-status">{{ song.played ? '已播放' : '待播放' }}</span>
             </div>
           </div>
@@ -80,6 +80,13 @@ const props = defineProps({
 const emit = defineEmits(['vote'])
 
 const sortBy = ref('popularity')
+
+// 格式化日期为 X年X月X日
+const formatDate = (dateString) => {
+  if (!dateString) return '未知时间'
+  const date = new Date(dateString)
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
+}
 
 // 按照选择的方式排序歌曲
 const sortedSongs = computed(() => {

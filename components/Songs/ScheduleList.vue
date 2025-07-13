@@ -59,7 +59,7 @@
         </div>
         
         <div class="schedule-meta">
-          <span class="requester">由 {{ schedule.song.requester }} 点播</span>
+          <span class="requester">投稿人：{{ schedule.song.requester }}</span>
           <span class="play-time">{{ formatPlayTime(schedule.playDate) }}</span>
         </div>
       </div>
