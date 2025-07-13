@@ -3,13 +3,13 @@
     <h2>用户登录</h2>
     <form @submit.prevent="handleLogin">
       <div class="form-group">
-        <label for="email">邮箱</label>
+        <label for="username">账号名</label>
         <input 
-          id="email" 
-          v-model="email" 
-          type="email" 
+          id="username" 
+          v-model="username" 
+          type="text" 
           required 
-          placeholder="请输入邮箱"
+          placeholder="请输入账号名"
         />
       </div>
       
@@ -29,10 +29,6 @@
       <button type="submit" :disabled="loading">
         {{ loading ? '登录中...' : '登录' }}
       </button>
-      
-      <p class="register-link">
-        还没有账号？<NuxtLink to="/register">注册</NuxtLink>
-      </p>
     </form>
   </div>
 </template>
@@ -41,7 +37,7 @@
 const router = useRouter()
 const auth = useAuth() // 假设我们有一个auth组合式函数
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -51,7 +47,7 @@ const handleLogin = async () => {
   loading.value = true
   
   try {
-    await auth.login(email.value, password.value)
+    await auth.login(username.value, password.value)
     router.push('/dashboard')
   } catch (err) {
     error.value = err.message || '登录失败，请稍后重试'
@@ -119,20 +115,5 @@ button:disabled {
   color: #e74c3c;
   margin: 0.5rem 0;
   font-size: 0.9rem;
-}
-
-.register-link {
-  margin-top: 1rem;
-  text-align: center;
-  font-size: 0.9rem;
-}
-
-.register-link a {
-  color: #3498db;
-  text-decoration: none;
-}
-
-.register-link a:hover {
-  text-decoration: underline;
 }
 </style> 

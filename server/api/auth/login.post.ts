@@ -5,17 +5,17 @@ import { prisma } from '../../models/schema'
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   
-  if (!body.email || !body.password) {
+  if (!body.username || !body.password) {
     throw createError({
       statusCode: 400,
-      message: '邮箱和密码不能为空'
+      message: '账号名和密码不能为空'
     })
   }
   
   // 查找用户
   const user = await prisma.user.findUnique({
     where: {
-      email: body.email
+      username: body.username
     }
   })
   
@@ -36,6 +36,18 @@ export default defineEventHandler(async (event) => {
     })
   }
   
+  // 获取客户端IP
+  const clientIp = getRequestIP(event, { xForwardedFor: true }) || '未知IP'
+  
+  // 更新用户最后登录时间和IP
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      lastLoginAt: new Date(),
+      lastLoginIp: clientIp
+    }
+  })
+  
   // 生成JWT令牌
   const token = jwt.sign(
     { 
@@ -50,9 +62,11 @@ export default defineEventHandler(async (event) => {
     token,
     user: {
       id: user.id,
-      email: user.email,
+      username: user.username,
       name: user.name,
-      role: user.role
+      role: user.role,
+      lastLoginAt: user.lastLoginAt,
+      lastLoginIp: user.lastLoginIp
     }
   }
 }) 

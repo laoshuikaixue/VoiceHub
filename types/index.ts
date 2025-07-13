@@ -1,8 +1,10 @@
 export interface User {
   id: number
-  email: string
+  username: string
   name: string | null
   role: 'USER' | 'ADMIN'
+  lastLoginAt?: Date | null
+  lastLoginIp?: string | null
 }
 
 export interface Song {

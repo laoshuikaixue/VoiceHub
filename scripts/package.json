@@ -4,6 +4,8 @@
   "description": "Admin scripts for VoiceHub",
   "type": "module",
   "scripts": {
-    "create-admin": "node create-admin.js"
+    "create-admin": "node create-admin.js",
+    "apply-migration": "node apply-migration.js",
+    "clear-database": "node clear-database.js"
   }
 } 

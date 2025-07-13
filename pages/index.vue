@@ -63,7 +63,6 @@
                   <div class="avatar">{{ user?.name?.charAt(0) || '游' }}</div>
                   <div class="user-name">
                     <h3 class="font-bold">{{ user?.name || '游客' }}</h3>
-                    <p class="text-sm text-gray">{{ user?.email || '' }}</p>
                   </div>
                 </div>
                 
@@ -76,6 +75,10 @@
                     <span>⚙️</span>
                   </NuxtLink>
                   
+                  <NuxtLink to="/change-password" class="icon-button" title="修改密码">
+                    <span>🔑</span>
+                  </NuxtLink>
+                  
                   <button @click="handleLogout" class="icon-button">
                     <span>🚪</span>
                   </button>
@@ -84,7 +87,6 @@
               
               <div v-else class="login-options">
                 <NuxtLink to="/login" class="btn btn-outline">登录</NuxtLink>
-                <NuxtLink to="/register" class="btn btn-primary">注册</NuxtLink>
                 
                 <button @click="toggleTheme" class="icon-button ml-4">
                   <span>🌓</span>

@@ -14,10 +14,10 @@ async function main() {
   
   // 创建管理员用户
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@campus.edu' },
+    where: { username: 'admin' },
     update: {},
     create: {
-      email: 'admin@campus.edu',
+      username: 'admin',
       name: '管理员',
       password: hashedPassword,
       role: 'ADMIN'

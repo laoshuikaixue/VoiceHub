@@ -6,10 +6,14 @@ CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "email" TEXT NOT NULL,
+    "username" TEXT NOT NULL,
     "name" TEXT,
+    "grade" TEXT,
+    "class" TEXT,
     "role" "Role" NOT NULL DEFAULT 'USER',
     "password" TEXT NOT NULL,
+    "lastLoginAt" TIMESTAMP(3),
+    "lastLoginIp" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -47,12 +51,13 @@ CREATE TABLE "Schedule" (
     "songId" INTEGER NOT NULL,
     "playDate" TIMESTAMP(3) NOT NULL,
     "played" BOOLEAN NOT NULL DEFAULT false,
+    "sequence" INTEGER NOT NULL DEFAULT 1,
 
     CONSTRAINT "Schedule_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Vote_songId_userId_key" ON "Vote"("songId", "userId");

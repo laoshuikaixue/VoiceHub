@@ -23,27 +23,13 @@ export const useAuth = () => {
     }
   }
 
-  // 注册
-  const register = async (name: string, email: string, password: string) => {
-    loading.value = true
-    try {
-      const { data } = await useFetch('/api/auth/register', {
-        method: 'POST',
-        body: { name, email, password }
-      })
-      return data.value
-    } finally {
-      loading.value = false
-    }
-  }
-
   // 登录
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     loading.value = true
     try {
       const { data, error } = await useFetch('/api/auth/login', {
         method: 'POST',
-        body: { email, password }
+        body: { username, password }
       })
 
       if (error.value) {
@@ -68,6 +54,26 @@ export const useAuth = () => {
         
         return userData
       }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 修改密码
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    loading.value = true
+    try {
+      const { data, error } = await useFetch('/api/auth/change-password', {
+        method: 'POST',
+        body: { currentPassword, newPassword },
+        ...getAuthHeader()
+      })
+
+      if (error.value) {
+        throw new Error(error.value?.statusMessage || '密码修改失败')
+      }
+
+      return data.value
     } finally {
       loading.value = false
     }
@@ -115,7 +121,7 @@ export const useAuth = () => {
     loading,
     login,
     logout,
-    register,
+    changePassword,
     getAuthHeader
   }
 } 

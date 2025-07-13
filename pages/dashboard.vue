@@ -9,9 +9,30 @@
         </div>
       </div>
       
+      <div class="dashboard-tabs">
+        <button 
+          :class="['tab-btn', { active: activeTab === 'schedule' }]" 
+          @click="activeTab = 'schedule'"
+        >
+          排期管理
+        </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'songs' }]" 
+          @click="activeTab = 'songs'"
+        >
+          歌曲管理
+        </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'users' }]" 
+          @click="activeTab = 'users'"
+        >
+          用户管理
+        </button>
+      </div>
+      
       <div class="dashboard-content">
         <!-- 歌曲列表 -->
-        <div class="section songs-section glass">
+        <div v-if="activeTab === 'songs'" class="section songs-section glass">
           <h2>歌曲列表</h2>
           
           <SongList 
@@ -23,7 +44,7 @@
         </div>
         
         <!-- 排期管理 -->
-        <div class="section schedule-section glass">
+        <div v-if="activeTab === 'schedule'" class="section schedule-section glass">
           <h2>排期管理</h2>
           <div class="schedule-manager">
             <!-- 水平滚动日期选择器 -->
@@ -149,6 +170,11 @@
             </div>
           </div>
         </div>
+
+        <!-- 用户管理 -->
+        <div v-if="activeTab === 'users'" class="section users-section glass">
+          <UserManager />
+        </div>
       </div>
       
       <!-- 自定义通知组件 -->
@@ -219,11 +245,15 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import SongList from '~/components/Songs/SongList.vue'
+import UserManager from '~/components/Admin/UserManager.vue'
 
 const router = useRouter()
 const currentUser = ref(null)
 const isAuthenticated = ref(false)
 const isAdminUser = ref(false)
+
+// 激活的标签
+const activeTab = ref('schedule')
 
 // 客户端安全数据
 let auth = null
@@ -949,6 +979,38 @@ const updateScrollButtonState = () => {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+.dashboard-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.375rem;
+  color: var(--gray);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.tab-btn:hover:not(.active) {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.tab-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary);
+  border-color: var(--primary);
+  font-weight: 600;
+}
+
 .dashboard-content {
   display: grid;
   grid-template-columns: 1fr;
@@ -1522,7 +1584,7 @@ const updateScrollButtonState = () => {
     grid-template-columns: 1fr 1fr;
   }
   
-  .songs-section, .schedule-section {
+  .songs-section, .schedule-section, .users-section {
     grid-column: span 2;
   }
 }

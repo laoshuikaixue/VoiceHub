@@ -18,7 +18,9 @@ export default defineEventHandler(async (event) => {
           include: {
             requester: {
               select: {
-                name: true
+                name: true,
+                grade: true,
+                class: true
               }
             },
             _count: {
@@ -35,11 +37,55 @@ export default defineEventHandler(async (event) => {
       ]
     })
     
+    // 获取所有用户的姓名列表，用于检测同名用户
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        grade: true,
+        class: true
+      }
+    })
+    
+    // 创建姓名到用户数组的映射
+    const nameToUsers = new Map()
+    users.forEach(user => {
+      if (user.name) {
+        if (!nameToUsers.has(user.name)) {
+          nameToUsers.set(user.name, [])
+        }
+        nameToUsers.get(user.name).push(user)
+      }
+    })
+    
     // 转换数据格式
     const formattedSchedules = schedules.map(schedule => {
       // 创建一个新的日期对象，只保留日期部分，去掉时间
       const dateOnly = new Date(schedule.playDate)
       dateOnly.setHours(0, 0, 0, 0)
+      
+      // 处理投稿人姓名，如果是同名用户则添加后缀
+      let requesterName = schedule.song.requester.name || '未知用户'
+      
+      // 检查是否有同名用户
+      const sameNameUsers = nameToUsers.get(requesterName)
+      if (sameNameUsers && sameNameUsers.length > 1) {
+        const requesterWithGradeClass = schedule.song.requester
+        
+        // 如果有年级信息，则添加年级后缀
+        if (requesterWithGradeClass.grade) {
+          // 检查同一个年级是否有同名
+          const sameGradeUsers = sameNameUsers.filter(u => u.grade === requesterWithGradeClass.grade)
+          
+          if (sameGradeUsers.length > 1 && requesterWithGradeClass.class) {
+            // 同一个年级有同名，添加班级后缀
+            requesterName = `${requesterName}（${requesterWithGradeClass.grade} ${requesterWithGradeClass.class}）`
+          } else {
+            // 只添加年级后缀
+            requesterName = `${requesterName}（${requesterWithGradeClass.grade}）`
+          }
+        }
+      }
       
       return {
         id: schedule.id,
@@ -51,7 +97,7 @@ export default defineEventHandler(async (event) => {
           id: schedule.song.id,
           title: schedule.song.title,
           artist: schedule.song.artist,
-          requester: schedule.song.requester.name,
+          requester: requesterName,
           voteCount: schedule.song._count.votes
         }
       }
