@@ -963,22 +963,26 @@ const handleVote = async (song) => {
       return
     }
     
-    const result = await songsService.voteSong(song.id)
-    if (result) {
-      showNotification('投票成功！', 'success')
-      // 手动刷新歌曲列表以获取最新状态，但不影响当前视图
-      setTimeout(() => {
-        songsService.fetchSongs().then(data => {
-          songs.value = songsService.songs.value
-        }).catch(err => {
-          console.error('刷新歌曲列表失败', err)
-        })
-      }, 500)
+    try {
+      const result = await songsService.voteSong(song.id)
+      if (result) {
+        showNotification('投票成功！', 'success')
+        // 手动刷新歌曲列表以获取最新状态，但不影响当前视图
+        setTimeout(() => {
+          songsService.fetchSongs().then(data => {
+            songs.value = songsService.songs.value
+          }).catch(err => {
+            console.error('刷新歌曲列表失败', err)
+          })
+        }, 500)
+      }
+    } catch (apiErr) {
+      // 不做任何处理，因为useSongs中已经处理了错误提示
+      console.log('API错误已在useSongs中处理')
     }
   } catch (err) {
-    if (err.message && err.message.includes('已经为这首歌投过票')) {
-      showNotification(`您已经为歌曲《${song.title}》投过票了`, 'info')
-    } else {
+    // 这里只处理非API错误
+    if (!(err.message && err.message.includes('已经为这首歌投过票'))) {
       showNotification(err.message || '投票失败', 'error')
     }
   }

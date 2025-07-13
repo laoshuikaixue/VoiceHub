@@ -222,18 +222,32 @@ export const useSongs = () => {
       // 显式传递认证头
       const authHeaders = getAuthHeader()
       
-      const data = await $fetch('/api/songs/request', {
-        method: 'POST',
-        body: { 
-          songId: songId,
-          isVoteOnly: true
-        },
-        headers: authHeaders.headers
-      })
-      
-      // 不再自动更新歌曲列表，只显示通知
-      showNotification('投票成功！', 'success')
-      return data
+      try {
+        const data = await $fetch('/api/songs/request', {
+          method: 'POST',
+          body: { 
+            songId: songId,
+            isVoteOnly: true
+          },
+          headers: authHeaders.headers
+        })
+        
+        // 不再自动更新歌曲列表，只显示通知
+        showNotification('投票成功！', 'success')
+        return data
+      } catch (fetchErr: any) {
+        // 处理API返回的错误
+        const errorMsg = fetchErr.data?.message || fetchErr.message || '投票失败'
+        
+        // 如果是已投票错误，只显示通知，不抛出异常
+        if (errorMsg.includes('已经为这首歌投过票')) {
+          showNotification('您已经为这首歌投过票了', 'info')
+          return null
+        }
+        
+        // 其他错误则抛出
+        throw fetchErr
+      }
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '投票失败'
       error.value = errorMsg
