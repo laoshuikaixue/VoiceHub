@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { prisma } from '../../models/schema'
+import { prisma, checkDatabaseConnection, reconnectDatabase } from '../../models/schema'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -24,6 +24,20 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // 检查数据库连接
+    const isConnected = await checkDatabaseConnection().catch(() => false)
+    if (!isConnected) {
+      console.log('Database connection check failed, attempting to reconnect...')
+      const reconnected = await reconnectDatabase().catch(() => false)
+      if (!reconnected) {
+        console.error('Database reconnection failed')
+        throw createError({
+          statusCode: 500,
+          message: '数据库连接失败，请稍后再试'
+        })
+      }
+    }
+    
     // 查找用户
     let user
     try {
@@ -35,10 +49,25 @@ export default defineEventHandler(async (event) => {
       console.log('User found:', user ? 'yes' : 'no')
     } catch (error) {
       console.error('Database error when finding user:', error)
-      throw createError({
-        statusCode: 500,
-        message: '数据库查询错误'
-      })
+      
+      // 尝试重新连接数据库并重试查询
+      console.log('Attempting to reconnect and retry query...')
+      await reconnectDatabase().catch(() => {})
+      
+      try {
+        user = await prisma.user.findUnique({
+          where: {
+            username: body.username
+          }
+        })
+        console.log('Retry successful, user found:', user ? 'yes' : 'no')
+      } catch (retryError) {
+        console.error('Retry failed:', retryError)
+        throw createError({
+          statusCode: 500,
+          message: '数据库查询错误，请稍后再试'
+        })
+      }
     }
     
     if (!user) {

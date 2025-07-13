@@ -287,6 +287,44 @@ const showNotification = (message, type = 'info') => {
   }, 3000)
 }
 
+// 更新歌曲数量统计
+const updateSongCounts = async () => {
+  try {
+    // 更新排期歌曲数量
+    const schedules = songs?.publicSchedules?.value || []
+    scheduleCount.value = schedules.length
+    
+    // 更新总歌曲数量
+    if (isClientAuthenticated.value && songs?.songs?.value) {
+      // 已登录用户：使用完整歌曲列表
+      songCount.value = songs.songs.value.length
+    } else {
+      // 未登录用户：从公共API获取歌曲总数
+      try {
+        const response = await fetch('/api/songs/count')
+        const data = await response.json()
+        songCount.value = data.count
+      } catch (err) {
+        console.error('获取歌曲总数失败', err)
+        songCount.value = 0
+      }
+    }
+  } catch (e) {
+    console.error('更新歌曲统计失败', e)
+  }
+}
+
+// 初始加载歌曲总数（无论是否登录）
+const loadSongCount = async () => {
+  try {
+    const response = await fetch('/api/songs/count')
+    const data = await response.json()
+    songCount.value = data.count
+  } catch (err) {
+    console.error('获取歌曲总数失败', err)
+  }
+}
+
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
   auth = useAuth()
@@ -297,6 +335,9 @@ onMounted(async () => {
   // 初始化歌曲服务
   songs = useSongs()
   
+  // 无论是否登录都获取歌曲总数
+  await loadSongCount()
+  
   // 无论是否登录都获取公共数据
   await songs.fetchPublicSchedules()
   
@@ -306,7 +347,7 @@ onMounted(async () => {
   }
   
   // 更新真实数据
-  updateSongCounts()
+  await updateSongCounts()
   
   // 设置定时刷新（每60秒刷新一次数据）
   refreshInterval = setInterval(async () => {
@@ -315,7 +356,7 @@ onMounted(async () => {
     } else {
       await songs.fetchPublicSchedules()
     }
-    updateSongCounts()
+    await updateSongCounts()
   }, 60000)
   
   // 监听通知
@@ -339,20 +380,6 @@ onUnmounted(() => {
 const realSongCount = computed(() => {
   return songs?.visibleSongs?.value?.length || 0
 })
-
-// 更新歌曲数量统计
-const updateSongCounts = () => {
-  try {
-    // 更新排期歌曲数量
-    const schedules = songs?.publicSchedules?.value || []
-    scheduleCount.value = schedules.length
-    
-    // 更新总歌曲数量
-    songCount.value = songs?.songs?.value?.length || publicSongs.value?.length || 0
-  } catch (e) {
-    console.error('更新歌曲统计失败', e)
-  }
-}
 
 // 使用计算属性安全地访问数据
 const publicSchedules = computed(() => songs?.publicSchedules?.value || [])
