@@ -50,6 +50,20 @@ export default defineEventHandler(async (event) => {
     })
   }
   
+  // 检查歌曲是否已排期
+  const schedule = await prisma.schedule.findFirst({
+    where: {
+      songId: body.songId
+    }
+  })
+  
+  if (schedule) {
+    throw createError({
+      statusCode: 400,
+      message: '已排期的歌曲不能撤回'
+    })
+  }
+  
   // 删除歌曲的所有投票
   await prisma.vote.deleteMany({
     where: {

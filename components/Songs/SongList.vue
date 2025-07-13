@@ -79,10 +79,12 @@
               <button 
                 class="withdraw-button"
                 @click="handleWithdraw(song)"
-                :disabled="actionInProgress"
+                :disabled="actionInProgress || song.scheduled"
+                :title="song.scheduled ? '已排期的歌曲不能撤回' : ''"
               >
                 撤回投稿
               </button>
+              <span v-if="song.scheduled" class="scheduled-tag">已排期</span>
             </div>
             
             <!-- 管理员操作按钮 -->
@@ -725,6 +727,17 @@ const cancelConfirm = () => {
 .withdraw-button[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.scheduled-tag {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: bold;
 }
 
 /* 管理员操作按钮 */

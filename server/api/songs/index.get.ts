@@ -31,6 +31,11 @@ export default defineEventHandler(async (event) => {
         select: {
           votes: true
         }
+      },
+      schedules: {
+        select: {
+          id: true
+        }
       }
     },
     orderBy: {
@@ -96,7 +101,8 @@ export default defineEventHandler(async (event) => {
       played: song.played,
       playedAt: song.playedAt,
       semester: song.semester,
-      createdAt: song.createdAt
+      createdAt: song.createdAt,
+      scheduled: song.schedules.length > 0 // 添加是否已排期的标志
     }
   })
   
