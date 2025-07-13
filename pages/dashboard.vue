@@ -1,190 +1,138 @@
 <template>
-  <ClientOnly>
-    <div class="dashboard">
-      <div class="dashboard-header glass">
-        <div class="header-left">
-          <NuxtLink to="/" class="logo-link">
-            <h2 class="logo">VoiceHub</h2>
-          </NuxtLink>
-          <h1>后台管理系统</h1>
-        </div>
-        <div class="user-info">
-          <span>欢迎, {{ currentUser?.name || '管理员' }}</span>
-          <button @click="handleLogout" class="logout-btn">注销</button>
-        </div>
-      </div>
-      
-      <div class="dashboard-tabs">
-        <button 
-          :class="['tab-btn', { active: activeTab === 'schedule' }]" 
-          @click="activeTab = 'schedule'"
-        >
-          排期管理
-        </button>
-        <button 
-          :class="['tab-btn', { active: activeTab === 'songs' }]" 
-          @click="activeTab = 'songs'"
-        >
-          歌曲管理
-        </button>
-        <button 
-          :class="['tab-btn', { active: activeTab === 'users' }]" 
-          @click="activeTab = 'users'"
-        >
-          用户管理
-        </button>
-      </div>
-      
-      <div class="dashboard-content">
-        <!-- 歌曲列表 -->
-        <div v-if="activeTab === 'songs'" class="section songs-section glass">
-          <h2>歌曲列表</h2>
-          
-          <SongList 
-            :songs="songs" 
-            :loading="songLoading" 
-            :error="songError"
-            :is-admin="isAdminUser"
-            @vote="handleVote"
-            @withdraw="handleWithdraw"
-            @delete="handleDelete"
-            @markPlayed="handleMarkPlayed"
-            @unmarkPlayed="handleUnmarkPlayed"
-            @refresh="refreshSongs"
-          />
+  <div>
+    <ClientOnly>
+      <div class="dashboard">
+        <div class="dashboard-header glass">
+          <div class="header-left">
+            <NuxtLink to="/" class="logo-link">
+              <h2 class="logo">VoiceHub</h2>
+            </NuxtLink>
+            <h1>后台管理系统</h1>
+          </div>
+          <div class="user-info">
+            <span>欢迎, {{ currentUser?.name || '管理员' }}</span>
+            <button @click="handleLogout" class="logout-btn">注销</button>
+          </div>
         </div>
         
-        <!-- 排期管理 -->
-        <div v-if="activeTab === 'schedule'" class="section schedule-section glass">
-          <h2>排期管理</h2>
-          <div class="schedule-manager">
-            <!-- 水平滚动日期选择器 -->
-            <div class="date-selector-container">
-              <button 
-                class="date-nav-btn prev-btn" 
-                @click="scrollDates('left')"
-                :disabled="isFirstDateVisible"
-              >
-                &lt;
-              </button>
-              <div class="date-selector" ref="dateSelector">
+        <div class="dashboard-tabs">
+          <button 
+            :class="['tab-btn', { active: activeTab === 'schedule' }]" 
+            @click="activeTab = 'schedule'"
+          >
+            排期管理
+          </button>
+          <button 
+            :class="['tab-btn', { active: activeTab === 'songs' }]" 
+            @click="activeTab = 'songs'"
+          >
+            歌曲管理
+          </button>
+          <button 
+            :class="['tab-btn', { active: activeTab === 'users' }]" 
+            @click="activeTab = 'users'"
+          >
+            用户管理
+          </button>
+        </div>
+        
+        <div class="dashboard-content">
+          <!-- 歌曲列表 -->
+          <div v-if="activeTab === 'songs'" class="section songs-section glass">
+            <h2>歌曲列表</h2>
+            
+            <SongList 
+              :songs="songs" 
+              :loading="songLoading" 
+              :error="songError"
+              :is-admin="isAdminUser"
+              @vote="handleVote"
+              @withdraw="handleWithdraw"
+              @delete="handleDelete"
+              @markPlayed="handleMarkPlayed"
+              @unmarkPlayed="handleUnmarkPlayed"
+              @refresh="refreshSongs"
+            />
+          </div>
+          
+          <!-- 排期管理 -->
+          <div v-if="activeTab === 'schedule'" class="section schedule-section glass">
+            <h2>排期管理</h2>
+            <div class="schedule-manager">
+              <!-- 水平滚动日期选择器 -->
+              <div class="date-selector-container">
                 <button 
-                  v-for="date in availableDates" 
-                  :key="date"
-                  :class="['date-btn', { active: selectedDate === date }]"
-                  @click="selectedDate = date"
+                  class="date-nav-btn prev-btn" 
+                  @click="scrollDates('left')"
+                  :disabled="isFirstDateVisible"
                 >
-                  {{ formatDateShort(date) }}
+                  &lt;
+                </button>
+                <div class="date-selector" ref="dateSelector">
+                  <button 
+                    v-for="date in availableDates" 
+                    :key="date"
+                    :class="['date-btn', { active: selectedDate === date }]"
+                    @click="selectedDate = date"
+                  >
+                    {{ formatDateShort(date) }}
+                  </button>
+                </div>
+                <button 
+                  class="date-nav-btn next-btn" 
+                  @click="scrollDates('right')"
+                  :disabled="isLastDateVisible"
+                >
+                  &gt;
                 </button>
               </div>
-              <button 
-                class="date-nav-btn next-btn" 
-                @click="scrollDates('right')"
-                :disabled="isLastDateVisible"
-              >
-                &gt;
-              </button>
-            </div>
-            
-            <div class="schedule-container">
-              <div class="song-list-panel">
-                <h3>待排歌曲</h3>
-                
-                <!-- 添加排序选项 -->
-                <div class="sort-options">
-                  <label>排序方式:</label>
-                  <select v-model="songSortOption" class="sort-select">
-                    <option value="time-desc">最新投稿</option>
-                    <option value="time-asc">最早投稿</option>
-                    <option value="votes-desc">热度最高</option>
-                    <option value="votes-asc">热度最低</option>
-                  </select>
-                </div>
-                
-                <div 
-                  :class="['draggable-songs', { 'drag-over': isDraggableOver }]"
-                  @dragover.prevent="handleDraggableDragOver($event)"
-                  @dragenter.prevent="isDraggableOver = true"
-                  @dragleave="handleDraggableDragLeave($event)"
-                  @drop.stop.prevent="handleReturnToDraggable($event)"
-                >
-                  <div 
-                    v-for="song in filteredUnscheduledSongs" 
-                    :key="song.id"
-                    class="draggable-song"
-                    draggable="true"
-                    @dragstart="dragStart($event, song)"
-                    @dragend="dragEnd($event)"
-                  >
-                    <div class="song-info">
-                      <div class="song-title">{{ song.title }}</div>
-                      <div class="song-meta">
-                        <span class="song-artist">{{ song.artist }}</span>
-                        <span class="song-submitter">投稿人: {{ song.requester }}</span>
-                      </div>
-                      <div class="song-stats">
-                        <span class="votes-count">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                          </svg>
-                          {{ song.voteCount || 0 }}
-                        </span>
-                        <span class="time-info">{{ formatDate(song.createdAt) }}</span>
-                      </div>
-                    </div>
-                    <div class="drag-handle">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="8" cy="8" r="1.5"></circle>
-                        <circle cx="16" cy="8" r="1.5"></circle>
-                        <circle cx="8" cy="16" r="1.5"></circle>
-                        <circle cx="16" cy="16" r="1.5"></circle>
-                      </svg>
-                    </div>
-                  </div>
-                  <div v-if="filteredUnscheduledSongs.length === 0" class="empty-message">
-                    没有待排歌曲
-                  </div>
-                </div>
-              </div>
               
-              <div class="sequence-panel">
-                <h3>播放顺序</h3>
-                <div 
-                  ref="sequenceList"
-                  :class="['sequence-list', { 'drag-over': isSequenceOver }]"
-                  @dragover.prevent="handleDragOver($event)"
-                  @dragenter.prevent="isSequenceOver = true"
-                  @dragleave="handleSequenceDragLeave($event)"
-                  @drop.stop.prevent="dropToSequence($event)"
-                >
-                  <div v-if="localScheduledSongs.length === 0" class="empty-message">
-                    将歌曲拖到此处安排播放顺序
+              <div class="schedule-container">
+                <div class="song-list-panel">
+                  <h3>待排歌曲</h3>
+                  
+                  <!-- 添加排序选项 -->
+                  <div class="sort-options">
+                    <label>排序方式:</label>
+                    <select v-model="songSortOption" class="sort-select">
+                      <option value="time-desc">最新投稿</option>
+                      <option value="time-asc">最早投稿</option>
+                      <option value="votes-desc">热度最高</option>
+                      <option value="votes-asc">热度最低</option>
+                    </select>
                   </div>
+                  
                   <div 
-                    v-for="(schedule, index) in localScheduledSongs" 
-                    :key="schedule.id"
-                    :class="['scheduled-song', { 'drag-over': dragOverIndex === index }]"
-                    draggable="true"
-                    @dragstart="dragScheduleStart($event, schedule)"
-                    @dragend="dragEnd($event)"
-                    @dragover.prevent
-                    @dragenter.prevent="handleDragEnter($event, index)"
-                    @dragleave="handleDragLeave($event)"
-                    @drop.stop.prevent="dropReorder($event, index)"
+                    :class="['draggable-songs', { 'drag-over': isDraggableOver }]"
+                    @dragover.prevent="handleDraggableDragOver($event)"
+                    @dragenter.prevent="isDraggableOver = true"
+                    @dragleave="handleDraggableDragLeave($event)"
+                    @drop.stop.prevent="handleReturnToDraggable($event)"
                   >
-                    <div class="order-number">{{ index + 1 }}</div>
-                    <div class="scheduled-song-info">
-                      <div class="song-title">{{ schedule.song.title }}</div>
-                      <div class="song-artist">{{ schedule.song.artist }}</div>
-                    </div>
-                    <div class="song-actions">
-                      <button 
-                        @click="removeFromSequence(index)" 
-                        class="remove-btn"
-                        title="移除排期"
-                      >
-                        ×
-                      </button>
+                    <div 
+                      v-for="song in filteredUnscheduledSongs" 
+                      :key="song.id"
+                      class="draggable-song"
+                      draggable="true"
+                      @dragstart="dragStart($event, song)"
+                      @dragend="dragEnd($event)"
+                    >
+                      <div class="song-info">
+                        <div class="song-title">{{ song.title }}</div>
+                        <div class="song-meta">
+                          <span class="song-artist">{{ song.artist }}</span>
+                          <span class="song-submitter">投稿人: {{ song.requester }}</span>
+                        </div>
+                        <div class="song-stats">
+                          <span class="votes-count">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            {{ song.voteCount || 0 }}
+                          </span>
+                          <span class="time-info">{{ formatDate(song.createdAt) }}</span>
+                        </div>
+                      </div>
                       <div class="drag-handle">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <circle cx="8" cy="8" r="1.5"></circle>
@@ -194,28 +142,110 @@
                         </svg>
                       </div>
                     </div>
+                    <div v-if="filteredUnscheduledSongs.length === 0" class="empty-message">
+                      没有待排歌曲
+                    </div>
                   </div>
                 </div>
-                <div class="sequence-actions">
-                  <button @click="saveSequence" class="save-btn" :disabled="!hasChanges">
-                    保存顺序
-                  </button>
-                  <button @click="markAllAsPlayed" class="mark-played-btn" :disabled="localScheduledSongs.length === 0">
-                    全部标记为已播放
-                  </button>
+                
+                <div class="sequence-panel">
+                  <h3>播放顺序</h3>
+                  <div 
+                    ref="sequenceList"
+                    :class="['sequence-list', { 'drag-over': isSequenceOver }]"
+                    @dragover.prevent="handleDragOver($event)"
+                    @dragenter.prevent="isSequenceOver = true"
+                    @dragleave="handleSequenceDragLeave($event)"
+                    @drop.stop.prevent="dropToSequence($event)"
+                  >
+                    <div v-if="localScheduledSongs.length === 0" class="empty-message">
+                      将歌曲拖到此处安排播放顺序
+                    </div>
+                    <div 
+                      v-for="(schedule, index) in localScheduledSongs" 
+                      :key="schedule.id"
+                      :class="['scheduled-song', { 'drag-over': dragOverIndex === index }]"
+                      draggable="true"
+                      @dragstart="dragScheduleStart($event, schedule)"
+                      @dragend="dragEnd($event)"
+                      @dragover.prevent
+                      @dragenter.prevent="handleDragEnter($event, index)"
+                      @dragleave="handleDragLeave($event)"
+                      @drop.stop.prevent="dropReorder($event, index)"
+                    >
+                      <div class="order-number">{{ index + 1 }}</div>
+                      <div class="scheduled-song-info">
+                        <div class="song-title">{{ schedule.song.title }}</div>
+                        <div class="song-artist">{{ schedule.song.artist }}</div>
+                      </div>
+                      <div class="song-actions">
+                        <button 
+                          @click="removeFromSequence(index)" 
+                          class="remove-btn"
+                          title="移除排期"
+                        >
+                          ×
+                        </button>
+                        <div class="drag-handle">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="8" cy="8" r="1.5"></circle>
+                            <circle cx="16" cy="8" r="1.5"></circle>
+                            <circle cx="8" cy="16" r="1.5"></circle>
+                            <circle cx="16" cy="16" r="1.5"></circle>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="sequence-actions">
+                    <button @click="saveSequence" class="save-btn" :disabled="!hasChanges">
+                      保存顺序
+                    </button>
+                    <button @click="markAllAsPlayed" class="mark-played-btn" :disabled="localScheduledSongs.length === 0">
+                      全部标记为已播放
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 用户管理 -->
-        <div v-if="activeTab === 'users'" class="section users-section glass">
-          <UserManager />
+          <!-- 用户管理 -->
+          <div v-if="activeTab === 'users'" class="section users-section glass">
+            <UserManager />
+          </div>
+        </div>
+        
+        <!-- 确认对话框组件 -->
+        <div v-if="confirmDialog.show" class="confirm-dialog-backdrop">
+          <div class="confirm-dialog">
+            <div class="confirm-dialog-header">
+              <h3>{{ confirmDialog.title }}</h3>
+            </div>
+            <div class="confirm-dialog-content">
+              {{ confirmDialog.message }}
+            </div>
+            <div class="confirm-dialog-actions">
+              <button 
+                @click="handleConfirmCancel" 
+                class="confirm-dialog-btn confirm-dialog-cancel"
+              >
+                取消
+              </button>
+              <button 
+                @click="handleConfirmConfirm" 
+                class="confirm-dialog-btn confirm-dialog-confirm"
+              >
+                确认
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-      
-      <!-- 自定义通知组件 -->
+    </ClientOnly>
+    
+    <!-- 将通知组件移到ClientOnly外部 -->
+    <Teleport to="body">
       <Transition-group 
         tag="div" 
         name="notification" 
@@ -250,34 +280,8 @@
           <div class="notification-content">{{ notification.message }}</div>
         </div>
       </Transition-group>
-      
-      <!-- 确认对话框组件 -->
-      <div v-if="confirmDialog.show" class="confirm-dialog-backdrop">
-        <div class="confirm-dialog">
-          <div class="confirm-dialog-header">
-            <h3>{{ confirmDialog.title }}</h3>
-          </div>
-          <div class="confirm-dialog-content">
-            {{ confirmDialog.message }}
-          </div>
-          <div class="confirm-dialog-actions">
-            <button 
-              @click="handleConfirmCancel" 
-              class="confirm-dialog-btn confirm-dialog-cancel"
-            >
-              取消
-            </button>
-            <button 
-              @click="handleConfirmConfirm" 
-              class="confirm-dialog-btn confirm-dialog-confirm"
-            >
-              确认
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </ClientOnly>
+    </Teleport>
+  </div>
 </template>
 
 <script setup>
@@ -1727,26 +1731,29 @@ const handleUnmarkPlayed = async (song) => {
   position: fixed;
   top: 1rem;
   right: 1rem;
-  z-index: 1000;
+  z-index: 9999; /* 使用极高的z-index值 */
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   width: 300px;
+  pointer-events: none; /* 允许点击通知下方的元素 */
 }
 
 .notification {
-  background: rgba(30, 41, 59, 0.9);
-  backdrop-filter: blur(10px);
+  background: rgba(15, 23, 42, 0.98); /* 几乎不透明的背景 */
   border-left: 4px solid var(--primary);
   border-radius: 0.375rem;
   padding: 1rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1); /* 增强阴影 */
   transform: translateX(100%);
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  pointer-events: auto; /* 恢复通知本身的点击事件 */
+  isolation: isolate; /* 创建新的层叠上下文 */
+  will-change: transform, opacity; /* 优化动画性能 */
 }
 
 .notification.visible {
@@ -1820,7 +1827,7 @@ const handleUnmarkPlayed = async (song) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1200; /* 确保低于通知的z-index */
   animation: fadeIn 0.2s ease-out;
 }
 
