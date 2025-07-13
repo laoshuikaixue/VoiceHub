@@ -3,11 +3,7 @@
     <header v-if="showHeader" class="site-header">
       <div class="container mx-auto px-4 py-3 flex items-center justify-between">
         <div class="site-branding flex items-center">
-          <img v-if="config.public.siteLogo" :src="config.public.siteLogo" alt="网站Logo" class="site-logo mr-2" />
           <h1 class="site-title text-xl font-bold">{{ config.public.siteTitle }}</h1>
-        </div>
-        <div class="site-description text-sm text-gray-600 hidden md:block">
-          {{ config.public.siteDescription }}
         </div>
       </div>
     </header>
@@ -66,11 +62,6 @@ const handleLogout = () => {
   border-bottom: 1px solid #eaeaea;
 }
 
-.site-logo {
-  max-height: 40px;
-  width: auto;
-}
-
 /* 主要内容 */
 .main-content {
   flex: 1;
@@ -81,10 +72,6 @@ const handleLogout = () => {
 @media (max-width: 768px) {
   .main-content {
     padding: 0;
-  }
-  
-  .site-description {
-    display: none;
   }
 }
 </style>
