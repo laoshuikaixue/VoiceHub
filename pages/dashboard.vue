@@ -977,14 +977,19 @@ const handleVote = async (song) => {
         }, 500)
       }
     } catch (apiErr) {
-      // 不做任何处理，因为useSongs中已经处理了错误提示
-      console.log('API错误已在useSongs中处理')
+      // 处理API错误，显示通知而不是替换界面
+      const errorMsg = apiErr.data?.message || apiErr.message || '投票失败'
+      
+      // 如果是已投票错误，显示特定通知
+      if (errorMsg.includes('已经为这首歌投过票')) {
+        showNotification(`您已经为歌曲《${song.title}》投过票了`, 'info')
+      } else {
+        showNotification(errorMsg, 'error')
+      }
     }
   } catch (err) {
-    // 这里只处理非API错误
-    if (!(err.message && err.message.includes('已经为这首歌投过票'))) {
-      showNotification(err.message || '投票失败', 'error')
-    }
+    // 这里处理其他非API错误
+    showNotification(err.message || '投票失败', 'error')
   }
 }
 
