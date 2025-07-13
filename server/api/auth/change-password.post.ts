@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   // 获取用户完整信息
   const currentUser = await prisma.user.findUnique({
     where: {
-      id: user.userId
+      id: user.id
     }
   })
   
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
   // 更新密码
   await prisma.user.update({
     where: {
-      id: user.userId
+      id: user.id
     },
     data: {
       password: hashedPassword

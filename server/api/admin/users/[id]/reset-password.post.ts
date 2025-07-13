@@ -47,11 +47,12 @@ export default defineEventHandler(async (event) => {
     // 加密新密码
     const hashedPassword = await bcrypt.hash(body.newPassword, 10)
     
-    // 更新密码
+    // 更新密码，同时更新passwordChangedAt字段，使旧令牌失效
     await prisma.user.update({
       where: { id },
       data: {
-        password: hashedPassword
+        password: hashedPassword,
+        passwordChangedAt: new Date() // 添加密码修改时间戳
       }
     })
     

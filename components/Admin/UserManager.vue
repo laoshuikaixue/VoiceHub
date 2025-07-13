@@ -674,13 +674,43 @@ const confirmResetPassword = async () => {
     
     // 重置成功
     resetPasswordUser.value = null
-    alert('密码重置成功')
+    
+    // 显示通知
+    showNotification('密码重置成功，该用户需要重新登录', 'success')
   } catch (err) {
     resetPasswordError.value = err.message || '重置密码失败'
     console.error('重置密码出错:', err)
   } finally {
     resetPasswordLoading.value = false
   }
+}
+
+// 显示通知
+const showNotification = (message, type = 'info') => {
+  // 创建通知元素
+  const notification = document.createElement('div')
+  notification.className = `global-notification ${type}`
+  notification.innerHTML = `
+    <div class="notification-content">
+      <span class="notification-message">${message}</span>
+    </div>
+  `
+  
+  // 添加到页面
+  document.body.appendChild(notification)
+  
+  // 添加显示类
+  setTimeout(() => {
+    notification.classList.add('show')
+  }, 10)
+  
+  // 自动关闭
+  setTimeout(() => {
+    notification.classList.remove('show')
+    setTimeout(() => {
+      document.body.removeChild(notification)
+    }, 300)
+  }, 3000)
 }
 
 // 确认删除用户
@@ -1393,5 +1423,53 @@ const importUsers = async () => {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+</style>
+
+<style>
+/* 全局通知样式 */
+.global-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  transform: translateX(120%);
+  transition: transform 0.3s ease;
+  max-width: 350px;
+}
+
+.global-notification.show {
+  transform: translateX(0);
+}
+
+.global-notification.success {
+  border-left: 4px solid var(--success);
+}
+
+.global-notification.error {
+  border-left: 4px solid var(--danger);
+}
+
+.global-notification.info {
+  border-left: 4px solid var(--primary);
+}
+
+.global-notification.warning {
+  border-left: 4px solid var(--warning);
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+}
+
+.notification-message {
+  color: var(--light);
+  font-size: 0.9rem;
 }
 </style> 

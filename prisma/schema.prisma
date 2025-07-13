@@ -11,19 +11,20 @@ datasource db {
 
 // 用户表
 model User {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  username    String   @unique  // 用户登录账号
-  name        String?  // 用户姓名
-  grade       String?  // 年级，如"高一"、"高二"
-  class       String?  // 班级，如"1班"、"2班"
-  role        Role     @default(USER)
-  password    String
-  lastLoginAt DateTime? // 最后登录时间
-  lastLoginIp String?   // 最后登录IP
-  votes       Vote[]
-  songs       Song[]
+  id               Int      @id @default(autoincrement())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  username         String   @unique  // 用户登录账号
+  name             String?  // 用户姓名
+  grade            String?  // 年级，如"高一"、"高二"
+  class            String?  // 班级，如"1班"、"2班"
+  role             Role     @default(USER)
+  password         String
+  passwordChangedAt DateTime? // 密码修改时间，用于使旧令牌失效
+  lastLoginAt      DateTime? // 最后登录时间
+  lastLoginIp      String?   // 最后登录IP
+  votes            Vote[]
+  songs            Song[]
 }
 
 enum Role {

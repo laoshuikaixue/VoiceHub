@@ -41,7 +41,8 @@ export default defineEventHandler(async (event) => {
     // 验证令牌
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
       userId: number,
-      role: string
+      role: string,
+      iat: number // 令牌发行时间
     }
     
     // 获取用户信息
@@ -61,7 +62,6 @@ export default defineEventHandler(async (event) => {
     // 将用户信息添加到事件上下文
     event.context.user = {
       id: user.id,
-      email: user.email,
       name: user.name,
       role: user.role
     }

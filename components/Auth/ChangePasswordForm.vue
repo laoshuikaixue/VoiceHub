@@ -70,16 +70,50 @@ const handleChangePassword = async () => {
   
   try {
     await auth.changePassword(currentPassword.value, newPassword.value)
-    success.value = '密码修改成功'
+    success.value = '密码修改成功，请重新登录'
     // 清空表单
     currentPassword.value = ''
     newPassword.value = ''
     confirmPassword.value = ''
+    
+    // 显示通知并在2秒后注销并重定向到登录页面
+    showNotification('密码已修改成功，请重新登录', 'success')
+    setTimeout(() => {
+      auth.logout() // 注销并重定向到登录页面
+    }, 2000)
   } catch (err) {
     error.value = err.message || '密码修改失败，请稍后重试'
   } finally {
     loading.value = false
   }
+}
+
+// 显示通知
+const showNotification = (message, type = 'info') => {
+  // 创建通知元素
+  const notification = document.createElement('div')
+  notification.className = `global-notification ${type}`
+  notification.innerHTML = `
+    <div class="notification-content">
+      <span class="notification-message">${message}</span>
+    </div>
+  `
+  
+  // 添加到页面
+  document.body.appendChild(notification)
+  
+  // 添加显示类
+  setTimeout(() => {
+    notification.classList.add('show')
+  }, 10)
+  
+  // 自动关闭
+  setTimeout(() => {
+    notification.classList.remove('show')
+    setTimeout(() => {
+      document.body.removeChild(notification)
+    }, 300)
+  }, 3000)
 }
 </script>
 
@@ -150,6 +184,54 @@ button:disabled {
 .success {
   color: var(--success);
   margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+</style>
+
+<style>
+/* 全局通知样式 */
+.global-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  transform: translateX(120%);
+  transition: transform 0.3s ease;
+  max-width: 350px;
+}
+
+.global-notification.show {
+  transform: translateX(0);
+}
+
+.global-notification.success {
+  border-left: 4px solid var(--success);
+}
+
+.global-notification.error {
+  border-left: 4px solid var(--danger);
+}
+
+.global-notification.info {
+  border-left: 4px solid var(--primary);
+}
+
+.global-notification.warning {
+  border-left: 4px solid var(--warning);
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+}
+
+.notification-message {
+  color: var(--light);
   font-size: 0.9rem;
 }
 </style> 

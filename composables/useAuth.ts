@@ -33,7 +33,9 @@ export const useAuth = () => {
       })
 
       if (error.value) {
-        throw new Error(error.value?.statusMessage || '登录失败')
+        // 获取服务器返回的详细错误信息
+        const errorMessage = error.value.data?.message || error.value.statusMessage || '登录失败'
+        throw new Error(errorMessage)
       }
 
       if (data.value) {
@@ -70,7 +72,9 @@ export const useAuth = () => {
       })
 
       if (error.value) {
-        throw new Error(error.value?.statusMessage || '密码修改失败')
+        // 获取服务器返回的详细错误信息
+        const errorMessage = error.value.data?.message || error.value.statusMessage || '密码修改失败'
+        throw new Error(errorMessage)
       }
 
       return data.value
