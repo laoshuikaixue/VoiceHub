@@ -12,6 +12,7 @@ export interface Song {
   title: string
   artist: string
   requester: string
+  requesterId?: number
   voteCount: number
   played: boolean
   playedAt: string | null

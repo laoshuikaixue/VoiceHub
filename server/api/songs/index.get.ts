@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
       // 如果有年级信息，则添加年级后缀
       if (requesterWithGradeClass.grade) {
         // 检查同一个年级是否有同名
-        const sameGradeUsers = sameNameUsers.filter(u => u.grade === requesterWithGradeClass.grade)
+        const sameGradeUsers = sameNameUsers.filter((u: {grade?: string, class?: string}) => u.grade === requesterWithGradeClass.grade)
         
         if (sameGradeUsers.length > 1 && requesterWithGradeClass.class) {
           // 同一个年级有同名，添加班级后缀
@@ -91,6 +91,7 @@ export default defineEventHandler(async (event) => {
       title: song.title,
       artist: song.artist,
       requester: requesterName,
+      requesterId: song.requester.id,
       voteCount: song._count.votes,
       played: song.played,
       playedAt: song.playedAt,

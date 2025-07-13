@@ -7,15 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({
       statusCode: 401,
-      message: '需要登录才能标记歌曲'
-    })
-  }
-  
-  // 检查是否是管理员
-  if (user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员可以标记歌曲为已播放'
+      message: '需要登录才能撤回歌曲'
     })
   }
   
@@ -42,33 +34,38 @@ export default defineEventHandler(async (event) => {
     })
   }
   
+  // 检查是否是用户自己的投稿
+  if (song.requesterId !== user.id && user.role !== 'ADMIN') {
+    throw createError({
+      statusCode: 403,
+      message: '只能撤回自己的投稿'
+    })
+  }
+  
   // 检查歌曲是否已经播放
   if (song.played) {
     throw createError({
       statusCode: 400,
-      message: '歌曲已经标记为已播放'
+      message: '已播放的歌曲不能撤回'
     })
   }
   
-  // 更新歌曲状态为已播放
-  const updatedSong = await prisma.song.update({
+  // 删除歌曲的所有投票
+  await prisma.vote.deleteMany({
+    where: {
+      songId: body.songId
+    }
+  })
+  
+  // 删除歌曲
+  await prisma.song.delete({
     where: {
       id: body.songId
-    },
-    data: {
-      played: true,
-      playedAt: new Date()
     }
   })
   
   return {
-    message: '歌曲已成功标记为已播放',
-    song: {
-      id: updatedSong.id,
-      title: updatedSong.title,
-      artist: updatedSong.artist,
-      played: updatedSong.played,
-      playedAt: updatedSong.playedAt
-    }
+    message: '歌曲已成功撤回',
+    songId: body.songId
   }
 }) 

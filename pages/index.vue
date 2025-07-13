@@ -137,6 +137,9 @@
                   :error="error"
                   :isAdmin="isAdmin"
                   @vote="handleVote"
+                  @withdraw="handleWithdraw"
+                  @delete="handleDelete"
+                  @markPlayed="handleMarkPlayed"
                 />
               </div>
             </ClientOnly>
@@ -157,6 +160,7 @@
           <RequestForm 
             :loading="loading" 
             @request="handleRequest"
+            @vote="handleVote"
           />
         </div>
       </div>
@@ -174,6 +178,7 @@
           <div class="rules-content">
             <h3 class="font-bold mb-2">投稿须知</h3>
             <ul class="list-disc pl-5 mb-4">
+              <li>投稿时无需加入书名号</li>
               <li>除DJ外 其他类型歌曲均接收（包含日语 韩语等小语种）</li>
               <li>禁止投递含有违规内容的歌曲</li>
               <li>点播的歌曲将由管理员进行审核</li>
@@ -204,15 +209,32 @@
             <p>邮箱：contact@lao-shui.top</p>
             <br>
             <p>Powered by LaoShui @ 2025 | All Rights Reserved.</p>
+            <p>项目开源地址：https://github.com/laoshuikaixue/VoiceHub</p>
           </div>
         </div>
       </div>
     </div>
+    
+    <!-- 通知组件 -->
+    <Transition-group 
+      tag="div" 
+      name="notification" 
+      class="notifications-container"
+    >
+      <div 
+        v-for="(notif, index) in notifications" 
+        :key="notif.id" 
+        class="notification"
+        :class="notif.type"
+      >
+        <div class="notification-content">{{ notif.message }}</div>
+      </div>
+    </Transition-group>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
 import ScheduleList from '~/components/Songs/ScheduleList.vue'
 import SongList from '~/components/Songs/SongList.vue'
 import RequestForm from '~/components/Songs/RequestForm.vue'
@@ -237,6 +259,25 @@ const showAbout = ref(false)
 // 标签页状态
 const activeTab = ref('schedule')
 
+// 通知系统
+const notifications = ref([])
+let notificationId = 0
+let refreshInterval = null
+
+// 显示通知
+const showNotification = (message, type = 'info') => {
+  const id = notificationId++
+  notifications.value.push({ id, message, type })
+  
+  // 3秒后自动关闭
+  setTimeout(() => {
+    const index = notifications.value.findIndex(n => n.id === id)
+    if (index !== -1) {
+      notifications.value.splice(index, 1)
+    }
+  }, 3000)
+}
+
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
   auth = useAuth()
@@ -257,6 +298,32 @@ onMounted(async () => {
   
   // 更新真实数据
   updateSongCounts()
+  
+  // 设置定时刷新（每60秒刷新一次数据）
+  refreshInterval = setInterval(async () => {
+    if (isClientAuthenticated.value) {
+      await songs.fetchSongs()
+    } else {
+      await songs.fetchPublicSchedules()
+    }
+    updateSongCounts()
+  }, 60000)
+  
+  // 监听通知
+  if (songs.notification && songs.notification.value) {
+    watch(songs.notification, (newVal) => {
+      if (newVal.show) {
+        showNotification(newVal.message, newVal.type)
+      }
+    })
+  }
+})
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+  }
 })
 
 // 实时计算歌曲总数
@@ -294,7 +361,7 @@ const error = computed(() => songs?.error?.value || '')
 // 处理投稿请求
 const handleRequest = async (songData) => {
   if (!auth || !isClientAuthenticated.value) {
-    alert('请先登录')
+    showNotification('请先登录', 'error')
     showRequestModal.value = false
     return false
   }
@@ -310,21 +377,94 @@ const handleRequest = async (songData) => {
     }
     return false
   } catch (err) {
-    console.error('点歌失败', err)
+    showNotification(err.message || '点歌失败', 'error')
     return false
   }
 }
 
 // 处理投票
-const handleVote = (song) => {
-  // 这里实现投票功能，目前是占位
+const handleVote = async (song) => {
   if (!isClientAuthenticated.value) {
-    alert('请先登录后再投票')
+    showNotification('请先登录后再投票', 'error')
     return
   }
   
-  // 这里应该调用API进行投票
-  alert(`为歌曲《${song.title}》投票成功！`)
+  try {
+    if (!songs) return
+    
+    const result = await songs.voteSong(song.id)
+    if (result) {
+      showNotification(`为歌曲《${song.title}》投票成功！`, 'success')
+    }
+  } catch (err) {
+    showNotification(err.message || '投票失败', 'error')
+  }
+}
+
+// 处理撤回投稿
+const handleWithdraw = async (song) => {
+  if (!isClientAuthenticated.value) {
+    showNotification('请先登录才能撤回投稿', 'error')
+    return
+  }
+  
+  try {
+    if (!songs) return
+    
+    const result = await songs.withdrawSong(song.id)
+    if (result) {
+      showNotification(`已成功撤回《${song.title}》的投稿`, 'success')
+      await songs.fetchSongs()
+      updateSongCounts()
+    }
+  } catch (err) {
+    showNotification(err.message || '撤回投稿失败', 'error')
+  }
+}
+
+// 处理删除歌曲（管理员）
+const handleDelete = async (song) => {
+  if (!isClientAuthenticated.value || !isAdmin.value) {
+    showNotification('只有管理员可以删除歌曲', 'error')
+    return
+  }
+  
+  try {
+    if (!songs) return
+    
+    const result = await songs.deleteSong(song.id)
+    if (result) {
+      showNotification(`已成功删除《${song.title}》`, 'success')
+      await songs.fetchSongs()
+      updateSongCounts()
+    }
+  } catch (err) {
+    showNotification(err.message || '删除歌曲失败', 'error')
+  }
+}
+
+// 处理标记为已播放（管理员）
+const handleMarkPlayed = async (song) => {
+  if (!isClientAuthenticated.value || !isAdmin.value) {
+    showNotification('只有管理员可以标记歌曲为已播放', 'error')
+    return
+  }
+  
+  try {
+    if (!songs || !songs.markPlayed) {
+      showNotification('功能未实现', 'error')
+      return
+    }
+    
+    const result = await songs.markPlayed(song.id)
+    if (result) {
+      showNotification(`已成功将《${song.title}》标记为已播放`, 'success')
+      await songs.fetchSongs()
+      updateSongCounts()
+    }
+  } catch (err) {
+    showNotification(err.message || '标记歌曲失败', 'error')
+  }
 }
 
 // 打开投稿弹窗
@@ -704,6 +844,76 @@ const handleLogout = () => {
   }
   100% {
     background-position: 0% 50%;
+  }
+}
+
+/* 通知样式 */
+.notifications-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 300px;
+}
+
+.notification {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.95);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: slide-in 0.3s ease;
+}
+
+.notification.success {
+  background: rgba(16, 185, 129, 0.95);
+  border-left: 4px solid rgb(16, 185, 129);
+}
+
+.notification.error {
+  background: rgba(239, 68, 68, 0.95);
+  border-left: 4px solid rgb(239, 68, 68);
+}
+
+.notification.info {
+  background: rgba(59, 130, 246, 0.95);
+  border-left: 4px solid rgb(59, 130, 246);
+}
+
+.notification-content {
+  margin-right: 8px;
+}
+
+/* 通知动画 */
+.notification-enter-active,
+.notification-leave-active {
+  transition: all 0.3s ease;
+}
+
+.notification-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.notification-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 </style> 

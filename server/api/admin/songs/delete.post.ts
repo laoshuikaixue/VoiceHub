@@ -1,4 +1,4 @@
-import { prisma } from '../../models/schema'
+import { prisma } from '../../../models/schema'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({
       statusCode: 401,
-      message: '需要登录才能标记歌曲'
+      message: '需要登录才能删除歌曲'
     })
   }
   
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   if (user.role !== 'ADMIN') {
     throw createError({
       statusCode: 403,
-      message: '只有管理员可以标记歌曲为已播放'
+      message: '只有管理员可以删除歌曲'
     })
   }
   
@@ -42,33 +42,29 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  // 检查歌曲是否已经播放
-  if (song.played) {
-    throw createError({
-      statusCode: 400,
-      message: '歌曲已经标记为已播放'
-    })
-  }
+  // 删除歌曲的所有投票
+  await prisma.vote.deleteMany({
+    where: {
+      songId: body.songId
+    }
+  })
   
-  // 更新歌曲状态为已播放
-  const updatedSong = await prisma.song.update({
+  // 删除歌曲的所有排期
+  await prisma.schedule.deleteMany({
+    where: {
+      songId: body.songId
+    }
+  })
+  
+  // 删除歌曲
+  await prisma.song.delete({
     where: {
       id: body.songId
-    },
-    data: {
-      played: true,
-      playedAt: new Date()
     }
   })
   
   return {
-    message: '歌曲已成功标记为已播放',
-    song: {
-      id: updatedSong.id,
-      title: updatedSong.title,
-      artist: updatedSong.artist,
-      played: updatedSong.played,
-      playedAt: updatedSong.playedAt
-    }
+    message: '歌曲已成功删除',
+    songId: body.songId
   }
 }) 

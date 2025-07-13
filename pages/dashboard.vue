@@ -40,6 +40,10 @@
             :loading="songLoading" 
             :error="songError"
             :is-admin="isAdminUser"
+            @vote="handleVote"
+            @withdraw="handleWithdraw"
+            @delete="handleDelete"
+            @markPlayed="handleMarkPlayed"
           />
         </div>
         
@@ -164,6 +168,9 @@
                 <div class="sequence-actions">
                   <button @click="saveSequence" class="save-btn" :disabled="!hasChanges">
                     保存顺序
+                  </button>
+                  <button @click="markAllAsPlayed" class="mark-played-btn" :disabled="localScheduledSongs.length === 0">
+                    全部标记为已播放
                   </button>
                 </div>
               </div>
@@ -309,8 +316,13 @@ onMounted(async () => {
   isAdminUser.value = auth.isAdmin.value
   currentUser.value = auth.user.value
   
-  if (!isAuthenticated.value || !isAdminUser.value) {
+  if (!isAuthenticated.value) {
     router.push('/login')
+    return
+  }
+  
+  if (!isAdminUser.value) {
+    router.push('/')
     return
   }
   
@@ -939,6 +951,103 @@ const updateScrollButtonState = () => {
   isFirstDateVisible.value = scrollLeft <= 10
   isLastDateVisible.value = scrollWidth - (scrollLeft + clientWidth) <= 10
 }
+
+// 处理投票
+const handleVote = async (song) => {
+  try {
+    const result = await songsService.voteSong(song.id)
+    if (result) {
+      showNotification('投票成功！', 'success')
+      await songsService.fetchSongs()
+      songs.value = songsService.songs.value
+    }
+  } catch (err) {
+    showNotification(err.message || '投票失败', 'error')
+  }
+}
+
+// 处理撤回投稿
+const handleWithdraw = async (song) => {
+  try {
+    const result = await songsService.withdrawSong(song.id)
+    if (result) {
+      showNotification('歌曲已成功撤回！', 'success')
+      await songsService.fetchSongs()
+      songs.value = songsService.songs.value
+    }
+  } catch (err) {
+    showNotification(err.message || '撤回失败', 'error')
+  }
+}
+
+// 处理删除歌曲
+const handleDelete = async (song) => {
+  try {
+    const result = await songsService.deleteSong(song.id)
+    if (result) {
+      showNotification('歌曲已成功删除！', 'success')
+      await songsService.fetchSongs()
+      songs.value = songsService.songs.value
+    }
+  } catch (err) {
+    showNotification(err.message || '删除失败', 'error')
+  }
+}
+
+// 处理标记为已播放
+const handleMarkPlayed = async (song) => {
+  try {
+    const result = await songsService.markPlayed(song.id)
+    if (result) {
+      showNotification('歌曲已标记为已播放！', 'success')
+      await songsService.fetchSongs()
+      songs.value = songsService.songs.value
+    }
+  } catch (err) {
+    showNotification(err.message || '操作失败', 'error')
+  }
+}
+
+// 标记所有歌曲为已播放
+const markAllAsPlayed = async () => {
+  try {
+    // 显示加载通知
+    showNotification('正在标记所有歌曲为已播放...', 'info')
+    
+    // 先保存当前排期
+    if (hasChanges.value) {
+      await saveSequence()
+    }
+    
+    // 获取当前日期的所有排期歌曲
+    const todaySchedules = publicSchedules.value.filter(s => {
+      if (!s.playDate) return false
+      const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
+      return scheduleDateStr === selectedDate.value
+    })
+    
+    // 标记所有歌曲为已播放
+    for (const schedule of todaySchedules) {
+      if (schedule.song && !schedule.song.played) {
+        try {
+          await songsService.markPlayed(schedule.song.id)
+        } catch (err) {
+          console.error(`标记歌曲 ${schedule.song.title} 失败:`, err)
+        }
+      }
+    }
+    
+    // 重新加载数据
+    await songsService.fetchSongs()
+    songs.value = songsService.songs.value
+    
+    // 显示成功通知
+    showNotification('所有歌曲已标记为已播放', 'success')
+  } catch (err) {
+    // 显示错误通知
+    showNotification('标记所有歌曲为已播放失败: ' + (err.message || '未知错误'), 'error')
+  }
+}
 </script>
 
 <style scoped>
@@ -1397,6 +1506,27 @@ const updateScrollButtonState = () => {
 }
 
 .save-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mark-played-btn {
+  padding: 0.5rem 1.5rem;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mark-played-btn:hover:not([disabled]) {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+}
+
+.mark-played-btn[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
 }

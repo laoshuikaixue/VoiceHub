@@ -3,13 +3,29 @@ import { useAuth } from './useAuth'
 import type { Song, Schedule } from '~/types'
 
 export const useSongs = () => {
-  const { getAuthHeader, isAuthenticated } = useAuth()
+  const { getAuthHeader, isAuthenticated, user } = useAuth()
   
   const songs = ref<Song[]>([])
   const publicSchedules = ref<Schedule[]>([])
   const publicSongs = ref<Song[]>([])
   const loading = ref(false)
   const error = ref('')
+  const notification = ref({ show: false, message: '', type: '' })
+  const similarSongFound = ref<Song | null>(null)
+  
+  // 显示通知
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    notification.value = {
+      show: true,
+      message,
+      type
+    }
+    
+    // 3秒后自动关闭
+    setTimeout(() => {
+      notification.value.show = false
+    }, 3000)
+  }
   
   // 获取歌曲列表（需要登录）
   const fetchSongs = async () => {
@@ -62,6 +78,7 @@ export const useSongs = () => {
                 title: schedule.song.title,
                 artist: schedule.song.artist,
                 requester: schedule.song.requester,
+                requesterId: 0, // 默认值，公共API不提供这个信息
                 voteCount: schedule.song.voteCount,
                 played: false, // 默认未播放
                 playedAt: null,
@@ -101,10 +118,39 @@ export const useSongs = () => {
     }
   }
   
-  // 点歌或投票
+  // 检查相似歌曲
+  const checkSimilarSongs = (title: string, artist: string): Song | null => {
+    similarSongFound.value = null
+    
+    // 检查是否已有完全相同歌曲
+    const exactSong = songs.value.find(song => 
+      song.title.toLowerCase() === title.toLowerCase() && 
+      song.artist.toLowerCase() === artist.toLowerCase()
+    )
+    
+    if (exactSong) {
+      return exactSong
+    }
+    
+    // 检查相似歌曲
+    const possibleSimilar = songs.value.find(song => 
+      song.title.toLowerCase().includes(title.toLowerCase()) || 
+      title.toLowerCase().includes(song.title.toLowerCase())
+    )
+    
+    if (possibleSimilar) {
+      similarSongFound.value = possibleSimilar
+      return possibleSimilar
+    }
+    
+    return null
+  }
+  
+  // 点歌
   const requestSong = async (title: string, artist: string) => {
     if (!isAuthenticated.value) {
       error.value = '需要登录才能点歌'
+      showNotification('需要登录才能点歌', 'error')
       return null
     }
     
@@ -112,6 +158,16 @@ export const useSongs = () => {
     error.value = ''
     
     try {
+      // 检查是否已有相同歌曲
+      const similarSong = checkSimilarSongs(title, artist)
+      
+      if (similarSong && similarSong.title.toLowerCase() === title.toLowerCase() && 
+          similarSong.artist.toLowerCase() === artist.toLowerCase()) {
+        showNotification(`《${title}》已经在列表中，不能重复投稿`, 'error')
+        loading.value = false
+        return null
+      }
+      
       // 显式传递认证头
       const authHeaders = getAuthHeader()
       
@@ -124,9 +180,155 @@ export const useSongs = () => {
       // 更新歌曲列表
       await fetchSongs()
       
+      showNotification('点歌成功！', 'success')
       return data
     } catch (err: any) {
-      error.value = err.message || '点歌失败'
+      const errorMsg = err.data?.message || err.message || '点歌失败'
+      error.value = errorMsg
+      showNotification(errorMsg, 'error')
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  // 投票
+  const voteSong = async (songId: number) => {
+    if (!isAuthenticated.value) {
+      showNotification('需要登录才能投票', 'error')
+      return null
+    }
+    
+    loading.value = true
+    error.value = ''
+    
+    try {
+      // 显式传递认证头
+      const authHeaders = getAuthHeader()
+      
+      const data = await $fetch('/api/songs/request', {
+        method: 'POST',
+        body: { 
+          songId: songId,
+          isVoteOnly: true
+        },
+        headers: authHeaders.headers
+      })
+      
+      // 更新歌曲列表
+      await fetchSongs()
+      
+      showNotification('投票成功！', 'success')
+      return data
+    } catch (err: any) {
+      const errorMsg = err.data?.message || err.message || '投票失败'
+      error.value = errorMsg
+      showNotification(errorMsg, 'error')
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  // 撤回歌曲（只能撤回自己的投稿）
+  const withdrawSong = async (songId: number) => {
+    if (!isAuthenticated.value) {
+      showNotification('需要登录才能撤回歌曲', 'error')
+      return null
+    }
+    
+    loading.value = true
+    error.value = ''
+    
+    try {
+      // 显式传递认证头
+      const authHeaders = getAuthHeader()
+      
+      const data = await $fetch('/api/songs/withdraw', {
+        method: 'POST',
+        body: { songId },
+        headers: authHeaders.headers
+      })
+      
+      // 更新歌曲列表
+      await fetchSongs()
+      
+      showNotification('歌曲已成功撤回！', 'success')
+      return data
+    } catch (err: any) {
+      const errorMsg = err.data?.message || err.message || '撤回歌曲失败'
+      error.value = errorMsg
+      showNotification(errorMsg, 'error')
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  // 删除歌曲（管理员专用）
+  const deleteSong = async (songId: number) => {
+    if (!isAuthenticated.value) {
+      showNotification('需要登录才能删除歌曲', 'error')
+      return null
+    }
+    
+    loading.value = true
+    error.value = ''
+    
+    try {
+      // 显式传递认证头
+      const authHeaders = getAuthHeader()
+      
+      const data = await $fetch('/api/admin/songs/delete', {
+        method: 'POST',
+        body: { songId },
+        headers: authHeaders.headers
+      })
+      
+      // 更新歌曲列表
+      await fetchSongs()
+      
+      showNotification('歌曲已成功删除！', 'success')
+      return data
+    } catch (err: any) {
+      const errorMsg = err.data?.message || err.message || '删除歌曲失败'
+      error.value = errorMsg
+      showNotification(errorMsg, 'error')
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  // 标记歌曲为已播放（管理员专用）
+  const markPlayed = async (songId: number) => {
+    if (!isAuthenticated.value) {
+      showNotification('需要登录才能标记歌曲', 'error')
+      return null
+    }
+    
+    loading.value = true
+    error.value = ''
+    
+    try {
+      // 显式传递认证头
+      const authHeaders = getAuthHeader()
+      
+      const data = await $fetch('/api/admin/mark-played', {
+        method: 'POST',
+        body: { songId },
+        headers: authHeaders.headers
+      })
+      
+      // 更新歌曲列表
+      await fetchSongs()
+      
+      showNotification('歌曲已成功标记为已播放！', 'success')
+      return data
+    } catch (err: any) {
+      const errorMsg = err.data?.message || err.message || '标记歌曲失败'
+      error.value = errorMsg
+      showNotification(errorMsg, 'error')
       return null
     } finally {
       loading.value = false
@@ -155,6 +357,12 @@ export const useSongs = () => {
     return songs.value.filter(song => !song.played)
   })
   
+  // 我的投稿歌曲
+  const mySongs = computed(() => {
+    if (!user.value) return []
+    return songs.value.filter(song => song.requesterId === user.value?.id)
+  })
+  
   // 所有可见的歌曲（登录用户看到的 + 公共歌曲）
   const visibleSongs = computed(() => {
     if (songs.value && songs.value.length > 0) {
@@ -171,13 +379,22 @@ export const useSongs = () => {
     visibleSongs,
     loading,
     error,
+    notification,
+    similarSongFound,
     fetchSongs,
     fetchPublicSongs,
     fetchPublicSchedules,
     requestSong,
+    voteSong,
+    withdrawSong,
+    deleteSong,
+    markPlayed,
+    checkSimilarSongs,
+    showNotification,
     songsByPopularity,
     songsByDate,
     playedSongs,
-    unplayedSongs
+    unplayedSongs,
+    mySongs
   }
 } 

@@ -13,6 +13,12 @@ export default defineEventHandler(async (event) => {
   
   const body = await readBody(event)
   
+  // 处理投票请求
+  if (body.isVoteOnly && body.songId) {
+    return await handleVote(body.songId, user.id)
+  }
+  
+  // 处理点歌请求
   if (!body.title || !body.artist) {
     throw createError({
       statusCode: 400,
@@ -46,61 +52,21 @@ export default defineEventHandler(async (event) => {
   // 查找是否已有相同的歌曲请求（未播放）
   const existingSong = await prisma.song.findFirst({
     where: {
-      title: body.title,
-      artist: body.artist,
+      title: {
+        equals: body.title,
+        mode: 'insensitive'  // 不区分大小写
+      },
+      artist: {
+        equals: body.artist,
+        mode: 'insensitive'  // 不区分大小写
+      },
       played: false
     }
   })
   
   // 如果歌曲已存在，则增加投票
   if (existingSong) {
-    // 检查用户是否已经投过票
-    const existingVote = await prisma.vote.findFirst({
-      where: {
-        songId: existingSong.id,
-        userId: user.id
-      }
-    })
-    
-    if (existingVote) {
-      throw createError({
-        statusCode: 400,
-        message: '你已经为这首歌投过票了'
-      })
-    }
-    
-    // 创建新的投票
-    const newVote = await prisma.vote.create({
-      data: {
-        song: {
-          connect: {
-            id: existingSong.id
-          }
-        },
-        user: {
-          connect: {
-            id: user.id
-          }
-        }
-      }
-    })
-    
-    // 获取投票总数
-    const voteCount = await prisma.vote.count({
-      where: {
-        songId: existingSong.id
-      }
-    })
-    
-    return {
-      message: '投票成功',
-      song: {
-        id: existingSong.id,
-        title: existingSong.title,
-        artist: existingSong.artist,
-        voteCount
-      }
-    }
+    return await handleVote(existingSong.id, user.id)
   } else {
     // 创建新歌曲
     const newSong = await prisma.song.create({
@@ -135,4 +101,69 @@ export default defineEventHandler(async (event) => {
       }
     }
   }
-}) 
+})
+
+// 处理投票逻辑
+async function handleVote(songId: number, userId: number) {
+  // 检查歌曲是否存在
+  const song = await prisma.song.findUnique({
+    where: {
+      id: songId
+    }
+  })
+  
+  if (!song) {
+    throw createError({
+      statusCode: 404,
+      message: '歌曲不存在'
+    })
+  }
+  
+  // 检查用户是否已经投过票
+  const existingVote = await prisma.vote.findFirst({
+    where: {
+      songId: songId,
+      userId: userId
+    }
+  })
+  
+  if (existingVote) {
+    throw createError({
+      statusCode: 400,
+      message: '你已经为这首歌投过票了'
+    })
+  }
+  
+  // 创建新的投票
+  const newVote = await prisma.vote.create({
+    data: {
+      song: {
+        connect: {
+          id: songId
+        }
+      },
+      user: {
+        connect: {
+          id: userId
+        }
+      }
+    }
+  })
+  
+  // 获取投票总数
+  const voteCount = await prisma.vote.count({
+    where: {
+      songId: songId
+    }
+  })
+  
+  return {
+    message: '投票成功',
+    song: {
+      id: song.id,
+      title: song.title,
+      artist: song.artist,
+      voteCount
+    }
+  }
+} 
