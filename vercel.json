@@ -2,7 +2,7 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": ".output",
-  "framework": "nuxt",
+  "framework": "nextjs",
   "functions": {
     "api/**/*.js": {
       "memory": 1024
