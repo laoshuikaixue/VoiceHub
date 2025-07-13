@@ -1,4 +1,5 @@
 import { prisma } from '../../models/schema'
+import type { NotificationSettings } from '~/types'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -23,40 +24,52 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 获取用户当前的通知设置
-    let settings = await prisma.notificationSettings.findUnique({
+    let dbSettings: any = await prisma.notificationSettings.findUnique({
       where: {
         userId: user.id
       }
     })
     
-    if (settings) {
+    if (dbSettings) {
       // 更新现有设置
-      settings = await prisma.notificationSettings.update({
+      dbSettings = await prisma.notificationSettings.update({
         where: {
           userId: user.id
         },
         data: {
-          songSelectedNotify: body.songSelectedNotify !== undefined ? body.songSelectedNotify : settings.songSelectedNotify,
-          songPlayedNotify: body.songPlayedNotify !== undefined ? body.songPlayedNotify : settings.songPlayedNotify,
-          songVotedNotify: body.songVotedNotify !== undefined ? body.songVotedNotify : settings.songVotedNotify,
-          songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : settings.songVotedThreshold,
-          systemNotify: body.systemNotify !== undefined ? body.systemNotify : settings.systemNotify,
-          refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : settings.refreshInterval
+          enabled: body.systemNotify !== undefined ? body.systemNotify : dbSettings.enabled,
+          songRequestEnabled: body.songSelectedNotify !== undefined ? body.songSelectedNotify : dbSettings.songRequestEnabled,
+          songPlayedEnabled: body.songPlayedNotify !== undefined ? body.songPlayedNotify : dbSettings.songPlayedEnabled,
+          songVotedEnabled: body.songVotedNotify !== undefined ? body.songVotedNotify : dbSettings.songVotedEnabled,
+          songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : dbSettings.songVotedThreshold,
+          refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : dbSettings.refreshInterval
         }
       })
     } else {
       // 创建新设置
-      settings = await prisma.notificationSettings.create({
+      dbSettings = await prisma.notificationSettings.create({
         data: {
           userId: user.id,
-          songSelectedNotify: body.songSelectedNotify !== undefined ? body.songSelectedNotify : true,
-          songPlayedNotify: body.songPlayedNotify !== undefined ? body.songPlayedNotify : true,
-          songVotedNotify: body.songVotedNotify !== undefined ? body.songVotedNotify : true,
+          enabled: body.systemNotify !== undefined ? body.systemNotify : true,
+          songRequestEnabled: body.songSelectedNotify !== undefined ? body.songSelectedNotify : true,
+          songPlayedEnabled: body.songPlayedNotify !== undefined ? body.songPlayedNotify : true,
+          songVotedEnabled: body.songVotedNotify !== undefined ? body.songVotedNotify : true,
           songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : 1,
-          systemNotify: body.systemNotify !== undefined ? body.systemNotify : true,
           refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : 60
         }
       })
+    }
+    
+    // 转换为前端期望的格式
+    const settings: NotificationSettings = {
+      id: dbSettings.id,
+      userId: dbSettings.userId,
+      songSelectedNotify: dbSettings.songRequestEnabled,
+      songPlayedNotify: dbSettings.songPlayedEnabled,
+      songVotedNotify: dbSettings.songVotedEnabled,
+      systemNotify: dbSettings.enabled,
+      refreshInterval: dbSettings.refreshInterval,
+      songVotedThreshold: dbSettings.songVotedThreshold
     }
     
     return settings

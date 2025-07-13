@@ -1,4 +1,5 @@
 import { prisma } from '../../models/schema'
+import type { NotificationSettings, DBNotificationSettings } from '~/types'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -13,23 +14,37 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 获取用户的通知设置，如果不存在则创建默认设置
-    let settings = await prisma.notificationSettings.findUnique({
+    let dbSettings: any = await prisma.notificationSettings.findUnique({
       where: {
         userId: user.id
       }
     })
     
-    if (!settings) {
+    if (!dbSettings) {
       // 创建默认设置
-      settings = await prisma.notificationSettings.create({
+      dbSettings = await prisma.notificationSettings.create({
         data: {
           userId: user.id,
-          songSelectedNotify: true,
-          songPlayedNotify: true,
-          songVotedNotify: true,
-          systemNotify: true
+          enabled: true,
+          songRequestEnabled: true,
+          songVotedEnabled: true,
+          songPlayedEnabled: true,
+          refreshInterval: 60,
+          songVotedThreshold: 1
         }
       })
+    }
+    
+    // 转换为前端期望的格式
+    const settings: NotificationSettings = {
+      id: dbSettings.id,
+      userId: dbSettings.userId,
+      songSelectedNotify: dbSettings.songRequestEnabled,
+      songPlayedNotify: dbSettings.songPlayedEnabled,
+      songVotedNotify: dbSettings.songVotedEnabled,
+      systemNotify: dbSettings.enabled,
+      refreshInterval: dbSettings.refreshInterval,
+      songVotedThreshold: dbSettings.songVotedThreshold
     }
     
     return settings

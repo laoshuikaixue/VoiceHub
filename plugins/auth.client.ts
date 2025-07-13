@@ -70,7 +70,36 @@ export default defineNuxtPlugin((nuxtApp) => {
         }
       }
       
-      return originalFetch(input, init)
+      try {
+        const response = await originalFetch(input, init)
+        
+        // 检查是否为401错误，特别检查是否是无效令牌
+        if (response.status === 401) {
+          try {
+            const errorData = await response.clone().json()
+            // 如果是无效令牌错误，清除本地存储
+            if (errorData && errorData.data && errorData.data.invalidToken) {
+              console.warn('无效的令牌，清除本地存储')
+              localStorage.removeItem('token')
+              localStorage.removeItem('user')
+              
+              // 如果当前在需要认证的页面，重定向到登录页面
+              const currentPath = window.location.pathname
+              if (currentPath.includes('/dashboard') || currentPath.includes('/change-password')) {
+                window.location.href = '/login?message=您的登录信息已失效，请重新登录'
+              }
+            }
+          } catch (e) {
+            // 如果不能解析JSON，忽略这一步
+            console.error('解析错误数据失败:', e)
+          }
+        }
+        
+        return response
+      } catch (error) {
+        console.error('请求错误:', error)
+        throw error
+      }
     }
     
     // 添加全局请求拦截器
@@ -117,12 +146,13 @@ export default defineNuxtPlugin((nuxtApp) => {
           // 如果当前在需要认证的页面，重定向到登录页面
           const currentPath = window.location.pathname
           if (currentPath.includes('/dashboard') || currentPath.includes('/change-password')) {
-            window.location.href = '/login'
+            window.location.href = '/login?message=登录信息已失效，请重新登录'
           }
-        } else {
-          console.log('令牌验证成功')
-          return response.json()
+          
+          throw new Error('Token validation failed')
         }
+        console.log('令牌验证成功')
+        return response.json()
       })
       .then(data => {
         if (data && data.verified) {

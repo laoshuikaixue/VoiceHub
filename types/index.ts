@@ -50,6 +50,7 @@ export interface Notification {
   readAt: string | null
 }
 
+// 前端使用的通知设置接口
 export interface NotificationSettings {
   id: number
   userId: number
@@ -57,4 +58,18 @@ export interface NotificationSettings {
   songPlayedNotify: boolean
   songVotedNotify: boolean
   systemNotify: boolean
+  refreshInterval: number
+  songVotedThreshold: number
+}
+
+// 数据库中的通知设置接口
+export interface DBNotificationSettings {
+  id: number
+  userId: number
+  enabled: boolean
+  songRequestEnabled: boolean
+  songVotedEnabled: boolean
+  songPlayedEnabled: boolean
+  refreshInterval: number
+  songVotedThreshold: number
 } 

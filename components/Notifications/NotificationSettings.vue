@@ -70,7 +70,6 @@
             />
             <div class="range-values">
               <span>1</span>
-              <span>5</span>
               <span>10</span>
             </div>
           </label>
@@ -108,7 +107,6 @@
         />
         <div class="range-values">
           <span>10秒</span>
-          <span>1分钟</span>
           <span>5分钟</span>
         </div>
         <p class="setting-description">设置通知自动刷新的时间间隔</p>

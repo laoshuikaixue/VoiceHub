@@ -70,7 +70,8 @@
             </div>
             
             <div class="song-meta">
-              <span class="requester">投稿人：{{ song.requester }} 时间：{{ formatDate(song.createdAt) }}</span>
+              <span class="requester">投稿人：{{ song.requester }}</span>
+              <span class="request-time">投稿时间：{{ song.requestedAt || formatDate(song.createdAt) }}</span>
               <span class="song-status">{{ song.played ? '已播放' : '待播放' }}</span>
             </div>
             
@@ -242,11 +243,11 @@ const confirmDialog = ref({
   data: null
 })
 
-// 格式化日期为 X年X月X日
+// 格式化日期为 X年X月X日 H:M
 const formatDate = (dateString) => {
   if (!dateString) return '未知时间'
   const date = new Date(dateString)
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
 // 检查是否是用户自己的投稿
@@ -642,9 +643,21 @@ const cancelConfirm = () => {
 
 .song-meta {
   display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: var(--gray);
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--gray-light);
+  margin-top: 0.5rem;
+}
+
+.requester, .request-time, .song-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.request-time {
+  color: var(--secondary);
 }
 
 .votes {

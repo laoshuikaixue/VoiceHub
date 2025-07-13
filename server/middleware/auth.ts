@@ -87,7 +87,8 @@ export default defineEventHandler(async (event) => {
       console.log(`用户不存在: ${decoded.userId}`)
       throw createError({
         statusCode: 401,
-        message: '用户不存在'
+        message: '用户不存在，请重新登录',
+        data: { invalidToken: true }
       })
     }
     
@@ -107,24 +108,28 @@ export default defineEventHandler(async (event) => {
       if (error.name === 'TokenExpiredError') {
         throw createError({
           statusCode: 401,
-          message: '令牌已过期，请重新登录'
+          message: '令牌已过期，请重新登录',
+          data: { invalidToken: true }
         })
       } else if (error.name === 'NotBeforeError') {
         throw createError({
           statusCode: 401,
-          message: '令牌尚未激活'
+          message: '令牌尚未激活',
+          data: { invalidToken: true }
         })
       } else {
-    throw createError({
-      statusCode: 401,
-      message: '无效的令牌'
-    })
+        throw createError({
+          statusCode: 401,
+          message: '无效的令牌',
+          data: { invalidToken: true }
+        })
       }
     } else {
       console.error(`认证错误:`, error)
       throw createError({
         statusCode: 401,
-        message: '认证失败: ' + (error instanceof Error ? error.message : '未知错误')
+        message: '认证失败: ' + (error instanceof Error ? error.message : '未知错误'),
+        data: { invalidToken: true }
       })
     }
   }

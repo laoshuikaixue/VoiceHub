@@ -38,11 +38,16 @@ export default defineEventHandler(async (event) => {
         }
       }
     },
-    orderBy: {
-      votes: {
-        _count: 'desc'
+    orderBy: [
+      {
+        votes: {
+          _count: 'desc'
+        }
+      },
+      {
+        createdAt: 'asc'  // 投票数相同时，按提交时间排序（较早提交的优先）
       }
-    }
+    ]
   })
   
   // 获取所有用户的姓名列表，用于检测同名用户
@@ -102,6 +107,7 @@ export default defineEventHandler(async (event) => {
       playedAt: song.playedAt,
       semester: song.semester,
       createdAt: song.createdAt,
+      requestedAt: song.createdAt.toLocaleString(), // 添加请求时间的格式化字符串
       scheduled: song.schedules.length > 0 // 添加是否已排期的标志
     }
   })
