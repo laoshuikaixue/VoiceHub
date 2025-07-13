@@ -13,6 +13,14 @@ async function main() {
   // 清空所有表数据
   try {
     // 按照关联关系顺序删除数据
+    console.log('删除通知表数据...')
+    await prisma.notification.deleteMany()
+    console.log('通知表数据已删除')
+    
+    console.log('删除通知设置表数据...')
+    await prisma.notificationSettings.deleteMany()
+    console.log('通知设置表数据已删除')
+    
     console.log('删除排期表数据...')
     await prisma.schedule.deleteMany()
     console.log('排期表数据已删除')
@@ -34,25 +42,14 @@ async function main() {
     // 创建默认管理员账户
     const hashedPassword = await bcrypt.hash('admin123', 10)
     
-    // 检查数据库模型是否包含email字段
-    const userFields = Object.keys(prisma.user.fields)
-    const hasEmailField = userFields.includes('email')
-    
     // 创建管理员用户
-    const adminData = {
-      name: '管理员',
-      username: 'admin',
-      password: hashedPassword,
-      role: 'ADMIN'
-    }
-    
-    // 如果模型中仍然有email字段，则添加它
-    if (hasEmailField) {
-      adminData.email = 'admin@example.com'
-    }
-    
     const admin = await prisma.user.create({
-      data: adminData
+      data: {
+        name: '管理员',
+        username: 'admin',
+        password: hashedPassword,
+        role: 'ADMIN'
+      }
     })
     
     console.log('默认管理员账户已创建:')
