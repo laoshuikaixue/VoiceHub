@@ -3,11 +3,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".output",
   "framework": "nextjs",
-  "functions": {
-    "api/**/*.js": {
-      "memory": 1024
-    }
-  },
   "routes": [
     {
       "src": "/api/(.*)",
