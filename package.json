@@ -8,7 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "vercel-build": "echo 'Starting Vercel build process' && prisma generate && echo 'Prisma client generated successfully' && nuxt build && echo 'Nuxt build completed successfully'"
+    "vercel-build": "echo 'Starting Vercel build process' && prisma generate && echo 'Prisma client generated successfully' && node scripts/add-password-changed-at.js && echo 'Database migration applied' && nuxt build && echo 'Nuxt build completed successfully'",
+    "apply-migration": "node scripts/add-password-changed-at.js"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",

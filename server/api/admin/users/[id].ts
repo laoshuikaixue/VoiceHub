@@ -49,7 +49,8 @@ export default defineEventHandler(async (event) => {
           updatedAt: true,
           grade: true,
           class: true,
-          username: true
+          username: true,
+          passwordChangedAt: true // 添加密码修改时间字段
         }
       })
       

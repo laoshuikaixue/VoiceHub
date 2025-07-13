@@ -47,6 +47,7 @@
               <th>班级</th>
               <th>最后登录</th>
               <th>登录IP</th>
+              <th>密码修改时间</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -64,6 +65,7 @@
               <td>{{ user.class || '-' }}</td>
               <td>{{ user.lastLoginAt ? formatDate(user.lastLoginAt) : '-' }}</td>
               <td>{{ user.lastLoginIp || '-' }}</td>
+              <td>{{ user.passwordChangedAt ? formatDate(user.passwordChangedAt) : '从未修改' }}</td>
               <td class="actions">
                 <button 
                   @click="editUser(user)" 
@@ -1037,7 +1039,8 @@ const importUsers = async () => {
 .users-table th:nth-child(6), .users-table td:nth-child(6) { width: 80px; } /* 班级 */
 .users-table th:nth-child(7), .users-table td:nth-child(7) { width: 180px; } /* 最后登录 */
 .users-table th:nth-child(8), .users-table td:nth-child(8) { width: 120px; } /* 登录IP */
-.users-table th:nth-child(9), .users-table td:nth-child(9) { width: auto; } /* 操作 */
+.users-table th:nth-child(9), .users-table td:nth-child(9) { width: 180px; } /* 密码修改时间 */
+.users-table th:nth-child(10), .users-table td:nth-child(10) { width: auto; } /* 操作 */
 
 .users-table th {
   color: var(--gray);
