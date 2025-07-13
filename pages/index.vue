@@ -70,11 +70,16 @@
                 </div>
 
                 <div class="user-actions">
-                  <NuxtLink v-if="isAdmin" to="/dashboard" class="icon-button" title="后台管理">
+                  <NuxtLink v-if="isAdmin" to="/dashboard" class="icon-button no-underline" title="后台管理">
                     <span>⚙️</span>
                   </NuxtLink>
 
-                  <NuxtLink to="/change-password" class="icon-button" title="修改密码">
+                  <button @click="navigateToNotifications" class="icon-button" title="通知中心">
+                    <span>🔔</span>
+                    <span v-if="unreadNotificationCount > 0" class="notification-badge">{{ unreadNotificationCount }}</span>
+                  </button>
+
+                  <NuxtLink to="/change-password" class="icon-button no-underline" title="修改密码">
                     <span>🔑</span>
                   </NuxtLink>
 
@@ -85,7 +90,7 @@
               </div>
 
               <div v-else class="login-options">
-                <NuxtLink to="/login" class="btn btn-outline">登录</NuxtLink>
+                <NuxtLink to="/login" class="btn btn-outline no-underline">登录</NuxtLink>
               </div>
             </ClientOnly>
           </div>
@@ -251,12 +256,15 @@
 
 <script setup>
 import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import ScheduleList from '~/components/Songs/ScheduleList.vue'
 import SongList from '~/components/Songs/SongList.vue'
 import RequestForm from '~/components/Songs/RequestForm.vue'
+import { useNotifications } from '~/composables/useNotifications'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
+const router = useRouter()
 
 // 服务器端安全的认证状态管理
 const isClientAuthenticated = ref(false)
@@ -264,6 +272,8 @@ const isAdmin = ref(false)
 const user = ref(null)
 let auth = null
 let songs = null
+let notificationsService = null
+const unreadNotificationCount = ref(0)
 
 // 模拟数据初始值
 const songCount = ref(0)
@@ -344,6 +354,7 @@ onMounted(async () => {
 
   // 初始化歌曲服务
   songs = useSongs()
+  notificationsService = useNotifications()
 
   // 无论是否登录都获取歌曲总数
   await loadSongCount()
@@ -367,6 +378,7 @@ onMounted(async () => {
       await songs.fetchPublicSchedules()
     }
     await updateSongCounts()
+    await updateNotificationCount()
   }, 60000)
 
   // 监听通知
@@ -609,6 +621,32 @@ const refreshSongs = async () => {
     showNotification('刷新歌曲列表失败', 'error')
   }
 }
+
+// 更新通知数量
+const updateNotificationCount = async () => {
+  if (isClientAuthenticated.value && notificationsService) {
+    try {
+      await notificationsService.fetchNotifications()
+      unreadNotificationCount.value = notificationsService.unreadCount.value || 0
+    } catch (err) {
+      console.error('获取通知数量失败', err)
+      // 出错时不显示任何通知
+      unreadNotificationCount.value = 0
+    }
+  } else {
+    // 未登录时不显示通知数量
+    unreadNotificationCount.value = 0
+  }
+}
+
+// 导航到通知页面
+const navigateToNotifications = () => {
+  if (isClientAuthenticated.value) {
+    router.push('/notifications')
+  } else {
+    showNotification('请先登录以查看通知', 'info')
+  }
+}
 </script>
 
 <style scoped>
@@ -835,19 +873,41 @@ const refreshSongs = async () => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none; /* 去掉链接的下划线 */
+  transition: all 0.3s ease;
+  position: relative;
+  text-decoration: none; /* 去除所有icon-button的下划线 */
+}
+
+.no-underline {
+  text-decoration: none !important; /* 强制去除下划线 */
 }
 
 .icon-button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background-color: #f44336;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
 }
 
 .login-options {

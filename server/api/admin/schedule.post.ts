@@ -1,4 +1,5 @@
 import { prisma } from '../../models/schema'
+import { createSongSelectedNotification } from '../../services/notificationService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -106,6 +107,14 @@ export default defineEventHandler(async (event) => {
         song: true
       }
     })
+    
+    // 发送通知（异步，不阻塞响应）
+    if (!existingSchedule) {
+      // 只有首次安排时才发送通知
+      createSongSelectedNotification(body.songId).catch(err => {
+        console.error('发送歌曲被选中通知失败:', err)
+      })
+    }
     
     return {
       id: newSchedule.id,

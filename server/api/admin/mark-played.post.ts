@@ -1,4 +1,5 @@
 import { prisma } from '../../models/schema'
+import { createSongPlayedNotification } from '../../services/notificationService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -68,6 +69,13 @@ export default defineEventHandler(async (event) => {
       playedAt: isUnmark ? null : new Date()
     }
   })
+  
+  // 如果是标记为已播放，则发送通知
+  if (!isUnmark) {
+    createSongPlayedNotification(body.songId).catch(err => {
+      console.error('发送歌曲已播放通知失败:', err)
+    })
+  }
   
   return {
     message: isUnmark ? '歌曲已成功撤回已播放状态' : '歌曲已成功标记为已播放',

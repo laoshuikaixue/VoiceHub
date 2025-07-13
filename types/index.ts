@@ -34,4 +34,27 @@ export interface Schedule {
     voteCount: number
     played?: boolean
   }
+}
+
+export type NotificationType = 'SONG_SELECTED' | 'SONG_PLAYED' | 'SONG_VOTED' | 'SYSTEM_NOTICE'
+
+export interface Notification {
+  id: number
+  createdAt: string
+  userId: number
+  type: NotificationType
+  title: string
+  content: string
+  relatedId?: number | null
+  read: boolean
+  readAt: string | null
+}
+
+export interface NotificationSettings {
+  id: number
+  userId: number
+  songSelectedNotify: boolean
+  songPlayedNotify: boolean
+  songVotedNotify: boolean
+  systemNotify: boolean
 } 

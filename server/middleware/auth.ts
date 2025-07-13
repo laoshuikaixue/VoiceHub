@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
     '/',
     '/login',
     '/register',
+    '/notifications',
     '/favicon.ico',
     '/_nuxt'
   ]

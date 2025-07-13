@@ -29,6 +29,12 @@ body {
   overflow-x: hidden;
 }
 
+/* 链接样式 */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
 /* 现代流体背景 */
 body::before {
   content: '';

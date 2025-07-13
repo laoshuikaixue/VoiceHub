@@ -57,9 +57,11 @@ export default defineNuxtPlugin((nuxtApp) => {
           if (init.headers instanceof Headers) {
             init.headers.set('Authorization', `Bearer ${token}`)
           } else {
-          Object.assign(init.headers, {
-            'Authorization': `Bearer ${token}`
-          })
+            // 使用展开运算符创建新对象，避免修改原始对象
+            init.headers = {
+              ...init.headers,
+              'Authorization': `Bearer ${token}`
+            }
           }
           
           console.log(`API请求: ${input}，已添加认证头`)

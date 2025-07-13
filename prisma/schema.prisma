@@ -25,6 +25,8 @@ model User {
   lastLoginIp      String?   // 最后登录IP
   votes            Vote[]
   songs            Song[]
+  notifications    Notification[] // 用户的通知
+  notificationSettings NotificationSettings? // 用户的通知设置
 }
 
 enum Role {
@@ -70,4 +72,37 @@ model Schedule {
   playDate  DateTime
   played    Boolean  @default(false)
   sequence  Int      @default(1) // 播放顺序
+} 
+
+// 通知表
+model Notification {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  userId      Int       // 接收通知的用户ID
+  user        User      @relation(fields: [userId], references: [id])
+  type        NotificationType // 通知类型
+  title       String    // 通知标题
+  content     String    // 通知内容
+  relatedId   Int?      // 相关联的ID（如歌曲ID、投票ID等）
+  read        Boolean   @default(false) // 是否已读
+  readAt      DateTime? // 阅读时间
+}
+
+// 通知类型枚举
+enum NotificationType {
+  SONG_SELECTED     // 歌曲被选中安排播放
+  SONG_PLAYED       // 歌曲已播放
+  SONG_VOTED        // 歌曲获得投票
+  SYSTEM_NOTICE     // 系统通知
+}
+
+// 用户通知设置表
+model NotificationSettings {
+  id                Int     @id @default(autoincrement())
+  userId            Int     @unique // 用户ID
+  user              User    @relation(fields: [userId], references: [id])
+  songSelectedNotify Boolean @default(true) // 歌曲被选中通知
+  songPlayedNotify  Boolean @default(true) // 歌曲已播放通知
+  songVotedNotify   Boolean @default(true) // 歌曲获得投票通知
+  systemNotify      Boolean @default(true) // 系统通知
 } 

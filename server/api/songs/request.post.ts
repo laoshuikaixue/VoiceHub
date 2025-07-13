@@ -1,4 +1,5 @@
 import { prisma } from '../../models/schema'
+import { createSongVotedNotification } from '../../services/notificationService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -156,6 +157,13 @@ async function handleVote(songId: number, userId: number) {
       songId: songId
     }
   })
+  
+  // 发送通知（异步，不阻塞响应）
+  if (song.requesterId !== userId) {
+    createSongVotedNotification(songId, userId).catch(err => {
+      console.error('发送投票通知失败:', err)
+    })
+  }
   
   return {
     message: '投票成功',

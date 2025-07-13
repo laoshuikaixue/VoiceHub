@@ -1,12 +1,5 @@
 <template>
   <div class="app">
-    <header v-if="showHeader" class="site-header">
-      <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="site-branding flex items-center">
-          <h1 class="site-title text-xl font-bold">{{ config.public.siteTitle }}</h1>
-        </div>
-      </div>
-    </header>
     <main class="main-content">
       <NuxtPage />
     </main>
@@ -15,16 +8,11 @@
 
 <script setup>
 import { onMounted, computed, ref } from 'vue'
+// 保留NotificationIcon的导入，但不在这里使用它，而是在各个页面中使用
+import NotificationIcon from '~/components/Notifications/NotificationIcon.vue'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
-
-// 根据路由决定是否显示头部
-const route = useRoute()
-const showHeader = computed(() => {
-  // 在首页不显示头部，因为首页已经有了自己的标题区域
-  return route.path !== '/'
-})
 
 // 使用onMounted确保只在客户端初始化认证
 let auth = null
@@ -54,12 +42,6 @@ const handleLogout = () => {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-}
-
-/* 站点头部 */
-.site-header {
-  background-color: #fff;
-  border-bottom: 1px solid #eaeaea;
 }
 
 /* 主要内容 */
