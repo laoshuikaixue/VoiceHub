@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 
 // PrismaClient 是附加到 `global` 对象的，以防止在开发过程中
 // 热重载时创建多个实例
@@ -13,65 +13,122 @@ if (!process.env.DATABASE_URL) {
     const dbUrlObj = new URL(process.env.DATABASE_URL)
     console.log(`Database provider: ${dbUrlObj.protocol}`)
     console.log(`Database host: ${dbUrlObj.hostname}`)
+    console.log(`Database port: ${dbUrlObj.port || 'default'}`)
+    console.log(`Database name: ${dbUrlObj.pathname.replace('/', '')}`)
     console.log(`Database has password: ${dbUrlObj.password ? 'Yes' : 'No'}`)
+    console.log(`Database connection string includes SSL parameters: ${dbUrlObj.search.includes('ssl') ? 'Yes' : 'No'}`)
   } catch (error) {
     console.error('Invalid DATABASE_URL format:', error)
   }
 }
 
-// 创建 Prisma 客户端实例，添加更多错误处理
+// 创建 Prisma 客户端实例，添加更多错误处理和重试逻辑
 let prismaInstance: PrismaClient
 
-try {
-  prismaInstance = globalForPrisma.prisma || 
-    new PrismaClient({
-      log: ['query', 'info', 'warn', 'error'],
+// 最大重试次数
+const MAX_RETRIES = 3;
+// 初始重试延迟（毫秒）
+const INITIAL_RETRY_DELAY = 1000;
+
+// 创建带有重试机制的Prisma客户端
+function createPrismaClient() {
+  try {
+    // 检查是否在Vercel环境中
+    const isVercelEnv = process.env.VERCEL === '1';
+    
+    console.log(`Running in ${isVercelEnv ? 'Vercel' : 'standard'} environment`);
+    
+    // 在Vercel环境中使用更保守的日志设置
+    const logLevels: Prisma.LogLevel[] = isVercelEnv 
+      ? ['error'] 
+      : ['query', 'info', 'warn', 'error'];
+    
+    return new PrismaClient({
+      log: logLevels,
       errorFormat: 'pretty',
-    })
-  
-  console.log('Prisma client instance created')
-} catch (error) {
-  console.error('Failed to create Prisma client instance:', error)
-  // 创建一个降级的 Prisma 客户端，只记录错误
-  prismaInstance = new PrismaClient({
-    log: ['error'],
-  })
+      // 在Vercel环境中增加连接超时
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Failed to create Prisma client instance:', error);
+    // 创建一个降级的 Prisma 客户端，只记录错误
+    return new PrismaClient({
+      log: ['error'],
+    });
+  }
+}
+
+// 初始化Prisma客户端
+if (process.env.NODE_ENV === 'production') {
+  // 生产环境下总是创建新实例
+  prismaInstance = createPrismaClient();
+  console.log('Created new Prisma client instance in production mode');
+} else {
+  // 开发环境下复用全局实例
+  prismaInstance = globalForPrisma.prisma || createPrismaClient();
+  console.log('Using cached or new Prisma client instance in development mode');
 }
 
 // 导出 Prisma 客户端实例
-export const prisma = prismaInstance
+export const prisma = prismaInstance;
 
-// 测试数据库连接
-prisma.$connect()
-  .then(() => {
-    console.log('Successfully connected to the database')
-  })
-  .catch((error) => {
-    console.error('Failed to connect to the database:', error)
-    // 尝试解析更详细的错误信息
+// 连接数据库的函数，包含重试逻辑
+async function connectWithRetry(retries = MAX_RETRIES, delay = INITIAL_RETRY_DELAY) {
+  try {
+    await prisma.$connect();
+    console.log('Successfully connected to the database');
+    return true;
+  } catch (error) {
+    console.error(`Database connection attempt failed (${MAX_RETRIES - retries + 1}/${MAX_RETRIES}):`, error);
+    
+    // 解析错误类型并记录详细信息
     if (error instanceof Error) {
-      console.error('Error name:', error.name)
-      console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       
       // 检查常见的连接错误
       if (error.message.includes('timeout')) {
-        console.error('Connection timeout: Database server might be unreachable or blocked by firewall')
+        console.error('Connection timeout: Database server might be unreachable or blocked by firewall');
       } else if (error.message.includes('authentication')) {
-        console.error('Authentication error: Check username and password in DATABASE_URL')
+        console.error('Authentication error: Check username and password in DATABASE_URL');
       } else if (error.message.includes('does not exist')) {
-        console.error('Database does not exist: Check database name in DATABASE_URL')
+        console.error('Database does not exist: Check database name in DATABASE_URL');
       } else if (error.message.includes('ENOTFOUND')) {
-        console.error('Host not found: Check hostname in DATABASE_URL')
+        console.error('Host not found: Check hostname in DATABASE_URL');
       } else if (error.message.includes('ECONNREFUSED')) {
-        console.error('Connection refused: Database server might be down or not accepting connections')
+        console.error('Connection refused: Database server might be down or not accepting connections');
       }
     }
-  })
+    
+    // 如果还有重试次数，则等待后重试
+    if (retries > 0) {
+      console.log(`Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      // 指数退避策略，每次重试延迟时间翻倍
+      return connectWithRetry(retries - 1, delay * 2);
+    }
+    
+    console.error('All database connection attempts failed');
+    return false;
+  }
+}
+
+// 尝试连接数据库
+connectWithRetry()
+  .catch(error => {
+    console.error('Database connection process failed completely:', error);
+  });
 
 // 只在非生产环境中缓存 Prisma 客户端实例
 if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma
+  globalForPrisma.prisma = prisma;
 } else {
-  console.log('Running in production mode, not caching Prisma client globally')
+  console.log('Running in production mode, not caching Prisma client globally');
 } 

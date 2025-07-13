@@ -1,5 +1,14 @@
 {
   "version": 2,
   "buildCommand": "npm run vercel-build",
-  "outputDirectory": ".output"
+  "outputDirectory": ".output",
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
+  "env": {
+    "NITRO_PRESET": "vercel"
+  }
 } 

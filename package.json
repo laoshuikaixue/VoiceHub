@@ -8,7 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "vercel-build": "prisma generate && nuxt build"
+    "vercel-build": "echo 'Starting Vercel build process' && prisma generate && echo 'Prisma client generated successfully' && nuxt build && echo 'Nuxt build completed successfully'"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",

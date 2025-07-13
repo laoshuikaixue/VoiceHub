@@ -3,10 +3,14 @@ import jwt from 'jsonwebtoken'
 import { prisma, checkDatabaseConnection, reconnectDatabase } from '../../models/schema'
 
 export default defineEventHandler(async (event) => {
+  // 记录请求开始时间，用于计算处理时间
+  const startTime = Date.now()
+  
   try {
     const body = await readBody(event)
     
     console.log('Login attempt for user:', body.username)
+    console.log('Environment:', process.env.NODE_ENV, 'Vercel:', process.env.VERCEL === '1' ? 'Yes' : 'No')
     
     if (!body.username || !body.password) {
       throw createError({
@@ -25,15 +29,45 @@ export default defineEventHandler(async (event) => {
     }
     
     // 检查数据库连接
-    const isConnected = await checkDatabaseConnection().catch(() => false)
+    console.log('Checking database connection...')
+    const isConnected = await checkDatabaseConnection().catch((error) => {
+      console.error('Database connection check error:', error)
+      return false
+    })
+    
     if (!isConnected) {
       console.log('Database connection check failed, attempting to reconnect...')
-      const reconnected = await reconnectDatabase().catch(() => false)
+      
+      // 多次尝试重新连接数据库
+      let reconnected = false
+      const maxRetries = 3
+      
+      for (let i = 0; i < maxRetries; i++) {
+        console.log(`Reconnection attempt ${i + 1}/${maxRetries}...`)
+        
+        reconnected = await reconnectDatabase().catch((error) => {
+          console.error(`Reconnection attempt ${i + 1} failed:`, error)
+          return false
+        })
+        
+        if (reconnected) {
+          console.log('Database reconnection successful')
+          break
+        }
+        
+        // 如果不是最后一次尝试，则等待一段时间后重试
+        if (i < maxRetries - 1) {
+          const delay = Math.pow(2, i) * 1000 // 指数退避策略
+          console.log(`Waiting ${delay}ms before next attempt...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+      }
+      
       if (!reconnected) {
-        console.error('Database reconnection failed')
+        console.error('All database reconnection attempts failed')
         throw createError({
-          statusCode: 500,
-          message: '数据库连接失败，请稍后再试'
+          statusCode: 503,
+          message: '数据库服务暂时不可用，请稍后再试'
         })
       }
     }
@@ -41,6 +75,7 @@ export default defineEventHandler(async (event) => {
     // 查找用户
     let user
     try {
+      console.log('Querying database for user...')
       user = await prisma.user.findUnique({
         where: {
           username: body.username
@@ -52,7 +87,9 @@ export default defineEventHandler(async (event) => {
       
       // 尝试重新连接数据库并重试查询
       console.log('Attempting to reconnect and retry query...')
-      await reconnectDatabase().catch(() => {})
+      await reconnectDatabase().catch((reconnectError) => {
+        console.error('Reconnection failed:', reconnectError)
+      })
       
       try {
         user = await prisma.user.findUnique({
@@ -63,9 +100,13 @@ export default defineEventHandler(async (event) => {
         console.log('Retry successful, user found:', user ? 'yes' : 'no')
       } catch (retryError) {
         console.error('Retry failed:', retryError)
+        
+        // 提供更详细的错误信息
+        const errorDetails = retryError instanceof Error ? retryError.message : 'Unknown error'
+        
         throw createError({
           statusCode: 500,
-          message: '数据库查询错误，请稍后再试'
+          message: `数据库查询错误，请稍后再试 (${errorDetails})`
         })
       }
     }
@@ -80,6 +121,7 @@ export default defineEventHandler(async (event) => {
     // 验证密码
     let isPasswordValid
     try {
+      console.log('Verifying password...')
       isPasswordValid = await bcrypt.compare(body.password, user.password)
       console.log('Password valid:', isPasswordValid)
     } catch (error) {
@@ -103,6 +145,7 @@ export default defineEventHandler(async (event) => {
     
     // 更新用户最后登录时间和IP
     try {
+      console.log('Updating user login information...')
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -119,6 +162,7 @@ export default defineEventHandler(async (event) => {
     // 生成JWT令牌
     let token
     try {
+      console.log('Generating JWT token...')
       token = jwt.sign(
         { 
           userId: user.id,
@@ -136,6 +180,10 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // 计算并记录总处理时间
+    const processingTime = Date.now() - startTime
+    console.log(`Login request processed in ${processingTime}ms`)
+    
     return {
       token,
       user: {
@@ -150,15 +198,22 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (error: any) {
-    console.error('Login error:', error)
+    // 计算并记录错误处理时间
+    const errorTime = Date.now() - startTime
+    console.error(`Login error after ${errorTime}ms:`, error)
+    
     // 如果是已经格式化的错误，直接抛出
     if (error.statusCode) {
       throw error
     }
-    // 否则创建一个通用的服务器错误
+    
+    // 否则创建一个通用的服务器错误，并包含更多诊断信息
+    const errorMessage = error.message || '未知错误'
+    const errorName = error.name || 'Error'
+    
     throw createError({
       statusCode: 500,
-      message: '登录处理错误: ' + (error.message || '未知错误')
+      message: `登录处理错误 [${errorName}]: ${errorMessage}`
     })
   }
 }) 
