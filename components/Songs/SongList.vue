@@ -597,6 +597,7 @@ const cancelConfirm = () => {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
+  width: 100%; /* 确保宽度一致 */
 }
 
 .song-card {
@@ -605,6 +606,8 @@ const cancelConfirm = () => {
   border-radius: 0.5rem;
   padding: 0.75rem;
   transition: all 0.3s ease;
+  width: 100%; /* 确保宽度一致 */
+  box-sizing: border-box; /* 确保内边距不会增加元素总宽度 */
 }
 
 .song-card:hover {

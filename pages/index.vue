@@ -16,7 +16,7 @@
               <div class="action-card">
                 <div class="icon">🎵</div>
                 <div class="content">
-                  <h3 class="text-lg font-bold">已收集歌曲</h3>
+                  <h3 class="text-lg font-bold">投稿数量</h3>
                   <p class="text-xl font-bold text-primary">{{ songCount }}</p>
                 </div>
               </div>
@@ -909,6 +909,12 @@ const refreshSongs = async () => {
   padding: 1rem;
   max-height: calc(100vh - 8rem);
   overflow-y: auto;
+  width: 100%; /* 确保内容宽度一致 */
+}
+
+/* 确保标签页内容宽度一致 */
+.schedule-tab, .songs-tab {
+  width: 100%;
 }
 
 /* 弹窗样式 */
@@ -1060,6 +1066,16 @@ const refreshSongs = async () => {
   .left-content {
     position: static;
     max-height: none;
+  }
+  
+  /* 确保移动端下标签内容宽度一致 */
+  .tab-content {
+    padding: 0.75rem;
+  }
+  
+  .schedule-tab, .songs-tab {
+    width: 100%;
+    padding: 0;
   }
 }
 
