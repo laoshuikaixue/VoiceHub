@@ -5,7 +5,15 @@
     <!-- 用户列表 -->
     <div class="users-section card">
       <div class="card-header">
-        <h3>用户列表</h3>
+        <div class="header-left">
+          <h3>用户列表</h3>
+          <div class="user-count">
+            共 <span class="count-number">{{ users.length }}</span> 名用户
+            <span v-if="filteredUsers.length !== users.length">
+              (当前显示: {{ filteredUsers.length }})
+            </span>
+          </div>
+        </div>
         <div class="controls">
           <input 
             v-model="searchTerm" 
@@ -43,7 +51,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="user in filteredUsers" :key="user.id">
+            <tr v-for="user in paginatedUsers" :key="user.id">
               <td>{{ user.id }}</td>
               <td>{{ user.name }}</td>
               <td>{{ user.username }}</td>
@@ -79,279 +87,349 @@
             </tr>
           </tbody>
         </table>
+        
+        <!-- 分页控件 -->
+        <div class="pagination-container">
+          <div class="pagination-settings">
+            <label for="page-size">每页显示:</label>
+            <select id="page-size" v-model.number="pageSize" class="page-size-select">
+              <option :value="10">10</option>
+              <option :value="20">20</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+              <option :value="-1">全部</option>
+            </select>
+          </div>
+          
+          <div class="pagination-controls" v-if="totalPages > 1">
+            <button 
+              @click="currentPage = 1" 
+              class="pagination-btn"
+              :disabled="currentPage === 1"
+              title="首页"
+            >
+              &laquo;
+            </button>
+            <button 
+              @click="currentPage--" 
+              class="pagination-btn"
+              :disabled="currentPage === 1"
+              title="上一页"
+            >
+              &lsaquo;
+            </button>
+            
+            <div class="pagination-info">
+              {{ currentPage }} / {{ totalPages }}
+            </div>
+            
+            <button 
+              @click="currentPage++" 
+              class="pagination-btn"
+              :disabled="currentPage === totalPages"
+              title="下一页"
+            >
+              &rsaquo;
+            </button>
+            <button 
+              @click="currentPage = totalPages" 
+              class="pagination-btn"
+              :disabled="currentPage === totalPages"
+              title="末页"
+            >
+              &raquo;
+            </button>
+          </div>
+          
+          <div class="pagination-status">
+            显示 {{ paginationStart }} - {{ paginationEnd }} 条，共 {{ filteredUsers.length }} 条
+          </div>
+        </div>
       </div>
     </div>
     
     <!-- 添加/编辑用户弹窗 -->
-    <div v-if="showAddUser || editingUser" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>{{ editingUser ? '编辑用户' : '添加用户' }}</h3>
-          <button @click="closeUserForm" class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="saveUser">
-            <div class="form-group">
-              <label for="name">姓名</label>
-              <input 
-                id="name" 
-                v-model="userForm.name" 
-                type="text" 
-                required
-              />
-            </div>
-            
-            <div class="form-group">
-              <label for="username">账号名</label>
-              <input 
-                id="username" 
-                v-model="userForm.username" 
-                type="text" 
-                required
-                :disabled="!!editingUser"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label for="grade">年级</label>
-              <select id="grade" v-model="userForm.grade">
-                <option value="">无</option>
-                <option value="高一">高一</option>
-                <option value="高二">高二</option>
-                <option value="高三">高三</option>
-                <option value="教师">教师</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="class">班级</label>
-              <input 
-                id="class" 
-                v-model="userForm.class" 
-                type="text" 
-                placeholder="如: 1班、2班"
-              />
-            </div>
-            
-            <div v-if="!editingUser" class="form-group">
-              <label for="password">密码</label>
-              <input 
-                id="password" 
-                v-model="userForm.password" 
-                type="password" 
-                required
-              />
-            </div>
-            
-            <div class="form-group">
-              <label for="role">角色</label>
-              <select id="role" v-model="userForm.role">
-                <option value="USER">普通用户</option>
-                <option value="ADMIN">管理员</option>
-              </select>
-            </div>
-            
-            <div v-if="formError" class="error">{{ formError }}</div>
-            
-            <div class="form-actions">
-              <button type="button" @click="closeUserForm" class="btn btn-secondary">取消</button>
-              <button type="submit" class="btn btn-primary" :disabled="formLoading">
-                {{ formLoading ? '保存中...' : '保存' }}
-              </button>
-            </div>
-          </form>
+    <Teleport to="body">
+      <div v-if="showAddUser || editingUser" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>{{ editingUser ? '编辑用户' : '添加用户' }}</h3>
+            <button @click="closeUserForm" class="close-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="saveUser">
+              <div class="form-group">
+                <label for="name">姓名</label>
+                <input 
+                  id="name" 
+                  v-model="userForm.name" 
+                  type="text" 
+                  required
+                />
+              </div>
+              
+              <div class="form-group">
+                <label for="username">账号名</label>
+                <input 
+                  id="username" 
+                  v-model="userForm.username" 
+                  type="text" 
+                  required
+                  :disabled="!!editingUser"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label for="grade">年级</label>
+                <select id="grade" v-model="userForm.grade">
+                  <option value="">无</option>
+                  <option value="高一">高一</option>
+                  <option value="高二">高二</option>
+                  <option value="高三">高三</option>
+                  <option value="教师">教师</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="class">班级</label>
+                <input 
+                  id="class" 
+                  v-model="userForm.class" 
+                  type="text" 
+                  placeholder="如: 1班、2班"
+                />
+              </div>
+              
+              <div v-if="!editingUser" class="form-group">
+                <label for="password">密码</label>
+                <input 
+                  id="password" 
+                  v-model="userForm.password" 
+                  type="password" 
+                  required
+                />
+              </div>
+              
+              <div class="form-group">
+                <label for="role">角色</label>
+                <select id="role" v-model="userForm.role">
+                  <option value="USER">普通用户</option>
+                  <option value="ADMIN">管理员</option>
+                </select>
+              </div>
+              
+              <div v-if="formError" class="error">{{ formError }}</div>
+              
+              <div class="form-actions">
+                <button type="button" @click="closeUserForm" class="btn btn-secondary">取消</button>
+                <button type="submit" class="btn btn-primary" :disabled="formLoading">
+                  {{ formLoading ? '保存中...' : '保存' }}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
     
     <!-- 批量导入用户弹窗 -->
-    <div v-if="showImportUsers" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>批量导入用户</h3>
-          <button @click="showImportUsers = false" class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="import-instructions">
-            <p>请上传Excel格式文件 (.xlsx)，文件格式如下：</p>
-            <div class="excel-format">
-              <table>
-                <thead>
-                  <tr>
-                    <th>A列</th>
-                    <th>B列</th>
-                    <th>C列</th>
-                    <th>D列</th>
-                    <th>E列</th>
-                    <th>F列</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>姓名</td>
-                    <td>账号名</td>
-                    <td>密码</td>
-                    <td>角色</td>
-                    <td>年级</td>
-                    <td>班级</td>
-                  </tr>
-                  <tr>
-                    <td>张三</td>
-                    <td>zhangsan</td>
-                    <td>password123</td>
-                    <td>USER</td>
-                    <td>高一</td>
-                    <td>1班</td>
-                  </tr>
-                </tbody>
-              </table>
+    <Teleport to="body">
+      <div v-if="showImportUsers" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>批量导入用户</h3>
+            <button @click="showImportUsers = false" class="close-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="import-instructions">
+              <p>请上传Excel格式文件 (.xlsx)，文件格式如下：</p>
+              <div class="excel-format">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>A列</th>
+                      <th>B列</th>
+                      <th>C列</th>
+                      <th>D列</th>
+                      <th>E列</th>
+                      <th>F列</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>姓名</td>
+                      <td>账号名</td>
+                      <td>密码</td>
+                      <td>角色</td>
+                      <td>年级</td>
+                      <td>班级</td>
+                    </tr>
+                    <tr>
+                      <td>张三</td>
+                      <td>zhangsan</td>
+                      <td>password123</td>
+                      <td>USER</td>
+                      <td>高一</td>
+                      <td>1班</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="import-note">注意：第一行可以是标题行（会自动跳过），角色可以是USER或ADMIN</p>
             </div>
-            <p class="import-note">注意：第一行可以是标题行（会自动跳过），角色可以是USER或ADMIN</p>
-          </div>
-          
-          <div class="form-group">
-            <label for="file-upload">选择文件</label>
-            <input 
-              id="file-upload" 
-              type="file" 
-              accept=".xlsx" 
-              @change="handleFileUpload"
-            />
-          </div>
-          
-          <div v-if="importError" class="error">{{ importError }}</div>
-          <div v-if="importSuccess" class="success">{{ importSuccess }}</div>
-          
-          <div class="preview-section" v-if="previewData.length > 0">
-            <h4>预览数据 ({{ previewData.length }}条记录)</h4>
-            <div class="preview-table-container">
-              <table class="preview-table">
-                <thead>
-                  <tr>
-                    <th>姓名</th>
-                    <th>账号名</th>
-                    <th>密码</th>
-                    <th>角色</th>
-                    <th>年级</th>
-                    <th>班级</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, index) in previewData.slice(0, 5)" :key="index">
-                    <td>{{ row.name }}</td>
-                    <td>{{ row.username }}</td>
-                    <td>******</td>
-                    <td>{{ row.role }}</td>
-                    <td>{{ row.grade || '-' }}</td>
-                    <td>{{ row.class || '-' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div v-if="previewData.length > 5" class="preview-more">
-                以及另外 {{ previewData.length - 5 }} 条记录
+            
+            <div class="form-group">
+              <label for="file-upload">选择文件</label>
+              <input 
+                id="file-upload" 
+                type="file" 
+                accept=".xlsx" 
+                @change="handleFileUpload"
+              />
+            </div>
+            
+            <div v-if="importError" class="error">{{ importError }}</div>
+            <div v-if="importSuccess" class="success">{{ importSuccess }}</div>
+            
+            <div class="preview-section" v-if="previewData.length > 0">
+              <h4>预览数据 ({{ previewData.length }}条记录)</h4>
+              <div class="preview-table-container">
+                <table class="preview-table">
+                  <thead>
+                    <tr>
+                      <th>姓名</th>
+                      <th>账号名</th>
+                      <th>密码</th>
+                      <th>角色</th>
+                      <th>年级</th>
+                      <th>班级</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(row, index) in previewData.slice(0, 5)" :key="index">
+                      <td>{{ row.name }}</td>
+                      <td>{{ row.username }}</td>
+                      <td>******</td>
+                      <td>{{ row.role }}</td>
+                      <td>{{ row.grade || '-' }}</td>
+                      <td>{{ row.class || '-' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-if="previewData.length > 5" class="preview-more">
+                  以及另外 {{ previewData.length - 5 }} 条记录
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div class="form-actions">
-            <button type="button" @click="showImportUsers = false" class="btn btn-secondary">取消</button>
-            <button 
-              type="button" 
-              @click="importUsers" 
-              class="btn btn-primary" 
-              :disabled="importLoading || previewData.length === 0"
-            >
-              {{ importLoading ? '导入中...' : '确认导入' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 确认删除弹窗 -->
-    <div v-if="confirmDelete" class="modal">
-      <div class="modal-content modal-sm">
-        <div class="modal-header">
-          <h3>确认删除</h3>
-          <button @click="confirmDelete = null" class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p>确定要删除用户 "{{ confirmDelete?.name }}" 吗？</p>
-          <p class="warning">此操作不可逆，请谨慎操作！</p>
-          
-          <div class="form-actions">
-            <button type="button" @click="confirmDelete = null" class="btn btn-secondary">取消</button>
-            <button 
-              type="button" 
-              @click="deleteUser" 
-              class="btn btn-danger" 
-              :disabled="deleteLoading"
-            >
-              {{ deleteLoading ? '删除中...' : '确认删除' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 重置密码弹窗 -->
-    <div v-if="resetPasswordUser" class="modal">
-      <div class="modal-content modal-sm">
-        <div class="modal-header">
-          <h3>重置密码</h3>
-          <button @click="resetPasswordUser = null" class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="confirmResetPassword">
-            <p>为用户 "{{ resetPasswordUser?.name }}" 重置密码</p>
-            
-            <div class="form-group">
-              <label for="reset-password">新密码</label>
-              <input 
-                id="reset-password" 
-                v-model="resetPasswordForm.password" 
-                type="password" 
-                required
-              />
-            </div>
-            
-            <div class="form-group">
-              <label for="reset-confirm-password">确认密码</label>
-              <input 
-                id="reset-confirm-password" 
-                v-model="resetPasswordForm.confirmPassword" 
-                type="password" 
-                required
-              />
-            </div>
-            
-            <div v-if="resetPasswordError" class="error">{{ resetPasswordError }}</div>
             
             <div class="form-actions">
-              <button type="button" @click="resetPasswordUser = null" class="btn btn-secondary">取消</button>
+              <button type="button" @click="showImportUsers = false" class="btn btn-secondary">取消</button>
               <button 
-                type="submit" 
-                class="btn btn-warning" 
-                :disabled="resetPasswordLoading"
+                type="button" 
+                @click="importUsers" 
+                class="btn btn-primary" 
+                :disabled="importLoading || previewData.length === 0"
               >
-                {{ resetPasswordLoading ? '重置中...' : '确认重置' }}
+                {{ importLoading ? '导入中...' : '确认导入' }}
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
+    
+    <!-- 确认删除弹窗 -->
+    <Teleport to="body">
+      <div v-if="confirmDelete" class="modal">
+        <div class="modal-content modal-sm">
+          <div class="modal-header">
+            <h3>确认删除</h3>
+            <button @click="confirmDelete = null" class="close-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>确定要删除用户 "{{ confirmDelete?.name }}" 吗？</p>
+            <p class="warning">此操作不可逆，请谨慎操作！</p>
+            
+            <div class="form-actions">
+              <button type="button" @click="confirmDelete = null" class="btn btn-secondary">取消</button>
+              <button 
+                type="button" 
+                @click="deleteUser" 
+                class="btn btn-danger" 
+                :disabled="deleteLoading"
+              >
+                {{ deleteLoading ? '删除中...' : '确认删除' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+    
+    <!-- 重置密码弹窗 -->
+    <Teleport to="body">
+      <div v-if="resetPasswordUser" class="modal">
+        <div class="modal-content modal-sm">
+          <div class="modal-header">
+            <h3>重置密码</h3>
+            <button @click="resetPasswordUser = null" class="close-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="confirmResetPassword">
+              <p>为用户 "{{ resetPasswordUser?.name }}" 重置密码</p>
+              
+              <div class="form-group">
+                <label for="reset-password">新密码</label>
+                <input 
+                  id="reset-password" 
+                  v-model="resetPasswordForm.password" 
+                  type="password" 
+                  required
+                />
+              </div>
+              
+              <div class="form-group">
+                <label for="reset-confirm-password">确认密码</label>
+                <input 
+                  id="reset-confirm-password" 
+                  v-model="resetPasswordForm.confirmPassword" 
+                  type="password" 
+                  required
+                />
+              </div>
+              
+              <div v-if="resetPasswordError" class="error">{{ resetPasswordError }}</div>
+              
+              <div class="form-actions">
+                <button type="button" @click="resetPasswordUser = null" class="btn btn-secondary">取消</button>
+                <button 
+                  type="submit" 
+                  class="btn btn-warning" 
+                  :disabled="resetPasswordLoading"
+                >
+                  {{ resetPasswordLoading ? '重置中...' : '确认重置' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 // 状态变量
 const users = ref([])
 const loading = ref(false)
 const error = ref('')
 const searchTerm = ref('')
+
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(20)
 
 // 表单相关状态
 const showAddUser = ref(false)
@@ -397,6 +475,43 @@ const filteredUsers = computed(() => {
     user.name?.toLowerCase().includes(term) ||
     user.username.toLowerCase().includes(term)
   )
+})
+
+// 分页计算
+const totalPages = computed(() => {
+  if (pageSize.value <= 0) return 1
+  return Math.ceil(filteredUsers.value.length / pageSize.value)
+})
+
+const paginatedUsers = computed(() => {
+  // 如果pageSize为-1，显示全部
+  if (pageSize.value <= 0) return filteredUsers.value
+  
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + parseInt(pageSize.value)
+  return filteredUsers.value.slice(start, end)
+})
+
+const paginationStart = computed(() => {
+  if (filteredUsers.value.length === 0) return 0
+  if (pageSize.value <= 0) return 1
+  return (currentPage.value - 1) * parseInt(pageSize.value) + 1
+})
+
+const paginationEnd = computed(() => {
+  if (filteredUsers.value.length === 0) return 0
+  if (pageSize.value <= 0) return filteredUsers.value.length
+  return Math.min(currentPage.value * parseInt(pageSize.value), filteredUsers.value.length)
+})
+
+// 当过滤结果变化时，重置到第一页
+watch(filteredUsers, () => {
+  currentPage.value = 1
+})
+
+// 当每页显示数量变化时，重置到第一页
+watch(pageSize, () => {
+  currentPage.value = 1
 })
 
 // 格式化日期
@@ -816,10 +931,29 @@ const importUsers = async () => {
   align-items: center;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .card-header h3 {
   margin: 0;
   font-size: 1.2rem;
   color: var(--light);
+}
+
+.user-count {
+  color: var(--gray);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+}
+
+.count-number {
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0 0.25rem;
 }
 
 .controls {
@@ -886,6 +1020,76 @@ const importUsers = async () => {
 
 .users-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+/* 分页控件样式 */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-settings {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gray);
+  font-size: 0.875rem;
+}
+
+.page-size-select {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.6);
+  color: var(--light);
+  cursor: pointer;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pagination-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 41, 59, 0.4);
+  color: var(--light);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--primary);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--gray);
+}
+
+.pagination-status {
+  font-size: 0.875rem;
+  color: var(--gray);
 }
 
 .role-badge {
@@ -1160,6 +1364,12 @@ const importUsers = async () => {
     gap: 0.5rem;
   }
   
+  .header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
   .controls {
     width: 100%;
     flex-wrap: wrap;
@@ -1177,6 +1387,11 @@ const importUsers = async () => {
   .btn-sm {
     min-width: auto;
     padding: 0.25rem;
+  }
+  
+  .pagination-container {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style> 
