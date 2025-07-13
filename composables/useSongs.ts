@@ -256,8 +256,7 @@ export const useSongs = () => {
           headers: authHeaders.headers
         })
         
-        // 不再自动更新歌曲列表，只显示通知
-        showNotification('投票成功！', 'success')
+        // 不再显示通知，由调用方处理
         return data
       } catch (fetchErr: any) {
         // 处理API返回的错误

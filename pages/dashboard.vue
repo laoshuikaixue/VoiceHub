@@ -1041,7 +1041,7 @@ const handleVote = async (song) => {
     try {
       const result = await songsService.voteSong(song.id)
       if (result) {
-        showNotification('投票成功！', 'success')
+        showNotification(`为歌曲《${song.title}》投票成功！`, 'success')
         // 手动刷新歌曲列表以获取最新状态，但不影响当前视图
         setTimeout(() => {
           songsService.fetchSongs().then(data => {
