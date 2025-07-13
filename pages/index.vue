@@ -789,6 +789,7 @@ const refreshSongs = async () => {
   align-items: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-decoration: none; /* 去掉链接的下划线 */
 }
 
 .icon-button:hover {

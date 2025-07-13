@@ -20,7 +20,7 @@ onMounted(() => {
   isClientAuthenticated.value = auth.isAuthenticated.value
   
   if (isClientAuthenticated.value) {
-    router.push('/dashboard')
+    router.push('/') // 修改为返回主页
   }
 })
 </script>

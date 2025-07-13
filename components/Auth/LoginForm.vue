@@ -62,7 +62,7 @@ const handleLogin = async () => {
   
   try {
     await auth.login(username.value, password.value)
-    router.push('/dashboard')
+    router.push('/') // 修改为返回主页
   } catch (err) {
     // 显示详细的错误信息
     error.value = err.message || '登录失败，请稍后重试'

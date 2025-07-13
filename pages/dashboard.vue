@@ -2,7 +2,12 @@
   <ClientOnly>
     <div class="dashboard">
       <div class="dashboard-header glass">
-        <h1>后台管理系统</h1>
+        <div class="header-left">
+          <NuxtLink to="/" class="logo-link">
+            <h2 class="logo">VoiceHub</h2>
+          </NuxtLink>
+          <h1>后台管理系统</h1>
+        </div>
         <div class="user-info">
           <span>欢迎, {{ currentUser?.name || '管理员' }}</span>
           <button @click="handleLogout" class="logout-btn">注销</button>
@@ -1117,6 +1122,37 @@ const handleUnmarkPlayed = async (song) => {
   margin-bottom: 2rem;
   padding: 1.5rem;
   border-radius: 0.75rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-link {
+  text-decoration: none;
+  color: var(--light);
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.logo-link:hover {
+  color: var(--primary);
+}
+
+.logo {
+  margin: 0;
+  padding: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--light);
+  transition: color 0.3s ease;
+}
+
+.logo:hover {
+  color: var(--primary);
 }
 
 .user-info {
