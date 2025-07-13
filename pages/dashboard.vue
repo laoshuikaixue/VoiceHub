@@ -89,6 +89,18 @@
             <div class="schedule-container">
               <div class="song-list-panel">
                 <h3>待排歌曲</h3>
+                
+                <!-- 添加排序选项 -->
+                <div class="sort-options">
+                  <label>排序方式:</label>
+                  <select v-model="songSortOption" class="sort-select">
+                    <option value="time-desc">最新投稿</option>
+                    <option value="time-asc">最早投稿</option>
+                    <option value="votes-desc">热度最高</option>
+                    <option value="votes-asc">热度最低</option>
+                  </select>
+                </div>
+                
                 <div 
                   :class="['draggable-songs', { 'drag-over': isDraggableOver }]"
                   @dragover.prevent="handleDraggableDragOver($event)"
@@ -106,7 +118,19 @@
                   >
                     <div class="song-info">
                       <div class="song-title">{{ song.title }}</div>
-                      <div class="song-artist">{{ song.artist }}</div>
+                      <div class="song-meta">
+                        <span class="song-artist">{{ song.artist }}</span>
+                        <span class="song-submitter">投稿人: {{ song.requester }}</span>
+                      </div>
+                      <div class="song-stats">
+                        <span class="votes-count">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                          </svg>
+                          {{ song.voteCount || 0 }}
+                        </span>
+                        <span class="time-info">{{ formatDate(song.createdAt) }}</span>
+                      </div>
                     </div>
                     <div class="drag-handle">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -295,6 +319,9 @@ const dragOverIndex = ref(-1)
 const isDraggableOver = ref(false)
 const isSequenceOver = ref(false)
 
+// 歌曲排序选项
+const songSortOption = ref('time-desc')
+
 // 本地排期数据（用于拖拽排序，不立即保存到数据库）
 const localScheduledSongs = ref([])
 const scheduledSongIds = ref(new Set())
@@ -315,6 +342,29 @@ const availableDates = computed(() => {
   
   return dates
 })
+
+// 格式化日期
+const formatDate = (dateString) => {
+  if (!dateString) return '未知时间'
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) {
+    const diffHours = Math.floor((now - date) / (1000 * 60 * 60))
+    if (diffHours < 1) {
+      const diffMinutes = Math.floor((now - date) / (1000 * 60))
+      return diffMinutes <= 1 ? '刚刚' : `${diffMinutes}分钟前`
+    }
+    return `${diffHours}小时前`
+  } else if (diffDays === 1) {
+    return '昨天'
+  } else if (diffDays < 7) {
+    return `${diffDays}天前`
+  } else {
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+  }
+}
 
 // 验证登录状态
 onMounted(async () => {
@@ -420,9 +470,25 @@ const filteredUnscheduledSongs = computed(() => {
   if (!songs.value) return []
   
   // 找出未播放且未排期的歌曲
-  return songs.value.filter(song => 
+  const unscheduledSongs = songs.value.filter(song => 
     !song.played && !scheduledSongIds.value.has(song.id)
   )
+  
+  // 根据选择的排序选项进行排序
+  return [...unscheduledSongs].sort((a, b) => {
+    switch (songSortOption.value) {
+      case 'time-desc':
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      case 'time-asc':
+        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
+      case 'votes-desc':
+        return (b.voteCount || 0) - (a.voteCount || 0)
+      case 'votes-asc':
+        return (a.voteCount || 0) - (b.voteCount || 0)
+      default:
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    }
+  })
 })
 
 // 检查顺序是否有变化
@@ -1540,6 +1606,41 @@ const handleUnmarkPlayed = async (song) => {
   color: var(--gray);
 }
 
+.song-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--gray);
+  margin-top: 0.25rem;
+}
+
+.song-submitter {
+  font-style: italic;
+}
+
+.song-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--gray);
+  margin-top: 0.25rem;
+}
+
+.votes-count {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--primary);
+}
+
+.time-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--gray);
+}
+
 .song-actions {
   display: flex;
   align-items: center;
@@ -1796,6 +1897,42 @@ const handleUnmarkPlayed = async (song) => {
   background: var(--primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+}
+
+/* 排序选项样式 */
+.sort-options {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0 0.5rem;
+}
+
+.sort-options label {
+  font-size: 0.875rem;
+  color: var(--gray);
+}
+
+.sort-select {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  color: var(--light);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.sort-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+.sort-select option {
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--light);
 }
 
 /* 响应式布局 */
