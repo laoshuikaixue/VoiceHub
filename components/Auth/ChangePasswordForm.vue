@@ -48,6 +48,7 @@
 <script setup>
 import { ref } from 'vue'
 const auth = useAuth()
+const router = useRouter() // 添加路由器
 
 const currentPassword = ref('')
 const newPassword = ref('')
@@ -55,6 +56,16 @@ const confirmPassword = ref('')
 const error = ref('')
 const success = ref('')
 const loading = ref(false)
+
+// 获取用户信息，检查是否是首次登录
+const isFirstLogin = ref(false)
+if (process.client) {
+  const userJson = localStorage.getItem('user')
+  if (userJson) {
+    const user = JSON.parse(userJson)
+    isFirstLogin.value = user.firstLogin === true
+  }
+}
 
 const handleChangePassword = async () => {
   error.value = ''
@@ -76,10 +87,23 @@ const handleChangePassword = async () => {
     newPassword.value = ''
     confirmPassword.value = ''
     
-    // 显示通知并在2秒后注销并重定向到登录页面
+    // 显示通知并在2秒后注销并重定向到主页
     showNotification('密码已修改成功，请重新登录', 'success')
+    
+    // 更新本地存储的用户信息，移除首次登录标志
+    if (process.client) {
+      const userJson = localStorage.getItem('user')
+      if (userJson) {
+        const user = JSON.parse(userJson)
+        user.firstLogin = false
+        localStorage.setItem('user', JSON.stringify(user))
+      }
+    }
+    
     setTimeout(() => {
-      auth.logout() // 注销并重定向到登录页面
+      auth.logout() // 注销
+      // 重定向到主页而不是仪表盘
+      window.location.href = '/'
     }, 2000)
   } catch (err) {
     error.value = err.message || '密码修改失败，请稍后重试'

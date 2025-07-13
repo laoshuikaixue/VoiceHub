@@ -148,79 +148,79 @@
     <!-- 投稿弹窗 -->
     <Teleport to="body">
       <Transition name="modal-animation">
-        <div v-if="showRequestModal" class="modal-overlay" @click.self="closeRequestModal">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h2 class="text-xl font-bold">投稿点歌</h2>
-              <button @click="closeRequestModal" class="close-button">×</button>
-            </div>
-            
-            <div class="modal-body">
-              <RequestForm 
-                :loading="loading" 
-                @request="handleRequest"
-                @vote="handleVote"
-              />
-            </div>
-          </div>
+    <div v-if="showRequestModal" class="modal-overlay" @click.self="closeRequestModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="text-xl font-bold">投稿点歌</h2>
+          <button @click="closeRequestModal" class="close-button">×</button>
         </div>
+        
+        <div class="modal-body">
+          <RequestForm 
+            :loading="loading" 
+            @request="handleRequest"
+            @vote="handleVote"
+          />
+        </div>
+      </div>
+    </div>
       </Transition>
     </Teleport>
     
     <!-- 规则弹窗 -->
     <Teleport to="body">
       <Transition name="modal-animation">
-        <div v-if="showRules" class="modal-overlay" @click.self="showRules = false">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h2 class="text-xl font-bold">点歌规则</h2>
-              <button @click="showRules = false" class="close-button">×</button>
-            </div>
+    <div v-if="showRules" class="modal-overlay" @click.self="showRules = false">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="text-xl font-bold">点歌规则</h2>
+          <button @click="showRules = false" class="close-button">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="rules-content">
+            <h3 class="font-bold mb-2">投稿须知</h3>
+            <ul class="list-disc pl-5 mb-4">
+              <li>投稿时无需加入书名号</li>
+              <li>除DJ外 其他类型歌曲均接收（包含日语 韩语等小语种）</li>
+              <li>禁止投递含有违规内容的歌曲</li>
+              <li>点播的歌曲将由管理员进行审核</li>
+              <li>审核通过后将安排在播放时段播出</li>
+            </ul>
             
-            <div class="modal-body">
-              <div class="rules-content">
-                <h3 class="font-bold mb-2">投稿须知</h3>
-                <ul class="list-disc pl-5 mb-4">
-                  <li>投稿时无需加入书名号</li>
-                  <li>除DJ外 其他类型歌曲均接收（包含日语 韩语等小语种）</li>
-                  <li>禁止投递含有违规内容的歌曲</li>
-                  <li>点播的歌曲将由管理员进行审核</li>
-                  <li>审核通过后将安排在播放时段播出</li>
-                </ul>
-                
-                <h3 class="font-bold mb-2">播放时间</h3>
-                <p>每天夜自修静班前</p>
-              </div>
-            </div>
+            <h3 class="font-bold mb-2">播放时间</h3>
+            <p>每天夜自修静班前</p>
           </div>
         </div>
+      </div>
+    </div>
       </Transition>
     </Teleport>
     
     <!-- 关于我们弹窗 -->
     <Teleport to="body">
       <Transition name="modal-animation">
-        <div v-if="showAbout" class="modal-overlay" @click.self="showAbout = false">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h2 class="text-xl font-bold">关于我们</h2>
-              <button @click="showAbout = false" class="close-button">×</button>
-            </div>
+    <div v-if="showAbout" class="modal-overlay" @click.self="showAbout = false">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="text-xl font-bold">关于我们</h2>
+          <button @click="showAbout = false" class="close-button">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="about-content">
+            <h3 class="font-bold mb-2">关于VoiceHub</h3>
+            <p class="mb-4">VoiceHub是由LaoShui开发，计划服务于舟山市六横中学的点歌系统。</p>
             
-            <div class="modal-body">
-              <div class="about-content">
-                <h3 class="font-bold mb-2">关于VoiceHub</h3>
-                <p class="mb-4">VoiceHub是由LaoShui开发，计划服务于舟山市六横中学的点歌系统。</p>
-                
-                <h3 class="font-bold mb-2">联系方式</h3>
-                <p>邮箱：contact@lao-shui.top</p>
-                <br>
-                <p>Powered by LaoShui @ 2025 | All Rights Reserved.</p>
-                <p>项目开源地址：<a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" class="github-link">https://github.com/laoshuikaixue/VoiceHub</a></p>
-              </div>
-            </div>
+            <h3 class="font-bold mb-2">联系方式</h3>
+            <p>邮箱：contact@lao-shui.top</p>
+            <br>
+            <p>Powered by LaoShui @ 2025 | All Rights Reserved.</p>
+            <p>项目开源地址：<a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" class="github-link">https://github.com/laoshuikaixue/VoiceHub</a></p>
           </div>
         </div>
+      </div>
+    </div>
       </Transition>
     </Teleport>
     
@@ -976,16 +976,16 @@ const refreshSongs = async () => {
 
 .rules-content, .about-content {
   color: var(--light);
-}
-
+  }
+  
 .github-link {
   color: var(--primary);
   text-decoration: none;
-}
-
+  }
+  
 .github-link:hover {
   text-decoration: underline;
-}
+  }
 
 /* 动画 */
 .modal-animation-enter-active,
@@ -1057,17 +1057,17 @@ const refreshSongs = async () => {
   
   .main-content {
     grid-template-columns: 1fr;
-  }
-  
+}
+
   .left-panel {
     margin-bottom: 2rem;
-  }
-  
+}
+
   .left-content {
     position: static;
     max-height: none;
-  }
-  
+}
+
   /* 确保移动端下标签内容宽度一致 */
   .tab-content {
     padding: 0.75rem;

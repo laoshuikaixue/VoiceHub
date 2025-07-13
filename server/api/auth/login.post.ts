@@ -7,17 +7,17 @@ export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   
   try {
-    const body = await readBody(event)
+  const body = await readBody(event)
     
     console.log('Login attempt for user:', body.username)
     console.log('Environment:', process.env.NODE_ENV, 'Vercel:', process.env.VERCEL === '1' ? 'Yes' : 'No')
-    
-    if (!body.username || !body.password) {
-      throw createError({
-        statusCode: 400,
-        message: '账号名和密码不能为空'
-      })
-    }
+  
+  if (!body.username || !body.password) {
+    throw createError({
+      statusCode: 400,
+      message: '账号名和密码不能为空'
+    })
+  }
     
     // 检查 JWT_SECRET 是否已设置
     if (!process.env.JWT_SECRET) {
@@ -71,8 +71,8 @@ export default defineEventHandler(async (event) => {
         })
       }
     }
-    
-    // 查找用户
+  
+  // 查找用户
     let user
     try {
       console.log('Querying database for user...')
@@ -81,8 +81,8 @@ export default defineEventHandler(async (event) => {
       try {
         // 首先尝试使用Prisma模型
         user = await prisma.user.findUnique({
-          where: {
-            username: body.username
+    where: {
+      username: body.username
           },
           select: {
             id: true,
@@ -93,15 +93,16 @@ export default defineEventHandler(async (event) => {
             password: true,
             role: true,
             lastLoginAt: true,
-            lastLoginIp: true
-          }
-        })
+            lastLoginIp: true,
+            passwordChangedAt: true // 添加密码修改时间字段
+    }
+  })
       } catch (schemaError) {
         console.warn('Schema mismatch detected, trying raw query:', schemaError)
         
         // 如果失败，使用原始SQL查询
         const result = await prisma.$queryRaw`
-          SELECT id, username, name, grade, class, password, role, "lastLoginAt", "lastLoginIp"
+          SELECT id, username, name, grade, class, password, role, "lastLoginAt", "lastLoginIp", "passwordChangedAt"
           FROM "User"
           WHERE username = ${body.username}
         `
@@ -123,7 +124,7 @@ export default defineEventHandler(async (event) => {
       try {
         // 使用简化的查询，只获取必要字段
         user = await prisma.$queryRaw`
-          SELECT id, username, name, grade, class, password, role, "lastLoginAt", "lastLoginIp"
+          SELECT id, username, name, grade, class, password, role, "lastLoginAt", "lastLoginIp", "passwordChangedAt"
           FROM "User"
           WHERE username = ${body.username}
         `
@@ -144,15 +145,15 @@ export default defineEventHandler(async (event) => {
         })
       }
     }
-    
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        message: '用户不存在'
-      })
-    }
-    
-    // 验证密码
+  
+  if (!user) {
+    throw createError({
+      statusCode: 401,
+      message: '用户不存在'
+    })
+  }
+  
+  // 验证密码
     let isPasswordValid
     try {
       console.log('Verifying password...')
@@ -165,19 +166,19 @@ export default defineEventHandler(async (event) => {
         message: '密码验证错误'
       })
     }
-    
-    if (!isPasswordValid) {
-      throw createError({
-        statusCode: 401,
-        message: '密码不正确'
-      })
-    }
-    
-    // 获取客户端IP
-    const clientIp = getRequestIP(event, { xForwardedFor: true }) || '未知IP'
+  
+  if (!isPasswordValid) {
+    throw createError({
+      statusCode: 401,
+      message: '密码不正确'
+    })
+  }
+  
+  // 获取客户端IP
+  const clientIp = getRequestIP(event, { xForwardedFor: true }) || '未知IP'
     console.log('Client IP:', clientIp)
-    
-    // 更新用户最后登录时间和IP
+  
+  // 更新用户最后登录时间和IP
     try {
       console.log('Updating user login information...')
       
@@ -194,19 +195,19 @@ export default defineEventHandler(async (event) => {
       console.error('Error updating user login time:', error)
       // 不中断登录流程，继续生成令牌
     }
-    
-    // 生成JWT令牌
+  
+  // 生成JWT令牌
     let token
     try {
       console.log('Generating JWT token...')
       token = jwt.sign(
-        { 
-          userId: user.id,
-          role: user.role
-        },
-        process.env.JWT_SECRET as string,
-        { expiresIn: '7d' }
-      )
+    { 
+      userId: user.id,
+      role: user.role
+    },
+    process.env.JWT_SECRET as string,
+    { expiresIn: '7d' }
+  )
       console.log('JWT token generated')
     } catch (error) {
       console.error('JWT signing error:', error)
@@ -220,18 +221,23 @@ export default defineEventHandler(async (event) => {
     const processingTime = Date.now() - startTime
     console.log(`Login request processed in ${processingTime}ms`)
     
-    return {
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
+    // 检查用户是否首次登录（从未修改过密码）
+    const firstLogin = !user.passwordChangedAt
+    console.log('First login:', firstLogin)
+  
+  return {
+    token,
+    user: {
+      id: user.id,
+      username: user.username,
+      name: user.name,
         grade: user.grade,
         class: user.class,
-        role: user.role,
-        lastLoginAt: user.lastLoginAt,
-        lastLoginIp: user.lastLoginIp
-      }
+      role: user.role,
+      lastLoginAt: user.lastLoginAt,
+      lastLoginIp: user.lastLoginIp,
+      firstLogin: firstLogin // 添加首次登录标志
+    }
     }
   } catch (error: any) {
     // 计算并记录错误处理时间
@@ -249,7 +255,7 @@ export default defineEventHandler(async (event) => {
     
     throw createError({
       statusCode: 500,
-      message: `登录处理错误 [${errorName}]: ${errorMessage}`
+      message: `登录失败：${errorName} - ${errorMessage}`
     })
   }
 }) 

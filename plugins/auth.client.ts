@@ -25,6 +25,13 @@ export default defineNuxtPlugin((nuxtApp) => {
           console.log('需要认证，但未找到令牌，重定向到登录页面')
           return next('/login')
         }
+        
+        // 检查是否是首次登录，并且不是前往修改密码页面
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        if (user.firstLogin && to.path !== '/change-password') {
+          console.log('首次登录用户，重定向到修改密码页面')
+          return next('/change-password')
+        }
       }
       
       next()
@@ -50,9 +57,9 @@ export default defineNuxtPlugin((nuxtApp) => {
           if (init.headers instanceof Headers) {
             init.headers.set('Authorization', `Bearer ${token}`)
           } else {
-            Object.assign(init.headers, {
-              'Authorization': `Bearer ${token}`
-            })
+          Object.assign(init.headers, {
+            'Authorization': `Bearer ${token}`
+          })
           }
           
           console.log(`API请求: ${input}，已添加认证头`)

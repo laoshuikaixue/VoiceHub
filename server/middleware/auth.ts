@@ -62,15 +62,15 @@ export default defineEventHandler(async (event) => {
     try {
       // 尝试使用Prisma模型
       user = await prisma.user.findUnique({
-        where: {
-          id: decoded.userId
+      where: {
+        id: decoded.userId
         },
         select: {
           id: true,
           name: true,
           role: true
-        }
-      })
+      }
+    })
     } catch (schemaError) {
       console.warn('架构不匹配，使用原始SQL查询:', schemaError)
       
@@ -114,10 +114,10 @@ export default defineEventHandler(async (event) => {
           message: '令牌尚未激活'
         })
       } else {
-        throw createError({
-          statusCode: 401,
-          message: '无效的令牌'
-        })
+    throw createError({
+      statusCode: 401,
+      message: '无效的令牌'
+    })
       }
     } else {
       console.error(`认证错误:`, error)
