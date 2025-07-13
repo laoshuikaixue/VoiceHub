@@ -49,7 +49,7 @@
       
       <div class="songs-grid">
         <div 
-          v-for="song in filteredSongs" 
+          v-for="song in paginatedSongs" 
           :key="song.id" 
           class="song-card"
           :class="{ 'played': song.played }"
@@ -117,6 +117,40 @@
         </div>
       </div>
       
+      <!-- 分页控件 - 仅在非移动端显示 -->
+      <div v-if="!isMobile && totalPages > 1" class="pagination">
+        <button 
+          @click="goToPage(currentPage - 1)" 
+          :disabled="currentPage === 1"
+          class="page-button"
+        >
+          上一页
+        </button>
+        
+        <div class="page-numbers">
+          <button 
+            v-for="page in displayedPageNumbers" 
+            :key="page"
+            @click="goToPage(page)"
+            :class="['page-number', { active: currentPage === page }]"
+          >
+            {{ page }}
+          </button>
+        </div>
+        
+        <button 
+          @click="goToPage(currentPage + 1)" 
+          :disabled="currentPage === totalPages"
+          class="page-button"
+        >
+          下一页
+        </button>
+        
+        <div class="page-info">
+          {{ currentPage }} / {{ totalPages }} 页 (共 {{ filteredSongs.length }} 首歌曲)
+        </div>
+      </div>
+      
       <!-- 确认对话框 -->
       <div v-if="confirmDialog.show" class="confirm-dialog-backdrop" @click.self="cancelConfirm">
         <div class="confirm-dialog">
@@ -147,7 +181,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 
 const props = defineProps({
@@ -176,6 +210,26 @@ const sortBy = ref('popularity')
 const sortOrder = ref('desc') // 'desc' for newest first, 'asc' for oldest first
 const filterBy = ref('all')
 const auth = useAuth()
+
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(10) // 每页显示10首歌曲
+const isMobile = ref(false)
+
+// 检测设备是否为移动设备
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+// 组件挂载和卸载时添加/移除窗口大小变化监听
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 
 // 确认对话框
 const confirmDialog = ref({
@@ -230,6 +284,65 @@ const filteredSongs = computed(() => {
     }
   }
 })
+
+// 计算总页数
+const totalPages = computed(() => {
+  return Math.ceil(filteredSongs.value.length / pageSize.value)
+})
+
+// 当前页显示的歌曲
+const paginatedSongs = computed(() => {
+  // 移动端不分页，显示所有歌曲
+  if (isMobile.value) {
+    return filteredSongs.value
+  }
+  
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredSongs.value.slice(start, end)
+})
+
+// 计算要显示的页码
+const displayedPageNumbers = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  
+  if (total <= 7) {
+    // 如果总页数小于等于7，显示所有页码
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  
+  // 否则，显示当前页附近的页码和首尾页码
+  if (current <= 4) {
+    // 当前页靠近开头
+    return [1, 2, 3, 4, 5, '...', total]
+  } else if (current >= total - 3) {
+    // 当前页靠近结尾
+    return [1, '...', total - 4, total - 3, total - 2, total - 1, total]
+  } else {
+    // 当前页在中间
+    return [1, '...', current - 1, current, current + 1, '...', total]
+  }
+})
+
+// 跳转到指定页
+const goToPage = (page) => {
+  if (typeof page === 'number' && page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    // 滚动到页面顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+// 监听过滤和排序变化，重置页码
+watch([filterBy, sortBy, sortOrder], () => {
+  currentPage.value = 1
+})
+
+// 监听歌曲列表变化，重置页码
+watch(() => props.songs, () => {
+  currentPage.value = 1
+}, { deep: true })
 
 // 用户操作：投票
 const handleVote = async (song) => {
@@ -694,6 +807,58 @@ const cancelConfirm = () => {
 .admin-action[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 分页控件样式 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.page-button, .page-number {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 41, 59, 0.4);
+  color: var(--gray);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.page-button:hover:not([disabled]), .page-number:hover:not([disabled]) {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+.page-button:disabled, .page-number[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: var(--gray);
+}
+
+.page-number.active {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+.page-info {
+  font-size: 0.875rem;
+  color: var(--gray);
+  margin-left: 1rem;
 }
 
 /* 确认对话框样式 */

@@ -606,6 +606,7 @@ const refreshSongs = async () => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  position: relative; /* 添加相对定位 */
 }
 
 .gradient-text {
@@ -617,17 +618,59 @@ const refreshSongs = async () => {
 
 .main-content {
   min-height: calc(100vh - 100px);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem; /* 确保与HTML中的gap一致 */
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .left-panel {
   display: flex;
-  align-items: center;
   justify-content: center;
-  height: 100%;
+  height: 100vh; /* 使用视窗高度 */
 }
 
 .left-content {
   width: 100%;
+  position: fixed; /* 固定定位 */
+  top: 50vh; /* 视窗高度的50% */
+  transform: translateY(-50%); /* 向上偏移自身高度的一半 */
+  left: calc((100% - 1200px) / 2 + 2rem); /* 左侧边距 */
+  width: calc((1200px / 2) - 2.75rem); /* 宽度为容器宽度的一半减去内边距和间隔的一半 */
+  max-height: calc(100vh - 4rem); /* 最大高度为视窗高度减去上下内边距 */
+  overflow-y: auto; /* 内容过多时可滚动 */
+}
+
+/* 窄屏幕适配 */
+@media (max-width: 1200px) {
+  .left-content {
+    left: 2rem;
+    width: calc(50% - 2.75rem);
+  }
+}
+
+@media (min-width: 768px) {
+  .left-content {
+    padding-right: 1rem; /* 在非移动端添加右侧内边距 */
+  }
+}
+
+@media (max-width: 767px) {
+  .left-panel {
+    height: auto;
+  }
+  
+  .left-content {
+    position: static;
+    transform: none;
+    width: 100%;
+    left: auto;
+  }
 }
 
 .logo-section {
@@ -799,43 +842,73 @@ const refreshSongs = async () => {
 
 .login-options {
   display: flex;
-  align-items: center;
+  justify-content: center;
 }
 
-/* 选项卡样式 */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.btn-outline:hover {
+  background: rgba(99, 102, 241, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.2);
+}
+
+.right-panel {
+  height: 100%;
+}
+
 .tabs-container {
-  margin-bottom: 1rem;
-  background: rgba(30, 41, 59, 0.6);
+  background: rgba(30, 41, 59, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 0.75rem;
   overflow: hidden;
+  height: 100%;
 }
 
 .tabs {
   display: flex;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(30, 41, 59, 0.6);
 }
 
 .tab {
-  flex: 1;
-  padding: 1rem;
-  text-align: center;
+  padding: 1rem 1.5rem;
   background: transparent;
   border: none;
   color: var(--gray);
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
+  flex: 1;
+  text-align: center;
 }
 
 .tab.active {
-  background: rgba(99, 102, 241, 0.1);
   color: var(--primary);
-  border-bottom: 2px solid var(--primary);
+  box-shadow: inset 0 -2px 0 var(--primary);
+}
+
+.tab:hover:not(.active) {
+  color: var(--light);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .tab-content {
   padding: 1rem;
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
 }
 
 /* 弹窗样式 */
@@ -845,233 +918,164 @@ const refreshSongs = async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(5px);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 100;
+  justify-content: center;
+  z-index: 1000;
 }
 
 .modal-content {
-  background: var(--dark);
+  background: rgba(30, 41, 59, 0.95);
   border-radius: 0.75rem;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
+  padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .close-button {
-  background: none;
+  background: transparent;
   border: none;
+  color: var(--gray);
   font-size: 1.5rem;
   cursor: pointer;
-  color: var(--gray);
-  line-height: 1;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
 }
 
 .close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
   color: var(--light);
 }
 
 .modal-body {
-  padding: 1.5rem;
-  max-height: 70vh;
-  overflow-y: auto;
+  padding: 1rem;
 }
 
+.rules-content, .about-content {
+  color: var(--light);
+}
+
+.github-link {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.github-link:hover {
+  text-decoration: underline;
+}
+
+/* 动画 */
+.modal-animation-enter-active,
+.modal-animation-leave-active {
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.modal-animation-enter-from,
+.modal-animation-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+/* 通知组件样式 */
+.notifications-container {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 300px;
+}
+
+.notification {
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-left: 3px solid var(--primary);
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification.success {
+  border-color: #10b981;
+}
+
+.notification.error {
+  border-color: #ef4444;
+}
+
+.notification.info {
+  border-color: #3b82f6;
+}
+
+.notification-content {
+  color: var(--light);
+  font-size: 0.875rem;
+}
+
+/* 响应式样式 */
 @media (max-width: 768px) {
+  .home {
+    padding: 1rem;
+  }
+  
   .main-content {
     grid-template-columns: 1fr;
   }
   
   .left-panel {
-    margin-bottom: 1rem;
+    margin-bottom: 2rem;
   }
   
-  .top-features {
-    grid-template-columns: 1fr;
-  }
-  
-  .request-column {
-    height: 120px;
-  }
-  
-  .capsule-buttons-row {
-    grid-template-columns: 1fr;
+  .left-content {
+    position: static;
+    max-height: none;
   }
 }
 
+/* 标题动画 */
 .animated-title {
-  font-size: 3.5rem;
   background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
   background-size: 200% auto;
+  color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
-  animation: gradient 3s ease infinite;
-  text-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
-  letter-spacing: 1px;
-  position: relative;
+  animation: shine 3s linear infinite;
 }
 
-.animated-title::after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60%;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--primary), transparent);
-}
-
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* 通知样式 */
-.notifications-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 300px;
-}
-
-.notification {
-  padding: 12px 16px;
-  border-radius: 8px;
-  background: rgba(30, 41, 59, 0.95);
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  animation: slide-in 0.3s ease;
-}
-
-.notification.success {
-  background: rgba(16, 185, 129, 0.95);
-  border-left: 4px solid rgb(16, 185, 129);
-}
-
-.notification.error {
-  background: rgba(239, 68, 68, 0.95);
-  border-left: 4px solid rgb(239, 68, 68);
-}
-
-.notification.info {
-  background: rgba(59, 130, 246, 0.95);
-  border-left: 4px solid rgb(59, 130, 246);
-}
-
-.notification-content {
-  margin-right: 8px;
-}
-
-/* 通知动画 */
-.notification-enter-active,
-.notification-leave-active {
-  transition: all 0.3s ease;
-}
-
-.notification-enter-from {
-  opacity: 0;
-  transform: translateX(30px);
-}
-
-.notification-leave-to {
-  opacity: 0;
-  transform: translateX(30px);
-}
-
-@keyframes slide-in {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
+@keyframes shine {
   to {
-    opacity: 1;
-    transform: translateX(0);
+    background-position: 200% center;
   }
-}
-
-/* GitHub链接样式 */
-.github-link {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--primary);
-  border-radius: 0.5rem;
-  color: var(--primary);
-  text-decoration: none;
-  transition: all 0.3s ease;
-  margin-top: 0.5rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.github-link:before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(99, 102, 241, 0.1);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.4s ease, height 0.4s ease;
-  z-index: 0;
-}
-
-.github-link:hover:before {
-  width: 300%;
-  height: 300%;
-}
-
-.github-link:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-}
-
-/* 弹窗动画 */
-.modal-animation-enter-active,
-.modal-animation-leave-active {
-  transition: opacity 0.3s cubic-bezier(0.52, 0.02, 0.19, 1.02);
-}
-.modal-animation-enter-from,
-.modal-animation-leave-to {
-  opacity: 0;
-}
-.modal-animation-enter-active .modal-content,
-.modal-animation-leave-active .modal-content {
-  transition: all 0.3s cubic-bezier(0.52, 0.02, 0.19, 1.02);
-  transform: scale(1);
-}
-.modal-animation-enter-from .modal-content,
-.modal-animation-leave-to .modal-content {
-  transform: scale(0.95) translateY(20px);
 }
 </style> 
