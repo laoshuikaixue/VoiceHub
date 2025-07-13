@@ -55,6 +55,26 @@
           </div>
         </label>
         <p class="setting-description">当您投稿的歌曲获得新投票时通知您</p>
+        
+        <div v-if="localSettings.songVotedNotify" class="sub-setting">
+          <label class="range-label">
+            <span>投票阈值：每获得 {{ localSettings.songVotedThreshold }} 票通知一次</span>
+            <input 
+              type="range" 
+              v-model="localSettings.songVotedThreshold" 
+              min="1" 
+              max="10" 
+              step="1"
+              @change="saveSettings"
+              class="range-slider"
+            />
+            <div class="range-values">
+              <span>1</span>
+              <span>5</span>
+              <span>10</span>
+            </div>
+          </label>
+        </div>
       </div>
       
       <div class="form-group">
@@ -70,6 +90,28 @@
           </div>
         </label>
         <p class="setting-description">接收系统公告和其他重要通知</p>
+      </div>
+      
+      <div class="form-group">
+        <label class="range-label">
+          <span class="label-text">通知刷新间隔</span>
+          <span class="range-value">{{ formatRefreshInterval(localSettings.refreshInterval) }}</span>
+        </label>
+        <input 
+          type="range" 
+          v-model="localSettings.refreshInterval" 
+          min="10" 
+          max="300" 
+          step="10"
+          @change="saveSettings"
+          class="range-slider"
+        />
+        <div class="range-values">
+          <span>10秒</span>
+          <span>1分钟</span>
+          <span>5分钟</span>
+        </div>
+        <p class="setting-description">设置通知自动刷新的时间间隔</p>
       </div>
     </div>
   </div>
@@ -89,7 +131,9 @@ const localSettings = ref({
   songSelectedNotify: true,
   songPlayedNotify: true,
   songVotedNotify: true,
-  systemNotify: true
+  songVotedThreshold: 1,
+  systemNotify: true,
+  refreshInterval: 60
 })
 
 // 监听设置变化
@@ -99,7 +143,9 @@ watch(settings, (newSettings) => {
       songSelectedNotify: newSettings.songSelectedNotify,
       songPlayedNotify: newSettings.songPlayedNotify,
       songVotedNotify: newSettings.songVotedNotify,
-      systemNotify: newSettings.systemNotify
+      songVotedThreshold: newSettings.songVotedThreshold || 1,
+      systemNotify: newSettings.systemNotify,
+      refreshInterval: newSettings.refreshInterval || 60
     }
   }
 }, { immediate: true })
@@ -117,6 +163,19 @@ const fetchSettings = async () => {
 // 保存设置
 const saveSettings = async () => {
   await notificationsService.updateNotificationSettings(localSettings.value)
+}
+
+// 格式化刷新间隔
+const formatRefreshInterval = (seconds) => {
+  if (seconds < 60) {
+    return `${seconds}秒`
+  } else {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return remainingSeconds > 0 
+      ? `${minutes}分${remainingSeconds}秒` 
+      : `${minutes}分钟`
+  }
 }
 </script>
 
@@ -244,6 +303,71 @@ input:checked + .toggle-slider:before {
   transform: translateX(26px);
 }
 
+.sub-setting {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.range-label {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.range-value {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.range-slider {
+  width: 100%;
+  margin-top: 10px;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.range-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.range-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+.range-values {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--gray);
+}
+
 /* 暗色模式 */
 @media (prefers-color-scheme: dark) {
   .form-group {
@@ -272,6 +396,18 @@ input:checked + .toggle-slider:before {
   
   input:focus + .toggle-slider {
     box-shadow: 0 0 1px #64b5f6;
+  }
+  
+  .range-slider {
+    background: #555;
+  }
+  
+  .range-slider::-webkit-slider-thumb {
+    background: #64b5f6;
+  }
+  
+  .range-slider::-moz-range-thumb {
+    background: #64b5f6;
   }
 }
 </style> 

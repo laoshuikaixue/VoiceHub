@@ -104,5 +104,7 @@ model NotificationSettings {
   songSelectedNotify Boolean @default(true) // 歌曲被选中通知
   songPlayedNotify  Boolean @default(true) // 歌曲已播放通知
   songVotedNotify   Boolean @default(true) // 歌曲获得投票通知
+  songVotedThreshold Int     @default(1)   // 歌曲获得多少票时通知，默认为1票
   systemNotify      Boolean @default(true) // 系统通知
+  refreshInterval   Int     @default(60)   // 通知刷新间隔（秒），默认60秒
 } 

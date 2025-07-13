@@ -39,7 +39,9 @@ export default defineEventHandler(async (event) => {
           songSelectedNotify: body.songSelectedNotify !== undefined ? body.songSelectedNotify : settings.songSelectedNotify,
           songPlayedNotify: body.songPlayedNotify !== undefined ? body.songPlayedNotify : settings.songPlayedNotify,
           songVotedNotify: body.songVotedNotify !== undefined ? body.songVotedNotify : settings.songVotedNotify,
-          systemNotify: body.systemNotify !== undefined ? body.systemNotify : settings.systemNotify
+          songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : settings.songVotedThreshold,
+          systemNotify: body.systemNotify !== undefined ? body.systemNotify : settings.systemNotify,
+          refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : settings.refreshInterval
         }
       })
     } else {
@@ -50,7 +52,9 @@ export default defineEventHandler(async (event) => {
           songSelectedNotify: body.songSelectedNotify !== undefined ? body.songSelectedNotify : true,
           songPlayedNotify: body.songPlayedNotify !== undefined ? body.songPlayedNotify : true,
           songVotedNotify: body.songVotedNotify !== undefined ? body.songVotedNotify : true,
-          systemNotify: body.systemNotify !== undefined ? body.systemNotify : true
+          songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : 1,
+          systemNotify: body.systemNotify !== undefined ? body.systemNotify : true,
+          refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : 60
         }
       })
     }
