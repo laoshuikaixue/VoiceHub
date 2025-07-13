@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
     '/api/auth/login',
     '/api/auth/register',
     '/api/songs/public',
+    '/api/songs/count',
     '/',
     '/login',
     '/register',
