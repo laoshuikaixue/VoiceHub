@@ -5,9 +5,13 @@ declare global {
   var prisma: PrismaClient | undefined
 }
 
-const prisma = global.prisma || new PrismaClient()
+// 只在服务端创建 PrismaClient 实例
+const prisma = process.server 
+  ? global.prisma || new PrismaClient()
+  : undefined
 
-if (process.env.NODE_ENV === 'development') {
+// 开发环境下保存到全局变量以避免热重载时创建多个实例
+if (process.server && process.env.NODE_ENV === 'development') {
   global.prisma = prisma
 }
 
