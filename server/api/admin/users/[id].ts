@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
           grade: true,
           class: true,
           username: true,
-          passwordChangedAt: true // 添加密码修改时间字段
+          passwordChangedAt: true
         }
       })
       

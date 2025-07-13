@@ -8,7 +8,7 @@
           <div class="logo-section text-center mb-6">
             <h1 class="text-4xl font-bold animated-title">VoiceHub</h1>
           </div>
-          
+
           <!-- 上部信息和投稿区域 -->
           <div class="top-features grid grid-cols-2 gap-4">
             <!-- 左侧信息栏 -->
@@ -20,7 +20,7 @@
                   <p class="text-xl font-bold text-primary">{{ songCount }}</p>
                 </div>
               </div>
-              
+
               <div class="action-card mt-4">
                 <div class="icon">{{ isRequestOpen ? '✅' : '❌' }}</div>
                 <div class="content">
@@ -31,7 +31,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- 右侧点歌按钮 -->
             <div class="request-column">
               <button @click="openRequestModal" class="big-button">
@@ -42,7 +42,7 @@
               </button>
             </div>
           </div>
-          
+
           <!-- 底部胶囊按钮组，占满宽度 -->
           <div class="capsule-buttons-row mt-4">
             <button @click="showRules = true" class="capsule-button">
@@ -54,7 +54,7 @@
               <span>关于我们</span>
             </button>
           </div>
-          
+
           <!-- 用户信息区域 -->
           <div class="user-panel card mt-6">
             <ClientOnly>
@@ -68,22 +68,22 @@
                     </p>
                   </div>
                 </div>
-                
+
                 <div class="user-actions">
                   <NuxtLink v-if="isAdmin" to="/dashboard" class="icon-button" title="后台管理">
                     <span>⚙️</span>
                   </NuxtLink>
-                  
+
                   <NuxtLink to="/change-password" class="icon-button" title="修改密码">
                     <span>🔑</span>
                   </NuxtLink>
-                  
+
                   <button @click="handleLogout" class="icon-button">
                     <span>🚪</span>
                   </button>
                 </div>
               </div>
-              
+
               <div v-else class="login-options">
                 <NuxtLink to="/login" class="btn btn-outline">登录</NuxtLink>
               </div>
@@ -91,44 +91,44 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 右侧内容区域 -->
       <div class="right-panel">
         <!-- 选项卡切换 -->
         <div class="tabs-container">
           <div class="tabs">
-            <button 
-              :class="{ 'active': activeTab === 'schedule' }" 
+            <button
+              :class="{ 'active': activeTab === 'schedule' }"
               @click="activeTab = 'schedule'"
               class="tab"
             >
               播出排期
             </button>
-            <button 
-              :class="{ 'active': activeTab === 'songs' }" 
+            <button
+              :class="{ 'active': activeTab === 'songs' }"
               @click="activeTab = 'songs'"
               class="tab"
             >
               歌曲列表
             </button>
           </div>
-          
+
           <div class="tab-content">
             <ClientOnly>
               <!-- 播出排期列表 -->
               <div v-if="activeTab === 'schedule'" class="schedule-tab">
-                <ScheduleList 
-                  :schedules="publicSchedules" 
-                  :loading="loading" 
+                <ScheduleList
+                  :schedules="publicSchedules"
+                  :loading="loading"
                   :error="error"
                 />
               </div>
-              
+
               <!-- 歌曲列表 -->
               <div v-else-if="activeTab === 'songs'" class="songs-tab">
-                <SongList 
-                  :songs="filteredSongs" 
-                  :loading="loading" 
+                <SongList
+                  :songs="filteredSongs"
+                  :loading="loading"
                   :error="error"
                   :isAdmin="isAdmin"
                   @vote="handleVote"
@@ -144,7 +144,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 投稿弹窗 -->
     <Teleport to="body">
       <Transition name="modal-animation">
@@ -154,10 +154,10 @@
           <h2 class="text-xl font-bold">投稿点歌</h2>
           <button @click="closeRequestModal" class="close-button">×</button>
         </div>
-        
+
         <div class="modal-body">
-          <RequestForm 
-            :loading="loading" 
+          <RequestForm
+            :loading="loading"
             @request="handleRequest"
             @vote="handleVote"
           />
@@ -166,7 +166,7 @@
     </div>
       </Transition>
     </Teleport>
-    
+
     <!-- 规则弹窗 -->
     <Teleport to="body">
       <Transition name="modal-animation">
@@ -176,7 +176,7 @@
           <h2 class="text-xl font-bold">点歌规则</h2>
           <button @click="showRules = false" class="close-button">×</button>
         </div>
-        
+
         <div class="modal-body">
           <div class="rules-content">
             <h3 class="font-bold mb-2">投稿须知</h3>
@@ -187,7 +187,7 @@
               <li>点播的歌曲将由管理员进行审核</li>
               <li>审核通过后将安排在播放时段播出</li>
             </ul>
-            
+
             <h3 class="font-bold mb-2">播放时间</h3>
             <p>每天夜自修静班前</p>
           </div>
@@ -196,7 +196,7 @@
     </div>
       </Transition>
     </Teleport>
-    
+
     <!-- 关于我们弹窗 -->
     <Teleport to="body">
       <Transition name="modal-animation">
@@ -206,33 +206,40 @@
           <h2 class="text-xl font-bold">关于我们</h2>
           <button @click="showAbout = false" class="close-button">×</button>
         </div>
-        
+
         <div class="modal-body">
           <div class="about-content">
             <h3 class="font-bold mb-2">关于VoiceHub</h3>
             <p class="mb-4">VoiceHub是由LaoShui开发，计划服务于舟山市六横中学的点歌系统。</p>
-            
+
             <h3 class="font-bold mb-2">联系方式</h3>
             <p>邮箱：contact@lao-shui.top</p>
             <br>
             <p>Powered by LaoShui @ 2025 | All Rights Reserved.</p>
-            <p>项目开源地址：<a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" class="github-link">https://github.com/laoshuikaixue/VoiceHub</a></p>
+            <p>项目开源地址：<a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" class="github-link">
+  <span class="github-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+    </svg>
+  </span>
+  GitHub
+</a></p>
           </div>
         </div>
       </div>
     </div>
       </Transition>
     </Teleport>
-    
+
     <!-- 通知组件 -->
-    <Transition-group 
-      tag="div" 
-      name="notification" 
+    <Transition-group
+      tag="div"
+      name="notification"
       class="notifications-container"
     >
-      <div 
-        v-for="(notif, index) in notifications" 
-        :key="notif.id" 
+      <div
+        v-for="(notif, index) in notifications"
+        :key="notif.id"
         class="notification"
         :class="notif.type"
       >
@@ -277,7 +284,7 @@ let refreshInterval = null
 const showNotification = (message, type = 'info') => {
   const id = notificationId++
   notifications.value.push({ id, message, type })
-  
+
   // 3秒后自动关闭
   setTimeout(() => {
     const index = notifications.value.findIndex(n => n.id === id)
@@ -293,7 +300,7 @@ const updateSongCounts = async () => {
     // 更新排期歌曲数量
     const schedules = songs?.publicSchedules?.value || []
     scheduleCount.value = schedules.length
-    
+
     // 更新总歌曲数量
     if (isClientAuthenticated.value && songs?.songs?.value) {
       // 已登录用户：使用完整歌曲列表
@@ -331,24 +338,24 @@ onMounted(async () => {
   isClientAuthenticated.value = auth.isAuthenticated.value
   isAdmin.value = auth.isAdmin.value
   user.value = auth.user.value
-  
+
   // 初始化歌曲服务
   songs = useSongs()
-  
+
   // 无论是否登录都获取歌曲总数
   await loadSongCount()
-  
+
   // 无论是否登录都获取公共数据
   await songs.fetchPublicSchedules()
-  
+
   // 如果用户已登录，获取完整歌曲列表
   if (isClientAuthenticated.value) {
     await songs.fetchSongs()
   }
-  
+
   // 更新真实数据
   await updateSongCounts()
-  
+
   // 设置定时刷新（每60秒刷新一次数据）
   refreshInterval = setInterval(async () => {
     if (isClientAuthenticated.value) {
@@ -358,7 +365,7 @@ onMounted(async () => {
     }
     await updateSongCounts()
   }, 60000)
-  
+
   // 监听通知
   if (songs.notification && songs.notification.value) {
     watch(songs.notification, (newVal) => {
@@ -401,7 +408,7 @@ const handleRequest = async (songData) => {
     showRequestModal.value = false
     return false
   }
-  
+
   try {
     const result = await songs.requestSong(songData.title, songData.artist)
     if (result) {
@@ -426,16 +433,16 @@ const handleVote = async (song) => {
     showNotification('请先登录后再投票', 'error')
     return
   }
-  
+
   try {
     if (!songs) return
-    
+
     // 检查是否已经投过票
     if (song.voted) {
       showNotification(`您已经为歌曲《${song.title}》投过票了`, 'info')
       return
     }
-    
+
     try {
       const result = await songs.voteSong(song.id)
       if (result) {
@@ -465,10 +472,10 @@ const handleWithdraw = async (song) => {
     showNotification('请先登录才能撤回投稿', 'error')
     return
   }
-  
+
   try {
     if (!songs) return
-    
+
     const result = await songs.withdrawSong(song.id)
     if (result) {
       showNotification(`已成功撤回《${song.title}》的投稿`, 'success')
@@ -486,10 +493,10 @@ const handleDelete = async (song) => {
     showNotification('只有管理员可以删除歌曲', 'error')
     return
   }
-  
+
   try {
     if (!songs) return
-    
+
     const result = await songs.deleteSong(song.id)
     if (result) {
       showNotification(`已成功删除《${song.title}》`, 'success')
@@ -507,13 +514,13 @@ const handleMarkPlayed = async (song) => {
     showNotification('只有管理员可以标记歌曲为已播放', 'error')
     return
   }
-  
+
   try {
     if (!songs || !songs.markPlayed) {
       showNotification('功能未实现', 'error')
       return
     }
-    
+
     const result = await songs.markPlayed(song.id)
     if (result) {
       showNotification(`已成功将《${song.title}》标记为已播放`, 'success')
@@ -531,13 +538,13 @@ const handleUnmarkPlayed = async (song) => {
     showNotification('只有管理员可以撤回歌曲已播放状态', 'error')
     return
   }
-  
+
   try {
     if (!songs || !songs.unmarkPlayed) {
       showNotification('功能未实现', 'error')
       return
     }
-    
+
     const result = await songs.unmarkPlayed(song.id)
     if (result) {
       showNotification(`已成功撤回《${song.title}》的已播放状态`, 'success')
@@ -555,12 +562,12 @@ const openRequestModal = () => {
     alert('请先登录')
     return
   }
-  
+
   if (!isRequestOpen.value) {
     alert('当前投稿已关闭')
     return
   }
-  
+
   showRequestModal.value = true
 }
 
@@ -586,13 +593,13 @@ const handleLogout = () => {
 const refreshSongs = async () => {
   try {
     showNotification('正在刷新歌曲列表...', 'info')
-    
+
     if (isClientAuthenticated.value) {
       await songs.fetchSongs()
     } else {
       await songs.fetchPublicSchedules()
     }
-    
+
     updateSongCounts()
     showNotification('歌曲列表已刷新', 'success')
   } catch (err) {
@@ -664,7 +671,7 @@ const refreshSongs = async () => {
   .left-panel {
     height: auto;
   }
-  
+
   .left-content {
     position: static;
     transform: none;
@@ -977,15 +984,31 @@ const refreshSongs = async () => {
 .rules-content, .about-content {
   color: var(--light);
   }
-  
+
 .github-link {
-  color: var(--primary);
+  color: var(--light);
   text-decoration: none;
-  }
-  
+  display: inline-flex;
+  align-items: center;
+  background: rgba(30, 41, 59, 0.8);
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+}
+
 .github-link:hover {
-  text-decoration: underline;
-  }
+  background: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.github-icon {
+  margin-right: 0.5rem;
+  display: flex;
+  align-items: center;
+}
 
 /* 动画 */
 .modal-animation-enter-active,
@@ -1054,7 +1077,7 @@ const refreshSongs = async () => {
   .home {
     padding: 1rem;
   }
-  
+
   .main-content {
     grid-template-columns: 1fr;
 }
@@ -1072,7 +1095,7 @@ const refreshSongs = async () => {
   .tab-content {
     padding: 0.75rem;
   }
-  
+
   .schedule-tab, .songs-tab {
     width: 100%;
     padding: 0;
@@ -1094,4 +1117,4 @@ const refreshSongs = async () => {
     background-position: 200% center;
   }
 }
-</style> 
+</style>

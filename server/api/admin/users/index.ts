@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
         class: true,
         lastLoginAt: true,
         lastLoginIp: true,
-        passwordChangedAt: true // 添加密码修改时间字段
+        passwordChangedAt: true
       },
       orderBy: {
         id: 'asc'
