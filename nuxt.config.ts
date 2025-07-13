@@ -46,6 +46,23 @@ export default defineNuxtConfig({
   
   // 服务器端配置
   nitro: {
-    preset: 'vercel'
+    preset: 'vercel',
+    // 外部依赖，不打包到客户端
+    externals: {
+      // 将 Prisma 添加到外部依赖列表
+      inline: ['@prisma/client']
+    }
+  },
+  
+  // 构建优化
+  build: {
+    transpile: ['@prisma/client']
+  },
+  
+  // Vite 配置
+  vite: {
+    optimizeDeps: {
+      exclude: ['@prisma/client', '.prisma']
+    }
   }
 })

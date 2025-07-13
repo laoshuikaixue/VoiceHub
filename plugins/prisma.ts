@@ -1,24 +1,12 @@
-import { PrismaClient } from '@prisma/client'
-
-declare global {
-  // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined
-}
-
-// 只在服务端创建 PrismaClient 实例
-const prisma = process.server 
-  ? global.prisma || new PrismaClient()
-  : undefined
-
-// 开发环境下保存到全局变量以避免热重载时创建多个实例
-if (process.server && process.env.NODE_ENV === 'development') {
-  global.prisma = prisma
-}
-
+// 这个插件只在服务器端运行
 export default defineNuxtPlugin(() => {
-  return {
-    provide: {
-      prisma
+  // 仅在服务器端提供 prisma
+  if (process.server) {
+    return {
+      provide: {
+        // 这里不直接导入 PrismaClient，而是通过事件上下文获取
+        // 服务器端的 API 处理程序可以通过 event.context.prisma 访问 Prisma 客户端
+      }
     }
   }
 }) 
