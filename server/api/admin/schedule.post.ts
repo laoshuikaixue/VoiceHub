@@ -63,13 +63,24 @@ export default defineEventHandler(async (event) => {
     let sequence = body.sequence || 1
     
     if (!body.sequence) {
-      // 只保留日期部分，不保留时间
-      const playDate = new Date(body.playDate)
-      const startOfDay = new Date(playDate)
-      startOfDay.setHours(0, 0, 0, 0)
+      // 解析输入的日期字符串，确保使用UTC时间
+      const inputDateStr = typeof body.playDate === 'string' ? body.playDate : body.playDate.toISOString()
       
-      const endOfDay = new Date(playDate)
-      endOfDay.setHours(23, 59, 59, 999)
+      // 提取年月日部分（不管输入格式如何）
+      const dateParts = inputDateStr.split('T')[0].split('-')
+      const year = parseInt(dateParts[0])
+      const month = parseInt(dateParts[1]) - 1 // 月份从0开始
+      const day = parseInt(dateParts[2])
+      
+      // 创建UTC日期，只包含日期部分
+      const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0))
+      const endOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999))
+      
+      console.log('查询当天排期范围:', {
+        输入日期: body.playDate,
+        开始时间: startOfDay.toISOString(),
+        结束时间: endOfDay.toISOString()
+      })
       
       const sameDaySchedules = await prisma.schedule.findMany({
         where: {
@@ -89,43 +100,54 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    // 创建新排期 - 只保存日期，将时间设置为00:00:00
-    const dateOnly = new Date(body.playDate)
-    dateOnly.setHours(0, 0, 0, 0)
+    // 解析输入的日期字符串，确保使用UTC时间
+    const inputDateStr = typeof body.playDate === 'string' ? body.playDate : body.playDate.toISOString()
     
-    const newSchedule = await prisma.schedule.create({
+    // 提取年月日部分（不管输入格式如何）
+    const dateParts = inputDateStr.split('T')[0].split('-')
+    const year = parseInt(dateParts[0])
+    const month = parseInt(dateParts[1]) - 1 // 月份从0开始
+    const day = parseInt(dateParts[2])
+    
+    // 创建UTC日期，只包含日期部分
+    const playDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0))
+    
+    console.log('创建排期日期处理:', {
+      输入日期: body.playDate,
+      解析后日期: playDate.toISOString(),
+      年: year,
+      月: month + 1,
+      日: day
+    })
+    
+    // 创建排期
+    const schedule = await prisma.schedule.create({
       data: {
-        playDate: dateOnly,
-        sequence,
-        song: {
-          connect: {
-            id: body.songId
-          }
-        }
+        songId: body.songId,
+        playDate: playDate,
+        sequence: sequence,
+        playTimeId: body.playTimeId || null
       },
       include: {
-        song: true
+        song: {
+          select: {
+            id: true,
+            title: true,
+            artist: true,
+            requesterId: true
+          }
+        }
       }
     })
     
-    // 发送通知（异步，不阻塞响应）
-    if (!existingSchedule) {
-      // 只有首次安排时才发送通知
-      createSongSelectedNotification(body.songId).catch(err => {
-        console.error('发送歌曲被选中通知失败:', err)
-      })
-    }
+    // 创建通知
+    await createSongSelectedNotification(schedule.song.requesterId, schedule.song.id, {
+      title: schedule.song.title,
+      artist: schedule.song.artist,
+      playDate: schedule.playDate
+    })
     
-    return {
-      id: newSchedule.id,
-      playDate: newSchedule.playDate,
-      sequence: newSchedule.sequence,
-      song: {
-        id: newSchedule.song.id,
-        title: newSchedule.song.title,
-        artist: newSchedule.song.artist
-      }
-    }
+    return schedule
   } catch (error: any) {
     console.error('创建排期失败:', error)
     throw createError({

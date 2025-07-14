@@ -6,7 +6,8 @@
     "create-admin": "node create-admin.js",
     "clear-db": "node clear-database.js",
     "check-db": "node check-database.js",
-    "repair-db": "node repair-database.js"
+    "repair-db": "node repair-database.js",
+    "fix-validation": "node fix-database-validation.js"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",

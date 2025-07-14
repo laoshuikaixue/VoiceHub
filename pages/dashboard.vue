@@ -40,6 +40,12 @@
         >
           通知管理
         </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'playtimes' }]" 
+          @click="activeTab = 'playtimes'"
+        >
+          播出时段
+        </button>
       </div>
       
       <div class="dashboard-content">
@@ -93,7 +99,15 @@
               </button>
             </div>
             
-            <div class="schedule-container">
+            <!-- 加载动画 -->
+            <div v-if="scheduleLoading" class="schedule-loading-container">
+              <div class="schedule-loading-spinner">
+                <div class="spinner"></div>
+              </div>
+              <div class="schedule-loading-text">正在加载排期...</div>
+            </div>
+            
+            <div v-else class="schedule-container">
               <div class="song-list-panel">
                 <h3>待排歌曲</h3>
                   
@@ -137,6 +151,10 @@
                             {{ song.voteCount || 0 }}
                           </span>
                           <span class="time-info">{{ formatDate(song.createdAt) }}</span>
+                          <div v-if="song.preferredPlayTimeId !== undefined && song.preferredPlayTimeId !== null" class="preferred-time-container">
+                            <span class="preferred-time-label">期望播出:</span>
+                            <span class="preferred-time">{{ getPlayTimeName(song.preferredPlayTimeId) }}</span>
+                          </div>
                         </div>
                     </div>
                     <div class="drag-handle">
@@ -156,6 +174,28 @@
               
               <div class="sequence-panel">
                 <h3>播放顺序</h3>
+                
+                <!-- 添加播放时段选择 -->
+                <div class="playtime-selector" v-if="playTimeEnabled">
+                  <label>当前播放时段:</label>
+                  <div v-if="!enablePlayTimeSelection" class="fixed-playtime">
+                    未指定时段
+                  </div>
+                  <select v-else v-model="currentPlayTimeId" class="playtime-select">
+                    <option value="">未指定时段</option>
+                    <option 
+                      v-for="playTime in enabledPlayTimes" 
+                      :key="playTime.id" 
+                      :value="playTime.id"
+                    >
+                      {{ playTime.name }}
+                    </option>
+                  </select>
+                  <div class="playtime-hint" v-if="enablePlayTimeSelection">
+                    <small>只显示当前选择时段内的排期</small>
+                  </div>
+                </div>
+                
                 <div 
                   ref="sequenceList"
                   :class="['sequence-list', { 'drag-over': isSequenceOver }]"
@@ -164,11 +204,17 @@
                   @dragleave="handleSequenceDragLeave($event)"
                   @drop.stop.prevent="dropToSequence($event)"
                 >
-                  <div v-if="localScheduledSongs.length === 0" class="empty-message">
-                    将歌曲拖到此处安排播放顺序
+                  <div v-if="filteredScheduledSongs.length === 0" class="empty-message">
+                    <span v-if="currentPlayTimeId !== ''">
+                      当前时段没有排期，请拖入歌曲或
+                      <a href="#" @click.prevent="currentPlayTimeId = ''">查看所有时段</a>
+                    </span>
+                    <span v-else>
+                      将歌曲拖到此处安排播放顺序
+                    </span>
                   </div>
                   <div 
-                    v-for="(schedule, index) in localScheduledSongs" 
+                    v-for="(schedule, index) in filteredScheduledSongs" 
                     :key="schedule.id"
                     :class="['scheduled-song', { 'drag-over': dragOverIndex === index }]"
                     draggable="true"
@@ -183,6 +229,9 @@
                     <div class="scheduled-song-info">
                       <div class="song-title">{{ schedule.song.title }}</div>
                       <div class="song-artist">{{ schedule.song.artist }}</div>
+                      <div v-if="playTimeEnabled && schedule.playTimeId" class="song-playtime">
+                        {{ getPlayTimeName(schedule.playTimeId) }}
+                      </div>
                     </div>
                     <div class="song-actions">
                       <button 
@@ -207,7 +256,7 @@
                   <button @click="saveSequence" class="save-btn" :disabled="!hasChanges">
                     保存顺序
                   </button>
-                  <button @click="markAllAsPlayed" class="mark-played-btn" :disabled="localScheduledSongs.length === 0">
+                  <button @click="markAllAsPlayed" class="mark-played-btn" :disabled="filteredScheduledSongs.length === 0">
                     全部标记为已播放
                   </button>
                 </div>
@@ -224,6 +273,11 @@
         <!-- 通知管理 -->
         <div v-if="activeTab === 'notifications'" class="section notifications-section glass full-width-section">
           <NotificationSender />
+        </div>
+
+        <!-- 播出时段管理 -->
+        <div v-if="activeTab === 'playtimes'" class="section playtimes-section glass full-width-section">
+          <PlayTimeManager />
         </div>
       </div>
       
@@ -297,11 +351,20 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useAuth } from '~/composables/useAuth'
+import { useSongs } from '~/composables/useSongs'
+import { useAdmin } from '~/composables/useAdmin'
+import { useProgress } from '~/composables/useProgress'
+import { useNotifications } from '~/composables/useNotifications'
 import SongList from '~/components/Songs/SongList.vue'
 import UserManager from '~/components/Admin/UserManager.vue'
 import NotificationSender from '~/components/Admin/NotificationSender.vue'
+import PlayTimeManager from '~/components/Admin/PlayTimeManager.vue'
+import ScheduleForm from '~/components/Admin/ScheduleForm.vue'
 
 const router = useRouter()
+
+// 初始化状态变量
 const currentUser = ref(null)
 const isAuthenticated = ref(false)
 const isAdminUser = ref(false)
@@ -309,15 +372,29 @@ const isAdminUser = ref(false)
 // 激活的标签
 const activeTab = ref('schedule')
 
-// 客户端安全数据
+// 客户端安全数据（将在onMounted中初始化）
 let auth = null
 let songsService = null
 let adminService = null
 
+// 歌曲和排期数据
 const songs = ref([])
 const publicSchedules = ref([])
 const songLoading = ref(false)
 const songError = ref('')
+const scheduleLoading = ref(false)
+const playTimeEnabled = ref(false)
+
+// 获取歌曲服务
+// 注释掉重复声明，这些变量将在onMounted中初始化
+// const songsService = useSongs()
+// const { songs, loading: songLoading, error: songError, playTimeEnabled } = songsService
+
+// 获取进度服务
+const progress = useProgress()
+
+// 获取通知服务
+const notificationsService = useNotifications()
 
 // DOM引用
 const dateSelector = ref(null)
@@ -334,6 +411,7 @@ const isLastDateVisible = ref(true)
 const dragOverIndex = ref(-1)
 const isDraggableOver = ref(false)
 const isSequenceOver = ref(false)
+const currentPlayTimeId = ref('') // 当前选择的播放时段ID
 
 // 歌曲排序选项
 const songSortOption = ref('time-desc')
@@ -345,12 +423,23 @@ const scheduledSongIds = ref(new Set())
 // 已移除的歌曲ID列表
 const removedSongIds = ref([])
 
-// 生成未来7天的日期
+// 生成包含过去和未来的日期
 const availableDates = computed(() => {
   const dates = []
   const today = new Date()
   
-  for (let i = 0; i < 14; i++) {
+  // 添加过去7天的日期
+  for (let i = 7; i > 0; i--) {
+    const date = new Date(today)
+    date.setDate(today.getDate() - i)
+    dates.push(date.toISOString().split('T')[0])
+  }
+  
+  // 添加今天
+  dates.push(today.toISOString().split('T')[0])
+  
+  // 添加未来7天的日期
+  for (let i = 1; i < 8; i++) {
     const date = new Date(today)
     date.setDate(today.getDate() + i)
     dates.push(date.toISOString().split('T')[0])
@@ -384,7 +473,12 @@ const formatDate = (dateString) => {
 
 // 验证登录状态
 onMounted(async () => {
+  try {
   auth = useAuth()
+    
+    // 确保认证状态正确初始化
+    auth.initAuth()
+    
   isAuthenticated.value = auth.isAuthenticated.value
   isAdminUser.value = auth.isAdmin.value
   currentUser.value = auth.user.value
@@ -408,82 +502,138 @@ onMounted(async () => {
   publicSchedules.value = songsService.publicSchedules.value
   songLoading.value = songsService.loading.value
   songError.value = songsService.error.value
-  
-  // 加载数据
-  await songsService.fetchSongs()
-  await songsService.fetchPublicSchedules()
-  
-  // 更新本地引用
-  songs.value = songsService.songs.value
-  publicSchedules.value = songsService.publicSchedules.value
-  
-  // 初始化本地排期数据
-  updateLocalScheduledSongs()
-  
-  // 初始化日期选择器滚动状态
-  nextTick(() => {
-    updateScrollButtonState()
     
-    // 确保空排期列表也能接收拖拽
-    if (sequenceList.value) {
-      // 使用事件委托，确保只有在列表为空时才处理
-      sequenceList.value.addEventListener('dragover', (e) => {
-        // 只有当列表为空或者直接拖到列表上时才处理
-        if (localScheduledSongs.value.length === 0 || e.target === sequenceList.value) {
-          e.preventDefault()
-          isSequenceOver.value = true
-        }
-      })
-      
-      sequenceList.value.addEventListener('drop', (e) => {
-        // 只有当列表为空或者直接拖到列表上时才处理
-        if ((localScheduledSongs.value.length === 0 || e.target === sequenceList.value) && 
-            !e.target.closest('.scheduled-song')) {
-          e.preventDefault()
-          e.stopPropagation() // 阻止事件冒泡，防止重复处理
-          dropToSequence(e)
-        }
-      })
+    // 初始化播放时段
+    await initPlayTimes()
+    
+    // 恢复上次选择的播放时段
+    const lastSelectedPlayTimeId = localStorage.getItem('lastSelectedPlayTimeId')
+    if (lastSelectedPlayTimeId) {
+      console.log('恢复上次选择的播放时段:', lastSelectedPlayTimeId)
+      currentPlayTimeId.value = lastSelectedPlayTimeId
     }
-  })
+    
+    // 加载数据
+    await songsService.fetchSongs()
+    
+    scheduleLoading.value = true
+    try {
+      await songsService.fetchPublicSchedules()
+      
+      // 更新本地引用
+      songs.value = songsService.songs.value
+      publicSchedules.value = songsService.publicSchedules.value
+      
+      // 初始化本地排期数据
+      updateLocalScheduledSongs()
+    } catch (scheduleError) {
+      showNotification('加载排期数据失败: ' + (scheduleError.message || '未知错误'), 'error')
+    } finally {
+      scheduleLoading.value = false
+    }
+    
+    // 初始化日期选择器滚动状态
+    nextTick(() => {
+      updateScrollButtonState()
+      
+      // 确保空排期列表也能接收拖拽
+      if (sequenceList.value) {
+        // 使用事件委托，确保只有在列表为空时才处理
+        sequenceList.value.addEventListener('dragover', (e) => {
+          // 只有当列表为空或者直接拖到列表上时才处理
+          if (localScheduledSongs.value.length === 0 || e.target === sequenceList.value) {
+            e.preventDefault()
+            isSequenceOver.value = true
+          }
+        })
+        
+        sequenceList.value.addEventListener('drop', (e) => {
+          // 只有当列表为空或者直接拖到列表上时才处理
+          if ((localScheduledSongs.value.length === 0 || e.target === sequenceList.value) && 
+              !e.target.closest('.scheduled-song')) {
+            e.preventDefault()
+            e.stopPropagation() // 阻止事件冒泡，防止重复处理
+            dropToSequence(e)
+          }
+        })
+      }
+    })
+  } catch (error) {
+    showNotification('初始化失败: ' + (error.message || '未知错误'), 'error')
+    console.error('初始化失败:', error)
+    
+    // 如果出现严重错误，重定向到登录页面
+    setTimeout(() => {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      router.push('/login')
+    }, 2000)
+  }
 })
 
 // 监听日期变化，重新加载排期
 watch(selectedDate, async () => {
+  scheduleLoading.value = true
+  try {
   await songsService.fetchPublicSchedules()
   publicSchedules.value = songsService.publicSchedules.value
   updateLocalScheduledSongs()
   hasChanges.value = false
+  } finally {
+    scheduleLoading.value = false
+  }
 })
 
 // 更新本地排期数据
 const updateLocalScheduledSongs = () => {
-  const datePrefix = selectedDate.value
-  
-  const dateSchedules = publicSchedules.value.filter(schedule => {
-    if (!schedule.playDate) return false
+  try {
+    if (!selectedDate.value) return
     
-    const scheduleDateStr = new Date(schedule.playDate).toISOString().split('T')[0]
-    return scheduleDateStr === datePrefix
-  }).sort((a, b) => {
-    // 按播放顺序排序
-    return a.sequence - b.sequence
-  })
-  
-  localScheduledSongs.value = [...dateSchedules]
-  originalOrder.value = [...dateSchedules].map(s => s.id)
-  
-  // 更新已排期歌曲ID集合 - 收集所有日期的排期歌曲
-  scheduledSongIds.value = new Set(
-    publicSchedules.value
-      .filter(s => s.song)
-      .map(s => s.song.id)
-  )
+    // 过滤出当前日期的排期
+    const todaySchedules = publicSchedules.value.filter(s => {
+      if (!s.playDate) return false
+      const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
+      return scheduleDateStr === selectedDate.value
+    })
+    
+    // 更新本地排期数据
+    localScheduledSongs.value = todaySchedules.map(s => ({
+      ...s,
+      playTimeId: s.playTimeId || null // 确保playTimeId存在，如果没有则为null
+    }))
+    
+    // 更新已排期ID集合 - 包含所有日期的排期歌曲ID
+    // 这样可以确保已经排期的歌曲不会出现在待排歌曲列表中
+    scheduledSongIds.value = new Set(
+      publicSchedules.value
+        .filter(s => s.song && s.song.id)
+        .map(s => s.song.id)
+    )
+    
+    console.log('已排期歌曲IDs:', Array.from(scheduledSongIds.value))
+    
+    // 记录原始顺序
+    originalOrder.value = [...localScheduledSongs.value]
+    
+    console.log('更新本地排期数据:', {
+      日期: selectedDate.value,
+      排期数量: localScheduledSongs.value.length,
+      播放时段启用: playTimeEnabled.value,
+      排期: localScheduledSongs.value
+    })
+  } catch (err) {
+    console.error('更新本地排期数据失败:', err)
+  }
 }
 
 // 未排期的歌曲（经过过滤，不显示已排到当日的歌曲）
 const filteredUnscheduledSongs = computed(() => {
   if (!songs.value) return []
+  
+  // 调试输出第一首歌曲的完整信息
+  if (songs.value.length > 0) {
+    console.log('第一首歌曲的完整信息:', JSON.stringify(songs.value[0]))
+  }
   
   // 找出未播放且未排期的歌曲
   const unscheduledSongs = songs.value.filter(song => 
@@ -643,14 +793,41 @@ const dropToSequence = async (event) => {
       const dateOnly = new Date(selectedDate.value)
       dateOnly.setHours(0, 0, 0, 0)
       
+      // 获取播放时段ID
+      let playTimeId = null
+      
+      // 1. 如果启用了播放时段选择功能
+      if (enablePlayTimeSelection.value) {
+        // 优先使用当前选择的时段
+        if (currentPlayTimeId.value) {
+          playTimeId = currentPlayTimeId.value ? parseInt(currentPlayTimeId.value) : null
+        } 
+        // 其次使用歌曲期望的时段
+        else if (song.preferredPlayTimeId) {
+          playTimeId = song.preferredPlayTimeId
+        }
+      } 
+      // 2. 如果未启用播放时段选择功能，但播放时段功能已开启
+      else if (playTimeEnabled.value) {
+        // 使用歌曲期望的时段（如果有）
+        if (song.preferredPlayTimeId) {
+          playTimeId = song.preferredPlayTimeId
+        }
+      }
+      // 3. 如果都未启用，则为null
+      
       // 创建新的排期对象（本地）
       const newSchedule = {
         id: Date.now(), // 临时ID
         song: song,
         playDate: dateOnly,
         sequence: localScheduledSongs.value.length + 1,
-        isNew: true // 标记为新创建的
+        playTimeId: playTimeId, // 添加播放时段ID
+        isNew: true, // 标记为新创建的
+        isLocalOnly: true // 标记为本地临时创建
       }
+      
+      console.log('创建新排期:', newSchedule)
       
       // 将歌曲ID添加到已排期集合，使其在左侧列表中隐藏
       scheduledSongIds.value.add(songId)
@@ -660,7 +837,7 @@ const dropToSequence = async (event) => {
       hasChanges.value = true
     }
   } catch (err) {
-    // 错误处理
+    console.error('处理拖放失败:', err)
   }
 }
 
@@ -735,12 +912,36 @@ const dropReorder = async (event, dropIndex) => {
       const dateOnly = new Date(selectedDate.value)
       dateOnly.setHours(0, 0, 0, 0)
       
+      // 获取播放时段ID
+      let playTimeId = null
+      
+      // 1. 如果启用了播放时段选择功能
+      if (enablePlayTimeSelection.value) {
+        // 优先使用当前选择的时段
+        if (currentPlayTimeId.value) {
+          playTimeId = currentPlayTimeId.value ? parseInt(currentPlayTimeId.value) : null
+        } 
+        // 其次使用歌曲期望的时段
+        else if (song.preferredPlayTimeId) {
+          playTimeId = song.preferredPlayTimeId
+        }
+      } 
+      // 2. 如果未启用播放时段选择功能，但播放时段功能已开启
+      else if (playTimeEnabled.value) {
+        // 使用歌曲期望的时段（如果有）
+        if (song.preferredPlayTimeId) {
+          playTimeId = song.preferredPlayTimeId
+        }
+      }
+      // 3. 如果都未启用，则为null
+      
       // 创建新的排期对象（本地）
       const newSchedule = {
         id: Date.now(), // 临时ID
         song: song,
         playDate: dateOnly,
         sequence: dropIndex + 1,
+        playTimeId: playTimeId, // 添加播放时段ID
         isNew: true // 标记为新创建的
       }
       
@@ -890,7 +1091,35 @@ const removeFromSequence = (index) => {
   showConfirmDialog(
     `移除歌曲 "${schedule.song.title}" 的排期`,
     `确定要移除歌曲 "${schedule.song.title}" 的排期吗？`,
-    () => {
+    async () => {
+      // 如果是已存在的排期（有ID且不是本地临时创建的），则调用API删除
+      if (schedule.id && !schedule.isLocalOnly) {
+        try {
+          // 显示加载通知
+          showNotification(`正在移除歌曲 "${schedule.song.title}" 的排期...`, 'info')
+          
+          // 确保adminService已初始化
+          if (!adminService) {
+            showNotification('管理服务未初始化，无法移除排期', 'error')
+            console.error('adminService未初始化')
+            return
+          }
+          
+          const result = await adminService.removeSchedule(schedule.id)
+          
+          if (!result || !result.success) {
+            const errorMsg = result?.message || '移除排期失败'
+            showNotification(`移除排期失败: ${errorMsg}`, 'error')
+            console.error('移除排期失败:', errorMsg)
+            return
+          }
+        } catch (err) {
+          showNotification(`移除排期失败: ${err.message || '未知错误'}`, 'error')
+          console.error('移除排期错误:', err)
+          return
+        }
+      }
+      
       // 从已排期ID集合中移除，使歌曲重新出现在左侧列表
       scheduledSongIds.value.delete(schedule.song.id)
       
@@ -931,7 +1160,15 @@ const saveSequence = async () => {
         const songSchedules = publicSchedules.value.filter(s => s.song && s.song.id === songId)
         
         for (const schedule of songSchedules) {
-          await fetch(`/api/admin/schedule/remove`, {
+          try {
+            // 确保auth已初始化
+            if (!auth || !auth.getAuthHeader) {
+              showNotification('认证服务未初始化，无法移除排期', 'error')
+              console.error('auth未初始化')
+              continue
+            }
+            
+            const response = await fetch(`/api/admin/schedule/remove`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -939,41 +1176,67 @@ const saveSequence = async () => {
             },
             body: JSON.stringify({ scheduleId: schedule.id })
           })
+            
+            const result = await response.json()
+            
+            if (!response.ok || !result.success) {
+              const errorMsg = result.message || '移除排期失败'
+              console.error(`移除排期失败 (ID: ${schedule.id}):`, errorMsg)
+              // 显示错误通知但继续执行
+              showNotification(`移除排期 "${schedule.song.title}" 失败: ${errorMsg}`, 'warning')
+            }
+          } catch (scheduleErr) {
+            console.error(`移除排期失败 (ID: ${schedule.id}):`, scheduleErr)
+            showNotification(`移除排期 "${schedule.song.title}" 失败: ${scheduleErr.message || '未知错误'}`, 'warning')
+          }
         }
       } catch (err) {
-        // 错误处理
+        console.error('移除排期处理错误:', err)
+        showNotification(`移除排期处理错误: ${err.message || '未知错误'}`, 'warning')
       }
     }
     
-    // 先删除当天所有排期
-    const todaySchedules = publicSchedules.value.filter(s => {
+    // 不再删除当天所有排期，而是分别处理每个排期
+    // 获取当前日期的已有排期（数据库中存在的）
+    const existingSchedules = publicSchedules.value.filter(s => {
       if (!s.playDate) return false
       const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
       return scheduleDateStr === selectedDate.value
     })
     
-    for (const schedule of todaySchedules) {
-      try {
-        await fetch(`/api/admin/schedule/remove`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...auth.getAuthHeader().headers
-          },
-          body: JSON.stringify({ scheduleId: schedule.id })
-        })
-      } catch (err) {
-        // 错误处理
-      }
-    }
-    
-    // 等待一小段时间确保删除操作完成
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // 创建映射表，用于快速查找排期
+    const existingScheduleMap = new Map()
+    existingSchedules.forEach(schedule => {
+      existingScheduleMap.set(schedule.song.id, schedule)
+    })
     
     // 创建新的排期，确保按顺序创建
     for (let i = 0; i < localScheduledSongs.value.length; i++) {
       const schedule = localScheduledSongs.value[i]
       try {
+        // 处理播放时段ID
+        let playTimeId = schedule.playTimeId
+        
+        // 如果是字符串类型，需要转换
+        if (typeof playTimeId === 'string') {
+          if (playTimeId === 'null' || playTimeId === '') {
+            playTimeId = null
+          } else {
+            playTimeId = parseInt(playTimeId)
+            if (isNaN(playTimeId)) {
+              playTimeId = null
+            }
+          }
+        }
+        
+        console.log(`保存排期 #${i+1}:`, {
+          歌曲: schedule.song.title,
+          日期: selectedDate.value,
+          序号: i + 1,
+          播放时段ID: playTimeId,
+          是否新排期: schedule.isNew || !existingScheduleMap.has(schedule.song.id)
+        })
+        
         // 使用直接fetch调用确保数据正确传递
         const result = await fetch('/api/admin/schedule', {
           method: 'POST',
@@ -983,8 +1246,9 @@ const saveSequence = async () => {
           },
           body: JSON.stringify({
             songId: schedule.song.id,
-            playDate: new Date(selectedDate.value).toISOString().split('T')[0], // 只保存日期
-            sequence: i + 1 // 使用索引+1作为序号
+            playDate: selectedDate.value, // 直接使用YYYY-MM-DD格式的日期字符串
+            sequence: i + 1, // 使用索引+1作为序号
+            playTimeId: playTimeId // 传递处理后的播放时段ID
           })
         })
         
@@ -1186,6 +1450,316 @@ const handleUnmarkPlayed = async (song) => {
     }
   } catch (err) {
     showNotification(err.message || '操作失败', 'error')
+  }
+}
+
+// 获取播放时段名称
+const getPlayTimeName = (id) => {
+  try {
+    if (id === null || id === undefined) return '未指定时段'
+    
+    if (!playTimes.value || !Array.isArray(playTimes.value) || playTimes.value.length === 0) {
+      console.warn('播放时段列表为空，无法获取名称')
+      return '未知时段'
+    }
+    
+    const numId = typeof id === 'string' ? parseInt(id) : id
+    const playTime = playTimes.value.find(pt => pt.id === numId)
+    
+    if (!playTime) {
+      console.warn(`未找到ID为${numId}的播放时段`)
+      return '未知时段'
+    }
+    
+    return playTime.name
+  } catch (err) {
+    console.error('获取播放时段名称失败:', err)
+    return '未知时段'
+  }
+}
+
+// 格式化播放时段范围
+const formatPlayTimeRange = (playTime) => {
+  try {
+    if (!playTime) return ''
+    
+    if (!playTime.startTime && !playTime.endTime) return ''
+    
+    let formattedRange = ''
+    
+    if (playTime.startTime) {
+      try {
+        // 检查是否是有效的日期字符串或Date对象
+        if (typeof playTime.startTime === 'string' && playTime.startTime.match(/^\d{2}:\d{2}$/)) {
+          // 如果是HH:MM格式，直接使用
+          formattedRange += playTime.startTime
+        } else {
+          const startDate = new Date(playTime.startTime)
+          if (isNaN(startDate.getTime())) {
+            console.warn('无效的开始时间格式:', playTime.startTime)
+            formattedRange += playTime.startTime
+          } else {
+            const start = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            formattedRange += start
+          }
+        }
+      } catch (e) {
+        console.error('格式化开始时间失败:', e)
+        formattedRange += String(playTime.startTime)
+      }
+    }
+    
+    if (playTime.startTime && playTime.endTime) {
+      formattedRange += ' - '
+    }
+    
+    if (playTime.endTime) {
+      try {
+        // 检查是否是有效的日期字符串或Date对象
+        if (typeof playTime.endTime === 'string' && playTime.endTime.match(/^\d{2}:\d{2}$/)) {
+          // 如果是HH:MM格式，直接使用
+          formattedRange += playTime.endTime
+        } else {
+          const endDate = new Date(playTime.endTime)
+          if (isNaN(endDate.getTime())) {
+            console.warn('无效的结束时间格式:', playTime.endTime)
+            formattedRange += playTime.endTime
+          } else {
+            const end = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            formattedRange += end
+          }
+        }
+      } catch (e) {
+        console.error('格式化结束时间失败:', e)
+        formattedRange += String(playTime.endTime)
+      }
+    }
+    
+    return formattedRange
+  } catch (err) {
+    console.error('格式化播放时段范围失败:', err, playTime)
+    return ''
+  }
+}
+
+// 获取播放时段列表
+const playTimes = ref([])
+const enablePlayTimeSelection = ref(false) // 是否启用播放时段选择功能
+
+// 初始化播放时段
+const initPlayTimes = async () => {
+  try {
+    if (!adminService) {
+      console.error('adminService未初始化')
+      return
+    }
+    
+    // 获取系统设置
+    try {
+      const systemSettings = await fetch('/api/admin/system-settings', {
+        headers: {
+          ...auth.getAuthHeader().headers
+        }
+      }).then(res => res.json())
+      
+      enablePlayTimeSelection.value = systemSettings.enablePlayTimeSelection
+      console.log('系统设置 - 启用播放时段选择:', enablePlayTimeSelection.value)
+    } catch (err) {
+      console.error('获取系统设置失败:', err)
+    }
+    
+    const result = await adminService.getPlayTimes()
+    console.log('获取播放时段结果:', result)
+    
+    if (result && Array.isArray(result)) {
+      playTimes.value = result
+      playTimeEnabled.value = result.length > 0
+      console.log('播放时段已启用:', playTimeEnabled.value, '数量:', result.length)
+      
+      // 如果启用了播放时段选择功能且有播放时段，则默认选择第一个播放时段
+      if (enablePlayTimeSelection.value && playTimes.value.length > 0) {
+        // 找到第一个启用的播放时段
+        const enabledPlayTime = playTimes.value.find(pt => pt.enabled)
+        if (enabledPlayTime) {
+          currentPlayTimeId.value = String(enabledPlayTime.id)
+          console.log('默认选择播放时段:', enabledPlayTime.name, enabledPlayTime.id)
+        }
+      } else {
+        // 否则选择未指定时段
+        currentPlayTimeId.value = ''
+        console.log('默认选择未指定时段')
+      }
+    } else {
+      console.warn('未获取到播放时段数据或格式不正确:', result)
+      playTimes.value = []
+      playTimeEnabled.value = false
+      currentPlayTimeId.value = '' // 默认选择未指定时段
+    }
+  } catch (err) {
+    console.error('获取播放时段失败:', err)
+    playTimes.value = []
+    playTimeEnabled.value = false
+    currentPlayTimeId.value = '' // 默认选择未指定时段
+  }
+}
+
+// 初始化播放时段
+onMounted(async () => {
+  await initPlayTimes()
+})
+
+// 监听播放时段变化，重新加载排期
+watch(currentPlayTimeId, async (newValue) => {
+  console.log('播放时段变化:', newValue)
+  
+  // 不需要重新获取数据，只需要更新视图
+  // 当前排期列表会通过filteredScheduledSongs计算属性自动筛选
+  
+  // 记录当前选择的播放时段
+  localStorage.setItem('lastSelectedPlayTimeId', newValue || '')
+})
+
+// 过滤排期，根据播放时段筛选
+const filteredScheduledSongs = computed(() => {
+  try {
+    // 先根据播放时段筛选
+    let filtered = [...localScheduledSongs.value]
+    
+    console.log('筛选前排期数量:', filtered.length, '当前选择的播放时段ID:', currentPlayTimeId.value, '启用播放时段选择:', enablePlayTimeSelection.value)
+    
+    // 如果启用了播放时段选择功能，则按时段筛选
+    if (enablePlayTimeSelection.value) {
+      if (currentPlayTimeId.value === '' || currentPlayTimeId.value === 'null') {
+        // 如果选择了"未指定时段"，则显示没有指定时段的排期
+        console.log('显示未指定时段的排期')
+        filtered = filtered.filter(schedule => {
+          // 检查排期是否没有指定时段
+          return schedule.playTimeId === null || 
+                 schedule.playTimeId === undefined || 
+                 schedule.playTimeId === '' || 
+                 schedule.playTimeId === 'null';
+        });
+      } else {
+        // 筛选指定时段的排期
+        const playTimeIdNum = parseInt(currentPlayTimeId.value)
+        filtered = filtered.filter(schedule => {
+          // 转换为数字进行比较
+          let schedulePlayTimeId = schedule.playTimeId
+          
+          // 处理各种可能的类型
+          if (schedulePlayTimeId === null || schedulePlayTimeId === undefined) {
+            schedulePlayTimeId = null
+          } else if (typeof schedulePlayTimeId === 'string') {
+            if (schedulePlayTimeId === 'null' || schedulePlayTimeId === '') {
+              schedulePlayTimeId = null
+            } else {
+              schedulePlayTimeId = parseInt(schedulePlayTimeId)
+              if (isNaN(schedulePlayTimeId)) {
+                schedulePlayTimeId = null
+              }
+            }
+          }
+          
+          // 检查是否匹配当前选择的时段
+          const isMatch = schedulePlayTimeId === playTimeIdNum
+          
+          console.log(`排期 ID=${schedule.id}, 歌曲=${schedule.song.title}, 时段ID=${schedulePlayTimeId}, 筛选时段=${playTimeIdNum}, 匹配=${isMatch}`)
+          
+          return isMatch
+        })
+        console.log(`筛选时段ID=${playTimeIdNum}的排期:`, filtered.length)
+      }
+    } else {
+      // 未启用播放时段选择功能，则显示所有排期（不筛选）
+      console.log('未启用播放时段选择功能，显示所有排期')
+    }
+    
+    // 根据选择的排序选项进行排序
+    return filtered.sort((a, b) => {
+      switch (songSortOption.value) {
+        case 'time-desc':
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+        case 'time-asc':
+          return new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
+        case 'votes-desc':
+          return (b.voteCount || 0) - (a.voteCount || 0)
+        case 'votes-asc':
+          return (a.voteCount || 0) - (b.voteCount || 0)
+        default:
+          return a.sequence - b.sequence // 默认按序号排序
+      }
+    })
+  } catch (err) {
+    console.error('筛选排期失败:', err)
+    return []
+  }
+})
+
+// 只显示已启用的播放时段
+const enabledPlayTimes = computed(() => {
+  return playTimes.value.filter(pt => pt.enabled)
+})
+
+// 监听系统设置变更（在适当的位置添加）
+const handleSystemSettingsChange = async (settings) => {
+  console.log('系统设置变更:', settings)
+  
+  // 如果播放时段选择功能状态发生变化
+  if (settings.enablePlayTimeSelection !== enablePlayTimeSelection.value) {
+    const oldValue = enablePlayTimeSelection.value
+    const newValue = settings.enablePlayTimeSelection
+    
+    // 显示确认对话框
+    showConfirmDialog(
+      `${newValue ? '启用' : '禁用'}播放时段选择功能`,
+      `确定要${newValue ? '启用' : '禁用'}播放时段选择功能吗？\n\n${
+        newValue 
+          ? '启用后，排期将按播放时段分类显示，您可以选择特定时段查看排期。' 
+          : '禁用后，所有排期将不再区分播放时段，但原有的播放时段信息将被保留以便将来使用。'
+      }`,
+      async () => {
+        try {
+          // 更新系统设置
+          const response = await fetch('/api/admin/system-settings', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...auth.getAuthHeader().headers
+            },
+            body: JSON.stringify({
+              enablePlayTimeSelection: newValue
+            })
+          })
+          
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.message || `${newValue ? '启用' : '禁用'}播放时段选择功能失败`)
+          }
+          
+          // 更新本地状态
+          enablePlayTimeSelection.value = newValue
+          
+          // 如果启用了播放时段选择功能，且有可用的播放时段，但当前未选择时段，则选择第一个
+          if (newValue && playTimes.value.length > 0 && !currentPlayTimeId.value) {
+            const enabledPlayTime = playTimes.value.find(pt => pt.enabled)
+            if (enabledPlayTime) {
+              currentPlayTimeId.value = String(enabledPlayTime.id)
+              localStorage.setItem('lastSelectedPlayTimeId', currentPlayTimeId.value)
+            }
+          }
+          // 禁用功能时，不清空时段选择，保留原有选择
+          
+          showNotification(`已${newValue ? '启用' : '禁用'}播放时段选择功能`, 'success')
+        } catch (err) {
+          console.error(`${newValue ? '启用' : '禁用'}播放时段选择功能失败:`, err)
+          showNotification(`${newValue ? '启用' : '禁用'}播放时段选择功能失败: ${err.message || '未知错误'}`, 'error')
+        }
+      },
+      () => {
+        // 取消操作，恢复原值
+        console.log('取消更改播放时段选择功能状态')
+      }
+    )
   }
 }
 </script>
@@ -1959,13 +2533,59 @@ const handleUnmarkPlayed = async (song) => {
   color: var(--light);
 }
 
+/* 播放时段筛选器样式 */
+.filter-options {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filter-options label {
+  font-size: 0.875rem;
+  color: var(--gray);
+  white-space: nowrap;
+}
+
+.filter-select {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  color: var(--light);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.filter-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+.filter-select option {
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--light);
+}
+
+.song-playtime {
+  font-size: 0.75rem;
+  color: var(--gray);
+  margin-top: 0.25rem;
+}
+
 /* 响应式布局 */
 @media (min-width: 768px) {
   .dashboard-content {
     grid-template-columns: 1fr 1fr;
   }
   
-  .songs-section, .schedule-section, .users-section, .notifications-section {
+  .songs-section, .schedule-section, .users-section, .notifications-section, .playtimes-section {
     grid-column: span 2;
   }
 }
@@ -2000,5 +2620,117 @@ const handleUnmarkPlayed = async (song) => {
     width: 90%;
     right: 5%;
   }
+}
+
+.playtime-selector {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.playtime-selector label {
+  font-weight: 500;
+  color: var(--light);
+  margin-bottom: 0.25rem;
+}
+
+.playtime-select {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.375rem;
+  color: var(--light);
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.playtime-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.playtime-select option {
+  background: #1e293b;
+  color: var(--light);
+  padding: 0.5rem;
+}
+
+.fixed-playtime {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.375rem;
+  color: var(--gray);
+  font-size: 0.875rem;
+}
+
+.playtime-hint {
+  margin-top: 0.25rem;
+  color: var(--gray);
+  font-size: 0.75rem;
+}
+
+.preferred-time-container {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  width: fit-content;
+}
+
+.preferred-time-label {
+  font-size: 0.75rem;
+  color: #8b5cf6; /* 使用固定颜色 */
+  font-weight: 500;
+  margin-right: 0.25rem;
+}
+
+.preferred-time {
+  font-size: 0.75rem;
+  color: #8b5cf6; /* 使用固定颜色代替变量 */
+  font-weight: 600;
+}
+
+/* 排期加载动画样式 */
+.schedule-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+  height: 300px;
+}
+
+.schedule-loading-spinner {
+  margin-bottom: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(99, 102, 241, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.schedule-loading-text {
+  color: var(--gray);
+  font-size: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style> 

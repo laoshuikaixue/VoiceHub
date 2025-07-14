@@ -20,13 +20,43 @@ export default defineEventHandler(async (event) => {
     }
     
     const prisma = event.context.prisma
+    const scheduleIdNumber = Number(scheduleId)
+    
+    console.log(`准备删除排期 ID=${scheduleIdNumber}`)
+    
+    // 先检查排期是否存在
+    const existingSchedule = await prisma.schedule.findUnique({
+      where: {
+        id: scheduleIdNumber
+      },
+      include: {
+        song: {
+          select: {
+            title: true,
+            artist: true
+          }
+        }
+      }
+    })
+    
+    if (!existingSchedule) {
+      console.log(`排期不存在 ID=${scheduleIdNumber}`)
+      return {
+        success: false,
+        message: '排期不存在或已被删除'
+      }
+    }
+    
+    console.log(`找到排期 ID=${scheduleIdNumber}, 歌曲=${existingSchedule.song?.title || '未知歌曲'}`)
     
     // 删除排期
     const deletedSchedule = await prisma.schedule.delete({
       where: {
-        id: Number(scheduleId)
+        id: scheduleIdNumber
       }
     })
+    
+    console.log(`成功删除排期 ID=${scheduleIdNumber}`)
     
     return {
       success: true,
@@ -35,9 +65,19 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error('移除排期失败:', error)
     
-    throw createError({
-      statusCode: 500,
-      statusMessage: error.message || '移除排期失败'
-    })
+    // 处理Prisma特定错误
+    if (error.code === 'P2025') {
+      return {
+        success: false,
+        message: '排期不存在或已被删除'
+      }
+    }
+    
+    // 确保返回一个成功=false的响应，而不是抛出错误
+    return {
+      success: false,
+      message: error.message || '移除排期失败',
+      error: error.code || 'UNKNOWN_ERROR'
+    }
   }
 }) 

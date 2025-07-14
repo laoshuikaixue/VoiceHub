@@ -108,7 +108,7 @@ export async function reconnectDatabase() {
     return false
   }
 }
-
+ 
 // 检查数据库模式是否需要迁移
 export async function checkSchemaIntegrity() {
   try {
@@ -122,7 +122,9 @@ export async function checkSchemaIntegrity() {
       prisma.vote.count(),
       prisma.schedule.count(),
       prisma.notification.count(),
-      prisma.notificationSettings.count()
+      prisma.notificationSettings.count(),
+      prisma.systemSettings.count(),
+      prisma.playTime.count()
     ]
     
     await Promise.all(testQueries)
@@ -150,57 +152,115 @@ export async function performDatabaseMaintenance() {
   try {
     console.log('执行数据库维护操作...')
     
-    // 检查Notification表是否缺少字段
+    // 添加重试次数限制，防止无限循环
+    let retryCount = 0;
+    const maxRetries = 2;
+    let success = false;
+    
+    // 首先验证notification表是否存在及其结构
     try {
-      // 尝试直接查询，如果有问题会抛出异常
-      await prisma.notification.findFirst({
-        select: {
-          id: true,
-          type: true,
-          message: true,
-          read: true,
-          userId: true,
-          songId: true,
-          createdAt: true,
-          updatedAt: true
-        }
-      })
+      console.log('检查Notification表结构...')
+      // 使用原始查询检查表结构，不使用Prisma模型直接访问
+      const columnQuery = await prisma.$queryRaw`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'notification' OR table_name = 'Notification'
+      `;
+      
+      const columns = columnQuery as { column_name: string }[];
+      const columnNames = columns.map(c => c.column_name.toLowerCase());
+      
+      console.log('发现的Notification表字段:', columnNames.join(', '));
+      
+      // 检查必要字段是否存在
+      const requiredColumns = ['id', 'createdat', 'updatedat', 'type', 'message', 'read', 'userid', 'songid'];
+      const missingColumns = requiredColumns.filter(col => !columnNames.includes(col.toLowerCase()));
+      
+      if (missingColumns.length > 0) {
+        console.warn(`Notification表缺少字段: ${missingColumns.join(', ')}`);
+        console.warn('此问题需要手动修复，请执行数据库迁移');
+      } else {
+        console.log('Notification表结构检查通过');
+        success = true;
+      }
     } catch (err) {
-      console.error('Notification表结构异常:', err)
-      console.warn('无法自动修复表结构，请考虑手动迁移数据库')
+      console.error('检查Notification表结构失败:', err);
+      console.warn('无法验证表结构，可能需要手动修复');
     }
+    
+    // 不再尝试直接查询notification模型，避免无限循环
     
     // 检查并修复缺少通知设置的用户
-    const usersWithoutSettings = await prisma.user.findMany({
-      where: {
-        notificationSettings: null
-      },
-      select: {
-        id: true
-      }
-    })
-    
-    if (usersWithoutSettings.length > 0) {
-      console.log(`发现${usersWithoutSettings.length}个用户缺少通知设置，正在修复...`)
+    try {
+      console.log('检查用户通知设置...')
+      const usersWithoutSettings = await prisma.user.findMany({
+        where: {
+          notificationSettings: null
+        },
+        select: {
+          id: true
+        }
+      })
       
-      for (const user of usersWithoutSettings) {
-        await prisma.notificationSettings.create({
-          data: {
-            userId: user.id,
-            enabled: true,
-            songRequestEnabled: true,
-            songVotedEnabled: true,
-            songPlayedEnabled: true,
-            refreshInterval: 60,
-            songVotedThreshold: 1
-          }
-        })
+      if (usersWithoutSettings.length > 0) {
+        console.log(`发现${usersWithoutSettings.length}个用户缺少通知设置，正在修复...`)
+        
+        for (const user of usersWithoutSettings) {
+          await prisma.notificationSettings.create({
+            data: {
+              userId: user.id,
+              enabled: true,
+              songRequestEnabled: true,
+              songVotedEnabled: true,
+              songPlayedEnabled: true,
+              refreshInterval: 60,
+              songVotedThreshold: 1
+            }
+          })
+        }
+        
+        console.log('已修复所有用户的通知设置')
+      } else {
+        console.log('所有用户都有通知设置')
       }
       
-      console.log('已修复所有用户的通知设置')
+      success = true;
+    } catch (err) {
+      console.error('修复用户通知设置失败:', err);
     }
     
-    return true
+    // 检查并创建系统设置
+    try {
+      console.log('检查系统设置...')
+      const systemSettings = await prisma.systemSettings.findFirst();
+      
+      if (!systemSettings) {
+        console.log('未找到系统设置，正在创建默认设置...')
+        
+        await prisma.systemSettings.create({
+          data: {
+            enablePlayTimeSelection: false
+          }
+        });
+        
+        console.log('已创建默认系统设置')
+      } else {
+        console.log('系统设置已存在')
+      }
+      
+      success = true;
+    } catch (err) {
+      console.error('检查/创建系统设置失败:', err);
+    }
+    
+    if (success) {
+      console.log('数据库维护操作完成');
+      return true;
+    } else {
+      console.warn('数据库维护操作部分完成，仍有问题未解决');
+      console.warn('建议执行 npm run repair-db 进行更彻底的修复');
+      return false;
+    }
   } catch (error) {
     console.error('数据库维护操作失败:', error)
     return false
@@ -253,6 +313,13 @@ export async function initializeFirstDeployment() {
         songPlayedEnabled: true,
         refreshInterval: 60,
         songVotedThreshold: 1
+      }
+    })
+    
+    // 创建系统设置
+    await prisma.systemSettings.create({
+      data: {
+        enablePlayTimeSelection: false
       }
     })
     

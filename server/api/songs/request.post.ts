@@ -14,12 +14,6 @@ export default defineEventHandler(async (event) => {
   
   const body = await readBody(event)
   
-  // 处理投票请求
-  if (body.isVoteOnly && body.songId) {
-    return await handleVote(body.songId, user.id)
-  }
-  
-  // 处理点歌请求
   if (!body.title || !body.artist) {
     throw createError({
       statusCode: 400,
@@ -27,82 +21,98 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  // 获取当前学期标识（这里简单使用年份+学期作为标识）
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
-  const semester = month >= 2 && month <= 7 ? `${year}-春季` : `${year}-秋季`
-  
-  // 检查该歌曲在本学期是否已播放过
-  const playedSong = await prisma.song.findFirst({
-    where: {
-      title: body.title,
-      artist: body.artist,
-      semester: semester,
-      played: true
-    }
-  })
-  
-  if (playedSong) {
-    throw createError({
-      statusCode: 400,
-      message: '该歌曲在本学期已经播放过，不能重复点播'
-    })
-  }
-  
-  // 查找是否已有相同的歌曲请求（未播放）
+  try {
+    // 检查是否已有相同歌曲
   const existingSong = await prisma.song.findFirst({
     where: {
       title: {
         equals: body.title,
-        mode: 'insensitive'  // 不区分大小写
+          mode: 'insensitive'
       },
       artist: {
         equals: body.artist,
-        mode: 'insensitive'  // 不区分大小写
-      },
-      played: false
+          mode: 'insensitive'
+        }
     }
   })
   
-  // 如果歌曲已存在，则增加投票
   if (existingSong) {
-    return await handleVote(existingSong.id, user.id)
-  } else {
-    // 创建新歌曲
-    const newSong = await prisma.song.create({
+      throw createError({
+        statusCode: 400,
+        message: `《${body.title}》已经在列表中，不能重复投稿`
+      })
+    }
+    
+    // 检查期望的播出时段是否存在
+    let preferredPlayTime = null
+    if (body.preferredPlayTimeId) {
+      // 检查系统设置是否允许选择播出时段
+      const systemSettings = await prisma.systemSettings.findFirst()
+      if (!systemSettings?.enablePlayTimeSelection) {
+        throw createError({
+          statusCode: 400,
+          message: '播出时段选择功能未启用'
+        })
+      }
+      
+      // 检查播出时段是否存在且已启用
+      preferredPlayTime = await prisma.playTime.findUnique({
+        where: {
+          id: body.preferredPlayTimeId,
+          enabled: true
+        }
+      })
+      
+      if (!preferredPlayTime) {
+        throw createError({
+          statusCode: 400,
+          message: '选择的播出时段不存在或未启用'
+        })
+      }
+    }
+    
+    // 创建歌曲
+    const song = await prisma.song.create({
       data: {
         title: body.title,
         artist: body.artist,
-        semester: semester,
-        requester: {
-          connect: {
-            id: user.id
-          }
-        },
-        votes: {
-          create: {
-            user: {
-              connect: {
-                id: user.id
-              }
-            }
-          }
+        requesterId: user.id,
+        preferredPlayTimeId: preferredPlayTime?.id || null,
+        semester: getCurrentSemester()
+      }
+    })
+    
+    return song
+  } catch (error: any) {
+    console.error('点歌失败:', error)
+    
+    if (error.statusCode) {
+      throw error
+    } else {
+      throw createError({
+        statusCode: 500,
+        message: '点歌失败，请稍后重试'
+      })
         }
       }
     })
     
-    return {
-      message: '点歌成功',
-      song: {
-        id: newSong.id,
-        title: newSong.title,
-        artist: newSong.artist,
-        voteCount: 1
-      }
-    }
-  }
-})
+// 获取当前学期
+function getCurrentSemester() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  
+  // 假设上学期为9-2月，下学期为3-8月
+  const term = month >= 3 && month <= 8 ? '下' : '上'
+  
+  // 如果是上学期（9-12月），年份应该是当前年份
+  // 如果是上学期（1-2月），年份应该是前一年
+  // 如果是下学期（3-8月），年份应该是当前年份
+  const academicYear = month >= 9 ? year : (month <= 2 ? year - 1 : year)
+  
+  return `${academicYear}-${academicYear + 1}学年${term}学期`
+}
 
 // 处理投票逻辑
 async function handleVote(songId: number, userId: number) {

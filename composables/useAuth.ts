@@ -15,10 +15,20 @@ export const useAuth = () => {
       const token = localStorage.getItem('token')
 
       if (storedUser && token) {
-        const parsedUser = JSON.parse(storedUser) as User
-        user.value = parsedUser
-        isAuthenticated.value = true
-        isAdmin.value = parsedUser.role === 'ADMIN'
+        try {
+          const parsedUser = JSON.parse(storedUser) as User
+          user.value = parsedUser
+          isAuthenticated.value = true
+          isAdmin.value = parsedUser.role === 'ADMIN'
+        } catch (error) {
+          // 清除无效的存储数据
+          localStorage.removeItem('user')
+          localStorage.removeItem('token')
+        }
+      } else {
+        user.value = null
+        isAuthenticated.value = false
+        isAdmin.value = false
       }
     }
   }
@@ -126,6 +136,7 @@ export const useAuth = () => {
     login,
     logout,
     changePassword,
-    getAuthHeader
+    getAuthHeader,
+    initAuth // 公开initAuth方法
   }
 } 

@@ -27,7 +27,7 @@ async function validateDatabase() {
     const tableNames = tables.map(t => t.table_name.toLowerCase())
     
     // 检查是否存在所有必要的表
-    const requiredTables = ['user', 'song', 'vote', 'schedule', 'notification', 'notificationsettings']
+    const requiredTables = ['user', 'song', 'vote', 'schedule', 'notification', 'notificationsettings', 'systemsettings', 'playtime']
     const missingTables = requiredTables.filter(table => !tableNames.includes(table))
     
     if (missingTables.length > 0) {
@@ -40,15 +40,19 @@ async function validateDatabase() {
     const notificationColumnsQuery = await prisma.$queryRaw`
       SELECT column_name, data_type
       FROM information_schema.columns
-      WHERE table_name = 'notification'
+      WHERE table_name = 'notification' OR table_name = 'Notification'
     `
     
     const notificationColumns = notificationColumnsQuery as { column_name: string, data_type: string }[]
+    
+    // 转换列名为小写进行不区分大小写的比较
     const columnNames = notificationColumns.map(c => c.column_name.toLowerCase())
     
-    // 确保所有必要的字段都存在
+    console.log('数据库中发现的Notification表字段:', columnNames.join(', '))
+    
+    // 确保所有必要的字段都存在（使用小写比较）
     const requiredNotificationColumns = ['id', 'createdat', 'updatedat', 'type', 'message', 'read', 'userid', 'songid']
-    const missingColumns = requiredNotificationColumns.filter(col => !columnNames.includes(col))
+    const missingColumns = requiredNotificationColumns.filter(col => !columnNames.includes(col.toLowerCase()))
     
     if (missingColumns.length > 0) {
       console.warn(`Notification表缺少以下字段: ${missingColumns.join(', ')}`)
@@ -79,7 +83,8 @@ async function validateDatabase() {
 export default defineNitroPlugin(async (nitroApp) => {
   try {
     // 记录当前环境
-    console.log(`应用正在${isVercelEnvironment() ? 'Vercel' : '非Vercel'}环境中运行`)
+    const isVercelEnv = isVercelEnvironment()
+    console.log(`应用正在${isVercelEnv ? 'Vercel' : '非Vercel'}环境中运行`)
     
     // 验证数据库连接
     const isConnected = await checkDatabaseConnection()
@@ -108,13 +113,28 @@ export default defineNitroPlugin(async (nitroApp) => {
       } else {
         console.log('检测到现有部署，将验证数据库结构...')
         
-        // 验证数据库结构完整性
-        const isValid = await validateDatabase()
-        
-        if (!isValid) {
-          console.warn('数据库结构验证失败，将尝试修复...')
-          // 执行数据库维护操作
-          await performDatabaseMaintenance()
+        // 在Vercel环境中，简化验证过程，避免过度消耗资源
+        if (isVercelEnv) {
+          console.log('在Vercel环境中，使用简化的数据库验证...')
+          // 仅进行基本的表存在性检查
+          try {
+            // 尝试访问核心表
+            await prisma.user.findFirst({ take: 1 })
+            await prisma.song.findFirst({ take: 1 })
+            console.log('数据库核心表检查通过')
+          } catch (error) {
+            console.error('数据库核心表检查失败:', error)
+            console.warn('如果这是新部署，请确保已执行数据库迁移')
+          }
+        } else {
+          // 非Vercel环境下进行完整验证
+          const isValid = await validateDatabase()
+          
+          if (!isValid) {
+            console.warn('数据库结构验证失败，将尝试修复...')
+            // 执行数据库维护操作
+            await performDatabaseMaintenance()
+          }
         }
       }
     }

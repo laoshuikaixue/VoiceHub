@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
     '/api/auth/register',
     '/api/songs/public',
     '/api/songs/count',
+    '/api/play-times',
     '/',
     '/login',
     '/register',
@@ -31,18 +32,16 @@ export default defineEventHandler(async (event) => {
   const authHeader = getRequestHeader(event, 'authorization')
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log(`未授权访问: ${path}, 没有提供令牌或格式不正确`)
     throw createError({
       statusCode: 401,
-      message: '未授权访问'
+      message: '未授权访问',
+      data: { invalidToken: true }
     })
   }
   
   const token = authHeader.substring(7) // 移除 'Bearer ' 前缀
   
   try {
-    console.log(`验证令牌: ${path}`)
-    
     // 检查JWT_SECRET是否设置
     if (!process.env.JWT_SECRET) {
       console.error('JWT_SECRET环境变量未设置')
@@ -55,8 +54,6 @@ export default defineEventHandler(async (event) => {
       role: string,
       iat: number // 令牌发行时间
     }
-    
-    console.log(`令牌验证成功，用户ID: ${decoded.userId}, 角色: ${decoded.role}`)
     
     // 获取用户信息
     let user
@@ -84,7 +81,6 @@ export default defineEventHandler(async (event) => {
     }
     
     if (!user) {
-      console.log(`用户不存在: ${decoded.userId}`)
       throw createError({
         statusCode: 401,
         message: '用户不存在，请重新登录',
@@ -92,45 +88,40 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    console.log(`用户验证成功: ${user.name}`)
-    
     // 将用户信息添加到事件上下文
     event.context.user = {
       id: user.id,
       name: user.name,
       role: user.role
     }
-  } catch (error) {
-    // 详细记录JWT错误
-    if (error instanceof jwt.JsonWebTokenError) {
-      console.error(`JWT错误: ${error.name} - ${error.message}`)
-      
-      if (error.name === 'TokenExpiredError') {
-        throw createError({
-          statusCode: 401,
-          message: '令牌已过期，请重新登录',
-          data: { invalidToken: true }
-        })
-      } else if (error.name === 'NotBeforeError') {
-        throw createError({
-          statusCode: 401,
-          message: '令牌尚未激活',
-          data: { invalidToken: true }
-        })
-      } else {
-        throw createError({
-          statusCode: 401,
-          message: '无效的令牌',
-          data: { invalidToken: true }
-        })
-      }
-    } else {
-      console.error(`认证错误:`, error)
+    
+    // 检查管理员路径权限
+    if (path.startsWith('/api/admin') && user.role !== 'ADMIN') {
+      throw createError({
+        statusCode: 403,
+        message: '需要管理员权限',
+      })
+    }
+    
+  } catch (error: any) {
+    // 检查是否是JWT验证错误
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
       throw createError({
         statusCode: 401,
-        message: '认证失败: ' + (error instanceof Error ? error.message : '未知错误'),
+        message: '无效或过期的令牌',
         data: { invalidToken: true }
       })
     }
+    
+    // 如果是我们自己抛出的错误，直接重新抛出
+    if (error.statusCode) {
+      throw error
+    }
+    
+    // 其他未知错误
+    throw createError({
+      statusCode: 500,
+      message: '服务器认证错误',
+    })
   }
 }) 

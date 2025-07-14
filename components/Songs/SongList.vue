@@ -72,7 +72,7 @@
             <div class="song-meta">
               <span class="requester">投稿人：{{ song.requester }}</span>
               <span class="request-time">投稿时间：{{ song.requestedAt || formatDate(song.createdAt) }}</span>
-              <span class="song-status">{{ song.played ? '已播放' : '待播放' }}</span>
+              <span class="song-status">{{ getSongStatus(song) }}</span>
             </div>
             
             <!-- 用户操作按钮 -->
@@ -248,6 +248,17 @@ const formatDate = (dateString) => {
   if (!dateString) return '未知时间'
   const date = new Date(dateString)
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+// 获取歌曲状态
+const getSongStatus = (song) => {
+  if (song.played) {
+    return '已播放'
+  } else if (song.scheduled) {
+    return '待播放'
+  } else {
+    return '待入选'
+  }
 }
 
 // 检查是否是用户自己的投稿

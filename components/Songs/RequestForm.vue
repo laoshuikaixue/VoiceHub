@@ -27,6 +27,31 @@
         />
       </div>
       
+      <!-- 播出时段选择 -->
+      <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
+        <label for="playTime">期望播出时段</label>
+        <select 
+          id="playTime" 
+          v-model="preferredPlayTimeId" 
+          class="input"
+        >
+          <option value="">不指定</option>
+          <option 
+            v-for="playTime in enabledPlayTimes" 
+            :key="playTime.id" 
+            :value="playTime.id"
+          >
+            {{ playTime.name }}
+            <template v-if="playTime.startTime || playTime.endTime">
+              ({{ formatPlayTimeRange(playTime) }})
+            </template>
+          </option>
+        </select>
+        <div class="help-text">
+          选择您希望歌曲播放的时段，管理员将尽量安排在您选择的时段播放
+        </div>
+      </div>
+      
       <!-- 相似歌曲提示 -->
       <div v-if="similarSong" class="similar-song-alert">
         <div class="alert-header">
@@ -67,7 +92,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 
 const props = defineProps({
@@ -81,12 +106,57 @@ const emit = defineEmits(['request', 'vote'])
 
 const title = ref('')
 const artist = ref('')
+const preferredPlayTimeId = ref('')
 const error = ref('')
 const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
 const similarSong = ref(null)
 const songService = useSongs()
+const playTimes = ref([])
+const playTimeSelectionEnabled = ref(false)
+const loadingPlayTimes = ref(false)
+
+// 获取播出时段
+const fetchPlayTimes = async () => {
+  loadingPlayTimes.value = true
+  try {
+    const response = await fetch('/api/play-times')
+    if (response.ok) {
+      const data = await response.json()
+      playTimes.value = data.playTimes || []
+      playTimeSelectionEnabled.value = data.enabled || false
+    }
+  } catch (err) {
+    console.error('获取播出时段失败:', err)
+  } finally {
+    loadingPlayTimes.value = false
+  }
+}
+
+onMounted(() => {
+  fetchPlayTimes()
+})
+
+// 过滤出启用的播出时段
+const enabledPlayTimes = computed(() => {
+  return playTimes.value.filter(pt => pt.enabled)
+})
+
+// 格式化播出时段时间范围
+const formatPlayTimeRange = (playTime) => {
+  if (!playTime) return '';
+  
+  if (playTime.startTime && playTime.endTime) {
+    return `${playTime.startTime} - ${playTime.endTime}`;
+  } else if (playTime.startTime) {
+    return `${playTime.startTime} 开始`;
+  } else if (playTime.endTime) {
+    return `${playTime.endTime} 结束`;
+  }
+  
+  return '不限时间';
+};
 
 // 监听歌曲服务中的相似歌曲
 watch(() => songService.similarSongFound.value, (newVal) => {
@@ -151,16 +221,26 @@ const handleSubmit = async () => {
   
   try {
     submitting.value = true
-    const result = await emit('request', {
+    
+    // 创建请求数据对象，确保总是包含title和artist
+    const requestData = {
       title: title.value.trim(),
       artist: artist.value.trim()
-    })
+    }
+    
+    // 只有在启用了播放时段选择且用户选择了时段时，才添加preferredPlayTimeId
+    if (playTimeSelectionEnabled.value && preferredPlayTimeId.value) {
+      requestData.preferredPlayTimeId = parseInt(preferredPlayTimeId.value)
+    }
+    
+    const result = await emit('request', requestData)
     
     if (result) {
       success.value = '点歌成功！'
       // 清空表单
       title.value = ''
       artist.value = ''
+      preferredPlayTimeId.value = ''
       similarSong.value = null
       
       // 3秒后清除成功提示
@@ -208,6 +288,12 @@ label {
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
 }
 
+.help-text {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--gray);
+}
+
 .btn-block {
   display: block;
   width: 100%;
@@ -226,18 +312,17 @@ label {
 }
 
 .success {
-  background: rgba(39, 174, 96, 0.1);
+  background: rgba(46, 204, 113, 0.1);
   color: #2ecc71;
-  border: 1px solid rgba(39, 174, 96, 0.2);
+  border: 1px solid rgba(46, 204, 113, 0.2);
 }
 
-/* 相似歌曲提示样式 */
 .similar-song-alert {
-  margin: 1rem 0;
-  padding: 1rem;
-  border-radius: 0.5rem;
   background: rgba(241, 196, 15, 0.1);
-  border: 1px solid rgba(241, 196, 15, 0.3);
+  border: 1px solid rgba(241, 196, 15, 0.2);
+  border-radius: 0.375rem;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .alert-header {
@@ -248,16 +333,15 @@ label {
 
 .alert-icon {
   margin-right: 0.5rem;
-  font-size: 1.25rem;
 }
 
 .alert-title {
-  font-weight: 600;
+  font-weight: 500;
   color: #f39c12;
 }
 
 .alert-content {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .alert-hint {
@@ -268,41 +352,60 @@ label {
 
 .alert-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .vote-btn, .ignore-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  border: none;
+  transition: all 0.2s ease;
 }
 
 .vote-btn {
-  background: rgba(52, 152, 219, 0.2);
-  color: #3498db;
-  border: 1px solid rgba(52, 152, 219, 0.3);
+  background: #f39c12;
+  color: white;
 }
 
-.vote-btn:hover:not(:disabled) {
-  background: rgba(52, 152, 219, 0.3);
-  transform: translateY(-1px);
+.vote-btn:hover {
+  background: #e67e22;
 }
 
 .vote-btn:disabled {
-  opacity: 0.6;
+  background: rgba(243, 156, 18, 0.5);
   cursor: not-allowed;
 }
 
 .ignore-btn {
-  background: rgba(149, 165, 166, 0.2);
-  color: #95a5a6;
-  border: 1px solid rgba(149, 165, 166, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--light);
 }
 
 .ignore-btn:hover {
-  background: rgba(149, 165, 166, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
   transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  background-color: rgba(99, 102, 241, 0.5);
+  cursor: not-allowed;
+  transform: none;
 }
 </style> 

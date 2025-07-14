@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "PlayTime" ALTER COLUMN "startTime" DROP NOT NULL,
+ALTER COLUMN "endTime" DROP NOT NULL;

@@ -127,7 +127,7 @@ async function repairDatabase() {
       const tableNames = tables.map(t => t.table_name.toLowerCase());
       
       // 检查是否存在所有必要的表
-      const requiredTables = ['user', 'song', 'vote', 'schedule', 'notification', 'notificationsettings'];
+      const requiredTables = ['user', 'song', 'vote', 'schedule', 'notification', 'notificationsettings', 'systemsettings', 'playtime'];
       const missingTables = requiredTables.filter(table => !tableNames.includes(table));
       
       if (missingTables.length > 0) {
@@ -138,31 +138,130 @@ async function repairDatabase() {
         console.log(chalk.green('✓ 所有必要的数据库表都存在'));
       }
       
+      // 修复5：检查系统设置
+      console.log(chalk.blue('⚙️ 检查系统设置...'));
+      const systemSettings = await prisma.systemSettings.findFirst();
+      
+      if (!systemSettings) {
+        console.log(chalk.yellow('⚠️ 没有找到系统设置记录，将创建默认设置'));
+        
+        const createSettingsResponse = await prompts({
+          type: 'confirm',
+          name: 'confirm',
+          message: '是否创建默认系统设置?',
+          initial: true
+        });
+        
+        if (createSettingsResponse.confirm) {
+          await prisma.systemSettings.create({
+            data: {
+              enablePlayTimeSelection: false
+            }
+          });
+          console.log(chalk.green('✅ 已创建默认系统设置'));
+        } else {
+          console.log(chalk.yellow('⚠️ 跳过创建系统设置'));
+        }
+      } else {
+        console.log(chalk.green('✓ 系统设置已存在'));
+        console.log(chalk.blue('📋 系统设置详情:'));
+        console.log(`  播放时段选择功能: ${systemSettings.enablePlayTimeSelection ? '已启用' : '已禁用'}`);
+      }
+      
       // 检查Notification表的结构
       if (tableNames.includes('notification')) {
         const notificationColumnsQuery = await prisma.$queryRaw`
           SELECT column_name, data_type
           FROM information_schema.columns
-          WHERE table_name = 'notification'
+          WHERE table_name = 'notification' OR table_name = 'Notification'
         `;
         
         const notificationColumns = notificationColumnsQuery;
+        console.log(chalk.blue('📋 Notification表字段详情:'));
+        for (const col of notificationColumns) {
+          console.log(`  ${col.column_name} (${col.data_type})`);
+        }
+        
         const columnNames = notificationColumns.map(c => c.column_name.toLowerCase());
         
         // 确保所有必要的字段都存在
         const requiredNotificationColumns = ['id', 'createdat', 'updatedat', 'type', 'message', 'read', 'userid', 'songid'];
-        const missingColumns = requiredNotificationColumns.filter(col => !columnNames.includes(col));
+        const missingColumns = requiredNotificationColumns.filter(col => !columnNames.includes(col.toLowerCase()));
         
         if (missingColumns.length > 0) {
           console.log(chalk.red(`❌ Notification表缺少以下字段: ${missingColumns.join(', ')}`));
-          console.log(chalk.yellow('⚠️ 无法自动添加缺失的字段，请使用以下命令运行数据库迁移:'));
-          console.log(chalk.yellow('  npx prisma migrate dev --name add_missing_notification_fields'));
+          
+          // 检查是否是大小写问题
+          const columnNamesExact = notificationColumns.map(c => c.column_name);
+          console.log(chalk.blue('🔍 检查是否存在字段大小写问题...'));
+          
+          const caseProblems = [];
+          for (const required of requiredNotificationColumns) {
+            const exactMatch = columnNamesExact.find(name => name.toLowerCase() === required.toLowerCase());
+            if (exactMatch && exactMatch !== required) {
+              caseProblems.push({ required, actual: exactMatch });
+            }
+          }
+          
+          if (caseProblems.length > 0) {
+            console.log(chalk.yellow('⚠️ 检测到字段大小写问题:'));
+            for (const { required, actual } of caseProblems) {
+              console.log(chalk.yellow(`  需要 '${required}', 实际为 '${actual}'`));
+            }
+            
+            console.log(chalk.yellow('这可能导致系统错误地认为这些字段缺失'));
+            
+            const fixCaseResponse = await prompts({
+              type: 'confirm',
+              name: 'confirm',
+              message: '是否修复代码以适应数据库的字段命名?',
+              initial: true
+            });
+            
+            if (fixCaseResponse.confirm) {
+              console.log(chalk.blue('🔧 将修改server/plugins/prisma.ts中的验证逻辑...'));
+              // 这里只是告知用户如何修复，而不是实际修改代码
+              console.log(chalk.green('✓ 请手动编辑server/plugins/prisma.ts文件'));
+              console.log(chalk.green('  并确保validateDatabase函数中不区分字段名大小写'));
+              console.log(chalk.green('  或者在server/models/schema.ts中的performDatabaseMaintenance函数中添加同样的逻辑'));
+            }
+          } else {
+            console.log(chalk.yellow('⚠️ 无法自动添加缺失的字段，请使用以下命令运行数据库迁移:'));
+            console.log(chalk.yellow('  npx prisma migrate dev --name add_missing_notification_fields'));
+          }
         } else {
           console.log(chalk.green('✓ Notification表结构完整'));
         }
       }
     } catch (error) {
       console.error(chalk.red('❌ 检查数据库表结构失败:'), error);
+    }
+    
+    // 修复4：验证数据库连接器设置
+    try {
+      console.log(chalk.blue('🔌 检查数据库连接设置...'));
+      
+      // 检查.env文件中的DATABASE_URL是否正确
+      if (!process.env.DATABASE_URL) {
+        console.log(chalk.red('❌ 未找到DATABASE_URL环境变量'));
+        console.log(chalk.yellow('⚠️ 请确保.env文件中包含正确的数据库连接URL'));
+      } else {
+        try {
+          const dbUrl = new URL(process.env.DATABASE_URL);
+          console.log(chalk.green(`✓ 数据库URL格式正确 (${dbUrl.protocol}://${dbUrl.host})`));
+        } catch (e) {
+          console.log(chalk.red('❌ DATABASE_URL格式不正确'));
+          console.log(chalk.yellow('⚠️ 请检查.env文件中的数据库连接URL格式'));
+        }
+      }
+      
+      // 检查server/plugins/prisma.ts中的数据库验证逻辑
+      console.log(chalk.yellow('ℹ️ 提示: 如果您仍然遇到数据库验证问题，可能需要检查以下文件:'));
+      console.log(chalk.yellow('  - server/plugins/prisma.ts'));
+      console.log(chalk.yellow('  - server/models/schema.ts'));
+      console.log(chalk.yellow('确保这些文件中的表名和字段名验证逻辑不区分大小写'));
+    } catch (error) {
+      console.error(chalk.red('❌ 检查数据库连接设置失败:'), error);
     }
     
     console.log(chalk.green('✅ 数据库修复操作完成'));

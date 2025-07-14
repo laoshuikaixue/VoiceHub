@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { useAuth } from './useAuth'
-import type { Song, Schedule } from '~/types'
+import type { Song, Schedule, PlayTime } from '~/types'
 
 export const useSongs = () => {
   const { getAuthHeader, isAuthenticated, user } = useAuth()
@@ -12,6 +12,8 @@ export const useSongs = () => {
   const error = ref('')
   const notification = ref({ show: false, message: '', type: '' })
   const similarSongFound = ref<Song | null>(null)
+  const playTimes = ref<PlayTime[]>([])
+  const playTimeEnabled = ref(false)
   
   // 显示通知
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -25,6 +27,39 @@ export const useSongs = () => {
     setTimeout(() => {
       notification.value.show = false
     }, 3000)
+  }
+  
+  // 获取播放时段列表
+  const fetchPlayTimes = async () => {
+    loading.value = true
+    error.value = ''
+    
+    try {
+      const response = await $fetch('/api/play-times')
+      playTimeEnabled.value = response.enabled
+      
+      // 确保类型兼容性
+      if (response.playTimes && Array.isArray(response.playTimes)) {
+        playTimes.value = response.playTimes.map(pt => ({
+          id: pt.id,
+          name: pt.name,
+          startTime: pt.startTime || undefined,  // 将null转换为undefined
+          endTime: pt.endTime || undefined,      // 将null转换为undefined
+          enabled: pt.enabled,
+          description: pt.description || undefined
+        }))
+      } else {
+        playTimes.value = []
+      }
+      
+      return response
+    } catch (err: any) {
+      error.value = err.message || '获取播放时段失败'
+      console.error('获取播放时段错误:', err)
+      return { enabled: false, playTimes: [] }
+    } finally {
+      loading.value = false
+    }
   }
   
   // 获取歌曲列表（需要登录）
@@ -167,10 +202,13 @@ export const useSongs = () => {
     return null
   }
   
-  // 点歌
-  const requestSong = async (title: string, artist: string) => {
+  // 请求歌曲
+  const requestSong = async (songData: {
+    title: string,
+    artist: string,
+    preferredPlayTimeId?: number | null
+  }) => {
     if (!isAuthenticated.value) {
-      error.value = '需要登录才能点歌'
       showNotification('需要登录才能点歌', 'error')
       return null
     }
@@ -179,43 +217,21 @@ export const useSongs = () => {
     error.value = ''
     
     try {
-      // 检查是否已有相同歌曲
-      const similarSong = checkSimilarSongs(title, artist)
-      
-      if (similarSong && similarSong.title.toLowerCase() === title.toLowerCase() && 
-          similarSong.artist.toLowerCase() === artist.toLowerCase()) {
-        showNotification(`《${title}》已经在列表中，不能重复投稿`, 'error')
-        loading.value = false
-        return null
-      }
-      
       // 显式传递认证头
       const authHeaders = getAuthHeader()
       
-      // 使用fetch代替$fetch，以确保认证头被正确发送
-      const response = await fetch('/api/songs/request', {
+      const data = await $fetch('/api/songs/request', {
         method: 'POST',
-        headers: {
-          ...authHeaders.headers,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ title, artist })
+        body: songData,
+        headers: authHeaders.headers
       })
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `点歌失败: ${response.status}`)
-      }
-      
-      const data = await response.json()
       
       // 更新歌曲列表
       await fetchSongs()
       
-      showNotification('点歌成功！', 'success')
       return data
     } catch (err: any) {
-      const errorMsg = err.message || '点歌失败'
+      const errorMsg = err.data?.message || err.message || '点歌失败'
       error.value = errorMsg
       showNotification(errorMsg, 'error')
       return null
@@ -247,11 +263,10 @@ export const useSongs = () => {
       const authHeaders = getAuthHeader()
       
       try {
-        const data = await $fetch('/api/songs/request', {
+        const data = await $fetch('/api/songs/vote', {
           method: 'POST',
           body: { 
-            songId: songId,
-            isVoteOnly: true
+            songId: songId
           },
           headers: authHeaders.headers
         })
@@ -304,7 +319,7 @@ export const useSongs = () => {
       // 更新歌曲列表
       await fetchSongs()
       
-      showNotification('歌曲已成功撤回！', 'success')
+      // 不在这里显示通知，由调用方处理
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '撤回歌曲失败'
@@ -458,6 +473,58 @@ export const useSongs = () => {
     }
   })
   
+  // 根据播放时间段过滤歌曲排期
+  const filterSchedulesByPlayTime = (schedules: Schedule[], playTimeId: number | null) => {
+    if (playTimeId === null) {
+      return schedules.filter(s => s.playTimeId === null)
+    }
+    return schedules.filter(s => s.playTimeId === playTimeId)
+  }
+  
+  // 获取播放时间名称
+  const getPlayTimeName = (playTimeId: number | null) => {
+    if (playTimeId === null) {
+      return '未指定时段'
+    }
+    
+    const foundTime = playTimes.value.find(pt => pt.id === playTimeId)
+    return foundTime ? foundTime.name : '未知时段'
+  }
+  
+  // 格式化播放时间显示
+  const formatPlayTimeDisplay = (playTime: PlayTime | null) => {
+    if (!playTime) {
+      return '全天'
+    }
+    
+    let displayText = playTime.name
+    
+    // 如果有开始和结束时间，添加时间信息
+    if (playTime.startTime && playTime.endTime) {
+      displayText += ` (${playTime.startTime}-${playTime.endTime})`
+    } 
+    // 如果只有开始时间
+    else if (playTime.startTime) {
+      displayText += ` (${playTime.startTime}起)`
+    } 
+    // 如果只有结束时间
+    else if (playTime.endTime) {
+      displayText += ` (至${playTime.endTime})`
+    }
+    
+    return displayText
+  }
+  
+  // 初始化加载
+  const initialize = async () => {
+    await fetchPlayTimes()
+    if (isAuthenticated.value) {
+      await fetchSongs()
+    } else {
+      await fetchPublicSchedules()
+    }
+  }
+  
   return {
     songs,
     publicSongs,
@@ -467,17 +534,24 @@ export const useSongs = () => {
     error,
     notification,
     similarSongFound,
+    playTimes,
+    playTimeEnabled,
+    showNotification,
     fetchSongs,
     fetchPublicSongs,
     fetchPublicSchedules,
+    fetchPlayTimes,
+    checkSimilarSongs,
     requestSong,
     voteSong,
     withdrawSong,
     deleteSong,
     markPlayed,
     unmarkPlayed,
-    checkSimilarSongs,
-    showNotification,
+    filterSchedulesByPlayTime,
+    getPlayTimeName,
+    formatPlayTimeDisplay,
+    initialize,
     songsByPopularity,
     songsByDate,
     playedSongs,

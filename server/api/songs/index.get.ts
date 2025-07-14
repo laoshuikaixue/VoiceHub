@@ -36,7 +36,9 @@ export default defineEventHandler(async (event) => {
         select: {
           id: true
         }
-      }
+      },
+      // 包含期望播放时段信息
+      preferredPlayTime: true
     },
     orderBy: [
       {
@@ -96,7 +98,8 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    return {
+    // 创建基本歌曲对象
+    const songObject: any = {
       id: song.id,
       title: song.title,
       artist: song.artist,
@@ -110,6 +113,27 @@ export default defineEventHandler(async (event) => {
       requestedAt: song.createdAt.toLocaleString(), // 添加请求时间的格式化字符串
       scheduled: song.schedules.length > 0 // 添加是否已排期的标志
     }
+    
+    // 只对管理员用户添加期望播放时段相关字段
+    if (user.role === 'ADMIN') {
+      songObject.preferredPlayTimeId = song.preferredPlayTimeId
+      
+      // 如果有期望播放时段，添加相关信息
+      if (song.preferredPlayTime) {
+        songObject.preferredPlayTime = {
+          id: song.preferredPlayTime.id,
+          name: song.preferredPlayTime.name,
+          startTime: song.preferredPlayTime.startTime,
+          endTime: song.preferredPlayTime.endTime,
+          enabled: song.preferredPlayTime.enabled
+        }
+      }
+      
+      // 调试输出
+      console.log(`歌曲 ${song.title} 的期望播放时段ID:`, song.preferredPlayTimeId)
+    }
+    
+    return songObject
   })
   
   return formattedSongs

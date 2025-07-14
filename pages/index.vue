@@ -425,8 +425,11 @@ const handleRequest = async (songData) => {
   }
 
   try {
-    const result = await songs.requestSong(songData.title, songData.artist)
+    // 直接传递整个songData对象，确保JSON格式正确
+    const result = await songs.requestSong(songData)
     if (result) {
+      // 显示投稿成功通知
+      showNotification(`《${songData.title} - ${songData.artist}》投稿成功！`, 'success')
       closeRequestModal()
       // 更新歌曲统计
       await songs.fetchSongs()

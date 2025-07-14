@@ -3,24 +3,27 @@ import { prisma } from '../models/schema'
 /**
  * 创建歌曲被选中的通知
  */
-export async function createSongSelectedNotification(songId: number) {
+export async function createSongSelectedNotification(
+  userId: number, 
+  songId: number, 
+  songInfo: { title: string, artist: string, playDate: Date }
+) {
   try {
-    // 获取歌曲信息
-    const song = await prisma.song.findUnique({
+    // 获取排期对应的播出时段
+    const schedule = await prisma.schedule.findFirst({
       where: {
-        id: songId
+        songId,
+        playDate: songInfo.playDate
+      },
+      include: {
+        playTime: true
       }
     })
-    
-    if (!song) {
-      console.error(`无法为ID为${songId}的歌曲创建通知：歌曲不存在`)
-      return null
-    }
     
     // 获取用户通知设置
     const settings = await prisma.notificationSettings.findUnique({
       where: {
-        userId: song.requesterId
+        userId
       }
     })
     
@@ -29,13 +32,31 @@ export async function createSongSelectedNotification(songId: number) {
       return null
     }
     
-    // 创建通知
+    // 创建通知，添加播出时段信息
+    let message = `您投稿的歌曲《${songInfo.title}》已被安排播放，播放日期：${formatDate(songInfo.playDate)}。`
+    
+    // 如果有播出时段信息，添加到通知中
+    if (schedule?.playTime) {
+      let timeInfo = '';
+      
+      // 根据开始和结束时间的情况，格式化显示
+      if (schedule.playTime.startTime && schedule.playTime.endTime) {
+        timeInfo = `(${schedule.playTime.startTime}-${schedule.playTime.endTime})`;
+      } else if (schedule.playTime.startTime) {
+        timeInfo = `(开始时间：${schedule.playTime.startTime})`;
+      } else if (schedule.playTime.endTime) {
+        timeInfo = `(结束时间：${schedule.playTime.endTime})`;
+      }
+      
+      message += `播出时段：${schedule.playTime.name}${timeInfo ? ' ' + timeInfo : ''}。`;
+    }
+    
     const notification = await prisma.notification.create({
       data: {
-        userId: song.requesterId,
+        userId,
         type: 'SONG_SELECTED',
-        message: `您投稿的歌曲《${song.title}》已被选中安排播放。`,
-        songId: songId
+        message,
+        songId
       }
     })
     
@@ -44,6 +65,15 @@ export async function createSongSelectedNotification(songId: number) {
     console.error('创建歌曲被选中通知失败:', err)
     return null
   }
+}
+
+// 格式化日期为 yyyy-MM-dd 格式
+function formatDate(date: Date): string {
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 /**

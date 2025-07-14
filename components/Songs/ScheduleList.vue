@@ -68,33 +68,77 @@
     </div>
     
     <div v-else class="schedule-items">
-      <div 
-        v-for="schedule in currentDateSchedules" 
-        :key="schedule.id" 
-        class="schedule-card"
-        :class="{ 'played': schedule.song.played }"
-      >
-        <div class="schedule-title-row">
-          <h3 class="song-title">{{ schedule.song.title }} - {{ schedule.song.artist }}</h3>
-          <div class="votes">
-            <span class="vote-count">{{ schedule.song.voteCount }}</span>
-            <span class="vote-label">热度</span>
+      <!-- 按播出时段分组显示 -->
+      <template v-if="schedulesByPlayTime && Object.keys(schedulesByPlayTime).length > 0">
+        <div v-for="(schedules, playTimeId) in schedulesByPlayTime" :key="playTimeId" class="playtime-group">
+          <div class="playtime-header" v-if="shouldShowPlayTimeHeader(playTimeId)">
+            <h4 v-if="playTimeId === 'null'">未指定时段</h4>
+            <h4 v-else-if="getPlayTimeById(playTimeId)">
+              {{ getPlayTimeById(playTimeId).name }}
+              <span class="playtime-time" v-if="getPlayTimeById(playTimeId).startTime || getPlayTimeById(playTimeId).endTime">
+                ({{ formatPlayTimeRange(getPlayTimeById(playTimeId)) }})
+              </span>
+            </h4>
+          </div>
+          
+          <div 
+            v-for="schedule in schedules" 
+            :key="schedule.id" 
+            class="schedule-card"
+            :class="{ 'played': schedule.song.played }"
+          >
+            <div class="schedule-title-row">
+              <h3 class="song-title">{{ schedule.song.title }} - {{ schedule.song.artist }}</h3>
+              <div class="votes">
+                <span class="vote-count">{{ schedule.song.voteCount }}</span>
+                <span class="vote-label">热度</span>
+              </div>
+            </div>
+            
+            <div class="schedule-meta">
+              <span class="requester">投稿人：{{ schedule.song.requester }}</span>
+              <span class="play-time" :class="{ 'played-status': schedule.song.played }">
+                {{ formatPlayTime(schedule) }}
+              </span>
+            </div>
           </div>
         </div>
-        
-        <div class="schedule-meta">
-          <span class="requester">投稿人：{{ schedule.song.requester }}</span>
-          <span class="play-time" :class="{ 'played-status': schedule.song.played }">
-            {{ formatPlayTime(schedule) }}
-          </span>
+      </template>
+      
+      <!-- 不分组显示（兼容旧版） -->
+      <template v-else>
+        <div 
+          v-for="schedule in currentDateSchedules" 
+          :key="schedule.id" 
+          class="schedule-card"
+          :class="{ 'played': schedule.song.played }"
+        >
+          <div class="schedule-title-row">
+            <h3 class="song-title">{{ schedule.song.title }} - {{ schedule.song.artist }}</h3>
+            <div class="votes">
+              <span class="vote-count">{{ schedule.song.voteCount }}</span>
+              <span class="vote-label">热度</span>
+            </div>
+          </div>
+          
+          <div class="schedule-meta">
+            <span class="requester">投稿人：{{ schedule.song.requester }}</span>
+            <span v-if="schedule.playTime" class="play-time">
+              {{ formatPlayTimeRange(schedule.playTime) }}
+            </span>
+            <span class="play-time" :class="{ 'played-status': schedule.song.played }">
+              {{ formatPlayTime(schedule) }}
+            </span>
+          </div>
         </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
+import { useSongs } from '~/composables/useSongs'
 
 const props = defineProps({
   schedules: {
@@ -110,6 +154,9 @@ const props = defineProps({
     default: ''
   }
 })
+
+// 获取播放时段启用状态
+const { playTimeEnabled } = useSongs()
 
 // 确保schedules不为null
 const safeSchedules = computed(() => props.schedules || [])
@@ -128,11 +175,18 @@ const safeGroupedSchedules = computed(() => {
   safeSchedules.value.forEach(schedule => {
     if (!schedule || !schedule.playDate) return
     
-    const date = new Date(schedule.playDate).toISOString().split('T')[0]
-    if (!groups[date]) {
-      groups[date] = []
+    try {
+      // 使用UTC时间处理日期
+      const scheduleDate = new Date(schedule.playDate)
+      const date = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, '0')}-${String(scheduleDate.getDate()).padStart(2, '0')}`
+      
+      if (!groups[date]) {
+        groups[date] = []
+      }
+      groups[date].push(schedule)
+    } catch (err) {
+      console.error('处理排期日期失败:', err, schedule)
     }
-    groups[date].push(schedule)
   })
   
   // 按日期排序
@@ -197,17 +251,31 @@ const resetDate = () => {
 // 格式化日期
 const formatDate = (dateStr) => {
   try {
-    const date = new Date(dateStr)
-    const year = date.getFullYear()
-    const month = date.getMonth() + 1
-    const day = date.getDate()
+    // 解析日期字符串
+    const parts = dateStr.split('-')
+    if (parts.length !== 3) {
+      throw new Error('无效的日期格式')
+    }
+    
+    const year = parseInt(parts[0])
+    const month = parseInt(parts[1])
+    const day = parseInt(parts[2])
+    
+    // 创建日期对象
+    const date = new Date(year, month - 1, day)
+    
+    // 检查日期是否有效
+    if (isNaN(date.getTime())) {
+      throw new Error('无效的日期')
+    }
+    
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
     const weekday = weekdays[date.getDay()]
     
     return `${year}年${month}月${day}日 ${weekday}`
   } catch (e) {
-    console.error('日期格式化错误:', e)
-    return dateStr
+    console.error('日期格式化错误:', e, dateStr)
+    return dateStr || '未知日期'
   }
 }
 
@@ -225,6 +293,93 @@ const formatPlayTime = (schedule) => {
     return '时间未定'
   }
 }
+
+// 按播出时段分组的排期
+const schedulesByPlayTime = computed(() => {
+  if (!currentDateSchedules.value || currentDateSchedules.value.length === 0) {
+    return null;
+  }
+  
+  const grouped = {};
+  
+  // 先对排期按时段和序号排序
+  const sortedSchedules = [...currentDateSchedules.value].sort((a, b) => {
+    // 先按时段分组，确保转换为字符串
+    const playTimeIdA = a.playTimeId !== null && a.playTimeId !== undefined ? String(a.playTimeId) : 'null';
+    const playTimeIdB = b.playTimeId !== null && b.playTimeId !== undefined ? String(b.playTimeId) : 'null';
+    
+    if (playTimeIdA !== playTimeIdB) {
+      // 未指定时段排在最后
+      if (playTimeIdA === 'null') return 1;
+      if (playTimeIdB === 'null') return -1;
+      // 使用数字比较而不是字符串比较
+      return parseInt(playTimeIdA) - parseInt(playTimeIdB);
+    }
+    
+    // 时段相同则按序号排序
+    return a.sequence - b.sequence;
+  });
+  
+  // 分组
+  for (const schedule of sortedSchedules) {
+    // 确保正确处理播放时段ID
+    const playTimeId = schedule.playTimeId !== null && schedule.playTimeId !== undefined ? String(schedule.playTimeId) : 'null';
+    
+    if (!grouped[playTimeId]) {
+      grouped[playTimeId] = [];
+    }
+    
+    grouped[playTimeId].push(schedule);
+  }
+  
+  return grouped;
+});
+
+// 根据ID获取播出时段信息
+const getPlayTimeById = (id) => {
+  if (id === 'null') return null;
+  
+  try {
+    const numId = parseInt(id);
+    if (isNaN(numId)) return null;
+    
+    // 从排期中查找
+    for (const schedule of currentDateSchedules.value) {
+      // 确保正确比较
+      if (schedule.playTimeId === numId && schedule.playTime) {
+        return schedule.playTime;
+      }
+    }
+  } catch (err) {
+    console.error('解析播放时段ID失败:', err);
+  }
+  
+  return null;
+};
+
+// 格式化播出时段时间范围
+const formatPlayTimeRange = (playTime) => {
+  if (!playTime) return '';
+  
+  if (playTime.startTime && playTime.endTime) {
+    return `${playTime.startTime} - ${playTime.endTime}`;
+  } else if (playTime.startTime) {
+    return `${playTime.startTime} 开始`;
+  } else if (playTime.endTime) {
+    return `${playTime.endTime} 结束`;
+  }
+  
+  return '不限时间';
+};
+
+// 判断是否显示播放时段标题
+const shouldShowPlayTimeHeader = (playTimeId) => {
+  // 如果播放时段功能未启用且是未指定时段，则不显示
+  if (!playTimeEnabled.value && playTimeId === 'null') {
+    return false;
+  }
+  return true; // 显示其他所有时段
+};
 </script>
 
 <style scoped>
@@ -466,6 +621,25 @@ const formatPlayTime = (schedule) => {
   background: rgba(99, 102, 241, 0.2);
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.playtime-group {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.playtime-header h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--light);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.playtime-time {
+  font-size: 0.75rem;
+  color: var(--gray);
+  margin-left: 0.5rem;
 }
 
 @media (max-width: 639px) {

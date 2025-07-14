@@ -10,9 +10,39 @@
           v-model="playDate" 
           type="date" 
           required 
-          :min="minDate"
           class="date-input"
         />
+      </div>
+      
+      <!-- 播出时段选择 -->
+      <div class="form-group" v-if="playTimeEnabled">
+        <label for="playTime">播出时段</label>
+        <select 
+          id="playTime" 
+          v-model="playTimeId" 
+          class="time-input"
+        >
+          <option value="">未指定</option>
+          <option 
+            v-for="playTime in playTimes" 
+            :key="playTime.id" 
+            :value="playTime.id"
+          >
+            {{ playTime.name }} ({{ playTime.startTime }} - {{ playTime.endTime }})
+          </option>
+        </select>
+        <div v-if="song?.preferredPlayTime" class="preferred-time-hint">
+          <div class="hint-icon">💡</div>
+          <div>
+            用户期望的播出时段: 
+            <span class="preferred-time">
+              {{ song.preferredPlayTime.name }}
+              <template v-if="song.preferredPlayTime.startTime || song.preferredPlayTime.endTime">
+                ({{ formatPlayTimeRange(song.preferredPlayTime) }})
+              </template>
+            </span>
+          </div>
+        </div>
       </div>
       
       <div v-if="error" class="error">{{ error }}</div>
@@ -30,7 +60,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useSongs } from '~/composables/useSongs'
 
 const props = defineProps({
   song: {
@@ -46,13 +77,51 @@ const props = defineProps({
 const emit = defineEmits(['schedule', 'cancel'])
 
 const playDate = ref('')
+const playTimeId = ref('')
 const error = ref('')
+const playTimes = ref([])
+const { playTimeEnabled } = useSongs()
 
-// 最小日期为今天
-const minDate = computed(() => {
-  const today = new Date()
-  return today.toISOString().split('T')[0]
+// 初始化
+onMounted(async () => {
+  await fetchPlayTimes()
+  
+  // 如果歌曲有期望的播出时段，默认选择该时段
+  if (props.song?.preferredPlayTimeId) {
+    playTimeId.value = props.song.preferredPlayTimeId
+  }
 })
+
+// 获取播出时段
+const fetchPlayTimes = async () => {
+  try {
+    // 使用useSongs中的方法获取播放时段
+    await useSongs().fetchPlayTimes()
+    const response = await fetch('/api/admin/play-times')
+    if (response.ok) {
+      const data = await response.json()
+      // 只显示启用的播放时段
+      playTimes.value = data.filter(pt => pt.enabled)
+    }
+  } catch (err) {
+    console.error('获取播出时段失败:', err)
+  }
+}
+
+// 格式化播出时段时间范围
+const formatPlayTimeRange = (playTime) => {
+  if (!playTime) return '';
+  
+  if (playTime.startTime && playTime.endTime) {
+    return `${playTime.startTime} - ${playTime.endTime}`;
+  } else if (playTime.startTime) {
+    return `${playTime.startTime} 开始`;
+  } else if (playTime.endTime) {
+    return `${playTime.endTime} 结束`;
+  }
+  
+  return '不限时间';
+};
 
 const handleSubmit = () => {
   error.value = ''
@@ -63,16 +132,14 @@ const handleSubmit = () => {
   }
   
   const selectedDate = new Date(playDate.value)
-  const today = new Date()
   
-  if (selectedDate < today) {
-    error.value = '不能选择过去的日期'
-    return
-  }
+  // 播出时段ID需要转换为数字或null
+  const schedulePlayTimeId = playTimeId.value ? parseInt(playTimeId.value) : null
   
   emit('schedule', {
     songId: props.song.id,
-    playDate: selectedDate
+    playDate: selectedDate,
+    playTimeId: schedulePlayTimeId
   })
 }
 </script>
@@ -114,7 +181,7 @@ label {
   color: var(--light);
 }
 
-.date-input {
+.date-input, .time-input {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -126,9 +193,29 @@ label {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.date-input:focus {
+.date-input:focus, .time-input:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+.preferred-time-hint {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.hint-icon {
+  font-size: 1rem;
+}
+
+.preferred-time {
+  font-weight: 500;
+  color: var(--primary-light);
 }
 
 .form-actions {
@@ -175,11 +262,10 @@ button {
 }
 
 .error {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #fca5a5;
   padding: 0.75rem;
+  margin-top: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(252, 165, 165);
   border-radius: 0.5rem;
-  margin: 1rem 0;
-  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 </style> 
