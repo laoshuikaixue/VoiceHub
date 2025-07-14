@@ -293,6 +293,16 @@
             <div v-if="importError" class="error">{{ importError }}</div>
             <div v-if="importSuccess" class="success">{{ importSuccess }}</div>
             
+            <!-- 进度条 -->
+            <div v-if="progressActive" class="progress-section">
+              <ProgressBar 
+                :percentage="progressPercentage" 
+                :message="progressMessage"
+                :sub-message="progressSubMessage"
+                :indeterminate="progressPercentage === 0"
+              />
+            </div>
+            
             <div class="preview-section" v-if="previewData.length > 0">
               <h4>预览数据 ({{ previewData.length }}条记录)</h4>
               <div class="preview-table-container">
@@ -422,6 +432,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import ProgressBar from '../UI/ProgressBar.vue'
 
 // 状态变量
 const users = ref([])
@@ -894,11 +905,26 @@ const importUsers = async () => {
   importSuccess.value = ''
   
   try {
-    // 调用API批量导入用户
+    // 获取进度ID
+    const progressResponse = await $fetch('/api/progress/id', {
+      method: 'GET'
+    })
+    
+    if (!progressResponse || !progressResponse.id) {
+      throw new Error('无法获取进度ID')
+    }
+    
+    const progressId = progressResponse.id
+    
+    // 连接到SSE进度流
+    connectToProgressEvents(progressId)
+    
+    // 调用API批量导入用户，传递进度ID
     const result = await $fetch('/api/admin/users/batch', {
       method: 'POST',
       body: {
-        users: previewData.value
+        users: previewData.value,
+        progressId
       },
       ...useAuth().getAuthHeader()
     })
@@ -924,6 +950,102 @@ const importUsers = async () => {
     console.error('导入用户出错:', err)
   } finally {
     importLoading.value = false
+    disconnectProgressEvents()
+  }
+}
+
+// 进度条状态
+const progressActive = ref(false)
+const progressPercentage = ref(0)
+const progressMessage = ref('')
+const progressSubMessage = ref('')
+let eventSource = null
+
+// 连接到进度事件流
+const connectToProgressEvents = (progressId) => {
+  if (!process.client) return
+  
+  // 确保之前的连接已关闭
+  disconnectProgressEvents()
+  
+  try {
+    // 重置进度状态
+    progressActive.value = true
+    progressPercentage.value = 0
+    progressMessage.value = '准备导入...'
+    progressSubMessage.value = ''
+    
+    // 创建新的事件源
+    eventSource = new EventSource(`/api/progress/events?id=${progressId}`)
+    
+    // 连接打开
+    eventSource.onopen = () => {
+      progressMessage.value = '已连接，等待进度更新...'
+    }
+    
+    // 接收消息
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        
+        if (data.connected) {
+          progressMessage.value = '已连接，等待进度更新...'
+          return
+        }
+        
+        if (data.error) {
+          progressMessage.value = data.error
+          disconnectProgressEvents()
+          return
+        }
+        
+        if (data.completed) {
+          progressPercentage.value = 100
+          progressMessage.value = data.message || '操作完成'
+          disconnectProgressEvents()
+          return
+        }
+        
+        // 更新进度
+        if (data.progress !== undefined) {
+          progressPercentage.value = data.progress
+          
+          if (data.message !== undefined) {
+            progressMessage.value = data.message
+          }
+          
+          if (data.subMessage !== undefined) {
+            progressSubMessage.value = data.subMessage
+          }
+        }
+      } catch (err) {
+        console.error('处理进度事件时出错:', err)
+      }
+    }
+    
+    // 错误处理
+    eventSource.onerror = (err) => {
+      console.error('进度事件流错误:', err)
+      progressMessage.value = '连接进度更新失败'
+      disconnectProgressEvents()
+    }
+    
+    // 关闭事件
+    eventSource.addEventListener('close', () => {
+      disconnectProgressEvents()
+    })
+    
+  } catch (err) {
+    console.error('创建EventSource时出错:', err)
+    progressMessage.value = '无法连接到进度更新服务'
+  }
+}
+
+// 断开进度事件连接
+const disconnectProgressEvents = () => {
+  if (eventSource) {
+    eventSource.close()
+    eventSource = null
   }
 }
 </script>
@@ -1403,10 +1525,19 @@ const importUsers = async () => {
 }
 
 .preview-table-container {
-  background: rgba(15, 23, 42, 0.6);
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+}
+
+.progress-section {
+  margin: 15px 0;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .preview-table {

@@ -25,7 +25,7 @@ export async function createSongSelectedNotification(songId: number) {
     })
     
     // 如果用户关闭了此类通知，则不发送
-    if (settings && !settings.songSelectedNotify) {
+    if (settings && !settings.enabled) {
       return null
     }
     
@@ -34,9 +34,8 @@ export async function createSongSelectedNotification(songId: number) {
       data: {
         userId: song.requesterId,
         type: 'SONG_SELECTED',
-        title: '歌曲已被选中',
-        content: `您投稿的歌曲《${song.title}》已被选中安排播放。`,
-        relatedId: songId
+        message: `您投稿的歌曲《${song.title}》已被选中安排播放。`,
+        songId: songId
       }
     })
     
@@ -72,7 +71,7 @@ export async function createSongPlayedNotification(songId: number) {
     })
     
     // 如果用户关闭了此类通知，则不发送
-    if (settings && !settings.songPlayedNotify) {
+    if (settings && !settings.songPlayedEnabled) {
       return null
     }
     
@@ -81,9 +80,8 @@ export async function createSongPlayedNotification(songId: number) {
       data: {
         userId: song.requesterId,
         type: 'SONG_PLAYED',
-        title: '歌曲已播放',
-        content: `您投稿的歌曲《${song.title}》已播放。`,
-        relatedId: songId
+        message: `您投稿的歌曲《${song.title}》已播放。`,
+        songId: songId
       }
     })
     
@@ -134,7 +132,7 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
     })
     
     // 如果用户关闭了此类通知，则不发送
-    if (settings && !settings.songVotedNotify) {
+    if (settings && !settings.songVotedEnabled) {
       return null
     }
     
@@ -148,9 +146,8 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
       data: {
         userId: song.requesterId,
         type: 'SONG_VOTED',
-        title: '歌曲获得新投票',
-        content: `您投稿的歌曲《${song.title}》获得了一个新的投票，当前共有 ${song.votes.length} 个投票。`,
-        relatedId: songId
+        message: `您投稿的歌曲《${song.title}》获得了一个新的投票，当前共有 ${song.votes.length} 个投票。`,
+        songId: songId
       }
     })
     
@@ -173,8 +170,8 @@ export async function createSystemNotification(userId: number, title: string, co
       }
     })
     
-    // 如果用户关闭了此类通知，则不发送
-    if (settings && !settings.systemNotify) {
+    // 如果用户关闭了通知，则不发送
+    if (settings && !settings.enabled) {
       return null
     }
     
@@ -183,14 +180,78 @@ export async function createSystemNotification(userId: number, title: string, co
       data: {
         userId: userId,
         type: 'SYSTEM_NOTICE',
-        title: title,
-        content: content
+        message: content
       }
     })
     
     return notification
   } catch (err) {
     console.error('创建系统通知失败:', err)
+    return null
+  }
+} 
+
+/**
+ * 批量创建系统通知
+ */
+export async function createBatchSystemNotifications(
+  userIds: number[],
+  title: string,
+  content: string
+) {
+  try {
+    if (!userIds.length) {
+      console.warn('没有可发送通知的用户')
+      return []
+    }
+    
+    // 获取用户通知设置
+    const userSettings = await prisma.notificationSettings.findMany({
+      where: {
+        userId: { in: userIds }
+      }
+    })
+    
+    // 构建用户ID到通知设置的映射
+    const settingsMap = new Map()
+    userSettings.forEach(setting => {
+      settingsMap.set(setting.userId, setting)
+    })
+    
+    // 准备要创建的通知数据
+    const notificationsToCreate = []
+    
+    for (const userId of userIds) {
+      const settings = settingsMap.get(userId)
+      
+      // 如果用户关闭了通知，则不发送
+      if (settings && !settings.enabled) {
+        continue
+      }
+      
+      notificationsToCreate.push({
+        userId,
+        type: 'SYSTEM_NOTICE',
+        message: content
+      })
+    }
+    
+    // 如果没有可发送的通知，直接返回
+    if (notificationsToCreate.length === 0) {
+      return []
+    }
+    
+    // 批量创建通知
+    const notifications = await prisma.notification.createMany({
+      data: notificationsToCreate
+    })
+    
+    return {
+      count: notifications.count,
+      total: userIds.length
+    }
+  } catch (err) {
+    console.error('批量创建系统通知失败:', err)
     return null
   }
 } 

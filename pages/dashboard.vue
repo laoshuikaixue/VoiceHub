@@ -34,6 +34,12 @@
         >
           用户管理
         </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'notifications' }]" 
+          @click="activeTab = 'notifications'"
+        >
+          通知管理
+        </button>
       </div>
       
       <div class="dashboard-content">
@@ -214,6 +220,11 @@
         <div v-if="activeTab === 'users'" class="section users-section glass">
           <UserManager />
         </div>
+        
+        <!-- 通知管理 -->
+        <div v-if="activeTab === 'notifications'" class="section notifications-section glass full-width-section">
+          <NotificationSender />
+        </div>
       </div>
       
         <!-- 确认对话框组件 -->
@@ -288,6 +299,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import SongList from '~/components/Songs/SongList.vue'
 import UserManager from '~/components/Admin/UserManager.vue'
+import NotificationSender from '~/components/Admin/NotificationSender.vue'
 
 const router = useRouter()
 const currentUser = ref(null)
@@ -1180,7 +1192,7 @@ const handleUnmarkPlayed = async (song) => {
 
 <style scoped>
 .dashboard {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -1294,6 +1306,11 @@ const handleUnmarkPlayed = async (song) => {
 .section:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.full-width-section {
+  width: 100%;
+  max-width: 100%;
 }
 
 .section h2 {
@@ -1948,7 +1965,7 @@ const handleUnmarkPlayed = async (song) => {
     grid-template-columns: 1fr 1fr;
   }
   
-  .songs-section, .schedule-section, .users-section {
+  .songs-section, .schedule-section, .users-section, .notifications-section {
     grid-column: span 2;
   }
 }

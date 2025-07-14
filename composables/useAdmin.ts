@@ -123,12 +123,51 @@ export const useAdmin = () => {
     }
   }
   
+  // 发送管理员通知
+  const sendAdminNotification = async (notificationData: {
+    title: string,
+    content: string,
+    scope: 'ALL' | 'GRADE' | 'CLASS' | 'MULTI_CLASS',
+    filter: {
+      grade?: string,
+      class?: string,
+      classes?: Array<{grade: string, class: string}>
+    }
+  }) => {
+    if (!isAdmin.value) {
+      error.value = '只有管理员才能发送系统通知'
+      return null
+    }
+    
+    loading.value = true
+    error.value = ''
+    
+    try {
+      // 显式传递认证头
+      const authHeaders = getAuthHeader()
+      
+      const data = await $fetch('/api/admin/notifications/send', {
+        method: 'POST',
+        body: notificationData,
+        headers: authHeaders.headers
+      })
+      
+      return data
+    } catch (err: any) {
+      error.value = err.message || '发送通知失败'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+  
   return {
     loading,
     error,
     createSchedule,
     removeSchedule,
     markSongAsPlayed,
-    updateScheduleSequence
+    updateScheduleSequence,
+    sendAdminNotification
   }
 } 
