@@ -9,7 +9,9 @@
 - **歌曲管理**：按热度排序，避免重复播放
 - **排期管理**：管理员可以通过拖拽界面进行歌曲排期和顺序管理
 - **公开展示**：公开展示歌曲播放排期，按日期分组展示
+- **通知系统**：实时通知功能，包括歌曲被选中、投票和系统通知
 - **现代UI**：响应式设计，玻璃态UI，流畅的动画效果
+- **数据库自检**：自动数据库验证和修复机制，确保系统稳定性
 
 ## 技术栈
 
@@ -19,6 +21,7 @@
 - **ORM**：Prisma
 - **认证**：JWT Token认证
 - **样式**：CSS变量，自定义动画
+- **部署**：支持Vercel一键部署
 
 ## 系统架构
 
@@ -27,6 +30,7 @@
 - 使用Vue 3组合式API构建前端组件
 - 使用Prisma ORM连接PostgreSQL数据库
 - 使用JWT进行用户认证和授权
+- 数据库自检和自动修复机制
 
 ## 安装与运行
 
@@ -70,9 +74,13 @@ npx prisma migrate deploy
 node scripts/create-admin.js
 ```
 
-7. 清空数据库（慎用）
+7. 数据库验证和修复
 ```bash
-node scripts/clear-database.js
+# 检查数据库结构和完整性
+cd scripts && npm run check-db
+
+# 修复数据库问题
+cd scripts && npm run repair-db
 ```
 
 8. 启动开发服务器
@@ -97,6 +105,7 @@ npm run start
 | DATABASE_URL | 是  | PostgreSQL数据库连接字符串          |
 | JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串        |
 | NODE_ENV     | 否  | 运行环境，development或production |
+| VERCEL       | 否  | 在Vercel环境中自动设置为'1'          |
 
 ## 项目结构
 
@@ -107,7 +116,9 @@ VoiceHub/
 ├── components/            # 可复用组件
 │   ├── Admin/             # 管理员组件
 │   ├── Auth/              # 认证相关组件
-│   └── Songs/             # 歌曲相关组件
+│   ├── Notifications/     # 通知相关组件
+│   ├── Songs/             # 歌曲相关组件
+│   └── UI/                # 通用UI组件
 ├── composables/           # 组合式API函数
 ├── pages/                 # 页面组件
 ├── plugins/               # 插件
@@ -116,10 +127,15 @@ VoiceHub/
 │   └── schema.prisma      # 数据库模型
 ├── public/                # 公共资源
 ├── scripts/               # 工具脚本
+│   ├── check-database.js  # 数据库检查工具
+│   ├── repair-database.js # 数据库修复工具
+│   └── create-admin.js    # 创建管理员账户
 ├── server/                # 服务端API
 │   ├── api/               # API端点
 │   ├── middleware/        # 中间件
-│   └── models/            # 服务端模型
+│   ├── models/            # 服务端模型
+│   ├── plugins/           # 服务端插件
+│   └── services/          # 服务层
 └── types/                 # TypeScript类型定义
 ```
 
@@ -129,6 +145,7 @@ VoiceHub/
 1. 访问主页，查看当前排期
 2. 注册/登录账号
 3. 在仪表盘中点歌或给喜欢的歌曲投票
+4. 查看通知中心获取歌曲状态更新
 
 ### 管理员
 1. 使用管理员账号登录（默认账号：admin，密码：admin123）
@@ -142,6 +159,74 @@ VoiceHub/
    - 单个添加：填写用户信息（包括姓名、账号、年级、班级）
    - 批量导入：通过EXCEL文件批量添加用户
    - 可以重置用户密码
+6. **通知管理**：向用户发送系统通知
+   - 支持按全体用户、年级、班级或多班级发送
+   - 实时显示发送进度和结果
+
+## 数据库验证和修复
+
+系统内置了自动数据库验证和修复机制，可确保数据库结构和数据一致性。
+
+### 自动验证
+
+应用启动时会自动验证数据库结构和完整性：
+
+1. 检查数据库连接状态
+2. 验证必要的表和字段是否存在
+3. 检查数据一致性（如用户通知设置）
+4. 首次部署时自动初始化数据库
+
+### 手动验证和修复
+
+系统提供了两个命令行工具用于手动检查和修复数据库问题：
+
+1. **数据库检查工具**
+   ```bash
+   cd scripts && npm run check-db
+   ```
+   该工具会检查：
+   - 数据库表结构完整性
+   - 必要字段是否存在
+   - 管理员用户是否存在
+   - 用户通知设置是否完整
+
+2. **数据库修复工具**
+   ```bash
+   cd scripts && npm run repair-db
+   ```
+   该工具提供交互式修复功能：
+   - 创建缺失的管理员账户
+   - 为用户添加缺失的通知设置
+   - 检查表结构并给出迁移建议
+
+## 部署指南
+
+### Vercel 部署
+
+本项目可以直接部署到Vercel平台：
+
+1. 在Vercel中导入GitHub仓库
+2. 设置环境变量：
+   - `DATABASE_URL`: PostgreSQL数据库连接字符串
+   - `JWT_SECRET`: JWT令牌签名密钥
+3. 部署应用
+
+Vercel环境下，系统会自动执行数据库验证，并在首次部署时初始化数据库。
+
+### 其他平台部署
+
+1. 构建生产版本
+   ```bash
+   npm run build
+   ```
+
+2. 设置环境变量
+   确保设置了必要的环境变量（DATABASE_URL和JWT_SECRET）
+
+3. 启动应用
+   ```bash
+   npm run start
+   ```
 
 ## 常见问题
 
@@ -165,6 +250,32 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
    ```
    然后再执行`npx prisma generate`
 
+### 数据库迁移问题
+
+如果遇到数据库表结构不匹配的问题：
+
+1. 确保数据库已经最新：
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+2. 如果还有问题，使用修复工具：
+   ```bash
+   cd scripts && npm run repair-db
+   ```
+
+3. 对于复杂的数据库问题，可能需要重置数据库（慎用，会删除所有数据）：
+   ```bash
+   npx prisma migrate reset
+   ```
+
+### 通知不显示内容
+
+如果通知只显示标题但不显示内容，可能是数据库模型与前端模型不匹配。运行修复工具：
+```bash
+cd scripts && npm run repair-db
+```
+
 ## 开发指南
 
 ### 组合式API
@@ -174,6 +285,7 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
 - `useAuth`: 处理用户认证、登录、注册和权限控制
 - `useSongs`: 处理歌曲相关操作，包括获取歌曲列表、点歌和投票
 - `useAdmin`: 处理管理员操作，包括排期管理和标记播放
+- `useNotifications`: 处理通知系统，包括获取、标记已读和设置
 
 ### 添加新功能
 
@@ -189,6 +301,8 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
 1. 编辑`prisma/schema.prisma`文件
 2. 运行迁移命令：`npx prisma migrate dev --name your_migration_name`
 3. 更新客户端：`npx prisma generate`
+4. 确保同时更新`types/index.ts`中的TypeScript类型定义
+5. 验证数据库：`cd scripts && npm run check-db`
 
 ## 许可证
 

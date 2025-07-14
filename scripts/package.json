@@ -1,20 +1,18 @@
 {
-  "name": "admin-scripts",
+  "name": "voicehub-scripts",
   "version": "1.0.0",
-  "description": "Admin scripts for VoiceHub",
-  "type": "module",
+  "description": "VoiceHub管理脚本",
   "scripts": {
     "create-admin": "node create-admin.js",
-    "apply-migration": "node apply-migration.js",
-    "clear-database": "node clear-database.js",
-    "add-password-changed-at": "node add-password-changed-at.js",
-    "init-notification-settings": "node init-notification-settings.js"
+    "clear-db": "node clear-database.js",
+    "check-db": "node check-database.js",
+    "repair-db": "node repair-database.js"
   },
-  "comments": {
-    "create-admin": "创建默认管理员账户",
-    "clear-database": "清空数据库并创建默认管理员账户",
-    "init-notification-settings": "为所有用户初始化通知设置",
-    "apply-migration": "手动应用迁移（已被Prisma迁移功能替代）",
-    "add-password-changed-at": "添加passwordChangedAt字段（已被Prisma迁移功能替代）"
+  "dependencies": {
+    "@prisma/client": "^6.11.1",
+    "dotenv": "^16.3.1",
+    "prompts": "^2.4.2",
+    "bcrypt": "^5.1.1",
+    "chalk": "^4.1.2"
   }
 } 

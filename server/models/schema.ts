@@ -108,6 +108,161 @@ export async function reconnectDatabase() {
     return false
   }
 }
+
+// 检查数据库模式是否需要迁移
+export async function checkSchemaIntegrity() {
+  try {
+    console.log('检查数据库架构完整性...')
+    
+    // 尝试访问数据库中的所有必要表
+    // 如果任何一个表不存在，查询将失败
+    const testQueries = [
+      prisma.user.count(),
+      prisma.song.count(),
+      prisma.vote.count(),
+      prisma.schedule.count(),
+      prisma.notification.count(),
+      prisma.notificationSettings.count()
+    ]
+    
+    await Promise.all(testQueries)
+    
+    console.log('数据库架构检查通过')
+    return true
+  } catch (error) {
+    console.error('数据库架构检查失败:', error)
+    
+    // 判断是否是因为表不存在导致的错误
+    if (error instanceof Error && 
+        (error.message.includes('relation') || 
+         error.message.includes('table') || 
+         error.message.includes('does not exist'))) {
+      console.error('数据库可能需要迁移，表结构不完整')
+      return false
+    }
+    
+    return false
+  }
+}
+
+// 安全地执行数据库修复操作
+export async function performDatabaseMaintenance() {
+  try {
+    console.log('执行数据库维护操作...')
+    
+    // 检查Notification表是否缺少字段
+    try {
+      // 尝试直接查询，如果有问题会抛出异常
+      await prisma.notification.findFirst({
+        select: {
+          id: true,
+          type: true,
+          message: true,
+          read: true,
+          userId: true,
+          songId: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      })
+    } catch (err) {
+      console.error('Notification表结构异常:', err)
+      console.warn('无法自动修复表结构，请考虑手动迁移数据库')
+    }
+    
+    // 检查并修复缺少通知设置的用户
+    const usersWithoutSettings = await prisma.user.findMany({
+      where: {
+        notificationSettings: null
+      },
+      select: {
+        id: true
+      }
+    })
+    
+    if (usersWithoutSettings.length > 0) {
+      console.log(`发现${usersWithoutSettings.length}个用户缺少通知设置，正在修复...`)
+      
+      for (const user of usersWithoutSettings) {
+        await prisma.notificationSettings.create({
+          data: {
+            userId: user.id,
+            enabled: true,
+            songRequestEnabled: true,
+            songVotedEnabled: true,
+            songPlayedEnabled: true,
+            refreshInterval: 60,
+            songVotedThreshold: 1
+          }
+        })
+      }
+      
+      console.log('已修复所有用户的通知设置')
+    }
+    
+    return true
+  } catch (error) {
+    console.error('数据库维护操作失败:', error)
+    return false
+  }
+}
+
+// 检测是否为首次部署
+export async function isFirstDeployment() {
+  try {
+    // 检查用户表是否为空
+    const userCount = await prisma.user.count()
+    return userCount === 0
+  } catch (error) {
+    // 如果查询失败，可能是因为表不存在，这也视为首次部署
+    console.log('检测首次部署时出错，假定为首次部署:', error)
+    return true
+  }
+}
+
+// 创建一个初始管理员用户和基本设置
+export async function initializeFirstDeployment() {
+  try {
+    console.log('初始化首次部署...')
+    
+    // 检查是否真的需要初始化
+    const userCount = await prisma.user.count()
+    if (userCount > 0) {
+      console.log('数据库已有用户，跳过初始化')
+      return true
+    }
+    
+    // 创建管理员用户
+    const admin = await prisma.user.create({
+      data: {
+        username: 'admin',
+        name: '系统管理员',
+        // "admin123"的bcrypt哈希
+        password: '$2b$10$JQC6LFL7YBr1QYbWZ7N4DeNWVxEXKldmvJ7B1XmMHJemAVPfRY3VG',
+        role: 'ADMIN'
+      }
+    })
+    
+    // 为管理员创建通知设置
+    await prisma.notificationSettings.create({
+      data: {
+        userId: admin.id,
+        enabled: true,
+        songRequestEnabled: true,
+        songVotedEnabled: true,
+        songPlayedEnabled: true,
+        refreshInterval: 60,
+        songVotedThreshold: 1
+      }
+    })
+    
+    console.log('初始化完成，已创建管理员账户 (用户名: admin, 密码: admin123)')
+    return true
+  } catch (error) {
+    console.error('初始化首次部署失败:', error)
+    return false
+  }
+}
  
 // 数据库模型在prisma/schema.prisma中定义 
 export { prisma } 
