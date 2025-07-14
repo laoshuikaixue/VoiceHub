@@ -50,8 +50,13 @@
                   <div class="notification-time">{{ formatTime(notification.createdAt) }}</div>
                 </div>
                 <div class="notification-body">
-                  <h3 class="notification-title">{{ notification.title }}</h3>
-                  <p class="notification-content">{{ notification.content }}</p>
+                  <h3 class="notification-title">
+                    <span v-if="notification.type === 'SONG_SELECTED'">歌曲已选中</span>
+                    <span v-else-if="notification.type === 'SONG_PLAYED'">歌曲已播放</span>
+                    <span v-else-if="notification.type === 'SONG_VOTED'">收到新投票</span>
+                    <span v-else>系统通知</span>
+                  </h3>
+                  <p class="notification-content">{{ notification.message }}</p>
                 </div>
                 <div class="notification-actions">
                   <button 

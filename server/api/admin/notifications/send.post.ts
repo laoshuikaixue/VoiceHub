@@ -128,10 +128,10 @@ export default defineEventHandler(async (event) => {
     
     // 判断result类型
     if (Array.isArray(result)) {
-      sentCount = 0
-    } else {
+      sentCount = result.length
+    } else if (result && typeof result === 'object' && 'count' in result) {
       sentCount = result.count
-      totalUsers = result.total
+      totalUsers = result.total || userIds.length
     }
     
     return {

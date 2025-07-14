@@ -54,8 +54,13 @@
             <span v-else>📢</span>
           </div>
           <div class="notification-content">
-            <div class="notification-title">{{ notification.title }}</div>
-            <div class="notification-text">{{ notification.content }}</div>
+            <div class="notification-title">
+              <span v-if="notification.type === 'SONG_SELECTED'">歌曲已选中</span>
+              <span v-else-if="notification.type === 'SONG_PLAYED'">歌曲已播放</span>
+              <span v-else-if="notification.type === 'SONG_VOTED'">收到新投票</span>
+              <span v-else>系统通知</span>
+            </div>
+            <div class="notification-text">{{ notification.message }}</div>
             <div class="notification-time">{{ formatTime(notification.createdAt) }}</div>
           </div>
           <button 
