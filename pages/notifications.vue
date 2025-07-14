@@ -29,6 +29,24 @@
         
         <div class="tab-content">
           <div v-if="activeTab === 'list'" class="notifications-list-container">
+            <div class="list-header">
+              <div class="list-title">
+                <h2>通知列表</h2>
+                <span v-if="hasUnread" class="unread-badge">{{ unreadCount }} 条未读</span>
+              </div>
+              <button @click="refreshNotifications" class="refresh-button" :disabled="loading">
+                <span class="refresh-icon" :class="{ 'spinning': loading }">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                    <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path>
+                  </svg>
+                </span>
+                刷新
+              </button>
+            </div>
+            
             <div v-if="loading" class="loading">加载中...</div>
             <div v-else-if="notifications.length === 0" class="empty-state">
               暂无通知
@@ -117,9 +135,8 @@ const activeTab = ref('list')
 const notificationsService = useNotifications()
 const loading = computed(() => notificationsService.loading.value)
 const notifications = computed(() => notificationsService.notifications.value || [])
-const hasUnread = computed(() => {
-  return notifications.value.some(notification => !notification.read)
-})
+const unreadCount = computed(() => notificationsService.unreadCount.value || 0)
+const hasUnread = computed(() => unreadCount.value > 0)
 
 // 检查登录状态
 const auth = useAuth()
@@ -135,6 +152,11 @@ onMounted(async () => {
 // 获取通知
 const fetchNotifications = async () => {
   await notificationsService.fetchNotifications()
+}
+
+// 刷新通知
+const refreshNotifications = async () => {
+  await fetchNotifications()
 }
 
 // 标记为已读
@@ -415,6 +437,80 @@ const formatTime = (timeString) => {
   background-color: var(--primary-dark);
 }
 
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.list-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.list-title h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--light);
+}
+
+.unread-badge {
+  background-color: var(--primary);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 10px;
+  display: inline-block;
+}
+
+.refresh-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  background-color: var(--primary);
+  color: white;
+  border-radius: 4px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
+.refresh-button:disabled {
+  background-color: var(--gray-dark);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.refresh-icon {
+  display: inline-flex;
+  transition: transform 0.5s ease;
+}
+
+.refresh-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 @media (max-width: 768px) {
   .notifications-page {
     padding: 15px;
@@ -427,6 +523,21 @@ const formatTime = (timeString) => {
   .tabs button {
     padding: 8px 15px;
     font-size: 14px;
+  }
+
+  .list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .list-title h2 {
+    font-size: 1rem;
+  }
+
+  .refresh-button {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style> 

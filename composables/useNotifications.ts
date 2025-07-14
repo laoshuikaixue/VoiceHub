@@ -157,7 +157,6 @@ export const useNotifications = () => {
       const index = notifications.value.findIndex((n: Notification) => n.id === notificationId)
       if (index !== -1) {
         notifications.value[index].read = true
-        notifications.value[index].readAt = new Date().toISOString()
         unreadCount.value = Math.max(0, unreadCount.value - 1)
       }
       
@@ -199,7 +198,6 @@ export const useNotifications = () => {
       // 更新本地通知状态
       notifications.value.forEach((notification: Notification) => {
         notification.read = true
-        notification.readAt = new Date().toISOString()
       })
       unreadCount.value = 0
       

@@ -49,8 +49,7 @@ export default defineEventHandler(async (event) => {
         id: id
       },
       data: {
-        read: true,
-        readAt: new Date()
+        read: true
       }
     })
     

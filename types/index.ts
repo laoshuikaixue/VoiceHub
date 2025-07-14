@@ -41,13 +41,12 @@ export type NotificationType = 'SONG_SELECTED' | 'SONG_PLAYED' | 'SONG_VOTED' | 
 export interface Notification {
   id: number
   createdAt: string
+  updatedAt: string
   userId: number
-  type: NotificationType
-  title: string
-  content: string
-  relatedId?: number | null
+  type: string
+  message: string
+  songId?: number | null
   read: boolean
-  readAt: string | null
 }
 
 // 前端使用的通知设置接口
