@@ -291,14 +291,16 @@ export async function initializeFirstDeployment() {
       console.log('数据库已有用户，跳过初始化')
       return true
     }
+
+    const bcrypt = require('bcrypt')
+    const hashedPassword = await bcrypt.hash('admin123', 10)
     
     // 创建管理员用户
     const admin = await prisma.user.create({
       data: {
         username: 'admin',
-        name: '系统管理员',
-        // "admin123"的bcrypt哈希
-        password: '$2b$10$JQC6LFL7YBr1QYbWZ7N4DeNWVxEXKldmvJ7B1XmMHJemAVPfRY3VG',
+        name: '管理员',
+        password: hashedPassword,
         role: 'ADMIN'
       }
     })
