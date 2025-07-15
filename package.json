@@ -8,7 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "vercel-build": "echo 'Starting Vercel build process' && prisma generate && echo 'Prisma client generated successfully' && prisma migrate deploy && echo 'Database migrations applied' && nuxt build && echo 'Nuxt build completed successfully'",
-    "netlify-build": "prisma generate && prisma migrate deploy && nuxt build"
+    "netlify-build": "prisma generate && prisma migrate deploy && node scripts/create-admin.js && nuxt build"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",
