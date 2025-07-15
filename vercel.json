@@ -4,5 +4,27 @@
   "outputDirectory": ".output",
   "env": {
     "NITRO_PRESET": "vercel"
+  },
+  "buildEnv": {
+    "DATABASE_URL": {
+      "type": "secret",
+      "required": true
+    },
+    "JWT_SECRET": {
+      "type": "secret",
+      "required": true
+    },
+    "NUXT_PUBLIC_SITE_TITLE": {
+      "type": "string",
+      "required": false
+    },
+    "NUXT_PUBLIC_SITE_LOGO": {
+      "type": "string",
+      "required": false
+    },
+    "NUXT_PUBLIC_SITE_DESCRIPTION": {
+      "type": "string",
+      "required": false
+    }
   }
 } 

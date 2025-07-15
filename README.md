@@ -21,7 +21,7 @@
 - **ORM**：Prisma
 - **认证**：JWT Token认证
 - **样式**：CSS变量，自定义动画
-- **部署**：支持Vercel一键部署
+- **部署**：支持Vercel和Netlify一键部署
 
 ## 系统架构
 
@@ -32,10 +32,40 @@
 - 使用JWT进行用户认证和授权
 - 数据库自检和自动修复机制
 
+## 部署指南
+
+### 一键部署
+
+本项目可以一键部署到Vercel/Netlify平台：
+
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/laoshuikaixue/VoiceHub&env=DATABASE_URL,JWT_SECRET&envDescription=需要配置数据库连接和JWT密钥&envLink=https://github.com/laoshuikaixue/VoiceHub#环境变量说明)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/laoshuikaixue/VoiceHub)
+
+在部署过程中，需要输入必要的环境变量：
+1. `DATABASE_URL`：PostgreSQL数据库连接字符串
+2. `JWT_SECRET`：JWT令牌签名密钥
+
+您可以参考[环境变量说明](#环境变量说明)了解更多详情。
+
+### 其他平台部署
+
+1. 构建生产版本
+   ```bash
+   npm run build
+   ```
+
+2. 设置环境变量
+   确保设置了必要的环境变量（DATABASE_URL和JWT_SECRET）
+
+3. 启动应用
+   ```bash
+   npm run start
+   ```
+
 ## 安装与运行
 
 ### 前提条件
-- Node.js 16+
+- Node.js 20+
 - PostgreSQL数据库
 
 ### 安装步骤
@@ -100,12 +130,15 @@ npm run start
 
 ## 环境变量说明
 
-| 变量名          | 必填 | 说明                          |
-|--------------|----|-----------------------------|
-| DATABASE_URL | 是  | PostgreSQL数据库连接字符串          |
-| JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串        |
-| NODE_ENV     | 否  | 运行环境，development或production |
-| VERCEL       | 否  | 在Vercel环境中自动设置为'1'          |
+| 变量名                          | 必填 | 说明                                |
+|------------------------------|----|-----------------------------------|
+| DATABASE_URL                 | 是  | PostgreSQL数据库连接字符串                |
+| JWT_SECRET                   | 是  | JWT令牌签名密钥，建议使用强随机字符串              |
+| NODE_ENV                     | 否  | 运行环境，development或production       |
+| NITRO_PRESET                 | 否  | Nitro预设，部署到Netlify时自动设置为'netlify' |
+| NUXT_PUBLIC_SITE_TITLE       | 否  | 站点标题，默认为"校园广播站点歌系统"               |
+| NUXT_PUBLIC_SITE_LOGO        | 否  | 站点Logo URL                        |
+| NUXT_PUBLIC_SITE_DESCRIPTION | 否  | 站点描述                              |
 
 ## 项目结构
 
@@ -113,30 +146,81 @@ npm run start
 VoiceHub/
 ├── app.vue                # 应用入口
 ├── assets/                # 静态资源
+│   └── css/               # CSS样式文件
 ├── components/            # 可复用组件
 │   ├── Admin/             # 管理员组件
+│   │   ├── NotificationSender.vue # 通知发送组件
+│   │   ├── PlayTimeManager.vue    # 播放时间管理组件
+│   │   ├── ScheduleForm.vue       # 排期表单组件
+│   │   └── UserManager.vue        # 用户管理组件
 │   ├── Auth/              # 认证相关组件
+│   │   ├── ChangePasswordForm.vue # 修改密码表单
+│   │   └── LoginForm.vue         # 登录表单
 │   ├── Notifications/     # 通知相关组件
+│   │   ├── NotificationIcon.vue   # 通知图标组件
+│   │   └── NotificationSettings.vue # 通知设置组件
 │   ├── Songs/             # 歌曲相关组件
+│   │   ├── RequestForm.vue        # 点歌表单
+│   │   ├── ScheduleList.vue       # 排期列表
+│   │   └── SongList.vue           # 歌曲列表
 │   └── UI/                # 通用UI组件
+│       └── ProgressBar.vue         # 进度条组件
 ├── composables/           # 组合式API函数
+│   ├── useAdmin.ts         # 管理员功能hooks
+│   ├── useAuth.ts          # 认证功能hooks
+│   ├── useNotifications.ts # 通知功能hooks
+│   ├── useProgress.ts      # 进度条功能hooks
+│   ├── useProgressEvents.ts # 进度事件功能hooks
+│   └── useSongs.ts         # 歌曲功能hooks
 ├── pages/                 # 页面组件
+│   ├── change-password.vue # 修改密码页面
+│   ├── dashboard.vue       # 仪表盘页面
+│   ├── index.vue           # 首页
+│   ├── login.vue           # 登录页面
+│   └── notifications.vue   # 通知页面
 ├── plugins/               # 插件
+│   ├── auth.client.ts      # 客户端认证插件
+│   └── prisma.ts           # Prisma插件
 ├── prisma/                # Prisma ORM配置
-│   ├── migrations/        # 数据库迁移
+│   ├── client.ts           # Prisma客户端
+│   ├── migrations/         # 数据库迁移
 │   └── schema.prisma      # 数据库模型
 ├── public/                # 公共资源
+│   ├── favicon.ico         # 网站图标
+│   └── robots.txt          # 爬虫规则
 ├── scripts/               # 工具脚本
-│   ├── check-database.js  # 数据库检查工具
-│   ├── repair-database.js # 数据库修复工具
-│   └── create-admin.js    # 创建管理员账户
+│   ├── check-database.js   # 数据库检查工具
+│   ├── clear-database.js   # 数据库清理工具
+│   ├── create-admin.js     # 创建管理员账户
+│   ├── fix-database-validation.js # 修复数据库验证
+│   ├── package.json        # 脚本依赖配置
+│   └── repair-database.js  # 数据库修复工具
 ├── server/                # 服务端API
-│   ├── api/               # API端点
-│   ├── middleware/        # 中间件
-│   ├── models/            # 服务端模型
-│   ├── plugins/           # 服务端插件
-│   └── services/          # 服务层
-└── types/                 # TypeScript类型定义
+│   ├── api/                # API端点
+│   │   ├── admin/          # 管理员API
+│   │   ├── auth/           # 认证API
+│   │   ├── notifications/  # 通知API
+│   │   ├── play-times/     # 播放时间API
+│   │   ├── progress/       # 进度API
+│   │   └── songs/          # 歌曲API
+│   ├── middleware/         # 中间件
+│   │   └── auth.ts         # 认证中间件
+│   ├── models/             # 服务端模型
+│   │   └── schema.ts       # 数据模型
+│   ├── plugins/            # 服务端插件
+│   │   └── prisma.ts       # Prisma服务端插件
+│   ├── services/           # 服务层
+│   │   └── notificationService.ts # 通知服务
+│   └── tsconfig.json       # 服务端TypeScript配置
+├── types/                 # TypeScript类型定义
+│   └── index.ts            # 全局类型定义
+├── .env                   # 环境变量(需自行创建)
+├── .env.example           # 环境变量示例
+├── netlify.toml           # Netlify部署配置
+├── nuxt.config.ts         # Nuxt配置
+├── package.json           # 项目依赖
+├── tsconfig.json          # TypeScript配置
+└── vercel.json            # Vercel部署配置
 ```
 
 ## 使用说明
@@ -198,35 +282,6 @@ VoiceHub/
    - 创建缺失的管理员账户
    - 为用户添加缺失的通知设置
    - 检查表结构并给出迁移建议
-
-## 部署指南
-
-### Vercel 部署
-
-本项目可以直接部署到Vercel平台：
-
-1. 在Vercel中导入GitHub仓库
-2. 设置环境变量：
-   - `DATABASE_URL`: PostgreSQL数据库连接字符串
-   - `JWT_SECRET`: JWT令牌签名密钥
-3. 部署应用
-
-Vercel环境下，系统会自动执行数据库验证，并在首次部署时初始化数据库。
-
-### 其他平台部署
-
-1. 构建生产版本
-   ```bash
-   npm run build
-   ```
-
-2. 设置环境变量
-   确保设置了必要的环境变量（DATABASE_URL和JWT_SECRET）
-
-3. 启动应用
-   ```bash
-   npm run start
-   ```
 
 ## 常见问题
 
