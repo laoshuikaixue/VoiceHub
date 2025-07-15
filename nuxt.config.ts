@@ -49,6 +49,6 @@ export default defineNuxtConfig({
   
   // 服务器端配置
   nitro: {
-    preset: 'vercel'
+    preset: process.env.NITRO_PRESET || 'vercel'
   }
 })
