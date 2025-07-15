@@ -16,10 +16,10 @@ export const useAuth = () => {
 
       if (storedUser && token) {
         try {
-          const parsedUser = JSON.parse(storedUser) as User
-          user.value = parsedUser
-          isAuthenticated.value = true
-          isAdmin.value = parsedUser.role === 'ADMIN'
+        const parsedUser = JSON.parse(storedUser) as User
+        user.value = parsedUser
+        isAuthenticated.value = true
+        isAdmin.value = parsedUser.role === 'ADMIN'
         } catch (error) {
           // 清除无效的存储数据
           localStorage.removeItem('user')

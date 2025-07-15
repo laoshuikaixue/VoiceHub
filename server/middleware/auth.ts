@@ -44,7 +44,6 @@ export default defineEventHandler(async (event) => {
   try {
     // 检查JWT_SECRET是否设置
     if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET环境变量未设置')
       throw new Error('服务器配置错误：缺少JWT_SECRET')
     }
     
@@ -70,8 +69,6 @@ export default defineEventHandler(async (event) => {
       }
     })
     } catch (schemaError) {
-      console.warn('架构不匹配，使用原始SQL查询:', schemaError)
-      
       // 如果Prisma模型失败，使用原始SQL查询
       const result = await prisma.$queryRaw`
         SELECT id, name, role FROM "User" WHERE id = ${decoded.userId}
@@ -94,10 +91,10 @@ export default defineEventHandler(async (event) => {
       name: user.name,
       role: user.role
     }
-    
+      
     // 检查管理员路径权限
     if (path.startsWith('/api/admin') && user.role !== 'ADMIN') {
-      throw createError({
+        throw createError({
         statusCode: 403,
         message: '需要管理员权限',
       })

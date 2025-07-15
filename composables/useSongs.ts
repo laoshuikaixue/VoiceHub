@@ -55,7 +55,6 @@ export const useSongs = () => {
       return response
     } catch (err: any) {
       error.value = err.message || '获取播放时段失败'
-      console.error('获取播放时段错误:', err)
       return { enabled: false, playTimes: [] }
     } finally {
       loading.value = false
@@ -76,8 +75,6 @@ export const useSongs = () => {
       // 显式传递认证头
       const authHeaders = getAuthHeader()
       
-      console.log('获取歌曲列表，认证头:', authHeaders.headers ? '已设置' : '未设置')
-      
       // 使用fetch代替$fetch，以确保认证头被正确发送
       const response = await fetch('/api/songs', {
         headers: {
@@ -95,7 +92,6 @@ export const useSongs = () => {
       songs.value = data as Song[]
     } catch (err: any) {
       error.value = err.message || '获取歌曲列表失败'
-      console.error('获取歌曲列表错误:', err)
     } finally {
       loading.value = false
     }

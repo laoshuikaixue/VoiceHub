@@ -83,25 +83,25 @@
           
           <div 
             v-for="schedule in schedules" 
-            :key="schedule.id" 
-            class="schedule-card"
-            :class="{ 'played': schedule.song.played }"
-          >
-            <div class="schedule-title-row">
-              <h3 class="song-title">{{ schedule.song.title }} - {{ schedule.song.artist }}</h3>
-              <div class="votes">
-                <span class="vote-count">{{ schedule.song.voteCount }}</span>
-                <span class="vote-label">热度</span>
-              </div>
-            </div>
-            
-            <div class="schedule-meta">
-              <span class="requester">投稿人：{{ schedule.song.requester }}</span>
-              <span class="play-time" :class="{ 'played-status': schedule.song.played }">
-                {{ formatPlayTime(schedule) }}
-              </span>
-            </div>
+        :key="schedule.id" 
+        class="schedule-card"
+        :class="{ 'played': schedule.song.played }"
+      >
+        <div class="schedule-title-row">
+          <h3 class="song-title">{{ schedule.song.title }} - {{ schedule.song.artist }}</h3>
+          <div class="votes">
+            <span class="vote-count">{{ schedule.song.voteCount }}</span>
+            <span class="vote-label">热度</span>
           </div>
+        </div>
+        
+        <div class="schedule-meta">
+          <span class="requester">投稿人：{{ schedule.song.requester }}</span>
+          <span class="play-time" :class="{ 'played-status': schedule.song.played }">
+            {{ formatPlayTime(schedule) }}
+          </span>
+        </div>
+      </div>
         </div>
       </template>
       
@@ -180,12 +180,12 @@ const safeGroupedSchedules = computed(() => {
       const scheduleDate = new Date(schedule.playDate)
       const date = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, '0')}-${String(scheduleDate.getDate()).padStart(2, '0')}`
       
-      if (!groups[date]) {
-        groups[date] = []
-      }
-      groups[date].push(schedule)
+    if (!groups[date]) {
+      groups[date] = []
+    }
+    groups[date].push(schedule)
     } catch (err) {
-      console.error('处理排期日期失败:', err, schedule)
+      // 无需在此处记录错误
     }
   })
   
@@ -274,7 +274,6 @@ const formatDate = (dateStr) => {
     
     return `${year}年${month}月${day}日 ${weekday}`
   } catch (e) {
-    console.error('日期格式化错误:', e, dateStr)
     return dateStr || '未知日期'
   }
 }
@@ -289,7 +288,6 @@ const formatPlayTime = (schedule) => {
       return "已排期"
     }
   } catch (e) {
-    console.error('时间格式化错误:', e)
     return '时间未定'
   }
 }
@@ -351,7 +349,7 @@ const getPlayTimeById = (id) => {
       }
     }
   } catch (err) {
-    console.error('解析播放时段ID失败:', err);
+    // 无需在此处记录错误
   }
   
   return null;

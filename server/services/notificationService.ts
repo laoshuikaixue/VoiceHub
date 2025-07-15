@@ -62,7 +62,6 @@ export async function createSongSelectedNotification(
     
     return notification
   } catch (err) {
-    console.error('创建歌曲被选中通知失败:', err)
     return null
   }
 }
@@ -89,7 +88,6 @@ export async function createSongPlayedNotification(songId: number) {
     })
     
     if (!song) {
-      console.error(`无法为ID为${songId}的歌曲创建通知：歌曲不存在`)
       return null
     }
     
@@ -117,7 +115,6 @@ export async function createSongPlayedNotification(songId: number) {
     
     return notification
   } catch (err) {
-    console.error('创建歌曲已播放通知失败:', err)
     return null
   }
 }
@@ -138,7 +135,6 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
     })
     
     if (!song) {
-      console.error(`无法为ID为${songId}的歌曲创建通知：歌曲不存在`)
       return null
     }
     
@@ -150,7 +146,6 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
     })
     
     if (!voter) {
-      console.error(`无法为ID为${voterId}的用户创建通知：用户不存在`)
       return null
     }
     
@@ -183,7 +178,6 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
     
     return notification
   } catch (err) {
-    console.error('创建歌曲获得投票通知失败:', err)
     return null
   }
 }
@@ -216,7 +210,6 @@ export async function createSystemNotification(userId: number, title: string, co
     
     return notification
   } catch (err) {
-    console.error('创建系统通知失败:', err)
     return null
   }
 } 
@@ -231,7 +224,6 @@ export async function createBatchSystemNotifications(
 ) {
   try {
     if (!userIds.length) {
-      console.warn('没有可发送通知的用户')
       return []
     }
     
@@ -281,7 +273,6 @@ export async function createBatchSystemNotifications(
       total: userIds.length
     }
   } catch (err) {
-    console.error('批量创建系统通知失败:', err)
     return null
   }
 } 

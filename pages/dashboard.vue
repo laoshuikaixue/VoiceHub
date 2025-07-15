@@ -210,7 +210,7 @@
                       <a href="#" @click.prevent="currentPlayTimeId = ''">查看所有时段</a>
                     </span>
                     <span v-else>
-                      将歌曲拖到此处安排播放顺序
+                    将歌曲拖到此处安排播放顺序
                     </span>
                   </div>
                   <div 
@@ -512,52 +512,52 @@ onMounted(async () => {
       console.log('恢复上次选择的播放时段:', lastSelectedPlayTimeId)
       currentPlayTimeId.value = lastSelectedPlayTimeId
     }
-    
-    // 加载数据
-    await songsService.fetchSongs()
+  
+  // 加载数据
+  await songsService.fetchSongs()
     
     scheduleLoading.value = true
     try {
-      await songsService.fetchPublicSchedules()
-      
-      // 更新本地引用
-      songs.value = songsService.songs.value
-      publicSchedules.value = songsService.publicSchedules.value
-      
-      // 初始化本地排期数据
-      updateLocalScheduledSongs()
+  await songsService.fetchPublicSchedules()
+  
+  // 更新本地引用
+  songs.value = songsService.songs.value
+  publicSchedules.value = songsService.publicSchedules.value
+  
+  // 初始化本地排期数据
+  updateLocalScheduledSongs()
     } catch (scheduleError) {
       showNotification('加载排期数据失败: ' + (scheduleError.message || '未知错误'), 'error')
     } finally {
       scheduleLoading.value = false
     }
+  
+  // 初始化日期选择器滚动状态
+  nextTick(() => {
+    updateScrollButtonState()
     
-    // 初始化日期选择器滚动状态
-    nextTick(() => {
-      updateScrollButtonState()
+    // 确保空排期列表也能接收拖拽
+    if (sequenceList.value) {
+      // 使用事件委托，确保只有在列表为空时才处理
+      sequenceList.value.addEventListener('dragover', (e) => {
+        // 只有当列表为空或者直接拖到列表上时才处理
+        if (localScheduledSongs.value.length === 0 || e.target === sequenceList.value) {
+          e.preventDefault()
+          isSequenceOver.value = true
+        }
+      })
       
-      // 确保空排期列表也能接收拖拽
-      if (sequenceList.value) {
-        // 使用事件委托，确保只有在列表为空时才处理
-        sequenceList.value.addEventListener('dragover', (e) => {
-          // 只有当列表为空或者直接拖到列表上时才处理
-          if (localScheduledSongs.value.length === 0 || e.target === sequenceList.value) {
-            e.preventDefault()
-            isSequenceOver.value = true
-          }
-        })
-        
-        sequenceList.value.addEventListener('drop', (e) => {
-          // 只有当列表为空或者直接拖到列表上时才处理
-          if ((localScheduledSongs.value.length === 0 || e.target === sequenceList.value) && 
-              !e.target.closest('.scheduled-song')) {
-            e.preventDefault()
-            e.stopPropagation() // 阻止事件冒泡，防止重复处理
-            dropToSequence(e)
-          }
-        })
-      }
-    })
+      sequenceList.value.addEventListener('drop', (e) => {
+        // 只有当列表为空或者直接拖到列表上时才处理
+        if ((localScheduledSongs.value.length === 0 || e.target === sequenceList.value) && 
+            !e.target.closest('.scheduled-song')) {
+          e.preventDefault()
+          e.stopPropagation() // 阻止事件冒泡，防止重复处理
+          dropToSequence(e)
+        }
+      })
+    }
+  })
   } catch (error) {
     showNotification('初始化失败: ' + (error.message || '未知错误'), 'error')
     console.error('初始化失败:', error)
@@ -594,21 +594,21 @@ const updateLocalScheduledSongs = () => {
       if (!s.playDate) return false
       const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
       return scheduleDateStr === selectedDate.value
-    })
-    
+  })
+  
     // 更新本地排期数据
     localScheduledSongs.value = todaySchedules.map(s => ({
       ...s,
       playTimeId: s.playTimeId || null // 确保playTimeId存在，如果没有则为null
     }))
-    
+  
     // 更新已排期ID集合 - 包含所有日期的排期歌曲ID
     // 这样可以确保已经排期的歌曲不会出现在待排歌曲列表中
-    scheduledSongIds.value = new Set(
-      publicSchedules.value
+  scheduledSongIds.value = new Set(
+    publicSchedules.value
         .filter(s => s.song && s.song.id)
-        .map(s => s.song.id)
-    )
+      .map(s => s.song.id)
+  )
     
     console.log('已排期歌曲IDs:', Array.from(scheduledSongIds.value))
     
@@ -1208,7 +1208,7 @@ const saveSequence = async () => {
     const existingScheduleMap = new Map()
     existingSchedules.forEach(schedule => {
       existingScheduleMap.set(schedule.song.id, schedule)
-    })
+        })
     
     // 创建新的排期，确保按顺序创建
     for (let i = 0; i < localScheduledSongs.value.length; i++) {
