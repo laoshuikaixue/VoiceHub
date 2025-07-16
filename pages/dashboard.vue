@@ -5,7 +5,7 @@
       <div class="dashboard-header glass">
           <div class="header-left">
             <NuxtLink to="/" class="logo-link">
-              <h2 class="logo">VoiceHub</h2>
+              <img src="/images/logo.svg" alt="VoiceHub Logo" class="admin-logo-image" />
             </NuxtLink>
         <h1>后台管理系统</h1>
           </div>
@@ -1788,14 +1788,17 @@ const handleSystemSettingsChange = async (settings) => {
 
 .logo-link {
   text-decoration: none;
-  color: var(--light);
-  font-size: 1.5rem;
-  font-weight: bold;
-  transition: color 0.3s ease;
+  transition: opacity 0.3s ease;
 }
 
 .logo-link:hover {
-  color: var(--primary);
+  opacity: 0.8;
+}
+
+.admin-logo-image {
+  width: 120px;
+  height: auto;
+  object-fit: contain;
 }
 
 .logo {

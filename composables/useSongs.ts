@@ -151,15 +151,31 @@ export const useSongs = () => {
     try {
       const data = await $fetch('/api/songs/public')
       
-      // 确保每个排期的歌曲都有played属性
-      const processedData = data.map((schedule: Schedule) => {
+      // 确保每个排期的歌曲都有played属性，并处理null/undefined转换
+      const processedData = data.map((schedule: any) => {
+        // 处理歌曲属性
         if (schedule.song && schedule.song.played === undefined) {
           schedule.song.played = false
         }
-        return schedule
+        
+        // 处理播放时间属性
+        let processedPlayTime = null
+        if (schedule.playTime) {
+          processedPlayTime = {
+            ...schedule.playTime,
+            startTime: schedule.playTime.startTime || undefined,
+            endTime: schedule.playTime.endTime || undefined
+          }
+        }
+        
+        // 返回符合Schedule类型的对象
+        return {
+          ...schedule,
+          playTime: processedPlayTime
+        } as Schedule
       })
       
-      publicSchedules.value = processedData as Schedule[]
+      publicSchedules.value = processedData
       
       // 同时从排期中提取歌曲信息
       await fetchPublicSongs()
@@ -267,6 +283,12 @@ export const useSongs = () => {
           headers: authHeaders.headers
         })
         
+        // 立即更新本地歌曲的投票状态
+        if (targetSong) {
+          targetSong.voted = true
+          targetSong.voteCount = (targetSong.voteCount || 0) + 1
+        }
+        
         // 不再显示通知，由调用方处理
         return data
       } catch (fetchErr: any) {
@@ -276,6 +298,12 @@ export const useSongs = () => {
         // 如果是已投票错误，只显示通知，不抛出异常
         if (errorMsg.includes('已经为这首歌投过票')) {
           showNotification('您已经为这首歌投过票了', 'info')
+          
+          // 如果API返回已投票错误，也更新本地状态
+          if (targetSong && !targetSong.voted) {
+            targetSong.voted = true
+          }
+          
           return null
         }
         

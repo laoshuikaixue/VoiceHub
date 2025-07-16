@@ -24,7 +24,8 @@ export default defineEventHandler(async (event) => {
       },
       votes: {
         select: {
-          id: true
+          id: true,
+          userId: true
         }
       },
       _count: {
@@ -98,6 +99,9 @@ export default defineEventHandler(async (event) => {
       }
     }
     
+    // 检查当前用户是否已对该歌曲投票
+    const voted = song.votes.some(vote => vote.userId === user.id)
+    
     // 创建基本歌曲对象
     const songObject: any = {
       id: song.id,
@@ -111,7 +115,8 @@ export default defineEventHandler(async (event) => {
       semester: song.semester,
       createdAt: song.createdAt,
       requestedAt: song.createdAt.toLocaleString(), // 添加请求时间的格式化字符串
-      scheduled: song.schedules.length > 0 // 添加是否已排期的标志
+      scheduled: song.schedules.length > 0, // 添加是否已排期的标志
+      voted: voted // 添加当前用户是否已投票的标志
     }
     
     // 只对管理员用户添加期望播放时段相关字段

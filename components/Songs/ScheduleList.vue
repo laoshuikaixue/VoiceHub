@@ -1,143 +1,165 @@
 <template>
   <div class="schedule-list">
-    <div class="schedule-header flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold">播出排期</h2>
-      
-      <div v-if="!loading && Object.keys(safeGroupedSchedules).length" class="date-nav flex items-center gap-2">
-        <button 
-          @click="previousDate" 
-          class="nav-button"
-          :disabled="currentDateIndex <= 0"
-        >
-          &lt;
-        </button>
-        <div class="date-display" @click="showDatePicker = true">
-          {{ currentDateFormatted }}
-          <span class="date-picker-icon">▼</span>
+    <!-- 两列布局：左侧日期选择，右侧排期展示 -->
+    <div class="schedule-container">
+      <!-- 左侧日期选择列表 - 移除标题和框 -->
+      <div class="date-selector">
+        <!-- 添加移动端日期导航按钮 -->
+        <div class="mobile-date-nav">
+          <button 
+            class="date-nav-btn prev"
+            @click="previousDate"
+            :disabled="currentDateIndex === 0"
+          >
+            <span>◀</span>
+          </button>
+          <div 
+            class="current-date-mobile" 
+            v-html="currentDateFormatted"
+            @click="toggleDatePicker"
+          ></div>
+          <button 
+            class="date-nav-btn next"
+            @click="nextDate"
+            :disabled="currentDateIndex >= availableDates.length - 1"
+          >
+            <span>▶</span>
+          </button>
         </div>
-        <button 
-          @click="nextDate" 
-          class="nav-button"
-          :disabled="currentDateIndex >= availableDates.length - 1"
-        >
-          &gt;
-        </button>
-      </div>
-    </div>
-    
-    <!-- 日期选择器弹窗 -->
-    <div v-if="showDatePicker" class="date-picker-overlay" @click.self="showDatePicker = false">
-      <div class="date-picker-container">
-        <div class="date-picker-header">
-          <h3>选择日期</h3>
-          <button @click="showDatePicker = false" class="close-btn">×</button>
-        </div>
-        <div class="date-picker-content">
+        
+        <!-- 添加移动端日期选择弹窗 -->
+        <Transition name="date-picker-fade">
+          <div v-if="showDatePicker" class="date-picker-modal">
+            <div class="date-picker-overlay" @click="showDatePicker = false"></div>
+            <div class="date-picker-content">
+              <div class="date-picker-header">
+                <h3>选择日期</h3>
+                <button class="close-btn" @click="showDatePicker = false">×</button>
+              </div>
+              <div class="date-picker-list">
+                <div 
+                  v-for="(date, index) in availableDates" 
+                  :key="date"
+                  :class="['date-picker-item', { 'active': currentDateIndex === index }]"
+                  @click="selectDateAndClose(index)"
+                  v-html="formatDate(date, false)"
+                  v-ripple
+                >
+                </div>
+                
+                <div v-if="availableDates.length === 0" class="empty-dates">
+                  暂无排期日期
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+        
+        <!-- 桌面端日期列表 -->
+        <div class="date-list">
           <div 
             v-for="(date, index) in availableDates" 
             :key="date"
-            :class="['date-option', { active: currentDateIndex === index }]"
+            :class="['date-item', { 'active': currentDateIndex === index }]"
             @click="selectDate(index)"
+            v-html="formatDate(date)"
+            v-ripple
           >
-            {{ formatDate(date) }}
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div v-if="loading" class="loading">
-      加载中...
-    </div>
-    
-    <div v-else-if="error" class="error">
-      {{ error }}
-    </div>
-    
-    <div v-else-if="!schedules || schedules.length === 0" class="empty">
-      <div class="icon mb-4">🎵</div>
-      <p>暂无排期信息</p>
-      <p class="text-sm text-gray">点歌后等待管理员安排播出时间</p>
-    </div>
-    
-    <div v-else-if="currentDateSchedules.length === 0" class="empty">
-      <div class="icon mb-4">📅</div>
-      <p>当前日期暂无排期</p>
-      <div class="mt-4">
-        <button @click="resetDate" class="btn btn-outline">查看全部日期</button>
-      </div>
-    </div>
-    
-    <div v-else class="schedule-items">
-      <!-- 按播出时段分组显示 -->
-      <template v-if="schedulesByPlayTime && Object.keys(schedulesByPlayTime).length > 0">
-        <div v-for="(schedules, playTimeId) in schedulesByPlayTime" :key="playTimeId" class="playtime-group">
-          <div class="playtime-header" v-if="shouldShowPlayTimeHeader(playTimeId)">
-            <h4 v-if="playTimeId === 'null'">未指定时段</h4>
-            <h4 v-else-if="getPlayTimeById(playTimeId)">
-              {{ getPlayTimeById(playTimeId).name }}
-              <span class="playtime-time" v-if="getPlayTimeById(playTimeId).startTime || getPlayTimeById(playTimeId).endTime">
-                ({{ formatPlayTimeRange(getPlayTimeById(playTimeId)) }})
-              </span>
-            </h4>
           </div>
           
-          <div 
-            v-for="schedule in schedules" 
-        :key="schedule.id" 
-        class="schedule-card"
-        :class="{ 'played': schedule.song.played }"
-      >
-        <div class="schedule-title-row">
-          <h3 class="song-title">{{ schedule.song.title }} - {{ schedule.song.artist }}</h3>
-          <div class="votes">
-            <span class="vote-count">{{ schedule.song.voteCount }}</span>
-            <span class="vote-label">热度</span>
+          <div v-if="availableDates.length === 0" class="empty-dates">
+            暂无排期日期
           </div>
+        </div>
+        <!-- 添加滚动指示器 -->
+        <div class="scroll-indicator-container">
+          <div class="scroll-indicator"></div>
+        </div>
+      </div>
+      
+      <!-- 分隔线 - 添加径向渐变效果 -->
+      <div class="vertical-divider"></div>
+      
+      <!-- 右侧排期内容 -->
+      <div class="schedule-content">
+        <div class="schedule-header">
+          <h2 class="current-date" v-html="currentDateFormatted"></h2>
         </div>
         
-        <div class="schedule-meta">
-          <span class="requester">投稿人：{{ schedule.song.requester }}</span>
-          <span class="play-time" :class="{ 'played-status': schedule.song.played }">
-            {{ formatPlayTime(schedule) }}
-          </span>
-        </div>
+        <!-- 使用Transition组件包裹内容 -->
+        <Transition name="schedule-fade" mode="out-in">
+          <div v-if="loading" class="loading" key="loading">
+            加载中...
+          </div>
+
+          <div v-else-if="error" class="error" key="error">
+            {{ error }}
+          </div>
+
+          <div v-else-if="!schedules || schedules.length === 0" class="empty" key="empty-all">
+            <div class="icon mb-4">🎵</div>
+            <p>暂无排期信息</p>
+            <p class="text-sm text-gray">点歌后等待管理员安排播出时间</p>
+          </div>
+
+          <div v-else-if="currentDateSchedules.length === 0" class="empty" key="empty-date">
+            <div class="icon mb-4">📅</div>
+            <p>当前日期暂无排期</p>
+            <p>请选择其他日期查看</p>
+          </div>
+
+          <div v-else class="schedule-items" :key="currentDate">
+            <!-- 按播出时段分组显示 -->
+            <template v-if="schedulesByPlayTime && Object.keys(schedulesByPlayTime).length > 0">
+              <div v-for="(schedules, playTimeId) in schedulesByPlayTime" :key="playTimeId" class="playtime-group">
+                <div class="playtime-header" v-if="shouldShowPlayTimeHeader(playTimeId)">
+                  <h4 v-if="playTimeId === 'null'">未指定时段</h4>
+                  <h4 v-else-if="getPlayTimeById(playTimeId)">
+                    {{ getPlayTimeById(playTimeId).name }}
+                    <span class="playtime-time" v-if="getPlayTimeById(playTimeId).startTime || getPlayTimeById(playTimeId).endTime">
+                      ({{ formatPlayTimeRange(getPlayTimeById(playTimeId)) }})
+                    </span>
+                  </h4>
+                </div>
+
+                <div class="song-cards">
+                  <div
+                    v-for="schedule in schedules"
+                    :key="schedule.id"
+                    class="song-card"
+                    :class="{ 'played': schedule.song.played }"
+                  >
+                    <div class="song-card-main">
+                      <div class="song-info">
+                        <h3 class="song-title" :title="schedule.song.title + ' - ' + schedule.song.artist">
+                          {{ schedule.song.title }} - {{ schedule.song.artist }}
+                        </h3>
+                        <div class="song-meta">
+                          <span class="requester">投稿人：{{ schedule.song.requester }}</span>
+                        </div>
+                      </div>
+                      
+                      <!-- 热度展示 -->
+                      <div class="action-area">
+                        <div class="vote-count">
+                          <span class="count">{{ schedule.song.voteCount }}</span>
+                          <span class="label">热度</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </Transition>
       </div>
-        </div>
-      </template>
-      
-      <!-- 不分组显示（兼容旧版） -->
-      <template v-else>
-        <div 
-          v-for="schedule in currentDateSchedules" 
-          :key="schedule.id" 
-          class="schedule-card"
-          :class="{ 'played': schedule.song.played }"
-        >
-          <div class="schedule-title-row">
-            <h3 class="song-title">{{ schedule.song.title }} - {{ schedule.song.artist }}</h3>
-            <div class="votes">
-              <span class="vote-count">{{ schedule.song.voteCount }}</span>
-              <span class="vote-label">热度</span>
-            </div>
-          </div>
-          
-          <div class="schedule-meta">
-            <span class="requester">投稿人：{{ schedule.song.requester }}</span>
-            <span v-if="schedule.playTime" class="play-time">
-              {{ formatPlayTimeRange(schedule.playTime) }}
-            </span>
-            <span class="play-time" :class="{ 'played-status': schedule.song.played }">
-              {{ formatPlayTime(schedule) }}
-            </span>
-          </div>
-        </div>
-      </template>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 
 const props = defineProps({
@@ -167,19 +189,19 @@ const showDatePicker = ref(false)
 // 按日期分组排期
 const safeGroupedSchedules = computed(() => {
   const groups = {}
-  
+
   if (!safeSchedules.value || !safeSchedules.value.length) {
     return {}
   }
-  
+
   safeSchedules.value.forEach(schedule => {
     if (!schedule || !schedule.playDate) return
-    
+
     try {
       // 使用UTC时间处理日期
       const scheduleDate = new Date(schedule.playDate)
       const date = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, '0')}-${String(scheduleDate.getDate()).padStart(2, '0')}`
-      
+
     if (!groups[date]) {
       groups[date] = []
     }
@@ -188,13 +210,13 @@ const safeGroupedSchedules = computed(() => {
       // 无需在此处记录错误
     }
   })
-  
+
   // 按日期排序
   const sortedGroups = {}
   Object.keys(groups).sort().forEach(date => {
     sortedGroups[date] = groups[date]
   })
-  
+
   return sortedGroups
 })
 
@@ -214,7 +236,7 @@ const currentDate = computed(() => {
 // 格式化当前日期
 const currentDateFormatted = computed(() => {
   if (!currentDate.value) return '无日期'
-  return formatDate(currentDate.value)
+  return formatDate(currentDate.value, isMobile.value)
 })
 
 // 当前日期的排期
@@ -243,40 +265,80 @@ const selectDate = (index) => {
   showDatePicker.value = false
 }
 
+// 切换日期选择器显示状态
+const toggleDatePicker = () => {
+  showDatePicker.value = !showDatePicker.value
+}
+
+// 选择日期并关闭弹窗
+const selectDateAndClose = (index) => {
+  currentDateIndex.value = index
+  showDatePicker.value = false
+}
+
 // 重置日期到第一天
 const resetDate = () => {
   currentDateIndex.value = 0
 }
 
 // 格式化日期
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, isMobile = false) => {
   try {
     // 解析日期字符串
     const parts = dateStr.split('-')
     if (parts.length !== 3) {
       throw new Error('无效的日期格式')
     }
-    
+
     const year = parseInt(parts[0])
     const month = parseInt(parts[1])
     const day = parseInt(parts[2])
-    
+
     // 创建日期对象
     const date = new Date(year, month - 1, day)
-    
+
     // 检查日期是否有效
     if (isNaN(date.getTime())) {
       throw new Error('无效的日期')
     }
-    
+
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
     const weekday = weekdays[date.getDay()]
-    
-    return `${year}年${month}月${day}日 ${weekday}`
+
+    // 移动端显示更紧凑的格式
+    if (isMobile) {
+      return `${month}月${day}日 ${weekday}`
+    }
+
+    return `${year}年${month}月${day}日\n<span class="weekday">${weekday}</span>`
   } catch (e) {
     return dateStr || '未知日期'
   }
 }
+
+// 添加窗口大小变化监听
+let resizeTimer = null
+const isMobile = ref(window.innerWidth <= 768)
+
+// 定义窗口大小变化处理函数
+const handleResize = () => {
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => {
+    isMobile.value = window.innerWidth <= 768
+  }, 100)
+}
+
+// 监听窗口大小变化
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+  // 初始化移动状态
+  isMobile.value = window.innerWidth <= 768
+})
+
+// 组件销毁前移除事件监听器
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
 
 // 格式化播放时间
 const formatPlayTime = (schedule) => {
@@ -297,15 +359,15 @@ const schedulesByPlayTime = computed(() => {
   if (!currentDateSchedules.value || currentDateSchedules.value.length === 0) {
     return null;
   }
-  
+
   const grouped = {};
-  
+
   // 先对排期按时段和序号排序
   const sortedSchedules = [...currentDateSchedules.value].sort((a, b) => {
     // 先按时段分组，确保转换为字符串
     const playTimeIdA = a.playTimeId !== null && a.playTimeId !== undefined ? String(a.playTimeId) : 'null';
     const playTimeIdB = b.playTimeId !== null && b.playTimeId !== undefined ? String(b.playTimeId) : 'null';
-    
+
     if (playTimeIdA !== playTimeIdB) {
       // 未指定时段排在最后
       if (playTimeIdA === 'null') return 1;
@@ -313,34 +375,34 @@ const schedulesByPlayTime = computed(() => {
       // 使用数字比较而不是字符串比较
       return parseInt(playTimeIdA) - parseInt(playTimeIdB);
     }
-    
+
     // 时段相同则按序号排序
     return a.sequence - b.sequence;
   });
-  
+
   // 分组
   for (const schedule of sortedSchedules) {
     // 确保正确处理播放时段ID
     const playTimeId = schedule.playTimeId !== null && schedule.playTimeId !== undefined ? String(schedule.playTimeId) : 'null';
-    
+
     if (!grouped[playTimeId]) {
       grouped[playTimeId] = [];
     }
-    
+
     grouped[playTimeId].push(schedule);
   }
-  
+
   return grouped;
 });
 
 // 根据ID获取播出时段信息
 const getPlayTimeById = (id) => {
   if (id === 'null') return null;
-  
+
   try {
     const numId = parseInt(id);
     if (isNaN(numId)) return null;
-    
+
     // 从排期中查找
     for (const schedule of currentDateSchedules.value) {
       // 确保正确比较
@@ -351,14 +413,14 @@ const getPlayTimeById = (id) => {
   } catch (err) {
     // 无需在此处记录错误
   }
-  
+
   return null;
 };
 
 // 格式化播出时段时间范围
 const formatPlayTimeRange = (playTime) => {
   if (!playTime) return '';
-  
+
   if (playTime.startTime && playTime.endTime) {
     return `${playTime.startTime} - ${playTime.endTime}`;
   } else if (playTime.startTime) {
@@ -366,7 +428,7 @@ const formatPlayTimeRange = (playTime) => {
   } else if (playTime.endTime) {
     return `${playTime.endTime} 结束`;
   }
-  
+
   return '不限时间';
 };
 
@@ -378,89 +440,187 @@ const shouldShowPlayTimeHeader = (playTimeId) => {
   }
   return true; // 显示其他所有时段
 };
+
+// 波纹效果指令
+const vRipple = {
+  mounted(el) {
+    el.addEventListener('click', e => {
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple-effect';
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      
+      el.appendChild(ripple);
+      
+      setTimeout(() => {
+        ripple.remove();
+      }, 600); // 与CSS动画时间一致
+    });
+  }
+};
 </script>
 
 <style scoped>
 .schedule-list {
-  width: 100%;
+  width: 100% !important;
   position: relative;
+  box-sizing: border-box;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+}
+
+/* 两列布局容器 */
+.schedule-container {
+  display: flex;
+  gap: 0; /* 移除间隙，使用分隔线 */
+  width: 100% !important;
+  box-sizing: border-box;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+}
+
+/* 左侧日期选择器 - 移除背景和边框 */
+.date-selector {
+  width: 200px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.date-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* 增强日期项目样式 */
+.date-item {
+  padding: 0.8rem 1rem;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  white-space: pre-line;
+  text-align: left;
+  line-height: 1.4;
+  position: relative;
+  overflow: hidden;
+}
+
+.date-item:hover {
+  background: #21242D;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.date-item.active {
+  background: #21242D;
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(11, 90, 254, 0.2);
+  border-left: 3px solid #0B5AFE;
+}
+
+.empty-dates {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.weekday {
+  display: block;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+/* 垂直分隔线 - 添加径向渐变效果 */
+.vertical-divider {
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    rgba(217, 217, 217, 0) 0%,
+    rgba(217, 217, 217, 0.5) 50%,
+    rgba(217, 217, 217, 0) 100%
+  );
+  margin: 0 1.5rem;
+  position: relative;
+}
+
+/* 右侧排期内容 */
+.schedule-content {
+  flex: 1;
+  min-width: 0;
+  max-width: calc(100% - 250px); /* 缩小右侧内容区域宽度 */
 }
 
 .schedule-header {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.schedule-header h2 {
-  margin: 0;
-  color: var(--light);
-}
-
-.date-nav {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.nav-button {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--gray);
-  transition: all 0.3s ease;
-}
-
-.nav-button:hover:not([disabled]) {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.nav-button[disabled] {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.date-display {
-  min-width: 180px;
-  text-align: center;
+.current-date {
+  font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  padding: 0.5rem 1rem;
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.3s ease;
+  font-size: 20px;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+/* 加载和错误状态 */
+.loading {
+  padding: 3rem;
+  text-align: center;
+  border-radius: 10px;
+  background: #21242D;
+  margin: 1rem 0;
+  color: rgba(255, 255, 255, 0.6);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
 }
 
-.date-display:hover {
-  background: rgba(30, 41, 59, 0.6);
-  border-color: rgba(255, 255, 255, 0.2);
+.loading::before {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 1rem;
+  border-radius: 50%;
+  border: 3px solid rgba(11, 90, 254, 0.2);
+  border-top-color: #0B5AFE;
+  animation: spin 1s linear infinite;
 }
 
-.date-picker-icon {
-  font-size: 0.75rem;
-  opacity: 0.6;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-.loading, .error, .empty {
+.error, .empty {
   padding: 2rem;
   text-align: center;
-  border-radius: 0.5rem;
-  background: rgba(30, 41, 59, 0.4);
+  border-radius: 10px;
+  background: #21242D;
   margin: 1rem 0;
-  color: var(--light);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .error {
-  color: var(--danger);
+  color: #ef4444;
 }
 
 .empty .icon {
@@ -468,101 +628,466 @@ const shouldShowPlayTimeHeader = (playTimeId) => {
   opacity: 0.5;
 }
 
-.schedule-items {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-  width: 100%; /* 确保宽度一致 */
+/* 排期时段分组 */
+.playtime-group {
+  margin-bottom: 2rem;
 }
 
-.schedule-card {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  transition: all 0.3s ease;
-  width: 100%; /* 确保宽度一致 */
-  box-sizing: border-box; /* 确保内边距不会增加元素总宽度 */
+.playtime-header h4 {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 1rem 0;
 }
 
-.schedule-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(99, 102, 241, 0.3);
+.playtime-time {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-left: 0.5rem;
 }
 
-.schedule-card.played {
-  border-color: rgba(16, 185, 129, 0.3);
-}
-
-.schedule-title-row {
+/* 歌曲卡片样式 - 匹配 SongList 样式 */
+.song-cards {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.song-card {
+  width: calc(33.33% - 0.67rem);
+  background: #21242D;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.song-card-main {
+  padding: 1rem;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  position: relative;
+  height: 80px;
+}
+
+.song-card.played {
+  opacity: 0.6;
+}
+
+.song-info {
+  width: 70%;
 }
 
 .song-title {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--light);
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: #FFFFFF;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 70%;
 }
 
-.schedule-meta {
+.song-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 0.75rem;
-  color: var(--gray);
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
 
-.votes {
+.requester {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* 热度样式 */
+.action-area {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 0.5rem;
 }
 
 .vote-count {
-  font-size: 1rem;
-  font-weight: bold;
-  color: var(--primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.vote-label {
-  font-size: 0.75rem;
-  color: var(--gray);
+.vote-count .count {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: #0B5AFE;
+  text-shadow: 0px 20px 30px rgba(0, 114, 248, 0.5), 
+               0px 8px 15px rgba(0, 114, 248, 0.5),
+               0px 4px 10px rgba(0, 179, 248, 0.3), 
+               0px 2px 10px rgba(0, 179, 248, 0.2), 
+               inset 3px 3px 10px rgba(255, 255, 255, 0.4), 
+               inset -1px -1px 15px rgba(255, 255, 255, 0.4);
 }
 
-.played-status {
-  color: var(--success);
+.vote-count .label {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #FFFFFF;
+  opacity: 0.4;
 }
 
-/* 日期选择器样式 */
-.date-picker-overlay {
+/* 响应式适配 */
+@media (max-width: 768px) {
+  .schedule-list {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden;
+  }
+  
+  .schedule-container {
+    flex-direction: column;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .date-selector {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 1rem;
+    padding: 0 !important;
+  }
+  
+  /* 显示移动端日期导航 */
+  .mobile-date-nav {
+    display: flex !important;
+    width: 100% !important;
+    position: relative;
+    z-index: 10;
+    box-sizing: border-box;
+    max-width: 100% !important;
+    min-width: auto !important;
+    margin: 0 !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 10px !important;
+  }
+  
+  /* 隐藏桌面端日期列表，但确保元素存在 */
+  .date-list {
+    height: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    position: absolute;
+  }
+  
+  .scroll-indicator-container {
+    display: none;
+  }
+  
+  .mobile-scroll-hint {
+    display: none;
+  }
+  
+  .vertical-divider {
+    display: none;
+  }
+  
+  .schedule-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+  }
+  
+  .schedule-header {
+    display: none; /* 隐藏桌面端日期标题 */
+  }
+  
+  .song-card {
+    width: 100%;
+  }
+  
+  /* 修复歌曲卡片布局 */
+  .song-card-main {
+    height: auto;
+    min-height: 70px;
+    padding: 0.75rem;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  
+  .song-info {
+    width: 75%;
+  }
+  
+  .action-area {
+    position: static;
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .playtime-header h4 {
+    font-size: 15px;
+    text-align: center;
+  }
+  
+  /* 确保加载状态在移动端正确显示 */
+  .loading, .error, .empty {
+    padding: 2rem 1rem;
+    width: 100%;
+  }
+}
+
+/* 小屏幕设备额外优化 */
+@media (max-width: 480px) {
+  .current-date-mobile {
+    font-size: 14px;
+  }
+  
+  .date-nav-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  /* 移动端日期导航强化样式 */
+  .mobile-date-nav {
+    background: linear-gradient(135deg, #21242D 0%, #2C3039 100%);
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+    border-radius: 10px !important;
+  }
+  
+  .song-info {
+    width: 70%;
+  }
+  
+  .song-title {
+    font-size: 14px;
+  }
+  
+  .requester {
+    font-size: 11px;
+  }
+  
+  .vote-count .count {
+    font-size: 18px;
+  }
+  
+  .vote-count .label {
+    font-size: 10px;
+  }
+}
+
+/* 添加日期切换过渡动画 */
+.schedule-fade-enter-active,
+.schedule-fade-leave-active {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.schedule-fade-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.schedule-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+/* 波纹效果样式 */
+.ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(0);
+  animation: ripple 0.6s linear;
+  pointer-events: none;
+  width: 100px;
+  height: 100px;
+  margin-left: -50px;
+  margin-top: -50px;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* 左侧日期选择器 - 移除背景和边框 */
+.date-selector {
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.date-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* 移动端滑动提示 */
+.mobile-scroll-hint {
+  display: none;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.5rem;
+}
+
+/* 滚动指示器 */
+.scroll-indicator-container {
+  display: none;
+  width: 100%;
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin-top: 0.5rem;
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.scroll-indicator {
+  height: 100%;
+  width: 20%;
+  background-color: rgba(11, 90, 254, 0.6);
+  border-radius: 1px;
+  animation: scroll-hint 1.5s infinite;
+}
+
+@keyframes scroll-hint {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(400%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* 移动端日期导航 */
+.mobile-date-nav {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  background: #21242D;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  min-width: 100%;
+}
+
+.date-nav-btn {
+  background: rgba(11, 90, 254, 0.1);
+  border: 1px solid rgba(11, 90, 254, 0.2);
+  color: #FFFFFF;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.date-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.date-nav-btn:hover:not(:disabled) {
+  background: rgba(11, 90, 254, 0.2);
+}
+
+.current-date-mobile {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #FFFFFF;
+  text-align: center;
+  flex: 1;
+  white-space: pre-line;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.current-date-mobile:after {
+  content: "▼";
+  font-size: 10px;
+  opacity: 0.7;
+  margin-left: 5px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.current-date-mobile:hover {
+  color: #0B5AFE;
+}
+
+/* 日期选择器弹窗样式 */
+.date-picker-modal {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(3px);
-  z-index: 1000;
+  z-index: 100;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 }
 
-.date-picker-container {
-  background: rgba(30, 41, 59, 0.95);
+.date-picker-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+.date-picker-content {
+  position: relative;
+  width: 85%;
+  max-width: 350px;
+  max-height: 70vh;
+  background: #1A1D24;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
-  width: 90%;
-  max-width: 400px;
-  max-height: 80vh;
   overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: scale-in 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .date-picker-header {
@@ -575,85 +1100,67 @@ const shouldShowPlayTimeHeader = (playTimeId) => {
 
 .date-picker-header h3 {
   margin: 0;
-  color: var(--light);
-  font-size: 1.25rem;
+  font-size: 16px;
+  color: white;
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: var(--gray);
-  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 22px;
   cursor: pointer;
-  padding: 0;
+  padding: 0 5px;
   line-height: 1;
-  transition: color 0.3s ease;
 }
 
-.close-btn:hover {
-  color: var(--light);
-}
-
-.date-picker-content {
-  max-height: 60vh;
+.date-picker-list {
+  padding: 1rem;
   overflow-y: auto;
-  padding: 0.5rem;
+  max-height: 60vh;
 }
 
-.date-option {
+.date-picker-item {
   padding: 0.75rem 1rem;
-  border-radius: 0.375rem;
+  border-radius: 8px;
   margin-bottom: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+  white-space: pre-line;
 }
 
-.date-option:hover {
-  background: rgba(30, 41, 59, 0.6);
-  transform: translateY(-1px);
+.date-picker-item:hover {
+  background: rgba(11, 90, 254, 0.1);
+  transform: translateY(-2px);
 }
 
-.date-option.active {
-  background: rgba(99, 102, 241, 0.2);
-  border-color: var(--primary);
-  color: var(--primary);
+.date-picker-item.active {
+  background: rgba(11, 90, 254, 0.2);
+  border-left: 3px solid #0B5AFE;
 }
 
-.playtime-group {
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+/* 过渡动画 */
+.date-picker-fade-enter-active,
+.date-picker-fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.playtime-header h4 {
-  margin: 0 0 0.5rem 0;
-  color: var(--light);
-  font-size: 1rem;
-  font-weight: 500;
+.date-picker-fade-enter-from,
+.date-picker-fade-leave-to {
+  opacity: 0;
 }
 
-.playtime-time {
-  font-size: 0.75rem;
-  color: var(--gray);
-  margin-left: 0.5rem;
-}
-
-@media (max-width: 639px) {
-  .schedule-title-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+@keyframes scale-in {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
   }
-  
-  .song-title {
-    max-width: 100%;
-  }
-  
-  .votes {
-    width: 100%;
-    justify-content: flex-end;
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 </style> 

@@ -147,6 +147,7 @@ VoiceHub/
 ├── app.vue                # 应用入口
 ├── assets/                # 静态资源
 │   └── css/               # CSS样式文件
+│       └── main.css       # 主样式文件
 ├── components/            # 可复用组件
 │   ├── Admin/             # 管理员组件
 │   │   ├── NotificationSender.vue # 通知发送组件
@@ -172,6 +173,7 @@ VoiceHub/
 │   ├── useProgress.ts      # 进度条功能hooks
 │   ├── useProgressEvents.ts # 进度事件功能hooks
 │   └── useSongs.ts         # 歌曲功能hooks
+├── logs/                  # 日志文件夹
 ├── pages/                 # 页面组件
 │   ├── change-password.vue # 修改密码页面
 │   ├── dashboard.vue       # 仪表盘页面
@@ -187,6 +189,9 @@ VoiceHub/
 │   └── schema.prisma      # 数据库模型
 ├── public/                # 公共资源
 │   ├── favicon.ico         # 网站图标
+│   ├── images/             # 图片资源
+│   │   ├── logo.svg        # 网站Logo
+│   │   └── thumbs-up.svg   # 点赞图标
 │   └── robots.txt          # 爬虫规则
 ├── scripts/               # 工具脚本
 │   ├── check-database.js   # 数据库检查工具
@@ -198,6 +203,14 @@ VoiceHub/
 ├── server/                # 服务端API
 │   ├── api/                # API端点
 │   │   ├── admin/          # 管理员API
+│   │   │   ├── backup/     # 备份相关API
+│   │   │   ├── mark-played.post.ts  # 标记已播放API
+│   │   │   ├── notifications/       # 管理员通知API
+│   │   │   ├── play-times/          # 播放时间管理API
+│   │   │   ├── schedule/            # 排期管理API
+│   │   │   ├── songs/               # 管理员歌曲管理API
+│   │   │   ├── system-settings/     # 系统设置API
+│   │   │   └── users/               # 用户管理API
 │   │   ├── auth/           # 认证API
 │   │   ├── notifications/  # 通知API
 │   │   ├── play-times/     # 播放时间API
@@ -214,8 +227,9 @@ VoiceHub/
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
 │   └── index.ts            # 全局类型定义
-├── .env                   # 环境变量(需自行创建)
-├── .env.example           # 环境变量示例
+├── .gitignore             # Git忽略文件
+├── .vercelignore          # Vercel忽略文件
+├── LICENSE                # 许可证文件
 ├── netlify.toml           # Netlify部署配置
 ├── nuxt.config.ts         # Nuxt配置
 ├── package.json           # 项目依赖
@@ -358,6 +372,10 @@ cd scripts && npm run repair-db
 3. 更新客户端：`npx prisma generate`
 4. 确保同时更新`types/index.ts`中的TypeScript类型定义
 5. 验证数据库：`cd scripts && npm run check-db`
+
+## 致谢
+
+特别感谢 [过客是个铁憨憨](https://github.com/1811304592) 为本项目提供全新UI设计。
 
 ## 许可证
 

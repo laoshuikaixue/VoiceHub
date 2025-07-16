@@ -47,9 +47,7 @@ async function validateDatabase() {
     
     // 转换列名为小写进行不区分大小写的比较
     const columnNames = notificationColumns.map(c => c.column_name.toLowerCase())
-    
-    console.log('数据库中发现的Notification表字段:', columnNames.join(', '))
-    
+
     // 确保所有必要的字段都存在（使用小写比较）
     const requiredNotificationColumns = ['id', 'createdat', 'updatedat', 'type', 'message', 'read', 'userid', 'songid']
     const missingColumns = requiredNotificationColumns.filter(col => !columnNames.includes(col.toLowerCase()))

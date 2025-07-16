@@ -1,93 +1,120 @@
 <template>
   <div class="request-form">
-    <form @submit.prevent="handleSubmit">
-      <div class="form-group">
-        <label for="title">歌曲名称</label>
-        <input 
-          id="title" 
-          v-model="title" 
-          type="text" 
-          required 
-          placeholder="请输入歌曲名称"
-          class="input"
-          @input="checkSimilarSongs"
-        />
+    <!-- 投稿须知区域 -->
+    <div class="rules-section">
+      <h2 class="section-title">投稿须知</h2>
+      <div class="rules-content">
+        <p>1. 投稿时无需加入书名号</p>
+        <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
+        <p>3. 禁止投递含有违规内容的歌曲</p>
+        <p>4. 点播的歌曲将由管理员进行审核</p>
+        <p>5. 审核通过后将安排在播放时段播出</p>
       </div>
-      
-      <div class="form-group">
-        <label for="artist">艺术家</label>
-        <input 
-          id="artist" 
-          v-model="artist" 
-          type="text" 
-          required 
-          placeholder="请输入艺术家名称"
-          class="input"
-          @input="checkSimilarSongs"
-        />
-      </div>
-      
-      <!-- 播出时段选择 -->
-      <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
-        <label for="playTime">期望播出时段</label>
-        <select 
-          id="playTime" 
-          v-model="preferredPlayTimeId" 
-          class="input"
-        >
-          <option value="">不指定</option>
-          <option 
-            v-for="playTime in enabledPlayTimes" 
-            :key="playTime.id" 
-            :value="playTime.id"
-          >
-            {{ playTime.name }}
-            <template v-if="playTime.startTime || playTime.endTime">
-              ({{ formatPlayTimeRange(playTime) }})
-            </template>
-          </option>
-        </select>
-        <div class="help-text">
-          选择您希望歌曲播放的时段，管理员将尽量安排在您选择的时段播放
+    </div>
+
+    <!-- 表单区域 -->
+    <div class="form-container">
+      <form @submit.prevent="handleSubmit" class="song-request-form">
+        <!-- 将歌曲名称和歌手放在同一行 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="title">歌曲名称</label>
+            <div class="input-wrapper">
+              <input 
+                id="title" 
+                v-model="title" 
+                type="text" 
+                required 
+                placeholder="请输入歌曲名称"
+                class="form-input"
+                @input="checkSimilarSongs"
+              />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="artist">歌手</label>
+            <div class="input-wrapper">
+              <input 
+                id="artist" 
+                v-model="artist" 
+                type="text" 
+                required 
+                placeholder="请输入歌手名称"
+                class="form-input"
+                @input="checkSimilarSongs"
+              />
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <!-- 相似歌曲提示 -->
-      <div v-if="similarSong" class="similar-song-alert">
-        <div class="alert-header">
-          <span class="alert-icon">⚠️</span>
-          <span class="alert-title">发现可能相似的歌曲</span>
+        
+        <!-- 播出时段选择 -->
+        <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
+          <label for="playTime">期望播出日期</label>
+          <div class="input-wrapper">
+            <select 
+              id="playTime" 
+              v-model="preferredPlayTimeId" 
+              class="form-select"
+            >
+              <option value="">选择日期</option>
+              <option 
+                v-for="playTime in enabledPlayTimes" 
+                :key="playTime.id" 
+                :value="playTime.id"
+              >
+                {{ playTime.name }}
+                <template v-if="playTime.startTime || playTime.endTime">
+                  ({{ formatPlayTimeRange(playTime) }})
+                </template>
+              </option>
+            </select>
+          </div>
         </div>
-        <div class="alert-content">
-          <p>《{{ similarSong.title }} - {{ similarSong.artist }}》</p>
-          <p class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
+        
+        <!-- 相似歌曲提示 -->
+        <div v-if="similarSong" class="similar-song-alert">
+          <div class="alert-header">
+            <span class="alert-icon">⚠️</span>
+            <span class="alert-title">发现可能相似的歌曲</span>
+          </div>
+          <div class="alert-content">
+            <p>《{{ similarSong.title }} - {{ similarSong.artist }}》</p>
+            <p class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
+          </div>
+          <div class="alert-actions">
+            <button 
+              type="button" 
+              class="vote-btn" 
+              @click="voteForSimilar"
+              :disabled="voting"
+            >
+              {{ voting ? '投票中...' : '投票支持' }}
+            </button>
+            <button 
+              type="button" 
+              class="ignore-btn" 
+              @click="ignoreSimilar"
+            >
+              继续投稿
+            </button>
+          </div>
         </div>
-        <div class="alert-actions">
-          <button 
-            type="button" 
-            class="vote-btn" 
-            @click="voteForSimilar"
-            :disabled="voting"
-          >
-            {{ voting ? '投票中...' : '投票支持' }}
+
+        <div class="form-notice">
+          提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出
+        </div>
+        
+        <div v-if="error" class="error-message">{{ error }}</div>
+        <div v-if="success" class="success-message">{{ success }}</div>
+        
+        <div class="form-actions">
+          <button type="submit" :disabled="loading || submitting" class="submit-button">
+            {{ loading || submitting ? '处理中...' : '提交' }}
           </button>
-          <button 
-            type="button" 
-            class="ignore-btn" 
-            @click="ignoreSimilar"
-          >
-            继续投稿
-          </button>
         </div>
-      </div>
-      
-      <div v-if="error" class="error">{{ error }}</div>
-      <div v-if="success" class="success">{{ success }}</div>
-      
-      <button type="submit" :disabled="loading || submitting" class="btn btn-primary btn-block">
-        {{ loading || submitting ? '处理中...' : '提交点歌' }}
-      </button>
-    </form>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -207,7 +234,7 @@ const handleSubmit = async () => {
   success.value = ''
   
   if (!title.value.trim() || !artist.value.trim()) {
-    error.value = '歌曲名称和艺术家名称不能为空'
+    error.value = '歌曲名称和歌手名称不能为空'
     return
   }
   
@@ -249,7 +276,8 @@ const handleSubmit = async () => {
       }, 3000)
     }
   } catch (err) {
-    error.value = err.message || '点歌失败，请稍后重试'
+    console.error('投稿失败:', err)
+    error.value = err.message || '投稿失败，请稍后重试'
   } finally {
     submitting.value = false
   }
@@ -259,153 +287,255 @@ const handleSubmit = async () => {
 <style scoped>
 .request-form {
   width: 100%;
+  color: #FFFFFF;
+  display: flex;
+  gap: 2rem;
+}
+
+.rules-section {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 13px;
+  padding: 1.5rem;
+  width: 40%;
+  height: fit-content;
+}
+
+.form-container {
+  width: 60%;
+}
+
+.section-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 1rem;
+}
+
+.rules-content {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+}
+
+.rules-content p {
+  margin-bottom: 0.5rem;
+}
+
+.song-request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.form-row .form-group {
+  flex: 1;
+  min-width: 0;
 }
 
 .form-group {
-  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: var(--light);
+.form-group label {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  color: #FFFFFF;
 }
 
-.input {
+.input-wrapper {
   width: 100%;
-  padding: 0.75rem;
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  color: var(--light);
 }
 
-.input:focus {
-  border-color: var(--primary);
+.form-input, .form-select {
+  background: #040E15;
+  border: 1px solid #242F38;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  width: 100%;
+}
+
+.form-input:focus, .form-select:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+  border-color: #0B5AFE;
 }
 
-.help-text {
+.form-notice {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.4);
   margin-top: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--gray);
 }
 
-.btn-block {
-  display: block;
-  width: 100%;
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
 }
 
-.error, .success {
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  margin: 1rem 0;
+.submit-button {
+  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 0.5rem 1.5rem;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.error {
-  background: rgba(231, 76, 60, 0.1);
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.2);
+.submit-button:hover {
+  transform: translateY(-2px);
 }
 
-.success {
-  background: rgba(46, 204, 113, 0.1);
-  color: #2ecc71;
-  border: 1px solid rgba(46, 204, 113, 0.2);
+.submit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.error-message {
+  background: rgba(255, 47, 47, 0.2);
+  border: 1px solid rgba(255, 47, 47, 0.4);
+  border-radius: 8px;
+  padding: 1rem;
+  color: #FF654D;
+  margin-top: 1rem;
+}
+
+.success-message {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 8px;
+  padding: 1rem;
+  color: #10b981;
+  margin-top: 1rem;
 }
 
 .similar-song-alert {
-  background: rgba(241, 196, 15, 0.1);
-  border: 1px solid rgba(241, 196, 15, 0.2);
-  border-radius: 0.375rem;
+  background: #21242D;
+  border-radius: 10px;
   padding: 1rem;
-  margin-bottom: 1.25rem;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  margin-top: 1rem;
 }
 
 .alert-header {
   display: flex;
   align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.alert-icon {
-  margin-right: 0.5rem;
-}
-
-.alert-title {
-  font-weight: 500;
-  color: #f39c12;
-}
-
-.alert-content {
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
 
+.alert-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #FFFFFF;
+}
+
+.alert-content {
+  margin-bottom: 1rem;
+}
+
 .alert-hint {
-  font-size: 0.875rem;
-  color: var(--gray);
-  margin-top: 0.25rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  margin-top: 0.5rem;
 }
 
 .alert-actions {
   display: flex;
-  gap: 0.5rem;
-}
-
-.vote-btn, .ignore-btn {
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
 
 .vote-btn {
-  background: #f39c12;
-  color: white;
-}
-
-.vote-btn:hover {
-  background: #e67e22;
-}
-
-.vote-btn:disabled {
-  background: rgba(243, 156, 18, 0.5);
-  cursor: not-allowed;
+  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  color: #FFFFFF;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .ignore-btn {
   background: rgba(255, 255, 255, 0.1);
-  color: var(--light);
-}
-
-.ignore-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.btn-primary {
-  background-color: var(--primary);
-  color: white;
-  padding: 0.75rem 1rem;
-  border: none;
-  border-radius: 0.375rem;
-  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  color: #FFFFFF;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.btn-primary:hover {
-  background-color: var(--primary-dark);
-  transform: translateY(-1px);
-}
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .request-form {
+    flex-direction: column;
+  }
 
-.btn-primary:disabled {
-  background-color: rgba(99, 102, 241, 0.5);
-  cursor: not-allowed;
-  transform: none;
+  .rules-section {
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 1rem;
+  }
+
+  .form-container {
+    width: 100%;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .form-group label {
+    font-size: 18px;
+  }
+  
+  .form-actions {
+    justify-content: center;
+  }
+  
+  .submit-button {
+    width: 100%;
+    padding: 0.75rem;
+  }
+  
+  .alert-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .vote-btn, .ignore-btn {
+    width: 100%;
+  }
 }
 </style> 

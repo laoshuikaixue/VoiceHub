@@ -1,5 +1,7 @@
 <template>
   <div class="app">
+    <!-- 移除旧的Logo组件 -->
+    
     <main class="main-content">
       <NuxtPage />
     </main>
@@ -42,12 +44,18 @@ const handleLogout = () => {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  position: relative;
 }
 
-/* 主要内容 */
+/* 移除旧的Logo定位样式 */
+
+/* 主要内容 - 确保渐变能透过去 */
 .main-content {
   flex: 1;
   padding: 0;
+  position: relative;
+  z-index: 1;
+  background: transparent;
 }
 
 /* 响应式调整 */

@@ -1,185 +1,193 @@
 <template>
   <div class="song-list">
-    <div v-if="loading" class="loading">
-      加载中...
-    </div>
+    <!-- 移除顶部径向渐变 -->
     
-    <div v-else-if="error" class="error">
-      {{ error }}
-    </div>
-    
-    <div v-else-if="songs.length === 0" class="empty">
-      暂无歌曲，马上去点歌吧！
-    </div>
-    
-    <div v-else class="songs-container">
-      <div class="filter-controls">
-        <button :class="{ active: filterBy === 'all' }" @click="filterBy = 'all'">
-          全部歌曲
+    <div class="song-list-header">
+      <div class="tab-controls">
+        <button 
+          class="tab-button" 
+          :class="{ 'active': activeTab === 'all' }"
+          @click="setActiveTab('all')"
+          v-ripple
+        >
+          全部投稿
         </button>
-        <button :class="{ active: filterBy === 'mine' }" @click="filterBy = 'mine'">
+        <button 
+          class="tab-button" 
+          :class="{ 'active': activeTab === 'mine' }"
+          @click="setActiveTab('mine')"
+          v-if="isAuthenticated"
+          v-ripple
+        >
           我的投稿
         </button>
       </div>
       
-      <div class="sort-controls">
-        <button :class="{ active: sortBy === 'popularity' }" @click="sortBy = 'popularity'">
-          按热度排序
-        </button>
-        <div class="date-sort-container">
-          <button :class="{ active: sortBy === 'date' }" @click="sortBy = 'date'">
-            按时间排序
-          </button>
-          <button 
-            v-if="sortBy === 'date'" 
-            class="sort-order-toggle" 
-            @click="toggleSortOrder"
-            :title="sortOrder === 'desc' ? '当前：最新在前' : '当前：最早在前'"
-          >
-            <span v-if="sortOrder === 'desc'">↓</span>
-            <span v-else>↑</span>
-          </button>
+      <div class="search-actions">
+        <div class="search-box">
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            placeholder="输入想要搜索的歌曲" 
+            class="search-input"
+          />
+          <span class="search-icon">🔍</span>
         </div>
-        <button @click="$emit('refresh')" class="refresh-button" title="刷新歌曲列表">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        
+        <!-- 添加刷新按钮 - 使用SVG图标 -->
+        <button 
+          class="refresh-button"
+          @click="handleRefresh"
+          :disabled="loading"
+          :title="loading ? '正在刷新...' : '刷新歌曲列表'"
+        >
+          <svg class="refresh-icon" :class="{ 'rotating': loading }" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
           </svg>
         </button>
       </div>
+    </div>
+
+    <!-- 使用Transition组件包裹所有内容 -->
+    <Transition name="tab-switch" mode="out-in">
+      <div v-if="loading" class="loading" :key="'loading'">
+        加载中...
+      </div>
       
-      <div class="songs-grid">
-        <div 
-          v-for="song in paginatedSongs" 
-          :key="song.id" 
-          class="song-card"
-          :class="{ 'played': song.played }"
-        >
-          <div class="song-info">
-            <div class="song-title-row">
-              <h3 class="song-title">{{ song.title }} - {{ song.artist }}</h3>
-              <div class="votes">
-                <span class="vote-count">{{ song.voteCount }}</span>
-                <button 
-                  class="vote-button"
-                  @click="handleVote(song)"
-                  :disabled="song.voted || song.played || voteInProgress"
-                >
-                  {{ song.voted ? '已投' : '投票' }}
-                </button>
+      <div v-else-if="error" class="error" :key="'error'">
+        {{ error }}
+      </div>
+      
+      <div v-else-if="displayedSongs.length === 0" class="empty" :key="'empty-' + activeTab">
+        {{ activeTab === 'mine' ? '您还没有投稿歌曲，马上去点歌吧！' : '暂无歌曲，马上去点歌吧！' }}
+      </div>
+      
+      <div v-else class="songs-container" :key="'songs-' + activeTab">
+        <div class="song-cards">
+          <div 
+            v-for="song in paginatedSongs" 
+            :key="song.id" 
+            class="song-card"
+            :class="{ 'played': song.played, 'scheduled': song.scheduled }"
+          >
+            <!-- 歌曲卡片主体 -->
+            <div class="song-card-main">
+              <div class="song-info">
+                <h3 class="song-title" :title="song.title + ' - ' + song.artist">
+                  {{ song.title }} - {{ song.artist }}
+                  <span v-if="song.scheduled" class="scheduled-tag">已排期</span>
+                </h3>
+                <div class="song-meta">
+                  <span class="requester">投稿人：{{ song.requester }}</span>
+                </div>
               </div>
+              
+              <!-- 热度和点赞按钮区域 -->
+              <div class="action-area">
+                <!-- 热度展示 -->
+                <div class="vote-count">
+                  <span class="count">{{ song.voteCount }}</span>
+                  <span class="label">热度</span>
+                </div>
+                
+                <!-- 点赞按钮 -->
+                <div class="like-button-wrapper">
+                  <button 
+                    class="like-button"
+                    :class="{ 'liked': song.voted }"
+                    @click="handleVote(song)"
+                    :disabled="song.played || voteInProgress"
+                    :title="song.voted ? '已点赞' : '点赞'"
+                  >
+                    <img src="/images/thumbs-up.svg" alt="点赞" class="like-icon" />
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 移除原来位置的已排期标签 -->
             </div>
             
-            <div class="song-meta">
-              <span class="requester">投稿人：{{ song.requester }}</span>
-              <span class="request-time">投稿时间：{{ song.requestedAt || formatDate(song.createdAt) }}</span>
-              <span class="song-status">{{ getSongStatus(song) }}</span>
-            </div>
-            
-            <!-- 用户操作按钮 -->
-            <div v-if="isMySong(song) && !song.played" class="user-actions">
+            <!-- 投稿时间和撤销按钮 -->
+            <div class="submission-footer">
+              <div class="submission-time">
+                投稿时间：{{ formatDateTime(song.createdAt) }}
+              </div>
+              
+              <!-- 如果是自己的投稿，显示撤回按钮 -->
               <button 
+                v-if="isMySong(song) && !song.played" 
                 class="withdraw-button"
                 @click="handleWithdraw(song)"
                 :disabled="actionInProgress || song.scheduled"
-                :title="song.scheduled ? '已排期的歌曲不能撤回' : ''"
+                :title="song.scheduled ? '已排期的歌曲不能撤回' : '撤回投稿'"
               >
-                撤回投稿
-              </button>
-              <span v-if="song.scheduled" class="scheduled-tag">已排期</span>
-            </div>
-            
-            <!-- 管理员操作按钮 -->
-            <div v-if="isAdmin && !song.played" class="admin-actions">
-              <button 
-                class="admin-action delete-button"
-                @click="handleDelete(song)"
-                :disabled="actionInProgress"
-              >
-                删除歌曲
-              </button>
-              <button 
-                class="admin-action mark-played"
-                @click="handleMarkPlayed(song)"
-                :disabled="actionInProgress"
-              >
-                标记为已播放
-              </button>
-            </div>
-            
-            <!-- 管理员撤回已播放歌曲按钮 -->
-            <div v-if="isAdmin && song.played" class="admin-actions">
-              <button 
-                class="admin-action unmark-played"
-                @click="handleUnmarkPlayed(song)"
-                :disabled="actionInProgress"
-              >
-                撤回已播放
+                撤销
               </button>
             </div>
           </div>
         </div>
-      </div>
-      
-      <!-- 分页控件 - 仅在非移动端显示 -->
-      <div v-if="!isMobile && totalPages > 1" class="pagination">
-        <button 
-          @click="goToPage(currentPage - 1)" 
-          :disabled="currentPage === 1"
-          class="page-button"
-        >
-          上一页
-        </button>
         
-        <div class="page-numbers">
+        <!-- 分页控件 -->
+        <div v-if="totalPages > 1" class="pagination">
           <button 
-            v-for="page in displayedPageNumbers" 
-            :key="page"
-            @click="goToPage(page)"
-            :class="['page-number', { active: currentPage === page }]"
+            @click="goToPage(currentPage - 1)" 
+            :disabled="currentPage === 1"
+            class="page-button"
           >
-            {{ page }}
+            上一页
           </button>
-        </div>
-        
-        <button 
-          @click="goToPage(currentPage + 1)" 
-          :disabled="currentPage === totalPages"
-          class="page-button"
-        >
-          下一页
-        </button>
-        
-        <div class="page-info">
-          {{ currentPage }} / {{ totalPages }} 页 (共 {{ filteredSongs.length }} 首歌曲)
-        </div>
-      </div>
-      
-      <!-- 确认对话框 -->
-      <div v-if="confirmDialog.show" class="confirm-dialog-backdrop" @click.self="cancelConfirm">
-        <div class="confirm-dialog">
-          <div class="confirm-dialog-header">
-            <h3>{{ confirmDialog.title }}</h3>
-          </div>
-          <div class="confirm-dialog-content">
-            {{ confirmDialog.message }}
-          </div>
-          <div class="confirm-dialog-actions">
+          
+          <div class="page-numbers">
             <button 
-              @click="cancelConfirm" 
-              class="confirm-dialog-btn confirm-dialog-cancel"
+              v-for="page in displayedPageNumbers" 
+              :key="page"
+              @click="goToPage(page)"
+              :class="['page-number', { active: currentPage === page }]"
             >
-              取消
-            </button>
-            <button 
-              @click="confirmAction" 
-              class="confirm-dialog-btn confirm-dialog-confirm"
-            >
-              确认
+              {{ page }}
             </button>
           </div>
+          
+          <button 
+            @click="goToPage(currentPage + 1)" 
+            :disabled="currentPage === totalPages"
+            class="page-button"
+          >
+            下一页
+          </button>
+          
+          <div class="page-info">
+            {{ currentPage }} / {{ totalPages }} 页
+          </div>
+        </div>
+        
+        <!-- 确认对话框 -->
+        <div v-if="confirmDialog.show" class="confirm-dialog-backdrop" @click.self="cancelConfirm">
+          <div class="confirm-dialog">
+            <div class="confirm-dialog-header">
+              <h3>{{ confirmDialog.title }}</h3>
+            </div>
+            <div class="confirm-dialog-content">
+              {{ confirmDialog.message }}
+            </div>
+            <div class="confirm-dialog-actions">
+              <button 
+                @click="cancelConfirm" 
+                class="confirm-dialog-btn confirm-dialog-cancel"
+              >
+                取消
+              </button>
+              <button 
+                @click="confirmAction" 
+                class="confirm-dialog-btn confirm-dialog-confirm"
+              >
+                确认
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -206,18 +214,27 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['vote', 'withdraw', 'delete', 'markPlayed', 'unmarkPlayed', 'refresh'])
+const emit = defineEmits(['vote', 'withdraw', 'refresh'])
 const voteInProgress = ref(false)
 const actionInProgress = ref(false)
 const sortBy = ref('popularity')
 const sortOrder = ref('desc') // 'desc' for newest first, 'asc' for oldest first
-const filterBy = ref('all')
+const searchQuery = ref('') // 搜索查询
+const activeTab = ref('all') // 默认显示全部投稿
 const auth = useAuth()
+const isAuthenticated = computed(() => auth && auth.isAuthenticated && auth.isAuthenticated.value)
 
 // 分页相关
 const currentPage = ref(1)
-const pageSize = ref(10) // 每页显示10首歌曲
+const pageSize = ref(12) // 每页显示12首歌曲，适合横向布局
 const isMobile = ref(false)
+
+// 切换活动标签
+const setActiveTab = (tab) => {
+  if (activeTab.value === tab) return; // 如果点击的是当前标签，不执行切换
+  activeTab.value = tab
+  currentPage.value = 1 // 重置为第一页
+}
 
 // 检测设备是否为移动设备
 const checkMobile = () => {
@@ -243,199 +260,166 @@ const confirmDialog = ref({
   data: null
 })
 
-// 格式化日期为 X年X月X日 H:M
+// 格式化日期为 X年X月X日
 const formatDate = (dateString) => {
   if (!dateString) return '未知时间'
   const date = new Date(dateString)
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
 }
 
-// 获取歌曲状态
-const getSongStatus = (song) => {
-  if (song.played) {
-    return '已播放'
-  } else if (song.scheduled) {
-    return '待播放'
-  } else {
-    return '待入选'
-  }
+// 格式化日期为 X年X月X日 HH:MM
+const formatDateTime = (dateString) => {
+  if (!dateString) return '未知时间'
+  const date = new Date(dateString)
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${hours}:${minutes}`
 }
 
-// 检查是否是用户自己的投稿
+// 判断是否是自己投稿的歌曲
 const isMySong = (song) => {
-  return auth.user.value && song.requesterId === auth.user.value.id
+  return auth && auth.user && auth.user.value && song.requesterId === auth.user.value.id
 }
 
-// Toggle sort order between ascending and descending
-const toggleSortOrder = () => {
-  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
-}
-
-// 按照选择的方式过滤和排序歌曲
-const filteredSongs = computed(() => {
+// 应用过滤器和搜索
+const displayedSongs = computed(() => {
+  if (!props.songs) return []
+  
   let result = [...props.songs]
   
-  // 先过滤
-  if (filterBy.value === 'mine' && auth.user.value) {
-    result = result.filter(song => song.requesterId === auth.user.value.id)
+  // 应用标签过滤器
+  if (activeTab.value === 'mine') {
+    result = result.filter(song => isMySong(song))
   }
   
-  // 再排序
-  if (sortBy.value === 'popularity') {
-    return result.sort((a, b) => b.voteCount - a.voteCount)
-  } else {
-    // 按时间排序，考虑排序方向
-    if (sortOrder.value === 'desc') {
-      // 降序 - 最新的在前面
-      return result.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )
-    } else {
-      // 升序 - 最早的在前面
-      return result.sort((a, b) => 
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      )
-    }
+  // 应用搜索过滤器
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase().trim()
+    result = result.filter(song => 
+      song.title.toLowerCase().includes(query) || 
+      song.artist.toLowerCase().includes(query) ||
+      (song.requester && song.requester.toLowerCase().includes(query))
+    )
   }
+  
+  // 应用排序
+  if (sortBy.value === 'popularity') {
+    result.sort((a, b) => b.voteCount - a.voteCount)
+  } else if (sortBy.value === 'date') {
+    result.sort((a, b) => {
+      const dateA = new Date(a.createdAt)
+      const dateB = new Date(b.createdAt)
+      return sortOrder.value === 'desc' ? dateB - dateA : dateA - dateB
+    })
+  }
+  
+  return result
 })
 
 // 计算总页数
 const totalPages = computed(() => {
-  return Math.ceil(filteredSongs.value.length / pageSize.value)
+  return Math.max(1, Math.ceil(displayedSongs.value.length / pageSize.value))
 })
 
-// 当前页显示的歌曲
+// 获取当前页的歌曲
 const paginatedSongs = computed(() => {
-  // 移动端不分页，显示所有歌曲
-  if (isMobile.value) {
-    return filteredSongs.value
-  }
-  
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredSongs.value.slice(start, end)
+  const startIndex = (currentPage.value - 1) * pageSize.value
+  const endIndex = startIndex + pageSize.value
+  return displayedSongs.value.slice(startIndex, endIndex)
 })
 
-// 计算要显示的页码
+// 计算分页显示的页码
 const displayedPageNumbers = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
+  const result = []
+  const totalPagesToShow = 5
   
-  if (total <= 7) {
-    // 如果总页数小于等于7，显示所有页码
-    return Array.from({ length: total }, (_, i) => i + 1)
-  }
-  
-  // 否则，显示当前页附近的页码和首尾页码
-  if (current <= 4) {
-    // 当前页靠近开头
-    return [1, 2, 3, 4, 5, '...', total]
-  } else if (current >= total - 3) {
-    // 当前页靠近结尾
-    return [1, '...', total - 4, total - 3, total - 2, total - 1, total]
+  if (totalPages.value <= totalPagesToShow) {
+    // 如果总页数小于等于要显示的页数，则显示所有页码
+    for (let i = 1; i <= totalPages.value; i++) {
+      result.push(i)
+    }
   } else {
-    // 当前页在中间
-    return [1, '...', current - 1, current, current + 1, '...', total]
+    // 否则，显示当前页附近的页码
+    const leftOffset = Math.floor(totalPagesToShow / 2)
+    const rightOffset = totalPagesToShow - leftOffset - 1
+    
+    let start = currentPage.value - leftOffset
+    let end = currentPage.value + rightOffset
+    
+    // 调整起始和结束页码，确保它们在有效范围内
+    if (start < 1) {
+      end = end + (1 - start)
+      start = 1
+    }
+    
+    if (end > totalPages.value) {
+      start = Math.max(1, start - (end - totalPages.value))
+      end = totalPages.value
+    }
+    
+    for (let i = start; i <= end; i++) {
+      result.push(i)
+    }
   }
+  
+  return result
 })
 
-// 跳转到指定页
+// 前往指定页
 const goToPage = (page) => {
-  if (typeof page === 'number' && page >= 1 && page <= totalPages.value) {
+  if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
-    // 滚动到页面顶部
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 
-// 监听过滤和排序变化，重置页码
-watch([filterBy, sortBy, sortOrder], () => {
-  currentPage.value = 1
-})
-
-// 监听歌曲列表变化，重置页码
-watch(() => props.songs, () => {
-  currentPage.value = 1
-}, { deep: true })
-
-// 用户操作：投票
+// 处理投票
 const handleVote = async (song) => {
-  if (voteInProgress.value) return
+  if (song.voted) {
+    return // 已经投过票
+  }
   
   voteInProgress.value = true
   try {
-    await emit('vote', song)
+    emit('vote', song)
+  } catch (err) {
+    console.error('投票处理失败', err)
   } finally {
     voteInProgress.value = false
   }
 }
 
-// 用户操作：撤回投稿
+// 处理撤回
 const handleWithdraw = (song) => {
+  if (song.scheduled) {
+    return // 已排期的歌曲不能撤回
+  }
+  
   confirmDialog.value = {
     show: true,
     title: '撤回投稿',
-    message: `确定要撤回《${song.title}》的投稿吗？此操作不可恢复。`,
+    message: `确认撤回歌曲《${song.title}》的投稿吗？`,
     action: 'withdraw',
     data: song
   }
 }
 
-// 管理员操作：删除歌曲
-const handleDelete = (song) => {
-  confirmDialog.value = {
-    show: true,
-    title: '删除歌曲',
-    message: `确定要删除《${song.title}》吗？此操作不可恢复。`,
-    action: 'delete',
-    data: song
-  }
+// 处理刷新按钮点击
+const handleRefresh = () => {
+  emit('refresh')
 }
 
-// 管理员操作：标记为已播放
-const handleMarkPlayed = (song) => {
-  confirmDialog.value = {
-    show: true,
-    title: '标记为已播放',
-    message: `确定要将《${song.title}》标记为已播放吗？`,
-    action: 'markPlayed',
-    data: song
-  }
-}
-
-// 管理员操作：撤回已播放状态
-const handleUnmarkPlayed = (song) => {
-  confirmDialog.value = {
-    show: true,
-    title: '撤回已播放状态',
-    message: `确定要撤回《${song.title}》的已播放状态吗？`,
-    action: 'unmarkPlayed',
-    data: song
-  }
-}
-
-// 确认操作
+// 确认执行操作
 const confirmAction = async () => {
-  if (actionInProgress.value) return
+  const { action, data } = confirmDialog.value
   
   actionInProgress.value = true
   try {
-    const { action, data } = confirmDialog.value
-    
-    if (action === 'withdraw') {
-      await emit('withdraw', data)
-    } else if (action === 'delete') {
-      await emit('delete', data)
-    } else if (action === 'markPlayed') {
-      await emit('markPlayed', data)
-    } else if (action === 'unmarkPlayed') {
-      await emit('unmarkPlayed', data)
-    }
-    
-    // 关闭对话框
-    confirmDialog.value.show = false
+    emit(action, data)
+  } catch (err) {
+    console.error('操作执行失败', err)
   } finally {
     actionInProgress.value = false
+    confirmDialog.value.show = false
   }
 }
 
@@ -443,486 +427,529 @@ const confirmAction = async () => {
 const cancelConfirm = () => {
   confirmDialog.value.show = false
 }
+
+// 当组件销毁时重置所有状态
+onUnmounted(() => {
+  // 清除所有可能的副作用
+})
+
+// 波纹效果指令
+const vRipple = {
+  mounted(el) {
+    el.addEventListener('click', e => {
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple-effect';
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      
+      el.appendChild(ripple);
+      
+      setTimeout(() => {
+        ripple.remove();
+      }, 600); // 与CSS动画时间一致
+    });
+  }
+};
 </script>
 
 <style scoped>
 .song-list {
   width: 100%;
-}
-
-.loading, .error, .empty {
-  padding: 2rem;
-  text-align: center;
-  border-radius: 0.5rem;
-  background: rgba(30, 41, 59, 0.4);
-  margin: 1rem 0;
-  color: var(--light);
-}
-
-.error {
-  color: var(--danger);
-}
-
-.empty {
-  color: var(--gray);
-}
-
-.filter-controls {
-  margin-bottom: 1rem;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.filter-controls button {
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(30, 41, 59, 0.4);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  color: var(--gray);
-  transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
+  z-index: 2;
 }
 
-.filter-controls button:before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.4s ease, height 0.4s ease;
-}
-
-.filter-controls button:hover:before {
-  width: 150%;
-  height: 150%;
-}
-
-.filter-controls button.active {
-  background: rgba(99, 102, 241, 0.2);
-  color: var(--primary);
-  border-color: var(--primary);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
-}
-
-.sort-controls {
-  margin-bottom: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.sort-controls button {
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(30, 41, 59, 0.4);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  color: var(--gray);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.sort-controls button:before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.4s ease, height 0.4s ease;
-}
-
-.sort-controls button:hover:before {
-  width: 150%;
-  height: 150%;
-}
-
-.sort-controls button.active {
-  background: rgba(99, 102, 241, 0.2);
-  color: var(--primary);
-  border-color: var(--primary);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
-}
-
-.date-sort-container {
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.sort-order-toggle {
-  margin-left: 0.25rem;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: bold;
-  padding: 0 !important;
-}
-
-.sort-order-toggle:hover {
-  background: rgba(99, 102, 241, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(99, 102, 241, 0.2);
-}
-
-.refresh-button {
-  margin-left: auto;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: var(--success);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 0 !important;
-}
-
-.refresh-button:hover {
-  background: rgba(16, 185, 129, 0.2);
-  transform: rotate(30deg);
-  box-shadow: 0 2px 5px rgba(16, 185, 129, 0.2);
-}
-
-.songs-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-  width: 100%; /* 确保宽度一致 */
-}
-
-.song-card {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  transition: all 0.3s ease;
-  width: 100%; /* 确保宽度一致 */
-  box-sizing: border-box; /* 确保内边距不会增加元素总宽度 */
-}
-
-.song-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(99, 102, 241, 0.3);
-}
-
-.song-card.played {
-  opacity: 0.7;
-}
-
-.song-info {
-  width: 100%;
-}
-
-.song-title-row {
+.song-list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.tab-controls {
+  display: flex;
+  gap: 1rem;
+}
+
+/* 标签切换动画 */
+.tab-switch-enter-active,
+.tab-switch-leave-active {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.tab-switch-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.tab-switch-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
+/* 标签按钮样式 */
+.tab-button {
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border-bottom: 3px solid transparent;
+  margin: 0 0.5rem;
+}
+
+.tab-button:hover {
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-3px);
+}
+
+.tab-button.active {
+  color: #FFFFFF;
+  border-bottom-color: #0B5AFE;
+  transform: none;
+  box-shadow: none;
+  background-color: transparent;
+}
+
+.tab-button:focus {
+  outline: none;
+}
+
+/* 波纹效果 */
+.ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(11, 90, 254, 0.3) 0%, rgba(255, 255, 255, 0.1) 70%);
+  transform: scale(0);
+  animation: ripple 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+  pointer-events: none;
+  width: 150px;
+  height: 150px;
+  margin-left: -75px;
+  margin-top: -75px;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.search-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.search-box {
+  position: relative;
+  width: 250px;
+}
+
+.search-input {
+  background: #040E15;
+  border: 1px solid #242F38;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  padding-right: 2.5rem;
+  font-family: 'MiSans', sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #0B5AFE;
+}
+
+.search-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.refresh-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #21242D;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.refresh-button:hover {
+  background: #2A2E38;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.refresh-button:active {
+  transform: translateY(0);
+}
+
+.refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.refresh-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.refresh-icon.rotating {
+  animation: rotate 1.2s cubic-bezier(0.5, 0.1, 0.5, 1) infinite;
+}
+
+/* 加载动画 */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading::before {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 1rem;
+  border-radius: 50%;
+  border: 3px solid rgba(11, 90, 254, 0.2);
+  border-top-color: #0B5AFE;
+  animation: spin 1s linear infinite;
+}
+
+.error,
+.empty {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.error {
+  color: #ef4444;
+}
+
+.songs-container {
+  width: 100%;
+}
+
+.song-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.song-card {
+  width: calc(33.333% - 0.75rem);
+  background: transparent;
+  border-radius: 10px;
+  overflow: visible;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.song-card-main {
+  padding: 1rem;
+  background: #21242D;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  position: relative;
+  height: 100px;
+  border-radius: 10px;
+  width: 100%;
+  z-index: 2;
+  margin-bottom: -5px;
+  padding-left: 1.5rem;
+  overflow: hidden;
+}
+
+/* 左侧竖条 - 默认蓝色 */
+.song-card-main::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+}
+
+/* 已排期歌曲的左侧竖条显示绿色 */
+.song-card.scheduled .song-card-main::before {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+}
+
+.song-card.played {
+  opacity: 0.6;
+}
+
+.song-info {
+  width: 70%;
 }
 
 .song-title {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--light);
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: #FFFFFF;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 70%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .song-meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  font-size: 0.8rem;
-  color: var(--gray-light);
-  margin-top: 0.5rem;
-}
-
-.requester, .request-time, .song-status {
-  display: inline-flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
-.request-time {
-  color: var(--secondary);
+.requester {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
 }
 
-.votes {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.vote-count {
-  font-size: 1rem;
-  font-weight: bold;
-  color: var(--primary);
-}
-
-.vote-button {
-  padding: 0.2rem 0.5rem;
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--primary);
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.vote-button:before {
-  content: '';
+/* 热度和点赞按钮区域 */
+.action-area {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(99, 102, 241, 0.2);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.4s ease, height 0.4s ease;
-  z-index: 0;
-}
-
-.vote-button:hover:not([disabled]):before {
-  width: 150%;
-  height: 150%;
-}
-
-.vote-button:hover:not([disabled]) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.2);
-}
-
-.vote-button[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 用户操作按钮 */
-.user-actions {
+  top: 1rem;
+  right: 1rem;
   display: flex;
-  justify-content: flex-end;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.withdraw-button {
-  padding: 0.35rem 0.75rem;
-  border: 1px solid rgba(231, 76, 60, 0.3);
-  background: rgba(231, 76, 60, 0.1);
-  color: #e74c3c;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
+/* 热度样式 */
+.vote-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vote-count .count {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: #0B5AFE;
+  text-shadow: 0px 20px 30px rgba(0, 114, 248, 0.5), 
+               0px 8px 15px rgba(0, 114, 248, 0.5),
+               0px 4px 10px rgba(0, 179, 248, 0.3), 
+               0px 2px 10px rgba(0, 179, 248, 0.2), 
+               inset 3px 3px 10px rgba(255, 255, 255, 0.4), 
+               inset -1px -1px 15px rgba(255, 255, 255, 0.4);
+}
+
+.vote-count .label {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #FFFFFF;
+  opacity: 0.4;
+}
+
+/* 点赞按钮样式 */
+.like-button-wrapper {
+  margin-top: 0;
+}
+
+.like-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-.withdraw-button:hover:not([disabled]) {
-  background: rgba(231, 76, 60, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.2);
+.like-button.liked {
+  background: #1A1D24;
+  border-color: #242F38;
+  background-image: none;
 }
 
-.withdraw-button[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
+.like-icon {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
+}
+
+.like-button:hover .like-icon {
+  transform: scale(1.2);
 }
 
 .scheduled-tag {
+  display: inline-flex;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  color: #10b981;
   margin-left: 0.5rem;
-  padding: 0.25rem 0.75rem;
-  background: rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.3);
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: bold;
+  vertical-align: middle;
 }
 
-/* 管理员操作按钮 */
-.admin-actions {
+/* 投稿时间和撤销按钮 */
+.submission-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
+  justify-content: space-between;
+  background: #1A1D24;
+  border-radius: 0 0 10px 10px;
+  padding: 0.5rem 1rem;
+  width: 95%;
+  position: relative;
+  z-index: 1;
+  height: 45px;
 }
 
-.admin-action {
-  padding: 0.35rem 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(30, 41, 59, 0.6);
-  color: var(--light);
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
+.submission-time {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: left;
+  max-width: 70%;
+}
+
+.withdraw-button {
+  background: linear-gradient(180deg, #FF2F2F 0%, #FF654D 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 0.25rem 0.75rem;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #FFFFFF;
   cursor: pointer;
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  height: 27px;
+  min-width: 51px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
 }
 
-.admin-action:before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.4s ease, height 0.4s ease;
-  z-index: 0;
-}
-
-.admin-action:hover:before {
-  width: 150%;
-  height: 150%;
-}
-
-.admin-action:hover {
+.withdraw-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.admin-action.mark-played {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: var(--success);
+.withdraw-button:active {
+  transform: translateY(0);
 }
 
-.admin-action.mark-played:hover {
-  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
-}
-
-.admin-action.delete-button {
-  background: rgba(231, 76, 60, 0.2);
-  border-color: rgba(231, 76, 60, 0.3);
-  color: #e74c3c;
-}
-
-.admin-action.delete-button:hover {
-  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.2);
-}
-
-.admin-action.unmark-played {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.3);
-  color: var(--primary);
-}
-
-.admin-action.unmark-played:hover {
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
-}
-
-.admin-action[disabled] {
+button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
-/* 分页控件样式 */
+/* 分页控件 */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
   margin-top: 1.5rem;
-  padding: 0.75rem 1rem;
-  background: rgba(30, 41, 59, 0.4);
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 0.5rem;
 }
 
 .page-button, .page-number {
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(30, 41, 59, 0.4);
-  color: var(--gray);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.page-button:hover:not([disabled]), .page-number:hover:not([disabled]) {
-  background: rgba(99, 102, 241, 0.2);
-  color: var(--primary);
-  border-color: var(--primary);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
-}
-
-.page-button:disabled, .page-number[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
-  color: var(--gray);
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .page-number.active {
-  background: rgba(99, 102, 241, 0.2);
-  color: var(--primary);
-  border-color: var(--primary);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+  background: #0B5AFE;
+  border-color: #0B5AFE;
 }
 
 .page-info {
+  margin-left: 0.5rem;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.875rem;
-  color: var(--gray);
-  margin-left: 1rem;
 }
 
-/* 确认对话框样式 */
+/* 确认对话框 */
 .confirm-dialog-backdrop {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 1000;
 }
 
 .confirm-dialog {
-  background: rgba(30, 41, 59, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
+  background: #21242D;
+  border-radius: 10px;
   width: 90%;
   max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .confirm-dialog-header {
@@ -930,16 +957,8 @@ const cancelConfirm = () => {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.confirm-dialog-header h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--light);
-  margin: 0;
-}
-
 .confirm-dialog-content {
   padding: 1.5rem 1rem;
-  color: var(--light);
 }
 
 .confirm-dialog-actions {
@@ -947,51 +966,83 @@ const cancelConfirm = () => {
   justify-content: flex-end;
   padding: 1rem;
   gap: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .confirm-dialog-btn {
-  padding: 0.5rem 1.25rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .confirm-dialog-cancel {
-  background: rgba(149, 165, 166, 0.2);
-  color: var(--light);
-  border: 1px solid rgba(149, 165, 166, 0.3);
-}
-
-.confirm-dialog-cancel:hover {
-  background: rgba(149, 165, 166, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
 }
 
 .confirm-dialog-confirm {
-  background: rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.3);
+  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  color: #FFFFFF;
 }
 
-.confirm-dialog-confirm:hover {
-  background: rgba(231, 76, 60, 0.3);
+/* 响应式适配 */
+@media (max-width: 1200px) {
+  .song-card {
+    width: calc(50% - 0.5rem);
+  }
 }
 
-@media (max-width: 639px) {
-  .song-title-row {
+@media (max-width: 768px) {
+  .song-list-header {
     flex-direction: column;
-    align-items: flex-start;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .tab-controls {
+    justify-content: center;
+  }
+  
+  .tab-button {
+    flex: 1;
+    padding: 0.5rem;
+  }
+  
+  .search-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .search-box {
+    width: calc(100% - 50px);
+  }
+  
+  .song-card {
+    width: 100%;
+  }
+  
+  .song-info {
+    width: 60%;
+  }
+  
+  .action-area {
     gap: 0.5rem;
   }
   
-  .song-title {
-    max-width: 100%;
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
   }
   
-  .votes {
+  .page-numbers {
+    order: 3;
     width: 100%;
-    justify-content: space-between;
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;
   }
 }
 </style> 
