@@ -2,6 +2,11 @@
 
 这是一个使用Nuxt 3全栈框架开发的校园广播站点歌系统。系统实现了用户点歌、投票、后台排期管理以及歌单公示等功能，支持管理员通过拖拽方式进行排期管理。
 
+## 项目截图
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/0ac138b4-4fb8-4478-a326-07e8f1128671" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/1d8bcdaf-adf7-403b-99f1-9d54a550f086" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/c5b13bc3-798c-4cd0-bf77-0876b583c73f" />
+
 ## 主要功能
 
 - **用户管理**：管理员添加用户，支持按年级班级分类
@@ -173,7 +178,6 @@ VoiceHub/
 │   ├── useProgress.ts      # 进度条功能hooks
 │   ├── useProgressEvents.ts # 进度事件功能hooks
 │   └── useSongs.ts         # 歌曲功能hooks
-├── logs/                  # 日志文件夹
 ├── pages/                 # 页面组件
 │   ├── change-password.vue # 修改密码页面
 │   ├── dashboard.vue       # 仪表盘页面
@@ -227,6 +231,8 @@ VoiceHub/
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
 │   └── index.ts            # 全局类型定义
+├── .env                   # 环境变量(需自行创建)
+├── .env.example           # 环境变量示例
 ├── .gitignore             # Git忽略文件
 ├── .vercelignore          # Vercel忽略文件
 ├── LICENSE                # 许可证文件
