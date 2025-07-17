@@ -17,6 +17,8 @@ logs
 .DS_Store
 .fleet
 .idea
+.kiro
+.cursor
 package-lock.json
 
 # Local env files
