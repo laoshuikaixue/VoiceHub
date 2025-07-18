@@ -72,6 +72,28 @@
           >
             <!-- 歌曲卡片主体 -->
             <div class="song-card-main">
+              <!-- 添加歌曲封面 -->
+              <div class="song-cover">
+                <template v-if="song.cover">
+                  <img
+                    :src="song.cover"
+                    :alt="song.title"
+                    class="cover-image"
+                    @error="handleImageError($event, song)"
+                  />
+                </template>
+                <div v-else class="text-cover">
+                  {{ getFirstChar(song.title) }}
+                </div>
+                <!-- 添加播放按钮 - 只在有musicUrl时显示 -->
+                <div v-if="song.musicUrl" class="play-button-overlay" @click="togglePlaySong(song)">
+                  <button class="play-button" :title="isCurrentPlaying(song.id) ? '暂停' : '播放'">
+                    <span v-if="isCurrentPlaying(song.id)" class="pause-icon">❚❚</span>
+                    <span v-else class="play-icon">▶</span>
+                  </button>
+                </div>
+              </div>
+
               <div class="song-info">
                 <h3 class="song-title" :title="song.title + ' - ' + song.artist">
                   {{ song.title }} - {{ song.artist }}
@@ -188,6 +210,9 @@
         </div>
       </div>
     </Transition>
+
+    <!-- 音频播放器 (隐藏但可以播放) -->
+    <audio ref="audioPlayer" @ended="onAudioEnded" @timeupdate="onTimeUpdate"></audio>
   </div>
 </template>
 
@@ -223,6 +248,12 @@ const searchQuery = ref('') // 搜索查询
 const activeTab = ref('all') // 默认显示全部投稿
 const auth = useAuth()
 const isAuthenticated = computed(() => auth && auth.isAuthenticated && auth.isAuthenticated.value)
+
+// 音频播放相关
+const audioPlayer = ref(null)
+const currentPlayingSong = ref(null)
+const isPlaying = ref(false)
+const playProgress = ref(0)
 
 // 分页相关
 const currentPage = ref(1)
@@ -428,8 +459,80 @@ const cancelConfirm = () => {
   confirmDialog.value.show = false
 }
 
+// 处理图片加载错误
+const handleImageError = (event, song) => {
+  event.target.style.display = 'none'
+  event.target.parentNode.classList.add('text-cover')
+  event.target.parentNode.textContent = getFirstChar(song.title)
+}
+
+// 获取歌曲标题的第一个字符作为封面
+const getFirstChar = (title) => {
+  if (!title) return '音'
+  return title.trim().charAt(0)
+}
+
+// 切换歌曲播放/暂停
+const togglePlaySong = (song) => {
+  if (!song.musicUrl) return
+
+  // 如果是同一首歌，切换播放/暂停状态
+  if (currentPlayingSong.value && currentPlayingSong.value.id === song.id) {
+    if (isPlaying.value) {
+      audioPlayer.value.pause()
+      isPlaying.value = false
+    } else {
+      audioPlayer.value.play()
+      isPlaying.value = true
+    }
+    return
+  }
+
+  // 如果是不同的歌曲，停止当前播放，播放新歌曲
+  if (isPlaying.value) {
+    audioPlayer.value.pause()
+    isPlaying.value = false
+  }
+
+  currentPlayingSong.value = song
+  audioPlayer.value.src = song.musicUrl
+  audioPlayer.value.play()
+    .then(() => {
+      isPlaying.value = true
+    })
+    .catch(err => {
+      console.error('播放失败:', err)
+      isPlaying.value = false
+    })
+}
+
+// 判断当前是否正在播放指定ID的歌曲
+const isCurrentPlaying = (songId) => {
+  return isPlaying.value && currentPlayingSong.value && currentPlayingSong.value.id === songId
+}
+
+// 音频播放结束处理
+const onAudioEnded = () => {
+  isPlaying.value = false
+  playProgress.value = 0
+  currentPlayingSong.value = null
+}
+
+// 更新播放进度
+const onTimeUpdate = () => {
+  if (audioPlayer.value && audioPlayer.value.duration) {
+    playProgress.value = (audioPlayer.value.currentTime / audioPlayer.value.duration) * 100
+  }
+}
+
 // 当组件销毁时重置所有状态
 onUnmounted(() => {
+  // 停止音频播放
+  if (audioPlayer.value) {
+    audioPlayer.value.pause()
+    audioPlayer.value.src = ''
+  }
+
   // 清除所有可能的副作用
 })
 
@@ -693,37 +796,106 @@ const vRipple = {
   background: #21242D;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   position: relative;
-  height: 100px;
+  height: 100px; /* 减小卡片高度 */
   border-radius: 10px;
   width: 100%;
   z-index: 2;
   margin-bottom: -5px;
-  padding-left: 1.5rem;
+  padding-left: 1rem; /* 减少左侧内边距，因为已移除状态条 */
   overflow: hidden;
+  display: flex; /* 使用flex布局 */
+  align-items: center; /* 垂直居中 */
+  gap: 15px; /* 元素之间的间隔 */
 }
 
-/* 左侧竖条 - 默认蓝色 */
-.song-card-main::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 4px;
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
-}
-
-/* 已排期歌曲的左侧竖条显示绿色 */
-.song-card.scheduled .song-card-main::before {
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-}
+/* 移除左侧状态条 */
 
 .song-card.played {
   opacity: 0.6;
 }
 
+/* 歌曲封面样式 */
+.song-cover {
+  width: 55px;
+  height: 55px;
+  flex-shrink: 0;
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 文字封面样式 */
+.text-cover {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0043F8 0%, #0075F8 100%);
+  color: #FFFFFF;
+  font-size: 28px;
+  font-weight: bold;
+  font-family: 'MiSans', sans-serif;
+}
+
+/* 播放按钮叠加层 */
+.play-button-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.song-cover:hover .play-button-overlay {
+  opacity: 1;
+}
+
+/* 播放按钮样式 */
+.play-button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(11, 90, 254, 0.8);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.play-button:hover {
+  transform: scale(1.1);
+}
+
+.play-icon {
+  margin-left: 2px;
+}
+
+.pause-icon {
+  font-size: 10px;
+}
+
 .song-info {
-  width: 70%;
+  width: calc(70% - 75px); /* 减去封面宽度和间距 */
 }
 
 .song-title {
@@ -753,13 +925,15 @@ const vRipple = {
   font-weight: 600;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
+  text-align: left;
 }
 
 /* 热度和点赞按钮区域 */
 .action-area {
   position: absolute;
-  top: 1rem;
+  top: 50%;
   right: 1rem;
+  transform: translateY(-50%);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -845,7 +1019,7 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #1A1D24;
+  background: #21242D;
   border-radius: 0 0 10px 10px;
   padding: 0.5rem 1rem;
   width: 95%;

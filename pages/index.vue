@@ -29,7 +29,7 @@
               <div class="user-actions">
                 <!-- 删除通知铃铛按钮 -->
                 <button @click="handleLogout" class="action-button logout-button">
-                  退出登录
+                  <span class="logout-text">退出登录</span>
                 </button>
                 <NuxtLink v-if="isAdmin" to="/dashboard" class="action-button dashboard-button">
                   管理后台
@@ -1024,6 +1024,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
 .logout-button {
   background: linear-gradient(180deg, #FF2F2F 0%, #FF654D 100%);
+  color: #FFFFFF;
 }
 
 .password-button {

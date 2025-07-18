@@ -14,7 +14,7 @@
 
     <!-- 表单区域 -->
     <div class="form-container">
-      <form @submit.prevent="handleSubmit" class="song-request-form">
+      <form @submit.prevent="handleSearch" class="song-request-form">
         <!-- 将歌曲名称和歌手放在同一行 -->
         <div class="form-row">
           <div class="form-group">
@@ -47,6 +47,21 @@
             </div>
           </div>
         </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="platform">音乐平台</label>
+            <div class="input-wrapper">
+              <select 
+                id="platform" 
+                v-model="platform" 
+                class="form-select"
+              >
+                <option value="netease">网易云音乐</option>
+                <option value="tencent">QQ音乐</option>
+              </select>
+          </div>
+        </div>
         
         <!-- 播出时段选择 -->
         <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
@@ -69,6 +84,7 @@
                 </template>
               </option>
             </select>
+            </div>
           </div>
         </div>
         
@@ -109,11 +125,72 @@
         <div v-if="success" class="success-message">{{ success }}</div>
         
         <div class="form-actions">
-          <button type="submit" :disabled="loading || submitting" class="submit-button">
-            {{ loading || submitting ? '处理中...' : '提交' }}
+          <button type="submit" :disabled="loading || searching" class="submit-button">
+            {{ loading || searching ? '处理中...' : '搜索' }}
           </button>
         </div>
       </form>
+      
+      <!-- 搜索结果区域 -->
+      <div v-if="searchResults.length > 0" class="search-results">
+        <h3 class="results-title">搜索结果</h3>
+        <div class="results-list">
+                      <div 
+            v-for="(result, index) in searchResults" 
+            :key="index" 
+            class="result-item"
+          >
+            <div class="result-cover">
+              <img :src="result.cover" alt="封面" class="cover-img" />
+              <div class="play-overlay" @click.stop="playSong(result)">
+                <span class="play-icon">▶</span>
+              </div>
+            </div>
+            <div class="result-info">
+              <h4 class="result-title">{{ result.song || result.title }}</h4>
+              <p class="result-artist">{{ result.singer || result.artist }}</p>
+              <p class="result-album" v-if="result.album">专辑：{{ result.album }}</p>
+              <p class="result-time">发布时间：{{ result.time }}</p>
+            </div>
+            <div class="result-actions">
+              <button 
+                class="select-btn" 
+                @click.stop="submitSong(result)"
+              >
+                选择投稿
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 添加未找到想要歌曲的按钮 -->
+        <div class="no-results-action">
+          <button 
+            class="manual-submit-btn" 
+            @click="handleSubmit"
+          >
+            以上没有我想要的歌曲，直接提交
+          </button>
+        </div>
+      </div>
+      
+      <!-- 播放器 -->
+      <div v-if="currentPlaying" class="audio-player">
+        <div class="player-info">
+          <img :src="currentPlaying.cover" alt="封面" class="player-cover" />
+          <div class="player-text">
+            <h4>{{ currentPlaying.song || currentPlaying.title }}</h4>
+            <p>{{ currentPlaying.singer || currentPlaying.artist }}</p>
+          </div>
+        </div>
+        <audio 
+          ref="audioPlayer" 
+          controls 
+          :src="currentPlaying.url"
+          @ended="stopPlaying"
+        ></audio>
+        <button class="close-player" @click="stopPlaying">×</button>
+      </div>
     </div>
   </div>
 </template>
@@ -133,6 +210,7 @@ const emit = defineEmits(['request', 'vote'])
 
 const title = ref('')
 const artist = ref('')
+const platform = ref('netease') // 默认使用网易云音乐
 const preferredPlayTimeId = ref('')
 const error = ref('')
 const success = ref('')
@@ -143,6 +221,14 @@ const songService = useSongs()
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
+
+// 搜索相关
+const searching = ref(false)
+const searchResults = ref([])
+const currentPlaying = ref(null)
+const audioPlayer = ref(null)
+const selectedCover = ref('')
+const selectedUrl = ref('')
 
 // 获取播出时段
 const fetchPlayTimes = async () => {
@@ -192,7 +278,7 @@ watch(() => songService.similarSongFound.value, (newVal) => {
 
 // 检查相似歌曲
 const checkSimilarSongs = () => {
-  if (title.value.trim().length > 2 && artist.value.trim().length > 0) {
+  if (title.value.trim().length > 2) {
     console.log('检查相似歌曲:', title.value, artist.value)
     const similar = songService.checkSimilarSongs(title.value.trim(), artist.value.trim())
     console.log('相似歌曲结果:', similar, songService.similarSongFound.value)
@@ -229,58 +315,250 @@ const ignoreSimilar = () => {
   similarSong.value = null
 }
 
-const handleSubmit = async () => {
+// 搜索歌曲
+const handleSearch = async () => {
   error.value = ''
   success.value = ''
   
-  if (!title.value.trim() || !artist.value.trim()) {
-    error.value = '歌曲名称和歌手名称不能为空'
+  if (!title.value.trim()) {
+    error.value = '歌曲名称不能为空'
     return
   }
   
-  // 再次检查相似歌曲
-  const similar = songService.checkSimilarSongs(title.value.trim(), artist.value.trim())
-  if (similar && similar.title.toLowerCase() === title.value.trim().toLowerCase() && 
-      similar.artist.toLowerCase() === artist.value.trim().toLowerCase()) {
-    error.value = `《${title.value}》已经在列表中，不能重复投稿`
+  if (!artist.value.trim()) {
+    error.value = '歌手名称不能为空'
     return
   }
   
+  searching.value = true
   try {
-    submitting.value = true
+    // 构建搜索词，将歌曲名称和歌手名称用空格连接
+    const searchWord = `${title.value.trim()} ${artist.value.trim()}`
     
-    // 创建请求数据对象，确保总是包含title和artist
-    const requestData = {
-      title: title.value.trim(),
-      artist: artist.value.trim()
+    // 构建API URL
+    const apiUrl = `https://api.vkeys.cn/v2/music/${platform.value}?word=${encodeURIComponent(searchWord)}`
+    
+    // 直接从前端调用API
+    const response = await fetch(apiUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'Origin': window.location.origin
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error('搜索请求失败，请稍后重试')
     }
     
-    // 只有在启用了播放时段选择且用户选择了时段时，才添加preferredPlayTimeId
-    if (playTimeSelectionEnabled.value && preferredPlayTimeId.value) {
-      requestData.preferredPlayTimeId = parseInt(preferredPlayTimeId.value)
-    }
+    const data = await response.json()
     
-    const result = await emit('request', requestData)
-    
-    if (result) {
-      success.value = '点歌成功！'
-      // 清空表单
-      title.value = ''
-      artist.value = ''
-      preferredPlayTimeId.value = ''
-      similarSong.value = null
-      
-      // 3秒后清除成功提示
-      setTimeout(() => {
-        success.value = ''
-      }, 3000)
+    if (data.code === 200) {
+      if (data.data && Array.isArray(data.data)) {
+        // 每个搜索结果初始不包含具体URL，选中后才会获取
+        searchResults.value = data.data.map(item => ({
+          ...item,
+          musicId: item.id,
+          hasUrl: false
+        }))
+      } else if (data.data) {
+        // 如果返回单个结果
+        searchResults.value = [{
+          ...data.data,
+          musicId: data.data.id,
+          hasUrl: false
+        }]
+      } else {
+        searchResults.value = []
+        error.value = '没有找到匹配的歌曲'
+      }
+    } else {
+      error.value = data.message || '搜索失败，请稍后重试'
     }
   } catch (err) {
-    console.error('投稿失败:', err)
+    console.error('搜索错误:', err)
+    error.value = err.message || '搜索请求失败，请稍后重试'
+    
+    if (error.value.includes('CORS') || error.value.includes('跨域')) {
+      error.value += '。请尝试使用能够处理跨域请求的浏览器扩展，或联系管理员配置服务器以允许跨域请求。'
+    }
+  } finally {
+    searching.value = false
+  }
+}
+
+// 获取音乐播放URL
+const getAudioUrl = async (result) => {
+  if (result.hasUrl || result.url) return result
+
+  try {
+    let apiUrl
+    if (platform.value === 'netease') {
+      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${result.musicId}`
+    } else if (platform.value === 'tencent') {
+      apiUrl = `https://api.vkeys.cn/v2/music/tencent/geturl?id=${result.musicId}`
+    }
+
+    const response = await fetch(apiUrl)
+    if (!response.ok) {
+      throw new Error('获取音乐URL失败')
+    }
+
+    const data = await response.json()
+    if (data.code === 200 && data.data) {
+      // 更新结果中的URL和其他信息
+      result.url = data.data.url
+      result.hasUrl = true
+      // 检查URL是否可用
+      
+      // 更新搜索结果中的对应项
+      const index = searchResults.value.findIndex(item => item.musicId === result.musicId)
+      if (index !== -1) {
+        searchResults.value[index] = { ...result }
+      }
+    }
+    
+    return result
+  } catch (err) {
+    console.error('获取音乐URL错误:', err)
+    error.value = '获取音乐URL失败，请稍后重试'
+    return result
+  }
+}
+
+// 播放歌曲
+const playSong = async (result) => {
+  // 如果还没有获取URL，先获取
+  if (!result.hasUrl && !result.url) {
+    result = await getAudioUrl(result)
+  }
+  
+  // 如果没有URL，提示错误
+  if (!result.url) {
+    error.value = '该歌曲无法播放，可能是付费内容'
+    return
+  }
+  
+  // 如果正在播放同一首歌，则停止
+  if (currentPlaying.value && currentPlaying.value.musicId === result.musicId) {
+    stopPlaying()
+    return
+  }
+  
+  currentPlaying.value = result
+  
+  // 等待DOM更新后播放
+      setTimeout(() => {
+    if (audioPlayer.value) {
+      audioPlayer.value.play().catch(err => {
+        console.error('播放失败:', err)
+        error.value = '播放失败，可能是浏览器限制或音乐资源不可用'
+      })
+    }
+  }, 100)
+}
+
+// 选择搜索结果
+const selectResult = async (result) => {
+  // 先获取完整信息
+  if (!result.hasUrl) {
+    result = await getAudioUrl(result)
+  }
+  
+  // 标准化属性名称（处理不同API返回格式的差异）
+  const songTitle = result.song || result.title
+  const singerName = result.singer || result.artist
+  
+  title.value = songTitle
+  artist.value = singerName
+  selectedCover.value = result.cover || ''
+  selectedUrl.value = result.url || ''
+  
+  // 如果没有URL，给出提示
+  if (!result.url) {
+    success.value = '已选择歌曲，但可能无法播放完整版本'
+  }
+}
+
+// 提交选中的歌曲
+const submitSong = async (result) => {
+  if (submitting.value) return
+
+  submitting.value = true
+  error.value = ''
+
+  // 使用搜索结果中的数据
+  title.value = result.song || result.title
+  artist.value = result.singer || result.artist
+  selectedCover.value = result.cover || ''
+  selectedUrl.value = result.url || result.file || ''
+
+  try {
+    const response = await songService.requestSong({
+      title: title.value,
+      artist: artist.value,
+      preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
+      cover: selectedCover.value,
+      musicUrl: selectedUrl.value
+    })
+
+    if (response) {
+      success.value = '歌曲投稿成功！'
+      resetForm()
+      emit('request', response)
+    }
+  } catch (err) {
     error.value = err.message || '投稿失败，请稍后重试'
   } finally {
     submitting.value = false
   }
+}
+
+// 直接提交表单
+const handleSubmit = async () => {
+  if (submitting.value) return
+  
+  submitting.value = true
+  error.value = ''
+  
+  try {
+    const response = await songService.requestSong({
+      title: title.value,
+      artist: artist.value,
+      preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
+      cover: selectedCover.value,
+      musicUrl: selectedUrl.value
+    })
+    
+    if (response) {
+      success.value = '歌曲投稿成功！'
+      resetForm()
+      emit('request', response)
+    }
+  } catch (err) {
+    error.value = err.message || '投稿失败，请稍后重试'
+  } finally {
+    submitting.value = false
+  }
+}
+
+// 重置表单
+const resetForm = () => {
+  title.value = ''
+  artist.value = ''
+  preferredPlayTimeId.value = ''
+  similarSong.value = null
+  searchResults.value = []
+  selectedCover.value = ''
+  selectedUrl.value = ''
+}
+
+// 停止播放
+const stopPlaying = () => {
+  if (audioPlayer.value) {
+    audioPlayer.value.pause()
+    audioPlayer.value.currentTime = 0
+  }
+  currentPlaying.value = null
 }
 </script>
 
@@ -495,6 +773,224 @@ const handleSubmit = async () => {
   cursor: pointer;
 }
 
+/* 搜索结果样式 */
+.search-results {
+  margin-top: 2rem;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 13px;
+  padding: 1.5rem;
+}
+
+.results-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 1rem;
+  color: #FFFFFF;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.result-item {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+  gap: 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.result-item:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.result-cover {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  border-radius: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.result-cover:hover .play-overlay {
+  opacity: 1;
+}
+
+.play-icon {
+  color: white;
+  font-size: 24px;
+}
+
+.result-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #FFFFFF;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-artist {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0.5rem 0;
+}
+
+.result-album,
+.result-quality,
+.result-time,
+.result-pay {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  margin: 0.25rem 0;
+}
+
+.result-actions {
+  display: flex;
+  align-items: center;
+}
+
+.select-btn {
+  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  color: #FFFFFF;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* 音频播放器样式 */
+.audio-player {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 800px;
+  background: rgba(0, 10, 20, 0.9);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.player-cover {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.player-text h4 {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #FFFFFF;
+  margin: 0 0 0.25rem 0;
+}
+
+.player-text p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0;
+}
+
+.audio-player audio {
+  flex: 2;
+  height: 36px;
+}
+
+.close-player {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  font-size: 24px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+/* 手动提交按钮样式 */
+.no-results-action {
+  margin-top: 1rem;
+  text-align: center;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.manual-submit-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 0.5rem 1.5rem;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.manual-submit-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
   .request-form {
@@ -536,6 +1032,25 @@ const handleSubmit = async () => {
   
   .vote-btn, .ignore-btn {
     width: 100%;
+  }
+  
+  .audio-player {
+    flex-direction: column;
+    padding: 0.75rem;
+  }
+  
+  .player-info {
+    width: 100%;
+  }
+  
+  .audio-player audio {
+    width: 100%;
+  }
+  
+  .close-player {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
   }
 }
 </style> 

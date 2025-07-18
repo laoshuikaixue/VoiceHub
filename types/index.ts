@@ -23,6 +23,8 @@ export interface Song {
   preferredPlayTime?: PlayTime | null
   createdAt: string
   voted?: boolean
+  cover?: string | null   // 音乐封面URL
+  musicUrl?: string | null  // 音乐文件URL
 }
 
 export interface Schedule {

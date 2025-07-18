@@ -131,7 +131,9 @@ export default defineEventHandler(async (event) => {
           artist: schedule.song.artist,
           requester: requesterName,
           voteCount: schedule.song._count.votes,
-          played: schedule.song.played || false
+          played: schedule.song.played || false,
+          cover: schedule.song.cover || null,
+          musicUrl: schedule.song.musicUrl || null
         }
       }
     })

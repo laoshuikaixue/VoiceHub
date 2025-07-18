@@ -78,7 +78,9 @@ export default defineEventHandler(async (event) => {
         artist: body.artist,
         requesterId: user.id,
         preferredPlayTimeId: preferredPlayTime?.id || null,
-        semester: getCurrentSemester()
+        semester: getCurrentSemester(),
+        cover: body.cover || null,
+        musicUrl: body.musicUrl || null
       }
     })
     

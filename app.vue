@@ -1,6 +1,13 @@
 <template>
   <div class="app">
-    <!-- 移除旧的Logo组件 -->
+    <!-- 全局通知组件 -->
+    <Notification
+      v-if="notification.show"
+      :show="notification.show"
+      :message="notification.message"
+      :type="notification.type"
+      @close="closeNotification"
+    />
     
     <main class="main-content">
       <NuxtPage />
@@ -10,11 +17,42 @@
 
 <script setup>
 import { onMounted, computed, ref } from 'vue'
-// 保留NotificationIcon的导入，但不在这里使用它，而是在各个页面中使用
-import NotificationIcon from '~/components/Notifications/NotificationIcon.vue'
+// 导入通知组件
+import Notification from '~/components/UI/Notification.vue'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
+
+// 通知状态
+const notification = ref({
+  show: false,
+  message: '',
+  type: 'info'
+})
+
+// 全局事件总线，用于在任何组件中触发通知
+const showGlobalNotification = (message, type = 'info') => {
+  notification.value = {
+    show: true,
+    message,
+    type
+  }
+  
+  // 3秒后自动关闭
+  setTimeout(() => {
+    notification.value.show = false
+  }, 3000)
+}
+
+// 关闭通知
+const closeNotification = () => {
+  notification.value.show = false
+}
+
+// 挂载全局通知方法到window对象，以便在composables中使用
+onMounted(() => {
+  window.$showNotification = showGlobalNotification
+})
 
 // 使用onMounted确保只在客户端初始化认证
 let auth = null

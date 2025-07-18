@@ -17,16 +17,22 @@ export const useSongs = () => {
   
   // 显示通知
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    notification.value = {
-      show: true,
-      message,
-      type
+    // 使用全局通知
+    if (window.$showNotification) {
+      window.$showNotification(message, type)
+    } else {
+      // 备用方案：使用本地通知
+      notification.value = {
+        show: true,
+        message,
+        type
+      }
+      
+      // 3秒后自动关闭
+      setTimeout(() => {
+        notification.value.show = false
+      }, 3000)
     }
-    
-    // 3秒后自动关闭
-    setTimeout(() => {
-      notification.value.show = false
-    }, 3000)
   }
   
   // 获取播放时段列表
@@ -218,7 +224,9 @@ export const useSongs = () => {
   const requestSong = async (songData: {
     title: string,
     artist: string,
-    preferredPlayTimeId?: number | null
+    preferredPlayTimeId?: number | null,
+    cover?: string | null,
+    musicUrl?: string | null
   }) => {
     if (!isAuthenticated.value) {
       showNotification('需要登录才能点歌', 'error')
@@ -244,8 +252,13 @@ export const useSongs = () => {
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '点歌失败'
-      error.value = errorMsg
-      showNotification(errorMsg, 'error')
+      // 如果是重复投稿错误，只显示通知而不设置全局错误
+      if (errorMsg.includes('已经在列表中') || errorMsg.includes('不能重复投稿')) {
+        showNotification(errorMsg, 'info')
+      } else {
+        error.value = errorMsg
+        showNotification(errorMsg, 'error')
+      }
       return null
     } finally {
       loading.value = false
