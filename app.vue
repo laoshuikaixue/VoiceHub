@@ -9,12 +9,12 @@
       @close="closeNotification"
     />
     
-    <!-- 全局音频播放器 -->
+    <!-- 全局音频播放器 - 使用isPlayerVisible控制显示/隐藏 -->
     <AudioPlayer
-      v-if="currentSong"
+      v-if="isPlayerVisible"
       :song="currentSong"
-      @close="stopPlayback"
-      @ended="stopPlayback"
+      @close="handlePlayerClose"
+      @ended="handlePlayerEnded"
     />
     
     <main class="main-content">
@@ -74,14 +74,31 @@ onMounted(() => {
 // 音频播放器
 const audioPlayer = useAudioPlayer()
 const currentSong = ref(null)
+const isPlayerVisible = ref(false) // 控制播放器显示/隐藏
 
 // 监听当前播放的歌曲
 watch(() => audioPlayer.getCurrentSong().value, (newSong) => {
-  currentSong.value = newSong
+  if (newSong) {
+    currentSong.value = newSong
+    isPlayerVisible.value = true
+  } else {
+    // 当没有歌曲时，不立即隐藏播放器，而是让动画完成
+    currentSong.value = null
+  }
 }, { immediate: true })
 
-// 停止播放
-const stopPlayback = () => {
+// 处理播放器关闭事件
+const handlePlayerClose = () => {
+  // 先停止播放
+  audioPlayer.stopSong()
+  // 延迟隐藏播放器，让动画有时间执行
+  setTimeout(() => {
+    isPlayerVisible.value = false
+  }, 400) // 略大于动画持续时间
+}
+
+// 处理播放结束事件
+const handlePlayerEnded = () => {
   audioPlayer.stopSong()
 }
 
