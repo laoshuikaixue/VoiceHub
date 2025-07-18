@@ -78,7 +78,7 @@
                @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()"
                v-ripple>
             通知
-            <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab">{{unreadNotificationCount}}</span>
+            <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
           </div>
         </div>
 
@@ -1922,20 +1922,14 @@ input:checked + .toggle-slider:before {
 
 /* 通知标签上的未读徽章 */
 .notification-badge-tab {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 9px;
-  background-color: var(--primary);
-  color: white;
-  font-size: 10px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
+  position: relative;
+  top: -8px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--danger);
+  display: inline-block;
   animation: pulse 2s infinite;
 }
 

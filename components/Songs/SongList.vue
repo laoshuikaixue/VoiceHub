@@ -553,7 +553,7 @@ const vRipple = {
   background: transparent;
   border: none;
   padding: 0.75rem 1.5rem;
-  font-family: 'MiSans', sans-serif;
+  font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 16px;
   color: rgba(255, 255, 255, 0.6);
@@ -618,7 +618,7 @@ const vRipple = {
   border-radius: 8px;
   padding: 0.5rem 1rem;
   padding-right: 2.5rem;
-  font-family: 'MiSans', sans-serif;
+  font-family: 'MiSans-Demibold', sans-serif;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.8);
   width: 100%;
@@ -744,7 +744,7 @@ const vRipple = {
 }
 
 .song-card-main {
-  padding: 1rem;
+  padding: 1rem 0 1rem 1rem; /* 移除右侧内边距，保留左侧、上下内边距 */
   background: #21242D;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   position: relative;
@@ -753,8 +753,6 @@ const vRipple = {
   width: 100%;
   z-index: 2;
   margin-bottom: -5px;
-  padding-left: 1rem; /* 减少左侧内边距，因为已移除状态条 */
-  padding-right: 1rem; /* 确保右侧有足够的内边距 */
   overflow: hidden;
   display: flex; /* 使用flex布局 */
   align-items: center; /* 垂直居中 */
@@ -797,7 +795,7 @@ const vRipple = {
   color: #FFFFFF;
   font-size: 28px;
   font-weight: bold;
-  font-family: 'MiSans', sans-serif;
+  font-family: 'MiSans-Demibold', sans-serif;
 }
 
 /* 播放按钮叠加层 */
@@ -858,7 +856,7 @@ const vRipple = {
 }
 
 .song-title {
-  font-family: 'MiSans', sans-serif;
+  font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 16px;
   letter-spacing: 0.04em;
@@ -887,7 +885,7 @@ const vRipple = {
 }
 
 .requester {
-  font-family: 'MiSans', sans-serif;
+  font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
@@ -903,11 +901,13 @@ const vRipple = {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0; /* 完全移除间距 */
   margin-left: auto;
+  margin-right: 10px; /* 添加右侧外边距，使整体向左移动 */
   flex-shrink: 0;
   width: auto; /* 使用自动宽度 */
-  min-width: 90px; /* 设置最小宽度确保按钮不会被挤压 */
+  min-width: 100px; /* 增加最小宽度，确保热度和点赞按钮有更多空间 */
+  padding-right: 0; /* 移除右侧内边距 */
 }
 
 /* 热度样式 */
@@ -915,10 +915,11 @@ const vRipple = {
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 45px; /* 增加热度显示的最小宽度 */
 }
 
 .vote-count .count {
-  font-family: 'MiSans', sans-serif;
+  font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 20px;
   color: #0B5AFE;
@@ -931,7 +932,7 @@ const vRipple = {
 }
 
 .vote-count .label {
-  font-family: 'MiSans', sans-serif;
+  font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 12px;
   color: #FFFFFF;
@@ -940,14 +941,15 @@ const vRipple = {
 
 /* 点赞按钮样式 */
 .like-button-wrapper {
-  margin-top: 0;
+  /* 向右移动点赞按钮，但考虑到整体已向左移动，减小负边距 */
+  margin-right: -10px;
 }
 
 .like-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 45px;
+  width: 48px;
   height: 45px;
   background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
   border: 1px solid rgba(255, 255, 255, 0.16);
@@ -1000,7 +1002,7 @@ const vRipple = {
 }
 
 .submission-time {
-  font-family: 'MiSans', sans-serif;
+  font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
@@ -1013,7 +1015,7 @@ const vRipple = {
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
   padding: 0.25rem 0.75rem;
-  font-family: 'MiSans', sans-serif;
+  font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 12px;
   color: #FFFFFF;
@@ -1116,7 +1118,7 @@ button:disabled {
 .confirm-dialog-btn {
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  font-family: 'MiSans', sans-serif;
+  font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 14px;
   border: 1px solid rgba(255, 255, 255, 0.16);
@@ -1210,4 +1212,4 @@ button:disabled {
 .page-move {
   transition: transform 0.4s ease;
 }
-</style> 
+</style>
