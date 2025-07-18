@@ -22,16 +22,16 @@ export const useSongs = () => {
       window.$showNotification(message, type)
     } else {
       // 备用方案：使用本地通知
-      notification.value = {
-        show: true,
-        message,
-        type
-      }
-      
-      // 3秒后自动关闭
-      setTimeout(() => {
-        notification.value.show = false
-      }, 3000)
+    notification.value = {
+      show: true,
+      message,
+      type
+    }
+    
+    // 3秒后自动关闭
+    setTimeout(() => {
+      notification.value.show = false
+    }, 3000)
     }
   }
   
@@ -67,14 +67,16 @@ export const useSongs = () => {
     }
   }
   
-  // 获取歌曲列表（需要登录）
-  const fetchSongs = async () => {
+  // 获取歌曲列表（需要登录）- 显示加载状态
+  const fetchSongs = async (silent = false) => {
     if (!isAuthenticated.value) {
       error.value = '需要登录才能获取歌曲列表'
       return
     }
     
+    if (!silent) {
     loading.value = true
+    }
     error.value = ''
     
     try {
@@ -99,8 +101,15 @@ export const useSongs = () => {
     } catch (err: any) {
       error.value = err.message || '获取歌曲列表失败'
     } finally {
+      if (!silent) {
       loading.value = false
+      }
     }
+  }
+  
+  // 静默刷新歌曲列表 - 不显示加载状态
+  const refreshSongsSilent = async () => {
+    return fetchSongs(true)
   }
   
   // 获取公共歌曲列表（无需登录）
@@ -150,8 +159,10 @@ export const useSongs = () => {
   }
   
   // 获取公共排期（无需登录）
-  const fetchPublicSchedules = async () => {
+  const fetchPublicSchedules = async (silent = false) => {
+    if (!silent) {
     loading.value = true
+    }
     error.value = ''
     
     try {
@@ -188,8 +199,15 @@ export const useSongs = () => {
     } catch (err: any) {
       error.value = err.message || '获取排期失败'
     } finally {
+      if (!silent) {
       loading.value = false
+      }
     }
+  }
+  
+  // 静默刷新公共排期 - 不显示加载状态
+  const refreshSchedulesSilent = async () => {
+    return fetchPublicSchedules(true)
   }
   
   // 检查相似歌曲
@@ -256,8 +274,8 @@ export const useSongs = () => {
       if (errorMsg.includes('已经在列表中') || errorMsg.includes('不能重复投稿')) {
         showNotification(errorMsg, 'info')
       } else {
-        error.value = errorMsg
-        showNotification(errorMsg, 'error')
+      error.value = errorMsg
+      showNotification(errorMsg, 'error')
       }
       return null
     } finally {
@@ -300,9 +318,11 @@ export const useSongs = () => {
         if (targetSong) {
           targetSong.voted = true
           targetSong.voteCount = (targetSong.voteCount || 0) + 1
+          
+          // 使用全局通知显示成功信息
+          showNotification(`为歌曲《${targetSong.title}》投票成功！`, 'success')
         }
         
-        // 不再显示通知，由调用方处理
         return data
       } catch (fetchErr: any) {
         // 处理API返回的错误
@@ -344,6 +364,10 @@ export const useSongs = () => {
     error.value = ''
     
     try {
+      // 查找歌曲信息用于通知
+      const targetSong = songs.value.find(s => s.id === songId)
+      const songTitle = targetSong ? targetSong.title : '歌曲'
+      
       // 显式传递认证头
       const authHeaders = getAuthHeader()
       
@@ -356,7 +380,8 @@ export const useSongs = () => {
       // 更新歌曲列表
       await fetchSongs()
       
-      // 不在这里显示通知，由调用方处理
+      // 显示成功通知
+      showNotification(`已成功撤回《${songTitle}》的投稿`, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '撤回歌曲失败'
@@ -578,6 +603,8 @@ export const useSongs = () => {
     fetchPublicSongs,
     fetchPublicSchedules,
     fetchPlayTimes,
+    refreshSongsSilent,
+    refreshSchedulesSilent,
     checkSimilarSongs,
     requestSong,
     voteSong,

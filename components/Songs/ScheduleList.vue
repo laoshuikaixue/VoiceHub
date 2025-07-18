@@ -178,14 +178,14 @@
       </div>
     </div>
 
-    <!-- 音频播放器 (隐藏但可以播放) -->
-    <audio ref="audioPlayer" @ended="onAudioEnded" @timeupdate="onTimeUpdate"></audio>
+    <!-- 使用全局音频播放器，此处不需要audio元素 -->
   </div>
 </template>
 
 <script setup>
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useSongs } from '~/composables/useSongs'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
 
 const props = defineProps({
   schedules: {
@@ -202,11 +202,8 @@ const props = defineProps({
   }
 })
 
-// 音频播放相关
-const audioPlayer = ref(null)
-const currentPlayingSong = ref(null)
-const isPlaying = ref(false)
-const playProgress = ref(0)
+// 音频播放相关 - 使用全局音频播放器
+const audioPlayer = useAudioPlayer()
 
 // 获取播放时段启用状态
 const { playTimeEnabled } = useSongs()
@@ -364,17 +361,50 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
   // 初始化移动状态
   isMobile.value = window.innerWidth <= 768
+  
+  // 寻找今天的日期并自动选择
+  if (availableDates.value.length > 0) {
+    const today = new Date()
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    
+    // 查找今天的日期索引
+    const todayIndex = availableDates.value.findIndex(date => date === todayStr)
+    
+    if (todayIndex >= 0) {
+      // 如果找到今天的日期，则选择它
+      currentDateIndex.value = todayIndex
+    } else {
+      // 如果今天没有排期，找到最接近今天的未来日期
+      const todayTime = today.getTime()
+      let closestFutureDate = -1
+      let minDiff = Number.MAX_SAFE_INTEGER
+      
+      availableDates.value.forEach((dateStr, index) => {
+        const dateParts = dateStr.split('-')
+        const date = new Date(
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2])
+        )
+        const diff = Math.abs(date.getTime() - todayTime)
+        
+        if (diff < minDiff) {
+          minDiff = diff
+          closestFutureDate = index
+        }
+      })
+      
+      if (closestFutureDate >= 0) {
+        currentDateIndex.value = closestFutureDate
+      }
+      // 如果没有找到合适的日期，则使用默认值（0）
+    }
+  }
 })
 
 // 组件销毁前移除事件监听器
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
-
-  // 停止音频播放
-  if (audioPlayer.value) {
-    audioPlayer.value.pause()
-    audioPlayer.value.src = ''
-  }
 })
 
 // 处理图片加载错误
@@ -393,54 +423,12 @@ const getFirstChar = (title) => {
 // 切换歌曲播放/暂停
 const togglePlaySong = (song) => {
   if (!song.musicUrl) return
-
-  // 如果是同一首歌，切换播放/暂停状态
-  if (currentPlayingSong.value && currentPlayingSong.value.id === song.id) {
-    if (isPlaying.value) {
-      audioPlayer.value.pause()
-      isPlaying.value = false
-    } else {
-      audioPlayer.value.play()
-      isPlaying.value = true
-    }
-    return
-  }
-
-  // 如果是不同的歌曲，停止当前播放，播放新歌曲
-  if (isPlaying.value) {
-    audioPlayer.value.pause()
-    isPlaying.value = false
-  }
-
-  currentPlayingSong.value = song
-  audioPlayer.value.src = song.musicUrl
-  audioPlayer.value.play()
-    .then(() => {
-      isPlaying.value = true
-    })
-    .catch(err => {
-      console.error('播放失败:', err)
-      isPlaying.value = false
-    })
+  audioPlayer.playSong(song)
 }
 
 // 判断当前是否正在播放指定ID的歌曲
 const isCurrentPlaying = (songId) => {
-  return isPlaying.value && currentPlayingSong.value && currentPlayingSong.value.id === songId
-}
-
-// 音频播放结束处理
-const onAudioEnded = () => {
-  isPlaying.value = false
-  playProgress.value = 0
-  currentPlayingSong.value = null
-}
-
-// 更新播放进度
-const onTimeUpdate = () => {
-  if (audioPlayer.value && audioPlayer.value.duration) {
-    playProgress.value = (audioPlayer.value.currentTime / audioPlayer.value.duration) * 100
-  }
+  return audioPlayer.isCurrentPlaying(songId)
 }
 
 // 格式化播放时间

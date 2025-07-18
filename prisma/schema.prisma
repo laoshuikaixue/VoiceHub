@@ -37,8 +37,6 @@ model Song {
   playedAt      DateTime?
   semester      String?
   preferredPlayTimeId Int?     // 期望播出时段ID，可选
-  cover         String?        // 音乐封面URL
-  musicUrl      String?        // 音乐文件URL
   notifications Notification[]
   schedules     Schedule[]
   requester     User           @relation(fields: [requesterId], references: [id])

@@ -13,13 +13,9 @@ export default defineEventHandler(async (event) => {
     
     console.log('获取排期使用的今日日期:', today.toISOString())
     
-    // 获取已排期的歌曲，包含播放时段信息
+    // 获取所有排期的歌曲，包含播放时段信息
     const schedules = await prisma.schedule.findMany({
-      where: {
-        playDate: {
-          gte: today // 只获取当前日期及以后的排期
-        }
-      },
+      // 移除日期过滤器，返回所有排期
       include: {
         song: {
           include: {

@@ -665,12 +665,14 @@ onMounted(async () => {
   // 更新真实数据
   await updateSongCounts()
 
-  // 设置定时刷新（每60秒刷新一次数据）
+  // 设置定时刷新（每60秒静默刷新一次数据）
   refreshInterval = setInterval(async () => {
     if (isClientAuthenticated.value) {
-      await songs.fetchSongs()
+      // 使用静默刷新，不显示加载状态
+      await songs.refreshSongsSilent()
     } else {
-      await songs.fetchPublicSchedules()
+      // 使用静默刷新，不显示加载状态
+      await songs.refreshSchedulesSilent()
     }
     await updateSongCounts()
     // 移除通知数量更新
@@ -720,16 +722,30 @@ const handleRequest = async (songData) => {
   }
 
   try {
+    console.log("处理歌曲请求:", songData.title)
     // 直接传递整个songData对象，确保JSON格式正确
     const result = await songs.requestSong(songData)
     if (result) {
       // 显示投稿成功通知
       showNotification(`《${songData.title} - ${songData.artist}》投稿成功！`, 'success')
-      // 更新歌曲统计
+      
+      // 强制刷新歌曲列表
+      console.log("投稿成功，刷新歌曲列表")
       await songs.fetchSongs()
+      
+      // 更新歌曲统计
       updateSongCounts()
-      // 自动刷新歌曲列表
+      
+      // 如果当前在歌曲列表页，自动切换到该页面
+      if (activeTab.value !== 'songs') {
+        setTimeout(() => {
+          handleTabClick('songs')
+        }, 500)
+      } else {
+        // 否则只刷新当前列表
       refreshSongs()
+      }
+      
       return true
     }
     return false
@@ -749,32 +765,18 @@ const handleVote = async (song) => {
   try {
     if (!songs) return
 
-    // 检查是否已经投过票
-    if (song.voted) {
-      showNotification(`您已经为歌曲《${song.title}》投过票了`, 'info')
-      return
-    }
-
-    try {
-      const result = await songs.voteSong(song.id)
-      if (result) {
-        showNotification(`为歌曲《${song.title}》投票成功！`, 'success')
-        // 手动刷新歌曲列表以获取最新状态，但不影响当前视图
+    // 调用投票API - 通知已在composable中处理
+    await songs.voteSong(song.id)
+    
+    // 静默刷新歌曲列表以获取最新状态，但不影响当前视图
         setTimeout(() => {
-          songs.fetchSongs().catch(err => {
+      songs.refreshSongsSilent().catch(err => {
             console.error('刷新歌曲列表失败', err)
           })
         }, 500)
-      }
-    } catch (apiErr) {
+  } catch (err) {
       // 不做任何处理，因为useSongs中已经处理了错误提示
       console.log('API错误已在useSongs中处理')
-    }
-  } catch (err) {
-    // 这里只处理非API错误
-    if (!(err.message && err.message.includes('已经为这首歌投过票'))) {
-      showNotification(err.message || '投票失败', 'error')
-    }
   }
 }
 
@@ -788,14 +790,13 @@ const handleWithdraw = async (song) => {
   try {
     if (!songs) return
 
-    const result = await songs.withdrawSong(song.id)
-    if (result) {
-      showNotification(`已成功撤回《${song.title}》的投稿`, 'success')
-      await songs.fetchSongs()
+    // 调用撤回API - 通知已在composable中处理
+    await songs.withdrawSong(song.id)
+    // 更新计数
       updateSongCounts()
-    }
   } catch (err) {
-    showNotification(err.message || '撤回投稿失败', 'error')
+    // 不做任何处理，因为useSongs中已经处理了错误提示
+    console.log('API错误已在useSongs中处理')
   }
 }
 

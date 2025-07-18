@@ -18,6 +18,14 @@
         {{ message }}
       </div>
       <button class="notification-close" @click="$emit('close')">×</button>
+      
+      <!-- 进度条 -->
+      <div v-if="autoClose" class="notification-progress">
+        <div 
+          class="notification-progress-bar" 
+          :style="{ animationDuration: `${duration}ms` }"
+        ></div>
+      </div>
     </div>
   </transition>
 </template>
@@ -36,6 +44,14 @@ defineProps({
     type: String,
     default: 'info', // 'success', 'error', 'info'
     validator: value => ['success', 'error', 'info'].includes(value)
+  },
+  autoClose: {
+    type: Boolean,
+    default: true
+  },
+  duration: {
+    type: Number,
+    default: 3000 // 默认3秒后自动关闭
   }
 })
 
@@ -50,14 +66,15 @@ defineEmits(['close'])
   z-index: 9999;
   display: flex;
   align-items: center;
-  padding: 12px 16px;
+  padding: 16px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   background: #21242D;
   color: #FFFFFF;
   max-width: 400px;
   min-width: 300px;
   font-family: 'MiSans', sans-serif;
+  overflow: hidden; /* 确保进度条不会溢出 */
 }
 
 .notification.success {
@@ -76,11 +93,12 @@ defineEmits(['close'])
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  margin-right: 12px;
+  margin-right: 16px;
   font-weight: bold;
+  font-size: 16px;
 }
 
 .success .notification-icon {
@@ -100,29 +118,99 @@ defineEmits(['close'])
 
 .notification-content {
   flex: 1;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .notification-close {
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-left: 12px;
   padding: 0;
+  transition: color 0.2s;
+}
+
+.notification-close:hover {
+  color: #FFFFFF;
+}
+
+/* 进度条 */
+.notification-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.notification-progress-bar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  animation: progress-shrink linear forwards;
+}
+
+.success .notification-progress-bar {
+  background-color: #10b981;
+}
+
+.error .notification-progress-bar {
+  background-color: #ef4444;
+}
+
+.info .notification-progress-bar {
+  background-color: #0B5AFE;
+}
+
+@keyframes progress-shrink {
+  0% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0);
+  }
 }
 
 /* 动画效果 */
-.notification-enter-active, .notification-leave-active {
-  transition: all 0.3s ease;
+.notification-enter-active {
+  animation: notification-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
-.notification-enter-from, .notification-leave-to {
-  opacity: 0;
-  transform: translateX(20px);
+
+.notification-leave-active {
+  animation: notification-out 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+@keyframes notification-in {
+  0% {
+    opacity: 0;
+    transform: translateX(40px) scale(0.9);
+  }
+  50% {
+    transform: translateX(-5px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes notification-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(20px) scale(0.9);
+  }
 }
 </style> 

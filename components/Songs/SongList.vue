@@ -63,7 +63,11 @@
       </div>
       
       <div v-else class="songs-container" :key="'songs-' + activeTab">
-        <div class="song-cards">
+        <TransitionGroup 
+          name="page" 
+          tag="div" 
+          class="song-cards"
+        >
           <div 
             v-for="song in paginatedSongs" 
             :key="song.id" 
@@ -147,7 +151,7 @@
               </button>
             </div>
           </div>
-        </div>
+        </TransitionGroup>
         
         <!-- 分页控件 -->
         <div v-if="totalPages > 1" class="pagination">
@@ -211,14 +215,14 @@
       </div>
     </Transition>
 
-    <!-- 音频播放器 (隐藏但可以播放) -->
-    <audio ref="audioPlayer" @ended="onAudioEnded" @timeupdate="onTimeUpdate"></audio>
+    <!-- 使用全局音频播放器，此处不需要audio元素 -->
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
 
 const props = defineProps({
   songs: {
@@ -250,10 +254,7 @@ const auth = useAuth()
 const isAuthenticated = computed(() => auth && auth.isAuthenticated && auth.isAuthenticated.value)
 
 // 音频播放相关
-const audioPlayer = ref(null)
-const currentPlayingSong = ref(null)
-const isPlaying = ref(false)
-const playProgress = ref(0)
+const audioPlayer = useAudioPlayer()
 
 // 分页相关
 const currentPage = ref(1)
@@ -475,66 +476,15 @@ const getFirstChar = (title) => {
 // 切换歌曲播放/暂停
 const togglePlaySong = (song) => {
   if (!song.musicUrl) return
-
-  // 如果是同一首歌，切换播放/暂停状态
-  if (currentPlayingSong.value && currentPlayingSong.value.id === song.id) {
-    if (isPlaying.value) {
-      audioPlayer.value.pause()
-      isPlaying.value = false
-    } else {
-      audioPlayer.value.play()
-      isPlaying.value = true
-    }
-    return
-  }
-
-  // 如果是不同的歌曲，停止当前播放，播放新歌曲
-  if (isPlaying.value) {
-    audioPlayer.value.pause()
-    isPlaying.value = false
-  }
-
-  currentPlayingSong.value = song
-  audioPlayer.value.src = song.musicUrl
-  audioPlayer.value.play()
-    .then(() => {
-      isPlaying.value = true
-    })
-    .catch(err => {
-      console.error('播放失败:', err)
-      isPlaying.value = false
-    })
+  audioPlayer.playSong(song)
 }
 
 // 判断当前是否正在播放指定ID的歌曲
 const isCurrentPlaying = (songId) => {
-  return isPlaying.value && currentPlayingSong.value && currentPlayingSong.value.id === songId
+  return audioPlayer.isCurrentPlaying(songId)
 }
 
-// 音频播放结束处理
-const onAudioEnded = () => {
-  isPlaying.value = false
-  playProgress.value = 0
-  currentPlayingSong.value = null
-}
-
-// 更新播放进度
-const onTimeUpdate = () => {
-  if (audioPlayer.value && audioPlayer.value.duration) {
-    playProgress.value = (audioPlayer.value.currentTime / audioPlayer.value.duration) * 100
-  }
-}
-
-// 当组件销毁时重置所有状态
-onUnmounted(() => {
-  // 停止音频播放
-  if (audioPlayer.value) {
-    audioPlayer.value.pause()
-    audioPlayer.value.src = ''
-  }
-
-  // 清除所有可能的副作用
-})
+// 当组件销毁时不需要特殊处理，音频播放由全局管理
 
 // 波纹效果指令
 const vRipple = {
@@ -1218,5 +1168,25 @@ button:disabled {
     justify-content: center;
     margin-top: 0.5rem;
   }
+}
+
+/* 翻页动画 */
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.4s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
+.page-move {
+  transition: transform 0.4s ease;
 }
 </style> 
