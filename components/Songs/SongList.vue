@@ -100,7 +100,7 @@
 
               <div class="song-info">
                 <h3 class="song-title" :title="song.title + ' - ' + song.artist">
-                  {{ song.title }} - {{ song.artist }}
+                  <span class="song-title-text">{{ song.title }} - {{ song.artist }}</span>
                   <span v-if="song.scheduled" class="scheduled-tag">已排期</span>
                 </h3>
                 <div class="song-meta">
@@ -123,7 +123,7 @@
                     :class="{ 'liked': song.voted }"
                     @click="handleVote(song)"
                     :disabled="song.played || voteInProgress"
-                    :title="song.voted ? '已点赞' : '点赞'"
+                    :title="song.voted ? '点击取消点赞' : '点赞'"
                   >
                     <img src="/images/thumbs-up.svg" alt="点赞" class="like-icon" />
                   </button>
@@ -406,13 +406,15 @@ const goToPage = (page) => {
 
 // 处理投票
 const handleVote = async (song) => {
-  if (song.voted) {
-    return // 已经投过票
-  }
-  
   voteInProgress.value = true
   try {
-    emit('vote', song)
+    if (song.voted) {
+      // 如果已投票，则调用撤销投票
+      emit('vote', { ...song, unvote: true })
+    } else {
+      // 正常投票
+      emit('vote', song)
+    }
   } catch (err) {
     console.error('投票处理失败', err)
   } finally {
@@ -752,10 +754,12 @@ const vRipple = {
   z-index: 2;
   margin-bottom: -5px;
   padding-left: 1rem; /* 减少左侧内边距，因为已移除状态条 */
+  padding-right: 1rem; /* 确保右侧有足够的内边距 */
   overflow: hidden;
   display: flex; /* 使用flex布局 */
   align-items: center; /* 垂直居中 */
   gap: 15px; /* 元素之间的间隔 */
+  box-sizing: border-box; /* 确保内边距不会增加元素的总宽度 */
 }
 
 /* 移除左侧状态条 */
@@ -844,8 +848,13 @@ const vRipple = {
   font-size: 10px;
 }
 
+/* 修改歌曲信息区域的CSS样式 */
 .song-info {
-  width: calc(70% - 75px); /* 减去封面宽度和间距 */
+  flex: 1;
+  width: 100%; /* 使用100%宽度 */
+  min-width: 0; /* 允许内容收缩 */
+  padding-right: 10px; /* 添加右侧内边距，而不是外边距 */
+  overflow: hidden; /* 确保内容不会溢出 */
 }
 
 .song-title {
@@ -855,12 +864,18 @@ const vRipple = {
   letter-spacing: 0.04em;
   color: #FFFFFF;
   margin-bottom: 0.5rem;
+  width: 100%; /* 确保标题占满整个容器宽度 */
+  display: flex;
+  align-items: center;
+}
+
+/* 添加一个包装器来处理歌曲标题和歌手的文本溢出 */
+.song-title-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex: 1;
+  min-width: 0; /* 允许文本收缩 */
 }
 
 .song-meta {
@@ -868,6 +883,7 @@ const vRipple = {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
+  width: 100%;
 }
 
 .requester {
@@ -876,18 +892,22 @@ const vRipple = {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
-/* 热度和点赞按钮区域 */
+/* 修改热度和点赞按钮区域的CSS样式 */
 .action-area {
-  position: absolute;
-  top: 50%;
-  right: 1rem;
-  transform: translateY(-50%);
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 0.75rem;
+  margin-left: auto;
+  flex-shrink: 0;
+  width: auto; /* 使用自动宽度 */
+  min-width: 90px; /* 设置最小宽度确保按钮不会被挤压 */
 }
 
 /* 热度样式 */
@@ -961,7 +981,8 @@ const vRipple = {
   font-size: 0.7rem;
   color: #10b981;
   margin-left: 0.5rem;
-  vertical-align: middle;
+  flex-shrink: 0; /* 防止标签被压缩 */
+  align-self: center; /* 确保垂直居中 */
 }
 
 /* 投稿时间和撤销按钮 */

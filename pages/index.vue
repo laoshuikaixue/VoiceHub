@@ -766,14 +766,21 @@ const handleVote = async (song) => {
     if (!songs) return
 
     // 调用投票API - 通知已在composable中处理
-    await songs.voteSong(song.id)
+    // 检查是否是取消投票请求
+    if (song.unvote) {
+      // 传递完整对象以支持撤销投票功能
+      await songs.voteSong(song)
+    } else {
+      // 保持向后兼容，传递ID
+      await songs.voteSong(song.id)
+    }
     
     // 静默刷新歌曲列表以获取最新状态，但不影响当前视图
-        setTimeout(() => {
+    setTimeout(() => {
       songs.refreshSongsSilent().catch(err => {
-            console.error('刷新歌曲列表失败', err)
-          })
-        }, 500)
+        console.error('刷新歌曲列表失败', err)
+      })
+    }, 500)
   } catch (err) {
       // 不做任何处理，因为useSongs中已经处理了错误提示
       console.log('API错误已在useSongs中处理')

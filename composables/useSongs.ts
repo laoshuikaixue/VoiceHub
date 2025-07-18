@@ -284,7 +284,7 @@ export const useSongs = () => {
   }
   
   // 投票
-  const voteSong = async (songId: number) => {
+  const voteSong = async (songId: number | {id: number, unvote?: boolean}) => {
     if (!isAuthenticated.value) {
       showNotification('需要登录才能投票', 'error')
       return null
@@ -293,10 +293,15 @@ export const useSongs = () => {
     loading.value = true
     error.value = ''
     
+    // 处理传入的可能是对象的情况
+    const actualSongId = typeof songId === 'object' ? songId.id : songId
+    const isUnvote = typeof songId === 'object' && songId.unvote === true
+    
     try {
-      // 检查是否已经投过票
-      const targetSong = songs.value.find(s => s.id === songId)
-      if (targetSong && targetSong.voted) {
+      // 检查是否已经投过票（只在正常投票时检查）
+      const targetSong = songs.value.find(s => s.id === actualSongId)
+      
+      if (!isUnvote && targetSong && targetSong.voted) {
         showNotification('您已经为这首歌投过票了', 'info')
         loading.value = false
         return null
@@ -309,18 +314,25 @@ export const useSongs = () => {
         const data = await $fetch('/api/songs/vote', {
           method: 'POST',
           body: { 
-            songId: songId
+            songId: actualSongId,
+            unvote: isUnvote // 添加取消投票参数
           },
           headers: authHeaders.headers
         })
         
         // 立即更新本地歌曲的投票状态
         if (targetSong) {
-          targetSong.voted = true
-          targetSong.voteCount = (targetSong.voteCount || 0) + 1
-          
-          // 使用全局通知显示成功信息
-          showNotification(`为歌曲《${targetSong.title}》投票成功！`, 'success')
+          if (isUnvote) {
+            // 取消投票
+            targetSong.voted = false
+            targetSong.voteCount = Math.max(0, (targetSong.voteCount || 1) - 1)
+            showNotification(`已取消对歌曲《${targetSong.title}》的投票`, 'success')
+          } else {
+            // 正常投票
+            targetSong.voted = true
+            targetSong.voteCount = (targetSong.voteCount || 0) + 1
+            showNotification(`为歌曲《${targetSong.title}》投票成功！`, 'success')
+          }
         }
         
         return data

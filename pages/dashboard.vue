@@ -630,11 +630,6 @@ const updateLocalScheduledSongs = () => {
 const filteredUnscheduledSongs = computed(() => {
   if (!songs.value) return []
   
-  // 调试输出第一首歌曲的完整信息
-  if (songs.value.length > 0) {
-    console.log('第一首歌曲的完整信息:', JSON.stringify(songs.value[0]))
-  }
-  
   // 找出未播放且未排期的歌曲
   const unscheduledSongs = songs.value.filter(song => 
     !song.played && !scheduledSongIds.value.has(song.id)

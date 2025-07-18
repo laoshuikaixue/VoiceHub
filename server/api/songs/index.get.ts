@@ -135,9 +135,6 @@ export default defineEventHandler(async (event) => {
           enabled: song.preferredPlayTime.enabled
         }
       }
-      
-      // 调试输出
-      console.log(`歌曲 ${song.title} 的期望播放时段ID:`, song.preferredPlayTimeId)
     }
     
     return songObject
