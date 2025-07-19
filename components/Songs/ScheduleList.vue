@@ -749,7 +749,7 @@ const vRipple = {
   margin-left: 0.5rem;
 }
 
-/* 歌曲卡片样式 - 匹配 SongList 样式 */
+/* 歌曲卡片样式 - 固定宽度布局 */
 .song-cards {
   display: flex;
   flex-wrap: wrap;
@@ -757,12 +757,40 @@ const vRipple = {
 }
 
 .song-card {
-  width: calc(33.33% - 0.67rem);
+  width: 320px;
+  flex-shrink: 0;
   background: #21242D;
   border-radius: 10px;
   overflow: hidden;
   position: relative;
 }
+
+/* 针对不同屏幕尺寸的响应式调整 */
+@media (max-width: 1400px) {
+  .song-card {
+    width: 300px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .song-card {
+    width: 280px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .song-card {
+    width: calc(50% - 0.5rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .song-card {
+    width: 100%;
+  }
+}
+
+
 
 .song-card-main {
   padding: 1rem;
@@ -999,8 +1027,8 @@ const vRipple = {
     display: none; /* 隐藏桌面端日期标题 */
   }
   
-  .song-card {
-    width: 100%;
+  .song-cards {
+    gap: 0.75rem;
   }
   
   /* 修复歌曲卡片布局 */
@@ -1011,21 +1039,23 @@ const vRipple = {
     position: relative;
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
+    gap: 0.75rem;
   }
-  
+
   .song-info {
-    width: 75%;
+    flex: 1;
+    min-width: 0;
   }
-  
+
   .action-area {
     position: static;
-    margin-left: auto;
+    transform: none;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
   
   .playtime-header h4 {
