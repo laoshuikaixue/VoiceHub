@@ -27,7 +27,7 @@ async function main() {
     });
 
     if (existingAdmin) {
-      console.log('管理员用户已存在');
+      console.log('✅ 管理员用户已存在，跳过创建');
       return existingAdmin;
     }
 
@@ -68,7 +68,7 @@ async function main() {
       }
     });
 
-    console.log('管理员用户创建成功 (admin/admin123)');
+    console.log('✅ 管理员用户创建成功 (admin/admin123)');
 
     return admin;
   } catch (error) {
