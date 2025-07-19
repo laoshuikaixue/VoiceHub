@@ -6,7 +6,7 @@
       :class="{ 'has-notifications': unreadCount > 0 }"
     >
       <span class="icon">🔔</span>
-      <span v-if="unreadCount > 0" class="notification-badge">{{ displayCount }}</span>
+      <span v-if="unreadCount > 0" class="notification-badge"></span>
     </button>
     
     <div v-if="showNotifications" class="notifications-dropdown">
@@ -261,19 +261,13 @@ const formatTime = (timeString) => {
 
 .notification-badge {
   position: absolute;
-  top: 0;
-  right: 0;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 9px;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   background-color: var(--danger);
-  color: white;
-  font-size: 10px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
+  display: block;
 }
 
 .notifications-dropdown {
@@ -318,7 +312,7 @@ const formatTime = (timeString) => {
 .action-button {
   background: transparent;
   border: none;
-  color: var(--primary);
+  color: var(--danger);
   font-size: 12px;
   cursor: pointer;
   padding: 4px 8px;
@@ -326,7 +320,7 @@ const formatTime = (timeString) => {
 }
 
 .action-button:hover {
-  background-color: rgba(99, 102, 241, 0.1);
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 .action-button:disabled {
@@ -364,11 +358,11 @@ const formatTime = (timeString) => {
 }
 
 .notification-item.unread {
-  background-color: rgba(99, 102, 241, 0.1);
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 .notification-item.unread:hover {
-  background-color: rgba(99, 102, 241, 0.15);
+  background-color: rgba(239, 68, 68, 0.15);
 }
 
 .notification-icon-type {
@@ -464,4 +458,4 @@ const formatTime = (timeString) => {
     transform: scale(1);
   }
 }
-</style> 
+</style>
