@@ -110,6 +110,14 @@ export const useAuth = () => {
     }
   }
 
+  // 获取token
+  const getToken = () => {
+    if (process.client) {
+      return localStorage.getItem('token')
+    }
+    return null
+  }
+
   // 获取认证头
   const getAuthHeader = () => {
     if (process.client) {
@@ -136,6 +144,7 @@ export const useAuth = () => {
     login,
     logout,
     changePassword,
+    getToken,
     getAuthHeader,
     initAuth // 公开initAuth方法
   }

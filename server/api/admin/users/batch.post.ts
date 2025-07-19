@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt'
 import { prisma } from '../../../models/schema'
-import { sendProgressUpdate, completeProgress, sendProgressError } from '../../progress/events'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -21,38 +20,17 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  // 获取进度ID
-  const progressId = body.progressId
-  
   const results = {
     created: 0,
     failed: 0,
     total: body.users.length
   }
-  
-  // 如果提供了进度ID，发送初始进度更新
-  if (progressId) {
-    sendProgressUpdate(progressId, {
-      progress: 0,
-      message: '准备导入用户...',
-      subMessage: `共${body.users.length}个用户待导入`
-    })
-  }
 
   // 批量添加用户
   for (let i = 0; i < body.users.length; i++) {
     const userData = body.users[i]
-    
+
     try {
-      // 更新进度
-      if (progressId) {
-        const progress = Math.floor((i / body.users.length) * 100)
-        sendProgressUpdate(progressId, {
-          progress,
-          message: `正在导入用户 (${i + 1}/${body.users.length})`,
-          subMessage: `当前用户: ${userData.name} (${userData.username})`
-        })
-      }
       
       // 验证必填字段
       if (!userData.name || !userData.username || !userData.password) {
@@ -91,22 +69,10 @@ export default defineEventHandler(async (event) => {
 
       results.created++
       
-      // 短暂延迟，防止数据库过载
-      await new Promise(resolve => setTimeout(resolve, 50))
-      
     } catch (error) {
       console.error('创建用户失败:', error)
       results.failed++
     }
-  }
-  
-  // 操作完成，发送最终进度更新
-  if (progressId) {
-    completeProgress(progressId, {
-      progress: 100,
-      message: `导入完成: ${results.created}个成功, ${results.failed}个失败`,
-      subMessage: `总共${results.total}个用户`
-    })
   }
 
   return results

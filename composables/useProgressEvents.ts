@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from 'vue'
 import { useProgress } from './useProgress'
+import { useAuth } from './useAuth'
 
 export const useProgressEvents = () => {
   const { 
@@ -20,8 +21,10 @@ export const useProgressEvents = () => {
     startIndeterminate('正在连接...')
     
     try {
-      // 创建新的事件源
-      eventSource = new EventSource(`/api/progress/events?id=${id}`)
+      // 创建新的事件源，通过URL参数传递认证token
+      const auth = useAuth()
+      const token = auth.getToken()
+      eventSource = new EventSource(`/api/progress/events?id=${id}&token=${token}`)
       
       // 连接打开
       eventSource.onopen = () => {
