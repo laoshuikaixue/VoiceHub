@@ -80,7 +80,6 @@
                       <h4 class="result-title">{{ result.song || result.title }}</h4>
                       <p class="result-artist">{{ result.singer || result.artist }}</p>
                       <p class="result-album" v-if="result.album">专辑：{{ result.album }}</p>
-                      <p class="result-time">发布时间：{{ result.time }}</p>
                     </div>
                     <div class="result-actions">
                       <button
@@ -1420,7 +1419,6 @@ const stopPlaying = () => {
 
 .result-album,
 .result-quality,
-.result-time,
 .result-pay {
   color: rgba(255, 255, 255, 0.5);
   font-size: 12px;
@@ -1696,8 +1694,7 @@ const stopPlaying = () => {
     margin: 0.3rem 0;
   }
 
-  .result-album,
-  .result-time {
+  .result-album {
     font-size: 11px;
     margin: 0.2rem 0;
   }
