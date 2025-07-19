@@ -261,14 +261,14 @@ const currentDate = computed(() => {
   return availableDates.value[currentDateIndex.value]
 })
 
-// 添加: 当日期列表变化时切换到今天日期
+// 当日期列表变化时切换到今天日期
 watch(availableDates, (newDates) => {
   if (newDates.length > 0) {
     findAndSelectTodayOrClosestDate()
   }
 }, { immediate: false })
 
-// 添加: 提取日期选择逻辑到独立函数
+// 提取日期选择逻辑到独立函数
 const findAndSelectTodayOrClosestDate = () => {
   if (availableDates.value.length === 0) return
 

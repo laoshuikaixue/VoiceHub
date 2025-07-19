@@ -21,6 +21,8 @@ export interface Song {
   semester: string | null
   preferredPlayTimeId?: number | null
   preferredPlayTime?: PlayTime | null
+  cover?: string | null
+  musicUrl?: string | null
   createdAt: string
   voted?: boolean
   cover?: string | null   // 音乐封面URL

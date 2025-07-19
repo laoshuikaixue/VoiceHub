@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
     return song
   } catch (error: any) {
     console.error('点歌失败:', error)
-    
+
     if (error.statusCode) {
       throw error
     } else {

@@ -1,18 +1,19 @@
 import { prisma } from '../../models/schema'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证
-  const user = event.context.user
-  
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '需要登录才能获取歌曲列表'
-    })
-  }
-  
-  // 获取所有歌曲及其投票数
-  const songs = await prisma.song.findMany({
+  try {
+    // 检查用户认证
+    const user = event.context.user
+
+    if (!user) {
+      throw createError({
+        statusCode: 401,
+        message: '需要登录才能获取歌曲列表'
+      })
+    }
+
+    // 获取所有歌曲及其投票数
+    const songs = await prisma.song.findMany({
     include: {
       requester: {
         select: {
@@ -139,6 +140,18 @@ export default defineEventHandler(async (event) => {
     
     return songObject
   })
-  
+
   return formattedSongs
-}) 
+  } catch (error: any) {
+    console.error('获取歌曲列表失败:', error)
+
+    if (error.statusCode) {
+      throw error
+    } else {
+      throw createError({
+        statusCode: 500,
+        message: '获取歌曲列表失败，请稍后重试'
+      })
+    }
+  }
+})
