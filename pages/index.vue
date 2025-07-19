@@ -574,7 +574,7 @@ watch(activeTab, (newTab) => {
   }
 })
 
-// 初始化时如果已经在通知页面，则加载通知
+// 初始化时如果已经在通知标签页，则加载通知
 onMounted(() => {
   if (activeTab.value === 'notification') {
     loadNotifications()
@@ -662,9 +662,11 @@ onMounted(async () => {
   // 无论是否登录都获取公共数据
   await songs.fetchPublicSchedules()
 
-  // 如果用户已登录，获取完整歌曲列表
+  // 如果用户已登录，获取完整歌曲列表和通知
   if (isClientAuthenticated.value) {
     await songs.fetchSongs()
+    // 立即加载通知，而不仅在切换到通知标签时
+    await loadNotifications()
   }
 
   // 更新真实数据

@@ -261,6 +261,53 @@ const currentDate = computed(() => {
   return availableDates.value[currentDateIndex.value]
 })
 
+// 添加: 当日期列表变化时切换到今天日期
+watch(availableDates, (newDates) => {
+  if (newDates.length > 0) {
+    findAndSelectTodayOrClosestDate()
+  }
+}, { immediate: false })
+
+// 添加: 提取日期选择逻辑到独立函数
+const findAndSelectTodayOrClosestDate = () => {
+  if (availableDates.value.length === 0) return
+
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  
+  // 查找今天的日期索引
+  const todayIndex = availableDates.value.findIndex(date => date === todayStr)
+  
+  if (todayIndex >= 0) {
+    // 如果找到今天的日期，则选择它
+    currentDateIndex.value = todayIndex
+  } else {
+    // 如果今天没有排期，找到最接近今天的未来日期
+    const todayTime = today.getTime()
+    let closestFutureDate = -1
+    let minDiff = Number.MAX_SAFE_INTEGER
+    
+    availableDates.value.forEach((dateStr, index) => {
+      const dateParts = dateStr.split('-')
+      const date = new Date(
+        parseInt(dateParts[0]),
+        parseInt(dateParts[1]) - 1,
+        parseInt(dateParts[2])
+      )
+      const diff = Math.abs(date.getTime() - todayTime)
+      
+      if (diff < minDiff) {
+        minDiff = diff
+        closestFutureDate = index
+      }
+    })
+    
+    if (closestFutureDate >= 0) {
+      currentDateIndex.value = closestFutureDate
+    }
+  }
+}
+
 // 格式化当前日期
 const currentDateFormatted = computed(() => {
   if (!currentDate.value) return '无日期'
@@ -362,44 +409,8 @@ onMounted(() => {
   // 初始化移动状态
   isMobile.value = window.innerWidth <= 768
   
-  // 寻找今天的日期并自动选择
-  if (availableDates.value.length > 0) {
-    const today = new Date()
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-    
-    // 查找今天的日期索引
-    const todayIndex = availableDates.value.findIndex(date => date === todayStr)
-    
-    if (todayIndex >= 0) {
-      // 如果找到今天的日期，则选择它
-      currentDateIndex.value = todayIndex
-    } else {
-      // 如果今天没有排期，找到最接近今天的未来日期
-      const todayTime = today.getTime()
-      let closestFutureDate = -1
-      let minDiff = Number.MAX_SAFE_INTEGER
-      
-      availableDates.value.forEach((dateStr, index) => {
-        const dateParts = dateStr.split('-')
-        const date = new Date(
-          parseInt(dateParts[0]),
-          parseInt(dateParts[1]) - 1,
-          parseInt(dateParts[2])
-        )
-        const diff = Math.abs(date.getTime() - todayTime)
-        
-        if (diff < minDiff) {
-          minDiff = diff
-          closestFutureDate = index
-        }
-      })
-      
-      if (closestFutureDate >= 0) {
-        currentDateIndex.value = closestFutureDate
-      }
-      // 如果没有找到合适的日期，则使用默认值（0）
-    }
-  }
+  // 寻找今天的日期并自动选择 - 初始加载时也尝试一次
+  findAndSelectTodayOrClosestDate()
 })
 
 // 组件销毁前移除事件监听器
