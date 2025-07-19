@@ -3,8 +3,9 @@
 这是一个使用Nuxt 3全栈框架开发的校园广播站点歌系统。系统实现了用户点歌、投票、后台排期管理以及歌单公示等功能，支持管理员通过拖拽方式进行排期管理。
 
 ## 项目截图
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/0ac138b4-4fb8-4478-a326-07e8f1128671" />
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/1d8bcdaf-adf7-403b-99f1-9d54a550f086" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/b766c8ca-de75-45d2-823c-651590f70fd3" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/cdbd908c-9830-4253-8093-3edf4e915226" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/5c6c9ddd-fa29-4fce-ab0d-3252649527ab" />
 <img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/c5b13bc3-798c-4cd0-bf77-0876b583c73f" />
 
 ## 主要功能

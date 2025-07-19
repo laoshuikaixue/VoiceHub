@@ -3,12 +3,12 @@
     <Transition name="overlay-animation">
       <div v-if="song" class="player-overlay" @click="stopPlaying"></div>
     </Transition>
-    
+
     <Transition name="player-animation">
       <div v-if="song" class="global-audio-player">
         <div class="player-info">
           <div class="cover-container">
-            <template v-if="song.cover">
+            <template v-if="song.cover && !coverError">
               <img :src="song.cover" alt="封面" class="player-cover" @error="handleImageError" />
             </template>
             <div v-else class="text-cover">
@@ -20,7 +20,7 @@
             <p>{{ song.artist }}</p>
           </div>
         </div>
-        
+
         <div class="player-controls">
           <div class="progress-container">
             <div class="control-with-progress">
@@ -28,25 +28,34 @@
                 <span v-if="isPlaying" class="pause-icon">❚❚</span>
                 <span v-else class="play-icon">▶</span>
               </button>
-              
-              <div class="progress-bar" @click="seekToPosition">
-                <div class="progress" :style="{ width: `${progress}%` }"></div>
+
+              <div
+                class="progress-bar"
+                @mousedown="startDrag"
+                @click="seekToPosition"
+                ref="progressBar"
+              >
+                <div class="progress" :style="{ width: `${progress}%` }">
+                  <div class="progress-thumb" :class="{ 'dragging': isDragging }"></div>
+                </div>
               </div>
+
+
             </div>
-            
+
             <div class="time-display">
               <span class="current-time">{{ formatTime(currentTime) }}</span>
               <span class="duration">{{ formatTime(duration) }}</span>
             </div>
           </div>
         </div>
-        
+
         <button class="close-player" @click="stopPlaying">×</button>
-        
-        <audio 
-          ref="audioPlayer" 
-          :src="song.musicUrl" 
-          @timeupdate="onTimeUpdate" 
+
+        <audio
+          ref="audioPlayer"
+          :src="song.musicUrl"
+          @timeupdate="onTimeUpdate"
           @ended="onEnded"
           @loadedmetadata="onLoaded"
           @error="onError"
@@ -69,14 +78,23 @@ const props = defineProps({
 const emit = defineEmits(['close', 'ended', 'error'])
 
 const audioPlayer = ref(null)
+const progressBar = ref(null)
 const isPlaying = ref(false)
 const progress = ref(0)
 const currentTime = ref(0)
 const duration = ref(0)
 const hasError = ref(false)
 const isClosing = ref(false) // 新增：标记是否正在关闭
+const coverError = ref(false) // 新增：封面加载错误标记
 
-watch(() => props.song, (newSong) => {
+
+
+// 拖拽相关
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartProgress = ref(0)
+
+watch(() => props.song, (newSong, oldSong) => {
   if (newSong && newSong.musicUrl) {
     // 当歌曲变更时，重置状态
     isClosing.value = false
@@ -84,7 +102,8 @@ watch(() => props.song, (newSong) => {
     currentTime.value = 0
     duration.value = 0
     hasError.value = false
-    
+    coverError.value = false // 重置封面错误状态
+
     // 延迟执行播放，确保DOM已更新
     setTimeout(() => {
       if (audioPlayer.value) {
@@ -102,9 +121,7 @@ watch(() => props.song, (newSong) => {
 
 // 处理图片加载错误
 const handleImageError = (event) => {
-  event.target.style.display = 'none'
-  event.target.parentNode.classList.add('text-cover')
-  event.target.parentNode.textContent = getFirstChar(props.song?.title || '')
+  coverError.value = true
 }
 
 // 获取标题第一个字符
@@ -189,21 +206,59 @@ const formatTime = (seconds) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
+
+
+// 进度条拖拽功能
+const startDrag = (event) => {
+  if (event.button !== 0) return // 只响应左键
+
+  isDragging.value = true
+  dragStartX.value = event.clientX
+  dragStartProgress.value = progress.value
+
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', endDrag)
+  event.preventDefault()
+}
+
+const onDrag = (event) => {
+  if (!isDragging.value || !progressBar.value) return
+
+  const rect = progressBar.value.getBoundingClientRect()
+  const newX = event.clientX - rect.left
+  const percentage = Math.max(0, Math.min(100, (newX / rect.width) * 100))
+
+  progress.value = percentage
+
+  // 实时更新播放位置
+  if (audioPlayer.value && duration.value) {
+    audioPlayer.value.currentTime = (percentage / 100) * duration.value
+  }
+}
+
+const endDrag = () => {
+  isDragging.value = false
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', endDrag)
+}
+
 // 添加进度条点击跳转功能
 const seekToPosition = (event) => {
-  if (!audioPlayer.value) return
-  
+  if (!audioPlayer.value || isDragging.value) return
+
   const progressBar = event.currentTarget
   const clickPosition = event.offsetX
   const barWidth = progressBar.clientWidth
   const seekPercentage = (clickPosition / barWidth)
-  
+
   // 设置新的播放位置
   audioPlayer.value.currentTime = seekPercentage * duration.value
-  
+
   // 更新进度
   progress.value = seekPercentage * 100
 }
+
+
 
 // 组件卸载时释放资源
 onUnmounted(() => {
@@ -211,7 +266,12 @@ onUnmounted(() => {
     audioPlayer.value.pause()
     audioPlayer.value.src = ''
   }
+  // 清理拖拽事件监听器
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', endDrag)
 })
+
+
 </script>
 
 <style scoped>
@@ -477,12 +537,17 @@ onUnmounted(() => {
   border-radius: 3px;
   position: relative;
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
   transition: height 0.2s ease;
 }
 
 .progress-bar:hover {
   height: 8px;
+}
+
+.progress-bar:hover .progress-thumb {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .progress {
@@ -491,6 +556,28 @@ onUnmounted(() => {
   border-radius: 3px;
   transition: width 0.1s linear;
   position: relative;
+}
+
+/* 进度条拖拽按钮 */
+.progress-thumb {
+  position: absolute;
+  top: 50%;
+  right: -6px;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-radius: 50%;
+  transform: translateY(-50%) scale(0);
+  opacity: 0;
+  transition: all 0.2s ease;
+  cursor: grab;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.progress-thumb.dragging {
+  cursor: grabbing;
+  transform: translateY(-50%) scale(1.2);
+  opacity: 1;
 }
 
 /* 进度条光晕效果 */
@@ -504,8 +591,10 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.7);
   border-radius: 50%;
   box-shadow: 0 0 10px 3px rgba(255, 255, 255, 0.5);
-  opacity: 0.5;
+  opacity: 0.3;
 }
+
+
 
 .time-display {
   display: flex;
@@ -591,26 +680,39 @@ onUnmounted(() => {
     padding: 0.75rem;
     bottom: 0.5rem;
   }
-  
+
   .player-text h4 {
     font-size: 14px;
   }
-  
+
   .player-text p {
     font-size: 12px;
   }
-  
+
   .cover-container {
     width: 45px;
     height: 45px;
   }
-  
+
+
+
   .player-animation-enter-active {
     animation-duration: 0.4s; /* 移动设备上稍微加快动画速度 */
   }
-  
+
   .player-animation-leave-active {
     animation-duration: 0.3s;
+  }
+
+  .progress-thumb {
+    width: 16px;
+    height: 16px;
+    right: -8px;
+  }
+
+  .progress-bar:hover .progress-thumb {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
   }
 }
 </style> 
