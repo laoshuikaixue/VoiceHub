@@ -21,12 +21,11 @@ export interface Song {
   semester: string | null
   preferredPlayTimeId?: number | null
   preferredPlayTime?: PlayTime | null
-  cover?: string | null
-  musicUrl?: string | null
+  cover?: string | null        // 音乐封面URL
+  musicPlatform?: string | null // 音乐平台（netease, tencent等）
+  musicId?: string | null      // 平台上的歌曲ID
   createdAt: string
   voted?: boolean
-  cover?: string | null   // 音乐封面URL
-  musicUrl?: string | null  // 音乐文件URL
 }
 
 export interface Schedule {
@@ -91,8 +90,15 @@ export interface PlayTime {
   description?: string // 描述，可选
 }
 
+// 学期接口
+export interface Semester {
+  id: number
+  name: string        // 学期名称
+  isActive: boolean   // 是否为当前活跃学期
+}
+
 // 系统设置接口
 export interface SystemSettings {
   id: number
   enablePlayTimeSelection: boolean // 是否启用播出时段选择功能
-} 
+}

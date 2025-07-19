@@ -119,7 +119,8 @@ export default defineEventHandler(async (event) => {
       scheduled: song.schedules.length > 0, // 添加是否已排期的标志
       voted: voted, // 添加当前用户是否已投票的标志
       cover: song.cover || null, // 添加封面字段
-      musicUrl: song.musicUrl || null // 添加音乐URL字段
+      musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
+      musicId: song.musicId || null // 添加音乐ID字段
     }
     
     // 只对管理员用户添加期望播放时段相关字段

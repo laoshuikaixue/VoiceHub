@@ -78,9 +78,10 @@ export default defineEventHandler(async (event) => {
         artist: body.artist,
         requesterId: user.id,
         preferredPlayTimeId: preferredPlayTime?.id || null,
-        semester: getCurrentSemester(),
+        semester: await getCurrentSemesterName(),
         cover: body.cover || null,
-        musicUrl: body.musicUrl || null
+        musicPlatform: body.musicPlatform || null,
+        musicId: body.musicId ? String(body.musicId) : null
       }
     })
     
@@ -98,8 +99,30 @@ export default defineEventHandler(async (event) => {
         }
       }
     })
-    
-// 获取当前学期
+
+// 获取当前学期名称（从数据库）
+async function getCurrentSemesterName() {
+  try {
+    // 获取当前活跃的学期
+    const currentSemester = await prisma.semester.findFirst({
+      where: {
+        isActive: true
+      }
+    })
+
+    if (currentSemester) {
+      return currentSemester.name
+    }
+
+    // 如果没有活跃学期，使用默认逻辑
+    return getCurrentSemester()
+  } catch (error) {
+    console.error('获取当前学期失败，使用默认逻辑:', error)
+    return getCurrentSemester()
+  }
+}
+
+// 获取当前学期（后备函数）
 function getCurrentSemester() {
   const now = new Date()
   const year = now.getFullYear()

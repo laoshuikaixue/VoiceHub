@@ -40,11 +40,17 @@
         >
           通知管理
         </button>
-        <button 
-          :class="['tab-btn', { active: activeTab === 'playtimes' }]" 
+        <button
+          :class="['tab-btn', { active: activeTab === 'playtimes' }]"
           @click="activeTab = 'playtimes'"
         >
           播出时段
+        </button>
+        <button
+          :class="['tab-btn', { active: activeTab === 'semesters' }]"
+          @click="activeTab = 'semesters'"
+        >
+          学期管理
         </button>
       </div>
       
@@ -279,6 +285,11 @@
         <div v-if="activeTab === 'playtimes'" class="section playtimes-section glass full-width-section">
           <PlayTimeManager />
         </div>
+
+        <!-- 学期管理 -->
+        <div v-if="activeTab === 'semesters'" class="section semesters-section glass full-width-section">
+          <SemesterManager />
+        </div>
       </div>
       
         <!-- 确认对话框组件 -->
@@ -360,6 +371,7 @@ import SongList from '~/components/Songs/SongList.vue'
 import UserManager from '~/components/Admin/UserManager.vue'
 import NotificationSender from '~/components/Admin/NotificationSender.vue'
 import PlayTimeManager from '~/components/Admin/PlayTimeManager.vue'
+import SemesterManager from '~/components/Admin/SemesterManager.vue'
 import ScheduleForm from '~/components/Admin/ScheduleForm.vue'
 
 const router = useRouter()
@@ -2583,7 +2595,7 @@ const handleSystemSettingsChange = async (settings) => {
     grid-template-columns: 1fr 1fr;
   }
   
-  .songs-section, .schedule-section, .users-section, .notifications-section, .playtimes-section {
+  .songs-section, .schedule-section, .users-section, .notifications-section, .playtimes-section, .semesters-section {
     grid-column: span 2;
   }
 }

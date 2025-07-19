@@ -143,8 +143,8 @@
                         <div v-else class="text-cover">
                           {{ getFirstChar(schedule.song.title) }}
                         </div>
-                        <!-- 添加播放按钮 - 只在有musicUrl时显示 -->
-                        <div v-if="schedule.song.musicUrl" class="play-button-overlay" @click="togglePlaySong(schedule.song)">
+                        <!-- 添加播放按钮 - 在有平台信息时显示 -->
+                        <div v-if="schedule.song.musicPlatform && schedule.song.musicId" class="play-button-overlay" @click="togglePlaySong(schedule.song)">
                           <button class="play-button" :title="isCurrentPlaying(schedule.song.id) ? '暂停' : '播放'">
                             <span v-if="isCurrentPlaying(schedule.song.id)" class="pause-icon">❚❚</span>
                             <span v-else class="play-icon">▶</span>
@@ -432,9 +432,62 @@ const getFirstChar = (title) => {
 }
 
 // 切换歌曲播放/暂停
-const togglePlaySong = (song) => {
-  if (!song.musicUrl) return
-  audioPlayer.playSong(song)
+const togglePlaySong = async (song) => {
+  // 如果有平台和ID信息，动态获取URL
+  if (song.musicPlatform && song.musicId) {
+    try {
+      const url = await getMusicUrl(song.musicPlatform, song.musicId)
+      if (url) {
+        const playableSong = {
+          ...song,
+          musicUrl: url
+        }
+        audioPlayer.playSong(playableSong)
+      } else {
+        if (window.$showNotification) {
+          window.$showNotification('无法获取音乐播放链接，可能是付费内容', 'error')
+        }
+      }
+    } catch (error) {
+      console.error('获取音乐URL失败:', error)
+      if (window.$showNotification) {
+        window.$showNotification('获取音乐播放链接失败', 'error')
+      }
+    }
+  }
+}
+
+// 动态获取音乐URL
+const getMusicUrl = async (platform, musicId) => {
+  const { getQuality } = useAudioQuality()
+
+  try {
+    let apiUrl
+    const quality = getQuality(platform)
+
+    if (platform === 'netease') {
+      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
+    } else if (platform === 'tencent') {
+      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
+    } else {
+      throw new Error('不支持的音乐平台')
+    }
+
+    const response = await fetch(apiUrl)
+    if (!response.ok) {
+      throw new Error('获取音乐URL失败')
+    }
+
+    const data = await response.json()
+    if (data.code === 200 && data.data && data.data.url) {
+      return data.data.url
+    }
+
+    return null
+  } catch (error) {
+    console.error('获取音乐URL错误:', error)
+    throw error
+  }
 }
 
 // 判断当前是否正在播放指定ID的歌曲

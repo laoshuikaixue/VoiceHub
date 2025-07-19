@@ -50,7 +50,31 @@
           </div>
         </div>
 
-        <button class="close-player" @click="stopPlaying">×</button>
+        <div class="player-actions">
+          <div class="quality-selector" :class="{ 'expanded': showQualitySettings }">
+            <button class="quality-btn" @click="toggleQualitySettings" title="音质设置">
+              <span class="quality-icon">♪</span>
+              <span class="quality-text">{{ currentQualityText }}</span>
+              <span class="quality-arrow" :class="{ 'rotated': showQualitySettings }">▼</span>
+            </button>
+
+            <Transition name="quality-dropdown">
+              <div v-if="showQualitySettings && currentPlatformOptions.length > 0" class="quality-dropdown">
+                <div
+                  v-for="option in currentPlatformOptions"
+                  :key="option.value"
+                  class="quality-option"
+                  :class="{ 'active': isCurrentQuality(option.value) }"
+                  @click="selectQuality(option.value)"
+                >
+                  <span class="option-label">{{ option.label }}</span>
+                </div>
+              </div>
+            </Transition>
+          </div>
+
+          <button class="close-player" @click="stopPlaying">×</button>
+        </div>
 
         <audio
           ref="audioPlayer"
@@ -66,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 
 const props = defineProps({
   song: {
@@ -84,8 +108,137 @@ const progress = ref(0)
 const currentTime = ref(0)
 const duration = ref(0)
 const hasError = ref(false)
-const isClosing = ref(false) // 新增：标记是否正在关闭
-const coverError = ref(false) // 新增：封面加载错误标记
+const isClosing = ref(false)
+const coverError = ref(false)
+const showQualitySettings = ref(false)
+
+// 音质设置相关
+const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+
+// 获取当前歌曲平台的音质文本
+const currentQualityText = computed(() => {
+  if (!props.song || !props.song.musicPlatform) return '音质'
+
+  const platform = props.song.musicPlatform
+  const quality = getQuality(platform)
+  const label = getQualityLabel(platform, quality)
+
+  // 简化显示文本
+  return label.replace(/音质|音乐/, '').trim() || '音质'
+})
+
+// 获取当前平台的音质选项
+const currentPlatformOptions = computed(() => {
+  if (!props.song || !props.song.musicPlatform) return []
+  return getQualityOptions(props.song.musicPlatform)
+})
+
+// 检查是否是当前音质
+const isCurrentQuality = (qualityValue) => {
+  if (!props.song || !props.song.musicPlatform) return false
+  return getQuality(props.song.musicPlatform) === qualityValue
+}
+
+// 切换音质设置显示
+const toggleQualitySettings = () => {
+  showQualitySettings.value = !showQualitySettings.value
+}
+
+// 选择音质
+const selectQuality = async (qualityValue) => {
+  if (!props.song || !props.song.musicPlatform) return
+
+  const platform = props.song.musicPlatform
+  const musicId = props.song.musicId || props.song.id
+
+  // 如果选择的是当前音质，直接返回
+  if (isCurrentQuality(qualityValue)) {
+    showQualitySettings.value = false
+    return
+  }
+
+  // 保存当前播放进度
+  const currentTimeBackup = audioPlayer.value ? audioPlayer.value.currentTime : 0
+  const wasPlaying = isPlaying.value
+
+  // 保存音质设置
+  saveQuality(platform, qualityValue)
+
+  // 显示提示
+  if (window.$showNotification) {
+    const label = getQualityLabel(platform, qualityValue)
+    const platformName = platform === 'netease' ? '网易云音乐' : 'QQ音乐'
+    window.$showNotification(`${platformName}音质已切换为：${label}`, 'success')
+  }
+
+  // 关闭下拉框
+  showQualitySettings.value = false
+
+  // 重新获取新音质的URL并加载
+  try {
+    const newUrl = await getMusicUrl(platform, musicId, qualityValue)
+    if (newUrl && audioPlayer.value) {
+      // 暂停当前播放
+      audioPlayer.value.pause()
+
+      // 更新音频源
+      audioPlayer.value.src = newUrl
+
+      // 等待音频加载完成后恢复进度
+      audioPlayer.value.addEventListener('loadedmetadata', () => {
+        if (audioPlayer.value && currentTimeBackup > 0) {
+          audioPlayer.value.currentTime = currentTimeBackup
+
+          // 如果之前在播放，继续播放
+          if (wasPlaying) {
+            audioPlayer.value.play().catch(err => {
+              console.error('恢复播放失败:', err)
+            })
+          }
+        }
+      }, { once: true })
+
+      // 加载新的音频
+      audioPlayer.value.load()
+    }
+  } catch (error) {
+    console.error('切换音质失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('切换音质失败，请稍后重试', 'error')
+    }
+  }
+}
+
+// 动态获取音乐URL（支持指定音质）
+const getMusicUrl = async (platform, musicId, quality = null) => {
+  try {
+    const qualityParam = quality || getQuality(platform)
+    let apiUrl
+
+    if (platform === 'netease') {
+      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${qualityParam}`
+    } else if (platform === 'tencent') {
+      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${qualityParam}`
+    } else {
+      throw new Error('不支持的音乐平台')
+    }
+
+    const response = await fetch(apiUrl)
+    if (!response.ok) {
+      throw new Error('获取音乐URL失败')
+    }
+
+    const data = await response.json()
+    if (data.code === 200 && data.data && data.data.url) {
+      return data.data.url
+    }
+
+    return null
+  } catch (error) {
+    console.error('获取音乐URL错误:', error)
+    throw error
+  }
+}
 
 
 
@@ -96,15 +249,13 @@ const dragStartProgress = ref(0)
 
 watch(() => props.song, (newSong, oldSong) => {
   if (newSong && newSong.musicUrl) {
-    // 当歌曲变更时，重置状态
     isClosing.value = false
     progress.value = 0
     currentTime.value = 0
     duration.value = 0
     hasError.value = false
-    coverError.value = false // 重置封面错误状态
+    coverError.value = false
 
-    // 延迟执行播放，确保DOM已更新
     setTimeout(() => {
       if (audioPlayer.value) {
         audioPlayer.value.load()
@@ -119,12 +270,10 @@ watch(() => props.song, (newSong, oldSong) => {
   }
 }, { immediate: true })
 
-// 处理图片加载错误
 const handleImageError = (event) => {
   coverError.value = true
 }
 
-// 获取标题第一个字符
 const getFirstChar = (title) => {
   if (!title) return '音'
   return title.trim().charAt(0)
@@ -147,22 +296,20 @@ const togglePlay = () => {
   }
 }
 
-// 停止播放
 const stopPlaying = () => {
-  if (isClosing.value) return // 防止重复触发
-  
+  if (isClosing.value) return
+
   isClosing.value = true
-  
+
   if (audioPlayer.value) {
     audioPlayer.value.pause()
     audioPlayer.value.currentTime = 0
     isPlaying.value = false
   }
-  
-  // 添加延迟，让动画有时间执行
+
   setTimeout(() => {
     emit('close')
-  }, 300) // 动画持续时间
+  }, 300)
 }
 
 // 处理时间更新事件
@@ -260,6 +407,20 @@ const seekToPosition = (event) => {
 
 
 
+// 处理点击外部关闭下拉框
+const handleClickOutside = (event) => {
+  const qualitySelector = event.target.closest('.quality-selector')
+  if (!qualitySelector && showQualitySettings.value) {
+    showQualitySettings.value = false
+  }
+}
+
+// 组件挂载时添加事件监听
+onMounted(() => {
+  // 添加点击外部关闭下拉框的监听
+  document.addEventListener('click', handleClickOutside)
+})
+
 // 组件卸载时释放资源
 onUnmounted(() => {
   if (audioPlayer.value) {
@@ -269,6 +430,8 @@ onUnmounted(() => {
   // 清理拖拽事件监听器
   document.removeEventListener('mousemove', onDrag)
   document.removeEventListener('mouseup', endDrag)
+  // 移除点击外部监听
+  document.removeEventListener('click', handleClickOutside)
 })
 
 
@@ -377,7 +540,7 @@ onUnmounted(() => {
   width: 90%;
   max-width: 800px;
   background: rgba(0, 10, 20, 0.95);
-  border-radius: 10px;
+  border-radius: 15px;
   padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;
@@ -405,7 +568,7 @@ onUnmounted(() => {
 .player-cover {
   width: 100%;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 10px;
   object-fit: cover;
 }
 
@@ -634,11 +797,134 @@ onUnmounted(() => {
   transition: transform 0.3s ease;
 }
 
-/* 修复关闭按钮动画 */
-.close-player {
+/* 播放器操作按钮区域 */
+.player-actions {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 10;
+}
+
+.quality-selector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.quality-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  animation: fade-rotate-in 0.4s ease 0.1s both;
+  min-width: 80px;
+  justify-content: space-between;
+}
+
+.quality-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.quality-selector.expanded .quality-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.quality-icon {
+  font-size: 0.9rem;
+}
+
+.quality-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  flex: 1;
+  text-align: center;
+}
+
+.quality-arrow {
+  font-size: 0.6rem;
+  transition: transform 0.3s ease;
+}
+
+.quality-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.quality-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  z-index: 1000;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+}
+
+.quality-option {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.quality-option:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.quality-option.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.option-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+}
+
+.quality-option.active .option-label {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 下拉框动画 */
+.quality-dropdown-enter-active,
+.quality-dropdown-leave-active {
+  transition: all 0.2s ease;
+  transform-origin: bottom;
+}
+
+.quality-dropdown-enter-from,
+.quality-dropdown-leave-to {
+  opacity: 0;
+  transform: scaleY(0.8) translateY(10px);
+}
+
+.quality-dropdown-enter-to,
+.quality-dropdown-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+
+/* 修复关闭按钮动画 */
+.close-player {
   background: rgba(255, 255, 255, 0.1);
   border: none;
   color: white;
@@ -715,4 +1001,5 @@ onUnmounted(() => {
     transform: translateY(-50%) scale(1);
   }
 }
-</style> 
+
+</style>

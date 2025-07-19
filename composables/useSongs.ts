@@ -244,7 +244,8 @@ export const useSongs = () => {
     artist: string,
     preferredPlayTimeId?: number | null,
     cover?: string | null,
-    musicUrl?: string | null
+    musicPlatform?: string | null,
+    musicId?: string | null
   }) => {
     if (!isAuthenticated.value) {
       showNotification('需要登录才能点歌', 'error')

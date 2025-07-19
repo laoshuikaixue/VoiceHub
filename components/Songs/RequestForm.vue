@@ -9,7 +9,8 @@
         <p>4. 点播的歌曲将由管理员进行审核</p>
         <p>5. 审核通过后将安排在播放时段播出</p>
         <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
-        <p>7. 最终解释权归广播站所有</p>
+        <p>7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
+        <p>8. 最终解释权归广播站所有</p>
       </div>
     </div>
 
@@ -478,11 +479,14 @@ const getAudioUrl = async (result) => {
   if (result.hasUrl || result.url) return result
 
   try {
+    const { getQuality } = useAudioQuality()
+    const quality = getQuality(platform.value)
+
     let apiUrl
     if (platform.value === 'netease') {
-      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${result.musicId}`
+      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${result.musicId}&quality=${quality}`
     } else if (platform.value === 'tencent') {
-      apiUrl = `https://api.vkeys.cn/v2/music/tencent/geturl?id=${result.musicId}`
+      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${result.musicId}&quality=${quality}`
     }
 
     const response = await fetch(apiUrl)
@@ -606,7 +610,8 @@ const submitSong = async (result) => {
         ? parseInt(preferredPlayTimeId.value)
         : null,
       cover: selectedCover.value,
-      musicUrl: selectedUrl.value,
+      musicPlatform: platform.value,
+      musicId: result.musicId ? String(result.musicId) : null,
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -640,7 +645,8 @@ const handleSubmit = async () => {
         ? parseInt(preferredPlayTimeId.value)
         : null,
       cover: selectedCover.value,
-      musicUrl: selectedUrl.value,
+      musicPlatform: platform.value,
+      musicId: null, // 手动输入时没有musicId
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -680,7 +686,8 @@ const handleManualSubmit = async () => {
         ? parseInt(preferredPlayTimeId.value)
         : null,
       cover: '',
-      musicUrl: '',
+      musicPlatform: platform.value,
+      musicId: null, // 手动输入时没有musicId
     }
 
     // 只emit事件，让父组件处理实际的API调用

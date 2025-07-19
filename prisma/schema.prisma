@@ -38,7 +38,8 @@ model Song {
   semester      String?
   preferredPlayTimeId Int?     // 期望播出时段ID，可选
   cover         String?        // 歌曲封面URL
-  musicUrl      String?        // 音乐文件URL
+  musicPlatform String?        // 音乐平台（netease, tencent等）
+  musicId       String?        // 平台上的歌曲ID
   notifications Notification[]
   schedules     Schedule[]
   requester     User           @relation(fields: [requesterId], references: [id])
@@ -109,6 +110,15 @@ model PlayTime {
   description String?   // 描述，可选
   schedules   Schedule[]
   songs       Song[]    // 歌曲与播出时段的关联，表示期望的播出时段
+}
+
+// 学期管理模型
+model Semester {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String   @unique // 学期名称，如"2024-2025学年上学期"
+  isActive    Boolean  @default(false) // 是否为当前活跃学期
 }
 
 // 全局系统设置模型

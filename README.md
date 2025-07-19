@@ -11,9 +11,12 @@
 ## 主要功能
 
 - **用户管理**：管理员添加用户，支持按年级班级分类
-- **点歌系统**：用户可以点歌或给已有歌曲投票
-- **歌曲管理**：按热度排序，避免重复播放
+- **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐和QQ音乐搜索
+- **音质切换**：支持多种音质选择（标准、HQ、无损、Hi-Res等），动态获取最新播放链接
+- **音乐播放器**：内置音乐播放器，支持进度控制和音质实时切换
+- **歌曲管理**：按热度排序，避免重复播放，动态URL防止链接过期
 - **排期管理**：管理员可以通过拖拽界面进行歌曲排期和顺序管理
+- **学期管理**：管理员可设置当前学期，自动关联点歌记录
 - **公开展示**：公开展示歌曲播放排期，按日期分组展示
 - **通知系统**：实时通知功能，包括歌曲被选中、投票和系统通知
 - **现代UI**：响应式设计，玻璃态UI，流畅的动画效果
@@ -26,7 +29,8 @@
 - **数据库**：PostgreSQL
 - **ORM**：Prisma
 - **认证**：JWT Token认证
-- **样式**：CSS变量，自定义动画
+- **音乐API**：网易云音乐、QQ音乐第三方API
+- **样式**：CSS变量，自定义动画，玻璃态设计
 - **部署**：支持Vercel和Netlify一键部署
 
 ## 系统架构
@@ -159,6 +163,7 @@ VoiceHub/
 │   │   ├── NotificationSender.vue # 通知发送组件
 │   │   ├── PlayTimeManager.vue    # 播放时间管理组件
 │   │   ├── ScheduleForm.vue       # 排期表单组件
+│   │   ├── SemesterManager.vue    # 学期管理组件
 │   │   └── UserManager.vue        # 用户管理组件
 │   ├── Auth/              # 认证相关组件
 │   │   ├── ChangePasswordForm.vue # 修改密码表单
@@ -167,17 +172,20 @@ VoiceHub/
 │   │   ├── NotificationIcon.vue   # 通知图标组件
 │   │   └── NotificationSettings.vue # 通知设置组件
 │   ├── Songs/             # 歌曲相关组件
-│   │   ├── RequestForm.vue        # 点歌表单
+│   │   ├── RequestForm.vue        # 点歌表单（支持音乐搜索）
 │   │   ├── ScheduleList.vue       # 排期列表
 │   │   └── SongList.vue           # 歌曲列表
 │   └── UI/                # 通用UI组件
-│       └── ProgressBar.vue         # 进度条组件
+│       ├── AudioPlayer.vue        # 音乐播放器组件
+│       └── ProgressBar.vue        # 进度条组件
 ├── composables/           # 组合式API函数
 │   ├── useAdmin.ts         # 管理员功能hooks
+│   ├── useAudioQuality.ts  # 音质管理hooks
 │   ├── useAuth.ts          # 认证功能hooks
 │   ├── useNotifications.ts # 通知功能hooks
 │   ├── useProgress.ts      # 进度条功能hooks
 │   ├── useProgressEvents.ts # 进度事件功能hooks
+│   ├── useSemesters.ts     # 学期管理hooks
 │   └── useSongs.ts         # 歌曲功能hooks
 ├── pages/                 # 页面组件
 │   ├── change-password.vue # 修改密码页面
@@ -213,6 +221,7 @@ VoiceHub/
 │   │   │   ├── notifications/       # 管理员通知API
 │   │   │   ├── play-times/          # 播放时间管理API
 │   │   │   ├── schedule/            # 排期管理API
+│   │   │   ├── semesters/           # 学期管理API
 │   │   │   ├── songs/               # 管理员歌曲管理API
 │   │   │   ├── system-settings/     # 系统设置API
 │   │   │   └── users/               # 用户管理API
@@ -220,6 +229,7 @@ VoiceHub/
 │   │   ├── notifications/  # 通知API
 │   │   ├── play-times/     # 播放时间API
 │   │   ├── progress/       # 进度API
+│   │   ├── semesters/      # 学期API
 │   │   └── songs/          # 歌曲API
 │   ├── middleware/         # 中间件
 │   │   └── auth.ts         # 认证中间件
@@ -250,7 +260,13 @@ VoiceHub/
 1. 访问主页，查看当前排期
 2. 注册/登录账号
 3. 在仪表盘中点歌或给喜欢的歌曲投票
-4. 查看通知中心获取歌曲状态更新
+   - 支持搜索网易云音乐和QQ音乐
+   - 可以试听歌曲并选择音质
+   - 支持给已有歌曲投票
+4. 使用内置播放器播放歌曲
+   - 支持多种音质切换（标准、HQ、无损、Hi-Res等）
+   - 实时切换音质并保持播放进度
+5. 查看通知中心获取歌曲状态更新
 
 ### 管理员
 1. 使用管理员账号登录（默认账号：admin，密码：admin123）
@@ -260,11 +276,17 @@ VoiceHub/
    - 可以在右侧拖拽调整歌曲播放顺序
    - 点击"保存顺序"按钮保存排期
 4. **歌曲管理**：查看和管理所有歌曲
-5. **用户管理**：添加、编辑和删除用户
+   - 支持播放歌曲并实时切换音质
+   - 动态获取最新的音乐播放链接
+5. **学期管理**：设置和管理学期信息
+   - 创建新学期（如"2024-2025学年上学期"）
+   - 设置当前活跃学期
+   - 点歌记录自动关联到当前学期
+6. **用户管理**：添加、编辑和删除用户
    - 单个添加：填写用户信息（包括姓名、账号、年级、班级）
    - 批量导入：通过EXCEL文件批量添加用户
    - 可以重置用户密码
-6. **通知管理**：向用户发送系统通知
+7. **通知管理**：向用户发送系统通知
    - 支持按全体用户、年级、班级或多班级发送
    - 实时显示发送进度和结果
 
@@ -345,13 +367,6 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
    npx prisma migrate reset
    ```
 
-### 通知不显示内容
-
-如果通知只显示标题但不显示内容，可能是数据库模型与前端模型不匹配。运行修复工具：
-```bash
-cd scripts && npm run repair-db
-```
-
 ## 开发指南
 
 ### 组合式API
@@ -362,6 +377,8 @@ cd scripts && npm run repair-db
 - `useSongs`: 处理歌曲相关操作，包括获取歌曲列表、点歌和投票
 - `useAdmin`: 处理管理员操作，包括排期管理和标记播放
 - `useNotifications`: 处理通知系统，包括获取、标记已读和设置
+- `useAudioQuality`: 处理音质管理，包括音质设置和持久化
+- `useSemesters`: 处理学期管理，包括创建学期和设置活跃学期
 
 ### 添加新功能
 
@@ -380,9 +397,28 @@ cd scripts && npm run repair-db
 4. 确保同时更新`types/index.ts`中的TypeScript类型定义
 5. 验证数据库：`cd scripts && npm run check-db`
 
+## 音乐服务免责声明
+
+VoiceHub是一个开源的校园广播站点歌管理系统，本项目：
+
+**不提供音乐内容**：
+- 本系统不存储、不提供任何音乐文件
+- 不提供音乐下载、上传或分享服务
+- 所有音乐内容均来自第三方音乐平台
+
+**第三方API使用**：
+- 本系统仅使用第三方公开API进行音乐搜索和获取播放链接
+- 音乐内容的版权归原音乐平台和版权方所有
+- 用户播放的音乐内容受相应音乐平台的服务条款约束
+
+**法律声明**：
+- 如有版权方认为本系统侵犯了其权益，请联系我们，我们将积极配合处理
+- 本系统开发者不承担因使用第三方音乐服务而产生的任何法律责任
+- 用户使用本系统即表示理解并同意上述条款
+
 ## 致谢
 
-特别感谢 [过客是个铁憨憨](https://github.com/1811304592) 为本项目提供全新UI设计。
+特别感谢 [过客是个铁憨憨](https://github.com/1811304592) 为本项目提供UI设计
 
 ## 许可证
 

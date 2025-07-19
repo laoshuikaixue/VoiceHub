@@ -292,7 +292,7 @@ export async function initializeFirstDeployment() {
       return true
     }
 
-    const bcrypt = require('bcrypt')
+    const bcrypt = await import('bcrypt')
     const hashedPassword = await bcrypt.hash('admin123', 10)
     
     // 创建管理员用户
