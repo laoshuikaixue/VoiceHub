@@ -499,6 +499,11 @@ const fetchNotificationSettings = async () => {
 // 保存通知设置
 const saveNotificationSettings = async () => {
   await notificationsService.updateNotificationSettings(notificationSettings.value)
+  
+  // 如果在首页，更新刷新间隔
+  if (typeof setupRefreshInterval === 'function') {
+    setupRefreshInterval()
+  }
 }
 
 // 加载通知
@@ -665,18 +670,40 @@ onMounted(async () => {
   // 更新真实数据
   await updateSongCounts()
 
-  // 设置定时刷新（每60秒静默刷新一次数据）
-  refreshInterval = setInterval(async () => {
-    if (isClientAuthenticated.value) {
-      // 使用静默刷新，不显示加载状态
-      await songs.refreshSongsSilent()
-    } else {
-      // 使用静默刷新，不显示加载状态
-      await songs.refreshSchedulesSilent()
+  // 获取通知设置
+  if (isClientAuthenticated.value) {
+    await fetchNotificationSettings()
+  }
+
+  // 设置定时刷新（根据用户设置的刷新间隔刷新数据）
+  const setupRefreshInterval = () => {
+    // 清除之前的定时器
+    if (refreshInterval) {
+      clearInterval(refreshInterval)
     }
-    await updateSongCounts()
-    // 移除通知数量更新
-  }, 60000)
+    
+    // 获取用户设置的刷新间隔（秒），默认60秒
+    const intervalSeconds = notificationSettings.value.refreshInterval || 60
+    const intervalMs = intervalSeconds * 1000
+    
+    console.log(`设置刷新间隔: ${intervalSeconds}秒`)
+    
+    refreshInterval = setInterval(async () => {
+      if (isClientAuthenticated.value) {
+        // 使用静默刷新，不显示加载状态
+        await songs.refreshSongsSilent()
+        // 同时刷新通知
+        await loadNotifications()
+      } else {
+        // 使用静默刷新，不显示加载状态
+        await songs.refreshSchedulesSilent()
+      }
+      await updateSongCounts()
+    }, intervalMs)
+  }
+  
+  // 初始设置刷新间隔
+  setupRefreshInterval()
 
   // 监听通知
   if (songs.notification && songs.notification.value) {
