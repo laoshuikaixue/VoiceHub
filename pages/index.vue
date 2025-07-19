@@ -760,19 +760,13 @@ const handleRequest = async (songData) => {
       
       // 强制刷新歌曲列表
       console.log("投稿成功，刷新歌曲列表")
-      await songs.fetchSongs()
-      
-      // 更新歌曲统计
-      updateSongCounts()
-      
+      await refreshSongs()
+
       // 如果当前在歌曲列表页，自动切换到该页面
       if (activeTab.value !== 'songs') {
         setTimeout(() => {
           handleTabClick('songs')
         }, 500)
-      } else {
-        // 否则只刷新当前列表
-      refreshSongs()
       }
       
       return true
