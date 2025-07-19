@@ -1,21 +1,23 @@
 import { prisma } from '../../../models/schema'
+import { hasPermission } from '../../../utils/permissions'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
   const user = event.context.user
-  
+
   if (!user) {
     throw createError({
       statusCode: 401,
       message: '需要登录才能删除歌曲'
     })
   }
-  
-  // 检查是否是管理员
-  if (user.role !== 'ADMIN') {
+
+  // 检查权限
+  const canManageSongs = await hasPermission(user.id, 'song_manage')
+  if (!canManageSongs) {
     throw createError({
       statusCode: 403,
-      message: '只有管理员可以删除歌曲'
+      message: '没有歌曲管理权限'
     })
   }
   

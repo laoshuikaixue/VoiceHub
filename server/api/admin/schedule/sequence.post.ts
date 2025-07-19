@@ -1,10 +1,21 @@
+import { hasPermission } from '../../../utils/permissions'
+
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
+  // 验证用户认证
   const user = event.context.user
-  if (!user || user.role !== 'ADMIN') {
+  if (!user) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: '需要登录'
+    })
+  }
+
+  // 检查排期管理权限
+  const canManageSchedule = await hasPermission(user.id, 'schedule_manage')
+  if (!canManageSchedule) {
     throw createError({
       statusCode: 403,
-      statusMessage: '需要管理员权限'
+      statusMessage: '没有排期管理权限'
     })
   }
   

@@ -52,6 +52,20 @@
         >
           学期管理
         </button>
+        <button
+          v-if="permissions.canManagePermissions"
+          :class="['tab-btn', { active: activeTab === 'permissions' }]"
+          @click="activeTab = 'permissions'"
+        >
+          权限管理
+        </button>
+        <button
+          v-if="permissions.canManageBlacklist"
+          :class="['tab-btn', { active: activeTab === 'blacklist' }]"
+          @click="activeTab = 'blacklist'"
+        >
+          黑名单管理
+        </button>
       </div>
       
       <div class="dashboard-content">
@@ -290,6 +304,16 @@
         <div v-if="activeTab === 'semesters'" class="section semesters-section glass full-width-section">
           <SemesterManager />
         </div>
+
+        <!-- 权限管理 -->
+        <div v-if="activeTab === 'permissions'" class="section permissions-section glass full-width-section">
+          <PermissionManager />
+        </div>
+
+        <!-- 黑名单管理 -->
+        <div v-if="activeTab === 'blacklist'" class="section blacklist-section glass full-width-section">
+          <BlacklistManager />
+        </div>
       </div>
       
         <!-- 确认对话框组件 -->
@@ -367,11 +391,14 @@ import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
 import { useProgress } from '~/composables/useProgress'
 import { useNotifications } from '~/composables/useNotifications'
+import { usePermissions } from '~/composables/usePermissions'
 import SongList from '~/components/Songs/SongList.vue'
 import UserManager from '~/components/Admin/UserManager.vue'
 import NotificationSender from '~/components/Admin/NotificationSender.vue'
 import PlayTimeManager from '~/components/Admin/PlayTimeManager.vue'
 import SemesterManager from '~/components/Admin/SemesterManager.vue'
+import PermissionManager from '~/components/Admin/PermissionManager.vue'
+import BlacklistManager from '~/components/Admin/BlacklistManager.vue'
 import ScheduleForm from '~/components/Admin/ScheduleForm.vue'
 
 const router = useRouter()
@@ -388,6 +415,7 @@ const activeTab = ref('schedule')
 let auth = null
 let songsService = null
 let adminService = null
+let permissions = null
 
 // 歌曲和排期数据
 const songs = ref([])
@@ -508,6 +536,7 @@ onMounted(async () => {
   // 初始化服务
   songsService = useSongs()
   adminService = useAdmin()
+  permissions = usePermissions()
   
   // 使用引用保存服务状态
   songs.value = songsService.songs.value

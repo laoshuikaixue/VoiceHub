@@ -24,6 +24,7 @@ model User {
   notificationSettings NotificationSettings?
   songs                Song[]
   votes                Vote[]
+  userPermissions      UserPermission[]      // 用户权限关联
 }
 
 model Song {
@@ -129,7 +130,64 @@ model SystemSettings {
   enablePlayTimeSelection Boolean  @default(false) // 是否启用播出时段选择功能
 }
 
+// 权限模型
+model Permission {
+  id              Int              @id @default(autoincrement())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  name            String           @unique // 权限名称，如"manage_songs", "manage_schedule"
+  displayName     String           // 显示名称，如"歌曲管理"
+  description     String?          // 权限描述
+  category        String           // 权限分类，如"song", "schedule", "user"
+  userPermissions UserPermission[]
+  rolePermissions RolePermission[]
+}
+
+// 用户权限关联表
+model UserPermission {
+  id           Int        @id @default(autoincrement())
+  createdAt    DateTime   @default(now())
+  userId       Int
+  permissionId Int
+  granted      Boolean    @default(true) // 是否授予权限
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+}
+
+// 角色权限关联表
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  createdAt    DateTime   @default(now())
+  role         Role
+  permissionId Int
+  granted      Boolean    @default(true) // 是否授予权限
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId])
+}
+
+// 歌曲黑名单模型
+model SongBlacklist {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  type        BlacklistType // 黑名单类型：SONG（具体歌曲）或KEYWORD（关键词）
+  value       String   // 黑名单值：歌曲名+艺术家 或 关键词
+  reason      String?  // 加入黑名单的原因
+  isActive    Boolean  @default(true) // 是否启用
+  createdBy   Int?     // 创建者ID
+}
+
 enum Role {
-  USER
-  ADMIN
+  USER          // 普通用户
+  ADMIN         // 保持兼容性，等同于SUPER_ADMIN
+  SONG_ADMIN    // 歌曲管理员
+  SUPER_ADMIN   // 超级管理员
+}
+
+enum BlacklistType {
+  SONG     // 具体歌曲
+  KEYWORD  // 关键词
 }
