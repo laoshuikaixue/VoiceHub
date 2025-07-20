@@ -95,9 +95,22 @@
             @dragend="dragEnd"
           >
             <div class="song-info">
-              <div class="song-title">{{ song.title }}</div>
-              <div class="song-meta">
-                <span class="song-artist">{{ song.artist }}</span>
+              <div class="song-main">
+                <div class="song-title">{{ song.title }}</div>
+                <div class="song-meta">
+                  <span class="song-artist">{{ song.artist }}</span>
+                </div>
+                <div class="song-stats">
+                  <span class="votes-count">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                    {{ song.voteCount || 0 }}
+                  </span>
+                  <span class="time-info">{{ formatDate(song.createdAt) }}</span>
+                </div>
+              </div>
+              <div class="song-side">
                 <span class="song-submitter">投稿: {{ song.requester }}</span>
                 <span
                   v-if="song.preferredPlayTimeId && getPlayTimeName(song.preferredPlayTimeId)"
@@ -105,15 +118,6 @@
                 >
                   期望时段: {{ getPlayTimeName(song.preferredPlayTimeId) }}
                 </span>
-              </div>
-              <div class="song-stats">
-                <span class="votes-count">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                  </svg>
-                  {{ song.voteCount || 0 }}
-                </span>
-                <span class="time-info">{{ formatDate(song.createdAt) }}</span>
               </div>
             </div>
             <div class="drag-handle">
@@ -1136,6 +1140,27 @@ const updateScrollButtonState = () => {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.song-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.song-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  flex-shrink: 0;
+  text-align: right;
+  min-height: 60px;
 }
 
 .song-title {
@@ -1167,7 +1192,7 @@ const updateScrollButtonState = () => {
 }
 
 .song-submitter {
-  font-size: 14px;
+  font-size: 12px;
   color: #888888;
   white-space: nowrap;
   overflow: hidden;
@@ -1176,13 +1201,13 @@ const updateScrollButtonState = () => {
 }
 
 .preferred-playtime {
-  font-size: 12px;
+  font-size: 11px;
   color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
+  background: rgba(102, 126, 234, 0.15);
+  padding: 3px 8px;
+  border-radius: 6px;
   white-space: nowrap;
-  align-self: flex-start;
+  border: 1px solid rgba(102, 126, 234, 0.3);
 }
 
 .song-stats {

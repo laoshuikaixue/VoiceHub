@@ -81,7 +81,7 @@
 
     <div class="form-footer">
       <p class="help-text">
-        请使用您的账号和密码登录系统
+        不同VoiceHub平台的账号不互通
       </p>
     </div>
   </div>

@@ -401,21 +401,7 @@
       </Transition>
     </Teleport>
 
-    <!-- 通知组件 -->
-    <Transition-group
-      tag="div"
-      name="notification"
-      class="notifications-container"
-    >
-      <div
-        v-for="(notif, index) in notifications"
-        :key="notif.id"
-        class="notification"
-        :class="notif.type"
-      >
-        <div class="notification-content">{{ notif.message }}</div>
-      </div>
-    </Transition-group>
+    <!-- 旧的通知组件已移除，使用全局通知系统 -->
   </div>
 </template>
 
@@ -453,9 +439,7 @@ const showAbout = ref(false)
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
 
-// 通知系统
-const notifications = ref([])
-let notificationId = 0
+// 旧的通知系统已移除，使用全局通知系统
 let refreshInterval = null
 
 // 添加通知相关变量
@@ -593,19 +577,7 @@ const getCurrentDate = () => {
   return `${year}年${month}月${date}日 周${weekDay}`;
 }
 
-// 显示通知
-const showNotification = (message, type = 'info') => {
-  const id = notificationId++
-  notifications.value.push({ id, message, type })
-
-  // 3秒后自动关闭
-  setTimeout(() => {
-    const index = notifications.value.findIndex(n => n.id === id)
-    if (index !== -1) {
-      notifications.value.splice(index, 1)
-    }
-  }, 3000)
-}
+// 旧的showNotification函数已移除，使用全局通知系统
 
 // 更新歌曲数量统计
 const updateSongCounts = async () => {
@@ -748,7 +720,9 @@ const error = computed(() => songs?.error?.value || '')
 // 处理投稿请求
 const handleRequest = async (songData) => {
   if (!auth || !isClientAuthenticated.value) {
-    showNotification('请先登录', 'error')
+    if (window.$showNotification) {
+      window.$showNotification('请先登录', 'error')
+    }
     showRequestModal.value = false
     return false
   }
@@ -759,8 +733,10 @@ const handleRequest = async (songData) => {
     const result = await songs.requestSong(songData)
     if (result) {
       // 显示投稿成功通知
-      showNotification(`《${songData.title} - ${songData.artist}》投稿成功！`, 'success')
-      
+      if (window.$showNotification) {
+        window.$showNotification(`《${songData.title} - ${songData.artist}》投稿成功！`, 'success')
+      }
+
       // 强制刷新歌曲列表
       console.log("投稿成功，刷新歌曲列表")
       await refreshSongs()
@@ -771,12 +747,14 @@ const handleRequest = async (songData) => {
           handleTabClick('songs')
         }, 500)
       }
-      
+
       return true
     }
     return false
   } catch (err) {
-    showNotification(err.message || '点歌失败', 'error')
+    if (window.$showNotification) {
+      window.$showNotification(err.message || '点歌失败', 'error')
+    }
     return false
   }
 }
@@ -923,24 +901,12 @@ const navigateToLogin = () => {
 
 // 显示登录提示
 const showLoginNotice = () => {
-  showToast('需要登录才能查看通知', 'info');
+  if (window.$showNotification) {
+    window.$showNotification('需要登录才能查看通知', 'info')
+  }
 }
 
-// 显示Toast通知
-const showToast = (message, type = 'info') => {
-  const toast = {
-    id: Date.now(),
-    message,
-    type
-  };
-  notifications.value.push(toast);
-  setTimeout(() => {
-    const index = notifications.value.findIndex(n => n.id === toast.id);
-    if (index !== -1) {
-      notifications.value.splice(index, 1);
-    }
-  }, 3000);
-}
+// 旧的showToast函数已移除，使用全局通知系统
 
 // 添加未读通知计数
 // 之前已声明了unreadNotificationCount，这里对其进行增强
@@ -1857,55 +1823,7 @@ input:checked + .toggle-slider:before {
   transform: scale(0.9);
 }
 
-/* 通知组件样式 */
-.notifications-container {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-width: 300px;
-}
-
-.notifications-container .notification {
-  padding: 0.75rem 1rem;
-  border-radius: 0.375rem;
-  background: rgba(30, 41, 59, 0.8);
-  backdrop-filter: blur(5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  border-left: 3px solid var(--primary);
-  animation: slideInNotification 0.3s ease-out forwards;
-}
-
-@keyframes slideInNotification {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.notifications-container .notification.success {
-  border-color: #10b981;
-}
-
-.notifications-container .notification.error {
-  border-color: #ef4444;
-}
-
-.notifications-container .notification.info {
-  border-color: #3b82f6;
-}
-
-.notifications-container .notification-content {
-  color: var(--light);
-  font-size: 0.875rem;
-}
+/* 旧的通知样式已移除，使用全局通知系统 */
 
 /* 波纹效果 */
 .section-tab {

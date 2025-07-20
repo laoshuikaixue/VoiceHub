@@ -526,8 +526,9 @@ const cancelForm = () => {
 
 .title {
   font-size: 1.5rem;
-  color: var(--light);
+  color: #ffffff;
   margin: 0;
+  font-weight: 600;
 }
 
 .settings-toggle {
@@ -537,8 +538,9 @@ const cancelForm = () => {
 }
 
 .label {
-  color: var(--light);
+  color: #cccccc;
   font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .toggle-switch {
@@ -561,27 +563,29 @@ const cancelForm = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(100, 116, 139, 0.3);
-  transition: .4s;
+  background-color: #374151;
+  transition: .3s;
+  border-radius: 24px;
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 16px;
-  width: 16px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: .4s;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ffffff;
+  transition: .3s;
+  border-radius: 50%;
 }
 
 input:checked + .slider {
-  background-color: var(--primary);
+  background-color: #4f46e5;
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px var(--primary);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
 }
 
 input:checked + .slider:before {
@@ -616,18 +620,18 @@ input:checked + .slider:before {
 }
 
 .btn-primary {
-  background-color: var(--primary);
+  background-color: #4f46e5;
   color: white;
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-dark);
+  background-color: #4338ca;
   transform: translateY(-1px);
 }
 
 .btn-secondary {
   background-color: rgba(255, 255, 255, 0.1);
-  color: var(--light);
+  color: #d1d5db;
 }
 
 .btn-secondary:hover {
@@ -682,7 +686,7 @@ input:checked + .slider:before {
   width: 2rem;
   height: 2rem;
   border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: var(--primary);
+  border-top-color: #4f46e5;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 0.5rem;
@@ -693,7 +697,7 @@ input:checked + .slider:before {
 }
 
 .error-message {
-  color: var(--danger);
+  color: #ef4444;
 }
 
 .empty-state {
@@ -718,7 +722,7 @@ input:checked + .slider:before {
 
 .empty-state .hint {
   font-size: 0.875rem;
-  color: var(--gray);
+  color: #888888;
   margin-top: 0.5rem;
 }
 
@@ -766,7 +770,7 @@ input:checked + .slider:before {
 
 .time-name {
   font-size: 1.125rem;
-  color: var(--light);
+  color: #ffffff;
   margin: 0;
 }
 
@@ -799,11 +803,11 @@ input:checked + .slider:before {
 
 .time-range .label, .description .label {
   min-width: 5rem;
-  color: var(--gray);
+  color: #888888;
 }
 
 .time-range .value, .description .value {
-  color: var(--light);
+  color: #cccccc;
 }
 
 .actions {
@@ -826,11 +830,12 @@ input:checked + .slider:before {
 }
 
 .modal-content {
-  background: rgba(30, 41, 59, 0.95);
-  border-radius: 0.75rem;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
   width: 100%;
   max-width: 550px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
 
@@ -854,13 +859,13 @@ input:checked + .slider:before {
 
 .modal-header h3 {
   margin: 0;
-  color: var(--light);
+  color: #ffffff;
 }
 
 .close-button {
   background: none;
   border: none;
-  color: var(--gray);
+  color: #888888;
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0;
@@ -868,7 +873,7 @@ input:checked + .slider:before {
 }
 
 .close-button:hover {
-  color: var(--light);
+  color: #ffffff;
 }
 
 .modal-body {
@@ -882,17 +887,17 @@ input:checked + .slider:before {
 .form-control {
   width: 100%;
   padding: 0.75rem;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.375rem;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
   font-size: 1rem;
-  color: var(--light);
+  color: #ffffff;
 }
 
 .form-control:focus {
-  border-color: var(--primary);
+  border-color: #4f46e5;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25);
 }
 
 textarea.form-control {

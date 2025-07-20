@@ -196,7 +196,7 @@ onMounted(async () => {
 }
 
 .add-btn {
-  background: linear-gradient(135deg, #0b5afe 0%, #1e40af 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -211,7 +211,7 @@ onMounted(async () => {
 
 .add-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(11, 90, 254, 0.3);
+  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
 }
 
 .current-semester {
@@ -226,8 +226,8 @@ onMounted(async () => {
 }
 
 .semester-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1rem;
@@ -238,13 +238,15 @@ onMounted(async () => {
 }
 
 .semester-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: #1f1f1f;
+  border-color: #3a3a3a;
+  transform: translateY(-1px);
 }
 
 .semester-card.active {
-  border-color: #0b5afe;
-  background: rgba(11, 90, 254, 0.1);
+  border-color: #4f46e5;
+  background: rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.2);
 }
 
 .semester-info h4 {
@@ -268,17 +270,18 @@ onMounted(async () => {
 }
 
 .active-badge {
-  background: #0b5afe;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
 }
 
 .set-active-btn {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: #d1d5db;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   padding: 0.5rem 1rem;
@@ -287,7 +290,8 @@ onMounted(async () => {
 }
 
 .set-active-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .set-active-btn:disabled {
@@ -322,7 +326,7 @@ onMounted(async () => {
 }
 
 .retry-btn {
-  background: #0b5afe;
+  background: #4f46e5;
   color: white;
   border: none;
   border-radius: 6px;
@@ -399,11 +403,11 @@ onMounted(async () => {
 .form-group input,
 .form-group textarea {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
   border-radius: 6px;
   padding: 0.75rem;
-  color: #fff;
+  color: #ffffff;
   font-size: 1rem;
 }
 
@@ -440,7 +444,7 @@ onMounted(async () => {
 
 .cancel-btn {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: #d1d5db;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   padding: 0.75rem 1.5rem;
@@ -448,7 +452,7 @@ onMounted(async () => {
 }
 
 .submit-btn {
-  background: #0b5afe;
+  background: #4f46e5;
   color: white;
   border: none;
   border-radius: 6px;
