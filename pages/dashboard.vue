@@ -32,8 +32,8 @@
             
             <div class="nav-section">
               <div class="nav-section-title">内容管理</div>
-              <button 
-                :class="['nav-item', { active: activeTab === 'schedule' }]" 
+              <button
+                :class="['nav-item', { active: activeTab === 'schedule' }]"
                 @click="activeTab = 'schedule'"
               >
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -43,6 +43,17 @@
                   <line x1="3" y1="10" x2="21" y2="10"/>
                 </svg>
                 排期管理
+              </button>
+              <button
+                :class="['nav-item', { active: activeTab === 'print' }]"
+                @click="activeTab = 'print'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6,9 6,2 18,2 18,9"/>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                  <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                打印排期
               </button>
               <button 
                 :class="['nav-item', { active: activeTab === 'songs' }]" 
@@ -186,6 +197,11 @@
             <div v-if="activeTab === 'schedule'" class="content-section">
               <ScheduleManager />
             </div>
+
+            <!-- 打印排期 -->
+            <div v-if="activeTab === 'print'" class="content-section">
+              <SchedulePrinter />
+            </div>
             
             <!-- 用户管理 -->
             <div v-if="activeTab === 'users'" class="content-section">
@@ -236,6 +252,7 @@ import { useAuth } from '~/composables/useAuth'
 import OverviewDashboard from '~/components/Admin/OverviewDashboard.vue'
 import SongManagement from '~/components/Admin/SongManagement.vue'
 import ScheduleManager from '~/components/Admin/ScheduleManager.vue'
+import SchedulePrinter from '~/components/Admin/SchedulePrinter.vue'
 import UserManager from '~/components/Admin/UserManager.vue'
 import RoleManager from '~/components/Admin/RoleManager.vue'
 import NotificationSender from '~/components/Admin/NotificationSender.vue'
