@@ -1,5 +1,5 @@
 <template>
-  <div class="app">
+  <div class="app" data-theme="dark" data-color-scheme="custom">
     <!-- 全局通知组件 -->
     <Notification
       :show="notification.show"

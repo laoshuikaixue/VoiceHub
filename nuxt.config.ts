@@ -30,7 +30,12 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见' }
+        { name: 'description', content: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见' },
+        // 防止浏览器自动应用深色主题
+        { name: 'color-scheme', content: 'light dark' },
+        { name: 'theme-color', content: '#111111' },
+        { name: 'msapplication-navbutton-color', content: '#111111' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico' },
