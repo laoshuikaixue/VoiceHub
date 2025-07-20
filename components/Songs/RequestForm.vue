@@ -802,6 +802,7 @@ const stopPlaying = () => {
   height: 100%;
   min-height: 0;
   gap: 1rem;
+  position: relative;
 }
 
 /* 搜索区域样式 */
@@ -909,6 +910,8 @@ const stopPlaying = () => {
   flex-direction: column;
   gap: 0.25rem;
   flex-shrink: 0; /* 防止被压缩 */
+  position: relative;
+  z-index: 10;
 }
 
 .form-group label {
@@ -985,6 +988,8 @@ const stopPlaying = () => {
   flex-direction: column;
   min-height: 400px;
   padding: 1rem 1.5rem 1.5rem 1.5rem; /* 上边距小一点 */
+  position: relative;
+  z-index: 1;
 }
 
 .results-content {
@@ -1041,6 +1046,7 @@ const stopPlaying = () => {
   gap: 1rem;
   padding-right: 0.5rem;
   min-height: 200px;
+  max-height: 400px;
 }
 
 /* 滚动条样式 */
@@ -1605,8 +1611,9 @@ const stopPlaying = () => {
 @media (max-width: 768px) {
   .request-form {
     flex-direction: column;
-    min-height: 100vh;
     height: auto;
+    max-height: none;
+    overflow: visible;
   }
 
   .rules-section {
@@ -1621,28 +1628,32 @@ const stopPlaying = () => {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 60vh;
+    height: auto;
   }
 
   .song-request-form {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 60vh;
+    height: auto;
+    gap: 1rem;
   }
 
   .search-results-container {
     flex: 1;
-    min-height: 50vh;
     height: auto;
+    max-height: 70vh;
     padding: 1rem;
     overflow: visible;
+    display: flex;
+    flex-direction: column;
   }
 
   .results-content {
     height: auto;
-    min-height: 40vh;
+    max-height: 60vh;
     overflow: visible;
+    flex: 1;
   }
 
   /* 移动端搜索区域 */
@@ -1816,6 +1827,41 @@ const stopPlaying = () => {
   .search-illustration {
     padding: 0.5rem;
     min-height: 120px;
+  }
+
+  /* 移动端搜索结果列表 */
+  .results-list {
+    flex: 1;
+    height: auto;
+    max-height: 50vh;
+    overflow: visible;
+  }
+
+  .results-grid {
+    max-height: 50vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2rem; /* 确保底部内容可见 */
+  }
+
+  /* 移动端期望排期选择 */
+  .form-group {
+    margin-bottom: 1rem;
+    z-index: 10;
+    position: relative;
+  }
+
+  .form-select {
+    position: relative;
+    z-index: 10;
+  }
+
+  /* 确保相似歌曲提示在移动端可见 */
+  .similar-song-alert {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    z-index: 20;
+    position: relative;
   }
 }
 </style>
