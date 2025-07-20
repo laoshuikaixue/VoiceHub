@@ -31,10 +31,8 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'description', content: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见' },
-        // 防止浏览器自动应用深色主题
-        { name: 'color-scheme', content: 'light dark' },
+        // 温和的主题控制
         { name: 'theme-color', content: '#111111' },
-        { name: 'msapplication-navbutton-color', content: '#111111' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
       ],
       link: [
@@ -60,6 +58,20 @@ export default defineNuxtConfig({
   
   // 服务器端配置
   nitro: {
-    preset: process.env.NITRO_PRESET || 'vercel'
+    preset: process.env.NITRO_PRESET || 'vercel',
+    // 增强错误处理和稳定性
+    experimental: {
+      wasm: true
+    },
+    timing: true,
+    // 增加请求超时时间
+    routeRules: {
+      '/api/**': {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        }
+      }
+    }
   }
 })

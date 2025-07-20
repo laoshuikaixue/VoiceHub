@@ -42,21 +42,28 @@ function createPrismaClient() {
   try {
     // 检查是否在Vercel环境中
     const isVercelEnv = process.env.VERCEL === '1';
-    
+
     console.log(`Running in ${isVercelEnv ? 'Vercel' : 'standard'} environment`);
-    
+
     // 在Vercel环境中使用更保守的日志设置
-    const logLevels: Prisma.LogLevel[] = isVercelEnv 
-      ? ['error'] 
-      : ['query', 'info', 'warn', 'error'];
-    
+    const logLevels: Prisma.LogLevel[] = isVercelEnv
+      ? ['error']
+      : ['error', 'warn'];
+
     return new PrismaClient({
       log: logLevels,
       errorFormat: 'pretty',
-      // 在Vercel环境中增加连接超时
+      // 增强连接配置
       datasources: {
         db: {
           url: process.env.DATABASE_URL
+        }
+      },
+      // 添加连接池配置
+      __internal: {
+        engine: {
+          connectTimeout: 60000, // 60秒连接超时
+          queryTimeout: 60000,   // 60秒查询超时
         }
       }
     });
@@ -65,6 +72,12 @@ function createPrismaClient() {
     // 创建一个降级的 Prisma 客户端，只记录错误
     return new PrismaClient({
       log: ['error'],
+      __internal: {
+        engine: {
+          connectTimeout: 30000,
+          queryTimeout: 30000,
+        }
+      }
     });
   }
 }

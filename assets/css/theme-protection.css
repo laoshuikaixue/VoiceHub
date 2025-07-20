@@ -1,296 +1,76 @@
-/* 浏览器主题保护样式 */
-/* 防止浏览器自动应用深色主题或其他主题修改我们的设计 */
+/* 温和的浏览器主题保护样式 */
+/* 只保护关键元素，不干扰正常的CSS */
 
-/* 全局颜色方案控制 */
+/* 全局颜色方案声明 */
 :root {
   color-scheme: light dark;
-  -webkit-color-scheme: light dark;
 }
 
-/* 强制保护所有元素不被浏览器主题影响 */
-* {
-  /* 防止浏览器强制修改外观 */
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  appearance: none !important;
-}
-
-/* 特别保护表单元素 */
-input,
+/* 只保护表单元素的外观 */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
 textarea,
-select,
-button,
-option {
-  /* 禁用浏览器的颜色方案 */
-  color-scheme: none !important;
-  -webkit-color-scheme: none !important;
-  
-  /* 强制使用我们定义的颜色 */
-  background-color: inherit !important;
-  color: inherit !important;
-  border-color: inherit !important;
-  
-  /* 防止浏览器修改字体 */
-  font-family: inherit !important;
+select {
+  /* 禁用浏览器默认样式 */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* 禁用浏览器的颜色方案自动调整 */
+  color-scheme: none;
+  -webkit-color-scheme: none;
 }
 
-/* 防止浏览器修改链接颜色 */
-a {
-  color: inherit !important;
-  text-decoration: inherit !important;
+/* 保护按钮外观 */
+button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
-/* 防止浏览器修改滚动条样式 */
-::-webkit-scrollbar {
-  -webkit-appearance: none !important;
-  appearance: none !important;
-}
-
-/* 防止浏览器在深色模式下修改图片 */
-img {
-  filter: none !important;
-}
-
-/* 防止浏览器修改选中文本的颜色 */
+/* 保护选中文本颜色 */
 ::selection {
-  background-color: rgba(79, 70, 229, 0.3) !important;
-  color: inherit !important;
+  background-color: rgba(79, 70, 229, 0.3);
+  color: inherit;
 }
 
 ::-moz-selection {
-  background-color: rgba(79, 70, 229, 0.3) !important;
-  color: inherit !important;
+  background-color: rgba(79, 70, 229, 0.3);
+  color: inherit;
 }
 
-/* 防止浏览器修改占位符文本颜色 */
+/* 保护占位符颜色 */
 ::placeholder {
-  color: inherit !important;
-  opacity: 0.6 !important;
+  opacity: 0.6;
 }
 
-::-webkit-input-placeholder {
-  color: inherit !important;
-  opacity: 0.6 !important;
-}
-
-::-moz-placeholder {
-  color: inherit !important;
-  opacity: 0.6 !important;
-}
-
-:-ms-input-placeholder {
-  color: inherit !important;
-  opacity: 0.6 !important;
-}
-
-/* 防止浏览器修改焦点样式 */
-:focus {
-  outline-color: inherit !important;
-}
-
-/* 防止浏览器在高对比度模式下修改样式 */
-@media (prefers-contrast: high) {
-  * {
-    background-color: inherit !important;
-    color: inherit !important;
-    border-color: inherit !important;
-  }
-}
-
-/* 防止浏览器在深色模式下自动调整 */
+/* 在深色模式偏好下保护表单元素 */
 @media (prefers-color-scheme: dark) {
-  * {
-    background-color: inherit !important;
-    color: inherit !important;
-    border-color: inherit !important;
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="url"],
+  input[type="tel"],
+  input[type="number"],
+  textarea,
+  select {
+    color-scheme: none;
+    -webkit-color-scheme: none;
   }
 }
 
-/* 防止浏览器在浅色模式下自动调整 */
-@media (prefers-color-scheme: light) {
-  * {
-    background-color: inherit !important;
-    color: inherit !important;
-    border-color: inherit !important;
+/* 高对比度模式下的调整 */
+@media (prefers-contrast: high) {
+  input, textarea, select, button {
+    border-width: 2px;
   }
-}
-
-/* 特别保护我们的深色主题元素 */
-.dark-theme,
-.dark-theme *,
-[data-theme="dark"],
-[data-theme="dark"] * {
-  color-scheme: dark !important;
-  -webkit-color-scheme: dark !important;
-}
-
-/* 强制保护背景色 */
-body,
-html {
-  background-color: #111111 !important;
-  color: #ffffff !important;
-}
-
-/* 保护主要容器的颜色 */
-.container,
-.main-content,
-.app-container {
-  background-color: inherit !important;
-  color: inherit !important;
-}
-
-/* 防止浏览器修改模态框和弹出层 */
-.modal,
-.dropdown,
-.popup,
-.overlay {
-  background-color: inherit !important;
-  color: inherit !important;
-  border-color: inherit !important;
-}
-
-/* 防止浏览器修改卡片组件 */
-.card,
-.panel,
-.section {
-  background-color: inherit !important;
-  color: inherit !important;
-  border-color: inherit !important;
-}
-
-/* 防止浏览器修改导航元素 */
-nav,
-.navigation,
-.navbar,
-.menu {
-  background-color: inherit !important;
-  color: inherit !important;
-  border-color: inherit !important;
-}
-
-/* 防止浏览器修改表格样式 */
-table,
-th,
-td {
-  background-color: inherit !important;
-  color: inherit !important;
-  border-color: inherit !important;
-}
-
-/* 防止浏览器修改代码块样式 */
-code,
-pre {
-  background-color: inherit !important;
-  color: inherit !important;
-  border-color: inherit !important;
-}
-
-/* 防止浏览器修改引用块样式 */
-blockquote {
-  background-color: inherit !important;
-  color: inherit !important;
-  border-color: inherit !important;
-}
-
-/* 防止浏览器修改分隔线样式 */
-hr {
-  border-color: inherit !important;
-  background-color: inherit !important;
-}
-
-/* 防止浏览器修改列表样式 */
-ul,
-ol,
-li {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改标题样式 */
-h1, h2, h3, h4, h5, h6 {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改段落样式 */
-p {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改强调文本样式 */
-strong,
-b,
-em,
-i {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改小文本样式 */
-small {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改标记文本样式 */
-mark {
-  background-color: inherit !important;
-  color: inherit !important;
-}
-
-/* 防止浏览器修改删除线文本样式 */
-del,
-s {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改插入文本样式 */
-ins,
-u {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改上标下标样式 */
-sub,
-sup {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改键盘输入样式 */
-kbd {
-  background-color: inherit !important;
-  color: inherit !important;
-  border-color: inherit !important;
-}
-
-/* 防止浏览器修改变量样式 */
-var {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改示例输出样式 */
-samp {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改缩写样式 */
-abbr {
-  color: inherit !important;
-  border-color: inherit !important;
-}
-
-/* 防止浏览器修改地址样式 */
-address {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改引用样式 */
-cite {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改定义样式 */
-dfn {
-  color: inherit !important;
-}
-
-/* 防止浏览器修改时间样式 */
-time {
-  color: inherit !important;
 }

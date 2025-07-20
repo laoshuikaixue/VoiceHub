@@ -1,5 +1,6 @@
 import { createError, defineEventHandler } from 'h3'
 import { prisma } from '../../models/schema'
+import { executeWithPool } from '~/server/utils/db-pool'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -13,35 +14,36 @@ export default defineEventHandler(async (event) => {
     ))
     
     // 获取所有排期的歌曲，包含播放时段信息
-    const schedules = await prisma.schedule.findMany({
-      // 移除日期过滤器，返回所有排期
-      include: {
-        song: {
-          include: {
-            requester: {
-              select: {
-                name: true,
-                grade: true,
-                class: true
-              }
-            },
-            _count: {
-              select: {
-                votes: true
+    const result = await executeWithPool(async () => {
+      const schedules = await prisma.schedule.findMany({
+        // 移除日期过滤器，返回所有排期
+        include: {
+          song: {
+            include: {
+              requester: {
+                select: {
+                  name: true,
+                  grade: true,
+                  class: true
+                }
+              },
+              _count: {
+                select: {
+                  votes: true
+                }
               }
             }
-          }
+          },
+          playTime: true // 包含播放时段信息
         },
-        playTime: true // 包含播放时段信息
-      },
-      orderBy: [
-        { playDate: 'asc' }
-        // 不使用sequence字段排序
-      ]
-    })
-    
-    // 获取所有用户的姓名列表，用于检测同名用户
-    const users = await prisma.user.findMany({
+        orderBy: [
+          { playDate: 'asc' }
+          // 不使用sequence字段排序
+        ]
+      })
+
+      // 获取所有用户的姓名列表，用于检测同名用户
+      const users = await prisma.user.findMany({
       select: {
         id: true,
         name: true,
@@ -125,8 +127,11 @@ export default defineEventHandler(async (event) => {
         }
       }
     })
-    
+
     return formattedSchedules
+    }, 'getPublicSchedules')
+
+    return result
   } catch (error: any) {
     console.error('获取公共排期失败:', error)
     throw createError({
