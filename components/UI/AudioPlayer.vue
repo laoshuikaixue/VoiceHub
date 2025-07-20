@@ -94,6 +94,7 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
 
 const props = defineProps({
   song: {
@@ -117,6 +118,9 @@ const showQualitySettings = ref(false)
 
 // 音质设置相关
 const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+
+// 全局音频播放器状态管理
+const globalAudioPlayer = useAudioPlayer()
 
 // 获取当前歌曲平台的音质文本
 const currentQualityText = computed(() => {
@@ -273,6 +277,32 @@ watch(() => props.song, (newSong, oldSong) => {
   }
 }, { immediate: true })
 
+// 监听全局播放状态变化
+const globalPlayingStatus = globalAudioPlayer.getPlayingStatus()
+watch(globalPlayingStatus, (newPlayingStatus) => {
+  // 如果全局状态变为暂停，同步本地状态
+  if (!newPlayingStatus && isPlaying.value) {
+    if (audioPlayer.value) {
+      audioPlayer.value.pause()
+    }
+    isPlaying.value = false
+  }
+  // 如果全局状态变为播放，且当前歌曲匹配，同步本地状态
+  else if (newPlayingStatus && !isPlaying.value) {
+    const currentGlobalSong = globalAudioPlayer.getCurrentSong().value
+    if (currentGlobalSong && props.song && currentGlobalSong.id === props.song.id) {
+      if (audioPlayer.value && audioPlayer.value.paused) {
+        audioPlayer.value.play().catch(err => {
+          console.error('播放失败:', err)
+          hasError.value = true
+          emit('error', err)
+        })
+      }
+      isPlaying.value = true
+    }
+  }
+}, { immediate: true })
+
 const handleImageError = (event) => {
   coverError.value = true
 }
@@ -285,10 +315,12 @@ const getFirstChar = (title) => {
 // 切换播放/暂停
 const togglePlay = () => {
   if (!audioPlayer.value) return
-  
+
   if (isPlaying.value) {
     audioPlayer.value.pause()
     isPlaying.value = false
+    // 同步到全局状态
+    globalAudioPlayer.pauseSong()
   } else {
     audioPlayer.value.play().catch(err => {
       console.error('播放失败:', err)
@@ -296,6 +328,10 @@ const togglePlay = () => {
       emit('error', err)
     })
     isPlaying.value = true
+    // 如果有当前歌曲，同步到全局状态
+    if (props.song) {
+      globalAudioPlayer.playSong(props.song)
+    }
   }
 }
 
@@ -308,6 +344,8 @@ const stopPlaying = () => {
     audioPlayer.value.pause()
     audioPlayer.value.currentTime = 0
     isPlaying.value = false
+    // 同步到全局状态
+    globalAudioPlayer.stopSong()
   }
 
   setTimeout(() => {
@@ -869,13 +907,14 @@ onUnmounted(() => {
   bottom: 100%;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   backdrop-filter: blur(20px);
   z-index: 1000;
   margin-bottom: 0.25rem;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .quality-option {

@@ -434,6 +434,47 @@ const getFirstChar = (title) => {
 
 // 切换歌曲播放/暂停
 const togglePlaySong = async (song) => {
+  // 检查是否为当前歌曲且正在播放
+  if (audioPlayer.isCurrentSong(song.id) && audioPlayer.getPlayingStatus().value) {
+    // 如果正在播放，则暂停
+    audioPlayer.pauseSong()
+    return
+  }
+
+  // 如果是当前歌曲但已暂停，则恢复播放
+  if (audioPlayer.isCurrentSong(song.id) && !audioPlayer.getPlayingStatus().value) {
+    // 检查当前全局歌曲是否有URL
+    const currentGlobalSong = audioPlayer.getCurrentSong().value
+    if (currentGlobalSong && currentGlobalSong.musicUrl) {
+      // 如果有URL，直接恢复播放
+      audioPlayer.playSong(currentGlobalSong)
+    } else {
+      // 如果没有URL，重新获取
+      if (song.musicPlatform && song.musicId) {
+        try {
+          const url = await getMusicUrl(song.musicPlatform, song.musicId)
+          if (url) {
+            const playableSong = {
+              ...song,
+              musicUrl: url
+            }
+            audioPlayer.playSong(playableSong)
+          } else {
+            if (window.$showNotification) {
+              window.$showNotification('无法获取音乐播放链接，可能是付费内容', 'error')
+            }
+          }
+        } catch (error) {
+          console.error('获取音乐URL失败:', error)
+          if (window.$showNotification) {
+            window.$showNotification('获取音乐播放链接失败', 'error')
+          }
+        }
+      }
+    }
+    return
+  }
+
   // 如果有平台和ID信息，动态获取URL
   if (song.musicPlatform && song.musicId) {
     try {

@@ -20,9 +20,9 @@ export function useAudioPlayer() {
       return false
     }
 
-    // 如果是同一首歌，则切换播放/暂停状态
+    // 如果是同一首歌，则开始播放（不切换状态，由调用方决定）
     if (currentSong.value && currentSong.value.id === song.id) {
-      isPlaying.value = !isPlaying.value
+      isPlaying.value = true
       return true
     }
 
@@ -47,6 +47,11 @@ export function useAudioPlayer() {
   const isCurrentPlaying = (songId: number) => {
     return isPlaying.value && currentSong.value && currentSong.value.id === songId
   }
+
+  // 检查指定ID的歌曲是否为当前歌曲（不管是否在播放）
+  const isCurrentSong = (songId: number) => {
+    return currentSong.value && currentSong.value.id === songId
+  }
   
   // 获取当前播放的歌曲信息
   const getCurrentSong = () => {
@@ -63,6 +68,7 @@ export function useAudioPlayer() {
     pauseSong,
     stopSong,
     isCurrentPlaying,
+    isCurrentSong,
     getCurrentSong,
     getPlayingStatus
   }
