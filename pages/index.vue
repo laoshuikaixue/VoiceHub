@@ -264,7 +264,9 @@
                   </div>
                   
                   <div v-else-if="userNotifications.length === 0" class="empty-notification">
-                    <div class="empty-icon">📭</div>
+                    <div class="empty-icon">
+                      <Icon name="bell" :size="48" color="#6b7280" />
+                    </div>
                     <p>暂无通知</p>
                   </div>
                   
@@ -278,10 +280,10 @@
                     >
                       <div class="notification-card-header">
                         <div class="notification-icon-type">
-                          <span v-if="notification.type === 'SONG_SELECTED'">🎯</span>
-                          <span v-else-if="notification.type === 'SONG_PLAYED'">🎵</span>
-                          <span v-else-if="notification.type === 'SONG_VOTED'">👍</span>
-                          <span v-else>📢</span>
+                          <Icon v-if="notification.type === 'SONG_SELECTED'" name="target" :size="20" color="#4f46e5" />
+                          <Icon v-else-if="notification.type === 'SONG_PLAYED'" name="music" :size="20" color="#10b981" />
+                          <Icon v-else-if="notification.type === 'SONG_VOTED'" name="thumbs-up" :size="20" color="#f59e0b" />
+                          <Icon v-else name="speaker" :size="20" color="#6b7280" />
                         </div>
                         <div class="notification-title-row">
                           <div class="notification-title">
@@ -411,6 +413,7 @@ import { useRouter } from 'vue-router'
 import ScheduleList from '~/components/Songs/ScheduleList.vue'
 import SongList from '~/components/Songs/SongList.vue'
 import RequestForm from '~/components/Songs/RequestForm.vue'
+import Icon from '~/components/UI/Icon.vue'
 import { useNotifications } from '~/composables/useNotifications'
 
 // 获取运行时配置

@@ -1,11 +1,11 @@
 <template>
   <div class="notification-icon-wrapper">
-    <button 
-      @click="toggleNotifications" 
+    <button
+      @click="toggleNotifications"
       class="notification-icon"
       :class="{ 'has-notifications': unreadCount > 0 }"
     >
-      <span class="icon">🔔</span>
+      <Icon name="bell" :size="20" color="#cccccc" class="icon" />
       <span v-if="unreadCount > 0" class="notification-badge"></span>
     </button>
     
@@ -48,10 +48,10 @@
           @click="viewNotification(notification)"
         >
           <div class="notification-icon-type">
-            <span v-if="notification.type === 'SONG_SELECTED'">🎯</span>
-            <span v-else-if="notification.type === 'SONG_PLAYED'">🎵</span>
-            <span v-else-if="notification.type === 'SONG_VOTED'">👍</span>
-            <span v-else>📢</span>
+            <Icon v-if="notification.type === 'SONG_SELECTED'" name="target" :size="16" color="#4f46e5" />
+            <Icon v-else-if="notification.type === 'SONG_PLAYED'" name="music" :size="16" color="#10b981" />
+            <Icon v-else-if="notification.type === 'SONG_VOTED'" name="thumbs-up" :size="16" color="#f59e0b" />
+            <Icon v-else name="speaker" :size="16" color="#6b7280" />
           </div>
           <div class="notification-content">
             <div class="notification-title">
@@ -89,6 +89,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useNotifications } from '~/composables/useNotifications'
+import Icon from '~/components/UI/Icon.vue'
 
 const props = defineProps({
   autoRefresh: {

@@ -3,10 +3,11 @@
 这是一个使用Nuxt 3全栈框架开发的校园广播站点歌系统。系统实现了用户点歌、投票、后台排期管理以及歌单公示等功能，支持管理员通过拖拽方式进行排期管理。
 
 ## 项目截图
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/b766c8ca-de75-45d2-823c-651590f70fd3" />
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/cdbd908c-9830-4253-8093-3edf4e915226" />
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/5c6c9ddd-fa29-4fce-ab0d-3252649527ab" />
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/c5b13bc3-798c-4cd0-bf77-0876b583c73f" />
+<img width="3200" height="1998" alt="0ecf382ceadccca83b7ce99fdba9ee57" src="https://github.com/user-attachments/assets/0973814f-ed09-41ce-ba70-d3e6cf2f8413" />
+<img width="3200" height="1998" alt="69aa203289e55b9cc9a228d29a7670b3" src="https://github.com/user-attachments/assets/58e7f35d-3d4d-4e25-b499-5738a61953a3" />
+<img width="3200" height="1998" alt="f2a0f4b1a1525e138b02a638444ebe82" src="https://github.com/user-attachments/assets/f35f6ddd-ac7e-47c3-a114-0c117c7ff2bd" />
+<img width="3200" height="1998" alt="84bf89008487359567e06319c416e0d5" src="https://github.com/user-attachments/assets/27574823-3a7a-4a23-ae53-5c071216ca06" />
+<img width="3200" height="1998" alt="15a1afdb11699328ccc91896f8145510" src="https://github.com/user-attachments/assets/241d6725-41d7-49e2-989a-fc4cd0b91940" />
 
 ## 主要功能
 
@@ -23,7 +24,7 @@
 
 ### 📅 排期管理
 - **排期管理**：管理员可以通过拖拽界面进行歌曲排期和顺序管理
-- **播出时段**：灵活配置播出时段，支持多时段管理
+- **播出时段**：灵活配置播出时段，**支持多时段管理**
 - **学期管理**：管理员可设置当前学期，自动关联点歌记录
 - **公开展示**：公开展示歌曲播放排期，按日期分组展示
 

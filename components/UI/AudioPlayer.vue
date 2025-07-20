@@ -25,8 +25,8 @@
           <div class="progress-container">
             <div class="control-with-progress">
               <button class="control-btn" @click="togglePlay">
-                <span v-if="isPlaying" class="pause-icon">❚❚</span>
-                <span v-else class="play-icon">▶</span>
+                <Icon v-if="isPlaying" name="pause" :size="18" color="white" />
+                <Icon v-else name="play" :size="18" color="white" />
               </button>
 
               <div
@@ -73,7 +73,9 @@
             </Transition>
           </div>
 
-          <button class="close-player" @click="stopPlaying">×</button>
+          <button class="close-player" @click="stopPlaying">
+            <Icon name="x" :size="16" color="white" />
+          </button>
         </div>
 
         <audio
@@ -91,6 +93,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import Icon from '~/components/UI/Icon.vue'
 
 const props = defineProps({
   song: {

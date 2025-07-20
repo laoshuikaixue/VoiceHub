@@ -6,24 +6,24 @@
       <div class="date-selector">
         <!-- 添加移动端日期导航按钮 -->
         <div class="mobile-date-nav">
-          <button 
+          <button
             class="date-nav-btn prev"
             @click="previousDate"
             :disabled="currentDateIndex === 0"
           >
-            <span>◀</span>
+            <Icon name="chevron-left" :size="16" />
           </button>
-          <div 
-            class="current-date-mobile" 
+          <div
+            class="current-date-mobile"
             v-html="currentDateFormatted"
             @click="toggleDatePicker"
           ></div>
-          <button 
+          <button
             class="date-nav-btn next"
             @click="nextDate"
             :disabled="currentDateIndex >= availableDates.length - 1"
           >
-            <span>▶</span>
+            <Icon name="chevron-right" :size="16" />
           </button>
         </div>
         
@@ -146,8 +146,8 @@
                         <!-- 添加播放按钮 - 在有平台信息时显示 -->
                         <div v-if="schedule.song.musicPlatform && schedule.song.musicId" class="play-button-overlay" @click="togglePlaySong(schedule.song)">
                           <button class="play-button" :title="isCurrentPlaying(schedule.song.id) ? '暂停' : '播放'">
-                            <span v-if="isCurrentPlaying(schedule.song.id)" class="pause-icon">❚❚</span>
-                            <span v-else class="play-icon">▶</span>
+                            <Icon v-if="isCurrentPlaying(schedule.song.id)" name="pause" :size="16" color="white" />
+                            <Icon v-else name="play" :size="16" color="white" />
                           </button>
                         </div>
                       </div>
@@ -186,6 +186,7 @@
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import Icon from '~/components/UI/Icon.vue'
 
 const props = defineProps({
   schedules: {

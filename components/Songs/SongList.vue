@@ -92,8 +92,8 @@
                 <!-- 添加播放按钮 - 在有平台信息时显示 -->
                 <div v-if="song.musicPlatform && song.musicId" class="play-button-overlay" @click="togglePlaySong(song)">
                   <button class="play-button" :title="isCurrentPlaying(song.id) ? '暂停' : '播放'">
-                    <span v-if="isCurrentPlaying(song.id)" class="pause-icon">❚❚</span>
-                    <span v-else class="play-icon">▶</span>
+                    <Icon v-if="isCurrentPlaying(song.id)" name="pause" :size="16" color="white" />
+                    <Icon v-else name="play" :size="16" color="white" />
                   </button>
                 </div>
               </div>
@@ -223,6 +223,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import Icon from '~/components/UI/Icon.vue'
 
 const props = defineProps({
   songs: {
@@ -891,13 +892,7 @@ const vRipple = {
   transform: scale(1.1);
 }
 
-.play-icon {
-  margin-left: 2px;
-}
-
-.pause-icon {
-  font-size: 10px;
-}
+/* 播放图标样式已移至Icon组件 */
 
 /* 修改歌曲信息区域的CSS样式 */
 .song-info {

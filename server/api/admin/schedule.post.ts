@@ -112,14 +112,6 @@ export default defineEventHandler(async (event) => {
     // 创建UTC日期，只包含日期部分
     const playDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0))
     
-    console.log('创建排期日期处理:', {
-      输入日期: body.playDate,
-      解析后日期: playDate.toISOString(),
-      年: year,
-      月: month + 1,
-      日: day
-    })
-    
     // 创建排期
     const schedule = await prisma.schedule.create({
       data: {
