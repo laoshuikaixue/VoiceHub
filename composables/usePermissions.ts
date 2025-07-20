@@ -93,7 +93,8 @@ export const usePermissions = () => {
         'song_vote',
         'schedule_view',
         'song_manage',
-        'schedule_manage'
+        'schedule_manage',
+        'schedule_print'
       ]
       return songAdminPermissions.includes(permission)
     }
@@ -116,6 +117,7 @@ export const usePermissions = () => {
   const canVoteSongs = computed(() => hasRolePermission('song_vote'))
   const canManageSongs = computed(() => hasRolePermission('song_manage'))
   const canManageSchedule = computed(() => hasRolePermission('schedule_manage'))
+  const canPrintSchedule = computed(() => hasRolePermission('schedule_print'))
   const canManageUsers = computed(() => hasRolePermission('user_manage'))
   const canManagePermissions = computed(() => hasRolePermission('permission_manage'))
   const canManageBlacklist = computed(() => hasRolePermission('blacklist_manage'))
@@ -150,6 +152,7 @@ export const usePermissions = () => {
     canVoteSongs,
     canManageSongs,
     canManageSchedule,
+    canPrintSchedule,
     canManageUsers,
     canManagePermissions,
     canManageBlacklist,

@@ -13,6 +13,7 @@ const PERMISSIONS = {
   'schedule.create': '创建排期',
   'schedule.edit': '编辑排期',
   'schedule.delete': '删除排期',
+  'schedule.print': '打印排期',
   
   // 用户管理权限
   'user.view': '查看用户',
@@ -45,8 +46,8 @@ const PERMISSION_CATEGORIES = {
     permissions: ['song.view', 'song.submit', 'song.manage', 'song.vote', 'song.delete']
   },
   'schedule': {
-    name: '排期管理', 
-    permissions: ['schedule.view', 'schedule.manage', 'schedule.create', 'schedule.edit', 'schedule.delete']
+    name: '排期管理',
+    permissions: ['schedule.view', 'schedule.manage', 'schedule.create', 'schedule.edit', 'schedule.delete', 'schedule.print']
   },
   'user': {
     name: '用户管理',
@@ -75,7 +76,7 @@ const DEFAULT_ROLES = {
     description: '负责歌曲和排期管理',
     permissions: [
       'song.view', 'song.submit', 'song.manage', 'song.vote', 'song.delete',
-      'schedule.view', 'schedule.manage', 'schedule.create', 'schedule.edit', 'schedule.delete'
+      'schedule.view', 'schedule.manage', 'schedule.create', 'schedule.edit', 'schedule.delete', 'schedule.print'
     ],
     isSystem: true
   },
@@ -86,7 +87,7 @@ const DEFAULT_ROLES = {
       // 歌曲权限
       'song.view', 'song.submit', 'song.manage', 'song.vote', 'song.delete',
       // 排期权限
-      'schedule.view', 'schedule.manage', 'schedule.create', 'schedule.edit', 'schedule.delete',
+      'schedule.view', 'schedule.manage', 'schedule.create', 'schedule.edit', 'schedule.delete', 'schedule.print',
       // 用户权限
       'user.view', 'user.manage', 'user.create', 'user.edit', 'user.delete', 'user.reset_password',
       // 系统权限

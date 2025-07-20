@@ -5,7 +5,20 @@
       <p class="subtitle">自定义打印设置，预览并导出排期表</p>
     </div>
 
-    <div class="printer-layout">
+    <!-- 权限检查 -->
+    <div v-if="!canPrintSchedule" class="permission-denied">
+      <div class="permission-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="m15 9-6 6"/>
+          <path d="m9 9 6 6"/>
+        </svg>
+      </div>
+      <h3>权限不足</h3>
+      <p>您没有打印排期的权限，请联系管理员获取相应权限。</p>
+    </div>
+
+    <div v-else class="printer-layout">
       <!-- 左侧设置面板 -->
       <div class="settings-panel">
         <div class="setting-group">
@@ -241,9 +254,13 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRuntimeConfig } from '#app'
+import { usePermissions } from '~/composables/usePermissions'
 
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
+
+// 权限检查
+const { canPrintSchedule } = usePermissions()
 
 // 配置
 const config = useRuntimeConfig()
@@ -802,6 +819,43 @@ watch(() => settings.value, () => {
 .subtitle {
   color: #888;
   font-size: 16px;
+}
+
+/* 权限拒绝样式 */
+.permission-denied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  color: #888;
+}
+
+.permission-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 24px;
+  color: #ff6b6b;
+}
+
+.permission-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.permission-denied h3 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #ffffff;
+}
+
+.permission-denied p {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 400px;
 }
 
 .printer-layout {
