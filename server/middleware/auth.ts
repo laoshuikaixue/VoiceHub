@@ -65,6 +65,7 @@ export default defineEventHandler(async (event) => {
         },
         select: {
           id: true,
+          username: true,
           name: true,
           role: true
       }
@@ -72,7 +73,7 @@ export default defineEventHandler(async (event) => {
     } catch (schemaError) {
       // 如果Prisma模型失败，使用原始SQL查询
       const result = await prisma.$queryRaw`
-        SELECT id, name, role FROM "User" WHERE id = ${decoded.userId}
+        SELECT id, username, name, role FROM "User" WHERE id = ${decoded.userId}
       `
       
       user = Array.isArray(result) && result.length > 0 ? result[0] : null
@@ -89,12 +90,14 @@ export default defineEventHandler(async (event) => {
     // 将用户信息添加到事件上下文
     event.context.user = {
       id: user.id,
+      username: user.username,
       name: user.name,
       role: user.role
     }
       
     // 检查管理员路径权限
-    if (path.startsWith('/api/admin') && user.role !== 'ADMIN') {
+    if (path.startsWith('/api/admin') && !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
+        console.log('权限检查失败:', { path, userRole: user.role, allowedRoles: ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'] })
         throw createError({
         statusCode: 403,
         message: '需要管理员权限',

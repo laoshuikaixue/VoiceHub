@@ -40,6 +40,9 @@ export interface Schedule {
     requester: string
     voteCount: number
     played?: boolean
+    cover?: string | null
+    musicPlatform?: string | null
+    musicId?: string | null
   }
 }
 

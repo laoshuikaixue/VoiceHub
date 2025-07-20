@@ -1,5 +1,7 @@
 {
-  "name": "nuxt-app",
+  "name": "voicehub",
+  "version": "1.0.0",
+  "description": "校园广播站点歌管理系统 - 现代化的点歌、排期和播放管理平台",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,6 +18,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "^6.0.0",
+    "formidable": "^3.5.4",
     "jsonwebtoken": "^9.0.2",
     "nuxt": "^3.17.6",
     "vue": "^3.5.17",

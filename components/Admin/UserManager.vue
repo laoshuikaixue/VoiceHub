@@ -1,444 +1,325 @@
 <template>
   <div class="user-manager">
-    <h2 class="section-title">用户管理</h2>
-    
-    <!-- 用户列表 -->
-    <div class="users-section card">
-      <div class="card-header">
-        <div class="header-left">
-          <h3>用户列表</h3>
-          <div class="user-count">
-            共 <span class="count-number">{{ users.length }}</span> 名用户
-            <span v-if="filteredUsers.length !== users.length">
-              (当前显示: {{ filteredUsers.length }})
-            </span>
-          </div>
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <h3>用户管理</h3>
+        <div class="stats">
+          <span class="stat-item">总计: {{ users.length }} 个用户</span>
         </div>
-        <div class="controls">
-          <input 
-            v-model="searchTerm" 
-            type="text" 
-            placeholder="搜索用户..." 
+      </div>
+      <div class="toolbar-right">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索用户..."
             class="search-input"
           />
-          <button @click="showAddUser = true" class="btn btn-primary">添加用户</button>
-          <button @click="showImportUsers = true" class="btn btn-secondary">批量导入</button>
+        </div>
+        <select v-model="roleFilter" class="filter-select">
+          <option value="">全部角色</option>
+          <option v-for="role in roles" :key="role.name" :value="role.name">
+            {{ role.displayName }}
+          </option>
+        </select>
+        <button @click="showAddModal = true" class="btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          添加用户
+        </button>
+      </div>
+    </div>
+
+    <!-- 用户表格 -->
+    <div class="table-container">
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <div>正在加载用户...</div>
+      </div>
+
+      <div v-else-if="filteredUsers.length === 0" class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <div class="empty-text">
+          {{ searchQuery ? '没有找到匹配的用户' : '暂无用户数据' }}
         </div>
       </div>
-      
-      <div class="loading-state" v-if="loading">
-        加载中...
-      </div>
-      <div class="error-state" v-else-if="error">
-        {{ error }}
-      </div>
-      <div class="empty-state" v-else-if="filteredUsers.length === 0">
-        没有找到用户
-      </div>
-      <div class="users-table-container" v-else>
-        <table class="users-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>姓名</th>
-              <th>账号名</th>
-              <th>角色</th>
-              <th>年级</th>
-              <th>班级</th>
-              <th>最后登录</th>
-              <th>登录IP</th>
-              <th>密码修改时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="user in paginatedUsers" :key="user.id">
-              <td>{{ user.id }}</td>
-              <td>{{ user.name }}</td>
-              <td>{{ user.username }}</td>
-              <td>
-                <span :class="['role-badge', user.role === 'ADMIN' ? 'admin' : 'user']">
-                  {{ user.role === 'ADMIN' ? '管理员' : '用户' }}
-                </span>
-              </td>
-              <td>{{ user.grade || '-' }}</td>
-              <td>{{ user.class || '-' }}</td>
-              <td>{{ user.lastLoginAt ? formatDate(user.lastLoginAt) : '-' }}</td>
-              <td>{{ user.lastLoginIp || '-' }}</td>
-              <td>{{ user.passwordChangedAt ? formatDate(user.passwordChangedAt) : '从未修改' }}</td>
-              <td class="actions">
-                <button 
-                  @click="editUser(user)" 
-                  class="btn btn-sm btn-outline"
+
+      <table v-else class="user-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>姓名</th>
+            <th>用户名</th>
+            <th>角色</th>
+            <th>年级</th>
+            <th>班级</th>
+            <th>最后登录</th>
+            <th>登录IP</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="user in paginatedUsers" :key="user.id" class="user-row">
+            <td>{{ user.id }}</td>
+            <td>{{ user.name }}</td>
+            <td>{{ user.username }}</td>
+            <td>
+              <span :class="['role-badge', getRoleClass(user.role)]">
+                {{ getRoleDisplayName(user.role) }}
+              </span>
+            </td>
+            <td>{{ user.grade || '-' }}</td>
+            <td>{{ user.class || '-' }}</td>
+            <td>{{ formatDate(user.lastLogin) }}</td>
+            <td>{{ user.lastLoginIp || '-' }}</td>
+            <td>
+              <div class="action-buttons">
+                <button
+                  @click="editUser(user)"
+                  class="action-btn edit-btn"
+                  title="编辑用户"
                 >
-                  编辑
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
                 </button>
-                <button 
-                  @click="resetPassword(user)" 
-                  class="btn btn-sm btn-warning"
+                <button
+                  @click="resetPassword(user)"
+                  class="action-btn warning-btn"
+                  title="重置密码"
                 >
-                  重置密码
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <circle cx="12" cy="16" r="1"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
                 </button>
-                <button 
-                  @click="confirmDeleteUser(user)" 
-                  class="btn btn-sm btn-danger"
+                <button
+                  @click="deleteUser(user)"
+                  class="action-btn delete-btn"
+                  title="删除用户"
                 >
-                  删除
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3,6 5,6 21,6"/>
+                    <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
+                  </svg>
                 </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <!-- 分页控件 -->
-        <div class="pagination-container">
-          <div class="pagination-settings">
-            <label for="page-size">每页显示:</label>
-            <select id="page-size" v-model.number="pageSize" class="page-size-select">
-              <option :value="10">10</option>
-              <option :value="20">20</option>
-              <option :value="50">50</option>
-              <option :value="100">100</option>
-              <option :value="-1">全部</option>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 分页 -->
+    <div v-if="totalPages > 1" class="pagination">
+      <button
+        @click="currentPage = 1"
+        :disabled="currentPage === 1"
+        class="page-btn"
+      >
+        首页
+      </button>
+      <button
+        @click="currentPage--"
+        :disabled="currentPage === 1"
+        class="page-btn"
+      >
+        上一页
+      </button>
+      <span class="page-info">
+        第 {{ currentPage }} 页，共 {{ totalPages }} 页
+      </span>
+      <button
+        @click="currentPage++"
+        :disabled="currentPage === totalPages"
+        class="page-btn"
+      >
+        下一页
+      </button>
+      <button
+        @click="currentPage = totalPages"
+        :disabled="currentPage === totalPages"
+        class="page-btn"
+      >
+        末页
+      </button>
+    </div>
+
+    <!-- 添加/编辑用户模态框 -->
+    <div v-if="showAddModal || editingUser" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>{{ editingUser ? '编辑用户' : '添加用户' }}</h3>
+          <button @click="closeModal" class="close-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label>姓名</label>
+            <input
+              v-model="userForm.name"
+              type="text"
+              placeholder="请输入姓名"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>用户名</label>
+            <input
+              v-model="userForm.username"
+              type="text"
+              placeholder="请输入用户名"
+              class="form-input"
+              :disabled="!!editingUser"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>密码</label>
+            <input
+              v-model="userForm.password"
+              type="password"
+              :placeholder="editingUser ? '留空则不修改密码' : '请输入密码'"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>角色</label>
+            <select v-model="userForm.role" class="form-select">
+              <option v-for="role in roles" :key="role.name" :value="role.name">
+                {{ role.displayName }}
+              </option>
             </select>
           </div>
-          
-          <div class="pagination-controls" v-if="totalPages > 1">
-            <button 
-              @click="currentPage = 1" 
-              class="pagination-btn"
-              :disabled="currentPage === 1"
-              title="首页"
-            >
-              &laquo;
-            </button>
-            <button 
-              @click="currentPage--" 
-              class="pagination-btn"
-              :disabled="currentPage === 1"
-              title="上一页"
-            >
-              &lsaquo;
-            </button>
-            
-            <div class="pagination-info">
-              {{ currentPage }} / {{ totalPages }}
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>年级</label>
+              <input
+                v-model="userForm.grade"
+                type="text"
+                placeholder="如: 2024"
+                class="form-input"
+              />
             </div>
-            
-            <button 
-              @click="currentPage++" 
-              class="pagination-btn"
-              :disabled="currentPage === totalPages"
-              title="下一页"
-            >
-              &rsaquo;
-            </button>
-            <button 
-              @click="currentPage = totalPages" 
-              class="pagination-btn"
-              :disabled="currentPage === totalPages"
-              title="末页"
-            >
-              &raquo;
-            </button>
+            <div class="form-group">
+              <label>班级</label>
+              <input
+                v-model="userForm.class"
+                type="text"
+                placeholder="如: 1班"
+                class="form-input"
+              />
+            </div>
           </div>
-          
-          <div class="pagination-status">
-            显示 {{ paginationStart }} - {{ paginationEnd }} 条，共 {{ filteredUsers.length }} 条
+
+          <div v-if="formError" class="error-message">
+            {{ formError }}
           </div>
+        </div>
+
+        <div class="modal-footer">
+          <button @click="closeModal" class="btn-secondary">取消</button>
+          <button @click="saveUser" class="btn-primary" :disabled="saving">
+            {{ saving ? '保存中...' : '保存' }}
+          </button>
         </div>
       </div>
     </div>
-    
-    <!-- 添加/编辑用户弹窗 -->
-    <Teleport to="body">
-      <div v-if="showAddUser || editingUser" class="modal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>{{ editingUser ? '编辑用户' : '添加用户' }}</h3>
-            <button @click="closeUserForm" class="close-btn">&times;</button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="saveUser">
-              <div class="form-group">
-                <label for="name">姓名</label>
-                <input 
-                  id="name" 
-                  v-model="userForm.name" 
-                  type="text" 
-                  required
-                />
-              </div>
-              
-              <div class="form-group">
-                <label for="username">账号名</label>
-                <input 
-                  id="username" 
-                  v-model="userForm.username" 
-                  type="text" 
-                  required
-                  :disabled="!!editingUser"
-                />
-              </div>
-              
-              <div class="form-group">
-                <label for="grade">年级</label>
-                <select id="grade" v-model="userForm.grade">
-                  <option value="">无</option>
-                  <option value="高一">高一</option>
-                  <option value="高二">高二</option>
-                  <option value="高三">高三</option>
-                  <option value="教师">教师</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label for="class">班级</label>
-                <input 
-                  id="class" 
-                  v-model="userForm.class" 
-                  type="text" 
-                  placeholder="如: 1班、2班"
-                />
-              </div>
-              
-              <div v-if="!editingUser" class="form-group">
-                <label for="password">密码</label>
-                <input 
-                  id="password" 
-                  v-model="userForm.password" 
-                  type="password" 
-                  required
-                />
-              </div>
-              
-              <div class="form-group">
-                <label for="role">角色</label>
-                <select id="role" v-model="userForm.role">
-                  <option value="USER">普通用户</option>
-                  <option value="ADMIN">管理员</option>
-                </select>
-              </div>
-              
-              <div v-if="formError" class="error">{{ formError }}</div>
-              
-              <div class="form-actions">
-                <button type="button" @click="closeUserForm" class="btn btn-secondary">取消</button>
-                <button type="submit" class="btn btn-primary" :disabled="formLoading">
-                  {{ formLoading ? '保存中...' : '保存' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-    
-    <!-- 批量导入用户弹窗 -->
-    <Teleport to="body">
-      <div v-if="showImportUsers" class="modal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>批量导入用户</h3>
-            <button @click="showImportUsers = false" class="close-btn">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div class="import-instructions">
-              <p>请上传Excel格式文件 (.xlsx)，文件格式如下：</p>
-              <div class="excel-format">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>A列</th>
-                      <th>B列</th>
-                      <th>C列</th>
-                      <th>D列</th>
-                      <th>E列</th>
-                      <th>F列</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>姓名</td>
-                      <td>账号名</td>
-                      <td>密码</td>
-                      <td>角色</td>
-                      <td>年级</td>
-                      <td>班级</td>
-                    </tr>
-                    <tr>
-                      <td>张三</td>
-                      <td>zhangsan</td>
-                      <td>password123</td>
-                      <td>USER</td>
-                      <td>高一</td>
-                      <td>1班</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p class="import-note">注意：第一行可以是标题行（会自动跳过），角色可以是USER或ADMIN</p>
-            </div>
-            
-            <div class="form-group">
-              <label for="file-upload">选择文件</label>
-              <input 
-                id="file-upload" 
-                type="file" 
-                accept=".xlsx" 
-                @change="handleFileUpload"
-              />
-            </div>
-            
-            <div v-if="importError" class="error">{{ importError }}</div>
-            <div v-if="importSuccess" class="success">{{ importSuccess }}</div>
-            
 
-            
-            <div class="preview-section" v-if="previewData.length > 0">
-              <h4>预览数据 ({{ previewData.length }}条记录)</h4>
-              <div class="preview-table-container">
-                <table class="preview-table">
-                  <thead>
-                    <tr>
-                      <th>姓名</th>
-                      <th>账号名</th>
-                      <th>密码</th>
-                      <th>角色</th>
-                      <th>年级</th>
-                      <th>班级</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(row, index) in previewData.slice(0, 5)" :key="index">
-                      <td>{{ row.name }}</td>
-                      <td>{{ row.username }}</td>
-                      <td>******</td>
-                      <td>{{ row.role }}</td>
-                      <td>{{ row.grade || '-' }}</td>
-                      <td>{{ row.class || '-' }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div v-if="previewData.length > 5" class="preview-more">
-                  以及另外 {{ previewData.length - 5 }} 条记录
-                </div>
-              </div>
-            </div>
-            
-            <div class="form-actions">
-              <button type="button" @click="showImportUsers = false" class="btn btn-secondary">取消</button>
-              <button 
-                type="button" 
-                @click="importUsers" 
-                class="btn btn-primary" 
-                :disabled="importLoading || previewData.length === 0"
-              >
-                {{ importLoading ? '导入中...' : '确认导入' }}
-              </button>
-            </div>
+    <!-- 重置密码模态框 -->
+    <div v-if="resetPasswordUser" class="modal-overlay" @click="closeResetPassword">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>重置密码 - {{ resetPasswordUser.name }}</h3>
+          <button @click="closeResetPassword" class="close-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label>新密码</label>
+            <input
+              v-model="passwordForm.password"
+              type="password"
+              placeholder="请输入新密码"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>确认密码</label>
+            <input
+              v-model="passwordForm.confirmPassword"
+              type="password"
+              placeholder="请再次输入新密码"
+              class="form-input"
+            />
+          </div>
+
+          <div v-if="passwordError" class="error-message">
+            {{ passwordError }}
           </div>
         </div>
-      </div>
-    </Teleport>
-    
-    <!-- 确认删除弹窗 -->
-    <Teleport to="body">
-      <div v-if="confirmDelete" class="modal">
-        <div class="modal-content modal-sm">
-          <div class="modal-header">
-            <h3>确认删除</h3>
-            <button @click="confirmDelete = null" class="close-btn">&times;</button>
-          </div>
-          <div class="modal-body">
-            <p>确定要删除用户 "{{ confirmDelete?.name }}" 吗？</p>
-            <p class="warning">此操作不可逆，请谨慎操作！</p>
-            
-            <div class="form-actions">
-              <button type="button" @click="confirmDelete = null" class="btn btn-secondary">取消</button>
-              <button 
-                type="button" 
-                @click="deleteUser" 
-                class="btn btn-danger" 
-                :disabled="deleteLoading"
-              >
-                {{ deleteLoading ? '删除中...' : '确认删除' }}
-              </button>
-            </div>
-          </div>
+
+        <div class="modal-footer">
+          <button @click="closeResetPassword" class="btn-secondary">取消</button>
+          <button @click="confirmResetPassword" class="btn-primary" :disabled="resetting">
+            {{ resetting ? '重置中...' : '重置密码' }}
+          </button>
         </div>
       </div>
-    </Teleport>
-    
-    <!-- 重置密码弹窗 -->
-    <Teleport to="body">
-      <div v-if="resetPasswordUser" class="modal">
-        <div class="modal-content modal-sm">
-          <div class="modal-header">
-            <h3>重置密码</h3>
-            <button @click="resetPasswordUser = null" class="close-btn">&times;</button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="confirmResetPassword">
-              <p>为用户 "{{ resetPasswordUser?.name }}" 重置密码</p>
-              
-              <div class="form-group">
-                <label for="reset-password">新密码</label>
-                <input 
-                  id="reset-password" 
-                  v-model="resetPasswordForm.password" 
-                  type="password" 
-                  required
-                />
-              </div>
-              
-              <div class="form-group">
-                <label for="reset-confirm-password">确认密码</label>
-                <input 
-                  id="reset-confirm-password" 
-                  v-model="resetPasswordForm.confirmPassword" 
-                  type="password" 
-                  required
-                />
-              </div>
-              
-              <div v-if="resetPasswordError" class="error">{{ resetPasswordError }}</div>
-              
-              <div class="form-actions">
-                <button type="button" @click="resetPasswordUser = null" class="btn btn-secondary">取消</button>
-                <button 
-                  type="submit" 
-                  class="btn btn-warning" 
-                  :disabled="resetPasswordLoading"
-                >
-                  {{ resetPasswordLoading ? '重置中...' : '确认重置' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import ProgressBar from '../UI/ProgressBar.vue'
+import { ref, computed, onMounted } from 'vue'
 
-// 状态变量
-const users = ref([])
+// 响应式数据
 const loading = ref(false)
-const error = ref('')
-const searchTerm = ref('')
-
-// 分页相关
+const users = ref([])
+const roles = ref([])
+const searchQuery = ref('')
+const roleFilter = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
 
-// 表单相关状态
-const showAddUser = ref(false)
+// 模态框状态
+const showAddModal = ref(false)
 const editingUser = ref(null)
+const saving = ref(false)
+const formError = ref('')
+
+// 重置密码状态
+const resetPasswordUser = ref(null)
+const resetting = ref(false)
+const passwordError = ref('')
+
+// 表单数据
 const userForm = ref({
   name: '',
   username: '',
@@ -447,309 +328,125 @@ const userForm = ref({
   grade: '',
   class: ''
 })
-const formLoading = ref(false)
-const formError = ref('')
 
-// 批量导入相关
-const showImportUsers = ref(false)
-const importLoading = ref(false)
-const importError = ref('')
-const importSuccess = ref('')
-const previewData = ref([])
-const xlsxLoaded = ref(false)
-
-// 删除用户相关
-const confirmDelete = ref(null)
-const deleteLoading = ref(false)
-
-// 重置密码相关
-const resetPasswordUser = ref(null)
-const resetPasswordForm = ref({
+const passwordForm = ref({
   password: '',
   confirmPassword: ''
 })
-const resetPasswordLoading = ref(false)
-const resetPasswordError = ref('')
 
-// 过滤用户列表
+// 服务
+let auth = null
+
+// 计算属性
 const filteredUsers = computed(() => {
-  if (!searchTerm.value) return users.value
-  
-  const term = searchTerm.value.toLowerCase()
-  return users.value.filter(user => 
-    user.name?.toLowerCase().includes(term) ||
-    user.username.toLowerCase().includes(term)
-  )
-})
+  let filtered = users.value
 
-// 分页计算
-const totalPages = computed(() => {
-  if (pageSize.value <= 0) return 1
-  return Math.ceil(filteredUsers.value.length / pageSize.value)
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(user =>
+      user.name?.toLowerCase().includes(query) ||
+      user.username?.toLowerCase().includes(query)
+    )
+  }
+
+  if (roleFilter.value) {
+    filtered = filtered.filter(user => user.role === roleFilter.value)
+  }
+
+  return filtered
 })
 
 const paginatedUsers = computed(() => {
-  // 如果pageSize为-1，显示全部
-  if (pageSize.value <= 0) return filteredUsers.value
-  
   const start = (currentPage.value - 1) * pageSize.value
-  const end = start + parseInt(pageSize.value)
+  const end = start + pageSize.value
   return filteredUsers.value.slice(start, end)
 })
 
-const paginationStart = computed(() => {
-  if (filteredUsers.value.length === 0) return 0
-  if (pageSize.value <= 0) return 1
-  return (currentPage.value - 1) * parseInt(pageSize.value) + 1
+const totalPages = computed(() => {
+  return Math.ceil(filteredUsers.value.length / pageSize.value)
 })
 
-const paginationEnd = computed(() => {
-  if (filteredUsers.value.length === 0) return 0
-  if (pageSize.value <= 0) return filteredUsers.value.length
-  return Math.min(currentPage.value * parseInt(pageSize.value), filteredUsers.value.length)
-})
+// 移除了不需要的统计计算属性
 
-// 当过滤结果变化时，重置到第一页
-watch(filteredUsers, () => {
-  currentPage.value = 1
-})
-
-// 当每页显示数量变化时，重置到第一页
-watch(pageSize, () => {
-  currentPage.value = 1
-})
-
-// 格式化日期
+// 方法
 const formatDate = (dateString) => {
-  if (!dateString) return '-'
-  
-  try {
-    const date = new Date(dateString)
-    
-    // 检查日期是否有效
-    if (isNaN(date.getTime())) return '-'
-    
-    // 获取当前日期
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
-    
-    // 如果是今天
-    if (date >= today) {
-      return `今天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-    }
-    
-    // 如果是昨天
-    if (date >= yesterday && date < today) {
-      return `昨天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-    }
-    
-    // 其他日期
-    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-  } catch (e) {
-    return '-'
-  }
+  if (!dateString) return '从未登录'
+  const date = new Date(dateString)
+  const now = new Date()
+  const diff = now - date
+
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
+  if (diff < 86400000 * 7) return `${Math.floor(diff / 86400000)}天前`
+
+  return date.toLocaleDateString('zh-CN')
 }
 
-// 初始化 - 获取用户列表
-onMounted(async () => {
-  await fetchUsers()
-  // 预加载XLSX库
-  loadXLSX()
-})
-
-// 加载XLSX库
-const loadXLSX = async () => {
-  if (process.client && !xlsxLoaded.value) {
-    try {
-      // 使用多个可靠的CDN源，如果一个失败可以尝试另一个
-      const cdnUrls = [
-        'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-        'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
-      ]
-      
-      // 尝试加载第一个CDN
-      let loaded = false
-      for (const url of cdnUrls) {
-        if (loaded) break
-        
-        try {
-          await new Promise((resolve, reject) => {
-            const script = document.createElement('script')
-            script.src = url
-            script.async = true
-            
-            script.onload = () => {
-              xlsxLoaded.value = true
-              loaded = true
-              console.log('XLSX库加载成功:', url)
-              resolve()
-            }
-            
-            script.onerror = () => {
-              console.warn(`无法从 ${url} 加载XLSX库，尝试下一个源`)
-              reject()
-            }
-            
-            document.head.appendChild(script)
-          })
-        } catch (e) {
-          // 这个CDN失败，继续尝试下一个
-          continue
-        }
-      }
-      
-      if (!loaded) {
-        throw new Error('所有XLSX库源加载失败')
-      }
-    } catch (err) {
-      console.error('加载XLSX库失败:', err)
-    }
+const getRoleClass = (role) => {
+  const classes = {
+    'USER': 'user',
+    'ADMIN': 'admin',
+    'SONG_ADMIN': 'song-admin',
+    'SUPER_ADMIN': 'super-admin'
   }
+  return classes[role] || 'user'
 }
 
-// 获取用户列表
-const fetchUsers = async () => {
-  loading.value = true
-  error.value = ''
-  
-  try {
-    // 调用API获取用户列表
-    const response = await $fetch('/api/admin/users', {
-      method: 'GET',
-      ...useAuth().getAuthHeader()
-    })
-    
-    users.value = response
-  } catch (err) {
-    error.value = err.message || '获取用户列表失败'
-    console.error('获取用户列表出错:', err)
-  } finally {
-    loading.value = false
+const getRoleDisplayName = (role) => {
+  const names = {
+    'USER': '普通用户',
+    'ADMIN': '管理员',
+    'SONG_ADMIN': '歌曲管理员',
+    'SUPER_ADMIN': '超级管理员'
   }
+  return names[role] || role
 }
 
-// 打开编辑用户表单
 const editUser = (user) => {
   editingUser.value = user
   userForm.value = {
-    id: user.id,
-    name: user.name || '',
+    name: user.name,
     username: user.username,
+    password: '',
     role: user.role,
     grade: user.grade || '',
     class: user.class || ''
   }
 }
 
-// 重置密码
 const resetPassword = (user) => {
   resetPasswordUser.value = user
-  resetPasswordForm.value = {
+  passwordForm.value = {
     password: '',
     confirmPassword: ''
   }
-  resetPasswordError.value = ''
 }
 
-const confirmResetPassword = async () => {
-  if (!resetPasswordUser.value) return
-  
-  resetPasswordError.value = ''
-  
-  // 验证两次密码是否一致
-  if (resetPasswordForm.value.password !== resetPasswordForm.value.confirmPassword) {
-    resetPasswordError.value = '两次输入的密码不一致'
-    return
-  }
-  
-  resetPasswordLoading.value = true
-  
+const deleteUser = async (user) => {
+  if (!confirm(`确定要删除用户 "${user.name}" 吗？此操作不可撤销。`)) return
+
   try {
-    // 调用API重置密码
-    await $fetch(`/api/admin/users/${resetPasswordUser.value.id}/reset-password`, {
-      method: 'POST',
-      body: {
-        newPassword: resetPasswordForm.value.password
-      },
-      ...useAuth().getAuthHeader()
-    })
-    
-    // 重置成功
-    resetPasswordUser.value = null
-    
-    // 显示通知
-    showNotification('密码重置成功，该用户需要重新登录', 'success')
-  } catch (err) {
-    resetPasswordError.value = err.message || '重置密码失败'
-    console.error('重置密码出错:', err)
-  } finally {
-    resetPasswordLoading.value = false
-  }
-}
-
-// 显示通知
-const showNotification = (message, type = 'info') => {
-  // 创建通知元素
-  const notification = document.createElement('div')
-  notification.className = `global-notification ${type}`
-  notification.innerHTML = `
-    <div class="notification-content">
-      <span class="notification-message">${message}</span>
-    </div>
-  `
-  
-  // 添加到页面
-  document.body.appendChild(notification)
-  
-  // 添加显示类
-  setTimeout(() => {
-    notification.classList.add('show')
-  }, 10)
-  
-  // 自动关闭
-  setTimeout(() => {
-    notification.classList.remove('show')
-    setTimeout(() => {
-      document.body.removeChild(notification)
-    }, 300)
-  }, 3000)
-}
-
-// 确认删除用户
-const confirmDeleteUser = (user) => {
-  confirmDelete.value = user
-}
-
-// 删除用户
-const deleteUser = async () => {
-  if (!confirmDelete.value) return
-  
-  deleteLoading.value = true
-  
-  try {
-    // 调用API删除用户
-    await $fetch(`/api/admin/users/${confirmDelete.value.id}`, {
+    await $fetch(`/api/admin/users/${user.id}`, {
       method: 'DELETE',
-      ...useAuth().getAuthHeader()
+      headers: auth.getAuthHeader().headers
     })
-    
-    // 更新用户列表
-    users.value = users.value.filter(user => user.id !== confirmDelete.value.id)
-    confirmDelete.value = null
-  } catch (err) {
-    alert(`删除失败: ${err.message || '未知错误'}`)
-    console.error('删除用户出错:', err)
-  } finally {
-    deleteLoading.value = false
+
+    await loadUsers()
+
+    if (window.$showNotification) {
+      window.$showNotification('用户删除成功', 'success')
+    }
+  } catch (error) {
+    console.error('删除用户失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('删除用户失败: ' + error.message, 'error')
+    }
   }
 }
 
-// 关闭用户表单
-const closeUserForm = () => {
-  showAddUser.value = false
+const closeModal = () => {
+  showAddModal.value = false
   editingUser.value = null
   formError.value = ''
   userForm.value = {
@@ -762,468 +459,458 @@ const closeUserForm = () => {
   }
 }
 
-// 保存用户
+const closeResetPassword = () => {
+  resetPasswordUser.value = null
+  passwordError.value = ''
+  passwordForm.value = {
+    password: '',
+    confirmPassword: ''
+  }
+}
+
 const saveUser = async () => {
+  if (!userForm.value.name || !userForm.value.username) {
+    formError.value = '请填写必要信息'
+    return
+  }
+
+  if (!editingUser.value && !userForm.value.password) {
+    formError.value = '请输入密码'
+    return
+  }
+
+  saving.value = true
   formError.value = ''
-  formLoading.value = true
-  
+
   try {
+    const userData = {
+      name: userForm.value.name,
+      username: userForm.value.username,
+      role: userForm.value.role,
+      grade: userForm.value.grade,
+      class: userForm.value.class
+    }
+
+    if (userForm.value.password) {
+      userData.password = userForm.value.password
+    }
+
     if (editingUser.value) {
-      // 更新用户
-      const updatedUser = await $fetch(`/api/admin/users/${editingUser.value.id}`, {
+      await $fetch(`/api/admin/users/${editingUser.value.id}`, {
         method: 'PUT',
-        body: {
-          name: userForm.value.name,
-          role: userForm.value.role,
-          grade: userForm.value.grade,
-          class: userForm.value.class
-        },
-        ...useAuth().getAuthHeader()
+        body: userData,
+        headers: auth.getAuthHeader().headers
       })
-      
-      // 更新列表中的用户数据
-      const index = users.value.findIndex(u => u.id === updatedUser.id)
-      if (index !== -1) {
-        users.value[index] = updatedUser
-      }
-      
-      closeUserForm()
     } else {
-      // 创建新用户
-      const newUser = await $fetch('/api/admin/users', {
+      await $fetch('/api/admin/users', {
         method: 'POST',
-        body: {
-          name: userForm.value.name,
-          username: userForm.value.username,
-          password: userForm.value.password,
-          role: userForm.value.role === 'ADMIN' ? 'ADMIN' : 'USER',
-          grade: userForm.value.grade,
-          class: userForm.value.class
-        },
-        ...useAuth().getAuthHeader()
+        body: userData,
+        headers: auth.getAuthHeader().headers
       })
-      
-      // 添加到用户列表
-      users.value.push(newUser)
-      closeUserForm()
     }
-  } catch (err) {
-    formError.value = err.message || '保存用户失败'
-    console.error('保存用户出错:', err)
+
+    await loadUsers()
+    closeModal()
+
+    if (window.$showNotification) {
+      window.$showNotification(
+        editingUser.value ? '用户更新成功' : '用户创建成功',
+        'success'
+      )
+    }
+  } catch (error) {
+    console.error('保存用户失败:', error)
+    formError.value = error.message || '保存失败'
   } finally {
-    formLoading.value = false
+    saving.value = false
   }
 }
 
-// 处理文件上传
-const handleFileUpload = async (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-  
-  importError.value = ''
-  importSuccess.value = ''
-  previewData.value = []
-  
-  // 确保XLSX库已加载
-  if (!window.XLSX) {
-    await loadXLSX()
-    
-    if (!window.XLSX) {
-      importError.value = '无法加载Excel处理库，请刷新页面重试'
-      return
-    }
+const confirmResetPassword = async () => {
+  if (!passwordForm.value.password) {
+    passwordError.value = '请输入新密码'
+    return
   }
-  
-  try {
-    const reader = new FileReader()
-    
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result)
-        // 使用全局XLSX对象
-        const workbook = window.XLSX.read(data, { type: 'array' })
-        
-        // 假设数据在第一个工作表中
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-        const jsonData = window.XLSX.utils.sheet_to_json(firstSheet, { header: 1 })
-        
-        // 解析数据，从第二行开始（跳过可能的标题行）
-        const startRow = jsonData[0] && jsonData[0].length >= 4 ? 1 : 0
-        const userData = []
-        
-        for (let i = startRow; i < jsonData.length; i++) {
-          const row = jsonData[i]
-          if (!row || !row.length || !row[0]) continue // 跳过空行
-          
-          userData.push({
-            name: row[0]?.toString() || '',
-            username: row[1]?.toString() || '',
-            password: row[2]?.toString() || '',
-            role: (row[3]?.toString() || '').toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER',
-            grade: row[4]?.toString() || '',
-            class: row[5]?.toString() || ''
-          })
-        }
-        
-        if (userData.length === 0) {
-          importError.value = '未找到有效数据'
-          return
-        }
-        
-        previewData.value = userData
-      } catch (err) {
-        console.error('解析Excel出错:', err)
-        importError.value = '解析Excel文件失败: ' + (err.message || '未知错误')
-      }
-    }
-    
-    reader.onerror = () => {
-      importError.value = '读取文件失败'
-    }
-    
-    reader.readAsArrayBuffer(file)
-  } catch (err) {
-    console.error('处理Excel文件错误:', err)
-    importError.value = '处理Excel文件失败: ' + (err.message || '未知错误')
+
+  if (passwordForm.value.password !== passwordForm.value.confirmPassword) {
+    passwordError.value = '两次输入的密码不一致'
+    return
   }
-}
 
-// 批量导入用户
-const importUsers = async () => {
-  if (previewData.value.length === 0) return
-
-  importLoading.value = true
-  importError.value = ''
-  importSuccess.value = ''
+  resetting.value = true
+  passwordError.value = ''
 
   try {
-    // 调用API批量导入用户
-    const result = await $fetch('/api/admin/users/batch', {
+    await $fetch(`/api/admin/users/${resetPasswordUser.value.id}/reset-password`, {
       method: 'POST',
       body: {
-        users: previewData.value
+        newPassword: passwordForm.value.password
       },
-      ...useAuth().getAuthHeader()
+      headers: auth.getAuthHeader().headers
     })
 
-    // 更新用户列表
-    await fetchUsers()
+    closeResetPassword()
 
-    importSuccess.value = `成功导入 ${result.created} 个用户，${result.failed} 个用户导入失败`
-
-    // 清空预览数据
-    previewData.value = []
-
-    // 3秒后关闭导入对话框
-    setTimeout(() => {
-      if (importSuccess.value) {
-        showImportUsers.value = false
-        importSuccess.value = ''
-      }
-    }, 3000)
-
-  } catch (err) {
-    importError.value = err.message || '导入用户失败'
-    console.error('导入用户出错:', err)
+    if (window.$showNotification) {
+      window.$showNotification('密码重置成功', 'success')
+    }
+  } catch (error) {
+    console.error('重置密码失败:', error)
+    passwordError.value = error.message || '重置失败'
   } finally {
-    importLoading.value = false
+    resetting.value = false
   }
 }
 
+const loadUsers = async () => {
+  loading.value = true
+  try {
+    const response = await $fetch('/api/admin/users', {
+      headers: auth.getAuthHeader().headers
+    })
+    users.value = response.users || []
+  } catch (error) {
+    console.error('加载用户失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('加载用户失败: ' + error.message, 'error')
+    }
+  } finally {
+    loading.value = false
+  }
+}
 
+const loadRoles = async () => {
+  try {
+    const response = await $fetch('/api/admin/roles', {
+      headers: auth.getAuthHeader().headers
+    })
+    roles.value = response.roles || []
+  } catch (error) {
+    console.error('加载角色失败:', error)
+  }
+}
+
+// 生命周期
+onMounted(async () => {
+  auth = useAuth()
+  await Promise.all([loadUsers(), loadRoles()])
+})
 </script>
 
 <style scoped>
 .user-manager {
-  width: 100%;
-  max-width: 100%;
-  margin-bottom: 2rem;
+  padding: 24px;
+  background: #0a0a0a;
+  min-height: 100vh;
+  color: #ffffff;
 }
 
-.section-title {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: var(--light);
-}
-
-.card {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
-  overflow: hidden;
-  width: 100%;
-}
-
-.users-section {
-  width: 100%;
-  min-width: 100%;
-}
-
-.card-header {
-  padding: 1rem 1.5rem;
-  background: rgba(30, 41, 59, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+/* 工具栏 */
+.toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.card-header h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: var(--light);
-}
-
-.user-count {
-  color: var(--gray);
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-}
-
-.count-number {
+.toolbar-left h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
   font-weight: 600;
-  color: var(--primary);
-  margin: 0 0.25rem;
+  color: #ffffff;
 }
 
-.controls {
+.stats {
   display: flex;
-  gap: 0.5rem;
+  gap: 16px;
+}
+
+.stat-item {
+  font-size: 14px;
+  color: #888888;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  color: #666666;
+  z-index: 1;
 }
 
 .search-input {
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 23, 42, 0.6);
-  color: var(--light);
+  padding: 8px 12px 8px 36px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  width: 200px;
 }
 
-.loading-state, .error-state, .empty-state {
-  padding: 2rem;
-  text-align: center;
+.search-input::placeholder {
+  color: #666666;
 }
 
-.error-state {
-  color: var(--danger);
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
-.users-table-container {
-  overflow-x: auto;
-  padding: 0.5rem;
-  width: 100%;
-  max-width: 100%;
-}
-
-.users-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: auto;
-}
-
-.users-table th, .users-table td {
-  padding: 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  white-space: nowrap;
-}
-
-/* 设置各列宽度 */
-.users-table th:nth-child(1), .users-table td:nth-child(1) { width: 50px; } /* ID */
-.users-table th:nth-child(2), .users-table td:nth-child(2) { width: 120px; } /* 姓名 */
-.users-table th:nth-child(3), .users-table td:nth-child(3) { width: 120px; } /* 账号名 */
-.users-table th:nth-child(4), .users-table td:nth-child(4) { width: 80px; } /* 角色 */
-.users-table th:nth-child(5), .users-table td:nth-child(5) { width: 80px; } /* 年级 */
-.users-table th:nth-child(6), .users-table td:nth-child(6) { width: 80px; } /* 班级 */
-.users-table th:nth-child(7), .users-table td:nth-child(7) { width: 180px; } /* 最后登录 */
-.users-table th:nth-child(8), .users-table td:nth-child(8) { width: 120px; } /* 登录IP */
-.users-table th:nth-child(9), .users-table td:nth-child(9) { width: 180px; } /* 密码修改时间 */
-.users-table th:nth-child(10), .users-table td:nth-child(10) { width: auto; } /* 操作 */
-
-.users-table th {
-  color: var(--gray);
-  font-weight: 500;
-  position: sticky;
-  top: 0;
-  background: rgba(30, 41, 59, 0.8);
-  z-index: 10;
-}
-
-.users-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-/* 分页控件样式 */
-.pagination-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  margin-top: 0.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.pagination-settings {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--gray);
-  font-size: 0.875rem;
-}
-
-.page-size-select {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 23, 42, 0.6);
-  color: var(--light);
+.filter-select {
+  padding: 8px 12px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
   cursor: pointer;
 }
 
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.pagination-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(30, 41, 59, 0.4);
-  color: var(--light);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: rgba(99, 102, 241, 0.2);
-  border-color: var(--primary);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.pagination-info {
-  padding: 0 0.75rem;
-  font-size: 0.875rem;
-  color: var(--gray);
-}
-
-.pagination-status {
-  font-size: 0.875rem;
-  color: var(--gray);
-}
-
-.role-badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 1rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.role-badge.admin {
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--primary);
-}
-
-.role-badge.user {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success);
-}
-
-.actions {
-  display: flex;
-  gap: 0.25rem;
-  justify-content: flex-end;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-}
-
-.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  min-width: 60px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  border: 1px solid transparent;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+.filter-select:focus {
+  outline: none;
+  border-color: #667eea;
 }
 
 .btn-primary {
-  background: var(--primary);
-  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #667eea;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.btn-secondary {
-  background: rgba(100, 116, 139, 0.2);
-  color: var(--gray);
-  border-color: rgba(100, 116, 139, 0.2);
+.btn-primary:hover {
+  background: #5a67d8;
 }
 
-.btn-outline {
-  background: transparent;
-  border-color: var(--primary);
-  color: var(--primary);
+.btn-primary svg {
+  width: 16px;
+  height: 16px;
 }
 
-.btn-warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-  border-color: rgba(245, 158, 11, 0.2);
+/* 表格容器 */
+.table-container {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-.btn-danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.2);
+/* 加载和空状态 */
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #888888;
 }
 
-.btn:hover {
-  opacity: 0.8;
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #2a2a2a;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
 }
 
-.btn:disabled {
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.empty-state svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  color: #444444;
+}
+
+.empty-text {
+  font-size: 16px;
+  color: #888888;
+}
+
+/* 用户表格 */
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-table th {
+  padding: 16px;
+  background: #2a2a2a;
+  color: #cccccc;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: left;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.user-table td {
+  padding: 16px;
+  border-bottom: 1px solid #2a2a2a;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.user-row:hover {
+  background: #1e1e1e;
+}
+
+/* 角色徽章 */
+.role-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.role-badge.user {
+  background: #1e3a8a;
+  color: #93c5fd;
+}
+
+.role-badge.admin {
+  background: #7c2d12;
+  color: #fed7aa;
+}
+
+.role-badge.song-admin {
+  background: #166534;
+  color: #bbf7d0;
+}
+
+.role-badge.super-admin {
+  background: #7c2d12;
+  color: #fca5a5;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.edit-btn {
+  background: #1e40af;
+  color: #ffffff;
+}
+
+.edit-btn:hover {
+  background: #1d4ed8;
+}
+
+.warning-btn {
+  background: #d97706;
+  color: #ffffff;
+}
+
+.warning-btn:hover {
+  background: #f59e0b;
+}
+
+.delete-btn {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.delete-btn:hover {
+  background: #ef4444;
+}
+
+/* 分页 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 20px;
+}
+
+.page-btn {
+  padding: 8px 12px;
+  background: #2a2a2a;
+  color: #ffffff;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #3a3a3a;
+  border-color: #4a4a4a;
+}
+
+.page-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Modal */
-.modal {
+.page-info {
+  color: #888888;
+  font-size: 14px;
+  margin: 0 8px;
+}
+
+/* 模态框 */
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1231,294 +918,180 @@ const importUsers = async () => {
 }
 
 .modal-content {
-  background: rgba(30, 41, 59, 0.95);
-  border-radius: 0.5rem;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
   width: 90%;
-  max-width: 600px;
+  max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
 }
 
-.modal-sm {
-  max-width: 400px;
-}
-
 .modal-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: sticky;
-  top: 0;
-  background: rgba(30, 41, 59, 0.95);
-  z-index: 10;
+  padding: 20px;
+  border-bottom: 1px solid #2a2a2a;
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.25rem;
-  color: var(--light);
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 .close-btn {
-  background: none;
+  width: 32px;
+  height: 32px;
   border: none;
-  font-size: 1.5rem;
+  background: #2a2a2a;
+  color: #888888;
+  border-radius: 6px;
   cursor: pointer;
-  color: var(--gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
-/* 移动端适配 */
-@media (max-width: 768px) {
-  .card-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .header-left {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-  
-  .controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .controls > .btn {
-    width: 100%;
-    justify-content: center;
-  }
+.close-btn:hover {
+  background: #3a3a3a;
+  color: #ffffff;
+}
 
-  .pagination-container {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-  
-  .pagination-controls {
-    justify-content: center;
-  }
-
-  .actions {
-    gap: 0.5rem;
-  }
+.close-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 20px;
 }
 
-/* Form */
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
-  color: var(--light);
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #cccccc;
 }
 
-.form-group input, .form-group select {
+.form-input,
+.form-select {
   width: 100%;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 23, 42, 0.8);
-  color: var(--light);
+  padding: 10px 12px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  box-sizing: border-box;
 }
 
-.form-actions {
+.form-input::placeholder {
+  color: #666666;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.error-message {
+  padding: 12px;
+  background: #7f1d1d;
+  border: 1px solid #991b1b;
+  border-radius: 8px;
+  color: #fecaca;
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid #2a2a2a;
 }
 
-.error, .warning {
-  color: var(--danger);
-  margin: 0.5rem 0;
+.btn-secondary {
+  padding: 8px 16px;
+  background: #2a2a2a;
+  color: #ffffff;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.success {
-  color: var(--success);
-  margin: 0.5rem 0;
+.btn-secondary:hover {
+  background: #3a3a3a;
+  border-color: #4a4a4a;
 }
 
-/* Import related */
-.import-instructions {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: rgba(15, 23, 42, 0.6);
-  border-radius: 0.375rem;
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.import-instructions pre {
-  background: rgba(15, 23, 42, 0.8);
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  overflow-x: auto;
-  margin: 0.5rem 0;
-}
-
-.excel-format {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: rgba(15, 23, 42, 0.8);
-  border-radius: 0.375rem;
-  overflow-x: auto;
-}
-
-.excel-format table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.excel-format th, .excel-format td {
-  padding: 0.5rem;
-  text-align: left;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 0.875rem;
-}
-
-.excel-format th {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--gray);
-  font-weight: 500;
-}
-
-.import-note {
-  margin-top: 1rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  color: var(--gray);
-  font-size: 0.875rem;
-}
-
-.preview-section {
-  margin: 1.5rem 0;
-}
-
-.preview-section h4 {
-  margin: 0 0 0.5rem 0;
-  color: var(--light);
-}
-
-.preview-table-container {
-  max-height: 300px;
-  overflow-y: auto;
-  margin-bottom: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.25rem;
-}
-
-
-
-.preview-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.preview-table th, .preview-table td {
-  padding: 0.5rem;
-  text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 0.875rem;
-}
-
-.preview-more {
-  text-align: center;
-  padding: 0.5rem;
-  color: var(--gray);
-  font-style: italic;
-}
-
-/* Responsive */
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .card-header {
+  .user-manager {
+    padding: 16px;
+  }
+
+  .toolbar {
     flex-direction: column;
-    align-items: flex-start;
+    gap: 16px;
+    align-items: stretch;
   }
-  
-  .header-left {
+
+  .toolbar-right {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
+    gap: 12px;
   }
-  
-  .controls {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-  
+
   .search-input {
-    flex-grow: 1;
+    width: 100%;
   }
-  
-  .users-table th, .users-table td {
-    padding: 0.5rem;
-    font-size: 0.875rem;
+
+  .user-table {
+    font-size: 12px;
   }
-  
-  .btn-sm {
-    min-width: auto;
-    padding: 0.25rem;
+
+  .user-table th,
+  .user-table td {
+    padding: 8px;
   }
-  
-  .pagination-container {
-    flex-direction: column;
-    align-items: flex-start;
+
+  .modal-content {
+    width: 95%;
+    margin: 20px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>
-
-<style>
-/* 全局通知样式 */
-.global-notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 15px 20px;
-  border-radius: 8px;
-  background: rgba(30, 41, 59, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  z-index: 9999;
-  transform: translateX(120%);
-  transition: transform 0.3s ease;
-  max-width: 350px;
-}
-
-.global-notification.show {
-  transform: translateX(0);
-}
-
-.global-notification.success {
-  border-left: 4px solid var(--success);
-}
-
-.global-notification.error {
-  border-left: 4px solid var(--danger);
-}
-
-.global-notification.info {
-  border-left: 4px solid var(--primary);
-}
-
-.global-notification.warning {
-  border-left: 4px solid var(--warning);
-}
-
-.notification-content {
-  display: flex;
-  align-items: center;
-}
-
-.notification-message {
-  color: var(--light);
-  font-size: 0.9rem;
-}
-</style> 

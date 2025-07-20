@@ -650,6 +650,7 @@ const vRipple = {
 .date-list {
   max-height: 500px;
   overflow-y: auto;
+  width: 100%;
 }
 
 /* 增强日期项目样式 */
@@ -689,6 +690,12 @@ const vRipple = {
   padding: 2rem 1rem;
   text-align: center;
   color: rgba(255, 255, 255, 0.6);
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
 }
 
 .weekday {

@@ -1,71 +1,124 @@
 <template>
   <div class="login-form">
-    <h2>用户登录</h2>
-    <form @submit.prevent="handleLogin">
+    <div class="form-header">
+      <h2>欢迎回来</h2>
+      <p>登录您的VoiceHub账户</p>
+    </div>
+
+    <form @submit.prevent="handleLogin" class="auth-form">
       <div class="form-group">
         <label for="username">账号名</label>
-        <input 
-          id="username" 
-          v-model="username" 
-          type="text" 
-          required 
-          placeholder="请输入账号名"
-          :class="{ 'input-error': error }"
-          @input="error = ''"
-        />
+        <div class="input-wrapper">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input
+            id="username"
+            v-model="username"
+            type="text"
+            required
+            placeholder="请输入账号名"
+            :class="{ 'input-error': error }"
+            @input="error = ''"
+          />
+        </div>
       </div>
-      
+
       <div class="form-group">
         <label for="password">密码</label>
-        <input 
-          id="password" 
-          v-model="password" 
-          type="password" 
-          required 
-          placeholder="请输入密码"
-          :class="{ 'input-error': error }"
-          @input="error = ''"
-        />
-      </div>
-      
-      <div v-if="error" class="error-container">
-        <div class="error-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        <div class="input-wrapper">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <circle cx="12" cy="16" r="1"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
+          <input
+            id="password"
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            required
+            placeholder="请输入密码"
+            :class="{ 'input-error': error }"
+            @input="error = ''"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            @click="showPassword = !showPassword"
+          >
+            <svg v-if="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
         </div>
-        <div class="error-message">{{ error }}</div>
       </div>
-      
-      <button type="submit" :disabled="loading">
-        <span v-if="loading" class="loading-spinner"></span>
-        {{ loading ? '登录中...' : '登录' }}
+
+      <div v-if="error" class="error-container">
+        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span class="error-message">{{ error }}</span>
+      </div>
+
+      <button type="submit" :disabled="loading" class="submit-btn">
+        <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+            <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+            <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+        <span>{{ loading ? '登录中...' : '登录' }}</span>
       </button>
     </form>
+
+    <div class="form-footer">
+      <p class="help-text">
+        请使用您的账号和密码登录系统
+      </p>
+    </div>
   </div>
 </template>
 
 <script setup>
-const router = useRouter()
-const auth = useAuth() // 假设我们有一个auth组合式函数
+import { ref } from 'vue'
+import { useAuth } from '~/composables/useAuth'
 
 const username = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
+const showPassword = ref(false)
+
+const auth = useAuth()
 
 const handleLogin = async () => {
+  if (!username.value || !password.value) {
+    error.value = '请填写完整的登录信息'
+    return
+  }
+
   error.value = ''
   loading.value = true
-  
+
   try {
     await auth.login(username.value, password.value)
-    router.push('/') // 修改为返回主页
+
+    // 登录成功后跳转
+    if (auth.isAdmin.value) {
+      await navigateTo('/dashboard')
+    } else {
+      await navigateTo('/')
+    }
   } catch (err) {
-    // 显示详细的错误信息
-    error.value = err.message || '登录失败，请稍后重试'
+    error.value = err.message || '登录失败，请检查账号密码'
     // 如果是密码错误，清空密码字段
     if (error.value.includes('密码不正确')) {
       password.value = ''
@@ -78,112 +131,225 @@ const handleLogin = async () => {
 
 <style scoped>
 .login-form {
+  width: 100%;
   max-width: 400px;
-  margin: 0 auto;
-  padding: 2rem;
-  border-radius: 0.75rem;
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-h2 {
+.form-header {
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: var(--light);
+  margin-bottom: 32px;
+}
+
+.form-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.form-header p {
+  font-size: 16px;
+  color: #888888;
+  margin: 0;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-label {
-  display: block;
-  margin-bottom: 0.5rem;
+.form-group label {
+  font-size: 14px;
   font-weight: 500;
-  color: var(--light);
+  color: #ffffff;
 }
 
-input {
-  width: 100%;
-  padding: 0.75rem;
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  color: var(--light);
-  transition: border-color 0.2s ease;
-}
-
-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-}
-
-input.input-error {
-  border-color: var(--danger);
-}
-
-button {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-top: 1rem;
+.input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
-button:hover {
-  background-color: var(--primary-dark);
+.input-icon {
+  position: absolute;
+  left: 16px;
+  width: 20px;
+  height: 20px;
+  color: #666666;
+  z-index: 1;
 }
 
-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+.input-wrapper input {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper input::placeholder {
+  color: #666666;
+}
+
+.input-wrapper input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-wrapper input:focus + .input-icon,
+.input-wrapper input:not(:placeholder-shown) + .input-icon {
+  color: #667eea;
+}
+
+.input-wrapper input.input-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 16px;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  color: #666666;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  z-index: 1;
+}
+
+.password-toggle:hover {
+  color: #ffffff;
+}
+
+.password-toggle svg {
+  width: 100%;
+  height: 100%;
 }
 
 .error-container {
   display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin: 0.75rem 0;
-  padding: 0.75rem;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 0.375rem;
+  border-radius: 12px;
+  color: #f87171;
 }
 
 .error-icon {
-  color: var(--danger);
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
-  margin-top: 2px;
 }
 
 .error-message {
-  color: var(--danger);
-  font-size: 0.9rem;
-  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.submit-btn:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .loading-spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spin 1s ease-in-out infinite;
-  margin-right: 0.5rem;
+  width: 20px;
+  height: 20px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.form-footer {
+  margin-top: 24px;
+  text-align: center;
 }
-</style> 
+
+.help-text {
+  font-size: 12px;
+  color: #666666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.help-text code {
+  background: #1a1a1a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  color: #667eea;
+  font-size: 11px;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .form-header h2 {
+    font-size: 24px;
+  }
+
+  .form-header p {
+    font-size: 14px;
+  }
+
+  .input-wrapper input {
+    padding: 14px 14px 14px 44px;
+    font-size: 16px; /* 防止iOS缩放 */
+  }
+
+  .submit-btn {
+    padding: 14px;
+    font-size: 16px;
+  }
+}
+</style>

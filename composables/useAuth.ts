@@ -19,7 +19,7 @@ export const useAuth = () => {
         const parsedUser = JSON.parse(storedUser) as User
         user.value = parsedUser
         isAuthenticated.value = true
-        isAdmin.value = parsedUser.role === 'ADMIN'
+        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(parsedUser.role)
         } catch (error) {
           // 清除无效的存储数据
           localStorage.removeItem('user')
@@ -52,7 +52,7 @@ export const useAuth = () => {
         const userData = data.value as any
         user.value = userData.user
         isAuthenticated.value = true
-        isAdmin.value = userData.user.role === 'ADMIN'
+        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(userData.user.role)
 
         // 确保只在客户端环境中存储数据
         if (process.client) {

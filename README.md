@@ -10,17 +10,37 @@
 
 ## 主要功能
 
-- **用户管理**：管理员添加用户，支持按年级班级分类
+### 🎵 核心功能
 - **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐和QQ音乐搜索
 - **音质切换**：支持多种音质选择（标准、HQ、无损、Hi-Res等），动态获取最新播放链接
 - **音乐播放器**：内置音乐播放器，支持进度控制和音质实时切换
 - **歌曲管理**：按热度排序，避免重复播放，动态URL防止链接过期
+
+### 👥 用户管理
+- **用户管理**：管理员添加用户，支持按年级班级分类
+- **权限控制**：多级权限管理，支持普通用户、管理员、超级管理员
+- **黑名单管理**：支持歌曲和艺术家黑名单，自动过滤不当内容
+
+### 📅 排期管理
 - **排期管理**：管理员可以通过拖拽界面进行歌曲排期和顺序管理
+- **播出时段**：灵活配置播出时段，支持多时段管理
 - **学期管理**：管理员可设置当前学期，自动关联点歌记录
 - **公开展示**：公开展示歌曲播放排期，按日期分组展示
-- **通知系统**：实时通知功能，包括歌曲被选中、投票和系统通知
-- **现代UI**：响应式设计，玻璃态UI，流畅的动画效果
+
+### 🔔 通知系统
+- **实时通知**：歌曲被选中、投票和系统通知
+- **通知设置**：用户可自定义通知偏好
+- **批量通知**：管理员可向特定用户群体发送通知
+
+### 💾 数据管理
+- **数据库备份**：完整的数据库备份和恢复功能
+- **文件导入导出**：支持备份文件的上传、下载和管理
 - **数据库自检**：自动数据库验证和修复机制，确保系统稳定性
+
+### 🎨 用户体验
+- **现代UI**：响应式设计，深色主题，流畅的动画效果
+- **玻璃态设计**：现代化的视觉效果和交互体验
+- **移动端适配**：完美支持移动设备访问
 
 ## 技术栈
 
@@ -160,8 +180,11 @@ VoiceHub/
 │       └── main.css       # 主样式文件
 ├── components/            # 可复用组件
 │   ├── Admin/             # 管理员组件
+│   │   ├── BackupManager.vue      # 数据库备份管理组件
+│   │   ├── BlacklistManager.vue   # 黑名单管理组件
 │   │   ├── NotificationSender.vue # 通知发送组件
 │   │   ├── PlayTimeManager.vue    # 播放时间管理组件
+│   │   ├── RoleManager.vue        # 角色管理组件
 │   │   ├── ScheduleForm.vue       # 排期表单组件
 │   │   ├── SemesterManager.vue    # 学期管理组件
 │   │   └── UserManager.vue        # 用户管理组件
@@ -207,16 +230,25 @@ VoiceHub/
 │   │   └── thumbs-up.svg   # 点赞图标
 │   └── robots.txt          # 爬虫规则
 ├── scripts/               # 工具脚本
-│   ├── check-database.js   # 数据库检查工具
-│   ├── clear-database.js   # 数据库清理工具
-│   ├── create-admin.js     # 创建管理员账户
+│   ├── backup-and-migrate.js      # 用户数据备份迁移工具
+│   ├── check-database.js          # 数据库检查工具
+│   ├── clear-database.js          # 数据库清理工具
+│   ├── create-admin.js            # 创建管理员账户
+│   ├── database-backup.js         # 完整数据库备份工具
 │   ├── fix-database-validation.js # 修复数据库验证
-│   ├── package.json        # 脚本依赖配置
-│   └── repair-database.js  # 数据库修复工具
+│   ├── package.json               # 脚本依赖配置
+│   └── repair-database.js         # 数据库修复工具
 ├── server/                # 服务端API
 │   ├── api/                # API端点
 │   │   ├── admin/          # 管理员API
 │   │   │   ├── backup/     # 备份相关API
+│   │   │   │   ├── export.post.ts   # 创建备份
+│   │   │   │   ├── upload.post.ts   # 上传备份文件
+│   │   │   │   ├── restore.post.ts  # 恢复备份
+│   │   │   │   ├── list.get.ts      # 获取备份列表
+│   │   │   │   ├── download/[filename].get.ts # 下载备份
+│   │   │   │   └── delete/[filename].delete.ts # 删除备份
+│   │   │   ├── blacklist/           # 黑名单管理API
 │   │   │   ├── mark-played.post.ts  # 标记已播放API
 │   │   │   ├── notifications/       # 管理员通知API
 │   │   │   ├── play-times/          # 播放时间管理API
@@ -366,6 +398,33 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
    ```bash
    npx prisma migrate reset
    ```
+
+## 数据备份功能
+
+VoiceHub 提供了完整的数据库备份和恢复功能：
+
+### Web界面备份管理
+- **创建备份**：支持完整备份和用户数据备份
+- **导入备份**：支持拖拽上传备份文件
+- **文件管理**：列出、下载、删除备份文件
+- **数据恢复**：支持合并模式和替换模式恢复
+
+### 命令行备份工具
+```bash
+# 创建完整数据库备份
+node scripts/database-backup.js backup
+
+# 恢复数据库备份
+node scripts/database-backup.js restore <备份文件路径>
+
+# 用户数据备份迁移（兼容旧版本）
+node scripts/backup-and-migrate.js
+```
+
+### 备份文件格式
+- **完整备份**：包含所有数据表的JSON格式文件
+- **用户备份**：仅包含用户相关数据
+- **元数据**：包含创建时间、创建者、表信息等
 
 ## 开发指南
 

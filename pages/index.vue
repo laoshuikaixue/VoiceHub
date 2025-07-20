@@ -436,7 +436,7 @@ const isClientAuthenticated = ref(false)
 const isAdmin = ref(false)
 const user = ref(null)
 let auth = null
-let songs = null
+let songs = useSongs() // 立即初始化songs服务
 let notificationsService = null
 const unreadNotificationCount = ref(0)
 
@@ -648,12 +648,15 @@ const loadSongCount = async () => {
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
   auth = useAuth()
+
+  // 初始化认证状态
+  await auth.initAuth()
+
   isClientAuthenticated.value = auth.isAuthenticated.value
   isAdmin.value = auth.isAdmin.value
   user.value = auth.user.value
 
-  // 初始化歌曲服务
-  songs = useSongs()
+  // 初始化通知服务
   notificationsService = useNotifications()
 
   // 无论是否登录都获取歌曲总数

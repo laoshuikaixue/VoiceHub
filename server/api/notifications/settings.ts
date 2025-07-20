@@ -1,3 +1,4 @@
+import { createError, defineEventHandler } from 'h3'
 import { prisma } from '../../models/schema'
 import type { NotificationSettings, DBNotificationSettings } from '~/types'
 

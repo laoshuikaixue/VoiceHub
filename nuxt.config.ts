@@ -5,6 +5,8 @@ export default defineNuxtConfig({
   
   // 引入全局CSS
   css: [
+    '~/assets/css/variables.css',
+    '~/assets/css/components.css',
     '~/assets/css/main.css',
   ],
   

@@ -1,7 +1,5 @@
 <template>
   <div class="notification-sender">
-    <h2 class="section-title">发送通知</h2>
-    
     <div class="card glass">
       <div class="card-header">
         <h3>向用户发送通知</h3>
@@ -564,10 +562,10 @@ const sendNotification = async () => {
 }
 
 .preview-card {
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  padding: 15px;
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
   width: 100%;
 }
 

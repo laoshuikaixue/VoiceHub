@@ -92,7 +92,7 @@ export default defineEventHandler(async (event) => {
             class: true,
             password: true,
             role: true,
-            lastLoginAt: true,
+            lastLogin: true,
             lastLoginIp: true,
             passwordChangedAt: true // 添加密码修改时间字段
     }
@@ -102,7 +102,7 @@ export default defineEventHandler(async (event) => {
         
         // 如果失败，使用原始SQL查询
         const result = await prisma.$queryRaw`
-          SELECT id, username, name, grade, class, password, role, "lastLoginAt", "lastLoginIp", "passwordChangedAt"
+          SELECT id, username, name, grade, class, password, role, "lastLogin", "lastLoginIp", "passwordChangedAt"
           FROM "User"
           WHERE username = ${body.username}
         `
@@ -124,7 +124,7 @@ export default defineEventHandler(async (event) => {
       try {
         // 使用简化的查询，只获取必要字段
         user = await prisma.$queryRaw`
-          SELECT id, username, name, grade, class, password, role, "lastLoginAt", "lastLoginIp", "passwordChangedAt"
+          SELECT id, username, name, grade, class, password, role, "lastLogin", "lastLoginIp", "passwordChangedAt"
           FROM "User"
           WHERE username = ${body.username}
         `
@@ -185,7 +185,7 @@ export default defineEventHandler(async (event) => {
       // 使用原始SQL更新，避免模式不匹配问题
       await prisma.$executeRaw`
         UPDATE "User"
-        SET "lastLoginAt" = NOW(),
+        SET "lastLogin" = NOW(),
             "lastLoginIp" = ${clientIp}
         WHERE id = ${user.id}
       `

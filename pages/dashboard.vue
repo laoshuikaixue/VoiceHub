@@ -1,2775 +1,614 @@
 <template>
   <div>
-  <ClientOnly>
-    <div class="dashboard">
-      <div class="dashboard-header glass">
-          <div class="header-left">
+    <ClientOnly>
+      <div class="admin-layout">
+        <!-- 左侧导航栏 -->
+        <aside class="sidebar">
+          <div class="sidebar-header">
             <NuxtLink to="/" class="logo-link">
-              <img src="/images/logo.svg" alt="VoiceHub Logo" class="admin-logo-image" />
+              <img src="/images/logo.svg" alt="VoiceHub Logo" class="logo-image" />
+              <div class="logo-content">
+                <span class="logo-text">{{ $config.public.siteTitle || 'VoiceHub' }}</span>
+                <span class="logo-subtitle">管理控制台</span>
+              </div>
             </NuxtLink>
-        <h1>后台管理系统</h1>
           </div>
-        <div class="user-info">
-          <span>欢迎, {{ currentUser?.name || '管理员' }}</span>
-          <button @click="handleLogout" class="logout-btn">注销</button>
-        </div>
-      </div>
-      
-      <div class="dashboard-tabs">
-        <button 
-          :class="['tab-btn', { active: activeTab === 'schedule' }]" 
-          @click="activeTab = 'schedule'"
-        >
-          排期管理
-        </button>
-        <button 
-          :class="['tab-btn', { active: activeTab === 'songs' }]" 
-          @click="activeTab = 'songs'"
-        >
-          歌曲管理
-        </button>
-        <button 
-          :class="['tab-btn', { active: activeTab === 'users' }]" 
-          @click="activeTab = 'users'"
-        >
-          用户管理
-        </button>
-        <button 
-          :class="['tab-btn', { active: activeTab === 'notifications' }]" 
-          @click="activeTab = 'notifications'"
-        >
-          通知管理
-        </button>
-        <button
-          :class="['tab-btn', { active: activeTab === 'playtimes' }]"
-          @click="activeTab = 'playtimes'"
-        >
-          播出时段
-        </button>
-        <button
-          :class="['tab-btn', { active: activeTab === 'semesters' }]"
-          @click="activeTab = 'semesters'"
-        >
-          学期管理
-        </button>
-        <button
-          v-if="permissions.canManagePermissions"
-          :class="['tab-btn', { active: activeTab === 'permissions' }]"
-          @click="activeTab = 'permissions'"
-        >
-          权限管理
-        </button>
-        <button
-          v-if="permissions.canManageBlacklist"
-          :class="['tab-btn', { active: activeTab === 'blacklist' }]"
-          @click="activeTab = 'blacklist'"
-        >
-          黑名单管理
-        </button>
-      </div>
-      
-      <div class="dashboard-content">
-        <!-- 歌曲列表 -->
-        <div v-if="activeTab === 'songs'" class="section songs-section glass">
-          <h2>歌曲列表</h2>
           
-          <SongList 
-            :songs="songs" 
-            :loading="songLoading" 
-            :error="songError"
-            :is-admin="isAdminUser"
-            @vote="handleVote"
-            @withdraw="handleWithdraw"
-            @delete="handleDelete"
-            @markPlayed="handleMarkPlayed"
-            @unmarkPlayed="handleUnmarkPlayed"
-            @refresh="refreshSongs"
-          />
-        </div>
-        
-        <!-- 排期管理 -->
-        <div v-if="activeTab === 'schedule'" class="section schedule-section glass">
-          <h2>排期管理</h2>
-          <div class="schedule-manager">
-            <!-- 水平滚动日期选择器 -->
-            <div class="date-selector-container">
+          <nav class="sidebar-nav">
+            <div class="nav-section">
+              <div class="nav-section-title">概览</div>
               <button 
-                class="date-nav-btn prev-btn" 
-                @click="scrollDates('left')"
-                :disabled="isFirstDateVisible"
+                :class="['nav-item', { active: activeTab === 'overview' }]" 
+                @click="activeTab = 'overview'"
               >
-                &lt;
-              </button>
-              <div class="date-selector" ref="dateSelector">
-                <button 
-                  v-for="date in availableDates" 
-                  :key="date"
-                  :class="['date-btn', { active: selectedDate === date }]"
-                  @click="selectedDate = date"
-                >
-                  {{ formatDateShort(date) }}
-                </button>
-              </div>
-              <button 
-                class="date-nav-btn next-btn" 
-                @click="scrollDates('right')"
-                :disabled="isLastDateVisible"
-              >
-                &gt;
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="9" y1="9" x2="15" y2="9"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+                数据概览
               </button>
             </div>
             
-            <!-- 加载动画 -->
-            <div v-if="scheduleLoading" class="schedule-loading-container">
-              <div class="schedule-loading-spinner">
-                <div class="spinner"></div>
-              </div>
-              <div class="schedule-loading-text">正在加载排期...</div>
+            <div class="nav-section">
+              <div class="nav-section-title">内容管理</div>
+              <button 
+                :class="['nav-item', { active: activeTab === 'schedule' }]" 
+                @click="activeTab = 'schedule'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                排期管理
+              </button>
+              <button 
+                :class="['nav-item', { active: activeTab === 'songs' }]" 
+                @click="activeTab = 'songs'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 1v6m0 6v6"/>
+                  <path d="m21 12-6-3-6 3-6-3"/>
+                </svg>
+                歌曲管理
+              </button>
             </div>
             
-            <div v-else class="schedule-container">
-              <div class="song-list-panel">
-                <h3>待排歌曲</h3>
-                  
-                  <!-- 添加排序选项 -->
-                  <div class="sort-options">
-                    <label>排序方式:</label>
-                    <select v-model="songSortOption" class="sort-select">
-                      <option value="time-desc">最新投稿</option>
-                      <option value="time-asc">最早投稿</option>
-                      <option value="votes-desc">热度最高</option>
-                      <option value="votes-asc">热度最低</option>
-                    </select>
-                  </div>
-                  
-                <div 
-                  :class="['draggable-songs', { 'drag-over': isDraggableOver }]"
-                  @dragover.prevent="handleDraggableDragOver($event)"
-                  @dragenter.prevent="isDraggableOver = true"
-                  @dragleave="handleDraggableDragLeave($event)"
-                  @drop.stop.prevent="handleReturnToDraggable($event)"
-                >
-                  <div 
-                    v-for="song in filteredUnscheduledSongs" 
-                    :key="song.id"
-                    class="draggable-song"
-                    draggable="true"
-                    @dragstart="dragStart($event, song)"
-                    @dragend="dragEnd($event)"
-                  >
-                    <div class="song-info">
-                      <div class="song-title">{{ song.title }}</div>
-                        <div class="song-meta">
-                          <span class="song-artist">{{ song.artist }}</span>
-                          <span class="song-submitter">投稿人: {{ song.requester }}</span>
-                        </div>
-                        <div class="song-stats">
-                          <span class="votes-count">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                            </svg>
-                            {{ song.voteCount || 0 }}
-                          </span>
-                          <span class="time-info">{{ formatDate(song.createdAt) }}</span>
-                          <div v-if="song.preferredPlayTimeId !== undefined && song.preferredPlayTimeId !== null" class="preferred-time-container">
-                            <span class="preferred-time-label">期望播出:</span>
-                            <span class="preferred-time">{{ getPlayTimeName(song.preferredPlayTimeId) }}</span>
-                          </div>
-                        </div>
-                    </div>
-                    <div class="drag-handle">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="8" cy="8" r="1.5"></circle>
-                        <circle cx="16" cy="8" r="1.5"></circle>
-                        <circle cx="8" cy="16" r="1.5"></circle>
-                        <circle cx="16" cy="16" r="1.5"></circle>
-                      </svg>
-                    </div>
-                  </div>
-                  <div v-if="filteredUnscheduledSongs.length === 0" class="empty-message">
-                    没有待排歌曲
-                  </div>
-                </div>
+            <div class="nav-section">
+              <div class="nav-section-title">用户管理</div>
+              <button
+                :class="['nav-item', { active: activeTab === 'users' }]"
+                @click="activeTab = 'users'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                用户管理
+              </button>
+
+            <button
+              :class="['nav-item', { active: activeTab === 'roles' }]"
+              @click="activeTab = 'roles'"
+            >
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <path d="M20 8v6"/>
+                <path d="M23 11h-6"/>
+              </svg>
+              角色管理
+            </button>
+            </div>
+            
+            <div class="nav-section">
+              <div class="nav-section-title">系统管理</div>
+              <button 
+                :class="['nav-item', { active: activeTab === 'notifications' }]" 
+                @click="activeTab = 'notifications'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                通知管理
+              </button>
+              <button
+                :class="['nav-item', { active: activeTab === 'playtimes' }]"
+                @click="activeTab = 'playtimes'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12,6 12,12 16,14"/>
+                </svg>
+                播出时段
+              </button>
+              <button
+                :class="['nav-item', { active: activeTab === 'semesters' }]"
+                @click="activeTab = 'semesters'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+                学期管理
+              </button>
+              <button
+                :class="['nav-item', { active: activeTab === 'blacklist' }]"
+                @click="activeTab = 'blacklist'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                </svg>
+                黑名单管理
+              </button>
+              <button
+                :class="['nav-item', { active: activeTab === 'backup' }]"
+                @click="activeTab = 'backup'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10,9 9,9 8,9"/>
+                </svg>
+                数据备份
+              </button>
+            </div>
+          </nav>
+          
+          <div class="sidebar-footer">
+            <div class="user-info">
+              <div class="user-avatar">
+                {{ (currentUser?.name || '管理员').charAt(0) }}
               </div>
-              
-              <div class="sequence-panel">
-                <h3>播放顺序</h3>
-                
-                <!-- 添加播放时段选择 -->
-                <div class="playtime-selector" v-if="playTimeEnabled">
-                  <label>当前播放时段:</label>
-                  <div v-if="!enablePlayTimeSelection" class="fixed-playtime">
-                    未指定时段
-                  </div>
-                  <select v-else v-model="currentPlayTimeId" class="playtime-select">
-                    <option value="">未指定时段</option>
-                    <option 
-                      v-for="playTime in enabledPlayTimes" 
-                      :key="playTime.id" 
-                      :value="playTime.id"
-                    >
-                      {{ playTime.name }}
-                    </option>
-                  </select>
-                  <div class="playtime-hint" v-if="enablePlayTimeSelection">
-                    <small>只显示当前选择时段内的排期</small>
-                  </div>
-                </div>
-                
-                <div 
-                  ref="sequenceList"
-                  :class="['sequence-list', { 'drag-over': isSequenceOver }]"
-                  @dragover.prevent="handleDragOver($event)"
-                  @dragenter.prevent="isSequenceOver = true"
-                  @dragleave="handleSequenceDragLeave($event)"
-                  @drop.stop.prevent="dropToSequence($event)"
-                >
-                  <div v-if="filteredScheduledSongs.length === 0" class="empty-message">
-                    <span v-if="currentPlayTimeId !== ''">
-                      当前时段没有排期，请拖入歌曲或
-                      <a href="#" @click.prevent="currentPlayTimeId = ''">查看所有时段</a>
-                    </span>
-                    <span v-else>
-                    将歌曲拖到此处安排播放顺序
-                    </span>
-                  </div>
-                  <div 
-                    v-for="(schedule, index) in filteredScheduledSongs" 
-                    :key="schedule.id"
-                    :class="['scheduled-song', { 'drag-over': dragOverIndex === index }]"
-                    draggable="true"
-                    @dragstart="dragScheduleStart($event, schedule)"
-                    @dragend="dragEnd($event)"
-                    @dragover.prevent
-                    @dragenter.prevent="handleDragEnter($event, index)"
-                    @dragleave="handleDragLeave($event)"
-                    @drop.stop.prevent="dropReorder($event, index)"
-                  >
-                    <div class="order-number">{{ index + 1 }}</div>
-                    <div class="scheduled-song-info">
-                      <div class="song-title">{{ schedule.song.title }}</div>
-                      <div class="song-artist">{{ schedule.song.artist }}</div>
-                      <div v-if="playTimeEnabled && schedule.playTimeId" class="song-playtime">
-                        {{ getPlayTimeName(schedule.playTimeId) }}
-                      </div>
-                    </div>
-                    <div class="song-actions">
-                      <button 
-                        @click="removeFromSequence(index)" 
-                        class="remove-btn"
-                        title="移除排期"
-                      >
-                        ×
-                      </button>
-                      <div class="drag-handle">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <circle cx="8" cy="8" r="1.5"></circle>
-                          <circle cx="16" cy="8" r="1.5"></circle>
-                          <circle cx="8" cy="16" r="1.5"></circle>
-                          <circle cx="16" cy="16" r="1.5"></circle>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="sequence-actions">
-                  <button @click="saveSequence" class="save-btn" :disabled="!hasChanges">
-                    保存顺序
-                  </button>
-                  <button @click="markAllAsPlayed" class="mark-played-btn" :disabled="filteredScheduledSongs.length === 0">
-                    全部标记为已播放
-                  </button>
-                </div>
+              <div class="user-details">
+                <div class="user-name">{{ currentUser?.name || '管理员' }}</div>
+                <div class="user-role">{{ getRoleDisplayName(currentUser?.role) }}</div>
               </div>
             </div>
+            <button @click="handleLogout" class="logout-btn">
+              <svg class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16,17 21,12 16,7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </button>
           </div>
-        </div>
-
-        <!-- 用户管理 -->
-        <div v-if="activeTab === 'users'" class="section users-section glass">
-          <UserManager />
-        </div>
+        </aside>
         
-        <!-- 通知管理 -->
-        <div v-if="activeTab === 'notifications'" class="section notifications-section glass full-width-section">
-          <NotificationSender />
-        </div>
-
-        <!-- 播出时段管理 -->
-        <div v-if="activeTab === 'playtimes'" class="section playtimes-section glass full-width-section">
-          <PlayTimeManager />
-        </div>
-
-        <!-- 学期管理 -->
-        <div v-if="activeTab === 'semesters'" class="section semesters-section glass full-width-section">
-          <SemesterManager />
-        </div>
-
-        <!-- 权限管理 -->
-        <div v-if="activeTab === 'permissions'" class="section permissions-section glass full-width-section">
-          <PermissionManager />
-        </div>
-
-        <!-- 黑名单管理 -->
-        <div v-if="activeTab === 'blacklist'" class="section blacklist-section glass full-width-section">
-          <BlacklistManager />
-        </div>
-      </div>
-      
-        <!-- 确认对话框组件 -->
-        <div v-if="confirmDialog.show" class="confirm-dialog-backdrop">
-          <div class="confirm-dialog">
-            <div class="confirm-dialog-header">
-              <h3>{{ confirmDialog.title }}</h3>
-            </div>
-            <div class="confirm-dialog-content">
-              {{ confirmDialog.message }}
-            </div>
-            <div class="confirm-dialog-actions">
-              <button 
-                @click="handleConfirmCancel" 
-                class="confirm-dialog-btn confirm-dialog-cancel"
-              >
-                取消
-              </button>
-              <button 
-                @click="handleConfirmConfirm" 
-                class="confirm-dialog-btn confirm-dialog-confirm"
-              >
-                确认
-              </button>
+        <!-- 主内容区域 -->
+        <main class="main-content">
+          <div class="content-header">
+            <h1 class="page-title">{{ getPageTitle() }}</h1>
+            <div class="content-actions">
+              <!-- 页面特定的操作按钮将在这里显示 -->
             </div>
           </div>
-        </div>
+          
+          <div class="content-body">
+            <!-- 数据概览 -->
+            <div v-if="activeTab === 'overview'" class="overview-section">
+              <OverviewDashboard @navigate="handleNavigate" />
+            </div>
+            
+            <!-- 歌曲管理 -->
+            <div v-if="activeTab === 'songs'" class="content-section">
+              <SongManagement />
+            </div>
+            
+            <!-- 排期管理 -->
+            <div v-if="activeTab === 'schedule'" class="content-section">
+              <ScheduleManager />
+            </div>
+            
+            <!-- 用户管理 -->
+            <div v-if="activeTab === 'users'" class="content-section">
+              <UserManager />
+            </div>
+
+            <!-- 角色管理 -->
+            <div v-if="activeTab === 'roles'" class="content-section">
+              <RoleManager />
+            </div>
+            
+            <!-- 通知管理 -->
+            <div v-if="activeTab === 'notifications'" class="content-section">
+              <NotificationSender />
+            </div>
+            
+            <!-- 播出时段 -->
+            <div v-if="activeTab === 'playtimes'" class="content-section">
+              <PlayTimeManager />
+            </div>
+            
+            <!-- 学期管理 -->
+            <div v-if="activeTab === 'semesters'" class="content-section">
+              <SemesterManager />
+            </div>
+            
+            <!-- 黑名单管理 -->
+            <div v-if="activeTab === 'blacklist'" class="content-section">
+              <BlacklistManager />
+            </div>
+
+            <!-- 数据备份 -->
+            <div v-if="activeTab === 'backup'" class="content-section">
+              <BackupManager />
+            </div>
+          </div>
+        </main>
       </div>
     </ClientOnly>
-    
-    <!-- 将通知组件移到ClientOnly外部 -->
-    <Teleport to="body">
-      <Transition-group 
-        tag="div" 
-        name="notification" 
-        class="notifications-container"
-      >
-        <div 
-          v-for="notification in notifications" 
-          :key="notification.id" 
-          :class="['notification', `notification-${notification.type}`, { 'visible': notification.visible }]"
-        >
-          <div class="notification-icon">
-            <svg v-if="notification.type === 'success'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-            <svg v-else-if="notification.type === 'error'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-            <svg v-else-if="notification.type === 'warning'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-          </div>
-          <div class="notification-content">{{ notification.message }}</div>
-        </div>
-      </Transition-group>
-    </Teleport>
-          </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
-import { useSongs } from '~/composables/useSongs'
-import { useAdmin } from '~/composables/useAdmin'
-import { useProgress } from '~/composables/useProgress'
-import { useNotifications } from '~/composables/useNotifications'
-import { usePermissions } from '~/composables/usePermissions'
-import SongList from '~/components/Songs/SongList.vue'
+
+// 导入组件
+import OverviewDashboard from '~/components/Admin/OverviewDashboard.vue'
+import SongManagement from '~/components/Admin/SongManagement.vue'
+import ScheduleManager from '~/components/Admin/ScheduleManager.vue'
 import UserManager from '~/components/Admin/UserManager.vue'
+import RoleManager from '~/components/Admin/RoleManager.vue'
 import NotificationSender from '~/components/Admin/NotificationSender.vue'
 import PlayTimeManager from '~/components/Admin/PlayTimeManager.vue'
 import SemesterManager from '~/components/Admin/SemesterManager.vue'
-import PermissionManager from '~/components/Admin/PermissionManager.vue'
 import BlacklistManager from '~/components/Admin/BlacklistManager.vue'
-import ScheduleForm from '~/components/Admin/ScheduleForm.vue'
+import BackupManager from '~/components/Admin/BackupManager.vue'
 
-const router = useRouter()
+// 页面元数据
+definePageMeta({
+  middleware: 'auth',
+  layout: false
+})
 
-// 初始化状态变量
+// 响应式数据
+const activeTab = ref('overview')
 const currentUser = ref(null)
-const isAuthenticated = ref(false)
-const isAdminUser = ref(false)
 
-// 激活的标签
-const activeTab = ref('schedule')
-
-// 客户端安全数据（将在onMounted中初始化）
+// 服务
 let auth = null
-let songsService = null
-let adminService = null
-let permissions = null
 
-// 歌曲和排期数据
-const songs = ref([])
-const publicSchedules = ref([])
-const songLoading = ref(false)
-const songError = ref('')
-const scheduleLoading = ref(false)
-const playTimeEnabled = ref(false)
-
-// 获取歌曲服务
-// 注释掉重复声明，这些变量将在onMounted中初始化
-// const songsService = useSongs()
-// const { songs, loading: songLoading, error: songError, playTimeEnabled } = songsService
-
-// 获取进度服务
-const progress = useProgress()
-
-// 获取通知服务
-const notificationsService = useNotifications()
-
-// DOM引用
-const dateSelector = ref(null)
-const sequenceList = ref(null)
-
-// 排期相关
-const selectedDate = ref(new Date().toISOString().split('T')[0])
-const currentDate = new Date().toISOString().split('T')[0]
-const hasChanges = ref(false)
-const originalOrder = ref([])
-const draggedSchedule = ref(null)
-const isFirstDateVisible = ref(true)
-const isLastDateVisible = ref(true)
-const dragOverIndex = ref(-1)
-const isDraggableOver = ref(false)
-const isSequenceOver = ref(false)
-const currentPlayTimeId = ref('') // 当前选择的播放时段ID
-
-// 歌曲排序选项
-const songSortOption = ref('time-desc')
-
-// 本地排期数据（用于拖拽排序，不立即保存到数据库）
-const localScheduledSongs = ref([])
-const scheduledSongIds = ref(new Set())
-
-// 已移除的歌曲ID列表
-const removedSongIds = ref([])
-
-// 生成包含过去和未来的日期
-const availableDates = computed(() => {
-  const dates = []
-  const today = new Date()
-  
-  // 添加过去7天的日期
-  for (let i = 7; i > 0; i--) {
-    const date = new Date(today)
-    date.setDate(today.getDate() - i)
-    dates.push(date.toISOString().split('T')[0])
+// 方法
+const getPageTitle = () => {
+  const titles = {
+    overview: '数据概览',
+    songs: '歌曲管理',
+    schedule: '排期管理',
+    users: '用户管理',
+    notifications: '通知管理',
+    playtimes: '播出时段',
+    semesters: '学期管理',
+    blacklist: '黑名单管理',
+    backup: '数据备份'
   }
-  
-  // 添加今天
-  dates.push(today.toISOString().split('T')[0])
-  
-  // 添加未来7天的日期
-  for (let i = 1; i < 8; i++) {
-    const date = new Date(today)
-    date.setDate(today.getDate() + i)
-    dates.push(date.toISOString().split('T')[0])
+  return titles[activeTab.value] || '管理后台'
+}
+
+const getRoleDisplayName = (role) => {
+  const roleNames = {
+    'USER': '普通用户',
+    'SONG_ADMIN': '歌曲管理员',
+    'ADMIN': '超级管理员',
+    'SUPER_ADMIN': '超级管理员'
   }
-  
-  return dates
-})
-
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return '未知时间'
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24))
-  
-  if (diffDays === 0) {
-    const diffHours = Math.floor((now - date) / (1000 * 60 * 60))
-    if (diffHours < 1) {
-      const diffMinutes = Math.floor((now - date) / (1000 * 60))
-      return diffMinutes <= 1 ? '刚刚' : `${diffMinutes}分钟前`
-    }
-    return `${diffHours}小时前`
-  } else if (diffDays === 1) {
-    return '昨天'
-  } else if (diffDays < 7) {
-    return `${diffDays}天前`
-  } else {
-    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
-  }
+  return roleNames[role] || role
 }
 
-// 验证登录状态
-onMounted(async () => {
-  try {
-  auth = useAuth()
-    
-    // 确保认证状态正确初始化
-    auth.initAuth()
-    
-  isAuthenticated.value = auth.isAuthenticated.value
-  isAdminUser.value = auth.isAdmin.value
-  currentUser.value = auth.user.value
-  
-  if (!isAuthenticated.value) {
-    router.push('/login')
-    return
-  }
-  
-  if (!isAdminUser.value) {
-    router.push('/')
-    return
-  }
-  
-  // 初始化服务
-  songsService = useSongs()
-  adminService = useAdmin()
-  permissions = usePermissions()
-  
-  // 使用引用保存服务状态
-  songs.value = songsService.songs.value
-  publicSchedules.value = songsService.publicSchedules.value
-  songLoading.value = songsService.loading.value
-  songError.value = songsService.error.value
-    
-    // 初始化播放时段
-    await initPlayTimes()
-    
-    // 恢复上次选择的播放时段
-    const lastSelectedPlayTimeId = localStorage.getItem('lastSelectedPlayTimeId')
-    if (lastSelectedPlayTimeId) {
-      console.log('恢复上次选择的播放时段:', lastSelectedPlayTimeId)
-      currentPlayTimeId.value = lastSelectedPlayTimeId
-    }
-  
-  // 加载数据
-  await songsService.fetchSongs()
-    
-    scheduleLoading.value = true
-    try {
-  await songsService.fetchPublicSchedules()
-  
-  // 更新本地引用
-  songs.value = songsService.songs.value
-  publicSchedules.value = songsService.publicSchedules.value
-  
-  // 初始化本地排期数据
-  updateLocalScheduledSongs()
-    } catch (scheduleError) {
-      showNotification('加载排期数据失败: ' + (scheduleError.message || '未知错误'), 'error')
-    } finally {
-      scheduleLoading.value = false
-    }
-  
-  // 初始化日期选择器滚动状态
-  nextTick(() => {
-    updateScrollButtonState()
-    
-    // 确保空排期列表也能接收拖拽
-    if (sequenceList.value) {
-      // 使用事件委托，确保只有在列表为空时才处理
-      sequenceList.value.addEventListener('dragover', (e) => {
-        // 只有当列表为空或者直接拖到列表上时才处理
-        if (localScheduledSongs.value.length === 0 || e.target === sequenceList.value) {
-          e.preventDefault()
-          isSequenceOver.value = true
-        }
-      })
-      
-      sequenceList.value.addEventListener('drop', (e) => {
-        // 只有当列表为空或者直接拖到列表上时才处理
-        if ((localScheduledSongs.value.length === 0 || e.target === sequenceList.value) && 
-            !e.target.closest('.scheduled-song')) {
-          e.preventDefault()
-          e.stopPropagation() // 阻止事件冒泡，防止重复处理
-          dropToSequence(e)
-        }
-      })
-    }
-  })
-  } catch (error) {
-    showNotification('初始化失败: ' + (error.message || '未知错误'), 'error')
-    console.error('初始化失败:', error)
-    
-    // 如果出现严重错误，重定向到登录页面
-    setTimeout(() => {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      router.push('/login')
-    }, 2000)
-  }
-})
-
-// 监听日期变化，重新加载排期
-watch(selectedDate, async () => {
-  scheduleLoading.value = true
-  try {
-  await songsService.fetchPublicSchedules()
-  publicSchedules.value = songsService.publicSchedules.value
-  updateLocalScheduledSongs()
-  hasChanges.value = false
-  } finally {
-    scheduleLoading.value = false
-  }
-})
-
-// 更新本地排期数据
-const updateLocalScheduledSongs = () => {
-  try {
-    if (!selectedDate.value) return
-    
-    // 过滤出当前日期的排期
-    const todaySchedules = publicSchedules.value.filter(s => {
-      if (!s.playDate) return false
-      const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
-      return scheduleDateStr === selectedDate.value
-  })
-  
-    // 更新本地排期数据
-    localScheduledSongs.value = todaySchedules.map(s => ({
-      ...s,
-      playTimeId: s.playTimeId || null // 确保playTimeId存在，如果没有则为null
-    }))
-  
-    // 更新已排期ID集合 - 包含所有日期的排期歌曲ID
-    // 这样可以确保已经排期的歌曲不会出现在待排歌曲列表中
-  scheduledSongIds.value = new Set(
-    publicSchedules.value
-        .filter(s => s.song && s.song.id)
-      .map(s => s.song.id)
-  )
-    
-    console.log('已排期歌曲IDs:', Array.from(scheduledSongIds.value))
-    
-    // 记录原始顺序
-    originalOrder.value = [...localScheduledSongs.value]
-    
-    console.log('更新本地排期数据:', {
-      日期: selectedDate.value,
-      排期数量: localScheduledSongs.value.length,
-      播放时段启用: playTimeEnabled.value,
-      排期: localScheduledSongs.value
-    })
-  } catch (err) {
-    console.error('更新本地排期数据失败:', err)
-  }
-}
-
-// 未排期的歌曲（经过过滤，不显示已排到当日的歌曲）
-const filteredUnscheduledSongs = computed(() => {
-  if (!songs.value) return []
-  
-  // 找出未播放且未排期的歌曲
-  const unscheduledSongs = songs.value.filter(song => 
-    !song.played && !scheduledSongIds.value.has(song.id)
-  )
-  
-  // 根据选择的排序选项进行排序
-  return [...unscheduledSongs].sort((a, b) => {
-    switch (songSortOption.value) {
-      case 'time-desc':
-        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-      case 'time-asc':
-        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
-      case 'votes-desc':
-        return (b.voteCount || 0) - (a.voteCount || 0)
-      case 'votes-asc':
-        return (a.voteCount || 0) - (b.voteCount || 0)
-      default:
-        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-    }
-  })
-})
-
-// 检查顺序是否有变化
-const checkForChanges = () => {
-  const currentOrder = localScheduledSongs.value.map(s => s.id)
-  hasChanges.value = JSON.stringify(currentOrder) !== JSON.stringify(originalOrder.value)
-}
-
-// 处理拖拽开始（从左侧拖到右侧）
-const dragStart = (event, song) => {
-  // 设置拖拽数据
-  event.dataTransfer.setData('text/plain', JSON.stringify({
-    type: 'new-song',
-    songId: song.id
-  }))
-  
-  // 添加拖拽效果
-  if (event.target.classList) {
-    setTimeout(() => {
-      event.target.classList.add('dragging')
-    }, 0)
-  }
-}
-
-// 处理排期拖拽开始（右侧内部排序）
-const dragScheduleStart = (event, schedule) => {
-  // 设置拖拽数据
-  event.dataTransfer.setData('text/plain', JSON.stringify({
-    type: 'reorder-schedule',
-    scheduleId: schedule.id
-  }))
-  
-  draggedSchedule.value = { ...schedule }
-  
-  // 添加拖拽效果
-  if (event.target.classList) {
-    setTimeout(() => {
-      event.target.classList.add('dragging')
-    }, 0)
-  }
-}
-
-// 处理拖拽结束
-const dragEnd = (event) => {
-  // 移除拖拽效果
-  if (event.target.classList) {
-    event.target.classList.remove('dragging')
-  }
-  
-  // 重置所有拖拽状态
-  dragOverIndex.value = -1
-  isDraggableOver.value = false
-  isSequenceOver.value = false
-  
-  // 确保清除拖拽状态
-  setTimeout(() => {
-    draggedSchedule.value = null
-  }, 50)
-}
-
-// 处理拖拽经过
-const handleDragOver = (event) => {
-  event.preventDefault()
-  event.dataTransfer.dropEffect = 'copy'
-  isSequenceOver.value = true
-}
-
-// 处理拖拽进入
-const handleDragEnter = (event, index) => {
-  event.preventDefault()
-  dragOverIndex.value = index
-}
-
-// 处理拖拽离开
-const handleDragLeave = (event) => {
-  // 确保只有当真正离开元素时才重置
-  if (!event.relatedTarget || !event.currentTarget.contains(event.relatedTarget)) {
-    dragOverIndex.value = -1
-  }
-}
-
-// 处理左侧拖拽区域的拖拽经过
-const handleDraggableDragOver = (event) => {
-  event.preventDefault()
-  event.dataTransfer.dropEffect = 'move'
-  isDraggableOver.value = true
-}
-
-// 处理左侧拖拽区域的拖拽离开
-const handleDraggableDragLeave = (event) => {
-  if (!event.relatedTarget || !event.currentTarget.contains(event.relatedTarget)) {
-    isDraggableOver.value = false
-  }
-}
-
-// 处理右侧拖拽区域的拖拽离开
-const handleSequenceDragLeave = (event) => {
-  if (!event.relatedTarget || !event.currentTarget.contains(event.relatedTarget)) {
-    isSequenceOver.value = false
-  }
-}
-
-// 处理放置到排期列表（从左侧拖到右侧）
-const dropToSequence = async (event) => {
-  event.preventDefault()
-  dragOverIndex.value = -1
-  isSequenceOver.value = false
-  
-  try {
-    const data = event.dataTransfer.getData('text/plain')
-    if (!data) {
-      return
-    }
-    
-    const dragData = JSON.parse(data)
-    
-    if (dragData.type === 'new-song') {
-      // 从左侧拖到右侧的新歌曲
-      const songId = parseInt(dragData.songId)
-      if (!songId) {
-        return
-      }
-      
-      const song = songs.value.find(s => s.id === songId)
-      if (!song) {
-        return
-      }
-      
-      // 检查歌曲是否已经在排期列表中
-      const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
-      if (existingIndex !== -1) {
-        return
-      }
-      
-      // 创建日期对象并设置为当天0点，只保存日期不保存时间
-      const dateOnly = new Date(selectedDate.value)
-      dateOnly.setHours(0, 0, 0, 0)
-      
-      // 获取播放时段ID
-      let playTimeId = null
-      
-      // 1. 如果启用了播放时段选择功能
-      if (enablePlayTimeSelection.value) {
-        // 优先使用当前选择的时段
-        if (currentPlayTimeId.value) {
-          playTimeId = currentPlayTimeId.value ? parseInt(currentPlayTimeId.value) : null
-        } 
-        // 其次使用歌曲期望的时段
-        else if (song.preferredPlayTimeId) {
-          playTimeId = song.preferredPlayTimeId
-        }
-      } 
-      // 2. 如果未启用播放时段选择功能，但播放时段功能已开启
-      else if (playTimeEnabled.value) {
-        // 使用歌曲期望的时段（如果有）
-        if (song.preferredPlayTimeId) {
-          playTimeId = song.preferredPlayTimeId
-        }
-      }
-      // 3. 如果都未启用，则为null
-      
-      // 创建新的排期对象（本地）
-      const newSchedule = {
-        id: Date.now(), // 临时ID
-        song: song,
-        playDate: dateOnly,
-        sequence: localScheduledSongs.value.length + 1,
-        playTimeId: playTimeId, // 添加播放时段ID
-        isNew: true, // 标记为新创建的
-        isLocalOnly: true // 标记为本地临时创建
-      }
-      
-      console.log('创建新排期:', newSchedule)
-      
-      // 将歌曲ID添加到已排期集合，使其在左侧列表中隐藏
-      scheduledSongIds.value.add(songId)
-      
-      // 添加到本地排期列表
-      localScheduledSongs.value.push(newSchedule)
-      hasChanges.value = true
-    }
-  } catch (err) {
-    console.error('处理拖放失败:', err)
-  }
-}
-
-// 处理重新排序（右侧内部）
-const dropReorder = async (event, dropIndex) => {
-  event.preventDefault()
-  dragOverIndex.value = -1
-  
-  try {
-    const data = event.dataTransfer.getData('text/plain')
-    if (!data) {
-      return
-    }
-    
-    const dragData = JSON.parse(data)
-    
-    if (dragData.type === 'reorder-schedule' && draggedSchedule.value) {
-      const scheduleId = parseInt(dragData.scheduleId)
-      
-      if (!scheduleId) {
-        return
-      }
-      
-      const draggedIndex = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
-      
-      if (draggedIndex === -1) {
-        return
-      }
-      
-      if (draggedIndex === dropIndex) {
-        return
-      }
-      
-      // 重新排序本地数据
-      
-      // 创建一个新数组进行操作
-      const newOrder = [...localScheduledSongs.value]
-      const draggedItem = newOrder.splice(draggedIndex, 1)[0]
-      newOrder.splice(dropIndex, 0, draggedItem)
-      
-      // 更新序号
-      newOrder.forEach((item, index) => {
-        item.sequence = index + 1
-      })
-      
-      // 确保更新本地数据 - 使用新的引用触发响应式更新
-      localScheduledSongs.value = newOrder
-      
-      // 强制重新渲染
-      nextTick(() => {
-        hasChanges.value = true
-      })
-    } else if (dragData.type === 'new-song') {
-      // 这是从左侧拖到右侧的新歌曲，但是放在了特定位置
-      const songId = parseInt(dragData.songId)
-      if (!songId) {
-        return
-      }
-      
-      const song = songs.value.find(s => s.id === songId)
-      if (!song) {
-        return
-      }
-      
-      // 检查歌曲是否已经在排期列表中
-      const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
-      if (existingIndex !== -1) {
-        return
-      }
-      
-      // 创建日期对象并设置为当天0点，只保存日期不保存时间
-      const dateOnly = new Date(selectedDate.value)
-      dateOnly.setHours(0, 0, 0, 0)
-      
-      // 获取播放时段ID
-      let playTimeId = null
-      
-      // 1. 如果启用了播放时段选择功能
-      if (enablePlayTimeSelection.value) {
-        // 优先使用当前选择的时段
-        if (currentPlayTimeId.value) {
-          playTimeId = currentPlayTimeId.value ? parseInt(currentPlayTimeId.value) : null
-        } 
-        // 其次使用歌曲期望的时段
-        else if (song.preferredPlayTimeId) {
-          playTimeId = song.preferredPlayTimeId
-        }
-      } 
-      // 2. 如果未启用播放时段选择功能，但播放时段功能已开启
-      else if (playTimeEnabled.value) {
-        // 使用歌曲期望的时段（如果有）
-        if (song.preferredPlayTimeId) {
-          playTimeId = song.preferredPlayTimeId
-        }
-      }
-      // 3. 如果都未启用，则为null
-      
-      // 创建新的排期对象（本地）
-      const newSchedule = {
-        id: Date.now(), // 临时ID
-        song: song,
-        playDate: dateOnly,
-        sequence: dropIndex + 1,
-        playTimeId: playTimeId, // 添加播放时段ID
-        isNew: true // 标记为新创建的
-      }
-      
-      // 将歌曲ID添加到已排期集合，使其在左侧列表中隐藏
-      scheduledSongIds.value.add(songId)
-      
-      // 添加到本地排期列表的特定位置
-      const newOrder = [...localScheduledSongs.value]
-      newOrder.splice(dropIndex, 0, newSchedule)
-      
-      // 更新序号
-      newOrder.forEach((item, index) => {
-        item.sequence = index + 1
-      })
-      
-      // 更新本地排期列表
-      localScheduledSongs.value = newOrder
-      hasChanges.value = true
-    }
-  } catch (err) {
-    // 错误处理
-  }
-  
-  draggedSchedule.value = null
-}
-
-// 处理拖回左侧列表
-const handleReturnToDraggable = (event) => {
-  event.preventDefault()
-  isDraggableOver.value = false
-  
-  try {
-    const data = event.dataTransfer.getData('text/plain')
-    if (!data) {
-      return
-    }
-    
-    const dragData = JSON.parse(data)
-    
-    if (dragData.type === 'reorder-schedule') {
-      const scheduleId = parseInt(dragData.scheduleId)
-      if (!scheduleId) return
-      
-      const scheduleIndex = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
-      if (scheduleIndex === -1) return
-      
-      const schedule = localScheduledSongs.value[scheduleIndex]
-      
-      // 从已排期ID集合中移除，使歌曲重新出现在左侧列表
-      scheduledSongIds.value.delete(schedule.song.id)
-      
-      // 记录被移除的歌曲ID，确保保存时处理
-      if (!removedSongIds.value.includes(schedule.song.id)) {
-        removedSongIds.value.push(schedule.song.id)
-      }
-      
-      // 从排期列表中移除
-      localScheduledSongs.value.splice(scheduleIndex, 1)
-      
-      // 重新编号
-      localScheduledSongs.value.forEach((item, idx) => {
-        item.sequence = idx + 1
-      })
-      
-      hasChanges.value = true
-    }
-  } catch (err) {
-    // 错误处理
-  }
-}
-
-// 格式化日期（短格式）
-const formatDateShort = (dateStr) => {
-  const date = new Date(dateStr)
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-  const weekday = weekdays[date.getDay()]
-  
-  return `${month}/${day} ${weekday}`
-}
-
-// 添加自定义通知系统
-const notifications = ref([])
-let notificationId = 0
-
-// 显示通知
-const showNotification = (message, type = 'info', duration = 3000) => {
-  const id = ++notificationId
-  notifications.value.push({
-    id,
-    message,
-    type, // 'info', 'success', 'warning', 'error'
-    visible: true
-  })
-  
-  // 自动关闭
-  setTimeout(() => {
-    const index = notifications.value.findIndex(n => n.id === id)
-    if (index !== -1) {
-      notifications.value[index].visible = false
-      setTimeout(() => {
-        notifications.value = notifications.value.filter(n => n.id !== id)
-      }, 300) // 等待淡出动画完成
-    }
-  }, duration)
-}
-
-// 确认对话框状态
-const confirmDialog = ref({
-  show: false,
-  title: '',
-  message: '',
-  onConfirm: () => {},
-  onCancel: () => {}
-})
-
-// 显示确认对话框
-const showConfirmDialog = (title, message, onConfirm, onCancel) => {
-  confirmDialog.value.show = true
-  confirmDialog.value.title = title
-  confirmDialog.value.message = message
-  confirmDialog.value.onConfirm = onConfirm
-  confirmDialog.value.onCancel = onCancel
-}
-
-// 处理确认对话框确认
-const handleConfirmConfirm = () => {
-  confirmDialog.value.onConfirm()
-  confirmDialog.value.show = false
-}
-
-// 处理确认对话框取消
-const handleConfirmCancel = () => {
-  confirmDialog.value.onCancel()
-  confirmDialog.value.show = false
-}
-
-// 从排期列表中移除
-const removeFromSequence = (index) => {
-  const schedule = localScheduledSongs.value[index]
-  if (!schedule) {
-    return
-  }
-  
-  // 使用自定义确认对话框替代浏览器默认的confirm
-  showConfirmDialog(
-    `移除歌曲 "${schedule.song.title}" 的排期`,
-    `确定要移除歌曲 "${schedule.song.title}" 的排期吗？`,
-    async () => {
-      // 如果是已存在的排期（有ID且不是本地临时创建的），则调用API删除
-      if (schedule.id && !schedule.isLocalOnly) {
-        try {
-          // 显示加载通知
-          showNotification(`正在移除歌曲 "${schedule.song.title}" 的排期...`, 'info')
-          
-          // 确保adminService已初始化
-          if (!adminService) {
-            showNotification('管理服务未初始化，无法移除排期', 'error')
-            console.error('adminService未初始化')
-            return
-          }
-          
-          const result = await adminService.removeSchedule(schedule.id)
-          
-          if (!result || !result.success) {
-            const errorMsg = result?.message || '移除排期失败'
-            showNotification(`移除排期失败: ${errorMsg}`, 'error')
-            console.error('移除排期失败:', errorMsg)
-            return
-          }
-        } catch (err) {
-          showNotification(`移除排期失败: ${err.message || '未知错误'}`, 'error')
-          console.error('移除排期错误:', err)
-          return
-        }
-      }
-      
-      // 从已排期ID集合中移除，使歌曲重新出现在左侧列表
-      scheduledSongIds.value.delete(schedule.song.id)
-      
-      // 记录被移除的歌曲ID，确保保存时处理
-      if (!removedSongIds.value.includes(schedule.song.id)) {
-        removedSongIds.value.push(schedule.song.id)
-      }
-      
-      // 从本地列表中移除
-      localScheduledSongs.value.splice(index, 1)
-      
-      // 重新编号
-      localScheduledSongs.value.forEach((item, idx) => {
-        item.sequence = idx + 1
-      })
-      
-      hasChanges.value = true
-      
-      // 显示成功通知
-      showNotification(`已移除歌曲 "${schedule.song.title}" 的排期`, 'success')
-    },
-    () => {
-      // 取消操作
-    }
-  )
-}
-
-// 保存顺序
-const saveSequence = async () => {
-  try {
-    // 显示加载通知
-    showNotification('正在保存排期...', 'info')
-    
-    // 处理已移除的歌曲，确保从数据库中删除它们的排期
-    for (const songId of removedSongIds.value) {
-      try {
-        // 查找该歌曲的所有排期
-        const songSchedules = publicSchedules.value.filter(s => s.song && s.song.id === songId)
-        
-        for (const schedule of songSchedules) {
-          try {
-            // 确保auth已初始化
-            if (!auth || !auth.getAuthHeader) {
-              showNotification('认证服务未初始化，无法移除排期', 'error')
-              console.error('auth未初始化')
-              continue
-            }
-            
-            const response = await fetch(`/api/admin/schedule/remove`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...auth.getAuthHeader().headers
-            },
-            body: JSON.stringify({ scheduleId: schedule.id })
-          })
-            
-            const result = await response.json()
-            
-            if (!response.ok || !result.success) {
-              const errorMsg = result.message || '移除排期失败'
-              console.error(`移除排期失败 (ID: ${schedule.id}):`, errorMsg)
-              // 显示错误通知但继续执行
-              showNotification(`移除排期 "${schedule.song.title}" 失败: ${errorMsg}`, 'warning')
-            }
-          } catch (scheduleErr) {
-            console.error(`移除排期失败 (ID: ${schedule.id}):`, scheduleErr)
-            showNotification(`移除排期 "${schedule.song.title}" 失败: ${scheduleErr.message || '未知错误'}`, 'warning')
-          }
-        }
-      } catch (err) {
-        console.error('移除排期处理错误:', err)
-        showNotification(`移除排期处理错误: ${err.message || '未知错误'}`, 'warning')
-      }
-    }
-    
-    // 不再删除当天所有排期，而是分别处理每个排期
-    // 获取当前日期的已有排期（数据库中存在的）
-    const existingSchedules = publicSchedules.value.filter(s => {
-      if (!s.playDate) return false
-      const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
-      return scheduleDateStr === selectedDate.value
-    })
-    
-    // 创建映射表，用于快速查找排期
-    const existingScheduleMap = new Map()
-    existingSchedules.forEach(schedule => {
-      existingScheduleMap.set(schedule.song.id, schedule)
-        })
-    
-    // 创建新的排期，确保按顺序创建
-    for (let i = 0; i < localScheduledSongs.value.length; i++) {
-      const schedule = localScheduledSongs.value[i]
-      try {
-        // 处理播放时段ID
-        let playTimeId = schedule.playTimeId
-        
-        // 如果是字符串类型，需要转换
-        if (typeof playTimeId === 'string') {
-          if (playTimeId === 'null' || playTimeId === '') {
-            playTimeId = null
-          } else {
-            playTimeId = parseInt(playTimeId)
-            if (isNaN(playTimeId)) {
-              playTimeId = null
-            }
-          }
-        }
-        
-        console.log(`保存排期 #${i+1}:`, {
-          歌曲: schedule.song.title,
-          日期: selectedDate.value,
-          序号: i + 1,
-          播放时段ID: playTimeId,
-          是否新排期: schedule.isNew || !existingScheduleMap.has(schedule.song.id)
-        })
-        
-        // 使用直接fetch调用确保数据正确传递
-        const result = await fetch('/api/admin/schedule', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...auth.getAuthHeader().headers
-          },
-          body: JSON.stringify({
-            songId: schedule.song.id,
-            playDate: selectedDate.value, // 直接使用YYYY-MM-DD格式的日期字符串
-            sequence: i + 1, // 使用索引+1作为序号
-            playTimeId: playTimeId // 传递处理后的播放时段ID
-          })
-        })
-        
-        if (!result.ok) {
-          const errorData = await result.json()
-          throw new Error(errorData.message || '创建排期失败')
-        }
-      } catch (err) {
-        throw err
-      }
-    }
-    
-    // 清空已移除歌曲ID列表
-    removedSongIds.value = []
-    
-    // 重新加载数据
-    await songsService.fetchPublicSchedules()
-    publicSchedules.value = songsService.publicSchedules.value
-    updateLocalScheduledSongs()
-    hasChanges.value = false
-    
-    // 显示成功通知
-    showNotification('播放顺序已保存', 'success')
-  } catch (err) {
-    // 显示错误通知
-    showNotification('保存顺序失败: ' + (err.message || '未知错误'), 'error')
-  }
-}
-
-// 处理注销
-const handleLogout = () => {
+const handleLogout = async () => {
   if (auth) {
-    auth.logout()
+    await auth.logout()
+    await navigateTo('/login')
   }
 }
 
-// 滚动日期选择器
-const scrollDates = (direction) => {
-  if (!dateSelector.value) return
-  
-  const scrollAmount = direction === 'left' ? -200 : 200
-  dateSelector.value.scrollBy({ left: scrollAmount, behavior: 'smooth' })
-  
-  // 更新按钮状态
-  setTimeout(updateScrollButtonState, 300)
+// 导航方法
+
+const handleNavigate = (tab) => {
+  activeTab.value = tab
 }
 
-// 更新滚动按钮状态
-const updateScrollButtonState = () => {
-  if (!dateSelector.value) return
-  
-  const { scrollLeft, scrollWidth, clientWidth } = dateSelector.value
-  isFirstDateVisible.value = scrollLeft <= 10
-  isLastDateVisible.value = scrollWidth - (scrollLeft + clientWidth) <= 10
-}
-
-// 处理投票
-const handleVote = async (song) => {
-  try {
-    // 检查是否已经投过票
-    if (song.voted) {
-      showNotification(`您已经为歌曲《${song.title}》投过票了`, 'info')
-      return
-    }
-    
-    try {
-      const result = await songsService.voteSong(song.id)
-      if (result) {
-        showNotification(`为歌曲《${song.title}》投票成功！`, 'success')
-        // 手动刷新歌曲列表以获取最新状态，但不影响当前视图
-        setTimeout(() => {
-          songsService.fetchSongs().then(data => {
-            songs.value = songsService.songs.value
-          }).catch(err => {
-            console.error('刷新歌曲列表失败', err)
-          })
-        }, 500)
-      }
-    } catch (apiErr) {
-      // 处理API错误，显示通知而不是替换界面
-      const errorMsg = apiErr.data?.message || apiErr.message || '投票失败'
-      
-      // 如果是已投票错误，显示特定通知
-      if (errorMsg.includes('已经为这首歌投过票')) {
-        showNotification(`您已经为歌曲《${song.title}》投过票了`, 'info')
-      } else {
-        showNotification(errorMsg, 'error')
-      }
-    }
-  } catch (err) {
-    // 这里处理其他非API错误
-    showNotification(err.message || '投票失败', 'error')
-  }
-}
-
-// 处理撤回投稿
-const handleWithdraw = async (song) => {
-  try {
-    const result = await songsService.withdrawSong(song.id)
-    if (result) {
-      showNotification('歌曲已成功撤回！', 'success')
-      await songsService.fetchSongs()
-      songs.value = songsService.songs.value
-    }
-  } catch (err) {
-    showNotification(err.message || '撤回失败', 'error')
-  }
-}
-
-// 处理删除歌曲
-const handleDelete = async (song) => {
-  try {
-    const result = await songsService.deleteSong(song.id)
-    if (result) {
-      showNotification('歌曲已成功删除！', 'success')
-      await songsService.fetchSongs()
-      songs.value = songsService.songs.value
-    }
-  } catch (err) {
-    showNotification(err.message || '删除失败', 'error')
-  }
-}
-
-// 处理标记为已播放
-const handleMarkPlayed = async (song) => {
-  try {
-    const result = await songsService.markPlayed(song.id)
-    if (result) {
-      showNotification('歌曲已标记为已播放！', 'success')
-      await songsService.fetchSongs()
-      songs.value = songsService.songs.value
-    }
-  } catch (err) {
-    showNotification(err.message || '操作失败', 'error')
-  }
-}
-
-// 标记所有歌曲为已播放
-const markAllAsPlayed = async () => {
-  try {
-    // 显示加载通知
-    showNotification('正在标记所有歌曲为已播放...', 'info')
-    
-    // 先保存当前排期
-    if (hasChanges.value) {
-      await saveSequence()
-    }
-    
-    // 获取当前日期的所有排期歌曲
-    const todaySchedules = publicSchedules.value.filter(s => {
-      if (!s.playDate) return false
-      const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
-      return scheduleDateStr === selectedDate.value
-    })
-    
-    // 标记所有歌曲为已播放
-    for (const schedule of todaySchedules) {
-      if (schedule.song && !schedule.song.played) {
-        try {
-          await songsService.markPlayed(schedule.song.id)
-        } catch (err) {
-          console.error(`标记歌曲 ${schedule.song.title} 失败:`, err)
-        }
-      }
-    }
-    
-    // 重新加载数据
-    await songsService.fetchSongs()
-    songs.value = songsService.songs.value
-    
-    // 显示成功通知
-    showNotification('所有歌曲已标记为已播放', 'success')
-  } catch (err) {
-    // 显示错误通知
-    showNotification('标记所有歌曲为已播放失败: ' + (err.message || '未知错误'), 'error')
-  }
-}
-
-// 刷新歌曲列表
-const refreshSongs = async () => {
-  try {
-    showNotification('正在刷新歌曲列表...', 'info')
-    await songsService.fetchSongs()
-    songs.value = songsService.songs.value
-    showNotification('歌曲列表已刷新', 'success')
-  } catch (err) {
-    showNotification('刷新歌曲列表失败', 'error')
-  }
-}
-
-// 处理撤回已播放状态
-const handleUnmarkPlayed = async (song) => {
-  try {
-    const result = await songsService.unmarkPlayed(song.id)
-    if (result) {
-      showNotification('歌曲已成功撤回已播放状态！', 'success')
-      await songsService.fetchSongs()
-      songs.value = songsService.songs.value
-    }
-  } catch (err) {
-    showNotification(err.message || '操作失败', 'error')
-  }
-}
-
-// 获取播放时段名称
-const getPlayTimeName = (id) => {
-  try {
-    if (id === null || id === undefined) return '未指定时段'
-    
-    if (!playTimes.value || !Array.isArray(playTimes.value) || playTimes.value.length === 0) {
-      console.warn('播放时段列表为空，无法获取名称')
-      return '未知时段'
-    }
-    
-    const numId = typeof id === 'string' ? parseInt(id) : id
-    const playTime = playTimes.value.find(pt => pt.id === numId)
-    
-    if (!playTime) {
-      console.warn(`未找到ID为${numId}的播放时段`)
-      return '未知时段'
-    }
-    
-    return playTime.name
-  } catch (err) {
-    console.error('获取播放时段名称失败:', err)
-    return '未知时段'
-  }
-}
-
-// 格式化播放时段范围
-const formatPlayTimeRange = (playTime) => {
-  try {
-    if (!playTime) return ''
-    
-    if (!playTime.startTime && !playTime.endTime) return ''
-    
-    let formattedRange = ''
-    
-    if (playTime.startTime) {
-      try {
-        // 检查是否是有效的日期字符串或Date对象
-        if (typeof playTime.startTime === 'string' && playTime.startTime.match(/^\d{2}:\d{2}$/)) {
-          // 如果是HH:MM格式，直接使用
-          formattedRange += playTime.startTime
-        } else {
-          const startDate = new Date(playTime.startTime)
-          if (isNaN(startDate.getTime())) {
-            console.warn('无效的开始时间格式:', playTime.startTime)
-            formattedRange += playTime.startTime
-          } else {
-            const start = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            formattedRange += start
-          }
-        }
-      } catch (e) {
-        console.error('格式化开始时间失败:', e)
-        formattedRange += String(playTime.startTime)
-      }
-    }
-    
-    if (playTime.startTime && playTime.endTime) {
-      formattedRange += ' - '
-    }
-    
-    if (playTime.endTime) {
-      try {
-        // 检查是否是有效的日期字符串或Date对象
-        if (typeof playTime.endTime === 'string' && playTime.endTime.match(/^\d{2}:\d{2}$/)) {
-          // 如果是HH:MM格式，直接使用
-          formattedRange += playTime.endTime
-        } else {
-          const endDate = new Date(playTime.endTime)
-          if (isNaN(endDate.getTime())) {
-            console.warn('无效的结束时间格式:', playTime.endTime)
-            formattedRange += playTime.endTime
-          } else {
-            const end = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            formattedRange += end
-          }
-        }
-      } catch (e) {
-        console.error('格式化结束时间失败:', e)
-        formattedRange += String(playTime.endTime)
-      }
-    }
-    
-    return formattedRange
-  } catch (err) {
-    console.error('格式化播放时段范围失败:', err, playTime)
-    return ''
-  }
-}
-
-// 获取播放时段列表
-const playTimes = ref([])
-const enablePlayTimeSelection = ref(false) // 是否启用播放时段选择功能
-
-// 初始化播放时段
-const initPlayTimes = async () => {
-  try {
-    if (!adminService) {
-      console.error('adminService未初始化')
-      return
-    }
-    
-    // 获取系统设置
-    try {
-      const systemSettings = await fetch('/api/admin/system-settings', {
-        headers: {
-          ...auth.getAuthHeader().headers
-        }
-      }).then(res => res.json())
-      
-      enablePlayTimeSelection.value = systemSettings.enablePlayTimeSelection
-      console.log('系统设置 - 启用播放时段选择:', enablePlayTimeSelection.value)
-    } catch (err) {
-      console.error('获取系统设置失败:', err)
-    }
-    
-    const result = await adminService.getPlayTimes()
-    console.log('获取播放时段结果:', result)
-    
-    if (result && Array.isArray(result)) {
-      playTimes.value = result
-      playTimeEnabled.value = result.length > 0
-      console.log('播放时段已启用:', playTimeEnabled.value, '数量:', result.length)
-      
-      // 如果启用了播放时段选择功能且有播放时段，则默认选择第一个播放时段
-      if (enablePlayTimeSelection.value && playTimes.value.length > 0) {
-        // 找到第一个启用的播放时段
-        const enabledPlayTime = playTimes.value.find(pt => pt.enabled)
-        if (enabledPlayTime) {
-          currentPlayTimeId.value = String(enabledPlayTime.id)
-          console.log('默认选择播放时段:', enabledPlayTime.name, enabledPlayTime.id)
-        }
-      } else {
-        // 否则选择未指定时段
-        currentPlayTimeId.value = ''
-        console.log('默认选择未指定时段')
-      }
-    } else {
-      console.warn('未获取到播放时段数据或格式不正确:', result)
-      playTimes.value = []
-      playTimeEnabled.value = false
-      currentPlayTimeId.value = '' // 默认选择未指定时段
-    }
-  } catch (err) {
-    console.error('获取播放时段失败:', err)
-    playTimes.value = []
-    playTimeEnabled.value = false
-    currentPlayTimeId.value = '' // 默认选择未指定时段
-  }
-}
-
-// 初始化播放时段
+// 生命周期
 onMounted(async () => {
-  await initPlayTimes()
-})
+  // 初始化服务
+  auth = useAuth()
 
-// 监听播放时段变化，重新加载排期
-watch(currentPlayTimeId, async (newValue) => {
-  console.log('播放时段变化:', newValue)
-  
-  // 不需要重新获取数据，只需要更新视图
-  // 当前排期列表会通过filteredScheduledSongs计算属性自动筛选
-  
-  // 记录当前选择的播放时段
-  localStorage.setItem('lastSelectedPlayTimeId', newValue || '')
-})
+  // 检查认证状态
+  await auth.initAuth()
 
-// 过滤排期，根据播放时段筛选
-const filteredScheduledSongs = computed(() => {
-  try {
-    // 先根据播放时段筛选
-    let filtered = [...localScheduledSongs.value]
-    
-    console.log('筛选前排期数量:', filtered.length, '当前选择的播放时段ID:', currentPlayTimeId.value, '启用播放时段选择:', enablePlayTimeSelection.value)
-    
-    // 如果启用了播放时段选择功能，则按时段筛选
-    if (enablePlayTimeSelection.value) {
-      if (currentPlayTimeId.value === '' || currentPlayTimeId.value === 'null') {
-        // 如果选择了"未指定时段"，则显示没有指定时段的排期
-        console.log('显示未指定时段的排期')
-        filtered = filtered.filter(schedule => {
-          // 检查排期是否没有指定时段
-          return schedule.playTimeId === null || 
-                 schedule.playTimeId === undefined || 
-                 schedule.playTimeId === '' || 
-                 schedule.playTimeId === 'null';
-        });
-      } else {
-        // 筛选指定时段的排期
-        const playTimeIdNum = parseInt(currentPlayTimeId.value)
-        filtered = filtered.filter(schedule => {
-          // 转换为数字进行比较
-          let schedulePlayTimeId = schedule.playTimeId
-          
-          // 处理各种可能的类型
-          if (schedulePlayTimeId === null || schedulePlayTimeId === undefined) {
-            schedulePlayTimeId = null
-          } else if (typeof schedulePlayTimeId === 'string') {
-            if (schedulePlayTimeId === 'null' || schedulePlayTimeId === '') {
-              schedulePlayTimeId = null
-            } else {
-              schedulePlayTimeId = parseInt(schedulePlayTimeId)
-              if (isNaN(schedulePlayTimeId)) {
-                schedulePlayTimeId = null
-              }
-            }
-          }
-          
-          // 检查是否匹配当前选择的时段
-          const isMatch = schedulePlayTimeId === playTimeIdNum
-          
-          console.log(`排期 ID=${schedule.id}, 歌曲=${schedule.song.title}, 时段ID=${schedulePlayTimeId}, 筛选时段=${playTimeIdNum}, 匹配=${isMatch}`)
-          
-          return isMatch
-        })
-        console.log(`筛选时段ID=${playTimeIdNum}的排期:`, filtered.length)
-      }
-    } else {
-      // 未启用播放时段选择功能，则显示所有排期（不筛选）
-      console.log('未启用播放时段选择功能，显示所有排期')
-    }
-    
-    // 根据选择的排序选项进行排序
-    return filtered.sort((a, b) => {
-      switch (songSortOption.value) {
-        case 'time-desc':
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-        case 'time-asc':
-          return new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
-        case 'votes-desc':
-          return (b.voteCount || 0) - (a.voteCount || 0)
-        case 'votes-asc':
-          return (a.voteCount || 0) - (b.voteCount || 0)
-        default:
-          return a.sequence - b.sequence // 默认按序号排序
-      }
-    })
-  } catch (err) {
-    console.error('筛选排期失败:', err)
-    return []
+  if (!auth.isAuthenticated.value) {
+    await navigateTo('/login')
+    return
   }
-})
 
-// 只显示已启用的播放时段
-const enabledPlayTimes = computed(() => {
-  return playTimes.value.filter(pt => pt.enabled)
-})
-
-// 监听系统设置变更（在适当的位置添加）
-const handleSystemSettingsChange = async (settings) => {
-  console.log('系统设置变更:', settings)
-  
-  // 如果播放时段选择功能状态发生变化
-  if (settings.enablePlayTimeSelection !== enablePlayTimeSelection.value) {
-    const oldValue = enablePlayTimeSelection.value
-    const newValue = settings.enablePlayTimeSelection
-    
-    // 显示确认对话框
-    showConfirmDialog(
-      `${newValue ? '启用' : '禁用'}播放时段选择功能`,
-      `确定要${newValue ? '启用' : '禁用'}播放时段选择功能吗？\n\n${
-        newValue 
-          ? '启用后，排期将按播放时段分类显示，您可以选择特定时段查看排期。' 
-          : '禁用后，所有排期将不再区分播放时段，但原有的播放时段信息将被保留以便将来使用。'
-      }`,
-      async () => {
-        try {
-          // 更新系统设置
-          const response = await fetch('/api/admin/system-settings', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...auth.getAuthHeader().headers
-            },
-            body: JSON.stringify({
-              enablePlayTimeSelection: newValue
-            })
-          })
-          
-          if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.message || `${newValue ? '启用' : '禁用'}播放时段选择功能失败`)
-          }
-          
-          // 更新本地状态
-          enablePlayTimeSelection.value = newValue
-          
-          // 如果启用了播放时段选择功能，且有可用的播放时段，但当前未选择时段，则选择第一个
-          if (newValue && playTimes.value.length > 0 && !currentPlayTimeId.value) {
-            const enabledPlayTime = playTimes.value.find(pt => pt.enabled)
-            if (enabledPlayTime) {
-              currentPlayTimeId.value = String(enabledPlayTime.id)
-              localStorage.setItem('lastSelectedPlayTimeId', currentPlayTimeId.value)
-            }
-          }
-          // 禁用功能时，不清空时段选择，保留原有选择
-          
-          showNotification(`已${newValue ? '启用' : '禁用'}播放时段选择功能`, 'success')
-        } catch (err) {
-          console.error(`${newValue ? '启用' : '禁用'}播放时段选择功能失败:`, err)
-          showNotification(`${newValue ? '启用' : '禁用'}播放时段选择功能失败: ${err.message || '未知错误'}`, 'error')
-        }
-      },
-      () => {
-        // 取消操作，恢复原值
-        console.log('取消更改播放时段选择功能状态')
-      }
-    )
+  if (!['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(auth.user.value?.role)) {
+    await navigateTo('/')
+    return
   }
-}
+
+  currentUser.value = auth.user.value
+})
 </script>
 
 <style scoped>
-.dashboard {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem;
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #0a0a0a;
+  color: #ffffff;
 }
 
-.dashboard-header {
+/* 左侧导航栏 */
+.sidebar {
+  width: 280px;
+  background: #111111;
+  border-right: 1px solid #1f1f1f;
+  position: fixed;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  border-radius: 0.75rem;
+  flex-direction: column;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+.sidebar-header {
+  padding: 24px 20px;
+  border-bottom: 1px solid #1f1f1f;
 }
 
 .logo-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   text-decoration: none;
-  transition: opacity 0.3s ease;
+  color: #ffffff;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .logo-link:hover {
-  opacity: 0.8;
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
 }
 
-.admin-logo-image {
-  width: 120px;
+.logo-image {
+  width: 150px;
   height: auto;
-  object-fit: contain;
+  filter: none;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
-.logo {
-  margin: 0;
-  padding: 0;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--light);
-  transition: color 0.3s ease;
+.logo-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
 }
 
-.logo:hover {
-  color: var(--primary);
+.logo-text {
+  font-size: 18px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.logo-subtitle {
+  font-size: 14px;
+  color: #888888;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 0;
+}
+
+.nav-section {
+  margin-bottom: 32px;
+}
+
+.nav-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  padding: 0 20px;
+}
+
+.nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  color: #cccccc;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.nav-item.active {
+  background: #1e40af;
+  color: #ffffff;
+}
+
+.nav-item.active .nav-icon {
+  color: #ffffff;
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  color: #888888;
+  transition: color 0.2s ease;
+}
+
+.nav-item:hover .nav-icon {
+  color: #ffffff;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 0;
+  overflow-y: auto;
+  min-height: 0; /* 允许flex子项收缩 */
+}
+
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid #1f1f1f;
+  background: #111111;
+  flex-shrink: 0; /* 防止footer被压缩 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
+  flex: 1;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.user-role {
+  font-size: 12px;
+  color: #888888;
 }
 
 .logout-btn {
-  padding: 0.5rem 1rem;
-  background-color: var(--danger);
-  color: white;
-  border: none;
-  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #888888;
   cursor: pointer;
-  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-  background-color: #c0392b;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: #2a2a2a;
+  color: #ffffff;
 }
 
-.dashboard-tabs {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+.logout-icon {
+  width: 16px;
+  height: 16px;
 }
 
-.tab-btn {
-  padding: 0.75rem 1.5rem;
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.375rem;
-  color: var(--gray);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.tab-btn:hover:not(.active) {
-  background: rgba(30, 41, 59, 0.6);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.tab-btn.active {
-  background: rgba(99, 102, 241, 0.2);
-  color: var(--primary);
-  border-color: var(--primary);
-  font-weight: 600;
-}
-
-.dashboard-content {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-}
-
-.section {
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.section:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-}
-
-.full-width-section {
-  width: 100%;
-  max-width: 100%;
-}
-
-.section h2 {
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--light);
-}
-
-/* 排期管理样式 */
-.schedule-manager {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* 水平日期选择器 */
-.date-selector-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  position: relative;
-}
-
-.date-selector {
-  display: flex;
-  overflow-x: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  scroll-behavior: smooth;
+/* 主内容区域 */
+.main-content {
   flex: 1;
-  padding: 0.5rem 0;
+  margin-left: 280px;
+  background: #0a0a0a;
+  min-height: 100vh;
 }
 
-.date-selector::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
-
-.date-btn {
-  padding: 0.5rem 1rem;
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.375rem;
-  color: var(--gray);
-  white-space: nowrap;
-  margin-right: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 90px;
-  text-align: center;
-}
-
-.date-btn:hover {
-  background: rgba(30, 41, 59, 0.6);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.date-btn.active {
-  background: rgba(99, 102, 241, 0.2);
-  color: var(--primary);
-  border-color: var(--primary);
-  font-weight: 500;
-}
-
-.date-nav-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--light);
+.content-header {
+  padding: 32px 40px 24px;
+  border-bottom: 1px solid #1f1f1f;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.date-nav-btn:hover:not([disabled]) {
-  background: rgba(30, 41, 59, 0.8);
-  transform: translateY(-1px);
-}
-
-.date-nav-btn[disabled] {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.schedule-container {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 1rem;
-  height: 500px; /* 保持一个足够的高度 */
-}
-
-.song-list-panel, .sequence-panel {
-  background: rgba(15, 23, 42, 0.4);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.song-list-panel h3, .sequence-panel h3 {
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.draggable-songs, .sequence-list {
-  overflow-y: auto;
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  min-height: 200px;
-  transition: all 0.3s ease;
-}
-
-.draggable-songs:empty, .sequence-list:empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--gray);
-  font-style: italic;
-}
-
-.sequence-list.drag-over, .draggable-songs.drag-over {
-  background: rgba(99, 102, 241, 0.05);
-  border-color: var(--primary);
-  box-shadow: inset 0 0 10px rgba(99, 102, 241, 0.2);
-}
-
-.draggable-song {
-  display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.375rem;
-  cursor: grab;
-  transition: all 0.2s ease;
-  user-select: none;
-  animation: fadeIn 0.3s ease-out;
-  position: relative;
-  z-index: 1;
 }
 
-.draggable-song:hover {
-  transform: translateY(-2px);
-  background: rgba(30, 41, 59, 0.8);
-  border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.drag-handle {
-  color: var(--gray);
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  transition: all 0.2s ease;
-}
-
-.drag-handle:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--light);
-}
-
-.scheduled-song {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.375rem;
-  cursor: grab;
-  transition: all 0.3s ease;
-  user-select: none;
-  animation: fadeIn 0.3s ease-out;
-  position: relative;
-  z-index: 1;
-}
-
-.scheduled-song:hover {
-  transform: translateY(-2px);
-  background: rgba(30, 41, 59, 0.8);
-  border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.scheduled-song.drag-over {
-  border: 2px dashed var(--primary);
-  background: rgba(99, 102, 241, 0.1);
-  transform: scale(1.02);
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
-  position: relative;
-  animation: pulse 1s infinite;
-}
-
-.scheduled-song.drag-over::before {
-  content: '';
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-bottom: 8px solid var(--primary);
-  opacity: 0.8;
-}
-
-.scheduled-song.dragging {
-  opacity: 0.5;
-  transform: scale(1.05);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  background: rgba(99, 102, 241, 0.2);
-  border: 1px dashed var(--primary);
-}
-
-.draggable-song.dragging {
-  opacity: 0.5;
-  transform: scale(1.05);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  background: rgba(99, 102, 241, 0.2);
-  border: 1px dashed var(--primary);
-}
-
-.sequence-list .scheduled-song[draggable=true]:active {
-  transform: scale(1.02);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  opacity: 0.8;
-}
-
-.sequence-list .scheduled-song:nth-child(even) {
-  animation-duration: 0.4s;
-}
-
-/* 拖拽经过效果 */
-.sequence-panel .scheduled-song {
-  position: relative;
-}
-
-.sequence-list .scheduled-song:nth-child(n+1) {
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
-}
-
-/* 拖拽时的动画和样式 */
-@keyframes wiggle {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  75% { transform: translateX(3px); }
-}
-
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.5); }
-  50% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.8); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); border-color: rgba(99, 102, 241, 0.5); }
-  50% { transform: scale(1.02); border-color: rgba(99, 102, 241, 1); }
-}
-
-.sequence-list .scheduled-song:active {
-  animation: wiggle 0.5s ease-in-out;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.draggable-song:active,
-.scheduled-song:active {
-  cursor: grabbing;
-  animation: wiggle 0.5s ease-in-out;
-}
-
-.order-number {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: rgba(99, 102, 241, 0.2);
-  border-radius: 50%;
-  margin-right: 0.75rem;
-  font-weight: bold;
-  color: var(--primary);
-  transition: all 0.2s ease;
-}
-
-.scheduled-song-info {
-  flex: 1;
-}
-
-.song-title {
-  font-weight: 500;
-  color: var(--light);
-}
-
-.song-artist {
-  font-size: 0.875rem;
-  color: var(--gray);
-}
-
-.song-meta {
-  display: flex;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--gray);
-  margin-top: 0.25rem;
-}
-
-.song-submitter {
-  font-style: italic;
-}
-
-.song-stats {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--gray);
-  margin-top: 0.25rem;
-}
-
-.votes-count {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: var(--primary);
-}
-
-.time-info {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: var(--gray);
-}
-
-.song-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.remove-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: var(--danger);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.remove-btn:hover {
-  background: rgba(239, 68, 68, 0.3);
-  transform: scale(1.1);
-}
-
-.empty-message {
-  padding: 2rem;
-  text-align: center;
-  color: var(--gray);
-  font-style: italic;
-}
-
-.sequence-actions {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-.save-btn {
-  padding: 0.5rem 1.5rem;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.save-btn:hover:not([disabled]) {
-  background-color: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
-}
-
-.save-btn[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.mark-played-btn {
-  padding: 0.5rem 1.5rem;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.mark-played-btn:hover:not([disabled]) {
-  background-color: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
-}
-
-.mark-played-btn[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 自定义通知样式 */
-.notifications-container {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 9999; /* 使用极高的z-index值 */
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  width: 300px;
-  pointer-events: none; /* 允许点击通知下方的元素 */
-}
-
-.notification {
-  background: rgba(15, 23, 42, 0.98); /* 几乎不透明的背景 */
-  border-left: 4px solid var(--primary);
-  border-radius: 0.375rem;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1); /* 增强阴影 */
-  transform: translateX(100%);
-  opacity: 0;
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-  pointer-events: auto; /* 恢复通知本身的点击事件 */
-  isolation: isolate; /* 创建新的层叠上下文 */
-  will-change: transform, opacity; /* 优化动画性能 */
-}
-
-.notification.visible {
-  transform: translateX(0);
-  opacity: 1;
-}
-
-.notification-icon {
-  flex-shrink: 0;
-}
-
-.notification-content {
-  flex: 1;
-  font-size: 0.875rem;
-  color: var(--light);
-}
-
-.notification-success {
-  border-color: #10b981;
-}
-
-.notification-success .notification-icon {
-  color: #10b981;
-}
-
-.notification-error {
-  border-color: #ef4444;
-}
-
-.notification-error .notification-icon {
-  color: #ef4444;
-}
-
-.notification-warning {
-  border-color: #f59e0b;
-}
-
-.notification-warning .notification-icon {
-  color: #f59e0b;
-}
-
-.notification-info {
-  border-color: #3b82f6;
-}
-
-.notification-info .notification-icon {
-  color: #3b82f6;
-}
-
-/* 通知动画 */
-.notification-enter-active,
-.notification-leave-active {
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-}
-
-.notification-enter-from,
-.notification-leave-to {
-  transform: translateX(100%);
-  opacity: 0;
-}
-
-/* 确认对话框样式 */
-.confirm-dialog-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(5px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1200; /* 确保低于通知的z-index */
-  animation: fadeIn 0.2s ease-out;
-}
-
-.confirm-dialog {
-  background: rgba(30, 41, 59, 0.95);
-  border-radius: 0.5rem;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  animation: dialogEnter 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-}
-
-@keyframes dialogEnter {
-  from {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.confirm-dialog-header {
-  padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.confirm-dialog-header h3 {
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #ffffff;
   margin: 0;
-  color: var(--light);
-  font-size: 1.25rem;
 }
 
-.confirm-dialog-content {
-  padding: 1.5rem 1rem;
-  color: var(--gray);
-}
-
-.confirm-dialog-actions {
-  padding: 1rem;
+.content-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 12px;
 }
 
-.confirm-dialog-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.content-body {
+  padding: 40px;
 }
 
-.confirm-dialog-cancel {
-  background: rgba(30, 41, 59, 0.6);
-  color: var(--gray);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.content-section {
+  background: #111111;
+  border-radius: 12px;
+  border: 1px solid #1f1f1f;
+  overflow: hidden;
 }
 
-.confirm-dialog-cancel:hover {
-  background: rgba(30, 41, 59, 0.8);
-}
+/* 移除重复的sidebar-footer样式 */
 
-.confirm-dialog-confirm {
-  background: var(--primary);
-  color: white;
-  border: none;
-}
-
-.confirm-dialog-confirm:hover {
-  background: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
-}
-
-/* 排序选项样式 */
-.sort-options {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  padding: 0 0.5rem;
-}
-
-.sort-options label {
-  font-size: 0.875rem;
-  color: var(--gray);
-}
-
-.sort-select {
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.25rem;
-  color: var(--light);
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.sort-select:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
-}
-
-.sort-select option {
-  background: rgba(15, 23, 42, 0.95);
-  color: var(--light);
-}
-
-/* 播放时段筛选器样式 */
-.filter-options {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem 1rem;
-  background: rgba(30, 41, 59, 0.4);
-  border-radius: 0.375rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.filter-options label {
-  font-size: 0.875rem;
-  color: var(--gray);
-  white-space: nowrap;
-}
-
-.filter-select {
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.25rem;
-  color: var(--light);
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.filter-select:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
-}
-
-.filter-select option {
-  background: rgba(15, 23, 42, 0.95);
-  color: var(--light);
-}
-
-.song-playtime {
-  font-size: 0.75rem;
-  color: var(--gray);
-  margin-top: 0.25rem;
-}
-
-/* 响应式布局 */
-@media (min-width: 768px) {
-  .dashboard-content {
-    grid-template-columns: 1fr 1fr;
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 240px;
   }
-  
-  .songs-section, .schedule-section, .users-section, .notifications-section, .playtimes-section, .semesters-section {
-    grid-column: span 2;
+
+  .main-content {
+    margin-left: 240px;
+  }
+
+  .content-body {
+    padding: 24px;
   }
 }
 
 @media (max-width: 768px) {
-  .dashboard {
-    padding: 1rem;
-  }
-  
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .dashboard-tabs {
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
-  }
-  
-  .schedule-container {
-    grid-template-columns: 1fr;
-    height: auto; /* 在移动端自动高度 */
-    gap: 2rem; /* 增加垂直间距 */
+  .sidebar {
+    width: 100%;
+    position: relative;
+    height: auto;
   }
 
-  .song-list-panel, .sequence-panel {
-    min-height: 300px; /* 给拖拽区域一个最小高度 */
+  .main-content {
+    margin-left: 0;
   }
-  
-  .notifications-container {
-    width: 90%;
-    right: 5%;
+
+  .content-header {
+    padding: 20px 24px 16px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .content-body {
+    padding: 20px;
   }
 }
-
-.playtime-selector {
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background: rgba(15, 23, 42, 0.6);
-  border-radius: 0.5rem;
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.playtime-selector label {
-  font-weight: 500;
-  color: var(--light);
-  margin-bottom: 0.25rem;
-}
-
-.playtime-select {
-  width: 100%;
-  padding: 0.5rem;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.375rem;
-  color: var(--light);
-  font-size: 0.875rem;
-  transition: all 0.3s ease;
-}
-
-.playtime-select:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-}
-
-.playtime-select option {
-  background: #1e293b;
-  color: var(--light);
-  padding: 0.5rem;
-}
-
-.fixed-playtime {
-  width: 100%;
-  padding: 0.5rem;
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.375rem;
-  color: var(--gray);
-  font-size: 0.875rem;
-}
-
-.playtime-hint {
-  margin-top: 0.25rem;
-  color: var(--gray);
-  font-size: 0.75rem;
-}
-
-.preferred-time-container {
-  display: flex;
-  align-items: center;
-  margin-top: 0.25rem;
-  background: rgba(139, 92, 246, 0.1);
-  border-radius: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  width: fit-content;
-}
-
-.preferred-time-label {
-  font-size: 0.75rem;
-  color: #8b5cf6; /* 使用固定颜色 */
-  font-weight: 500;
-  margin-right: 0.25rem;
-}
-
-.preferred-time {
-  font-size: 0.75rem;
-  color: #8b5cf6; /* 使用固定颜色代替变量 */
-  font-weight: 600;
-}
-
-/* 排期加载动画样式 */
-.schedule-loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 0;
-  height: 300px;
-}
-
-.schedule-loading-spinner {
-  margin-bottom: 1rem;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(99, 102, 241, 0.2);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.schedule-loading-text {
-  color: var(--gray);
-  font-size: 1rem;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-</style> 
+</style>

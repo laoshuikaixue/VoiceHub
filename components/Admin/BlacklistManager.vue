@@ -321,9 +321,11 @@ onMounted(() => {
 
 <style scoped>
 .blacklist-manager {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
+  padding: 24px;
+  background: #111111;
+  border-radius: 12px;
+  border: 1px solid #1f1f1f;
 }
 
 .header {
@@ -341,11 +343,11 @@ onMounted(() => {
 }
 
 .add-section, .filter-section, .blacklist-section {
-  background: rgba(255, 255, 255, 0.05);
+  background: #1a1a1a;
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid #2a2a2a;
 }
 
 .add-section h4, .blacklist-section h4 {

@@ -261,13 +261,16 @@ const formatTime = (timeString) => {
 
 .notification-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 8px;
-  height: 8px;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background-color: var(--danger);
+  background-color: #ff4444;
+  border: 2px solid #121318;
   display: block;
+  z-index: 10;
+  box-shadow: 0 0 0 1px rgba(255, 68, 68, 0.3);
 }
 
 .notifications-dropdown {

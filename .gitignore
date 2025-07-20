@@ -13,6 +13,10 @@ node_modules
 logs
 *.log
 
+# Backups
+backups/
+*.backup
+
 # Misc
 .DS_Store
 .fleet

@@ -505,9 +505,10 @@ const cancelForm = () => {
 
 <style scoped>
 .play-time-manager {
-  background: rgba(15, 23, 42, 0.3);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
+  background: #111111;
+  border: 1px solid #1f1f1f;
+  border-radius: 12px;
+  padding: 24px;
   position: relative;
   width: 100%;
 }
@@ -671,8 +672,9 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  border-radius: 0.5rem;
-  background: rgba(30, 41, 59, 0.4);
+  border-radius: 8px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
   text-align: center;
 }
 
@@ -700,8 +702,9 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  border-radius: 0.5rem;
-  background: rgba(30, 41, 59, 0.4);
+  border-radius: 8px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
   text-align: center;
   min-height: 250px;
 }
@@ -738,11 +741,11 @@ input:checked + .slider:before {
 }
 
 .play-time-card {
-  background: rgba(30, 41, 59, 0.4);
-  border-radius: 0.5rem;
-  padding: 1.25rem;
+  background: #1a1a1a;
+  border-radius: 8px;
+  padding: 20px;
   transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid #2a2a2a;
   display: flex;
   flex-direction: column;
   height: 100%;

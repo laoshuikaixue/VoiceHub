@@ -121,9 +121,9 @@
 
               <!-- 初始状态 -->
               <div v-else-if="!searching" class="initial-state" key="initial">
-                <div class="initial-icon">🎵</div>
-                <p class="initial-text">输入歌曲名称开始搜索</p>
-                <p class="initial-hint">支持网易云音乐和QQ音乐</p>
+                <div class="search-illustration">
+                  <img src="/public/images/search.svg" alt="搜索歌曲" class="search-svg" />
+                </div>
               </div>
             </Transition>
           </div>
@@ -134,10 +134,10 @@
           v-if="playTimeSelectionEnabled && playTimes.length > 0"
           class="form-group"
         >
-          <label for="playTime">期望播出日期</label>
+          <label for="playTime">期望播出时段</label>
           <div class="input-wrapper">
             <select id="playTime" v-model="preferredPlayTimeId" class="form-select">
-              <option value="">选择日期</option>
+              <option value="">选择时段</option>
               <option
                 v-for="playTime in enabledPlayTimes"
                 :key="playTime.id"
@@ -983,19 +983,15 @@ const stopPlaying = () => {
   border-radius: 13px;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-  height: 0; /* 强制flex子元素计算高度 */
+  min-height: 400px;
   padding: 1rem 1.5rem 1.5rem 1.5rem; /* 上边距小一点 */
 }
 
 .results-content {
   flex: 1;
-  min-height: 0;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 0; /* 强制flex子元素计算高度 */
+  min-height: 300px;
 }
 
 /* 加载状态 */
@@ -1034,8 +1030,7 @@ const stopPlaying = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  height: 0; /* 强制flex子元素计算高度 */
+  min-height: 200px;
 }
 
 .results-grid {
@@ -1045,8 +1040,7 @@ const stopPlaying = () => {
   flex-direction: column;
   gap: 1rem;
   padding-right: 0.5rem;
-  min-height: 0;
-  height: 0; /* 强制flex子元素计算高度 */
+  min-height: 200px;
 }
 
 /* 滚动条样式 */
@@ -1079,6 +1073,7 @@ const stopPlaying = () => {
   text-align: center;
   gap: 1rem;
   padding: 2rem;
+  min-height: 300px;
 }
 
 .empty-icon,
@@ -1101,6 +1096,24 @@ const stopPlaying = () => {
   color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
   margin: 0;
+}
+
+/* 搜索插图样式 */
+.search-illustration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.search-svg {
+  width: 30%;
+  max-width: 400px;
+  min-width: 200px;
+  height: auto;
+  object-fit: contain;
 }
 
 /* 手动输入触发按钮 */
@@ -1592,8 +1605,8 @@ const stopPlaying = () => {
 @media (max-width: 768px) {
   .request-form {
     flex-direction: column;
-    height: auto;
     min-height: 100vh;
+    height: auto;
   }
 
   .rules-section {
@@ -1605,12 +1618,31 @@ const stopPlaying = () => {
 
   .form-container {
     width: 100%;
-    height: auto;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 60vh;
+  }
+
+  .song-request-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 60vh;
   }
 
   .search-results-container {
-    min-height: 300px;
+    flex: 1;
+    min-height: 50vh;
+    height: auto;
+    padding: 1rem;
+    overflow: visible;
+  }
+
+  .results-content {
+    height: auto;
+    min-height: 40vh;
+    overflow: visible;
   }
 
   /* 移动端搜索区域 */
@@ -1618,6 +1650,7 @@ const stopPlaying = () => {
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
+    margin-bottom: 1rem;
   }
 
   .search-label {
@@ -1771,6 +1804,18 @@ const stopPlaying = () => {
   .btn {
     width: 100%;
     padding: 0.75rem;
+  }
+
+  /* 移动端搜索插图 */
+  .search-svg {
+    width: 50%;
+    max-width: 250px;
+    min-width: 120px;
+  }
+
+  .search-illustration {
+    padding: 0.5rem;
+    min-height: 120px;
   }
 }
 </style>

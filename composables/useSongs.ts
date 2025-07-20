@@ -142,7 +142,10 @@ export const useSongs = () => {
                 played: false, // 默认未播放
                 playedAt: null,
                 semester: null,
-                createdAt: new Date().toISOString() // 使用当前时间作为默认值
+                createdAt: new Date().toISOString(), // 使用当前时间作为默认值
+                cover: schedule.song.cover || null,
+                musicPlatform: schedule.song.musicPlatform || null,
+                musicId: schedule.song.musicId || null
               };
               songsMap.set(songId, completeSong);
             }
