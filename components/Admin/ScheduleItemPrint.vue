@@ -193,49 +193,88 @@ const handleImageError = (event) => {
   .schedule-item-print {
     color: #000 !important;
     background: #fff !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
   }
-  
+
+  .item-content {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 12px !important;
+  }
+
   .sequence-number {
     background: #f0f0f0 !important;
     color: #000 !important;
+    width: 30px !important;
+    height: 30px !important;
+    flex-shrink: 0 !important;
   }
-  
+
+  .cover-section {
+    width: 40px !important;
+    height: 40px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .song-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
   .song-title {
     color: #000 !important;
+    font-size: 16px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
-  
+
   .song-artist,
   .label,
   .value {
     color: #333 !important;
   }
-  
+
   .time-range {
     color: #666 !important;
   }
+
+  .requester-info,
+  .votes-info,
+  .playtime-info {
+    display: flex !important;
+    align-items: center !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
 }
 
-/* 响应式布局 */
-@media (max-width: 768px) {
+/* 响应式布局 - 仅在屏幕显示时应用，打印时不应用 */
+@media screen and (max-width: 768px) {
   .item-content {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .sequence-number {
     align-self: flex-start;
   }
-  
+
   .cover-section {
     width: 60px;
     height: 60px;
   }
-  
+
   .song-info {
     width: 100%;
   }
-  
+
   .requester-info,
   .votes-info,
   .playtime-info {

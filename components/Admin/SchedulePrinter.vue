@@ -157,7 +157,7 @@
             <!-- 页面头部 -->
             <div class="page-header">
               <div class="logo-section">
-                <img src="/images/logo.jpg" alt="VoiceHub Logo" class="logo" />
+                <img :src="logoUrl" alt="VoiceHub Logo" class="logo" />
                 <div class="title-section">
                   <h1>{{ siteTitle }}</h1>
                   <h2>广播排期表</h2>
@@ -265,6 +265,14 @@ const { canPrintSchedule } = usePermissions()
 // 配置
 const config = useRuntimeConfig()
 const siteTitle = config.public.siteTitle || 'VoiceHub'
+
+// Logo URL处理，避免开发模式路径问题
+const logoUrl = computed(() => {
+  if (process.client) {
+    return new URL('/images/logo.jpg', window.location.origin).href
+  }
+  return '/images/logo.jpg'
+})
 
 // 响应式数据
 const schedules = ref([])
@@ -466,71 +474,125 @@ const refreshPreview = async () => {
 
 const printSchedule = async () => {
   try {
-    // 动态导入PDF库
-    const { default: jsPDF } = await import('jspdf')
-    const { default: html2canvas } = await import('html2canvas')
+    // 复用PDF导出逻辑，但用于打印
+    await exportPDFForPrint()
+  } catch (error) {
+    console.error('打印失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('打印失败: ' + error.message, 'error')
+    }
+  }
+}
 
-    if (!previewContent.value) {
-      throw new Error('预览内容未找到')
+// 专门用于打印的PDF生成函数
+const exportPDFForPrint = async () => {
+  // 动态导入PDF库
+  const { default: jsPDF } = await import('jspdf')
+  const { default: html2canvas } = await import('html2canvas')
+
+  if (!previewContent.value) {
+    throw new Error('预览内容未找到')
+  }
+
+  // 获取预览页面元素
+  const printPage = previewContent.value.querySelector('.print-page')
+  if (!printPage) {
+    throw new Error('打印页面元素未找到')
+  }
+
+  // 创建PDF - 使用选择的纸张大小和方向
+  const orientation = settings.value.orientation === 'landscape' ? 'l' : 'p'
+  const format = settings.value.paperSize.toLowerCase()
+  const pdf = new jsPDF(orientation, 'mm', format)
+
+  const pageWidth = pdf.internal.pageSize.getWidth()
+  const pageHeight = pdf.internal.pageSize.getHeight()
+  const margin = 10 // 页边距
+
+  // 克隆预览内容，保持原有样式
+  const clonedPage = printPage.cloneNode(true)
+
+  // 创建PDF渲染容器，设置为纸张大小
+  const pdfContainer = document.createElement('div')
+  pdfContainer.style.cssText = `
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: -1;
+    width: ${pageWidth}mm;
+    background: white;
+    color: black;
+    box-sizing: border-box;
+  `
+
+  // 调整克隆页面的样式以适配纸张大小
+  clonedPage.style.cssText = `
+    width: ${pageWidth - margin * 2}mm !important;
+    max-width: ${pageWidth - margin * 2}mm !important;
+    margin: ${margin}mm !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    box-sizing: border-box !important;
+    transform-origin: top left !important;
+  `
+
+  // 确保所有子元素的颜色正确
+  const allElements = clonedPage.querySelectorAll('*')
+  allElements.forEach(el => {
+    if (el.style) {
+      el.style.color = 'black'
     }
 
-    // 获取打印页面元素
-    const printPage = previewContent.value.querySelector('.print-page')
-    if (!printPage) {
-      throw new Error('打印页面元素未找到')
+    if (el.classList.contains('print-page') ||
+        el.classList.contains('page-header') ||
+        el.classList.contains('page-footer') ||
+        el.classList.contains('schedule-content')) {
+      el.style.background = 'white'
+      el.style.backgroundColor = 'white'
     }
+  })
 
-    // 克隆元素以避免修改原始DOM
-    const clonedPage = printPage.cloneNode(true)
+  pdfContainer.appendChild(clonedPage)
+  document.body.appendChild(pdfContainer)
 
-    // 预处理所有图片
-    await preprocessImages(clonedPage)
+  // 预处理图片
+  await preprocessImages(clonedPage)
 
-    // 临时添加到DOM中进行渲染
-    clonedPage.style.position = 'absolute'
-    clonedPage.style.left = '-9999px'
-    clonedPage.style.top = '-9999px'
-    document.body.appendChild(clonedPage)
+  try {
+    // 等待渲染完成
+    await new Promise(resolve => setTimeout(resolve, 500))
 
-    try {
-      // 生成canvas
-      const canvas = await html2canvas(clonedPage, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false
-      })
+    // 使用html2canvas转换
+    const canvas = await html2canvas(clonedPage, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      width: clonedPage.offsetWidth,
+      height: clonedPage.offsetHeight
+    })
 
-      // 移除临时元素
-      document.body.removeChild(clonedPage)
-
-    // 创建PDF - 使用选择的纸张大小和方向
-    const orientation = settings.value.orientation === 'landscape' ? 'l' : 'p'
-    const format = settings.value.paperSize.toLowerCase()
-
-    const pdf = new jsPDF(orientation, 'mm', format)
-    const pageWidth = pdf.internal.pageSize.getWidth()
-    const pageHeight = pdf.internal.pageSize.getHeight()
+    // 移除临时容器
+    document.body.removeChild(pdfContainer)
 
     // 计算图片在PDF中的尺寸
-    const imgWidth = pageWidth
-    const imgHeight = (canvas.height * pageWidth) / canvas.width
-    let heightLeft = imgHeight
+    const availableWidth = pageWidth - margin * 2
+    const availableHeight = pageHeight - margin * 2
 
-    // 添加第一页
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight)
-    heightLeft -= pageHeight
+    let imgWidth = availableWidth
+    let imgHeight = (canvas.height * imgWidth) / canvas.width
 
-    // 如果内容超过一页，添加更多页面
-    while (heightLeft > 0) {
-      const position = heightLeft - imgHeight
-      pdf.addPage()
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
+    if (imgHeight > availableHeight) {
+      imgHeight = availableHeight
+      imgWidth = (canvas.width * imgHeight) / canvas.height
     }
 
-    // 生成PDF的Blob
+    const xOffset = (pageWidth - imgWidth) / 2
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', xOffset, margin, imgWidth, imgHeight)
+
+    // 生成PDF的Blob用于打印
     const pdfBlob = pdf.output('blob')
     const pdfUrl = URL.createObjectURL(pdfBlob)
 
@@ -547,21 +609,15 @@ const printSchedule = async () => {
       }, 1000)
     }
 
-      if (window.$showNotification) {
-        window.$showNotification('正在准备打印...', 'info')
-      }
-    } catch (canvasError) {
-      // 移除临时元素
-      if (document.body.contains(clonedPage)) {
-        document.body.removeChild(clonedPage)
-      }
-      throw canvasError
-    }
-  } catch (error) {
-    console.error('打印失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('打印失败: ' + error.message, 'error')
+      window.$showNotification('正在准备打印...', 'info')
     }
+  } catch (canvasError) {
+    // 移除临时容器
+    if (document.body.contains(pdfContainer)) {
+      document.body.removeChild(pdfContainer)
+    }
+    throw canvasError
   }
 }
 
@@ -619,76 +675,174 @@ const exportPDF = async () => {
       throw new Error('预览内容未找到')
     }
 
-    // 获取打印页面元素
+    // 获取预览页面元素
     const printPage = previewContent.value.querySelector('.print-page')
     if (!printPage) {
       throw new Error('打印页面元素未找到')
     }
 
-    // 克隆元素以避免修改原始DOM
+    // 创建PDF - 使用选择的纸张大小和方向
+    const orientation = settings.value.orientation === 'landscape' ? 'l' : 'p'
+    const format = settings.value.paperSize.toLowerCase()
+    const pdf = new jsPDF(orientation, 'mm', format)
+
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const margin = 10 // 页边距
+
+    // 克隆预览内容，保持原有样式
     const clonedPage = printPage.cloneNode(true)
 
-    // 预处理所有图片
+    // 创建PDF渲染容器，设置为纸张大小
+    const pdfContainer = document.createElement('div')
+    pdfContainer.style.cssText = `
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      z-index: -1;
+      width: ${pageWidth}mm;
+      background: white;
+      color: black;
+      box-sizing: border-box;
+    `
+
+    // 调整克隆页面的样式以适配纸张大小
+    clonedPage.style.cssText = `
+      width: ${pageWidth - margin * 2}mm !important;
+      max-width: ${pageWidth - margin * 2}mm !important;
+      margin: ${margin}mm !important;
+      padding: 0 !important;
+      background: white !important;
+      color: black !important;
+      box-sizing: border-box !important;
+      transform-origin: top left !important;
+    `
+
+    // 确保所有子元素的颜色正确
+    const allElements = clonedPage.querySelectorAll('*')
+    allElements.forEach(el => {
+      // 强制设置文字颜色为黑色
+      if (el.style) {
+        el.style.color = 'black'
+      }
+
+      // 处理背景色
+      if (el.classList.contains('print-page') ||
+          el.classList.contains('page-header') ||
+          el.classList.contains('page-footer') ||
+          el.classList.contains('schedule-content')) {
+        el.style.background = 'white'
+        el.style.backgroundColor = 'white'
+      }
+    })
+
+    pdfContainer.appendChild(clonedPage)
+    document.body.appendChild(pdfContainer)
+
+    // 预处理图片
     await preprocessImages(clonedPage)
 
-    // 临时添加到DOM中进行渲染
-    clonedPage.style.position = 'absolute'
-    clonedPage.style.left = '-9999px'
-    clonedPage.style.top = '-9999px'
-    document.body.appendChild(clonedPage)
-
     try {
-      // 生成canvas
+      // 等待渲染完成
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // 使用html2canvas转换，保持预览的质量
       const canvas = await html2canvas(clonedPage, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        logging: false
+        logging: false,
+        width: clonedPage.offsetWidth,
+        height: clonedPage.offsetHeight
       })
 
-      // 移除临时元素
-      document.body.removeChild(clonedPage)
+      // 移除临时容器
+      document.body.removeChild(pdfContainer)
 
-    // 创建PDF - 使用选择的纸张大小和方向
-    const orientation = settings.value.orientation === 'landscape' ? 'l' : 'p'
-    const format = settings.value.paperSize.toLowerCase()
+      // 计算图片在PDF中的尺寸，保持宽高比
+      const availableWidth = pageWidth - margin * 2
+      const availableHeight = pageHeight - margin * 2
 
-    const pdf = new jsPDF(orientation, 'mm', format)
-    const pageWidth = pdf.internal.pageSize.getWidth()
-    const pageHeight = pdf.internal.pageSize.getHeight()
+      let imgWidth = availableWidth
+      let imgHeight = (canvas.height * imgWidth) / canvas.width
 
-    // 计算图片在PDF中的尺寸
-    const imgWidth = pageWidth
-    const imgHeight = (canvas.height * pageWidth) / canvas.width
-    let heightLeft = imgHeight
+      // 如果高度超出页面，按高度重新计算
+      if (imgHeight > availableHeight) {
+        imgHeight = availableHeight
+        imgWidth = (canvas.width * imgHeight) / canvas.height
+      }
 
-    // 添加第一页
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight)
-    heightLeft -= pageHeight
+      const xOffset = (pageWidth - imgWidth) / 2
+      let currentY = margin
+      let remainingHeight = imgHeight
+      let sourceY = 0
 
-    // 如果内容超过一页，添加更多页面
-    while (heightLeft > 0) {
-      const position = heightLeft - imgHeight
-      pdf.addPage()
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
-    }
+      // 添加第一页
+      const firstPageHeight = Math.min(remainingHeight, availableHeight)
 
-    // 生成文件名
-    const dateRange = formatDateRange()
-    const fileName = `广播排期表_${dateRange}_${new Date().toISOString().split('T')[0]}.pdf`
+      if (firstPageHeight === imgHeight) {
+        // 内容适合一页
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', xOffset, currentY, imgWidth, imgHeight)
+      } else {
+        // 需要分页
+        const firstPageCanvas = document.createElement('canvas')
+        const firstPageCtx = firstPageCanvas.getContext('2d')
+        firstPageCanvas.width = canvas.width
+        firstPageCanvas.height = (firstPageHeight / imgHeight) * canvas.height
 
-    // 保存PDF
-    pdf.save(fileName)
+        firstPageCtx.drawImage(
+          canvas,
+          0, sourceY,
+          canvas.width, firstPageCanvas.height,
+          0, 0,
+          canvas.width, firstPageCanvas.height
+        )
+
+        pdf.addImage(firstPageCanvas.toDataURL('image/png'), 'PNG', xOffset, currentY, imgWidth, firstPageHeight)
+
+        remainingHeight -= firstPageHeight
+        sourceY += firstPageCanvas.height
+
+        // 添加后续页面
+        while (remainingHeight > 0) {
+          pdf.addPage()
+
+          const pageContentHeight = Math.min(remainingHeight, availableHeight)
+          const pageCanvas = document.createElement('canvas')
+          const pageCtx = pageCanvas.getContext('2d')
+          pageCanvas.width = canvas.width
+          pageCanvas.height = (pageContentHeight / imgHeight) * canvas.height
+
+          pageCtx.drawImage(
+            canvas,
+            0, sourceY,
+            canvas.width, pageCanvas.height,
+            0, 0,
+            canvas.width, pageCanvas.height
+          )
+
+          pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', xOffset, margin, imgWidth, pageContentHeight)
+
+          remainingHeight -= pageContentHeight
+          sourceY += pageCanvas.height
+        }
+      }
+
+      // 生成文件名
+      const dateRange = formatDateRange()
+      const fileName = `广播排期表_${dateRange}_${new Date().toISOString().split('T')[0]}.pdf`
+
+      // 保存PDF
+      pdf.save(fileName)
 
       if (window.$showNotification) {
         window.$showNotification('PDF导出成功', 'success')
       }
     } catch (canvasError) {
-      // 移除临时元素
-      if (document.body.contains(clonedPage)) {
-        document.body.removeChild(clonedPage)
+      // 移除临时容器
+      if (document.body.contains(pdfContainer)) {
+        document.body.removeChild(pdfContainer)
       }
       throw canvasError
     }
@@ -700,6 +854,167 @@ const exportPDF = async () => {
   } finally {
     isExporting.value = false
   }
+}
+
+// 生成PDF专用的排期内容
+const generatePDFScheduleContent = () => {
+  let html = ''
+
+  const scheduleGroups = groupedSchedules.value
+  const dateKeys = Object.keys(scheduleGroups)
+
+  if (dateKeys.length === 0) {
+    return '<p style="text-align: center; color: #666; font-size: 16px; margin: 40px 0;">暂无排期数据</p>'
+  }
+
+  dateKeys.forEach(dateKey => {
+    const dateGroup = scheduleGroups[dateKey]
+
+    // 日期标题
+    html += `
+      <div style="
+        font-size: 18px;
+        font-weight: bold;
+        color: #000;
+        margin: 20px 0 15px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #ddd;
+      ">
+        ${formatDate(dateGroup.date)}
+      </div>
+    `
+
+    const playTimeKeys = Object.keys(dateGroup.playTimes || {})
+    if (playTimeKeys.length > 0) {
+      // 按时段分组显示
+      playTimeKeys.forEach(playTimeKey => {
+        const playTimeData = dateGroup.playTimes[playTimeKey]
+        if (playTimeData.schedules.length > 0) {
+          html += `
+            <div style="margin-bottom: 20px;">
+              <h4 style="
+                font-size: 16px;
+                font-weight: 600;
+                color: #333;
+                margin: 10px 0 8px 0;
+              ">
+                ${playTimeData.playTime?.name || '未指定时段'}
+                ${playTimeData.playTime?.startTime && playTimeData.playTime?.endTime ?
+                  `(${playTimeData.playTime.startTime}-${playTimeData.playTime.endTime})` : ''}
+              </h4>
+              ${generateScheduleItems(playTimeData.schedules)}
+            </div>
+          `
+        }
+      })
+    } else {
+      // 不分时段显示
+      html += generateScheduleItems(dateGroup.allSchedules || [])
+    }
+  })
+
+  return html
+}
+
+// 生成排期项目HTML
+const generateScheduleItems = (schedules) => {
+  return schedules.map(schedule => `
+    <div style="
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 8px;
+    ">
+      ${settings.value.showSequence ? `
+        <div style="
+          width: 30px;
+          height: 30px;
+          background: #f0f0f0;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: 14px;
+          flex-shrink: 0;
+        ">
+          ${schedule.sequence || 1}
+        </div>
+      ` : ''}
+
+      ${settings.value.showCover ? `
+        <div style="
+          width: 40px;
+          height: 40px;
+          flex-shrink: 0;
+        ">
+          ${schedule.song?.cover ?
+            `<img src="${schedule.song.cover}" alt="${schedule.song?.title || '歌曲'}" style="
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              border-radius: 4px;
+            " />` :
+            `<div style="
+              width: 100%;
+              height: 100%;
+              background: #f0f0f0;
+              border-radius: 4px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #999;
+              font-size: 12px;
+            ">♪</div>`
+          }
+        </div>
+      ` : ''}
+
+      <div style="flex: 1; min-width: 0;">
+        ${settings.value.showTitle ? `
+          <div style="
+            font-size: 16px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          ">
+            ${schedule.song?.title || '未知歌曲'}
+          </div>
+        ` : ''}
+
+        ${settings.value.showArtist ? `
+          <div style="
+            font-size: 14px;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          ">
+            ${schedule.song?.artist || '未知艺术家'}
+          </div>
+        ` : ''}
+      </div>
+
+      <div style="display: flex; gap: 12px; flex-shrink: 0; font-size: 12px; color: #666;">
+        ${settings.value.showRequester ? `
+          <span>投稿人: ${schedule.song?.requester || '未知'}</span>
+        ` : ''}
+
+        ${settings.value.showVotes ? `
+          <span>热度: ${schedule.song?.voteCount || 0}</span>
+        ` : ''}
+
+        ${settings.value.showPlayTime && schedule.playTime ? `
+          <span>时段: ${schedule.playTime?.name || '未指定'}</span>
+        ` : ''}
+      </div>
+    </div>
+  `).join('')
 }
 
 const formatDate = (dateStr) => {
@@ -1116,8 +1431,8 @@ watch(() => settings.value, () => {
 }
 
 .logo {
-  width: 48px;
-  height: 48px;
+  width: 70px;
+  height: auto;
   object-fit: contain;
   border-radius: 4px;
 }
@@ -1356,12 +1671,26 @@ watch(() => settings.value, () => {
     box-shadow: none !important;
     padding: 20mm !important;
     margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
   }
 
   .page-header,
   .schedule-content,
   .page-footer {
     color: #000000 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .schedule-content {
+    width: 100% !important;
+  }
+
+  .schedule-item-print {
+    width: 100% !important;
+    max-width: none !important;
   }
 }
 
@@ -1373,18 +1702,139 @@ watch(() => settings.value, () => {
   }
 }
 
-@media (max-width: 768px) {
+@media screen and (max-width: 768px) {
   .printer-layout {
     grid-template-columns: 1fr;
     gap: 20px;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .settings-panel {
-    order: 2;
+    order: 1;
+    height: 50vh;
+    overflow-y: auto;
+    flex-shrink: 0;
   }
 
   .preview-panel {
-    order: 1;
+    order: 2;
+    height: 50vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .preview-content {
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .setting-item {
+    margin-bottom: 16px;
+  }
+
+  .setting-select,
+  .setting-input {
+    padding: 12px;
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  .date-range {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .checkbox-group {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .checkbox-item {
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 16px;
+    min-height: 48px;
+  }
+}
+
+/* 小屏幕设备进一步优化 */
+@media screen and (max-width: 480px) {
+  .schedule-printer {
+    padding: 12px;
+  }
+
+  .printer-layout {
+    gap: 16px;
+    height: 100vh;
+  }
+
+  .settings-panel {
+    padding: 16px;
+    height: 45vh;
+    overflow-y: auto;
+  }
+
+  .preview-panel {
+    height: 55vh;
+    overflow-y: auto;
+  }
+
+  .panel-title {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .setting-item {
+    margin-bottom: 12px;
+  }
+
+  .setting-label {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .setting-select,
+  .setting-input {
+    padding: 10px;
+    font-size: 16px;
+    min-height: 40px;
+  }
+
+  .checkbox-group {
+    gap: 8px;
+  }
+
+  .checkbox-item {
+    padding: 10px;
+  }
+
+  .checkbox-item label {
+    font-size: 13px;
+  }
+
+  .action-buttons {
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 12px 16px;
+    font-size: 15px;
+    min-height: 44px;
   }
 }
 </style>

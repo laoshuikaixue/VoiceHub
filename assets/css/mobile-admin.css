@@ -1,7 +1,23 @@
 /* 移动端管理界面优化样式 */
 
+/* 确保打印时不受移动端样式影响 */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .schedule-item-print,
+  .print-page,
+  .schedule-content {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+}
+
 /* 通用移动端表单优化 */
-@media (max-width: 768px) and not print {
+@media screen and (max-width: 768px) {
   /* 模态框移动端优化 */
   .modal-overlay {
     padding: 0;
@@ -180,7 +196,7 @@
 }
 
 /* 小屏幕设备进一步优化 */
-@media (max-width: 480px) and not print {
+@media screen and (max-width: 480px) {
   .modal-content {
     border-radius: 12px 12px 0 0 !important;
   }
@@ -272,7 +288,7 @@
 }
 
 /* 横屏模式优化 */
-@media (max-width: 768px) and (orientation: landscape) and not print {
+@media screen and (max-width: 768px) and (orientation: landscape) {
   .modal-content {
     max-height: 85vh !important;
   }
@@ -291,7 +307,7 @@
 }
 
 /* 移动端专用交互优化 */
-@media (max-width: 768px) and not print {
+@media screen and (max-width: 768px) {
   /* 滑动手势支持 */
   .sidebar {
     touch-action: pan-y;
@@ -411,7 +427,7 @@
 }
 
 /* 下拉刷新支持 */
-@media (max-width: 768px) and not print {
+@media screen and (max-width: 768px) {
   .overview-dashboard,
   .user-manager,
   .role-manager {
@@ -421,7 +437,7 @@
 
 /* 安全区域适配 */
 @supports (padding: max(0px)) {
-  @media (max-width: 768px) and not print {
+  @media screen and (max-width: 768px) {
     .mobile-header {
       padding-left: max(16px, env(safe-area-inset-left));
       padding-right: max(16px, env(safe-area-inset-right));

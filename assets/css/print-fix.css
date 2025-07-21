@@ -1,0 +1,232 @@
+/* PDF导出宽度修复样式 */
+
+@media print {
+  /* 重置所有可能影响宽度的样式 */
+  * {
+    box-sizing: border-box !important;
+  }
+
+  /* 强制覆盖移动端样式 */
+  .schedule-item-print .item-content {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  .schedule-item-print .sequence-number {
+    align-self: center !important;
+  }
+
+  .schedule-item-print .cover-section {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .schedule-item-print .song-info {
+    width: auto !important;
+    flex: 1 !important;
+  }
+
+  .schedule-item-print .requester-info,
+  .schedule-item-print .votes-info,
+  .schedule-item-print .playtime-info {
+    width: auto !important;
+    justify-content: flex-end !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 确保页面容器宽度正确 */
+  html, body {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 打印页面容器 - 固定合理宽度 */
+  .print-page {
+    width: 210mm !important;
+    max-width: 210mm !important;
+    min-width: auto !important;
+    box-sizing: border-box !important;
+    margin: 0 auto !important;
+    padding: 20mm !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* 排期内容容器 */
+  .schedule-content {
+    width: 100% !important;
+    max-width: 170mm !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 排期项目 */
+  .schedule-item-print {
+    width: 100% !important;
+    max-width: 170mm !important;
+    box-sizing: border-box !important;
+    margin-bottom: 8px !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* 排期项目内容 */
+  .schedule-item-print .item-content {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 12px !important;
+    padding: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 序号 */
+  .schedule-item-print .sequence-number {
+    width: 30px !important;
+    height: 30px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #f0f0f0 !important;
+    border-radius: 50% !important;
+    font-weight: bold !important;
+    font-size: 14px !important;
+  }
+
+  /* 封面 */
+  .schedule-item-print .cover-section {
+    width: 40px !important;
+    height: 40px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .schedule-item-print .song-cover,
+  .schedule-item-print .cover-placeholder {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 4px !important;
+  }
+
+  /* 歌曲信息 */
+  .schedule-item-print .song-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+    margin-right: 12px !important;
+  }
+
+  .schedule-item-print .song-title {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #000 !important;
+    margin-bottom: 2px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .schedule-item-print .song-artist {
+    font-size: 14px !important;
+    color: #333 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* 附加信息 */
+  .schedule-item-print .requester-info,
+  .schedule-item-print .votes-info,
+  .schedule-item-print .playtime-info {
+    display: flex !important;
+    align-items: center !important;
+    font-size: 12px !important;
+    color: #666 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    margin-left: 8px !important;
+  }
+
+  .schedule-item-print .label {
+    font-weight: 500 !important;
+    margin-right: 4px !important;
+  }
+
+  .schedule-item-print .value {
+    color: #333 !important;
+  }
+
+  /* 页面头部和尾部 */
+  .page-header,
+  .page-footer {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    color: #000 !important;
+  }
+
+  .page-header {
+    text-align: center !important;
+    margin-bottom: 20px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 2px solid #000 !important;
+  }
+
+  .page-footer {
+    text-align: center !important;
+    margin-top: 20px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid #ccc !important;
+    font-size: 12px !important;
+    color: #666 !important;
+  }
+
+  /* 隐藏不需要打印的元素 */
+  .settings-panel,
+  .preview-header,
+  .mobile-header,
+  .sidebar,
+  .mobile-overlay,
+  .back-to-top-btn {
+    display: none !important;
+  }
+
+  /* 确保主内容区域正确显示 */
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* 移除所有阴影和边框效果 */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* 确保文字颜色正确 */
+  * {
+    color: inherit !important;
+  }
+
+  /* 页面分页控制 */
+  .print-page {
+    page-break-after: always !important;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto !important;
+  }
+
+  /* 防止内容被截断 */
+  .schedule-item-print {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+/* 专门针对PDF导出的样式 */
+@page {
+  margin: 20mm;
+  size: A4;
+}
