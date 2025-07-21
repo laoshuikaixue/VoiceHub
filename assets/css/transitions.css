@@ -1,0 +1,200 @@
+/* 页面过渡动画 */
+
+/* 通用页面过渡 */
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(1.02);
+}
+
+/* 后台页面特殊过渡 */
+.page-enter-active[data-route="dashboard"],
+.page-leave-active[data-route="dashboard"] {
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.page-enter-from[data-route="dashboard"] {
+  opacity: 0;
+  transform: translateX(100px) scale(0.95);
+  filter: blur(4px);
+}
+
+.page-leave-to[data-route="dashboard"] {
+  opacity: 0;
+  transform: translateX(-100px) scale(1.05);
+  filter: blur(4px);
+}
+
+/* 首页特殊过渡 */
+.page-enter-active[data-route="index"],
+.page-leave-active[data-route="index"] {
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.page-enter-from[data-route="index"] {
+  opacity: 0;
+  transform: translateY(30px) scale(0.96);
+  filter: blur(6px);
+}
+
+.page-leave-to[data-route="index"] {
+  opacity: 0;
+  transform: translateY(-30px) scale(1.04);
+  filter: blur(6px);
+}
+
+/* 布局过渡 */
+.layout-enter-active,
+.layout-leave-active {
+  transition: all 0.3s ease-in-out;
+}
+
+.layout-enter-from,
+.layout-leave-to {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+/* 加载动画 */
+.page-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #4f46e5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 特殊效果：从首页到后台的滑动效果 */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: absolute;
+  width: 100%;
+}
+
+.slide-left-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.slide-left-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+/* 特殊效果：从后台到首页的滑动效果 */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: absolute;
+  width: 100%;
+}
+
+.slide-right-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.slide-right-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* 淡入淡出效果 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.4s ease-in-out;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 缩放效果 */
+.scale-enter-active,
+.scale-leave-active {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.scale-enter-from {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.scale-leave-to {
+  opacity: 0;
+  transform: scale(1.1);
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .page-enter-active,
+  .page-leave-active {
+    transition-duration: 0.3s;
+  }
+  
+  .slide-left-enter-active,
+  .slide-left-leave-active,
+  .slide-right-enter-active,
+  .slide-right-leave-active {
+    transition-duration: 0.3s;
+  }
+  
+  .page-enter-from,
+  .page-leave-to {
+    transform: translateY(15px) scale(0.99);
+  }
+}
+
+/* 减少动画效果（用户偏好） */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active,
+  .layout-enter-active,
+  .layout-leave-active,
+  .slide-left-enter-active,
+  .slide-left-leave-active,
+  .slide-right-enter-active,
+  .slide-right-leave-active,
+  .scale-enter-active,
+  .scale-leave-active,
+  .fade-enter-active,
+  .fade-leave-active {
+    transition-duration: 0.1s;
+  }
+  
+  .page-enter-from,
+  .page-leave-to {
+    transform: none;
+    filter: none;
+  }
+}

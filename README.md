@@ -3,12 +3,12 @@
 这是一个使用Nuxt 3全栈框架开发的校园广播站点歌系统。系统实现了用户点歌、投票、后台排期管理以及歌单公示等功能，支持管理员通过拖拽方式进行排期管理。
 
 ## 项目截图
-<img width="3200" height="1998" alt="0ecf382ceadccca83b7ce99fdba9ee57" src="https://github.com/user-attachments/assets/0973814f-ed09-41ce-ba70-d3e6cf2f8413" />
-<img width="3200" height="1998" alt="69aa203289e55b9cc9a228d29a7670b3" src="https://github.com/user-attachments/assets/58e7f35d-3d4d-4e25-b499-5738a61953a3" />
-<img width="3200" height="1998" alt="f2a0f4b1a1525e138b02a638444ebe82" src="https://github.com/user-attachments/assets/f35f6ddd-ac7e-47c3-a114-0c117c7ff2bd" />
-<img width="3200" height="1998" alt="84bf89008487359567e06319c416e0d5" src="https://github.com/user-attachments/assets/27574823-3a7a-4a23-ae53-5c071216ca06" />
-<img width="3200" height="1998" alt="15a1afdb11699328ccc91896f8145510" src="https://github.com/user-attachments/assets/241d6725-41d7-49e2-989a-fc4cd0b91940" />
-<img width="3200" height="1998" alt="8e0826c6be5446781afd4d6a093531f1" src="https://github.com/user-attachments/assets/ab7273a1-820b-4537-ad05-34bbbde9e572" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/db932613-6694-47ec-9f2e-5379c833591f" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/719006eb-ab53-4ad1-af4a-882ce8d481db" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/f721792e-e251-4914-8e15-e929fd424d07" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/71ef19fd-e380-4358-b44e-3b4229a2273b" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/4cef5807-a3ea-4096-94be-80acdc5d8a76" />
+<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/ab7273a1-820b-4537-ad05-34bbbde9e572" />
 
 ## 主要功能
 
@@ -181,7 +181,10 @@ VoiceHub/
 ├── app.vue                # 应用入口
 ├── assets/                # 静态资源
 │   └── css/               # CSS样式文件
-│       └── main.css       # 主样式文件
+│       ├── main.css       # 主样式文件
+│       ├── variables.css  # CSS变量定义
+│       ├── components.css # 组件样式
+│       └── transitions.css # 页面过渡动画样式
 ├── components/            # 可复用组件
 │   ├── Admin/             # 管理员组件
 │   │   ├── BackupManager.vue      # 数据库备份管理组件
@@ -206,12 +209,14 @@ VoiceHub/
 │   │   └── SongList.vue           # 歌曲列表
 │   └── UI/                # 通用UI组件
 │       ├── AudioPlayer.vue        # 音乐播放器组件
+│       ├── PageTransition.vue     # 页面过渡动画组件
 │       └── ProgressBar.vue        # 进度条组件
 ├── composables/           # 组合式API函数
 │   ├── useAdmin.ts         # 管理员功能hooks
 │   ├── useAudioQuality.ts  # 音质管理hooks
 │   ├── useAuth.ts          # 认证功能hooks
 │   ├── useNotifications.ts # 通知功能hooks
+│   ├── usePermissions.ts   # 权限管理hooks
 │   ├── useProgress.ts      # 进度条功能hooks
 │   ├── useProgressEvents.ts # 进度事件功能hooks
 │   ├── useSemesters.ts     # 学期管理hooks
@@ -279,6 +284,8 @@ VoiceHub/
 │   │   └── prisma.ts       # Prisma服务端插件
 │   ├── services/           # 服务层
 │   │   └── notificationService.ts # 通知服务
+│   ├── utils/              # 服务端工具函数
+│   │   └── permissions.js  # 权限系统配置
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
 │   └── index.ts            # 全局类型定义

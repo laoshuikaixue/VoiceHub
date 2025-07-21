@@ -8,6 +8,7 @@ export default defineNuxtConfig({
     '~/assets/css/variables.css',
     '~/assets/css/components.css',
     '~/assets/css/main.css',
+    '~/assets/css/transitions.css',
   ],
   
   // 配置运行时配置
@@ -25,6 +26,8 @@ export default defineNuxtConfig({
   
   // 配置环境变量
   app: {
+    pageTransition: { name: 'page', mode: 'out-in' },
+    layoutTransition: { name: 'layout', mode: 'out-in' },
     head: {
       title: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
       meta: [

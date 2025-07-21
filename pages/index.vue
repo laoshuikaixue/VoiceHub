@@ -850,6 +850,22 @@ const handleLogout = () => {
   }
 }
 
+// 处理进入后台的点击动画
+const handleDashboardClick = (event) => {
+  const button = event.currentTarget
+  button.classList.add('clicking')
+
+  // 添加涟漪效果
+  const ripple = document.createElement('span')
+  ripple.classList.add('ripple')
+  button.appendChild(ripple)
+
+  setTimeout(() => {
+    button.classList.remove('clicking')
+    ripple.remove()
+  }, 300)
+}
+
 // 添加查看通知并标记为已读
 const viewNotification = async (notification) => {
   if (!notification.read) {
