@@ -32,6 +32,7 @@
               <div
                 class="progress-bar"
                 @mousedown="startDrag"
+                @touchstart="startTouchDrag"
                 @click="seekToPosition"
                 ref="progressBar"
               >
@@ -428,6 +429,49 @@ const endDrag = () => {
   isDragging.value = false
   document.removeEventListener('mousemove', onDrag)
   document.removeEventListener('mouseup', endDrag)
+  // 清理触摸事件
+  document.removeEventListener('touchmove', onTouchDrag)
+  document.removeEventListener('touchend', endTouchDrag)
+}
+
+// 触摸事件处理
+const startTouchDrag = (event) => {
+  if (event.touches.length !== 1) return // 只响应单指触摸
+
+  isDragging.value = true
+  const touch = event.touches[0]
+  dragStartX.value = touch.clientX
+  dragStartProgress.value = progress.value
+
+  document.addEventListener('touchmove', onTouchDrag, { passive: false })
+  document.addEventListener('touchend', endTouchDrag)
+  event.preventDefault()
+}
+
+const onTouchDrag = (event) => {
+  if (!isDragging.value || !progressBar.value || event.touches.length !== 1) return
+
+  const touch = event.touches[0]
+  const rect = progressBar.value.getBoundingClientRect()
+  const deltaX = touch.clientX - dragStartX.value
+  const progressBarWidth = rect.width
+  const deltaProgress = (deltaX / progressBarWidth) * 100
+
+  let newProgress = dragStartProgress.value + deltaProgress
+  newProgress = Math.max(0, Math.min(100, newProgress))
+
+  const percentage = newProgress
+  if (audioPlayer.value && duration.value) {
+    audioPlayer.value.currentTime = (percentage / 100) * duration.value
+  }
+
+  event.preventDefault()
+}
+
+const endTouchDrag = () => {
+  isDragging.value = false
+  document.removeEventListener('touchmove', onTouchDrag)
+  document.removeEventListener('touchend', endTouchDrag)
 }
 
 // 添加进度条点击跳转功能
@@ -471,6 +515,8 @@ onUnmounted(() => {
   // 清理拖拽事件监听器
   document.removeEventListener('mousemove', onDrag)
   document.removeEventListener('mouseup', endDrag)
+  document.removeEventListener('touchmove', onTouchDrag)
+  document.removeEventListener('touchend', endTouchDrag)
   // 移除点击外部监听
   document.removeEventListener('click', handleClickOutside)
 })
@@ -743,6 +789,18 @@ onUnmounted(() => {
   cursor: pointer;
   overflow: visible;
   transition: height 0.2s ease;
+  touch-action: none; /* 防止触摸时的默认行为 */
+}
+
+/* 增加触摸区域但不影响视觉 */
+.progress-bar::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  bottom: -10px;
+  left: 0;
+  right: 0;
+  z-index: 1;
 }
 
 .progress-bar:hover {
@@ -1036,6 +1094,18 @@ onUnmounted(() => {
     width: 16px;
     height: 16px;
     right: -8px;
+    opacity: 1; /* 移动端始终显示 */
+    transform: translateY(-50%) scale(1);
+  }
+
+  .progress-bar {
+    height: 6px; /* 保持原有高度 */
+  }
+
+  /* 移动端更大的触摸区域 */
+  .progress-bar::before {
+    top: -15px;
+    bottom: -15px;
   }
 
   .progress-bar:hover .progress-thumb {

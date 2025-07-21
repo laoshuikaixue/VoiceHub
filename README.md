@@ -8,6 +8,7 @@
 <img width="3200" height="1998" alt="f2a0f4b1a1525e138b02a638444ebe82" src="https://github.com/user-attachments/assets/f35f6ddd-ac7e-47c3-a114-0c117c7ff2bd" />
 <img width="3200" height="1998" alt="84bf89008487359567e06319c416e0d5" src="https://github.com/user-attachments/assets/27574823-3a7a-4a23-ae53-5c071216ca06" />
 <img width="3200" height="1998" alt="15a1afdb11699328ccc91896f8145510" src="https://github.com/user-attachments/assets/241d6725-41d7-49e2-989a-fc4cd0b91940" />
+<img width="3200" height="1998" alt="8e0826c6be5446781afd4d6a093531f1" src="https://github.com/user-attachments/assets/ab7273a1-820b-4537-ad05-34bbbde9e572" />
 
 ## 主要功能
 
@@ -25,6 +26,7 @@
 ### 📅 排期管理
 - **排期管理**：管理员可以通过拖拽界面进行歌曲排期和顺序管理
 - **播出时段**：灵活配置播出时段，**支持多时段管理**
+- **打印排期**：支持自定义纸张大小、内容选择和PDF导出的打印功能
 - **学期管理**：管理员可设置当前学期，自动关联点歌记录
 - **公开展示**：公开展示歌曲播放排期，按日期分组展示
 
@@ -51,6 +53,7 @@
 - **ORM**：Prisma
 - **认证**：JWT Token认证
 - **音乐API**：网易云音乐、QQ音乐第三方API
+- **打印导出**：jsPDF、html2canvas，支持PDF生成和图片处理
 - **样式**：CSS变量，自定义动画，玻璃态设计
 - **部署**：支持Vercel和Netlify一键部署
 
@@ -187,6 +190,8 @@ VoiceHub/
 │   │   ├── PlayTimeManager.vue    # 播放时间管理组件
 │   │   ├── RoleManager.vue        # 角色管理组件
 │   │   ├── ScheduleForm.vue       # 排期表单组件
+│   │   ├── SchedulePrinter.vue    # 排期打印组件
+│   │   ├── ScheduleItemPrint.vue  # 排期项目打印组件
 │   │   ├── SemesterManager.vue    # 学期管理组件
 │   │   └── UserManager.vue        # 用户管理组件
 │   ├── Auth/              # 认证相关组件
@@ -262,6 +267,8 @@ VoiceHub/
 │   │   ├── notifications/  # 通知API
 │   │   ├── play-times/     # 播放时间API
 │   │   ├── progress/       # 进度API
+│   │   ├── proxy/          # 代理API
+│   │   │   └── image.get.ts # 图片代理API（解决跨域问题）
 │   │   ├── semesters/      # 学期API
 │   │   └── songs/          # 歌曲API
 │   ├── middleware/         # 中间件
@@ -308,6 +315,13 @@ VoiceHub/
    - 通过拖拽将歌曲从左侧添加到右侧的排期列表
    - 可以在右侧拖拽调整歌曲播放顺序
    - 点击"保存顺序"按钮保存排期
+4. **打印排期**：专业的排期打印和导出功能
+   - 选择纸张大小（A4、A3、Letter、Legal）和页面方向
+   - 自定义显示内容：歌曲封面、歌名、歌手、投稿人、热度等
+   - 快捷日期选择：今天、明天、本周、下周
+   - 智能分组显示：按日期分组，有多个播出时段时自动按时间排序
+   - 实时预览：所见即所得的打印预览
+   - PDF导出：支持导出高质量PDF文件，自动处理跨域图片
 4. **歌曲管理**：查看和管理所有歌曲
    - 支持播放歌曲并实时切换音质
    - 动态获取最新的音乐播放链接
