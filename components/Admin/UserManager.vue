@@ -27,13 +27,25 @@
             {{ role.displayName }}
           </option>
         </select>
-        <button @click="showAddModal = true" class="btn-primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          添加用户
-        </button>
+        <div class="action-buttons">
+          <button @click="showAddModal = true" class="btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            添加用户
+          </button>
+          <button @click="showImportModal = true" class="btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10,9 9,9 8,9"/>
+            </svg>
+            批量导入
+          </button>
+        </div>
       </div>
     </div>
 
@@ -108,7 +120,7 @@
                   </svg>
                 </button>
                 <button
-                  @click="deleteUser(user)"
+                  @click="confirmDeleteUser(user)"
                   class="action-btn delete-btn"
                   title="删除用户"
                 >
@@ -367,6 +379,171 @@
       </div>
     </div>
   </div>
+
+  <!-- 批量导入用户模态框 -->
+  <div v-if="showImportModal" class="modal-overlay" @click="closeImportModal">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h3>批量导入用户</h3>
+        <button @click="closeImportModal" class="close-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="import-instructions">
+          <p>请上传Excel格式文件 (.xlsx)，文件格式如下：</p>
+          <div class="excel-format">
+            <table>
+              <thead>
+                <tr>
+                  <th>A列</th>
+                  <th>B列</th>
+                  <th>C列</th>
+                  <th>D列</th>
+                  <th>E列</th>
+                  <th>F列</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>姓名</td>
+                  <td>账号名</td>
+                  <td>密码</td>
+                  <td>角色</td>
+                  <td>年级</td>
+                  <td>班级</td>
+                </tr>
+                <tr>
+                  <td>张三</td>
+                  <td>zhangsan</td>
+                  <td>password123</td>
+                  <td>USER</td>
+                  <td>高一</td>
+                  <td>1班</td>
+                </tr>
+                <tr>
+                  <td>李四</td>
+                  <td>lisi</td>
+                  <td>password456</td>
+                  <td>ADMIN</td>
+                  <td>教师</td>
+                  <td>-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="import-note">注意：第一行可以是标题行（会自动跳过），角色可以是：USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）</p>
+        </div>
+
+        <div class="form-group">
+          <label>选择文件</label>
+          <div class="file-upload-container">
+            <input
+              id="file-upload"
+              type="file"
+              accept=".xlsx"
+              @change="handleFileUpload"
+              class="file-input-hidden"
+            />
+            <label for="file-upload" class="file-upload-btn">
+              <div class="upload-text">
+                <div class="upload-title">点击选择Excel文件</div>
+                <div class="upload-subtitle">或拖拽文件到此处</div>
+              </div>
+            </label>
+            <div class="file-upload-info">
+              支持 .xlsx 格式文件
+            </div>
+          </div>
+        </div>
+
+        <div v-if="importError" class="error-message">{{ importError }}</div>
+        <div v-if="importSuccess" class="success-message">{{ importSuccess }}</div>
+
+        <div class="preview-section" v-if="previewData.length > 0">
+          <h4>预览数据 ({{ previewData.length }}条记录)</h4>
+          <div class="preview-table-container">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th>姓名</th>
+                  <th>账号名</th>
+                  <th>密码</th>
+                  <th>角色</th>
+                  <th>年级</th>
+                  <th>班级</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, index) in previewData.slice(0, 5)" :key="index">
+                  <td>{{ row.name }}</td>
+                  <td>{{ row.username }}</td>
+                  <td>******</td>
+                  <td>{{ row.role }}</td>
+                  <td>{{ row.grade || '-' }}</td>
+                  <td>{{ row.class || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="previewData.length > 5" class="preview-more">
+              以及另外 {{ previewData.length - 5 }} 条记录
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button @click="closeImportModal" class="btn-secondary">取消</button>
+        <button
+          @click="importUsers"
+          class="btn-primary"
+          :disabled="importLoading || previewData.length === 0"
+        >
+          {{ importLoading ? '导入中...' : '确认导入' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认模态框 -->
+  <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
+    <div class="modal-content modal-sm" @click.stop>
+      <div class="modal-header">
+        <h3>确认删除</h3>
+        <button @click="closeDeleteModal" class="close-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="delete-warning">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <div class="warning-text">
+            <p>确定要删除用户 <strong>"{{ deletingUser?.name }}"</strong> 吗？</p>
+            <p class="warning-note">此操作不可撤销，请谨慎操作！</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button @click="closeDeleteModal" class="btn-secondary">取消</button>
+        <button @click="confirmDelete" class="btn-danger" :disabled="deleting">
+          {{ deleting ? '删除中...' : '确认删除' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -391,6 +568,19 @@ const formError = ref('')
 const resetPasswordUser = ref(null)
 const resetting = ref(false)
 const passwordError = ref('')
+
+// 批量导入状态
+const showImportModal = ref(false)
+const importLoading = ref(false)
+const importError = ref('')
+const importSuccess = ref('')
+const previewData = ref([])
+const xlsxLoaded = ref(false)
+
+// 删除确认状态
+const showDeleteModal = ref(false)
+const deletingUser = ref(null)
+const deleting = ref(false)
 
 // 表单数据
 const userForm = ref({
@@ -496,16 +686,30 @@ const resetPassword = (user) => {
   }
 }
 
-const deleteUser = async (user) => {
-  if (!confirm(`确定要删除用户 "${user.name}" 吗？此操作不可撤销。`)) return
+const confirmDeleteUser = (user) => {
+  deletingUser.value = user
+  showDeleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false
+  deletingUser.value = null
+  deleting.value = false
+}
+
+const confirmDelete = async () => {
+  if (!deletingUser.value) return
+
+  deleting.value = true
 
   try {
-    await $fetch(`/api/admin/users/${user.id}`, {
+    await $fetch(`/api/admin/users/${deletingUser.value.id}`, {
       method: 'DELETE',
       headers: auth.getAuthHeader().headers
     })
 
     await loadUsers()
+    closeDeleteModal()
 
     if (window.$showNotification) {
       window.$showNotification('用户删除成功', 'success')
@@ -515,6 +719,8 @@ const deleteUser = async (user) => {
     if (window.$showNotification) {
       window.$showNotification('删除用户失败: ' + error.message, 'error')
     }
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -652,6 +858,184 @@ const loadUsers = async () => {
   }
 }
 
+// 批量导入相关方法
+const closeImportModal = () => {
+  showImportModal.value = false
+  importError.value = ''
+  importSuccess.value = ''
+  previewData.value = []
+  // 清空文件输入
+  const fileInput = document.getElementById('file-upload')
+  if (fileInput) {
+    fileInput.value = ''
+  }
+}
+
+// 加载XLSX库
+const loadXLSX = async () => {
+  if (typeof window !== 'undefined' && !xlsxLoaded.value) {
+    try {
+      // 使用多个可靠的CDN源，如果一个失败可以尝试另一个
+      const cdnUrls = [
+        'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+        'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+      ]
+
+      // 尝试加载第一个CDN
+      let loaded = false
+      for (const url of cdnUrls) {
+        if (loaded) break
+
+        try {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script')
+            script.src = url
+            script.async = true
+
+            script.onload = () => {
+              xlsxLoaded.value = true
+              loaded = true
+              console.log('XLSX库加载成功:', url)
+              resolve()
+            }
+
+            script.onerror = () => {
+              console.warn(`无法从 ${url} 加载XLSX库，尝试下一个源`)
+              reject()
+            }
+
+            document.head.appendChild(script)
+          })
+        } catch (e) {
+          // 这个CDN失败，继续尝试下一个
+          continue
+        }
+      }
+
+      if (!loaded) {
+        throw new Error('所有XLSX库源加载失败')
+      }
+    } catch (err) {
+      console.error('加载XLSX库失败:', err)
+    }
+  }
+}
+
+// 处理文件上传
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  importError.value = ''
+  importSuccess.value = ''
+  previewData.value = []
+
+  // 确保XLSX库已加载
+  if (!window.XLSX) {
+    await loadXLSX()
+
+    if (!window.XLSX) {
+      importError.value = '无法加载Excel处理库，请刷新页面重试'
+      return
+    }
+  }
+
+  try {
+    const reader = new FileReader()
+
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result)
+        // 使用全局XLSX对象
+        const workbook = window.XLSX.read(data, { type: 'array' })
+
+        // 假设数据在第一个工作表中
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+        const jsonData = window.XLSX.utils.sheet_to_json(firstSheet, { header: 1 })
+
+        // 解析数据，从第二行开始（跳过可能的标题行）
+        const startRow = jsonData[0] && jsonData[0].length >= 4 ? 1 : 0
+        const userData = []
+
+        for (let i = startRow; i < jsonData.length; i++) {
+          const row = jsonData[i]
+          if (!row || !row.length || !row[0]) continue // 跳过空行
+
+          userData.push({
+            name: row[0]?.toString() || '',
+            username: row[1]?.toString() || '',
+            password: row[2]?.toString() || '',
+            role: (row[3]?.toString() || '').toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER',
+            grade: row[4]?.toString() || '',
+            class: row[5]?.toString() || ''
+          })
+        }
+
+        if (userData.length === 0) {
+          importError.value = '未找到有效数据'
+          return
+        }
+
+        previewData.value = userData
+      } catch (err) {
+        console.error('解析Excel出错:', err)
+        importError.value = '解析Excel文件失败: ' + (err.message || '未知错误')
+      }
+    }
+
+    reader.onerror = () => {
+      importError.value = '读取文件失败'
+    }
+
+    reader.readAsArrayBuffer(file)
+  } catch (err) {
+    console.error('处理Excel文件错误:', err)
+    importError.value = '处理Excel文件失败: ' + (err.message || '未知错误')
+  }
+}
+
+// 批量导入用户
+const importUsers = async () => {
+  if (previewData.value.length === 0) return
+
+  importLoading.value = true
+  importError.value = ''
+  importSuccess.value = ''
+
+  try {
+    // 调用API批量导入用户
+    const result = await $fetch('/api/admin/users/batch', {
+      method: 'POST',
+      body: {
+        users: previewData.value
+      },
+      headers: auth.getAuthHeader().headers
+    })
+
+    // 更新用户列表
+    await loadUsers()
+
+    importSuccess.value = `成功导入 ${result.created} 个用户，${result.failed} 个用户导入失败`
+
+    // 清空预览数据
+    previewData.value = []
+
+    // 3秒后关闭导入对话框
+    setTimeout(() => {
+      if (importSuccess.value) {
+        closeImportModal()
+      }
+    }, 3000)
+
+  } catch (err) {
+    importError.value = err.message || '导入用户失败'
+    console.error('导入用户出错:', err)
+  } finally {
+    importLoading.value = false
+  }
+}
+
 const loadRoles = async () => {
   try {
     const response = await $fetch('/api/admin/roles', {
@@ -667,6 +1051,8 @@ const loadRoles = async () => {
 onMounted(async () => {
   auth = useAuth()
   await Promise.all([loadUsers(), loadRoles()])
+  // 预加载XLSX库
+  loadXLSX()
 })
 </script>
 
@@ -713,29 +1099,42 @@ onMounted(async () => {
   gap: 12px;
 }
 
+/* 操作按钮组 */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 搜索框样式 */
 .search-box {
   position: relative;
   display: flex;
   align-items: center;
+  width: 200px;
 }
 
 .search-icon {
   position: absolute;
-  left: 12px;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 16px;
   height: 16px;
   color: #666666;
-  z-index: 1;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .search-input {
-  padding: 8px 12px 8px 36px;
+  width: 100%;
+  padding: 8px 12px 8px 34px;
   background: #2a2a2a;
   border: 1px solid #3a3a3a;
   border-radius: 8px;
   color: #ffffff;
   font-size: 14px;
-  width: 200px;
+  box-sizing: border-box;
 }
 
 .search-input::placeholder {
@@ -756,6 +1155,21 @@ onMounted(async () => {
   color: #ffffff;
   font-size: 14px;
   cursor: pointer;
+  text-align: center;
+  text-align-last: center;
+}
+
+.filter-select option {
+  text-align: left;
+  background: #2a2a2a;
+  color: #ffffff;
+  padding: 8px 12px;
+}
+
+.filter-select option {
+  text-align: center;
+  background: #2a2a2a;
+  color: #ffffff;
 }
 
 .filter-select:focus {
@@ -783,6 +1197,30 @@ onMounted(async () => {
 }
 
 .btn-primary svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #4a5568;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #2d3748;
+}
+
+.btn-secondary svg {
   width: 16px;
   height: 16px;
 }
@@ -1229,12 +1667,70 @@ onMounted(async () => {
   }
 
   .toolbar-right {
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
   }
 
-  .search-input {
+  /* 移动端第一行：搜索和筛选 */
+  .toolbar-right > .search-box {
+    flex: 1;
+    min-width: 0;
+    order: 1;
+  }
+
+  .toolbar-right > .filter-select {
+    flex-shrink: 0;
+    min-width: 100px;
+    order: 2;
+  }
+
+  /* 移动端第二行：按钮组 */
+  .toolbar-right > .action-buttons {
+    order: 3;
+    flex-basis: 100%; /* 占满整行 */
     width: 100%;
+  }
+
+  /* 移动端搜索框样式 - 使用更强的选择器 */
+  .toolbar-right > .search-box {
+    width: 100% !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .user-manager .toolbar-right > .search-box .search-input {
+    width: 100% !important;
+    padding: 12px 16px 12px 44px !important; /* 匹配mobile-admin.css的padding但增加左padding */
+    font-size: 16px !important; /* 匹配mobile-admin.css */
+    box-sizing: border-box !important;
+    min-height: 44px !important; /* 匹配mobile-admin.css */
+    border-radius: 10px !important; /* 匹配mobile-admin.css */
+  }
+
+  .user-manager .toolbar-right > .search-box .search-icon {
+    left: 16px !important; /* 调整图标位置匹配新的padding */
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 18px !important; /* 稍微增大图标 */
+    height: 18px !important;
+    position: absolute !important;
+    z-index: 10 !important;
+  }
+
+  /* 移动端按钮组保持一行 */
+  .action-buttons {
+    flex-direction: row;
+    width: 100%;
+    gap: 8px;
+    flex-basis: 100%; /* 占满整行 */
+  }
+
+  .action-buttons .btn-primary,
+  .action-buttons .btn-secondary {
+    flex: 1;
+    justify-content: center;
   }
 
   /* 隐藏桌面端表格，显示移动端卡片 */
@@ -1248,7 +1744,22 @@ onMounted(async () => {
 
   .modal-content {
     width: 95%;
+    max-width: 480px;
     margin: 20px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  /* 移动端模态框按钮优化 */
+  .modal-footer {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .modal-footer .btn-secondary,
+  .modal-footer .btn-primary {
+    flex: 1;
+    justify-content: center;
   }
 
   .form-row {
@@ -1338,5 +1849,199 @@ onMounted(async () => {
     min-width: 40px;
     min-height: 40px;
   }
+}
+
+/* 批量导入相关样式 */
+.import-instructions {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 0.375rem;
+}
+
+.excel-format {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+}
+
+.excel-format table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.excel-format th, .excel-format td {
+  padding: 0.5rem;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.875rem;
+}
+
+.excel-format th {
+  background: rgba(255, 255, 255, 0.05);
+  color: #888888;
+  font-weight: 500;
+}
+
+.import-note {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: #888888;
+  font-size: 0.875rem;
+}
+
+.preview-section {
+  margin: 1.5rem 0;
+}
+
+.preview-section h4 {
+  margin: 0 0 0.5rem 0;
+  color: #ffffff;
+}
+
+.preview-table-container {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  overflow-x: auto;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.preview-table th, .preview-table td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.875rem;
+}
+
+.preview-more {
+  text-align: center;
+  padding: 0.5rem;
+  color: #888888;
+  font-style: italic;
+}
+
+.success-message {
+  color: #10b981;
+  margin: 0.5rem 0;
+}
+
+.error-message {
+  color: #ef4444;
+  margin: 0.5rem 0;
+}
+
+/* 文件上传样式 */
+.file-upload-container {
+  margin-top: 0.5rem;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #2a2a2a;
+  border: 2px dashed #4a5568;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 80px;
+}
+
+.file-upload-btn:hover {
+  background: #3a3a3a;
+  border-color: #667eea;
+}
+
+.upload-text {
+  text-align: center;
+}
+
+.upload-title {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.upload-subtitle {
+  font-size: 14px;
+  color: #888888;
+}
+
+.file-upload-info {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #888888;
+  text-align: center;
+}
+
+/* 删除确认模态框样式 */
+.modal-sm {
+  max-width: 400px;
+}
+
+.delete-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+}
+
+.delete-warning svg {
+  width: 24px;
+  height: 24px;
+  color: #ef4444;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.warning-text p {
+  margin: 0 0 8px 0;
+  color: #ffffff;
+}
+
+.warning-text .warning-note {
+  font-size: 14px;
+  color: #ef4444;
+  margin: 8px 0 0 0;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
