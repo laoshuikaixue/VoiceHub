@@ -18,9 +18,12 @@ class DatabasePool {
     try {
       await this.ensureConnection()
       this.startPeriodicHealthCheck()
+      this.setupGracefulShutdown()
       console.log('[DB Pool] 数据库连接池初始化成功')
-    } catch (error) {
-      console.error('[DB Pool] 初始化失败:', error)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('[DB Pool] 初始化失败:', errorMessage)
+      // 初始化失败时不抛出错误，允许应用继续运行
     }
   }
 
@@ -40,10 +43,11 @@ class DatabasePool {
       this.lastHealthCheck = now
       this.connectionAttempts = 0
       return true
-    } catch (error) {
-      console.error('[DB Pool] 连接检查失败:', error.message)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('[DB Pool] 连接检查失败:', errorMessage)
       this.isConnected = false
-      
+
       // 尝试重新连接
       return await this.reconnect()
     }
@@ -60,31 +64,37 @@ class DatabasePool {
     console.log(`[DB Pool] 尝试重连 (${this.connectionAttempts}/${this.maxConnectionAttempts})`)
 
     try {
-      // 断开现有连接
-      await prisma.$disconnect()
-      
+      // 断开现有连接（忽略错误）
+      try {
+        await prisma.$disconnect()
+      } catch (disconnectError: unknown) {
+        const errorMessage = disconnectError instanceof Error ? disconnectError.message : String(disconnectError)
+        console.log('[DB Pool] 断开连接时出错（忽略）:', errorMessage)
+      }
+
       // 等待一段时间
       await new Promise(resolve => setTimeout(resolve, this.reconnectDelay))
-      
+
       // 重新连接
       await prisma.$connect()
-      
+
       // 测试连接
       await prisma.$queryRaw`SELECT 1 as reconnect_test`
-      
+
       this.isConnected = true
       this.lastHealthCheck = Date.now()
       this.connectionAttempts = 0
       this.reconnectDelay = 1000 // 重置延迟
-      
+
       console.log('[DB Pool] 重连成功')
       return true
-    } catch (error) {
-      console.error(`[DB Pool] 重连失败 (尝试 ${this.connectionAttempts}):`, error.message)
-      
-      // 增加延迟时间
-      this.reconnectDelay = Math.min(this.reconnectDelay * 2, 10000)
-      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`[DB Pool] 重连失败 (尝试 ${this.connectionAttempts}):`, errorMessage)
+
+      // 增加延迟时间，使用指数退避
+      this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 30000)
+
       return false
     }
   }
@@ -103,27 +113,36 @@ class DatabasePool {
       const result = await operation()
       console.log(`[DB Pool] 操作成功: ${operationName}`)
       return result
-    } catch (error) {
-      console.error(`[DB Pool] 操作失败: ${operationName}`, error.message)
-      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`[DB Pool] 操作失败: ${operationName}`, errorMessage)
+
       // 检查是否是连接错误
-      const isConnectionError = error.message.includes('ECONNRESET') ||
-                               error.message.includes('ENOTFOUND') ||
-                               error.message.includes('ETIMEDOUT') ||
-                               error.message.includes('Connection terminated')
+      const isConnectionError = errorMessage.includes('ECONNRESET') ||
+                               errorMessage.includes('ENOTFOUND') ||
+                               errorMessage.includes('ETIMEDOUT') ||
+                               errorMessage.includes('Connection terminated') ||
+                               errorMessage.includes('Connection lost') ||
+                               errorMessage.includes('Server has gone away')
 
       if (isConnectionError) {
         console.log(`[DB Pool] 检测到连接错误，标记连接为不可用`)
         this.isConnected = false
-        
-        // 尝试重新连接并重试操作
+
+        // 尝试重新连接并重试操作（只重试一次）
         const reconnected = await this.reconnect()
         if (reconnected) {
           console.log(`[DB Pool] 重连成功，重试操作: ${operationName}`)
-          return await operation()
+          try {
+            return await operation()
+          } catch (retryError: unknown) {
+            const retryErrorMessage = retryError instanceof Error ? retryError.message : String(retryError)
+            console.error(`[DB Pool] 重试操作失败: ${operationName}`, retryErrorMessage)
+            throw retryError
+          }
         }
       }
-      
+
       throw error
     }
   }
@@ -155,6 +174,41 @@ class DatabasePool {
     this.isConnected = false
     this.connectionAttempts = 0
     return await this.reconnect()
+  }
+
+  // 设置优雅关闭
+  setupGracefulShutdown() {
+    const cleanup = async () => {
+      console.log('[DB Pool] 应用关闭，清理数据库连接...')
+      try {
+        await prisma.$disconnect()
+        console.log('[DB Pool] 数据库连接已清理')
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.error('[DB Pool] 清理连接时出错:', errorMessage)
+      }
+    }
+
+    // 监听各种退出信号
+    process.on('SIGINT', cleanup)
+    process.on('SIGTERM', cleanup)
+    process.on('beforeExit', cleanup)
+
+    // 处理未捕获的异常
+    process.on('uncaughtException', (error: Error) => {
+      console.error('[DB Pool] 未捕获的异常:', error.message)
+      cleanup().finally(() => process.exit(1))
+    })
+
+    process.on('unhandledRejection', (reason: unknown, promise: Promise<any>) => {
+      const reasonMessage = reason instanceof Error ? reason.message : String(reason)
+      console.error('[DB Pool] 未处理的Promise拒绝:', reasonMessage)
+      // 不立即退出，记录错误并继续运行
+      if (reasonMessage.includes('ECONNRESET')) {
+        console.log('[DB Pool] 检测到连接重置，标记连接为不可用')
+        this.isConnected = false
+      }
+    })
   }
 }
 

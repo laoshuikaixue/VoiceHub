@@ -285,6 +285,7 @@ VoiceHub/
 │   ├── services/           # 服务层
 │   │   └── notificationService.ts # 通知服务
 │   ├── utils/              # 服务端工具函数
+│   │   ├── db-pool.ts      # 数据库连接池管理
 │   │   └── permissions.js  # 权限系统配置
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
