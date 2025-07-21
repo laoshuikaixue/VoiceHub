@@ -256,14 +256,36 @@ const validatePassword = () => {
 }
 
 const handleChangePassword = async () => {
-  if (newPassword.value !== confirmPassword.value) {
-    error.value = '新密码和确认密码不匹配'
-    return
-  }
-
-  if (newPassword.value.length < 8) {
-    error.value = '新密码长度至少为8位'
-    return
+  if (props.isFirstLogin) {
+    if (!newPassword.value || !confirmPassword.value) {
+      error.value = '请填写新密码并确认密码'
+      return
+    }
+    if (newPassword.value !== confirmPassword.value) {
+      error.value = '新密码和确认密码不匹配'
+      return
+    }
+    if (newPassword.value.length < 8) {
+      error.value = '新密码长度至少为8位'
+      return
+    }
+  } else {
+    if (!currentPassword.value) {
+      error.value = '请填写当前密码'
+      return
+    }
+    if (!newPassword.value || !confirmPassword.value) {
+      error.value = '请填写新密码并确认密码'
+      return
+    }
+    if (newPassword.value !== confirmPassword.value) {
+      error.value = '新密码和确认密码不匹配'
+      return
+    }
+    if (newPassword.value.length < 8) {
+      error.value = '新密码长度至少为8位'
+      return
+    }
   }
 
   loading.value = true
@@ -272,7 +294,7 @@ const handleChangePassword = async () => {
 
   try {
     if (props.isFirstLogin) {
-      await auth.setInitialPassword(newPassword.value)
+      await auth.changePassword('', newPassword.value)
       success.value = '密码设置成功！正在跳转...'
     } else {
       await auth.changePassword(currentPassword.value, newPassword.value)
