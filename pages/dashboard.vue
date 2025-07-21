@@ -1,9 +1,40 @@
 <template>
   <div>
     <ClientOnly>
-      <div class="admin-layout">
+      <div
+        class="admin-layout"
+        @touchstart="handleTouchStart"
+        @touchend="handleTouchEnd"
+      >
+        <!-- 移动端顶部导航栏 -->
+        <header class="mobile-header">
+          <button @click="toggleSidebar" class="mobile-menu-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <div class="mobile-logo">
+            <span class="mobile-logo-text">{{ $config.public.siteTitle || 'VoiceHub' }}</span>
+            <span class="mobile-logo-subtitle">管理控制台</span>
+          </div>
+          <div class="mobile-user">
+            <div class="mobile-user-avatar">
+              {{ (currentUser?.name || '管理员').charAt(0) }}
+            </div>
+          </div>
+        </header>
+
+        <!-- 移动端遮罩层 -->
+        <div
+          v-if="sidebarOpen"
+          class="mobile-overlay"
+          @click="closeSidebar"
+        ></div>
+
         <!-- 左侧导航栏 -->
-        <aside class="sidebar">
+        <aside :class="['sidebar', { 'sidebar-open': sidebarOpen }]">
           <div class="sidebar-header">
             <NuxtLink to="/" class="logo-link">
               <img src="/images/logo.svg" alt="VoiceHub Logo" class="logo-image" />
@@ -183,6 +214,18 @@
           </div>
           
           <div class="content-body">
+            <!-- 移动端返回顶部按钮 -->
+            <button
+              v-if="showBackToTop"
+              @click="scrollToTop"
+              class="back-to-top-btn"
+              aria-label="返回顶部"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
+            </button>
+
             <!-- 数据概览 -->
             <div v-if="activeTab === 'overview'" class="overview-section">
               <OverviewDashboard @navigate="handleNavigate" />
@@ -245,7 +288,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 
 // 导入组件
@@ -270,6 +313,7 @@ definePageMeta({
 // 响应式数据
 const activeTab = ref('overview')
 const currentUser = ref(null)
+const sidebarOpen = ref(false)
 
 // 服务
 let auth = null
@@ -308,9 +352,65 @@ const handleLogout = async () => {
 }
 
 // 导航方法
-
 const handleNavigate = (tab) => {
   activeTab.value = tab
+  // 移动端点击导航后关闭侧边栏
+  if (window.innerWidth <= 768) {
+    closeSidebar()
+  }
+}
+
+// 侧边栏控制方法
+const toggleSidebar = () => {
+  sidebarOpen.value = !sidebarOpen.value
+}
+
+const closeSidebar = () => {
+  sidebarOpen.value = false
+}
+
+// 监听窗口大小变化，大屏幕时自动关闭移动端侧边栏
+const handleResize = () => {
+  if (window.innerWidth > 768) {
+    sidebarOpen.value = false
+  }
+}
+
+// 触摸手势支持
+let touchStartX = 0
+let touchStartY = 0
+let touchEndX = 0
+let touchEndY = 0
+
+const handleTouchStart = (e) => {
+  touchStartX = e.changedTouches[0].screenX
+  touchStartY = e.changedTouches[0].screenY
+}
+
+const handleTouchEnd = (e) => {
+  touchEndX = e.changedTouches[0].screenX
+  touchEndY = e.changedTouches[0].screenY
+  handleSwipe()
+}
+
+const handleSwipe = () => {
+  const deltaX = touchEndX - touchStartX
+  const deltaY = touchEndY - touchStartY
+  const minSwipeDistance = 50
+
+  // 只在移动端处理滑动手势
+  if (window.innerWidth > 768) return
+
+  // 水平滑动距离大于垂直滑动距离，且超过最小滑动距离
+  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+    if (deltaX > 0 && touchStartX < 50) {
+      // 从左边缘向右滑动，打开侧边栏
+      sidebarOpen.value = true
+    } else if (deltaX < 0 && sidebarOpen.value) {
+      // 向左滑动，关闭侧边栏
+      sidebarOpen.value = false
+    }
+  }
 }
 
 // 生命周期
@@ -332,6 +432,21 @@ onMounted(async () => {
   }
 
   currentUser.value = auth.user.value
+
+  // 添加窗口大小监听器
+  window.addEventListener('resize', handleResize)
+
+  // 添加双击关闭侧边栏事件
+  document.addEventListener('dblclick', (e) => {
+    if (window.innerWidth <= 768 && sidebarOpen.value) {
+      closeSidebar()
+    }
+  })
+})
+
+// 组件卸载时清理事件监听器
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -341,6 +456,100 @@ onMounted(async () => {
   min-height: 100vh;
   background: #0a0a0a;
   color: #ffffff;
+  position: relative;
+}
+
+/* 移动端顶部导航栏 */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #111111;
+  border-bottom: 1px solid #1f1f1f;
+  z-index: 1001;
+  padding: 0 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-menu-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #1a1a1a;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+  background: #2a2a2a;
+}
+
+.mobile-menu-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  margin: 0 16px;
+}
+
+.mobile-logo-text {
+  font-size: 16px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.mobile-logo-subtitle {
+  font-size: 12px;
+  color: #888888;
+  font-weight: 400;
+}
+
+.mobile-user {
+  display: flex;
+  align-items: center;
+}
+
+.mobile-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+/* 移动端遮罩层 */
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
 }
 
 /* 左侧导航栏 */
@@ -353,6 +562,8 @@ onMounted(async () => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  z-index: 1000;
+  transition: transform 0.3s ease;
 }
 
 .sidebar-header {
@@ -606,26 +817,183 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    position: relative;
-    height: auto;
+  /* 显示移动端头部 */
+  .mobile-header {
+    display: flex;
   }
 
+  /* 显示移动端遮罩层 */
+  .mobile-overlay {
+    display: block;
+  }
+
+  /* 侧边栏移动端样式 */
+  .sidebar {
+    width: 280px;
+    position: fixed;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  /* 主内容区域 */
   .main-content {
     margin-left: 0;
+    padding-top: 60px; /* 为移动端头部留出空间 */
   }
 
   .content-header {
-    padding: 20px 24px 16px;
+    padding: 16px 20px 12px;
   }
 
   .page-title {
-    font-size: 24px;
+    font-size: 20px;
   }
 
   .content-body {
-    padding: 20px;
+    padding: 16px;
+  }
+
+  /* 侧边栏内部元素的移动端优化 */
+  .sidebar-header {
+    padding: 20px 16px;
+  }
+
+  .logo-image {
+    width: 120px;
+    margin-bottom: 16px;
+  }
+
+  /* 移动端隐藏logo文字 */
+  .logo-content {
+    display: none;
+  }
+
+  .nav-section {
+    margin-bottom: 24px;
+  }
+
+  .nav-section-title {
+    padding: 0 16px;
+    font-size: 11px;
+  }
+
+  .nav-item {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .sidebar-footer {
+    padding: 16px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+
+  .user-role {
+    font-size: 11px;
+  }
+
+  .logout-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .logout-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* 小屏幕设备进一步优化 */
+@media (max-width: 480px) {
+  .mobile-header {
+    height: 56px;
+    padding: 0 12px;
+  }
+
+  .mobile-menu-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .mobile-menu-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .mobile-logo-text {
+    font-size: 14px;
+  }
+
+  .mobile-logo-subtitle {
+    font-size: 11px;
+  }
+
+  .mobile-user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .main-content {
+    padding-top: 56px;
+  }
+
+  .content-header {
+    padding: 12px 16px 8px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  .content-body {
+    padding: 12px;
+  }
+
+  .sidebar {
+    width: 260px;
+  }
+
+  .sidebar-header {
+    padding: 16px 12px;
+  }
+
+  .logo-image {
+    width: 100px;
+    margin-bottom: 12px;
+  }
+
+  .nav-item {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .nav-section-title {
+    padding: 0 12px;
+  }
+
+  .sidebar-footer {
+    padding: 12px;
   }
 }
 </style>

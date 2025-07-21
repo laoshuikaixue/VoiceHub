@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     '~/assets/css/components.css',
     '~/assets/css/main.css',
     '~/assets/css/transitions.css',
+    '~/assets/css/mobile-admin.css',
   ],
   
   // 配置运行时配置
@@ -32,11 +33,15 @@ export default defineNuxtConfig({
       title: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
       meta: [
         { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover' },
         { name: 'description', content: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见' },
-        // 温和的主题控制
+        // 移动端优化
         { name: 'theme-color', content: '#111111' },
-        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+        { name: 'apple-mobile-web-app-title', content: 'VoiceHub管理' },
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'format-detection', content: 'telephone=no' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico' },

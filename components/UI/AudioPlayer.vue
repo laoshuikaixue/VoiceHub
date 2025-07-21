@@ -531,7 +531,7 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 40vh; /* 只覆盖底部区域 */
+  height: 20vh; /* 只覆盖底部区域 */
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5));
   z-index: 999;
   backdrop-filter: blur(1px);

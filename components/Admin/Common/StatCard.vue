@@ -196,19 +196,54 @@ const changeClass = computed(() => {
     padding: var(--spacing-lg);
     gap: var(--spacing-md);
   }
-  
+
   .stat-icon {
     width: 40px;
     height: 40px;
   }
-  
+
   .stat-icon svg {
     width: 20px;
     height: 20px;
   }
-  
+
   .stat-value {
     font-size: var(--text-xl);
+  }
+
+  .stat-label {
+    font-size: var(--text-xs);
+  }
+
+  .stat-change {
+    font-size: 10px;
+  }
+
+  .stat-change svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* 小屏幕设备进一步优化 */
+@media (max-width: 480px) {
+  .stat-card {
+    padding: var(--spacing-md);
+    gap: var(--spacing-sm);
+  }
+
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .stat-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .stat-value {
+    font-size: var(--text-lg);
   }
 }
 </style>

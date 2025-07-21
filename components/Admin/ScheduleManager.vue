@@ -93,6 +93,9 @@
             draggable="true"
             @dragstart="dragStart($event, song)"
             @dragend="dragEnd"
+            @touchstart="handleTouchStart($event, song, 'song')"
+            @touchmove="handleTouchMove"
+            @touchend="handleTouchEnd"
           >
             <div class="song-info">
               <div class="song-main">
@@ -179,6 +182,7 @@
               v-for="(schedule, index) in localScheduledSongs"
               :key="schedule.id"
               :class="['scheduled-song', { 'drag-over': dragOverIndex === index }]"
+              :data-schedule-id="schedule.id"
               draggable="true"
               @dragstart="dragScheduleStart($event, schedule)"
               @dragend="dragEnd"
@@ -186,6 +190,9 @@
               @dragenter.prevent="handleDragEnter($event, index)"
               @dragleave="handleDragLeave"
               @drop.stop.prevent="dropReorder($event, index)"
+              @touchstart="handleTouchStart($event, schedule, 'schedule')"
+              @touchmove="handleTouchMove"
+              @touchend="handleTouchEnd"
             >
             <div class="order-number">{{ index + 1 }}</div>
             <div class="scheduled-song-info">
@@ -234,6 +241,12 @@ const isDraggableOver = ref(false)
 const isSequenceOver = ref(false)
 const dragOverIndex = ref(-1)
 const draggedSchedule = ref(null)
+
+// 触摸拖拽状态
+const touchDragData = ref(null)
+const touchStartPos = ref({ x: 0, y: 0 })
+const isDragging = ref(false)
+const dragElement = ref(null)
 
 // DOM引用
 const dateSelector = ref(null)
@@ -631,6 +644,160 @@ const dropReorder = async (event, dropIndex) => {
   }
 
   draggedSchedule.value = null
+}
+
+// 触摸拖拽方法
+const handleTouchStart = (event, item, type) => {
+  if (window.innerWidth > 768) return // 只在移动端启用触摸拖拽
+
+  const touch = event.touches[0]
+  touchStartPos.value = { x: touch.clientX, y: touch.clientY }
+  touchDragData.value = { item, type }
+
+  // 防止页面滚动
+  event.preventDefault()
+}
+
+const handleTouchMove = (event) => {
+  if (!touchDragData.value || window.innerWidth > 768) return
+
+  const touch = event.touches[0]
+  const deltaX = Math.abs(touch.clientX - touchStartPos.value.x)
+  const deltaY = Math.abs(touch.clientY - touchStartPos.value.y)
+
+  // 如果移动距离超过阈值，开始拖拽
+  if ((deltaX > 10 || deltaY > 10) && !isDragging.value) {
+    isDragging.value = true
+
+    // 创建拖拽元素
+    const target = event.target.closest('.draggable-song, .scheduled-song')
+    if (target) {
+      target.classList.add('dragging')
+      dragElement.value = target
+    }
+  }
+
+  // 防止页面滚动
+  if (isDragging.value) {
+    event.preventDefault()
+  }
+}
+
+const handleTouchEnd = (event) => {
+  if (!touchDragData.value || window.innerWidth > 768) return
+
+  if (isDragging.value) {
+    const touch = event.changedTouches[0]
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY)
+
+    if (elementBelow) {
+      // 检查是否拖拽到序列列表
+      const sequenceList = elementBelow.closest('.sequence-list')
+      const scheduledSong = elementBelow.closest('.scheduled-song')
+      const draggableSongs = elementBelow.closest('.draggable-songs')
+
+      if (touchDragData.value.type === 'song' && sequenceList) {
+        // 从左侧拖拽到右侧
+        handleTouchDropToSequence(scheduledSong)
+      } else if (touchDragData.value.type === 'schedule' && scheduledSong) {
+        // 在右侧重新排序
+        handleTouchReorder(scheduledSong)
+      } else if (touchDragData.value.type === 'schedule' && draggableSongs) {
+        // 从右侧拖拽回左侧
+        handleTouchReturnToDraggable()
+      }
+    }
+
+    // 清理拖拽状态
+    if (dragElement.value) {
+      dragElement.value.classList.remove('dragging')
+      dragElement.value = null
+    }
+  }
+
+  // 重置状态
+  isDragging.value = false
+  touchDragData.value = null
+  dragOverIndex.value = -1
+  isSequenceOver.value = false
+  isDraggableOver.value = false
+}
+
+const handleTouchDropToSequence = async (targetElement) => {
+  const song = touchDragData.value.item
+  const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === song.id)
+  if (existingIndex !== -1) return
+
+  let insertIndex = localScheduledSongs.value.length
+
+  if (targetElement) {
+    const scheduleId = parseInt(targetElement.dataset.scheduleId)
+    const targetIndex = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
+    if (targetIndex !== -1) {
+      insertIndex = targetIndex
+    }
+  }
+
+  try {
+    const response = await $fetch('/api/admin/schedule', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...useAuth().getAuthHeader().headers
+      },
+      body: JSON.stringify({
+        songId: song.id,
+        date: selectedDate.value,
+        playTimeId: selectedPlayTime.value || null,
+        sequence: insertIndex + 1
+      })
+    })
+
+    localScheduledSongs.value.splice(insertIndex, 0, response)
+    updateSequenceNumbers()
+    hasChanges.value = true
+  } catch (error) {
+    console.error('添加排期失败:', error)
+  }
+}
+
+const handleTouchReorder = async (targetElement) => {
+  const draggedSchedule = touchDragData.value.item
+  const scheduleId = parseInt(targetElement.dataset.scheduleId)
+  const draggedIndex = localScheduledSongs.value.findIndex(s => s.id === draggedSchedule.id)
+  const dropIndex = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
+
+  if (draggedIndex === -1 || dropIndex === -1 || draggedIndex === dropIndex) return
+
+  const newOrder = [...localScheduledSongs.value]
+  const [draggedItem] = newOrder.splice(draggedIndex, 1)
+  newOrder.splice(dropIndex, 0, draggedItem)
+
+  newOrder.forEach((item, index) => {
+    item.sequence = index + 1
+  })
+
+  localScheduledSongs.value = newOrder
+  hasChanges.value = true
+}
+
+const handleTouchReturnToDraggable = async () => {
+  const schedule = touchDragData.value.item
+  const scheduleIndex = localScheduledSongs.value.findIndex(s => s.id === schedule.id)
+  if (scheduleIndex === -1) return
+
+  try {
+    await $fetch(`/api/admin/schedule/${schedule.id}`, {
+      method: 'DELETE',
+      ...useAuth().getAuthHeader()
+    })
+
+    localScheduledSongs.value.splice(scheduleIndex, 1)
+    updateSequenceNumbers()
+    hasChanges.value = true
+  } catch (error) {
+    console.error('删除排期失败:', error)
+  }
 }
 
 const handleReturnToDraggable = async (event) => {
@@ -1416,5 +1583,47 @@ const updateScrollButtonState = () => {
   opacity: 0.7;
   transform: rotate(2deg) scale(1.02);
   z-index: 1000;
+}
+
+/* 移动端触摸拖拽优化 */
+@media (max-width: 768px) {
+  .draggable-song,
+  .scheduled-song {
+    touch-action: none; /* 防止滚动干扰拖拽 */
+    user-select: none;
+  }
+
+  .drag-handle {
+    width: 32px;
+    height: 32px;
+    touch-action: none;
+  }
+
+  .drag-handle svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* 拖拽时的视觉反馈 */
+  .draggable-song.dragging,
+  .scheduled-song.dragging {
+    opacity: 0.8;
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+  }
+
+  /* 拖拽区域高亮 */
+  .draggable-songs.drag-over,
+  .sequence-list.drag-over {
+    background: rgba(102, 126, 234, 0.15);
+    border: 2px dashed #667eea;
+  }
+
+  .scheduled-song.drag-over {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.15);
+    transform: translateY(-3px);
+  }
 }
 </style>

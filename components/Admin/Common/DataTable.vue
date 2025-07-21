@@ -35,99 +35,103 @@
         <div class="loading-text">{{ loadingText }}</div>
       </div>
 
-      <!-- 表格头部 -->
-      <div class="table-header">
-        <div
-          v-if="selectable"
-          class="header-cell checkbox-cell"
-        >
-          <input
-            type="checkbox"
-            :checked="isAllSelected"
-            @change="toggleSelectAll"
-            class="checkbox"
-          />
-        </div>
-        <div
-          v-for="column in columns"
-          :key="column.key"
-          class="header-cell"
-          :class="column.class"
-          :style="{ width: column.width }"
-        >
-          {{ column.title }}
-        </div>
-        <div
-          v-if="hasActions"
-          class="header-cell actions-cell"
-        >
-          操作
-        </div>
-      </div>
-
-      <!-- 表格内容 -->
-      <div class="table-body">
-        <!-- 空状态 -->
-        <div v-if="!loading && data.length === 0" class="empty-state">
-          <slot name="empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M8 12h8"/>
-            </svg>
-            <div class="empty-text">暂无数据</div>
-          </slot>
-        </div>
-
-        <!-- 数据行 -->
-        <div
-          v-for="(row, index) in data"
-          :key="getRowKey(row, index)"
-          :class="['table-row', { 
-            selected: selectedRows.includes(getRowKey(row, index)),
-            clickable: rowClickable
-          }]"
-          @click="handleRowClick(row, index)"
-        >
+      <!-- 桌面端表格 -->
+      <div class="desktop-table">
+        <!-- 表格头部 -->
+        <div class="table-header">
           <div
             v-if="selectable"
-            class="cell checkbox-cell"
-            @click.stop
+            class="header-cell checkbox-cell"
           >
             <input
               type="checkbox"
-              :checked="selectedRows.includes(getRowKey(row, index))"
-              @change="toggleSelectRow(getRowKey(row, index))"
+              :checked="isAllSelected"
+              @change="toggleSelectAll"
               class="checkbox"
             />
           </div>
-          
           <div
             v-for="column in columns"
             :key="column.key"
-            class="cell"
+            class="header-cell"
             :class="column.class"
             :style="{ width: column.width }"
           >
-            <slot
-              :name="`cell-${column.key}`"
-              :row="row"
-              :value="getNestedValue(row, column.key)"
-              :index="index"
-            >
-              {{ formatCellValue(getNestedValue(row, column.key), column) }}
-            </slot>
+            {{ column.title }}
           </div>
-          
           <div
             v-if="hasActions"
-            class="cell actions-cell"
-            @click.stop
+            class="header-cell actions-cell"
           >
-            <slot
-              name="actions"
-              :row="row"
-              :index="index"
+            操作
+          </div>
+        </div>
+      </div>
+
+      <!-- 桌面端表格内容 -->
+      <div class="desktop-table">
+        <div class="table-body">
+          <!-- 空状态 -->
+          <div v-if="!loading && data.length === 0" class="empty-state">
+            <slot name="empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 12h8"/>
+              </svg>
+              <div class="empty-text">暂无数据</div>
+            </slot>
+          </div>
+
+          <!-- 数据行 -->
+          <div
+            v-for="(row, index) in data"
+            :key="getRowKey(row, index)"
+            :class="['table-row', {
+              selected: selectedRows.includes(getRowKey(row, index)),
+              clickable: rowClickable
+            }]"
+            @click="handleRowClick(row, index)"
+          >
+            <div
+              v-if="selectable"
+              class="cell checkbox-cell"
+              @click.stop
             >
+              <input
+                type="checkbox"
+                :checked="selectedRows.includes(getRowKey(row, index))"
+                @change="toggleSelectRow(getRowKey(row, index))"
+                class="checkbox"
+              />
+            </div>
+
+            <div
+              v-for="column in columns"
+              :key="column.key"
+              class="cell"
+              :class="column.class"
+              :style="{ width: column.width }"
+            >
+              <slot
+                :name="`cell-${column.key}`"
+                :row="row"
+                :value="getNestedValue(row, column.key)"
+                :index="index"
+              >
+                {{ formatCellValue(getNestedValue(row, column.key), column) }}
+              </slot>
+            </div>
+
+            <div
+              v-if="hasActions"
+              class="cell actions-cell"
+              @click.stop
+            >
+              <slot
+                name="actions"
+                :row="row"
+                :index="index"
+              >
               <div class="action-buttons">
                 <button class="action-btn edit-btn" title="编辑">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -141,6 +145,88 @@
                     <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
                   </svg>
                 </button>
+              </div>
+            </slot>
+          </div>
+        </div>
+      </div>
+
+      <!-- 移动端卡片布局 -->
+      <div class="mobile-cards">
+        <!-- 空状态 -->
+        <div v-if="!loading && data.length === 0" class="empty-state">
+          <slot name="empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M8 12h8"/>
+            </svg>
+            <div class="empty-text">暂无数据</div>
+          </slot>
+        </div>
+
+        <!-- 数据卡片 -->
+        <div
+          v-for="(row, index) in data"
+          :key="getRowKey(row, index)"
+          :class="['data-card', {
+            selected: selectedRows.includes(getRowKey(row, index)),
+            clickable: rowClickable
+          }]"
+          @click="handleRowClick(row, index)"
+        >
+          <div class="card-header">
+            <div class="card-selection" v-if="selectable" @click.stop>
+              <input
+                type="checkbox"
+                :checked="selectedRows.includes(getRowKey(row, index))"
+                @change="toggleSelectRow(getRowKey(row, index))"
+                class="checkbox"
+              />
+            </div>
+            <div class="card-primary">
+              <slot
+                name="mobile-primary"
+                :row="row"
+                :index="index"
+              >
+                <!-- 默认显示第一列 -->
+                <div class="primary-value">
+                  {{ formatCellValue(getNestedValue(row, columns[0]?.key), columns[0]) }}
+                </div>
+              </slot>
+            </div>
+            <div class="card-actions" v-if="hasActions" @click.stop>
+              <slot
+                name="actions"
+                :row="row"
+                :index="index"
+              ></slot>
+            </div>
+          </div>
+          <div class="card-body">
+            <slot
+              name="mobile-content"
+              :row="row"
+              :index="index"
+              :columns="columns"
+            >
+              <!-- 默认显示所有列（除第一列外） -->
+              <div
+                v-for="column in columns.slice(1)"
+                :key="column.key"
+                class="card-field"
+              >
+                <span class="field-label">{{ column.title }}:</span>
+                <span class="field-value">
+                  <slot
+                    :name="`cell-${column.key}`"
+                    :row="row"
+                    :value="getNestedValue(row, column.key)"
+                    :index="index"
+                  >
+                    {{ formatCellValue(getNestedValue(row, column.key), column) }}
+                  </slot>
+                </span>
               </div>
             </slot>
           </div>
@@ -509,6 +595,95 @@ watch(() => props.data, (newData) => {
   color: var(--text-tertiary);
 }
 
+/* 移动端卡片布局 */
+.mobile-cards {
+  display: none;
+}
+
+.data-card {
+  background: var(--table-row-bg);
+  border: 1px solid var(--table-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.data-card:hover {
+  border-color: var(--border-secondary);
+  transform: translateY(-1px);
+}
+
+.data-card:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+.data-card.selected {
+  background-color: var(--table-selected);
+  border-color: var(--primary);
+}
+
+.data-card.clickable {
+  cursor: pointer;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--table-border);
+  background: var(--bg-tertiary);
+}
+
+.card-selection {
+  margin-right: var(--spacing-sm);
+}
+
+.card-primary {
+  flex: 1;
+}
+
+.primary-value {
+  font-weight: 600;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.card-body {
+  padding: var(--spacing-md);
+}
+
+.card-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--border-tertiary);
+}
+
+.card-field:last-child {
+  border-bottom: none;
+}
+
+.field-label {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.field-value {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .table-toolbar {
@@ -522,17 +697,13 @@ watch(() => props.data, (newData) => {
     justify-content: center;
   }
 
-  .table-header,
-  .table-row {
-    padding: var(--spacing-md);
+  /* 隐藏桌面表格，显示移动端卡片 */
+  .desktop-table {
+    display: none;
   }
 
-  .checkbox-cell {
-    width: 40px;
-  }
-
-  .actions-cell {
-    width: 80px;
+  .mobile-cards {
+    display: block;
   }
 
   .action-buttons {
@@ -541,8 +712,47 @@ watch(() => props.data, (newData) => {
   }
 
   .action-btn {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .action-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* 小屏幕设备进一步优化 */
+@media (max-width: 480px) {
+  .data-card {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .card-header {
+    padding: var(--spacing-sm);
+  }
+
+  .card-body {
+    padding: var(--spacing-sm);
+  }
+
+  .primary-value {
+    font-size: var(--text-sm);
+  }
+
+  .field-label,
+  .field-value {
+    font-size: var(--text-xs);
+  }
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .action-btn svg {
+    width: 16px;
+    height: 16px;
   }
 }
 </style>

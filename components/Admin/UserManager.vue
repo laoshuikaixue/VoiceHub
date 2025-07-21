@@ -54,50 +54,52 @@
         </div>
       </div>
 
-      <table v-else class="user-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>姓名</th>
-            <th>用户名</th>
-            <th>角色</th>
-            <th>年级</th>
-            <th>班级</th>
-            <th>最后登录</th>
-            <th>登录IP</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in paginatedUsers" :key="user.id" class="user-row">
-            <td>{{ user.id }}</td>
-            <td>{{ user.name }}</td>
-            <td>{{ user.username }}</td>
-            <td>
-              <span :class="['role-badge', getRoleClass(user.role)]">
-                {{ getRoleDisplayName(user.role) }}
-              </span>
-            </td>
-            <td>{{ user.grade || '-' }}</td>
-            <td>{{ user.class || '-' }}</td>
-            <td>{{ formatDate(user.lastLogin) }}</td>
-            <td>{{ user.lastLoginIp || '-' }}</td>
-            <td>
-              <div class="action-buttons">
-                <button
-                  @click="editUser(user)"
-                  class="action-btn edit-btn"
-                  title="编辑用户"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button
-                  @click="resetPassword(user)"
-                  class="action-btn warning-btn"
-                  title="重置密码"
+      <!-- 桌面端表格 -->
+      <div v-else class="table-container">
+        <table class="user-table desktop-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>姓名</th>
+              <th>用户名</th>
+              <th>角色</th>
+              <th>年级</th>
+              <th>班级</th>
+              <th>最后登录</th>
+              <th>登录IP</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="user in paginatedUsers" :key="user.id" class="user-row">
+              <td>{{ user.id }}</td>
+              <td>{{ user.name }}</td>
+              <td>{{ user.username }}</td>
+              <td>
+                <span :class="['role-badge', getRoleClass(user.role)]">
+                  {{ getRoleDisplayName(user.role) }}
+                </span>
+              </td>
+              <td>{{ user.grade || '-' }}</td>
+              <td>{{ user.class || '-' }}</td>
+              <td>{{ formatDate(user.lastLogin) }}</td>
+              <td>{{ user.lastLoginIp || '-' }}</td>
+              <td>
+                <div class="action-buttons">
+                  <button
+                    @click="editUser(user)"
+                    class="action-btn edit-btn"
+                    title="编辑用户"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button
+                    @click="resetPassword(user)"
+                    class="action-btn warning-btn"
+                    title="重置密码"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -120,6 +122,77 @@
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <!-- 移动端卡片式布局 -->
+      <div class="mobile-cards">
+        <div v-for="user in paginatedUsers" :key="user.id" class="user-card">
+          <div class="card-header">
+            <div class="user-primary-info">
+              <div class="user-name-container">
+                <span class="user-name-label">{{ user.name }}</span>
+                <span :class="['role-badge', getRoleClass(user.role)]">
+                  {{ getRoleDisplayName(user.role) }}
+                </span>
+              </div>
+              <div class="user-username">{{ user.username }}</div>
+            </div>
+            <div class="card-actions">
+              <button
+                @click="editUser(user)"
+                class="action-btn edit-btn"
+                title="编辑用户"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button
+                @click="resetPassword(user)"
+                class="action-btn warning-btn"
+                title="重置密码"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </button>
+              <button
+                @click="confirmDeleteUser(user)"
+                class="action-btn delete-btn"
+                title="删除用户"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3,6 5,6 21,6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  <line x1="10" y1="11" x2="10" y2="17"/>
+                  <line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="info-label">ID:</span>
+              <span class="info-value">{{ user.id }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">年级班级:</span>
+              <span class="info-value">{{ user.grade || '-' }} {{ user.class || '-' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">最后登录:</span>
+              <span class="info-value">{{ formatDate(user.lastLogin) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">登录IP:</span>
+              <span class="info-value">{{ user.lastLoginIp || '-' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 分页 -->
@@ -1055,6 +1128,94 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
+/* 移动端卡片布局 */
+.mobile-cards {
+  display: none;
+}
+
+.user-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.user-card:hover {
+  border-color: #3a3a3a;
+  transform: translateY(-1px);
+}
+
+.user-card:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+.card-header {
+  padding: 16px;
+  border-bottom: 1px solid #2a2a2a;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.user-primary-info {
+  flex: 1;
+}
+
+.user-name-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.user-name-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.user-username {
+  font-size: 14px;
+  color: #888888;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 13px;
+  color: #888888;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 13px;
+  color: #cccccc;
+  text-align: right;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .user-manager {
@@ -1076,13 +1237,13 @@ onMounted(async () => {
     width: 100%;
   }
 
-  .user-table {
-    font-size: 12px;
+  /* 隐藏桌面端表格，显示移动端卡片 */
+  .desktop-table {
+    display: none;
   }
 
-  .user-table th,
-  .user-table td {
-    padding: 8px;
+  .mobile-cards {
+    display: block;
   }
 
   .modal-content {
@@ -1092,6 +1253,90 @@ onMounted(async () => {
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  /* 移动端分页优化 */
+  .pagination {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .page-btn {
+    padding: 10px 14px;
+    font-size: 14px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .page-info {
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+
+/* 小屏幕设备进一步优化 */
+@media (max-width: 480px) {
+  .user-manager {
+    padding: 12px;
+  }
+
+  .toolbar-title {
+    font-size: 18px;
+  }
+
+  .toolbar-description {
+    font-size: 12px;
+  }
+
+  .user-card {
+    margin-bottom: 12px;
+  }
+
+  .card-header {
+    padding: 12px;
+  }
+
+  .card-body {
+    padding: 12px;
+  }
+
+  .user-name-label {
+    font-size: 15px;
+  }
+
+  .user-username {
+    font-size: 13px;
+  }
+
+  .role-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+
+  .info-label, .info-value {
+    font-size: 12px;
+  }
+
+  .action-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .action-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .pagination {
+    padding: 12px 0;
+  }
+
+  .page-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-width: 40px;
+    min-height: 40px;
   }
 }
 </style>

@@ -1,0 +1,439 @@
+/* 移动端管理界面优化样式 */
+
+/* 通用移动端表单优化 */
+@media (max-width: 768px) and not print {
+  /* 模态框移动端优化 */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    padding: 16px 20px !important;
+    position: sticky;
+    top: 0;
+    background: inherit;
+    z-index: 1;
+  }
+
+  .modal-header h3 {
+    font-size: 18px !important;
+  }
+
+  .close-btn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .modal-body {
+    padding: 20px !important;
+  }
+
+  .modal-footer {
+    padding: 16px 20px !important;
+    position: sticky;
+    bottom: 0;
+    background: inherit;
+    border-top: 1px solid var(--border-secondary) !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* 表单元素移动端优化 */
+  .form-group {
+    margin-bottom: 20px !important;
+  }
+
+  .form-group label {
+    font-size: 15px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    padding: 14px 16px !important;
+    font-size: 16px !important; /* 防止iOS缩放 */
+    border-radius: 10px !important;
+    min-height: 44px !important; /* 触摸友好的最小高度 */
+    box-sizing: border-box !important;
+  }
+
+  .form-textarea {
+    min-height: 120px !important;
+    resize: vertical;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  /* 按钮移动端优化 */
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-warning {
+    padding: 14px 20px !important;
+    font-size: 16px !important;
+    min-height: 48px !important;
+    border-radius: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .modal-footer .btn-primary,
+  .modal-footer .btn-secondary {
+    order: 1;
+  }
+
+  .modal-footer .btn-secondary {
+    order: 2;
+  }
+
+  /* 搜索输入框优化 */
+  .search-input {
+    padding: 12px 16px !important;
+    font-size: 16px !important;
+    border-radius: 10px !important;
+    min-height: 44px !important;
+  }
+
+  /* 工具栏按钮优化 */
+  .create-btn,
+  .refresh-btn,
+  .upload-btn {
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    min-height: 44px !important;
+    border-radius: 10px !important;
+  }
+
+  /* 操作按钮优化 */
+  .action-btn {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 8px !important;
+  }
+
+  .action-btn svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* 分页按钮优化 */
+  .page-btn {
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    min-height: 44px !important;
+    border-radius: 8px !important;
+  }
+
+  /* 选择框优化 */
+  .checkbox,
+  .radio {
+    width: 20px !important;
+    height: 20px !important;
+    margin: 0 !important;
+  }
+
+  /* 标签和徽章优化 */
+  .role-badge,
+  .status-badge,
+  .permission-tag {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+  }
+
+  /* 错误消息优化 */
+  .error-message {
+    padding: 14px 16px !important;
+    font-size: 15px !important;
+    border-radius: 10px !important;
+    margin-top: 12px !important;
+  }
+
+  /* 加载状态优化 */
+  .loading-overlay {
+    border-radius: 12px !important;
+  }
+
+  .spinner {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .loading-text {
+    font-size: 15px !important;
+    margin-top: 12px !important;
+  }
+}
+
+/* 小屏幕设备进一步优化 */
+@media (max-width: 480px) and not print {
+  .modal-content {
+    border-radius: 12px 12px 0 0 !important;
+  }
+
+  .modal-header {
+    padding: 12px 16px !important;
+  }
+
+  .modal-header h3 {
+    font-size: 16px !important;
+  }
+
+  .close-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .modal-body {
+    padding: 16px !important;
+  }
+
+  .modal-footer {
+    padding: 12px 16px !important;
+  }
+
+  .form-group {
+    margin-bottom: 16px !important;
+  }
+
+  .form-group label {
+    font-size: 14px !important;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    padding: 12px 14px !important;
+    font-size: 16px !important;
+    min-height: 40px !important;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-warning {
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    min-height: 44px !important;
+  }
+
+  .action-btn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .action-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+/* 触摸设备特殊优化 */
+@media (hover: none) and (pointer: coarse) {
+  /* 增加触摸目标大小 */
+  .nav-item,
+  .action-btn,
+  .page-btn,
+  .close-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  /* 移除悬停效果 */
+  .nav-item:hover,
+  .action-btn:hover,
+  .page-btn:hover,
+  .close-btn:hover {
+    transform: none !important;
+  }
+
+  /* 添加触摸反馈 */
+  .nav-item:active,
+  .action-btn:active,
+  .page-btn:active,
+  .close-btn:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* 横屏模式优化 */
+@media (max-width: 768px) and (orientation: landscape) and not print {
+  .modal-content {
+    max-height: 85vh !important;
+  }
+
+  .modal-header {
+    padding: 12px 20px !important;
+  }
+
+  .modal-body {
+    padding: 16px 20px !important;
+  }
+
+  .modal-footer {
+    padding: 12px 20px !important;
+  }
+}
+
+/* 移动端专用交互优化 */
+@media (max-width: 768px) and not print {
+  /* 滑动手势支持 */
+  .sidebar {
+    touch-action: pan-y;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  .activity-list,
+  .modal-body {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* 触摸反馈 */
+  .nav-item,
+  .action-btn,
+  .page-btn,
+  .close-btn,
+  .mobile-menu-btn,
+  .user-card,
+  .data-card,
+  .stat-card {
+    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.1);
+    tap-highlight-color: rgba(102, 126, 234, 0.1);
+  }
+
+  /* 防止双击缩放 */
+  .nav-item,
+  .action-btn,
+  .page-btn,
+  .close-btn,
+  .mobile-menu-btn {
+    touch-action: manipulation;
+  }
+
+  /* 长按菜单禁用 */
+  .action-btn,
+  .page-btn,
+  .close-btn {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* 拖拽优化 */
+  .user-card,
+  .data-card,
+  .role-card {
+    touch-action: pan-y;
+  }
+
+  /* 输入框优化 */
+  .form-input,
+  .form-select,
+  .form-textarea,
+  .search-input {
+    -webkit-appearance: none;
+    appearance: none;
+    touch-action: manipulation;
+  }
+
+  /* iOS特定优化 */
+  .form-input[type="text"],
+  .form-input[type="email"],
+  .form-input[type="password"],
+  .search-input {
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+/* 触摸设备特殊交互 */
+@media (hover: none) and (pointer: coarse) {
+  /* 卡片点击效果 */
+  .user-card:active,
+  .data-card:active,
+  .role-card:active,
+  .stat-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+
+  /* 按钮点击效果 */
+  .nav-item:active,
+  .action-btn:active,
+  .page-btn:active,
+  .close-btn:active,
+  .mobile-menu-btn:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+
+  /* 移除悬停效果 */
+  .nav-item:hover,
+  .action-btn:hover,
+  .page-btn:hover,
+  .close-btn:hover,
+  .user-card:hover,
+  .data-card:hover,
+  .role-card:hover,
+  .stat-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* 焦点样式优化 */
+  .form-input:focus,
+  .form-select:focus,
+  .form-textarea:focus,
+  .search-input:focus {
+    transform: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+  }
+}
+
+/* 下拉刷新支持 */
+@media (max-width: 768px) and not print {
+  .overview-dashboard,
+  .user-manager,
+  .role-manager {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* 安全区域适配 */
+@supports (padding: max(0px)) {
+  @media (max-width: 768px) and not print {
+    .mobile-header {
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+      padding-top: max(0px, env(safe-area-inset-top));
+    }
+
+    .sidebar {
+      padding-left: max(0px, env(safe-area-inset-left));
+    }
+
+    .modal-content {
+      margin-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+  }
+}

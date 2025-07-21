@@ -1076,6 +1076,23 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
 
+  .permission-item {
+    padding: 12px 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .permission-checkbox,
+  .category-checkbox {
+    width: 18px !important;
+    height: 18px !important;
+    margin-right: 10px !important;
+  }
+
+  .permission-name,
+  .category-name {
+    font-size: 15px !important;
+  }
+
   .modal-footer {
     flex-direction: column;
     align-items: stretch;
@@ -1084,6 +1101,63 @@ onMounted(async () => {
   .cancel-btn,
   .save-btn {
     width: 100%;
+    padding: 14px 20px !important;
+    font-size: 16px !important;
+    min-height: 48px !important;
+  }
+}
+
+/* 小屏幕设备进一步优化 */
+@media (max-width: 480px) {
+  .role-manager {
+    padding: 12px;
+  }
+
+  .toolbar-title {
+    font-size: 18px;
+  }
+
+  .toolbar-description {
+    font-size: 12px;
+  }
+
+  .role-card {
+    padding: 16px;
+  }
+
+  .role-name {
+    font-size: 16px;
+  }
+
+  .role-description {
+    font-size: 13px;
+  }
+
+  .permission-tag {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .permission-item {
+    padding: 10px 6px !important;
+  }
+
+  .permission-checkbox,
+  .category-checkbox {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .permission-name,
+  .category-name {
+    font-size: 14px !important;
+  }
+
+  .cancel-btn,
+  .save-btn {
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    min-height: 44px !important;
   }
 }
 </style>

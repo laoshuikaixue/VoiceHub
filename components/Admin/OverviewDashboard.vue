@@ -564,6 +564,8 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .action-btn:hover {
@@ -596,16 +598,165 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .overview-dashboard {
+    gap: 20px;
+  }
+
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .dashboard-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
+  .dashboard-card {
+    border-radius: 10px;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+  }
+
+  .card-header h3 {
+    font-size: 16px;
+  }
+
+  .refresh-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .refresh-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .activity-list {
+    padding: 20px;
+    max-height: 300px;
+  }
+
+  .activity-item {
+    padding: 10px 0;
+  }
+
+  .activity-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .activity-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .activity-title {
+    font-size: 13px;
+  }
+
+  .activity-description {
+    font-size: 11px;
+  }
+
+  .activity-time {
+    font-size: 10px;
+  }
+
+  .system-status {
+    padding: 20px;
+  }
+
+  .status-item {
+    padding: 10px 0;
+  }
+
+  .status-item span {
+    font-size: 13px;
+  }
+
+  .status-value {
+    font-size: 11px;
+  }
+
+  .quick-actions {
+    padding: 20px;
+    gap: 10px;
+  }
+
+  .action-btn {
+    padding: 12px 14px !important;
+    font-size: 13px !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    box-sizing: border-box !important;
+  }
+
+  .action-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* 小屏幕设备进一步优化 */
+@media (max-width: 480px) {
   .overview-dashboard {
-    gap: 24px;
+    gap: 16px;
+  }
+
+  .stats-grid {
+    gap: 12px;
+  }
+
+  .dashboard-grid {
+    gap: 12px;
+  }
+
+  .card-header {
+    padding: 12px 16px;
+  }
+
+  .card-header h3 {
+    font-size: 15px;
+  }
+
+  .refresh-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .refresh-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .activity-list {
+    padding: 16px;
+    max-height: 250px;
+  }
+
+  .system-status {
+    padding: 16px;
+  }
+
+  .quick-actions {
+    padding: 16px;
+    gap: 8px;
+  }
+
+  .action-btn {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    box-sizing: border-box !important;
+  }
+
+  .action-btn svg {
+    width: 12px;
+    height: 12px;
   }
 }
 </style>
