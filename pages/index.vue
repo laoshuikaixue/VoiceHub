@@ -938,13 +938,13 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .ellipse-effect {
   position: absolute;
   top: -165px;
-  left: 165px;
+  left: 50%;
+  transform: translateX(-50%) perspective(500px) rotateX(10deg);
   width: 1110px;
   height: 309px;
   background: radial-gradient(ellipse at center, rgba(11, 90, 254, 0.3) 0%, rgba(11, 90, 254, 0.15) 30%, rgba(11, 90, 254, 0) 70%);
   z-index: 0; /* 确保在内容下方但在背景上方 */
   pointer-events: none; /* 允许点击穿透 */
-  transform: perspective(500px) rotateX(10deg);
 }
 
 /* 顶部区域样式 */
