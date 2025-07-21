@@ -274,9 +274,17 @@ const handleChangePassword = async () => {
     if (props.isFirstLogin) {
       await auth.setInitialPassword(newPassword.value)
       success.value = '密码设置成功！正在跳转...'
+      setTimeout(() => {
+        auth.logout()
+        router.push('/')
+      }, 1500)
     } else {
       await auth.changePassword(currentPassword.value, newPassword.value)
       success.value = '密码修改成功！正在跳转...'
+      setTimeout(() => {
+        auth.logout()
+        router.push('/')
+      }, 1500)
     }
 
     // 清空表单
