@@ -93,6 +93,30 @@ export const useAuth = () => {
     }
   }
 
+  // 设置初始密码（仅首次登录且未修改过密码时可用）
+  const setInitialPassword = async (newPassword: string) => {
+    loading.value = true
+    try {
+      // 只有首次登录且未修改过密码才允许设置初始密码
+      if (!user.value || !("passwordChangedAt" in user.value) || !user.value.passwordChangedAt) {
+        const { data, error } = await useFetch('/api/auth/set-initial-password', {
+          method: 'POST',
+          body: { newPassword },
+          ...getAuthHeader()
+        })
+        if (error.value) {
+          const errorMessage = error.value.data?.message || error.value.statusMessage || '初始密码设置失败'
+          throw new Error(errorMessage)
+        }
+        return data.value
+      } else {
+        throw new Error('已设置过密码，不能再次设置初始密码')
+      }
+    } finally {
+      loading.value = false
+    }
+  }
+
   // 注销
   const logout = () => {
     user.value = null
@@ -144,6 +168,7 @@ export const useAuth = () => {
     login,
     logout,
     changePassword,
+    setInitialPassword,
     getToken,
     getAuthHeader,
     initAuth // 公开initAuth方法
