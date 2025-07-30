@@ -24,6 +24,7 @@ backups/
 .kiro
 .cursor
 .vercel
+.vscode
 package-lock.json
 
 # Local env files

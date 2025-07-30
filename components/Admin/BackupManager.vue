@@ -232,15 +232,35 @@ const createBackup = async () => {
       }
     })
 
-    if (response.downloadMode === 'direct') {
-      // 直接下载模式（无服务器环境）
-      const dataStr = JSON.stringify(response.data, null, 2)
+    // 添加调试信息
+    console.log('服务器响应:', response)
+    console.log('downloadMode:', response.backup?.downloadMode)
+    console.log('filename:', response.backup?.filename)
+
+    // 无论什么模式，都强制进行浏览器下载
+    if (response.backup) {
+      console.log('强制进行浏览器下载')
+      
+      let dataToDownload
+      if (response.backup.data) {
+        // 如果服务器直接返回了数据，使用它
+        dataToDownload = response.backup.data
+      } else {
+        // 如果没有数据，可能需要从文件路径获取（但在这种情况下我们无法访问文件系统）
+        // 这种情况下，我们需要修改服务器端逻辑
+        console.warn('服务器没有返回备份数据，无法进行浏览器下载')
+        showNotification('备份创建成功，但无法自动下载。请联系管理员。', 'warning')
+        showCreateModal.value = false
+        return
+      }
+      
+      const dataStr = JSON.stringify(dataToDownload, null, 2)
       const blob = new Blob([dataStr], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       
       const link = document.createElement('a')
       link.href = url
-      link.download = response.filename
+      link.download = response.backup.filename
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -248,8 +268,8 @@ const createBackup = async () => {
       
       showNotification('备份已下载', 'success')
     } else {
-      // 传统文件模式
-      showNotification('备份创建成功', 'success')
+      console.error('服务器响应中没有backup对象')
+      showNotification('备份创建失败：服务器响应格式错误', 'error')
     }
     
     showCreateModal.value = false
