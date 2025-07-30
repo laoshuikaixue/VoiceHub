@@ -175,34 +175,77 @@ export default defineEventHandler(async (event) => {
 
     backupData.metadata.totalRecords = totalRecords
 
-    // 创建备份目录
-    const backupDir = path.join(process.cwd(), 'backups')
-    try {
-      await fs.access(backupDir)
-    } catch {
-      await fs.mkdir(backupDir, { recursive: true })
-    }
-
-    // 生成备份文件名
+    // 生成备份文件名（用于下载）
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
     const filePrefix = tables === 'users' ? 'users-backup' : 'database-backup'
     const filename = `${filePrefix}-${timestamp}.json`
-    const filepath = path.join(backupDir, filename)
-
-    // 保存备份文件
-    await fs.writeFile(filepath, JSON.stringify(backupData, null, 2), 'utf8')
 
     console.log(`✅ 备份完成: ${filename}`)
     console.log(`📊 总计备份 ${totalRecords} 条记录`)
 
-    return {
-      success: true,
-      message: '数据库备份创建成功',
-      backup: {
-        filename,
-        filepath,
-        size: (await fs.stat(filepath)).size,
-        metadata: backupData.metadata
+    // 检测运行环境
+    const isVercel = process.env.VERCEL || process.env.VERCEL_ENV
+    const isNetlify = process.env.NETLIFY
+    const isServerless = isVercel || isNetlify
+
+    if (isServerless) {
+      // 在无服务器环境中，直接返回备份数据供前端下载
+      console.log('🌐 检测到无服务器环境，直接返回备份数据')
+      
+      // 计算数据大小（估算）
+      const dataSize = JSON.stringify(backupData).length
+
+      return {
+        success: true,
+        message: '数据库备份创建成功',
+        backup: {
+          filename,
+          data: backupData,
+          size: dataSize,
+          metadata: backupData.metadata,
+          downloadMode: 'direct' // 标识为直接下载模式
+        }
+      }
+    } else {
+      // 在传统服务器环境中，保存到文件系统
+      try {
+        const backupDir = path.join(process.cwd(), 'backups')
+        try {
+          await fs.access(backupDir)
+        } catch {
+          await fs.mkdir(backupDir, { recursive: true })
+        }
+
+        const filepath = path.join(backupDir, filename)
+        await fs.writeFile(filepath, JSON.stringify(backupData, null, 2), 'utf8')
+
+        return {
+          success: true,
+          message: '数据库备份创建成功',
+          backup: {
+            filename,
+            filepath,
+            size: (await fs.stat(filepath)).size,
+            metadata: backupData.metadata,
+            downloadMode: 'file' // 标识为文件下载模式
+          }
+        }
+      } catch (fsError) {
+        console.warn('文件系统操作失败，回退到直接返回模式:', fsError.message)
+        
+        // 如果文件系统操作失败，回退到直接返回模式
+        const dataSize = JSON.stringify(backupData).length
+        return {
+          success: true,
+          message: '数据库备份创建成功（直接下载模式）',
+          backup: {
+            filename,
+            data: backupData,
+            size: dataSize,
+            metadata: backupData.metadata,
+            downloadMode: 'direct'
+          }
+        }
       }
     }
 

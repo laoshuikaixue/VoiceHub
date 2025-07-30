@@ -13,14 +13,40 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // 检测运行环境
+    const isVercel = process.env.VERCEL || process.env.VERCEL_ENV
+    const isNetlify = process.env.NETLIFY
+    const isServerless = isVercel || isNetlify
+
+    if (isServerless) {
+      // 在无服务器环境中，无法持久化存储文件，返回空列表
+      console.log('🌐 检测到无服务器环境，备份文件无法持久化存储')
+      return {
+        success: true,
+        backups: [],
+        total: 0,
+        message: '无服务器环境中备份文件无法持久化存储，请使用直接下载功能'
+      }
+    }
+
     const backupDir = path.join(process.cwd(), 'backups')
     
     // 检查备份目录是否存在
     try {
       await fs.access(backupDir)
     } catch {
-      // 如果目录不存在，创建它
-      await fs.mkdir(backupDir, { recursive: true })
+      // 如果目录不存在，尝试创建它
+      try {
+        await fs.mkdir(backupDir, { recursive: true })
+      } catch (mkdirError) {
+        console.warn('无法创建备份目录，可能在只读文件系统中:', mkdirError.message)
+        return {
+          success: true,
+          backups: [],
+          total: 0,
+          message: '文件系统只读，备份文件无法持久化存储'
+        }
+      }
       return {
         success: true,
         backups: [],

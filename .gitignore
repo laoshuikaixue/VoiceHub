@@ -23,6 +23,7 @@ backups/
 .idea
 .kiro
 .cursor
+.vercel
 package-lock.json
 
 # Local env files
