@@ -382,12 +382,12 @@ onMounted(() => {
 }
 
 .save-btn {
-  background: #0b5afe;
+  background: var(--btn-primary-bg);
   color: white;
 }
 
 .save-btn:hover:not(:disabled) {
-  background: #0847d1;
+  background: var(--btn-primary-hover-bg);
 }
 
 .save-btn:disabled {

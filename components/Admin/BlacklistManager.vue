@@ -142,6 +142,19 @@
       {{ success }}
     </div>
   </div>
+
+  <!-- 确认删除对话框 -->
+  <ConfirmDialog
+    :show="showDeleteDialog"
+    title="删除黑名单项"
+    :message="deleteDialogMessage"
+    type="danger"
+    confirm-text="删除"
+    cancel-text="取消"
+    :loading="loading"
+    @confirm="confirmDelete"
+    @close="showDeleteDialog = false"
+  />
 </template>
 
 <script setup>
@@ -151,6 +164,11 @@ const blacklist = ref([])
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+
+// 删除对话框相关
+const showDeleteDialog = ref(false)
+const deleteDialogMessage = ref('')
+const deleteTargetItem = ref(null)
 
 const newItem = reactive({
   type: 'SONG',
@@ -269,28 +287,38 @@ const toggleItemStatus = async (item) => {
 
 // 删除项目
 const deleteItem = async (item) => {
-  if (!confirm(`确定要删除黑名单项"${item.value}"吗？`)) return
+  deleteTargetItem.value = item
+  deleteDialogMessage.value = `确定要删除黑名单项"${item.value}"吗？`
+  showDeleteDialog.value = true
+}
+
+// 确认删除
+const confirmDelete = async () => {
+  if (!deleteTargetItem.value) return
 
   loading.value = true
   error.value = ''
 
   try {
-    await $fetch(`/api/admin/blacklist/${item.id}`, {
+    await $fetch(`/api/admin/blacklist/${deleteTargetItem.value.id}`, {
       method: 'DELETE',
       ...useAuth().getAuthHeader()
     })
 
-    success.value = '黑名单项删除成功'
+    if (window.$showNotification) {
+      window.$showNotification('黑名单项删除成功', 'success')
+    }
     await loadBlacklist()
-
-    setTimeout(() => {
-      success.value = ''
-    }, 2000)
   } catch (err) {
     error.value = '删除失败'
     console.error('删除失败:', err)
+    if (window.$showNotification) {
+      window.$showNotification('删除失败: ' + err.message, 'error')
+    }
   } finally {
     loading.value = false
+    showDeleteDialog.value = false
+    deleteTargetItem.value = null
   }
 }
 
@@ -321,11 +349,10 @@ onMounted(() => {
 
 <style scoped>
 .blacklist-manager {
-  width: 100%;
-  padding: 24px;
-  background: #111111;
-  border-radius: 12px;
-  border: 1px solid #1f1f1f;
+  padding: 20px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+  color: #e2e8f0;
 }
 
 .header {
@@ -333,8 +360,11 @@ onMounted(() => {
 }
 
 .header h3 {
-  color: #fff;
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #f8fafc;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .description {
@@ -403,7 +433,7 @@ onMounted(() => {
 
 .add-btn {
   padding: 10px 20px;
-  background: #0b5afe;
+  background: var(--btn-primary-bg);
   color: white;
   border: none;
   border-radius: 6px;
@@ -413,7 +443,7 @@ onMounted(() => {
 }
 
 .add-btn:hover:not(:disabled) {
-  background: #0847d1;
+  background: var(--btn-primary-hover-bg);
 }
 
 .add-btn:disabled {

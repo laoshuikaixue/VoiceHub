@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, readonly } from 'vue'
 import type { Semester } from '~/types'
 
 export function useSemesters() {
@@ -147,6 +147,46 @@ export function useSemesters() {
     }
   }
 
+  // 删除学期
+  const deleteSemester = async (semesterId: number) => {
+    const { isAuthenticated, getAuthHeader } = useAuth()
+    
+    if (!isAuthenticated.value) {
+      error.value = '需要登录才能删除学期'
+      return false
+    }
+    
+    loading.value = true
+    error.value = ''
+    
+    try {
+      const authHeaders = getAuthHeader()
+      
+      const response = await fetch(`/api/admin/semesters/${semesterId}`, {
+        method: 'DELETE',
+        headers: {
+          ...authHeaders.headers,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || '删除学期失败')
+      }
+      
+      // 更新学期列表
+      await fetchSemesters()
+      
+      return true
+    } catch (err: any) {
+      error.value = err.message || '删除学期失败'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     semesters: readonly(semesters),
     currentSemester: readonly(currentSemester),
@@ -155,6 +195,7 @@ export function useSemesters() {
     fetchSemesters,
     fetchCurrentSemester,
     createSemester,
-    setActiveSemester
+    setActiveSemester,
+    deleteSemester
   }
 }

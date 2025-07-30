@@ -82,8 +82,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button @click="showCreateModal = false" class="cancel-btn">取消</button>
-          <button @click="createBackup" class="confirm-btn" :disabled="createLoading">
+          <button @click="showCreateModal = false" class="action-btn secondary">取消</button>
+          <button @click="createBackup" class="action-btn primary" :disabled="createLoading">
             <span v-if="createLoading">创建中...</span>
             <span v-else>创建备份</span>
           </button>
@@ -183,10 +183,10 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button @click="showUploadModal = false" class="cancel-btn">取消</button>
+          <button @click="showUploadModal = false" class="action-btn secondary">取消</button>
           <button
             @click="uploadFile"
-            class="confirm-btn"
+            class="action-btn primary"
             :disabled="!selectedFile || uploadLoading || (restoreForm.mode === 'replace' && !restoreForm.clearExisting)"
           >
             <span v-if="uploadLoading">导入中...</span>
@@ -232,50 +232,102 @@ const createBackup = async () => {
       }
     })
 
-    // 添加调试信息
     console.log('服务器响应:', response)
-    console.log('downloadMode:', response.backup?.downloadMode)
-    console.log('filename:', response.backup?.filename)
 
-    // 无论什么模式，都强制进行浏览器下载
-    if (response.backup) {
-      console.log('强制进行浏览器下载')
+    if (response.success && response.backup) {
+      const { backup } = response
       
+      // 强制进行浏览器下载
       let dataToDownload
-      if (response.backup.data) {
-        // 如果服务器直接返回了数据，使用它
-        dataToDownload = response.backup.data
+      
+      if (backup.downloadMode === 'direct' && backup.data) {
+        // 直接下载模式：服务器返回了完整数据
+        dataToDownload = backup.data
+        console.log('使用直接下载模式')
+        
+        // 创建并下载文件
+        try {
+          const dataStr = JSON.stringify(dataToDownload, null, 2)
+          const blob = new Blob([dataStr], { 
+            type: 'application/json;charset=utf-8' 
+          })
+          
+          // 创建下载链接
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = backup.filename
+          link.style.display = 'none'
+          
+          // 添加到DOM，点击，然后移除
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          
+          // 清理URL对象
+          URL.revokeObjectURL(url)
+          
+          // 显示成功消息
+          const sizeText = backup.size ? ` (${formatFileSize(backup.size)})` : ''
+          showNotification(`备份文件已下载: ${backup.filename}${sizeText}`, 'success')
+          
+          console.log('✅ 文件下载成功:', backup.filename)
+        } catch (downloadError) {
+          console.error('下载失败:', downloadError)
+          showNotification('文件下载失败: ' + downloadError.message, 'error')
+        }
+      } else if (backup.downloadMode === 'file' && backup.filename) {
+        // 文件下载模式：通过API下载文件
+        console.log('使用文件下载模式')
+        
+        try {
+          // 使用 $fetch 进行认证请求，然后创建下载
+          const response = await $fetch(`/api/admin/backup/download?filename=${encodeURIComponent(backup.filename)}`, {
+            method: 'GET'
+          })
+          
+          // 创建 Blob 并下载
+          const blob = new Blob([response], {
+            type: 'application/json'
+          })
+          
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = backup.filename
+          link.style.display = 'none'
+          
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          
+          URL.revokeObjectURL(url)
+          
+          // 显示成功消息
+          const sizeText = backup.size ? ` (${formatFileSize(backup.size)})` : ''
+          showNotification(`备份文件已下载: ${backup.filename}${sizeText}`, 'success')
+          
+          console.log('✅ 文件下载成功:', backup.filename)
+        } catch (downloadError) {
+          console.error('文件下载失败:', downloadError)
+          showNotification('文件下载失败: ' + downloadError.message, 'error')
+        }
       } else {
-        // 如果没有数据，可能需要从文件路径获取（但在这种情况下我们无法访问文件系统）
-        // 这种情况下，我们需要修改服务器端逻辑
-        console.warn('服务器没有返回备份数据，无法进行浏览器下载')
-        showNotification('备份创建成功，但无法自动下载。请联系管理员。', 'warning')
+        console.error('无效的下载模式或缺少数据')
+        showNotification('备份创建失败：无效的响应格式', 'error')
         showCreateModal.value = false
         return
       }
-      
-      const dataStr = JSON.stringify(dataToDownload, null, 2)
-      const blob = new Blob([dataStr], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      
-      const link = document.createElement('a')
-      link.href = url
-      link.download = response.backup.filename
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-      
-      showNotification('备份已下载', 'success')
     } else {
-      console.error('服务器响应中没有backup对象')
+      console.error('服务器响应格式错误:', response)
       showNotification('备份创建失败：服务器响应格式错误', 'error')
     }
     
     showCreateModal.value = false
   } catch (error) {
     console.error('创建备份失败:', error)
-    showNotification('创建备份失败: ' + (error.data?.message || error.message), 'error')
+    const errorMessage = error.data?.message || error.message || '未知错误'
+    showNotification('创建备份失败: ' + errorMessage, 'error')
   } finally {
     createLoading.value = false
   }
@@ -339,103 +391,161 @@ const formatFileSize = (bytes) => {
 
 // 显示通知
 const showNotification = (message, type = 'info') => {
-  // 这里可以集成你的通知系统
-  console.log(`${type}: ${message}`)
-  alert(message) // 临时使用 alert，可以替换为更好的通知组件
+  // 创建通知元素
+  const notification = document.createElement('div')
+  notification.className = `notification ${type}`
+  notification.textContent = message
+  
+  // 添加到body
+  document.body.appendChild(notification)
+  
+  // 自动移除
+  setTimeout(() => {
+    notification.style.animation = 'slideOutRight 0.3s ease-out'
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification)
+      }
+    }, 300)
+  }, 4000)
 }
 </script>
 
 <style scoped>
 .backup-manager {
-  max-width: 800px;
-  margin: 0 auto;
   padding: 20px;
-  background: #1f2937;
-  color: #f9fafb;
-  border-radius: 12px;
+  background: var(--bg-primary) !important;
+  min-height: 100vh;
+  color: #e2e8f0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 覆盖全局背景 */
+.backup-manager::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary) !important;
+  z-index: -1;
 }
 
 .header {
+  margin-bottom: 32px;
   text-align: center;
-  margin-bottom: 40px;
 }
 
 .header h3 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #f9fafb;
   margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #f8fafc;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.description {
-  color: #9ca3af;
+.header .description {
+  color: #94a3b8;
+  font-size: 16px;
   margin: 0;
 }
 
 .actions-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 24px;
-  margin-bottom: 40px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .action-card {
-  background: #374151;
-  border: 1px solid #4b5563;
-  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  border-radius: 16px;
   padding: 24px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
   text-align: center;
-  transition: all 0.2s ease;
 }
 
 .action-card:hover {
-  background: #4b5563;
-  border-color: #6b7280;
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
   transform: translateY(-2px);
 }
 
 .action-icon {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   margin: 0 auto 16px;
-  color: #3b82f6;
+  color: #6366f1;
 }
 
 .action-card h4 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
-  color: #f9fafb;
+  color: #f8fafc;
   margin: 0 0 8px 0;
 }
 
 .action-card p {
-  color: #9ca3af;
-  margin: 0 0 20px 0;
+  color: #94a3b8;
   font-size: 14px;
+  margin: 0 0 20px 0;
   line-height: 1.5;
 }
 
 .action-btn {
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
   width: 100%;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: white;
 }
 
-.action-btn:hover {
-  background: #2563eb;
+.action-btn.primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.action-btn.primary:hover {
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
   transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+}
+
+.action-btn.secondary {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+}
+
+.action-btn.secondary:hover {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(100, 116, 139, 0.4);
 }
 
 .action-btn:disabled {
-  background: #6b7280;
+  background: #374151 !important;
+  color: #6b7280 !important;
   cursor: not-allowed;
-  transform: none;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.action-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* 模态框样式 */
@@ -445,7 +555,8 @@ const showNotification = (message, type = 'info') => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -454,58 +565,75 @@ const showNotification = (message, type = 'info') => {
 }
 
 .modal {
-  background: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 12px;
+  background: #1e293b;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  border-radius: 20px;
   max-width: 500px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
 }
 
 .modal-header {
-  padding: 24px 24px 0;
-  border-bottom: 1px solid #374151;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32px 32px 0 32px;
   margin-bottom: 24px;
 }
 
-.modal-header h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #f9fafb;
-  margin: 0 0 8px 0;
+.modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
 }
 
-.modal-header p {
-  color: #9ca3af;
-  margin: 0 0 24px 0;
-  font-size: 14px;
+.close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
-.modal-content {
-  padding: 0 24px;
+.close-btn:hover {
+  background: rgba(71, 85, 105, 0.3);
+  color: #f8fafc;
+}
+
+.close-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.modal-body {
+  padding: 0 32px 32px 32px;
 }
 
 .modal-footer {
-  padding: 24px;
-  border-top: 1px solid #374151;
+  padding: 24px 32px;
+  border-top: 1px solid rgba(71, 85, 105, 0.3);
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: flex-end;
-  margin-top: 24px;
+  margin-top: 0;
 }
 
 /* 表单样式 */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 28px;
 }
 
 .form-group label {
   display: block;
-  font-weight: 500;
-  color: #f9fafb;
-  margin-bottom: 8px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+  font-size: 15px;
 }
 
 .radio-group {
@@ -517,214 +645,394 @@ const showNotification = (message, type = 'info') => {
 .radio-option {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  background: #374151;
-  border: 1px solid #4b5563;
-  border-radius: 8px;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 2px solid rgba(71, 85, 105, 0.5);
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
 .radio-option:hover {
-  background: #4b5563;
-  border-color: #6b7280;
+  background: rgba(51, 65, 85, 0.6);
+  border-color: rgba(99, 102, 241, 0.7);
+  transform: translateY(-1px);
 }
 
 .radio-option input[type="radio"] {
-  margin: 0;
-  accent-color: #3b82f6;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #64748b;
+  border-radius: 50%;
+  background: transparent;
+  margin: 2px 0 0 0;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.radio-option input[type="radio"]:checked {
+  border-color: #6366f1;
+  background: #6366f1;
+}
+
+.radio-option input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+}
+
+.radio-option input[type="radio"]:checked + span {
+  color: #f8fafc;
+  font-weight: 600;
 }
 
 .radio-option span {
   font-weight: 500;
-  color: #f9fafb;
+  color: #e2e8f0;
+  font-size: 15px;
+  transition: all 0.3s ease;
 }
 
 .radio-option small {
   display: block;
-  color: #9ca3af;
-  font-size: 12px;
-  margin-top: 4px;
+  color: #94a3b8;
+  font-size: 13px;
+  margin-top: 6px;
+  line-height: 1.4;
 }
 
 .checkbox-option {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  background: #374151;
-  border: 1px solid #4b5563;
-  border-radius: 8px;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 2px solid rgba(71, 85, 105, 0.5);
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
 .checkbox-option:hover {
-  background: #4b5563;
-  border-color: #6b7280;
+  background: rgba(51, 65, 85, 0.6);
+  border-color: rgba(99, 102, 241, 0.7);
+  transform: translateY(-1px);
 }
 
 .checkbox-option.danger {
-  border-color: #dc2626;
-  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .checkbox-option.danger:hover {
-  background: rgba(220, 38, 38, 0.2);
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.7);
 }
 
 .checkbox-option input[type="checkbox"] {
-  margin: 0;
-  accent-color: #3b82f6;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #64748b;
+  border-radius: 4px;
+  background: transparent;
+  margin: 2px 0 0 0;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.checkbox-option input[type="checkbox"]:checked {
+  border-color: #6366f1;
+  background: #6366f1;
+}
+
+.checkbox-option input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.checkbox-option.danger input[type="checkbox"]:checked {
+  border-color: #ef4444;
+  background: #ef4444;
+}
+
+.checkbox-option input[type="checkbox"]:checked + span {
+  color: #f8fafc;
+  font-weight: 600;
 }
 
 .checkbox-option span {
   font-weight: 500;
-  color: #f9fafb;
+  color: #e2e8f0;
+  font-size: 15px;
+  transition: all 0.3s ease;
 }
 
 .checkbox-option small {
   display: block;
-  color: #9ca3af;
-  font-size: 12px;
-  margin-top: 4px;
+  color: #94a3b8;
+  font-size: 13px;
+  margin-top: 6px;
+  line-height: 1.4;
 }
 
 /* 文件上传区域 */
+.upload-section {
+  margin-bottom: 32px;
+}
+
 .upload-area {
-  border: 2px dashed #4b5563;
-  border-radius: 12px;
-  padding: 40px 20px;
+  border: 2px dashed rgba(71, 85, 105, 0.5);
+  border-radius: 16px;
+  padding: 48px 24px;
   text-align: center;
-  background: #374151;
-  transition: all 0.2s ease;
+  background: rgba(30, 41, 59, 0.4);
+  transition: all 0.3s ease;
   cursor: pointer;
-  margin-bottom: 20px;
 }
 
 .upload-area:hover,
 .upload-area.drag-over {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
 }
 
-.upload-icon {
-  width: 48px;
-  height: 48px;
+.upload-area svg {
+  width: 56px;
+  height: 56px;
   margin: 0 auto 16px;
-  color: #6b7280;
+  color: #6366f1;
+  transition: all 0.3s ease;
 }
 
-.upload-area:hover .upload-icon,
-.upload-area.drag-over .upload-icon {
-  color: #3b82f6;
+.upload-area:hover svg,
+.upload-area.drag-over svg {
+  color: #8b5cf6;
+  transform: scale(1.1);
 }
 
-.upload-text {
-  color: #f9fafb;
-  font-weight: 500;
+.upload-area h4 {
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 18px;
   margin-bottom: 8px;
 }
 
-.upload-hint {
-  color: #9ca3af;
+.upload-area p {
+  color: #94a3b8;
   font-size: 14px;
-}
-
-.file-input {
-  display: none;
+  margin: 0;
 }
 
 /* 文件信息 */
-.file-info {
-  background: #374151;
-  border: 1px solid #4b5563;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
+.selected-file {
+  margin-bottom: 32px;
 }
 
-.file-info h4 {
-  color: #f9fafb;
-  font-weight: 500;
-  margin: 0 0 8px 0;
+.file-info {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.file-info svg {
+  width: 24px;
+  height: 24px;
+  color: #6366f1;
+  flex-shrink: 0;
 }
 
 .file-details {
+  flex: 1;
   display: flex;
-  justify-content: space-between;
-  color: #9ca3af;
-  font-size: 14px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.file-name {
+  color: #e2e8f0;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.file-size {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.remove-file-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #f87171;
+  flex-shrink: 0;
+}
+
+.remove-file-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.remove-file-btn svg {
+  width: 16px;
+  height: 16px;
+  color: inherit;
 }
 
 /* 警告框 */
 .warning-box {
   background: rgba(245, 158, 11, 0.1);
-  border: 1px solid #f59e0b;
-  border-radius: 8px;
-  padding: 16px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  padding: 20px;
   display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 32px;
 }
 
 .warning-box svg {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   color: #f59e0b;
   flex-shrink: 0;
   margin-top: 2px;
 }
 
+.warning-box > div {
+  flex: 1;
+}
+
 .warning-box h4 {
   color: #f59e0b;
   font-weight: 600;
-  margin: 0 0 4px 0;
-  font-size: 14px;
+  margin: 0 0 8px 0;
+  font-size: 15px;
 }
 
 .warning-box p {
   color: #fbbf24;
   margin: 0;
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
-/* 按钮样式 */
-.cancel-btn {
-  background: #6b7280;
+
+
+/* 通知样式 */
+.notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  padding: 16px 24px;
+  border-radius: 12px;
   color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  z-index: 1001;
+  animation: slideInRight 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 300px;
+  max-width: 500px;
 }
 
-.cancel-btn:hover {
-  background: #4b5563;
+.notification::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.confirm-btn {
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.notification.success::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
+  background-size: 16px;
 }
 
-.confirm-btn:hover {
-  background: #2563eb;
+.notification.error::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
+  background-size: 16px;
 }
 
-.confirm-btn:disabled {
-  background: #6b7280;
-  cursor: not-allowed;
+.notification.warning::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
+  background-size: 16px;
+}
+
+.notification.info::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
+  background-size: 16px;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.notification.success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.notification.error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.notification.warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.notification.info {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 /* 响应式设计 */
@@ -739,16 +1047,30 @@ const showNotification = (message, type = 'info') => {
   }
   
   .modal {
-    margin: 20px;
-    max-width: calc(100vw - 40px);
+    margin: 16px;
+    max-width: calc(100vw - 32px);
+    border-radius: 16px;
+  }
+  
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 24px;
   }
   
   .modal-footer {
     flex-direction: column;
+    gap: 12px;
   }
   
   .modal-footer button {
     width: 100%;
+  }
+  
+  .notification {
+    left: 16px;
+    right: 16px;
+    top: 16px;
   }
 }
 </style>

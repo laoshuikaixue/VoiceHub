@@ -254,6 +254,19 @@
       </div>
     </div>
   </div>
+
+  <!-- 确认删除对话框 -->
+  <ConfirmDialog
+    :show="showDeleteDialog"
+    :title="deleteDialogTitle"
+    :message="deleteDialogMessage"
+    type="danger"
+    confirm-text="删除"
+    cancel-text="取消"
+    :loading="loading"
+    @confirm="confirmDelete"
+    @close="showDeleteDialog = false"
+  />
 </template>
 
 <script setup>
@@ -267,6 +280,12 @@ const sortOption = ref('time-desc')
 const selectedSongs = ref([])
 const currentPage = ref(1)
 const pageSize = ref(20)
+
+// 删除对话框相关
+const showDeleteDialog = ref(false)
+const deleteDialogTitle = ref('')
+const deleteDialogMessage = ref('')
+const deleteAction = ref(null)
 
 // 数据
 const songs = ref([])
@@ -450,55 +469,70 @@ const deleteSong = async (songId) => {
   const song = songs.value.find(s => s.id === songId)
   if (!song) return
 
-  if (!confirm(`确定要删除歌曲 "${song.title}" 吗？此操作不可撤销。`)) return
+  deleteDialogTitle.value = '删除歌曲'
+  deleteDialogMessage.value = `确定要删除歌曲 "${song.title}" 吗？此操作不可撤销。`
+  deleteAction.value = async () => {
+    try {
+      await adminService.deleteSong(songId)
+      await refreshSongs()
 
-  try {
-    await adminService.deleteSong(songId)
-    await refreshSongs()
+      // 从选中列表中移除
+      const index = selectedSongs.value.indexOf(songId)
+      if (index > -1) {
+        selectedSongs.value.splice(index, 1)
+      }
 
-    // 从选中列表中移除
-    const index = selectedSongs.value.indexOf(songId)
-    if (index > -1) {
-      selectedSongs.value.splice(index, 1)
-    }
-
-    if (window.$showNotification) {
-      window.$showNotification('歌曲删除成功', 'success')
-    }
-  } catch (error) {
-    console.error('删除歌曲失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('删除失败: ' + error.message, 'error')
+      if (window.$showNotification) {
+        window.$showNotification('歌曲删除成功', 'success')
+      }
+    } catch (error) {
+      console.error('删除歌曲失败:', error)
+      if (window.$showNotification) {
+        window.$showNotification('删除失败: ' + error.message, 'error')
+      }
     }
   }
+  showDeleteDialog.value = true
 }
 
 const batchDelete = async () => {
   if (selectedSongs.value.length === 0) return
 
-  if (!confirm(`确定要删除选中的 ${selectedSongs.value.length} 首歌曲吗？此操作不可撤销。`)) return
+  deleteDialogTitle.value = '批量删除歌曲'
+  deleteDialogMessage.value = `确定要删除选中的 ${selectedSongs.value.length} 首歌曲吗？此操作不可撤销。`
+  deleteAction.value = async () => {
+    try {
+      loading.value = true
 
-  try {
-    loading.value = true
+      for (const songId of selectedSongs.value) {
+        await adminService.deleteSong(songId)
+      }
 
-    for (const songId of selectedSongs.value) {
-      await adminService.deleteSong(songId)
+      await refreshSongs()
+      selectedSongs.value = []
+
+      if (window.$showNotification) {
+        window.$showNotification('批量删除成功', 'success')
+      }
+    } catch (error) {
+      console.error('批量删除失败:', error)
+      if (window.$showNotification) {
+        window.$showNotification('批量删除失败: ' + error.message, 'error')
+      }
+    } finally {
+      loading.value = false
     }
-
-    await refreshSongs()
-    selectedSongs.value = []
-
-    if (window.$showNotification) {
-      window.$showNotification('批量删除成功', 'success')
-    }
-  } catch (error) {
-    console.error('批量删除失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('批量删除失败: ' + error.message, 'error')
-    }
-  } finally {
-    loading.value = false
   }
+  showDeleteDialog.value = true
+}
+
+// 确认删除
+const confirmDelete = async () => {
+  if (deleteAction.value) {
+    await deleteAction.value()
+  }
+  showDeleteDialog.value = false
+  deleteAction.value = null
 }
 
 // 监听器
@@ -522,9 +556,11 @@ onMounted(async () => {
   flex-direction: column;
   gap: 24px;
   padding: 24px;
-  background: #111111;
+  background: var(--bg-primary);
   border-radius: 12px;
   border: 1px solid #1f1f1f;
+  color: #e2e8f0;
+  min-height: 100vh;
 }
 
 /* 工具栏 */
@@ -537,6 +573,14 @@ onMounted(async () => {
   border-radius: 12px;
   border: 1px solid #2a2a2a;
   flex-wrap: wrap;
+}
+
+.toolbar h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #f8fafc;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .search-section {

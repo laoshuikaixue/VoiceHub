@@ -225,6 +225,19 @@
       </div>
     </div>
   </div>
+
+  <!-- 确认对话框 -->
+  <ConfirmDialog
+    :show="showConfirmDialog"
+    :title="confirmDialogTitle"
+    :message="confirmDialogMessage"
+    :type="confirmDialogType"
+    :confirm-text="confirmDialogConfirmText"
+    cancel-text="取消"
+    :loading="loading"
+    @confirm="handleConfirm"
+    @close="showConfirmDialog = false"
+  />
 </template>
 
 <script setup>
@@ -235,6 +248,14 @@ const selectedDate = ref(new Date().toISOString().split('T')[0])
 const loading = ref(false)
 const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
+
+// 确认对话框相关
+const showConfirmDialog = ref(false)
+const confirmDialogTitle = ref('')
+const confirmDialogMessage = ref('')
+const confirmDialogType = ref('warning')
+const confirmDialogConfirmText = ref('确认')
+const confirmAction = ref(null)
 
 // 拖拽状态
 const isDraggableOver = ref(false)
@@ -835,7 +856,11 @@ const removeFromSequence = (index) => {
   const schedule = localScheduledSongs.value[index]
   if (!schedule) return
 
-  if (confirm(`确定要移除歌曲 "${schedule.song.title}" 的排期吗？`)) {
+  confirmDialogTitle.value = '移除排期'
+  confirmDialogMessage.value = `确定要移除歌曲 "${schedule.song.title}" 的排期吗？`
+  confirmDialogType.value = 'warning'
+  confirmDialogConfirmText.value = '移除'
+  confirmAction.value = () => {
     scheduledSongIds.value.delete(schedule.song.id)
     localScheduledSongs.value.splice(index, 1)
 
@@ -845,6 +870,7 @@ const removeFromSequence = (index) => {
 
     hasChanges.value = true
   }
+  showConfirmDialog.value = true
 }
 
 const saveSequence = async () => {
@@ -906,30 +932,44 @@ const saveSequence = async () => {
 }
 
 const markAllAsPlayed = async () => {
-  if (!confirm('确定要将所有排期歌曲标记为已播放吗？')) return
+  confirmDialogTitle.value = '标记已播放'
+  confirmDialogMessage.value = '确定要将所有排期歌曲标记为已播放吗？'
+  confirmDialogType.value = 'info'
+  confirmDialogConfirmText.value = '标记'
+  confirmAction.value = async () => {
+    try {
+      loading.value = true
 
-  try {
-    loading.value = true
-
-    for (const schedule of localScheduledSongs.value) {
-      if (schedule.song && !schedule.song.played) {
-        await songsService.markPlayed(schedule.song.id)
+      for (const schedule of localScheduledSongs.value) {
+        if (schedule.song && !schedule.song.played) {
+          await songsService.markPlayed(schedule.song.id)
+        }
       }
-    }
 
-    await loadData()
+      await loadData()
 
-    if (window.$showNotification) {
-      window.$showNotification('所有歌曲已标记为已播放', 'success')
+      if (window.$showNotification) {
+        window.$showNotification('所有歌曲已标记为已播放', 'success')
+      }
+    } catch (error) {
+      console.error('标记已播放失败:', error)
+      if (window.$showNotification) {
+        window.$showNotification('标记已播放失败: ' + error.message, 'error')
+      }
+    } finally {
+      loading.value = false
     }
-  } catch (error) {
-    console.error('标记已播放失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('标记已播放失败: ' + error.message, 'error')
-    }
-  } finally {
-    loading.value = false
   }
+  showConfirmDialog.value = true
+}
+
+// 处理确认操作
+const handleConfirm = async () => {
+  if (confirmAction.value) {
+    await confirmAction.value()
+  }
+  showConfirmDialog.value = false
+  confirmAction.value = null
 }
 
 // 日期滚动
@@ -970,14 +1010,16 @@ const updateScrollButtonState = () => {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 24px;
-  background: var(--card-bg);
+  padding: 20px;
+  background: var(--bg-primary);
   border-radius: var(--radius-xl);
   border: 1px solid var(--card-border);
   width: 100%;
   max-width: none;
   min-width: 0;
   box-sizing: border-box;
+  min-height: 100vh;
+  color: #e2e8f0;
 }
 
 /* 日期选择器 */
@@ -1183,10 +1225,11 @@ const updateScrollButtonState = () => {
 }
 
 .panel-header h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #ffffff;
   margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #f8fafc;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .sort-options {

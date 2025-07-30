@@ -1058,10 +1058,10 @@ onMounted(async () => {
 
 <style scoped>
 .user-manager {
-  padding: 24px;
-  background: #0a0a0a;
+  padding: 20px;
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #ffffff;
+  color: #e2e8f0;
 }
 
 /* 工具栏 */
@@ -1078,9 +1078,10 @@ onMounted(async () => {
 
 .toolbar-left h3 {
   margin: 0 0 8px 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #ffffff;
+  font-size: 28px;
+  font-weight: 700;
+  color: #f8fafc;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .stats {

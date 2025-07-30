@@ -55,6 +55,8 @@ export default defineEventHandler(async (event) => {
       iat: number // 令牌发行时间
     }
     
+    console.log('Token解码成功:', { userId: decoded.userId, role: decoded.role, path })
+    
     // 获取用户信息
     let user
     try {
@@ -80,12 +82,15 @@ export default defineEventHandler(async (event) => {
     }
     
     if (!user) {
+      console.log('用户查询失败:', { userId: decoded.userId })
       throw createError({
         statusCode: 401,
         message: '用户不存在，请重新登录',
         data: { invalidToken: true }
       })
     }
+    
+    console.log('用户查询成功:', { id: user.id, username: user.username, role: user.role })
     
     // 将用户信息添加到事件上下文
     event.context.user = {
@@ -125,4 +130,4 @@ export default defineEventHandler(async (event) => {
       message: '服务器认证错误',
     })
   }
-}) 
+})

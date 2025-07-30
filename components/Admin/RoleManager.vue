@@ -204,6 +204,19 @@
       </div>
     </div>
   </div>
+
+  <!-- 确认对话框 -->
+  <ConfirmDialog
+    :show="showConfirmDialog"
+    :title="confirmDialogTitle"
+    :message="confirmDialogMessage"
+    :type="confirmDialogType"
+    :confirm-text="confirmDialogConfirmText"
+    cancel-text="取消"
+    :loading="loading"
+    @confirm="handleConfirm"
+    @close="showConfirmDialog = false"
+  />
 </template>
 
 <script setup>
@@ -215,6 +228,14 @@ const savingRole = ref(false)
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const editingRole = ref(null)
+
+// 确认对话框相关
+const showConfirmDialog = ref(false)
+const confirmDialogTitle = ref('')
+const confirmDialogMessage = ref('')
+const confirmDialogType = ref('warning')
+const confirmDialogConfirmText = ref('确认')
+const confirmAction = ref(null)
 
 const roles = ref([])
 const permissions = ref([])
@@ -391,25 +412,30 @@ const deleteRole = async (roleId) => {
   const role = roles.value.find(r => r.id === roleId)
   if (!role) return
 
-  if (!confirm(`确定要删除角色 "${role.name}" 吗？此操作不可撤销。`)) return
+  confirmDialogTitle.value = '删除角色'
+  confirmDialogMessage.value = `确定要删除角色 "${role.name}" 吗？此操作不可撤销。`
+  confirmDialogType.value = 'danger'
+  confirmDialogConfirmText.value = '删除'
+  confirmAction.value = async () => {
+    try {
+      await $fetch(`/api/admin/roles/${roleId}`, {
+        method: 'DELETE',
+        headers: auth.getAuthHeader().headers
+      })
 
-  try {
-    await $fetch(`/api/admin/roles/${roleId}`, {
-      method: 'DELETE',
-      headers: auth.getAuthHeader().headers
-    })
+      await refreshRoles()
 
-    await refreshRoles()
-
-    if (window.$showNotification) {
-      window.$showNotification('角色删除成功', 'success')
-    }
-  } catch (error) {
-    console.error('删除角色失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('删除角色失败: ' + error.message, 'error')
+      if (window.$showNotification) {
+        window.$showNotification('角色删除成功', 'success')
+      }
+    } catch (error) {
+      console.error('删除角色失败:', error)
+      if (window.$showNotification) {
+        window.$showNotification('删除角色失败: ' + error.message, 'error')
+      }
     }
   }
+  showConfirmDialog.value = true
 }
 
 const saveRole = async () => {
@@ -467,32 +493,46 @@ const closeModals = () => {
 }
 
 const initializeRoles = async () => {
-  if (!confirm('确定要初始化角色系统吗？这将创建默认的角色和权限。')) return
+  confirmDialogTitle.value = '初始化角色系统'
+  confirmDialogMessage.value = '确定要初始化角色系统吗？这将创建默认的角色和权限。'
+  confirmDialogType.value = 'info'
+  confirmDialogConfirmText.value = '初始化'
+  confirmAction.value = async () => {
+    try {
+      loading.value = true
 
-  try {
-    loading.value = true
+      const response = await $fetch('/api/admin/init-roles', {
+        method: 'POST',
+        headers: auth.getAuthHeader().headers
+      })
 
-    const response = await $fetch('/api/admin/init-roles', {
-      method: 'POST',
-      headers: auth.getAuthHeader().headers
-    })
+      if (response.success) {
+        await refreshRoles()
+        await loadPermissions()
 
-    if (response.success) {
-      await refreshRoles()
-      await loadPermissions()
-
-      if (window.$showNotification) {
-        window.$showNotification(response.message, 'success')
+        if (window.$showNotification) {
+          window.$showNotification(response.message, 'success')
+        }
       }
+    } catch (error) {
+      console.error('初始化角色系统失败:', error)
+      if (window.$showNotification) {
+        window.$showNotification('初始化失败: ' + error.message, 'error')
+      }
+    } finally {
+      loading.value = false
     }
-  } catch (error) {
-    console.error('初始化角色系统失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('初始化失败: ' + error.message, 'error')
-    }
-  } finally {
-    loading.value = false
   }
+  showConfirmDialog.value = true
+}
+
+// 处理确认操作
+const handleConfirm = async () => {
+  if (confirmAction.value) {
+    await confirmAction.value()
+  }
+  showConfirmDialog.value = false
+  confirmAction.value = null
 }
 
 // 生命周期
@@ -508,10 +548,12 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 24px;
-  background: #111111;
+  padding: 20px;
+  background: var(--bg-primary);
   border-radius: 12px;
   border: 1px solid #1f1f1f;
+  min-height: 100vh;
+  color: #e2e8f0;
 }
 
 /* 工具栏 */
@@ -526,9 +568,10 @@ onMounted(async () => {
 }
 
 .toolbar-left h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #ffffff;
+  font-size: 28px;
+  font-weight: 700;
+  color: #f8fafc;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   margin: 0 0 4px 0;
 }
 

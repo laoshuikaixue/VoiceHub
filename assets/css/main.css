@@ -48,7 +48,13 @@ a {
   color: inherit;
 }
 
-/* 现代流体背景 */
+/* 简洁现代背景 */
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* 可选的微妙纹理效果 */
 body::before {
   content: '';
   position: fixed;
@@ -56,23 +62,12 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background:
-    radial-gradient(circle at 20% 35%, var(--primary-light) 0%, transparent 25%),
-    radial-gradient(circle at 75% 65%, var(--success-light) 0%, transparent 30%);
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.01) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(120, 119, 198, 0.02) 0%, transparent 50%);
   z-index: -1;
-}
-
-/* 流体动画效果 */
-body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%236366f1' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
-  z-index: -2;
-  opacity: 0.5;
+  pointer-events: none;
 }
 
 /* 容器 */
@@ -134,18 +129,36 @@ body::after {
 /* 卡片 */
 .card {
   background: var(--card-bg);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-xl);
   padding: var(--spacing-2xl);
-  box-shadow: var(--card-shadow);
-  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   border-color: var(--card-hover-border);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 
+    0 12px 24px rgba(0, 0, 0, 0.15),
+    0 4px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* 按钮 */
@@ -154,7 +167,7 @@ body::after {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-md) var(--spacing-2xl);
-  font-weight: var(--font-medium);
+  font-weight: var(--font-semibold);
   border-radius: var(--radius-lg);
   transition: all var(--transition-normal);
   cursor: pointer;
@@ -162,41 +175,76 @@ body::after {
   border: none;
   outline: none;
   font-size: var(--text-sm);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.btn:hover::before {
+  left: 100%;
 }
 
 .btn-primary {
-  background-color: var(--btn-primary-bg);
+  background: linear-gradient(135deg, var(--btn-primary-bg) 0%, var(--primary-hover) 100%);
   color: var(--btn-primary-text);
+  border: 1px solid var(--primary-border);
 }
 
 .btn-primary:hover {
-  background-color: var(--btn-primary-hover);
+  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .btn-secondary {
-  background-color: var(--btn-secondary-bg);
+  background: linear-gradient(135deg, var(--btn-secondary-bg) 0%, var(--bg-quaternary) 100%);
   color: var(--btn-secondary-text);
   border: 1px solid var(--btn-secondary-border);
 }
 
 .btn-secondary:hover {
-  background-color: var(--btn-secondary-hover);
+  background: linear-gradient(135deg, var(--bg-quaternary) 0%, #4a4a4a 100%);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
 
 .btn-outline {
-  background-color: transparent;
-  border: 1px solid var(--border-tertiary);
+  background: transparent;
+  border: 2px solid var(--border-tertiary);
   color: var(--text-primary);
+  backdrop-filter: blur(8px);
 }
 
 .btn-outline:hover {
-  background-color: var(--bg-hover);
+  background: var(--bg-hover);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
 .btn:disabled {
-  background-color: var(--btn-disabled-bg);
+  background: var(--btn-disabled-bg);
   color: var(--btn-disabled-text);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn:disabled::before {
+  display: none;
 }
 
 /* 列表样式 */
@@ -217,33 +265,50 @@ body::after {
 .input {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-lg);
-  background-color: var(--input-bg);
-  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  border: 2px solid var(--input-border);
   border-radius: var(--radius-lg);
   color: var(--input-text);
   outline: none;
-  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+  transition: all var(--transition-normal);
   font-size: var(--text-sm);
+  position: relative;
+  backdrop-filter: blur(8px);
 }
 
 .input:focus {
   border-color: var(--input-border-focus);
-  box-shadow: var(--input-shadow-focus);
+  box-shadow: 
+    var(--input-shadow-focus),
+    0 4px 12px rgba(102, 126, 234, 0.1);
+  background: var(--bg-secondary);
+  transform: translateY(-1px);
 }
 
 .input::placeholder {
   color: var(--input-placeholder);
+  transition: color var(--transition-normal);
+}
+
+.input:focus::placeholder {
+  color: var(--text-quaternary);
 }
 
 .form-group {
   margin-bottom: var(--spacing-lg);
+  position: relative;
 }
 
 .form-group label {
   display: block;
   margin-bottom: var(--spacing-sm);
-  font-weight: var(--font-medium);
+  font-weight: var(--font-semibold);
   color: var(--text-secondary);
+  transition: color var(--transition-normal);
+}
+
+.form-group:focus-within label {
+  color: var(--primary);
 }
 
 /* 响应式 */

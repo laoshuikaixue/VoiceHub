@@ -58,6 +58,14 @@
             >
               设为当前
             </button>
+            <button 
+              v-if="!semester.isActive"
+              @click="deleteSemester(semester.id)"
+              class="delete-btn"
+              :disabled="loading"
+            >
+              删除
+            </button>
             <span v-else class="active-badge">当前学期</span>
           </div>
         </div>
@@ -107,10 +115,24 @@
       </div>
     </div>
   </div>
+
+  <!-- 确认删除对话框 -->
+  <ConfirmDialog
+    :show="showDeleteDialog"
+    title="删除学期"
+    message="确定要删除这个学期吗？此操作不可撤销。"
+    type="danger"
+    confirm-text="删除"
+    cancel-text="取消"
+    :loading="loading"
+    @confirm="confirmDelete"
+    @close="showDeleteDialog = false"
+  />
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 const { 
   semesters, 
@@ -120,10 +142,13 @@ const {
   fetchSemesters, 
   fetchCurrentSemester, 
   createSemester, 
-  setActiveSemester 
+  setActiveSemester,
+  deleteSemester: deleteSemesterAPI
 } = useSemesters()
 
 const showAddModal = ref(false)
+const showDeleteDialog = ref(false)
+const deleteTargetId = ref(null)
 const submitting = ref(false)
 const newSemester = ref({
   name: '',
@@ -138,6 +163,25 @@ const setActive = async (semesterId) => {
   if (success && window.$showNotification) {
     window.$showNotification('活跃学期设置成功！', 'success')
   }
+}
+
+// 删除学期
+const deleteSemester = async (semesterId) => {
+  deleteTargetId.value = semesterId
+  showDeleteDialog.value = true
+}
+
+// 确认删除
+const confirmDelete = async () => {
+  if (!deleteTargetId.value) return
+  
+  const success = await deleteSemesterAPI(deleteTargetId.value)
+  if (success && window.$showNotification) {
+    window.$showNotification('学期删除成功！', 'success')
+  }
+  
+  showDeleteDialog.value = false
+  deleteTargetId.value = null
 }
 
 // 处理添加学期
@@ -177,9 +221,10 @@ onMounted(async () => {
 
 <style scoped>
 .semester-manager {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 20px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+  color: #e2e8f0;
 }
 
 .header {
@@ -190,9 +235,11 @@ onMounted(async () => {
 }
 
 .header h2 {
-  color: #fff;
-  font-size: 1.5rem;
   margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #f8fafc;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .add-btn {
@@ -287,6 +334,7 @@ onMounted(async () => {
   padding: 0.5rem 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
+  margin-right: 0.5rem;
 }
 
 .set-active-btn:hover {
@@ -295,6 +343,26 @@ onMounted(async () => {
 }
 
 .set-active-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.delete-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.delete-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

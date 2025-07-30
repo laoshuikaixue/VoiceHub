@@ -388,6 +388,10 @@ const sendNotification = async () => {
 
 <style scoped>
 .notification-sender {
+  padding: 20px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+  color: #e2e8f0;
   margin-bottom: 30px;
   width: 100%;
   max-width: 100%;
@@ -425,9 +429,10 @@ const sendNotification = async () => {
 
 .card-header h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--light);
+  font-size: 28px;
+  font-weight: 700;
+  color: #f8fafc;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .card-body {
@@ -461,25 +466,51 @@ const sendNotification = async () => {
 
 .scope-btn {
   padding: 8px 15px;
-  background: rgba(30, 41, 59, 0.4);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  color: var(--gray);
+  color: #9ca3af;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   font-size: 14px;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.scope-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
 }
 
 .scope-btn:hover:not(.active) {
-  background: rgba(30, 41, 59, 0.6);
+  background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
+  color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.scope-btn:hover::before {
+  left: 100%;
 }
 
 .scope-btn.active {
-  background: rgba(99, 102, 241, 0.2);
-  color: var(--primary);
-  border-color: var(--primary);
+  background: linear-gradient(135deg, rgba(11, 90, 254, 0.2), rgba(11, 90, 254, 0.1));
+  color: #60a5fa;
+  border-color: rgba(11, 90, 254, 0.4);
   font-weight: 500;
+  box-shadow: 0 0 20px rgba(11, 90, 254, 0.2);
+}
+
+.scope-btn.active::before {
+  background: linear-gradient(90deg, transparent, rgba(11, 90, 254, 0.2), transparent);
 }
 
 /* 多班级选择 */
@@ -624,4 +655,4 @@ const sendNotification = async () => {
     width: 100%;
   }
 }
-</style> 
+</style>
