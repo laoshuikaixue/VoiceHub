@@ -6,7 +6,7 @@
         <div class="info-content">
           <div class="logo-section">
             <img src="/images/logo.svg" alt="VoiceHub Logo" class="brand-logo" />
-            <h1 class="brand-title">{{ $config.public.siteTitle || 'VoiceHub' }}</h1>
+            <h1 class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
           </div>
 
           <div v-if="isFirstLogin" class="welcome-message">
@@ -74,12 +74,18 @@
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
 import { ref } from 'vue'
 
+// 使用站点配置
+const { siteTitle, initSiteConfig } = useSiteConfig()
+
 const auth = useAuth()
 const router = useRouter()
 const isFirstLogin = ref(false)
 
 // 未登录用户重定向到登录页
-onMounted(() => {
+onMounted(async () => {
+  // 初始化站点配置
+  await initSiteConfig()
+  
   if (!auth.isAuthenticated.value && process.client) {
     router.push('/login')
     return

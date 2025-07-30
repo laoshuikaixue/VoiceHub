@@ -3,14 +3,17 @@
     <div class="rules-section">
       <h2 class="section-title">投稿须知</h2>
       <div class="rules-content">
-        <p>1. 投稿时无需加入书名号</p>
-        <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
-        <p>3. 禁止投递含有违规内容的歌曲</p>
-        <p>4. 点播的歌曲将由管理员进行审核</p>
-        <p>5. 审核通过后将安排在播放时段播出</p>
-        <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
-        <p>7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
-        <p>8. 最终解释权归广播站所有</p>
+        <div v-if="submissionGuidelines" class="guidelines-content" v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+        <div v-else class="default-guidelines">
+          <p>1. 投稿时无需加入书名号</p>
+          <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
+          <p>3. 禁止投递含有违规内容的歌曲</p>
+          <p>4. 点播的歌曲将由管理员进行审核</p>
+          <p>5. 审核通过后将安排在播放时段播出</p>
+          <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
+          <p>7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
+          <p>8. 最终解释权归广播站所有</p>
+        </div>
       </div>
     </div>
 
@@ -245,6 +248,7 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 
 const props = defineProps({
   loading: {
@@ -254,6 +258,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['request', 'vote'])
+
+// 站点配置
+const { guidelines: submissionGuidelines, initSiteConfig } = useSiteConfig()
 
 const title = ref('')
 const artist = ref('')
@@ -300,6 +307,7 @@ const fetchPlayTimes = async () => {
 
 onMounted(() => {
   fetchPlayTimes()
+  initSiteConfig()
 })
 
 // 过滤出启用的播出时段

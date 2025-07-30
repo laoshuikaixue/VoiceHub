@@ -48,7 +48,7 @@
       </div>
 
       <div class="site-title">
-        <h2>{{ config.public.siteTitle || 'VoiceHub示例站' }}</h2>
+        <h2>{{ siteTitle || 'VoiceHub示例站' }}</h2>
       </div>
 
       <!-- 中间主体内容区域 -->
@@ -337,6 +337,13 @@
           </Transition>
         </div>
       </div>
+      
+      <!-- 备案号显示 -->
+      <div v-if="icpNumber" class="icp-footer">
+        <a :href="`https://beian.miit.gov.cn/`" target="_blank" rel="noopener noreferrer" class="icp-link">
+          {{ icpNumber }}
+        </a>
+      </div>
     </div>
 
     <!-- 规则弹窗 -->
@@ -352,7 +359,8 @@
         <div class="modal-body">
           <div class="rules-content">
             <h3 class="font-bold mb-2">投稿须知</h3>
-            <ul class="list-disc pl-5 mb-4">
+            <div v-if="submissionGuidelines" class="guidelines-content" v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+            <ul v-else class="list-disc pl-5 mb-4">
               <li>投稿时无需加入书名号</li>
               <li>除DJ外 其他类型歌曲均接收（包含日语 韩语等小语种）</li>
               <li>禁止投递含有违规内容的歌曲</li>
@@ -381,7 +389,7 @@
 
         <div class="modal-body">
           <div class="about-content">
-            <h3 class="font-bold mb-2">关于{{ config.public.siteTitle || 'VoiceHub' }}</h3>
+            <h3 class="font-bold mb-2">关于{{ siteTitle || 'VoiceHub' }}</h3>
             <p class="mb-4">VoiceHub是由LaoShui开发，计划服务于舟山市六横中学的点歌系统。</p>
 
             <h3 class="font-bold mb-2">联系方式</h3>
@@ -415,10 +423,14 @@ import SongList from '~/components/Songs/SongList.vue'
 import RequestForm from '~/components/Songs/RequestForm.vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useNotifications } from '~/composables/useNotifications'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
 const router = useRouter()
+
+// 站点配置
+const { title: siteTitle, description: siteDescription, guidelines: submissionGuidelines, icp: icpNumber, initSiteConfig } = useSiteConfig()
 
 // 服务器端安全的认证状态管理
 const isClientAuthenticated = ref(false)
@@ -622,6 +634,9 @@ const loadSongCount = async () => {
 
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
+  // 初始化站点配置
+  await initSiteConfig()
+  
   auth = useAuth()
 
   // 初始化认证状态
@@ -938,7 +953,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 <style scoped>
 .home {
   width: 100%;
-  min-height: 100vh;
+  flex: 1; /* 使用flex: 1 替代 min-height: 100vh */
   background-color: #121318;
   padding: 1.5rem;
   color: #FFFFFF;
@@ -1091,6 +1106,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   display: flex;
   flex-direction: column;
   gap: 0; /* 移除间隙 */
+  min-height: 60vh; /* 确保内容区域有足够的高度 */
 }
 
 /* 选项卡样式 */
@@ -1198,6 +1214,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   margin-top: -2px; /* 使内容容器与标签连接 */
   box-sizing: border-box;
   width: 100%;
+  min-height: 60vh; /* 确保内容区域有足够的高度 */
 }
 
 @media (max-width: 768px) {
@@ -1219,6 +1236,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   width: 100%;
   box-sizing: border-box;
   padding: 0;
+  min-height: 50vh; /* 确保排期内容有足够的高度 */
 }
 
 @media (max-width: 768px) {
@@ -1967,5 +1985,35 @@ input:checked + .toggle-slider:before {
 .login-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0, 67, 248, 0.3);
+}
+
+/* 备案号样式 */
+.icp-footer {
+  text-align: center;
+  padding: 20px 0;
+  margin-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.icp-link {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-size: 12px;
+  transition: color 0.2s ease;
+}
+
+.icp-link:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+@media (max-width: 768px) {
+  .icp-footer {
+    padding: 15px 0;
+    margin-top: 20px;
+  }
+  
+  .icp-link {
+    font-size: 11px;
+  }
 }
 </style>

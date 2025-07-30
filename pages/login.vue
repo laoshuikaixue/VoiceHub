@@ -6,7 +6,7 @@
         <div class="brand-content">
           <div class="logo-section">
             <img src="/images/logo.svg" alt="VoiceHub Logo" class="brand-logo" />
-            <h1 class="brand-title">{{ $config.public.siteTitle || 'VoiceHub' }}</h1>
+            <h1 class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
           </div>
           <p class="brand-description">
             校园广播站点歌管理系统
@@ -54,12 +54,18 @@
 import { ref, onMounted } from 'vue'
 import LoginForm from '~/components/Auth/LoginForm.vue'
 
+// 使用站点配置
+const { siteTitle, initSiteConfig } = useSiteConfig()
+
 // 服务器端安全的认证状态管理
 const isClientAuthenticated = ref(false)
 const router = useRouter()
 
 // 在组件挂载后初始化认证（只会在客户端执行）
-onMounted(() => {
+onMounted(async () => {
+  // 初始化站点配置
+  await initSiteConfig()
+  
   const auth = useAuth()
   isClientAuthenticated.value = auth.isAuthenticated.value
   

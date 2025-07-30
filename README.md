@@ -162,104 +162,181 @@ npm run build
 npm run start
 ```
 
+## 系统配置
+
+### 站点配置管理
+VoiceHub 提供了完整的站点配置管理功能，支持通过管理后台动态配置系统参数：
+
+#### 基本信息配置
+- **站点标题**：自定义系统显示名称
+- **站点描述**：系统功能描述和介绍
+- **站点Logo**：支持上传自定义Logo图片
+
+#### 播放时段管理
+- **多时段支持**：支持配置多个播放时段（如午间、晚间）
+- **时段名称**：自定义时段显示名称
+- **开始/结束时间**：精确到分钟的时间控制
+- **时段排序**：支持拖拽调整时段显示顺序
+
+#### 通知系统配置
+- **通知开关**：控制系统通知功能的启用状态
+- **通知类型**：配置不同类型通知的发送规则
+- **通知模板**：自定义通知消息的格式和内容
+
+### 数据库备份与恢复
+系统提供了完整的数据备份和恢复解决方案：
+
+#### 备份功能
+- **完整备份**：包含所有数据表的完整系统备份
+- **用户数据备份**：仅备份用户相关数据（用户、歌曲、投票等）
+- **增量备份**：支持基于时间的增量备份策略
+
+#### 恢复功能
+- **合并模式**：将备份数据与现有数据合并，保留现有数据
+- **替换模式**：完全替换现有数据（谨慎使用）
+- **数据验证**：恢复前自动验证备份文件完整性
+
+### 权限与角色管理
+VoiceHub 实现了细粒度的权限控制系统：
+
+#### 角色类型
+- **超级管理员**：拥有所有系统权限，包括用户管理、系统配置等
+- **管理员**：拥有日常管理权限，如排期管理、歌曲管理等
+- **普通用户**：基本的点歌、投票和查看权限
+
+#### 权限分类
+- **用户管理权限**：创建、编辑、删除用户账户
+- **歌曲管理权限**：管理歌曲库、黑名单、排期等
+- **系统配置权限**：修改系统设置、站点配置等
+- **数据管理权限**：数据库备份、恢复、导入导出等
+- **通知管理权限**：发送系统通知、管理通知设置等
+
+#### 权限继承
+- 权限采用继承机制，高级角色自动拥有低级角色的所有权限
+- 支持动态权限检查，确保用户只能访问授权的功能
+- 前端和后端双重权限验证，确保系统安全性
+
+
 ## 环境变量说明
 
-| 变量名                          | 必填 | 说明                                |
-|------------------------------|----|-----------------------------------|
-| DATABASE_URL                 | 是  | PostgreSQL数据库连接字符串                |
-| JWT_SECRET                   | 是  | JWT令牌签名密钥，建议使用强随机字符串              |
-| NODE_ENV                     | 否  | 运行环境，development或production       |
-| NITRO_PRESET                 | 否  | Nitro预设，部署到Netlify时自动设置为'netlify' |
-| NUXT_PUBLIC_SITE_TITLE       | 否  | 站点标题，默认为"校园广播站点歌系统"               |
-| NUXT_PUBLIC_SITE_LOGO        | 否  | 站点Logo URL                        |
-| NUXT_PUBLIC_SITE_DESCRIPTION | 否  | 站点描述                              |
+| 变量名          | 必填 | 说明                                | 示例值                                                                 |
+|--------------|----|-----------------------------------|---------------------------------------------------------------------|
+| DATABASE_URL | 是  | PostgreSQL数据库连接字符串                | `postgresql://username:password@host:port/database?sslmode=require` |
+| JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串              | `your-very-secure-jwt-secret-key-with-at-least-32-characters`       |
+| NODE_ENV     | 否  | 运行环境，development或production       | `production`                                                        |
+| NITRO_PRESET | 否  | Nitro预设，部署到Netlify时自动设置为'netlify' | `netlify`                                                           |
+
 
 ## 项目结构
 
 ```
 VoiceHub/
-├── app.vue                # 应用入口
-├── assets/                # 静态资源
+├── app.vue                # 应用入口文件
+├── assets/                # 静态资源目录
 │   └── css/               # CSS样式文件
-│       ├── main.css       # 主样式文件
-│       ├── variables.css  # CSS变量定义
-│       ├── components.css # 组件样式
-│       ├── transitions.css # 页面过渡动画样式
-│       ├── mobile-admin.css # 移动端管理界面优化样式
-│       └── print-fix.css  # PDF导出样式修复
-├── components/            # 可复用组件
-│   ├── Admin/             # 管理员组件
+│       ├── components.css      # 组件样式
+│       ├── fonts.css          # 字体样式
+│       ├── main.css           # 主样式文件
+│       ├── mobile-admin.css   # 移动端管理样式
+│       ├── print-fix.css      # 打印样式修复
+│       ├── theme-protection.css # 主题保护样式
+│       ├── transitions.css    # 过渡动画样式
+│       └── variables.css      # CSS变量定义
+├── backups/               # 数据库备份文件存储目录
+├── components/            # Vue组件目录
+│   ├── Admin/             # 管理员功能组件
 │   │   ├── Common/        # 通用管理组件
 │   │   │   ├── DataTable.vue      # 通用数据表格组件
+│   │   │   ├── SearchFilter.vue   # 搜索过滤组件
 │   │   │   └── StatCard.vue       # 统计卡片组件
-│   │   ├── BackupManager.vue      # 数据库备份管理组件
-│   │   ├── BlacklistManager.vue   # 黑名单管理组件
-│   │   ├── NotificationSender.vue # 通知发送组件
-│   │   ├── OverviewDashboard.vue  # 管理概览仪表板组件
-│   │   ├── PlayTimeManager.vue    # 播放时间管理组件
-│   │   ├── RoleManager.vue        # 角色管理组件
-│   │   ├── ScheduleForm.vue       # 排期表单组件
-│   │   ├── ScheduleManager.vue    # 排期管理组件
-│   │   ├── SchedulePrinter.vue    # 排期打印组件
-│   │   ├── ScheduleItemPrint.vue  # 排期项目打印组件
-│   │   ├── SemesterManager.vue    # 学期管理组件
-│   │   └── UserManager.vue        # 用户管理组件
+│   │   ├── BackupManager.vue      # 数据库备份管理
+│   │   ├── BlacklistManager.vue   # 黑名单管理
+│   │   ├── NotificationSender.vue # 通知发送管理
+│   │   ├── OverviewDashboard.vue  # 管理概览仪表板
+│   │   ├── PermissionManager.vue  # 权限管理
+│   │   ├── PlayTimeManager.vue    # 播放时间管理
+│   │   ├── RoleManager.vue        # 角色管理
+│   │   ├── ScheduleForm.vue       # 排期表单
+│   │   ├── ScheduleItemPrint.vue  # 排期项目打印
+│   │   ├── ScheduleManager.vue    # 排期管理
+│   │   ├── SchedulePrinter.vue    # 排期打印功能
+│   │   ├── SemesterManager.vue    # 学期管理
+│   │   ├── SiteConfigManager.vue  # 站点配置管理
+│   │   ├── SongManagement.vue     # 歌曲管理
+│   │   └── UserManager.vue        # 用户管理
 │   ├── Auth/              # 认证相关组件
 │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   └── LoginForm.vue         # 登录表单
-│   ├── Notifications/     # 通知相关组件
-│   │   ├── NotificationIcon.vue   # 通知图标组件
-│   │   └── NotificationSettings.vue # 通知设置组件
+│   ├── Notifications/     # 通知系统组件
+│   │   ├── NotificationIcon.vue   # 通知图标
+│   │   └── NotificationSettings.vue # 通知设置
 │   ├── Songs/             # 歌曲相关组件
 │   │   ├── RequestForm.vue        # 点歌表单（支持音乐搜索）
-│   │   ├── ScheduleList.vue       # 排期列表
+│   │   ├── ScheduleList.vue       # 排期列表展示
 │   │   └── SongList.vue           # 歌曲列表
-│   └── UI/                # 通用UI组件
-│       ├── AudioPlayer.vue        # 音乐播放器组件
-│       ├── PageTransition.vue     # 页面过渡动画组件
-│       └── ProgressBar.vue        # 进度条组件
-├── composables/           # 组合式API函数
+│   ├── UI/                # 通用UI组件
+│   │   ├── Linear/        # Linear图标组件库
+│   │   │   └── icons/     # 图标文件
+│   │   ├── AudioPlayer.vue        # 音乐播放器
+│   │   ├── ConfirmDialog.vue      # 确认对话框
+│   │   ├── Icon.vue               # 图标组件
+│   │   ├── Notification.vue       # 通知组件
+│   │   ├── PageTransition.vue     # 页面过渡动画
+│   │   └── ProgressBar.vue        # 进度条组件
+│   └── SiteFooter.vue     # 站点页脚
+├── composables/           # Vue 3 组合式API
 │   ├── useAdmin.ts         # 管理员功能hooks
+│   ├── useAudioPlayer.ts   # 音频播放器hooks
 │   ├── useAudioQuality.ts  # 音质管理hooks
 │   ├── useAuth.ts          # 认证功能hooks
 │   ├── useNotifications.ts # 通知功能hooks
 │   ├── usePermissions.ts   # 权限管理hooks
 │   ├── useProgress.ts      # 进度条功能hooks
-│   ├── useProgressEvents.ts # 进度事件功能hooks
+│   ├── useProgressEvents.ts # 进度事件hooks
 │   ├── useSemesters.ts     # 学期管理hooks
+│   ├── useSiteConfig.js    # 站点配置hooks
 │   └── useSongs.ts         # 歌曲功能hooks
-├── pages/                 # 页面组件
+├── layouts/               # 布局组件
+│   └── default.vue         # 默认布局模板
+├── middleware/            # 中间件
+│   └── auth.ts             # 认证中间件
+├── pages/                 # 页面组件（Nuxt 3路由）
 │   ├── change-password.vue # 修改密码页面
-│   ├── dashboard.vue       # 仪表盘页面
+│   ├── dashboard.vue       # 用户仪表盘
 │   ├── index.vue           # 首页
 │   ├── login.vue           # 登录页面
-│   └── notifications.vue   # 通知页面
-├── plugins/               # 插件
+│   └── notifications.vue   # 通知中心页面
+├── plugins/               # Nuxt插件
 │   ├── auth.client.ts      # 客户端认证插件
-│   └── prisma.ts           # Prisma插件
+│   ├── font-loader.client.ts # 字体加载插件
+│   └── prisma.ts           # Prisma ORM插件
 ├── prisma/                # Prisma ORM配置
-│   ├── client.ts           # Prisma客户端
-│   ├── migrations/         # 数据库迁移
-│   └── schema.prisma      # 数据库模型
-├── public/                # 公共资源
+│   ├── client.ts           # Prisma客户端配置
+│   ├── migrations/         # 数据库迁移文件
+│   └── schema.prisma      # 数据库模型定义
+├── public/                # 公共静态资源
 │   ├── favicon.ico         # 网站图标
+│   ├── fonts/              # 字体文件
 │   ├── images/             # 图片资源
-│   │   ├── logo.svg        # 网站Logo
-│   │   └── thumbs-up.svg   # 点赞图标
-│   └── robots.txt          # 爬虫规则
-├── scripts/               # 工具脚本
+│   └── robots.txt          # 搜索引擎爬虫规则
+├── scripts/               # 工具脚本目录
 │   ├── backup-and-migrate.js      # 用户数据备份迁移工具
 │   ├── check-database.js          # 数据库检查工具
+│   ├── check-deploy.js            # 部署检查工具
 │   ├── clear-database.js          # 数据库清理工具
-│   ├── create-admin.js            # 创建管理员账户
+│   ├── create-admin.js            # 创建管理员账户脚本
 │   ├── database-backup.js         # 完整数据库备份工具
-│   ├── fix-database-validation.js # 修复数据库验证
+│   ├── deploy.js                  # 自动化部署脚本
+│   ├── fix-database-validation.js # 修复数据库验证问题
+│   ├── init-permissions.js        # 初始化权限系统
+│   ├── migrate-roles.js           # 角色系统迁移脚本
 │   ├── package.json               # 脚本依赖配置
-│   └── repair-database.js         # 数据库修复工具
-├── server/                # 服务端API
-│   ├── api/                # API端点
+│   ├── repair-database.js         # 数据库修复工具
+│   └── setup-database.js          # 数据库初始化设置
+├── server/                # 服务端代码（Nuxt 3 Server API）
+│   ├── api/                # API端点目录
 │   │   ├── admin/          # 管理员API
-│   │   │   ├── backup/     # 备份相关API
+│   │   │   ├── backup/     # 备份管理API
 │   │   │   │   ├── export.post.ts   # 创建备份
 │   │   │   │   ├── upload.post.ts   # 上传备份文件
 │   │   │   │   ├── restore.post.ts  # 恢复备份
@@ -267,7 +344,7 @@ VoiceHub/
 │   │   │   │   ├── download/[filename].get.ts # 下载备份
 │   │   │   │   └── delete/[filename].delete.ts # 删除备份
 │   │   │   ├── blacklist/           # 黑名单管理API
-│   │   │   ├── mark-played.post.ts  # 标记已播放API
+│   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
 │   │   │   ├── notifications/       # 管理员通知API
 │   │   │   ├── play-times/          # 播放时间管理API
 │   │   │   ├── schedule/            # 排期管理API
@@ -275,39 +352,75 @@ VoiceHub/
 │   │   │   ├── songs/               # 管理员歌曲管理API
 │   │   │   ├── system-settings/     # 系统设置API
 │   │   │   └── users/               # 用户管理API
-│   │   ├── auth/           # 认证API
-│   │   ├── notifications/  # 通知API
+│   │   ├── auth/           # 认证相关API
+│   │   ├── blacklist/      # 黑名单API
+│   │   ├── notifications/  # 通知系统API
 │   │   ├── play-times/     # 播放时间API
-│   │   ├── progress/       # 进度API
-│   │   ├── proxy/          # 代理API
-│   │   │   └── image.get.ts # 图片代理API（解决跨域问题）
+│   │   ├── progress/       # 进度条API
+│   │   ├── proxy/          # 代理服务API
+│   │   │   └── image.get.ts # 图片代理（解决跨域）
 │   │   ├── semesters/      # 学期API
-│   │   └── songs/          # 歌曲API
-│   ├── middleware/         # 中间件
+│   │   ├── site-config.get.ts # 站点配置API
+│   │   ├── songs/          # 歌曲相关API
+│   │   ├── system/         # 系统API
+│   │   └── users/          # 用户API
+│   ├── error.ts            # 全局错误处理
+│   ├── middleware/         # 服务端中间件
 │   │   └── auth.ts         # 认证中间件
-│   ├── models/             # 服务端模型
-│   │   └── schema.ts       # 数据模型
+│   ├── models/             # 数据模型
+│   │   └── schema.ts       # 数据模型定义
 │   ├── plugins/            # 服务端插件
+│   │   ├── db-pool-init.ts # 数据库连接池初始化
+│   │   ├── error-handler.ts # 错误处理插件
 │   │   └── prisma.ts       # Prisma服务端插件
-│   ├── services/           # 服务层
+│   ├── services/           # 业务服务层
 │   │   └── notificationService.ts # 通知服务
 │   ├── utils/              # 服务端工具函数
 │   │   ├── db-pool.ts      # 数据库连接池管理
-│   │   └── permissions.js  # 权限系统配置
+│   │   ├── permissions.js  # 权限系统配置（JS版本）
+│   │   └── permissions.ts  # 权限系统配置（TS版本）
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
-│   └── index.ts            # 全局类型定义
-├── .env                   # 环境变量(需自行创建)
-├── .env.example           # 环境变量示例
-├── .gitignore             # Git忽略文件
-├── .vercelignore          # Vercel忽略文件
-├── LICENSE                # 许可证文件
+│   ├── global.d.ts         # 全局类型定义
+│   └── index.ts            # 项目类型定义
+├── utils/                 # 客户端工具函数
+│   └── db-manager.ts       # 数据库管理工具
+├── .env.example           # 环境变量示例文件
+├── .gitignore             # Git忽略文件配置
+├── .vercelignore          # Vercel部署忽略文件
+├── LICENSE                # 开源许可证文件
 ├── netlify.toml           # Netlify部署配置
-├── nuxt.config.ts         # Nuxt配置
-├── package.json           # 项目依赖
-├── tsconfig.json          # TypeScript配置
+├── nuxt.config.ts         # Nuxt 3主配置文件
+├── package.json           # Node.js项目配置和依赖
+├── README.md              # 项目说明文档
+├── tsconfig.json          # TypeScript配置文件
 └── vercel.json            # Vercel部署配置
 ```
+
+### 目录说明
+
+#### 核心目录
+- **`components/`**: Vue组件库，按功能模块组织
+- **`pages/`**: 页面组件，Nuxt 3自动路由
+- **`server/api/`**: 服务端API，RESTful接口设计
+- **`composables/`**: Vue 3组合式API，业务逻辑复用
+- **`prisma/`**: 数据库ORM配置和迁移
+
+#### 配置目录
+- **`assets/css/`**: 样式文件，支持CSS变量和主题
+- **`plugins/`**: Nuxt插件，扩展框架功能
+- **`middleware/`**: 中间件，处理路由和认证
+- **`types/`**: TypeScript类型定义
+
+#### 工具目录
+- **`scripts/`**: 数据库管理和部署脚本
+- **`utils/`**: 工具函数库
+- **`backups/`**: 数据库备份文件存储
+
+#### 静态资源
+- **`public/`**: 静态文件，直接访问
+- **`public/fonts/`**: 自定义字体文件
+- **`public/images/`**: 图片资源
 
 ## 使用说明
 

@@ -412,140 +412,143 @@ const showNotification = (message, type = 'info') => {
 </script>
 
 <style scoped>
+/* 主容器 */
 .backup-manager {
-  padding: 20px;
-  background: var(--bg-primary) !important;
   min-height: 100vh;
-  color: #e2e8f0;
+  background: #1a1a1a;
+  color: #e5e5e5;
+  padding: 2rem;
   position: relative;
-  z-index: 1;
 }
 
-/* 覆盖全局背景 */
-.backup-manager::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--bg-primary) !important;
-  z-index: -1;
-}
-
+/* 头部区域 */
 .header {
-  margin-bottom: 32px;
   text-align: center;
+  margin-bottom: 3rem;
 }
 
 .header h3 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
+  font-size: 2.5rem;
   font-weight: 700;
-  color: #f8fafc;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  margin: 0 0 1rem 0;
 }
 
 .header .description {
-  color: #94a3b8;
-  font-size: 16px;
+  font-size: 1.125rem;
+  color: #a0a0a0;
   margin: 0;
 }
 
+/* 操作卡片网格 */
 .actions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
-  max-width: 1000px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
+/* 操作卡片 */
 .action-card {
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid rgba(71, 85, 105, 0.3);
-  border-radius: 16px;
-  padding: 24px;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
+  background: #2a2a2a;
+  border: 1px solid #404040;
+  border-radius: 12px;
+  padding: 2rem;
   text-align: center;
+  transition: all 0.2s ease;
 }
 
 .action-card:hover {
-  border-color: rgba(99, 102, 241, 0.5);
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
-  transform: translateY(-2px);
+  border-color: #606060;
+  background: #2f2f2f;
 }
 
-.action-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 16px;
-  color: #6366f1;
-}
-
-.action-card h4 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #f8fafc;
-  margin: 0 0 8px 0;
-}
-
-.action-card p {
-  color: #94a3b8;
-  font-size: 14px;
-  margin: 0 0 20px 0;
-  line-height: 1.5;
-}
-
-.action-btn {
+.action-card .card-content {
+  position: relative;
   width: 100%;
-  padding: 12px 20px;
-  border: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+}
+
+/* 图标样式 */
+.action-icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1.5rem;
+  background: #404040;
   border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  color: #ffffff;
+}
+
+.action-icon svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* 卡片文本 */
+.action-card h4 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 0.75rem 0;
+}
+
+.action-card p {
+  color: #a0a0a0;
+  font-size: 1rem;
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+  flex-grow: 1;
+}
+
+/* 按钮样式 */
+.action-btn {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: block;
+  text-align: center;
   color: white;
+  box-sizing: border-box;
+  margin-bottom: 0.5rem;
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  background: #4a90e2;
 }
 
 .action-btn.primary:hover {
-  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+  background: #357abd;
 }
 
 .action-btn.secondary {
-  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+  background: #606060;
 }
 
 .action-btn.secondary:hover {
-  background: linear-gradient(135deg, #475569 0%, #334155 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 25px rgba(100, 116, 139, 0.4);
+  background: #505050;
 }
 
 .action-btn:disabled {
-  background: #374151 !important;
-  color: #6b7280 !important;
+  background: #404040 !important;
+  color: #808080 !important;
   cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
+  opacity: 0.6;
 }
 
 .action-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 /* 模态框样式 */
@@ -555,374 +558,279 @@ const showNotification = (message, type = 'info') => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 1.5rem;
 }
 
 .modal {
-  background: #1e293b;
-  border: 1px solid rgba(71, 85, 105, 0.3);
-  border-radius: 20px;
-  max-width: 500px;
+  background: #2a2a2a;
+  border: 1px solid #404040;
+  border-radius: 12px;
+  max-width: 600px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 32px 32px 0 32px;
-  margin-bottom: 24px;
+  padding: 2rem 2rem 0 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .modal-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #f8fafc;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #ffffff;
   margin: 0;
 }
 
 .close-btn {
-  background: none;
+  background: #404040;
   border: none;
-  color: #94a3b8;
+  color: #a0a0a0;
   cursor: pointer;
-  padding: 8px;
+  padding: 0.75rem;
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  background: rgba(71, 85, 105, 0.3);
-  color: #f8fafc;
+  background: #505050;
+  color: #ffffff;
 }
 
 .close-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .modal-body {
-  padding: 0 32px 32px 32px;
+  padding: 0 2rem 2rem 2rem;
 }
 
 .modal-footer {
-  padding: 24px 32px;
-  border-top: 1px solid rgba(71, 85, 105, 0.3);
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #404040;
   display: flex;
-  gap: 16px;
+  gap: 1rem;
   justify-content: flex-end;
-  margin-top: 0;
+  background: #252525;
+}
+
+.modal-footer button {
+  min-width: 120px;
 }
 
 /* 表单样式 */
 .form-group {
-  margin-bottom: 28px;
+  margin-bottom: 2rem;
 }
 
 .form-group label {
   display: block;
+  font-size: 1.125rem;
   font-weight: 600;
-  color: #e2e8f0;
-  margin-bottom: 12px;
-  font-size: 15px;
+  color: #ffffff;
+  margin-bottom: 1rem;
 }
 
 .radio-group {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1rem;
 }
 
-.radio-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 20px;
-  background: rgba(30, 41, 59, 0.6);
-  border: 2px solid rgba(71, 85, 105, 0.5);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.radio-option:hover {
-  background: rgba(51, 65, 85, 0.6);
-  border-color: rgba(99, 102, 241, 0.7);
-  transform: translateY(-1px);
-}
-
-.radio-option input[type="radio"] {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border: 2px solid #64748b;
-  border-radius: 50%;
-  background: transparent;
-  margin: 2px 0 0 0;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.radio-option input[type="radio"]:checked {
-  border-color: #6366f1;
-  background: #6366f1;
-}
-
-.radio-option input[type="radio"]:checked::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: white;
-}
-
-.radio-option input[type="radio"]:checked + span {
-  color: #f8fafc;
-  font-weight: 600;
-}
-
-.radio-option span {
-  font-weight: 500;
-  color: #e2e8f0;
-  font-size: 15px;
-  transition: all 0.3s ease;
-}
-
-.radio-option small {
-  display: block;
-  color: #94a3b8;
-  font-size: 13px;
-  margin-top: 6px;
-  line-height: 1.4;
-}
-
+.radio-option,
 .checkbox-option {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  padding: 20px;
-  background: rgba(30, 41, 59, 0.6);
-  border: 2px solid rgba(71, 85, 105, 0.5);
-  border-radius: 12px;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #333333;
+  border: 1px solid #505050;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
+  transition: all 0.2s ease;
 }
 
+.radio-option:hover,
 .checkbox-option:hover {
-  background: rgba(51, 65, 85, 0.6);
-  border-color: rgba(99, 102, 241, 0.7);
-  transform: translateY(-1px);
+  border-color: #606060;
+  background: #383838;
+}
+
+.radio-option input[type="radio"],
+.checkbox-option input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  accent-color: #4a90e2;
+  cursor: pointer;
+}
+
+.radio-option > div,
+.checkbox-option > div {
+  flex: 1;
+}
+
+.radio-option span,
+.checkbox-option span {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 0.25rem;
+}
+
+.radio-option small,
+.checkbox-option small {
+  display: block;
+  font-size: 0.875rem;
+  color: #a0a0a0;
+  line-height: 1.4;
 }
 
 .checkbox-option.danger {
-  border-color: rgba(239, 68, 68, 0.5);
-  background: rgba(239, 68, 68, 0.1);
+  border-color: #d32f2f;
+  background: rgba(211, 47, 47, 0.1);
 }
 
-.checkbox-option.danger:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.7);
+.checkbox-option.danger span {
+  color: #ff6b6b;
 }
 
-.checkbox-option input[type="checkbox"] {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border: 2px solid #64748b;
-  border-radius: 4px;
-  background: transparent;
-  margin: 2px 0 0 0;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.checkbox-option input[type="checkbox"]:checked {
-  border-color: #6366f1;
-  background: #6366f1;
-}
-
-.checkbox-option input[type="checkbox"]:checked::after {
-  content: '✓';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.checkbox-option.danger input[type="checkbox"]:checked {
-  border-color: #ef4444;
-  background: #ef4444;
-}
-
-.checkbox-option input[type="checkbox"]:checked + span {
-  color: #f8fafc;
-  font-weight: 600;
-}
-
-.checkbox-option span {
-  font-weight: 500;
-  color: #e2e8f0;
-  font-size: 15px;
-  transition: all 0.3s ease;
-}
-
-.checkbox-option small {
-  display: block;
-  color: #94a3b8;
-  font-size: 13px;
-  margin-top: 6px;
-  line-height: 1.4;
+.checkbox-option.danger small {
+  color: #ff8a80;
 }
 
 /* 文件上传区域 */
 .upload-section {
-  margin-bottom: 32px;
+  margin-bottom: 2rem;
 }
 
 .upload-area {
-  border: 2px dashed rgba(71, 85, 105, 0.5);
-  border-radius: 16px;
-  padding: 48px 24px;
+  border: 2px dashed #505050;
+  border-radius: 8px;
+  padding: 3rem 2rem;
   text-align: center;
-  background: rgba(30, 41, 59, 0.4);
-  transition: all 0.3s ease;
   cursor: pointer;
+  transition: all 0.2s ease;
+  background: #333333;
 }
 
 .upload-area:hover,
 .upload-area.drag-over {
-  border-color: #6366f1;
-  background: rgba(99, 102, 241, 0.1);
+  border-color: #4a90e2;
+  background: #383838;
 }
 
 .upload-area svg {
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 16px;
-  color: #6366f1;
-  transition: all 0.3s ease;
-}
-
-.upload-area:hover svg,
-.upload-area.drag-over svg {
-  color: #8b5cf6;
-  transform: scale(1.1);
+  width: 4rem;
+  height: 4rem;
+  color: #4a90e2;
+  margin-bottom: 1.5rem;
 }
 
 .upload-area h4 {
-  color: #e2e8f0;
+  font-size: 1.25rem;
   font-weight: 600;
-  font-size: 18px;
-  margin-bottom: 8px;
+  color: #ffffff;
+  margin: 0 0 0.5rem 0;
 }
 
 .upload-area p {
-  color: #94a3b8;
-  font-size: 14px;
+  color: #a0a0a0;
+  font-size: 1rem;
   margin: 0;
 }
 
-/* 文件信息 */
 .selected-file {
-  margin-bottom: 32px;
-}
-
-.file-info {
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(71, 85, 105, 0.5);
-  border-radius: 12px;
-  padding: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  padding: 1.25rem;
+  background: #333333;
+  border: 1px solid #505050;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
 }
 
 .file-info svg {
-  width: 24px;
-  height: 24px;
-  color: #6366f1;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #4a90e2;
   flex-shrink: 0;
 }
 
 .file-details {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .file-name {
-  color: #e2e8f0;
+  display: block;
+  font-size: 1rem;
   font-weight: 500;
-  font-size: 15px;
+  color: #ffffff;
+  margin-bottom: 0.25rem;
 }
 
 .file-size {
-  color: #94a3b8;
-  font-size: 13px;
+  display: block;
+  font-size: 0.875rem;
+  color: #a0a0a0;
 }
 
 .remove-file-btn {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(211, 47, 47, 0.2);
   border: none;
+  padding: 0.75rem;
   border-radius: 8px;
-  padding: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #f87171;
-  flex-shrink: 0;
+  color: #ff6b6b;
 }
 
 .remove-file-btn:hover {
-  background: rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
+  background: rgba(211, 47, 47, 0.3);
 }
 
 .remove-file-btn svg {
-  width: 16px;
-  height: 16px;
-  color: inherit;
+  width: 1rem;
+  height: 1rem;
 }
 
 /* 警告框 */
 .warning-box {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 12px;
-  padding: 20px;
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid #ff9800;
+  border-radius: 8px;
+  padding: 1.5rem;
   display: flex;
-  gap: 16px;
+  gap: 1rem;
   align-items: flex-start;
-  margin-bottom: 32px;
+  margin-bottom: 2rem;
 }
 
 .warning-box svg {
-  width: 24px;
-  height: 24px;
-  color: #f59e0b;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #ff9800;
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 0.125rem;
 }
 
 .warning-box > div {
@@ -930,147 +838,330 @@ const showNotification = (message, type = 'info') => {
 }
 
 .warning-box h4 {
-  color: #f59e0b;
+  color: #ff9800;
   font-weight: 600;
-  margin: 0 0 8px 0;
-  font-size: 15px;
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
 }
 
 .warning-box p {
-  color: #fbbf24;
+  color: #ffb74d;
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
-
-
 
 /* 通知样式 */
 .notification {
   position: fixed;
-  top: 24px;
-  right: 24px;
-  padding: 16px 24px;
-  border-radius: 12px;
+  top: 1.5rem;
+  right: 1.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
   color: white;
   font-weight: 500;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 1001;
-  animation: slideInRight 0.3s ease-out;
+  animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   min-width: 300px;
   max-width: 500px;
 }
 
-.notification::before {
-  content: '';
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.notification.success {
+  background: #2e7d32;
+  border: 1px solid #4caf50;
 }
 
-.notification.success::before {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
-  background-size: 16px;
+.notification.error {
+  background: #d32f2f;
+  border: 1px solid #f44336;
 }
 
-.notification.error::before {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
-  background-size: 16px;
+.notification.warning {
+  background: #f57c00;
+  border: 1px solid #ff9800;
 }
 
-.notification.warning::before {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
-  background-size: 16px;
-}
-
-.notification.info::before {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
-  background-size: 16px;
+.notification.info {
+  background: #1976d2;
+  border: 1px solid #2196f3;
 }
 
 @keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateX(100%) scale(0.9);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
 }
 
 @keyframes slideOutRight {
   from {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
   to {
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateX(100%) scale(0.9);
   }
-}
-
-.notification.success {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.notification.error {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.notification.warning {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.notification.info {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 /* 响应式设计 */
+@media (max-width: 1024px) {
+  .actions-grid {
+    grid-template-columns: 1fr;
+    max-width: 600px;
+  }
+}
+
 @media (max-width: 768px) {
   .backup-manager {
-    padding: 16px;
+    padding: 1.5rem;
+  }
+  
+  .header h3 {
+    font-size: 1.75rem;
   }
   
   .actions-grid {
+    gap: 1.5rem;
     grid-template-columns: 1fr;
-    gap: 16px;
+  }
+  
+  .action-card {
+    padding: 2rem;
+  }
+  
+  .action-card .card-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 180px;
+  }
+  
+  .action-card p {
+    flex-grow: 1;
+    margin-bottom: 1.5rem;
+  }
+  
+  .action-btn {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem 1.5rem !important;
+    font-size: 1rem !important;
+    display: block !important;
+    text-align: center !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0.75rem !important;
   }
   
   .modal {
-    margin: 16px;
-    max-width: calc(100vw - 32px);
-    border-radius: 16px;
-  }
-  
-  .modal-header,
-  .modal-body,
-  .modal-footer {
-    padding: 24px;
-  }
-  
-  .modal-footer {
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .modal-footer button {
-    width: 100%;
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
   }
   
   .notification {
-    left: 16px;
-    right: 16px;
-    top: 16px;
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .backup-manager {
+    padding: 1rem;
+  }
+  
+  .header {
+    margin-bottom: 2rem;
+  }
+  
+  .header h3 {
+    font-size: 1.5rem;
+  }
+  
+  .actions-grid {
+    gap: 1rem;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  
+  .action-card {
+    padding: 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .action-card .card-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 160px;
+  }
+  
+  .action-icon {
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1rem;
+  }
+  
+  .action-icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  
+  .action-card h4 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .action-card p {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+  }
+  
+  .action-btn {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    display: block !important;
+    text-align: center !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .action-btn span {
+    display: inline-block;
+    width: 100%;
+  }
+  
+  .action-btn svg {
+    display: none !important;
+  }
+  
+  .modal {
+    margin: 0.5rem;
+    max-width: calc(100vw - 1rem);
+    border-radius: 1rem;
+  }
+  
+  .modal-header {
+    padding: 1.25rem;
+  }
+  
+  .modal-title {
+    font-size: 1.25rem;
+  }
+  
+  .modal-body {
+    padding: 0 1.25rem 1.25rem;
+  }
+  
+  .modal-footer {
+    padding: 1rem 1.25rem;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .modal-footer .action-btn {
+    width: 100% !important;
+    order: 2;
+  }
+  
+  .modal-footer .action-btn.primary {
+    order: 1;
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group label {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .radio-option,
+  .checkbox-option {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  
+  .radio-option input[type="radio"],
+  .checkbox-option input[type="checkbox"] {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+  
+  .upload-area {
+    padding: 1.5rem 1rem;
+  }
+  
+  .upload-area svg {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .upload-area h4 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .upload-area p {
+    font-size: 0.85rem;
+  }
+  
+  .selected-file {
+    margin-top: 1rem;
+  }
+  
+  .file-info {
+    gap: 0.75rem;
+  }
+  
+  .file-name {
+    font-size: 0.875rem;
+  }
+  
+  .file-size {
+    font-size: 0.75rem;
+  }
+  
+  .warning-box {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  
+  .warning-box h4 {
+    font-size: 0.875rem;
+  }
+  
+  .warning-box p {
+    font-size: 0.8rem;
   }
 }
 </style>

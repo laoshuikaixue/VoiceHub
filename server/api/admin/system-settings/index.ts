@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  if (user.role !== 'ADMIN') {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '只有管理员才能查看系统设置'
@@ -25,7 +25,12 @@ export default defineEventHandler(async (event) => {
     if (!settings) {
       settings = await prisma.systemSettings.create({
         data: {
-          enablePlayTimeSelection: false
+          enablePlayTimeSelection: false,
+          siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',
+          siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico',
+          siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
+          submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
+          icpNumber: null
         }
       })
     }
@@ -38,4 +43,4 @@ export default defineEventHandler(async (event) => {
       message: '获取系统设置失败'
     })
   }
-}) 
+})

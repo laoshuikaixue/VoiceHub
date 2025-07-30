@@ -12,6 +12,7 @@ export default defineEventHandler(async (event) => {
     '/api/songs/count',
     '/api/semesters/current',
     '/api/play-times',
+    '/api/site-config',
     '/',
     '/login',
     '/register',

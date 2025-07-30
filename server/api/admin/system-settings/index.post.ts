@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  if (user.role !== 'ADMIN') {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '只有管理员才能更新系统设置'
@@ -22,11 +22,36 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     
     // 验证请求体
-    if (typeof body.enablePlayTimeSelection !== 'boolean') {
-      throw createError({
-        statusCode: 400,
-        message: '请求参数无效'
-      })
+    const updateData: any = {}
+    
+    if (body.enablePlayTimeSelection !== undefined) {
+      if (typeof body.enablePlayTimeSelection !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enablePlayTimeSelection 必须是布尔值'
+        })
+      }
+      updateData.enablePlayTimeSelection = body.enablePlayTimeSelection
+    }
+    
+    if (body.siteTitle !== undefined) {
+      updateData.siteTitle = body.siteTitle
+    }
+    
+    if (body.siteLogoUrl !== undefined) {
+      updateData.siteLogoUrl = body.siteLogoUrl
+    }
+    
+    if (body.siteDescription !== undefined) {
+      updateData.siteDescription = body.siteDescription
+    }
+    
+    if (body.submissionGuidelines !== undefined) {
+      updateData.submissionGuidelines = body.submissionGuidelines
+    }
+    
+    if (body.icpNumber !== undefined) {
+      updateData.icpNumber = body.icpNumber
     }
     
     // 获取当前设置，如果不存在则创建
@@ -36,7 +61,12 @@ export default defineEventHandler(async (event) => {
       // 如果不存在，创建新设置
       settings = await prisma.systemSettings.create({
         data: {
-          enablePlayTimeSelection: body.enablePlayTimeSelection
+          enablePlayTimeSelection: updateData.enablePlayTimeSelection ?? false,
+          siteTitle: updateData.siteTitle ?? 'VoiceHub',
+          siteLogoUrl: updateData.siteLogoUrl ?? '/favicon.ico',
+          siteDescription: updateData.siteDescription ?? '校园广播站点歌系统 - 让你的声音被听见',
+          submissionGuidelines: updateData.submissionGuidelines ?? '请遵守校园规定，提交健康向上的歌曲。',
+          icpNumber: updateData.icpNumber ?? null
         }
       })
     } else {
@@ -45,18 +75,21 @@ export default defineEventHandler(async (event) => {
         where: {
           id: settings.id
         },
-        data: {
-          enablePlayTimeSelection: body.enablePlayTimeSelection
-        }
+        data: updateData
       })
     }
     
     return settings
   } catch (error) {
     console.error('更新系统设置失败:', error)
+    
+    if (error.statusCode) {
+      throw error
+    }
+    
     throw createError({
       statusCode: 500,
       message: '更新系统设置失败'
     })
   }
-}) 
+})

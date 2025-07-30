@@ -139,6 +139,13 @@ model SystemSettings {
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
   enablePlayTimeSelection Boolean  @default(false) // 是否启用播出时段选择功能
+  
+  // 站点配置
+  siteTitle              String?  // 站点标题
+  siteLogoUrl            String?  // 站点Logo URL
+  siteDescription        String?  // 站点描述
+  submissionGuidelines   String?  // 投稿须知
+  icpNumber              String?  // 备案号
 }
 
 // 歌曲黑名单模型

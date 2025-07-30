@@ -91,9 +91,9 @@
                 @click="activeTab = 'songs'"
               >
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 1v6m0 6v6"/>
-                  <path d="m21 12-6-3-6 3-6-3"/>
+                  <path d="M9 18V5l12-2v13"/>
+                  <circle cx="6" cy="18" r="3"/>
+                  <circle cx="18" cy="16" r="3"/>
                 </svg>
                 歌曲管理
               </button>
@@ -167,6 +167,17 @@
                   <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
                 </svg>
                 黑名单管理
+              </button>
+              <button
+                :class="['nav-item', { active: activeTab === 'site-config' }]"
+                @click="activeTab = 'site-config'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 1v6m0 6v6"/>
+                  <path d="m21 12-6-3-6 3-6-3"/>
+                </svg>
+                站点配置
               </button>
               <button
                 :class="['nav-item', { active: activeTab === 'backup' }]"
@@ -276,6 +287,11 @@
               <BlacklistManager />
             </div>
 
+            <!-- 站点配置 -->
+            <div v-if="activeTab === 'site-config'" class="content-section full-width">
+              <SiteConfigManager />
+            </div>
+
             <!-- 数据备份 -->
             <div v-if="activeTab === 'backup'" class="content-section">
               <BackupManager />
@@ -291,6 +307,9 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 
+// 使用站点配置
+const { siteTitle, initSiteConfig } = useSiteConfig()
+
 // 导入组件
 import OverviewDashboard from '~/components/Admin/OverviewDashboard.vue'
 import SongManagement from '~/components/Admin/SongManagement.vue'
@@ -302,6 +321,7 @@ import NotificationSender from '~/components/Admin/NotificationSender.vue'
 import PlayTimeManager from '~/components/Admin/PlayTimeManager.vue'
 import SemesterManager from '~/components/Admin/SemesterManager.vue'
 import BlacklistManager from '~/components/Admin/BlacklistManager.vue'
+import SiteConfigManager from '~/components/Admin/SiteConfigManager.vue'
 import BackupManager from '~/components/Admin/BackupManager.vue'
 
 // 页面元数据
@@ -329,6 +349,7 @@ const getPageTitle = () => {
     playtimes: '播出时段',
     semesters: '学期管理',
     blacklist: '黑名单管理',
+    'site-config': '站点配置',
     backup: '数据备份'
   }
   return titles[activeTab.value] || '管理后台'
@@ -415,6 +436,9 @@ const handleSwipe = () => {
 
 // 生命周期
 onMounted(async () => {
+  // 初始化站点配置
+  await initSiteConfig()
+  
   // 初始化服务
   auth = useAuth()
 
@@ -797,6 +821,12 @@ onUnmounted(() => {
   border-radius: 12px;
   border: 1px solid #1f1f1f;
   overflow: hidden;
+}
+
+/* 全宽内容样式 */
+.content-section.full-width {
+  max-width: none;
+  width: 100%;
 }
 
 /* 移除重复的sidebar-footer样式 */

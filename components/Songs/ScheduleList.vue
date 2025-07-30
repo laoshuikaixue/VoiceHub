@@ -669,6 +669,7 @@ const vRipple = {
   margin: 0 !important;
   padding: 0 !important;
   max-width: none !important;
+  min-height: 50vh; /* 确保排期列表有足够的高度 */
 }
 
 /* 两列布局容器 */
@@ -680,6 +681,7 @@ const vRipple = {
   margin: 0 !important;
   padding: 0 !important;
   max-width: none !important;
+  min-height: 45vh; /* 确保容器有足够的高度 */
 }
 
 /* 左侧日期选择器 - 移除背景和边框 */
@@ -765,6 +767,7 @@ const vRipple = {
   flex: 1;
   min-width: 0;
   max-width: calc(100% - 250px); /* 缩小右侧内容区域宽度 */
+  min-height: 40vh; /* 确保内容区域有足够的高度 */
 }
 
 .schedule-header {
@@ -1482,4 +1485,4 @@ const vRipple = {
     opacity: 1;
   }
 }
-</style> 
+</style>
