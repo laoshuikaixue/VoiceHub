@@ -27,52 +27,39 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  try {
-    // 检查学期名称是否已存在
-    const existingSemester = await prisma.semester.findUnique({
-      where: {
-        name: body.name
-      }
+  // 检查学期名称是否已存在
+  const existingSemester = await prisma.semester.findUnique({
+    where: {
+      name: body.name
+    }
+  })
+  
+  if (existingSemester) {
+    throw createError({
+      statusCode: 400,
+      message: '该学期名称已存在'
     })
-    
-    if (existingSemester) {
-      throw createError({
-        statusCode: 400,
-        message: '该学期名称已存在'
-      })
-    }
-    
-    // 如果设置为活跃学期，先将其他学期设为非活跃
-    if (body.isActive) {
-      await prisma.semester.updateMany({
-        where: {
-          isActive: true
-        },
-        data: {
-          isActive: false
-        }
-      })
-    }
-    
-    // 创建新学期
-    const semester = await prisma.semester.create({
-      data: {
-        name: body.name,
-        isActive: body.isActive || false
-      }
-    })
-    
-    return semester
-  } catch (error: any) {
-    console.error('创建学期失败:', error)
-    
-    if (error.statusCode) {
-      throw error
-    } else {
-      throw createError({
-        statusCode: 500,
-        message: '创建学期失败，请稍后重试'
-      })
-    }
   }
+  
+  // 如果设置为活跃学期，先将其他学期设为非活跃
+  if (body.isActive) {
+    await prisma.semester.updateMany({
+      where: {
+        isActive: true
+      },
+      data: {
+        isActive: false
+      }
+    })
+  }
+  
+  // 创建新学期
+  const semester = await prisma.semester.create({
+    data: {
+      name: body.name,
+      isActive: body.isActive || false
+    }
+  })
+  
+  return semester
 })
