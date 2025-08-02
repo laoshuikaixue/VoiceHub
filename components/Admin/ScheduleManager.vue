@@ -152,6 +152,13 @@
               保存排期
             </button>
             <button 
+              @click="openDownloadDialog" 
+              class="download-btn" 
+              :disabled="localScheduledSongs.length === 0"
+            >
+              下载歌曲
+            </button>
+            <button 
               @click="markAllAsPlayed" 
               class="mark-played-btn" 
               :disabled="localScheduledSongs.length === 0"
@@ -238,10 +245,18 @@
     @confirm="handleConfirm"
     @close="showConfirmDialog = false"
   />
+
+  <!-- 下载对话框 -->
+  <SongDownloadDialog
+    :show="showDownloadDialog"
+    :songs="localScheduledSongs"
+    @close="showDownloadDialog = false"
+  />
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import SongDownloadDialog from './SongDownloadDialog.vue'
 
 // 响应式数据
 const selectedDate = ref(new Date().toISOString().split('T')[0])
@@ -256,6 +271,9 @@ const confirmDialogMessage = ref('')
 const confirmDialogType = ref('warning')
 const confirmDialogConfirmText = ref('确认')
 const confirmAction = ref(null)
+
+// 下载相关
+const showDownloadDialog = ref(false)
 
 // 拖拽状态
 const isDraggableOver = ref(false)
@@ -1003,6 +1021,11 @@ const updateScrollButtonState = () => {
   isFirstDateVisible.value = scrollLeft <= 0
   isLastDateVisible.value = scrollLeft >= scrollWidth - clientWidth - 1
 }
+
+// 打开下载对话框
+const openDownloadDialog = () => {
+  showDownloadDialog.value = true
+}
 </script>
 
 <style scoped>
@@ -1258,7 +1281,8 @@ const updateScrollButtonState = () => {
 }
 
 .save-btn,
-.mark-played-btn {
+.mark-played-btn,
+.download-btn {
   padding: 8px 16px;
   border-radius: 6px;
   font-size: 14px;
@@ -1293,6 +1317,21 @@ const updateScrollButtonState = () => {
 }
 
 .mark-played-btn:disabled {
+  background: #3a3a3a;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+.download-btn {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.download-btn:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.download-btn:disabled {
   background: #3a3a3a;
   color: #666666;
   cursor: not-allowed;
