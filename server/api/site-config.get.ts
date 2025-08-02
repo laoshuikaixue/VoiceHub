@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
       return {
         siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',
         siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico',
+        schoolLogoUrl: '',
         siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
         submissionGuidelines: defaultSubmissionGuidelines,
         icpNumber: ''
@@ -29,6 +30,7 @@ export default defineEventHandler(async (event) => {
     return {
       siteTitle: settings.siteTitle || 'VoiceHub',
       siteLogoUrl: settings.siteLogoUrl || '/favicon.ico',
+      schoolLogoUrl: settings.schoolLogoUrl || '',
       siteDescription: settings.siteDescription || '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: settings.submissionGuidelines || defaultSubmissionGuidelines,
       icpNumber: settings.icpNumber || ''
@@ -40,6 +42,7 @@ export default defineEventHandler(async (event) => {
     return {
       siteTitle: 'VoiceHub',
       siteLogoUrl: '/favicon.ico',
+      schoolLogoUrl: '',
       siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: defaultSubmissionGuidelines,
       icpNumber: ''

@@ -41,7 +41,11 @@ export default defineEventHandler(async (event) => {
     if (body.siteLogoUrl !== undefined) {
       updateData.siteLogoUrl = body.siteLogoUrl
     }
-    
+
+    if (body.schoolLogoUrl !== undefined) {
+      updateData.schoolLogoUrl = body.schoolLogoUrl
+    }
+
     if (body.siteDescription !== undefined) {
       updateData.siteDescription = body.siteDescription
     }
@@ -64,6 +68,7 @@ export default defineEventHandler(async (event) => {
           enablePlayTimeSelection: updateData.enablePlayTimeSelection ?? false,
           siteTitle: updateData.siteTitle ?? 'VoiceHub',
           siteLogoUrl: updateData.siteLogoUrl ?? '/favicon.ico',
+          schoolLogoUrl: updateData.schoolLogoUrl ?? null,
           siteDescription: updateData.siteDescription ?? '校园广播站点歌系统 - 让你的声音被听见',
           submissionGuidelines: updateData.submissionGuidelines ?? '请遵守校园规定，提交健康向上的歌曲。',
           icpNumber: updateData.icpNumber ?? null

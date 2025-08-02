@@ -239,7 +239,13 @@ export async function performDatabaseMaintenance() {
         
         await prisma.systemSettings.create({
           data: {
-            enablePlayTimeSelection: false
+            enablePlayTimeSelection: false,
+            siteTitle: 'VoiceHub',
+            siteLogoUrl: '/favicon.ico',
+            schoolLogoUrl: null,
+            siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
+            submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
+            icpNumber: null
           }
         });
         
@@ -321,7 +327,13 @@ export async function initializeFirstDeployment() {
     // 创建系统设置
     await prisma.systemSettings.create({
       data: {
-        enablePlayTimeSelection: false
+        enablePlayTimeSelection: false,
+        siteTitle: 'VoiceHub',
+        siteLogoUrl: '/favicon.ico',
+        schoolLogoUrl: null,
+        siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
+        submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
+        icpNumber: null
       }
     })
     

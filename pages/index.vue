@@ -10,6 +10,11 @@
           <NuxtLink to="/" class="logo-link">
             <img src="/images/logo.svg" alt="VoiceHub Logo" class="logo-image" />
           </NuxtLink>
+          <!-- 横线和学校logo -->
+          <div v-if="schoolLogoUrl && schoolLogoUrl.trim()" class="logo-divider-container">
+            <div class="logo-divider"></div>
+            <img :src="schoolLogoUrl" alt="学校Logo" class="school-logo" />
+          </div>
         </div>
 
         <!-- 用户信息区域修改 -->
@@ -430,7 +435,7 @@ const config = useRuntimeConfig()
 const router = useRouter()
 
 // 站点配置
-const { title: siteTitle, description: siteDescription, guidelines: submissionGuidelines, icp: icpNumber, initSiteConfig } = useSiteConfig()
+const { title: siteTitle, description: siteDescription, guidelines: submissionGuidelines, icp: icpNumber, schoolLogoUrl, initSiteConfig } = useSiteConfig()
 
 // 服务器端安全的认证状态管理
 const isClientAuthenticated = ref(false)
@@ -982,13 +987,15 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .top-bar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 2rem;
+  margin-top: -2rem;
 }
 
 .logo-section {
   display: flex;
   align-items: center;
+  gap: 20px; /* 添加间距 */
 }
 
 .logo-link {
@@ -1000,6 +1007,33 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   width: 150px;
   height: auto;
   object-fit: contain;
+}
+
+/* 横线和学校logo容器 */
+.logo-divider-container {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+/* 横线样式 */
+.logo-divider {
+  width: 2px;
+  height: 100px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.3));
+  border-radius: 1px;
+}
+
+/* 学校logo样式 */
+.school-logo {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.school-logo:hover {
+  transform: scale(1.05);
 }
 
 /* 移除不需要的title-group样式 */

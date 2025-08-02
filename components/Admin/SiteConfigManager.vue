@@ -30,6 +30,17 @@
       </div>
 
       <div class="form-group">
+        <label for="schoolLogoUrl">学校Logo URL（可选）</label>
+        <input
+          id="schoolLogoUrl"
+          v-model="formData.schoolLogoUrl"
+          type="url"
+          placeholder="请输入学校Logo图片URL"
+        />
+        <small class="help-text">设置后将在首页VoiceHub Logo旁边显示学校Logo</small>
+      </div>
+
+      <div class="form-group">
         <label for="siteDescription">站点描述</label>
         <textarea
           id="siteDescription"
@@ -115,6 +126,7 @@ const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 const formData = ref({
   siteTitle: '',
   siteLogoUrl: '',
+  schoolLogoUrl: '',
   siteDescription: '',
   submissionGuidelines: '',
   icpNumber: ''
@@ -141,6 +153,7 @@ const loadConfig = async () => {
     formData.value = {
       siteTitle: data.siteTitle || '',
       siteLogoUrl: data.siteLogoUrl || '',
+      schoolLogoUrl: data.schoolLogoUrl || '',
       siteDescription: data.siteDescription || '',
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
       icpNumber: data.icpNumber || ''
@@ -155,6 +168,7 @@ const loadConfig = async () => {
     formData.value = {
       siteTitle: 'VoiceHub',
       siteLogoUrl: '/favicon.ico',
+      schoolLogoUrl: '',
       siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: defaultSubmissionGuidelines,
       icpNumber: ''
@@ -175,6 +189,7 @@ const saveConfig = async () => {
     const configToSave = {
       siteTitle: formData.value.siteTitle.trim() || '校园广播站点歌系统',
       siteLogoUrl: formData.value.siteLogoUrl.trim() || '/favicon.ico',
+      schoolLogoUrl: formData.value.schoolLogoUrl.trim(),
       siteDescription: formData.value.siteDescription.trim() || '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: formData.value.submissionGuidelines.trim() || defaultSubmissionGuidelines,
       icpNumber: formData.value.icpNumber.trim()
