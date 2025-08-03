@@ -14,6 +14,16 @@ export default defineEventHandler(async (event) => {
   }
   
   try {
+    // 获取用户信息（包含meowNickname）
+    const userInfo = await prisma.user.findUnique({
+      where: {
+        id: user.id
+      },
+      select: {
+        meowNickname: true
+      }
+    })
+
     // 获取用户的通知设置，如果不存在则创建默认设置
     let dbSettings: any = await prisma.notificationSettings.findUnique({
       where: {
@@ -45,10 +55,14 @@ export default defineEventHandler(async (event) => {
       songVotedNotify: dbSettings.songVotedEnabled,
       systemNotify: dbSettings.enabled,
       refreshInterval: dbSettings.refreshInterval,
-      songVotedThreshold: dbSettings.songVotedThreshold
+      songVotedThreshold: dbSettings.songVotedThreshold,
+      meowUserId: userInfo?.meowNickname || ''
     }
     
-    return settings
+    return {
+      success: true,
+      data: settings
+    }
   } catch (err) {
     console.error('获取通知设置失败:', err)
     throw createError({
@@ -56,4 +70,4 @@ export default defineEventHandler(async (event) => {
       message: '获取通知设置失败'
     })
   }
-}) 
+})

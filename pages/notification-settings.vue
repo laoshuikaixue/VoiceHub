@@ -90,7 +90,7 @@
                 <div class="threshold-input">
                   <input 
                     type="number" 
-                    v-model.number="localSettings.voteThreshold"
+                    v-model.number="localSettings.songVotedThreshold"
                     min="1"
                     max="100"
                     class="number-input"
@@ -259,7 +259,7 @@ const localSettings = ref({
   songSelectedNotify: true,
   songPlayedNotify: true,
   songVotedNotify: true,
-  voteThreshold: 5,
+  songVotedThreshold: 5,
   systemNotify: true,
   refreshInterval: 60,
   meowUserId: ''
@@ -372,7 +372,7 @@ const loadSettings = async () => {
         songSelectedNotify: response.data.songSelectedNotify || false,
         songPlayedNotify: response.data.songPlayedNotify || false,
         songVotedNotify: response.data.songVotedNotify || false,
-        voteThreshold: response.data.voteThreshold || 5,
+        songVotedThreshold: response.data.songVotedThreshold || 5,
         systemNotify: response.data.systemNotify || true,
         refreshInterval: response.data.refreshInterval || 60,
         meowUserId: response.data.meowUserId || ''

@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
       }
 
       if (Date.now() > storedData.expiresAt) {
-        verificationCodes.delete(meowUserId)
+        verificationCodes.delete(meowId)
         throw createError({
           statusCode: 400,
           statusMessage: '验证码已过期，请重新发送'

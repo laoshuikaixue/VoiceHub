@@ -72,7 +72,11 @@ export default defineEventHandler(async (event) => {
       songVotedThreshold: dbSettings.songVotedThreshold
     }
     
-    return settings
+    return {
+      success: true,
+      data: settings,
+      message: '通知设置保存成功'
+    }
   } catch (err) {
     console.error('更新通知设置失败:', err)
     throw createError({
@@ -80,4 +84,4 @@ export default defineEventHandler(async (event) => {
       message: '更新通知设置失败'
     })
   }
-}) 
+})
