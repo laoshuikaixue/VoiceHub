@@ -1,5 +1,5 @@
 import { prisma } from '../../../models/schema'
-import { hasPermission } from '../../../utils/permissions'
+import { hasPermission } from '../../../utils/permissions.js'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查权限
-  const canManageSongs = await hasPermission(user.id, 'song_manage')
+  const canManageSongs = hasPermission(user, 'song.manage')
   if (!canManageSongs) {
     throw createError({
       statusCode: 403,
@@ -69,4 +69,4 @@ export default defineEventHandler(async (event) => {
     message: '歌曲已成功删除',
     songId: body.songId
   }
-}) 
+})

@@ -221,6 +221,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuth } from '~/composables/useAuth'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 // 响应式数据
 const loading = ref(false)
@@ -247,7 +249,7 @@ const formData = ref({
 })
 
 // 服务
-let auth = null
+const auth = useAuth()
 
 // 权限分类
 const permissionCategories = computed(() => {
@@ -537,7 +539,6 @@ const handleConfirm = async () => {
 
 // 生命周期
 onMounted(async () => {
-  auth = useAuth()
   await loadPermissions()
   await refreshRoles()
 })

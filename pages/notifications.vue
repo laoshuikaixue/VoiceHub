@@ -13,13 +13,13 @@
       
       <template v-else>
         <div class="page-actions">
-          <button @click="showSettingsModal = true" class="settings-button">
+          <NuxtLink to="/notification-settings" class="settings-button">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
             </svg>
             通知设置
-          </button>
+          </NuxtLink>
         </div>
         
         <div class="notifications-content">
@@ -107,11 +107,7 @@
           </div>
         </div>
         
-        <!-- 通知设置弹窗 -->
-        <NotificationSettingsModal 
-          :isOpen="showSettingsModal" 
-          @close="showSettingsModal = false" 
-        />
+
       </template>
     </div>
   </div>
@@ -121,14 +117,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useNotifications } from '~/composables/useNotifications'
 import { useAuth } from '~/composables/useAuth'
-import NotificationSettingsModal from '~/components/Notifications/NotificationSettingsModal.vue'
+
 
 // 中间件验证
 // definePageMeta({
 //   middleware: ['auth']
 // })
 
-const showSettingsModal = ref(false)
+
 const notificationsService = useNotifications()
 const loading = computed(() => notificationsService.loading.value)
 const notifications = computed(() => notificationsService.notifications.value || [])

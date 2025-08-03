@@ -1,4 +1,4 @@
-import { hasPermission } from '../../../utils/permissions'
+import { hasPermission } from '../../../utils/permissions.js'
 
 export default defineEventHandler(async (event) => {
   // 验证用户认证
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查排期管理权限
-  const canManageSchedule = await hasPermission(user.id, 'schedule_manage')
+  const canManageSchedule = hasPermission(user, 'schedule.manage')
   if (!canManageSchedule) {
     throw createError({
       statusCode: 403,
@@ -58,4 +58,4 @@ export default defineEventHandler(async (event) => {
       statusMessage: error.message || '更新排期顺序失败'
     })
   }
-}) 
+})
