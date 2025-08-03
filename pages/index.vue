@@ -22,9 +22,9 @@
           <ClientOnly>
             <div v-if="isClientAuthenticated" class="user-info">
               <div class="user-details">
-                <h3 class="user-name">你好，{{ user?.name || '游客' }}</h3>
-                <p v-if="user?.grade || user?.class" class="user-class">
-                  {{ user.grade }} {{ user.class }}
+                <h3 class="user-name">你好，{{ auth?.user?.value?.name || '游客' }}</h3>
+                <p v-if="auth?.user?.value?.grade || auth?.user?.value?.class" class="user-class">
+                  {{ auth?.user?.value?.grade }} {{ auth?.user?.value?.class }}
                 </p>
                 <p v-else-if="isAdmin" class="user-class">
                   管理员
@@ -651,6 +651,19 @@ onMounted(async () => {
   isAdmin.value = auth.isAdmin.value
   user.value = auth.user.value
 
+  // 监听认证状态变化
+  watch(() => auth.isAuthenticated.value, (newVal) => {
+    isClientAuthenticated.value = newVal
+  })
+
+  watch(() => auth.isAdmin.value, (newVal) => {
+    isAdmin.value = newVal
+  })
+
+  watch(() => auth.user.value, (newVal) => {
+    user.value = newVal
+  })
+
   // 初始化通知服务
   notificationsService = useNotifications()
 
@@ -665,6 +678,9 @@ onMounted(async () => {
     await songs.fetchSongs()
     // 立即加载通知，而不仅在切换到通知标签时
     await loadNotifications()
+    
+    // 检查用户是否需要修改密码并显示提示
+    await checkPasswordChangeRequired()
   }
 
   // 更新真实数据
@@ -959,6 +975,34 @@ const navigateToLogin = () => {
 const showLoginNotice = () => {
   if (window.$showNotification) {
     window.$showNotification('需要登录才能查看通知', 'info')
+  }
+}
+
+// 检查用户是否需要修改密码
+const checkPasswordChangeRequired = async () => {
+  try {
+    // 获取最新的用户信息
+    if (auth && auth.refreshUser) {
+      await auth.refreshUser()
+      
+      // 检查用户是否需要修改密码
+      const currentUser = auth.user.value
+      if (currentUser && currentUser.needsPasswordChange) {
+        // 延迟1秒显示通知，确保页面加载完成
+        setTimeout(() => {
+          if (window.$showNotification) {
+            window.$showNotification(
+              '为了您的账户安全，建议您修改密码。您可以点击右上角的"修改密码"按钮进行修改。',
+              'info',
+              true,
+              8000 // 显示8秒
+            )
+          }
+        }, 1000)
+      }
+    }
+  } catch (error) {
+    console.error('检查密码修改状态失败:', error)
   }
 }
 

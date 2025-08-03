@@ -221,9 +221,9 @@ export default defineEventHandler(async (event) => {
     const processingTime = Date.now() - startTime
     console.log(`Login request processed in ${processingTime}ms`)
     
-    // 检查用户是否首次登录（从未修改过密码）
-    const firstLogin = !user.passwordChangedAt
-    console.log('First login:', firstLogin)
+    // 检查用户是否需要强制修改密码（passwordChangedAt为空表示使用默认密码）
+    const needsPasswordChange = !user.passwordChangedAt
+    console.log('Needs password change:', needsPasswordChange)
   
   return {
     token,
@@ -236,7 +236,7 @@ export default defineEventHandler(async (event) => {
       role: user.role,
       lastLoginAt: user.lastLoginAt,
       lastLoginIp: user.lastLoginIp,
-      firstLogin: firstLogin // 添加首次登录标志
+      needsPasswordChange: needsPasswordChange // 是否需要强制修改密码
     }
     }
   } catch (error: any) {
@@ -258,4 +258,4 @@ export default defineEventHandler(async (event) => {
       message: `登录失败：${errorName} - ${errorMessage}`
     })
   }
-}) 
+})

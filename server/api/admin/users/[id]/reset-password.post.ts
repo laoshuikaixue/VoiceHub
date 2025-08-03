@@ -47,12 +47,12 @@ export default defineEventHandler(async (event) => {
     // 加密新密码
     const hashedPassword = await bcrypt.hash(body.newPassword, 10)
     
-    // 更新密码，同时更新passwordChangedAt字段，使旧令牌失效
+    // 更新密码，清空passwordChangedAt字段，强制用户下次登录时修改密码
     await prisma.user.update({
       where: { id },
       data: {
         password: hashedPassword,
-        passwordChangedAt: new Date() // 添加密码修改时间戳
+        passwordChangedAt: null // 清空密码修改时间，强制用户修改密码
       }
     })
     
@@ -67,4 +67,4 @@ export default defineEventHandler(async (event) => {
       message: '重置密码失败'
     })
   }
-}) 
+})

@@ -274,32 +274,38 @@ const handleChangePassword = async () => {
     if (props.isFirstLogin) {
       await auth.setInitialPassword(newPassword.value)
       success.value = '密码设置成功！正在跳转...'
-      setTimeout(() => {
-        auth.logout()
-        router.push('/')
-      }, 1500)
+      
+      // 清空表单
+      currentPassword.value = ''
+      newPassword.value = ''
+      confirmPassword.value = ''
+      
+      // 强制修改密码完成后，更新用户状态并跳转到相应页面
+      setTimeout(async () => {
+        // 重新获取用户信息以更新needsPasswordChange状态
+        await auth.refreshUser()
+        
+        if (auth.isAdmin.value) {
+          router.push('/dashboard')
+        } else {
+          router.push('/')
+        }
+      }, 2000)
     } else {
       await auth.changePassword(currentPassword.value, newPassword.value)
       success.value = '密码修改成功！正在跳转...'
+      
+      // 清空表单
+      currentPassword.value = ''
+      newPassword.value = ''
+      confirmPassword.value = ''
+      
+      // 普通密码修改后登出用户
       setTimeout(() => {
         auth.logout()
-        router.push('/')
-      }, 1500)
+        router.push('/login')
+      }, 2000)
     }
-
-    // 清空表单
-    currentPassword.value = ''
-    newPassword.value = ''
-    confirmPassword.value = ''
-
-    // 2秒后跳转
-    setTimeout(() => {
-      if (auth.isAdmin.value) {
-        router.push('/dashboard')
-      } else {
-        router.push('/')
-      }
-    }, 2000)
   } catch (err) {
     error.value = err.message || '操作失败，请重试'
   } finally {

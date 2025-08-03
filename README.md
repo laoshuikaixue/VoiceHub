@@ -44,7 +44,8 @@
 ### 🎨 用户体验
 - **现代UI**：响应式设计，深色主题，流畅的动画效果
 - **玻璃态设计**：现代化的视觉效果和交互体验
-- **移动端优化**：适配支持移动设备访问
+- **交互反馈**：hover效果，点击反馈，状态变化动画
+- **移动端优化**：适配支持移动设备访问，触摸友好的交互设计
 
 ## 技术栈
 
@@ -53,11 +54,9 @@
 - **数据库**：PostgreSQL
 - **ORM**：Prisma
 - **认证**：JWT Token认证
-- **音乐API**：网易云音乐、QQ音乐第三方API
 - **代理服务**：HTTP/HTTPS代理，解决混合内容问题，支持Range请求和缓存
 - **打印导出**：jsPDF、html2canvas，支持PDF生成和图片处理
-- **样式**：CSS变量，自定义动画，玻璃态设计
-- **部署**：支持Vercel和Netlify一键部署
+- **样式**：CSS变量，自定义动画，玻璃态设计，响应式布局
 
 ## 系统架构
 
@@ -282,7 +281,8 @@ VoiceHub/
 │   │   ├── AudioPlayer.vue        # 音乐播放器
 │   │   ├── ConfirmDialog.vue      # 确认对话框
 │   │   ├── Icon.vue               # 图标组件
-│   │   ├── Notification.vue       # 通知组件
+│   │   ├── Notification.vue       # 单个通知组件
+│   │   ├── NotificationContainer.vue # 多通知容器组件
 │   │   ├── PageTransition.vue     # 页面过渡动画
 │   │   └── ProgressBar.vue        # 进度条组件
 │   └── SiteFooter.vue     # 站点页脚
@@ -307,6 +307,7 @@ VoiceHub/
 │   ├── dashboard.vue       # 用户仪表盘
 │   ├── index.vue           # 首页
 │   ├── login.vue           # 登录页面
+│   ├── notification-test.vue # 通知系统测试页面
 │   └── notifications.vue   # 通知中心页面
 ├── plugins/               # Nuxt插件
 │   ├── auth.client.ts      # 客户端认证插件

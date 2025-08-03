@@ -91,12 +91,12 @@ onMounted(async () => {
     return
   }
   
-  // 检查是否首次登录
+  // 检查是否需要修改密码（用于显示不同的UI提示）
   if (process.client) {
     const userJson = localStorage.getItem('user')
     if (userJson) {
       const user = JSON.parse(userJson)
-      isFirstLogin.value = user.firstLogin === true
+      isFirstLogin.value = user.needsPasswordChange === true
     }
   }
 })

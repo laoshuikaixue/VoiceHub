@@ -93,25 +93,25 @@ export const useAuth = () => {
     }
   }
 
-  // 设置初始密码（仅首次登录且未修改过密码时可用）
+  // 设置初始密码（仅需要强制修改密码时可用）
   const setInitialPassword = async (newPassword: string) => {
     loading.value = true
     try {
-      // 只有首次登录且未修改过密码才允许设置初始密码
-      if (!user.value || !("passwordChangedAt" in user.value) || !user.value.passwordChangedAt) {
-        const { data, error } = await useFetch('/api/auth/set-initial-password', {
-          method: 'POST',
-          body: { newPassword },
-          ...getAuthHeader()
-        })
-        if (error.value) {
-          const errorMessage = error.value.data?.message || error.value.statusMessage || '初始密码设置失败'
-          throw new Error(errorMessage)
-        }
-        return data.value
-      } else {
-        throw new Error('已设置过密码，不能再次设置初始密码')
+      // 只有需要强制修改密码时才允许设置初始密码
+      if (!user.value || !("needsPasswordChange" in user.value) || !user.value.needsPasswordChange) {
+        throw new Error('当前不需要设置初始密码')
       }
+      
+      const { data, error } = await useFetch('/api/auth/set-initial-password', {
+        method: 'POST',
+        body: { newPassword },
+        ...getAuthHeader()
+      })
+      if (error.value) {
+        const errorMessage = error.value.data?.message || error.value.statusMessage || '初始密码设置失败'
+        throw new Error(errorMessage)
+      }
+      return data.value
     } finally {
       loading.value = false
     }
@@ -157,6 +157,40 @@ export const useAuth = () => {
     return {}
   }
 
+  // 刷新用户信息
+  const refreshUser = async () => {
+    if (!isAuthenticated.value) {
+      return
+    }
+
+    try {
+      const { data, error } = await useFetch('/api/auth/me', {
+        method: 'GET',
+        ...getAuthHeader()
+      })
+
+      if (error.value) {
+        // 如果获取用户信息失败，可能token已过期，执行登出
+        logout()
+        return
+      }
+
+      if (data.value) {
+        const userData = data.value as any
+        user.value = userData
+        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(userData.role)
+
+        // 更新localStorage中的用户信息
+        if (process.client) {
+          localStorage.setItem('user', JSON.stringify(userData))
+        }
+      }
+    } catch (error) {
+      console.error('刷新用户信息失败:', error)
+      // 发生错误时不执行登出，保持当前状态
+    }
+  }
+
   // 初始化认证
   initAuth()
 
@@ -169,6 +203,7 @@ export const useAuth = () => {
     logout,
     changePassword,
     setInitialPassword,
+    refreshUser,
     getToken,
     getAuthHeader,
     initAuth // 公开initAuth方法

@@ -25,11 +25,7 @@ export default defineNuxtPlugin((nuxtApp) => {
           return next('/login')
         }
         
-        // 检查是否是首次登录，并且不是前往修改密码页面
-        const user = JSON.parse(localStorage.getItem('user') || '{}')
-        if (user.firstLogin && to.path !== '/change-password') {
-          return next('/change-password')
-        }
+
       }
       
       next()
@@ -173,4 +169,4 @@ export default defineNuxtPlugin((nuxtApp) => {
       checkToken()
     }, 500) // 延迟检查，确保应用完全加载
   })
-}) 
+})
