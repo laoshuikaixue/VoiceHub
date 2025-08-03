@@ -29,15 +29,28 @@
         <small class="help-text">支持相对路径（如 /logo.png）或完整URL</small>
       </div>
 
+
+
       <div class="form-group">
-        <label for="schoolLogoUrl">学校Logo URL（可选）</label>
+        <label for="schoolLogoHomeUrl">首页学校Logo URL（可选）</label>
         <input
-          id="schoolLogoUrl"
-          v-model="formData.schoolLogoUrl"
+          id="schoolLogoHomeUrl"
+          v-model="formData.schoolLogoHomeUrl"
           type="url"
-          placeholder="请输入学校Logo图片URL"
+          placeholder="请输入首页用的学校Logo图片URL"
         />
-        <small class="help-text">设置后将在首页VoiceHub Logo旁边显示学校Logo</small>
+        <small class="help-text">设置后将在首页VoiceHub Logo旁边显示学校Logo（大尺寸）</small>
+      </div>
+
+      <div class="form-group">
+        <label for="schoolLogoPrintUrl">打印页学校Logo URL（可选）</label>
+        <input
+          id="schoolLogoPrintUrl"
+          v-model="formData.schoolLogoPrintUrl"
+          type="url"
+          placeholder="请输入打印页用的学校Logo图片URL"
+        />
+        <small class="help-text">设置后将在排期打印页面显示学校Logo（小尺寸）</small>
       </div>
 
       <div class="form-group">
@@ -126,7 +139,8 @@ const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 const formData = ref({
   siteTitle: '',
   siteLogoUrl: '',
-  schoolLogoUrl: '',
+  schoolLogoHomeUrl: '',
+  schoolLogoPrintUrl: '',
   siteDescription: '',
   submissionGuidelines: '',
   icpNumber: ''
@@ -153,7 +167,8 @@ const loadConfig = async () => {
     formData.value = {
       siteTitle: data.siteTitle || '',
       siteLogoUrl: data.siteLogoUrl || '',
-      schoolLogoUrl: data.schoolLogoUrl || '',
+      schoolLogoHomeUrl: data.schoolLogoHomeUrl || '',
+      schoolLogoPrintUrl: data.schoolLogoPrintUrl || '',
       siteDescription: data.siteDescription || '',
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
       icpNumber: data.icpNumber || ''
@@ -168,7 +183,8 @@ const loadConfig = async () => {
     formData.value = {
       siteTitle: 'VoiceHub',
       siteLogoUrl: '/favicon.ico',
-      schoolLogoUrl: '',
+      schoolLogoHomeUrl: '',
+      schoolLogoPrintUrl: '',
       siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: defaultSubmissionGuidelines,
       icpNumber: ''
@@ -189,7 +205,8 @@ const saveConfig = async () => {
     const configToSave = {
       siteTitle: formData.value.siteTitle.trim() || '校园广播站点歌系统',
       siteLogoUrl: formData.value.siteLogoUrl.trim() || '/favicon.ico',
-      schoolLogoUrl: formData.value.schoolLogoUrl.trim(),
+      schoolLogoHomeUrl: formData.value.schoolLogoHomeUrl.trim(),
+      schoolLogoPrintUrl: formData.value.schoolLogoPrintUrl.trim(),
       siteDescription: formData.value.siteDescription.trim() || '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: formData.value.submissionGuidelines.trim() || defaultSubmissionGuidelines,
       icpNumber: formData.value.icpNumber.trim()

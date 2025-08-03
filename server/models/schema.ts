@@ -330,7 +330,6 @@ export async function initializeFirstDeployment() {
         enablePlayTimeSelection: false,
         siteTitle: 'VoiceHub',
         siteLogoUrl: '/favicon.ico',
-        schoolLogoUrl: null,
         siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
         submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
         icpNumber: null
@@ -346,4 +345,4 @@ export async function initializeFirstDeployment() {
 }
  
 // 数据库模型在prisma/schema.prisma中定义 
-export { prisma } 
+export { prisma }

@@ -98,6 +98,10 @@
                 <input type="checkbox" v-model="settings.showSequence" />
                 <span>播放顺序</span>
               </label>
+              <label class="checkbox-item" v-if="schoolLogoPrintUrl">
+                <input type="checkbox" v-model="settings.showSchoolLogo" />
+                <span>学校Logo</span>
+              </label>
             </div>
           </div>
 
@@ -158,13 +162,22 @@
             <div class="page-header">
               <div class="logo-section">
                 <img :src="logoUrl" alt="VoiceHub Logo" class="logo" />
+                <!-- 竖线分割 -->
+                <div class="logo-divider"></div>
+                <!-- 学校logo -->
+                <img 
+              v-if="settings.showSchoolLogo && schoolLogoPrintUrl"
+              :src="schoolLogoPrintUrl"
+              alt="学校Logo" 
+              class="school-logo-print"
+            />
                 <div class="title-section">
                   <h1>{{ siteTitle }}</h1>
                   <h2>广播排期表</h2>
                 </div>
               </div>
               <div class="date-info">
-                <span>{{ formatDateRange() }}</span>
+                <div class="date-range-display">{{ formatDateRange() }}</div>
               </div>
             </div>
 
@@ -255,6 +268,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRuntimeConfig } from '#app'
 import { usePermissions } from '~/composables/usePermissions'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
@@ -262,9 +276,11 @@ import ScheduleItemPrint from './ScheduleItemPrint.vue'
 // 权限检查
 const { canPrintSchedule } = usePermissions()
 
+// 站点配置
+const { title: siteTitle, schoolLogoPrintUrl, initSiteConfig } = useSiteConfig()
+
 // 配置
 const config = useRuntimeConfig()
-const siteTitle = config.public.siteTitle || 'VoiceHub'
 
 // Logo URL处理，避免开发模式路径问题
 const logoUrl = computed(() => {
@@ -292,7 +308,8 @@ const settings = ref({
   showArtist: true,
   showRequester: true,
   showVotes: true,
-  showSequence: true
+  showSequence: true,
+  showSchoolLogo: false
 })
 
 // 计算属性
@@ -1044,7 +1061,13 @@ const formatDateRange = () => {
   const start = settings.value.startDate ? formatDate(settings.value.startDate) : '开始'
   const end = settings.value.endDate ? formatDate(settings.value.endDate) : '结束'
 
-  return `${start} - ${end}`
+  // 如果日期范围较长，使用双行显示
+  const fullRange = `${start} - ${end}`
+  if (fullRange.length > 20) {
+    return `${start}\n至 ${end}`
+  }
+
+  return fullRange
 }
 
 const setDateRange = (type) => {
@@ -1099,9 +1122,17 @@ const initializeDates = () => {
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   initializeDates()
   loadSchedules()
+  
+  // 初始化站点配置
+  await initSiteConfig()
+  
+  // 如果有学校logo，自动勾选显示学校logo选项
+  if (schoolLogoPrintUrl.value) {
+    settings.value.showSchoolLogo = true
+  }
 })
 
 // 调试用的计算属性
@@ -1436,12 +1467,27 @@ watch(() => settings.value, () => {
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
 .logo {
   width: 70px;
   height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.logo-divider {
+  width: 2px;
+  height: 60px;
+  background: linear-gradient(to bottom, #ddd, #999, #ddd);
+  border-radius: 1px;
+  margin: 0 4px;
+}
+
+.school-logo-print {
+  width: 60px;
+  height: 60px;
   object-fit: contain;
   border-radius: 4px;
 }
@@ -1464,6 +1510,15 @@ watch(() => settings.value, () => {
   font-size: 14px;
   color: #666;
   text-align: right;
+  display: flex;
+  align-items: flex-start;
+}
+
+.date-range-display {
+  white-space: pre-line;
+  line-height: 1.4;
+  font-weight: 500;
+  margin-top: 2px; /* 微调对齐，考虑到h1的line-height */
 }
 
 .schedule-content {

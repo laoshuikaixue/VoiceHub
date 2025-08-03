@@ -144,7 +144,8 @@ model SystemSettings {
   // 站点配置
   siteTitle              String?  // 站点标题
   siteLogoUrl            String?  // 站点Logo URL
-  schoolLogoUrl          String?  // 学校Logo URL
+  schoolLogoHomeUrl      String?  // 首页学校Logo URL（大尺寸）
+  schoolLogoPrintUrl     String?  // 打印页学校Logo URL（小尺寸）
   siteDescription        String?  // 站点描述
   submissionGuidelines   String?  // 投稿须知
   icpNumber              String?  // 备案号

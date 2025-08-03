@@ -28,7 +28,8 @@ export default defineEventHandler(async (event) => {
           enablePlayTimeSelection: false,
           siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',
           siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico',
-          schoolLogoUrl: null,
+          schoolLogoHomeUrl: null,
+          schoolLogoPrintUrl: null,
           siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
           submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
           icpNumber: null

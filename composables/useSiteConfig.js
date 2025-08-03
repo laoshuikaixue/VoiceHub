@@ -13,7 +13,8 @@ const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 const siteConfig = ref({
   siteTitle: '',
   siteLogoUrl: '',
-  schoolLogoUrl: '',
+  schoolLogoHomeUrl: '',
+  schoolLogoPrintUrl: '',
   siteDescription: '',
   submissionGuidelines: '',
   icpNumber: ''
@@ -51,7 +52,8 @@ export const useSiteConfig = () => {
       siteConfig.value = {
         siteTitle: '校园广播站点歌系统',
         siteLogoUrl: '/favicon.ico',
-        schoolLogoUrl: '',
+        schoolLogoHomeUrl: '',
+        schoolLogoPrintUrl: '',
         siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
         submissionGuidelines: defaultSubmissionGuidelines,
         icpNumber: ''
@@ -65,7 +67,8 @@ export const useSiteConfig = () => {
   // 计算属性
   const title = computed(() => siteConfig.value.siteTitle || '校园广播站点歌系统')
   const logoUrl = computed(() => siteConfig.value.siteLogoUrl || '/favicon.ico')
-  const schoolLogoUrl = computed(() => siteConfig.value.schoolLogoUrl || '')
+  const schoolLogoHomeUrl = computed(() => siteConfig.value.schoolLogoHomeUrl || '')
+  const schoolLogoPrintUrl = computed(() => siteConfig.value.schoolLogoPrintUrl || '')
   const description = computed(() => siteConfig.value.siteDescription || '校园广播站点歌系统 - 让你的声音被听见')
   const guidelines = computed(() => siteConfig.value.submissionGuidelines || defaultSubmissionGuidelines)
   const icp = computed(() => siteConfig.value.icpNumber || '')
@@ -89,7 +92,8 @@ export const useSiteConfig = () => {
     isLoading: readonly(isLoading),
     title,
     logoUrl,
-    schoolLogoUrl,
+    schoolLogoHomeUrl,
+    schoolLogoPrintUrl,
     description,
     guidelines,
     icp,

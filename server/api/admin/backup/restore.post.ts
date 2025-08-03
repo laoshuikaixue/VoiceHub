@@ -361,7 +361,7 @@ export default defineEventHandler(async (event) => {
                       enablePlayTimeSelection: record.enablePlayTimeSelection,
                       siteTitle: record.siteTitle,
                       siteLogoUrl: record.siteLogoUrl,
-                      schoolLogoUrl: record.schoolLogoUrl,
+            
                       siteDescription: record.siteDescription,
                       submissionGuidelines: record.submissionGuidelines,
                       icpNumber: record.icpNumber

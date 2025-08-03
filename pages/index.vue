@@ -11,7 +11,7 @@
             <img src="/images/logo.svg" alt="VoiceHub Logo" class="logo-image" />
           </NuxtLink>
           <!-- 横线和学校logo -->
-          <div v-if="schoolLogoUrl && schoolLogoUrl.trim()" class="logo-divider-container">
+          <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider-container">
             <div class="logo-divider"></div>
             <img :src="proxiedSchoolLogoUrl" alt="学校Logo" class="school-logo" />
           </div>
@@ -365,13 +365,6 @@
           <div class="rules-content">
             <h3 class="font-bold mb-2">投稿须知</h3>
             <div v-if="submissionGuidelines" class="guidelines-content" v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
-            <ul v-else class="list-disc pl-5 mb-4">
-              <li>投稿时无需加入书名号</li>
-              <li>除DJ外 其他类型歌曲均接收（包含日语 韩语等小语种）</li>
-              <li>禁止投递含有违规内容的歌曲</li>
-              <li>点播的歌曲将由管理员进行审核</li>
-              <li>审核通过后将安排在播放时段播出</li>
-            </ul>
 
             <h3 class="font-bold mb-2">播放时间</h3>
             <p>每天夜自修静班前</p>
@@ -435,7 +428,7 @@ const config = useRuntimeConfig()
 const router = useRouter()
 
 // 站点配置
-const { title: siteTitle, description: siteDescription, guidelines: submissionGuidelines, icp: icpNumber, schoolLogoUrl, initSiteConfig } = useSiteConfig()
+const { title: siteTitle, description: siteDescription, guidelines: submissionGuidelines, icp: icpNumber, schoolLogoHomeUrl, initSiteConfig } = useSiteConfig()
 
 // 服务器端安全的认证状态管理
 const isClientAuthenticated = ref(false)
@@ -758,11 +751,11 @@ const error = computed(() => songs?.error?.value || '')
 
 // 处理学校logo的HTTP/HTTPS代理
 const proxiedSchoolLogoUrl = computed(() => {
-  if (!schoolLogoUrl.value || !schoolLogoUrl.value.trim()) {
+  if (!schoolLogoHomeUrl.value || !schoolLogoHomeUrl.value.trim()) {
     return ''
   }
   
-  const logoUrl = schoolLogoUrl.value.trim()
+  const logoUrl = schoolLogoHomeUrl.value.trim()
   
   // 如果是HTTP链接，通过代理访问
   if (logoUrl.startsWith('http://')) {
@@ -1091,11 +1084,6 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   width: 160px;
   height: 160px;
   object-fit: contain;
-  transition: transform 0.2s ease;
-}
-
-.school-logo:hover {
-  transform: scale(1.05);
 }
 
 /* 移除不需要的title-group样式 */
