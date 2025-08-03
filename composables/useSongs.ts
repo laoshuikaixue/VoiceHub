@@ -213,29 +213,143 @@ export const useSongs = () => {
     return fetchPublicSchedules(true)
   }
   
+  // 字符串相似度计算（编辑距离）
+  const calculateSimilarity = (str1: string, str2: string): number => {
+    const len1 = str1.length
+    const len2 = str2.length
+    
+    if (len1 === 0) return len2
+    if (len2 === 0) return len1
+    
+    const matrix = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(null))
+    
+    for (let i = 0; i <= len1; i++) matrix[i][0] = i
+    for (let j = 0; j <= len2; j++) matrix[0][j] = j
+    
+    for (let i = 1; i <= len1; i++) {
+      for (let j = 1; j <= len2; j++) {
+        const cost = str1[i - 1] === str2[j - 1] ? 0 : 1
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,      // 删除
+          matrix[i][j - 1] + 1,      // 插入
+          matrix[i - 1][j - 1] + cost // 替换
+        )
+      }
+    }
+    
+    const maxLen = Math.max(len1, len2)
+    return (maxLen - matrix[len1][len2]) / maxLen
+  }
+  
+  // 标准化字符串（去除标点符号、空格，转换为小写）
+  const normalizeString = (str: string): string => {
+    return str
+      .toLowerCase()
+      .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
+      .replace(/[&＆]/g, 'and')
+      .replace(/[feat\.?|ft\.?]/gi, '')
+      .trim()
+  }
+  
   // 检查相似歌曲
   const checkSimilarSongs = (title: string, artist: string): Song[] => {
     similarSongFound.value = null
     
-    // 检查是否已有完全相同歌曲
-    const exactSongs = songs.value.filter(song => 
-      song.title.toLowerCase() === title.toLowerCase() && 
-      song.artist.toLowerCase() === artist.toLowerCase()
-    )
+    const normalizedTitle = normalizeString(title)
+    const normalizedArtist = normalizeString(artist)
+    
+    // 1. 检查完全相同的歌曲（标准化后）
+    const exactSongs = songs.value.filter(song => {
+      const songTitle = normalizeString(song.title)
+      const songArtist = normalizeString(song.artist)
+      return songTitle === normalizedTitle && songArtist === normalizedArtist
+    })
     
     if (exactSongs.length > 0) {
       return exactSongs
     }
     
-    // 检查相似歌曲
-    const possibleSimilar = songs.value.filter(song => 
-      song.title.toLowerCase().includes(title.toLowerCase()) || 
-      title.toLowerCase().includes(song.title.toLowerCase())
-    )
+    // 2. 检查高度相似的歌曲
+    const similarSongs: Array<{song: Song, similarity: number}> = []
+    
+    songs.value.forEach(song => {
+      const songTitle = normalizeString(song.title)
+      const songArtist = normalizeString(song.artist)
+      
+      // 计算标题相似度
+      const titleSimilarity = calculateSimilarity(normalizedTitle, songTitle)
+      
+      // 计算艺术家相似度
+      const artistSimilarity = calculateSimilarity(normalizedArtist, songArtist)
+      
+      // 检查是否为高度相似
+      const isHighlySimilar = (
+        // 标题完全相同，艺术家高度相似
+        (titleSimilarity >= 0.95 && artistSimilarity >= 0.8) ||
+        // 标题高度相似，艺术家完全相同
+        (titleSimilarity >= 0.8 && artistSimilarity >= 0.95) ||
+        // 标题和艺术家都高度相似
+        (titleSimilarity >= 0.85 && artistSimilarity >= 0.85) ||
+        // 标题包含关系且艺术家相似
+        (
+          (songTitle.includes(normalizedTitle) || normalizedTitle.includes(songTitle)) &&
+          artistSimilarity >= 0.8 &&
+          Math.abs(songTitle.length - normalizedTitle.length) <= 3
+        )
+      )
+      
+      if (isHighlySimilar) {
+        const overallSimilarity = (titleSimilarity * 0.7 + artistSimilarity * 0.3)
+        similarSongs.push({ song, similarity: overallSimilarity })
+      }
+    })
+    
+    // 3. 按相似度排序并返回
+    if (similarSongs.length > 0) {
+      const sortedSimilar = similarSongs
+        .sort((a, b) => b.similarity - a.similarity)
+        .map(item => item.song)
+      
+      similarSongFound.value = sortedSimilar[0] // 保持兼容性
+      return sortedSimilar
+    }
+    
+    // 4. 如果没有高度相似的，检查可能的相似歌曲（降低阈值）
+    const possibleSimilar: Array<{song: Song, similarity: number}> = []
+    
+    songs.value.forEach(song => {
+      const songTitle = normalizeString(song.title)
+      const songArtist = normalizeString(song.artist)
+      
+      const titleSimilarity = calculateSimilarity(normalizedTitle, songTitle)
+      const artistSimilarity = calculateSimilarity(normalizedArtist, songArtist)
+      
+      // 检查可能相似的条件（更宽松）
+      const isPossiblySimilar = (
+        // 标题相似度较高
+        (titleSimilarity >= 0.7 && artistSimilarity >= 0.6) ||
+        // 标题包含关系
+        (
+          (songTitle.includes(normalizedTitle) || normalizedTitle.includes(songTitle)) &&
+          artistSimilarity >= 0.5 &&
+          normalizedTitle.length >= 3
+        )
+      )
+      
+      if (isPossiblySimilar) {
+        const overallSimilarity = (titleSimilarity * 0.7 + artistSimilarity * 0.3)
+        possibleSimilar.push({ song, similarity: overallSimilarity })
+      }
+    })
     
     if (possibleSimilar.length > 0) {
-      similarSongFound.value = possibleSimilar[0] // 保持兼容性
-      return possibleSimilar
+      const sortedPossible = possibleSimilar
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, 3) // 最多返回3个可能相似的歌曲
+        .map(item => item.song)
+      
+      similarSongFound.value = sortedPossible[0] // 保持兼容性
+      return sortedPossible
     }
     
     return []

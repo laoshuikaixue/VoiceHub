@@ -517,15 +517,31 @@ const ignoreSimilar = () => {
 }
 
 // 检查搜索结果是否已存在完全匹配的歌曲
+// 标准化字符串（与useSongs中的逻辑保持一致）
+const normalizeString = (str) => {
+  return str
+    .toLowerCase()
+    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
+    .replace(/[&＆]/g, 'and')
+    .replace(/[feat\.?|ft\.?]/gi, '')
+    .trim()
+}
+
 const getSimilarSong = (result) => {
   const title = result.song || result.title
   const artist = result.singer || result.artist
   
-  // 只检查完全匹配的歌曲（歌名和歌手都完全相同）
-  return songService.songs.value.find(song => 
-    song.title.toLowerCase() === title.toLowerCase() && 
-    song.artist.toLowerCase() === artist.toLowerCase()
-  )
+  if (!title || !artist) return null
+  
+  const normalizedTitle = normalizeString(title)
+  const normalizedArtist = normalizeString(artist)
+  
+  // 检查完全匹配的歌曲（标准化后）
+  return songService.songs.value.find(song => {
+    const songTitle = normalizeString(song.title)
+    const songArtist = normalizeString(song.artist)
+    return songTitle === normalizedTitle && songArtist === normalizedArtist
+  })
 }
 
 // 从搜索结果中点赞已存在的歌曲

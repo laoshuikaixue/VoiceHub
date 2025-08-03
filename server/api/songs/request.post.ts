@@ -22,19 +22,33 @@ export default defineEventHandler(async (event) => {
   }
   
   try {
-    // 检查是否已有相同歌曲
-  const existingSong = await prisma.song.findFirst({
-    where: {
-      title: {
-        equals: body.title,
-          mode: 'insensitive'
-      },
-      artist: {
-        equals: body.artist,
-          mode: 'insensitive'
-        }
+    // 标准化字符串用于精确匹配
+    const normalizeForMatch = (str: string): string => {
+      return str
+        .toLowerCase()
+        .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
+        .replace(/[&＆]/g, 'and')
+        .replace(/[feat\.?|ft\.?]/gi, '')
+        .trim()
     }
-  })
+
+    const normalizedTitle = normalizeForMatch(body.title)
+    const normalizedArtist = normalizeForMatch(body.artist)
+
+    // 检查是否已有完全相同的歌曲（标准化后完全匹配）
+    const allSongs = await prisma.song.findMany({
+      select: {
+        id: true,
+        title: true,
+        artist: true
+      }
+    })
+
+    const existingSong = allSongs.find(song => {
+      const songTitle = normalizeForMatch(song.title)
+      const songArtist = normalizeForMatch(song.artist)
+      return songTitle === normalizedTitle && songArtist === normalizedArtist
+    })
   
   if (existingSong) {
       throw createError({
