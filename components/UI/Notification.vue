@@ -10,14 +10,28 @@
       }"
     >
       <div class="notification-icon">
-        <span v-if="type === 'success'">✓</span>
-        <span v-else-if="type === 'error'">✕</span>
-        <span v-else>ℹ</span>
+        <Icon 
+          v-if="type === 'success'" 
+          name="success" 
+          :size="16" 
+        />
+        <Icon 
+          v-else-if="type === 'error'" 
+          name="error" 
+          :size="16" 
+        />
+        <Icon 
+          v-else 
+          name="info" 
+          :size="16" 
+        />
       </div>
       <div class="notification-content">
         {{ message }}
       </div>
-      <button class="notification-close" @click="$emit('close')">×</button>
+      <button class="notification-close" @click="$emit('close')">
+        <Icon name="close" :size="16" />
+      </button>
       
       <!-- 进度条 -->
       <div v-if="autoClose" class="notification-progress">
@@ -31,6 +45,8 @@
 </template>
 
 <script setup>
+import Icon from './Icon.vue'
+
 defineProps({
   show: {
     type: Boolean,
@@ -213,4 +229,4 @@ defineEmits(['close'])
     transform: translateX(20px) scale(0.9);
   }
 }
-</style> 
+</style>

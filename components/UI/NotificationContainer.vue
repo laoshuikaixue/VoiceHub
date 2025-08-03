@@ -12,14 +12,28 @@
         }"
       >
         <div class="notification-icon">
-          <span v-if="notification.type === 'success'">✓</span>
-          <span v-else-if="notification.type === 'error'">✕</span>
-          <span v-else>ℹ</span>
+          <Icon 
+            v-if="notification.type === 'success'" 
+            name="success" 
+            :size="16" 
+          />
+          <Icon 
+            v-else-if="notification.type === 'error'" 
+            name="error" 
+            :size="16" 
+          />
+          <Icon 
+            v-else 
+            name="info" 
+            :size="16" 
+          />
         </div>
         <div class="notification-content">
           {{ notification.message }}
         </div>
-        <button class="notification-close" @click="removeNotification(notification.id)">×</button>
+        <button class="notification-close" @click="removeNotification(notification.id)">
+          <Icon name="close" :size="16" />
+        </button>
         
         <!-- 进度条 -->
         <div v-if="notification.autoClose" class="notification-progress">
@@ -38,6 +52,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import Icon from './Icon.vue'
 
 const notifications = ref([])
 let notificationId = 0

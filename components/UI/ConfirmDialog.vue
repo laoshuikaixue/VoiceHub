@@ -5,10 +5,26 @@
         <div v-if="show" class="dialog" @click.stop>
           <div class="dialog-header">
             <div class="dialog-icon" :class="type">
-              <span v-if="type === 'warning'">⚠</span>
-              <span v-else-if="type === 'danger'">⚠</span>
-              <span v-else-if="type === 'info'">ℹ</span>
-              <span v-else>?</span>
+              <Icon 
+                v-if="type === 'warning'" 
+                name="warning" 
+                :size="20" 
+              />
+              <Icon 
+                v-else-if="type === 'danger'" 
+                name="warning" 
+                :size="20" 
+              />
+              <Icon 
+                v-else-if="type === 'info'" 
+                name="info" 
+                :size="20" 
+              />
+              <Icon 
+                v-else 
+                name="info" 
+                :size="20" 
+              />
             </div>
             <h3 class="dialog-title">{{ title }}</h3>
           </div>
@@ -42,6 +58,8 @@
 </template>
 
 <script setup>
+import Icon from './Icon.vue'
+
 defineProps({
   show: {
     type: Boolean,

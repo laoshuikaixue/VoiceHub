@@ -218,7 +218,7 @@
       <div v-if="similarSongs.length > 0" class="similar-song-alert">
         <div class="alert-header">
           <div class="alert-header-left">
-            <span class="alert-icon">⚠️</span>
+            <Icon name="warning" :size="16" class="alert-icon" />
             <span class="alert-title">发现可能相似的歌曲</span>
           </div>
           <!-- 宽屏时显示在右上角的继续投稿按钮 -->
@@ -238,7 +238,10 @@
               <p v-if="song.played" class="alert-hint">该歌曲已播放，无法进行投票操作</p>
               <p v-else-if="song.scheduled" class="alert-hint">该歌曲已排期，无法进行投票操作</p>
               <p v-else-if="!song.voted" class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
-              <p v-else-if="song.voted" class="voted-status">✓ 您已为此歌曲投票</p>
+              <p v-else-if="song.voted" class="voted-status">
+                <Icon name="success" :size="14" style="margin-right: 4px;" />
+                您已为此歌曲投票
+              </p>
             </div>
             <!-- 只有在歌曲未排期、未播放且未投票时才显示投票按钮 -->
             <div v-if="!song.voted && !song.played && !song.scheduled" class="song-actions">
@@ -340,6 +343,7 @@ import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
 import DuplicateSongModal from './DuplicateSongModal.vue'
+import Icon from '../UI/Icon.vue'
 
 const props = defineProps({
   loading: {
@@ -1573,6 +1577,11 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.alert-icon {
+  color: #f59e0b;
+  flex-shrink: 0;
 }
 
 .alert-title {
