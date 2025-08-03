@@ -272,7 +272,9 @@ export default defineEventHandler(async (event) => {
                       preferredPlayTimeId: validPreferredPlayTimeId,
                       cover: record.cover,
                       musicPlatform: record.musicPlatform,
-                      musicId: record.musicId
+                      musicId: record.musicId,
+                      createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                      updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
                     }
                     
                     let createdSong

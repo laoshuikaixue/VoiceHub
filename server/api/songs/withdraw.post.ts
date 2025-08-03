@@ -115,4 +115,4 @@ export default defineEventHandler(async (event) => {
     songId: body.songId,
     quotaReturned: canReturnQuota
   }
-}) 
+})

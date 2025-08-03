@@ -180,18 +180,28 @@
                 站点配置
               </button>
               <button
-                :class="['nav-item', { active: activeTab === 'backup' }]"
-                @click="activeTab = 'backup'"
+                :class="['nav-item', { active: activeTab === 'database' }]"
+                @click="activeTab = 'database'"
               >
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10,9 9,9 8,9"/>
+                  <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
                 </svg>
-                数据备份
+                数据库操作
               </button>
+            </div>
+            
+            <div class="nav-section">
+              <div class="nav-section-title">账户管理</div>
+              <NuxtLink to="/change-password" class="nav-item nav-link">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <circle cx="12" cy="16" r="1"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                修改密码
+              </NuxtLink>
             </div>
           </nav>
           
@@ -292,9 +302,9 @@
               <SiteConfigManager />
             </div>
 
-            <!-- 数据备份 -->
-            <div v-if="activeTab === 'backup'" class="content-section">
-              <BackupManager />
+            <!-- 数据库操作 -->
+            <div v-if="activeTab === 'database'" class="content-section">
+              <DatabaseManager />
             </div>
           </div>
         </main>
@@ -322,7 +332,7 @@ import PlayTimeManager from '~/components/Admin/PlayTimeManager.vue'
 import SemesterManager from '~/components/Admin/SemesterManager.vue'
 import BlacklistManager from '~/components/Admin/BlacklistManager.vue'
 import SiteConfigManager from '~/components/Admin/SiteConfigManager.vue'
-import BackupManager from '~/components/Admin/BackupManager.vue'
+import DatabaseManager from '~/components/Admin/DatabaseManager.vue'
 
 // 页面元数据
 definePageMeta({
@@ -350,7 +360,7 @@ const getPageTitle = () => {
     semesters: '学期管理',
     blacklist: '黑名单管理',
     'site-config': '站点配置',
-    backup: '数据备份'
+    database: '数据库操作'
   }
   return titles[activeTab.value] || '管理后台'
 }
@@ -704,6 +714,32 @@ onUnmounted(() => {
 }
 
 .nav-item:hover .nav-icon {
+  color: #ffffff;
+}
+
+.nav-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  color: #cccccc;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.nav-link:hover .nav-icon {
   color: #ffffff;
 }
 
