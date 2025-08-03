@@ -278,30 +278,70 @@ const handleFileDrop = (event) => {
 const createBackup = async () => {
   createLoading.value = true
   try {
-    const response = await $fetch('/api/admin/backup/create', {
+    const response = await $fetch('/api/admin/backup/export', {
       method: 'POST',
       body: {
-        includeSongs: createForm.value.includeSongs,
-        includeUsers: createForm.value.includeUsers,
-        includeSystemData: createForm.value.includeSystemData,
-        downloadMode: true
+        tables: createForm.value.includeUsers && createForm.value.includeSongs ? 'all' : 
+                createForm.value.includeUsers ? 'users' : 'all',
+        includeSystemData: createForm.value.includeSystemData
       }
     })
 
-    if (response.success && response.downloadData) {
-      // 创建下载链接
-      const blob = new Blob([response.downloadData], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = response.filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+    if (response.success && response.backup) {
+      // 处理直接下载模式
+      if (response.backup.downloadMode === 'direct' && response.backup.data) {
+        // 创建下载链接
+        const blob = new Blob([JSON.stringify(response.backup.data, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = response.backup.filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
 
-      showNotification('备份文件已下载', 'success')
-      showCreateModal.value = false
+        showNotification('备份文件已下载', 'success')
+        showCreateModal.value = false
+      } else if (response.backup.downloadMode === 'file' && response.backup.filename) {
+        // 处理文件模式，通过下载API获取文件
+        try {
+          // 使用fetch直接获取文件，以便正确处理二进制数据
+          const downloadUrl = `/api/admin/backup/download/${response.backup.filename}`
+          const downloadResponse = await fetch(downloadUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${useCookie('auth-token').value}`
+            }
+          })
+          
+          if (!downloadResponse.ok) {
+            throw new Error(`下载失败: ${downloadResponse.status}`)
+          }
+          
+          // 获取文件内容
+          const blob = await downloadResponse.blob()
+          
+          // 创建下载链接
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = response.backup.filename
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+
+          showNotification('备份文件已下载', 'success')
+          showCreateModal.value = false
+        } catch (downloadError) {
+          console.error('下载备份文件失败:', downloadError)
+          showNotification('下载备份文件失败: ' + downloadError.message, 'error')
+        }
+      } else {
+        showNotification('备份创建成功', 'success')
+        showCreateModal.value = false
+      }
     } else {
       throw new Error(response.message || '备份创建失败')
     }
