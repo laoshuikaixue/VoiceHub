@@ -214,31 +214,31 @@ export const useSongs = () => {
   }
   
   // 检查相似歌曲
-  const checkSimilarSongs = (title: string, artist: string): Song | null => {
+  const checkSimilarSongs = (title: string, artist: string): Song[] => {
     similarSongFound.value = null
     
     // 检查是否已有完全相同歌曲
-    const exactSong = songs.value.find(song => 
+    const exactSongs = songs.value.filter(song => 
       song.title.toLowerCase() === title.toLowerCase() && 
       song.artist.toLowerCase() === artist.toLowerCase()
     )
     
-    if (exactSong) {
-      return exactSong
+    if (exactSongs.length > 0) {
+      return exactSongs
     }
     
     // 检查相似歌曲
-    const possibleSimilar = songs.value.find(song => 
+    const possibleSimilar = songs.value.filter(song => 
       song.title.toLowerCase().includes(title.toLowerCase()) || 
       title.toLowerCase().includes(song.title.toLowerCase())
     )
     
-    if (possibleSimilar) {
-      similarSongFound.value = possibleSimilar
+    if (possibleSimilar.length > 0) {
+      similarSongFound.value = possibleSimilar[0] // 保持兼容性
       return possibleSimilar
     }
     
-    return null
+    return []
   }
   
   // 请求歌曲

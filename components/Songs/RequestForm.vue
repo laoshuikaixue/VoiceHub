@@ -114,33 +114,49 @@
                     <div class="result-actions">
                       <!-- 检查是否已存在相似歌曲 -->
                       <div v-if="getSimilarSong(result)" class="similar-song-info">
-                        <span class="similar-text">歌曲已存在</span>
+                        <!-- 根据歌曲状态显示不同的文本 -->
+                        <span v-if="getSimilarSong(result)?.played" class="similar-text status-played">歌曲已播放</span>
+                        <span v-else-if="getSimilarSong(result)?.scheduled" class="similar-text status-scheduled">歌曲已排期</span>
+                        <span v-else class="similar-text">歌曲已存在</span>
+                        
+                        <!-- 始终显示点赞按钮，但根据状态设置不同样式 -->
                         <button
                           class="like-btn"
-                          :class="{ 'disabled': getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled }"
-                          @click.stop.prevent="handleLikeFromSearch(getSimilarSong(result))"
-                          :disabled="getSimilarSong(result)?.voted || getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled || submitting"
-                          :title="getSimilarSong(result)?.played ? '已播放的歌曲不能点赞' : getSimilarSong(result)?.scheduled ? '已排期的歌曲不能点赞' : (getSimilarSong(result)?.voted ? '已点赞' : '点赞')"
+                          :class="{
+                            'disabled': getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled || getSimilarSong(result)?.voted || submitting
+                          }"
+                          @click.stop.prevent="getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled ? null : handleLikeFromSearch(getSimilarSong(result))"
+                          :disabled="getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled || getSimilarSong(result)?.voted || submitting"
+                          :title="
+                            getSimilarSong(result)?.played ? '已播放的歌曲不能点赞' :
+                            getSimilarSong(result)?.scheduled ? '已排期的歌曲不能点赞' :
+                            getSimilarSong(result)?.voted ? '已点赞' : '点赞'
+                          "
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                           </svg>
-                          {{ getSimilarSong(result)?.voted ? '已点赞' : '点赞' }}
+                          {{ 
+                            getSimilarSong(result)?.played ? '已播放' :
+                            getSimilarSong(result)?.scheduled ? '已排期' :
+                            getSimilarSong(result)?.voted ? '已点赞' : '点赞' 
+                          }}
                         </button>
                       </div>
                       <button
                         v-else
                         class="select-btn"
+                        :disabled="submitting"
                         @click.stop.prevent="submitSong(result)"
                       >
-                        选择投稿
+                        {{ submitting ? '投稿中...' : '选择投稿' }}
                       </button>
                     </div>
                   </div>
                 </TransitionGroup>
 
                 <!-- 手动输入按钮 -->
-                <div class="manual-input-trigger">
+                <div class="no-results-action">
                   <button
                     type="button"
                     class="manual-submit-btn"
@@ -199,26 +215,47 @@
         </div>
       </form>
 
-      <div v-if="similarSong" class="similar-song-alert">
+      <div v-if="similarSongs.length > 0" class="similar-song-alert">
         <div class="alert-header">
-          <span class="alert-icon">⚠️</span>
-          <span class="alert-title">发现可能相似的歌曲</span>
-        </div>
-        <div class="alert-content">
-          <p>《{{ similarSong.title }} - {{ similarSong.artist }}》</p>
-          <p v-if="!similarSong.voted" class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
-          <p v-if="similarSong.voted" class="voted-status">✓ 您已为此歌曲投票</p>
-        </div>
-        <div v-if="!similarSong.voted" class="alert-actions">
-          <button
-            type="button"
-            class="vote-btn"
-            @click="voteForSimilar"
-            :disabled="voting"
-          >
-            {{ voting ? '投票中...' : '投票支持' }}
+          <div class="alert-header-left">
+            <span class="alert-icon">⚠️</span>
+            <span class="alert-title">发现可能相似的歌曲</span>
+          </div>
+          <!-- 宽屏时显示在右上角的继续投稿按钮 -->
+          <button type="button" class="ignore-btn desktop-continue-btn" @click="ignoreSimilar" :disabled="submitting">
+            继续投稿
           </button>
-          <button type="button" class="ignore-btn" @click="ignoreSimilar">
+        </div>
+        <div class="similar-songs-list">
+          <div v-for="song in similarSongs" :key="song.id" class="similar-song-item">
+            <div class="song-info">
+              <p class="song-title">
+                《{{ song.title }} - {{ song.artist }}》
+                <span v-if="song.played" class="song-status status-played">已播放</span>
+                <span v-else-if="song.scheduled" class="song-status status-scheduled">已排期</span>
+              </p>
+              <!-- 根据歌曲状态显示不同的提示 -->
+              <p v-if="song.played" class="alert-hint">该歌曲已播放，无法进行投票操作</p>
+              <p v-else-if="song.scheduled" class="alert-hint">该歌曲已排期，无法进行投票操作</p>
+              <p v-else-if="!song.voted" class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
+              <p v-else-if="song.voted" class="voted-status">✓ 您已为此歌曲投票</p>
+            </div>
+            <!-- 只有在歌曲未排期、未播放且未投票时才显示投票按钮 -->
+            <div v-if="!song.voted && !song.played && !song.scheduled" class="song-actions">
+              <button
+                type="button"
+                class="vote-btn small"
+                @click="voteForSimilar(song)"
+                :disabled="voting || submitting"
+              >
+                {{ voting ? '投票中...' : '投票支持' }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- 移动端时显示在底部的继续投稿按钮 -->
+        <div class="alert-actions mobile-continue-actions">
+          <button type="button" class="ignore-btn mobile-continue-btn" @click="ignoreSimilar" :disabled="submitting">
             继续投稿
           </button>
         </div>
@@ -328,7 +365,7 @@ const error = ref('')
 const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
-const similarSong = ref(null)
+const similarSongs = ref([])
 const songService = useSongs()
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
@@ -407,7 +444,12 @@ const formatPlayTimeRange = (playTime) => {
 watch(
   () => songService.similarSongFound.value,
   (newVal) => {
-    similarSong.value = newVal
+    // 保持兼容性，如果有相似歌曲，将其放入数组
+    if (newVal) {
+      similarSongs.value = [newVal]
+    } else {
+      similarSongs.value = []
+    }
   }
 )
 
@@ -432,28 +474,29 @@ const checkSimilarSongs = () => {
       artist.value.trim()
     )
     console.log('相似歌曲结果:', similar, songService.similarSongFound.value)
+    similarSongs.value = similar
   } else {
-    similarSong.value = null
+    similarSongs.value = []
   }
 }
 
 // 投票支持相似歌曲
-const voteForSimilar = async () => {
-  if (!similarSong.value || similarSong.value.voted) return
+const voteForSimilar = async (song) => {
+  if (!song || song.voted) return
 
   voting.value = true
   try {
     // 直接调用songService的投票方法，避免重复处理
-    await songService.voteSong(similarSong.value.id)
+    await songService.voteSong(song.id)
     
     // 更新本地状态
-    similarSong.value.voted = true
-    similarSong.value.voteCount = (similarSong.value.voteCount || 0) + 1
+    song.voted = true
+    song.voteCount = (song.voteCount || 0) + 1
     
     // 清除表单并隐藏提示
     title.value = ''
     artist.value = ''
-    similarSong.value = null
+    similarSongs.value = []
   } catch (err) {
     error.value = err.message || '投票失败，请稍后重试'
     if (window.$showNotification) {
@@ -466,7 +509,7 @@ const voteForSimilar = async () => {
 
 // 忽略相似歌曲，继续投稿
 const ignoreSimilar = () => {
-  similarSong.value = null
+  similarSongs.value = []
 }
 
 // 检查搜索结果是否已存在完全匹配的歌曲
@@ -947,7 +990,7 @@ const resetForm = () => {
   title.value = ''
   artist.value = ''
   preferredPlayTimeId.value = ''
-  similarSong.value = null
+  similarSongs.value = []
   searchResults.value = []
   selectedCover.value = ''
   selectedUrl.value = ''
@@ -1521,8 +1564,15 @@ defineExpose({
 .alert-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
+}
+
+.alert-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .alert-title {
@@ -1534,6 +1584,62 @@ defineExpose({
 
 .alert-content {
   margin-bottom: 1rem;
+}
+
+.similar-songs-list {
+  margin-bottom: 1rem;
+  max-height: 80px; /* 减小高度，防止与搜索结果重叠 */
+  overflow-y: auto;
+}
+
+.similar-song-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.similar-song-item:last-child {
+  border-bottom: none;
+}
+
+.song-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.song-actions {
+  margin-left: 1rem;
+  flex-shrink: 0;
+}
+
+.vote-btn.small {
+  padding: 0.3rem 0.6rem;
+  font-size: 12px;
+}
+
+/* 歌曲状态样式 */
+.song-status {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.status-played {
+  color: #ef4444;
+}
+
+.status-scheduled {
+  color: #f59e0b;
 }
 
 .alert-hint {
@@ -1592,6 +1698,45 @@ defineExpose({
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
+}
+
+/* 桌面端继续投稿按钮 */
+.desktop-continue-btn {
+  display: none;
+}
+
+/* 移动端继续投稿按钮 */
+.mobile-continue-actions {
+  display: block;
+}
+
+.mobile-continue-btn {
+  display: block;
+}
+
+/* 宽屏时的样式 */
+@media (min-width: 768px) {
+  .desktop-continue-btn {
+    display: inline-flex;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+  
+  .mobile-continue-actions {
+    display: none;
+  }
+  
+  .similar-songs-list {
+    max-height: 80px;
+  }
+}
+
+/* 移动端时增加相似歌曲列表高度 */
+@media (max-width: 767px) {
+  .similar-songs-list {
+    max-height: 150px;
+  }
 }
 
 /* 动画样式 */
@@ -1757,16 +1902,19 @@ defineExpose({
 
 .result-item {
   display: flex;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
-  padding: 1rem;
+  padding: 1rem 0;
   gap: 1rem;
   transition: all 0.2s ease;
   cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.result-item:last-child {
+  border-bottom: none;
 }
 
 .result-item:hover {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .result-cover {
@@ -1857,6 +2005,16 @@ defineExpose({
   color: rgba(255, 255, 255, 0.6);
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
+}
+
+.similar-text.status-played {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.similar-text.status-scheduled {
+  color: #f59e0b;
+  font-weight: 600;
 }
 
 .like-btn {
