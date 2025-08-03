@@ -1,4 +1,5 @@
 import { prisma } from '../models/schema'
+import { sendMeowNotificationToUser, sendBatchMeowNotifications } from './meowNotificationService'
 
 /**
  * 创建歌曲被选中的通知
@@ -60,6 +61,17 @@ export async function createSongSelectedNotification(
       }
     })
     
+    // 同步发送 MeoW 通知
+    try {
+      await sendMeowNotificationToUser(
+        userId,
+        '收到新选中',
+        message
+      )
+    } catch (error) {
+      console.error('发送 MeoW 通知失败:', error)
+    }
+    
     return notification
   } catch (err) {
     return null
@@ -104,14 +116,26 @@ export async function createSongPlayedNotification(songId: number) {
     }
     
     // 创建通知
+    const message = `您投稿的歌曲《${song.title}》已播放。`
     const notification = await prisma.notification.create({
       data: {
         userId: song.requesterId,
         type: 'SONG_PLAYED',
-        message: `您投稿的歌曲《${song.title}》已播放。`,
+        message,
         songId: songId
       }
     })
+    
+    // 同步发送 MeoW 通知
+    try {
+      await sendMeowNotificationToUser(
+        song.requesterId,
+        '歌曲已播放',
+        message
+      )
+    } catch (error) {
+      console.error('发送 MeoW 通知失败:', error)
+    }
     
     return notification
   } catch (err) {
@@ -167,14 +191,26 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
     }
     
     // 创建通知
+    const message = `您投稿的歌曲《${song.title}》获得了一个新的投票，当前共有 ${song.votes.length} 个投票。`
     const notification = await prisma.notification.create({
       data: {
         userId: song.requesterId,
         type: 'SONG_VOTED',
-        message: `您投稿的歌曲《${song.title}》获得了一个新的投票，当前共有 ${song.votes.length} 个投票。`,
+        message,
         songId: songId
       }
     })
+    
+    // 同步发送 MeoW 通知
+    try {
+      await sendMeowNotificationToUser(
+        song.requesterId,
+        '收到新投票',
+        message
+      )
+    } catch (error) {
+      console.error('发送 MeoW 通知失败:', error)
+    }
     
     return notification
   } catch (err) {
@@ -207,6 +243,17 @@ export async function createSystemNotification(userId: number, title: string, co
         message: content
       }
     })
+    
+    // 同步发送 MeoW 通知
+    try {
+      await sendMeowNotificationToUser(
+        userId,
+        title,
+        content
+      )
+    } catch (error) {
+      console.error('发送 MeoW 通知失败:', error)
+    }
     
     return notification
   } catch (err) {
@@ -268,11 +315,24 @@ export async function createBatchSystemNotifications(
       data: notificationsToCreate
     })
     
+    // 同步发送 MeoW 通知
+    let meowResults = { success: 0, failed: 0 }
+    try {
+      meowResults = await sendBatchMeowNotifications(
+        userIds,
+        title,
+        content
+      )
+    } catch (error) {
+      console.error('批量发送 MeoW 通知失败:', error)
+    }
+    
     return {
       count: notifications.count,
-      total: userIds.length
+      total: userIds.length,
+      meowNotifications: meowResults
     }
   } catch (err) {
     return null
   }
-} 
+}

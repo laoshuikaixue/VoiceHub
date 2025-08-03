@@ -153,114 +153,7 @@
                   </button>
                 </div>
 
-                <!-- 设置面板 -->
-                <div v-if="showNotificationSettings" class="notification-settings-panel">
-                  <div class="settings-panel-content">
-                    <h3 class="settings-panel-title">通知设置</h3>
-                    
-                    <div class="settings-form">
-                      <div class="form-group">
-                        <label class="toggle-label">
-                          <span class="label-text">歌曲被选中通知</span>
-                          <div class="toggle-switch">
-                            <input 
-                              type="checkbox" 
-                              v-model="notificationSettings.songSelectedNotify"
-                              @change="saveNotificationSettings"
-                            />
-                            <span class="toggle-slider"></span>
-                          </div>
-                        </label>
-                        <p class="setting-description">当您投稿的歌曲被选中安排播放时通知您</p>
-                      </div>
-                      
-                      <div class="form-group">
-                        <label class="toggle-label">
-                          <span class="label-text">歌曲已播放通知</span>
-                          <div class="toggle-switch">
-                            <input 
-                              type="checkbox" 
-                              v-model="notificationSettings.songPlayedNotify"
-                              @change="saveNotificationSettings"
-                            />
-                            <span class="toggle-slider"></span>
-                          </div>
-                        </label>
-                        <p class="setting-description">当您投稿的歌曲被播放时通知您</p>
-                      </div>
-                      
-                      <div class="form-group">
-                        <label class="toggle-label">
-                          <span class="label-text">歌曲获得投票通知</span>
-                          <div class="toggle-switch">
-                            <input 
-                              type="checkbox" 
-                              v-model="notificationSettings.songVotedNotify"
-                              @change="saveNotificationSettings"
-                            />
-                            <span class="toggle-slider"></span>
-                          </div>
-                        </label>
-                        <p class="setting-description">当您投稿的歌曲获得新投票时通知您</p>
-                        
-                        <div v-if="notificationSettings.songVotedNotify" class="sub-setting">
-                          <label class="range-label">
-                            <span>投票阈值：每获得 {{ notificationSettings.songVotedThreshold }} 票通知一次</span>
-                            <input 
-                              type="range" 
-                              v-model="notificationSettings.songVotedThreshold" 
-                              min="1" 
-                              max="10" 
-                              step="1"
-                              @change="saveNotificationSettings"
-                              class="range-slider"
-                            />
-                            <div class="range-values">
-                              <span>1</span>
-                              <span>10</span>
-                            </div>
-                          </label>
-                        </div>
-                      </div>
-                      
-                      <div class="form-group">
-                        <label class="toggle-label">
-                          <span class="label-text">系统通知</span>
-                          <div class="toggle-switch">
-                            <input 
-                              type="checkbox" 
-                              v-model="notificationSettings.systemNotify"
-                              @change="saveNotificationSettings"
-                            />
-                            <span class="toggle-slider"></span>
-                          </div>
-                        </label>
-                        <p class="setting-description">接收系统公告和其他重要通知</p>
-                      </div>
-                      
-                      <div class="form-group">
-                        <label class="range-label">
-                          <span class="label-text">通知刷新间隔</span>
-                          <span class="range-value">{{ formatRefreshInterval(notificationSettings.refreshInterval) }}</span>
-                        </label>
-                        <input 
-                          type="range" 
-                          v-model="notificationSettings.refreshInterval" 
-                          min="10" 
-                          max="300" 
-                          step="10"
-                          @change="saveNotificationSettings"
-                          class="range-slider"
-                        />
-                        <div class="range-values">
-                          <span>10秒</span>
-                          <span>5分钟</span>
-                        </div>
-                        <p class="setting-description">设置通知自动刷新的时间间隔</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+
 
                 <!-- 通知列表 -->
                 <div class="notification-list">
@@ -411,6 +304,10 @@
     </Teleport>
 
     <!-- 旧的通知组件已移除，使用全局通知系统 -->
+    
+
+    
+
   </div>
 </template>
 
@@ -421,6 +318,7 @@ import ScheduleList from '~/components/Songs/ScheduleList.vue'
 import SongList from '~/components/Songs/SongList.vue'
 import RequestForm from '~/components/Songs/RequestForm.vue'
 import Icon from '~/components/UI/Icon.vue'
+
 import { useNotifications } from '~/composables/useNotifications'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 
@@ -471,12 +369,9 @@ const notificationSettings = ref({
   refreshInterval: 60
 })
 
-// 切换通知设置面板
+// 跳转到通知设置页面
 const toggleNotificationSettings = () => {
-  showNotificationSettings.value = !showNotificationSettings.value
-  if (showNotificationSettings.value) {
-    fetchNotificationSettings()
-  }
+  navigateTo('/notification-settings')
 }
 
 // 获取通知设置
@@ -1443,107 +1338,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   transform: rotate(30deg);
 }
 
-/* 设置面板 */
-.notification-settings-panel {
-  position: absolute;
-  top: 60px;
-  right: 0;
-  width: 320px;
-  background-color: rgba(26, 27, 36, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-  z-index: 10;
-  animation: slideIn 0.2s ease;
-}
 
-.settings-panel-content {
-  padding: 16px;
-}
-
-.settings-panel-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin: 0 0 16px 0;
-  color: var(--light);
-  text-align: center;
-}
-
-.settings-form .form-group {
-  margin-bottom: 15px;
-  padding: 10px;
-  border-radius: 6px;
-  background-color: rgba(30, 41, 59, 0.5);
-  transition: all 0.2s ease;
-}
-
-.settings-form .form-group:hover {
-  background-color: rgba(30, 41, 59, 0.7);
-}
-
-.toggle-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-
-.label-text {
-  font-weight: 500;
-  color: var(--light);
-}
-
-.setting-description {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: 5px;
-  margin-bottom: 0;
-}
-
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 22px;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #474747;
-  transition: 0.4s;
-  border-radius: 22px;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 16px;
-  width: 16px;
-  left: 3px;
-  bottom: 3px;
-  background-color: var(--light);
-  transition: 0.4s;
-  border-radius: 50%;
-}
-
-input:checked + .toggle-slider {
-  background-color: var(--primary);
-}
-
-input:checked + .toggle-slider:before {
-  transform: translateX(18px);
-}
 
 /* 通知列表 */
 .notification-list {
@@ -1806,11 +1601,6 @@ input:checked + .toggle-slider:before {
 
 /* 修改移动端通知样式 */
 @media (max-width: 768px) {
-  .notification-settings-panel {
-    width: 100%;
-    top: 50px;
-  }
-  
   .notification-items {
     padding-bottom: 20px;
   }

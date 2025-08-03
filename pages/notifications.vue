@@ -12,23 +12,18 @@
       </div>
       
       <template v-else>
-        <div class="tabs">
-          <button 
-            :class="{ 'active': activeTab === 'list' }" 
-            @click="activeTab = 'list'"
-          >
-            通知列表
-          </button>
-          <button 
-            :class="{ 'active': activeTab === 'settings' }" 
-            @click="activeTab = 'settings'"
-          >
+        <div class="page-actions">
+          <button @click="showSettingsModal = true" class="settings-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+            </svg>
             通知设置
           </button>
         </div>
         
-        <div class="tab-content">
-          <div v-if="activeTab === 'list'" class="notifications-list-container">
+        <div class="notifications-content">
+          <div class="notifications-list-container">
             <div class="list-header">
               <div class="list-title">
                 <h2>通知列表</h2>
@@ -110,11 +105,13 @@
               </button>
             </div>
           </div>
-          
-          <div v-else-if="activeTab === 'settings'" class="settings-container">
-            <NotificationSettings />
-          </div>
         </div>
+        
+        <!-- 通知设置弹窗 -->
+        <NotificationSettingsModal 
+          :isOpen="showSettingsModal" 
+          @close="showSettingsModal = false" 
+        />
       </template>
     </div>
   </div>
@@ -124,14 +121,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useNotifications } from '~/composables/useNotifications'
 import { useAuth } from '~/composables/useAuth'
-import NotificationSettings from '~/components/Notifications/NotificationSettings.vue'
+import NotificationSettingsModal from '~/components/Notifications/NotificationSettingsModal.vue'
 
 // 中间件验证
 // definePageMeta({
 //   middleware: ['auth']
 // })
 
-const activeTab = ref('list')
+const showSettingsModal = ref(false)
 const notificationsService = useNotifications()
 const loading = computed(() => notificationsService.loading.value)
 const notifications = computed(() => notificationsService.notifications.value || [])
@@ -247,31 +244,34 @@ const formatTime = (timeString) => {
   text-decoration: underline;
 }
 
-.tabs {
+.page-actions {
   display: flex;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: flex-end;
   margin-bottom: 20px;
 }
 
-.tabs button {
-  padding: 10px 20px;
-  background: transparent;
+.settings-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--primary);
+  color: white;
   border: none;
-  border-bottom: 2px solid transparent;
-  font-size: 16px;
+  border-radius: 6px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--gray);
 }
 
-.tabs button:hover {
-  color: var(--primary);
+.settings-button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
 }
 
-.tabs button.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+.settings-button svg {
+  flex-shrink: 0;
 }
 
 .loading,
@@ -540,4 +540,4 @@ const formatTime = (timeString) => {
     justify-content: center;
   }
 }
-</style> 
+</style>

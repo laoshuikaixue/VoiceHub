@@ -21,6 +21,11 @@ model User {
   lastLoginIp          String?
   passwordChangedAt    DateTime?
   forcePasswordChange  Boolean               @default(true) // 强制修改密码标志，新用户默认需要修改
+  
+  // 社交账号绑定
+  meowNickname         String?               // MeoW 昵称
+  meowBoundAt          DateTime?             // MeoW 绑定时间
+  
   notifications        Notification[]
   notificationSettings NotificationSettings?
   songs                Song[]
