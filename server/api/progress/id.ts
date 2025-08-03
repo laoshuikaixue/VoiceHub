@@ -4,7 +4,7 @@ import { generateProgressId } from './events'
 export default defineEventHandler((event) => {
   // 检查认证
   const user = event.context.user
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '需要管理员权限'

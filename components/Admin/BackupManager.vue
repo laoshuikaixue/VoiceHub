@@ -372,6 +372,22 @@ const uploadFile = async () => {
     showUploadModal.value = false
     selectedFile.value = null
     restoreForm.value = { mode: 'merge', clearExisting: false }
+    
+    // 恢复完成后刷新用户信息，确保角色等信息正确加载
+    const { refreshUser } = useAuth()
+    if (refreshUser) {
+      try {
+        await refreshUser()
+        console.log('用户信息已刷新')
+      } catch (refreshError) {
+        console.warn('刷新用户信息失败:', refreshError)
+      }
+    }
+    
+    // 延迟一段时间后刷新页面，确保所有数据都已更新
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
   } catch (error) {
     console.error('导入备份失败:', error)
     showNotification('导入备份失败: ' + (error.data?.message || error.message), 'error')

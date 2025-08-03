@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // 检查是否是用户自己的投稿
-  if (song.requesterId !== user.id && user.role !== 'ADMIN') {
+  if (song.requesterId !== user.id && !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '只能撤回自己的投稿'

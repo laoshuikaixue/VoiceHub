@@ -966,7 +966,7 @@ const handleFileUpload = async (event) => {
             name: row[0]?.toString() || '',
             username: row[1]?.toString() || '',
             password: row[2]?.toString() || '',
-            role: (row[3]?.toString() || '').toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER',
+            role: (row[3]?.toString() || '').toUpperCase() === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : (row[3]?.toString() || '').toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER',
             grade: row[4]?.toString() || '',
             class: row[5]?.toString() || ''
           })

@@ -271,6 +271,10 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import { useSongs } from '~/composables/useSongs'
+import { useAdmin } from '~/composables/useAdmin'
+import { useAuth } from '~/composables/useAuth'
 
 // 响应式数据
 const loading = ref(false)

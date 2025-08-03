@@ -16,7 +16,7 @@ async function backupAndMigrate() {
     const userBackup = users.map(user => ({
       ...user,
       // 将旧的角色ID转换为新的角色字符串
-      newRole: user.role === 'ADMIN' ? 'ADMIN' : 'USER',
+      newRole: user.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : user.role === 'ADMIN' ? 'ADMIN' : 'USER',
       // 保留lastLoginAt字段数据
       lastLogin: user.lastLoginAt || user.lastLogin
     }))

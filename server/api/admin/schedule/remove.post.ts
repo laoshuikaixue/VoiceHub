@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
   const user = event.context.user
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       statusMessage: '需要管理员权限'
@@ -80,4 +80,4 @@ export default defineEventHandler(async (event) => {
       error: error.code || 'UNKNOWN_ERROR'
     }
   }
-}) 
+})

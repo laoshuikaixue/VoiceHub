@@ -13,6 +13,10 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    // 获取系统设置
+    const systemSettings = await prisma.systemSettings.findFirst()
+    const showBlacklistKeywords = systemSettings?.showBlacklistKeywords ?? false
+
     // 获取所有活跃的黑名单项
     const blacklistItems = await prisma.songBlacklist.findMany({
       where: { isActive: true }
@@ -36,8 +40,8 @@ export default defineEventHandler(async (event) => {
         if (songFullName.includes(item.value.toLowerCase())) {
           blocked.push({
             type: 'keyword',
-            value: item.value,
-            reason: item.reason || `包含被禁止的关键词: ${item.value}`
+            value: showBlacklistKeywords ? item.value : null, // 根据设置决定是否显示具体关键词
+            reason: item.reason || (showBlacklistKeywords ? `包含关键词：${item.value}` : '包含关键词')
           })
         }
       }

@@ -159,6 +159,9 @@ model SystemSettings {
   enableSubmissionLimit  Boolean  @default(false) // 是否启用投稿限额
   dailySubmissionLimit   Int?     // 每日投稿限额，null表示无限制
   weeklySubmissionLimit  Int?     // 每周投稿限额，null表示无限制
+
+  // 黑名单设置
+  showBlacklistKeywords  Boolean  @default(false) // 是否显示具体的黑名单关键词
 }
 
 // 歌曲黑名单模型

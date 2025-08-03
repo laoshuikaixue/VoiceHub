@@ -92,6 +92,16 @@ export default defineEventHandler(async (event) => {
       updateData.weeklySubmissionLimit = body.weeklySubmissionLimit
     }
     
+    if (body.showBlacklistKeywords !== undefined) {
+      if (typeof body.showBlacklistKeywords !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'showBlacklistKeywords 必须是布尔值'
+        })
+      }
+      updateData.showBlacklistKeywords = body.showBlacklistKeywords
+    }
+    
     // 验证每日和每周限额不能同时设置
     if (body.enableSubmissionLimit && 
         body.dailySubmissionLimit !== undefined && 
@@ -123,7 +133,8 @@ export default defineEventHandler(async (event) => {
           icpNumber: updateData.icpNumber ?? null,
           enableSubmissionLimit: updateData.enableSubmissionLimit ?? false,
           dailySubmissionLimit: updateData.dailySubmissionLimit ?? null,
-          weeklySubmissionLimit: updateData.weeklySubmissionLimit ?? null
+          weeklySubmissionLimit: updateData.weeklySubmissionLimit ?? null,
+          showBlacklistKeywords: updateData.showBlacklistKeywords ?? false
         }
       })
     } else {

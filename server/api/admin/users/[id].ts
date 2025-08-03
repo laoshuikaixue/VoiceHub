@@ -3,7 +3,7 @@ import { prisma } from '../../../models/schema'
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
   const user = event.context.user
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '没有权限访问'
@@ -93,4 +93,4 @@ export default defineEventHandler(async (event) => {
     statusCode: 405,
     message: '不支持的请求方法'
   })
-}) 
+})

@@ -191,7 +191,9 @@ export default defineEventHandler(async (event) => {
                           role: record.role,
                           lastLogin: record.lastLogin ? new Date(record.lastLogin) : null,
                           lastLoginIp: record.lastLoginIp,
-                          passwordChangedAt: record.passwordChangedAt ? new Date(record.passwordChangedAt) : null
+                          passwordChangedAt: record.passwordChangedAt ? new Date(record.passwordChangedAt) : null,
+                          meowNickname: record.meowNickname,
+                          meowBoundAt: record.meowBoundAt ? new Date(record.meowBoundAt) : null
                         },
                         create: {
                           username: record.username,
@@ -202,7 +204,9 @@ export default defineEventHandler(async (event) => {
                           role: record.role,
                           lastLogin: record.lastLogin ? new Date(record.lastLogin) : null,
                           lastLoginIp: record.lastLoginIp,
-                          passwordChangedAt: record.passwordChangedAt ? new Date(record.passwordChangedAt) : null
+                          passwordChangedAt: record.passwordChangedAt ? new Date(record.passwordChangedAt) : null,
+                          meowNickname: record.meowNickname,
+                          meowBoundAt: record.meowBoundAt ? new Date(record.meowBoundAt) : null
                         }
                       })
                     } else {
@@ -216,7 +220,9 @@ export default defineEventHandler(async (event) => {
                           role: record.role,
                           lastLogin: record.lastLogin ? new Date(record.lastLogin) : null,
                           lastLoginIp: record.lastLoginIp,
-                          passwordChangedAt: record.passwordChangedAt ? new Date(record.passwordChangedAt) : null
+                          passwordChangedAt: record.passwordChangedAt ? new Date(record.passwordChangedAt) : null,
+                          meowNickname: record.meowNickname,
+                          meowBoundAt: record.meowBoundAt ? new Date(record.meowBoundAt) : null
                         }
                       })
                     }

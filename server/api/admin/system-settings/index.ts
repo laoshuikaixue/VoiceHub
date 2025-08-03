@@ -35,7 +35,8 @@ export default defineEventHandler(async (event) => {
           icpNumber: null,
           enableSubmissionLimit: false,
           dailySubmissionLimit: null,
-          weeklySubmissionLimit: null
+          weeklySubmissionLimit: null,
+          showBlacklistKeywords: false
         }
       })
     }

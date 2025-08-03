@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  if (user.role !== 'ADMIN') {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '只有管理员才能添加播出时段'
@@ -96,4 +96,4 @@ export default defineEventHandler(async (event) => {
       message: '创建播出时段失败'
     })
   }
-}) 
+})

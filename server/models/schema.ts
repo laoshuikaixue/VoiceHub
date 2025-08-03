@@ -170,8 +170,6 @@ export async function performDatabaseMaintenance() {
       const columns = columnQuery as { column_name: string }[];
       const columnNames = columns.map(c => c.column_name.toLowerCase());
       
-      console.log('发现的Notification表字段:', columnNames.join(', '));
-      
       // 检查必要字段是否存在
       const requiredColumns = ['id', 'createdat', 'updatedat', 'type', 'message', 'read', 'userid', 'songid'];
       const missingColumns = requiredColumns.filter(col => !columnNames.includes(col.toLowerCase()));
@@ -301,13 +299,13 @@ export async function initializeFirstDeployment() {
     const bcrypt = await import('bcrypt')
     const hashedPassword = await bcrypt.hash('admin123', 10)
     
-    // 创建管理员用户
+    // 创建超级管理员用户
     const admin = await prisma.user.create({
       data: {
         username: 'admin',
-        name: '管理员',
+        name: '超级管理员',
         password: hashedPassword,
-        role: 'ADMIN'
+        role: 'SUPER_ADMIN'
       }
     })
     
@@ -336,7 +334,7 @@ export async function initializeFirstDeployment() {
       }
     })
     
-    console.log('初始化完成，已创建管理员账户 (用户名: admin, 密码: admin123)')
+    console.log('初始化完成，已创建超级管理员账户 (用户名: admin, 密码: admin123)')
     return true
   } catch (error) {
     console.error('初始化首次部署失败:', error)

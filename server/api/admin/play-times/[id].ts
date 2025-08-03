@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  if (user.role !== 'ADMIN') {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '只有管理员才能访问播出时段'
@@ -238,4 +238,4 @@ export default defineEventHandler(async (event) => {
       message: '不支持的请求方法'
     })
   }
-}) 
+})

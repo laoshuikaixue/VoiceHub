@@ -338,6 +338,35 @@ export const useAdmin = () => {
       loading.value = false
     }
   }
+
+  // 删除歌曲
+  const deleteSong = async (songId: number) => {
+    if (!isAdmin.value) {
+      error.value = '只有管理员才能删除歌曲'
+      return null
+    }
+    
+    loading.value = true
+    error.value = ''
+    
+    try {
+      // 显式传递认证头
+      const authHeaders = getAuthHeader()
+      
+      const data = await $fetch('/api/admin/songs/delete', {
+        method: 'POST',
+        body: { songId },
+        headers: authHeaders.headers
+      })
+      
+      return data
+    } catch (err: any) {
+      error.value = err.message || '删除歌曲失败'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
   
   return {
     loading,
@@ -352,6 +381,7 @@ export const useAdmin = () => {
     getPlayTimes,
     createPlayTime,
     updatePlayTime,
-    deletePlayTime
+    deletePlayTime,
+    deleteSong
   }
-} 
+}

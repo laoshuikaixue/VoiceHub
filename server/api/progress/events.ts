@@ -93,7 +93,7 @@ export default defineEventHandler(async (event) => {
       select: { id: true, role: true }
     })
 
-    if (!user || user.role !== 'ADMIN') {
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
         message: '需要管理员权限'
@@ -142,4 +142,4 @@ export default defineEventHandler(async (event) => {
       clearInterval(heartbeatInterval)
     }
   }, 30000) // 每30秒发送一次心跳
-}) 
+})

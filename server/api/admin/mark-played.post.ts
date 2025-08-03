@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // 检查是否是管理员
-  if (user.role !== 'ADMIN') {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '只有管理员可以标记歌曲为已播放'
@@ -87,4 +87,4 @@ export default defineEventHandler(async (event) => {
       playedAt: updatedSong.playedAt
     }
   }
-}) 
+})

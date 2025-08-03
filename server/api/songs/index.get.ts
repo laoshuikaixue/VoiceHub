@@ -130,7 +130,7 @@ export default defineEventHandler(async (event) => {
         }
 
         // 只对管理员用户添加期望播放时段相关字段
-        if (user.role === 'ADMIN') {
+        if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
           songObject.preferredPlayTimeId = song.preferredPlayTimeId
 
           // 如果有期望播放时段，添加相关信息

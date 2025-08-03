@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  if (user.role !== 'ADMIN') {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '只有管理员可以发送系统通知'
@@ -148,4 +148,4 @@ export default defineEventHandler(async (event) => {
       message: error.message || '发送通知失败'
     })
   }
-}) 
+})

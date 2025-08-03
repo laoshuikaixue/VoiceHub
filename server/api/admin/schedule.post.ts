@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  if (user.role !== 'ADMIN') {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '只有管理员才能创建排期'
@@ -147,4 +147,4 @@ export default defineEventHandler(async (event) => {
       message: error.message || '创建排期失败'
     })
   }
-}) 
+})

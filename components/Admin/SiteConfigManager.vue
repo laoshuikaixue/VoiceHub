@@ -156,6 +156,22 @@
         </div>
       </div>
 
+      <!-- 黑名单设置 -->
+      <div class="form-section">
+        <h4 class="section-title">黑名单设置</h4>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              v-model="formData.showBlacklistKeywords"
+            />
+            <span class="checkbox-text">显示具体黑名单关键词</span>
+          </label>
+          <small class="help-text">开启后，在投稿时会显示"包含关键词：XXX"；关闭时只显示"包含关键词"</small>
+        </div>
+      </div>
+
       <div class="form-actions">
         <button 
           @click="saveConfig" 
@@ -223,7 +239,8 @@ const formData = ref({
   icpNumber: '',
   enableSubmissionLimit: false,
   dailySubmissionLimit: 0,
-  weeklySubmissionLimit: 0
+  weeklySubmissionLimit: 0,
+  showBlacklistKeywords: false
 })
 
 const originalData = ref({})
@@ -254,7 +271,8 @@ const loadConfig = async () => {
       icpNumber: data.icpNumber || '',
       enableSubmissionLimit: data.enableSubmissionLimit || false,
       dailySubmissionLimit: data.dailySubmissionLimit || 0,
-      weeklySubmissionLimit: data.weeklySubmissionLimit || 0
+      weeklySubmissionLimit: data.weeklySubmissionLimit || 0,
+      showBlacklistKeywords: data.showBlacklistKeywords || false
     }
     
     // 保存原始数据用于重置
@@ -273,7 +291,8 @@ const loadConfig = async () => {
       icpNumber: '',
       enableSubmissionLimit: false,
       dailySubmissionLimit: 0,
-      weeklySubmissionLimit: 0
+      weeklySubmissionLimit: 0,
+      showBlacklistKeywords: false
     }
     originalData.value = { ...formData.value }
   } finally {
@@ -298,7 +317,8 @@ const saveConfig = async () => {
       icpNumber: formData.value.icpNumber.trim(),
       enableSubmissionLimit: formData.value.enableSubmissionLimit,
       dailySubmissionLimit: formData.value.dailySubmissionLimit || 0,
-      weeklySubmissionLimit: formData.value.weeklySubmissionLimit || 0
+      weeklySubmissionLimit: formData.value.weeklySubmissionLimit || 0,
+      showBlacklistKeywords: formData.value.showBlacklistKeywords
     }
     
     const response = await fetch('/api/admin/system-settings', {
