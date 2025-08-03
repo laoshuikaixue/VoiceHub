@@ -149,6 +149,11 @@ model SystemSettings {
   siteDescription        String?  // 站点描述
   submissionGuidelines   String?  // 投稿须知
   icpNumber              String?  // 备案号
+
+  // 投稿限额设置
+  enableSubmissionLimit  Boolean  @default(false) // 是否启用投稿限额
+  dailySubmissionLimit   Int?     // 每日投稿限额，null表示无限制
+  weeklySubmissionLimit  Int?     // 每周投稿限额，null表示无限制
 }
 
 // 歌曲黑名单模型

@@ -89,6 +89,73 @@
         <small class="help-text">如有备案号，将显示在页面底部</small>
       </div>
 
+      <!-- 投稿限额设置 -->
+      <div class="form-section">
+        <h4 class="section-title">投稿限额设置</h4>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              v-model="formData.enableSubmissionLimit"
+            />
+            <span class="checkbox-text">启用投稿限额</span>
+          </label>
+          <small class="help-text">开启后将限制用户的投稿频率</small>
+        </div>
+
+        <div v-if="formData.enableSubmissionLimit" class="submission-limits">
+          <div class="limit-type-selection">
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="limitType"
+                value="daily"
+                :checked="limitType === 'daily'"
+                @change="handleLimitTypeChange('daily')"
+              />
+              <span class="radio-text">每日限额</span>
+            </label>
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="limitType"
+                value="weekly"
+                :checked="limitType === 'weekly'"
+                @change="handleLimitTypeChange('weekly')"
+              />
+              <span class="radio-text">每周限额</span>
+            </label>
+          </div>
+
+          <div v-if="limitType === 'daily'" class="form-group">
+            <label for="dailySubmissionLimit">每日投稿限额</label>
+            <input
+              id="dailySubmissionLimit"
+              v-model.number="formData.dailySubmissionLimit"
+              type="number"
+              min="1"
+              max="100"
+              placeholder="请输入每日最大投稿数量"
+            />
+            <small class="help-text">每个用户每天最多可以投稿的歌曲数量</small>
+          </div>
+
+          <div v-if="limitType === 'weekly'" class="form-group">
+            <label for="weeklySubmissionLimit">每周投稿限额</label>
+            <input
+              id="weeklySubmissionLimit"
+              v-model.number="formData.weeklySubmissionLimit"
+              type="number"
+              min="1"
+              max="500"
+              placeholder="请输入每周最大投稿数量"
+            />
+            <small class="help-text">每个用户每周最多可以投稿的歌曲数量</small>
+          </div>
+        </div>
+      </div>
+
       <div class="form-actions">
         <button 
           @click="saveConfig" 
@@ -119,13 +186,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 
 const { getAuthHeader } = useAuth()
 
 const loading = ref(true)
 const saving = ref(false)
+
+// 限额类型：daily 或 weekly
+const limitType = computed(() => {
+  if (formData.value.dailySubmissionLimit > 0) {
+    return 'daily'
+  } else if (formData.value.weeklySubmissionLimit > 0) {
+    return 'weekly'
+  }
+  return 'daily' // 默认为每日限额
+})
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
@@ -143,7 +220,10 @@ const formData = ref({
   schoolLogoPrintUrl: '',
   siteDescription: '',
   submissionGuidelines: '',
-  icpNumber: ''
+  icpNumber: '',
+  enableSubmissionLimit: false,
+  dailySubmissionLimit: 0,
+  weeklySubmissionLimit: 0
 })
 
 const originalData = ref({})
@@ -171,7 +251,10 @@ const loadConfig = async () => {
       schoolLogoPrintUrl: data.schoolLogoPrintUrl || '',
       siteDescription: data.siteDescription || '',
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
-      icpNumber: data.icpNumber || ''
+      icpNumber: data.icpNumber || '',
+      enableSubmissionLimit: data.enableSubmissionLimit || false,
+      dailySubmissionLimit: data.dailySubmissionLimit || 0,
+      weeklySubmissionLimit: data.weeklySubmissionLimit || 0
     }
     
     // 保存原始数据用于重置
@@ -187,7 +270,10 @@ const loadConfig = async () => {
       schoolLogoPrintUrl: '',
       siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: defaultSubmissionGuidelines,
-      icpNumber: ''
+      icpNumber: '',
+      enableSubmissionLimit: false,
+      dailySubmissionLimit: 0,
+      weeklySubmissionLimit: 0
     }
     originalData.value = { ...formData.value }
   } finally {
@@ -209,7 +295,10 @@ const saveConfig = async () => {
       schoolLogoPrintUrl: formData.value.schoolLogoPrintUrl.trim(),
       siteDescription: formData.value.siteDescription.trim() || '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: formData.value.submissionGuidelines.trim() || defaultSubmissionGuidelines,
-      icpNumber: formData.value.icpNumber.trim()
+      icpNumber: formData.value.icpNumber.trim(),
+      enableSubmissionLimit: formData.value.enableSubmissionLimit,
+      dailySubmissionLimit: formData.value.dailySubmissionLimit || 0,
+      weeklySubmissionLimit: formData.value.weeklySubmissionLimit || 0
     }
     
     const response = await fetch('/api/admin/system-settings', {
@@ -237,6 +326,23 @@ const saveConfig = async () => {
     window.$showNotification('保存配置失败，请重试', 'error')
   } finally {
     saving.value = false
+  }
+}
+
+// 处理限额类型变化
+const handleLimitTypeChange = (type) => {
+  if (type === 'daily') {
+    // 切换到每日限额，清空每周限额
+    formData.value.weeklySubmissionLimit = 0
+    if (formData.value.dailySubmissionLimit === 0) {
+      formData.value.dailySubmissionLimit = 5 // 默认值
+    }
+  } else if (type === 'weekly') {
+    // 切换到每周限额，清空每日限额
+    formData.value.dailySubmissionLimit = 0
+    if (formData.value.weeklySubmissionLimit === 0) {
+      formData.value.weeklySubmissionLimit = 20 // 默认值
+    }
   }
 }
 
@@ -289,6 +395,72 @@ onMounted(() => {
 
 .form-group:last-child {
   margin-bottom: 0;
+}
+
+.form-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.section-title {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.checkbox-text {
+  font-size: 14px;
+}
+
+.submission-limits {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.limit-type-selection {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.radio-label input[type="radio"] {
+  width: auto;
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.radio-text {
+  font-size: 14px;
 }
 
 .form-group label {

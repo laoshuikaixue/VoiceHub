@@ -64,6 +64,38 @@ export default defineEventHandler(async (event) => {
     })
   }
   
+  // 获取系统设置以检查限制类型
+  const settings = await prisma.systemSettings.findFirst()
+  const dailyLimit = settings?.dailySubmissionLimit || 0
+  const weeklyLimit = settings?.weeklySubmissionLimit || 0
+  
+  // 检查撤销的歌曲是否在当前限制期间内（用于返还配额）
+  let canReturnQuota = false
+  const now = new Date()
+  
+  if (dailyLimit > 0) {
+    // 检查是否在同一天
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+    
+    if (song.createdAt >= startOfDay && song.createdAt < endOfDay) {
+      canReturnQuota = true
+    }
+  } else if (weeklyLimit > 0) {
+    // 检查是否在同一周（周一开始）
+    const startOfWeek = new Date(now)
+    const dayOfWeek = now.getDay()
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 周一为一周开始
+    startOfWeek.setDate(now.getDate() - daysToSubtract)
+    startOfWeek.setHours(0, 0, 0, 0)
+    
+    const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
+    
+    if (song.createdAt >= startOfWeek && song.createdAt < endOfWeek) {
+      canReturnQuota = true
+    }
+  }
+  
   // 删除歌曲的所有投票
   await prisma.vote.deleteMany({
     where: {
@@ -79,7 +111,8 @@ export default defineEventHandler(async (event) => {
   })
   
   return {
-    message: '歌曲已成功撤回',
-    songId: body.songId
+    message: canReturnQuota ? '歌曲已成功撤回，投稿配额已返还' : '歌曲已成功撤回',
+    songId: body.songId,
+    quotaReturned: canReturnQuota
   }
 }) 

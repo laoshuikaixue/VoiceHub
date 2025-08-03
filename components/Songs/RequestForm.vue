@@ -17,6 +17,8 @@
       </div>
     </div>
 
+
+
     <div class="form-container">
       <form @submit.prevent="handleSearch" class="song-request-form">
         <!-- 歌曲搜索区域 -->
@@ -40,6 +42,30 @@
 
         <!-- 搜索结果容器 -->
         <div class="search-results-container">
+          <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
+          <div v-if="user && submissionStatus && submissionStatus.limitEnabled" class="submission-status-horizontal">
+            <!-- 超级管理员提示 -->
+            <div v-if="user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN')" class="admin-notice-horizontal">
+              <span class="admin-icon">👑</span>
+              <span class="admin-text">您是管理员，不受投稿限制</span>
+            </div>
+            
+            <!-- 投稿状态内容 -->
+            <div v-else class="status-content-horizontal">
+              <div v-if="submissionStatus.dailyLimit" class="status-item-horizontal">
+                <span class="status-label">今日投稿：</span>
+                <span class="status-value">{{ submissionStatus.dailyUsed }} / {{ submissionStatus.dailyLimit }}</span>
+                <span class="status-remaining">剩余 {{ Math.max(0, submissionStatus.dailyLimit - submissionStatus.dailyUsed) }}</span>
+              </div>
+              
+              <div v-if="submissionStatus.weeklyLimit" class="status-item-horizontal">
+                <span class="status-label">本周投稿：</span>
+                <span class="status-value">{{ submissionStatus.weeklyUsed }} / {{ submissionStatus.weeklyLimit }}</span>
+                <span class="status-remaining">剩余 {{ Math.max(0, submissionStatus.weeklyLimit - submissionStatus.weeklyUsed) }}</span>
+              </div>
+            </div>
+          </div>
+
           <!-- 音乐平台选择按钮 -->
           <div class="platform-selection">
             <button
@@ -91,8 +117,10 @@
                         <span class="similar-text">歌曲已存在</span>
                         <button
                           class="like-btn"
+                          :class="{ 'disabled': getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled }"
                           @click.stop.prevent="handleLikeFromSearch(getSimilarSong(result))"
-                          :disabled="getSimilarSong(result)?.voted || submitting"
+                          :disabled="getSimilarSong(result)?.voted || getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled || submitting"
+                          :title="getSimilarSong(result)?.played ? '已播放的歌曲不能点赞' : getSimilarSong(result)?.scheduled ? '已排期的歌曲不能点赞' : (getSimilarSong(result)?.voted ? '已点赞' : '点赞')"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -273,6 +301,7 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useAuth } from '~/composables/useAuth'
 import DuplicateSongModal from './DuplicateSongModal.vue'
 
 const props = defineProps({
@@ -287,6 +316,10 @@ const emit = defineEmits(['request', 'vote'])
 // 站点配置
 const { guidelines: submissionGuidelines, initSiteConfig } = useSiteConfig()
 
+// 用户认证
+const auth = useAuth()
+const user = computed(() => auth.user.value)
+
 const title = ref('')
 const artist = ref('')
 const platform = ref('netease') // 默认使用网易云音乐
@@ -300,6 +333,10 @@ const songService = useSongs()
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
+
+// 投稿状态
+const submissionStatus = ref(null)
+const loadingSubmissionStatus = ref(false)
 
 // 重复歌曲弹窗相关
 const showDuplicateModal = ref(false)
@@ -337,6 +374,7 @@ const fetchPlayTimes = async () => {
 onMounted(async () => {
   fetchPlayTimes()
   initSiteConfig()
+  fetchSubmissionStatus()
   // 加载歌曲列表以便检查相似歌曲
   try {
     await songService.fetchSongs()
@@ -370,6 +408,18 @@ watch(
   () => songService.similarSongFound.value,
   (newVal) => {
     similarSong.value = newVal
+  }
+)
+
+// 监听用户状态变化，当用户登录后重新获取投稿状态
+watch(
+  () => user.value,
+  (newUser) => {
+    if (newUser) {
+      fetchSubmissionStatus()
+    } else {
+      submissionStatus.value = null
+    }
   }
 )
 
@@ -434,6 +484,15 @@ const getSimilarSong = (result) => {
 // 从搜索结果中点赞已存在的歌曲
 const handleLikeFromSearch = async (song) => {
   if (!song || song.voted) {
+    return
+  }
+  
+  // 检查歌曲状态
+  if (song.played || song.scheduled) {
+    if (window.$showNotification) {
+      const message = song.played ? '已播放的歌曲不能点赞' : '已排期的歌曲不能点赞'
+      window.$showNotification(message, 'warning')
+    }
     return
   }
   
@@ -676,6 +735,16 @@ const submitSong = async (result) => {
   if (submitting.value) return
   console.log('执行submitSong，提交歌曲:', result.title || result.song)
 
+  // 检查投稿限额
+  const limitCheck = checkSubmissionLimit()
+  if (!limitCheck.canSubmit) {
+    error.value = limitCheck.message
+    if (window.$showNotification) {
+      window.$showNotification(limitCheck.message, 'error')
+    }
+    return
+  }
+
   // 使用搜索结果中的数据
   const songTitle = result.song || result.title
   const songArtist = result.singer || result.artist
@@ -762,6 +831,16 @@ const submitSong = async (result) => {
 const handleSubmit = async () => {
   if (submitting.value) return
 
+  // 检查投稿限额
+  const limitCheck = checkSubmissionLimit()
+  if (!limitCheck.canSubmit) {
+    error.value = limitCheck.message
+    if (window.$showNotification) {
+      window.$showNotification(limitCheck.message, 'error')
+    }
+    return
+  }
+
   submitting.value = true
   error.value = ''
 
@@ -799,6 +878,16 @@ const handleManualSubmit = async () => {
     error.value = '请输入完整的歌曲信息'
     if (window.$showNotification) {
       window.$showNotification('请输入完整的歌曲信息', 'error')
+    }
+    return
+  }
+
+  // 检查投稿限额
+  const limitCheck = checkSubmissionLimit()
+  if (!limitCheck.canSubmit) {
+    error.value = limitCheck.message
+    if (window.$showNotification) {
+      window.$showNotification(limitCheck.message, 'error')
     }
     return
   }
@@ -871,6 +960,58 @@ const resetForm = () => {
 const stopPlaying = () => {
   audioPlayer.stopSong()
 }
+
+// 获取投稿状态
+const fetchSubmissionStatus = async () => {
+  if (!user.value) return
+  
+  loadingSubmissionStatus.value = true
+  try {
+    const response = await $fetch('/api/songs/submission-status')
+    submissionStatus.value = response
+  } catch (err) {
+    console.error('获取投稿状态失败:', err)
+  } finally {
+    loadingSubmissionStatus.value = false
+  }
+}
+
+// 检查投稿限额
+const checkSubmissionLimit = () => {
+  // 超级管理员不受投稿限制
+  if (user.value && (user.value.role === 'SUPER_ADMIN' || user.value.role === 'ADMIN')) {
+    return { canSubmit: true, message: '' }
+  }
+
+  if (!submissionStatus.value || !submissionStatus.value.limitEnabled) {
+    return { canSubmit: true, message: '' }
+  }
+
+  const { dailyLimit, weeklyLimit, dailyUsed, weeklyUsed } = submissionStatus.value
+
+  // 检查日限额
+  if (dailyLimit && dailyUsed >= dailyLimit) {
+    return { 
+      canSubmit: false, 
+      message: `今日投稿已达上限 (${dailyUsed}/${dailyLimit})` 
+    }
+  }
+
+  // 检查周限额
+  if (weeklyLimit && weeklyUsed >= weeklyLimit) {
+    return { 
+      canSubmit: false, 
+      message: `本周投稿已达上限 (${weeklyUsed}/${weeklyLimit})` 
+    }
+  }
+
+  return { canSubmit: true, message: '' }
+}
+
+// 暴露方法给父组件
+defineExpose({
+  refreshSubmissionStatus: fetchSubmissionStatus
+})
 </script>
 
 <style scoped>
@@ -1003,6 +1144,74 @@ const stopPlaying = () => {
 
 .default-guidelines p {
   margin-bottom: 0.8rem;
+}
+
+
+
+/* 横向投稿状态样式 */
+.submission-status-horizontal {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-notice-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.admin-notice-horizontal .admin-icon {
+  font-size: 16px;
+}
+
+.admin-notice-horizontal .admin-text {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #FFD700;
+}
+
+.status-content-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.status-item-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-item-horizontal .status-label {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #FFFFFF;
+}
+
+.status-item-horizontal .status-value {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #0B5AFE;
+}
+
+.status-item-horizontal .status-remaining {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(11, 90, 254, 0.1);
+  border: 1px solid rgba(11, 90, 254, 0.3);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
 }
 
 
@@ -1676,6 +1885,13 @@ const stopPlaying = () => {
   background: rgba(255, 255, 255, 0.2);
   cursor: not-allowed;
   transform: none;
+}
+
+.like-btn.disabled {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .like-btn svg {

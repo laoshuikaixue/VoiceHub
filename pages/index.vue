@@ -122,6 +122,7 @@
             <!-- 投稿歌曲内容 -->
             <div v-else-if="activeTab === 'request'" class="tab-pane request-pane" key="request">
               <RequestForm
+                ref="requestFormRef"
                 :loading="loading"
                 @request="handleRequest"
                 @vote="handleVote"
@@ -590,6 +591,9 @@ const getCurrentDate = () => {
   return `${year}年${month}月${date}日 周${weekDay}`;
 }
 
+// RequestForm组件引用
+const requestFormRef = ref(null)
+
 // 旧的showNotification函数已移除，使用全局通知系统
 
 // 更新歌曲数量统计
@@ -789,6 +793,11 @@ const handleRequest = async (songData) => {
       // 强制刷新歌曲列表
       console.log("投稿成功，刷新歌曲列表")
       await refreshSongs()
+
+      // 刷新投稿状态
+      if (requestFormRef.value && requestFormRef.value.refreshSubmissionStatus) {
+        await requestFormRef.value.refreshSubmissionStatus()
+      }
 
       // 如果当前在歌曲列表页，自动切换到该页面
       if (activeTab.value !== 'songs') {

@@ -120,10 +120,10 @@
                 <div class="like-button-wrapper">
                   <button 
                     class="like-button"
-                    :class="{ 'liked': song.voted }"
+                    :class="{ 'liked': song.voted, 'disabled': song.played || song.scheduled }"
                     @click="handleVote(song)"
-                    :disabled="song.played || voteInProgress"
-                    :title="song.voted ? '点击取消点赞' : '点赞'"
+                    :disabled="song.played || song.scheduled || voteInProgress"
+                    :title="song.played ? '已播放的歌曲不能点赞' : song.scheduled ? '已排期的歌曲不能点赞' : (song.voted ? '点击取消点赞' : '点赞')"
                   >
                     <img src="/images/thumbs-up.svg" alt="点赞" class="like-icon" />
                   </button>
@@ -141,11 +141,11 @@
               
               <!-- 如果是自己的投稿，显示撤回按钮 -->
               <button 
-                v-if="isMySong(song) && !song.played" 
+                v-if="isMySong(song) && !song.played && !song.scheduled" 
                 class="withdraw-button"
                 @click="handleWithdraw(song)"
-                :disabled="actionInProgress || song.scheduled"
-                :title="song.scheduled ? '已排期的歌曲不能撤回' : '撤回投稿'"
+                :disabled="actionInProgress"
+                title="撤回投稿"
               >
                 撤销
               </button>
@@ -407,6 +407,11 @@ const goToPage = (page) => {
 
 // 处理投票
 const handleVote = async (song) => {
+  // 检查歌曲状态
+  if (song.played || song.scheduled) {
+    return // 已播放或已排期的歌曲不能点赞
+  }
+  
   voteInProgress.value = true
   try {
     if (song.voted) {
@@ -1051,6 +1056,17 @@ const vRipple = {
   background: #1A1D24;
   border-color: #242F38;
   background-image: none;
+}
+
+.like-button.disabled {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.like-button.disabled .like-icon {
+  opacity: 0.5;
 }
 
 .like-icon {

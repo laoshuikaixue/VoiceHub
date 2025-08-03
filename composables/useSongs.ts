@@ -396,8 +396,11 @@ export const useSongs = () => {
       // 更新歌曲列表
       await fetchSongs()
       
-      // 显示成功通知
-      showNotification(`已成功撤回《${songTitle}》的投稿`, 'success')
+      // 显示成功通知，包含配额返还信息
+      const message = data.quotaReturned 
+        ? `已成功撤回《${songTitle}》的投稿，投稿配额已返还`
+        : `已成功撤回《${songTitle}》的投稿`
+      showNotification(message, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '撤回歌曲失败'
@@ -638,4 +641,4 @@ export const useSongs = () => {
     unplayedSongs,
     mySongs
   }
-} 
+}

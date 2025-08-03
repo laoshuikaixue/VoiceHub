@@ -43,11 +43,67 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // 检查投稿限额
+    const systemSettings = await prisma.systemSettings.findFirst()
+    if (systemSettings?.enableSubmissionLimit) {
+      const now = new Date()
+      
+      // 检查每日限额
+      if (systemSettings.dailySubmissionLimit && systemSettings.dailySubmissionLimit > 0) {
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+        
+        const dailyCount = await prisma.song.count({
+          where: {
+            requesterId: user.id,
+            createdAt: {
+              gte: startOfDay,
+              lt: endOfDay
+            }
+          }
+        })
+        
+        if (dailyCount >= systemSettings.dailySubmissionLimit) {
+          throw createError({
+            statusCode: 400,
+            message: `每日投稿限额为${systemSettings.dailySubmissionLimit}首，您今日已达到限额`
+          })
+        }
+      }
+      
+      // 检查每周限额
+      if (systemSettings.weeklySubmissionLimit && systemSettings.weeklySubmissionLimit > 0) {
+        const startOfWeek = new Date(now)
+        const dayOfWeek = now.getDay()
+        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 周一为一周开始
+        startOfWeek.setDate(now.getDate() - daysToSubtract)
+        startOfWeek.setHours(0, 0, 0, 0)
+        
+        const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
+        
+        const weeklyCount = await prisma.song.count({
+          where: {
+            requesterId: user.id,
+            createdAt: {
+              gte: startOfWeek,
+              lt: endOfWeek
+            }
+          }
+        })
+        
+        if (weeklyCount >= systemSettings.weeklySubmissionLimit) {
+          throw createError({
+            statusCode: 400,
+            message: `每周投稿限额为${systemSettings.weeklySubmissionLimit}首，您本周已达到限额`
+          })
+        }
+      }
+    }
+    
     // 检查期望的播出时段是否存在
     let preferredPlayTime = null
     if (body.preferredPlayTimeId) {
       // 检查系统设置是否允许选择播出时段
-      const systemSettings = await prisma.systemSettings.findFirst()
       if (!systemSettings?.enablePlayTimeSelection) {
         throw createError({
           statusCode: 400,
@@ -209,4 +265,4 @@ async function handleVote(songId: number, userId: number) {
       voteCount
     }
   }
-} 
+}

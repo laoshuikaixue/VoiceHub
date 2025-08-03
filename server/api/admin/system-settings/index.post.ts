@@ -62,6 +62,50 @@ export default defineEventHandler(async (event) => {
       updateData.icpNumber = body.icpNumber
     }
     
+    if (body.enableSubmissionLimit !== undefined) {
+      if (typeof body.enableSubmissionLimit !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enableSubmissionLimit 必须是布尔值'
+        })
+      }
+      updateData.enableSubmissionLimit = body.enableSubmissionLimit
+    }
+    
+    if (body.dailySubmissionLimit !== undefined) {
+      if (body.dailySubmissionLimit !== null && (!Number.isInteger(body.dailySubmissionLimit) || body.dailySubmissionLimit < 0)) {
+        throw createError({
+          statusCode: 400,
+          message: 'dailySubmissionLimit 必须是非负整数或null'
+        })
+      }
+      updateData.dailySubmissionLimit = body.dailySubmissionLimit
+    }
+    
+    if (body.weeklySubmissionLimit !== undefined) {
+      if (body.weeklySubmissionLimit !== null && (!Number.isInteger(body.weeklySubmissionLimit) || body.weeklySubmissionLimit < 0)) {
+        throw createError({
+          statusCode: 400,
+          message: 'weeklySubmissionLimit 必须是非负整数或null'
+        })
+      }
+      updateData.weeklySubmissionLimit = body.weeklySubmissionLimit
+    }
+    
+    // 验证每日和每周限额不能同时设置
+    if (body.enableSubmissionLimit && 
+        body.dailySubmissionLimit !== undefined && 
+        body.weeklySubmissionLimit !== undefined &&
+        body.dailySubmissionLimit !== null && 
+        body.weeklySubmissionLimit !== null &&
+        body.dailySubmissionLimit > 0 && 
+        body.weeklySubmissionLimit > 0) {
+      throw createError({
+        statusCode: 400,
+        message: '每日限额和每周限额不能同时设置，请选择其中一种'
+      })
+    }
+    
     // 获取当前设置，如果不存在则创建
     let settings = await prisma.systemSettings.findFirst()
     
@@ -71,12 +115,15 @@ export default defineEventHandler(async (event) => {
         data: {
           enablePlayTimeSelection: updateData.enablePlayTimeSelection ?? false,
           siteTitle: updateData.siteTitle ?? 'VoiceHub',
-      siteLogoUrl: updateData.siteLogoUrl ?? '/favicon.ico',
-      schoolLogoHomeUrl: updateData.schoolLogoHomeUrl ?? null,
-      schoolLogoPrintUrl: updateData.schoolLogoPrintUrl ?? null,
+          siteLogoUrl: updateData.siteLogoUrl ?? '/favicon.ico',
+          schoolLogoHomeUrl: updateData.schoolLogoHomeUrl ?? null,
+          schoolLogoPrintUrl: updateData.schoolLogoPrintUrl ?? null,
           siteDescription: updateData.siteDescription ?? '校园广播站点歌系统 - 让你的声音被听见',
           submissionGuidelines: updateData.submissionGuidelines ?? '请遵守校园规定，提交健康向上的歌曲。',
-          icpNumber: updateData.icpNumber ?? null
+          icpNumber: updateData.icpNumber ?? null,
+          enableSubmissionLimit: updateData.enableSubmissionLimit ?? false,
+          dailySubmissionLimit: updateData.dailySubmissionLimit ?? null,
+          weeklySubmissionLimit: updateData.weeklySubmissionLimit ?? null
         }
       })
     } else {
