@@ -113,13 +113,13 @@
             </svg>
             刷新预览
           </button>
-          <button @click="printSchedule" class="btn btn-primary">
+          <button @click="printSchedule" class="btn btn-primary" :disabled="isPrinting">
             <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6,9 6,2 18,2 18,9"/>
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
               <rect x="6" y="14" width="12" height="8"/>
             </svg>
-            打印
+            {{ isPrinting ? '打印中...' : '打印' }}
           </button>
           <button @click="exportPDF" class="btn btn-success" :disabled="isExporting">
             <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -278,6 +278,7 @@ const logoUrl = computed(() => {
 const schedules = ref([])
 const loading = ref(false)
 const isExporting = ref(false)
+const isPrinting = ref(false)
 const previewContent = ref(null)
 
 // 打印设置
@@ -473,7 +474,14 @@ const refreshPreview = async () => {
 }
 
 const printSchedule = async () => {
+  if (isPrinting.value) return // 防止重复点击
+  
+  isPrinting.value = true
   try {
+    if (window.$showNotification) {
+      window.$showNotification('正在准备打印...', 'info')
+    }
+    
     // 复用PDF导出逻辑，但用于打印
     await exportPDFForPrint()
   } catch (error) {
@@ -481,6 +489,11 @@ const printSchedule = async () => {
     if (window.$showNotification) {
       window.$showNotification('打印失败: ' + error.message, 'error')
     }
+  } finally {
+    // 延迟重置状态，给用户足够的时间看到"打印中"状态
+    setTimeout(() => {
+      isPrinting.value = false
+    }, 2000)
   }
 }
 
@@ -607,10 +620,6 @@ const exportPDFForPrint = async () => {
       setTimeout(() => {
         printWindow.print()
       }, 1000)
-    }
-
-    if (window.$showNotification) {
-      window.$showNotification('正在准备打印...', 'info')
     }
   } catch (canvasError) {
     // 移除临时容器
