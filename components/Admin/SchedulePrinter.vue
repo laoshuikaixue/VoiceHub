@@ -105,6 +105,16 @@
             </div>
           </div>
 
+          <!-- 备注设置 -->
+          <div class="setting-group">
+            <label class="setting-label">备注</label>
+            <textarea 
+              v-model="settings.remark" 
+              class="remark-input"
+              placeholder="请输入备注信息（可选）"
+              rows="3"
+            ></textarea>
+          </div>
 
         </div>
 
@@ -254,8 +264,11 @@
 
             <!-- 页面底部 -->
             <div class="page-footer">
-              <span>生成时间：{{ new Date().toLocaleString() }}</span>
-              <span>VoiceHub 广播管理系统</span>
+              <div class="footer-left">
+                <span>生成时间：{{ new Date().toLocaleString() }}</span>
+                <span v-if="settings.remark" class="remark-text">备注：{{ settings.remark }}</span>
+              </div>
+              <span class="footer-right">VoiceHub 广播管理系统</span>
             </div>
           </div>
         </div>
@@ -309,7 +322,8 @@ const settings = ref({
   showRequester: true,
   showVotes: true,
   showSequence: true,
-  showSchoolLogo: false
+  showSchoolLogo: false,
+  remark: ''
 })
 
 // 计算属性
@@ -1617,10 +1631,51 @@ watch(() => settings.value, () => {
 .page-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding-top: 16px;
   border-top: 1px solid #e5e5e5;
   font-size: 12px;
+  color: #666;
+}
+
+.footer-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.footer-right {
+  align-self: flex-end;
+}
+
+.remark-text {
+  font-size: 11px;
+  color: #555;
+  max-width: 400px;
+  word-wrap: break-word;
+  line-height: 1.3;
+}
+
+.remark-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.remark-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+.remark-input::placeholder {
   color: #666;
 }
 
