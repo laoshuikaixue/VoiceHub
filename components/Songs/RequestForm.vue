@@ -86,7 +86,22 @@
                       <p class="result-album" v-if="result.album">专辑：{{ result.album }}</p>
                     </div>
                     <div class="result-actions">
+                      <!-- 检查是否已存在相似歌曲 -->
+                      <div v-if="getSimilarSong(result)" class="similar-song-info">
+                        <span class="similar-text">歌曲已存在</span>
+                        <button
+                          class="like-btn"
+                          @click.stop.prevent="handleLikeFromSearch(getSimilarSong(result))"
+                          :disabled="getSimilarSong(result)?.voted || submitting"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                          </svg>
+                          {{ getSimilarSong(result)?.voted ? '已点赞' : '点赞' }}
+                        </button>
+                      </div>
                       <button
+                        v-else
                         class="select-btn"
                         @click.stop.prevent="submitSong(result)"
                       >
@@ -163,9 +178,10 @@
         </div>
         <div class="alert-content">
           <p>《{{ similarSong.title }} - {{ similarSong.artist }}》</p>
-          <p class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
+          <p v-if="!similarSong.voted" class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
+          <p v-if="similarSong.voted" class="voted-status">✓ 您已为此歌曲投票</p>
         </div>
-        <div class="alert-actions">
+        <div v-if="!similarSong.voted" class="alert-actions">
           <button
             type="button"
             class="vote-btn"
@@ -181,6 +197,14 @@
       </div>
 
     </div>
+
+    <!-- 重复歌曲弹窗 -->
+    <DuplicateSongModal
+      :show="showDuplicateModal"
+      :song="duplicateSong"
+      @close="closeDuplicateModal"
+      @like="handleLikeDuplicate"
+    />
 
     <!-- 手动输入弹窗 -->
     <Teleport to="body">
@@ -249,6 +273,7 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import DuplicateSongModal from './DuplicateSongModal.vue'
 
 const props = defineProps({
   loading: {
@@ -275,6 +300,10 @@ const songService = useSongs()
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
+
+// 重复歌曲弹窗相关
+const showDuplicateModal = ref(false)
+const duplicateSong = ref(null)
 
 // 搜索相关
 const searching = ref(false)
@@ -305,9 +334,15 @@ const fetchPlayTimes = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   fetchPlayTimes()
   initSiteConfig()
+  // 加载歌曲列表以便检查相似歌曲
+  try {
+    await songService.fetchSongs()
+  } catch (error) {
+    console.error('加载歌曲列表失败:', error)
+  }
 })
 
 // 过滤出启用的播出时段
@@ -354,26 +389,21 @@ const checkSimilarSongs = () => {
 
 // 投票支持相似歌曲
 const voteForSimilar = async () => {
-  if (!similarSong.value) return
+  if (!similarSong.value || similarSong.value.voted) return
 
   voting.value = true
   try {
-    await emit('vote', similarSong.value)
-    success.value = `已为《${similarSong.value.title}》投票！`
-    if (window.$showNotification) {
-      window.$showNotification(
-        `已为《${similarSong.value.title}》投票！`,
-        'success'
-      )
-    }
+    // 直接调用songService的投票方法，避免重复处理
+    await songService.voteSong(similarSong.value.id)
+    
+    // 更新本地状态
+    similarSong.value.voted = true
+    similarSong.value.voteCount = (similarSong.value.voteCount || 0) + 1
+    
+    // 清除表单并隐藏提示
     title.value = ''
     artist.value = ''
     similarSong.value = null
-
-    // 3秒后清除成功提示
-    setTimeout(() => {
-      success.value = ''
-    }, 3000)
   } catch (err) {
     error.value = err.message || '投票失败，请稍后重试'
     if (window.$showNotification) {
@@ -387,6 +417,54 @@ const voteForSimilar = async () => {
 // 忽略相似歌曲，继续投稿
 const ignoreSimilar = () => {
   similarSong.value = null
+}
+
+// 检查搜索结果是否已存在完全匹配的歌曲
+const getSimilarSong = (result) => {
+  const title = result.song || result.title
+  const artist = result.singer || result.artist
+  
+  // 只检查完全匹配的歌曲（歌名和歌手都完全相同）
+  return songService.songs.value.find(song => 
+    song.title.toLowerCase() === title.toLowerCase() && 
+    song.artist.toLowerCase() === artist.toLowerCase()
+  )
+}
+
+// 从搜索结果中点赞已存在的歌曲
+const handleLikeFromSearch = async (song) => {
+  if (!song || song.voted) {
+    return
+  }
+  
+  try {
+    await songService.voteSong(song.id)
+    // songService.voteSong 已经包含了成功提示，这里不需要重复显示
+  } catch (error) {
+    // 错误提示由 songService.voteSong 处理，这里不需要重复显示
+    console.error('点赞失败:', error)
+  }
+}
+
+// 关闭重复歌曲弹窗
+const closeDuplicateModal = () => {
+  showDuplicateModal.value = false
+  duplicateSong.value = null
+}
+
+// 处理重复歌曲弹窗中的点赞
+const handleLikeDuplicate = async (songId) => {
+  try {
+    await songService.voteSong(songId)
+    if (window.$showNotification) {
+      window.$showNotification(`点赞成功！`, 'success')
+    }
+    closeDuplicateModal()
+  } catch (error) {
+    if (window.$showNotification) {
+      window.$showNotification('点赞失败，请稍后重试', 'error')
+    }
+  }
 }
 
 // 平台切换函数
@@ -598,12 +676,27 @@ const submitSong = async (result) => {
   if (submitting.value) return
   console.log('执行submitSong，提交歌曲:', result.title || result.song)
 
+  // 使用搜索结果中的数据
+  const songTitle = result.song || result.title
+  const songArtist = result.singer || result.artist
+
+  // 检查是否已存在完全匹配的歌曲
+  const existingSong = songService.songs.value.find(song => 
+    song.title.toLowerCase() === songTitle.toLowerCase() && 
+    song.artist.toLowerCase() === songArtist.toLowerCase()
+  )
+  if (existingSong) {
+    // 显示重复歌曲弹窗
+    duplicateSong.value = existingSong
+    showDuplicateModal.value = true
+    return
+  }
+
   submitting.value = true
   error.value = ''
 
-  // 使用搜索结果中的数据
-  title.value = result.song || result.title
-  artist.value = result.singer || result.artist
+  title.value = songTitle
+  artist.value = songArtist
   selectedCover.value = result.cover || ''
   selectedUrl.value = result.url || result.file || ''
 
@@ -896,12 +989,20 @@ const stopPlaying = () => {
   font-family: 'MiSans', sans-serif;
   font-weight: 400;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.8;
   letter-spacing: 0.04em;
 }
 
 .rules-content p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.guidelines-content {
+  line-height: 1.8;
+}
+
+.default-guidelines p {
+  margin-bottom: 0.8rem;
 }
 
 
@@ -1232,6 +1333,16 @@ const stopPlaying = () => {
   margin-top: 0.5rem;
 }
 
+.voted-status {
+  color: #10b981;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .alert-actions {
   display: flex;
   justify-content: flex-end;
@@ -1248,6 +1359,18 @@ const stopPlaying = () => {
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vote-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 67, 248, 0.3);
+}
+
+.vote-btn:disabled {
+  background: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+  transform: none;
 }
 
 .ignore-btn {
@@ -1508,6 +1631,57 @@ const stopPlaying = () => {
 .result-actions {
   display: flex;
   align-items: center;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.similar-song-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.similar-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+}
+
+.like-btn {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  color: #ffffff;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.like-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.like-btn:disabled {
+  background: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.like-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
 }
 
 .select-btn {

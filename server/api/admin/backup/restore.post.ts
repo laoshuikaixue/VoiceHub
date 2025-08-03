@@ -277,11 +277,24 @@ export default defineEventHandler(async (event) => {
                     
                     let createdSong
                     if (mode === 'merge') {
-                      createdSong = await tx.song.upsert({
-                        where: { id: record.id },
-                        update: songData,
-                        create: { ...songData, id: record.id }
+                      // 检查是否存在相同的歌曲（按标题和艺术家）
+                      const existingSong = await tx.song.findFirst({
+                        where: {
+                          title: { equals: record.title, mode: 'insensitive' },
+                          artist: { equals: record.artist, mode: 'insensitive' }
+                        }
                       })
+                      
+                      if (existingSong) {
+                        // 如果存在相同歌曲，更新它
+                        createdSong = await tx.song.update({
+                          where: { id: existingSong.id },
+                          data: songData
+                        })
+                      } else {
+                        // 如果不存在，创建新歌曲（不指定ID，让数据库自动生成）
+                        createdSong = await tx.song.create({ data: songData })
+                      }
                     } else {
                       createdSong = await tx.song.create({ data: songData })
                     }
@@ -292,35 +305,32 @@ export default defineEventHandler(async (event) => {
                     break
 
                   case 'playTimes':
+                    const playTimeData = {
+                      name: record.name,
+                      startTime: record.startTime,
+                      endTime: record.endTime,
+                      enabled: record.enabled,
+                      description: record.description
+                    }
+                    
                     if (mode === 'merge') {
-                      await tx.playTime.upsert({
-                        where: { id: record.id },
-                        update: {
-                          name: record.name,
-                          startTime: record.startTime,
-                          endTime: record.endTime,
-                          enabled: record.enabled,
-                          description: record.description
-                        },
-                        create: {
-                          id: record.id,
-                          name: record.name,
-                          startTime: record.startTime,
-                          endTime: record.endTime,
-                          enabled: record.enabled,
-                          description: record.description
-                        }
+                      // 检查是否存在相同名称的播放时段
+                      const existingPlayTime = await tx.playTime.findFirst({
+                        where: { name: record.name }
                       })
+                      
+                      if (existingPlayTime) {
+                        // 如果存在相同播放时段，更新它
+                        await tx.playTime.update({
+                          where: { id: existingPlayTime.id },
+                          data: playTimeData
+                        })
+                      } else {
+                        // 如果不存在，创建新播放时段（不指定ID，让数据库自动生成）
+                        await tx.playTime.create({ data: playTimeData })
+                      }
                     } else {
-                      await tx.playTime.create({
-                        data: {
-                          name: record.name,
-                          startTime: record.startTime,
-                          endTime: record.endTime,
-                          enabled: record.enabled,
-                          description: record.description
-                        }
-                      })
+                      await tx.playTime.create({ data: playTimeData })
                     }
                     break
 
@@ -347,23 +357,32 @@ export default defineEventHandler(async (event) => {
                     break
 
                   case 'systemSettings':
+                    const systemSettingsData = {
+                      enablePlayTimeSelection: record.enablePlayTimeSelection,
+                      siteTitle: record.siteTitle,
+                      siteLogoUrl: record.siteLogoUrl,
+                      schoolLogoUrl: record.schoolLogoUrl,
+                      siteDescription: record.siteDescription,
+                      submissionGuidelines: record.submissionGuidelines,
+                      icpNumber: record.icpNumber
+                    }
+                    
                     if (mode === 'merge') {
-                      await tx.systemSettings.upsert({
-                        where: { id: record.id },
-                        update: {
-                          enablePlayTimeSelection: record.enablePlayTimeSelection
-                        },
-                        create: {
-                          id: record.id,
-                          enablePlayTimeSelection: record.enablePlayTimeSelection
-                        }
-                      })
+                      // 检查是否存在系统设置记录（通常只有一条记录）
+                      const existingSystemSettings = await tx.systemSettings.findFirst({})
+                      
+                      if (existingSystemSettings) {
+                        // 如果存在系统设置，更新它
+                        await tx.systemSettings.update({
+                          where: { id: existingSystemSettings.id },
+                          data: systemSettingsData
+                        })
+                      } else {
+                        // 如果不存在，创建新系统设置（不指定ID，让数据库自动生成）
+                        await tx.systemSettings.create({ data: systemSettingsData })
+                      }
                     } else {
-                      await tx.systemSettings.create({
-                        data: {
-                          enablePlayTimeSelection: record.enablePlayTimeSelection
-                        }
-                      })
+                      await tx.systemSettings.create({ data: systemSettingsData })
                     }
                     break
 
@@ -416,11 +435,24 @@ export default defineEventHandler(async (event) => {
                     }
                     
                     if (mode === 'merge') {
-                      await tx.schedule.upsert({
-                        where: { id: record.id },
-                        update: scheduleData,
-                        create: { ...scheduleData, id: record.id }
+                      // 检查是否存在相同的排期（按歌曲ID和播放日期）
+                      const existingSchedule = await tx.schedule.findFirst({
+                        where: {
+                          songId: validSongId,
+                          playDate: new Date(record.playDate)
+                        }
                       })
+                      
+                      if (existingSchedule) {
+                        // 如果存在相同排期，更新它
+                        await tx.schedule.update({
+                          where: { id: existingSchedule.id },
+                          data: scheduleData
+                        })
+                      } else {
+                        // 如果不存在，创建新排期（不指定ID，让数据库自动生成）
+                        await tx.schedule.create({ data: scheduleData })
+                      }
                     } else {
                       await tx.schedule.create({ data: scheduleData })
                     }
@@ -499,41 +531,38 @@ export default defineEventHandler(async (event) => {
                       }
                     }
                     
+                    const notificationData = {
+                      userId: validNotificationUserId,
+                      title: record.title,
+                      message: record.message,
+                      type: record.type,
+                      read: record.read,
+                      createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                      updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+                    }
+                    
                     if (mode === 'merge') {
-                      await tx.notification.upsert({
-                        where: { id: record.id },
-                        update: {
+                      // 检查是否存在相同的通知（按用户ID、类型和消息）
+                      const existingNotification = await tx.notification.findFirst({
+                        where: {
                           userId: validNotificationUserId,
-                          title: record.title,
-                          message: record.message,
                           type: record.type,
-                          read: record.read,
-                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
-                          updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
-                        },
-                        create: {
-                          id: record.id,
-                          userId: validNotificationUserId,
-                          title: record.title,
-                          message: record.message,
-                          type: record.type,
-                          read: record.read,
-                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
-                          updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+                          message: record.message
                         }
                       })
+                      
+                      if (existingNotification) {
+                        // 如果存在相同通知，更新它
+                        await tx.notification.update({
+                          where: { id: existingNotification.id },
+                          data: notificationData
+                        })
+                      } else {
+                        // 如果不存在，创建新通知（不指定ID，让数据库自动生成）
+                        await tx.notification.create({ data: notificationData })
+                      }
                     } else {
-                      await tx.notification.create({
-                        data: {
-                          userId: validNotificationUserId,
-                          title: record.title,
-                          message: record.message,
-                          type: record.type,
-                          read: record.read,
-                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
-                          updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
-                        }
-                      })
+                      await tx.notification.create({ data: notificationData })
                     }
                     break
 
