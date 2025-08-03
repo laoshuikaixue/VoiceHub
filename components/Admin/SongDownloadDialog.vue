@@ -195,26 +195,33 @@ const closeDialog = () => {
 
 // 获取音频URL
 const getMusicUrl = async (platform, musicId, quality) => {
-  let apiUrl
-  if (platform === 'netease') {
-    apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
-  } else if (platform === 'tencent') {
-    apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
-  } else {
-    throw new Error('不支持的音乐平台')
-  }
+  try {
+    const response = await fetch('/api/proxy/music-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        platform,
+        musicId,
+        quality
+      })
+    })
 
-  const response = await fetch(apiUrl)
-  if (!response.ok) {
-    throw new Error('获取音乐URL失败')
-  }
+    if (!response.ok) {
+      throw new Error('获取音乐URL失败')
+    }
 
-  const data = await response.json()
-  if (data.code !== 200 || !data.data?.url) {
-    throw new Error('无法获取音乐播放链接')
-  }
+    const data = await response.json()
+    if (data.code !== 200 || !data.data?.url) {
+      throw new Error('无法获取音乐播放链接')
+    }
 
-  return data.data.url
+    return data.data.url
+  } catch (error) {
+    console.error('获取音频URL失败:', error)
+    throw new Error('获取音乐播放链接失败: ' + error.message)
+  }
 }
 
 // 下载单个文件

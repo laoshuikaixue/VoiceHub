@@ -490,14 +490,18 @@ const getAudioUrl = async (result) => {
     const { getQuality } = useAudioQuality()
     const quality = getQuality(platform.value)
 
-    let apiUrl
-    if (platform.value === 'netease') {
-      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${result.musicId}&quality=${quality}`
-    } else if (platform.value === 'tencent') {
-      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${result.musicId}&quality=${quality}`
-    }
+    const response = await fetch('/api/proxy/music-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        platform: platform.value,
+        musicId: result.musicId,
+        quality
+      })
+    })
 
-    const response = await fetch(apiUrl)
     if (!response.ok) {
       throw new Error('获取音乐URL失败')
     }

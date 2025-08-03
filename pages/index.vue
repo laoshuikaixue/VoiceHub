@@ -13,7 +13,7 @@
           <!-- 横线和学校logo -->
           <div v-if="schoolLogoUrl && schoolLogoUrl.trim()" class="logo-divider-container">
             <div class="logo-divider"></div>
-            <img :src="schoolLogoUrl" alt="学校Logo" class="school-logo" />
+            <img :src="proxiedSchoolLogoUrl" alt="学校Logo" class="school-logo" />
           </div>
         </div>
 
@@ -740,6 +740,23 @@ const filteredSongs = computed(() => {
 const loading = computed(() => songs?.loading?.value || false)
 const error = computed(() => songs?.error?.value || '')
 
+// 处理学校logo的HTTP/HTTPS代理
+const proxiedSchoolLogoUrl = computed(() => {
+  if (!schoolLogoUrl.value || !schoolLogoUrl.value.trim()) {
+    return ''
+  }
+  
+  const logoUrl = schoolLogoUrl.value.trim()
+  
+  // 如果是HTTP链接，通过代理访问
+  if (logoUrl.startsWith('http://')) {
+    return `/api/proxy/image?url=${encodeURIComponent(logoUrl)}`
+  }
+  
+  // HTTPS链接或相对路径直接返回
+  return logoUrl
+})
+
 // 处理投稿请求
 const handleRequest = async (songData) => {
   if (!auth || !isClientAuthenticated.value) {
@@ -996,6 +1013,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   display: flex;
   align-items: center;
   gap: 20px; /* 添加间距 */
+  min-height: 160px; /* 确保与学校logo高度一致 */
 }
 
 .logo-link {

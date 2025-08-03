@@ -504,18 +504,21 @@ const getMusicUrl = async (platform, musicId) => {
   const { getQuality } = useAudioQuality()
 
   try {
-    let apiUrl
     const quality = getQuality(platform)
 
-    if (platform === 'netease') {
-      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
-    } else if (platform === 'tencent') {
-      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
-    } else {
-      throw new Error('不支持的音乐平台')
-    }
+    // 使用新的代理API
+    const response = await fetch('/api/proxy/music-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        platform,
+        musicId,
+        quality
+      })
+    })
 
-    const response = await fetch(apiUrl)
     if (!response.ok) {
       throw new Error('获取音乐URL失败')
     }

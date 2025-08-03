@@ -2,7 +2,10 @@ import jwt from 'jsonwebtoken'
 import { prisma } from '../models/schema'
 
 export default defineEventHandler(async (event) => {
-  const path = getRequestPath(event)
+  const fullPath = getRequestPath(event)
+  
+  // 只获取路径部分，不包括查询参数
+  const path = fullPath.split('?')[0]
   
   // 无需认证的公共路径
   const publicRoutes = [
@@ -13,6 +16,9 @@ export default defineEventHandler(async (event) => {
     '/api/semesters/current',
     '/api/play-times',
     '/api/site-config',
+    '/api/proxy/image',
+    '/api/proxy/audio',
+    '/api/proxy/music-url',
     '/',
     '/login',
     '/register',
