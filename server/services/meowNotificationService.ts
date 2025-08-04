@@ -70,6 +70,7 @@ export async function sendMeowNotificationToUser(
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
+        name: true,
         meowNickname: true,
         notificationSettings: {
           select: {
@@ -89,17 +90,39 @@ export async function sendMeowNotificationToUser(
       return false
     }
     
+    // 检查是否有其他用户绑定了相同的 MeoW ID
+    const usersWithSameMeowId = await prisma.user.findMany({
+      where: {
+        meowNickname: user.meowNickname,
+        id: { not: userId }
+      },
+      select: {
+        name: true
+      }
+    })
+    
     // 获取站点标题
     const siteTitle = await getSiteTitle()
     
     // 构建完整的通知标题
     const fullTitle = `${notificationTitle} | ${siteTitle}通知推送`
     
+    // 如果有多个用户绑定了相同的 MeoW ID，在消息中加上用户名备注
+    let enhancedMessage = notificationMessage
+    if (usersWithSameMeowId.length > 0) {
+      // 检查消息是否以"您"开头，如果是则替换，否则添加前缀
+      if (notificationMessage.startsWith('您')) {
+        enhancedMessage = `您（${user.name}）${notificationMessage.substring(1)}`
+      } else {
+        enhancedMessage = `您（${user.name}）${notificationMessage}`
+      }
+    }
+    
     // 发送 MeoW 通知
     return await sendMeowNotification(
       user.meowNickname,
       fullTitle,
-      notificationMessage,
+      enhancedMessage,
       url
     )
   } catch (error) {
@@ -128,6 +151,7 @@ export async function sendBatchMeowNotifications(
     },
     select: {
       id: true,
+      name: true,
       meowNickname: true,
       notificationSettings: {
         select: {
@@ -141,6 +165,13 @@ export async function sendBatchMeowNotifications(
   const siteTitle = await getSiteTitle()
   const fullTitle = `${notificationTitle} | ${siteTitle}通知推送`
   
+  // 统计每个 MeoW ID 绑定的用户数量
+  const meowIdCounts = new Map<string, number>()
+  users.forEach(user => {
+    const count = meowIdCounts.get(user.meowNickname!) || 0
+    meowIdCounts.set(user.meowNickname!, count + 1)
+  })
+  
   // 并发发送通知（限制并发数）
   const batchSize = 5
   for (let i = 0; i < users.length; i += batchSize) {
@@ -152,10 +183,22 @@ export async function sendBatchMeowNotifications(
         return false
       }
       
+      // 如果该 MeoW ID 绑定了多个用户，在消息中加上用户名备注
+      let enhancedMessage = notificationMessage
+      const userCount = meowIdCounts.get(user.meowNickname!)
+      if (userCount && userCount > 1) {
+        // 检查消息是否以"您"开头，如果是则替换，否则添加前缀
+        if (notificationMessage.startsWith('您')) {
+          enhancedMessage = `您（${user.name}）${notificationMessage.substring(1)}`
+        } else {
+          enhancedMessage = `您（${user.name}）${notificationMessage}`
+        }
+      }
+      
       return await sendMeowNotification(
         user.meowNickname!,
         fullTitle,
-        notificationMessage,
+        enhancedMessage,
         url
       )
     })

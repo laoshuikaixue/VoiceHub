@@ -30,6 +30,9 @@ export default defineEventHandler(async (event) => {
       const song = await prisma.song.findUnique({
         where: {
           id: body.songId
+        },
+        include: {
+          schedules: true
         }
       })
 
@@ -37,6 +40,22 @@ export default defineEventHandler(async (event) => {
         throw createError({
           statusCode: 404,
           message: '歌曲不存在'
+        })
+      }
+
+      // 检查歌曲是否已播放
+      if (song.played) {
+        throw createError({
+          statusCode: 400,
+          message: '该歌曲已播放，无法进行投票操作'
+        })
+      }
+
+      // 检查歌曲是否已排期
+      if (song.schedules && song.schedules.length > 0) {
+        throw createError({
+          statusCode: 400,
+          message: '该歌曲已排期，无法进行投票操作'
         })
       }
 
