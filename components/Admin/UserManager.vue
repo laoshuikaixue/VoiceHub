@@ -23,7 +23,7 @@
         </div>
         <select v-model="roleFilter" class="filter-select">
           <option value="">全部角色</option>
-          <option v-for="role in roles" :key="role.name" :value="role.name">
+          <option v-for="role in allRoles" :key="role.name" :value="role.name">
             {{ role.displayName }}
           </option>
         </select>
@@ -552,15 +552,24 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 
 // 响应式数据
 const loading = ref(false)
 const users = ref([])
-const roles = ref([])
 const searchQuery = ref('')
 const roleFilter = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
+
+// 硬编码角色定义
+const allRoles = [
+  { name: 'USER', displayName: '普通用户' },
+  { name: 'SONG_ADMIN', displayName: '歌曲管理员' },
+  { name: 'ADMIN', displayName: '管理员' },
+  { name: 'SUPER_ADMIN', displayName: '超级管理员' }
+]
 
 // 模态框状态
 const showAddModal = ref(false)
@@ -602,22 +611,21 @@ const passwordForm = ref({
 })
 
 // 服务
-let auth = null
+const auth = useAuth()
+const permissions = usePermissions()
 
 // 计算属性
 const isSuperAdmin = computed(() => {
-  return auth?.user?.role === 'SUPER_ADMIN'
+  return auth.user.value?.role === 'SUPER_ADMIN'
 })
 
 const availableRoles = computed(() => {
   if (isSuperAdmin.value) {
-    // 超级管理员可以设置所有角色
-    return roles.value
+    // 超级管理员可以分配除自己以外的所有角色
+    return allRoles.filter(role => role.name !== 'SUPER_ADMIN')
   } else {
-    // 普通管理员只能设置 USER 和 SONG_ADMIN 角色
-    return roles.value.filter(role => 
-      role.name === 'USER' || role.name === 'SONG_ADMIN'
-    )
+    // 其他角色不能分配角色，返回空数组
+    return []
   }
 })
 
@@ -794,6 +802,11 @@ const saveUser = async () => {
       userData.password = userForm.value.password
     }
 
+    // 检查是否是权限更新
+    const isRoleUpdate = editingUser.value && editingUser.value.role !== userForm.value.role
+    const oldRole = editingUser.value?.role
+    const newRole = userForm.value.role
+
     if (editingUser.value) {
       await $fetch(`/api/admin/users/${editingUser.value.id}`, {
         method: 'PUT',
@@ -806,6 +819,34 @@ const saveUser = async () => {
         body: userData,
         headers: auth.getAuthHeader().headers
       })
+    }
+
+    // 如果是权限更新且当前用户是超级管理员，发送通知
+    if (isRoleUpdate && permissions.isSuperAdmin) {
+      try {
+        const roleNames = {
+          'USER': '普通用户',
+          'SONG_ADMIN': '歌曲管理员', 
+          'ADMIN': '管理员',
+          'SUPER_ADMIN': '超级管理员'
+        }
+        
+        const notificationMessage = `您的账户权限已由超级管理员更新：${roleNames[oldRole]} → ${roleNames[newRole]}`
+        
+        await $fetch('/api/admin/notifications/send', {
+          method: 'POST',
+          body: {
+            userId: editingUser.value.id,
+            title: '权限变更通知',
+            message: notificationMessage,
+            type: 'system'
+          },
+          headers: auth.getAuthHeader().headers
+        })
+      } catch (notificationError) {
+        console.error('发送权限变更通知失败:', notificationError)
+        // 不影响主要操作，只记录错误
+      }
     }
 
     await loadUsers()
@@ -1072,21 +1113,9 @@ const importUsers = async () => {
   }
 }
 
-const loadRoles = async () => {
-  try {
-    const response = await $fetch('/api/admin/roles', {
-      headers: auth.getAuthHeader().headers
-    })
-    roles.value = response.roles || []
-  } catch (error) {
-    console.error('加载角色失败:', error)
-  }
-}
-
 // 生命周期
 onMounted(async () => {
-  auth = useAuth()
-  await Promise.all([loadUsers(), loadRoles()])
+  await loadUsers()
   // 预加载XLSX库
   loadXLSX()
 })

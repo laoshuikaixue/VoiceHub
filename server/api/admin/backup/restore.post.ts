@@ -127,7 +127,13 @@ export default defineEventHandler(async (event) => {
         await prisma.schedule.deleteMany()
         await prisma.vote.deleteMany()
         await prisma.song.deleteMany()
-        await prisma.user.deleteMany()
+        await prisma.user.deleteMany({
+          where: {
+            role: {
+              not: 'SUPER_ADMIN'
+            }
+          }
+        })
         await prisma.playTime.deleteMany()
         await prisma.semester.deleteMany()
         await prisma.systemSettings.deleteMany()
@@ -194,7 +200,16 @@ export default defineEventHandler(async (event) => {
                       // 添加基本字段
                       userFields.forEach(field => {
                         if (record.hasOwnProperty(field)) {
-                          userData[field] = record[field]
+                          // 确保角色为有效的硬编码角色
+                          if (field === 'role') {
+                            if (!['USER', 'SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(record[field])) {
+                              userData[field] = 'USER' // 默认为普通用户
+                            } else {
+                              userData[field] = record[field]
+                            }
+                          } else {
+                            userData[field] = record[field]
+                          }
                         }
                       })
                       

@@ -1,21 +1,10 @@
-import { hasPermission } from '../../../utils/permissions.js'
-
 export default defineEventHandler(async (event) => {
-  // 验证用户认证
+  // 验证用户认证和权限
   const user = event.context.user
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: '需要登录'
-    })
-  }
-
-  // 检查排期管理权限
-  const canManageSchedule = hasPermission(user, 'schedule.manage')
-  if (!canManageSchedule) {
+  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
-      statusMessage: '没有排期管理权限'
+      statusMessage: '需要歌曲管理员及以上权限'
     })
   }
   

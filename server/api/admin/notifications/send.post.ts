@@ -1,5 +1,5 @@
 import { prisma } from '../../../models/schema'
-import { createBatchSystemNotifications } from '../../../services/notificationService'
+import { createBatchSystemNotifications, createSystemNotification } from '../../../services/notificationService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户是否为管理员
@@ -22,9 +22,29 @@ export default defineEventHandler(async (event) => {
   try {
     // 获取请求数据
     const body = await readBody(event)
-    const { title, content, scope, filter } = body
+    const { title, message, content, scope, filter, userId, type } = body
     
-    // 验证请求数据
+    // 处理单个用户通知（用于权限变更等系统通知）
+    if (userId && title && (message || content)) {
+      const notificationContent = message || content
+      const result = await createSystemNotification(userId, title, notificationContent)
+      
+      if (result) {
+        return {
+          success: true,
+          message: '通知发送成功',
+          sentCount: 1,
+          totalUsers: 1
+        }
+      } else {
+        throw createError({
+          statusCode: 500,
+          message: '发送通知失败'
+        })
+      }
+    }
+    
+    // 验证批量通知请求数据
     if (!title || !content) {
       throw createError({
         statusCode: 400,

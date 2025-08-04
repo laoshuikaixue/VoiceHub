@@ -12,10 +12,10 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
-      message: '只有管理员才能创建排期'
+      message: '只有歌曲管理员及以上权限才能创建排期'
     })
   }
   

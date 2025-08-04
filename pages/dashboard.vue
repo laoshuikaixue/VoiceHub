@@ -46,7 +46,8 @@
           </div>
           
           <nav class="sidebar-nav">
-            <div class="nav-section">
+            <!-- 概览 - 只有管理员和超级管理员可见 -->
+            <div v-if="permissions.canAccessPage('overview')" class="nav-section">
               <div class="nav-section-title">概览</div>
               <button 
                 :class="['nav-item', { active: activeTab === 'overview' }]" 
@@ -61,9 +62,11 @@
               </button>
             </div>
             
-            <div class="nav-section">
+            <!-- 内容管理 - 歌曲管理员及以上可见 -->
+            <div v-if="permissions.canAccessPage('schedule') || permissions.canAccessPage('print') || permissions.canAccessPage('songs')" class="nav-section">
               <div class="nav-section-title">内容管理</div>
               <button
+                v-if="permissions.canAccessPage('schedule')"
                 :class="['nav-item', { active: activeTab === 'schedule' }]"
                 @click="activeTab = 'schedule'"
               >
@@ -76,6 +79,7 @@
                 排期管理
               </button>
               <button
+                v-if="permissions.canAccessPage('print')"
                 :class="['nav-item', { active: activeTab === 'print' }]"
                 @click="activeTab = 'print'"
               >
@@ -87,6 +91,7 @@
                 打印排期
               </button>
               <button 
+                v-if="permissions.canAccessPage('songs')"
                 :class="['nav-item', { active: activeTab === 'songs' }]" 
                 @click="activeTab = 'songs'"
               >
@@ -99,9 +104,11 @@
               </button>
             </div>
             
-            <div class="nav-section">
+            <!-- 用户管理 - 只有管理员和超级管理员可见 -->
+            <div v-if="permissions.canAccessPage('users')" class="nav-section">
               <div class="nav-section-title">用户管理</div>
               <button
+                v-if="permissions.canAccessPage('users')"
                 :class="['nav-item', { active: activeTab === 'users' }]"
                 @click="activeTab = 'users'"
               >
@@ -111,24 +118,13 @@
                 </svg>
                 用户管理
               </button>
-
-            <button
-              :class="['nav-item', { active: activeTab === 'roles' }]"
-              @click="activeTab = 'roles'"
-            >
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="8.5" cy="7" r="4"/>
-                <path d="M20 8v6"/>
-                <path d="M23 11h-6"/>
-              </svg>
-              角色管理
-            </button>
             </div>
             
-            <div class="nav-section">
+            <!-- 系统管理 - 只有超级管理员可见 -->
+            <div v-if="permissions.canAccessPage('notifications') || permissions.canAccessPage('playtimes') || permissions.canAccessPage('semesters') || permissions.canAccessPage('blacklist') || permissions.canAccessPage('site-config') || permissions.canAccessPage('database')" class="nav-section">
               <div class="nav-section-title">系统管理</div>
               <button 
+                v-if="permissions.canAccessPage('notifications')"
                 :class="['nav-item', { active: activeTab === 'notifications' }]" 
                 @click="activeTab = 'notifications'"
               >
@@ -139,6 +135,7 @@
                 通知管理
               </button>
               <button
+                v-if="permissions.canAccessPage('playtimes')"
                 :class="['nav-item', { active: activeTab === 'playtimes' }]"
                 @click="activeTab = 'playtimes'"
               >
@@ -149,6 +146,7 @@
                 播出时段
               </button>
               <button
+                v-if="permissions.canAccessPage('semesters')"
                 :class="['nav-item', { active: activeTab === 'semesters' }]"
                 @click="activeTab = 'semesters'"
               >
@@ -159,6 +157,7 @@
                 学期管理
               </button>
               <button
+                v-if="permissions.canAccessPage('blacklist')"
                 :class="['nav-item', { active: activeTab === 'blacklist' }]"
                 @click="activeTab = 'blacklist'"
               >
@@ -169,6 +168,7 @@
                 黑名单管理
               </button>
               <button
+                v-if="permissions.canAccessPage('site-config')"
                 :class="['nav-item', { active: activeTab === 'site-config' }]"
                 @click="activeTab = 'site-config'"
               >
@@ -180,6 +180,7 @@
                 站点配置
               </button>
               <button
+                v-if="permissions.canAccessPage('database')"
                 :class="['nav-item', { active: activeTab === 'database' }]"
                 @click="activeTab = 'database'"
               >
@@ -248,62 +249,57 @@
             </button>
 
             <!-- 数据概览 -->
-            <div v-if="activeTab === 'overview'" class="overview-section">
+            <div v-if="activeTab === 'overview' && permissions.canAccessPage('overview')" class="overview-section">
               <OverviewDashboard @navigate="handleNavigate" />
             </div>
             
             <!-- 歌曲管理 -->
-            <div v-if="activeTab === 'songs'" class="content-section">
+            <div v-if="activeTab === 'songs' && permissions.canAccessPage('songs')" class="content-section">
               <SongManagement />
             </div>
             
             <!-- 排期管理 -->
-            <div v-if="activeTab === 'schedule'" class="content-section">
+            <div v-if="activeTab === 'schedule' && permissions.canAccessPage('schedule')" class="content-section">
               <ScheduleManager />
             </div>
 
             <!-- 打印排期 -->
-            <div v-if="activeTab === 'print'" class="content-section">
+            <div v-if="activeTab === 'print' && permissions.canAccessPage('print')" class="content-section">
               <SchedulePrinter />
             </div>
             
             <!-- 用户管理 -->
-            <div v-if="activeTab === 'users'" class="content-section">
+            <div v-if="activeTab === 'users' && permissions.canAccessPage('users')" class="content-section">
               <UserManager />
-            </div>
-
-            <!-- 角色管理 -->
-            <div v-if="activeTab === 'roles'" class="content-section">
-              <RoleManager />
             </div>
             
             <!-- 通知管理 -->
-            <div v-if="activeTab === 'notifications'" class="content-section">
+            <div v-if="activeTab === 'notifications' && permissions.canAccessPage('notifications')" class="content-section">
               <NotificationSender />
             </div>
             
             <!-- 播出时段 -->
-            <div v-if="activeTab === 'playtimes'" class="content-section">
+            <div v-if="activeTab === 'playtimes' && permissions.canAccessPage('playtimes')" class="content-section">
               <PlayTimeManager />
             </div>
             
             <!-- 学期管理 -->
-            <div v-if="activeTab === 'semesters'" class="content-section">
+            <div v-if="activeTab === 'semesters' && permissions.canAccessPage('semesters')" class="content-section">
               <SemesterManager />
             </div>
             
             <!-- 黑名单管理 -->
-            <div v-if="activeTab === 'blacklist'" class="content-section">
+            <div v-if="activeTab === 'blacklist' && permissions.canAccessPage('blacklist')" class="content-section">
               <BlacklistManager />
             </div>
 
             <!-- 站点配置 -->
-            <div v-if="activeTab === 'site-config'" class="content-section full-width">
+            <div v-if="activeTab === 'site-config' && permissions.canAccessPage('site-config')" class="content-section full-width">
               <SiteConfigManager />
             </div>
 
             <!-- 数据库操作 -->
-            <div v-if="activeTab === 'database'" class="content-section">
+            <div v-if="activeTab === 'database' && permissions.canAccessPage('database')" class="content-section">
               <DatabaseManager />
             </div>
           </div>
@@ -316,6 +312,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
@@ -326,7 +323,6 @@ import SongManagement from '~/components/Admin/SongManagement.vue'
 import ScheduleManager from '~/components/Admin/ScheduleManager.vue'
 import SchedulePrinter from '~/components/Admin/SchedulePrinter.vue'
 import UserManager from '~/components/Admin/UserManager.vue'
-import RoleManager from '~/components/Admin/RoleManager.vue'
 import NotificationSender from '~/components/Admin/NotificationSender.vue'
 import PlayTimeManager from '~/components/Admin/PlayTimeManager.vue'
 import SemesterManager from '~/components/Admin/SemesterManager.vue'
@@ -344,9 +340,11 @@ definePageMeta({
 const activeTab = ref('overview')
 const currentUser = ref(null)
 const sidebarOpen = ref(false)
+const showBackToTop = ref(false)
 
 // 服务
 let auth = null
+const permissions = usePermissions()
 
 // 方法
 const getPageTitle = () => {
@@ -354,6 +352,7 @@ const getPageTitle = () => {
     overview: '数据概览',
     songs: '歌曲管理',
     schedule: '排期管理',
+    print: '打印排期',
     users: '用户管理',
     notifications: '通知管理',
     playtimes: '播出时段',
@@ -405,6 +404,16 @@ const handleResize = () => {
   if (window.innerWidth > 768) {
     sidebarOpen.value = false
   }
+}
+
+// 返回顶部功能
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// 监听滚动事件
+const handleScroll = () => {
+  showBackToTop.value = window.scrollY > 300
 }
 
 // 触摸手势支持
@@ -460,15 +469,23 @@ onMounted(async () => {
     return
   }
 
-  if (!['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(auth.user.value?.role)) {
+  // 检查用户是否有访问后台的权限
+  if (!permissions.canAccessAdmin.value) {
     await navigateTo('/')
     return
   }
 
   currentUser.value = auth.user.value
 
+  // 设置默认页面
+  const userPages = permissions.getUserPages.value
+  if (userPages.length > 0 && !userPages.includes(activeTab.value)) {
+    activeTab.value = userPages[0]
+  }
+
   // 添加窗口大小监听器
   window.addEventListener('resize', handleResize)
+  window.addEventListener('scroll', handleScroll)
 
   // 添加双击关闭侧边栏事件
   document.addEventListener('dblclick', (e) => {
@@ -481,6 +498,7 @@ onMounted(async () => {
 // 组件卸载时清理事件监听器
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 

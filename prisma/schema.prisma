@@ -15,7 +15,7 @@ model User {
   name                 String?
   grade                String?
   class                String?
-  role                 String                @default("USER") // 简化为字符串字段
+  role                 String                @default("USER") // 角色：USER, SONG_ADMIN, ADMIN, SUPER_ADMIN
   password             String
   lastLogin            DateTime?
   lastLoginIp          String?
@@ -30,18 +30,6 @@ model User {
   notificationSettings NotificationSettings?
   songs                Song[]
   votes                Vote[]
-}
-
-// 简化的角色模型
-model Role {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  name        String   @unique // 角色名称，如"USER", "ADMIN", "SONG_ADMIN"
-  displayName String   // 显示名称，如"普通用户", "管理员", "歌曲管理员"
-  description String?  // 角色描述
-  permissions String[] // 权限数组，如["song.manage", "user.view"]
-  isSystem    Boolean  @default(false) // 是否为系统角色（不可删除）
 }
 
 model Song {
