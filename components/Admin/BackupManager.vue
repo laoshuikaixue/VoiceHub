@@ -200,6 +200,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useAuth } from '~/composables/useAuth'
 
 // 响应式数据
 const createLoading = ref(false)
@@ -269,12 +270,16 @@ const createBackup = async () => {
           
           // 显示成功消息
           const sizeText = backup.size ? ` (${formatFileSize(backup.size)})` : ''
-          showNotification(`备份文件已下载: ${backup.filename}${sizeText}`, 'success')
+          if (window.$showNotification) {
+            window.$showNotification(`备份文件已下载: ${backup.filename}${sizeText}`, 'success')
+          }
           
           console.log('✅ 文件下载成功:', backup.filename)
         } catch (downloadError) {
           console.error('下载失败:', downloadError)
-          showNotification('文件下载失败: ' + downloadError.message, 'error')
+          if (window.$showNotification) {
+            window.$showNotification('文件下载失败: ' + downloadError.message, 'error')
+          }
         }
       } else if (backup.downloadMode === 'file' && backup.filename) {
         // 文件下载模式：通过API下载文件
@@ -305,29 +310,39 @@ const createBackup = async () => {
           
           // 显示成功消息
           const sizeText = backup.size ? ` (${formatFileSize(backup.size)})` : ''
-          showNotification(`备份文件已下载: ${backup.filename}${sizeText}`, 'success')
+          if (window.$showNotification) {
+            window.$showNotification(`备份文件已下载: ${backup.filename}${sizeText}`, 'success')
+          }
           
           console.log('✅ 文件下载成功:', backup.filename)
         } catch (downloadError) {
           console.error('文件下载失败:', downloadError)
-          showNotification('文件下载失败: ' + downloadError.message, 'error')
+          if (window.$showNotification) {
+            window.$showNotification('文件下载失败: ' + downloadError.message, 'error')
+          }
         }
       } else {
         console.error('无效的下载模式或缺少数据')
-        showNotification('备份创建失败：无效的响应格式', 'error')
+        if (window.$showNotification) {
+          window.$showNotification('备份创建失败：无效的响应格式', 'error')
+        }
         showCreateModal.value = false
         return
       }
     } else {
       console.error('服务器响应格式错误:', response)
-      showNotification('备份创建失败：服务器响应格式错误', 'error')
+      if (window.$showNotification) {
+        window.$showNotification('备份创建失败：服务器响应格式错误', 'error')
+      }
     }
     
     showCreateModal.value = false
   } catch (error) {
     console.error('创建备份失败:', error)
     const errorMessage = error.data?.message || error.message || '未知错误'
-    showNotification('创建备份失败: ' + errorMessage, 'error')
+    if (window.$showNotification) {
+      window.$showNotification('创建备份失败: ' + errorMessage, 'error')
+    }
   } finally {
     createLoading.value = false
   }
@@ -357,6 +372,7 @@ const uploadFile = async () => {
   if (!selectedFile.value) return
   
   uploadLoading.value = true
+  
   try {
     const formData = new FormData()
     formData.append('file', selectedFile.value)
@@ -367,30 +383,53 @@ const uploadFile = async () => {
       method: 'POST',
       body: formData
     })
-
-    showNotification('备份导入成功', 'success')
-    showUploadModal.value = false
-    selectedFile.value = null
-    restoreForm.value = { mode: 'merge', clearExisting: false }
     
-    // 恢复完成后刷新用户信息，确保角色等信息正确加载
-    const { refreshUser } = useAuth()
-    if (refreshUser) {
-      try {
-        await refreshUser()
-        console.log('用户信息已刷新')
-      } catch (refreshError) {
-        console.warn('刷新用户信息失败:', refreshError)
+    if (response.success) {
+      // 关闭模态框并重置表单
+      showUploadModal.value = false
+      selectedFile.value = null
+      restoreForm.value = { mode: 'merge', clearExisting: false }
+      
+      // 显示成功通知
+      if (window.$showNotification) {
+        window.$showNotification(`备份恢复成功！处理了 ${response.details?.tablesProcessed || 0} 个表，恢复了 ${response.details?.recordsRestored || 0} 条记录`, 'success')
+        
+        // 如果有错误，显示警告
+        if (response.details?.errors && response.details.errors.length > 0) {
+          setTimeout(() => {
+            window.$showNotification(`恢复过程中发生了 ${response.details.errors.length} 个错误`, 'warning')
+          }, 1000)
+        }
+        
+        // 显示即将重定向的通知
+        setTimeout(() => {
+          window.$showNotification('数据库恢复完成，3秒后将返回首页重新登录', 'info')
+        }, 2000)
+      }
+      
+      // 清除认证状态并重定向到首页
+      setTimeout(() => {
+        const { logout } = useAuth()
+        if (logout) {
+          logout()
+        }
+        // 清除本地存储的认证信息
+        localStorage.removeItem('auth-token')
+        localStorage.removeItem('user-info')
+        
+        // 重定向到首页
+        window.location.href = '/'
+      }, 5000)
+    } else {
+      if (window.$showNotification) {
+        window.$showNotification('备份导入失败: ' + (response.message || '未知错误'), 'error')
       }
     }
-    
-    // 延迟一段时间后刷新页面，确保所有数据都已更新
-    setTimeout(() => {
-      window.location.reload()
-    }, 1000)
   } catch (error) {
     console.error('导入备份失败:', error)
-    showNotification('导入备份失败: ' + (error.data?.message || error.message), 'error')
+    if (window.$showNotification) {
+      window.$showNotification('导入备份失败: ' + (error.data?.message || error.message), 'error')
+    }
   } finally {
     uploadLoading.value = false
   }
@@ -405,26 +444,7 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// 显示通知
-const showNotification = (message, type = 'info') => {
-  // 创建通知元素
-  const notification = document.createElement('div')
-  notification.className = `notification ${type}`
-  notification.textContent = message
-  
-  // 添加到body
-  document.body.appendChild(notification)
-  
-  // 自动移除
-  setTimeout(() => {
-    notification.style.animation = 'slideOutRight 0.3s ease-out'
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification)
-      }
-    }, 300)
-  }, 4000)
-}
+
 </script>
 
 <style scoped>
@@ -590,6 +610,83 @@ const showNotification = (message, type = 'info') => {
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+.progress-modal {
+  max-width: 600px;
+}
+
+.progress-info {
+  padding: 20px;
+}
+
+.current-status h4 {
+  margin: 0 0 15px 0;
+  color: #4a90e2;
+  font-size: 18px;
+}
+
+.progress-stats p {
+  margin: 5px 0;
+  color: #a0a0a0;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #404040;
+  border-radius: 4px;
+  margin: 15px 0;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a90e2, #357abd);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-details, .progress-errors {
+  margin-top: 20px;
+}
+
+.progress-details h5, .progress-errors h5 {
+  margin: 0 0 10px 0;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.details-list, .errors-list {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #505050;
+  border-radius: 6px;
+  padding: 10px;
+  background: #333333;
+}
+
+.detail-item {
+  padding: 4px 0;
+  color: #a0a0a0;
+  font-size: 13px;
+  border-bottom: 1px solid #404040;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.error-item {
+  padding: 4px 0;
+  color: #ff6b6b;
+  font-size: 13px;
+  border-bottom: 1px solid #4a2a2a;
+}
+
+.error-item:last-child {
+  border-bottom: none;
 }
 
 .modal-header {

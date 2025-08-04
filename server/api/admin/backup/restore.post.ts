@@ -180,50 +180,51 @@ export default defineEventHandler(async (event) => {
                 // 根据表名选择恢复策略
                 switch (tableName) {
                   case 'users':
+                    // 动态构建用户数据，自动跳过不存在的字段
+                    const buildUserData = (includePassword = false) => {
+                      const userData = {}
+                      const userFields = [
+                        'username', 'name', 'grade', 'class', 'role', 
+                        'lastLoginIp', 'meowNickname', 'forcePasswordChange'
+                      ]
+                      
+                      // 处理日期字段
+                      const dateFields = ['lastLogin', 'passwordChangedAt', 'meowBoundAt']
+                      
+                      // 添加基本字段
+                      userFields.forEach(field => {
+                        if (record.hasOwnProperty(field)) {
+                          userData[field] = record[field]
+                        }
+                      })
+                      
+                      // 处理日期字段
+                      dateFields.forEach(field => {
+                        if (record.hasOwnProperty(field) && record[field]) {
+                          userData[field] = new Date(record[field])
+                        } else if (record.hasOwnProperty(field)) {
+                          userData[field] = null
+                        }
+                      })
+                      
+                      // 密码字段只在创建时需要
+                      if (includePassword && record.hasOwnProperty('password')) {
+                        userData.password = record.password
+                      }
+                      
+                      return userData
+                    }
+                    
                     let createdUser
                     if (mode === 'merge') {
                       createdUser = await tx.user.upsert({
                         where: { username: record.username },
-                        update: {
-                          name: record.name,
-                          grade: record.grade,
-                          class: record.class,
-                          role: record.role,
-                          lastLogin: record.lastLogin ? new Date(record.lastLogin) : null,
-                          lastLoginIp: record.lastLoginIp,
-                          passwordChangedAt: record.passwordChangedAt ? new Date(record.passwordChangedAt) : null,
-                          meowNickname: record.meowNickname,
-                          meowBoundAt: record.meowBoundAt ? new Date(record.meowBoundAt) : null
-                        },
-                        create: {
-                          username: record.username,
-                          name: record.name,
-                          password: record.password,
-                          grade: record.grade,
-                          class: record.class,
-                          role: record.role,
-                          lastLogin: record.lastLogin ? new Date(record.lastLogin) : null,
-                          lastLoginIp: record.lastLoginIp,
-                          passwordChangedAt: record.passwordChangedAt ? new Date(record.passwordChangedAt) : null,
-                          meowNickname: record.meowNickname,
-                          meowBoundAt: record.meowBoundAt ? new Date(record.meowBoundAt) : null
-                        }
+                        update: buildUserData(false),
+                        create: buildUserData(true)
                       })
                     } else {
                       createdUser = await tx.user.create({
-                        data: {
-                          username: record.username,
-                          name: record.name,
-                          password: record.password,
-                          grade: record.grade,
-                          class: record.class,
-                          role: record.role,
-                          lastLogin: record.lastLogin ? new Date(record.lastLogin) : null,
-                          lastLoginIp: record.lastLoginIp,
-                          passwordChangedAt: record.passwordChangedAt ? new Date(record.passwordChangedAt) : null,
-                          meowNickname: record.meowNickname,
-                          meowBoundAt: record.meowBoundAt ? new Date(record.meowBoundAt) : null
-                        }
+                        data: buildUserData(true)
                       })
                     }
                     // 建立ID映射
@@ -268,19 +269,40 @@ export default defineEventHandler(async (event) => {
                       }
                     }
                     
+                    // 动态构建歌曲数据，自动跳过不存在的字段
                     const songData = {
-                      title: record.title,
-                      artist: record.artist,
-                      requesterId: validRequesterId,
-                      played: record.played || false,
-                      playedAt: record.playedAt ? new Date(record.playedAt) : null,
-                      semester: record.semester,
-                      preferredPlayTimeId: validPreferredPlayTimeId,
-                      cover: record.cover,
-                      musicPlatform: record.musicPlatform,
-                      musicId: record.musicId,
-                      createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
-                      updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+                      requesterId: validRequesterId, // 必需字段
+                      preferredPlayTimeId: validPreferredPlayTimeId // 已验证的字段
+                    }
+                    
+                    // 基本字段
+                    const songFields = ['title', 'artist', 'semester', 'cover', 'musicPlatform', 'musicId']
+                    songFields.forEach(field => {
+                      if (record.hasOwnProperty(field)) {
+                        songData[field] = record[field]
+                      }
+                    })
+                    
+                    // 布尔字段，提供默认值
+                    songData.played = record.hasOwnProperty('played') ? record.played : false
+                    
+                    // 日期字段
+                    if (record.hasOwnProperty('playedAt') && record.playedAt) {
+                      songData.playedAt = new Date(record.playedAt)
+                    } else {
+                      songData.playedAt = null
+                    }
+                    
+                    if (record.hasOwnProperty('createdAt') && record.createdAt) {
+                      songData.createdAt = new Date(record.createdAt)
+                    } else {
+                      songData.createdAt = new Date()
+                    }
+                    
+                    if (record.hasOwnProperty('updatedAt') && record.updatedAt) {
+                      songData.updatedAt = new Date(record.updatedAt)
+                    } else {
+                      songData.updatedAt = new Date()
                     }
                     
                     let createdSong
@@ -313,13 +335,18 @@ export default defineEventHandler(async (event) => {
                     break
 
                   case 'playTimes':
-                    const playTimeData = {
-                      name: record.name,
-                      startTime: record.startTime,
-                      endTime: record.endTime,
-                      enabled: record.enabled,
-                      description: record.description
-                    }
+                    // 动态构建播放时段数据，自动跳过不存在的字段
+                    const playTimeData = {}
+                    const playTimeFields = ['name', 'startTime', 'endTime', 'description']
+                    
+                    playTimeFields.forEach(field => {
+                      if (record.hasOwnProperty(field)) {
+                        playTimeData[field] = record[field]
+                      }
+                    })
+                    
+                    // 布尔字段，提供默认值
+                    playTimeData.enabled = record.hasOwnProperty('enabled') ? record.enabled : true
                     
                     if (mode === 'merge') {
                       // 检查是否存在相同名称的播放时段
@@ -343,37 +370,56 @@ export default defineEventHandler(async (event) => {
                     break
 
                   case 'semesters':
+                    // 动态构建学期数据，自动跳过不存在的字段
+                    const semesterData = {}
+                    const semesterFields = ['name']
+                    
+                    semesterFields.forEach(field => {
+                      if (record.hasOwnProperty(field)) {
+                        semesterData[field] = record[field]
+                      }
+                    })
+                    
+                    // 布尔字段，提供默认值
+                    semesterData.isActive = record.hasOwnProperty('isActive') ? record.isActive : false
+                    
                     if (mode === 'merge') {
                       await tx.semester.upsert({
-                        where: { name: record.name },
-                        update: {
-                          isActive: record.isActive
-                        },
-                        create: {
-                          name: record.name,
-                          isActive: record.isActive
-                        }
+                        where: { name: semesterData.name },
+                        update: semesterData,
+                        create: semesterData
                       })
                     } else {
                       await tx.semester.create({
-                        data: {
-                          name: record.name,
-                          isActive: record.isActive
-                        }
+                        data: semesterData
                       })
                     }
                     break
 
                   case 'systemSettings':
-                    const systemSettingsData = {
-                      enablePlayTimeSelection: record.enablePlayTimeSelection,
-                      siteTitle: record.siteTitle,
-                      siteLogoUrl: record.siteLogoUrl,
-            
-                      siteDescription: record.siteDescription,
-                      submissionGuidelines: record.submissionGuidelines,
-                      icpNumber: record.icpNumber
-                    }
+                    // 动态构建系统设置数据，自动跳过不存在的字段
+                    const systemSettingsData = {}
+                    const systemSettingsFields = [
+                      'enablePlayTimeSelection',
+                      'siteTitle', 
+                      'siteLogoUrl',
+                      'schoolLogoHomeUrl',
+                      'schoolLogoPrintUrl', 
+                      'siteDescription',
+                      'submissionGuidelines',
+                      'icpNumber',
+                      'enableSubmissionLimit',
+                      'dailySubmissionLimit',
+                      'weeklySubmissionLimit',
+                      'showBlacklistKeywords'
+                    ]
+                    
+                    // 只添加备份数据中存在的字段
+                    systemSettingsFields.forEach(field => {
+                      if (record.hasOwnProperty(field)) {
+                        systemSettingsData[field] = record[field]
+                      }
+                    })
                     
                     if (mode === 'merge') {
                       // 检查是否存在系统设置记录（通常只有一条记录）
@@ -434,13 +480,18 @@ export default defineEventHandler(async (event) => {
                       }
                     }
                     
-                    const scheduleData = {
+                    // 动态构建排期数据，自动跳过不存在的字段
+                    const scheduleData = { 
                       songId: validSongId,
                       playDate: new Date(record.playDate),
-                      played: record.played || false,
-                      sequence: record.sequence || 1,
                       playTimeId: validPlayTimeId
                     }
+                    
+                    // 布尔字段，提供默认值
+                    scheduleData.played = record.hasOwnProperty('played') ? record.played : false
+                    
+                    // 数字字段，提供默认值
+                    scheduleData.sequence = record.hasOwnProperty('sequence') ? record.sequence : 1
                     
                     if (mode === 'merge') {
                       // 检查是否存在相同的排期（按歌曲ID和播放日期）
@@ -485,17 +536,33 @@ export default defineEventHandler(async (event) => {
                       }
                     }
                     
-                    const notificationSettingsData = {
-                      userId: validUserId,
-                      enabled: record.enabled !== undefined ? record.enabled : true,
-                      songRequestEnabled: record.songRequestEnabled !== undefined ? record.songRequestEnabled : true,
-                      songVotedEnabled: record.songVotedEnabled !== undefined ? record.songVotedEnabled : true,
-                      songPlayedEnabled: record.songPlayedEnabled !== undefined ? record.songPlayedEnabled : true,
-                      refreshInterval: record.refreshInterval || 60,
-                      songVotedThreshold: record.songVotedThreshold || 1,
-                      createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
-                      updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+                    // 动态构建通知设置数据，自动跳过不存在的字段
+                    const notificationSettingsData = { userId: validUserId }
+                    const notificationFields = ['refreshInterval', 'songVotedThreshold', 'meowUserId']
+                    
+                    notificationFields.forEach(field => {
+                      if (record.hasOwnProperty(field)) {
+                        notificationSettingsData[field] = record[field]
+                      }
+                    })
+                    
+                    // 布尔字段，提供默认值
+                    notificationSettingsData.enabled = record.hasOwnProperty('enabled') ? record.enabled : true
+                    notificationSettingsData.songRequestEnabled = record.hasOwnProperty('songRequestEnabled') ? record.songRequestEnabled : true
+                    notificationSettingsData.songVotedEnabled = record.hasOwnProperty('songVotedEnabled') ? record.songVotedEnabled : true
+                    notificationSettingsData.songPlayedEnabled = record.hasOwnProperty('songPlayedEnabled') ? record.songPlayedEnabled : true
+                    
+                    // 数字字段，提供默认值
+                    if (!notificationSettingsData.hasOwnProperty('refreshInterval')) {
+                      notificationSettingsData.refreshInterval = 60
                     }
+                    if (!notificationSettingsData.hasOwnProperty('songVotedThreshold')) {
+                      notificationSettingsData.songVotedThreshold = 1
+                    }
+                    
+                    // 日期字段
+                    notificationSettingsData.createdAt = record.createdAt ? new Date(record.createdAt) : new Date()
+                    notificationSettingsData.updatedAt = record.updatedAt ? new Date(record.updatedAt) : new Date()
                     
                     if (mode === 'merge') {
                       // 使用userId作为唯一标识进行upsert，因为数据库中userId有唯一约束
@@ -539,15 +606,22 @@ export default defineEventHandler(async (event) => {
                       }
                     }
                     
-                    const notificationData = {
-                      userId: validNotificationUserId,
-                      title: record.title,
-                      message: record.message,
-                      type: record.type,
-                      read: record.read,
-                      createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
-                      updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
-                    }
+                    // 动态构建通知数据，自动跳过不存在的字段
+                    const notificationData = { userId: validNotificationUserId }
+                    const notificationDataFields = ['title', 'message', 'type']
+                    
+                    notificationDataFields.forEach(field => {
+                      if (record.hasOwnProperty(field)) {
+                        notificationData[field] = record[field]
+                      }
+                    })
+                    
+                    // 布尔字段，提供默认值
+                    notificationData.read = record.hasOwnProperty('read') ? record.read : false
+                    
+                    // 日期字段
+                    notificationData.createdAt = record.createdAt ? new Date(record.createdAt) : new Date()
+                    notificationData.updatedAt = record.updatedAt ? new Date(record.updatedAt) : new Date()
                     
                     if (mode === 'merge') {
                       // 检查是否存在相同的通知（按用户ID、类型和消息）

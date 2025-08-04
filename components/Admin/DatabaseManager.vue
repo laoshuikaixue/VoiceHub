@@ -232,6 +232,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useAuth } from '~/composables/useAuth'
 
 // 响应式数据
 const showCreateModal = ref(false)
@@ -260,7 +261,9 @@ const handleFileSelect = (event) => {
   if (file && file.type === 'application/json') {
     selectedFile.value = file
   } else {
-    showNotification('请选择有效的JSON备份文件', 'error')
+    if (window.$showNotification) {
+      window.$showNotification('请选择有效的JSON备份文件', 'error')
+    }
   }
 }
 
@@ -270,7 +273,9 @@ const handleFileDrop = (event) => {
   if (file && file.type === 'application/json') {
     selectedFile.value = file
   } else {
-    showNotification('请选择有效的JSON备份文件', 'error')
+    if (window.$showNotification) {
+      window.$showNotification('请选择有效的JSON备份文件', 'error')
+    }
   }
 }
 
@@ -301,7 +306,9 @@ const createBackup = async () => {
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
 
-        showNotification('备份文件已下载', 'success')
+        if (window.$showNotification) {
+          window.$showNotification('备份文件已下载', 'success')
+        }
         showCreateModal.value = false
       } else if (response.backup.downloadMode === 'file' && response.backup.filename) {
         // 处理文件模式，通过下载API获取文件
@@ -332,14 +339,20 @@ const createBackup = async () => {
           document.body.removeChild(a)
           URL.revokeObjectURL(url)
 
-          showNotification('备份文件已下载', 'success')
+          if (window.$showNotification) {
+            window.$showNotification('备份文件已下载', 'success')
+          }
           showCreateModal.value = false
         } catch (downloadError) {
           console.error('下载备份文件失败:', downloadError)
-          showNotification('下载备份文件失败: ' + downloadError.message, 'error')
+          if (window.$showNotification) {
+            window.$showNotification('下载备份文件失败: ' + downloadError.message, 'error')
+          }
         }
       } else {
-        showNotification('备份创建成功', 'success')
+        if (window.$showNotification) {
+          window.$showNotification('备份创建成功', 'success')
+        }
         showCreateModal.value = false
       }
     } else {
@@ -347,7 +360,9 @@ const createBackup = async () => {
     }
   } catch (error) {
     console.error('创建备份失败:', error)
-    showNotification('创建备份失败: ' + error.message, 'error')
+    if (window.$showNotification) {
+      window.$showNotification('创建备份失败: ' + error.message, 'error')
+    }
   } finally {
     createLoading.value = false
   }
@@ -356,7 +371,9 @@ const createBackup = async () => {
 // 恢复备份
 const restoreBackup = async () => {
   if (!selectedFile.value) {
-    showNotification('请选择备份文件', 'error')
+    if (window.$showNotification) {
+      window.$showNotification('请选择备份文件', 'error')
+    }
     return
   }
 
@@ -373,20 +390,41 @@ const restoreBackup = async () => {
     })
 
     if (response.success) {
-      showNotification('数据恢复完成', 'success')
+      // 关闭模态框并重置表单
       showUploadModal.value = false
       selectedFile.value = null
       
-      // 刷新页面以反映数据变化
+      // 显示成功通知
+      if (window.$showNotification) {
+        window.$showNotification('数据恢复成功！', 'success')
+        
+        // 显示即将重定向的通知
+        setTimeout(() => {
+          window.$showNotification('数据库恢复完成，3秒后将返回首页重新登录', 'info')
+        }, 1500)
+      }
+      
+      // 清除认证状态并重定向到首页
       setTimeout(() => {
-        window.location.reload()
-      }, 1500)
+        const { logout } = useAuth()
+        if (logout) {
+          logout()
+        }
+        // 清除本地存储的认证信息
+        localStorage.removeItem('auth-token')
+        localStorage.removeItem('user-info')
+        
+        // 重定向到首页
+        window.location.href = '/'
+      }, 4500)
     } else {
       throw new Error(response.message || '数据恢复失败')
     }
   } catch (error) {
     console.error('恢复备份失败:', error)
-    showNotification('恢复备份失败: ' + error.message, 'error')
+    if (window.$showNotification) {
+      window.$showNotification('恢复备份失败: ' + error.message, 'error')
+    }
   } finally {
     uploadLoading.value = false
   }
@@ -395,7 +433,9 @@ const restoreBackup = async () => {
 // 重置数据库
 const resetDatabase = async () => {
   if (resetConfirmText.value !== 'CONFIRM-DATABASE-RESET-OPERATION') {
-    showNotification('请输入 CONFIRM-DATABASE-RESET-OPERATION 确认操作', 'error')
+    if (window.$showNotification) {
+      window.$showNotification('请输入 CONFIRM-DATABASE-RESET-OPERATION 确认操作', 'error')
+    }
     return
   }
 
@@ -406,50 +446,47 @@ const resetDatabase = async () => {
     })
 
     if (response.success) {
-      showNotification('数据库重置完成', 'success')
+      // 关闭模态框并重置表单
       showResetModal.value = false
       resetConfirmText.value = ''
       
-      // 刷新页面
+      // 显示成功通知
+      if (window.$showNotification) {
+        window.$showNotification('数据库重置成功！', 'success')
+        
+        // 显示即将重定向的通知
+        setTimeout(() => {
+          window.$showNotification('数据库重置完成，3秒后将返回首页重新登录', 'info')
+        }, 1500)
+      }
+      
+      // 清除认证状态并重定向到首页
       setTimeout(() => {
-        window.location.reload()
-      }, 1500)
+        const { logout } = useAuth()
+        if (logout) {
+          logout()
+        }
+        // 清除本地存储的认证信息
+        localStorage.removeItem('auth-token')
+        localStorage.removeItem('user-info')
+        
+        // 重定向到首页
+        window.location.href = '/'
+      }, 4500)
     } else {
       throw new Error(response.message || '数据库重置失败')
     }
   } catch (error) {
     console.error('重置数据库失败:', error)
-    showNotification('重置数据库失败: ' + error.message, 'error')
+    if (window.$showNotification) {
+      window.$showNotification('重置数据库失败: ' + error.message, 'error')
+    }
   } finally {
     resetLoading.value = false
   }
 }
 
-// 显示通知
-const showNotification = (message, type = 'info') => {
-  const notification = document.createElement('div')
-  notification.className = `notification ${type}`
-  notification.innerHTML = `
-    <div class="notification-content">
-      <span>${message}</span>
-    </div>
-  `
-  
-  document.body.appendChild(notification)
-  
-  setTimeout(() => {
-    notification.classList.add('show')
-  }, 100)
-  
-  setTimeout(() => {
-    notification.classList.remove('show')
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification)
-      }
-    }, 300)
-  }, 4000)
-}
+
 </script>
 
 <style scoped>

@@ -55,13 +55,31 @@ export default defineEventHandler(async (event) => {
       // 加密密码
       const hashedPassword = await bcrypt.hash(userData.password, 10)
 
+      // 角色权限控制
+      let validRole = 'USER' // 默认角色
+      if (userData.role) {
+        if (user.role === 'SUPER_ADMIN') {
+          // 超级管理员可以设置任何角色
+          const allowedRoles = ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN']
+          if (allowedRoles.includes(userData.role)) {
+            validRole = userData.role
+          }
+        } else if (user.role === 'ADMIN') {
+          // 普通管理员只能设置 USER 和 SONG_ADMIN 角色
+          const allowedRoles = ['USER', 'SONG_ADMIN']
+          if (allowedRoles.includes(userData.role)) {
+            validRole = userData.role
+          }
+        }
+      }
+
       // 创建用户
       await prisma.user.create({
         data: {
           name: userData.name,
           username: userData.username,
           password: hashedPassword,
-          role: userData.role === 'ADMIN' ? 'ADMIN' : userData.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'USER',
+          role: validRole,
           grade: userData.grade,
           class: userData.class
         }

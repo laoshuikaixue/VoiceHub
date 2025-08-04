@@ -290,7 +290,7 @@
           <div class="form-group">
             <label>角色</label>
             <select v-model="userForm.role" class="form-select">
-              <option v-for="role in roles" :key="role.name" :value="role.name">
+              <option v-for="role in availableRoles" :key="role.name" :value="role.name">
                 {{ role.displayName }}
               </option>
             </select>
@@ -436,7 +436,11 @@
               </tbody>
             </table>
           </div>
-          <p class="import-note">注意：第一行可以是标题行（会自动跳过），角色可以是：USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）</p>
+          <p class="import-note">
+            注意：第一行可以是标题行（会自动跳过），角色可以是：
+            <span v-if="isSuperAdmin">USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）</span>
+            <span v-else>USER（普通用户）、SONG_ADMIN（歌曲管理员）</span>
+          </p>
         </div>
 
         <div class="form-group">
@@ -601,6 +605,22 @@ const passwordForm = ref({
 let auth = null
 
 // 计算属性
+const isSuperAdmin = computed(() => {
+  return auth?.user?.role === 'SUPER_ADMIN'
+})
+
+const availableRoles = computed(() => {
+  if (isSuperAdmin.value) {
+    // 超级管理员可以设置所有角色
+    return roles.value
+  } else {
+    // 普通管理员只能设置 USER 和 SONG_ADMIN 角色
+    return roles.value.filter(role => 
+      role.name === 'USER' || role.name === 'SONG_ADMIN'
+    )
+  }
+})
+
 const filteredUsers = computed(() => {
   let filtered = users.value
 
@@ -962,11 +982,27 @@ const handleFileUpload = async (event) => {
           const row = jsonData[i]
           if (!row || !row.length || !row[0]) continue // 跳过空行
 
+          let role = (row[3]?.toString() || '').toUpperCase()
+          
+          // 根据当前用户权限过滤角色
+          if (!isSuperAdmin.value) {
+            // 普通管理员只能导入 USER 和 SONG_ADMIN 角色
+            if (role !== 'USER' && role !== 'SONG_ADMIN') {
+              role = 'USER' // 默认设为普通用户
+            }
+          }
+          
+          // 确保角色有效
+          const validRoles = ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN']
+          if (!validRoles.includes(role)) {
+            role = 'USER'
+          }
+
           userData.push({
             name: row[0]?.toString() || '',
             username: row[1]?.toString() || '',
             password: row[2]?.toString() || '',
-            role: (row[3]?.toString() || '').toUpperCase() === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : (row[3]?.toString() || '').toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER',
+            role: role,
             grade: row[4]?.toString() || '',
             class: row[5]?.toString() || ''
           })

@@ -2,6 +2,15 @@ import { prisma } from '~/server/models/schema'
 
 export default defineEventHandler(async (event) => {
   try {
+    // 验证超级管理员权限
+    const user = event.context.user
+    if (!user || user.role !== 'SUPER_ADMIN') {
+      throw createError({
+        statusCode: 403,
+        statusMessage: '只有超级管理员可以删除角色'
+      })
+    }
+
     const roleId = parseInt(getRouterParam(event, 'id'))
 
     // 检查角色是否存在

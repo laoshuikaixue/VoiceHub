@@ -51,11 +51,38 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // 角色权限控制
+    let validRole = 'USER'
+    if (role && ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(role)) {
+      // 超级管理员可以设置任何角色
+      if (user.role === 'SUPER_ADMIN') {
+        validRole = role
+      } 
+      // 管理员只能设置管理员以下的角色（USER, SONG_ADMIN）
+      else if (user.role === 'ADMIN') {
+        if (['USER', 'SONG_ADMIN'].includes(role)) {
+          validRole = role
+        } else {
+          throw createError({
+            statusCode: 403,
+            statusMessage: '管理员只能设置用户和歌曲管理员角色'
+          })
+        }
+      }
+      // 其他角色不能设置角色
+      else {
+        throw createError({
+          statusCode: 403,
+          statusMessage: '没有权限设置用户角色'
+        })
+      }
+    }
+
     // 准备更新数据
     const updateData = {
       name,
       username,
-      role: ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(role) ? role : 'USER',
+      role: validRole,
       grade,
       class: userClass
     }

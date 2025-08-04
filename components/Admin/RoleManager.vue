@@ -224,6 +224,23 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
+// 权限检查
+const auth = useAuth()
+const { user } = auth
+
+// 检查是否为超级管理员
+const isSuperAdmin = computed(() => {
+  return user.value && user.value.role === 'SUPER_ADMIN'
+})
+
+// 如果不是超级管理员，显示权限不足提示
+if (!isSuperAdmin.value) {
+  throw createError({
+    statusCode: 403,
+    statusMessage: '只有超级管理员可以访问角色管理'
+  })
+}
+
 // 响应式数据
 const loading = ref(false)
 const savingRole = ref(false)
@@ -248,8 +265,7 @@ const formData = ref({
   permissions: []
 })
 
-// 服务
-const auth = useAuth()
+// auth 已在上面声明
 
 // 权限分类
 const permissionCategories = computed(() => {
