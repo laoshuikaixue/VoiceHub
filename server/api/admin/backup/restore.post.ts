@@ -217,14 +217,53 @@ export default defineEventHandler(async (event) => {
                     
                     let createdUser
                     if (mode === 'merge') {
-                      createdUser = await tx.user.upsert({
-                        where: { username: record.username },
-                        update: buildUserData(false),
-                        create: buildUserData(true)
+                      // 在merge模式下，先检查用户名是否存在
+                      const existingUser = await tx.user.findUnique({
+                        where: { username: record.username }
                       })
+                      
+                      if (existingUser) {
+                        // 如果用户名已存在，更新现有用户
+                        createdUser = await tx.user.update({
+                          where: { username: record.username },
+                          data: buildUserData(false)
+                        })
+                      } else {
+                        // 如果用户名不存在，尝试使用原始ID创建
+                        try {
+                          // 先检查原始ID是否已被占用
+                          const existingUserWithId = await tx.user.findUnique({
+                            where: { id: record.id }
+                          })
+                          
+                          if (existingUserWithId) {
+                            // ID已被占用，让数据库自动生成新ID
+                            createdUser = await tx.user.create({
+                              data: buildUserData(true)
+                            })
+                          } else {
+                            // ID未被占用，使用原始ID
+                            createdUser = await tx.user.create({
+                              data: {
+                                ...buildUserData(true),
+                                id: record.id
+                              }
+                            })
+                          }
+                        } catch (error) {
+                          // 如果创建失败（可能是ID冲突），让数据库自动生成ID
+                          createdUser = await tx.user.create({
+                            data: buildUserData(true)
+                          })
+                        }
+                      }
                     } else {
+                      // 完全恢复模式，直接使用原始ID
                       createdUser = await tx.user.create({
-                        data: buildUserData(true)
+                        data: {
+                          ...buildUserData(true),
+                          id: record.id
+                        }
                       })
                     }
                     // 建立ID映射
@@ -322,11 +361,42 @@ export default defineEventHandler(async (event) => {
                           data: songData
                         })
                       } else {
-                        // 如果不存在，创建新歌曲（不指定ID，让数据库自动生成）
-                        createdSong = await tx.song.create({ data: songData })
+                        // 如果不存在，尝试使用原始ID创建
+                        try {
+                          // 先检查原始ID是否已被占用
+                          const existingSongWithId = await tx.song.findUnique({
+                            where: { id: record.id }
+                          })
+                          
+                          if (existingSongWithId) {
+                            // ID已被占用，让数据库自动生成新ID
+                            createdSong = await tx.song.create({ 
+                              data: songData
+                            })
+                          } else {
+                            // ID未被占用，使用原始ID
+                            createdSong = await tx.song.create({ 
+                              data: {
+                                ...songData,
+                                id: record.id
+                              }
+                            })
+                          }
+                        } catch (error) {
+                          // 如果创建失败（可能是ID冲突），让数据库自动生成ID
+                          createdSong = await tx.song.create({ 
+                            data: songData
+                          })
+                        }
                       }
                     } else {
-                      createdSong = await tx.song.create({ data: songData })
+                      // 完全恢复模式，直接使用原始ID
+                      createdSong = await tx.song.create({ 
+                        data: {
+                          ...songData,
+                          id: record.id
+                        }
+                      })
                     }
                     // 建立歌曲ID映射
                     if (record.id && createdSong.id) {
@@ -365,7 +435,13 @@ export default defineEventHandler(async (event) => {
                         await tx.playTime.create({ data: playTimeData })
                       }
                     } else {
-                      await tx.playTime.create({ data: playTimeData })
+                      // 完全恢复模式，使用原始ID
+                      await tx.playTime.create({ 
+                        data: {
+                          ...playTimeData,
+                          id: record.id
+                        }
+                      })
                     }
                     break
 
@@ -390,8 +466,12 @@ export default defineEventHandler(async (event) => {
                         create: semesterData
                       })
                     } else {
+                      // 完全恢复模式，使用原始ID
                       await tx.semester.create({
-                        data: semesterData
+                        data: {
+                          ...semesterData,
+                          id: record.id
+                        }
                       })
                     }
                     break
@@ -436,7 +516,13 @@ export default defineEventHandler(async (event) => {
                         await tx.systemSettings.create({ data: systemSettingsData })
                       }
                     } else {
-                      await tx.systemSettings.create({ data: systemSettingsData })
+                      // 完全恢复模式，使用原始ID
+                      await tx.systemSettings.create({ 
+                        data: {
+                          ...systemSettingsData,
+                          id: record.id
+                        }
+                      })
                     }
                     break
 
@@ -513,7 +599,13 @@ export default defineEventHandler(async (event) => {
                         await tx.schedule.create({ data: scheduleData })
                       }
                     } else {
-                      await tx.schedule.create({ data: scheduleData })
+                      // 完全恢复模式，使用原始ID
+                      await tx.schedule.create({ 
+                        data: {
+                          ...scheduleData,
+                          id: record.id
+                        }
+                      })
                     }
                     break
 
@@ -572,18 +664,13 @@ export default defineEventHandler(async (event) => {
                         create: notificationSettingsData
                       })
                     } else {
-                      // 在replace模式下，检查是否已存在该用户的设置
-                      const existingSettings = await tx.notificationSettings.findUnique({
-                        where: { userId: validUserId }
+                      // 完全恢复模式，使用原始ID
+                      await tx.notificationSettings.create({
+                        data: {
+                          ...notificationSettingsData,
+                          id: record.id
+                        }
                       })
-                      if (!existingSettings) {
-                        await tx.notificationSettings.create({
-                          data: notificationSettingsData
-                        })
-                      } else {
-                        console.warn(`用户ID ${validUserId} 的通知设置已存在，跳过此记录`)
-                        return
-                      }
                     }
                     break
 
@@ -644,7 +731,13 @@ export default defineEventHandler(async (event) => {
                         await tx.notification.create({ data: notificationData })
                       }
                     } else {
-                      await tx.notification.create({ data: notificationData })
+                      // 完全恢复模式，使用原始ID
+                      await tx.notification.create({ 
+                        data: {
+                          ...notificationData,
+                          id: record.id
+                        }
+                      })
                     }
                     break
 
