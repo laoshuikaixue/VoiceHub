@@ -27,21 +27,21 @@ async function repairDatabase() {
     console.log(chalk.green('✅ 数据库连接成功'));
     
     // 修复1：确保存在管理员用户
-    console.log(chalk.blue('👤 检查管理员用户...'));
-    const adminCount = await prisma.user.count({
+    console.log(chalk.blue('👤 检查超级管理员用户...'));
+    const superAdminCount = await prisma.user.count({
       where: {
-        role: 'ADMIN'
+        role: 'SUPER_ADMIN'
       }
     });
     
-    if (adminCount === 0) {
-      console.log(chalk.yellow('⚠️ 数据库中没有管理员用户，将创建默认管理员'));
+    if (superAdminCount === 0) {
+      console.log(chalk.yellow('⚠️ 数据库中没有超级管理员用户，将创建默认超级管理员'));
       
-      // 询问是否创建默认管理员
+      // 询问是否创建默认超级管理员
       const response = await prompts({
         type: 'confirm',
         name: 'confirm',
-        message: '是否创建默认管理员账户? (admin/admin123)',
+        message: '是否创建默认超级管理员账户? (admin/admin123)',
         initial: true
       });
       
@@ -51,18 +51,18 @@ async function repairDatabase() {
         await prisma.user.create({
           data: {
             username: 'admin',
-            name: '管理员',
+            name: '超级管理员',
             password: hashedPassword,
-            role: 'ADMIN'
+            role: 'SUPER_ADMIN'
           }
         });
         
-        console.log(chalk.green('✅ 已创建默认管理员账户 (用户名: admin, 密码: admin123)'));
+        console.log(chalk.green('✅ 已创建默认超级管理员账户 (用户名: admin, 密码: admin123)'));
       } else {
-        console.log(chalk.yellow('⚠️ 跳过创建管理员账户'));
+        console.log(chalk.yellow('⚠️ 跳过创建超级管理员账户'));
       }
     } else {
-      console.log(chalk.green(`✓ 数据库中已存在 ${adminCount} 个管理员用户`));
+      console.log(chalk.green(`✓ 数据库中已存在 ${superAdminCount} 个超级管理员用户`));
     }
     
     // 修复2：为所有用户创建通知设置
@@ -299,4 +299,4 @@ main()
   .catch(e => {
     console.error(e);
     process.exit(1);
-  }); 
+  });

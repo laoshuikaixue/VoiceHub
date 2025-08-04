@@ -106,19 +106,21 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-      // 检查该MeoW ID是否已被其他用户绑定
-      const existingUser = await prisma.user.findFirst({
+      // 检查是否有其他用户绑定了相同的 MeoW ID（仅用于记录，不阻止绑定）
+      const existingUsers = await prisma.user.findMany({
         where: {
           meowNickname: meowId,
           id: { not: userId }
+        },
+        select: {
+          name: true,
+          username: true
         }
       })
 
-      if (existingUser) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: '该 MeoW ID 已被其他用户绑定'
-        })
+      if (existingUsers.length > 0) {
+        console.log(`MeoW ID "${meowId}" 已被 ${existingUsers.length} 个其他用户绑定:`, 
+          existingUsers.map(u => `${u.name}(${u.username})`).join(', '))
       }
 
       // 生成验证码

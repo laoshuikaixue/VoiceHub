@@ -58,15 +58,15 @@ async function validateDatabase() {
       return false
     }
     
-    // 验证用户表是否存在管理员用户
-    const adminCount = await prisma.user.count({
+    // 验证用户表是否存在超级管理员用户
+    const superAdminCount = await prisma.user.count({
       where: {
-        role: 'ADMIN'
+        role: 'SUPER_ADMIN'
       }
     })
     
-    if (adminCount === 0) {
-      console.warn('数据库中没有管理员用户，可能需要初始化')
+    if (superAdminCount === 0) {
+      console.warn('数据库中没有超级管理员用户，可能需要初始化')
       return false
     }
     
@@ -144,4 +144,4 @@ export default defineNitroPlugin(async (nitroApp) => {
   nitroApp.hooks.hook('request', (event) => {
     event.context.prisma = prisma
   })
-}) 
+})

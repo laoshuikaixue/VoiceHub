@@ -21,7 +21,7 @@ async function main() {
   try {
     await prisma.$connect();
 
-    // 检查是否已有管理员用户
+    // 检查是否已有超级管理员用户
     const existingAdmin = await prisma.user.findUnique({
       where: { username: 'admin' }
     });
@@ -34,13 +34,13 @@ async function main() {
     // 加密密码
     const hashedPassword = await bcrypt.hash('admin123', 10);
 
-    // 创建管理员用户
+    // 创建超级管理员用户
     const admin = await prisma.user.create({
       data: {
         username: 'admin',
-        name: '管理员',
+        name: '超级管理员',
         password: hashedPassword,
-        role: 'ADMIN'
+        role: 'SUPER_ADMIN'
       }
     });
 

@@ -101,18 +101,18 @@ async function validateDatabase() {
     // 检查数据完整性
     console.log(chalk.blue('📊 检查数据完整性...'));
     
-    // 验证用户表是否存在管理员用户
-    const adminCount = await prisma.user.count({
+    // 验证用户表是否存在超级管理员用户
+    const superAdminCount = await prisma.user.count({
       where: {
-        role: 'ADMIN'
+        role: 'SUPER_ADMIN'
       }
     });
     
-    if (adminCount === 0) {
-      console.log(chalk.yellow('⚠️ 数据库中没有管理员用户，需要创建默认管理员'));
+    if (superAdminCount === 0) {
+      console.log(chalk.yellow('⚠️ 数据库中没有超级管理员用户，需要创建默认超级管理员'));
       return false;
     } else {
-      console.log(chalk.green(`✓ 数据库中存在 ${adminCount} 个管理员用户`));
+      console.log(chalk.green(`✓ 数据库中存在 ${superAdminCount} 个超级管理员用户`));
     }
     
     // 检查用户是否都有通知设置
@@ -178,4 +178,4 @@ main()
   .catch(e => {
     console.error(e);
     process.exit(1);
-  }); 
+  });

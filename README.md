@@ -335,17 +335,11 @@ VoiceHub/
 │   ├── images/             # 图片资源
 │   └── robots.txt          # 搜索引擎爬虫规则
 ├── scripts/               # 工具脚本目录
-│   ├── backup-and-migrate.js      # 用户数据备份迁移工具
 │   ├── check-database.js          # 数据库检查工具
 │   ├── check-deploy.js            # 部署检查工具
-│   ├── clear-database.js          # 数据库清理工具
 │   ├── create-admin.js            # 创建管理员账户脚本
 │   ├── database-backup.js         # 完整数据库备份工具
 │   ├── deploy.js                  # 自动化部署脚本
-│   ├── fix-database-validation.js # 修复数据库验证问题
-│   ├── fix-sequence.js            # 修复序列问题脚本
-│   ├── init-permissions.js        # 初始化权限系统
-│   ├── migrate-roles.js           # 角色系统迁移脚本
 │   ├── package.json               # 脚本依赖配置
 │   ├── repair-database.js         # 数据库修复工具
 │   └── setup-database.js          # 数据库初始化设置
