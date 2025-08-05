@@ -272,7 +272,9 @@ VoiceHub/
 │   │   ├── SiteConfigManager.vue  # 站点配置管理
 │   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
 │   │   ├── SongManagement.vue     # 歌曲管理
-│   │   └── UserManager.vue        # 用户管理
+│   │   ├── UserManager.vue        # 用户管理
+│   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
+│   │   └── VotersModal.vue        # 投票人员查看弹窗
 │   ├── Auth/              # 认证相关组件
 │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   └── LoginForm.vue         # 登录表单
@@ -394,6 +396,8 @@ VoiceHub/
 │   │   │   │   └── index.ts         # 获取系统设置
 │   │   │   └── users/               # 用户管理API
 │   │   │       ├── [id]/            # 用户详情操作子目录
+│   │   │       │   ├── reset-password.post.ts # 重置用户密码
+│   │   │       │   └── songs.get.ts # 获取用户歌曲信息
 │   │   │       ├── [id].delete.ts   # 删除用户
 │   │   │       ├── [id].put.ts      # 更新用户
 │   │   │       ├── [id].ts          # 用户详情

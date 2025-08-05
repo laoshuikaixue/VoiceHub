@@ -60,7 +60,9 @@
 <script setup>
 import Icon from './Icon.vue'
 
-defineProps({
+
+
+const props = defineProps({
   show: {
     type: Boolean,
     default: false

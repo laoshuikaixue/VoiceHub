@@ -109,6 +109,17 @@
                     </svg>
                   </button>
                   <button
+                    @click="viewUserSongs(user)"
+                    class="action-btn music-btn"
+                    title="查看歌曲"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M9 18V5l12-2v13"/>
+                      <circle cx="6" cy="18" r="3"/>
+                      <circle cx="18" cy="16" r="3"/>
+                    </svg>
+                  </button>
+                  <button
                     @click="resetPassword(user)"
                     class="action-btn warning-btn"
                     title="重置密码"
@@ -158,6 +169,17 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button
+                @click="viewUserSongs(user)"
+                class="action-btn music-btn"
+                title="查看歌曲"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 18V5l12-2v13"/>
+                  <circle cx="6" cy="18" r="3"/>
+                  <circle cx="18" cy="16" r="3"/>
                 </svg>
               </button>
               <button
@@ -548,12 +570,20 @@
       </div>
     </div>
   </div>
+
+  <!-- 用户歌曲模态框 -->
+  <UserSongsModal
+    :show="showUserSongsModal"
+    :user-id="selectedUserId"
+    @close="closeUserSongsModal"
+  />
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
+import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 
 // 响应式数据
 const loading = ref(false)
@@ -594,6 +624,10 @@ const xlsxLoaded = ref(false)
 const showDeleteModal = ref(false)
 const deletingUser = ref(null)
 const deleting = ref(false)
+
+// 用户歌曲模态框状态
+const showUserSongsModal = ref(false)
+const selectedUserId = ref(null)
 
 // 表单数据
 const userForm = ref({
@@ -717,6 +751,16 @@ const resetPassword = (user) => {
 const confirmDeleteUser = (user) => {
   deletingUser.value = user
   showDeleteModal.value = true
+}
+
+const viewUserSongs = (user) => {
+  selectedUserId.value = user.id
+  showUserSongsModal.value = true
+}
+
+const closeUserSongsModal = () => {
+  showUserSongsModal.value = false
+  selectedUserId.value = null
 }
 
 const closeDeleteModal = () => {
@@ -1423,6 +1467,15 @@ onMounted(async () => {
 
 .edit-btn:hover {
   background: #1d4ed8;
+}
+
+.music-btn {
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+.music-btn:hover {
+  background: #8b5cf6;
 }
 
 .warning-btn {

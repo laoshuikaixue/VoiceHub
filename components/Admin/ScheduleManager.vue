@@ -203,20 +203,13 @@
             >
             <div class="order-number">{{ index + 1 }}</div>
             <div class="scheduled-song-info">
-              <div class="song-title">{{ schedule.song.title }}</div>
-              <div class="song-artist">{{ schedule.song.artist }}</div>
+              <div class="song-main">
+                <div class="song-title">{{ schedule.song.title }}</div>
+                <div class="song-artist">{{ schedule.song.artist }}</div>
+                <div class="song-requester">投稿人: {{ schedule.song.requester }}</div>
+              </div>
             </div>
             <div class="song-actions">
-              <button
-                @click="removeFromSequence(index)"
-                class="remove-btn"
-                title="移除排期"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/>
-                  <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
               <div class="drag-handle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="8" cy="8" r="1.5"/>
@@ -870,26 +863,7 @@ const handleReturnToDraggable = async (event) => {
   }
 }
 
-const removeFromSequence = (index) => {
-  const schedule = localScheduledSongs.value[index]
-  if (!schedule) return
 
-  confirmDialogTitle.value = '移除排期'
-  confirmDialogMessage.value = `确定要移除歌曲 "${schedule.song.title}" 的排期吗？`
-  confirmDialogType.value = 'warning'
-  confirmDialogConfirmText.value = '移除'
-  confirmAction.value = () => {
-    scheduledSongIds.value.delete(schedule.song.id)
-    localScheduledSongs.value.splice(index, 1)
-
-    localScheduledSongs.value.forEach((item, idx) => {
-      item.sequence = idx + 1
-    })
-
-    hasChanges.value = true
-  }
-  showConfirmDialog.value = true
-}
 
 const saveSequence = async () => {
   try {
@@ -1440,6 +1414,15 @@ const openDownloadDialog = () => {
   flex: 1;
 }
 
+.song-requester {
+  font-size: 12px;
+  color: #888888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
 .song-submitter {
   font-size: 12px;
   color: #888888;
@@ -1523,28 +1506,7 @@ const openDownloadDialog = () => {
   gap: 8px;
 }
 
-.remove-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  background: #ef4444;
-  border: none;
-  color: #ffffff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
 
-.remove-btn:hover {
-  background: #dc2626;
-}
-
-.remove-btn svg {
-  width: 16px;
-  height: 16px;
-}
 
 /* 空状态 */
 .empty-message {

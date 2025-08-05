@@ -159,7 +159,7 @@
           
           <div class="cell stats-cell">
             <div class="song-stats">
-              <div class="stat-item">
+              <div class="stat-item clickable" @click="showVoters(song.id)" :title="song.voteCount > 0 ? '点击查看投票人员' : '暂无投票'">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
@@ -267,11 +267,19 @@
     @confirm="confirmDelete"
     @close="showDeleteDialog = false"
   />
+
+  <!-- 投票人员弹窗 -->
+  <VotersModal
+    :show="showVotersModal"
+    :song-id="selectedSongId"
+    @close="closeVotersModal"
+  />
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import VotersModal from '~/components/Admin/VotersModal.vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
 import { useAuth } from '~/composables/useAuth'
@@ -290,6 +298,10 @@ const showDeleteDialog = ref(false)
 const deleteDialogTitle = ref('')
 const deleteDialogMessage = ref('')
 const deleteAction = ref(null)
+
+// 投票人员弹窗相关
+const showVotersModal = ref(false)
+const selectedSongId = ref(null)
 
 // 数据
 const songs = ref([])
@@ -528,6 +540,18 @@ const batchDelete = async () => {
     }
   }
   showDeleteDialog.value = true
+}
+
+// 显示投票人员弹窗
+const showVoters = (songId) => {
+  selectedSongId.value = songId
+  showVotersModal.value = true
+}
+
+// 关闭投票人员弹窗
+const closeVotersModal = () => {
+  showVotersModal.value = false
+  selectedSongId.value = null
 }
 
 // 确认删除
@@ -931,9 +955,26 @@ onMounted(async () => {
   color: #888888;
 }
 
+.song-stats .stat-item.clickable {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.song-stats .stat-item.clickable:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.song-stats .stat-item.clickable:hover svg {
+  color: #ef4444;
+}
+
 .song-stats svg {
   width: 14px;
   height: 14px;
+  color: #ef4444;
 }
 
 .status-badge {
