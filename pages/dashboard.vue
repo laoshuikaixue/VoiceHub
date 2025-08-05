@@ -16,7 +16,8 @@
             </svg>
           </button>
           <div class="mobile-logo">
-            <span class="mobile-logo-text">{{ $config.public.siteTitle || 'VoiceHub' }}</span>
+            <span v-if="$config.public.siteTitle" class="mobile-logo-text">{{ $config.public.siteTitle }}</span>
+            <span v-else class="mobile-logo-text">VoiceHub</span>
             <span class="mobile-logo-subtitle">管理控制台</span>
           </div>
           <div class="mobile-user">
@@ -39,7 +40,8 @@
             <NuxtLink to="/" class="logo-link">
               <img src="/images/logo.svg" alt="VoiceHub Logo" class="logo-image" />
               <div class="logo-content">
-                <span class="logo-text">{{ $config.public.siteTitle || 'VoiceHub' }}</span>
+                <span v-if="$config.public.siteTitle" class="logo-text">{{ $config.public.siteTitle }}</span>
+                <span v-else class="logo-text">VoiceHub</span>
                 <span class="logo-subtitle">管理控制台</span>
               </div>
             </NuxtLink>
@@ -310,9 +312,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
@@ -352,6 +355,29 @@ const getPageTitle = () => {
   }
   return titles[activeTab.value] || '管理后台'
 }
+
+// 动态页面标题
+const dynamicTitle = computed(() => {
+  const currentPageTitle = getPageTitle()
+  if (siteTitle && siteTitle.value) {
+    return `${currentPageTitle} | ${siteTitle.value}`
+  }
+  return `${currentPageTitle} | 校园广播站点歌系统`
+})
+
+// 监听activeTab变化，更新页面标题
+watch(activeTab, () => {
+  if (typeof document !== 'undefined') {
+    document.title = dynamicTitle.value
+  }
+}, { immediate: true })
+
+// 监听siteTitle变化，更新页面标题
+watch(() => siteTitle?.value, () => {
+  if (typeof document !== 'undefined') {
+    document.title = dynamicTitle.value
+  }
+})
 
 const getRoleDisplayName = (role) => {
   const roleNames = {
@@ -470,6 +496,11 @@ onMounted(async () => {
   const userPages = permissions.getUserPages.value
   if (userPages.length > 0 && !userPages.includes(activeTab.value)) {
     activeTab.value = userPages[0]
+  }
+
+  // 设置初始页面标题
+  if (typeof document !== 'undefined') {
+    document.title = dynamicTitle.value
   }
 
   // 添加窗口大小监听器

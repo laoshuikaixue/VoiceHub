@@ -246,7 +246,6 @@ VoiceHub/
 ├── assets/                # 静态资源目录
 │   └── css/               # CSS样式文件
 │       ├── components.css      # 组件样式
-│       ├── fonts.css          # 字体样式
 │       ├── main.css           # 主样式文件
 │       ├── mobile-admin.css   # 移动端管理样式
 │       ├── print-fix.css      # 打印样式修复
@@ -297,7 +296,6 @@ VoiceHub/
 │   │   └── ProgressBar.vue        # 进度条组件
 │   └── SiteFooter.vue     # 站点页脚
 ├── composables/           # Vue 3 组合式API
-│   ├── __tests__/          # 组合式API测试目录
 │   ├── useAdmin.ts         # 管理员功能hooks
 │   ├── useAudioPlayer.ts   # 音频播放器hooks
 │   ├── useAudioQuality.ts  # 音质管理hooks
@@ -331,8 +329,11 @@ VoiceHub/
 │   └── seeds/             # 数据库种子文件目录
 ├── public/                # 公共静态资源
 │   ├── favicon.ico         # 网站图标
-│   ├── fonts/              # 字体文件
 │   ├── images/             # 图片资源
+│   │   ├── logo.jpg        # 站点Logo（JPG格式）
+│   │   ├── logo.svg        # 站点Logo（SVG格式）
+│   │   ├── search.svg      # 搜索图标
+│   │   └── thumbs-up.svg   # 点赞图标
 │   └── robots.txt          # 搜索引擎爬虫规则
 ├── scripts/               # 工具脚本目录
 │   ├── check-database.js          # 数据库检查工具
@@ -476,6 +477,7 @@ VoiceHub/
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 项目类型定义
 ├── utils/                 # 客户端工具函数
+│   ├── __tests__/          # 工具函数测试目录
 │   └── db-manager.ts       # 数据库管理工具
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
@@ -511,8 +513,7 @@ VoiceHub/
 
 #### 静态资源
 - **`public/`**: 静态文件，直接访问
-- **`public/fonts/`**: 自定义字体文件
-- **`public/images/`**: 图片资源
+- **`public/images/`**: 图片资源，包含Logo和图标文件
 
 ## 使用说明
 

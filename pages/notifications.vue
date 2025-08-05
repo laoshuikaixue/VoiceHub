@@ -117,6 +117,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useNotifications } from '~/composables/useNotifications'
 import { useAuth } from '~/composables/useAuth'
+import { useSiteConfig } from '~/composables/useSiteConfig'
+
+const { siteTitle, initSiteConfig } = useSiteConfig()
 
 
 // 中间件验证
@@ -137,6 +140,14 @@ const isAuthenticated = computed(() => auth.isAuthenticated.value)
 
 // 初始化
 onMounted(async () => {
+  // 初始化站点配置
+  await initSiteConfig()
+  
+  // 设置页面标题
+  if (typeof document !== 'undefined' && siteTitle.value) {
+    document.title = `通知 | ${siteTitle.value}`
+  }
+  
   if (isAuthenticated.value) {
     await fetchNotifications()
   }

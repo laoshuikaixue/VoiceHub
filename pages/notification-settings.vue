@@ -248,6 +248,9 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import { useSiteConfig } from '~/composables/useSiteConfig'
+
+const { siteTitle } = useSiteConfig()
 
 // 页面状态
 const loading = ref(true)
@@ -286,6 +289,11 @@ const confirmDialog = ref({
 
 // 页面初始化
 onMounted(async () => {
+  // 设置页面标题
+  if (typeof document !== 'undefined' && siteTitle.value) {
+    document.title = `通知设置 | ${siteTitle.value}`
+  }
+  
   await loadSettings()
 })
 

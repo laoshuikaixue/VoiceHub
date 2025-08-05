@@ -52,7 +52,7 @@
         </div>
       </div>
 
-      <div class="site-title">
+      <div v-if="siteTitle" class="site-title">
         <h2>{{ siteTitle || 'VoiceHub示例站' }}</h2>
       </div>
 
@@ -281,7 +281,8 @@
 
         <div class="modal-body">
           <div class="about-content">
-            <h3 class="font-bold mb-2">关于{{ siteTitle || 'VoiceHub' }}</h3>
+            <h3 v-if="siteTitle" class="font-bold mb-2">关于{{ siteTitle }}</h3>
+            <h3 v-else class="font-bold mb-2">关于VoiceHub</h3>
             <p class="mb-4">VoiceHub是由LaoShui开发，计划服务于舟山市六横中学的点歌系统。</p>
 
             <h3 class="font-bold mb-2">联系方式</h3>
@@ -325,7 +326,7 @@ const config = useRuntimeConfig()
 const router = useRouter()
 
 // 站点配置
-const { title: siteTitle, description: siteDescription, guidelines: submissionGuidelines, icp: icpNumber, schoolLogoHomeUrl, initSiteConfig } = useSiteConfig()
+const { siteTitle, description: siteDescription, guidelines: submissionGuidelines, icp: icpNumber, schoolLogoHomeUrl, initSiteConfig } = useSiteConfig()
 
 // 服务器端安全的认证状态管理
 const isClientAuthenticated = ref(false)
@@ -527,10 +528,22 @@ const loadSongCount = async () => {
   }
 }
 
+// 监听siteTitle变化，确保首页title正确设置
+watch(siteTitle, (newSiteTitle) => {
+  if (typeof document !== 'undefined' && newSiteTitle) {
+    document.title = `首页 | ${newSiteTitle}`
+  }
+}, { immediate: true })
+
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
+  
+  // 确保title正确设置
+  if (typeof document !== 'undefined' && siteTitle.value) {
+    document.title = `首页 | ${siteTitle.value}`
+  }
   
   auth = useAuth()
 

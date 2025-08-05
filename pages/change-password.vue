@@ -6,7 +6,7 @@
         <div class="info-content">
           <div class="logo-section">
             <img src="/images/logo.svg" alt="VoiceHub Logo" class="brand-logo" />
-            <h1 class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
+            <h1 v-if="siteTitle" class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
           </div>
 
           <div v-if="isFirstLogin" class="welcome-message">
@@ -85,6 +85,11 @@ const isFirstLogin = ref(false)
 onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
+  
+  // 设置页面标题
+  if (typeof document !== 'undefined' && siteTitle.value) {
+    document.title = `修改密码 | ${siteTitle.value}`
+  }
   
   if (!auth.isAuthenticated.value && process.client) {
     router.push('/login')

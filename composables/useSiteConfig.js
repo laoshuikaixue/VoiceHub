@@ -40,11 +40,6 @@ export const useSiteConfig = () => {
       siteConfig.value = data
       isLoaded.value = true
       
-      // 更新页面标题
-      if (data.siteTitle && typeof document !== 'undefined') {
-        document.title = `${data.siteTitle} | VoiceHub`
-      }
-      
     } catch (error) {
       console.error('获取站点配置失败:', error)
       
@@ -65,7 +60,7 @@ export const useSiteConfig = () => {
   }
 
   // 计算属性
-  const title = computed(() => siteConfig.value.siteTitle ? `${siteConfig.value.siteTitle} | VoiceHub` : '校园广播站点歌系统 | VoiceHub')
+  const siteTitle = computed(() => siteConfig.value.siteTitle || '校园广播站点歌系统')
   const logoUrl = computed(() => siteConfig.value.siteLogoUrl || '/favicon.ico')
   const schoolLogoHomeUrl = computed(() => siteConfig.value.schoolLogoHomeUrl || '')
   const schoolLogoPrintUrl = computed(() => siteConfig.value.schoolLogoPrintUrl || '')
@@ -90,7 +85,7 @@ export const useSiteConfig = () => {
     siteConfig: readonly(siteConfig),
     isLoaded: readonly(isLoaded),
     isLoading: readonly(isLoading),
-    title,
+    siteTitle,
     logoUrl,
     schoolLogoHomeUrl,
     schoolLogoPrintUrl,

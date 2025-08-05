@@ -2,7 +2,8 @@
   <footer class="site-footer" v-if="showFooter">
     <div class="footer-content">
       <div class="footer-links">
-        <span class="footer-text">© {{ currentYear }} {{ siteTitle }}</span>
+        <span v-if="siteTitle" class="footer-text">© {{ currentYear }} {{ siteTitle }}</span>
+        <span v-else class="footer-text">© {{ currentYear }} VoiceHub</span>
         <span v-if="icpNumber" class="icp-number">
           <a :href="icpLink" target="_blank" rel="noopener noreferrer">
             {{ icpNumber }}

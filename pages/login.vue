@@ -6,7 +6,7 @@
         <div class="brand-content">
           <div class="logo-section">
             <img src="/images/logo.svg" alt="VoiceHub Logo" class="brand-logo" />
-            <h1 class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
+            <h1 v-if="siteTitle" class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
           </div>
           <p class="brand-description">
             校园广播站点歌管理系统
@@ -65,6 +65,11 @@ const router = useRouter()
 onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
+  
+  // 设置页面标题
+  if (typeof document !== 'undefined' && siteTitle.value) {
+    document.title = `登录 | ${siteTitle.value}`
+  }
   
   const auth = useAuth()
   isClientAuthenticated.value = auth.isAuthenticated.value

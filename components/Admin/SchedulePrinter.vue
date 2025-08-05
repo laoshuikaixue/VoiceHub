@@ -182,7 +182,8 @@
               class="school-logo-print"
             />
                 <div class="title-section">
-                  <h1>{{ siteTitle }}</h1>
+                  <h1 v-if="siteTitle">{{ siteTitle }}</h1>
+                  <h1 v-else>VoiceHub</h1>
                   <h2>广播排期表</h2>
                 </div>
               </div>
