@@ -1,4 +1,4 @@
-import { createError, defineEventHandler } from 'h3'
+import { createError, defineEventHandler, getQuery } from 'h3'
 import { prisma } from '../../models/schema'
 import { executeWithPool } from '~/server/utils/db-pool'
 
@@ -14,12 +14,23 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    console.log(`[Songs API] 用户 ${user.name} 请求歌曲列表`)
+    // 获取查询参数
+    const query = getQuery(event)
+    const semester = query.semester as string
+
+    console.log(`[Songs API] 用户 ${user.name} 请求歌曲列表${semester ? ` (学期: ${semester})` : ''}`)
 
     // 使用连接池执行数据库操作
     const result = await executeWithPool(async () => {
-      // 获取所有歌曲及其投票数
+      // 构建查询条件
+      const whereCondition: any = {}
+      if (semester) {
+        whereCondition.semester = semester
+      }
+
+      // 获取歌曲及其投票数
       const songs = await prisma.song.findMany({
+        where: whereCondition,
         include: {
           requester: {
             select: {

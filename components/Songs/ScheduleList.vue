@@ -1,5 +1,15 @@
 <template>
   <div class="schedule-list">
+    <!-- 学期选择器 -->
+    <div v-if="availableSemesters.length > 1" class="semester-selector">
+      <label class="semester-label">学期：</label>
+      <select v-model="selectedSemester" @change="onSemesterChange" class="semester-select">
+        <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.id">
+          {{ semester.name }}
+        </option>
+      </select>
+    </div>
+    
     <!-- 两列布局：左侧日期选择，右侧排期展示 -->
     <div class="schedule-container">
       <!-- 左侧日期选择列表 - 移除标题和框 -->
@@ -183,8 +193,9 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useSongs } from '~/composables/useSongs'
+import { useSemesters } from '~/composables/useSemesters'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import Icon from '~/components/UI/Icon.vue'
 import { convertToHttps } from '~/utils/url'
@@ -210,13 +221,19 @@ const audioPlayer = useAudioPlayer()
 // 获取播放时段启用状态
 const { playTimeEnabled } = useSongs()
 
+// 学期相关
+const { fetchCurrentSemester, currentSemester } = useSemesters()
+const availableSemesters = ref([])
+const selectedSemester = ref(null)
+const preserveSelectedDate = ref(false) // 用于标记是否保持选择的日期
+
 // 确保schedules不为null
 const safeSchedules = computed(() => props.schedules || [])
 
 // 日期选择器状态
 const showDatePicker = ref(false)
 
-// 按日期分组排期
+// 按日期分组排期（添加学期过滤）
 const safeGroupedSchedules = computed(() => {
   const groups = {}
 
@@ -226,6 +243,14 @@ const safeGroupedSchedules = computed(() => {
 
   safeSchedules.value.forEach(schedule => {
     if (!schedule || !schedule.playDate) return
+
+    // 如果选择了特定学期，只显示该学期的排期
+    if (selectedSemester.value && schedule.song && schedule.song.semester) {
+      const selectedSemesterName = availableSemesters.value.find(s => s.id === selectedSemester.value)?.name
+      if (selectedSemesterName && schedule.song.semester !== selectedSemesterName) {
+        return
+      }
+    }
 
     try {
       // 使用UTC时间处理日期
@@ -263,11 +288,12 @@ const currentDate = computed(() => {
   return availableDates.value[currentDateIndex.value]
 })
 
-// 当日期列表变化时切换到今天日期
+// 当日期列表变化时切换到今天日期（除非是学期切换导致的变化）
 watch(availableDates, (newDates) => {
-  if (newDates.length > 0) {
+  if (newDates.length > 0 && !preserveSelectedDate.value) {
     findAndSelectTodayOrClosestDate()
   }
+  preserveSelectedDate.value = false // 重置标记
 }, { immediate: false })
 
 // 提取日期选择逻辑到独立函数
@@ -277,17 +303,38 @@ const findAndSelectTodayOrClosestDate = () => {
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
   
-  // 查找今天的日期索引
-  const todayIndex = availableDates.value.findIndex(date => date === todayStr)
-  
-  if (todayIndex >= 0) {
-    // 如果找到今天的日期，则选择它
-    currentDateIndex.value = todayIndex
-  } else {
-    // 如果今天没有排期，找到最接近今天的未来日期
+  // 在宽屏模式下，优先显示最近的日期（今天或之后最近的日期）
+  if (!isMobile.value) {
     const todayTime = today.getTime()
-    let closestFutureDate = -1
-    let minDiff = Number.MAX_SAFE_INTEGER
+    let closestFutureIndex = -1
+    let minFutureDiff = Number.MAX_SAFE_INTEGER
+    
+    // 查找今天或之后最近的日期
+    availableDates.value.forEach((dateStr, index) => {
+      const dateParts = dateStr.split('-')
+      const date = new Date(
+        parseInt(dateParts[0]),
+        parseInt(dateParts[1]) - 1,
+        parseInt(dateParts[2])
+      )
+      const diff = date.getTime() - todayTime
+      
+      // 优先选择今天或未来的日期
+      if (diff >= 0 && diff < minFutureDiff) {
+        minFutureDiff = diff
+        closestFutureIndex = index
+      }
+    })
+    
+    // 如果找到了今天或未来的日期，选择它
+    if (closestFutureIndex >= 0) {
+      currentDateIndex.value = closestFutureIndex
+      return
+    }
+    
+    // 如果没有今天或未来的日期，选择最近的过去日期
+    let closestPastIndex = -1
+    let minPastDiff = Number.MAX_SAFE_INTEGER
     
     availableDates.value.forEach((dateStr, index) => {
       const dateParts = dateStr.split('-')
@@ -296,16 +343,51 @@ const findAndSelectTodayOrClosestDate = () => {
         parseInt(dateParts[1]) - 1,
         parseInt(dateParts[2])
       )
-      const diff = Math.abs(date.getTime() - todayTime)
+      const diff = todayTime - date.getTime()
       
-      if (diff < minDiff) {
-        minDiff = diff
-        closestFutureDate = index
+      if (diff > 0 && diff < minPastDiff) {
+        minPastDiff = diff
+        closestPastIndex = index
       }
     })
     
-    if (closestFutureDate >= 0) {
-      currentDateIndex.value = closestFutureDate
+    if (closestPastIndex >= 0) {
+      currentDateIndex.value = closestPastIndex
+    } else {
+      // 如果都没找到，默认选择第一个
+      currentDateIndex.value = 0
+    }
+  } else {
+    // 移动端保持原有逻辑：优先选择今天
+    const todayIndex = availableDates.value.findIndex(date => date === todayStr)
+    
+    if (todayIndex >= 0) {
+      // 如果找到今天的日期，则选择它
+      currentDateIndex.value = todayIndex
+    } else {
+      // 如果今天没有排期，找到最接近今天的日期
+      const todayTime = today.getTime()
+      let closestDate = -1
+      let minDiff = Number.MAX_SAFE_INTEGER
+      
+      availableDates.value.forEach((dateStr, index) => {
+        const dateParts = dateStr.split('-')
+        const date = new Date(
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2])
+        )
+        const diff = Math.abs(date.getTime() - todayTime)
+        
+        if (diff < minDiff) {
+          minDiff = diff
+          closestDate = index
+        }
+      })
+      
+      if (closestDate >= 0) {
+        currentDateIndex.value = closestDate
+      }
     }
   }
 }
@@ -405,11 +487,77 @@ const handleResize = () => {
   }, 100)
 }
 
+// 获取可用学期列表
+const fetchAvailableSemesters = async () => {
+  try {
+    // 从排期中提取学期信息
+    const semesters = new Set()
+    safeSchedules.value.forEach(schedule => {
+      if (schedule.song && schedule.song.semester) {
+        semesters.add(schedule.song.semester)
+      }
+    })
+    
+    // 获取当前学期
+    await fetchCurrentSemester()
+    
+    // 构建学期列表，当前学期排在第一位
+    const semesterList = []
+    if (currentSemester.value) {
+      semesterList.push({
+        id: currentSemester.value.id || 'current',
+        name: currentSemester.value.name
+      })
+    }
+    
+    // 添加其他学期
+    Array.from(semesters).forEach(semesterName => {
+      if (!currentSemester.value || semesterName !== currentSemester.value.name) {
+        semesterList.push({
+          id: semesterName,
+          name: semesterName
+        })
+      }
+    })
+    
+    availableSemesters.value = semesterList
+    
+    // 默认选择当前学期
+    if (semesterList.length > 0) {
+      selectedSemester.value = semesterList[0].id
+    }
+  } catch (error) {
+    console.error('获取学期列表失败:', error)
+  }
+}
+
+// 学期切换处理
+const onSemesterChange = () => {
+  preserveSelectedDate.value = true // 标记保持选择的日期
+  // 学期切换后，如果当前选择的日期在新学期中不存在，则选择最近的日期
+  nextTick(() => {
+    if (availableDates.value.length > 0) {
+      const currentDateStr = currentDate.value
+      if (currentDateStr && availableDates.value.includes(currentDateStr)) {
+        // 当前日期在新学期中存在，保持选择
+        const index = availableDates.value.indexOf(currentDateStr)
+        currentDateIndex.value = index
+      } else {
+        // 当前日期在新学期中不存在，选择最近的日期
+        findAndSelectTodayOrClosestDate()
+      }
+    }
+  })
+}
+
 // 监听窗口大小变化
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('resize', handleResize)
   // 初始化移动状态
   isMobile.value = window.innerWidth <= 768
+  
+  // 获取学期列表
+  await fetchAvailableSemesters()
   
   // 寻找今天的日期并自动选择 - 初始加载时也尝试一次
   findAndSelectTodayOrClosestDate()
@@ -684,6 +832,63 @@ const vRipple = {
   padding: 0 !important;
   max-width: none !important;
   min-height: 50vh; /* 确保排期列表有足够的高度 */
+}
+
+/* 学期选择器样式 */
+.semester-selector {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(11, 90, 254, 0.1) 0%, rgba(33, 36, 45, 0.9) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(11, 90, 254, 0.2);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.semester-label {
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 500;
+  margin-right: 0.75rem;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.semester-select {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  color: #FFFFFF;
+  padding: 0.6rem 1rem;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.semester-select:hover {
+  background: linear-gradient(135deg, rgba(11, 90, 254, 0.2) 0%, rgba(255, 255, 255, 0.15) 100%);
+  border-color: rgba(11, 90, 254, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(11, 90, 254, 0.2);
+}
+
+.semester-select:focus {
+  outline: none;
+  border-color: #0B5AFE;
+  box-shadow: 0 0 0 3px rgba(11, 90, 254, 0.3), 0 4px 12px rgba(11, 90, 254, 0.2);
+  transform: translateY(-1px);
+}
+
+.semester-select option {
+  background: #1A1D24;
+  color: #FFFFFF;
+  padding: 0.5rem;
 }
 
 /* 两列布局容器 */

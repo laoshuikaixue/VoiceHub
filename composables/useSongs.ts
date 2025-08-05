@@ -68,7 +68,7 @@ export const useSongs = () => {
   }
   
   // 获取歌曲列表（需要登录）- 显示加载状态
-  const fetchSongs = async (silent = false) => {
+  const fetchSongs = async (silent = false, semester?: string) => {
     if (!isAuthenticated.value) {
       error.value = '需要登录才能获取歌曲列表'
       return
@@ -83,8 +83,15 @@ export const useSongs = () => {
       // 显式传递认证头
       const authHeaders = getAuthHeader()
       
+      // 构建URL参数
+      const params = new URLSearchParams()
+      if (semester) {
+        params.append('semester', semester)
+      }
+      const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
+      
       // 使用fetch代替$fetch，以确保认证头被正确发送
-      const response = await fetch('/api/songs', {
+      const response = await fetch(url, {
         headers: {
           ...authHeaders.headers,
           'Content-Type': 'application/json'
@@ -162,14 +169,21 @@ export const useSongs = () => {
   }
   
   // 获取公共排期（无需登录）
-  const fetchPublicSchedules = async (silent = false) => {
+  const fetchPublicSchedules = async (silent = false, semester?: string) => {
     if (!silent) {
     loading.value = true
     }
     error.value = ''
     
     try {
-      const data = await $fetch('/api/songs/public')
+      // 构建URL参数
+      const params = new URLSearchParams()
+      if (semester) {
+        params.append('semester', semester)
+      }
+      const url = `/api/songs/public${params.toString() ? '?' + params.toString() : ''}`
+      
+      const data = await $fetch(url)
       
       // 确保每个排期的歌曲都有played属性，并处理null/undefined转换
       const processedData = data.map((schedule: any) => {

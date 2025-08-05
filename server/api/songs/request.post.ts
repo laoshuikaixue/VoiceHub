@@ -221,4 +221,3 @@ function getCurrentSemester() {
   
   return `${academicYear}-${academicYear + 1}学年${term}学期`
 }
-

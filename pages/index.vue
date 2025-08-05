@@ -98,6 +98,7 @@
                   :schedules="publicSchedules"
                   :loading="loading"
                   :error="error"
+                  @semester-change="handleSemesterChange"
                 />
               </ClientOnly>
             </div>
@@ -114,6 +115,7 @@
                     @vote="handleVote"
                     @withdraw="handleWithdraw"
                     @refresh="refreshSongs"
+                    @semester-change="handleSemesterChange"
                   />
                 </ClientOnly>
               </div>
@@ -491,7 +493,7 @@ const requestFormRef = ref(null)
 // 旧的showNotification函数已移除，使用全局通知系统
 
 // 更新歌曲数量统计
-const updateSongCounts = async () => {
+const updateSongCounts = async (semester = null) => {
   try {
     // 更新排期歌曲数量
     const schedules = songs?.publicSchedules?.value || []
@@ -504,7 +506,8 @@ const updateSongCounts = async () => {
     } else {
       // 未登录用户：从公共API获取歌曲总数
       try {
-        const response = await fetch('/api/songs/count')
+        const url = semester ? `/api/songs/count?semester=${encodeURIComponent(semester)}` : '/api/songs/count'
+        const response = await fetch(url)
         const data = await response.json()
         songCount.value = data.count
       } catch (err) {
@@ -789,6 +792,20 @@ const refreshSongs = async () => {
     updateSongCounts()
   } catch (err) {
     console.error('刷新歌曲列表失败', err)
+  }
+}
+
+// 处理学期变化
+const handleSemesterChange = async (semester) => {
+  try {
+    if (isClientAuthenticated.value) {
+      await songs.fetchSongs(semester)
+    } else {
+      await songs.fetchPublicSchedules(semester)
+    }
+    await updateSongCounts(semester)
+  } catch (err) {
+    console.error('切换学期失败', err)
   }
 }
 

@@ -1,9 +1,13 @@
-import { createError, defineEventHandler } from 'h3'
+import { createError, defineEventHandler, getQuery } from 'h3'
 import { prisma } from '../../models/schema'
 import { executeWithPool } from '~/server/utils/db-pool'
 
 export default defineEventHandler(async (event) => {
   try {
+    // 获取查询参数
+    const query = getQuery(event)
+    const semester = query.semester as string
+    
     // 获取当前日期，使用UTC时间
     const now = new Date()
     const today = new Date(Date.UTC(
@@ -13,10 +17,18 @@ export default defineEventHandler(async (event) => {
       0, 0, 0, 0
     ))
     
-    // 获取所有排期的歌曲，包含播放时段信息
+    // 获取排期的歌曲，包含播放时段信息
     const result = await executeWithPool(async () => {
+      // 构建查询条件
+      const whereCondition: any = {}
+      if (semester) {
+        whereCondition.song = {
+          semester: semester
+        }
+      }
+      
       const schedules = await prisma.schedule.findMany({
-        // 移除日期过滤器，返回所有排期
+        where: whereCondition,
         include: {
           song: {
             include: {
@@ -139,4 +151,4 @@ export default defineEventHandler(async (event) => {
       statusMessage: error.message || '获取排期数据失败'
     })
   }
-}) 
+})

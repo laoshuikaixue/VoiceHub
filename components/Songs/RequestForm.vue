@@ -342,6 +342,7 @@ import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
+import { useSemesters } from '~/composables/useSemesters'
 import DuplicateSongModal from './DuplicateSongModal.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps } from '~/utils/url'
@@ -361,6 +362,9 @@ const { guidelines: submissionGuidelines, initSiteConfig } = useSiteConfig()
 // 用户认证
 const auth = useAuth()
 const user = computed(() => auth.user.value)
+
+// 学期管理
+const { fetchCurrentSemester, currentSemester } = useSemesters()
 
 const title = ref('')
 const artist = ref('')
@@ -417,9 +421,12 @@ onMounted(async () => {
   fetchPlayTimes()
   initSiteConfig()
   fetchSubmissionStatus()
-  // 加载歌曲列表以便检查相似歌曲
+  // 获取当前学期
+  await fetchCurrentSemester()
+  // 加载歌曲列表以便检查相似歌曲，只加载当前学期的歌曲
   try {
-    await songService.fetchSongs()
+    const currentSemesterName = currentSemester.value?.name
+    await songService.fetchSongs(false, currentSemesterName)
   } catch (error) {
     console.error('加载歌曲列表失败:', error)
   }
@@ -539,11 +546,22 @@ const getSimilarSong = (result) => {
   const normalizedTitle = normalizeString(title)
   const normalizedArtist = normalizeString(artist)
   
-  // 检查完全匹配的歌曲（标准化后）
+  // 获取当前学期名称
+  const currentSemesterName = currentSemester.value?.name
+  
+  // 检查完全匹配的歌曲（标准化后），只检查当前学期的歌曲
   return songService.songs.value.find(song => {
     const songTitle = normalizeString(song.title)
     const songArtist = normalizeString(song.artist)
-    return songTitle === normalizedTitle && songArtist === normalizedArtist
+    const titleMatch = songTitle === normalizedTitle && songArtist === normalizedArtist
+    
+    // 如果有当前学期信息，只检查当前学期的歌曲
+    if (currentSemesterName) {
+      return titleMatch && song.semester === currentSemesterName
+    }
+    
+    // 如果没有学期信息，检查所有歌曲（向后兼容）
+    return titleMatch
   })
 }
 

@@ -34,6 +34,31 @@
           <span class="search-icon">🔍</span>
         </div>
         
+        <!-- 学期选择器 -->
+        <div v-if="availableSemesters.length > 1" class="semester-selector-compact">
+          <button 
+            class="semester-toggle-btn"
+            @click="showSemesterDropdown = !showSemesterDropdown"
+            :title="'当前学期: ' + selectedSemester"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/>
+            </svg>
+          </button>
+          
+          <div v-if="showSemesterDropdown" class="semester-dropdown">
+            <div 
+              v-for="semester in availableSemesters" 
+              :key="semester"
+              class="semester-option"
+              :class="{ 'active': selectedSemester === semester }"
+              @click="onSemesterChange(semester)"
+            >
+              {{ semester }}
+            </div>
+          </div>
+        </div>
+        
         <!-- 添加刷新按钮 - 使用SVG图标 -->
         <button 
           class="refresh-button"
@@ -224,6 +249,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useSemesters } from '~/composables/useSemesters'
 import Icon from '~/components/UI/Icon.vue'
 import { convertToHttps } from '~/utils/url'
 
@@ -246,7 +272,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['vote', 'withdraw', 'refresh'])
+const emit = defineEmits(['vote', 'withdraw', 'refresh', 'semester-change'])
 const voteInProgress = ref(false)
 const actionInProgress = ref(false)
 const sortBy = ref('popularity')
@@ -255,6 +281,12 @@ const searchQuery = ref('') // 搜索查询
 const activeTab = ref('all') // 默认显示全部投稿
 const auth = useAuth()
 const isAuthenticated = computed(() => auth && auth.isAuthenticated && auth.isAuthenticated.value)
+
+// 学期相关
+const { fetchCurrentSemester, currentSemester } = useSemesters()
+const availableSemesters = ref([])
+const selectedSemester = ref('')
+const showSemesterDropdown = ref(false)
 
 // 音频播放相关
 const audioPlayer = useAudioPlayer()
@@ -280,11 +312,17 @@ const checkMobile = () => {
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  fetchAvailableSemesters()
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
 })
+
+// 监听歌曲数据变化，更新学期信息
+watch(() => props.songs, () => {
+  fetchAvailableSemesters()
+}, { deep: true })
 
 // 确认对话框
 const confirmDialog = ref({
@@ -321,6 +359,11 @@ const displayedSongs = computed(() => {
   if (!props.songs) return []
   
   let result = [...props.songs]
+  
+  // 应用学期过滤器
+  if (selectedSemester.value) {
+    result = result.filter(song => song.semester === selectedSemester.value)
+  }
   
   // 应用标签过滤器
   if (activeTab.value === 'mine') {
@@ -612,6 +655,35 @@ const isCurrentPlaying = (songId) => {
   return audioPlayer.isCurrentPlaying(songId)
 }
 
+// 学期相关函数
+const fetchAvailableSemesters = async () => {
+  try {
+    // 从歌曲数据中提取学期信息
+    const semesters = [...new Set(props.songs.map(song => song.semester).filter(Boolean))]
+    availableSemesters.value = semesters.sort().reverse() // 按时间倒序排列
+    
+    // 只在第一次加载时设置默认学期
+    if (!selectedSemester.value && availableSemesters.value.length > 0) {
+      // 获取当前学期
+      await fetchCurrentSemester()
+      if (currentSemester.value && availableSemesters.value.includes(currentSemester.value)) {
+        selectedSemester.value = currentSemester.value
+      } else {
+        selectedSemester.value = availableSemesters.value[0]
+      }
+    }
+  } catch (error) {
+    console.error('获取学期信息失败:', error)
+  }
+}
+
+const onSemesterChange = (semester) => {
+  selectedSemester.value = semester
+  showSemesterDropdown.value = false
+  currentPage.value = 1 // 重置到第一页
+  emit('semester-change', semester)
+}
+
 // 当组件销毁时不需要特殊处理，音频播放由全局管理
 
 // 波纹效果指令
@@ -731,6 +803,71 @@ const vRipple = {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+/* 紧凑型学期选择器样式 */
+.semester-selector-compact {
+  position: relative;
+}
+
+.semester-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #21242D;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  padding: 0;
+}
+
+.semester-toggle-btn:hover {
+  background: #2A2E38;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: #0B5AFE;
+}
+
+.semester-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #1A1D24;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  min-width: 180px;
+  overflow: hidden;
+}
+
+.semester-option {
+  padding: 0.75rem 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.semester-option:last-child {
+  border-bottom: none;
+}
+
+.semester-option:hover {
+  background: rgba(11, 90, 254, 0.1);
+  color: #FFFFFF;
+}
+
+.semester-option.active {
+  background: rgba(11, 90, 254, 0.2);
+  color: #0B5AFE;
+  font-weight: 600;
 }
 
 .search-box {
