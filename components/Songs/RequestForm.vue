@@ -17,8 +17,6 @@
       </div>
     </div>
 
-
-
     <div class="form-container">
       <form @submit.prevent="handleSearch" class="song-request-form">
         <!-- 歌曲搜索区域 -->
@@ -103,7 +101,9 @@
                     <div class="result-cover">
                       <img :src="result.cover" alt="封面" class="cover-img" />
                       <div class="play-overlay" @click.stop="playSong(result)">
-                        <span class="play-icon">▶</span>
+                        <div class="play-button-bg">
+                          <Icon name="play" :size="24" color="white" />
+                        </div>
                       </div>
                     </div>
                     <div class="result-info">
@@ -1927,8 +1927,8 @@ defineExpose({
 
 .result-item {
   display: flex;
-  padding: 1rem 0;
-  gap: 1rem;
+  padding: 1rem 1.5rem 1rem 1.5rem;
+  gap: 1.2rem;
   transition: all 0.2s ease;
   cursor: pointer;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -1962,22 +1962,34 @@ defineExpose({
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
   opacity: 0;
   border-radius: 6px;
   transition: opacity 0.2s ease;
+  cursor: pointer;
 }
 
 .result-cover:hover .play-overlay {
   opacity: 1;
 }
 
-.play-icon {
+.play-button-bg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(11, 90, 254, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: white;
-  font-size: 24px;
+  transition: transform 0.2s ease;
+}
+
+.play-button-bg:hover {
+  transform: scale(1.1);
 }
 
 .result-info {
@@ -2015,6 +2027,7 @@ defineExpose({
   align-items: center;
   flex-direction: column;
   gap: 0.5rem;
+  margin-right: 0.5rem;
 }
 
 .similar-song-info {
