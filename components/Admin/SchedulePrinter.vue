@@ -283,6 +283,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRuntimeConfig } from '#app'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { convertToHttps } from '~/utils/url'
 
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
@@ -992,7 +993,7 @@ const generateScheduleItems = (schedules) => {
           flex-shrink: 0;
         ">
           ${schedule.song?.cover ?
-            `<img src="${schedule.song.cover}" alt="${schedule.song?.title || '歌曲'}" style="
+            `<img src="${convertToHttps(schedule.song.cover)}" alt="${schedule.song?.title || '歌曲'}" style="
               width: 100%;
               height: 100%;
               object-fit: cover;

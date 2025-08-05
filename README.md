@@ -433,9 +433,7 @@ VoiceHub/
 │   │   │   └── id.ts                # 进度ID管理
 │   │   ├── proxy.ts        # 代理服务主文件
 │   │   ├── proxy/          # 代理服务API
-│   │   │   ├── audio.get.ts         # 音频代理（支持Range请求和缓存）
-│   │   │   ├── image.get.ts         # 图片代理（解决HTTP/HTTPS混合内容及跨域问题）
-│   │   │   └── music-url.post.ts    # 音乐URL代理（获取播放链接）
+│   │   │   └── image.get.ts         # 图片代理（解决HTTP/HTTPS混合内容及跨域问题）
 │   │   ├── semesters/      # 学期API
 │   │   │   └── current.get.ts       # 获取当前学期
 │   │   ├── site-config.get.ts       # 站点配置API
@@ -478,7 +476,8 @@ VoiceHub/
 │   └── index.ts            # 项目类型定义
 ├── utils/                 # 客户端工具函数
 │   ├── __tests__/          # 工具函数测试目录
-│   └── db-manager.ts       # 数据库管理工具
+│   ├── db-manager.ts       # 数据库管理工具
+│   └── url.ts              # URL处理工具（HTTPS转换等）
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
 ├── .vercelignore          # Vercel部署忽略文件
@@ -636,36 +635,14 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
    npx prisma migrate reset
    ```
 
-## HTTP/HTTPS代理服务
+## 混合内容问题解决
 
-VoiceHub 内置了强大的代理服务系统，专门解决HTTPS环境下访问HTTP资源的混合内容问题，确保系统在各种部署环境下都能正常工作。
+VoiceHub 自动解决HTTPS环境下访问HTTP资源的混合内容问题：
 
-### 🔒 混合内容问题解决
-
-在HTTPS环境下（如Vercel、Netlify等平台），浏览器会阻止加载HTTP资源，导致以下问题：
-- 学校Logo等HTTP图片无法显示
-- HTTP音频链接无法播放
-- 音乐下载功能受限
-
-VoiceHub通过以下代理API解决了这些问题：
-
-#### 图片代理服务 (`/api/proxy/image`)
-- **自动检测**：系统自动检测HTTP图片链接并通过代理访问
-- **透明代理**：对用户完全透明，无需修改现有配置
-- **缓存优化**：支持浏览器缓存，提高加载速度
-- **错误处理**：优雅处理图片加载失败的情况
-
-#### 音频代理服务 (`/api/proxy/audio`)
-- **Range请求支持**：完整支持HTTP Range请求，实现音频的快进、快退功能
-- **流式传输**：支持音频流式播放，无需等待完整下载
-- **CORS处理**：自动添加必要的CORS头，确保跨域访问
-- **缓存控制**：智能缓存策略，平衡性能和实时性
-
-#### 音乐URL代理服务 (`/api/proxy/music-url`)
-- **平台支持**：支持网易云音乐和QQ音乐平台
-- **音质选择**：支持多种音质（128k、320k、无损、Hi-Res等）
-- **智能路由**：自动判断是否需要代理，HTTPS链接直接返回
-- **错误恢复**：链接失效时自动重新获取
+### 🔒 自动HTTPS转换
+- **图片链接**：自动将HTTP图片链接转换为HTTPS，确保在安全环境下正常显示
+- **透明处理**：对用户完全透明，无需修改现有配置
+- **兼容性**：确保系统在各种部署环境（Vercel、Netlify等）下都能正常工作
 
 ## 数据备份功能
 

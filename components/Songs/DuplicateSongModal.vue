@@ -21,7 +21,7 @@
           <div class="song-cover">
             <img 
               v-if="song.cover" 
-              :src="song.cover" 
+              :src="convertToHttps(song.cover)" 
               :alt="song.title"
               @error="handleImageError"
             />
@@ -80,6 +80,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Song } from '~/types'
+import { convertToHttps } from '~/utils/url'
 
 interface Props {
   show: boolean

@@ -99,7 +99,7 @@
                     class="result-item"
                   >
                     <div class="result-cover">
-                      <img :src="result.cover" alt="封面" class="cover-img" />
+                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img" />
                       <div class="play-overlay" @click.stop="playSong(result)">
                         <div class="play-button-bg">
                           <Icon name="play" :size="24" color="white" />
@@ -344,6 +344,7 @@ import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
 import DuplicateSongModal from './DuplicateSongModal.vue'
 import Icon from '../UI/Icon.vue'
+import { convertToHttps } from '~/utils/url'
 
 const props = defineProps({
   loading: {
@@ -515,6 +516,8 @@ const voteForSimilar = async (song) => {
 const ignoreSimilar = () => {
   similarSongs.value = []
 }
+
+
 
 // 检查搜索结果是否已存在完全匹配的歌曲
 // 标准化字符串（与useSongs中的逻辑保持一致）
@@ -690,16 +693,20 @@ const getAudioUrl = async (result) => {
     const { getQuality } = useAudioQuality()
     const quality = getQuality(platform.value)
 
-    const response = await fetch('/api/proxy/music-url', {
-      method: 'POST',
+    // 直接调用音乐API
+    let apiUrl
+    if (platform.value === 'netease') {
+      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${result.musicId}&quality=${quality}`
+    } else if (platform.value === 'tencent') {
+      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${result.musicId}&quality=${quality}`
+    } else {
+      throw new Error('不支持的音乐平台')
+    }
+
+    const response = await fetch(apiUrl, {
       headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        platform: platform.value,
-        musicId: result.musicId,
-        quality
-      })
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
     })
 
     if (!response.ok) {
@@ -708,8 +715,14 @@ const getAudioUrl = async (result) => {
 
     const data = await response.json()
     if (data.code === 200 && data.data) {
+      // 将HTTP URL改为HTTPS
+      let url = data.data.url
+      if (url.startsWith('http://')) {
+        url = url.replace('http://', 'https://')
+      }
+      
       // 更新结果中的URL和其他信息
-      result.url = data.data.url
+      result.url = url
       result.hasUrl = true
       // 检查URL是否可用
 

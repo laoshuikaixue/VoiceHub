@@ -9,7 +9,7 @@
         <div class="player-info">
           <div class="cover-container">
             <template v-if="song.cover && !coverError">
-              <img :src="song.cover" alt="封面" class="player-cover" @error="handleImageError" />
+              <img :src="convertToHttps(song.cover)" alt="封面" class="player-cover" @error="handleImageError" />
             </template>
             <div v-else class="text-cover">
               {{ getFirstChar(song.title || '') }}
@@ -96,6 +96,7 @@
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { convertToHttps } from '~/utils/url'
 
 const props = defineProps({
   song: {
@@ -1064,7 +1065,7 @@ onUnmounted(() => {
   .global-audio-player {
     width: 95%;
     padding: 0.75rem;
-    bottom: 0.5rem;
+    bottom: 1.5rem;
   }
 
   .player-text h4 {

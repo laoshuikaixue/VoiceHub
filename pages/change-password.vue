@@ -86,11 +86,6 @@ onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
   
-  // 设置页面标题
-  if (typeof document !== 'undefined' && siteTitle.value) {
-    document.title = `修改密码 | ${siteTitle.value}`
-  }
-  
   if (!auth.isAuthenticated.value && process.client) {
     router.push('/login')
     return

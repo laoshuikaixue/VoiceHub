@@ -10,7 +10,7 @@
       <div v-if="settings.showCover" class="cover-section">
         <img 
           v-if="schedule.song.cover" 
-          :src="schedule.song.cover" 
+          :src="convertToHttps(schedule.song.cover)" 
           :alt="schedule.song.title"
           class="song-cover"
           @error="handleImageError"
@@ -62,6 +62,7 @@
 
 <script setup>
 import { defineProps } from 'vue'
+import { convertToHttps } from '~/utils/url'
 
 // 定义props
 const props = defineProps({

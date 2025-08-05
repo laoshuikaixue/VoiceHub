@@ -80,7 +80,7 @@
               <div class="song-cover">
                 <template v-if="song.cover">
                   <img
-                    :src="song.cover"
+                    :src="convertToHttps(song.cover)"
                     :alt="song.title"
                     class="cover-image"
                     @error="handleImageError($event, song)"
@@ -224,6 +224,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import Icon from '~/components/UI/Icon.vue'
+import { convertToHttps } from '~/utils/url'
 
 const props = defineProps({
   songs: {
@@ -481,6 +482,8 @@ const getFirstChar = (title) => {
   return title.trim().charAt(0)
 }
 
+
+
 // 切换歌曲播放/暂停
 const togglePlaySong = async (song) => {
   // 检查是否为当前歌曲且正在播放
@@ -564,14 +567,23 @@ const getMusicUrl = async (platform, musicId) => {
       throw new Error('不支持的音乐平台')
     }
 
-    const response = await fetch(apiUrl)
+    const response = await fetch(apiUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    })
     if (!response.ok) {
       throw new Error('获取音乐URL失败')
     }
 
     const data = await response.json()
     if (data.code === 200 && data.data && data.data.url) {
-      return data.data.url
+      // 将HTTP URL改为HTTPS
+      let url = data.data.url
+      if (url.startsWith('http://')) {
+        url = url.replace('http://', 'https://')
+      }
+      return url
     }
 
     return null

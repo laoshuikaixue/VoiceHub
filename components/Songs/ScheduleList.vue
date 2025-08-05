@@ -134,7 +134,7 @@
                       <div class="song-cover">
                         <template v-if="schedule.song.cover">
                           <img
-                            :src="schedule.song.cover"
+                            :src="convertToHttps(schedule.song.cover)"
                             :alt="schedule.song.title"
                             class="cover-image"
                             @error="handleImageError($event, schedule.song)"
@@ -187,6 +187,7 @@ import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import Icon from '~/components/UI/Icon.vue'
+import { convertToHttps } from '~/utils/url'
 
 const props = defineProps({
   schedules: {
@@ -432,6 +433,8 @@ const getFirstChar = (title) => {
   return title.trim().charAt(0)
 }
 
+
+
 // 切换歌曲播放/暂停
 const togglePlaySong = async (song) => {
   // 检查是否为当前歌曲且正在播放
@@ -506,17 +509,20 @@ const getMusicUrl = async (platform, musicId) => {
   try {
     const quality = getQuality(platform)
 
-    // 使用新的代理API
-    const response = await fetch('/api/proxy/music-url', {
-      method: 'POST',
+    // 直接调用音乐API
+    let apiUrl
+    if (platform === 'netease') {
+      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
+    } else if (platform === 'tencent') {
+      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
+    } else {
+      throw new Error('不支持的音乐平台')
+    }
+
+    const response = await fetch(apiUrl, {
       headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        platform,
-        musicId,
-        quality
-      })
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
     })
 
     if (!response.ok) {
@@ -525,7 +531,12 @@ const getMusicUrl = async (platform, musicId) => {
 
     const data = await response.json()
     if (data.code === 200 && data.data && data.data.url) {
-      return data.data.url
+      // 将HTTP URL改为HTTPS
+      let url = data.data.url
+      if (url.startsWith('http://')) {
+        url = url.replace('http://', 'https://')
+      }
+      return url
     }
 
     return null

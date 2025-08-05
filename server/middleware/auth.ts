@@ -17,8 +17,6 @@ export default defineEventHandler(async (event) => {
     '/api/play-times',
     '/api/site-config',
     '/api/proxy/image',
-    '/api/proxy/audio',
-    '/api/proxy/music-url',
     '/',
     '/login',
     '/register',

@@ -53,7 +53,7 @@
       </div>
 
       <div v-if="siteTitle" class="site-title">
-        <h2>{{ siteTitle || 'VoiceHub示例站' }}</h2>
+        <h2>{{ siteTitle }} | VoiceHub</h2>
       </div>
 
       <!-- 中间主体内容区域 -->
