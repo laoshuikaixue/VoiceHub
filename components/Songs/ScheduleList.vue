@@ -1000,7 +1000,7 @@ const vRipple = {
 
 .song-title {
   font-family: 'MiSans', sans-serif;
-  font-weight: 600;
+  font-weight: normal;
   font-size: 16px;
   letter-spacing: 0.04em;
   color: #FFFFFF;
@@ -1019,7 +1019,7 @@ const vRipple = {
 
 .requester {
   font-family: 'MiSans', sans-serif;
-  font-weight: 600;
+  font-weight: normal;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
   text-align: left;

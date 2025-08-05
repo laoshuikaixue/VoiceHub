@@ -250,57 +250,57 @@
 
             <!-- 数据概览 -->
             <div v-if="activeTab === 'overview' && permissions.canAccessPage('overview')" class="overview-section">
-              <OverviewDashboard @navigate="handleNavigate" />
+              <LazyAdminOverviewDashboard @navigate="handleNavigate" />
             </div>
             
             <!-- 歌曲管理 -->
             <div v-if="activeTab === 'songs' && permissions.canAccessPage('songs')" class="content-section">
-              <SongManagement />
+              <LazyAdminSongManagement />
             </div>
             
             <!-- 排期管理 -->
             <div v-if="activeTab === 'schedule' && permissions.canAccessPage('schedule')" class="content-section">
-              <ScheduleManager />
+              <LazyAdminScheduleManager />
             </div>
 
             <!-- 打印排期 -->
             <div v-if="activeTab === 'print' && permissions.canAccessPage('print')" class="content-section">
-              <SchedulePrinter />
+              <LazyAdminSchedulePrinter />
             </div>
             
             <!-- 用户管理 -->
             <div v-if="activeTab === 'users' && permissions.canAccessPage('users')" class="content-section">
-              <UserManager />
+              <LazyAdminUserManager />
             </div>
             
             <!-- 通知管理 -->
             <div v-if="activeTab === 'notifications' && permissions.canAccessPage('notifications')" class="content-section">
-              <NotificationSender />
+              <LazyAdminNotificationSender />
             </div>
             
             <!-- 播出时段 -->
             <div v-if="activeTab === 'playtimes' && permissions.canAccessPage('playtimes')" class="content-section">
-              <PlayTimeManager />
+              <LazyAdminPlayTimeManager />
             </div>
             
             <!-- 学期管理 -->
             <div v-if="activeTab === 'semesters' && permissions.canAccessPage('semesters')" class="content-section">
-              <SemesterManager />
+              <LazyAdminSemesterManager />
             </div>
             
             <!-- 黑名单管理 -->
             <div v-if="activeTab === 'blacklist' && permissions.canAccessPage('blacklist')" class="content-section">
-              <BlacklistManager />
+              <LazyAdminBlacklistManager />
             </div>
 
             <!-- 站点配置 -->
             <div v-if="activeTab === 'site-config' && permissions.canAccessPage('site-config')" class="content-section full-width">
-              <SiteConfigManager />
+              <LazyAdminSiteConfigManager />
             </div>
 
             <!-- 数据库操作 -->
             <div v-if="activeTab === 'database' && permissions.canAccessPage('database')" class="content-section">
-              <DatabaseManager />
+              <LazyAdminDatabaseManager />
             </div>
           </div>
         </main>
@@ -318,17 +318,6 @@ import { usePermissions } from '~/composables/usePermissions'
 const { siteTitle, initSiteConfig } = useSiteConfig()
 
 // 导入组件
-import OverviewDashboard from '~/components/Admin/OverviewDashboard.vue'
-import SongManagement from '~/components/Admin/SongManagement.vue'
-import ScheduleManager from '~/components/Admin/ScheduleManager.vue'
-import SchedulePrinter from '~/components/Admin/SchedulePrinter.vue'
-import UserManager from '~/components/Admin/UserManager.vue'
-import NotificationSender from '~/components/Admin/NotificationSender.vue'
-import PlayTimeManager from '~/components/Admin/PlayTimeManager.vue'
-import SemesterManager from '~/components/Admin/SemesterManager.vue'
-import BlacklistManager from '~/components/Admin/BlacklistManager.vue'
-import SiteConfigManager from '~/components/Admin/SiteConfigManager.vue'
-import DatabaseManager from '~/components/Admin/DatabaseManager.vue'
 
 // 页面元数据
 definePageMeta({

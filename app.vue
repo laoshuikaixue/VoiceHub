@@ -1,10 +1,10 @@
 <template>
   <div class="app" data-theme="dark" data-color-scheme="custom">
     <!-- 全局通知容器组件 -->
-    <NotificationContainer ref="notificationContainer" />
+    <LazyUINotificationContainer ref="notificationContainer" />
     
     <!-- 全局音频播放器 - 使用isPlayerVisible控制显示/隐藏 -->
-    <AudioPlayer
+    <LazyUIAudioPlayer
       v-if="isPlayerVisible"
       :song="currentSong"
       @close="handlePlayerClose"
@@ -20,8 +20,6 @@
 <script setup>
 import { onMounted, computed, ref, watch } from 'vue'
 // 导入通知容器组件和音频播放器
-import NotificationContainer from '~/components/UI/NotificationContainer.vue'
-import AudioPlayer from '~/components/UI/AudioPlayer.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
 

@@ -1508,7 +1508,7 @@ watch(() => settings.value, () => {
 
 .title-section h1 {
   font-size: 24px;
-  font-weight: bold;
+  font-weight: normal;
   margin: 0 0 4px 0;
   color: #000;
 }

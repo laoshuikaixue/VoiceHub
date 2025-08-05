@@ -45,14 +45,15 @@ export default defineNuxtConfig({
         { name: 'format-detection', content: 'telephone=no' }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico' },
-        // 预加载MiSans字体 - TTF格式
-        { rel: 'preload', href: '/fonts/MiSans-Regular.ttf', as: 'font', type: 'font/ttf', crossorigin: 'anonymous' },
-        { rel: 'preload', href: '/fonts/MiSans-Medium.ttf', as: 'font', type: 'font/ttf', crossorigin: 'anonymous' },
-        { rel: 'preload', href: '/fonts/MiSans-Semibold.ttf', as: 'font', type: 'font/ttf', crossorigin: 'anonymous' },
-        { rel: 'preload', href: '/fonts/MiSans-Demibold.ttf', as: 'font', type: 'font/ttf', crossorigin: 'anonymous' }
-      ]
+          { rel: 'icon', type: 'image/x-icon', href: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico' },
+          // 从CDN加载MiSans字体
+          { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/misans.min.css' }
+        ]
     }
+  },
+
+  features: {
+    inlineStyles: true
   },
   
   // TypeScript配置

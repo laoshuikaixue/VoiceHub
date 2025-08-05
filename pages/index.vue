@@ -94,7 +94,7 @@
             <!-- 播出排期内容 -->
             <div v-if="activeTab === 'schedule'" class="tab-pane schedule-tab-pane" key="schedule">
               <ClientOnly class="full-width">
-                <ScheduleList
+                <LazySongsScheduleList
                   :schedules="publicSchedules"
                   :loading="loading"
                   :error="error"
@@ -106,7 +106,7 @@
             <div v-else-if="activeTab === 'songs'" class="tab-pane" key="songs">
               <div class="song-list-container">
                 <ClientOnly>
-                  <SongList
+                  <LazySongsSongList
                     :songs="filteredSongs"
                     :loading="loading"
                     :error="error"
@@ -121,7 +121,7 @@
             
             <!-- 投稿歌曲内容 -->
             <div v-else-if="activeTab === 'request'" class="tab-pane request-pane" key="request">
-              <RequestForm
+              <LazySongsRequestForm
                 ref="requestFormRef"
                 :loading="loading"
                 @request="handleRequest"
@@ -314,9 +314,7 @@
 <script setup>
 import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import ScheduleList from '~/components/Songs/ScheduleList.vue'
-import SongList from '~/components/Songs/SongList.vue'
-import RequestForm from '~/components/Songs/RequestForm.vue'
+
 import Icon from '~/components/UI/Icon.vue'
 
 import { useNotifications } from '~/composables/useNotifications'

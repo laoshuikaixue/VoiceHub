@@ -42,7 +42,7 @@ export const useSiteConfig = () => {
       
       // 更新页面标题
       if (data.siteTitle && typeof document !== 'undefined') {
-        document.title = data.siteTitle
+        document.title = `${data.siteTitle} | VoiceHub`
       }
       
     } catch (error) {
@@ -65,7 +65,7 @@ export const useSiteConfig = () => {
   }
 
   // 计算属性
-  const title = computed(() => siteConfig.value.siteTitle || '校园广播站点歌系统')
+  const title = computed(() => siteConfig.value.siteTitle ? `${siteConfig.value.siteTitle} | VoiceHub` : '校园广播站点歌系统 | VoiceHub')
   const logoUrl = computed(() => siteConfig.value.siteLogoUrl || '/favicon.ico')
   const schoolLogoHomeUrl = computed(() => siteConfig.value.schoolLogoHomeUrl || '')
   const schoolLogoPrintUrl = computed(() => siteConfig.value.schoolLogoPrintUrl || '')
