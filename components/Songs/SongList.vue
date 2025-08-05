@@ -101,7 +101,8 @@
               <div class="song-info">
                 <h3 class="song-title" :title="song.title + ' - ' + song.artist">
                   <span class="song-title-text">{{ song.title }} - {{ song.artist }}</span>
-                  <span v-if="song.scheduled" class="scheduled-tag">已排期</span>
+                  <span v-if="song.played" class="played-tag">已播放</span>
+                  <span v-else-if="song.scheduled" class="scheduled-tag">已排期</span>
                 </h3>
                 <div class="song-meta">
                   <span class="requester">投稿人：{{ song.requester }}</span>
@@ -336,18 +337,31 @@ const displayedSongs = computed(() => {
     )
   }
   
-  // 应用排序
-  if (sortBy.value === 'popularity') {
-    result.sort((a, b) => b.voteCount - a.voteCount)
-  } else if (sortBy.value === 'date') {
-    result.sort((a, b) => {
-      const dateA = new Date(a.createdAt)
-      const dateB = new Date(b.createdAt)
-      return sortOrder.value === 'desc' ? dateB - dateA : dateA - dateB
-    })
+  // 按状态分组：未排期、已排期、已播放
+  const unscheduledSongs = result.filter(song => !song.played && !song.scheduled)
+  const scheduledSongs = result.filter(song => !song.played && song.scheduled)
+  const playedSongs = result.filter(song => song.played)
+  
+  // 对每个分组内部进行排序
+  const sortSongs = (songs) => {
+    if (sortBy.value === 'popularity') {
+      return songs.sort((a, b) => b.voteCount - a.voteCount)
+    } else if (sortBy.value === 'date') {
+      return songs.sort((a, b) => {
+        const dateA = new Date(a.createdAt)
+        const dateB = new Date(b.createdAt)
+        return sortOrder.value === 'desc' ? dateB - dateA : dateA - dateB
+      })
+    }
+    return songs
   }
   
-  return result
+  // 返回按顺序排列的歌曲：未排期 → 已排期 → 已播放
+  return [
+    ...sortSongs(unscheduledSongs),
+    ...sortSongs(scheduledSongs),
+    ...sortSongs(playedSongs)
+  ]
 })
 
 // 计算总页数
@@ -963,7 +977,7 @@ const vRipple = {
 
 .song-title {
   font-family: 'MiSans', sans-serif;
-  font-weight: normal;
+  font-weight: 600;
   font-size: 16px;
   letter-spacing: 0.04em;
   color: #FFFFFF;
@@ -1092,6 +1106,19 @@ const vRipple = {
 }
 
 .scheduled-tag {
+  display: inline-flex;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  color: #10b981;
+  margin-left: 0.5rem;
+  flex-shrink: 0; /* 防止标签被压缩 */
+  align-self: center; /* 确保垂直居中 */
+}
+
+.played-tag {
   display: inline-flex;
   background: rgba(16, 185, 129, 0.2);
   border: 1px solid rgba(16, 185, 129, 0.4);

@@ -453,10 +453,6 @@ const markAsPlayed = async (songId) => {
   try {
     await songsService.markPlayed(songId)
     await refreshSongs()
-
-    if (window.$showNotification) {
-      window.$showNotification('歌曲已标记为已播放', 'success')
-    }
   } catch (error) {
     console.error('标记已播放失败:', error)
     if (window.$showNotification) {
@@ -469,10 +465,6 @@ const markAsUnplayed = async (songId) => {
   try {
     await songsService.unmarkPlayed(songId)
     await refreshSongs()
-
-    if (window.$showNotification) {
-      window.$showNotification('歌曲已标记为未播放', 'success')
-    }
   } catch (error) {
     console.error('标记未播放失败:', error)
     if (window.$showNotification) {

@@ -650,9 +650,11 @@ const realSongCount = computed(() => {
 const publicSchedules = computed(() => songs?.publicSchedules?.value || [])
 const allSongs = computed(() => songs?.visibleSongs?.value || [])
 const filteredSongs = computed(() => {
-  // 返回未播放的歌曲，这里可以根据需要添加过滤条件
+  // 返回所有歌曲，但将已播放的歌曲排在最后
   if (allSongs.value && allSongs.value.length > 0) {
-    return allSongs.value.filter(song => !song.played);
+    const unplayedSongs = allSongs.value.filter(song => !song.played);
+    const playedSongs = allSongs.value.filter(song => song.played);
+    return [...unplayedSongs, ...playedSongs];
   }
   return [];
 })

@@ -57,6 +57,13 @@ export default defineEventHandler(async (event) => {
         artist: true,
         createdAt: true,
         played: true,
+        schedules: {
+          select: {
+            id: true,
+            playDate: true,
+            played: true
+          }
+        },
         _count: {
           select: {
             votes: true
@@ -76,6 +83,13 @@ export default defineEventHandler(async (event) => {
             title: true,
             artist: true,
             played: true,
+            schedules: {
+              select: {
+                id: true,
+                playDate: true,
+                played: true
+              }
+            },
             _count: {
               select: {
                 votes: true
@@ -108,6 +122,7 @@ export default defineEventHandler(async (event) => {
         artist: song.artist,
         createdAt: song.createdAt,
         played: song.played,
+        scheduled: song.schedules.length > 0,
         voteCount: song._count.votes
       })),
       votedSongs: votedSongs.map(vote => ({
@@ -115,6 +130,7 @@ export default defineEventHandler(async (event) => {
         title: vote.song.title,
         artist: vote.song.artist,
         played: vote.song.played,
+        scheduled: vote.song.schedules.length > 0,
         voteCount: vote.song._count.votes,
         votedAt: vote.createdAt,
         requester: vote.song.requester

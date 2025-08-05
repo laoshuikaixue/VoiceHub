@@ -71,8 +71,8 @@
                       <div class="song-meta">
                         <span class="submit-time">{{ formatDate(song.createdAt) }}</span>
                         <span class="vote-count">{{ song.voteCount }} 票</span>
-                        <span :class="['status', song.played ? 'played' : 'pending']">
-                          {{ song.played ? '已播放' : '待播放' }}
+                        <span :class="['status', getStatusClass(song)]">
+                          {{ getStatusText(song) }}
                         </span>
                       </div>
                     </div>
@@ -98,8 +98,8 @@
                       <div class="song-meta">
                         <span class="vote-time">{{ formatDate(song.votedAt) }} 投票</span>
                         <span class="vote-count">{{ song.voteCount }} 票</span>
-                        <span :class="['status', song.played ? 'played' : 'pending']">
-                          {{ song.played ? '已播放' : '待播放' }}
+                        <span :class="['status', getStatusClass(song)]">
+                          {{ getStatusText(song) }}
                         </span>
                       </div>
                       <div v-if="song.requester" class="submitter-info">
@@ -197,6 +197,20 @@ const formatDate = (dateString) => {
     month: 'short',
     day: 'numeric'
   })
+}
+
+// 获取歌曲状态文本
+const getStatusText = (song) => {
+  if (song.played) return '已播放'
+  if (song.scheduled) return '已排期'
+  return '待排期'
+}
+
+// 获取歌曲状态样式类
+const getStatusClass = (song) => {
+  if (song.played) return 'played'
+  if (song.scheduled) return 'scheduled'
+  return 'pending'
 }
 
 const handleOverlayClick = () => {
@@ -452,6 +466,11 @@ const handleOverlayClick = () => {
 .status.played {
   background: rgba(34, 197, 94, 0.2);
   color: #22c55e;
+}
+
+.status.scheduled {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
 }
 
 .status.pending {

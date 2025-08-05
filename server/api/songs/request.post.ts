@@ -155,6 +155,19 @@ export default defineEventHandler(async (event) => {
       }
     })
     
+    // 投稿者自动投一票
+    try {
+      await prisma.vote.create({
+        data: {
+          songId: song.id,
+          userId: user.id
+        }
+      })
+    } catch (voteError) {
+      console.error('自动投票失败:', voteError)
+      // 投票失败不影响投稿成功，只记录错误
+    }
+    
     return song
   } catch (error: any) {
     console.error('点歌失败:', error)
@@ -209,74 +222,3 @@ function getCurrentSemester() {
   return `${academicYear}-${academicYear + 1}学年${term}学期`
 }
 
-// 处理投票逻辑
-async function handleVote(songId: number, userId: number) {
-  // 检查歌曲是否存在
-  const song = await prisma.song.findUnique({
-    where: {
-      id: songId
-    }
-  })
-  
-  if (!song) {
-    throw createError({
-      statusCode: 404,
-      message: '歌曲不存在'
-    })
-  }
-  
-  // 检查用户是否已经投过票
-  const existingVote = await prisma.vote.findFirst({
-    where: {
-      songId: songId,
-      userId: userId
-    }
-  })
-  
-  if (existingVote) {
-    throw createError({
-      statusCode: 400,
-      message: '你已经为这首歌投过票了'
-    })
-  }
-  
-  // 创建新的投票
-  const newVote = await prisma.vote.create({
-    data: {
-      song: {
-        connect: {
-          id: songId
-        }
-      },
-      user: {
-        connect: {
-          id: userId
-        }
-      }
-    }
-  })
-  
-  // 获取投票总数
-  const voteCount = await prisma.vote.count({
-    where: {
-      songId: songId
-    }
-  })
-  
-  // 发送通知（异步，不阻塞响应）
-  if (song.requesterId !== userId) {
-    createSongVotedNotification(songId, userId).catch(err => {
-      console.error('发送投票通知失败:', err)
-    })
-  }
-  
-  return {
-    message: '投票成功',
-    song: {
-      id: song.id,
-      title: song.title,
-      artist: song.artist,
-      voteCount
-    }
-  }
-}
