@@ -565,19 +565,26 @@ const exportPDFForPrint = async () => {
     box-sizing: border-box !important;
   `
 
-  // 确保所有子元素的颜色正确
+  // 确保所有子元素的颜色和样式正确
   const allElements = clonedPage.querySelectorAll('*')
   allElements.forEach(el => {
     if (el.style) {
-      el.style.color = 'black'
+      // 强制设置文字颜色为黑色
+      el.style.color = 'black !important'
+      
+      // 保持背景为白色
+      el.style.background = 'white !important'
+      el.style.backgroundColor = 'white !important'
     }
 
-    if (el.classList.contains('print-page') ||
+    // 特别处理页面元素的背景
+    if (el.classList && (
+        el.classList.contains('print-page') ||
         el.classList.contains('page-header') ||
         el.classList.contains('page-footer') ||
-        el.classList.contains('schedule-content')) {
-      el.style.background = 'white'
-      el.style.backgroundColor = 'white'
+        el.classList.contains('schedule-content'))) {
+      el.style.background = 'white !important'
+      el.style.backgroundColor = 'white !important'
     }
   })
 
@@ -596,7 +603,7 @@ const exportPDFForPrint = async () => {
     const options = {
       margin: 10,
       filename: `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'png', quality: 0.98 },
+      image: { type: 'jpeg', quality: 0.9 },
       html2canvas: { 
         scale: 2,
         useCORS: true,
@@ -642,8 +649,8 @@ const exportPDFForPrint = async () => {
 // 预下载图片并转换为base64
 const downloadImageAsBase64 = async (url) => {
   try {
-    // 使用我们的代理API来获取图片
-    const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(url)}`
+    // 使用我们的代理API来获取图片，并指定较低的图片质量
+    const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(url)}&quality=60`
     const response = await fetch(proxyUrl)
 
     if (!response.ok) throw new Error('图片代理下载失败')
@@ -662,25 +669,40 @@ const downloadImageAsBase64 = async (url) => {
 }
 
 // 预处理所有图片
-const preprocessImages = async (element) => {
-  const images = element.querySelectorAll('img')
-  const imagePromises = Array.from(images).map(async (img) => {
-    if (img.src && !img.src.startsWith('data:')) {
-      try {
-        const base64 = await downloadImageAsBase64(img.src)
-        if (base64) {
-          img.src = base64
+  const preprocessImages = async (element) => {
+    const images = element.querySelectorAll('img')
+    const imagePromises = Array.from(images).map(async (img) => {
+      if (img.src && !img.src.startsWith('data:')) {
+        try {
+          const base64 = await downloadImageAsBase64(img.src)
+          if (base64) {
+            img.src = base64
+          }
+        } catch (error) {
+          console.warn('处理图片失败:', img.src, error)
         }
-      } catch (error) {
-        console.warn('处理图片失败:', img.src, error)
       }
-    }
-  })
+      
+      // 确保图片元素在打印时保持正确的样式
+      if (img.classList.contains('school-logo-print')) {
+        // 学校Logo按原尺寸显示
+        img.style.objectFit = 'contain !important'
+      } else if (img.classList.contains('logo')) {
+        // 系统Logo按原尺寸显示
+        img.style.objectFit = 'contain !important'
+      } else if (img.classList.contains('song-cover')) {
+        // 歌曲封面保持固定尺寸
+        img.style.width = '40px !important'
+        img.style.height = '40px !important'
+        img.style.objectFit = 'cover !important'
+        img.style.borderRadius = '4px !important'
+      }
+    })
 
-  await Promise.all(imagePromises)
-  // 等待一下让图片加载完成
-  await new Promise(resolve => setTimeout(resolve, 500))
-}
+    await Promise.all(imagePromises)
+    // 等待一下让图片加载完成
+    await new Promise(resolve => setTimeout(resolve, 500))
+  }
 
 const exportPDF = async () => {
   isExporting.value = true
@@ -699,44 +721,49 @@ const exportPDF = async () => {
     }
 
     // 克隆预览内容，保持原有样式
-    const clonedPage = printPage.cloneNode(true)
+  const clonedPage = printPage.cloneNode(true)
 
-    // 创建PDF渲染容器
-    const pdfContainer = document.createElement('div')
-    pdfContainer.style.cssText = `
-      position: absolute;
-      left: -9999px;
-      top: 0;
-      z-index: -1;
-      background: white;
-      color: black;
-      box-sizing: border-box;
-    `
+  // 创建PDF渲染容器
+  const pdfContainer = document.createElement('div')
+  pdfContainer.style.cssText = `
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: -1;
+    background: white;
+    color: black;
+    box-sizing: border-box;
+  `
 
-    // 调整克隆页面的样式
-    clonedPage.style.cssText = `
-      background: white !important;
-      color: black !important;
-      box-sizing: border-box !important;
-    `
+  // 调整克隆页面的样式
+  clonedPage.style.cssText = `
+    background: white !important;
+    color: black !important;
+    box-sizing: border-box !important;
+  `
 
-    // 确保所有子元素的颜色正确
-    const allElements = clonedPage.querySelectorAll('*')
-    allElements.forEach(el => {
+  // 确保所有子元素的颜色和样式正确
+  const allElements = clonedPage.querySelectorAll('*')
+  allElements.forEach(el => {
+    if (el.style) {
       // 强制设置文字颜色为黑色
-      if (el.style) {
-        el.style.color = 'black'
-      }
+      el.style.color = 'black !important'
+      
+      // 保持背景为白色
+      el.style.background = 'white !important'
+      el.style.backgroundColor = 'white !important'
+    }
 
-      // 处理背景色
-      if (el.classList.contains('print-page') ||
-          el.classList.contains('page-header') ||
-          el.classList.contains('page-footer') ||
-          el.classList.contains('schedule-content')) {
-        el.style.background = 'white'
-        el.style.backgroundColor = 'white'
-      }
-    })
+    // 特别处理页面元素的背景
+    if (el.classList && (
+        el.classList.contains('print-page') ||
+        el.classList.contains('page-header') ||
+        el.classList.contains('page-footer') ||
+        el.classList.contains('schedule-content'))) {
+      el.style.background = 'white !important'
+      el.style.backgroundColor = 'white !important'
+    }
+  })
 
     pdfContainer.appendChild(clonedPage)
     document.body.appendChild(pdfContainer)
@@ -753,14 +780,14 @@ const exportPDF = async () => {
       const options = {
         margin: 10,
         filename: `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'png', quality: 0.98 },
+        image: { type: 'jpeg', quality: 0.9 },
         html2canvas: { 
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          logging: false
-        },
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      },
         jsPDF: { unit: 'mm', format: settings.value.paperSize.toLowerCase(), orientation: settings.value.orientation === 'landscape' ? 'l' : 'p' },
         pagebreak: { mode: ['css', 'legacy'] }
       }
@@ -1395,8 +1422,6 @@ watch(() => settings.value, () => {
 }
 
 .school-logo-print {
-  width: 60px;
-  height: 60px;
   object-fit: contain;
   border-radius: 4px;
 }

@@ -164,6 +164,15 @@
     box-sizing: border-box !important;
     color: #000 !important;
   }
+  
+  /* 学校Logo */
+  .school-logo-print {
+    object-fit: contain !important;
+  }
+  
+  .logo {
+    object-fit: contain !important;
+  }
 
   .page-header {
     text-align: center !important;
