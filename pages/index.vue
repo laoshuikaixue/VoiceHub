@@ -233,6 +233,18 @@
                     清空所有通知
                   </button>
                 </div>
+                
+                <!-- 确认对话框 -->
+                <ConfirmDialog
+                  v-model:show="showConfirmDialog"
+                  :title="confirmDialogConfig.title"
+                  :message="confirmDialogConfig.message"
+                  :type="confirmDialogConfig.type"
+                  :confirm-text="confirmDialogConfig.confirmText"
+                  :cancel-text="confirmDialogConfig.cancelText"
+                  @confirm="handleConfirmAction"
+                  @cancel="handleCancelAction"
+                />
               </div>
             </div>
           </Transition>
@@ -319,6 +331,7 @@ import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import Icon from '~/components/UI/Icon.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
 import { useSiteConfig } from '~/composables/useSiteConfig'
@@ -419,16 +432,60 @@ const markAllNotificationsAsRead = async () => {
 
 // 删除通知
 const deleteNotification = async (id) => {
-  if (confirm('确定要删除此通知吗？')) {
-    await notificationsService.deleteNotification(id)
+  pendingAction.value = 'delete'
+  pendingId.value = id
+  confirmDialogConfig.value = {
+    title: '删除通知',
+    message: '确定要删除此通知吗？',
+    type: 'warning',
+    confirmText: '删除',
+    cancelText: '取消'
   }
+  showConfirmDialog.value = true
 }
 
 // 清空所有通知
 const clearAllNotifications = async () => {
-  if (confirm('确定要清空所有通知吗？此操作不可撤销。')) {
+  pendingAction.value = 'clearAll'
+  confirmDialogConfig.value = {
+    title: '清空所有通知',
+    message: '确定要清空所有通知吗？此操作不可撤销。',
+    type: 'danger',
+    confirmText: '清空',
+    cancelText: '取消'
+  }
+  showConfirmDialog.value = true
+}
+
+// 确认对话框相关状态
+const showConfirmDialog = ref(false)
+const confirmDialogConfig = ref({
+  title: '',
+  message: '',
+  type: 'warning',
+  confirmText: '确定',
+  cancelText: '取消'
+})
+const pendingAction = ref('')
+const pendingId = ref(null)
+
+// 处理确认操作
+const handleConfirmAction = async () => {
+  if (pendingAction.value === 'delete') {
+    await notificationsService.deleteNotification(pendingId.value)
+    pendingId.value = null
+  } else if (pendingAction.value === 'clearAll') {
     await notificationsService.clearAllNotifications()
   }
+  showConfirmDialog.value = false
+  pendingAction.value = ''
+}
+
+// 处理取消操作
+const handleCancelAction = () => {
+  showConfirmDialog.value = false
+  pendingAction.value = ''
+  pendingId.value = null
 }
 
 // 格式化通知时间

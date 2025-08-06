@@ -83,6 +83,18 @@
         </button>
       </div>
     </div>
+    
+    <!-- 确认对话框 -->
+    <ConfirmDialog
+      v-model:show="showConfirmDialog"
+      :title="confirmDialogConfig.title"
+      :message="confirmDialogConfig.message"
+      :type="confirmDialogConfig.type"
+      :confirm-text="confirmDialogConfig.confirmText"
+      :cancel-text="confirmDialogConfig.cancelText"
+      @confirm="handleConfirmDelete"
+      @cancel="handleCancelDelete"
+    />
   </div>
 </template>
 
@@ -90,6 +102,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useNotifications } from '~/composables/useNotifications'
 import Icon from '~/components/UI/Icon.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 const props = defineProps({
   autoRefresh: {
@@ -111,6 +124,17 @@ const notifications = computed(() => notificationsService.notifications.value ||
 const unreadCount = computed(() => notificationsService.unreadCount.value || 0)
 const hasUnread = computed(() => unreadCount.value > 0)
 const displayCount = computed(() => unreadCount.value > 99 ? '99+' : unreadCount.value)
+
+// 确认对话框相关
+const showConfirmDialog = ref(false)
+const confirmDialogConfig = ref({
+  title: '确认删除',
+  message: '确定要删除此通知吗？',
+  type: 'warning',
+  confirmText: '删除',
+  cancelText: '取消'
+})
+const pendingDeleteId = ref(null)
 
 let refreshTimer = null
 
@@ -181,7 +205,29 @@ const viewNotification = async (notification) => {
 
 // 删除通知
 const deleteNotification = async (id) => {
-  await notificationsService.deleteNotification(id)
+  pendingDeleteId.value = id
+  showConfirmDialog.value = true
+}
+
+// 确认删除
+const handleConfirmDelete = async () => {
+  if (pendingDeleteId.value) {
+    if (pendingDeleteId.value === 'all') {
+      // 清空所有通知
+      await notificationsService.clearAllNotifications()
+    } else {
+      // 删除单个通知
+      await notificationsService.deleteNotification(pendingDeleteId.value)
+    }
+    pendingDeleteId.value = null
+  }
+  showConfirmDialog.value = false
+}
+
+// 取消删除
+const handleCancelDelete = () => {
+  pendingDeleteId.value = null
+  showConfirmDialog.value = false
 }
 
 // 标记所有为已读
@@ -191,9 +237,15 @@ const markAllAsRead = async () => {
 
 // 清空所有通知
 const clearAllNotifications = async () => {
-  if (confirm('确定要清空所有通知吗？')) {
-    await notificationsService.clearAllNotifications()
+  confirmDialogConfig.value = {
+    title: '确认清空',
+    message: '确定要清空所有通知吗？',
+    type: 'warning',
+    confirmText: '清空',
+    cancelText: '取消'
   }
+  pendingDeleteId.value = 'all'
+  showConfirmDialog.value = true
 }
 
 // 打开设置
