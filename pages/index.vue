@@ -1015,6 +1015,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
 /* 学校logo样式 */
 .school-logo {
+  width: 160px;
+  height: 160px;
   object-fit: contain;
 }
 
