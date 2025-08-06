@@ -146,10 +146,10 @@
                 <div class="like-button-wrapper">
                   <button 
                     class="like-button"
-                    :class="{ 'liked': song.voted, 'disabled': song.played || song.scheduled }"
+                    :class="{ 'liked': song.voted, 'disabled': song.played || song.scheduled || isMySong(song) || voteInProgress }"
                     @click="handleVote(song)"
                     :disabled="song.played || song.scheduled || voteInProgress"
-                    :title="song.played ? '已播放的歌曲不能点赞' : song.scheduled ? '已排期的歌曲不能点赞' : (song.voted ? '点击取消点赞' : '点赞')"
+                    :title="song.played ? '已播放的歌曲不能点赞' : song.scheduled ? '已排期的歌曲不能点赞' : isMySong(song) ? '不允许自己给自己点赞' : (song.voted ? '点击取消点赞' : '点赞')"
                   >
                     <img src="/images/thumbs-up.svg" alt="点赞" class="like-icon" />
                   </button>
@@ -476,9 +476,25 @@ const goToPage = (page) => {
 
 // 处理投票
 const handleVote = async (song) => {
+  // 检查用户是否登录
+  if (!isAuthenticated.value) {
+    if (window.$showNotification) {
+      window.$showNotification('请先登录后再点赞', 'error')
+    }
+    return
+  }
+  
   // 检查歌曲状态
   if (song.played || song.scheduled) {
     return // 已播放或已排期的歌曲不能点赞
+  }
+  
+  // 检查是否是自己的歌曲
+  if (isMySong(song)) {
+    if (window.$showNotification) {
+      window.$showNotification('不允许自己给自己点赞', 'error')
+    }
+    return
   }
   
   voteInProgress.value = true

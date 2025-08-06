@@ -104,6 +104,17 @@
                 </svg>
                 歌曲管理
               </button>
+              <button 
+                v-if="permissions.canAccessPage('data-analysis')"
+                :class="['nav-item', { active: activeTab === 'data-analysis' }]" 
+                @click="activeTab = 'data-analysis'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 3v18h18"/>
+                  <path d="m19 9-5 5-4-4-3 3"/>
+                </svg>
+                数据分析
+              </button>
             </div>
             
             <!-- 用户管理 - 只有管理员和超级管理员可见 -->
@@ -268,6 +279,11 @@
             <!-- 打印排期 -->
             <div v-if="activeTab === 'print' && permissions.canAccessPage('print')" class="content-section">
               <LazyAdminSchedulePrinter />
+            </div>
+            
+            <!-- 数据分析 -->
+            <div v-if="activeTab === 'data-analysis' && permissions.canAccessPage('data-analysis')" class="content-section">
+              <LazyAdminDataAnalysisPanel />
             </div>
             
             <!-- 用户管理 -->

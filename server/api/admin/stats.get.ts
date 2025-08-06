@@ -1,4 +1,4 @@
-import { createError, defineEventHandler } from 'h3'
+import { createError, defineEventHandler, getQuery } from 'h3'
 import { prisma } from '../../models/schema'
 
 export default defineEventHandler(async (event) => {
@@ -11,12 +11,30 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const query = getQuery(event)
+  const semester = query.semester as string
+
   try {
     // 获取当前时间相关的日期
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+
+    // 构建查询条件
+    const where = semester && semester !== 'all' ? { semester: semester } : {}
+    
+    // 构建排期查询条件
+    const scheduleBaseWhere = semester && semester !== 'all' ? { song: { semester: semester } } : {}
+    
+    // 添加日期条件到今日排期查询
+    const todayScheduleWhere = {
+      ...scheduleBaseWhere,
+      playDate: {
+        gte: today,
+        lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+      }
+    }
 
     // 并行获取所有统计数据
     const [
@@ -34,27 +52,40 @@ export default defineEventHandler(async (event) => {
       blacklistCount
     ] = await Promise.all([
       // 总歌曲数
-      prisma.song.count(),
+      prisma.song.count({ where }),
       
       // 总用户数
       prisma.user.count(),
       
-      // 今日排期数
-      prisma.schedule.count({
-        where: {
-          playDate: {
-            gte: today,
-            lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
-          }
-        }
-      }),
+      // 今日排期数 (按天计算)
+    (async () => {
+      const todaySchedules = await prisma.schedule.findMany({
+        where: todayScheduleWhere,
+        select: { playDate: true }
+      });
       
-      // 总排期数
-      prisma.schedule.count(),
+      // 按日期去重计算天数
+      const uniqueDates = new Set(todaySchedules.map(s => s.playDate.toISOString().split('T')[0]));
+      return uniqueDates.size;
+    })(),
+      
+      // 总排期数 (按天计算)
+    (async () => {
+      const scheduleWhere = semester && semester !== 'all' ? { song: { semester: semester } } : {};
+      const schedules = await prisma.schedule.findMany({
+        where: scheduleWhere,
+        select: { playDate: true }
+      });
+      
+      // 按日期去重计算天数
+      const uniqueDates = new Set(schedules.map(s => s.playDate.toISOString().split('T')[0]));
+      return uniqueDates.size;
+    })(),
       
       // 本周点歌数
       prisma.song.count({
         where: {
+          ...where,
           createdAt: {
             gte: weekAgo
           }
@@ -64,6 +95,7 @@ export default defineEventHandler(async (event) => {
       // 上周点歌数
       prisma.song.count({
         where: {
+          ...where,
           createdAt: {
             gte: twoWeeksAgo,
             lt: weekAgo
@@ -74,6 +106,7 @@ export default defineEventHandler(async (event) => {
       // 本周新增歌曲
       prisma.song.count({
         where: {
+          ...where,
           createdAt: {
             gte: weekAgo
           }
@@ -83,6 +116,7 @@ export default defineEventHandler(async (event) => {
       // 上周新增歌曲
       prisma.song.count({
         where: {
+          ...where,
           createdAt: {
             gte: twoWeeksAgo,
             lt: weekAgo

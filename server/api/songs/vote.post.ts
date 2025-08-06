@@ -59,6 +59,14 @@ export default defineEventHandler(async (event) => {
         })
       }
 
+      // 检查是否是自己的歌曲
+      if (song.requesterId === user.id) {
+        throw createError({
+          statusCode: 400,
+          message: '不允许自己给自己投票'
+        })
+      }
+
       // 检查用户是否已经投过票
       const existingVote = await prisma.vote.findFirst({
         where: {

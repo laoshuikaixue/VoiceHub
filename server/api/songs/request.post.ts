@@ -166,18 +166,7 @@ export default defineEventHandler(async (event) => {
       }
     })
     
-    // 投稿者自动投一票
-    try {
-      await prisma.vote.create({
-        data: {
-          songId: song.id,
-          userId: user.id
-        }
-      })
-    } catch (voteError) {
-      console.error('自动投票失败:', voteError)
-      // 投票失败不影响投稿成功，只记录错误
-    }
+    // 移除了投稿者自动投票的逻辑
     
     return song
   } catch (error: any) {

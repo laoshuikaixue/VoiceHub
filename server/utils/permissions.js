@@ -24,7 +24,8 @@ const ROLES = {
       'schedule',    // 排期管理
       'print',       // 打印排期
       'songs',       // 歌曲管理
-      'users'        // 用户管理
+      'users',       // 用户管理
+      'data-analysis' // 数据分析
     ],
     canAccessAdmin: true
   },
@@ -42,7 +43,8 @@ const ROLES = {
       'semesters',     // 学期管理
       'blacklist',     // 黑名单管理
       'site-config',   // 站点配置
-      'database'       // 数据库操作
+      'database',      // 数据库操作
+      'data-analysis'  // 数据分析
     ],
     canAccessAdmin: true
   }
