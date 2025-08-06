@@ -1132,9 +1132,7 @@ const vRipple = {
   gap: 15px; /* 元素之间的间隔 */
 }
 
-.song-card.played {
-  opacity: 0.6;
-}
+
 
 /* 歌曲封面样式 */
 .song-cover {
