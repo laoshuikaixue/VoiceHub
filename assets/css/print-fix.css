@@ -223,6 +223,37 @@
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
+
+  /* 优化分页效果 */
+  .page-header {
+    page-break-after: avoid !important;
+  }
+
+  .page-footer {
+    page-break-before: avoid !important;
+  }
+
+  /* 确保歌曲信息完整显示 */
+  .schedule-item-print .item-content {
+    page-break-inside: avoid !important;
+  }
+
+  /* 防止封面图片被截断 */
+  .schedule-item-print .cover-section {
+    page-break-inside: avoid !important;
+  }
+
+  /* 防止歌曲标题和艺术家信息被截断 */
+  .schedule-item-print .song-info {
+    page-break-inside: avoid !important;
+  }
+
+  /* 防止附加信息被截断 */
+  .schedule-item-print .requester-info,
+  .schedule-item-print .votes-info,
+  .schedule-item-print .playtime-info {
+    page-break-inside: avoid !important;
+  }
 }
 
 /* 专门针对PDF导出的样式 */

@@ -150,14 +150,13 @@
       <!-- 右侧预览面板 -->
       <div class="preview-panel">
         <div class="preview-header">
-          <h3>打印预览</h3>
-          <div class="preview-info">
-            <span>{{ filteredSchedules.length }} 首歌曲</span>
-            <span>{{ Math.ceil(filteredSchedules.length / itemsPerPage) }} 页</span>
-            <span v-if="schedules.length === 0" class="debug-info">无排期数据</span>
-            <span v-else-if="filteredSchedules.length === 0" class="debug-info">过滤后无数据</span>
+            <h3>打印预览</h3>
+            <div class="preview-info">
+              <span>{{ filteredSchedules.length }} 首歌曲</span>
+              <span v-if="schedules.length === 0" class="debug-info">无排期数据</span>
+              <span v-else-if="filteredSchedules.length === 0" class="debug-info">过滤后无数据</span>
+            </div>
           </div>
-        </div>
         
         <div 
           class="preview-content" 
@@ -182,7 +181,7 @@
               class="school-logo-print"
             />
                 <div class="title-section">
-                  <h1>{{ siteTitle || '校园广播站点歌系统' }}</h1>
+                  <h1>{{ siteTitle }}</h1>
                   <h2>广播排期表</h2>
                 </div>
               </div>
@@ -291,7 +290,7 @@ import ScheduleItemPrint from './ScheduleItemPrint.vue'
 const { canPrintSchedule } = usePermissions()
 
 // 站点配置
-const { title: siteTitle, schoolLogoPrintUrl, initSiteConfig } = useSiteConfig()
+const { siteTitle, schoolLogoPrintUrl, initSiteConfig } = useSiteConfig()
 
 // 配置
 const config = useRuntimeConfig()
@@ -532,8 +531,7 @@ const printSchedule = async () => {
 // 专门用于打印的PDF生成函数
 const exportPDFForPrint = async () => {
   // 动态导入PDF库
-  const { default: jsPDF } = await import('jspdf')
-  const { default: html2canvas } = await import('html2canvas')
+  const html2pdf = (await import('html2pdf.js')).default
 
   if (!previewContent.value) {
     throw new Error('预览内容未找到')
@@ -545,41 +543,26 @@ const exportPDFForPrint = async () => {
     throw new Error('打印页面元素未找到')
   }
 
-  // 创建PDF - 使用选择的纸张大小和方向
-  const orientation = settings.value.orientation === 'landscape' ? 'l' : 'p'
-  const format = settings.value.paperSize.toLowerCase()
-  const pdf = new jsPDF(orientation, 'mm', format)
-
-  const pageWidth = pdf.internal.pageSize.getWidth()
-  const pageHeight = pdf.internal.pageSize.getHeight()
-  const margin = 10 // 页边距
-
   // 克隆预览内容，保持原有样式
   const clonedPage = printPage.cloneNode(true)
 
-  // 创建PDF渲染容器，设置为纸张大小
+  // 创建PDF渲染容器
   const pdfContainer = document.createElement('div')
   pdfContainer.style.cssText = `
     position: absolute;
     left: -9999px;
     top: 0;
     z-index: -1;
-    width: ${pageWidth}mm;
     background: white;
     color: black;
     box-sizing: border-box;
   `
 
-  // 调整克隆页面的样式以适配纸张大小
+  // 调整克隆页面的样式
   clonedPage.style.cssText = `
-    width: ${pageWidth - margin * 2}mm !important;
-    max-width: ${pageWidth - margin * 2}mm !important;
-    margin: ${margin}mm !important;
-    padding: 0 !important;
     background: white !important;
     color: black !important;
     box-sizing: border-box !important;
-    transform-origin: top left !important;
   `
 
   // 确保所有子元素的颜色正确
@@ -608,57 +591,51 @@ const exportPDFForPrint = async () => {
     // 等待渲染完成
     await new Promise(resolve => setTimeout(resolve, 500))
 
-    // 使用html2canvas转换
-    const canvas = await html2canvas(clonedPage, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      width: clonedPage.offsetWidth,
-      height: clonedPage.offsetHeight
+    // 使用html2pdf.js生成PDF
+    const worker = html2pdf()
+    const options = {
+      margin: 10,
+      filename: `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.pdf`,
+      image: { type: 'png', quality: 0.98 },
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      },
+      jsPDF: { unit: 'mm', format: settings.value.paperSize.toLowerCase(), orientation: settings.value.orientation === 'landscape' ? 'l' : 'p' },
+      pagebreak: { mode: ['css', 'legacy'] }
+    }
+
+    // 生成PDF并打印
+    await worker.from(clonedPage).set(options).toPdf().get('pdf').then(pdf => {
+      // 生成PDF的Blob用于打印
+      const pdfBlob = pdf.output('blob')
+      const pdfUrl = URL.createObjectURL(pdfBlob)
+
+      // 移除临时容器
+      document.body.removeChild(pdfContainer)
+
+      // 创建新窗口显示PDF并打印
+      const printWindow = window.open(pdfUrl, '_blank')
+      if (!printWindow) {
+        throw new Error('无法打开打印窗口')
+      }
+
+      // 等待PDF加载完成后自动打印
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print()
+        }, 1000)
+      }
     })
-
-    // 移除临时容器
-    document.body.removeChild(pdfContainer)
-
-    // 计算图片在PDF中的尺寸
-    const availableWidth = pageWidth - margin * 2
-    const availableHeight = pageHeight - margin * 2
-
-    let imgWidth = availableWidth
-    let imgHeight = (canvas.height * imgWidth) / canvas.width
-
-    if (imgHeight > availableHeight) {
-      imgHeight = availableHeight
-      imgWidth = (canvas.width * imgHeight) / canvas.height
-    }
-
-    const xOffset = (pageWidth - imgWidth) / 2
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', xOffset, margin, imgWidth, imgHeight)
-
-    // 生成PDF的Blob用于打印
-    const pdfBlob = pdf.output('blob')
-    const pdfUrl = URL.createObjectURL(pdfBlob)
-
-    // 创建新窗口显示PDF并打印
-    const printWindow = window.open(pdfUrl, '_blank')
-    if (!printWindow) {
-      throw new Error('无法打开打印窗口')
-    }
-
-    // 等待PDF加载完成后自动打印
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.print()
-      }, 1000)
-    }
-  } catch (canvasError) {
+  } catch (error) {
     // 移除临时容器
     if (document.body.contains(pdfContainer)) {
       document.body.removeChild(pdfContainer)
     }
-    throw canvasError
+    throw error
   }
 }
 
@@ -709,8 +686,7 @@ const exportPDF = async () => {
   isExporting.value = true
   try {
     // 动态导入PDF库
-    const { default: jsPDF } = await import('jspdf')
-    const { default: html2canvas } = await import('html2canvas')
+    const html2pdf = (await import('html2pdf.js')).default
 
     if (!previewContent.value) {
       throw new Error('预览内容未找到')
@@ -722,41 +698,26 @@ const exportPDF = async () => {
       throw new Error('打印页面元素未找到')
     }
 
-    // 创建PDF - 使用选择的纸张大小和方向
-    const orientation = settings.value.orientation === 'landscape' ? 'l' : 'p'
-    const format = settings.value.paperSize.toLowerCase()
-    const pdf = new jsPDF(orientation, 'mm', format)
-
-    const pageWidth = pdf.internal.pageSize.getWidth()
-    const pageHeight = pdf.internal.pageSize.getHeight()
-    const margin = 10 // 页边距
-
     // 克隆预览内容，保持原有样式
     const clonedPage = printPage.cloneNode(true)
 
-    // 创建PDF渲染容器，设置为纸张大小
+    // 创建PDF渲染容器
     const pdfContainer = document.createElement('div')
     pdfContainer.style.cssText = `
       position: absolute;
       left: -9999px;
       top: 0;
       z-index: -1;
-      width: ${pageWidth}mm;
       background: white;
       color: black;
       box-sizing: border-box;
     `
 
-    // 调整克隆页面的样式以适配纸张大小
+    // 调整克隆页面的样式
     clonedPage.style.cssText = `
-      width: ${pageWidth - margin * 2}mm !important;
-      max-width: ${pageWidth - margin * 2}mm !important;
-      margin: ${margin}mm !important;
-      padding: 0 !important;
       background: white !important;
       color: black !important;
       box-sizing: border-box !important;
-      transform-origin: top left !important;
     `
 
     // 确保所有子元素的颜色正确
@@ -787,105 +748,38 @@ const exportPDF = async () => {
       // 等待渲染完成
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // 使用html2canvas转换，保持预览的质量
-      const canvas = await html2canvas(clonedPage, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        width: clonedPage.offsetWidth,
-        height: clonedPage.offsetHeight
-      })
+      // 使用html2pdf.js生成PDF
+      const worker = html2pdf()
+      const options = {
+        margin: 10,
+        filename: `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'png', quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          logging: false
+        },
+        jsPDF: { unit: 'mm', format: settings.value.paperSize.toLowerCase(), orientation: settings.value.orientation === 'landscape' ? 'l' : 'p' },
+        pagebreak: { mode: ['css', 'legacy'] }
+      }
+
+      // 生成并保存PDF
+      await worker.from(clonedPage).set(options).save()
 
       // 移除临时容器
       document.body.removeChild(pdfContainer)
 
-      // 计算图片在PDF中的尺寸，保持宽高比
-      const availableWidth = pageWidth - margin * 2
-      const availableHeight = pageHeight - margin * 2
-
-      let imgWidth = availableWidth
-      let imgHeight = (canvas.height * imgWidth) / canvas.width
-
-      // 如果高度超出页面，按高度重新计算
-      if (imgHeight > availableHeight) {
-        imgHeight = availableHeight
-        imgWidth = (canvas.width * imgHeight) / canvas.height
-      }
-
-      const xOffset = (pageWidth - imgWidth) / 2
-      let currentY = margin
-      let remainingHeight = imgHeight
-      let sourceY = 0
-
-      // 添加第一页
-      const firstPageHeight = Math.min(remainingHeight, availableHeight)
-
-      if (firstPageHeight === imgHeight) {
-        // 内容适合一页
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', xOffset, currentY, imgWidth, imgHeight)
-      } else {
-        // 需要分页
-        const firstPageCanvas = document.createElement('canvas')
-        const firstPageCtx = firstPageCanvas.getContext('2d')
-        firstPageCanvas.width = canvas.width
-        firstPageCanvas.height = (firstPageHeight / imgHeight) * canvas.height
-
-        firstPageCtx.drawImage(
-          canvas,
-          0, sourceY,
-          canvas.width, firstPageCanvas.height,
-          0, 0,
-          canvas.width, firstPageCanvas.height
-        )
-
-        pdf.addImage(firstPageCanvas.toDataURL('image/png'), 'PNG', xOffset, currentY, imgWidth, firstPageHeight)
-
-        remainingHeight -= firstPageHeight
-        sourceY += firstPageCanvas.height
-
-        // 添加后续页面
-        while (remainingHeight > 0) {
-          pdf.addPage()
-
-          const pageContentHeight = Math.min(remainingHeight, availableHeight)
-          const pageCanvas = document.createElement('canvas')
-          const pageCtx = pageCanvas.getContext('2d')
-          pageCanvas.width = canvas.width
-          pageCanvas.height = (pageContentHeight / imgHeight) * canvas.height
-
-          pageCtx.drawImage(
-            canvas,
-            0, sourceY,
-            canvas.width, pageCanvas.height,
-            0, 0,
-            canvas.width, pageCanvas.height
-          )
-
-          pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', xOffset, margin, imgWidth, pageContentHeight)
-
-          remainingHeight -= pageContentHeight
-          sourceY += pageCanvas.height
-        }
-      }
-
-      // 生成文件名
-      const dateRange = formatDateRange()
-      const fileName = `广播排期表_${dateRange}_${new Date().toISOString().split('T')[0]}.pdf`
-
-      // 保存PDF
-      pdf.save(fileName)
-
       if (window.$showNotification) {
         window.$showNotification('PDF导出成功', 'success')
       }
-    } catch (canvasError) {
+    } catch (error) {
       // 移除临时容器
       if (document.body.contains(pdfContainer)) {
         document.body.removeChild(pdfContainer)
       }
-      throw canvasError
+      throw error
     }
   } catch (error) {
     console.error('导出PDF失败:', error)
