@@ -60,6 +60,17 @@ export default defineEventHandler(async (event) => {
     // 检查投稿限额
     const systemSettings = await prisma.systemSettings.findFirst()
     if (systemSettings?.enableSubmissionLimit) {
+      // 检查是否设置了限额为0（关闭投稿）
+      const dailyLimit = systemSettings.dailySubmissionLimit
+      const weeklyLimit = systemSettings.weeklySubmissionLimit
+      
+      if ((dailyLimit === 0 && dailyLimit !== null) || (weeklyLimit === 0 && weeklyLimit !== null)) {
+        throw createError({
+          statusCode: 403,
+          message: '投稿功能已关闭'
+        })
+      }
+      
       const now = new Date()
       
       // 检查每日限额

@@ -222,7 +222,7 @@ const audioPlayer = useAudioPlayer()
 const { playTimeEnabled } = useSongs()
 
 // 学期相关
-const { fetchCurrentSemester, currentSemester } = useSemesters()
+const { fetchCurrentSemester, currentSemester, semesterUpdateEvent } = useSemesters()
 const availableSemesters = ref([])
 const selectedSemester = ref(null)
 const preserveSelectedDate = ref(false) // 用于标记是否保持选择的日期
@@ -549,6 +549,12 @@ const onSemesterChange = () => {
     }
   })
 }
+
+// 监听学期更新事件
+watch(semesterUpdateEvent, async () => {
+  // 当学期更新时，重新获取学期列表
+  await fetchAvailableSemesters()
+})
 
 // 监听窗口大小变化
 onMounted(async () => {

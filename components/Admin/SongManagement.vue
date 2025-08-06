@@ -28,6 +28,13 @@
       </div>
       
       <div class="filter-section">
+        <select v-model="selectedSemester" class="filter-select semester-select">
+          <option value="all">全部学期</option>
+          <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
+            {{ semester.name }}
+          </option>
+        </select>
+        
         <select v-model="statusFilter" class="filter-select">
           <option value="all">全部状态</option>
           <option value="pending">待排期</option>
@@ -46,6 +53,17 @@
       </div>
       
       <div class="action-section">
+        <button
+          @click="showAddSongModal = true"
+          class="filter-select add-song-btn"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          手动添加
+        </button>
+        
         <button
           @click="refreshSongs"
           class="refresh-btn"
@@ -177,6 +195,17 @@
           <div class="cell actions-cell">
             <div class="action-buttons">
               <button
+                @click="editSong(song)"
+                class="action-btn edit-btn"
+                title="编辑歌曲"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              
+              <button
                 v-if="!song.played"
                 @click="markAsPlayed(song.id)"
                 class="action-btn played-btn"
@@ -274,6 +303,230 @@
     :song-id="selectedSongId"
     @close="closeVotersModal"
   />
+
+  <!-- 编辑歌曲模态框 -->
+  <div v-if="showEditModal" class="modal-overlay" @click="cancelEditSong">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h3>编辑歌曲</h3>
+        <button @click="cancelEditSong" class="close-btn">×</button>
+      </div>
+      <div class="modal-body">
+        <form @submit.prevent="saveEditSong">
+          <div class="form-group">
+            <label>歌曲名称</label>
+            <input
+              v-model="editForm.title"
+              type="text"
+              class="form-input"
+              placeholder="请输入歌曲名称"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>歌手</label>
+            <input
+              v-model="editForm.artist"
+              type="text"
+              class="form-input"
+              placeholder="请输入歌手名称"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>投稿人</label>
+            <div class="user-search-container">
+              <input
+                v-model="editUserSearchQuery"
+                type="text"
+                class="form-input"
+                placeholder="搜索用户姓名或用户名"
+                @input="searchEditUsers"
+                @focus="showEditUserDropdown = true"
+              />
+              <div v-if="showEditUserDropdown && filteredEditUsers.length > 0" class="user-dropdown">
+                <div
+                  v-for="user in filteredEditUsers.slice(0, 10)"
+                  :key="user.id"
+                  class="user-option"
+                  @click="selectEditUser(user)"
+                >
+                  <div class="user-info">
+                    <span class="user-name">{{ user.name }}</span>
+                    <span class="user-username">@{{ user.username }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-if="selectedEditUser" class="selected-user">
+              <span>已选择: {{ selectedEditUser.name }} (@{{ selectedEditUser.username }})</span>
+              <button type="button" @click="clearSelectedEditUser" class="clear-user-btn">×</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>学期</label>
+            <select v-model="editForm.semester" class="form-select">
+              <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
+                {{ semester.name }}
+              </option>
+            </select>
+          </div>
+          
+          <!-- 音乐平台和ID（可选） -->
+          <div class="form-group">
+            <label>音乐平台 <span class="optional-label">（可选）</span></label>
+            <select v-model="editForm.musicPlatform" class="form-select">
+              <option value="">请选择平台</option>
+              <option value="netease">网易云音乐</option>
+              <option value="tencent">QQ音乐</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>音乐ID <span class="optional-label">（可选）</span></label>
+            <input
+              v-model="editForm.musicId"
+              type="text"
+              class="form-input"
+              placeholder="请输入音乐平台上的歌曲ID"
+            />
+            <div class="field-hint">
+              音乐ID是歌曲在对应平台上的唯一标识符，用于播放功能
+            </div>
+          </div>
+          <div class="form-group">
+            <label>歌曲封面URL <span class="optional-label">（可选）</span></label>
+            <input
+              v-model="editForm.cover"
+              type="url"
+              class="form-input"
+              placeholder="请输入歌曲封面图片的URL地址"
+            />
+            <div class="field-hint">
+              歌曲封面将显示在歌曲列表中，建议使用高质量的图片链接
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="cancelEditSong" class="btn-cancel">取消</button>
+            <button type="submit" class="btn-primary" :disabled="editLoading">
+              {{ editLoading ? '保存中...' : '保存' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 手动添加歌曲模态框 -->
+  <div v-if="showAddSongModal" class="modal-overlay" @click="cancelAddSong">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h3>手动添加歌曲</h3>
+        <button @click="cancelAddSong" class="close-btn">×</button>
+      </div>
+      <div class="modal-body">
+        <form @submit.prevent="saveAddSong">
+          <div class="form-group">
+            <label>歌曲名称</label>
+            <input
+              v-model="addForm.title"
+              type="text"
+              class="form-input"
+              placeholder="请输入歌曲名称"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>歌手</label>
+            <input
+              v-model="addForm.artist"
+              type="text"
+              class="form-input"
+              placeholder="请输入歌手名称"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>投稿人</label>
+            <div class="user-search-container">
+              <input
+                v-model="userSearchQuery"
+                type="text"
+                class="form-input"
+                placeholder="搜索用户姓名或用户名"
+                @input="searchUsers"
+                @focus="showUserDropdown = true"
+              />
+              <div v-if="showUserDropdown && filteredUsers.length > 0" class="user-dropdown">
+                <div
+                  v-for="user in filteredUsers.slice(0, 10)"
+                  :key="user.id"
+                  class="user-option"
+                  @click="selectUser(user)"
+                >
+                  <div class="user-info">
+                    <span class="user-name">{{ user.name }}</span>
+                    <span class="user-username">@{{ user.username }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-if="selectedUser" class="selected-user">
+              <span>已选择: {{ selectedUser.name }} (@{{ selectedUser.username }})</span>
+              <button type="button" @click="clearSelectedUser" class="clear-user-btn">×</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>学期</label>
+            <select v-model="addForm.semester" class="form-select">
+              <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
+                {{ semester.name }}
+              </option>
+            </select>
+          </div>
+          
+          <!-- 音乐平台和ID（可选） -->
+          <div class="form-group">
+            <label>音乐平台 <span class="optional-label">（可选）</span></label>
+            <select v-model="addForm.musicPlatform" class="form-select">
+              <option value="">请选择平台</option>
+              <option value="netease">网易云音乐</option>
+              <option value="tencent">QQ音乐</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>音乐ID <span class="optional-label">（可选）</span></label>
+            <input
+              v-model="addForm.musicId"
+              type="text"
+              class="form-input"
+              placeholder="请输入音乐平台上的歌曲ID"
+            />
+            <div class="field-hint">
+              音乐ID是歌曲在对应平台上的唯一标识符，用于播放功能
+            </div>
+          </div>
+          <div class="form-group">
+            <label>歌曲封面URL <span class="optional-label">（可选）</span></label>
+            <input
+              v-model="addForm.cover"
+              type="url"
+              class="form-input"
+              placeholder="请输入歌曲封面图片的URL地址"
+            />
+            <div class="field-hint">
+              歌曲封面将显示在歌曲列表中，建议使用高质量的图片链接
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="cancelAddSong" class="btn-cancel">取消</button>
+            <button type="submit" class="btn-primary" :disabled="addLoading">
+              {{ addLoading ? '添加中...' : '添加歌曲' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -283,6 +536,7 @@ import VotersModal from '~/components/Admin/VotersModal.vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
 import { useAuth } from '~/composables/useAuth'
+import { useSemesters } from '~/composables/useSemesters'
 
 // 响应式数据
 const loading = ref(false)
@@ -293,6 +547,10 @@ const selectedSongs = ref([])
 const currentPage = ref(1)
 const pageSize = ref(20)
 
+// 学期相关
+const selectedSemester = ref('all')
+const availableSemesters = ref([])
+
 // 删除对话框相关
 const showDeleteDialog = ref(false)
 const deleteDialogTitle = ref('')
@@ -302,6 +560,47 @@ const deleteAction = ref(null)
 // 投票人员弹窗相关
 const showVotersModal = ref(false)
 const selectedSongId = ref(null)
+
+// 编辑歌曲相关
+const showEditModal = ref(false)
+const editLoading = ref(false)
+const editForm = ref({
+  id: null,
+  title: '',
+  artist: '',
+  requester: '',
+  semester: '',
+  musicPlatform: '',
+  musicId: '',
+  cover: ''
+})
+
+// 添加歌曲相关
+const showAddSongModal = ref(false)
+const addLoading = ref(false)
+const searchLoading = ref(false)
+const addForm = ref({
+  title: '',
+  artist: '',
+  requester: '',
+  semester: '',
+  musicPlatform: '',
+  musicId: '',
+  cover: ''
+})
+
+// 用户搜索相关
+const userSearchQuery = ref('')
+const showUserDropdown = ref(false)
+const selectedUser = ref(null)
+const allUsers = ref([])
+const filteredUsers = ref([])
+
+// 编辑模态框的用户搜索
+const editUserSearchQuery = ref('')
+const showEditUserDropdown = ref(false)
+const selectedEditUser = ref(null)
+const filteredEditUsers = ref([])
 
 // 数据
 const songs = ref([])
@@ -325,6 +624,11 @@ const filteredSongs = computed(() => {
       song.artist?.toLowerCase().includes(query) ||
       song.requester?.toLowerCase().includes(query)
     )
+  }
+  
+  // 学期过滤
+  if (selectedSemester.value !== 'all') {
+    filtered = filtered.filter(song => song.semester === selectedSemester.value)
   }
   
   // 状态过滤
@@ -555,18 +859,275 @@ const confirmDelete = async () => {
   deleteAction.value = null
 }
 
+// 编辑歌曲
+const editSong = (song) => {
+  editForm.value = {
+    id: song.id,
+    title: song.title || '',
+    artist: song.artist || '',
+    requester: song.requester_id || song.requester || '',
+    semester: song.semester || '',
+    musicPlatform: song.musicPlatform || '',
+    musicId: song.musicId || '',
+    cover: song.cover || ''
+  }
+  
+  // 设置编辑时的用户信息
+  if (song.requester_name) {
+    selectedEditUser.value = {
+      id: song.requester_id || song.requester,
+      name: song.requester_name,
+      username: song.requester_username || ''
+    }
+    editUserSearchQuery.value = song.requester_name
+  } else {
+    clearSelectedEditUser()
+  }
+  
+  showEditModal.value = true
+}
+
+const saveEditSong = async () => {
+  if (!editForm.value.title || !editForm.value.artist) {
+    if (window.$showNotification) {
+      window.$showNotification('请填写歌曲名称和歌手', 'error')
+    }
+    return
+  }
+
+  editLoading.value = true
+  try {
+    const { updateSong } = adminService
+    // 传递投稿人字段，支持修改投稿人
+    await updateSong(editForm.value.id, {
+      title: editForm.value.title,
+      artist: editForm.value.artist,
+      requester: editForm.value.requester,
+      semester: editForm.value.semester,
+      musicPlatform: editForm.value.musicPlatform || null,
+      musicId: editForm.value.musicId || null,
+      cover: editForm.value.cover || null
+    })
+    
+    await refreshSongs()
+    showEditModal.value = false
+    
+    if (window.$showNotification) {
+      window.$showNotification('歌曲信息更新成功', 'success')
+    }
+  } catch (error) {
+    console.error('更新歌曲失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('更新失败: ' + error.message, 'error')
+    }
+  } finally {
+    editLoading.value = false
+  }
+}
+
+const cancelEditSong = () => {
+  showEditModal.value = false
+  editForm.value = {
+    id: null,
+    title: '',
+    artist: '',
+    requester: '',
+    semester: '',
+    musicPlatform: '',
+    musicId: '',
+    cover: ''
+  }
+  clearSelectedEditUser()
+}
+
+// 添加歌曲
+const openAddSongModal = () => {
+  addForm.value = {
+    title: '',
+    artist: '',
+    requester: '',
+    semester: '',
+    musicPlatform: '',
+    musicId: '',
+    cover: ''
+  }
+  showAddSongModal.value = true
+}
+
+
+
+const saveAddSong = async () => {
+  if (!addForm.value.title || !addForm.value.artist) {
+    if (window.$showNotification) {
+      window.$showNotification('请填写歌曲名称和歌手', 'error')
+    }
+    return
+  }
+
+  addLoading.value = true
+  try {
+    const { addSong } = adminService
+    await addSong({
+      title: addForm.value.title,
+      artist: addForm.value.artist,
+      requester: addForm.value.requester,
+      semester: addForm.value.semester,
+      musicPlatform: addForm.value.musicPlatform || null,
+      musicId: addForm.value.musicId || null,
+      cover: addForm.value.cover || null
+    })
+    
+    await refreshSongs()
+    showAddSongModal.value = false
+    
+    if (window.$showNotification) {
+      window.$showNotification('歌曲添加成功', 'success')
+    }
+  } catch (error) {
+    console.error('添加歌曲失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('添加失败: ' + error.message, 'error')
+    }
+  } finally {
+    addLoading.value = false
+  }
+}
+
+const cancelAddSong = () => {
+  showAddSongModal.value = false
+  addForm.value = {
+    title: '',
+    artist: '',
+    requester: '',
+    semester: '',
+    musicPlatform: '',
+    musicId: '',
+    cover: ''
+  }
+  clearSelectedUser()
+}
+
+// 用户搜索功能
+const fetchUsers = async () => {
+  try {
+    const response = await $fetch('/api/admin/users')
+    allUsers.value = response.users || []
+  } catch (error) {
+    console.error('获取用户列表失败:', error)
+  }
+}
+
+const searchUsers = () => {
+  if (!userSearchQuery.value.trim()) {
+    filteredUsers.value = []
+    showUserDropdown.value = false
+    return
+  }
+
+  const query = userSearchQuery.value.toLowerCase()
+  filteredUsers.value = allUsers.value.filter(user =>
+    user.name?.toLowerCase().includes(query) ||
+    user.username?.toLowerCase().includes(query)
+  )
+  showUserDropdown.value = true
+}
+
+const selectUser = (user) => {
+  selectedUser.value = user
+  addForm.value.requester = user.id // 存储用户ID
+  userSearchQuery.value = user.name
+  showUserDropdown.value = false
+}
+
+const clearSelectedUser = () => {
+  selectedUser.value = null
+  addForm.value.requester = ''
+  userSearchQuery.value = ''
+  showUserDropdown.value = false
+}
+
+// 编辑模态框的用户搜索功能
+const searchEditUsers = () => {
+  if (!editUserSearchQuery.value.trim()) {
+    filteredEditUsers.value = []
+    showEditUserDropdown.value = false
+    return
+  }
+
+  const query = editUserSearchQuery.value.toLowerCase()
+  filteredEditUsers.value = allUsers.value.filter(user =>
+    user.name?.toLowerCase().includes(query) ||
+    user.username?.toLowerCase().includes(query)
+  )
+  showEditUserDropdown.value = true
+}
+
+const selectEditUser = (user) => {
+  selectedEditUser.value = user
+  editForm.value.requester = user.id // 存储用户ID
+  editUserSearchQuery.value = user.name
+  showEditUserDropdown.value = false
+}
+
+const clearSelectedEditUser = () => {
+  selectedEditUser.value = null
+  editForm.value.requester = ''
+  editUserSearchQuery.value = ''
+  showEditUserDropdown.value = false
+}
+
+// 点击外部关闭下拉框
+const handleClickOutside = (event) => {
+  if (!event.target.closest('.user-search-container')) {
+    showUserDropdown.value = false
+    showEditUserDropdown.value = false
+  }
+}
+
 // 监听器
-watch([searchQuery, statusFilter, sortOption], () => {
+watch([searchQuery, statusFilter, sortOption, selectedSemester], () => {
   currentPage.value = 1
 })
 
 // 生命周期
+// 监听学期更新事件
+const { semesters, fetchSemesters, semesterUpdateEvent } = useSemesters()
+
+watch(semesterUpdateEvent, async () => {
+  // 当学期更新时，重新获取学期列表
+  await fetchSemesters()
+  availableSemesters.value = semesters.value || []
+})
+
 onMounted(async () => {
   songsService = useSongs()
   adminService = useAdmin()
   auth = useAuth()
-
+  
+  // 获取可用学期
+  const { fetchCurrentSemester, currentSemester } = useSemesters()
+  await fetchSemesters()
+  await fetchCurrentSemester()
+  
+  availableSemesters.value = semesters.value || []
+  
+  // 设置默认学期为当前学期
+  if (currentSemester.value) {
+    selectedSemester.value = currentSemester.value.name
+  }
+  
+  // 获取用户列表
+  await fetchUsers()
+  
+  // 添加点击外部关闭下拉框的事件监听
+  document.addEventListener('click', handleClickOutside)
+  
   await refreshSongs()
+})
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -688,6 +1249,13 @@ onMounted(async () => {
 .filter-select:focus {
   outline: none;
   border-color: #667eea;
+}
+
+.semester-select {
+  width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .action-section {
@@ -1140,5 +1708,410 @@ onMounted(async () => {
     flex-wrap: wrap;
     gap: 8px;
   }
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #1a1a1a;
+  border-radius: 12px;
+  border: 1px solid #2a2a2a;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: #888888;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: #2a2a2a;
+  color: #ffffff;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-input::placeholder {
+  color: #666666;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.auto-match-section {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+}
+
+.auto-match-section .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.auto-match-btn {
+  padding: 12px 16px;
+  background: #667eea;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auto-match-btn:hover:not(:disabled) {
+  background: #5a67d8;
+}
+
+.auto-match-btn:disabled {
+  background: #3a3a3a;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+.modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #2a2a2a;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.modal-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-btn.primary {
+  background: #667eea;
+  color: #ffffff;
+}
+
+.modal-btn.primary:hover:not(:disabled) {
+  background: #5a67d8;
+}
+
+.modal-btn.secondary {
+  background: #2a2a2a;
+  color: #e2e8f0;
+  border: 1px solid #3a3a3a;
+}
+
+.modal-btn.secondary:hover {
+  background: #3a3a3a;
+}
+
+.modal-btn:disabled {
+  background: #3a3a3a;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+.edit-btn {
+  background: #667eea;
+  color: #ffffff;
+}
+
+.edit-btn:hover {
+  background: #5a67d8;
+}
+
+.add-song-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-song-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 模态框按钮样式 */
+.close-btn {
+  background: none;
+  border: none;
+  color: #888888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #2a2a2a;
+  color: #ffffff;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #2a2a2a;
+}
+
+.btn-cancel {
+  padding: 12px 24px;
+  background: #2a2a2a;
+  color: #e2e8f0;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: #3a3a3a;
+}
+
+.btn-primary {
+  padding: 12px 24px;
+  background: #667eea;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #5a67d8;
+}
+
+.btn-primary:disabled {
+  background: #3a3a3a;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+.search-input-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-input-group .form-input {
+  flex: 1;
+}
+
+.auto-fill-btn {
+  padding: 12px 16px;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.auto-fill-btn:hover:not(:disabled) {
+  background: #059669;
+}
+
+.auto-fill-btn:disabled {
+  background: #3a3a3a;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+/* 用户搜索样式 */
+.user-search-container {
+  position: relative;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.user-option {
+  padding: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #3a3a3a;
+  transition: background-color 0.2s;
+}
+
+.user-option:hover {
+  background-color: #3a3a3a;
+}
+
+.user-option:last-child {
+  border-bottom: none;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.user-username {
+  font-size: 0.875rem;
+  color: #888888;
+}
+
+.selected-user {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid #667eea;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #667eea;
+}
+
+.clear-user-btn {
+  background: none;
+  border: none;
+  color: #888888;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.clear-user-btn:hover {
+  background: #3a3a3a;
+  color: #ffffff;
+}
+
+/* 可选字段样式 */
+.optional-label {
+  font-size: 0.75rem;
+  color: #888888;
+  font-weight: normal;
+}
+
+.field-hint {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #888888;
+  line-height: 1.4;
 }
 </style>

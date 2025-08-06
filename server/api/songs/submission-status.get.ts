@@ -15,6 +15,9 @@ export default defineEventHandler(async (event) => {
     // 获取系统设置
     const systemSettings = await prisma.systemSettings.findFirst()
     
+    // 超级管理员和管理员不受投稿限制
+    const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+    
     if (!systemSettings?.enableSubmissionLimit) {
       return {
         limitEnabled: false,
@@ -23,7 +26,26 @@ export default defineEventHandler(async (event) => {
         dailyUsed: 0,
         weeklyUsed: 0,
         dailyRemaining: null,
-        weeklyRemaining: null
+        weeklyRemaining: null,
+        submissionClosed: false
+      }
+    }
+
+    // 检查是否设置了限额为0（关闭投稿）
+    const dailyLimit = systemSettings.dailySubmissionLimit || 0
+    const weeklyLimit = systemSettings.weeklySubmissionLimit || 0
+    
+    if ((dailyLimit === 0 && systemSettings.dailySubmissionLimit !== null) || 
+        (weeklyLimit === 0 && systemSettings.weeklySubmissionLimit !== null)) {
+      return {
+        limitEnabled: true,
+        dailyLimit: dailyLimit || null,
+        weeklyLimit: weeklyLimit || null,
+        dailyUsed: 0,
+        weeklyUsed: 0,
+        dailyRemaining: 0,
+        weeklyRemaining: 0,
+        submissionClosed: !isAdmin // 管理员不受投稿关闭限制
       }
     }
     
@@ -75,7 +97,8 @@ export default defineEventHandler(async (event) => {
       dailyUsed,
       weeklyUsed,
       dailyRemaining: systemSettings.dailySubmissionLimit ? Math.max(0, systemSettings.dailySubmissionLimit - dailyUsed) : null,
-      weeklyRemaining: systemSettings.weeklySubmissionLimit ? Math.max(0, systemSettings.weeklySubmissionLimit - weeklyUsed) : null
+      weeklyRemaining: systemSettings.weeklySubmissionLimit ? Math.max(0, systemSettings.weeklySubmissionLimit - weeklyUsed) : null,
+      submissionClosed: false
     }
   } catch (error) {
     console.error('获取投稿状态失败:', error)

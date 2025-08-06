@@ -34,6 +34,41 @@
           <polyline points="9,18 15,12 9,6"/>
         </svg>
       </button>
+      
+      <!-- 手动日期选择器 -->
+      <div class="manual-date-selector">
+        <button class="manual-date-btn" @click="showManualDatePicker = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          选择日期
+        </button>
+      </div>
+    </div>
+
+    <!-- 手动日期选择弹窗 -->
+    <div v-if="showManualDatePicker" class="manual-date-modal">
+      <div class="manual-date-overlay" @click="showManualDatePicker = false"></div>
+      <div class="manual-date-content">
+        <div class="manual-date-header">
+          <h3>选择日期</h3>
+          <button class="close-btn" @click="showManualDatePicker = false">×</button>
+        </div>
+        <div class="manual-date-body">
+          <input
+            type="date"
+            v-model="manualSelectedDate"
+            class="manual-date-input"
+          />
+          <div class="manual-date-actions">
+            <button class="cancel-btn" @click="showManualDatePicker = false">取消</button>
+            <button class="confirm-btn" @click="confirmManualDate">确认</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 播出时段选择器 -->
@@ -56,6 +91,8 @@
       </div>
     </div>
 
+
+
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-container">
       <div class="spinner"></div>
@@ -68,14 +105,28 @@
       <div class="song-list-panel">
         <div class="panel-header">
           <h3>待排歌曲</h3>
-          <div class="sort-options">
-            <label>排序:</label>
-            <select v-model="songSortOption" class="sort-select">
-              <option value="time-desc">最新投稿</option>
-              <option value="time-asc">最早投稿</option>
-              <option value="votes-desc">热度最高</option>
-              <option value="votes-asc">热度最低</option>
-            </select>
+          <div class="header-controls">
+            <div class="semester-selector">
+              <label class="semester-label">学期：</label>
+              <select v-model="selectedSemester" @change="onSemesterChange" class="semester-select">
+                <option
+                  v-for="semester in availableSemesters"
+                  :key="semester.id"
+                  :value="semester.name"
+                >
+                  {{ semester.name }}
+                </option>
+              </select>
+            </div>
+            <div class="sort-options">
+              <label>排序:</label>
+              <select v-model="songSortOption" class="sort-select">
+                <option value="time-desc">最新投稿</option>
+                <option value="time-asc">最早投稿</option>
+                <option value="votes-desc">热度最高</option>
+                <option value="votes-asc">热度最低</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -135,6 +186,51 @@
           
           <div v-if="filteredUnscheduledSongs.length === 0" class="empty-message">
             没有待排歌曲
+          </div>
+        </div>
+        
+        <!-- 分页控件 -->
+        <div v-if="totalPages > 1" class="pagination-container">
+          <div class="pagination-info">
+            共 {{ allUnscheduledSongs.length }} 首歌曲，第 {{ currentPage }} / {{ totalPages }} 页
+          </div>
+          <div class="pagination-controls">
+            <button 
+              class="pagination-btn" 
+              :disabled="currentPage === 1"
+              @click="prevPage"
+            >
+              上一页
+            </button>
+            
+            <div class="page-numbers">
+              <button
+                v-for="page in Math.min(5, totalPages)"
+                :key="page"
+                :class="['page-number', { active: page === currentPage }]"
+                @click="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+              
+              <span v-if="totalPages > 5" class="page-ellipsis">...</span>
+              
+              <button
+                v-if="totalPages > 5 && currentPage < totalPages - 2"
+                :class="['page-number', { active: totalPages === currentPage }]"
+                @click="goToPage(totalPages)"
+              >
+                {{ totalPages }}
+              </button>
+            </div>
+            
+            <button 
+              class="pagination-btn" 
+              :disabled="currentPage === totalPages"
+              @click="nextPage"
+            >
+              下一页
+            </button>
           </div>
         </div>
       </div>
@@ -299,17 +395,30 @@ const playTimes = ref([])
 const playTimeEnabled = ref(false)
 const selectedPlayTime = ref('')
 
+// 学期相关
+const availableSemesters = ref([])
+const selectedSemester = ref('')
+
+// 手动日期选择
+const showManualDatePicker = ref(false)
+const manualSelectedDate = ref('')
+
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(10)
+
 // 服务
 let songsService = null
 let adminService = null
 let auth = null
+let semesterService = null
 
-// 生成日期列表
+// 生成日期列表（固定14天）
 const availableDates = computed(() => {
   const dates = []
   const today = new Date()
 
-  // 生成前7天到后7天的日期（共15天）
+  // 生成前7天到后7天的日期
   for (let i = -7; i <= 7; i++) {
     const date = new Date(today)
     date.setDate(today.getDate() + i)
@@ -331,8 +440,8 @@ const availableDates = computed(() => {
   return dates
 })
 
-// 过滤未排期歌曲
-const filteredUnscheduledSongs = computed(() => {
+// 过滤未排期歌曲（所有）
+const allUnscheduledSongs = computed(() => {
   if (!songs.value) return []
   
   const unscheduledSongs = songs.value.filter(song =>
@@ -353,6 +462,18 @@ const filteredUnscheduledSongs = computed(() => {
         return 0
     }
   })
+})
+
+// 分页后的未排期歌曲
+const filteredUnscheduledSongs = computed(() => {
+  const startIndex = (currentPage.value - 1) * pageSize.value
+  const endIndex = startIndex + pageSize.value
+  return allUnscheduledSongs.value.slice(startIndex, endIndex)
+})
+
+// 总页数
+const totalPages = computed(() => {
+  return Math.ceil(allUnscheduledSongs.value.length / pageSize.value)
 })
 
 // 方法
@@ -398,10 +519,13 @@ onMounted(async () => {
   songsService = useSongs()
   adminService = useAdmin()
   auth = useAuth()
+  semesterService = useSemesters()
 
+  // 先加载学期数据，然后加载其他数据
+  await loadSemesters()
   await loadData()
 
-  // 添加滚轮事件监听
+  // 添加事件监听器
   nextTick(() => {
     if (dateSelector.value) {
       dateSelector.value.addEventListener('wheel', handleDateSelectorWheel, { passive: false })
@@ -417,17 +541,51 @@ onUnmounted(() => {
   }
 })
 
+// 确认手动日期选择
+const confirmManualDate = () => {
+  if (manualSelectedDate.value) {
+    selectedDate.value = manualSelectedDate.value
+    showManualDatePicker.value = false
+  }
+}
+
+// 分页控制方法
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
 // 监听日期变化
 watch(selectedDate, async () => {
   await loadData()
+})
+
+// 监听排序选项变化，重置分页
+watch(songSortOption, () => {
+  currentPage.value = 1
 })
 
 // 加载数据
 const loadData = async () => {
   loading.value = true
   try {
-    await songsService.fetchSongs()
-    await songsService.fetchPublicSchedules()
+    // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
+    const semester = selectedSemester.value === '全部' ? undefined : selectedSemester.value
+    await songsService.fetchSongs(false, semester)
+    await songsService.fetchPublicSchedules(false, semester)
     await loadPlayTimes()
 
     songs.value = songsService.songs.value
@@ -478,6 +636,58 @@ const getPlayTimeName = (playTimeId) => {
   if (!playTimeId || !playTimes.value) return ''
   const playTime = playTimes.value.find(pt => pt.id === playTimeId)
   return playTime ? playTime.name : ''
+}
+
+// 加载学期列表
+const loadSemesters = async () => {
+  try {
+    await semesterService.fetchSemesters()
+    await semesterService.fetchCurrentSemester()
+    
+    // 构建学期列表，包含"全部"选项和各个学期
+    const semesterList = [
+      { id: 'all', name: '全部', isCurrent: false }
+    ]
+    
+    // 添加当前学期（如果存在）
+    if (semesterService.currentSemester.value) {
+      semesterList.push({
+        id: semesterService.currentSemester.value.id || 'current',
+        name: semesterService.currentSemester.value.name,
+        isCurrent: true
+      })
+    }
+    
+    // 添加其他学期
+    if (semesterService.semesters.value) {
+      semesterService.semesters.value.forEach(semester => {
+        if (!semesterService.currentSemester.value || semester.name !== semesterService.currentSemester.value.name) {
+          semesterList.push({
+            id: semester.id,
+            name: semester.name,
+            isCurrent: false
+          })
+        }
+      })
+    }
+    
+    availableSemesters.value = semesterList
+    
+    // 默认选择当前学期（如果存在），否则选择"全部"
+    if (semesterService.currentSemester.value) {
+      selectedSemester.value = semesterService.currentSemester.value.name
+    } else if (semesterList.length > 0) {
+      selectedSemester.value = semesterList[0].name
+    }
+  } catch (error) {
+    console.error('获取学期列表失败:', error)
+  }
+}
+
+// 学期切换处理
+const onSemesterChange = async () => {
+  // 学期切换后重新加载数据
+  await loadData()
 }
 
 // 更新本地排期数据
@@ -1007,15 +1217,9 @@ const openDownloadDialog = () => {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 20px;
-  background: var(--bg-primary);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--card-border);
   width: 100%;
-  max-width: none;
   min-width: 0;
   box-sizing: border-box;
-  min-height: 100vh;
   color: #e2e8f0;
 }
 
@@ -1073,6 +1277,8 @@ const openDownloadDialog = () => {
   border-color: #667eea;
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
+
+
 
 .date-nav-btn {
   width: 40px;
@@ -1194,11 +1400,19 @@ const openDownloadDialog = () => {
 /* 排期内容 */
 .schedule-content {
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr);
-  gap: 24px;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
   min-height: 600px;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .schedule-content {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 .song-list-panel,
@@ -1227,6 +1441,47 @@ const openDownloadDialog = () => {
   font-weight: 700;
   color: #f8fafc;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.semester-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.semester-label {
+  font-size: 14px;
+  color: #888888;
+  white-space: nowrap;
+}
+
+.semester-select {
+  padding: 6px 12px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  min-width: 150px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.semester-select:hover {
+  border-color: #4a4a4a;
+  background: #333333;
+}
+
+.semester-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
 .sort-options {
@@ -1508,6 +1763,161 @@ const openDownloadDialog = () => {
 
 
 
+/* 手动日期选择器 */
+.manual-date-selector {
+  margin-left: 12px;
+}
+
+.manual-date-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #3a3a3a;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.manual-date-btn:hover {
+  background: #4a4a4a;
+  border-color: #667eea;
+}
+
+.manual-date-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 手动日期选择弹窗 */
+.manual-date-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.manual-date-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.manual-date-content {
+  position: relative;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  min-width: 320px;
+  max-width: 90vw;
+}
+
+.manual-date-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.manual-date-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #888888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #3a3a3a;
+  color: #ffffff;
+}
+
+.manual-date-body {
+  padding: 24px;
+}
+
+.manual-date-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 16px;
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+}
+
+.manual-date-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.manual-date-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancel-btn,
+.confirm-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn {
+  background: #3a3a3a;
+  color: #ffffff;
+}
+
+.cancel-btn:hover {
+  background: #4a4a4a;
+}
+
+.confirm-btn {
+  background: #667eea;
+  color: #ffffff;
+}
+
+.confirm-btn:hover {
+  background: #5a67d8;
+}
+
 /* 空状态 */
 .empty-message {
   display: flex;
@@ -1520,6 +1930,88 @@ const openDownloadDialog = () => {
   border: 2px dashed #3a3a3a;
   border-radius: 8px;
   margin: 20px 0;
+}
+
+/* 分页控件 */
+.pagination-container {
+  margin-top: 16px;
+  padding: 16px;
+  background: #2a2a2a;
+  border-radius: 8px;
+  border: 1px solid #3a3a3a;
+}
+
+.pagination-info {
+  text-align: center;
+  color: #cccccc;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  background: #3a3a3a;
+  color: #ffffff;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #4a4a4a;
+  border-color: #5a5a5a;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-number {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3a3a3a;
+  color: #ffffff;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-number:hover {
+  background: #4a4a4a;
+  border-color: #5a5a5a;
+}
+
+.page-number.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: #ffffff;
+}
+
+.page-ellipsis {
+  color: #666666;
+  padding: 0 8px;
+  font-size: 14px;
 }
 
 /* 响应式设计 */
@@ -1539,22 +2031,24 @@ const openDownloadDialog = () => {
     width: 100%;
     justify-content: flex-end;
   }
+
+  .pagination-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .page-numbers {
+    order: -1;
+  }
 }
 
 @media (max-width: 900px) {
-  .schedule-manager {
-    padding: 16px;
-  }
-
   .schedule-content {
     gap: 12px;
   }
 }
 
 @media (max-width: 768px) {
-  .schedule-manager {
-    padding: 16px;
-  }
 
   .date-selector-container {
     padding: 12px;
@@ -1578,6 +2072,26 @@ const openDownloadDialog = () => {
   .song-meta {
     flex-direction: column;
     gap: 4px;
+  }
+
+  .pagination-container {
+    padding: 12px;
+  }
+
+  .pagination-info {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .pagination-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .page-number {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
   }
 }
 

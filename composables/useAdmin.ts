@@ -367,6 +367,64 @@ export const useAdmin = () => {
       loading.value = false
     }
   }
+
+  // 更新歌曲
+  const updateSong = async (songId: number, songData: any) => {
+    if (!isAdmin.value) {
+      error.value = '只有管理员才能更新歌曲'
+      return null
+    }
+    
+    loading.value = true
+    error.value = ''
+    
+    try {
+      // 显式传递认证头
+      const authHeaders = getAuthHeader()
+      
+      const data = await $fetch(`/api/songs/${songId}/update`, {
+        method: 'PUT',
+        body: songData,
+        headers: authHeaders.headers
+      })
+      
+      return data
+    } catch (err: any) {
+      error.value = err.message || '更新歌曲失败'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 添加歌曲
+  const addSong = async (songData: any) => {
+    if (!isAdmin.value) {
+      error.value = '只有管理员才能添加歌曲'
+      return null
+    }
+    
+    loading.value = true
+    error.value = ''
+    
+    try {
+      // 显式传递认证头
+      const authHeaders = getAuthHeader()
+      
+      const data = await $fetch('/api/songs/add', {
+        method: 'POST',
+        body: songData,
+        headers: authHeaders.headers
+      })
+      
+      return data
+    } catch (err: any) {
+      error.value = err.message || '添加歌曲失败'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
   
   return {
     loading,
@@ -382,6 +440,8 @@ export const useAdmin = () => {
     createPlayTime,
     updatePlayTime,
     deletePlayTime,
-    deleteSong
+    deleteSong,
+    updateSong,
+    addSong
   }
 }

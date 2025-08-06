@@ -134,11 +134,11 @@
               id="dailySubmissionLimit"
               v-model.number="formData.dailySubmissionLimit"
               type="number"
-              min="1"
+              min="0"
               max="100"
               placeholder="请输入每日最大投稿数量"
             />
-            <small class="help-text">每个用户每天最多可以投稿的歌曲数量</small>
+            <small class="help-text">每个用户每天最多可以投稿的歌曲数量，设置为0表示关闭投稿功能</small>
           </div>
 
           <div v-if="limitType === 'weekly'" class="form-group">
@@ -147,11 +147,11 @@
               id="weeklySubmissionLimit"
               v-model.number="formData.weeklySubmissionLimit"
               type="number"
-              min="1"
+              min="0"
               max="500"
               placeholder="请输入每周最大投稿数量"
             />
-            <small class="help-text">每个用户每周最多可以投稿的歌曲数量</small>
+            <small class="help-text">每个用户每周最多可以投稿的歌曲数量，设置为0表示关闭投稿功能</small>
           </div>
         </div>
       </div>
@@ -212,9 +212,9 @@ const saving = ref(false)
 
 // 限额类型：daily 或 weekly
 const limitType = computed(() => {
-  if (formData.value.dailySubmissionLimit > 0) {
+  if (formData.value.dailySubmissionLimit !== null && formData.value.dailySubmissionLimit !== undefined) {
     return 'daily'
-  } else if (formData.value.weeklySubmissionLimit > 0) {
+  } else if (formData.value.weeklySubmissionLimit !== null && formData.value.weeklySubmissionLimit !== undefined) {
     return 'weekly'
   }
   return 'daily' // 默认为每日限额
@@ -353,14 +353,14 @@ const saveConfig = async () => {
 const handleLimitTypeChange = (type) => {
   if (type === 'daily') {
     // 切换到每日限额，清空每周限额
-    formData.value.weeklySubmissionLimit = 0
-    if (formData.value.dailySubmissionLimit === 0) {
+    formData.value.weeklySubmissionLimit = null
+    if (formData.value.dailySubmissionLimit === null || formData.value.dailySubmissionLimit === undefined) {
       formData.value.dailySubmissionLimit = 5 // 默认值
     }
   } else if (type === 'weekly') {
     // 切换到每周限额，清空每日限额
-    formData.value.dailySubmissionLimit = 0
-    if (formData.value.weeklySubmissionLimit === 0) {
+    formData.value.dailySubmissionLimit = null
+    if (formData.value.weeklySubmissionLimit === null || formData.value.weeklySubmissionLimit === undefined) {
       formData.value.weeklySubmissionLimit = 20 // 默认值
     }
   }

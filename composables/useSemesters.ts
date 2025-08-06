@@ -1,11 +1,19 @@
 import { ref, readonly } from 'vue'
 import type { Semester } from '~/types'
 
+// 全局事件总线用于学期更新通知
+const semesterUpdateEvent = ref(0)
+
 export function useSemesters() {
   const semesters = ref<Semester[]>([])
   const currentSemester = ref<Semester | null>(null)
   const loading = ref(false)
   const error = ref('')
+
+  // 触发学期更新事件
+  const triggerSemesterUpdate = () => {
+    semesterUpdateEvent.value++
+  }
 
   // 获取学期列表（管理员专用）
   const fetchSemesters = async () => {
@@ -96,6 +104,14 @@ export function useSemesters() {
       // 更新学期列表
       await fetchSemesters()
       
+      // 如果设置为活跃学期，也更新当前学期
+      if (semesterData.isActive) {
+        await fetchCurrentSemester()
+      }
+      
+      // 触发全局学期更新事件
+      triggerSemesterUpdate()
+      
       return data
     } catch (err: any) {
       error.value = err.message || '创建学期失败'
@@ -138,6 +154,9 @@ export function useSemesters() {
       await fetchSemesters()
       await fetchCurrentSemester()
       
+      // 触发全局学期更新事件
+      triggerSemesterUpdate()
+      
       return true
     } catch (err: any) {
       error.value = err.message || '设置活跃学期失败'
@@ -178,6 +197,9 @@ export function useSemesters() {
       // 更新学期列表
       await fetchSemesters()
       
+      // 触发全局学期更新事件
+      triggerSemesterUpdate()
+      
       return true
     } catch (err: any) {
       error.value = err.message || '删除学期失败'
@@ -192,10 +214,12 @@ export function useSemesters() {
     currentSemester: readonly(currentSemester),
     loading: readonly(loading),
     error: readonly(error),
+    semesterUpdateEvent: readonly(semesterUpdateEvent),
     fetchSemesters,
     fetchCurrentSemester,
     createSemester,
     setActiveSemester,
-    deleteSemester
+    deleteSemester,
+    triggerSemesterUpdate
   }
 }

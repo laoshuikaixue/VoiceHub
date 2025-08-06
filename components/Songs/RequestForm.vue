@@ -48,6 +48,12 @@
               <span class="admin-text">您是管理员，不受投稿限制</span>
             </div>
             
+            <!-- 投稿关闭提示 -->
+            <div v-else-if="submissionStatus.submissionClosed" class="submission-closed-notice">
+              <span class="closed-icon">🚫</span>
+              <span class="closed-text">投稿功能已关闭</span>
+            </div>
+            
             <!-- 投稿状态内容 -->
             <div v-else class="status-content-horizontal">
               <div v-if="submissionStatus.dailyLimit" class="status-item-horizontal">
@@ -1081,6 +1087,14 @@ const checkSubmissionLimit = () => {
     return { canSubmit: true, message: '' }
   }
 
+  // 检查投稿是否已关闭
+  if (submissionStatus.value.submissionClosed) {
+    return { 
+      canSubmit: false, 
+      message: '投稿功能已关闭' 
+    }
+  }
+
   const { dailyLimit, weeklyLimit, dailyUsed, weeklyUsed } = submissionStatus.value
 
   // 检查日限额
@@ -1267,6 +1281,24 @@ defineExpose({
   font-weight: 500;
   font-size: 14px;
   color: #FFD700;
+}
+
+.submission-closed-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.submission-closed-notice .closed-icon {
+  font-size: 16px;
+}
+
+.submission-closed-notice .closed-text {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #FF6B6B;
 }
 
 .status-content-horizontal {

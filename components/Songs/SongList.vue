@@ -283,7 +283,7 @@ const auth = useAuth()
 const isAuthenticated = computed(() => auth && auth.isAuthenticated && auth.isAuthenticated.value)
 
 // 学期相关
-const { fetchCurrentSemester, currentSemester } = useSemesters()
+const { fetchCurrentSemester, currentSemester, semesterUpdateEvent } = useSemesters()
 const availableSemesters = ref([])
 const selectedSemester = ref('')
 const showSemesterDropdown = ref(false)
@@ -309,10 +309,15 @@ const checkMobile = () => {
 }
 
 // 组件挂载和卸载时添加/移除窗口大小变化监听
-onMounted(() => {
+onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
-  fetchAvailableSemesters()
+  
+  // 首先获取当前学期
+  await fetchCurrentSemester()
+  
+  // 然后获取可用学期并设置默认值
+  await fetchAvailableSemesters()
 })
 
 onUnmounted(() => {
@@ -323,6 +328,12 @@ onUnmounted(() => {
 watch(() => props.songs, () => {
   fetchAvailableSemesters()
 }, { deep: true })
+
+// 监听学期更新事件
+watch(semesterUpdateEvent, async () => {
+  // 当学期更新时，重新获取学期列表
+  fetchAvailableSemesters()
+})
 
 // 确认对话框
 const confirmDialog = ref({
@@ -663,12 +674,10 @@ const fetchAvailableSemesters = async () => {
     availableSemesters.value = semesters.sort().reverse() // 按时间倒序排列
     
     // 只在第一次加载时设置默认学期
-    if (!selectedSemester.value && availableSemesters.value.length > 0) {
-      // 获取当前学期
-      await fetchCurrentSemester()
-      if (currentSemester.value && availableSemesters.value.includes(currentSemester.value)) {
-        selectedSemester.value = currentSemester.value
-      } else {
+    if (!selectedSemester.value) {
+      if (currentSemester.value && availableSemesters.value.includes(currentSemester.value.name)) {
+        selectedSemester.value = currentSemester.value.name
+      } else if (availableSemesters.value.length > 0) {
         selectedSemester.value = availableSemesters.value[0]
       }
     }
