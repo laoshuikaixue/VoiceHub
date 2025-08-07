@@ -68,7 +68,66 @@ let isAuthenticated = false
 onMounted(() => {
   auth = useAuth()
   isAuthenticated = auth.isAuthenticated.value
+  
+  // 初始化鸿蒙系统控制事件监听
+  setupHarmonyOSListeners()
 })
+
+// 设置鸿蒙系统控制事件监听
+const setupHarmonyOSListeners = () => {
+  if (typeof window === 'undefined') return
+  
+  // 监听鸿蒙系统控制事件
+  const handleHarmonyOSPlay = () => {
+    console.log('收到鸿蒙播放命令')
+    const currentGlobalSong = audioPlayer.getCurrentSong().value
+    if (currentGlobalSong) {
+      // 如果有当前歌曲，恢复播放
+      audioPlayer.playSong(currentGlobalSong)
+    }
+  }
+  
+  const handleHarmonyOSPause = () => {
+    console.log('收到鸿蒙暂停命令')
+    audioPlayer.pauseSong()
+  }
+  
+  const handleHarmonyOSStop = () => {
+    console.log('收到鸿蒙停止命令')
+    audioPlayer.stopSong()
+  }
+  
+  const handleHarmonyOSNext = () => {
+    console.log('收到鸿蒙下一首命令')
+    // 这里可以实现下一首逻辑，目前暂时停止播放
+    audioPlayer.stopSong()
+  }
+  
+  const handleHarmonyOSPrevious = () => {
+    console.log('收到鸿蒙上一首命令')
+    // 这里可以实现上一首逻辑，目前暂时停止播放
+    audioPlayer.stopSong()
+  }
+  
+  // 使用Nuxt的事件总线监听鸿蒙控制事件
+  if (window.__NUXT__ && window.__NUXT__.$nuxt) {
+    const nuxtApp = window.__NUXT__.$nuxt
+    if (nuxtApp.$on) {
+      nuxtApp.$on('harmonyos-play', handleHarmonyOSPlay)
+      nuxtApp.$on('harmonyos-pause', handleHarmonyOSPause)
+      nuxtApp.$on('harmonyos-stop', handleHarmonyOSStop)
+      nuxtApp.$on('harmonyos-next', handleHarmonyOSNext)
+      nuxtApp.$on('harmonyos-previous', handleHarmonyOSPrevious)
+    }
+  }
+  
+  // 备用方案：直接在window上监听自定义事件
+  window.addEventListener('harmonyos-play', handleHarmonyOSPlay)
+  window.addEventListener('harmonyos-pause', handleHarmonyOSPause)
+  window.addEventListener('harmonyos-stop', handleHarmonyOSStop)
+  window.addEventListener('harmonyos-next', handleHarmonyOSNext)
+  window.addEventListener('harmonyos-previous', handleHarmonyOSPrevious)
+}
 
 // 使用计算属性确保安全地访问auth对象
 const safeIsAuthenticated = computed(() => auth?.isAuthenticated?.value || false)

@@ -82,6 +82,20 @@ export default defineNuxtConfig({
           'Connection': 'keep-alive'
         }
       }
+    },
+    // Prisma 客户端配置
+    rollupConfig: {
+      external: ['@prisma/client'],
+    }
+  },
+  
+  // Vite 配置
+  vite: {
+    optimizeDeps: {
+      include: ['@prisma/client']
+    },
+    ssr: {
+      noExternal: ['@prisma/client']
     }
   }
 })

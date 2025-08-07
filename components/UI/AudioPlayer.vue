@@ -265,6 +265,11 @@ watch(() => props.song, (newSong, oldSong) => {
     hasError.value = false
     coverError.value = false
 
+    // 先通知鸿蒙应用歌曲信息变化
+    setTimeout(() => {
+      notifyHarmonyOS('metadata')
+    }, 50)
+
     setTimeout(() => {
       if (audioPlayer.value) {
         audioPlayer.value.load()
@@ -274,6 +279,8 @@ watch(() => props.song, (newSong, oldSong) => {
           emit('error', err)
         })
         isPlaying.value = true
+        // 通知鸿蒙应用开始播放
+        notifyHarmonyOS('play')
       }
     }, 100)
   }
@@ -323,6 +330,8 @@ const togglePlay = () => {
     isPlaying.value = false
     // 同步到全局状态
     globalAudioPlayer.pauseSong()
+    // 通知鸿蒙应用
+    notifyHarmonyOS('pause')
   } else {
     audioPlayer.value.play().catch(err => {
       console.error('播放失败:', err)
@@ -333,6 +342,30 @@ const togglePlay = () => {
     // 如果有当前歌曲，同步到全局状态
     if (props.song) {
       globalAudioPlayer.playSong(props.song)
+    }
+    // 通知鸿蒙应用
+    notifyHarmonyOS('play')
+  }
+}
+
+// 通知鸿蒙应用播放状态变化
+const notifyHarmonyOS = (action) => {
+  if (typeof window !== 'undefined' && window.voiceHubPlayer && props.song) {
+    const songInfo = {
+      title: props.song.title || '未知歌曲',
+      artist: props.song.artist || '未知艺术家',
+      album: 'VoiceHub',
+      cover: props.song.cover || '',
+      duration: duration.value || 0,
+      position: currentTime.value || 0
+    }
+
+    if (action === 'play') {
+      window.voiceHubPlayer.onPlayStateChanged(true, songInfo)
+    } else if (action === 'pause') {
+      window.voiceHubPlayer.onPlayStateChanged(false, songInfo)
+    } else if (action === 'metadata') {
+      window.voiceHubPlayer.onSongChanged(songInfo)
     }
   }
 }
@@ -348,6 +381,8 @@ const stopPlaying = () => {
     isPlaying.value = false
     // 同步到全局状态
     globalAudioPlayer.stopSong()
+    // 通知鸿蒙应用停止播放
+    notifyHarmonyOS('pause')
   }
 
   setTimeout(() => {
@@ -363,6 +398,12 @@ const onTimeUpdate = () => {
   
   if (audioPlayer.value.duration) {
     progress.value = (audioPlayer.value.currentTime / audioPlayer.value.duration) * 100
+    
+    // 每5秒通知一次鸿蒙应用播放位置（避免过于频繁的更新）
+    const currentTimeInt = Math.floor(audioPlayer.value.currentTime)
+    if (currentTimeInt % 5 === 0 && isPlaying.value) {
+      notifyHarmonyOS('play') // 这会包含当前位置信息
+    }
   }
 }
 
@@ -371,6 +412,8 @@ const onEnded = () => {
   isPlaying.value = false
   progress.value = 0
   currentTime.value = 0
+  // 通知鸿蒙应用播放结束
+  notifyHarmonyOS('pause')
   emit('ended')
 }
 
