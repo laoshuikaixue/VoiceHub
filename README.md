@@ -298,7 +298,6 @@ VoiceHub/
 │   │   ├── NotificationContainer.vue # 多通知容器组件
 │   │   ├── PageTransition.vue     # 页面过渡动画
 │   │   └── ProgressBar.vue        # 进度条组件
-│   └── SiteFooter.vue     # 站点页脚
 ├── composables/           # Vue 3 组合式API
 │   ├── useAdmin.ts         # 管理员功能hooks
 │   ├── useAudioPlayer.ts   # 音频播放器hooks

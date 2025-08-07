@@ -119,6 +119,11 @@
             <span>黑名单项目</span>
             <div class="status-value">{{ stats.blacklistCount }} 项</div>
           </div>
+          <div class="status-item">
+            <div class="status-dot active"></div>
+            <span>系统版本</span>
+            <div class="status-value">v{{ systemVersion }}</div>
+          </div>
         </div>
       </div>
       
@@ -166,9 +171,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import StatCard from './Common/StatCard.vue'
+import packageJson from '~/package.json'
 
 // 定义事件
 const emit = defineEmits(['navigate'])
+
+// 系统版本号
+const systemVersion = ref(packageJson.version)
 
 // 导航方法
 const navigateTo = (tab) => {

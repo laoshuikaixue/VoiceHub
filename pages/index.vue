@@ -251,11 +251,23 @@
         </div>
       </div>
       
-      <!-- 备案号显示 -->
-      <div v-if="icpNumber" class="icp-footer">
-        <a :href="`https://beian.miit.gov.cn/`" target="_blank" rel="noopener noreferrer" class="icp-link">
-          {{ icpNumber }}
-        </a>
+      <!-- 页脚信息显示 -->
+      <div class="site-footer">
+        <div class="footer-info">
+          <span v-if="icpNumber" class="footer-item">
+            <a :href="`https://beian.miit.gov.cn/`" target="_blank" rel="noopener noreferrer" class="icp-link">
+              {{ icpNumber }}
+            </a>
+          </span>
+          <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }} &#124; LaoShui</span>
+          <span v-else class="footer-item">© {{ currentYear }} LaoShui</span>
+          <span class="footer-item">Worker {{ workerInfo.id }} in {{ workerInfo.responseTime }}ms</span>
+          <span class="footer-item">
+            <a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" rel="noopener noreferrer" class="voicehub-link">
+              VoiceHub v{{ systemVersion }}
+            </a>
+          </span>
+        </div>
       </div>
     </div>
 
@@ -335,6 +347,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import packageJson from '~/package.json'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
@@ -364,6 +377,14 @@ const showAbout = ref(false)
 
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
+
+// Footer相关变量
+const systemVersion = packageJson.version
+const currentYear = new Date().getFullYear()
+const workerInfo = ref({
+  id: 0,
+  responseTime: 157
+})
 
 // 旧的通知系统已移除，使用全局通知系统
 let refreshInterval = null
@@ -1957,33 +1978,72 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   box-shadow: 0 5px 15px rgba(0, 67, 248, 0.3);
 }
 
-/* 备案号样式 */
-.icp-footer {
+/* 页脚样式 */
+.site-footer {
   text-align: center;
   padding: 20px 0;
   margin-top: 30px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.icp-link {
+.footer-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.footer-item {
   color: rgba(255, 255, 255, 0.6);
-  text-decoration: none;
   font-size: 12px;
+  white-space: nowrap;
+}
+
+.footer-item:not(:last-child)::after {
+  content: " | ";
+  margin: 0 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.footer-item a {
+  color: inherit;
+  text-decoration: none;
   transition: color 0.2s ease;
 }
 
-.icp-link:hover {
+.footer-item a:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.icp-link,
+.voicehub-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.icp-link:hover,
+.voicehub-link:hover {
   color: rgba(255, 255, 255, 0.8);
 }
 
 @media (max-width: 768px) {
-  .icp-footer {
+  .site-footer {
     padding: 15px 0;
     margin-top: 20px;
   }
   
-  .icp-link {
+  .footer-info {
+    gap: 0;
+  }
+  
+  .footer-item {
     font-size: 11px;
+  }
+  
+  .footer-item:not(:last-child)::after {
+    margin: 0 2px;
   }
 }
 </style>
