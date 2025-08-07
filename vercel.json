@@ -2,7 +2,13 @@
   "version": 2,
   "buildCommand": "npm run vercel-build",
   "outputDirectory": ".output",
+  "installCommand": "npm ci && npx prisma generate",
   "env": {
     "NITRO_PRESET": "vercel"
+  },
+  "functions": {
+    ".output/server/index.mjs": {
+      "includeFiles": "node_modules/.prisma/**"
+    }
   }
 }

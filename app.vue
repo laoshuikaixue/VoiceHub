@@ -79,7 +79,6 @@ const setupHarmonyOSListeners = () => {
   
   // 监听鸿蒙系统控制事件
   const handleHarmonyOSPlay = () => {
-    console.log('收到鸿蒙播放命令')
     const currentGlobalSong = audioPlayer.getCurrentSong().value
     if (currentGlobalSong) {
       // 如果有当前歌曲，恢复播放
@@ -88,23 +87,19 @@ const setupHarmonyOSListeners = () => {
   }
   
   const handleHarmonyOSPause = () => {
-    console.log('收到鸿蒙暂停命令')
     audioPlayer.pauseSong()
   }
   
   const handleHarmonyOSStop = () => {
-    console.log('收到鸿蒙停止命令')
     audioPlayer.stopSong()
   }
   
   const handleHarmonyOSNext = () => {
-    console.log('收到鸿蒙下一首命令')
     // 这里可以实现下一首逻辑，目前暂时停止播放
     audioPlayer.stopSong()
   }
   
   const handleHarmonyOSPrevious = () => {
-    console.log('收到鸿蒙上一首命令')
     // 这里可以实现上一首逻辑，目前暂时停止播放
     audioPlayer.stopSong()
   }
