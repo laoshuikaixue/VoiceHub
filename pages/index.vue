@@ -259,9 +259,9 @@
               {{ icpNumber }}
             </a>
           </span>
-          <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }} &#124; LaoShui</span>
-          <span v-else class="footer-item">© {{ currentYear }} LaoShui</span>
-          <span class="footer-item">Worker {{ workerInfo.id }} in {{ workerInfo.responseTime }}ms</span>
+          <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }}</span>
+           <span v-else class="footer-item">© {{ currentYear }} LaoShui</span>
+           <span class="footer-item">Worker in {{ responseTime }}ms</span>
           <span class="footer-item">
             <a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" rel="noopener noreferrer" class="voicehub-link">
               VoiceHub v{{ systemVersion }}
@@ -381,10 +381,15 @@ const activeTab = ref('schedule') // 默认显示播出排期
 // Footer相关变量
 const systemVersion = packageJson.version
 const currentYear = new Date().getFullYear()
-const workerInfo = ref({
-  id: 0,
-  responseTime: 157
-})
+const responseTime = ref(0)
+
+// 计算页面加载时间
+const calculateLoadTime = () => {
+  if (typeof window !== 'undefined' && window.performance) {
+    const loadTime = Math.round(window.performance.now())
+    responseTime.value = loadTime
+  }
+}
 
 // 旧的通知系统已移除，使用全局通知系统
 let refreshInterval = null
@@ -713,6 +718,9 @@ onMounted(async () => {
       }
     })
   }
+
+  // 计算页面加载时间
+  calculateLoadTime()
 })
 
 // 组件卸载时清除定时器

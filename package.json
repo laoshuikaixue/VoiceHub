@@ -16,7 +16,10 @@
     "db:reset": "npx prisma migrate reset",
     "setup": "npm install && npx prisma generate && npx prisma migrate deploy",
     "create-admin": "cd scripts && node create-admin.js",
-    "clear-db": "cd scripts && node clear-database.js"
+    "clear-db": "cd scripts && node clear-database.js",
+    "vercel-build": "node scripts/deploy.js",
+    "netlify-build": "node scripts/deploy.js",
+    "check-deploy": "node scripts/check-deploy.js"
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
