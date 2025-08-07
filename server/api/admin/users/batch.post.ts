@@ -34,7 +34,6 @@ export default defineEventHandler(async (event) => {
       
       // 验证必填字段
       if (!userData.name || !userData.username || !userData.password) {
-        console.warn('用户数据缺少必填字段:', userData)
         results.failed++
         continue
       }
@@ -47,7 +46,6 @@ export default defineEventHandler(async (event) => {
       })
 
       if (existingUser) {
-        console.warn('用户名已存在:', userData.username)
         results.failed++
         continue
       }
@@ -74,7 +72,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // 创建用户
-      await prisma.user.create({
+      const newUser = await prisma.user.create({
         data: {
           name: userData.name,
           username: userData.username,
@@ -88,10 +86,9 @@ export default defineEventHandler(async (event) => {
       results.created++
       
     } catch (error) {
-      console.error('创建用户失败:', error)
+      console.error(`用户创建失败:`, error)
       results.failed++
     }
   }
-
   return results
 })

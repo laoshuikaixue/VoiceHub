@@ -175,14 +175,21 @@ export default defineEventHandler(async (event) => {
         let restoredCount = 0
 
         // 分批处理大量数据，每条记录使用独立事务
-        const batchSize = 10 // 进一步减少批次大小
+        let batchSize = 10 // 初始批次大小
+        let consecutiveErrors = 0
+        
         for (let i = 0; i < tableData.length; i += batchSize) {
           const batch = tableData.slice(i, i + batchSize)
           
-          // 逐条处理记录，每条记录使用独立事务
+          // 逐条处理记录，每条记录使用独立事务，带重试机制
           for (const record of batch) {
-            try {
-              await prisma.$transaction(async (tx) => {
+            let retryCount = 0
+            const maxRetries = 3
+            let lastError = null
+            
+            while (retryCount <= maxRetries) {
+              try {
+                await prisma.$transaction(async (tx) => {
                 // 根据表名选择恢复策略
                 switch (tableName) {
                   case 'users':
@@ -267,6 +274,7 @@ export default defineEventHandler(async (event) => {
                           }
                         } catch (error) {
                           // 如果创建失败（可能是ID冲突），让数据库自动生成ID
+                          console.warn(`用户 ${record.username} 使用原始ID创建失败，使用自动生成ID: ${error.message}`)
                           createdUser = await tx.user.create({
                             data: buildUserData(true)
                           })
@@ -399,6 +407,7 @@ export default defineEventHandler(async (event) => {
                           }
                         } catch (error) {
                           // 如果创建失败（可能是ID冲突），让数据库自动生成ID
+                          console.warn(`歌曲 ${record.title} 使用原始ID创建失败，使用自动生成ID: ${error.message}`)
                           createdSong = await tx.song.create({ 
                             data: songData
                           })
@@ -761,16 +770,64 @@ export default defineEventHandler(async (event) => {
                     console.warn(`暂不支持恢复表: ${tableName}`)
                     return // 跳出当前事务，不处理此记录
                 }
-              }, {
-                timeout: 15000, // 每个记录事务15秒超时
-                maxWait: 3000, // 最大等待时间3秒
-              })
-              
-              restoredCount++
-            } catch (recordError) {
-              console.error(`恢复记录失败 (${tableName}):`, recordError)
-              restoreResults.details.errors.push(`${tableName}: ${recordError.message}`)
+                }, {
+                  timeout: 15000, // 每个记录事务15秒超时
+                  maxWait: 3000, // 最大等待时间3秒
+                })
+                
+                // 成功处理，跳出重试循环
+                restoredCount++
+                break
+                
+              } catch (recordError) {
+                lastError = recordError
+                retryCount++
+                
+                // 检查是否是可重试的错误
+                const isRetryableError = (
+                  recordError.code === 'P2002' || // 唯一约束冲突
+                  recordError.code === 'P2003' || // 外键约束冲突
+                  recordError.code === 'P2025' || // 记录不存在
+                  recordError.message.includes('timeout') ||
+                  recordError.message.includes('connection') ||
+                  recordError.message.includes('SQLITE_BUSY') ||
+                  recordError.message.includes('database is locked')
+                )
+                
+                if (retryCount <= maxRetries && isRetryableError) {
+                  console.warn(`恢复记录失败，第 ${retryCount}/${maxRetries} 次重试 (${tableName}):`, recordError.message)
+                  
+                  // 根据错误类型调整重试策略
+                  if (recordError.code === 'P2002') {
+                    // 唯一约束冲突，等待更长时间
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
+                  } else {
+                    // 其他错误，短暂等待
+                    await new Promise(resolve => setTimeout(resolve, 500 * retryCount))
+                  }
+                } else {
+                  // 不可重试的错误或重试次数用完
+                  break
+                }
+              }
             }
+            
+            // 如果所有重试都失败了，记录错误
+             if (retryCount > maxRetries && lastError) {
+               console.error(`恢复记录最终失败 (${tableName}):`, lastError)
+               restoreResults.details.errors.push(`${tableName}: ${lastError.message} (重试${maxRetries}次后失败)`)
+               consecutiveErrors++
+               
+               // 如果连续错误过多，减少批处理大小
+               if (consecutiveErrors >= 3 && batchSize > 1) {
+                 batchSize = Math.max(1, Math.floor(batchSize / 2))
+                 consecutiveErrors = 0
+                 console.warn(`由于连续错误，将批处理大小调整为: ${batchSize}`)
+               }
+             } else if (retryCount <= maxRetries) {
+               // 成功处理，重置连续错误计数
+               consecutiveErrors = 0
+             }
           }
           
           // 每批处理完后输出进度

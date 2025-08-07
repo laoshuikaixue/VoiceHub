@@ -135,22 +135,24 @@ JWT_SECRET="your-very-secure-jwt-secret-key"
 
 5. 初始化数据库和Prisma客户端
 ```bash
-npx prisma generate
-npx prisma migrate deploy
+npm run db:generate
+npm run db:migrate
+```
+
+或者使用一键设置命令：
+```bash
+npm run setup
 ```
 
 6. 创建管理员账户
 ```bash
-node scripts/create-admin.js
+npm run create-admin
 ```
 
-7. 数据库验证和修复
+7. 创建管理员账户（如果需要）
 ```bash
-# 检查数据库结构和完整性
-cd scripts && npm run check-db
-
-# 修复数据库问题
-cd scripts && npm run repair-db
+# 创建超级管理员账户
+npm run create-admin
 ```
 
 8. 启动开发服务器
@@ -165,7 +167,7 @@ npm run build
 
 10. 运行生产版本
 ```bash
-npm run start
+npm start
 ```
 
 ## 系统配置
@@ -338,14 +340,9 @@ VoiceHub/
 │   │   └── thumbs-up.svg   # 点赞图标
 │   └── robots.txt          # 搜索引擎爬虫规则
 ├── scripts/               # 工具脚本目录
-│   ├── check-database.js          # 数据库检查工具
-│   ├── check-deploy.js            # 部署检查工具
+│   ├── clear-database.js          # 数据库清空脚本
 │   ├── create-admin.js            # 创建管理员账户脚本
-│   ├── database-backup.js         # 完整数据库备份工具
-│   ├── deploy.js                  # 自动化部署脚本
-│   ├── package.json               # 脚本依赖配置
-│   ├── repair-database.js         # 数据库修复工具
-│   └── setup-database.js          # 数据库初始化设置
+│   └── package.json               # 脚本依赖配置
 ├── server/                # 服务端代码（Nuxt 3 Server API）
 │   ├── api/                # API端点目录
 │   │   ├── admin/          # 管理员API
@@ -413,7 +410,6 @@ VoiceHub/
 │   │   │   └── verify.get.ts        # 验证Token
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
-│   │   ├── debug/          # 调试API目录
 │   │   ├── meow/           # MeoW账号绑定API
 │   │   │   ├── bind.post.ts         # 绑定MeoW账号
 │   │   │   └── unbind.post.ts       # 解绑MeoW账号
@@ -429,7 +425,6 @@ VoiceHub/
 │   │   │   ├── read-all.post.ts     # 标记所有已读
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
-│   │   ├── permissions/    # 权限API目录
 │   │   ├── play-times/     # 播放时间API
 │   │   │   └── index.ts             # 播放时间管理
 │   │   ├── progress/       # 进度条API
@@ -562,41 +557,31 @@ VoiceHub/
    - 支持按全体用户、年级、班级或多班级发送
    - 实时显示发送进度和结果
 
-## 数据库验证和修复
+## 数据库管理
 
-系统内置了自动数据库验证和修复机制，可确保数据库结构和数据一致性。
+### 数据库初始化
 
-### 自动验证
+首次部署时，系统会自动初始化数据库结构。如需手动管理数据库：
 
-应用启动时会自动验证数据库结构和完整性：
-
-1. 检查数据库连接状态
-2. 验证必要的表和字段是否存在
-3. 检查数据一致性（如用户通知设置）
-4. 首次部署时自动初始化数据库
-
-### 手动验证和修复
-
-系统提供了两个命令行工具用于手动检查和修复数据库问题：
-
-1. **数据库检查工具**
+1. **生成Prisma客户端**：
    ```bash
-   cd scripts && npm run check-db
+   npm run db:generate
    ```
-   该工具会检查：
-   - 数据库表结构完整性
-   - 必要字段是否存在
-   - 管理员用户是否存在
-   - 用户通知设置是否完整
 
-2. **数据库修复工具**
+2. **执行数据库迁移**：
    ```bash
-   cd scripts && npm run repair-db
+   npm run db:migrate
    ```
-   该工具提供交互式修复功能：
-   - 创建缺失的管理员账户
-   - 为用户添加缺失的通知设置
-   - 检查表结构并给出迁移建议
+
+3. **重置数据库**（慎用，会删除所有数据）：
+   ```bash
+   npm run db:reset
+   ```
+
+4. **清空数据库并创建管理员**：
+   ```bash
+   npm run clear-db
+   ```
 
 ## 常见问题
 
@@ -612,13 +597,13 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
 1. 确保已正确配置根目录的`.env`文件（包含有效的DATABASE_URL）
 2. 运行以下命令生成Prisma客户端：
    ```bash
-   npx prisma generate
+   npm run db:generate
    ```
 3. 如果在Windows系统上遇到PowerShell执行策略限制，请先运行：
    ```bash
    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
    ```
-   然后再执行`npx prisma generate`
+   然后再执行`npm run db:generate`
 
 ### 数据库迁移问题
 
@@ -626,17 +611,17 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
 
 1. 确保数据库已经最新：
    ```bash
-   npx prisma migrate deploy
+   npm run db:migrate
    ```
 
-2. 如果还有问题，使用修复工具：
+2. 对于复杂的数据库问题，可能需要重置数据库（慎用，会删除所有数据）：
    ```bash
-   cd scripts && npm run repair-db
+   npm run db:reset
    ```
 
-3. 对于复杂的数据库问题，可能需要重置数据库（慎用，会删除所有数据）：
+3. 如果需要清空数据库并重新创建管理员账户：
    ```bash
-   npx prisma migrate reset
+   npm run clear-db
    ```
 
 ## 混合内容问题解决

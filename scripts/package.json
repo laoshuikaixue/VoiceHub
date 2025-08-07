@@ -2,18 +2,16 @@
   "name": "voicehub-scripts",
   "version": "1.0.0",
   "description": "VoiceHub管理脚本",
+  "type": "module",
   "scripts": {
     "create-admin": "node create-admin.js",
-    "clear-db": "node clear-database.js",
-    "check-db": "node check-database.js",
-    "repair-db": "node repair-database.js",
-    "fix-validation": "node fix-database-validation.js"
+    "clear-db": "node clear-database.js"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",
+    "bcrypt": "^6.0.0",
+    "chalk": "^4.1.2",
     "dotenv": "^16.3.1",
-    "prompts": "^2.4.2",
-    "bcrypt": "^5.1.1",
-    "chalk": "^4.1.2"
+    "prompts": "^2.4.2"
   }
-} 
+}

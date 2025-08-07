@@ -1059,8 +1059,26 @@ const handleFileUpload = async (event) => {
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
         const jsonData = window.XLSX.utils.sheet_to_json(firstSheet, { header: 1 })
 
-        // 解析数据，从第二行开始（跳过可能的标题行）
-        const startRow = jsonData[0] && jsonData[0].length >= 4 ? 1 : 0
+        // 智能检测标题行
+        let startRow = 0
+        if (jsonData.length > 0 && jsonData[0]) {
+          const firstRow = jsonData[0]
+          // 检查第一行是否包含常见的标题关键词
+          const titleKeywords = ['姓名', '用户名', '密码', '角色', '年级', '班级', 'name', 'username', 'password', 'role', 'grade', 'class']
+          const isHeaderRow = firstRow.some(cell => 
+            cell && titleKeywords.some(keyword => 
+              cell.toString().toLowerCase().includes(keyword.toLowerCase())
+            )
+          )
+          
+          if (isHeaderRow) {
+            startRow = 1
+            console.log('检测到标题行，从第二行开始解析')
+          } else {
+            console.log('未检测到标题行，从第一行开始解析')
+          }
+        }
+        
         const userData = []
 
         for (let i = startRow; i < jsonData.length; i++) {

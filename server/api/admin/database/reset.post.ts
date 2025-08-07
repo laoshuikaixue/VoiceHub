@@ -1,6 +1,32 @@
 import { createError, defineEventHandler } from 'h3'
 import { prisma } from '../../../models/schema'
 
+// 重置所有表的自增序列
+async function resetAutoIncrementSequences() {
+  const tables = [
+    'User',
+    'Song', 
+    'Vote',
+    'Schedule',
+    'Notification',
+    'NotificationSettings',
+    'PlayTime',
+    'Semester',
+    'SystemSettings',
+    'SongBlacklist'
+  ]
+  
+  for (const table of tables) {
+    try {
+      // PostgreSQL 重置序列的 SQL 命令
+      const sequenceName = `"${table}_id_seq"`
+      await prisma.$executeRawUnsafe(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`)
+    } catch (error) {
+      console.warn(`重置 ${table} 表序列失败: ${error.message}`)
+    }
+  }
+}
+
 export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
@@ -12,14 +38,13 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    console.log(`开始重置数据库，操作者: ${user.name} (${user.username})`)
-
     const resetResults = {
       success: true,
       message: '数据库重置完成',
       details: {
         tablesCleared: 0,
         recordsDeleted: 0,
+        sequencesReset: 0,
         errors: [],
         preservedData: []
       }
@@ -29,32 +54,26 @@ export default defineEventHandler(async (event) => {
       // 使用事务确保数据一致性
       await prisma.$transaction(async (tx) => {
         // 按照外键依赖顺序删除数据
-        console.log('删除通知数据...')
         const deletedNotifications = await tx.notification.deleteMany()
         resetResults.details.recordsDeleted += deletedNotifications.count
         resetResults.details.tablesCleared++
 
-        console.log('删除通知设置...')
         const deletedNotificationSettings = await tx.notificationSettings.deleteMany()
         resetResults.details.recordsDeleted += deletedNotificationSettings.count
         resetResults.details.tablesCleared++
 
-        console.log('删除排期数据...')
         const deletedSchedules = await tx.schedule.deleteMany()
         resetResults.details.recordsDeleted += deletedSchedules.count
         resetResults.details.tablesCleared++
 
-        console.log('删除投票数据...')
         const deletedVotes = await tx.vote.deleteMany()
         resetResults.details.recordsDeleted += deletedVotes.count
         resetResults.details.tablesCleared++
 
-        console.log('删除歌曲数据...')
         const deletedSongs = await tx.song.deleteMany()
         resetResults.details.recordsDeleted += deletedSongs.count
         resetResults.details.tablesCleared++
 
-        console.log('删除用户数据（保留当前管理员）...')
         const deletedUsers = await tx.user.deleteMany({
           where: {
             NOT: {
@@ -66,24 +85,30 @@ export default defineEventHandler(async (event) => {
         resetResults.details.tablesCleared++
         resetResults.details.preservedData.push(`保留当前管理员账户: ${user.name}`)
 
-        console.log('删除播放时段数据...')
         const deletedPlayTimes = await tx.playTime.deleteMany()
         resetResults.details.recordsDeleted += deletedPlayTimes.count
         resetResults.details.tablesCleared++
 
-        console.log('删除学期数据...')
         const deletedSemesters = await tx.semester.deleteMany()
         resetResults.details.recordsDeleted += deletedSemesters.count
         resetResults.details.tablesCleared++
 
         // 系统设置保持不变
         resetResults.details.preservedData.push('系统设置已保留')
-
-        console.log(`✅ 数据库重置完成`)
-        console.log(`- 清空表数量: ${resetResults.details.tablesCleared}`)
-        console.log(`- 删除记录数: ${resetResults.details.recordsDeleted}`)
-        console.log(`- 保留数据: ${resetResults.details.preservedData.join(', ')}`)
       })
+
+      // 重置自增序列，但要考虑保留的管理员账户
+      await resetAutoIncrementSequences()
+      
+      // 特别处理User表的序列，确保下一个用户ID不会与保留的管理员冲突
+      try {
+        const nextUserId = user.id + 1
+        await prisma.$executeRawUnsafe(`ALTER SEQUENCE "User_id_seq" RESTART WITH ${nextUserId}`)
+      } catch (error) {
+        console.warn(`调整User表序列失败: ${error.message}`)
+      }
+      
+      resetResults.details.sequencesReset = 10 // 重置的表数量
 
       return resetResults
 
