@@ -351,14 +351,27 @@ const togglePlay = () => {
 // 通知鸿蒙应用播放状态变化
 const notifyHarmonyOS = (action) => {
   if (typeof window !== 'undefined' && window.voiceHubPlayer && props.song) {
+    // 处理封面URL，确保是完整的URL
+    let coverUrl = props.song.cover || ''
+    if (coverUrl && !coverUrl.startsWith('http')) {
+      // 如果是相对路径，转换为完整URL
+      if (coverUrl.startsWith('/')) {
+        coverUrl = window.location.origin + coverUrl
+      } else {
+        coverUrl = window.location.origin + '/' + coverUrl
+      }
+    }
+
     const songInfo = {
       title: props.song.title || '未知歌曲',
       artist: props.song.artist || '未知艺术家',
-      album: 'VoiceHub',
-      cover: props.song.cover || '',
+      album: props.song.album || 'VoiceHub',
+      cover: coverUrl,
       duration: duration.value || 0,
       position: currentTime.value || 0
     }
+
+    console.log('VoiceHub: Notifying HarmonyOS -', action, songInfo)
 
     if (action === 'play') {
       window.voiceHubPlayer.onPlayStateChanged(true, songInfo)
@@ -548,6 +561,12 @@ const handleClickOutside = (event) => {
 onMounted(() => {
   // 添加点击外部关闭下拉框的监听
   document.addEventListener('click', handleClickOutside)
+  
+  // 如果有当前歌曲，立即发送元数据到HarmonyOS
+  if (currentSong.value) {
+    console.log('Sending initial metadata to HarmonyOS:', currentSong.value)
+    notifyHarmonyOS('metadata')
+  }
 })
 
 // 组件卸载时释放资源
