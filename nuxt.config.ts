@@ -68,7 +68,7 @@ export default defineNuxtConfig({
   
   // 服务器端配置
   nitro: {
-    preset: process.env.NITRO_PRESET || 'vercel',
+    preset: process.env.VERCEL ? 'vercel' : (process.env.NITRO_PRESET || 'node-server'),
     // 增强错误处理和稳定性
     experimental: {
       wasm: true
@@ -83,10 +83,20 @@ export default defineNuxtConfig({
         }
       }
     },
-    // Prisma 客户端配置
-    rollupConfig: {
-      external: ['@prisma/client'],
-    }
+    // 根据部署环境调整配置
+    ...(process.env.VERCEL ? {
+      // Vercel 环境：让 Vercel 自动处理 Prisma
+    } : process.env.NETLIFY ? {
+      // Netlify 环境：使用标准配置
+      rollupConfig: {
+        external: ['@prisma/client'],
+      }
+    } : {
+      // 其他环境：使用标准配置
+      rollupConfig: {
+        external: ['@prisma/client'],
+      }
+    })
   },
   
   // Vite 配置
@@ -94,8 +104,9 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: ['@prisma/client']
     },
+    // 根据部署环境调整 SSR 配置
     ssr: {
-      noExternal: ['@prisma/client']
+      noExternal: process.env.VERCEL ? [] : ['@prisma/client']
     }
   }
 })
