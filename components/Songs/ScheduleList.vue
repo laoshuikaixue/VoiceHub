@@ -637,11 +637,53 @@ const togglePlaySong = async (song) => {
     try {
       const url = await getMusicUrl(song.musicPlatform, song.musicId)
       if (url) {
+        // 构建当前时段的播放列表
+        const currentTimeSlot = getCurrentTimeSlot(song)
+        let playlist = []
+        let songIndex = 0
+        
+        if (currentTimeSlot && currentTimeSlot.songs) {
+          // 为播放列表中的每首歌曲获取音乐URL（如果需要的话）
+          playlist = await Promise.all(currentTimeSlot.songs.map(async (s) => {
+            let musicUrl = s.musicUrl
+            
+            // 如果歌曲没有musicUrl但有平台信息，尝试获取
+            if (!musicUrl && s.musicPlatform && s.musicId) {
+              try {
+                musicUrl = await getMusicUrl(s.musicPlatform, s.musicId)
+              } catch (error) {
+                console.warn(`无法获取歌曲 ${s.title} 的播放链接:`, error)
+                musicUrl = null
+              }
+            }
+            
+            return {
+              id: s.id,
+              title: s.title,
+              artist: s.artist,
+              cover: s.cover,
+              musicUrl: musicUrl,
+              musicPlatform: s.musicPlatform,
+              musicId: s.musicId
+            }
+          }))
+          
+          // 找到当前歌曲在播放列表中的索引
+          songIndex = playlist.findIndex((s) => s.id === song.id)
+          if (songIndex === -1) songIndex = 0
+        }
+        
         const playableSong = {
           ...song,
           musicUrl: url
         }
-        audioPlayer.playSong(playableSong)
+        
+        // 更新播放列表中当前歌曲的URL
+        if (playlist.length > 0 && songIndex >= 0) {
+          playlist[songIndex] = playableSong
+        }
+        
+        audioPlayer.playSong(playableSong, playlist, songIndex)
       } else {
         if (window.$showNotification) {
           window.$showNotification('无法获取音乐播放链接，可能是付费内容', 'error')
@@ -654,6 +696,21 @@ const togglePlaySong = async (song) => {
       }
     }
   }
+}
+
+// 获取歌曲所在的时段
+const getCurrentTimeSlot = (song) => {
+  if (!schedulesByPlayTime.value) return null
+  
+  for (const [playTimeId, schedules] of Object.entries(schedulesByPlayTime.value)) {
+    if (schedules.some((schedule) => schedule.song.id === song.id)) {
+      return {
+        id: playTimeId,
+        songs: schedules.map(schedule => schedule.song)
+      }
+    }
+  }
+  return null
 }
 
 // 动态获取音乐URL

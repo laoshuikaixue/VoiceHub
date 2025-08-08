@@ -149,6 +149,30 @@
       <line x1="12" y1="17" x2="12.01" y2="17" />
     </g>
 
+    <!-- 上一首图标 -->
+    <g v-else-if="name === 'skip-back' || name === 'previous'">
+      <polygon points="19,20 9,12 19,4" fill="currentColor" />
+      <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2" />
+    </g>
+
+    <!-- 下一首图标 -->
+    <g v-else-if="name === 'skip-forward' || name === 'next'">
+      <polygon points="5,4 15,12 5,20" fill="currentColor" />
+      <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2" />
+    </g>
+
+    <!-- 快退图标 -->
+    <g v-else-if="name === 'rewind'">
+      <polygon points="11,19 2,12 11,5" fill="currentColor" />
+      <polygon points="22,19 13,12 22,5" fill="currentColor" />
+    </g>
+
+    <!-- 快进图标 -->
+    <g v-else-if="name === 'fast-forward'">
+      <polygon points="13,19 22,12 13,5" fill="currentColor" />
+      <polygon points="2,19 11,12 2,5" fill="currentColor" />
+    </g>
+
     <!-- 默认图标（如果没有匹配的图标） -->
     <circle v-else cx="12" cy="12" r="10" />
   </svg>
