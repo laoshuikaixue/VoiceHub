@@ -27,25 +27,25 @@
               <!-- 上一首按钮 -->
               <button 
                 class="control-btn prev-btn" 
-                @click="playPrevious" 
-                :disabled="!globalAudioPlayer.hasPrevious.value"
-                :title="globalAudioPlayer.hasPrevious.value ? '上一首' : '没有上一首'"
+                @click="handlePrevious" 
+                :disabled="!sync.globalAudioPlayer.hasPrevious.value"
+                :title="sync.globalAudioPlayer.hasPrevious.value ? '上一首' : '没有上一首'"
               >
                 <Icon name="skip-back" :size="18" color="white" />
               </button>
               
               <!-- 播放/暂停按钮 -->
-              <button class="control-btn play-pause-btn" @click="togglePlay" :disabled="hasError">
-                <Icon v-if="isPlaying" name="pause" :size="18" color="white" />
+              <button class="control-btn play-pause-btn" @click="handleTogglePlay" :disabled="control.hasError.value">
+                <Icon v-if="control.isPlaying.value" name="pause" :size="18" color="white" />
                 <Icon v-else name="play" :size="18" color="white" />
               </button>
               
               <!-- 下一首按钮 -->
               <button 
                 class="control-btn next-btn" 
-                @click="playNext" 
-                :disabled="!globalAudioPlayer.hasNext.value"
-                :title="globalAudioPlayer.hasNext.value ? '下一首' : '没有下一首'"
+                @click="handleNext" 
+                :disabled="!sync.globalAudioPlayer.hasNext.value"
+                :title="sync.globalAudioPlayer.hasNext.value ? '下一首' : '没有下一首'"
               >
                 <Icon name="skip-forward" :size="18" color="white" />
               </button>
@@ -53,33 +53,21 @@
               <div class="progress-container-wrapper">
                 <div
                   class="progress-bar"
-                  @mousedown="startDrag"
-                  @touchstart="startTouchDrag"
-                  @click="seekToPosition"
+                  @mousedown="control.startDrag"
+                  @touchstart="control.startTouchDrag"
+                  @click="control.seekToPosition"
                   ref="progressBar"
                 >
-                  <div class="progress" :style="{ width: `${progress}%` }">
-                    <div class="progress-thumb" :class="{ 'dragging': isDragging }"></div>
+                  <div class="progress" :style="{ width: `${control.progress.value}%` }">
+                    <div class="progress-thumb" :class="{ 'dragging': control.isDragging.value }"></div>
                   </div>
                 </div>
-                
-                <!-- 进度条点击控制 - 限制在进度条区域 -->
-                <div 
-                  class="progress-click-area" 
-                  @click="onProgressClick"
-                  @mousedown="onProgressMouseDown"
-                  @mousemove="onProgressMouseMove"
-                  @mouseup="onProgressMouseUp"
-                  @mouseleave="onProgressMouseUp"
-                ></div>
               </div>
-
-
             </div>
 
             <div class="time-display">
-              <span class="current-time">{{ formatTime(currentTime) }}</span>
-              <span class="duration">{{ formatTime(duration) }}</span>
+              <span class="current-time">{{ control.formatTime(control.currentTime.value) }}</span>
+              <span class="duration">{{ control.formatTime(control.duration.value) }}</span>
             </div>
           </div>
         </div>
@@ -115,14 +103,14 @@
         <audio
           ref="audioPlayer"
           :src="song.musicUrl"
-          @timeupdate="onTimeUpdate"
-          @ended="onEnded"
-          @loadedmetadata="onLoaded"
-          @error="onError"
-          @play="onPlay"
-          @pause="onPause"
-          @loadstart="onLoadStart"
-          @canplay="onCanPlay"
+          @timeupdate="handleTimeUpdate"
+          @ended="handleEnded"
+          @loadedmetadata="handleLoaded"
+          @error="handleError"
+          @play="handlePlay"
+          @pause="handlePause"
+          @loadstart="handleLoadStart"
+          @canplay="handleCanPlay"
         ></audio>
       </div>
     </Transition>
@@ -132,9 +120,9 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
-import { useAudioPlayer } from '~/composables/useAudioPlayer'
-import { useMusicWebSocket } from '~/composables/useMusicWebSocket'
-import { useAuth } from '~/composables/useAuth'
+import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
+import { useAudioPlayerSync } from '~/composables/useAudioPlayerSync'
+import { useAudioQuality } from '~/composables/useAudioQuality'
 import { convertToHttps } from '~/utils/url'
 
 const props = defineProps({
@@ -150,23 +138,129 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'ended', 'error', 'songChange'])
 
+// 使用 composables
+const control = useAudioPlayerControl()
+const sync = useAudioPlayerSync()
+const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+
+// UI 状态
 const audioPlayer = ref(null)
 const progressBar = ref(null)
-const isPlaying = ref(false)
-const progress = ref(0)
-const currentTime = ref(0)
-const duration = ref(0)
-const hasError = ref(false)
 const isClosing = ref(false)
 const coverError = ref(false)
 const showQualitySettings = ref(false)
 
-// 音质设置相关
-const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+// 同步标记，避免双向触发
+const isSyncingFromGlobal = ref(false)
+const isMounted = ref(false)
 
-// 全局音频播放器状态管理
-const globalAudioPlayer = useAudioPlayer()
-const musicWebSocket = useMusicWebSocket()
+// 音频事件处理器
+const handleTimeUpdate = () => {
+  if (!audioPlayer.value || isSyncingFromGlobal.value) return
+  
+  const currentTime = audioPlayer.value.currentTime
+  const duration = audioPlayer.value.duration
+  
+  control.onTimeUpdate(currentTime, duration)
+  
+  // 节流的进度更新
+  sync.throttledProgressUpdate(currentTime, duration, control.isPlaying.value, props.song)
+}
+
+const handlePlay = () => {
+  if (isSyncingFromGlobal.value) return
+  
+  control.onPlay()
+  sync.syncPlayStateToGlobal(true, props.song)
+  sync.notifyHarmonyOS('play', {
+    position: control.currentTime.value,
+    duration: control.duration.value
+  }, props.song)
+  sync.sendWebSocketUpdate({
+    songId: props.song?.id,
+    isPlaying: true,
+    position: control.currentTime.value,
+    duration: control.duration.value,
+    volume: 1,
+    playlistIndex: sync.globalAudioPlayer.getCurrentPlaylistIndex().value
+  })
+}
+
+const handlePause = () => {
+  if (isSyncingFromGlobal.value) return
+  
+  control.onPause()
+  sync.syncPlayStateToGlobal(false, props.song)
+  sync.notifyHarmonyOS('pause', {
+    position: control.currentTime.value,
+    duration: control.duration.value
+  }, props.song)
+  sync.sendWebSocketUpdate({
+    songId: props.song?.id,
+    isPlaying: false,
+    position: control.currentTime.value,
+    duration: control.duration.value,
+    volume: 1,
+    playlistIndex: sync.globalAudioPlayer.getCurrentPlaylistIndex().value
+  })
+}
+
+const handleLoaded = () => {
+  if (!audioPlayer.value) return
+  
+  control.onLoaded(audioPlayer.value.duration)
+  
+  // 通知鸿蒙应用元数据
+  sync.notifyHarmonyOS('metadata', {
+    title: props.song?.title || '未知歌曲',
+    artist: props.song?.artist || '未知艺术家',
+    album: props.song?.album || '',
+    artwork: props.song?.cover || '',
+    duration: audioPlayer.value.duration
+  }, props.song)
+  
+  // 延迟同步播放列表状态
+  setTimeout(() => {
+    sync.notifyPlaylistState()
+  }, 100)
+}
+
+const handleError = (error) => {
+  control.onError(error)
+  emit('error', error)
+}
+
+const handleEnded = () => {
+  control.onEnded()
+  emit('ended')
+}
+
+const handleLoadStart = () => {
+  control.onLoadStart()
+}
+
+const handleCanPlay = () => {
+  control.onCanPlay()
+}
+
+// UI 事件处理器
+const handleTogglePlay = () => {
+  control.togglePlay()
+}
+
+const handlePrevious = async () => {
+  const result = await sync.playPrevious(props.song)
+  if (result.success && result.newSong) {
+    emit('songChange', result.newSong)
+  }
+}
+
+const handleNext = async () => {
+  const result = await sync.playNext(props.song)
+  if (result.success && result.newSong) {
+    emit('songChange', result.newSong)
+  }
+}
 
 // 获取当前歌曲平台的音质文本
 const currentQualityText = computed(() => {
@@ -201,207 +295,40 @@ const toggleQualitySettings = () => {
 const selectQuality = async (qualityValue) => {
   if (!props.song || !props.song.musicPlatform) return
 
-  const platform = props.song.musicPlatform
-  const musicId = props.song.musicId || props.song.id
-
   // 如果选择的是当前音质，直接返回
   if (isCurrentQuality(qualityValue)) {
     showQualitySettings.value = false
     return
   }
 
-  // 保存当前播放进度和状态
-  const currentTimeBackup = audioPlayer.value ? audioPlayer.value.currentTime : 0
-  const wasPlaying = isPlaying.value
-
-  // 立即更新播放状态为暂停，避免状态不一致
-  if (wasPlaying && audioPlayer.value) {
-    audioPlayer.value.pause()
-    isPlaying.value = false
-    // 同步到全局状态
-    globalAudioPlayer.pauseSong()
-    // 通知鸿蒙应用暂停
-    notifyHarmonyOS('pause')
-  }
-
-  // 保存音质设置
-  saveQuality(platform, qualityValue)
-
-  // 显示提示
-  if (window.$showNotification) {
-    const label = getQualityLabel(platform, qualityValue)
-    const platformName = platform === 'netease' ? '网易云音乐' : 'QQ音乐'
-    window.$showNotification(`${platformName}音质已切换为：${label}`, 'success')
-  }
-
   // 关闭下拉框
   showQualitySettings.value = false
 
-  // 重新获取新音质的URL并加载
-  try {
-    const newUrl = await getMusicUrl(platform, musicId, qualityValue)
-    if (newUrl && audioPlayer.value) {
-      // 更新音频源
-      audioPlayer.value.src = newUrl
-
-      // 创建一个Promise来处理音频加载
-      const loadPromise = new Promise((resolve, reject) => {
-        const handleLoadedMetadata = () => {
-          audioPlayer.value.removeEventListener('loadedmetadata', handleLoadedMetadata)
-          audioPlayer.value.removeEventListener('error', handleError)
-          resolve()
-        }
-        
-        const handleError = (err) => {
-          audioPlayer.value.removeEventListener('loadedmetadata', handleLoadedMetadata)
-          audioPlayer.value.removeEventListener('error', handleError)
-          reject(err)
-        }
-
-        audioPlayer.value.addEventListener('loadedmetadata', handleLoadedMetadata)
-        audioPlayer.value.addEventListener('error', handleError)
-      })
-
-      // 加载新的音频
-      audioPlayer.value.load()
-
-      // 等待加载完成
-      await loadPromise
-
-      // 恢复播放进度
-      if (audioPlayer.value && currentTimeBackup > 0) {
-        audioPlayer.value.currentTime = currentTimeBackup
-        // 立即更新进度显示
-        currentTime.value = currentTimeBackup
-        if (duration.value > 0) {
-          progress.value = (currentTimeBackup / duration.value) * 100
-        }
-      }
-
-      // 如果之前在播放，恢复播放状态
-      if (wasPlaying) {
-        // 播放状态会通过onPlay事件自动更新
-        await audioPlayer.value.play()
-      }
-    }
-  } catch (error) {
-    console.error('切换音质失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('切换音质失败，请稍后重试', 'error')
-    }
-    
-    // 如果切换失败，尝试恢复之前的播放状态
-    if (wasPlaying && audioPlayer.value && !audioPlayer.value.error) {
-      try {
-        // 播放状态会通过onPlay事件自动更新
-        await audioPlayer.value.play()
-      } catch (playError) {
-        console.error('恢复播放失败:', playError)
-      }
-    }
+  // 使用 control composable 的音质切换功能
+  await control.switchQuality(
+    props.song.musicPlatform,
+    props.song.musicId || props.song.id,
+    qualityValue
+  )
+  
+  // 同步状态到全局
+  sync.syncPlayStateToGlobal(control.isPlaying.value, props.song)
+  
+  // 通知鸿蒙系统
+  if (control.isPlaying.value) {
+    sync.notifyHarmonyOS('play', {
+      position: control.currentTime.value,
+      duration: control.duration.value
+    }, props.song)
+  } else {
+    sync.notifyHarmonyOS('pause', {
+      position: control.currentTime.value,
+      duration: control.duration.value
+    }, props.song)
   }
 }
 
-// 动态获取音乐URL（支持指定音质）
-const getMusicUrl = async (platform, musicId, quality = null) => {
-  try {
-    const qualityParam = quality || getQuality(platform)
-    let apiUrl
-
-    if (platform === 'netease') {
-      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${qualityParam}`
-    } else if (platform === 'tencent') {
-      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${qualityParam}`
-    } else {
-      throw new Error('不支持的音乐平台')
-    }
-
-    const response = await fetch(apiUrl)
-    if (!response.ok) {
-      throw new Error('获取音乐URL失败')
-    }
-
-    const data = await response.json()
-    if (data.code === 200 && data.data && data.data.url) {
-      return data.data.url
-    }
-
-    return null
-  } catch (error) {
-    console.error('获取音乐URL错误:', error)
-    throw error
-  }
-}
-
-
-
-// 拖拽相关
-const isDragging = ref(false)
-const dragStartX = ref(0)
-const dragStartProgress = ref(0)
-const dragProgress = ref(0)
-
-watch(() => props.song, (newSong, oldSong) => {
-  if (newSong && newSong.musicUrl) {
-    isClosing.value = false
-    progress.value = 0
-    currentTime.value = 0
-    duration.value = 0
-    hasError.value = false
-    coverError.value = false
-
-    // 先通知鸿蒙应用歌曲信息变化
-    setTimeout(() => {
-      notifyHarmonyOS('metadata')
-    }, 50)
-
-    setTimeout(() => {
-      if (audioPlayer.value) {
-        audioPlayer.value.load()
-        // 播放状态会通过onPlay事件自动更新
-        audioPlayer.value.play().catch(err => {
-          console.error('播放失败:', err)
-          hasError.value = true
-          emit('error', err)
-        })
-      }
-    }, 100)
-  }
-}, { immediate: true })
-
-// 监听全局播放状态变化
-const globalPlayingStatus = globalAudioPlayer.getPlayingStatus()
-watch(globalPlayingStatus, (newPlayingStatus) => {
-  // 如果全局状态变为暂停，同步本地状态
-  if (!newPlayingStatus && isPlaying.value) {
-    if (audioPlayer.value) {
-      audioPlayer.value.pause() // 状态会通过onPause事件自动更新
-    }
-  }
-  // 如果全局状态变为播放，且当前歌曲匹配，同步本地状态
-  else if (newPlayingStatus && !isPlaying.value) {
-    const currentGlobalSong = globalAudioPlayer.getCurrentSong().value
-    if (currentGlobalSong && props.song && currentGlobalSong.id === props.song.id) {
-      if (audioPlayer.value && audioPlayer.value.paused) {
-        audioPlayer.value.play().catch(err => { // 状态会通过onPlay事件自动更新
-          console.error('播放失败:', err)
-          hasError.value = true
-          emit('error', err)
-        })
-      }
-    }
-  }
-}, { immediate: true })
-
-// 监听全局播放器歌曲变化
-const globalCurrentSong = globalAudioPlayer.getCurrentSong()
-watch(globalCurrentSong, (newGlobalSong) => {
-  // 如果全局歌曲变化且与当前props.song不同，触发歌曲切换事件
-  if (newGlobalSong && (!props.song || newGlobalSong.id !== props.song.id)) {
-    emit('songChange', newGlobalSong)
-  }
-}, { immediate: false })
-
+// 其他 UI 方法
 const handleImageError = (event) => {
   coverError.value = true
 }
@@ -411,342 +338,190 @@ const getFirstChar = (title) => {
   return title.trim().charAt(0)
 }
 
-// 切换播放/暂停
-const togglePlay = () => {
-  if (!audioPlayer.value) return
-
-  if (isPlaying.value) {
-    // 暂停播放 - 状态会通过onPause事件自动更新
-    audioPlayer.value.pause()
-  } else {
-    // 开始播放 - 状态会通过onPlay事件自动更新
-    audioPlayer.value.play().catch(err => {
-      console.error('播放失败:', err)
-      hasError.value = true
-      emit('error', err)
-    })
-  }
-}
-
-// 通知鸿蒙应用播放状态变化
-const notifyHarmonyOS = (action, extraData = {}) => {
-  if (typeof window !== 'undefined' && props.song) {
-    // 处理封面URL，确保是完整的URL
-    let coverUrl = props.song.cover || ''
-    
-    if (coverUrl && !coverUrl.startsWith('http')) {
-      // 如果是相对路径，转换为完整URL
-      if (coverUrl.startsWith('/')) {
-        coverUrl = window.location.origin + coverUrl
-      } else {
-        coverUrl = window.location.origin + '/' + coverUrl
-      }
-    }
-
-    const songInfo = {
-      title: props.song.title || '未知歌曲',
-      artist: props.song.artist || '未知艺术家',
-      album: props.song.album || 'VoiceHub',
-      cover: coverUrl,
-      duration: extraData.duration !== undefined ? extraData.duration : (duration.value || 0),
-      position: extraData.position !== undefined ? extraData.position : (currentTime.value || 0)
-    }
-
-    // 只有在鸿蒙环境中才调用相关API
-    if (window.voiceHubPlayer) {
-      if (action === 'play') {
-        window.voiceHubPlayer.onPlayStateChanged(true, songInfo)
-      } else if (action === 'pause') {
-        window.voiceHubPlayer.onPlayStateChanged(false, songInfo)
-      } else if (action === 'stop') {
-        window.voiceHubPlayer.onPlayStateChanged(false, { ...songInfo, position: 0 })
-      } else if (action === 'progress') {
-        // 进度更新时，保持当前播放状态
-        window.voiceHubPlayer.onPlayStateChanged(isPlaying.value, songInfo)
-      } else if (action === 'metadata') {
-        window.voiceHubPlayer.onSongChanged(songInfo)
-      }
-    }
-  }
-}
-
+// 停止播放并关闭播放器
 const stopPlaying = () => {
   if (isClosing.value) return
 
   isClosing.value = true
-
-  if (audioPlayer.value) {
-    audioPlayer.value.pause() // 状态会通过onPause事件自动更新
-    audioPlayer.value.currentTime = 0
-    // 同步到全局状态
-    globalAudioPlayer.stopSong()
-  }
+  control.stop()
+  sync.syncStopToGlobal()
 
   setTimeout(() => {
     emit('close')
   }, 300)
 }
 
-// 播放上一首歌曲
-const playPrevious = async () => {
-  if (!globalAudioPlayer.hasPrevious.value) {
-    console.log('没有上一首歌曲')
-    return
+// 监听器和生命周期钩子
+watch(() => props.song, async (newSong, oldSong) => {
+  if (!newSong) return
+  
+  // 避免双向触发
+  if (isSyncingFromGlobal.value) return
+  
+  // 确保组件已经挂载
+  if (!isMounted.value) return
+  
+  // 如果是新歌曲，加载并播放
+  if (!oldSong || newSong.id !== oldSong.id) {
+    const loadSuccess = await control.loadSong(newSong)
+    if (loadSuccess) {
+      sync.setGlobalPlaylist(newSong, props.playlist)
+      await control.play()
+    }
   }
+}, { immediate: false })
 
-  try {
-    const success = await globalAudioPlayer.playPrevious()
-    if (success) {
-      const newSong = globalAudioPlayer.getCurrentSong().value
-      if (newSong) {
-        // 只在鸿蒙环境下发送WebSocket消息
-        if (isHarmonyOS()) {
-          await musicWebSocket.sendSongChange({
-            songId: newSong.id,
-            title: newSong.title,
-            artist: newSong.artist,
-            cover: newSong.cover || '',
-            duration: 0,
-            playlistIndex: globalAudioPlayer.getCurrentPlaylistIndex().value
-          })
-          
-          // 通知鸿蒙应用歌曲变化
-          notifyHarmonyOS('metadata', {
-            title: newSong.title,
-            artist: newSong.artist,
-            cover: newSong.cover
-          })
+// 监听全局播放状态变化，避免双向触发
+watch(() => sync.globalAudioPlayer.getPlayingStatus().value, (newPlayingStatus) => {
+  if (isSyncingFromGlobal.value) return
+  
+  isSyncingFromGlobal.value = true
+  
+  if (!newPlayingStatus && control.isPlaying.value) {
+    control.pause()
+  } else if (newPlayingStatus && !control.isPlaying.value) {
+    const currentGlobalSong = sync.globalAudioPlayer.getCurrentSong().value
+    if (currentGlobalSong && props.song && currentGlobalSong.id === props.song.id) {
+      control.play()
+    }
+  }
+  
+  nextTick(() => {
+    isSyncingFromGlobal.value = false
+  })
+}, { immediate: true })
+
+// 监听全局歌曲变化
+watch(() => sync.globalAudioPlayer.getCurrentSong().value, (newGlobalSong) => {
+  if (newGlobalSong && (!props.song || newGlobalSong.id !== props.song.id)) {
+    emit('songChange', newGlobalSong)
+  }
+}, { immediate: false })
+
+// 监听播放列表状态变化
+watch([
+  () => sync.globalAudioPlayer.hasNext.value,
+  () => sync.globalAudioPlayer.hasPrevious.value,
+  () => sync.globalAudioPlayer.getCurrentPlaylistIndex().value,
+  () => sync.globalAudioPlayer.getCurrentPlaylist().value
+], () => {
+  sync.notifyPlaylistState()
+}, { immediate: true })
+
+onMounted(async () => {
+  // 设置挂载标记
+  isMounted.value = true
+  
+  // 设置音频播放器和进度条引用
+  control.setAudioPlayerRef(audioPlayer.value)
+  control.setProgressBarRef(progressBar.value)
+  
+  // 初始化 WebSocket 连接
+  sync.initializeWebSocket()
+  
+  // 处理初始歌曲的播放
+  if (props.song) {
+    const loadSuccess = await control.loadSong(props.song)
+    if (loadSuccess) {
+      sync.setGlobalPlaylist(props.song, props.playlist)
+      // 尝试播放，如果失败（由于浏览器自动播放策略），等待用户交互
+      const playSuccess = await control.play()
+      if (!playSuccess) {
+        console.log('自动播放被浏览器阻止，等待用户交互后播放')
+        // 监听用户交互，一旦用户交互就尝试播放
+        const handleUserInteraction = async () => {
+          if (!control.hasUserInteracted.value && props.song) {
+            const retryPlaySuccess = await control.play()
+            if (retryPlaySuccess) {
+              // 移除事件监听器
+              document.removeEventListener('click', handleUserInteraction)
+              document.removeEventListener('touchstart', handleUserInteraction)
+              document.removeEventListener('keydown', handleUserInteraction)
+            }
+          }
         }
         
-        // 触发歌曲切换事件
-        emit('songChange', newSong)
-      }
-    }
-  } catch (error) {
-    console.error('播放上一首歌曲失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('播放上一首歌曲失败', 'error')
-    }
-  }
-}
-
-// 播放下一首歌曲
-const playNext = async () => {
-  if (!globalAudioPlayer.hasNext.value) {
-    console.log('没有下一首歌曲')
-    return
-  }
-
-  try {
-    const success = await globalAudioPlayer.playNext()
-    if (success) {
-      const newSong = globalAudioPlayer.getCurrentSong().value
-      if (newSong) {
-        // 只在鸿蒙环境下发送WebSocket消息
-        if (isHarmonyOS()) {
-          await musicWebSocket.sendSongChange({
-            songId: newSong.id,
-            title: newSong.title,
-            artist: newSong.artist,
-            cover: newSong.cover || '',
-            duration: 0,
-            playlistIndex: globalAudioPlayer.getCurrentPlaylistIndex().value
-          })
-          
-          // 通知鸿蒙应用歌曲变化
-          notifyHarmonyOS('metadata', {
-            title: newSong.title,
-            artist: newSong.artist,
-            cover: newSong.cover
-          })
-        }
-        
-        // 触发歌曲切换事件
-        emit('songChange', newSong)
-      }
-    }
-  } catch (error) {
-    console.error('播放下一首歌曲失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('播放下一首歌曲失败', 'error')
-    }
-  }
-}
-
-// 进度条点击控制
-const onProgressClick = (event) => {
-  if (!audioPlayer.value || !audioPlayer.value.duration) return
-  
-  const rect = event.target.getBoundingClientRect()
-  const clickX = event.clientX - rect.left
-  const progressPercent = (clickX / rect.width) * 100
-  const newTime = (progressPercent / 100) * audioPlayer.value.duration
-  
-  seekToTime(newTime)
-}
-
-const onProgressMouseDown = (event) => {
-  isDragging.value = true
-  dragStartX.value = event.clientX
-  dragStartProgress.value = progress.value
-  event.preventDefault()
-}
-
-const onProgressMouseMove = (event) => {
-  if (!isDragging.value || !audioPlayer.value || !audioPlayer.value.duration) return
-  
-  const rect = event.target.getBoundingClientRect()
-  const moveX = event.clientX - rect.left
-  const progressPercent = Math.max(0, Math.min(100, (moveX / rect.width) * 100))
-  
-  dragProgress.value = progressPercent
-  
-  // 实时预览时间
-  const previewTime = (progressPercent / 100) * audioPlayer.value.duration
-  currentTime.value = previewTime
-}
-
-const onProgressMouseUp = () => {
-  if (!isDragging.value || !audioPlayer.value || !audioPlayer.value.duration) return
-  
-  const newTime = (dragProgress.value / 100) * audioPlayer.value.duration
-  seekToTime(newTime)
-  
-  isDragging.value = false
-  dragProgress.value = 0
-}
-
-// 跳转到指定时间
-const seekToTime = async (time) => {
-  if (!audioPlayer.value) return
-  
-  audioPlayer.value.currentTime = time
-  currentTime.value = time
-  
-  // 更新全局播放器状态
-  globalAudioPlayer.updatePosition(time)
-  
-  // 只在鸿蒙环境下发送WebSocket消息和通知
-  if (isHarmonyOS()) {
-    // 发送WebSocket位置更新
-    await musicWebSocket.sendPositionUpdate({
-      songId: props.song?.id,
-      position: time,
-      duration: audioPlayer.value.duration || 0
-    })
-    
-    // 通知鸿蒙应用
-    notifyHarmonyOS('seek', {
-      position: time,
-      duration: audioPlayer.value.duration || 0
-    })
-  }
-}
-
-// 处理时间更新事件
-const onTimeUpdate = () => {
-  if (!audioPlayer.value || isDragging.value) return
-  
-  currentTime.value = audioPlayer.value.currentTime
-  
-  if (audioPlayer.value.duration) {
-    progress.value = (audioPlayer.value.currentTime / audioPlayer.value.duration) * 100
-    
-    // 更新全局播放器状态
-    globalAudioPlayer.updatePosition(audioPlayer.value.currentTime)
-    globalAudioPlayer.setDuration(audioPlayer.value.duration)
-    
-    // 只在鸿蒙环境下发送WebSocket消息
-    if (isHarmonyOS()) {
-      // 使用WebSocket发送播放位置更新（节流，每秒最多一次）
-      const now = Date.now()
-      if (!onTimeUpdate.lastUpdate || now - onTimeUpdate.lastUpdate > 1000) {
-        onTimeUpdate.lastUpdate = now
-        
-        // 发送播放位置更新到WebSocket，这会触发状态更新监听器
-        musicWebSocket.sendPositionUpdate(
-          audioPlayer.value.currentTime,
-          audioPlayer.value.duration,
-          props.song?.id
-        )
-        
-        // 同时发送完整的状态更新
-        musicWebSocket.sendStateUpdate({
-          songId: props.song?.id,
-          isPlaying: isPlaying.value,
-          position: audioPlayer.value.currentTime,
-          duration: audioPlayer.value.duration,
-          volume: audioPlayer.value.volume,
-          playlistIndex: globalAudioPlayer.getCurrentPlaylistIndex().value
-        })
+        document.addEventListener('click', handleUserInteraction, { once: true })
+        document.addEventListener('touchstart', handleUserInteraction, { once: true })
+        document.addEventListener('keydown', handleUserInteraction, { once: true })
       }
     }
   }
-}
-
-// 处理播放结束事件
-const onEnded = () => {
-  // 播放状态会通过onPause事件自动更新（播放结束时会触发pause事件）
-  progress.value = 0
-  currentTime.value = 0
-  emit('ended')
-}
-
-// 处理音频加载事件
-const onLoaded = () => {
-  if (!audioPlayer.value) return
-  duration.value = audioPlayer.value.duration
   
-  // 音频加载完成后，立即同步状态到鸿蒙应用
-  if (props.song) {
-    notifyHarmonyOS('metadata')
-  }
-}
-
-// 处理错误事件
-const onError = (err) => {
-  console.error('音频加载错误:', err)
-  hasError.value = true
-  emit('error', err)
-}
-
-// 处理播放事件（音频实际开始播放时触发）
-const onPlay = () => {
-  if (!isPlaying.value) {
-    isPlaying.value = true
-    // 同步到全局状态
-    if (props.song) {
-      globalAudioPlayer.playSong(props.song)
+  // 初始化鸿蒙系统控制事件
+  sync.initializeHarmonyOSControls({
+    onPlay: () => {
+      isSyncingFromGlobal.value = true
+      control.play()
+      nextTick(() => {
+        isSyncingFromGlobal.value = false
+      })
+    },
+    onPause: () => {
+      isSyncingFromGlobal.value = true
+      control.pause()
+      nextTick(() => {
+        isSyncingFromGlobal.value = false
+      })
+    },
+    onStop: () => {
+      isSyncingFromGlobal.value = true
+      control.stop()
+      sync.syncStopToGlobal()
+      nextTick(() => {
+        isSyncingFromGlobal.value = false
+      })
+    },
+    onNext: handleNext,
+    onPrevious: handlePrevious,
+    onSeek: (time) => {
+      control.seek(time)
+      sync.updateGlobalPosition(time, control.duration.value)
     }
-    // 通知鸿蒙应用
-    notifyHarmonyOS('play')
+  })
+  
+  // 点击外部关闭下拉框
+  const handleClickOutside = (event) => {
+    if (showQualitySettings.value && !event.target.closest('.quality-selector')) {
+      showQualitySettings.value = false
+    }
   }
-}
-
-// 处理暂停事件（音频实际暂停时触发）
-const onPause = () => {
-  if (isPlaying.value) {
-    isPlaying.value = false
-    // 同步到全局状态
-    globalAudioPlayer.pauseSong()
-    // 通知鸿蒙应用
-    notifyHarmonyOS('pause')
+  document.addEventListener('click', handleClickOutside)
+  
+  // 暴露播放器实例到全局（鸿蒙环境）
+  if (sync.isHarmonyOS()) {
+    window.voiceHubPlayerInstance = {
+      play: () => control.play(),
+      pause: () => control.pause(),
+      stop: () => control.stop(),
+      seek: (time) => control.seek(time),
+      getCurrentTime: () => control.currentTime.value,
+      getDuration: () => control.duration.value,
+      isPlaying: () => control.isPlaying.value
+    }
   }
-}
+})
 
-// 处理加载开始事件
-const onLoadStart = () => {
-  // 重置错误状态
-  hasError.value = false
-}
-
-// 处理可以播放事件
-const onCanPlay = () => {
-  // 音频准备就绪，确保状态同步
-  if (props.song) {
-    notifyHarmonyOS('metadata')
+onUnmounted(() => {
+  // 清理音频播放器
+  control.cleanup()
+  
+  // 清理鸿蒙系统控制事件
+  sync.cleanupHarmonyOSControls()
+  
+  // 清理点击外部监听
+  const handleClickOutside = (event) => {
+    if (showQualitySettings.value && !event.target.closest('.quality-selector')) {
+      showQualitySettings.value = false
+    }
   }
-}
+  document.removeEventListener('click', handleClickOutside)
+  
+  // 清理全局实例
+  if (sync.isHarmonyOS() && window.voiceHubPlayerInstance) {
+    delete window.voiceHubPlayerInstance
+  }
+})
 
 // 格式化时间
 const formatTime = (seconds) => {
@@ -756,333 +531,6 @@ const formatTime = (seconds) => {
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
-
-
-
-// 进度条拖拽功能
-const startDrag = (event) => {
-  if (event.button !== 0) return // 只响应左键
-
-  isDragging.value = true
-  dragStartX.value = event.clientX
-  dragStartProgress.value = progress.value
-
-  document.addEventListener('mousemove', onDrag)
-  document.addEventListener('mouseup', endDrag)
-  event.preventDefault()
-}
-
-const onDrag = (event) => {
-  if (!isDragging.value || !progressBar.value) return
-
-  const rect = progressBar.value.getBoundingClientRect()
-  const newX = event.clientX - rect.left
-  const percentage = Math.max(0, Math.min(100, (newX / rect.width) * 100))
-
-  progress.value = percentage
-
-  // 实时更新播放位置
-  if (audioPlayer.value && duration.value) {
-    audioPlayer.value.currentTime = (percentage / 100) * duration.value
-  }
-}
-
-const endDrag = () => {
-  isDragging.value = false
-  document.removeEventListener('mousemove', onDrag)
-  document.removeEventListener('mouseup', endDrag)
-  // 清理触摸事件
-  document.removeEventListener('touchmove', onTouchDrag)
-  document.removeEventListener('touchend', endTouchDrag)
-  
-  // 拖拽结束后，如果正在播放，同步状态到鸿蒙应用
-  if (isPlaying.value && props.song) {
-    notifyHarmonyOS('play')
-  }
-}
-
-// 触摸事件处理
-const startTouchDrag = (event) => {
-  if (event.touches.length !== 1) return // 只响应单指触摸
-
-  isDragging.value = true
-  const touch = event.touches[0]
-  dragStartX.value = touch.clientX
-  dragStartProgress.value = progress.value
-
-  document.addEventListener('touchmove', onTouchDrag, { passive: false })
-  document.addEventListener('touchend', endTouchDrag)
-  event.preventDefault()
-}
-
-const onTouchDrag = (event) => {
-  if (!isDragging.value || !progressBar.value || event.touches.length !== 1) return
-
-  const touch = event.touches[0]
-  const rect = progressBar.value.getBoundingClientRect()
-  const deltaX = touch.clientX - dragStartX.value
-  const progressBarWidth = rect.width
-  const deltaProgress = (deltaX / progressBarWidth) * 100
-
-  let newProgress = dragStartProgress.value + deltaProgress
-  newProgress = Math.max(0, Math.min(100, newProgress))
-
-  const percentage = newProgress
-  if (audioPlayer.value && duration.value) {
-    audioPlayer.value.currentTime = (percentage / 100) * duration.value
-  }
-
-  event.preventDefault()
-}
-
-const endTouchDrag = () => {
-  isDragging.value = false
-  document.removeEventListener('touchmove', onTouchDrag)
-  document.removeEventListener('touchend', endTouchDrag)
-  
-  // 拖拽结束后，如果正在播放，同步状态到鸿蒙应用
-  if (isPlaying.value && props.song) {
-    notifyHarmonyOS('play')
-  }
-}
-
-// 添加进度条点击跳转功能
-const seekToPosition = (event) => {
-  if (!audioPlayer.value || isDragging.value) return
-
-  const progressBar = event.currentTarget
-  const clickPosition = event.offsetX
-  const barWidth = progressBar.clientWidth
-  const seekPercentage = (clickPosition / barWidth)
-
-  // 设置新的播放位置
-  audioPlayer.value.currentTime = seekPercentage * duration.value
-
-  // 更新进度
-  progress.value = seekPercentage * 100
-  
-  // 跳转后，如果正在播放，同步状态到鸿蒙应用
-  if (isPlaying.value && props.song) {
-    notifyHarmonyOS('play')
-  }
-}
-
-
-
-// 处理点击外部关闭下拉框
-const handleClickOutside = (event) => {
-  const qualitySelector = event.target.closest('.quality-selector')
-  if (!qualitySelector && showQualitySettings.value) {
-    showQualitySettings.value = false
-  }
-}
-
-// 检测是否在鸿蒙环境
-const isHarmonyOS = () => {
-  return typeof window !== 'undefined' && 
-         (window.navigator.userAgent.includes('HarmonyOS') || 
-          window.harmonyOSBridge || 
-          window.voiceHubPlayer)
-}
-
-// WebSocket连接管理（不再需要定时器）
-
-// 组件挂载时添加事件监听
-onMounted(() => {
-  // 添加点击外部关闭下拉框的监听
-  document.addEventListener('click', handleClickOutside)
-  
-  // 只在鸿蒙环境下初始化WebSocket连接
-  if (isHarmonyOS()) {
-    const { getToken } = useAuth()
-    const token = getToken()
-    musicWebSocket.connect(token || undefined)
-    
-    // 在鸿蒙环境下设置WebSocket监听器来接收播放进度更新
-    // 监听WebSocket状态更新，用于同步到鸿蒙侧
-    musicWebSocket.setStateUpdateListener((state) => {
-      // 当收到状态更新时，通知鸿蒙应用
-      if (state.position !== undefined && state.duration !== undefined) {
-        notifyHarmonyOS('progress', {
-          position: state.position,
-          duration: state.duration
-        })
-      }
-    })
-  }
-  
-  // 只在鸿蒙环境下设置WebSocket事件监听器
-  if (isHarmonyOS()) {
-    musicWebSocket.setStateUpdateListener((state) => {
-      // 处理来自其他客户端的状态更新
-      if (state.songId && props.song && state.songId !== props.song.id) {
-        // 如果是不同的歌曲，不处理
-        return
-      }
-      
-      // 同步播放状态
-      if (audioPlayer.value && state.position !== undefined) {
-        const currentTime = audioPlayer.value.currentTime
-        const timeDiff = Math.abs(currentTime - state.position)
-        
-        // 如果时间差超过2秒，同步位置
-        if (timeDiff > 2) {
-          audioPlayer.value.currentTime = state.position
-        }
-      }
-    })
-    
-    musicWebSocket.setSongChangeListener((songInfo) => {
-      // 处理歌曲切换通知
-      console.log('Received song change notification:', songInfo)
-    })
-  }
-  
-  // 定义鸿蒙事件处理函数（在组件作用域中）
-  let harmonyOSHandlers = null
-
-  // 只在鸿蒙环境下设置鸿蒙相关功能
-  if (isHarmonyOS()) {
-    // 监听鸿蒙系统控制事件
-    const handleHarmonyOSControl = (event) => {
-      const { action, time } = event.detail || {}
-      
-      switch (action) {
-        case 'play':
-          if (!isPlaying.value) {
-            togglePlay()
-          }
-          break
-        case 'pause':
-          if (isPlaying.value) {
-            togglePlay()
-          }
-          break
-        case 'stop':
-          stopPlaying()
-          break
-        case 'next':
-          playNext()
-          break
-        case 'previous':
-          playPrevious()
-          break
-        case 'seek':
-          if (typeof time === 'number') {
-            seekToTime(time)
-          }
-          break
-      }
-    }
-
-    // 处理单独的鸿蒙控制事件
-    const handleHarmonyOSPlay = () => {
-      if (!isPlaying.value) {
-        togglePlay()
-      }
-    }
-
-    const handleHarmonyOSPause = () => {
-      if (isPlaying.value) {
-        togglePlay()
-      }
-    }
-
-    const handleHarmonyOSStop = () => {
-      stopPlaying()
-    }
-
-    const handleHarmonyOSNext = () => {
-      playNext()
-    }
-
-    const handleHarmonyOSPrevious = () => {
-      playPrevious()
-    }
-
-    const handleHarmonyOSSeek = (event) => {
-      const { time } = event.detail || {}
-      if (typeof time === 'number') {
-        seekToTime(time)
-      }
-    }
-
-    // 保存处理函数引用以便清理
-    harmonyOSHandlers = {
-      handleHarmonyOSControl,
-      handleHarmonyOSPlay,
-      handleHarmonyOSPause,
-      handleHarmonyOSStop,
-      handleHarmonyOSNext,
-      handleHarmonyOSPrevious,
-      handleHarmonyOSSeek
-    }
-    
-    // 添加事件监听器
-    window.addEventListener('harmonyos-control', handleHarmonyOSControl)
-    window.addEventListener('harmonyos-play', handleHarmonyOSPlay)
-    window.addEventListener('harmonyos-pause', handleHarmonyOSPause)
-    window.addEventListener('harmonyos-stop', handleHarmonyOSStop)
-    window.addEventListener('harmonyos-next', handleHarmonyOSNext)
-    window.addEventListener('harmonyos-previous', handleHarmonyOSPrevious)
-    window.addEventListener('harmonyos-seek', handleHarmonyOSSeek)
-    
-    // 暴露播放器实例到全局，供鸿蒙调用
-    window.audioPlayerInstance = {
-      seekToTime,
-      playNext,
-      playPrevious,
-      togglePlay,
-      stopPlaying
-    }
-    
-    // 如果有当前歌曲，立即发送元数据到HarmonyOS
-    if (props.song) {
-      notifyHarmonyOS('metadata', {
-        title: props.song.title,
-        artist: props.song.artist,
-        cover: props.song.cover
-      })
-    }
-  }
-  
-  // 如果有播放列表，设置到全局播放器（无论是否鸿蒙环境都需要）
-  if (props.song && props.playlist && props.playlist.length > 0) {
-    globalAudioPlayer.playSong(props.song, props.playlist)
-  }
-})
-
-// 组件卸载时释放资源
-onUnmounted(() => {
-  if (audioPlayer.value) {
-    audioPlayer.value.pause()
-    audioPlayer.value.src = ''
-  }
-  
-  // WebSocket会在useMusicWebSocket的onBeforeUnmount中自动清理
-  
-  // 清理拖拽事件监听器
-  document.removeEventListener('mousemove', onDrag)
-  document.removeEventListener('mouseup', endDrag)
-  document.removeEventListener('touchmove', onTouchDrag)
-  document.removeEventListener('touchend', endTouchDrag)
-  // 移除点击外部监听
-  document.removeEventListener('click', handleClickOutside)
-  
-  // 只在鸿蒙环境下清理鸿蒙相关资源
-  if (isHarmonyOS() && harmonyOSHandlers) {
-    // 清理鸿蒙系统事件监听器
-    window.removeEventListener('harmonyos-control', harmonyOSHandlers.handleHarmonyOSControl)
-    window.removeEventListener('harmonyos-play', harmonyOSHandlers.handleHarmonyOSPlay)
-    window.removeEventListener('harmonyos-pause', harmonyOSHandlers.handleHarmonyOSPause)
-    window.removeEventListener('harmonyos-stop', harmonyOSHandlers.handleHarmonyOSStop)
-    window.removeEventListener('harmonyos-next', harmonyOSHandlers.handleHarmonyOSNext)
-    window.removeEventListener('harmonyos-previous', harmonyOSHandlers.handleHarmonyOSPrevious)
-    window.removeEventListener('harmonyos-seek', harmonyOSHandlers.handleHarmonyOSSeek)
-    // 清理全局播放器实例
-    delete window.audioPlayerInstance
-  }
-})
 
 
 </script>

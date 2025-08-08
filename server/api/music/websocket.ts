@@ -15,55 +15,91 @@ interface MusicState {
   timestamp: number
 }
 
-// 广播音乐状态到所有连接的客户端
+// 广播音乐状态到所有连接的客户端（改进错误处理）
 export function broadcastMusicState(state: MusicState) {
   const message = JSON.stringify({
     type: 'music_state_update',
     data: state
   })
 
+  const deadConnections: string[] = []
+  
   musicConnections.forEach((connection, id) => {
     try {
+      // 检查连接是否仍然有效
+      if (connection.destroyed || connection.writableEnded) {
+        deadConnections.push(id)
+        return
+      }
+      
       connection.write(`data: ${message}\n\n`)
     } catch (error) {
-      console.error(`Failed to send music state to connection ${id}:`, error)
-      musicConnections.delete(id)
+      // 忽略常见的连接错误，避免日志污染
+      if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE' && error.code !== 'ENOTFOUND') {
+        console.error(`Failed to send music state to connection ${id}:`, error.message)
+      }
+      deadConnections.push(id)
     }
   })
+  
+  // 清理死连接
+  deadConnections.forEach(id => musicConnections.delete(id))
 }
 
-// 发送播放列表更新
+// 发送播放列表更新（改进错误处理）
 export function broadcastPlaylistUpdate(playlist: any[]) {
   const message = JSON.stringify({
     type: 'playlist_update',
     data: { playlist }
   })
 
+  const deadConnections: string[] = []
+  
   musicConnections.forEach((connection, id) => {
     try {
+      if (connection.destroyed || connection.writableEnded) {
+        deadConnections.push(id)
+        return
+      }
+      
       connection.write(`data: ${message}\n\n`)
     } catch (error) {
-      console.error(`Failed to send playlist update to connection ${id}:`, error)
-      musicConnections.delete(id)
+      if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE' && error.code !== 'ENOTFOUND') {
+        console.error(`Failed to send playlist update to connection ${id}:`, error.message)
+      }
+      deadConnections.push(id)
     }
   })
+  
+  deadConnections.forEach(id => musicConnections.delete(id))
 }
 
-// 发送歌曲切换通知
+// 发送歌曲切换通知（改进错误处理）
 export function broadcastSongChange(songInfo: any) {
   const message = JSON.stringify({
     type: 'song_change',
     data: songInfo
   })
 
+  const deadConnections: string[] = []
+  
   musicConnections.forEach((connection, id) => {
     try {
+      if (connection.destroyed || connection.writableEnded) {
+        deadConnections.push(id)
+        return
+      }
+      
       connection.write(`data: ${message}\n\n`)
     } catch (error) {
-      console.error(`Failed to send song change to connection ${id}:`, error)
-      musicConnections.delete(id)
+      if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE' && error.code !== 'ENOTFOUND') {
+        console.error(`Failed to send song change to connection ${id}:`, error.message)
+      }
+      deadConnections.push(id)
     }
   })
+  
+  deadConnections.forEach(id => musicConnections.delete(id))
 }
 
 // WebSocket事件处理器
@@ -116,31 +152,59 @@ export default defineEventHandler(async (event) => {
   // 存储连接
   musicConnections.set(connectionId, response)
 
-  // 监听客户端断开连接
-  response.on('close', () => {
-    musicConnections.delete(connectionId)
-    console.log(`Music WebSocket connection ${connectionId} closed`)
-  })
-
-  event.node.req.on('close', () => {
-    musicConnections.delete(connectionId)
-    console.log(`Music WebSocket connection ${connectionId} closed by client`)
-  })
-
-  // 定期发送心跳
-  const heartbeatInterval = setInterval(() => {
+  // 监听客户端断开连接（改进错误处理）
+  const cleanup = () => {
     if (musicConnections.has(connectionId)) {
-      try {
-        response.write(`data: ${JSON.stringify({
-          type: 'heartbeat',
-          data: { timestamp: Date.now() }
-        })}\n\n`)
-      } catch (error) {
-        clearInterval(heartbeatInterval)
-        musicConnections.delete(connectionId)
-      }
-    } else {
+      musicConnections.delete(connectionId)
+      console.log(`Music WebSocket connection ${connectionId} cleaned up`)
+    }
+    if (heartbeatInterval) {
       clearInterval(heartbeatInterval)
+    }
+  }
+
+  response.on('close', cleanup)
+  response.on('error', (error) => {
+    // 忽略常见的连接错误
+    if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE') {
+      console.error(`Music WebSocket connection ${connectionId} error:`, error.message)
+    }
+    cleanup()
+  })
+
+  event.node.req.on('close', cleanup)
+  event.node.req.on('error', (error) => {
+    // 忽略常见的连接错误
+    if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE') {
+      console.error(`Music WebSocket request ${connectionId} error:`, error.message)
+    }
+    cleanup()
+  })
+
+  // 定期发送心跳（改进错误处理）
+  const heartbeatInterval = setInterval(() => {
+    if (!musicConnections.has(connectionId)) {
+      clearInterval(heartbeatInterval)
+      return
+    }
+
+    try {
+      // 检查连接状态
+      if (response.destroyed || response.writableEnded) {
+        cleanup()
+        return
+      }
+
+      response.write(`data: ${JSON.stringify({
+        type: 'heartbeat',
+        data: { timestamp: Date.now() }
+      })}\n\n`)
+    } catch (error) {
+      // 忽略常见的连接错误
+      if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE') {
+        console.error(`Heartbeat failed for connection ${connectionId}:`, error.message)
+      }
+      cleanup()
     }
   }, 30000) // 每30秒发送一次心跳
 
