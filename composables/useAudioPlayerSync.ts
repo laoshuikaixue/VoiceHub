@@ -40,20 +40,25 @@ export const useAudioPlayerSync = () => {
       }
 
       const songInfo = {
-        title: extraData.title || song.title || '未知歌曲',
-        artist: extraData.artist || song.artist || '未知艺术家',
-        album: extraData.album || song.album || 'VoiceHub',
+        title: extraData.title || song.title || '',
+        artist: extraData.artist || song.artist || '',
+        album: extraData.album || song.album || '',
         cover: extraData.artwork || coverUrl,
         duration: extraData.duration !== undefined ? extraData.duration : 0,
         position: extraData.position !== undefined ? extraData.position : 0,
         lyrics: lyrics || '' // 添加歌词字段
       }
 
-      console.log(`[HarmonyOS] 通知动作: ${action}`, songInfo)
-      
-      // 如果有歌词，记录歌词信息
-      if (lyrics) {
-        console.log(`[HarmonyOS] 歌词信息: ${lyrics.length} 字符`)
+      // 只记录重要的状态变化
+      if (action === 'metadata' || action === 'stop') {
+        console.log(`[HarmonyOS] ${action}:`, songInfo.title)
+        // 添加歌词传递调试信息
+        if (action === 'metadata') {
+          console.log(`[HarmonyOS] 歌词传递调试: 原始lyrics参数长度=${lyrics ? lyrics.length : 0}, songInfo.lyrics长度=${songInfo.lyrics.length}`)
+          if (songInfo.lyrics) {
+            console.log(`[HarmonyOS] 歌词预览: ${songInfo.lyrics.substring(0, 100)}...`)
+          }
+        }
       }
 
       // 只有在鸿蒙环境中才调用相关API
@@ -63,13 +68,11 @@ export const useAudioPlayerSync = () => {
             position: songInfo.position,
             duration: songInfo.duration
           })
-          console.log('[HarmonyOS] 播放状态更新，位置:', `${songInfo.position.toFixed(1)}s`)
         } else if (action === 'pause') {
           window.voiceHubPlayer.onPlayStateChanged(false, {
             position: songInfo.position,
             duration: songInfo.duration
           })
-          console.log('[HarmonyOS] 暂停状态更新，保持位置:', `${songInfo.position.toFixed(1)}s`)
         } else if (action === 'stop') {
           window.voiceHubPlayer.onPlayStateChanged(false, { position: 0, duration: songInfo.duration })
         } else if (action === 'progress') {
@@ -83,15 +86,10 @@ export const useAudioPlayerSync = () => {
             })
           }
         } else if (action === 'metadata') {
-          // 元数据更新时，分离元数据和播放状态更新，避免冲突
+          // 元数据更新时，只更新歌曲信息，不改变播放状态和位置
           window.voiceHubPlayer.onSongChanged(songInfo)
-          // 延迟更新播放状态，确保元数据先设置完成
+          // 延迟同步播放列表状态，但不更新播放状态
           setTimeout(() => {
-            window.voiceHubPlayer.onPlayStateChanged(false, {
-              position: songInfo.position,
-              duration: songInfo.duration
-            })
-            // 同步播放列表状态
             notifyPlaylistState()
           }, 100)
         } else if (action === 'seek') {
@@ -119,7 +117,7 @@ export const useAudioPlayerSync = () => {
         hasPrevious: hasPrevious
       }
       
-      console.log('[HarmonyOS] 更新播放列表状态:', playlistState)
+      // 播放列表状态更新（减少日志输出）
       window.voiceHubPlayer.updatePlaylistState(playlistState)
       
       // 备用方案：直接通过HarmonyOS接口发送
@@ -132,6 +130,9 @@ export const useAudioPlayerSync = () => {
   // 节流的进度更新
   const throttledProgressUpdate = (currentTime: number, duration: number, isPlaying: boolean, song?: any) => {
     if (!isHarmonyOS()) return
+    
+    // 只在播放状态下发送进度更新，避免暂停时发送错误的位置信息
+    if (!isPlaying) return
 
     const now = Date.now()
     const progressDiff = Math.abs(currentTime - lastProgressDiff.value)
@@ -155,11 +156,13 @@ export const useAudioPlayerSync = () => {
       lastHarmonyUpdate.value = now
       lastProgressDiff.value = currentTime
       
-      // 只更新进度，不改变播放状态
-      notifyHarmonyOS('progress', {
-        position: currentTime,
-        duration: duration
-      }, song)
+      // 只更新播放状态和进度，不传递歌曲信息（避免覆盖元数据）
+      if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
+        window.voiceHubPlayer.onPlayStateChanged(isPlaying, {
+          position: currentTime,
+          duration: duration
+        })
+      }
     }
   }
 
@@ -172,10 +175,7 @@ export const useAudioPlayerSync = () => {
 
   // 播放上一首歌曲
   const playPrevious = async (song?: any) => {
-    console.log('播放上一首歌曲被调用，hasPrevious:', globalAudioPlayer.hasPrevious.value)
-    
     if (!globalAudioPlayer.hasPrevious.value) {
-      console.log('没有上一首歌曲')
       if (window.$showNotification) {
         window.$showNotification('没有上一首歌曲', 'warning')
       }
@@ -183,15 +183,23 @@ export const useAudioPlayerSync = () => {
     }
 
     try {
-      console.log('尝试播放上一首歌曲...')
+      // 记录当前播放状态 - 优先检查鸿蒙侧状态
+      let wasPlaying = globalAudioPlayer.getPlayingStatus().value
+      
+      // 如果在鸿蒙环境，尝试获取鸿蒙侧的播放状态
+      if (isHarmonyOS() && window.voiceHubPlayer && window.voiceHubPlayer.getPlayState) {
+        try {
+          wasPlaying = window.voiceHubPlayer.getPlayState()
+        } catch (e) {
+          console.warn('无法获取鸿蒙侧播放状态，使用Web端状态')
+        }
+      }
+      
       const success = await globalAudioPlayer.playPrevious()
-      console.log('播放上一首歌曲结果:', success)
       
       if (success) {
         const newSong = globalAudioPlayer.getCurrentSong().value
         if (newSong) {
-          console.log('成功切换到上一首:', newSong.title)
-          
           // 只在鸿蒙环境下发送WebSocket消息
           if (isHarmonyOS()) {
             await musicWebSocket.sendSongChange({
@@ -203,17 +211,21 @@ export const useAudioPlayerSync = () => {
               playlistIndex: globalAudioPlayer.getCurrentPlaylistIndex().value
             })
             
-            // 通知鸿蒙应用歌曲变化，确保元数据完整
-            // 获取新歌曲的歌词
-            await lyrics.loadLyrics(newSong)
-            const harmonyLyrics = lyrics.getFormattedLyricsForHarmonyOS()
-            notifyHarmonyOS('metadata', {
-              title: newSong.title || '未知歌曲',
-              artist: newSong.artist || '未知艺术家',
-              album: newSong.album || '',
-              artwork: newSong.cover || '',
-              duration: newSong.duration || 0
-            }, newSong, harmonyLyrics)
+            // 获取新歌曲的歌词（但不立即设置元数据，让AudioPlayer的handleLoaded处理）
+            if (newSong.musicPlatform && newSong.musicId) {
+              await lyrics.fetchLyrics(newSong.musicPlatform, newSong.musicId)
+            }
+            
+            // 如果之前是播放状态，切换歌曲后自动开始播放
+            // 不在这里传递歌词，让AudioPlayer的handleLoaded方法负责歌词传递
+            if (wasPlaying) {
+              setTimeout(() => {
+                notifyHarmonyOS('play', {
+                  position: 0,
+                  duration: newSong.duration || 0
+                }, newSong) // 移除歌词参数，避免与handleLoaded竞争
+              }, 500) // 延迟确保handleLoaded完成元数据设置
+            }
             
             // 通知播放列表状态变化
             setTimeout(() => {
@@ -224,7 +236,6 @@ export const useAudioPlayerSync = () => {
           return { success: true, newSong }
         }
       } else {
-        console.log('播放上一首歌曲失败')
         if (window.$showNotification) {
           window.$showNotification('播放上一首歌曲失败', 'error')
         }
@@ -241,10 +252,7 @@ export const useAudioPlayerSync = () => {
 
   // 播放下一首歌曲
   const playNext = async (song?: any) => {
-    console.log('播放下一首歌曲被调用，hasNext:', globalAudioPlayer.hasNext.value)
-    
     if (!globalAudioPlayer.hasNext.value) {
-      console.log('没有下一首歌曲')
       if (window.$showNotification) {
         window.$showNotification('没有下一首歌曲', 'warning')
       }
@@ -252,15 +260,23 @@ export const useAudioPlayerSync = () => {
     }
 
     try {
-      console.log('尝试播放下一首歌曲...')
+      // 记录当前播放状态 - 优先检查鸿蒙侧状态
+      let wasPlaying = globalAudioPlayer.getPlayingStatus().value
+      
+      // 如果在鸿蒙环境，尝试获取鸿蒙侧的播放状态
+      if (isHarmonyOS() && window.voiceHubPlayer && window.voiceHubPlayer.getPlayState) {
+        try {
+          wasPlaying = window.voiceHubPlayer.getPlayState()
+        } catch (e) {
+          console.warn('无法获取鸿蒙侧播放状态，使用Web端状态')
+        }
+      }
+      
       const success = await globalAudioPlayer.playNext()
-      console.log('播放下一首歌曲结果:', success)
       
       if (success) {
         const newSong = globalAudioPlayer.getCurrentSong().value
         if (newSong) {
-          console.log('成功切换到下一首:', newSong.title)
-          
           // 只在鸿蒙环境下发送WebSocket消息
           if (isHarmonyOS()) {
             await musicWebSocket.sendSongChange({
@@ -272,17 +288,21 @@ export const useAudioPlayerSync = () => {
               playlistIndex: globalAudioPlayer.getCurrentPlaylistIndex().value
             })
             
-            // 通知鸿蒙应用歌曲变化，确保元数据完整
-            // 获取新歌曲的歌词
-            await lyrics.loadLyrics(newSong)
-            const harmonyLyrics = lyrics.getFormattedLyricsForHarmonyOS()
-            notifyHarmonyOS('metadata', {
-              title: newSong.title || '未知歌曲',
-              artist: newSong.artist || '未知艺术家',
-              album: newSong.album || '',
-              artwork: newSong.cover || '',
-              duration: newSong.duration || 0
-            }, newSong, harmonyLyrics)
+            // 获取新歌曲的歌词（但不立即设置元数据，让AudioPlayer的handleLoaded处理）
+            if (newSong.musicPlatform && newSong.musicId) {
+              await lyrics.fetchLyrics(newSong.musicPlatform, newSong.musicId)
+            }
+            
+            // 如果之前是播放状态，切换歌曲后自动开始播放
+            // 不在这里传递歌词，让AudioPlayer的handleLoaded方法负责歌词传递
+            if (wasPlaying) {
+              setTimeout(() => {
+                notifyHarmonyOS('play', {
+                  position: 0,
+                  duration: newSong.duration || 0
+                }, newSong) // 移除歌词参数，避免与handleLoaded竞争
+              }, 500) // 延迟确保handleLoaded完成元数据设置
+            }
             
             // 通知播放列表状态变化
             setTimeout(() => {
@@ -293,7 +313,6 @@ export const useAudioPlayerSync = () => {
           return { success: true, newSong }
         }
       } else {
-        console.log('播放下一首歌曲失败')
         if (window.$showNotification) {
           window.$showNotification('播放下一首歌曲失败', 'error')
         }
@@ -347,7 +366,7 @@ export const useAudioPlayerSync = () => {
       // 设置WebSocket事件监听器
       musicWebSocket.setStateUpdateListener((state) => {
         // 处理来自其他客户端的状态更新
-        console.log('Received WebSocket state update:', state)
+    
       })
       
       musicWebSocket.setSongChangeListener((songInfo) => {

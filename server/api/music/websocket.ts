@@ -115,14 +115,14 @@ export default defineEventHandler(async (event) => {
       if (process.env.JWT_SECRET) {
         const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userId: number }
         userId = decoded.userId
-        console.log('Music WebSocket authenticated user:', userId)
+  
       }
     } catch (error) {
       console.warn('Invalid token for music WebSocket connection, proceeding as anonymous:', error)
       // 不抛出错误，允许匿名连接
     }
   } else {
-    console.log('Music WebSocket connection without token, proceeding as anonymous')
+    
   }
 
   // 生成连接ID
@@ -156,7 +156,7 @@ export default defineEventHandler(async (event) => {
   const cleanup = () => {
     if (musicConnections.has(connectionId)) {
       musicConnections.delete(connectionId)
-      console.log(`Music WebSocket connection ${connectionId} cleaned up`)
+  
     }
     if (heartbeatInterval) {
       clearInterval(heartbeatInterval)
@@ -208,5 +208,5 @@ export default defineEventHandler(async (event) => {
     }
   }, 30000) // 每30秒发送一次心跳
 
-  console.log(`Music WebSocket connection ${connectionId} established for user ${userId || 'anonymous'}`)
+
 })

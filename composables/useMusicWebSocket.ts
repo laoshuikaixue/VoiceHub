@@ -50,7 +50,7 @@ export function useMusicWebSocket() {
       eventSource = new EventSource(url.toString())
 
       eventSource.onopen = () => {
-        console.log('Music WebSocket connected')
+
         isConnected.value = true
         onConnectionChange.value?.(true)
         
@@ -92,7 +92,7 @@ export function useMusicWebSocket() {
     switch (type) {
       case 'connection_established':
         connectionId.value = data.connectionId
-        console.log('Music WebSocket connection established:', data.connectionId)
+        
         break
 
       case 'music_state_update':
@@ -112,7 +112,7 @@ export function useMusicWebSocket() {
         break
 
       default:
-        console.log('Unknown WebSocket message type:', type)
+        
     }
   }
 
@@ -143,7 +143,7 @@ export function useMusicWebSocket() {
     if (reconnectTimer) return
 
     reconnectTimer = setTimeout(() => {
-      console.log('Attempting to reconnect Music WebSocket...')
+      
       connect()
     }, 5000) // 5秒后重连
   }

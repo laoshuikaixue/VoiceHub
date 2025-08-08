@@ -149,6 +149,9 @@ export const useAudioPlayerControl = () => {
     isLoadingNewSong.value = true
     hasError.value = false
     
+    // 立即清空之前的歌词，避免显示上一首歌的歌词
+    lyrics.clearLyrics()
+    
     try {
       let songUrl: string
       let songInfo: any = null
@@ -400,6 +403,10 @@ export const useAudioPlayerControl = () => {
   const startTouchDrag = (event: TouchEvent, progressBar: HTMLElement) => {
     if (event.touches.length !== 1) return
 
+    // 阻止默认行为，防止页面滚动
+    event.preventDefault()
+    event.stopPropagation()
+
     isDragging.value = true
     const touch = event.touches[0]
     dragStartX.value = touch.clientX
@@ -407,6 +414,10 @@ export const useAudioPlayerControl = () => {
 
     const onTouchDrag = (e: TouchEvent) => {
       if (!isDragging.value || !progressBar || e.touches.length !== 1) return
+
+      // 阻止默认行为和事件冒泡
+      e.preventDefault()
+      e.stopPropagation()
 
       const touch = e.touches[0]
       const rect = progressBar.getBoundingClientRect()
@@ -420,19 +431,26 @@ export const useAudioPlayerControl = () => {
         audioPlayer.value.currentTime = newTime
         currentTime.value = newTime
       }
-
-      e.preventDefault()
     }
 
-    const endTouchDrag = () => {
+    const endTouchDrag = (e: TouchEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      
       isDragging.value = false
       document.removeEventListener('touchmove', onTouchDrag)
       document.removeEventListener('touchend', endTouchDrag)
+      
+      // 触摸结束时同步播放位置
+      if (audioPlayer.value && duration.value) {
+        const newTime = (progress.value / 100) * duration.value
+        audioPlayer.value.currentTime = newTime
+        currentTime.value = newTime
+      }
     }
 
     document.addEventListener('touchmove', onTouchDrag, { passive: false })
-    document.addEventListener('touchend', endTouchDrag)
-    event.preventDefault()
+    document.addEventListener('touchend', endTouchDrag, { passive: false })
   }
 
   // 进度条点击跳转
@@ -574,9 +592,11 @@ export const useAudioPlayerControl = () => {
   // 清理资源
   const cleanup = () => {
     if (audioPlayer.value) {
+      // 先暂停播放
       audioPlayer.value.pause()
-      audioPlayer.value.src = ''
-      audioPlayer.value.load()
+      
+      // 不设置空的 src，避免触发 MEDIA_ERR_SRC_NOT_SUPPORTED 错误
+      // 只是暂停播放即可，让组件自然销毁
     }
     resetState()
   }

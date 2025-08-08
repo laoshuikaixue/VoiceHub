@@ -190,8 +190,11 @@ const handleTimeUpdate = () => {
   // 修复参数传递问题：onTimeUpdate只接受一个参数
   control.onTimeUpdate(currentTime)
   
-  // 节流的进度更新
-  sync.throttledProgressUpdate(currentTime, duration, control.isPlaying.value, props.song)
+  // 只在播放状态下发送进度更新，避免暂停时发送位置为0的更新
+  // 不传递song参数，避免覆盖已设置的元数据
+  if (control.isPlaying.value) {
+    sync.throttledProgressUpdate(currentTime, duration, control.isPlaying.value)
+  }
 }
 
 const handlePlay = () => {
@@ -199,12 +202,15 @@ const handlePlay = () => {
   
   control.onPlay()
   sync.syncPlayStateToGlobal(true, props.song)
-  // 获取歌词并传递到鸿蒙侧
-  const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
-  sync.notifyHarmonyOS('play', {
-    position: control.currentTime.value,
-    duration: control.duration.value
-  }, props.song, harmonyLyrics)
+  
+  // 直接调用鸿蒙侧播放状态更新，不传递歌曲信息避免覆盖元数据
+  if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
+    window.voiceHubPlayer.onPlayStateChanged(true, {
+      position: control.currentTime.value,
+      duration: control.duration.value
+    })
+  }
+  
   sync.sendWebSocketUpdate({
     songId: props.song?.id,
     isPlaying: true,
@@ -220,12 +226,15 @@ const handlePause = () => {
   
   control.onPause()
   sync.syncPlayStateToGlobal(false, props.song)
-  // 获取歌词并传递到鸿蒙侧
-  const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
-  sync.notifyHarmonyOS('pause', {
-    position: control.currentTime.value,
-    duration: control.duration.value
-  }, props.song, harmonyLyrics)
+  
+  // 直接调用鸿蒙侧播放状态更新，不传递歌曲信息避免覆盖元数据
+  if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
+    window.voiceHubPlayer.onPlayStateChanged(false, {
+      position: control.currentTime.value,
+      duration: control.duration.value
+    })
+  }
+  
   sync.sendWebSocketUpdate({
     songId: props.song?.id,
     isPlaying: false,
@@ -236,21 +245,68 @@ const handlePause = () => {
   })
 }
 
-const handleLoaded = () => {
+const handleLoaded = async () => {
   if (!audioPlayer.value) return
   
   control.onLoaded(audioPlayer.value.duration)
   
-  // 获取歌词并传递到鸿蒙侧
-  const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
-  // 通知鸿蒙应用元数据
+  // 先传递基本的歌曲元数据给鸿蒙侧（不包含歌词）
   sync.notifyHarmonyOS('metadata', {
-    title: props.song?.title || '未知歌曲',
-    artist: props.song?.artist || '未知艺术家',
+    title: props.song?.title || '',
+    artist: props.song?.artist || '',
     album: props.song?.album || '',
     artwork: props.song?.cover || '',
     duration: audioPlayer.value.duration
-  }, props.song, harmonyLyrics)
+  }, props.song)
+  
+  // 如果歌曲有平台信息，等待歌词加载完成后单独传递歌词
+  if (props.song?.musicPlatform && props.song?.musicId) {
+    console.log('等待歌词加载完成...')
+    
+    // 等待歌词数据实际加载完成，最多等待8秒
+    const maxWaitTime = 8000
+    const startTime = Date.now()
+    
+    // 等待歌词加载状态变化：从未开始 -> 加载中 -> 完成/失败
+    while ((Date.now() - startTime) < maxWaitTime) {
+      // 检查是否有歌词数据
+      if (control.lyrics.currentLyrics.value.length > 0) {
+        console.log('检测到歌词数据，歌词行数:', control.lyrics.currentLyrics.value.length)
+        break
+      }
+      
+      // 检查是否加载失败（不在加载中且有错误）
+      if (!control.lyrics.isLoading.value && control.lyrics.error.value) {
+        console.log('歌词加载失败:', control.lyrics.error.value)
+        break
+      }
+      
+      // 检查是否加载完成但无歌词（不在加载中且无错误且无歌词）
+      if (!control.lyrics.isLoading.value && !control.lyrics.error.value && control.lyrics.currentLyrics.value.length === 0) {
+        console.log('歌词加载完成但无歌词')
+        break
+      }
+      
+      // 等待100ms后再次检查
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    
+    // 检查歌词是否加载成功
+    const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
+    const hasValidLyrics = harmonyLyrics && harmonyLyrics !== '[00:00.00]暂无歌词' && control.lyrics.currentLyrics.value.length > 0
+    
+    if (hasValidLyrics) {
+      console.log('歌词加载成功，单独传递歌词给鸿蒙侧，歌词长度:', harmonyLyrics.length, '预览:', harmonyLyrics.substring(0, 100))
+      
+      // 使用专门的歌词更新方法
+      control.lyrics.notifyHarmonyOSLyricsUpdate(harmonyLyrics)
+    } else {
+      console.log('歌词加载失败或无歌词，清空歌词')
+      
+      // 清空歌词
+      control.lyrics.notifyHarmonyOSLyricsUpdate('')
+    }
+  }
   
   // 延迟同步播放列表状态
   setTimeout(() => {
@@ -258,9 +314,27 @@ const handleLoaded = () => {
   }, 100)
 }
 
-const handleError = (error) => {
+const handleError = async (error) => {
   control.onError(error)
-  emit('error', error)
+  
+  // 如果是加载错误且有下一首歌曲，自动跳到下一首
+  if (error && error.type === 'error' && sync.globalAudioPlayer.hasNext.value) {
+    console.log('当前歌曲无法播放，自动跳到下一首')
+    
+    // 延迟一下再跳转，避免频繁切换
+    setTimeout(async () => {
+      const result = await sync.playNext(props.song)
+      if (result.success && result.newSong) {
+        emit('songChange', result.newSong)
+      } else {
+        // 如果下一首也无法播放，停止自动跳转
+        console.log('没有可播放的歌曲了')
+        emit('error', error)
+      }
+    }, 1000)
+  } else {
+    emit('error', error)
+  }
 }
 
 const handleEnded = () => {
@@ -347,18 +421,12 @@ const selectQuality = async (qualityValue) => {
   // 同步状态到全局
   sync.syncPlayStateToGlobal(control.isPlaying.value, props.song)
   
-  // 通知鸿蒙系统
-  const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
-  if (control.isPlaying.value) {
-    sync.notifyHarmonyOS('play', {
+  // 直接调用鸿蒙侧播放状态更新，不传递歌曲信息避免覆盖元数据
+  if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
+    window.voiceHubPlayer.onPlayStateChanged(control.isPlaying.value, {
       position: control.currentTime.value,
       duration: control.duration.value
-    }, props.song, harmonyLyrics)
-  } else {
-    sync.notifyHarmonyOS('pause', {
-      position: control.currentTime.value,
-      duration: control.duration.value
-    }, props.song, harmonyLyrics)
+    })
   }
 }
 
@@ -459,12 +527,11 @@ onMounted(async () => {
     if (loadSuccess) {
       sync.setGlobalPlaylist(props.song, props.playlist)
       
-      // 获取歌词并传递到鸿蒙侧
-      const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
+      // 传递加载状态到鸿蒙侧
       sync.notifyHarmonyOS('load', {
         position: 0,
         duration: control.duration.value
-      }, props.song, harmonyLyrics)
+      }, props.song)
       
       // 尝试播放，如果失败（由于浏览器自动播放策略），等待用户交互
       const playSuccess = await control.play()

@@ -594,7 +594,10 @@ const togglePlaySong = async (song) => {
               ...song,
               musicUrl: url
             }
-            audioPlayer.playSong(playableSong)
+            // 构建播放列表并设置当前歌曲索引
+            const playlist = await buildPlayablePlaylist(song)
+            const currentIndex = playlist.findIndex(item => item.id === song.id)
+            audioPlayer.playSong(playableSong, playlist, currentIndex)
           } else {
             if (window.$showNotification) {
               window.$showNotification('无法获取音乐播放链接，可能是付费内容', 'error')
@@ -620,7 +623,10 @@ const togglePlaySong = async (song) => {
           ...song,
           musicUrl: url
         }
-        audioPlayer.playSong(playableSong)
+        // 构建播放列表并设置当前歌曲索引
+        const playlist = await buildPlayablePlaylist(song)
+        const currentIndex = playlist.findIndex(item => item.id === song.id)
+        audioPlayer.playSong(playableSong, playlist, currentIndex)
       } else {
         if (window.$showNotification) {
           window.$showNotification('无法获取音乐播放链接，可能是付费内容', 'error')
@@ -633,6 +639,20 @@ const togglePlaySong = async (song) => {
       }
     }
   }
+}
+
+// 构建可播放的播放列表
+const buildPlayablePlaylist = async (currentSong) => {
+  // 获取当前显示的歌曲列表（已经过滤和排序）
+  const songsToProcess = paginatedSongs.value.filter(song => 
+    song.musicPlatform && song.musicId && song.id !== currentSong.id
+  )
+  
+  // 将当前歌曲添加到列表中正确的位置
+  const allSongs = [...paginatedSongs.value]
+  
+  // 只返回有播放信息的歌曲，保持原有顺序
+  return allSongs.filter(song => song.musicPlatform && song.musicId)
 }
 
 // 动态获取音乐URL
