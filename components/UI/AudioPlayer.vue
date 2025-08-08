@@ -429,7 +429,7 @@ const togglePlay = () => {
 }
 
 // 通知鸿蒙应用播放状态变化
-const notifyHarmonyOS = (action) => {
+const notifyHarmonyOS = (action, extraData = {}) => {
   if (typeof window !== 'undefined' && props.song) {
     // 处理封面URL，确保是完整的URL
     let coverUrl = props.song.cover || ''
@@ -448,8 +448,8 @@ const notifyHarmonyOS = (action) => {
       artist: props.song.artist || '未知艺术家',
       album: props.song.album || 'VoiceHub',
       cover: coverUrl,
-      duration: duration.value || 0,
-      position: currentTime.value || 0
+      duration: extraData.duration !== undefined ? extraData.duration : (duration.value || 0),
+      position: extraData.position !== undefined ? extraData.position : (currentTime.value || 0)
     }
 
     // 只有在鸿蒙环境中才调用相关API
@@ -458,6 +458,11 @@ const notifyHarmonyOS = (action) => {
         window.voiceHubPlayer.onPlayStateChanged(true, songInfo)
       } else if (action === 'pause') {
         window.voiceHubPlayer.onPlayStateChanged(false, songInfo)
+      } else if (action === 'stop') {
+        window.voiceHubPlayer.onPlayStateChanged(false, { ...songInfo, position: 0 })
+      } else if (action === 'progress') {
+        // 进度更新时，保持当前播放状态
+        window.voiceHubPlayer.onPlayStateChanged(isPlaying.value, songInfo)
       } else if (action === 'metadata') {
         window.voiceHubPlayer.onSongChanged(songInfo)
       }
@@ -651,12 +656,21 @@ const onTimeUpdate = () => {
     globalAudioPlayer.updatePosition(audioPlayer.value.currentTime)
     globalAudioPlayer.setDuration(audioPlayer.value.duration)
     
-    // 只在鸿蒙环境下发送WebSocket消息和通知
+    // 只在鸿蒙环境下发送WebSocket消息
     if (isHarmonyOS()) {
-      // 发送WebSocket状态更新（节流，每秒最多一次）
+      // 使用WebSocket发送播放位置更新（节流，每秒最多一次）
       const now = Date.now()
       if (!onTimeUpdate.lastUpdate || now - onTimeUpdate.lastUpdate > 1000) {
         onTimeUpdate.lastUpdate = now
+        
+        // 发送播放位置更新到WebSocket，这会触发状态更新监听器
+        musicWebSocket.sendPositionUpdate(
+          audioPlayer.value.currentTime,
+          audioPlayer.value.duration,
+          props.song?.id
+        )
+        
+        // 同时发送完整的状态更新
         musicWebSocket.sendStateUpdate({
           songId: props.song?.id,
           isPlaying: isPlaying.value,
@@ -666,12 +680,6 @@ const onTimeUpdate = () => {
           playlistIndex: globalAudioPlayer.getCurrentPlaylistIndex().value
         })
       }
-      
-      // 通知鸿蒙应用播放进度
-      notifyHarmonyOS('progress', {
-        position: audioPlayer.value.currentTime,
-        duration: audioPlayer.value.duration
-      })
     }
   }
 }
@@ -877,6 +885,8 @@ const isHarmonyOS = () => {
           window.voiceHubPlayer)
 }
 
+// WebSocket连接管理（不再需要定时器）
+
 // 组件挂载时添加事件监听
 onMounted(() => {
   // 添加点击外部关闭下拉框的监听
@@ -887,6 +897,18 @@ onMounted(() => {
     const { getToken } = useAuth()
     const token = getToken()
     musicWebSocket.connect(token || undefined)
+    
+    // 在鸿蒙环境下设置WebSocket监听器来接收播放进度更新
+    // 监听WebSocket状态更新，用于同步到鸿蒙侧
+    musicWebSocket.setStateUpdateListener((state) => {
+      // 当收到状态更新时，通知鸿蒙应用
+      if (state.position !== undefined && state.duration !== undefined) {
+        notifyHarmonyOS('progress', {
+          position: state.position,
+          duration: state.duration
+        })
+      }
+    })
   }
   
   // 只在鸿蒙环境下设置WebSocket事件监听器
@@ -916,6 +938,9 @@ onMounted(() => {
     })
   }
   
+  // 定义鸿蒙事件处理函数（在组件作用域中）
+  let harmonyOSHandlers = null
+
   // 只在鸿蒙环境下设置鸿蒙相关功能
   if (isHarmonyOS()) {
     // 监听鸿蒙系统控制事件
@@ -981,6 +1006,17 @@ onMounted(() => {
         seekToTime(time)
       }
     }
+
+    // 保存处理函数引用以便清理
+    harmonyOSHandlers = {
+      handleHarmonyOSControl,
+      handleHarmonyOSPlay,
+      handleHarmonyOSPause,
+      handleHarmonyOSStop,
+      handleHarmonyOSNext,
+      handleHarmonyOSPrevious,
+      handleHarmonyOSSeek
+    }
     
     // 添加事件监听器
     window.addEventListener('harmonyos-control', handleHarmonyOSControl)
@@ -1022,6 +1058,9 @@ onUnmounted(() => {
     audioPlayer.value.pause()
     audioPlayer.value.src = ''
   }
+  
+  // WebSocket会在useMusicWebSocket的onBeforeUnmount中自动清理
+  
   // 清理拖拽事件监听器
   document.removeEventListener('mousemove', onDrag)
   document.removeEventListener('mouseup', endDrag)
@@ -1031,15 +1070,15 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   
   // 只在鸿蒙环境下清理鸿蒙相关资源
-  if (isHarmonyOS()) {
+  if (isHarmonyOS() && harmonyOSHandlers) {
     // 清理鸿蒙系统事件监听器
-    window.removeEventListener('harmonyos-control', handleHarmonyOSControl)
-    window.removeEventListener('harmonyos-play', handleHarmonyOSPlay)
-    window.removeEventListener('harmonyos-pause', handleHarmonyOSPause)
-    window.removeEventListener('harmonyos-stop', handleHarmonyOSStop)
-    window.removeEventListener('harmonyos-next', handleHarmonyOSNext)
-    window.removeEventListener('harmonyos-previous', handleHarmonyOSPrevious)
-    window.removeEventListener('harmonyos-seek', handleHarmonyOSSeek)
+    window.removeEventListener('harmonyos-control', harmonyOSHandlers.handleHarmonyOSControl)
+    window.removeEventListener('harmonyos-play', harmonyOSHandlers.handleHarmonyOSPlay)
+    window.removeEventListener('harmonyos-pause', harmonyOSHandlers.handleHarmonyOSPause)
+    window.removeEventListener('harmonyos-stop', harmonyOSHandlers.handleHarmonyOSStop)
+    window.removeEventListener('harmonyos-next', harmonyOSHandlers.handleHarmonyOSNext)
+    window.removeEventListener('harmonyos-previous', harmonyOSHandlers.handleHarmonyOSPrevious)
+    window.removeEventListener('harmonyos-seek', harmonyOSHandlers.handleHarmonyOSSeek)
     // 清理全局播放器实例
     delete window.audioPlayerInstance
   }
