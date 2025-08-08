@@ -510,6 +510,19 @@ onMounted(async () => {
       isSyncingFromGlobal.value = true
       control.stop()
       sync.syncStopToGlobal()
+      
+      // 通知鸿蒙侧清理元数据
+      if (sync.isHarmonyOS()) {
+        sync.notifyHarmonyOS('metadata', {}, {
+          title: '',
+          artist: '',
+          album: '',
+          cover: '',
+          duration: 0,
+          position: 0
+        }, '')
+      }
+      
       nextTick(() => {
         isSyncingFromGlobal.value = false
       })

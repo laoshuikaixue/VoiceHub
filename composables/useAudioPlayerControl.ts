@@ -87,6 +87,11 @@ export const useAudioPlayerControl = () => {
       audioPlayer.value.currentTime = 0
       currentTime.value = 0
       progress.value = 0
+      isPlaying.value = false
+      
+      // 清理歌词状态
+      lyrics.clearLyrics()
+      
       return true
     } catch (error) {
       console.error('停止失败:', error)
@@ -138,7 +143,7 @@ export const useAudioPlayerControl = () => {
   }
 
   // 加载新歌曲
-  const loadSong = async (songUrlOrSong: string | any): Promise<boolean> => {
+  const loadSong = async (songUrlOrSong: string | any, retryCount: number = 0): Promise<boolean> => {
     if (!audioPlayer.value) return false
     
     isLoadingNewSong.value = true
@@ -146,9 +151,11 @@ export const useAudioPlayerControl = () => {
     
     try {
       let songUrl: string
+      let songInfo: any = null
       
       // 如果传入的是歌曲对象，检查是否有音乐平台信息
       if (typeof songUrlOrSong === 'object' && songUrlOrSong !== null) {
+        songInfo = songUrlOrSong
         // 检查是否有音乐平台和ID信息
         if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
           console.log('正在获取歌曲URL:', songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
@@ -177,18 +184,39 @@ export const useAudioPlayerControl = () => {
         throw new Error('无效的歌曲参数')
       }
       
+      console.log('设置音频源:', songUrl)
       audioPlayer.value.src = songUrl
       audioPlayer.value.load()
       
       // 等待音频可以播放
       await waitForCanPlay(audioPlayer.value)
       
+      console.log('歌曲加载成功:', songInfo?.title || songUrl)
       isLoadingNewSong.value = false
       return true
     } catch (error) {
       console.error('加载歌曲失败:', error)
+      
+      // 重试逻辑
+      if (retryCount < 2 && typeof songUrlOrSong === 'object' && songUrlOrSong?.musicPlatform) {
+        console.log(`第 ${retryCount + 1} 次重试加载歌曲...`)
+        await new Promise(resolve => setTimeout(resolve, 1000)) // 等待1秒后重试
+        return await loadSong(songUrlOrSong, retryCount + 1)
+      }
+      
       hasError.value = true
       isLoadingNewSong.value = false
+      
+      // 显示详细错误信息
+      let errorMessage = '加载歌曲失败'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      }
+      
+      if (window.$showNotification) {
+        window.$showNotification(errorMessage, 'error')
+      }
+      
       return false
     }
   }
@@ -284,19 +312,50 @@ export const useAudioPlayerControl = () => {
         throw new Error('不支持的音乐平台')
       }
 
-      const response = await fetch(apiUrl)
+      console.log('正在请求音乐URL:', { platform, musicId, quality: qualityParam, apiUrl })
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000 // 10秒超时
+      })
+
       if (!response.ok) {
-        throw new Error('获取音乐URL失败')
+        const errorText = await response.text()
+        console.error('API响应错误:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        })
+        throw new Error(`获取音乐URL失败: ${response.status} ${response.statusText}`)
       }
 
       const data = await response.json()
+      console.log('API响应数据:', data)
+
       if (data.code === 200 && data.data && data.data.url) {
+        console.log('成功获取音乐URL:', data.data.url)
         return data.data.url
+      } else if (data.code !== 200) {
+        console.error('API返回错误代码:', data)
+        throw new Error(data.message || `API错误: ${data.code}`)
       }
 
+      console.warn('API返回成功但没有URL:', data)
       return null
     } catch (error) {
       console.error('获取音乐URL错误:', error)
+      
+      // 提供更友好的错误信息
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('网络连接失败，请检查网络连接')
+      } else if (error.name === 'AbortError') {
+        throw new Error('请求超时，请稍后重试')
+      }
+      
       throw error
     }
   }
@@ -442,8 +501,41 @@ export const useAudioPlayerControl = () => {
 
   const onError = (error: any) => {
     console.error('音频播放错误:', error)
+    
+    // 获取更详细的错误信息
+    let errorMessage = '音频播放失败'
+    if (audioPlayer.value && audioPlayer.value.error) {
+      const mediaError = audioPlayer.value.error
+      switch (mediaError.code) {
+        case MediaError.MEDIA_ERR_ABORTED:
+          errorMessage = '音频加载被中止'
+          break
+        case MediaError.MEDIA_ERR_NETWORK:
+          errorMessage = '网络错误，无法加载音频'
+          break
+        case MediaError.MEDIA_ERR_DECODE:
+          errorMessage = '音频解码失败，格式不支持'
+          break
+        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          errorMessage = '音频源不支持或无效'
+          break
+        default:
+          errorMessage = `音频播放错误 (代码: ${mediaError.code})`
+      }
+      console.error(`详细错误信息: ${errorMessage}`, {
+        code: mediaError.code,
+        message: mediaError.message,
+        src: audioPlayer.value.src
+      })
+    }
+    
     hasError.value = true
     isPlaying.value = false
+    
+    // 显示用户友好的错误提示
+    if (window.$showNotification) {
+      window.$showNotification(errorMessage, 'error')
+    }
   }
 
   const onPlay = () => {
