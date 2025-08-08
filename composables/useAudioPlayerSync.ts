@@ -2,10 +2,12 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useMusicWebSocket } from '~/composables/useMusicWebSocket'
 import { useAuth } from '~/composables/useAuth'
+import { useLyrics } from '~/composables/useLyrics'
 
 export const useAudioPlayerSync = () => {
   const globalAudioPlayer = useAudioPlayer()
   const musicWebSocket = useMusicWebSocket()
+  const lyrics = useLyrics()
   
   // 节流控制
   const lastWebSocketUpdate = ref(0)
@@ -24,7 +26,7 @@ export const useAudioPlayerSync = () => {
   }
 
   // 通知鸿蒙应用播放状态变化（改进事件驱动机制）
-  const notifyHarmonyOS = (action: string, extraData: Record<string, any> = {}, song?: any) => {
+  const notifyHarmonyOS = (action: string, extraData: Record<string, any> = {}, song?: any, lyrics?: string) => {
     if (typeof window !== 'undefined' && song) {
       // 处理封面URL，确保是完整的URL
       let coverUrl = song.cover || ''
@@ -43,10 +45,16 @@ export const useAudioPlayerSync = () => {
         album: extraData.album || song.album || 'VoiceHub',
         cover: extraData.artwork || coverUrl,
         duration: extraData.duration !== undefined ? extraData.duration : 0,
-        position: extraData.position !== undefined ? extraData.position : 0
+        position: extraData.position !== undefined ? extraData.position : 0,
+        lyrics: lyrics || '' // 添加歌词字段
       }
 
       console.log(`[HarmonyOS] 通知动作: ${action}`, songInfo)
+      
+      // 如果有歌词，记录歌词信息
+      if (lyrics) {
+        console.log(`[HarmonyOS] 歌词信息: ${lyrics.length} 字符`)
+      }
 
       // 只有在鸿蒙环境中才调用相关API
       if (window.voiceHubPlayer) {
@@ -196,13 +204,16 @@ export const useAudioPlayerSync = () => {
             })
             
             // 通知鸿蒙应用歌曲变化，确保元数据完整
+            // 获取新歌曲的歌词
+            await lyrics.loadLyrics(newSong)
+            const harmonyLyrics = lyrics.getFormattedLyricsForHarmonyOS()
             notifyHarmonyOS('metadata', {
               title: newSong.title || '未知歌曲',
               artist: newSong.artist || '未知艺术家',
               album: newSong.album || '',
               artwork: newSong.cover || '',
               duration: newSong.duration || 0
-            }, newSong)
+            }, newSong, harmonyLyrics)
             
             // 通知播放列表状态变化
             setTimeout(() => {
@@ -262,13 +273,16 @@ export const useAudioPlayerSync = () => {
             })
             
             // 通知鸿蒙应用歌曲变化，确保元数据完整
+            // 获取新歌曲的歌词
+            await lyrics.loadLyrics(newSong)
+            const harmonyLyrics = lyrics.getFormattedLyricsForHarmonyOS()
             notifyHarmonyOS('metadata', {
               title: newSong.title || '未知歌曲',
               artist: newSong.artist || '未知艺术家',
               album: newSong.album || '',
               artwork: newSong.cover || '',
               duration: newSong.duration || 0
-            }, newSong)
+            }, newSong, harmonyLyrics)
             
             // 通知播放列表状态变化
             setTimeout(() => {
@@ -422,6 +436,7 @@ export const useAudioPlayerSync = () => {
   return {
     // 状态
     globalAudioPlayer,
+    lyrics,
     
     // 鸿蒙通知
     notifyHarmonyOS,

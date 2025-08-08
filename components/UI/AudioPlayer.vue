@@ -73,6 +73,10 @@
         </div>
 
         <div class="player-actions">
+          <button class="action-btn" @click="toggleLyrics" title="歌词">
+            <Icon name="type" :size="16" color="white" />
+          </button>
+
           <div class="quality-selector" :class="{ 'expanded': showQualitySettings }">
             <button class="quality-btn" @click="toggleQualitySettings" title="音质设置">
               <span class="quality-icon">♪</span>
@@ -100,6 +104,26 @@
           </button>
         </div>
 
+        <!-- 歌词显示区域 -->
+        <Transition name="lyrics-slide">
+          <div v-if="showLyrics" class="lyrics-panel">
+            <LyricsDisplay
+              :compact="true"
+              :show-controls="false"
+              :allow-seek="true"
+              height="120px"
+              :current-lyrics="control.lyrics.currentLyrics.value"
+              :translation-lyrics="control.lyrics.translationLyrics.value"
+              :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
+              :current-lyric-index="control.lyrics.currentLyricIndex.value"
+              :current-time="control.currentTime.value"
+              :is-loading="control.lyrics.isLoading.value"
+              :error="control.lyrics.error.value"
+              @seek="handleLyricSeek"
+            />
+          </div>
+        </Transition>
+
         <audio
           ref="audioPlayer"
           :src="song.musicUrl"
@@ -120,6 +144,7 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import LyricsDisplay from './LyricsDisplay.vue'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useAudioPlayerSync } from '~/composables/useAudioPlayerSync'
 import { useAudioQuality } from '~/composables/useAudioQuality'
@@ -149,6 +174,7 @@ const progressBar = ref(null)
 const isClosing = ref(false)
 const coverError = ref(false)
 const showQualitySettings = ref(false)
+const showLyrics = ref(false)
 
 // 同步标记，避免双向触发
 const isSyncingFromGlobal = ref(false)
@@ -161,7 +187,8 @@ const handleTimeUpdate = () => {
   const currentTime = audioPlayer.value.currentTime
   const duration = audioPlayer.value.duration
   
-  control.onTimeUpdate(currentTime, duration)
+  // 修复参数传递问题：onTimeUpdate只接受一个参数
+  control.onTimeUpdate(currentTime)
   
   // 节流的进度更新
   sync.throttledProgressUpdate(currentTime, duration, control.isPlaying.value, props.song)
@@ -172,10 +199,12 @@ const handlePlay = () => {
   
   control.onPlay()
   sync.syncPlayStateToGlobal(true, props.song)
+  // 获取歌词并传递到鸿蒙侧
+  const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
   sync.notifyHarmonyOS('play', {
     position: control.currentTime.value,
     duration: control.duration.value
-  }, props.song)
+  }, props.song, harmonyLyrics)
   sync.sendWebSocketUpdate({
     songId: props.song?.id,
     isPlaying: true,
@@ -191,10 +220,12 @@ const handlePause = () => {
   
   control.onPause()
   sync.syncPlayStateToGlobal(false, props.song)
+  // 获取歌词并传递到鸿蒙侧
+  const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
   sync.notifyHarmonyOS('pause', {
     position: control.currentTime.value,
     duration: control.duration.value
-  }, props.song)
+  }, props.song, harmonyLyrics)
   sync.sendWebSocketUpdate({
     songId: props.song?.id,
     isPlaying: false,
@@ -210,6 +241,8 @@ const handleLoaded = () => {
   
   control.onLoaded(audioPlayer.value.duration)
   
+  // 获取歌词并传递到鸿蒙侧
+  const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
   // 通知鸿蒙应用元数据
   sync.notifyHarmonyOS('metadata', {
     title: props.song?.title || '未知歌曲',
@@ -217,7 +250,7 @@ const handleLoaded = () => {
     album: props.song?.album || '',
     artwork: props.song?.cover || '',
     duration: audioPlayer.value.duration
-  }, props.song)
+  }, props.song, harmonyLyrics)
   
   // 延迟同步播放列表状态
   setTimeout(() => {
@@ -315,16 +348,17 @@ const selectQuality = async (qualityValue) => {
   sync.syncPlayStateToGlobal(control.isPlaying.value, props.song)
   
   // 通知鸿蒙系统
+  const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
   if (control.isPlaying.value) {
     sync.notifyHarmonyOS('play', {
       position: control.currentTime.value,
       duration: control.duration.value
-    }, props.song)
+    }, props.song, harmonyLyrics)
   } else {
     sync.notifyHarmonyOS('pause', {
       position: control.currentTime.value,
       duration: control.duration.value
-    }, props.song)
+    }, props.song, harmonyLyrics)
   }
 }
 
@@ -424,6 +458,14 @@ onMounted(async () => {
     const loadSuccess = await control.loadSong(props.song)
     if (loadSuccess) {
       sync.setGlobalPlaylist(props.song, props.playlist)
+      
+      // 获取歌词并传递到鸿蒙侧
+      const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
+      sync.notifyHarmonyOS('load', {
+        position: 0,
+        duration: control.duration.value
+      }, props.song, harmonyLyrics)
+      
       // 尝试播放，如果失败（由于浏览器自动播放策略），等待用户交互
       const playSuccess = await control.play()
       if (!playSuccess) {
@@ -522,6 +564,16 @@ onUnmounted(() => {
     delete window.voiceHubPlayerInstance
   }
 })
+
+// 切换歌词显示
+const toggleLyrics = () => {
+  showLyrics.value = !showLyrics.value
+}
+
+const handleLyricSeek = (time) => {
+  control.seek(time)
+  sync.updateGlobalPosition(time, control.duration.value)
+}
 
 // 格式化时间
 const formatTime = (seconds) => {
@@ -1154,6 +1206,59 @@ const formatTime = (seconds) => {
     opacity: 1;
     transform: translateY(-50%) scale(1);
   }
+}
+
+/* 歌词面板样式 */
+.lyrics-panel {
+  margin-top: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 歌词滑动动画 */
+.lyrics-slide-enter-active,
+.lyrics-slide-leave-active {
+  transition: all 0.3s ease;
+  transform-origin: top;
+}
+
+.lyrics-slide-enter-from,
+.lyrics-slide-leave-to {
+  opacity: 0;
+  transform: scaleY(0);
+  max-height: 0;
+}
+
+.lyrics-slide-enter-to,
+.lyrics-slide-leave-from {
+  opacity: 1;
+  transform: scaleY(1);
+  max-height: 120px;
+}
+
+/* 操作按钮样式 */
+.action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: scale(1.1);
 }
 
 </style>

@@ -793,10 +793,24 @@ const playSong = async (result) => {
     artist: result.singer || result.artist,
     cover: result.cover || null,
     musicUrl: result.url,
+    musicPlatform: platform.value,
+    musicId: result.musicId ? String(result.musicId) : null,
   }
 
   // 使用全局播放器播放歌曲
   audioPlayer.playSong(song)
+
+  // 如果有音乐平台信息，请求歌词
+  if (song.musicPlatform && song.musicId) {
+    try {
+      const { useLyrics } = await import('~/composables/useLyrics')
+      const lyrics = useLyrics()
+      console.log('正在请求歌词:', song.musicPlatform, song.musicId)
+      await lyrics.fetchLyrics(song.musicPlatform, song.musicId)
+    } catch (error) {
+      console.error('获取歌词失败:', error)
+    }
+  }
 }
 
 // 选择搜索结果

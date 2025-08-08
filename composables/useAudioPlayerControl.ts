@@ -1,5 +1,6 @@
 import { ref, computed, nextTick } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
+import { useLyrics } from '~/composables/useLyrics'
 
 export const useAudioPlayerControl = () => {
   const audioPlayer = ref<HTMLAudioElement | null>(null)
@@ -29,6 +30,9 @@ export const useAudioPlayerControl = () => {
   
   // 音质设置相关
   const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+  
+  // 歌词功能
+  const lyrics = useLyrics()
 
   // 基本播放控制
   const play = async (): Promise<boolean> => {
@@ -143,11 +147,29 @@ export const useAudioPlayerControl = () => {
     try {
       let songUrl: string
       
-      // 如果传入的是歌曲对象，获取URL
-      if (typeof songUrlOrSong === 'object' && songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
-        songUrl = await getMusicUrl(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
-        if (!songUrl) {
-          throw new Error('无法获取歌曲URL')
+      // 如果传入的是歌曲对象，检查是否有音乐平台信息
+      if (typeof songUrlOrSong === 'object' && songUrlOrSong !== null) {
+        // 检查是否有音乐平台和ID信息
+        if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
+          console.log('正在获取歌曲URL:', songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+          songUrl = await getMusicUrl(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+          if (!songUrl) {
+            throw new Error('无法获取歌曲URL')
+          }
+          
+          // 加载歌词
+          console.log('正在加载歌词:', songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+          await lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+          
+          // 获取格式化的歌词用于鸿蒙侧
+          const harmonyLyrics = lyrics.getFormattedLyricsForHarmonyOS()
+        } else {
+          // 如果没有音乐平台信息，检查是否有直接的URL
+          if (songUrlOrSong.musicUrl) {
+            songUrl = songUrlOrSong.musicUrl
+          } else {
+            throw new Error('歌曲缺少播放信息（音乐平台ID或直接URL）')
+          }
         }
       } else if (typeof songUrlOrSong === 'string') {
         songUrl = songUrlOrSong
@@ -406,6 +428,11 @@ export const useAudioPlayerControl = () => {
     if (duration.value > 0) {
       progress.value = (currentTimeValue / duration.value) * 100
     }
+    
+    // 更新歌词时间
+    const timeInMs = currentTimeValue * 1000
+    console.log(`onTimeUpdate: 当前时间 ${currentTimeValue}s (${timeInMs}ms), 进度 ${progress.value.toFixed(1)}%`)
+    lyrics.updateCurrentLyricIndex(timeInMs) // 转换为毫秒
   }
 
   const onLoaded = (durationValue: number) => {
@@ -526,6 +553,9 @@ export const useAudioPlayerControl = () => {
     formatTime,
     resetState,
     waitForCanPlay,
-    cleanup
+    cleanup,
+    
+    // 歌词功能
+    lyrics
   }
 }

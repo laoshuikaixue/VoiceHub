@@ -21,16 +21,11 @@ interface SongInfo {
 }
 
 export function useMusicWebSocket() {
-  const socket = ref<WebSocket | null>(null)
   const isConnected = ref(false)
   const connectionId = ref<string | null>(null)
   const lastHeartbeat = ref<number>(0)
-  const reconnectAttempts = ref(0)
-  const maxReconnectAttempts = 5
-  const reconnectDelay = ref(1000)
-  const connectionTimeout = ref<NodeJS.Timeout | null>(null)
-  const isReconnecting = ref(false)
   
+  let eventSource: EventSource | null = null
   let reconnectTimer: NodeJS.Timeout | null = null
   let heartbeatTimer: NodeJS.Timeout | null = null
 
@@ -40,48 +35,24 @@ export function useMusicWebSocket() {
   const onPlaylistUpdate = ref<((playlist: any[]) => void) | null>(null)
   const onConnectionChange = ref<((connected: boolean) => void) | null>(null)
 
-  // 连接WebSocket（改进错误处理和连接管理）
+  // 连接WebSocket
   const connect = (token?: string) => {
-    // 防止重复连接
-    if (isReconnecting.value) {
-      console.log('🔄 正在重连中，跳过新的连接请求')
-      return
+    if (eventSource) {
+      disconnect()
     }
 
     try {
-      const wsUrl = 'ws://localhost:3001/ws/music'
-      console.log('🔌 尝试连接WebSocket:', wsUrl)
-      
-      // 清理现有连接
-      if (socket.value) {
-        socket.value.close()
-        socket.value = null
+      const url = new URL('/api/music/websocket', window.location.origin)
+      if (token) {
+        url.searchParams.set('token', token)
       }
-      
-      isReconnecting.value = true
-      socket.value = new WebSocket(wsUrl)
-      
-      // 设置连接超时
-      connectionTimeout.value = setTimeout(() => {
-        if (socket.value && socket.value.readyState === WebSocket.CONNECTING) {
-          console.log('⏰ WebSocket连接超时，关闭连接')
-          socket.value.close()
-        }
-      }, 10000) // 10秒超时
 
-      socket.value.onopen = () => {
-        console.log('✅ WebSocket连接成功')
+      eventSource = new EventSource(url.toString())
+
+      eventSource.onopen = () => {
+        console.log('Music WebSocket connected')
         isConnected.value = true
-        isReconnecting.value = false
-        reconnectAttempts.value = 0
-        reconnectDelay.value = 1000
         onConnectionChange.value?.(true)
-        
-        // 清理连接超时
-        if (connectionTimeout.value) {
-          clearTimeout(connectionTimeout.value)
-          connectionTimeout.value = null
-        }
         
         // 清除重连定时器
         if (reconnectTimer) {
@@ -90,53 +61,26 @@ export function useMusicWebSocket() {
         }
       }
 
-      socket.value.onmessage = (event) => {
+      eventSource.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data)
-          console.log('📨 收到WebSocket消息:', message)
           handleMessage(message)
         } catch (error) {
-          console.error('❌ WebSocket消息解析失败:', error)
+          console.error('Failed to parse WebSocket message:', error)
         }
       }
 
-      socket.value.onclose = (event) => {
-        console.log('🔌 WebSocket连接关闭:', event.code, event.reason)
+      eventSource.onerror = (error) => {
+        console.error('Music WebSocket error:', error)
         isConnected.value = false
-        isReconnecting.value = false
         onConnectionChange.value?.(false)
         
-        // 清理连接超时
-        if (connectionTimeout.value) {
-          clearTimeout(connectionTimeout.value)
-          connectionTimeout.value = null
-        }
-        
-        // 只有在非正常关闭时才自动重连
-        if (event.code !== 1000 && reconnectAttempts.value < maxReconnectAttempts) {
-          reconnectAttempts.value++
-          console.log(`🔄 尝试重连 (${reconnectAttempts.value}/${maxReconnectAttempts})`)
-          scheduleReconnect()
-        } else if (event.code !== 1000) {
-          console.error('❌ WebSocket重连失败，已达到最大重试次数')
-        }
-      }
-      
-      socket.value.onerror = (error) => {
-        console.error('❌ WebSocket错误:', error)
-        isConnected.value = false
-        isReconnecting.value = false
-        
-        // 清理连接超时
-        if (connectionTimeout.value) {
-          clearTimeout(connectionTimeout.value)
-          connectionTimeout.value = null
-        }
+        // 自动重连
+        scheduleReconnect()
       }
 
     } catch (error) {
-      console.error('❌ WebSocket连接失败:', error)
-      isReconnecting.value = false
+      console.error('Failed to create WebSocket connection:', error)
       scheduleReconnect()
     }
   }
@@ -174,9 +118,9 @@ export function useMusicWebSocket() {
 
   // 断开连接
   const disconnect = () => {
-    if (socket.value) {
-      socket.value.close(1000, 'Normal closure')
-      socket.value = null
+    if (eventSource) {
+      eventSource.close()
+      eventSource = null
     }
 
     if (reconnectTimer) {
@@ -188,29 +132,20 @@ export function useMusicWebSocket() {
       clearTimeout(heartbeatTimer)
       heartbeatTimer = null
     }
-    
-    if (connectionTimeout.value) {
-      clearTimeout(connectionTimeout.value)
-      connectionTimeout.value = null
-    }
 
     isConnected.value = false
-    isReconnecting.value = false
-    reconnectAttempts.value = 0
     connectionId.value = null
     onConnectionChange.value?.(false)
   }
 
   // 计划重连
   const scheduleReconnect = () => {
-    if (reconnectTimer || isReconnecting.value) return
+    if (reconnectTimer) return
 
     reconnectTimer = setTimeout(() => {
-      console.log('🔄 尝试重新连接 WebSocket...')
+      console.log('Attempting to reconnect Music WebSocket...')
       connect()
-    }, reconnectDelay.value)
-    
-    reconnectDelay.value = Math.min(reconnectDelay.value * 2, 30000)
+    }, 5000) // 5秒后重连
   }
 
   // 发送音乐状态更新
