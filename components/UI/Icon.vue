@@ -173,6 +173,18 @@
       <polygon points="2,19 11,12 2,5" fill="currentColor" />
     </g>
 
+    <!-- 歌词图标 -->
+    <g v-else-if="name === 'lyrics'">
+      <!-- 音符基础形状 -->
+      <path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="1.5" fill="none" />
+      <circle cx="6" cy="18" r="3" fill="currentColor" />
+      <circle cx="18" cy="16" r="3" fill="currentColor" />
+      <!-- 歌词文本线条 -->
+      <line x1="2" y1="8" x2="7" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="2" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="2" y1="16" x2="6" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+    </g>
+
     <!-- 默认图标（如果没有匹配的图标） -->
     <circle v-else cx="12" cy="12" r="10" />
   </svg>

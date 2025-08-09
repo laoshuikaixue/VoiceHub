@@ -73,8 +73,8 @@
         </div>
 
         <div class="player-actions">
-          <button class="action-btn" @click="toggleLyrics" title="歌词">
-            <Icon name="type" :size="16" color="white" />
+          <button class="action-btn" :class="{ active: showLyrics }" @click="toggleLyrics" :title="showLyrics ? '隐藏歌词' : '显示歌词'">
+            <Icon name="lyrics" :size="16" color="white" />
           </button>
 
           <div class="quality-selector" :class="{ 'expanded': showQualitySettings }">
@@ -1341,4 +1341,17 @@ const formatTime = (seconds) => {
   transform: scale(1.1);
 }
 
+.action-btn.active {
+  background: rgba(59, 130, 246, 0.25);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(59,130,246,0.35);
+  transform: scale(1.06);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 10px rgba(59,130,246,0.35); }
+  50% { box-shadow: 0 0 18px rgba(59,130,246,0.55); }
+  100% { box-shadow: 0 0 10px rgba(59,130,246,0.35); }
+}
 </style>

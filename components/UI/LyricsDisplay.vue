@@ -1,540 +1,220 @@
 <template>
-  <div class="lyrics-display" :class="{ 'compact': compact }">
-    <!-- 歌词控制栏 -->
-    <div v-if="showControls" class="lyrics-controls">
-      <button 
-        @click="toggleTranslation" 
-        :class="{ 'active': showTranslation }"
-        class="control-btn"
-        :disabled="!hasTranslation"
-      >
-        译
-      </button>
-      <button 
-        @click="toggleWordByWord" 
-        :class="{ 'active': showWordByWord }"
-        class="control-btn"
-        :disabled="!hasWordByWord"
-      >
-        逐字
-      </button>
-      <button @click="scrollToCurrentLyric" class="control-btn">
-        定位
-      </button>
-    </div>
-
-    <!-- 歌词内容 -->
-    <div class="lyrics-content" ref="lyricsContainer">
-      <!-- 加载状态 -->
-    <div v-if="props.isLoading" class="lyrics-loading">
-      <div class="loading-spinner"></div>
-      <span>加载歌词中...</span>
-    </div>
-
-    <!-- 错误状态 -->
-    <div v-else-if="props.error" class="lyrics-error">
-      <Icon name="alert-circle" />
-      <span>{{ props.error }}</span>
-    </div>
-
-    <!-- 无歌词 -->
-    <div v-else-if="!props.currentLyrics || props.currentLyrics.length === 0" class="lyrics-empty">
-      <Icon name="music" />
-      <span>暂无歌词</span>
-    </div>
-
-    <!-- 歌词列表 -->
-    <div v-else class="lyrics-list" ref="lyricsList">
-      <div
-        v-for="(line, index) in props.currentLyrics"
-        :key="index"
-        :ref="el => setLyricLineRef(el, index)"
-        @click="onLyricLineClick(index)"
-        class="lyric-line"
-        :class="{
-          'current': index === props.currentLyricIndex,
-          'passed': index < props.currentLyricIndex,
-          'clickable': props.allowSeek
-        }"
-      >
+  <div class="lyrics-display" :style="{ height }">
+    <div class="lyrics-container" ref="containerRef">
+      <template v-if="!isLoading && !error && (currentLyrics?.length || translationLyrics?.length)">
+        <div
+          v-for="(line, index) in currentLyrics"
+          :key="index"
+          :ref="el => setLineRef(el, index)"
+          class="lyric-line"
+          :class="{ active: index === currentLyricIndex, passed: index < currentLyricIndex, upcoming: index > currentLyricIndex }"
+          @click="allowSeek && handleSeek(line.time)"
+        >
           <!-- 主歌词 -->
-          <div class="lyric-main">
-            <template v-if="showWordByWord && line.words">
+          <div class="line-primary">
+            <template v-if="displayWords(line).length">
               <span
-                v-for="(word, wordIndex) in line.words"
-                :key="wordIndex"
+                v-for="(w, wi) in displayWords(line)"
+                :key="wi"
                 class="lyric-word"
-                :class="{ 'word-active': isWordActive(line, word) }"
+                :class="{ 'word-active': isWordActive(line, w) }"
               >
-                {{ word.content }}
+                {{ w.content }}
               </span>
             </template>
             <template v-else>
-              {{ line.content }}
+              {{ line.content || '...' }}
             </template>
           </div>
-
+          
           <!-- 翻译歌词 -->
-          <div 
-            v-if="showTranslation && getTranslationForLine(line.time)"
-            class="lyric-translation"
-          >
-            {{ getTranslationForLine(line.time) }}
+          <div class="line-translation" v-if="translationLyrics && translationLyrics[index]">
+            {{ translationLyrics[index].content }}
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- 当前歌词显示（紧凑模式） -->
-    <div v-if="compact" class="current-lyric-display">
-      <div class="current-lyric-main">{{ currentLyricContent }}</div>
-      <div v-if="showTranslation && currentTranslationContent" class="current-lyric-translation">
-        {{ currentTranslationContent }}
-      </div>
+      </template>
+      
+      <div v-else-if="isLoading" class="placeholder">歌词加载中...</div>
+      <div v-else-if="error" class="placeholder error">{{ error }}</div>
+      <div v-else class="placeholder">暂无歌词</div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { type LyricLine } from '~/composables/useLyrics'
-import Icon from './Icon.vue'
+<script setup>
+import { ref, watch, onMounted, nextTick, computed } from 'vue'
 
-interface Props {
-  // 是否显示控制按钮
-  showControls?: boolean
-  // 是否允许点击歌词跳转
-  allowSeek?: boolean
-  // 紧凑模式（只显示当前歌词）
-  compact?: boolean
-  // 自动滚动
-  autoScroll?: boolean
-  // 高度
-  height?: string
-  // 歌词数据（从父组件传入）
-  currentLyrics?: LyricLine[]
-  translationLyrics?: LyricLine[]
-  wordByWordLyrics?: LyricLine[]
-  currentLyricIndex?: number
-  currentTime?: number
-  isLoading?: boolean
-  error?: string | null
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  showControls: true,
-  allowSeek: true,
-  compact: false,
-  autoScroll: true,
-  height: '400px',
-  currentLyrics: () => [],
-  translationLyrics: () => [],
-  wordByWordLyrics: () => [],
-  currentLyricIndex: 0,
-  currentTime: 0,
-  isLoading: false,
-  error: null
+const props = defineProps({
+  currentLyrics: { type: Array, default: () => [] },
+  translationLyrics: { type: Array, default: () => [] },
+  wordByWordLyrics: { type: Array, default: () => [] },
+  currentLyricIndex: { type: Number, default: -1 },
+  currentTime: { type: Number, default: 0 },
+  height: { type: String, default: '240px' },
+  compact: { type: Boolean, default: false },
+  showControls: { type: Boolean, default: true },
+  allowSeek: { type: Boolean, default: false },
+  isLoading: { type: Boolean, default: false },
+  error: { type: String, default: '' }
 })
 
-const emit = defineEmits<{
-  seek: [time: number]
-}>()
+const emit = defineEmits(['seek'])
 
-// 歌词显示设置（本地状态）
-const showTranslation = ref(false)
-const showWordByWord = ref(false)
+const containerRef = ref(null)
+const lineRefs = ref([])
 
-// 计算属性
-const currentLyricContent = computed(() => {
-  const lyrics = props.currentLyrics
-  if (!lyrics || lyrics.length === 0 || props.currentLyricIndex >= lyrics.length) {
-    return ''
-  }
-  return lyrics[props.currentLyricIndex].content
-})
-
-const currentTranslationContent = computed(() => {
-  if (!showTranslation.value || !props.translationLyrics || props.translationLyrics.length === 0) {
-    return ''
-  }
-  
-  const currentTime = props.currentLyrics?.[props.currentLyricIndex]?.time
-  if (!currentTime) return ''
-  
-  // 找到对应时间的翻译歌词
-  for (let i = 0; i < props.translationLyrics.length; i++) {
-    if (currentTime >= props.translationLyrics[i].time && 
-        (i === props.translationLyrics.length - 1 || currentTime < props.translationLyrics[i + 1].time)) {
-      return props.translationLyrics[i].content
-    }
-  }
-  return ''
-})
-
-// 跳转到指定歌词行
-const seekToLyricLine = (index: number): number => {
-  if (props.currentLyrics && index >= 0 && index < props.currentLyrics.length) {
-    return props.currentLyrics[index].time / 1000 // 返回秒数
-  }
-  return 0
-}
-
-// 模板引用
-const lyricsContainer = ref<HTMLElement>()
-const lyricsList = ref<HTMLElement>()
-const lyricLineRefs = ref<Map<number, HTMLElement>>(new Map())
-
-// 计算属性
-const hasTranslation = computed(() => props.translationLyrics.length > 0)
-const hasWordByWord = computed(() => props.wordByWordLyrics.length > 0)
-
-// 设置歌词行引用
-const setLyricLineRef = (el: HTMLElement | null, index: number) => {
+const setLineRef = (el, index) => {
   if (el) {
-    lyricLineRefs.value.set(index, el)
-  } else {
-    lyricLineRefs.value.delete(index)
+    lineRefs.value[index] = el
   }
 }
 
-// 切换翻译显示
-const toggleTranslation = () => {
-  showTranslation.value = !showTranslation.value
+const scrollToActive = () => {
+  if (!containerRef.value) return
+  const activeEl = lineRefs.value[props.currentLyricIndex]
+  if (!activeEl) return
+
+  const container = containerRef.value
+  const offsetTop = activeEl.offsetTop
+  const half = container.clientHeight / 2
+  const target = offsetTop - half + activeEl.clientHeight / 2
+
+  container.scrollTo({ top: target, behavior: 'smooth' })
 }
 
-// 切换逐字歌词显示
-const toggleWordByWord = () => {
-  showWordByWord.value = !showWordByWord.value
-}
-
-// 滚动到当前歌词
-const scrollToCurrentLyric = () => {
-  if (!props.autoScroll) return
-  
-  nextTick(() => {
-    const currentElement = lyricLineRefs.value.get(props.currentLyricIndex)
-    if (currentElement && lyricsContainer.value) {
-      const containerRect = lyricsContainer.value.getBoundingClientRect()
-      const elementRect = currentElement.getBoundingClientRect()
-      
-      const scrollTop = lyricsContainer.value.scrollTop
-      const targetScrollTop = scrollTop + elementRect.top - containerRect.top - containerRect.height / 2 + elementRect.height / 2
-      
-      lyricsContainer.value.scrollTo({
-        top: targetScrollTop,
-        behavior: 'smooth'
-      })
-    }
-  })
-}
-
-// 歌词行点击事件
-const onLyricLineClick = (index: number) => {
-  if (!props.allowSeek) return
-  
-  const time = seekToLyricLine(index)
-  emit('seek', time)
-}
-
-// 获取指定时间的翻译歌词
-const getTranslationForLine = (time: number): string => {
-  if (!showTranslation.value || props.translationLyrics.length === 0) {
-    return ''
+const displayWords = (line) => {
+  // 优先使用逐字歌词
+  if (line && Array.isArray(line.words) && line.words.length) return line.words
+  // 回退到全局 word-by-word 数据（如解析器返回分离结构）
+  const idx = props.currentLyrics.indexOf(line)
+  if (idx >= 0 && props.wordByWordLyrics && props.wordByWordLyrics[idx]) {
+    return props.wordByWordLyrics[idx].words || []
   }
-  
-  for (let i = 0; i < props.translationLyrics.length; i++) {
-    if (time >= props.translationLyrics[i].time && 
-        (i === props.translationLyrics.length - 1 || time < props.translationLyrics[i + 1].time)) {
-      return props.translationLyrics[i].content
-    }
-  }
-  return ''
+  return []
 }
 
-// 判断单词是否激活（逐字歌词）
-const isWordActive = (line: LyricLine, word: { time: number; duration: number; content: string }): boolean => {
-  if (!showWordByWord.value || !word.time || !word.duration) return false
-  
-  const wordEndTime = word.time + word.duration
-  return props.currentTime >= word.time && props.currentTime < wordEndTime
+const isWordActive = (line, word) => {
+  const wordStart = (word.time ?? 0)
+  const wordEnd = wordStart + (word.duration ?? 0)
+  const tMs = (props.currentTime || 0) * 1000
+  return tMs >= wordStart && tMs < wordEnd
 }
 
-// 监听当前歌词索引变化，自动滚动
-watch(() => props.currentLyricIndex, () => {
-  if (props.autoScroll && !props.compact) {
-    scrollToCurrentLyric()
-  }
-}, { flush: 'post' })
+const handleSeek = (timeMs) => emit('seek', Math.max(0, (timeMs || 0) / 1000))
 
-// 暴露方法给父组件
-defineExpose({
-  scrollToCurrentLyric,
-  toggleTranslation,
-  toggleWordByWord
+watch(
+  () => props.currentLyricIndex,
+  async () => {
+    await nextTick()
+    scrollToActive()
+  }
+)
+
+watch(
+  () => [props.currentLyrics, props.translationLyrics],
+  async () => {
+    await nextTick()
+    scrollToActive()
+  },
+  { deep: true }
+)
+
+onMounted(async () => {
+  await nextTick()
+  scrollToActive()
 })
 </script>
 
 <style scoped>
 .lyrics-display {
-  display: flex;
-  flex-direction: column;
-  height: v-bind(height);
-  max-height: 400px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  width: 100%;
   overflow: hidden;
   position: relative;
 }
 
-.lyrics-display.compact {
-  height: auto;
-  min-height: 60px;
-  max-height: 120px;
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.lyrics-controls {
-  display: flex;
-  gap: 6px;
-  padding: 8px 12px;
-  background: rgba(248, 250, 252, 0.6);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(8px);
-}
-
-.control-btn {
-  padding: 4px 8px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.8);
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.control-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: var(--primary-color);
-}
-
-.control-btn.active {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-}
-
-.control-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.lyrics-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px 16px;
-  position: relative;
-  scroll-behavior: smooth;
-}
-
-.lyrics-loading,
-.lyrics-error,
-.lyrics-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+.lyrics-container {
   height: 100%;
-  color: rgba(255, 255, 255, 0.7);
-  gap: 16px;
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(59, 130, 246, 0.2);
-  border-top: 3px solid var(--primary-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.lyrics-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px 0;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding: 8px 0;
+  /* 顶/底部渐隐，仿 Apple Music */
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 8%, #000 18%, #000 82%, rgba(0,0,0,0.7) 92%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 8%, #000 18%, #000 82%, rgba(0,0,0,0.7) 92%, rgba(0,0,0,0) 100%);
 }
 
 .lyric-line {
-  padding: 6px 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  line-height: 1.4;
-  position: relative;
+  padding: 6px 12px;
   text-align: center;
+  color: rgba(255, 255, 255, 0.68);
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), color 420ms ease, text-shadow 420ms ease, opacity 420ms ease;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  will-change: transform, text-shadow, opacity;
 }
 
-.lyric-line.clickable {
-  cursor: pointer;
-}
-
-.lyric-line.clickable:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-
+/* 非当前行的层次 */
 .lyric-line.passed {
-  opacity: 0.4;
+  opacity: 0.5;
+  transform: scale(0.995);
 }
 
-.lyric-line.current {
-  background: rgba(59, 130, 246, 0.08);
-  color: var(--primary-color);
+.lyric-line.upcoming {
+  opacity: 0.75;
+}
+
+/* 当前行 - 丝滑放大并带光晕 */
+.lyric-line.active {
+  color: #fff;
+  transform: translateY(-1px) scale(1.05);
+  text-shadow: 0 0 10px rgba(99, 179, 237, 0.45), 0 0 22px rgba(59, 130, 246, 0.4);
+  animation: popIn 460ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes popIn {
+  0%   { transform: translateY(8px) scale(0.98); opacity: 0.6; text-shadow: 0 0 0 rgba(59,130,246,0); }
+  55%  { transform: translateY(-2px) scale(1.07); opacity: 1; text-shadow: 0 0 14px rgba(99,179,237,0.5), 0 0 26px rgba(59,130,246,0.45); }
+  100% { transform: translateY(0) scale(1.03); text-shadow: 0 0 10px rgba(99,179,237,0.45), 0 0 22px rgba(59,130,246,0.4); }
+}
+
+.line-primary {
+  font-size: 13.5px;
   font-weight: 600;
 }
 
-.lyric-main {
-  font-size: 14px;
-  margin-bottom: 2px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+/* 当前行字体稍大，视觉焦点更强 */
+.lyric-line.active .line-primary {
+  font-size: 15.2px;
+  letter-spacing: 0.15px;
+}
+
+.line-translation {
+  font-size: 12px;
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .lyric-word {
-  transition: color 0.2s ease;
+  display: inline-block;
+  margin: 0 1px;
+  padding: 0 1px;
+  transition: color 180ms ease, text-shadow 180ms ease, transform 180ms ease;
 }
 
-.lyric-word.word-active {
-  color: var(--primary-color);
-  font-weight: 600;
+.word-active {
+  color: #fff;
+  text-shadow: 0 0 6px rgba(255,255,255,0.55), 0 0 14px rgba(99,179,237,0.5);
+  transform: translateY(-0.5px);
 }
 
-.lyric-translation {
-  font-size: 12px;
+.placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: rgba(255, 255, 255, 0.6);
-  opacity: 0.7;
-  margin-top: 2px;
 }
 
-.current-lyric-display {
-  padding: 12px 16px;
-  text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(15, 23, 42, 0.5);
-}
-
-.current-lyric-main {
-  font-size: 15px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
-  margin-bottom: 4px;
-  line-height: 1.4;
-}
-
-.current-lyric-translation {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
-  opacity: 0.7;
-}
-
-/* 简约的滚动条样式 */
-.lyrics-content::-webkit-scrollbar {
-  width: 4px;
-}
-
-.lyrics-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.lyrics-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 2px;
-}
-
-.lyrics-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-/* 滚动动画效果 */
-.lyrics-content {
-  scroll-padding-top: 50%;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .lyrics-controls {
-    padding: 6px 10px;
-  }
-  
-  .lyrics-content {
-    padding: 10px 12px;
-  }
-  
-  .lyrics-list {
-    gap: 6px;
-    padding: 12px 0;
-  }
-  
-  .lyric-main {
-    font-size: 13px;
-  }
-  
-  .current-lyric-main {
-    font-size: 14px;
-  }
-  
-  .lyric-line {
-    padding: 4px 6px;
-  }
-}
-
-/* 统一使用深色主题 */
-.lyrics-display {
-  background: rgba(30, 41, 59, 0.85);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.lyrics-display.compact {
-  background: rgba(30, 41, 59, 0.9);
-}
-
-.lyrics-controls {
-  background: rgba(15, 23, 42, 0.6);
-  border-bottom-color: rgba(255, 255, 255, 0.08);
-}
-
-.control-btn {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.control-btn:hover:not(:disabled) {
-  background: rgba(30, 41, 59, 0.95);
-}
-
-.lyric-line.current {
-  background: rgba(59, 130, 246, 0.15);
-}
-
-.current-lyric-display {
-  background: rgba(15, 23, 42, 0.5);
-  border-top-color: rgba(255, 255, 255, 0.08);
-}
-
-.lyrics-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.lyrics-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+.placeholder.error {
+  color: #ff7676;
 }
 </style>
