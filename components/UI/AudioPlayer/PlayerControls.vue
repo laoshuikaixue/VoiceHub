@@ -31,9 +31,9 @@
         <div class="progress-container-wrapper">
           <div
             class="progress-bar"
-            @mousedown="$emit('startDrag', $event)"
-            @touchstart="$emit('startTouchDrag', $event)"
-            @click="$emit('seekToPosition', $event)"
+            @mousedown="handleProgressMouseDown"
+            @touchstart="handleProgressTouchStart"
+            @click="handleProgressClick"
             ref="progressBar"
           >
             <div class="progress" :style="{ width: `${progress}%` }">
@@ -106,6 +106,21 @@ const formatTime = (time) => {
   const minutes = Math.floor(time / 60)
   const seconds = Math.floor(time % 60)
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+// 进度条事件处理
+const handleProgressMouseDown = (event) => {
+  emit('startDrag', event, progressBar.value)
+}
+
+const handleProgressTouchStart = (event) => {
+  emit('startTouchDrag', event, progressBar.value)
+}
+
+const handleProgressClick = (event) => {
+  // 防止拖拽时触发点击
+  if (props.isDragging) return
+  emit('seekToPosition', event)
 }
 
 defineExpose({
@@ -184,21 +199,28 @@ defineExpose({
   border-radius: 2px;
   cursor: pointer;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  /* 增加触摸区域 */
+  padding: 8px 0;
+  margin: -8px 0;
+  touch-action: none; /* 防止移动端滚动 */
 }
 
 .progress {
-  height: 100%;
+  position: absolute;
+  top: 8px;
+  left: 0;
+  height: 4px;
   background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
   border-radius: 2px;
-  position: relative;
-  transition: width 0.1s ease;
+  transition: width 0.05s linear; /* 更快的响应 */
+  will-change: width; /* 优化动画性能 */
 }
 
 .progress-thumb {
   position: absolute;
   right: -6px;
-  top: 50%;
+  top: 10px;
   transform: translateY(-50%);
   width: 12px;
   height: 12px;
@@ -206,12 +228,38 @@ defineExpose({
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  will-change: opacity, transform; /* 优化动画性能 */
 }
 
 .progress-bar:hover .progress-thumb,
 .progress-thumb.dragging {
   opacity: 1;
+}
+
+.progress-thumb.dragging {
+  transform: translateY(-50%) scale(1.2); /* 拖拽时稍微放大 */
+}
+
+/* 移动端优化 */
+@media (hover: none) and (pointer: coarse) {
+  .progress-bar {
+    padding: 12px 0; /* 增加触摸区域 */
+    margin: -12px 0;
+  }
+  
+  .progress {
+    top: 12px;
+    height: 6px; /* 移动端稍微增加高度 */
+  }
+  
+  .progress-thumb {
+    width: 16px; /* 移动端增大拇指大小 */
+    height: 16px;
+    right: -8px;
+    top: 15px; /* 调整到移动端进度条中心 */
+    opacity: 1; /* 移动端始终显示 */
+  }
 }
 
 .time-display {

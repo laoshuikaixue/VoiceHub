@@ -118,6 +118,7 @@ onUnmounted(() => {
   transition: all 0.2s ease;
   backdrop-filter: blur(10px);
   color: white;
+  flex-shrink: 0;
 }
 
 .action-btn:hover {
@@ -137,6 +138,7 @@ onUnmounted(() => {
 
 .quality-selector {
   position: relative;
+  flex-shrink: 0;
 }
 
 .quality-btn {
@@ -154,10 +156,32 @@ onUnmounted(() => {
   color: white;
   font-size: 11px;
   min-width: 60px;
+  flex-shrink: 0;
 }
 
 .quality-btn:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.close-player {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  color: white;
+  flex-shrink: 0;
+}
+
+.close-player:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
 }
 
 .quality-icon {
@@ -224,23 +248,27 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-.close-player {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 6px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
-}
-
-.close-player:hover {
-  background: rgba(255, 0, 0, 0.2);
-  transform: scale(1.05);
+/* 移动端优化 */
+@media (hover: none) and (pointer: coarse) {
+  .action-btn,
+  .close-player {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+  
+  .quality-btn {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 8px;
+    min-width: 60px;
+  }
+  
+  .lyrics-btn svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 /* 动画 */

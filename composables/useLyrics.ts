@@ -333,7 +333,7 @@ export const useLyrics = () => {
       if (time >= lyrics[i].time && 
           (i === lyrics.length - 1 || time < lyrics[i + 1].time)) {
         if (currentLyricIndex.value !== i) {
-          console.log(`歌词索引更新: ${currentLyricIndex.value} -> ${i}, 时间: ${time}ms, 歌词: "${lyrics[i].content}"`)
+          // 歌词索引更新
           currentLyricIndex.value = i
         }
         return

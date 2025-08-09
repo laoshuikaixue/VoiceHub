@@ -380,10 +380,9 @@ export const useAudioPlayerControl = () => {
 
       progress.value = percentage
 
-      // 实时更新播放位置
-      if (audioPlayer.value && duration.value) {
+      // 拖拽时只更新进度条显示，不实时更新音频位置
+      if (duration.value) {
         const newTime = (percentage / 100) * duration.value
-        audioPlayer.value.currentTime = newTime
         currentTime.value = newTime
       }
     }
@@ -392,6 +391,13 @@ export const useAudioPlayerControl = () => {
       isDragging.value = false
       document.removeEventListener('mousemove', onDrag)
       document.removeEventListener('mouseup', endDrag)
+      
+      // 拖拽结束时才更新音频位置
+      if (audioPlayer.value && duration.value) {
+        const newTime = (progress.value / 100) * duration.value
+        audioPlayer.value.currentTime = newTime
+        currentTime.value = newTime
+      }
     }
 
     document.addEventListener('mousemove', onDrag)
@@ -426,9 +432,9 @@ export const useAudioPlayerControl = () => {
 
       progress.value = percentage
 
-      if (audioPlayer.value && duration.value) {
+      // 拖拽时只更新进度条显示，不实时更新音频位置
+      if (duration.value) {
         const newTime = (percentage / 100) * duration.value
-        audioPlayer.value.currentTime = newTime
         currentTime.value = newTime
       }
     }
@@ -441,7 +447,7 @@ export const useAudioPlayerControl = () => {
       document.removeEventListener('touchmove', onTouchDrag)
       document.removeEventListener('touchend', endTouchDrag)
       
-      // 触摸结束时同步播放位置
+      // 触摸结束时才更新音频位置
       if (audioPlayer.value && duration.value) {
         const newTime = (progress.value / 100) * duration.value
         audioPlayer.value.currentTime = newTime
@@ -508,7 +514,6 @@ export const useAudioPlayerControl = () => {
     
     // 更新歌词时间
     const timeInMs = currentTimeValue * 1000
-    console.log(`onTimeUpdate: 当前时间 ${currentTimeValue}s (${timeInMs}ms), 进度 ${progress.value.toFixed(1)}%`)
     lyrics.updateCurrentLyricIndex(timeInMs) // 转换为毫秒
   }
 
