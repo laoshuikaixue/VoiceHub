@@ -6,103 +6,39 @@
 
     <Transition name="player-animation">
       <div v-if="song" class="global-audio-player">
-        <div class="player-info">
-          <div class="cover-container">
-            <template v-if="song.cover && !coverError">
-              <img :src="convertToHttps(song.cover)" alt="封面" class="player-cover" @error="handleImageError" />
-            </template>
-            <div v-else class="text-cover">
-              {{ getFirstChar(song.title || '') }}
-            </div>
-          </div>
-          <div class="player-text">
-            <h4>{{ song.title }}</h4>
-            <p>{{ song.artist }}</p>
-          </div>
-        </div>
+        <!-- 播放器信息 -->
+        <PlayerInfo :song="song" />
 
-        <div class="player-controls">
-          <div class="progress-container">
-            <div class="control-with-progress">
-              <!-- 上一首按钮 -->
-              <button 
-                class="control-btn prev-btn" 
-                @click="handlePrevious" 
-                :disabled="!sync.globalAudioPlayer.hasPrevious.value"
-                :title="sync.globalAudioPlayer.hasPrevious.value ? '上一首' : '没有上一首'"
-              >
-                <Icon name="skip-back" :size="18" color="white" />
-              </button>
-              
-              <!-- 播放/暂停按钮 -->
-              <button class="control-btn play-pause-btn" @click="handleTogglePlay" :disabled="control.hasError.value">
-                <Icon v-if="control.isPlaying.value" name="pause" :size="18" color="white" />
-                <Icon v-else name="play" :size="18" color="white" />
-              </button>
-              
-              <!-- 下一首按钮 -->
-              <button 
-                class="control-btn next-btn" 
-                @click="handleNext" 
-                :disabled="!sync.globalAudioPlayer.hasNext.value"
-                :title="sync.globalAudioPlayer.hasNext.value ? '下一首' : '没有下一首'"
-              >
-                <Icon name="skip-forward" :size="18" color="white" />
-              </button>
+        <!-- 播放器控制 -->
+        <PlayerControls
+          ref="playerControlsRef"
+          :is-playing="control.isPlaying.value"
+          :has-error="control.hasError.value"
+          :has-previous="sync.globalAudioPlayer.hasPrevious.value"
+          :has-next="sync.globalAudioPlayer.hasNext.value"
+          :progress="control.progress.value"
+          :is-dragging="control.isDragging.value"
+          :current-time="control.currentTime.value"
+          :duration="control.duration.value"
+          @toggle-play="handleTogglePlay"
+          @previous="handlePrevious"
+          @next="handleNext"
+          @start-drag="control.startDrag"
+          @start-touch-drag="control.startTouchDrag"
+          @seek-to-position="control.seekToPosition"
+        />
 
-              <div class="progress-container-wrapper">
-                <div
-                  class="progress-bar"
-                  @mousedown="control.startDrag"
-                  @touchstart="control.startTouchDrag"
-                  @click="control.seekToPosition"
-                  ref="progressBar"
-                >
-                  <div class="progress" :style="{ width: `${control.progress.value}%` }">
-                    <div class="progress-thumb" :class="{ 'dragging': control.isDragging.value }"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="time-display">
-              <span class="current-time">{{ control.formatTime(control.currentTime.value) }}</span>
-              <span class="duration">{{ control.formatTime(control.duration.value) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="player-actions">
-          <button class="action-btn" :class="{ active: showLyrics }" @click="toggleLyrics" :title="showLyrics ? '隐藏歌词' : '显示歌词'">
-            <Icon name="lyrics" :size="16" color="white" />
-          </button>
-
-          <div class="quality-selector" :class="{ 'expanded': showQualitySettings }">
-            <button class="quality-btn" @click="toggleQualitySettings" title="音质设置">
-              <span class="quality-icon">♪</span>
-              <span class="quality-text">{{ currentQualityText }}</span>
-              <span class="quality-arrow" :class="{ 'rotated': showQualitySettings }">▼</span>
-            </button>
-
-            <Transition name="quality-dropdown">
-              <div v-if="showQualitySettings && currentPlatformOptions.length > 0" class="quality-dropdown">
-                <div
-                  v-for="option in currentPlatformOptions"
-                  :key="option.value"
-                  class="quality-option"
-                  :class="{ 'active': isCurrentQuality(option.value) }"
-                  @click="selectQuality(option.value)"
-                >
-                  <span class="option-label">{{ option.label }}</span>
-                </div>
-              </div>
-            </Transition>
-          </div>
-
-          <button class="close-player" @click="stopPlaying">
-            <Icon name="x" :size="16" color="white" />
-          </button>
-        </div>
+        <!-- 播放器操作 -->
+        <PlayerActions
+          :show-lyrics="showLyrics"
+          :song="song"
+          :current-quality-text="currentQualityText"
+          :current-platform-options="currentPlatformOptions"
+          :is-current-quality="isCurrentQuality"
+          @toggle-lyrics="toggleLyrics"
+          @select-quality="selectQuality"
+          @close="stopPlaying"
+        />
 
         <!-- 歌词显示区域 -->
         <Transition name="lyrics-slide">
@@ -124,9 +60,10 @@
           </div>
         </Transition>
 
-        <audio
-          ref="audioPlayer"
-          :src="song.musicUrl"
+        <!-- 音频元素 -->
+        <AudioElement
+          ref="audioElementRef"
+          :song="song"
           @timeupdate="handleTimeUpdate"
           @ended="handleEnded"
           @loadedmetadata="handleLoaded"
@@ -135,20 +72,23 @@
           @pause="handlePause"
           @loadstart="handleLoadStart"
           @canplay="handleCanPlay"
-        ></audio>
+        />
       </div>
     </Transition>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
+import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import LyricsDisplay from './LyricsDisplay.vue'
+import PlayerInfo from './AudioPlayer/PlayerInfo.vue'
+import PlayerControls from './AudioPlayer/PlayerControls.vue'
+import PlayerActions from './AudioPlayer/PlayerActions.vue'
+import AudioElement from './AudioPlayer/AudioElement.vue'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useAudioPlayerSync } from '~/composables/useAudioPlayerSync'
 import { useAudioQuality } from '~/composables/useAudioQuality'
-import { convertToHttps } from '~/utils/url'
+import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 
 const props = defineProps({
   song: {
@@ -167,18 +107,23 @@ const emit = defineEmits(['close', 'ended', 'error', 'songChange'])
 const control = useAudioPlayerControl()
 const sync = useAudioPlayerSync()
 const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+const enhanced = useAudioPlayerEnhanced()
+
+// 组件引用
+const audioElementRef = ref(null)
+const playerControlsRef = ref(null)
 
 // UI 状态
-const audioPlayer = ref(null)
-const progressBar = ref(null)
 const isClosing = ref(false)
-const coverError = ref(false)
-const showQualitySettings = ref(false)
 const showLyrics = ref(false)
 
 // 同步标记，避免双向触发
 const isSyncingFromGlobal = ref(false)
 const isMounted = ref(false)
+
+// 获取音频播放器引用
+const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
+const progressBar = computed(() => playerControlsRef.value?.progressBar)
 
 // 音频事件处理器
 const handleTimeUpdate = () => {
@@ -317,22 +262,33 @@ const handleLoaded = async () => {
 const handleError = async (error) => {
   control.onError(error)
   
-  // 如果是加载错误且有下一首歌曲，自动跳到下一首
-  if (error && error.type === 'error' && sync.globalAudioPlayer.hasNext.value) {
-    console.log('当前歌曲无法播放，自动跳到下一首')
-    
-    // 延迟一下再跳转，避免频繁切换
-    setTimeout(async () => {
-      const result = await sync.playNext(props.song)
-      if (result.success && result.newSong) {
-        emit('songChange', result.newSong)
-      } else {
-        // 如果下一首也无法播放，停止自动跳转
-        console.log('没有可播放的歌曲了')
-        emit('error', error)
-      }
-    }, 1000)
+  // 使用增强的错误处理逻辑
+  const result = await enhanced.handlePlaybackError(
+    error,
+    props.song,
+    (newSong) => emit('songChange', newSong),
+    handleNext,
+    () => emit('close')
+  )
+  
+  if (result.handled) {
+    if (result.shouldRetry) {
+      // 重试当前歌曲
+      setTimeout(() => {
+        if (audioPlayer.value) {
+          audioPlayer.value.load()
+          control.play()
+        }
+      }, 500)
+    } else if (result.newSong) {
+      // 已经切换到新歌曲，不需要额外处理
+      console.log('已切换到新歌曲或新音质')
+    } else if (result.shouldClose) {
+      // 已经关闭播放器，不需要额外处理
+      console.log('播放器已关闭')
+    }
   } else {
+    // 如果增强处理失败，使用原始错误处理
     emit('error', error)
   }
 }
@@ -404,40 +360,60 @@ const selectQuality = async (qualityValue) => {
 
   // 如果选择的是当前音质，直接返回
   if (isCurrentQuality(qualityValue)) {
-    showQualitySettings.value = false
     return
   }
 
-  // 关闭下拉框
-  showQualitySettings.value = false
-
-  // 使用 control composable 的音质切换功能
-  await control.switchQuality(
-    props.song.musicPlatform,
-    props.song.musicId || props.song.id,
-    qualityValue
-  )
+  // 使用增强的音质切换功能
+  const result = await enhanced.enhancedQualitySwitch(props.song, qualityValue)
   
-  // 同步状态到全局
-  sync.syncPlayStateToGlobal(control.isPlaying.value, props.song)
-  
-  // 直接调用鸿蒙侧播放状态更新，不传递歌曲信息避免覆盖元数据
-  if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
-    window.voiceHubPlayer.onPlayStateChanged(control.isPlaying.value, {
-      position: control.currentTime.value,
-      duration: control.duration.value
-    })
+  if (result.success) {
+    // 更新歌曲的音乐链接
+    const updatedSong = {
+      ...props.song,
+      musicUrl: result.url
+    }
+    
+    // 通知父组件更新歌曲
+    emit('songChange', updatedSong)
+    
+    // 重新加载音频
+    if (audioPlayer.value) {
+      const wasPlaying = control.isPlaying.value
+      const currentTime = control.currentTime.value
+      
+      audioPlayer.value.load()
+      
+      // 如果之前在播放，加载完成后继续播放
+      if (wasPlaying) {
+        audioPlayer.value.addEventListener('canplay', () => {
+          audioPlayer.value.currentTime = currentTime
+          control.play()
+        }, { once: true })
+      }
+    }
+    
+    // 同步状态到全局
+    sync.syncPlayStateToGlobal(control.isPlaying.value, updatedSong)
+    
+    // 直接调用鸿蒙侧播放状态更新
+    if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
+      window.voiceHubPlayer.onPlayStateChanged(control.isPlaying.value, {
+        position: control.currentTime.value,
+        duration: control.duration.value
+      })
+    }
   }
+  // 如果失败，增强的composable已经显示了错误通知
 }
 
-// 其他 UI 方法
-const handleImageError = (event) => {
-  coverError.value = true
+// 歌词相关方法
+const toggleLyrics = () => {
+  showLyrics.value = !showLyrics.value
 }
 
-const getFirstChar = (title) => {
-  if (!title) return '音'
-  return title.trim().charAt(0)
+const handleLyricSeek = (time) => {
+  control.seek(time)
+  sync.updateGlobalPosition(time, control.duration.value)
 }
 
 // 停止播放并关闭播放器
@@ -511,8 +487,14 @@ watch([
 }, { immediate: true })
 
 onMounted(async () => {
+  // 处理热重载清理
+  enhanced.handleHotReload()
+  
   // 设置挂载标记
   isMounted.value = true
+  
+  // 等待子组件挂载完成
+  await nextTick()
   
   // 设置音频播放器和进度条引用
   control.setAudioPlayerRef(audioPlayer.value)
@@ -520,6 +502,9 @@ onMounted(async () => {
   
   // 初始化 WebSocket 连接
   sync.initializeWebSocket()
+  
+  // 重置重试状态
+  enhanced.resetRetryState()
   
   // 处理初始歌曲的播放
   if (props.song) {
@@ -602,14 +587,6 @@ onMounted(async () => {
     }
   })
   
-  // 点击外部关闭下拉框
-  const handleClickOutside = (event) => {
-    if (showQualitySettings.value && !event.target.closest('.quality-selector')) {
-      showQualitySettings.value = false
-    }
-  }
-  document.addEventListener('click', handleClickOutside)
-  
   // 暴露播放器实例到全局（鸿蒙环境）
   if (sync.isHarmonyOS()) {
     window.voiceHubPlayerInstance = {
@@ -631,29 +608,16 @@ onUnmounted(() => {
   // 清理鸿蒙系统控制事件
   sync.cleanupHarmonyOSControls()
   
-  // 清理点击外部监听
-  const handleClickOutside = (event) => {
-    if (showQualitySettings.value && !event.target.closest('.quality-selector')) {
-      showQualitySettings.value = false
-    }
-  }
-  document.removeEventListener('click', handleClickOutside)
-  
   // 清理全局实例
   if (sync.isHarmonyOS() && window.voiceHubPlayerInstance) {
     delete window.voiceHubPlayerInstance
   }
+  
+  // 重置重试状态
+  enhanced.resetRetryState()
 })
 
-// 切换歌词显示
-const toggleLyrics = () => {
-  showLyrics.value = !showLyrics.value
-}
 
-const handleLyricSeek = (time) => {
-  control.seek(time)
-  sync.updateGlobalPosition(time, control.duration.value)
-}
 
 // 格式化时间
 const formatTime = (seconds) => {

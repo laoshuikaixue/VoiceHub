@@ -1,0 +1,257 @@
+<template>
+  <div class="player-actions">
+    <button 
+      class="action-btn lyrics-btn" 
+      :class="{ active: showLyrics }" 
+      @click="$emit('toggleLyrics')" 
+      :title="showLyrics ? '隐藏歌词' : '显示歌词'"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 5h18v2H3V5zm0 4h14v2H3V9zm0 4h18v2H3v-2zm0 4h10v2H3v-2z" fill="currentColor" opacity="0.9"/>
+        <circle cx="20" cy="11" r="2" fill="currentColor" opacity="0.7"/>
+        <circle cx="18" cy="15" r="1.5" fill="currentColor" opacity="0.7"/>
+      </svg>
+    </button>
+
+    <div class="quality-selector" :class="{ 'expanded': showQualitySettings }">
+      <button class="quality-btn" @click="toggleQualitySettings" title="音质设置">
+        <span class="quality-icon">♪</span>
+        <span class="quality-text">{{ currentQualityText }}</span>
+        <span class="quality-arrow" :class="{ 'rotated': showQualitySettings }">▼</span>
+      </button>
+
+      <Transition name="quality-dropdown">
+        <div v-if="showQualitySettings && currentPlatformOptions.length > 0" class="quality-dropdown">
+          <div
+            v-for="option in currentPlatformOptions"
+            :key="option.value"
+            class="quality-option"
+            :class="{ 'active': isCurrentQuality(option.value) }"
+            @click="selectQuality(option.value)"
+          >
+            <span class="option-label">{{ option.label }}</span>
+          </div>
+        </div>
+      </Transition>
+    </div>
+
+    <button class="close-player" @click="$emit('close')">
+      <Icon name="x" :size="16" color="white" />
+    </button>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import Icon from '~/components/UI/Icon.vue'
+
+const props = defineProps({
+  showLyrics: {
+    type: Boolean,
+    default: false
+  },
+  song: {
+    type: Object,
+    default: null
+  },
+  currentQualityText: {
+    type: String,
+    default: '音质'
+  },
+  currentPlatformOptions: {
+    type: Array,
+    default: () => []
+  },
+  isCurrentQuality: {
+    type: Function,
+    required: true
+  }
+})
+
+const emit = defineEmits(['toggleLyrics', 'selectQuality', 'close'])
+
+const showQualitySettings = ref(false)
+
+const toggleQualitySettings = () => {
+  showQualitySettings.value = !showQualitySettings.value
+}
+
+const selectQuality = (qualityValue) => {
+  showQualitySettings.value = false
+  emit('selectQuality', qualityValue)
+}
+
+// 点击外部关闭下拉框
+const handleClickOutside = (event) => {
+  if (showQualitySettings.value && !event.target.closest('.quality-selector')) {
+    showQualitySettings.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+</script>
+
+<style scoped>
+.player-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  color: white;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.action-btn.active {
+  background: rgba(79, 172, 254, 0.3);
+  color: #4facfe;
+}
+
+.lyrics-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.quality-selector {
+  position: relative;
+}
+
+.quality-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 6px;
+  height: 32px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  color: white;
+  font-size: 11px;
+  min-width: 60px;
+}
+
+.quality-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.quality-icon {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.quality-text {
+  font-size: 10px;
+  white-space: nowrap;
+  max-width: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quality-arrow {
+  font-size: 8px;
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+}
+
+.quality-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.quality-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.quality-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: white;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.quality-option:last-child {
+  border-bottom: none;
+}
+
+.quality-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.quality-option.active {
+  background: rgba(79, 172, 254, 0.2);
+  color: #4facfe;
+}
+
+.option-label {
+  white-space: nowrap;
+}
+
+.close-player {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.close-player:hover {
+  background: rgba(255, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+/* 动画 */
+.quality-dropdown-enter-active,
+.quality-dropdown-leave-active {
+  transition: all 0.2s ease;
+}
+
+.quality-dropdown-enter-from,
+.quality-dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
+}
+</style>
