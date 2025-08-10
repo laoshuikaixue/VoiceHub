@@ -3,6 +3,7 @@ import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useMusicWebSocket } from '~/composables/useMusicWebSocket'
 import { useAuth } from '~/composables/useAuth'
 import { useLyrics } from '~/composables/useLyrics'
+import { useAudioQuality } from '~/composables/useAudioQuality'
 
 export const useAudioPlayerSync = () => {
   const globalAudioPlayer = useAudioPlayer()
@@ -47,6 +48,14 @@ export const useAudioPlayerSync = () => {
         duration: extraData.duration !== undefined ? extraData.duration : 0,
         position: extraData.position !== undefined ? extraData.position : 0,
         lyrics: lyrics || '' // 添加歌词字段
+      }
+
+      // 添加调试信息
+      if (action === 'metadata') {
+        console.log(`[HarmonyOS] 调试信息:`)
+        console.log(`  extraData:`, extraData)
+        console.log(`  song:`, song)
+        console.log(`  构建的songInfo:`, songInfo)
       }
 
       // 只记录重要的状态变化
@@ -175,14 +184,43 @@ export const useAudioPlayerSync = () => {
 
   // 播放上一首歌曲
   const playPrevious = async (song?: any) => {
-    if (!globalAudioPlayer.hasPrevious.value) {
-      if (window.$showNotification) {
-        window.$showNotification('没有上一首歌曲', 'warning')
-      }
-      return { success: false, newSong: null }
-    }
-
     try {
+      const currentSong = globalAudioPlayer.getCurrentSong().value
+      
+      // 首先尝试获取当前歌曲的URL，如果成功则继续播放当前歌曲
+      if (currentSong?.musicPlatform && currentSong?.musicId) {
+        console.log('尝试获取当前歌曲URL...')
+        const { getQuality } = useAudioQuality()
+        const quality = getQuality(currentSong.musicPlatform)
+        const urlResult = await getMusicUrl(currentSong.musicPlatform, currentSong.musicId, quality)
+        
+        if (urlResult.success) {
+          console.log('当前歌曲URL获取成功，继续播放当前歌曲')
+          // 更新当前歌曲的URL
+          const updatedSong = {
+            ...currentSong,
+            musicUrl: urlResult.url
+          }
+          globalAudioPlayer.playSong(updatedSong)
+          
+          if (window.$showNotification) {
+            window.$showNotification('歌曲链接已更新，继续播放', 'success')
+          }
+          
+          return { success: true, newSong: updatedSong, continueCurrentSong: true }
+        } else {
+          console.log('当前歌曲URL获取失败，尝试播放上一首:', urlResult.error)
+        }
+      }
+      
+      // 如果当前歌曲URL获取失败，则播放上一首
+      if (!globalAudioPlayer.hasPrevious.value) {
+        if (window.$showNotification) {
+          window.$showNotification('没有上一首歌曲', 'warning')
+        }
+        return { success: false, newSong: null }
+      }
+
       // 记录当前播放状态 - 优先检查鸿蒙侧状态
       let wasPlaying = globalAudioPlayer.getPlayingStatus().value
       
@@ -250,16 +288,84 @@ export const useAudioPlayerSync = () => {
     return { success: false, newSong: null }
   }
 
+  // 获取音乐链接
+  const getMusicUrl = async (platform, musicId, quality) => {
+    try {
+      let apiUrl
+      if (platform === 'netease') {
+        apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
+      } else if (platform === 'tencent') {
+        apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
+      } else {
+        return { success: false, error: '不支持的音乐平台' }
+      }
+
+      const response = await fetch(apiUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      })
+
+      if (!response.ok) {
+        return { success: false, error: `获取音乐URL失败: ${response.status}` }
+      }
+
+      const data = await response.json()
+      if (data.code === 200 && data.data && data.data.url) {
+        // 将HTTP URL改为HTTPS
+        let url = data.data.url
+        if (url.startsWith('http://')) {
+          url = url.replace('http://', 'https://')
+        }
+        return { success: true, url }
+      } else {
+        return { success: false, error: data.message || `API错误: ${data.code}` }
+      }
+    } catch (error) {
+      console.error('获取音乐链接失败:', error)
+      return { success: false, error: error.message || '网络错误' }
+    }
+  }
+
   // 播放下一首歌曲
   const playNext = async (song?: any) => {
-    if (!globalAudioPlayer.hasNext.value) {
-      if (window.$showNotification) {
-        window.$showNotification('没有下一首歌曲', 'warning')
-      }
-      return { success: false, newSong: null }
-    }
-
     try {
+      const currentSong = globalAudioPlayer.getCurrentSong().value
+      
+      // 首先尝试获取当前歌曲的URL，如果成功则继续播放当前歌曲
+      if (currentSong?.musicPlatform && currentSong?.musicId) {
+        console.log('尝试获取当前歌曲URL...')
+        const { getQuality } = useAudioQuality()
+        const quality = getQuality(currentSong.musicPlatform)
+        const urlResult = await getMusicUrl(currentSong.musicPlatform, currentSong.musicId, quality)
+        
+        if (urlResult.success) {
+          console.log('当前歌曲URL获取成功，继续播放当前歌曲')
+          // 更新当前歌曲的URL
+          const updatedSong = {
+            ...currentSong,
+            musicUrl: urlResult.url
+          }
+          globalAudioPlayer.playSong(updatedSong)
+          
+          if (window.$showNotification) {
+            window.$showNotification('歌曲链接已更新，继续播放', 'success')
+          }
+          
+          return { success: true, newSong: updatedSong, continueCurrentSong: true }
+        } else {
+          console.log('当前歌曲URL获取失败，尝试播放下一首:', urlResult.error)
+        }
+      }
+      
+      // 如果当前歌曲URL获取失败，则播放下一首
+      if (!globalAudioPlayer.hasNext.value) {
+        if (window.$showNotification) {
+          window.$showNotification('没有下一首歌曲', 'warning')
+        }
+        return { success: false, newSong: null }
+      }
+
       // 记录当前播放状态 - 优先检查鸿蒙侧状态
       let wasPlaying = globalAudioPlayer.getPlayingStatus().value
       

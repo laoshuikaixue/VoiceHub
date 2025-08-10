@@ -32,19 +32,35 @@ export const useAudioPlayerEnhanced = () => {
   // 获取音乐链接
   const getMusicUrl = async (platform, musicId, quality) => {
     try {
-      const response = await $fetch(`/api/music/url`, {
-        method: 'POST',
-        body: {
-          platform,
-          musicId,
-          quality
+      let apiUrl
+      if (platform === 'netease') {
+        apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
+      } else if (platform === 'tencent') {
+        apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
+      } else {
+        return { success: false, error: '不支持的音乐平台' }
+      }
+
+      const response = await fetch(apiUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
       })
-      
-      if (response.success && response.url) {
-        return { success: true, url: response.url }
+
+      if (!response.ok) {
+        return { success: false, error: `获取音乐URL失败: ${response.status}` }
+      }
+
+      const data = await response.json()
+      if (data.code === 200 && data.data && data.data.url) {
+        // 将HTTP URL改为HTTPS
+        let url = data.data.url
+        if (url.startsWith('http://')) {
+          url = url.replace('http://', 'https://')
+        }
+        return { success: true, url }
       } else {
-        return { success: false, error: response.error || '获取音乐链接失败' }
+        return { success: false, error: data.message || `API错误: ${data.code}` }
       }
     } catch (error) {
       console.error('获取音乐链接失败:', error)

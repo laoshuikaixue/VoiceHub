@@ -252,22 +252,29 @@ onUnmounted(() => {
 @media (hover: none) and (pointer: coarse) {
   .action-btn,
   .close-player {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
   }
   
   .quality-btn {
-    height: 32px;
-    min-height: 32px;
+    height: 32px !important;
+    min-height: 32px !important;
     padding: 0 8px;
     min-width: 60px;
   }
   
   .lyrics-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  /* 确保所有图标大小一致 */
+  .action-btn svg,
+  .close-player svg {
+    width: 16px !important;
+    height: 16px !important;
   }
 }
 

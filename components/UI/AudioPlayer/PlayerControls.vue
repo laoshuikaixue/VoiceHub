@@ -36,7 +36,11 @@
             @click="handleProgressClick"
             ref="progressBar"
           >
-            <div class="progress" :style="{ width: `${progress}%` }">
+            <div 
+              class="progress" 
+              :class="{ 'dragging': isDragging }"
+              :style="{ '--progress-width': `${progress}%` }"
+            >
               <div class="progress-thumb" :class="{ 'dragging': isDragging }"></div>
             </div>
           </div>
@@ -194,33 +198,41 @@ defineExpose({
 
 .progress-bar {
   width: 100%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
+  height: 20px; /* 增加触摸区域 */
   cursor: pointer;
   position: relative;
-  overflow: visible;
-  /* 增加触摸区域 */
-  padding: 8px 0;
-  margin: -8px 0;
+  display: flex;
+  align-items: center;
   touch-action: none; /* 防止移动端滚动 */
 }
 
 .progress {
-  position: absolute;
-  top: 8px;
-  left: 0;
+  width: 100%;
   height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+  transition: height 0.2s ease;
+}
+
+.progress::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: var(--progress-width, 0%);
   background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
   border-radius: 2px;
-  transition: width 0.05s linear; /* 更快的响应 */
-  will-change: width; /* 优化动画性能 */
+  transition: width 0.05s linear;
+  will-change: width;
 }
 
 .progress-thumb {
   position: absolute;
-  right: -6px;
-  top: 10px;
+  left: calc(var(--progress-width, 0%) - 6px);
+  top: 50%;
   transform: translateY(-50%);
   width: 12px;
   height: 12px;
@@ -229,7 +241,13 @@ defineExpose({
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   opacity: 0;
   transition: opacity 0.2s ease, transform 0.1s ease;
-  will-change: opacity, transform; /* 优化动画性能 */
+  will-change: opacity, transform;
+  pointer-events: none;
+}
+
+.progress-bar:hover .progress,
+.progress.dragging {
+  height: 6px;
 }
 
 .progress-bar:hover .progress-thumb,
@@ -238,27 +256,28 @@ defineExpose({
 }
 
 .progress-thumb.dragging {
-  transform: translateY(-50%) scale(1.2); /* 拖拽时稍微放大 */
+  transform: translateY(-50%) scale(1.2);
 }
 
 /* 移动端优化 */
 @media (hover: none) and (pointer: coarse) {
   .progress-bar {
-    padding: 12px 0; /* 增加触摸区域 */
-    margin: -12px 0;
+    height: 24px; /* 增加移动端触摸区域 */
   }
   
   .progress {
-    top: 12px;
     height: 6px; /* 移动端稍微增加高度 */
   }
   
   .progress-thumb {
     width: 16px; /* 移动端增大拇指大小 */
     height: 16px;
-    right: -8px;
-    top: 15px; /* 调整到移动端进度条中心 */
+    left: calc(var(--progress-width, 0%) - 8px);
     opacity: 1; /* 移动端始终显示 */
+  }
+  
+  .progress-bar:active .progress {
+    height: 8px; /* 触摸时进一步增大 */
   }
 }
 
