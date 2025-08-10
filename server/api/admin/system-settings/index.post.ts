@@ -102,17 +102,15 @@ export default defineEventHandler(async (event) => {
       updateData.showBlacklistKeywords = body.showBlacklistKeywords
     }
     
-    // 验证每日和每周限额不能同时设置
+    // 验证每日和每周限额二选一逻辑
     if (body.enableSubmissionLimit && 
         body.dailySubmissionLimit !== undefined && 
         body.weeklySubmissionLimit !== undefined &&
         body.dailySubmissionLimit !== null && 
-        body.weeklySubmissionLimit !== null &&
-        body.dailySubmissionLimit > 0 && 
-        body.weeklySubmissionLimit > 0) {
+        body.weeklySubmissionLimit !== null) {
       throw createError({
         statusCode: 400,
-        message: '每日限额和每周限额不能同时设置，请选择其中一种'
+        message: '每日限额和每周限额只能选择其中一种，另一种必须设置为空'
       })
     }
     

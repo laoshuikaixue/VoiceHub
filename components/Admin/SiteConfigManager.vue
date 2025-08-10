@@ -210,14 +210,18 @@ const { getAuthHeader } = useAuth()
 const loading = ref(true)
 const saving = ref(false)
 
-// 限额类型：daily 或 weekly
+// 限额类型：daily 或 weekly（二选一逻辑）
 const limitType = computed(() => {
+  // 如果每日限额不为 null/undefined，则使用每日限额
   if (formData.value.dailySubmissionLimit !== null && formData.value.dailySubmissionLimit !== undefined) {
     return 'daily'
-  } else if (formData.value.weeklySubmissionLimit !== null && formData.value.weeklySubmissionLimit !== undefined) {
+  }
+  // 如果每周限额不为 null/undefined，则使用每周限额
+  if (formData.value.weeklySubmissionLimit !== null && formData.value.weeklySubmissionLimit !== undefined) {
     return 'weekly'
   }
-  return 'daily' // 默认为每日限额
+  // 默认为每日限额
+  return 'daily'
 })
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
@@ -270,8 +274,8 @@ const loadConfig = async () => {
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
       icpNumber: data.icpNumber || '',
       enableSubmissionLimit: data.enableSubmissionLimit || false,
-      dailySubmissionLimit: data.dailySubmissionLimit || 0,
-      weeklySubmissionLimit: data.weeklySubmissionLimit || 0,
+      dailySubmissionLimit: data.dailySubmissionLimit !== undefined ? data.dailySubmissionLimit : 5,
+      weeklySubmissionLimit: data.weeklySubmissionLimit !== undefined ? data.weeklySubmissionLimit : null,
       showBlacklistKeywords: data.showBlacklistKeywords || false
     }
     
@@ -290,8 +294,8 @@ const loadConfig = async () => {
       submissionGuidelines: defaultSubmissionGuidelines,
       icpNumber: '',
       enableSubmissionLimit: false,
-      dailySubmissionLimit: 0,
-      weeklySubmissionLimit: 0,
+      dailySubmissionLimit: 5,
+      weeklySubmissionLimit: null,
       showBlacklistKeywords: false
     }
     originalData.value = { ...formData.value }
@@ -306,7 +310,7 @@ const saveConfig = async () => {
     saving.value = true
     const authHeaders = getAuthHeader()
     
-    // 处理空值，使用默认值
+    // 处理空值，使用默认值，确保二选一逻辑
     const configToSave = {
       siteTitle: formData.value.siteTitle.trim() || '校园广播站点歌系统',
       siteLogoUrl: formData.value.siteLogoUrl.trim() || '/favicon.ico',
@@ -316,8 +320,8 @@ const saveConfig = async () => {
       submissionGuidelines: formData.value.submissionGuidelines.trim() || defaultSubmissionGuidelines,
       icpNumber: formData.value.icpNumber.trim(),
       enableSubmissionLimit: formData.value.enableSubmissionLimit,
-      dailySubmissionLimit: formData.value.dailySubmissionLimit || 0,
-      weeklySubmissionLimit: formData.value.weeklySubmissionLimit || 0,
+      dailySubmissionLimit: formData.value.dailySubmissionLimit,
+      weeklySubmissionLimit: formData.value.weeklySubmissionLimit,
       showBlacklistKeywords: formData.value.showBlacklistKeywords
     }
     

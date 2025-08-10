@@ -31,16 +31,27 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 检查是否设置了限额为0（关闭投稿）
-    const dailyLimit = systemSettings.dailySubmissionLimit || 0
-    const weeklyLimit = systemSettings.weeklySubmissionLimit || 0
+    // 确定生效的限额类型（二选一逻辑）
+    const dailyLimit = systemSettings.dailySubmissionLimit
+    const weeklyLimit = systemSettings.weeklySubmissionLimit
     
-    if ((dailyLimit === 0 && systemSettings.dailySubmissionLimit !== null) || 
-        (weeklyLimit === 0 && systemSettings.weeklySubmissionLimit !== null)) {
+    let effectiveLimit = null
+    let limitType = null
+    
+    if (dailyLimit !== null && dailyLimit !== undefined) {
+      effectiveLimit = dailyLimit
+      limitType = 'daily'
+    } else if (weeklyLimit !== null && weeklyLimit !== undefined) {
+      effectiveLimit = weeklyLimit
+      limitType = 'weekly'
+    }
+    
+    // 检查是否设置了限额为0（关闭投稿）
+    if (effectiveLimit === 0) {
       return {
         limitEnabled: true,
-        dailyLimit: dailyLimit || null,
-        weeklyLimit: weeklyLimit || null,
+        dailyLimit: limitType === 'daily' ? effectiveLimit : null,
+        weeklyLimit: limitType === 'weekly' ? effectiveLimit : null,
         dailyUsed: 0,
         weeklyUsed: 0,
         dailyRemaining: 0,
@@ -51,9 +62,11 @@ export default defineEventHandler(async (event) => {
     
     const now = new Date()
     
-    // 计算每日使用量
+    // 只计算生效的限额类型的使用量
     let dailyUsed = 0
-    if (systemSettings.dailySubmissionLimit && systemSettings.dailySubmissionLimit > 0) {
+    let weeklyUsed = 0
+    
+    if (limitType === 'daily' && effectiveLimit > 0) {
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
       
@@ -66,11 +79,7 @@ export default defineEventHandler(async (event) => {
           }
         }
       })
-    }
-    
-    // 计算每周使用量
-    let weeklyUsed = 0
-    if (systemSettings.weeklySubmissionLimit && systemSettings.weeklySubmissionLimit > 0) {
+    } else if (limitType === 'weekly' && effectiveLimit > 0) {
       const startOfWeek = new Date(now)
       const dayOfWeek = now.getDay()
       const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 周一为一周开始
@@ -92,12 +101,12 @@ export default defineEventHandler(async (event) => {
     
     return {
       limitEnabled: true,
-      dailyLimit: systemSettings.dailySubmissionLimit || null,
-      weeklyLimit: systemSettings.weeklySubmissionLimit || null,
+      dailyLimit: limitType === 'daily' ? effectiveLimit : null,
+      weeklyLimit: limitType === 'weekly' ? effectiveLimit : null,
       dailyUsed,
       weeklyUsed,
-      dailyRemaining: systemSettings.dailySubmissionLimit ? Math.max(0, systemSettings.dailySubmissionLimit - dailyUsed) : null,
-      weeklyRemaining: systemSettings.weeklySubmissionLimit ? Math.max(0, systemSettings.weeklySubmissionLimit - weeklyUsed) : null,
+      dailyRemaining: limitType === 'daily' && effectiveLimit ? Math.max(0, effectiveLimit - dailyUsed) : null,
+      weeklyRemaining: limitType === 'weekly' && effectiveLimit ? Math.max(0, effectiveLimit - weeklyUsed) : null,
       submissionClosed: false
     }
   } catch (error) {

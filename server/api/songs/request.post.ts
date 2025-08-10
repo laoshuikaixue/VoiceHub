@@ -57,70 +57,86 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // 检查投稿限额
+    // 检查投稿限额（管理员不受限制）
     const systemSettings = await prisma.systemSettings.findFirst()
-    if (systemSettings?.enableSubmissionLimit) {
-      // 检查是否设置了限额为0（关闭投稿）
+    const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+    
+    if (systemSettings?.enableSubmissionLimit && !isAdmin) {
       const dailyLimit = systemSettings.dailySubmissionLimit
       const weeklyLimit = systemSettings.weeklySubmissionLimit
       
-      if ((dailyLimit === 0 && dailyLimit !== null) || (weeklyLimit === 0 && weeklyLimit !== null)) {
+      // 确定生效的限额类型（二选一逻辑）
+      let effectiveLimit = null
+      let limitType = null
+      
+      if (dailyLimit !== null && dailyLimit !== undefined) {
+        effectiveLimit = dailyLimit
+        limitType = 'daily'
+      } else if (weeklyLimit !== null && weeklyLimit !== undefined) {
+        effectiveLimit = weeklyLimit
+        limitType = 'weekly'
+      }
+      
+      // 如果生效的限额为0，则关闭投稿
+      if (effectiveLimit === 0) {
         throw createError({
           statusCode: 403,
           message: '投稿功能已关闭'
         })
       }
       
-      const now = new Date()
-      
-      // 检查每日限额
-      if (systemSettings.dailySubmissionLimit && systemSettings.dailySubmissionLimit > 0) {
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+      // 如果有生效的限额且大于0，检查使用量
+      if (effectiveLimit && effectiveLimit > 0) {
+        const now = new Date()
+        let currentCount = 0
         
-        const dailyCount = await prisma.song.count({
-          where: {
-            requesterId: user.id,
-            createdAt: {
-              gte: startOfDay,
-              lt: endOfDay
+        if (limitType === 'daily') {
+          // 检查每日限额
+          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+          
+          currentCount = await prisma.song.count({
+            where: {
+              requesterId: user.id,
+              createdAt: {
+                gte: startOfDay,
+                lt: endOfDay
+              }
             }
-          }
-        })
-        
-        if (dailyCount >= systemSettings.dailySubmissionLimit) {
-          throw createError({
-            statusCode: 400,
-            message: `每日投稿限额为${systemSettings.dailySubmissionLimit}首，您今日已达到限额`
           })
-        }
-      }
-      
-      // 检查每周限额
-      if (systemSettings.weeklySubmissionLimit && systemSettings.weeklySubmissionLimit > 0) {
-        const startOfWeek = new Date(now)
-        const dayOfWeek = now.getDay()
-        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 周一为一周开始
-        startOfWeek.setDate(now.getDate() - daysToSubtract)
-        startOfWeek.setHours(0, 0, 0, 0)
-        
-        const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
-        
-        const weeklyCount = await prisma.song.count({
-          where: {
-            requesterId: user.id,
-            createdAt: {
-              gte: startOfWeek,
-              lt: endOfWeek
+          
+          if (currentCount >= effectiveLimit) {
+            throw createError({
+              statusCode: 400,
+              message: `每日投稿限额为${effectiveLimit}首，您今日已达到限额`
+            })
+          }
+        } else if (limitType === 'weekly') {
+          // 检查每周限额
+          const startOfWeek = new Date(now)
+          const dayOfWeek = now.getDay()
+          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 周一为一周开始
+          startOfWeek.setDate(now.getDate() - daysToSubtract)
+          startOfWeek.setHours(0, 0, 0, 0)
+          
+          const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
+          
+          currentCount = await prisma.song.count({
+            where: {
+              requesterId: user.id,
+              createdAt: {
+                gte: startOfWeek,
+                lt: endOfWeek
+              }
             }
-          }
-        })
-        
-        if (weeklyCount >= systemSettings.weeklySubmissionLimit) {
-          throw createError({
-            statusCode: 400,
-            message: `每周投稿限额为${systemSettings.weeklySubmissionLimit}首，您本周已达到限额`
           })
+          
+          if (currentCount >= effectiveLimit) {
+            throw createError({
+              statusCode: 400,
+              message: `每周投稿限额为${effectiveLimit}首，您本周已达到限额`
+            })
+          }
         }
       }
     }
