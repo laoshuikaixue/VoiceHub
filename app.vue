@@ -94,14 +94,30 @@ const setupHarmonyOSListeners = () => {
     audioPlayer.stopSong()
   }
   
-  const handleHarmonyOSNext = () => {
-    // 这里可以实现下一首逻辑，目前暂时停止播放
-    audioPlayer.stopSong()
+  const handleHarmonyOSNext = async () => {
+    try {
+      const success = await audioPlayer.playNext()
+      if (!success) {
+        console.log('没有下一首歌曲或切换失败，继续播放当前歌曲')
+        // 如果切换失败，不做任何操作，继续播放当前歌曲
+      }
+    } catch (error) {
+      console.error('切换下一首歌曲失败:', error)
+      // 切换失败时不停止播放，继续播放当前歌曲
+    }
   }
   
-  const handleHarmonyOSPrevious = () => {
-    // 这里可以实现上一首逻辑，目前暂时停止播放
-    audioPlayer.stopSong()
+  const handleHarmonyOSPrevious = async () => {
+    try {
+      const success = await audioPlayer.playPrevious()
+      if (!success) {
+        console.log('没有上一首歌曲或切换失败，继续播放当前歌曲')
+        // 如果切换失败，不做任何操作，继续播放当前歌曲
+      }
+    } catch (error) {
+      console.error('切换上一首歌曲失败:', error)
+      // 切换失败时不停止播放，继续播放当前歌曲
+    }
   }
   
   // 使用Nuxt的事件总线监听鸿蒙控制事件

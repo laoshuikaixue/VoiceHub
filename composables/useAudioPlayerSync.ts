@@ -185,35 +185,7 @@ export const useAudioPlayerSync = () => {
   // 播放上一首歌曲
   const playPrevious = async (song?: any) => {
     try {
-      const currentSong = globalAudioPlayer.getCurrentSong().value
-      
-      // 首先尝试获取当前歌曲的URL，如果成功则继续播放当前歌曲
-      if (currentSong?.musicPlatform && currentSong?.musicId) {
-        console.log('尝试获取当前歌曲URL...')
-        const { getQuality } = useAudioQuality()
-        const quality = getQuality(currentSong.musicPlatform)
-        const urlResult = await getMusicUrl(currentSong.musicPlatform, currentSong.musicId, quality)
-        
-        if (urlResult.success) {
-          console.log('当前歌曲URL获取成功，继续播放当前歌曲')
-          // 更新当前歌曲的URL
-          const updatedSong = {
-            ...currentSong,
-            musicUrl: urlResult.url
-          }
-          globalAudioPlayer.playSong(updatedSong)
-          
-          if (window.$showNotification) {
-            window.$showNotification('歌曲链接已更新，继续播放', 'success')
-          }
-          
-          return { success: true, newSong: updatedSong, continueCurrentSong: true }
-        } else {
-          console.log('当前歌曲URL获取失败，尝试播放上一首:', urlResult.error)
-        }
-      }
-      
-      // 如果当前歌曲URL获取失败，则播放上一首
+      // 检查是否有上一首歌曲
       if (!globalAudioPlayer.hasPrevious.value) {
         if (window.$showNotification) {
           window.$showNotification('没有上一首歌曲', 'warning')
@@ -330,35 +302,7 @@ export const useAudioPlayerSync = () => {
   // 播放下一首歌曲
   const playNext = async (song?: any) => {
     try {
-      const currentSong = globalAudioPlayer.getCurrentSong().value
-      
-      // 首先尝试获取当前歌曲的URL，如果成功则继续播放当前歌曲
-      if (currentSong?.musicPlatform && currentSong?.musicId) {
-        console.log('尝试获取当前歌曲URL...')
-        const { getQuality } = useAudioQuality()
-        const quality = getQuality(currentSong.musicPlatform)
-        const urlResult = await getMusicUrl(currentSong.musicPlatform, currentSong.musicId, quality)
-        
-        if (urlResult.success) {
-          console.log('当前歌曲URL获取成功，继续播放当前歌曲')
-          // 更新当前歌曲的URL
-          const updatedSong = {
-            ...currentSong,
-            musicUrl: urlResult.url
-          }
-          globalAudioPlayer.playSong(updatedSong)
-          
-          if (window.$showNotification) {
-            window.$showNotification('歌曲链接已更新，继续播放', 'success')
-          }
-          
-          return { success: true, newSong: updatedSong, continueCurrentSong: true }
-        } else {
-          console.log('当前歌曲URL获取失败，尝试播放下一首:', urlResult.error)
-        }
-      }
-      
-      // 如果当前歌曲URL获取失败，则播放下一首
+      // 检查是否有下一首歌曲
       if (!globalAudioPlayer.hasNext.value) {
         if (window.$showNotification) {
           window.$showNotification('没有下一首歌曲', 'warning')
