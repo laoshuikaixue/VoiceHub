@@ -28,7 +28,7 @@
           </div>
           
           <!-- 翻译歌词 -->
-          <div class="line-translation" v-if="translationLyrics && translationLyrics[index]">
+          <div class="line-translation" v-if="translationLyrics && translationLyrics[index] && translationLyrics[index].content && translationLyrics[index].content.trim() && translationLyrics[index].content !== '//'">
             {{ translationLyrics[index].content }}
           </div>
         </div>

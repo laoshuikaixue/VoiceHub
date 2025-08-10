@@ -209,9 +209,9 @@ onUnmounted(() => {
 
 .quality-dropdown {
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   right: 0;
-  margin-top: 4px;
+  margin-bottom: 4px;
   background: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(20px);
   border-radius: 8px;
@@ -287,6 +287,6 @@ onUnmounted(() => {
 .quality-dropdown-enter-from,
 .quality-dropdown-leave-to {
   opacity: 0;
-  transform: translateY(-8px) scale(0.95);
+  transform: translateY(8px) scale(0.95);
 }
 </style>
