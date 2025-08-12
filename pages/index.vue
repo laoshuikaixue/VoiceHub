@@ -575,7 +575,7 @@ const requestFormRef = ref(null)
 
 // 旧的showNotification函数已移除，使用全局通知系统
 
-// 更新歌曲数量统计
+// 更新歌曲数量统计（优化版本，避免重复请求）
 const updateSongCounts = async (semester = null) => {
   try {
     // 更新排期歌曲数量
@@ -587,30 +587,11 @@ const updateSongCounts = async (semester = null) => {
       // 已登录用户：使用完整歌曲列表
       songCount.value = songs.songs.value.length
     } else {
-      // 未登录用户：从公共API获取歌曲总数
-      try {
-        const url = semester ? `/api/songs/count?semester=${encodeURIComponent(semester)}` : '/api/songs/count'
-        const response = await fetch(url)
-        const data = await response.json()
-        songCount.value = data.count
-      } catch (err) {
-        console.error('获取歌曲总数失败', err)
-        songCount.value = 0
-      }
+      // 未登录用户：使用缓存的歌曲总数
+      songCount.value = songs?.songCount?.value || 0
     }
   } catch (e) {
     console.error('更新歌曲统计失败', e)
-  }
-}
-
-// 初始加载歌曲总数（无论是否登录）
-const loadSongCount = async () => {
-  try {
-    const response = await fetch('/api/songs/count')
-    const data = await response.json()
-    songCount.value = data.count
-  } catch (err) {
-    console.error('获取歌曲总数失败', err)
   }
 }
 
@@ -656,31 +637,30 @@ onMounted(async () => {
   // 初始化通知服务
   notificationsService = useNotifications()
 
-  // 无论是否登录都获取歌曲总数
-  await loadSongCount()
-
-  // 无论是否登录都获取公共数据
-  await songs.fetchPublicSchedules()
-
-  // 如果用户已登录，获取完整歌曲列表和通知
+  // 优化数据加载流程：根据用户状态加载不同数据
   if (isClientAuthenticated.value) {
-    await songs.fetchSongs()
-    // 立即加载通知，而不仅在切换到通知标签时
-    await loadNotifications()
+    // 已登录用户：并行加载完整歌曲列表、公共排期、通知和设置
+    await Promise.all([
+      songs.fetchSongs(),
+      songs.fetchPublicSchedules(),
+      loadNotifications(),
+      fetchNotificationSettings()
+    ])
     
     // 检查用户是否需要修改密码并显示提示
     await checkPasswordChangeRequired()
+  } else {
+    // 未登录用户：并行加载歌曲总数和公共排期
+    await Promise.all([
+      songs.fetchSongCount(),
+      songs.fetchPublicSchedules()
+    ])
   }
 
-  // 更新真实数据
+  // 更新统计数据（基于已加载的缓存数据）
   await updateSongCounts()
 
-  // 获取通知设置
-  if (isClientAuthenticated.value) {
-    await fetchNotificationSettings()
-  }
-
-  // 设置定时刷新（根据用户设置的刷新间隔刷新数据）
+  // 设置智能定时刷新（只刷新过期或即将过期的数据）
   const setupRefreshInterval = () => {
     // 清除之前的定时器
     if (refreshInterval) {
@@ -691,19 +671,48 @@ onMounted(async () => {
     const intervalSeconds = notificationSettings.value.refreshInterval || 60
     const intervalMs = intervalSeconds * 1000
     
-    console.log(`设置刷新间隔: ${intervalSeconds}秒`)
+    console.log(`设置智能刷新间隔: ${intervalSeconds}秒`)
     
     refreshInterval = setInterval(async () => {
-      if (isClientAuthenticated.value) {
-        // 使用静默刷新，不显示加载状态
-        await songs.refreshSongsSilent()
-        // 同时刷新通知
-        await loadNotifications()
-      } else {
-        // 使用静默刷新，不显示加载状态
-        await songs.refreshSchedulesSilent()
+      try {
+        // 使用智能刷新，只刷新过期或即将过期的数据
+        const cache = songs.cache || (await import('~/composables/useDataCache')).getGlobalCache()
+        
+        if (isClientAuthenticated.value) {
+          // 已登录用户：智能刷新歌曲列表、公共排期和通知
+          await cache.smartRefresh([
+            {
+              type: 'songs',
+              requestFn: () => songs.fetchSongs(true, undefined, true)
+            },
+            {
+              type: 'publicSchedules',
+              requestFn: () => songs.fetchPublicSchedules(true, undefined, true)
+            },
+            {
+              type: 'notifications',
+              requestFn: () => loadNotifications()
+            }
+          ])
+        } else {
+          // 未登录用户：智能刷新公共排期和歌曲总数
+          await cache.smartRefresh([
+            {
+              type: 'publicSchedules',
+              requestFn: () => songs.fetchPublicSchedules(true, undefined, true)
+            },
+            {
+              type: 'songCount',
+              requestFn: () => songs.fetchSongCount(true)
+            }
+          ])
+        }
+        
+        // 更新统计数据
+        await updateSongCounts()
+      } catch (error) {
+        console.error('智能刷新失败:', error)
       }
-      await updateSongCounts()
     }, intervalMs)
   }
   
@@ -866,13 +875,13 @@ const handleWithdraw = async (song) => {
   }
 }
 
-// 刷新歌曲列表
+// 刷新歌曲列表（优化版本）
 const refreshSongs = async () => {
   try {
     if (isClientAuthenticated.value) {
-      await songs.fetchSongs()
+      await songs.fetchSongs(false, undefined, true) // forceRefresh=true
     } else {
-      await songs.fetchPublicSchedules()
+      await songs.fetchPublicSchedules(false, undefined, true) // forceRefresh=true
     }
 
     updateSongCounts()
@@ -881,13 +890,13 @@ const refreshSongs = async () => {
   }
 }
 
-// 处理学期变化
+// 处理学期变化（优化版本）
 const handleSemesterChange = async (semester) => {
   try {
     if (isClientAuthenticated.value) {
-      await songs.fetchSongs(semester)
+      await songs.fetchSongs(false, semester, true) // forceRefresh=true
     } else {
-      await songs.fetchPublicSchedules(semester)
+      await songs.fetchPublicSchedules(false, semester, true) // forceRefresh=true
     }
     await updateSongCounts(semester)
   } catch (err) {

@@ -1,9 +1,11 @@
 import { ref, computed } from 'vue'
 import { useAuth } from './useAuth'
+import { getGlobalCache } from './useDataCache'
 import type { Song, Schedule, PlayTime } from '~/types'
 
 export const useSongs = () => {
   const { getAuthHeader, isAuthenticated, user } = useAuth()
+  const cache = getGlobalCache()
   
   const songs = ref<Song[]>([])
   const publicSchedules = ref<Schedule[]>([])
@@ -14,6 +16,7 @@ export const useSongs = () => {
   const similarSongFound = ref<Song | null>(null)
   const playTimes = ref<PlayTime[]>([])
   const playTimeEnabled = ref(false)
+  const songCount = ref(0)
   
   // 显示通知
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -68,48 +71,58 @@ export const useSongs = () => {
   }
   
   // 获取歌曲列表（需要登录）- 显示加载状态
-  const fetchSongs = async (silent = false, semester?: string) => {
+  const fetchSongs = async (silent = false, semester?: string, forceRefresh = false) => {
     if (!isAuthenticated.value) {
       error.value = '需要登录才能获取歌曲列表'
       return
     }
     
     if (!silent) {
-    loading.value = true
+      loading.value = true
     }
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      const requestParams = semester ? { semester } : undefined
       
-      // 构建URL参数
-      const params = new URLSearchParams()
-      if (semester) {
-        params.append('semester', semester)
-      }
-      const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
+      const data = await cache.cachedRequest(
+        'songs',
+        async () => {
+          // 显式传递认证头
+          const authHeaders = getAuthHeader()
+          
+          // 构建URL参数
+          const params = new URLSearchParams()
+          if (semester) {
+            params.append('semester', semester)
+          }
+          const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
+          
+          // 使用fetch代替$fetch，以确保认证头被正确发送
+          const response = await fetch(url, {
+            headers: {
+              ...authHeaders.headers,
+              'Content-Type': 'application/json'
+            }
+          })
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            throw new Error(errorData.message || `获取歌曲列表失败: ${response.status}`)
+          }
+          
+          return await response.json()
+        },
+        requestParams,
+        forceRefresh
+      )
       
-      // 使用fetch代替$fetch，以确保认证头被正确发送
-      const response = await fetch(url, {
-        headers: {
-          ...authHeaders.headers,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `获取歌曲列表失败: ${response.status}`)
-      }
-      
-      const data = await response.json()
       songs.value = data as Song[]
     } catch (err: any) {
       error.value = err.message || '获取歌曲列表失败'
     } finally {
       if (!silent) {
-      loading.value = false
+        loading.value = false
       }
     }
   }
@@ -119,71 +132,64 @@ export const useSongs = () => {
     return fetchSongs(true)
   }
   
-  // 获取公共歌曲列表（无需登录）
-  const fetchPublicSongs = async () => {
-    loading.value = true
-    error.value = ''
+  // 从排期数据中提取歌曲信息
+  const extractSongsFromSchedules = (schedules: Schedule[]): Song[] => {
+    const songsMap = new Map<string, Song>()
     
-    try {
-      const data = await $fetch('/api/songs/public')
-      
-      // 如果API返回的是排期列表，提取歌曲信息
-      if (Array.isArray(data)) {
-        const schedules = data as Schedule[];
-        publicSchedules.value = schedules;
-        
-        // 从排期中提取不重复的歌曲
-        const songsMap = new Map<string, Song>();
-        schedules.forEach(schedule => {
-          if (schedule.song) {
-            const songId = String(schedule.song.id);
-            if (!songsMap.has(songId)) {
-              // 将排期中的歌曲信息转换为完整的Song对象
-              const completeSong: Song = {
-                id: schedule.song.id,
-                title: schedule.song.title,
-                artist: schedule.song.artist,
-                requester: schedule.song.requester,
-                requesterId: 0, // 默认值，公共API不提供这个信息
-                voteCount: schedule.song.voteCount,
-                played: false, // 默认未播放
-                playedAt: null,
-                semester: null,
-                createdAt: new Date().toISOString(), // 使用当前时间作为默认值
-                cover: schedule.song.cover || null,
-                musicPlatform: schedule.song.musicPlatform || null,
-                musicId: schedule.song.musicId || null
-              };
-              songsMap.set(songId, completeSong);
-            }
+    schedules.forEach(schedule => {
+      if (schedule.song) {
+        const songId = String(schedule.song.id)
+        if (!songsMap.has(songId)) {
+          // 将排期中的歌曲信息转换为完整的Song对象
+          const completeSong: Song = {
+            id: schedule.song.id,
+            title: schedule.song.title,
+            artist: schedule.song.artist,
+            requester: schedule.song.requester,
+            requesterId: 0, // 默认值，公共API不提供这个信息
+            voteCount: schedule.song.voteCount,
+            played: schedule.song.played || false,
+            playedAt: schedule.song.playedAt || null,
+            semester: schedule.song.semester || null,
+            createdAt: schedule.song.createdAt || new Date().toISOString(),
+            cover: schedule.song.cover || null,
+            musicPlatform: schedule.song.musicPlatform || null,
+            musicId: schedule.song.musicId || null
           }
-        });
-        
-        publicSongs.value = Array.from(songsMap.values());
+          songsMap.set(songId, completeSong)
+        }
       }
-    } catch (err: any) {
-      error.value = err.message || '获取公共歌曲列表失败'
-    } finally {
-      loading.value = false
-    }
+    })
+    
+    return Array.from(songsMap.values())
   }
   
   // 获取公共排期（无需登录）
-  const fetchPublicSchedules = async (silent = false, semester?: string) => {
+  const fetchPublicSchedules = async (silent = false, semester?: string, forceRefresh = false) => {
     if (!silent) {
     loading.value = true
     }
     error.value = ''
     
     try {
-      // 构建URL参数
-      const params = new URLSearchParams()
-      if (semester) {
-        params.append('semester', semester)
-      }
-      const url = `/api/songs/public${params.toString() ? '?' + params.toString() : ''}`
+      const requestParams = semester ? { semester } : undefined
       
-      const data = await $fetch(url)
+      const data = await cache.cachedRequest(
+        'public-schedules',
+        async () => {
+          // 构建URL参数
+          const params = new URLSearchParams()
+          if (semester) {
+            params.append('semester', semester)
+          }
+          const url = `/api/songs/public${params.toString() ? '?' + params.toString() : ''}`
+          
+          const response = await $fetch(url)
+          return response
+        },
+        requestParams,
+        forceRefresh
+      )
       
       // 确保每个排期的歌曲都有played属性，并处理null/undefined转换
       const processedData = data.map((schedule: any) => {
@@ -211,8 +217,8 @@ export const useSongs = () => {
       
       publicSchedules.value = processedData
       
-      // 同时从排期中提取歌曲信息
-      await fetchPublicSongs()
+      // 直接从排期数据中提取歌曲信息，避免重复请求
+      publicSongs.value = extractSongsFromSchedules(processedData)
     } catch (err: any) {
       error.value = err.message || '获取排期失败'
     } finally {
@@ -724,6 +730,27 @@ export const useSongs = () => {
     return displayText
   }
   
+  // 获取歌曲总数（缓存版本）
+  const fetchSongCount = async (forceRefresh = false) => {
+    try {
+      const count = await cache.cachedRequest(
+        'song-count',
+        async () => {
+          const response = await $fetch('/api/songs/count')
+          return response
+        },
+        undefined,
+        forceRefresh
+      )
+      
+      songCount.value = count as number
+      return count
+    } catch (err: any) {
+      console.error('获取歌曲总数失败:', err)
+      return 0
+    }
+  }
+
   // 初始化加载
   const initialize = async () => {
     await fetchPlayTimes()
@@ -739,6 +766,7 @@ export const useSongs = () => {
     publicSongs,
     publicSchedules,
     visibleSongs,
+    songCount,
     loading,
     error,
     notification,
@@ -747,9 +775,9 @@ export const useSongs = () => {
     playTimeEnabled,
     showNotification,
     fetchSongs,
-    fetchPublicSongs,
     fetchPublicSchedules,
     fetchPlayTimes,
+    fetchSongCount,
     refreshSongsSilent,
     refreshSchedulesSilent,
     checkSimilarSongs,
@@ -762,6 +790,7 @@ export const useSongs = () => {
     filterSchedulesByPlayTime,
     getPlayTimeName,
     formatPlayTimeDisplay,
+    extractSongsFromSchedules,
     initialize,
     songsByPopularity,
     songsByDate,
