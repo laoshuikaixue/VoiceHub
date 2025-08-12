@@ -163,6 +163,116 @@ export default defineEventHandler(async (event) => {
     const songsChange = songsThisWeek - songsLastWeek
     const usersChange = usersThisWeek - usersLastWeek
 
+    // 获取趋势数据 (最近7天)
+    const trendData = await Promise.all([
+      // 歌曲趋势
+      (async () => {
+        const trends = []
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+          const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+          const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+          
+          const count = await prisma.song.count({
+            where: {
+              ...where,
+              createdAt: {
+                gte: startOfDay,
+                lt: endOfDay
+              }
+            }
+          })
+          
+          trends.push({
+            date: startOfDay.toISOString().split('T')[0],
+            count
+          })
+        }
+        return trends
+      })(),
+      
+      // 用户趋势
+      (async () => {
+        const trends = []
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+          const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+          const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+          
+          const count = await prisma.user.count({
+            where: {
+              createdAt: {
+                gte: startOfDay,
+                lt: endOfDay
+              }
+            }
+          })
+          
+          trends.push({
+            date: startOfDay.toISOString().split('T')[0],
+            count
+          })
+        }
+        return trends
+      })(),
+      
+      // 排期趋势
+      (async () => {
+        const trends = []
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+          const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+          const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+          
+          const schedules = await prisma.schedule.findMany({
+            where: {
+              ...scheduleBaseWhere,
+              playDate: {
+                gte: startOfDay,
+                lt: endOfDay
+              }
+            },
+            select: { playDate: true }
+          })
+          
+          // 按日期去重计算天数
+          const uniqueDates = new Set(schedules.map(s => s.playDate.toISOString().split('T')[0]))
+          
+          trends.push({
+            date: startOfDay.toISOString().split('T')[0],
+            count: uniqueDates.size
+          })
+        }
+        return trends
+      })(),
+      
+      // 点歌请求趋势
+      (async () => {
+        const trends = []
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+          const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+          const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+          
+          const count = await prisma.song.count({
+            where: {
+              ...where,
+              createdAt: {
+                gte: startOfDay,
+                lt: endOfDay
+              }
+            }
+          })
+          
+          trends.push({
+            date: startOfDay.toISOString().split('T')[0],
+            count
+          })
+        }
+        return trends
+      })()
+    ])
+
     return {
       totalSongs,
       totalUsers,
@@ -173,7 +283,12 @@ export default defineEventHandler(async (event) => {
       usersChange,
       requestsChange,
       currentSemester: currentSemester?.name || null,
-      blacklistCount
+      blacklistCount,
+      // 趋势数据
+      songsTrend: trendData[0],
+      usersTrend: trendData[1],
+      schedulesTrend: trendData[2],
+      requestsTrend: trendData[3]
     }
   } catch (error) {
     console.error('获取统计数据失败:', error)

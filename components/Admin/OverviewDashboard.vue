@@ -11,11 +11,10 @@
       />
 
       <StatCard
-        label="用户总数"
+        label="注册用户"
         :value="stats.totalUsers"
         icon="users"
         icon-class="success"
-        :change="stats.usersChange"
       />
 
       <StatCard

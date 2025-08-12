@@ -150,6 +150,7 @@
           </div>
         </div>
       </div>
+      </div>
 
       <!-- 移动端卡片布局 -->
       <div class="mobile-cards">
