@@ -46,8 +46,13 @@ export default defineNuxtConfig({
       ],
       link: [
           { rel: 'icon', type: 'image/x-icon', href: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico' },
-          // 从CDN加载MiSans字体
-          { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/misans.min.css' }
+          // 优先加载常规字体，确保页面快速显示
+          { rel: 'preload', as: 'style', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css' },
+          { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css' },
+          // 延迟加载其他字重，避免阻塞页面渲染
+          { rel: 'preload', as: 'style', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Medium.min.css', onload: "this.onload=null;this.rel='stylesheet'" },
+          { rel: 'preload', as: 'style', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Semibold.min.css', onload: "this.onload=null;this.rel='stylesheet'" },
+          { rel: 'preload', as: 'style', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Bold.min.css', onload: "this.onload=null;this.rel='stylesheet'" }
         ]
     }
   },
