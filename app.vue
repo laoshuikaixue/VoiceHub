@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { onMounted, computed, ref, watch, nextTick } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 // 导入通知容器组件和音频播放器
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
@@ -33,7 +33,7 @@ const notificationContainer = ref(null)
 const audioPlayer = useAudioPlayer()
 const currentSong = ref(null)
 const isPlayerVisible = ref(false) // 控制播放器显示/隐藏
-const isAudioPlayerPreloaded = ref(false) // 音频播放器预加载状态
+
 
 // 监听当前播放的歌曲
 watch(() => audioPlayer.getCurrentSong().value, (newSong) => {
@@ -61,46 +61,7 @@ const handlePlayerEnded = () => {
   audioPlayer.stopSong()
 }
 
-// 预加载音频播放器模块
-const preloadAudioPlayerModules = async () => {
-  if (isAudioPlayerPreloaded.value) return
-  
-  try {
-    // 等待首页完全加载后再开始预加载
-    await nextTick()
-    
-    // 延迟500ms，确保首页加载优先级
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // 预加载音频播放器相关的composables
-    const preloadPromises = [
-      // 预加载音频播放器控制模块
-      import('~/composables/useAudioPlayerControl'),
-      // 预加载音频播放器同步模块
-      import('~/composables/useAudioPlayerSync'),
-      // 预加载音质管理模块
-      import('~/composables/useAudioQuality'),
-      // 预加载增强功能模块
-      import('~/composables/useAudioPlayerEnhanced'),
-      // 预加载歌词功能模块
-      import('~/composables/useLyrics'),
-      // 预加载WebSocket模块
-      import('~/composables/useMusicWebSocket')
-    ]
-    
-    // 并行加载所有模块
-    await Promise.all(preloadPromises)
-    
-    // 预加载音频播放器组件（但不渲染）
-    await import('~/components/UI/AudioPlayer.vue')
-    
-    isAudioPlayerPreloaded.value = true
-    console.log('音频播放器模块预加载完成')
-  } catch (error) {
-    console.warn('音频播放器模块预加载失败:', error)
-    // 预加载失败不影响正常功能，播放时会正常加载
-  }
-}
+
 
 // 使用onMounted确保只在客户端初始化认证
 let auth = null
@@ -114,8 +75,7 @@ onMounted(async () => {
   // 初始化鸿蒙系统控制事件监听
   setupHarmonyOSListeners()
   
-  // 异步预加载音频播放器模块，不影响首页加载速度
-  await preloadAudioPlayerModules()
+
 })
 
 // 设置鸿蒙系统控制事件监听
@@ -186,13 +146,7 @@ const setupHarmonyOSListeners = () => {
 }
 
 // 使用计算属性确保安全地访问auth对象
-const safeIsAuthenticated = computed(() => auth?.isAuthenticated?.value || false)
-
-const handleLogout = () => {
-  if (auth) {
-    auth.logout()
-  }
-}
+computed(() => auth?.isAuthenticated?.value || false);
 </script>
 
 <style>

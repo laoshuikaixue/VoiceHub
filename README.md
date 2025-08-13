@@ -78,6 +78,9 @@
 
 本项目可以一键部署到Vercel/Netlify平台：
 
+> [!TIP]
+> 我们对Vercel做了专门的缓存优化配置，因此建议您使用Vercel进行部署
+
 [![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/laoshuikaixue/VoiceHub&env=DATABASE_URL,JWT_SECRET&envDescription=需要配置数据库连接和JWT密钥&envLink=https://github.com/laoshuikaixue/VoiceHub#环境变量说明)
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/laoshuikaixue/VoiceHub)
 
@@ -232,12 +235,12 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 ## 环境变量说明
 
-| 变量名          | 必填 | 说明                                | 示例值                                                                 |
-|--------------|----|-----------------------------------|---------------------------------------------------------------------|
-| DATABASE_URL | 是  | PostgreSQL数据库连接字符串                | `postgresql://username:password@host:port/database?sslmode=require` |
-| JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串              | `your-very-secure-jwt-secret-key-with-at-least-32-characters`       |
-| NODE_ENV     | 否  | 运行环境，development或production       | `production`                                                        |
-| NITRO_PRESET | 否  | Nitro预设，部署到Netlify时自动设置为'netlify' | `netlify`                                                           |
+| 变量名          | 必填 | 说明                          | 示例值                                                                 |
+|--------------|----|-----------------------------|---------------------------------------------------------------------|
+| DATABASE_URL | 是  | PostgreSQL数据库连接字符串          | `postgresql://username:password@host:port/database?sslmode=require` |
+| JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串        | `your-very-secure-jwt-secret-key-with-at-least-32-characters`       |
+| NODE_ENV     | 否  | 运行环境，development或production | `production`                                                        |
+| NITRO_PRESET | 否  | Nitro预设                     | `vercel`                                                            |
 
 
 ## 项目结构

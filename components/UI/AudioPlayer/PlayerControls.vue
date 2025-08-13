@@ -13,8 +13,9 @@
         </button>
         
         <!-- 播放/暂停按钮 -->
-        <button class="control-btn play-pause-btn" @click="$emit('togglePlay')" :disabled="hasError">
-          <Icon v-if="isPlaying" name="pause" :size="18" color="white" />
+        <button class="control-btn play-pause-btn" @click="$emit('togglePlay')" :disabled="hasError || isLoading">
+          <div v-if="isLoading" class="loading-spinner"></div>
+          <Icon v-else-if="isPlaying" name="pause" :size="18" color="white" />
           <Icon v-else name="play" :size="18" color="white" />
         </button>
         
@@ -91,6 +92,10 @@ const props = defineProps({
   duration: {
     type: Number,
     default: 0
+  },
+  isLoading: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -189,6 +194,20 @@ defineExpose({
   width: 44px;
   height: 44px;
   background: rgba(255, 255, 255, 0.15);
+}
+
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .progress-container-wrapper {

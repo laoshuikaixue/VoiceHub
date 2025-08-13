@@ -20,6 +20,7 @@
           :is-dragging="control.isDragging.value"
           :current-time="control.currentTime.value"
           :duration="control.duration.value"
+          :is-loading="control.isLoadingNewSong.value"
           @toggle-play="handleTogglePlay"
           @previous="handlePrevious"
           @next="handleNext"

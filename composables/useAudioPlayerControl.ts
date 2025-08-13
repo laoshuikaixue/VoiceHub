@@ -155,6 +155,7 @@ export const useAudioPlayerControl = () => {
     try {
       let songUrl: string
       let songInfo: any = null
+      let lyricsPromise: Promise<void> | null = null
       
       // 如果传入的是歌曲对象，检查是否有音乐平台信息
       if (typeof songUrlOrSong === 'object' && songUrlOrSong !== null) {
@@ -167,12 +168,9 @@ export const useAudioPlayerControl = () => {
             throw new Error('无法获取歌曲URL')
           }
           
-          // 加载歌词
+          // 并行加载歌词（不阻塞音频加载）
           console.log('正在加载歌词:', songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
-          await lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
-          
-          // 获取格式化的歌词用于鸿蒙侧
-          const harmonyLyrics = lyrics.getFormattedLyricsForHarmonyOS()
+          lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
         } else {
           // 如果没有音乐平台信息，检查是否有直接的URL
           if (songUrlOrSong.musicUrl) {
@@ -194,8 +192,27 @@ export const useAudioPlayerControl = () => {
       // 等待音频可以播放
       await waitForCanPlay(audioPlayer.value)
       
+      // 等待歌词加载完成（如果有的话）
+      if (lyricsPromise) {
+        try {
+          await lyricsPromise
+          console.log('歌词加载完成')
+        } catch (lyricsError) {
+          console.warn('歌词加载失败，但继续播放音频:', lyricsError)
+        }
+      }
+      
       console.log('歌曲加载成功:', songInfo?.title || songUrl)
       isLoadingNewSong.value = false
+      
+      // 自动开始播放
+      if (hasUserInteracted.value) {
+        console.log('用户已交互，自动开始播放')
+        await play()
+      } else {
+        console.log('用户未交互，等待用户手动播放')
+      }
+      
       return true
     } catch (error) {
       console.error('加载歌曲失败:', error)
