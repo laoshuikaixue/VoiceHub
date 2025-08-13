@@ -258,6 +258,8 @@ VoiceHub/
 │   ├── Admin/             # 管理员功能组件
 │   │   ├── Common/        # 通用管理组件
 │   │   │   ├── DataTable.vue      # 通用数据表格组件
+│   │   │   ├── ErrorBoundary.vue  # 错误边界组件
+│   │   │   ├── LoadingState.vue   # 加载状态组件
 │   │   │   ├── SearchFilter.vue   # 搜索过滤组件
 │   │   │   └── StatCard.vue       # 统计卡片组件
 │   │   ├── BackupManager.vue      # 数据库备份管理
@@ -289,9 +291,14 @@ VoiceHub/
 │   │   ├── ScheduleList.vue       # 排期列表展示
 │   │   └── SongList.vue           # 歌曲列表
 │   ├── UI/                # 通用UI组件
+│   │   ├── AudioPlayer/   # 音频播放器组件模块
+│   │   │   ├── AudioElement.vue   # 音频元素组件
+│   │   │   ├── PlayerActions.vue  # 播放器操作组件
+│   │   │   ├── PlayerControls.vue # 播放器控制组件
+│   │   │   └── PlayerInfo.vue     # 播放器信息组件
 │   │   ├── Linear/        # Linear图标组件库
 │   │   │   └── icons/     # 图标文件
-│   │   ├── AudioPlayer.vue        # 音乐播放器
+│   │   ├── AudioPlayer.vue        # 主音频播放器组件
 │   │   ├── ConfirmDialog.vue      # 确认对话框
 │   │   ├── Icon.vue               # 图标组件
 │   │   ├── Notification.vue       # 单个通知组件
@@ -301,8 +308,13 @@ VoiceHub/
 ├── composables/           # Vue 3 组合式API
 │   ├── useAdmin.ts         # 管理员功能hooks
 │   ├── useAudioPlayer.ts   # 音频播放器hooks
+│   ├── useAudioPlayerControl.ts # 音频播放器控制hooks
+│   ├── useAudioPlayerEnhanced.ts # 增强音频播放器hooks
+│   ├── useAudioPlayerSync.ts # 音频播放器同步hooks
 │   ├── useAudioQuality.ts  # 音质管理hooks
 │   ├── useAuth.ts          # 认证功能hooks
+│   ├── useLyrics.ts        # 歌词功能hooks
+│   ├── useMusicWebSocket.ts # 音乐WebSocket hooks
 │   ├── useNotifications.ts # 通知功能hooks
 │   ├── usePermissions.ts   # 权限管理hooks
 │   ├── useProgress.ts      # 进度条功能hooks
@@ -346,6 +358,9 @@ VoiceHub/
 │   ├── api/                # API端点目录
 │   │   ├── admin/          # 管理员API
 │   │   │   ├── activities.get.ts    # 获取活动统计
+│   │   │   ├── analytics/           # 数据分析API
+│   │   │   │   ├── prediction/      # 预测分析子目录
+│   │   │   │   └── reports/         # 报告生成子目录
 │   │   │   ├── backup/              # 备份管理API
 │   │   │   │   ├── delete/          # 删除备份子目录
 │   │   │   │   ├── download/        # 下载备份子目录
@@ -363,10 +378,11 @@ VoiceHub/
 │   │   │   │   └── reset.post.ts    # 重置数据库
 │   │   │   ├── db-status.get.ts     # 数据库状态检查
 │   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
+│   │   │   ├── music-sources/       # 音乐源管理API
+│   │   │   │   └── [id]/            # 音乐源详情操作子目录
 │   │   │   ├── notifications/       # 管理员通知API
 │   │   │   │   ├── history/         # 通知历史子目录
-│   │   │   │   ├── send.post.ts     # 发送通知
-│   │   │   │   └── templates/       # 通知模板子目录
+│   │   │   │   └── send.post.ts     # 发送通知
 │   │   │   ├── permissions/         # 权限管理API
 │   │   │   │   └── user/            # 用户权限管理子目录
 │   │   │   ├── play-times/          # 播放时间管理API
@@ -387,6 +403,13 @@ VoiceHub/
 │   │   │   ├── songs/               # 管理员歌曲管理API
 │   │   │   │   └── delete.post.ts   # 删除歌曲
 │   │   │   ├── stats.get.ts         # 统计数据
+│   │   │   ├── stats/               # 详细统计API
+│   │   │   │   ├── active-users.get.ts # 活跃用户统计
+│   │   │   │   ├── realtime.get.ts  # 实时统计
+│   │   │   │   ├── semester-comparison.get.ts # 学期对比统计
+│   │   │   │   ├── top-songs.get.ts # 热门歌曲统计
+│   │   │   │   ├── trends.get.ts    # 趋势分析
+│   │   │   │   └── user-engagement.get.ts # 用户参与度统计
 │   │   │   ├── system-settings/     # 系统设置API
 │   │   │   │   ├── index.post.ts    # 更新系统设置
 │   │   │   │   └── index.ts         # 获取系统设置
