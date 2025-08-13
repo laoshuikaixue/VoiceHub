@@ -36,18 +36,23 @@ export default defineEventHandler(async (event) => {
     return
   }
   
-  // 获取认证令牌
-  const authHeader = getRequestHeader(event, 'authorization')
+  // 获取认证令牌 - 优先从cookie获取，其次从Authorization header
+  let token = getCookie(event, 'auth-token')
   
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token) {
+    const authHeader = getRequestHeader(event, 'authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7) // 移除 'Bearer ' 前缀
+    }
+  }
+  
+  if (!token) {
     throw createError({
       statusCode: 401,
       message: '未授权访问',
       data: { invalidToken: true }
     })
   }
-  
-  const token = authHeader.substring(7) // 移除 'Bearer ' 前缀
   
   try {
     // 检查JWT_SECRET是否设置

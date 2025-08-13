@@ -225,6 +225,15 @@ export default defineEventHandler(async (event) => {
     const needsPasswordChange = !user.passwordChangedAt
     console.log('Needs password change:', needsPasswordChange)
   
+  // 设置httpOnly cookie
+  setCookie(event, 'auth-token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 7, // 7天
+    path: '/'
+  })
+
   return {
     token,
     user: {

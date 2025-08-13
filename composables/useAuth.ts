@@ -7,23 +7,38 @@ export const useAuth = () => {
   const isAdmin = ref(false)
   const loading = ref(false)
 
-  // 从localStorage初始化用户状态
+  // 从SSR payload或localStorage初始化用户状态
   const initAuth = () => {
-    // 确保只在客户端(浏览器)环境中访问localStorage
+    // 首先尝试从SSR payload获取用户信息
+    const nuxtApp = useNuxtApp()
+    if (nuxtApp.payload.user && nuxtApp.payload.isAuthenticated) {
+      user.value = nuxtApp.payload.user as User
+      isAuthenticated.value = nuxtApp.payload.isAuthenticated
+      isAdmin.value = nuxtApp.payload.isAdmin || false
+      
+      // 同步到localStorage（仅客户端）
+      if (process.client) {
+        localStorage.setItem('user', JSON.stringify(nuxtApp.payload.user))
+      }
+      return
+    }
+    
+    // 如果没有SSR payload，则从localStorage获取（仅客户端）
     if (process.client) {
       const storedUser = localStorage.getItem('user')
-      const token = localStorage.getItem('token')
 
-      if (storedUser && token) {
+      if (storedUser) {
         try {
-        const parsedUser = JSON.parse(storedUser) as User
-        user.value = parsedUser
-        isAuthenticated.value = true
-        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(parsedUser.role)
+          const parsedUser = JSON.parse(storedUser) as User
+          user.value = parsedUser
+          isAuthenticated.value = true
+          isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(parsedUser.role)
         } catch (error) {
           // 清除无效的存储数据
           localStorage.removeItem('user')
-          localStorage.removeItem('token')
+          user.value = null
+          isAuthenticated.value = false
+          isAdmin.value = false
         }
       } else {
         user.value = null
@@ -56,11 +71,10 @@ export const useAuth = () => {
 
         // 确保只在客户端环境中存储数据
         if (process.client) {
-          // 存储token和用户信息
-          localStorage.setItem('token', userData.token)
+          // 存储用户信息到localStorage作为备份
           localStorage.setItem('user', JSON.stringify(userData.user))
           
-          // 刷新页面以确保认证插件能够应用认证头
+          // 刷新页面以确保认证状态生效
           window.location.reload()
         }
         
@@ -78,7 +92,7 @@ export const useAuth = () => {
       const { data, error } = await useFetch('/api/auth/change-password', {
         method: 'POST',
         body: { currentPassword, newPassword },
-        ...getAuthHeader()
+        credentials: 'include' // 确保包含cookie
       })
 
       if (error.value) {
@@ -105,7 +119,7 @@ export const useAuth = () => {
       const { data, error } = await useFetch('/api/auth/set-initial-password', {
         method: 'POST',
         body: { newPassword },
-        ...getAuthHeader()
+        credentials: 'include' // 确保包含cookie
       })
       if (error.value) {
         const errorMessage = error.value.data?.message || error.value.statusMessage || '初始密码设置失败'
@@ -118,7 +132,16 @@ export const useAuth = () => {
   }
 
   // 注销
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // 调用服务器端logout API清除cookie
+      await $fetch('/api/auth/logout', {
+        method: 'POST'
+      })
+    } catch (error) {
+      console.error('服务器端登出失败:', error)
+    }
+    
     user.value = null
     isAuthenticated.value = false
     isAdmin.value = false
@@ -134,7 +157,7 @@ export const useAuth = () => {
     }
   }
 
-  // 获取token
+  // 获取token（主要用于向后兼容）
   const getToken = () => {
     if (process.client) {
       return localStorage.getItem('token')
@@ -142,7 +165,7 @@ export const useAuth = () => {
     return null
   }
 
-  // 获取认证头
+  // 获取认证头（现在主要依赖cookie，这个方法作为备用）
   const getAuthHeader = () => {
     if (process.client) {
       const token = localStorage.getItem('token')
@@ -154,6 +177,7 @@ export const useAuth = () => {
         }
       }
     }
+    // 现在主要依赖cookie认证，返回空对象
     return {}
   }
 
@@ -166,11 +190,11 @@ export const useAuth = () => {
     try {
       const { data, error } = await useFetch('/api/auth/me', {
         method: 'GET',
-        ...getAuthHeader()
+        credentials: 'include' // 确保包含cookie
       })
 
       if (error.value) {
-        // 如果获取用户信息失败，可能token已过期，执行登出
+        // 如果获取用户信息失败，可能认证已过期，执行登出
         logout()
         return
       }
