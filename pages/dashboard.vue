@@ -642,7 +642,7 @@ onUnmounted(() => {
 
 /* 左侧导航栏 */
 .sidebar {
-  width: 280px;
+  width: 260px;
   background: #111111;
   border-right: 1px solid #1f1f1f;
   position: fixed;
@@ -877,7 +877,7 @@ onUnmounted(() => {
 /* 主内容区域 */
 .main-content {
   flex: 1;
-  margin-left: 280px;
+  margin-left: 260px;
   background: #0a0a0a;
   min-height: 100vh;
 }
@@ -924,11 +924,11 @@ onUnmounted(() => {
 /* 响应式设计 */
 @media (max-width: 1024px) {
   .sidebar {
-    width: 240px;
+    width: 220px;
   }
 
   .main-content {
-    margin-left: 240px;
+    margin-left: 220px;
   }
 
   .content-body {
@@ -949,10 +949,10 @@ onUnmounted(() => {
 
   /* 侧边栏移动端样式 */
   .sidebar {
-    width: 280px;
+    width: 260px;
     position: fixed;
-    height: 100vh;
-    top: 0;
+    height: calc(100vh - 60px);
+    top: 60px;
     left: 0;
     transform: translateX(-100%);
     z-index: 1000;
@@ -982,15 +982,20 @@ onUnmounted(() => {
 
   /* 侧边栏内部元素的移动端优化 */
   .sidebar-header {
-    padding: 20px 16px;
+    padding: 16px;
   }
 
+  /* 移动端优化logo显示 */
+  .logo-link {
+    padding: 4px;
+    gap: 4px;
+  }
+  
   .logo-image {
-    width: 120px;
-    margin-bottom: 16px;
+    width: 100px;
+    margin-bottom: 8px;
   }
-
-  /* 移动端隐藏logo文字 */
+  
   .logo-content {
     display: none;
   }
@@ -1098,9 +1103,14 @@ onUnmounted(() => {
     padding: 16px 12px;
   }
 
+  .logo-link {
+    padding: 2px;
+    gap: 2px;
+  }
+
   .logo-image {
-    width: 100px;
-    margin-bottom: 12px;
+    width: 80px;
+    margin-bottom: 8px;
   }
 
   .nav-item {

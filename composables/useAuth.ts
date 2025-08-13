@@ -148,8 +148,7 @@ export const useAuth = () => {
 
     // 确保只在客户端环境中访问localStorage
     if (process.client) {
-      // 清除存储的认证信息
-      localStorage.removeItem('token')
+      // 清除存储的用户信息
       localStorage.removeItem('user')
 
       // 刷新页面以清除认证状态
@@ -157,29 +156,8 @@ export const useAuth = () => {
     }
   }
 
-  // 获取token（主要用于向后兼容）
-  const getToken = () => {
-    if (process.client) {
-      return localStorage.getItem('token')
-    }
-    return null
-  }
-
-  // 获取认证头（现在主要依赖cookie，这个方法作为备用）
-  const getAuthHeader = () => {
-    if (process.client) {
-      const token = localStorage.getItem('token')
-      if (token) {
-        return {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
-    }
-    // 现在主要依赖cookie认证，返回空对象
-    return {}
-  }
+  // 向后兼容：提供空的认证头，因为现在完全依赖cookie认证
+  const getAuthHeader = () => ({ headers: {} })
 
   // 刷新用户信息
   const refreshUser = async () => {
@@ -228,8 +206,7 @@ export const useAuth = () => {
     changePassword,
     setInitialPassword,
     refreshUser,
-    getToken,
-    getAuthHeader,
-    initAuth // 公开initAuth方法
+    initAuth, // 公开initAuth方法
+    getAuthHeader
   }
 }

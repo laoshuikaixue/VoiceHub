@@ -3,15 +3,8 @@ export default defineNuxtRouteMiddleware((to, from) => {
   if (process.server) {
     const nuxtApp = useNuxtApp()
     
-    console.log('[Route Middleware] 服务器端检查认证状态:', {
-      path: to.path,
-      isAuthenticated: nuxtApp.payload.isAuthenticated,
-      user: nuxtApp.payload.user?.username
-    })
-    
     // 检查SSR payload中的认证状态
     if (!nuxtApp.payload.isAuthenticated) {
-      console.log('[Route Middleware] 认证失败，重定向到登录页')
       return navigateTo('/login')
     }
     
