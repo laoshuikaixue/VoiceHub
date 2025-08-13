@@ -136,7 +136,11 @@ export const useAuth = () => {
     try {
       // 调用服务器端logout API清除cookie
       await $fetch('/api/auth/logout', {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
       })
     } catch (error) {
       console.error('服务器端登出失败:', error)
@@ -150,9 +154,19 @@ export const useAuth = () => {
     if (process.client) {
       // 清除存储的用户信息
       localStorage.removeItem('user')
+      
+      // 清除所有相关的缓存
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            caches.delete(name)
+          })
+        })
+      }
 
-      // 刷新页面以清除认证状态
-      window.location.href = '/'
+      // 强制刷新页面，添加时间戳防止缓存
+      const timestamp = new Date().getTime()
+      window.location.href = `/?t=${timestamp}`
     }
   }
 
