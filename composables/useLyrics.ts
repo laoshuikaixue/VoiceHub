@@ -150,7 +150,7 @@ export const useLyrics = () => {
 
   // 获取歌词（带重试逻辑）
   const fetchLyrics = async (platform: string, musicId: string, maxRetries: number = 3): Promise<void> => {
-    console.log('fetchLyrics 开始:', { platform, musicId, maxRetries })
+    // 开始获取歌词
     
     if (!platform || !musicId) {
       console.error('fetchLyrics 参数错误:', { platform, musicId })
@@ -180,7 +180,7 @@ export const useLyrics = () => {
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`fetchLyrics 第${attempt}次尝试`)
+        // 重试获取歌词
         
         let apiUrl: string
         
@@ -192,7 +192,7 @@ export const useLyrics = () => {
           throw new Error('不支持的音乐平台')
         }
 
-        console.log('fetchLyrics 请求URL:', apiUrl)
+        // 请求歌词API
         
         const response = await fetch(apiUrl, {
           timeout: 10000, // 10秒超时
@@ -200,14 +200,14 @@ export const useLyrics = () => {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
           }
         })
-        console.log('fetchLyrics 响应状态:', response.status, response.statusText)
+        // 检查响应状态
         
         if (!response.ok) {
           throw new Error(`获取歌词失败: ${response.status} ${response.statusText}`)
         }
 
         const data = await response.json()
-        console.log('fetchLyrics 响应数据:', data)
+        // 处理响应数据
         
         if (data.code !== 200) {
           throw new Error(data.message || '获取歌词失败')
@@ -215,27 +215,20 @@ export const useLyrics = () => {
 
         // 解析歌词
         const lyricData = data.data
-        console.log('fetchLyrics 歌词数据:', lyricData)
       
       // 普通歌词
       if (lyricData.lrc) {
-        console.log('解析普通歌词 (lrc):', lyricData.lrc.substring(0, 200) + '...')
         currentLyrics.value = parseLrcLyrics(lyricData.lrc)
-        console.log('解析后的普通歌词行数:', currentLyrics.value.length)
       } else {
-        console.log('没有普通歌词 (lrc)')
         currentLyrics.value = []
       }
       
       // 翻译歌词
       if (lyricData.trans) {
-        console.log('解析翻译歌词 (trans):', lyricData.trans.substring(0, 200) + '...')
         translationLyrics.value = parseLrcLyrics(lyricData.trans)
-        console.log('解析后的翻译歌词行数:', translationLyrics.value.length)
         // 如果有翻译歌词，自动启用翻译显示
         showTranslation.value = true
       } else {
-        console.log('没有翻译歌词 (trans)')
         // 没有翻译歌词，关闭翻译显示
         translationLyrics.value = []
         showTranslation.value = false
@@ -243,11 +236,8 @@ export const useLyrics = () => {
       
       // 逐字歌词
       if (lyricData.yrc) {
-        console.log('解析逐字歌词 (yrc):', lyricData.yrc.substring(0, 200) + '...')
         wordByWordLyrics.value = parseYrcLyrics(lyricData.yrc)
-        console.log('解析后的逐字歌词行数:', wordByWordLyrics.value.length)
       } else {
-        console.log('没有逐字歌词 (yrc)')
         wordByWordLyrics.value = []
       }
 
@@ -255,11 +245,8 @@ export const useLyrics = () => {
 
         // 如果没有普通歌词但有逐字歌词，使用逐字歌词作为普通歌词
         if (currentLyrics.value.length === 0 && wordByWordLyrics.value.length > 0) {
-          console.log('使用逐字歌词作为普通歌词')
           currentLyrics.value = wordByWordLyrics.value
         }
-
-        console.log(`fetchLyrics 第${attempt}次尝试成功，最终歌词行数:`, currentLyrics.value.length)
         
         // 获取成功后立即通知鸿蒙侧更新歌词
         const harmonyLyrics = getFormattedLyricsForHarmonyOS()
@@ -309,7 +296,7 @@ export const useLyrics = () => {
           }
         }
         window.HarmonyOS.postMessage(JSON.stringify(message))
-        console.log('已通知鸿蒙侧更新歌词，长度:', lyrics.length)
+        // 通知鸿蒙侧更新歌词
       } catch (error) {
         console.error('通知鸿蒙侧更新歌词失败:', error)
       }
@@ -324,7 +311,7 @@ export const useLyrics = () => {
     
     const lyrics = currentLyrics.value
     if (lyrics.length === 0) {
-      console.log('updateCurrentLyricIndex: 没有歌词数据')
+      // 没有歌词数据
       return
     }
 
@@ -340,7 +327,7 @@ export const useLyrics = () => {
       }
     }
     
-    console.log(`updateCurrentLyricIndex: 未找到匹配的歌词行, 时间: ${time}ms, 歌词总数: ${lyrics.length}`)
+    // 未找到匹配的歌词行
   }
 
   // 获取当前歌词内容
@@ -434,7 +421,7 @@ export const useLyrics = () => {
       formattedLyrics = truncatedLyrics.trim()
     }
     
-    console.log('鸿蒙侧歌词格式化完成，字节长度:', encoder.encode(formattedLyrics).length)
+    // 歌词格式化完成
     return formattedLyrics
   }
 

@@ -207,8 +207,6 @@ const handleLoaded = async () => {
   
   // 如果歌曲有平台信息，主动获取并等待歌词加载完成后单独传递歌词
   if (props.song?.musicPlatform && props.song?.musicId) {
-    console.log('开始获取歌词...')
-    
     // 主动触发歌词获取
     await control.lyrics.fetchLyrics(props.song.musicPlatform, props.song.musicId)
     
@@ -220,19 +218,16 @@ const handleLoaded = async () => {
     while ((Date.now() - startTime) < maxWaitTime) {
       // 检查是否有歌词数据
       if (control.lyrics.currentLyrics.value.length > 0) {
-        console.log('检测到歌词数据，歌词行数:', control.lyrics.currentLyrics.value.length)
         break
       }
       
       // 检查是否加载失败（不在加载中且有错误）
       if (!control.lyrics.isLoading.value && control.lyrics.error.value) {
-        console.log('歌词加载失败:', control.lyrics.error.value)
         break
       }
       
       // 检查是否加载完成但无歌词（不在加载中且无错误且无歌词）
       if (!control.lyrics.isLoading.value && !control.lyrics.error.value && control.lyrics.currentLyrics.value.length === 0) {
-        console.log('歌词加载完成但无歌词')
         break
       }
       
@@ -245,13 +240,9 @@ const handleLoaded = async () => {
     const hasValidLyrics = harmonyLyrics && harmonyLyrics !== '[00:00.00]暂无歌词' && control.lyrics.currentLyrics.value.length > 0
     
     if (hasValidLyrics) {
-      console.log('歌词加载成功，单独传递歌词给鸿蒙侧，歌词长度:', harmonyLyrics.length, '预览:', harmonyLyrics.substring(0, 100))
-      
       // 使用专门的歌词更新方法
       control.lyrics.notifyHarmonyOSLyricsUpdate(harmonyLyrics)
     } else {
-      console.log('歌词加载失败或无歌词，清空歌词')
-      
       // 清空歌词
       control.lyrics.notifyHarmonyOSLyricsUpdate('')
     }
@@ -500,6 +491,20 @@ onMounted(async () => {
   // 等待子组件挂载完成
   await nextTick()
   
+  // 确保音频播放器引用已正确获取
+  let retryCount = 0
+  const maxRetries = 10
+  
+  while (!audioPlayer.value && retryCount < maxRetries) {
+    await new Promise(resolve => setTimeout(resolve, 100))
+    retryCount++
+  }
+  
+  if (!audioPlayer.value) {
+    console.error('[AudioPlayer] ❌ 无法获取音频播放器引用，自动播放将失败')
+    return
+  }
+  
   // 设置音频播放器和进度条引用
   control.setAudioPlayerRef(audioPlayer.value)
   control.setProgressBarRef(progressBar.value)
@@ -524,8 +529,14 @@ onMounted(async () => {
       
       // 尝试播放，如果失败（由于浏览器自动播放策略），等待用户交互
       const playSuccess = await control.play()
+      
       if (!playSuccess) {
-        console.log('自动播放被浏览器阻止，等待用户交互后播放')
+        // 通知鸿蒙侧播放失败（暂停状态）
+        sync.notifyHarmonyOS('pause', {
+          position: 0,
+          duration: control.duration.value
+        }, props.song)
+        
         // 监听用户交互，一旦用户交互就尝试播放
         const handleUserInteraction = async () => {
           if (!control.hasUserInteracted.value && props.song) {

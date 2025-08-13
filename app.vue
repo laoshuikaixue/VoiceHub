@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { onMounted, computed, ref, watch } from 'vue'
+import { onMounted, computed, ref, watch, nextTick } from 'vue'
 // 导入通知容器组件和音频播放器
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
@@ -146,7 +146,13 @@ const setupHarmonyOSListeners = () => {
 }
 
 // 使用计算属性确保安全地访问auth对象
-computed(() => auth?.isAuthenticated?.value || false);
+const safeIsAuthenticated = computed(() => auth?.isAuthenticated?.value || false)
+
+const handleLogout = () => {
+  if (auth) {
+    auth.logout()
+  }
+}
 </script>
 
 <style>

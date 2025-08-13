@@ -63,26 +63,26 @@ export const useAudioPlayerSync = () => {
         console.log(`[HarmonyOS] ${action}:`, songInfo.title)
         // 添加歌词传递调试信息
         if (action === 'metadata') {
-          console.log(`[HarmonyOS] 歌词传递调试: 原始lyrics参数长度=${lyrics ? lyrics.length : 0}, songInfo.lyrics长度=${songInfo.lyrics.length}`)
-          if (songInfo.lyrics) {
-            console.log(`[HarmonyOS] 歌词预览: ${songInfo.lyrics.substring(0, 100)}...`)
-          }
+          // 传递歌词给鸿蒙侧
         }
       }
 
       // 只有在鸿蒙环境中才调用相关API
       if (window.voiceHubPlayer) {
         if (action === 'play') {
+          console.log(`[HarmonyOS] 🎵 通知播放状态: 播放 - ${songInfo.title}, 位置=${songInfo.position}s, 时长=${songInfo.duration}s`)
           window.voiceHubPlayer.onPlayStateChanged(true, {
             position: songInfo.position,
             duration: songInfo.duration
           })
         } else if (action === 'pause') {
+          console.log(`[HarmonyOS] ⏸️ 通知播放状态: 暂停 - ${songInfo.title}, 位置=${songInfo.position}s, 时长=${songInfo.duration}s`)
           window.voiceHubPlayer.onPlayStateChanged(false, {
             position: songInfo.position,
             duration: songInfo.duration
           })
         } else if (action === 'stop') {
+          console.log(`[HarmonyOS] ⏹️ 通知播放状态: 停止 - ${songInfo.title}`)
           window.voiceHubPlayer.onPlayStateChanged(false, { position: 0, duration: songInfo.duration })
         } else if (action === 'progress') {
           // 进度更新时，只更新位置，不改变播放状态

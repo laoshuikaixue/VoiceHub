@@ -805,7 +805,7 @@ const playSong = async (result) => {
     try {
       const { useLyrics } = await import('~/composables/useLyrics')
       const lyrics = useLyrics()
-      console.log('正在请求歌词:', song.musicPlatform, song.musicId)
+      // 请求歌词
       await lyrics.fetchLyrics(song.musicPlatform, song.musicId)
     } catch (error) {
       console.error('获取歌词失败:', error)

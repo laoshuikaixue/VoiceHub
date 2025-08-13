@@ -36,12 +36,22 @@ export const useAudioPlayerControl = () => {
 
   // 基本播放控制
   const play = async (): Promise<boolean> => {
-    if (!audioPlayer.value || hasError.value) return false
+    // 等待音频播放器引用设置完成
+    let retryCount = 0
+    const maxRetries = 20
+    
+    while (!audioPlayer.value && retryCount < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, 50))
+      retryCount++
+    }
+    
+    if (!audioPlayer.value || hasError.value) {
+      return false
+    }
     
     try {
       // 确保音频已经加载
       if (audioPlayer.value.readyState < 2) {
-        console.log('音频还未准备好，等待加载...')
         await waitForCanPlay(audioPlayer.value)
       }
       
@@ -51,16 +61,14 @@ export const useAudioPlayerControl = () => {
       if (playPromise !== undefined) {
         await playPromise
       }
-      
       return true
     } catch (error) {
       // 检查是否是自动播放被阻止的错误
       if (error.name === 'NotAllowedError') {
-        console.log('自动播放被浏览器阻止，需要用户交互后才能播放')
         // 不设置 hasError，因为这不是真正的错误
         return false
       } else {
-        console.error('播放失败:', error)
+        console.error('[AudioPlayerControl] ❌ 播放失败:', error)
         hasError.value = true
         return false
       }
@@ -169,7 +177,7 @@ export const useAudioPlayerControl = () => {
           }
           
           // 并行加载歌词（不阻塞音频加载）
-          console.log('正在加载歌词:', songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+          // 加载歌词
           lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
         } else {
           // 如果没有音乐平台信息，检查是否有直接的URL
@@ -196,7 +204,7 @@ export const useAudioPlayerControl = () => {
       if (lyricsPromise) {
         try {
           await lyricsPromise
-          console.log('歌词加载完成')
+          // 歌词加载完成
         } catch (lyricsError) {
           console.warn('歌词加载失败，但继续播放音频:', lyricsError)
         }
