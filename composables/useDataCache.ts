@@ -11,10 +11,10 @@ interface PendingRequest {
   timestamp: number
 }
 
-// 缓存配置
+// 缓存配置 - 优化关键数据的缓存时间以提高实时性
 const CACHE_CONFIG = {
-  songs: 3 * 60 * 1000, // 3分钟
-  publicSchedules: 5 * 60 * 1000, // 5分钟
+  songs: 2 * 60 * 1000, // 2分钟 (从3分钟缩短)
+  publicSchedules: 1 * 60 * 1000, // 1分钟 (从5分钟缩短)
   songCount: 10 * 60 * 1000, // 10分钟
   notifications: 2 * 60 * 1000, // 2分钟
   notificationSettings: 30 * 60 * 1000, // 30分钟

@@ -649,37 +649,6 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
    npm run clear-db
    ```
 
-## 混合内容问题解决
-
-VoiceHub 自动解决HTTPS环境下访问HTTP资源的混合内容问题：
-
-### 🔒 自动HTTPS转换
-- **图片链接**：自动将HTTP图片链接转换为HTTPS，确保在安全环境下正常显示
-- **透明处理**：对用户完全透明，无需修改现有配置
-- **兼容性**：确保系统在各种部署环境（Vercel、Netlify等）下都能正常工作
-
-## 数据备份功能
-
-VoiceHub 提供了完整的数据库备份和恢复功能：
-
-### Web界面备份管理
-- **创建备份**：支持完整备份和用户数据备份
-- **导入备份**：支持拖拽上传备份文件
-- **文件管理**：列出、下载、删除备份文件
-- **数据恢复**：支持合并模式和替换模式恢复
-
-### 命令行备份工具
-```bash
-# 创建完整数据库备份
-node scripts/database-backup.js backup
-
-# 恢复数据库备份
-node scripts/database-backup.js restore <备份文件路径>
-
-# 用户数据备份迁移（兼容旧版本）
-node scripts/backup-and-migrate.js
-```
-
 ### 备份文件格式
 - **完整备份**：包含所有数据表的JSON格式文件
 - **用户备份**：仅包含用户相关数据

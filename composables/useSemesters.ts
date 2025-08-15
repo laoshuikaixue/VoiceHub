@@ -4,6 +4,66 @@ import type { Semester } from '~/types'
 // 全局事件总线用于学期更新通知
 const semesterUpdateEvent = ref(0)
 
+// SessionStorage 键名常量
+const SELECTED_SEMESTER_KEY = 'voicehub_selected_semester'
+const AVAILABLE_SEMESTERS_KEY = 'voicehub_available_semesters'
+
+// 持久化工具函数
+const persistenceUtils = {
+  // 保存选中的学期
+  saveSelectedSemester: (semester: string | null) => {
+    try {
+      if (semester) {
+        sessionStorage.setItem(SELECTED_SEMESTER_KEY, semester)
+      } else {
+        sessionStorage.removeItem(SELECTED_SEMESTER_KEY)
+      }
+    } catch (error) {
+      console.warn('保存选中学期失败:', error)
+    }
+  },
+  
+  // 获取选中的学期
+  getSelectedSemester: (): string | null => {
+    try {
+      return sessionStorage.getItem(SELECTED_SEMESTER_KEY)
+    } catch (error) {
+      console.warn('获取选中学期失败:', error)
+      return null
+    }
+  },
+  
+  // 保存可用学期列表
+  saveAvailableSemesters: (semesters: string[]) => {
+    try {
+      sessionStorage.setItem(AVAILABLE_SEMESTERS_KEY, JSON.stringify(semesters))
+    } catch (error) {
+      console.warn('保存可用学期列表失败:', error)
+    }
+  },
+  
+  // 获取可用学期列表
+  getAvailableSemesters: (): string[] => {
+    try {
+      const stored = sessionStorage.getItem(AVAILABLE_SEMESTERS_KEY)
+      return stored ? JSON.parse(stored) : []
+    } catch (error) {
+      console.warn('获取可用学期列表失败:', error)
+      return []
+    }
+  },
+  
+  // 清除所有持久化数据
+  clearAll: () => {
+    try {
+      sessionStorage.removeItem(SELECTED_SEMESTER_KEY)
+      sessionStorage.removeItem(AVAILABLE_SEMESTERS_KEY)
+    } catch (error) {
+      console.warn('清除持久化数据失败:', error)
+    }
+  }
+}
+
 export function useSemesters() {
   const semesters = ref<Semester[]>([])
   const currentSemester = ref<Semester | null>(null)
@@ -220,6 +280,8 @@ export function useSemesters() {
     createSemester,
     setActiveSemester,
     deleteSemester,
-    triggerSemesterUpdate
+    triggerSemesterUpdate,
+    // 导出持久化工具函数
+    persistenceUtils
   }
 }

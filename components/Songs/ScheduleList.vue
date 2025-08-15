@@ -1,15 +1,5 @@
 <template>
   <div class="schedule-list">
-    <!-- 学期选择器 -->
-    <div v-if="availableSemesters.length > 1" class="semester-selector">
-      <label class="semester-label">学期：</label>
-      <select v-model="selectedSemester" @change="onSemesterChange" class="semester-select">
-        <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.id">
-          {{ semester.name }}
-        </option>
-      </select>
-    </div>
-    
     <!-- 两列布局：左侧日期选择，右侧排期展示 -->
     <div class="schedule-container">
       <!-- 左侧日期选择列表 - 移除标题和框 -->
@@ -195,7 +185,6 @@
 <script setup>
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useSongs } from '~/composables/useSongs'
-import { useSemesters } from '~/composables/useSemesters'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import Icon from '~/components/UI/Icon.vue'
 import { convertToHttps } from '~/utils/url'
@@ -221,19 +210,13 @@ const audioPlayer = useAudioPlayer()
 // 获取播放时段启用状态
 const { playTimeEnabled } = useSongs()
 
-// 学期相关
-const { fetchCurrentSemester, currentSemester, semesterUpdateEvent } = useSemesters()
-const availableSemesters = ref([])
-const selectedSemester = ref(null)
-const preserveSelectedDate = ref(false) // 用于标记是否保持选择的日期
-
 // 确保schedules不为null
 const safeSchedules = computed(() => props.schedules || [])
 
 // 日期选择器状态
 const showDatePicker = ref(false)
 
-// 按日期分组排期（添加学期过滤）
+// 按日期分组排期
 const safeGroupedSchedules = computed(() => {
   const groups = {}
 
@@ -243,14 +226,6 @@ const safeGroupedSchedules = computed(() => {
 
   safeSchedules.value.forEach(schedule => {
     if (!schedule || !schedule.playDate) return
-
-    // 如果选择了特定学期，只显示该学期的排期
-    if (selectedSemester.value && schedule.song && schedule.song.semester) {
-      const selectedSemesterName = availableSemesters.value.find(s => s.id === selectedSemester.value)?.name
-      if (selectedSemesterName && schedule.song.semester !== selectedSemesterName) {
-        return
-      }
-    }
 
     try {
       // 使用UTC时间处理日期
@@ -288,12 +263,11 @@ const currentDate = computed(() => {
   return availableDates.value[currentDateIndex.value]
 })
 
-// 当日期列表变化时切换到今天日期（除非是学期切换导致的变化）
+// 当日期列表变化时切换到今天日期
 watch(availableDates, (newDates) => {
-  if (newDates.length > 0 && !preserveSelectedDate.value) {
+  if (newDates.length > 0) {
     findAndSelectTodayOrClosestDate()
   }
-  preserveSelectedDate.value = false // 重置标记
 }, { immediate: false })
 
 // 提取日期选择逻辑到独立函数
@@ -487,83 +461,17 @@ const handleResize = () => {
   }, 100)
 }
 
-// 获取可用学期列表
-const fetchAvailableSemesters = async () => {
-  try {
-    // 从排期中提取学期信息
-    const semesters = new Set()
-    safeSchedules.value.forEach(schedule => {
-      if (schedule.song && schedule.song.semester) {
-        semesters.add(schedule.song.semester)
-      }
-    })
-    
-    // 获取当前学期
-    await fetchCurrentSemester()
-    
-    // 构建学期列表，当前学期排在第一位
-    const semesterList = []
-    if (currentSemester.value) {
-      semesterList.push({
-        id: currentSemester.value.id || 'current',
-        name: currentSemester.value.name
-      })
-    }
-    
-    // 添加其他学期
-    Array.from(semesters).forEach(semesterName => {
-      if (!currentSemester.value || semesterName !== currentSemester.value.name) {
-        semesterList.push({
-          id: semesterName,
-          name: semesterName
-        })
-      }
-    })
-    
-    availableSemesters.value = semesterList
-    
-    // 默认选择当前学期
-    if (semesterList.length > 0) {
-      selectedSemester.value = semesterList[0].id
-    }
-  } catch (error) {
-    console.error('获取学期列表失败:', error)
-  }
-}
 
-// 学期切换处理
-const onSemesterChange = () => {
-  preserveSelectedDate.value = true // 标记保持选择的日期
-  // 学期切换后，如果当前选择的日期在新学期中不存在，则选择最近的日期
-  nextTick(() => {
-    if (availableDates.value.length > 0) {
-      const currentDateStr = currentDate.value
-      if (currentDateStr && availableDates.value.includes(currentDateStr)) {
-        // 当前日期在新学期中存在，保持选择
-        const index = availableDates.value.indexOf(currentDateStr)
-        currentDateIndex.value = index
-      } else {
-        // 当前日期在新学期中不存在，选择最近的日期
-        findAndSelectTodayOrClosestDate()
-      }
-    }
-  })
-}
 
-// 监听学期更新事件
-watch(semesterUpdateEvent, async () => {
-  // 当学期更新时，重新获取学期列表
-  await fetchAvailableSemesters()
-})
+
+
+
 
 // 监听窗口大小变化
 onMounted(async () => {
   window.addEventListener('resize', handleResize)
   // 初始化移动状态
   isMobile.value = window.innerWidth <= 768
-  
-  // 获取学期列表
-  await fetchAvailableSemesters()
   
   // 寻找今天的日期并自动选择 - 初始加载时也尝试一次
   findAndSelectTodayOrClosestDate()
