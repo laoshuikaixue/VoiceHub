@@ -1,5 +1,6 @@
 import { prisma } from '../../models/schema'
 import { createSongVotedNotification } from '../../services/notificationService'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -168,19 +169,55 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    // 创建歌曲
-    const song = await prisma.song.create({
-      data: {
-        title: body.title,
-        artist: body.artist,
-        requesterId: user.id,
-        preferredPlayTimeId: preferredPlayTime?.id || null,
-        semester: await getCurrentSemesterName(),
-        cover: body.cover || null,
-        musicPlatform: body.musicPlatform || null,
-        musicId: body.musicId ? String(body.musicId) : null
+    // 创建歌曲（带序列重置逻辑）
+    let song
+    try {
+      song = await prisma.song.create({
+        data: {
+          title: body.title,
+          artist: body.artist,
+          requesterId: user.id,
+          preferredPlayTimeId: preferredPlayTime?.id || null,
+          semester: await getCurrentSemesterName(),
+          cover: body.cover || null,
+          musicPlatform: body.musicPlatform || null,
+          musicId: body.musicId ? String(body.musicId) : null
+        }
+      })
+    } catch (error) {
+      // 检查是否为唯一约束冲突错误（通常是序列问题）
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        console.log('检测到唯一约束冲突，尝试重置序列...')
+        
+        try {
+          // 重置Song表的id序列
+          await prisma.$executeRaw`
+            SELECT setval(pg_get_serial_sequence('Song', 'id'), COALESCE(MAX(id), 0) + 1, false) FROM "Song"
+          `
+          
+          console.log('序列重置成功，重试创建歌曲...')
+          
+          // 重试创建歌曲
+          song = await prisma.song.create({
+            data: {
+              title: body.title,
+              artist: body.artist,
+              requesterId: user.id,
+              preferredPlayTimeId: preferredPlayTime?.id || null,
+              semester: await getCurrentSemesterName(),
+              cover: body.cover || null,
+              musicPlatform: body.musicPlatform || null,
+              musicId: body.musicId ? String(body.musicId) : null
+            }
+          })
+        } catch (retryError) {
+          console.error('序列重置后重试仍失败:', retryError)
+          throw error // 抛出原始错误
+        }
+      } else {
+        throw error // 非序列问题，直接抛出
       }
-    })
+    }
     
     // 移除了投稿者自动投票的逻辑
     

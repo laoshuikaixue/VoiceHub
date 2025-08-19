@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, readBody, readMultipartFormData } from 'h3'
 import { prisma } from '../../../models/schema'
+import { Prisma } from '@prisma/client'
 import { promises as fs } from 'fs'
 import path from 'path'
 
@@ -847,6 +848,29 @@ export default defineEventHandler(async (event) => {
     console.log(`✅ 数据恢复完成`)
     console.log(`📊 处理了 ${restoreResults.details.tablesProcessed} 个表`)
     console.log(`📊 恢复了 ${restoreResults.details.recordsRestored} 条记录`)
+
+    // 重置所有自增序列
+    console.log(`🔄 开始重置自增序列...`)
+    const sequenceResetResults = []
+    const tablesToReset = ['User', 'Song', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings']
+    
+    for (const tableName of tablesToReset) {
+      try {
+        const result = await prisma.$queryRaw`
+          SELECT setval(pg_get_serial_sequence(${tableName}, 'id'), COALESCE(MAX(id), 0) + 1, false) 
+          FROM ${Prisma.raw(`"${tableName}"`)}` 
+        sequenceResetResults.push(`${tableName}: 序列已重置`)
+        console.log(`✅ ${tableName} 序列重置成功`)
+      } catch (sequenceError) {
+        const errorMsg = `${tableName}: 序列重置失败 - ${sequenceError.message}`
+        sequenceResetResults.push(errorMsg)
+        console.warn(`⚠️ ${errorMsg}`)
+      }
+    }
+    
+    // 将序列重置结果添加到详情中
+    restoreResults.details.sequenceResets = sequenceResetResults
+    console.log(`✅ 序列重置完成`)
 
     if (restoreResults.details.errors.length > 0) {
       console.warn(`⚠️ 发生了 ${restoreResults.details.errors.length} 个错误`)
