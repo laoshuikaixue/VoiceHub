@@ -36,12 +36,17 @@ export default defineEventHandler(async (event) => {
     const normalizedTitle = normalizeForMatch(body.title)
     const normalizedArtist = normalizeForMatch(body.artist)
 
-    // 检查是否已有完全相同的歌曲（标准化后完全匹配）
+    // 检查是否已有完全相同的歌曲（标准化后完全匹配，仅限当前学期）
+    const currentSemester = await getCurrentSemesterName()
     const allSongs = await prisma.song.findMany({
+      where: {
+        semester: currentSemester
+      },
       select: {
         id: true,
         title: true,
-        artist: true
+        artist: true,
+        semester: true
       }
     })
 
