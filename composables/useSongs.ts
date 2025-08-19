@@ -271,18 +271,44 @@ export const useSongs = () => {
       .trim()
   }
   
+  // 获取当前学期名称（从数据库）
+  const getCurrentSemesterName = async () => {
+    try {
+      const response = await fetch('/api/semesters/current')
+      if (!response.ok) {
+        throw new Error('获取当前学期失败')
+      }
+      const data = await response.json()
+      return data?.name || null
+    } catch (error) {
+      console.error('获取当前学期失败:', error)
+      return null
+    }
+  }
+
   // 检查相似歌曲
-  const checkSimilarSongs = (title: string, artist: string): Song[] => {
+  const checkSimilarSongs = async (title: string, artist: string): Promise<Song[]> => {
     similarSongFound.value = null
     
     const normalizedTitle = normalizeString(title)
     const normalizedArtist = normalizeString(artist)
     
+    // 获取当前学期名称
+    const currentSemesterName = await getCurrentSemesterName()
+    
     // 1. 检查完全相同的歌曲（标准化后）
     const exactSongs = songs.value.filter(song => {
       const songTitle = normalizeString(song.title)
       const songArtist = normalizeString(song.artist)
-      return songTitle === normalizedTitle && songArtist === normalizedArtist
+      const titleMatch = songTitle === normalizedTitle && songArtist === normalizedArtist
+      
+      // 如果有当前学期信息，只检查当前学期的歌曲
+      if (currentSemesterName) {
+        return titleMatch && song.semester === currentSemesterName
+      }
+      
+      // 如果没有学期信息，检查所有歌曲（向后兼容）
+      return titleMatch
     })
     
     if (exactSongs.length > 0) {
@@ -293,6 +319,11 @@ export const useSongs = () => {
     const similarSongs: Array<{song: Song, similarity: number}> = []
     
     songs.value.forEach(song => {
+      // 如果有当前学期信息，只检查当前学期的歌曲
+      if (currentSemesterName && song.semester !== currentSemesterName) {
+        return
+      }
+      
       const songTitle = normalizeString(song.title)
       const songArtist = normalizeString(song.artist)
       
@@ -338,6 +369,11 @@ export const useSongs = () => {
     const possibleSimilar: Array<{song: Song, similarity: number}> = []
     
     songs.value.forEach(song => {
+      // 如果有当前学期信息，只检查当前学期的歌曲
+      if (currentSemesterName && song.semester !== currentSemesterName) {
+        return
+      }
+      
       const songTitle = normalizeString(song.title)
       const songArtist = normalizeString(song.artist)
       

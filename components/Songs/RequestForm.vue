@@ -484,10 +484,10 @@ watch(
 )
 
 // 检查相似歌曲
-const checkSimilarSongs = () => {
+const checkSimilarSongs = async () => {
   if (title.value.trim().length > 2) {
     console.log('检查相似歌曲:', title.value, artist.value)
-    const similar = songService.checkSimilarSongs(
+    const similar = await songService.checkSimilarSongs(
       title.value.trim(),
       artist.value.trim()
     )
