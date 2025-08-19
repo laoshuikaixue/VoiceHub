@@ -5,7 +5,7 @@
       <div class="toolbar-left">
         <h3>用户管理</h3>
         <div class="stats">
-          <span class="stat-item">总计: {{ users.length }} 个用户</span>
+          <span class="stat-item">总计: {{ totalUsers }} 个用户</span>
         </div>
       </div>
       <div class="toolbar-right">
@@ -44,6 +44,13 @@
               <polyline points="10,9 9,9 8,9"/>
             </svg>
             批量导入
+          </button>
+          <button @click="showBatchUpdateModal = true" class="btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+            批量更新
           </button>
         </div>
       </div>
@@ -232,31 +239,31 @@
     <!-- 分页 -->
     <div v-if="totalPages > 1" class="pagination">
       <button
-        @click="currentPage = 1"
+        @click="goToPage(1)"
         :disabled="currentPage === 1"
         class="page-btn"
       >
         首页
       </button>
       <button
-        @click="currentPage--"
+        @click="goToPage(currentPage - 1)"
         :disabled="currentPage === 1"
         class="page-btn"
       >
         上一页
       </button>
       <span class="page-info">
-        第 {{ currentPage }} 页，共 {{ totalPages }} 页
+        第 {{ currentPage }} 页，共 {{ totalPages }} 页 (共 {{ totalUsers }} 个用户)
       </span>
       <button
-        @click="currentPage++"
+        @click="goToPage(currentPage + 1)"
         :disabled="currentPage === totalPages"
         class="page-btn"
       >
         下一页
       </button>
       <button
-        @click="currentPage = totalPages"
+        @click="goToPage(totalPages)"
         :disabled="currentPage === totalPages"
         class="page-btn"
       >
@@ -571,6 +578,14 @@
     </div>
   </div>
 
+  <!-- 批量更新模态框 -->
+  <BatchUpdateModal
+    :show="showBatchUpdateModal"
+    :users="users"
+    @close="closeBatchUpdateModal"
+    @update-success="handleBatchUpdateSuccess"
+  />
+
   <!-- 用户歌曲模态框 -->
   <UserSongsModal
     :show="showUserSongsModal"
@@ -584,6 +599,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
+import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 
 // 响应式数据
 const loading = ref(false)
@@ -591,7 +607,9 @@ const users = ref([])
 const searchQuery = ref('')
 const roleFilter = ref('')
 const currentPage = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(50)
+const totalUsers = ref(0)
+const totalPages = ref(1)
 
 // 硬编码角色定义
 const allRoles = [
@@ -619,6 +637,9 @@ const importError = ref('')
 const importSuccess = ref('')
 const previewData = ref([])
 const xlsxLoaded = ref(false)
+
+// 批量更新状态
+const showBatchUpdateModal = ref(false)
 
 // 删除确认状态
 const showDeleteModal = ref(false)
@@ -663,35 +684,25 @@ const availableRoles = computed(() => {
   }
 })
 
+// 由于使用服务器端分页，这些计算属性简化了
 const filteredUsers = computed(() => {
-  let filtered = users.value
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(user =>
-      user.name?.toLowerCase().includes(query) ||
-      user.username?.toLowerCase().includes(query)
-    )
-  }
-
-  if (roleFilter.value) {
-    filtered = filtered.filter(user => user.role === roleFilter.value)
-  }
-
-  return filtered
+  return users.value
 })
 
 const paginatedUsers = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredUsers.value.slice(start, end)
+  return users.value
 })
 
-const totalPages = computed(() => {
-  return Math.ceil(filteredUsers.value.length / pageSize.value)
-})
+// 监听搜索和过滤条件变化
+watch([searchQuery, roleFilter], () => {
+  currentPage.value = 1
+  loadUsers(1, pageSize.value)
+}, { debounce: 300 })
 
-// 移除了不需要的统计计算属性
+// 监听页码变化
+watch(currentPage, (newPage) => {
+  loadUsers(newPage, pageSize.value)
+})
 
 // 方法
 const formatDate = (dateString) => {
@@ -728,6 +739,12 @@ const getRoleDisplayName = (role) => {
   return names[role] || role
 }
 
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+    currentPage.value = page
+  }
+}
+
 const editUser = (user) => {
   editingUser.value = user
   userForm.value = {
@@ -761,6 +778,17 @@ const viewUserSongs = (user) => {
 const closeUserSongsModal = () => {
   showUserSongsModal.value = false
   selectedUserId.value = null
+}
+
+const closeBatchUpdateModal = () => {
+  showBatchUpdateModal.value = false
+}
+
+const handleBatchUpdateSuccess = async () => {
+  await loadUsers()
+  if (window.$showNotification) {
+    window.$showNotification('批量更新成功', 'success')
+  }
 }
 
 const closeDeleteModal = () => {
@@ -946,13 +974,31 @@ const confirmResetPassword = async () => {
   }
 }
 
-const loadUsers = async () => {
+const loadUsers = async (page = 1, limit = 100) => {
   loading.value = true
   try {
     const response = await $fetch('/api/admin/users', {
+      query: {
+        page: page.toString(),
+        limit: limit.toString(),
+        search: searchQuery.value || undefined,
+        role: roleFilter.value || undefined
+      },
       headers: auth.getAuthHeader().headers
     })
-    users.value = response.users || []
+    
+    // 处理分页响应数据
+    if (response.users) {
+      users.value = response.users
+      // 更新分页信息
+      if (response.pagination) {
+        totalUsers.value = response.pagination.total
+        currentPage.value = response.pagination.page
+        totalPages.value = response.pagination.totalPages
+      }
+    } else {
+      users.value = []
+    }
   } catch (error) {
     console.error('加载用户失败:', error)
     if (window.$showNotification) {
@@ -1177,7 +1223,7 @@ const importUsers = async () => {
 
 // 生命周期
 onMounted(async () => {
-  await loadUsers()
+  await loadUsers(1, pageSize.value)
   // 预加载XLSX库
   loadXLSX()
 })

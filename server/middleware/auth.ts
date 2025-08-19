@@ -11,20 +11,10 @@ export default defineEventHandler(async (event) => {
   const publicRoutes = [
     '/api/auth/login',
     '/api/auth/register',
-    '/api/songs/public',
-    '/api/songs/count',
-    '/api/semesters/current',
-    '/api/play-times',
-    '/api/site-config',
-    '/api/proxy/image',
-    '/api/music/state',
-    '/api/music/websocket',
-    '/',
-    '/login',
-    '/register',
-    '/notifications',
-    '/favicon.ico',
-    '/_nuxt'
+    '/api/auth/logout',
+    '/api/songs/current',
+    '/api/songs/queue',
+    '/api/songs/history'
   ]
   
   // 检查是否是公共路径或以公共路径开头
