@@ -13,9 +13,10 @@ export default defineNuxtPlugin((nuxtApp) => {
     auth.initAuth()
   })
   
-  // 为所有API请求确保包含cookie
+  // 为所有API请求确保包含cookie并处理401错误
   nuxtApp.hook('app:mounted', () => {
     const originalFetch = window.fetch
+    const errorHandler = useErrorHandler()
     
     window.fetch = async function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
       // 只处理本站API请求
@@ -30,14 +31,10 @@ export default defineNuxtPlugin((nuxtApp) => {
         
         // 检查是否为401错误
         if (response.status === 401) {
-          const auth = useAuth()
-          const currentPath = window.location.pathname
-          
-          // 如果当前在需要认证的页面，执行登出并重定向
-          if (currentPath.includes('/dashboard') || currentPath.includes('/change-password')) {
-            await auth.logout()
-            window.location.href = '/login?message=您的登录信息已失效，请重新登录'
-          }
+          console.log('检测到401错误，URL:', input)
+          await errorHandler.handle401Error('您的登录信息已失效，请重新登录')
+          // 返回一个rejected promise以阻止后续处理
+          return Promise.reject(new Error('Authentication expired'))
         }
         
         return response
@@ -45,7 +42,31 @@ export default defineNuxtPlugin((nuxtApp) => {
         throw error
       }
     }
+    
+    // 拦截$fetch和useFetch的错误
+    const originalUseFetch = nuxtApp.$fetch
+    if (originalUseFetch) {
+      nuxtApp.$fetch = async function(request: any, options: any = {}) {
+        try {
+          return await originalUseFetch(request, options)
+        } catch (error: any) {
+          // 检查是否为401错误
+          if (error?.status === 401 || error?.statusCode === 401) {
+            console.log('$fetch检测到401错误，URL:', request)
+            await errorHandler.handle401Error('您的登录信息已失效，请重新登录')
+            throw error
+          }
+          throw error
+        }
+      }
+    }
   })
   
-  // 认证状态检查已集成到fetch拦截器中，无需额外的定时检查
+  // 全局错误处理
+  nuxtApp.hook('vue:error', async (error: any) => {
+    if (error?.status === 401 || error?.statusCode === 401) {
+      const errorHandler = useErrorHandler()
+      await errorHandler.handle401Error('您的登录信息已失效，请重新登录')
+    }
+  })
 })

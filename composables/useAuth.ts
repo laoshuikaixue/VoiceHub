@@ -58,6 +58,12 @@ export const useAuth = () => {
       })
 
       if (error.value) {
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(error.value)) {
+          return
+        }
+        
         // 获取服务器返回的详细错误信息
         const errorMessage = error.value.data?.message || error.value.statusMessage || '登录失败'
         throw new Error(errorMessage)
@@ -96,6 +102,12 @@ export const useAuth = () => {
       })
 
       if (error.value) {
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(error.value)) {
+          return
+        }
+        
         // 获取服务器返回的详细错误信息
         const errorMessage = error.value.data?.message || error.value.statusMessage || '密码修改失败'
         throw new Error(errorMessage)
@@ -122,6 +134,12 @@ export const useAuth = () => {
         credentials: 'include' // 确保包含cookie
       })
       if (error.value) {
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(error.value)) {
+          return
+        }
+        
         const errorMessage = error.value.data?.message || error.value.statusMessage || '初始密码设置失败'
         throw new Error(errorMessage)
       }
@@ -186,7 +204,13 @@ export const useAuth = () => {
       })
 
       if (error.value) {
-        // 如果获取用户信息失败，可能认证已过期，执行登出
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(error.value, '登录状态已过期')) {
+          return
+        }
+        
+        // 其他错误，执行登出
         logout()
         return
       }
@@ -201,9 +225,16 @@ export const useAuth = () => {
           localStorage.setItem('user', JSON.stringify(userData))
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('刷新用户信息失败:', error)
-      // 发生错误时不执行登出，保持当前状态
+      
+      // 检查是否为401错误
+      const errorHandler = useErrorHandler()
+      if (await errorHandler.checkAndHandleFetchError(error, '登录状态已过期')) {
+        return
+      }
+      
+      // 发生其他错误时不执行登出，保持当前状态
     }
   }
 

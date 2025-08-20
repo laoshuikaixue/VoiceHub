@@ -34,6 +34,12 @@ export const useNotifications = () => {
       })
       
       if (fetchError.value) {
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
+          return
+        }
+        
         throw new Error(fetchError.value.message || `获取通知失败: ${fetchError.value.statusCode}`)
       }
       
@@ -42,6 +48,12 @@ export const useNotifications = () => {
         unreadCount.value = data.value.unreadCount || 0
       }
     } catch (err: any) {
+      // 检查是否为401错误
+      const errorHandler = useErrorHandler()
+      if (await errorHandler.checkAndHandleFetchError(err)) {
+        return
+      }
+      
       // 捕获错误但不显示在UI上
       console.error('获取通知错误:', err)
       notifications.value = []
@@ -73,6 +85,12 @@ export const useNotifications = () => {
       })
       
       if (fetchError.value) {
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
+          return
+        }
+        
         throw new Error(fetchError.value.message || `获取通知设置失败: ${fetchError.value.statusCode}`)
       }
       
@@ -80,6 +98,12 @@ export const useNotifications = () => {
         settings.value = data.value
       }
     } catch (err: any) {
+      // 检查是否为401错误
+      const errorHandler = useErrorHandler()
+      if (await errorHandler.checkAndHandleFetchError(err)) {
+        return
+      }
+      
       // 捕获错误但不显示在UI上
       console.error('获取通知设置错误:', err)
       settings.value = null
@@ -111,6 +135,12 @@ export const useNotifications = () => {
       })
       
       if (fetchError.value) {
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
+          return null
+        }
+        
         throw new Error(fetchError.value.message || `更新通知设置失败: ${fetchError.value.statusCode}`)
       }
       
@@ -120,6 +150,12 @@ export const useNotifications = () => {
       }
       return null
     } catch (err: any) {
+      // 检查是否为401错误
+      const errorHandler = useErrorHandler()
+      if (await errorHandler.checkAndHandleFetchError(err)) {
+        return null
+      }
+      
       error.value = err.message || '更新通知设置失败'
       console.error('更新通知设置错误:', err)
       return null
@@ -150,6 +186,12 @@ export const useNotifications = () => {
       })
       
       if (fetchError.value) {
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
+          return null
+        }
+        
         throw new Error(fetchError.value.message || `标记通知失败: ${fetchError.value.statusCode}`)
       }
       
@@ -162,6 +204,12 @@ export const useNotifications = () => {
       
       return data.value
     } catch (err: any) {
+      // 检查是否为401错误
+      const errorHandler = useErrorHandler()
+      if (await errorHandler.checkAndHandleFetchError(err)) {
+        return null
+      }
+      
       error.value = err.message || '标记通知失败'
       console.error('标记通知错误:', err)
       return null
@@ -192,6 +240,12 @@ export const useNotifications = () => {
       })
       
       if (fetchError.value) {
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
+          return null
+        }
+        
         throw new Error(fetchError.value.message || `标记所有通知失败: ${fetchError.value.statusCode}`)
       }
       
@@ -203,6 +257,12 @@ export const useNotifications = () => {
       
       return data.value
     } catch (err: any) {
+      // 检查是否为401错误
+      const errorHandler = useErrorHandler()
+      if (await errorHandler.checkAndHandleFetchError(err)) {
+        return null
+      }
+      
       error.value = err.message || '标记所有通知失败'
       console.error('标记所有通知错误:', err)
       return null
@@ -233,6 +293,12 @@ export const useNotifications = () => {
       })
       
       if (fetchError.value) {
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
+          return null
+        }
+        
         throw new Error(fetchError.value.message || `删除通知失败: ${fetchError.value.statusCode}`)
       }
       
@@ -247,6 +313,12 @@ export const useNotifications = () => {
       
       return true
     } catch (err: any) {
+      // 检查是否为401错误
+      const errorHandler = useErrorHandler()
+      if (await errorHandler.checkAndHandleFetchError(err)) {
+        return null
+      }
+      
       error.value = err.message || '删除通知失败'
       console.error('删除通知错误:', err)
       return null
@@ -277,6 +349,12 @@ export const useNotifications = () => {
       })
       
       if (fetchError.value) {
+        // 检查401错误
+        const errorHandler = useErrorHandler()
+        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
+          return null
+        }
+        
         throw new Error(fetchError.value.message || `清空通知失败: ${fetchError.value.statusCode}`)
       }
       
@@ -286,6 +364,12 @@ export const useNotifications = () => {
       
       return true
     } catch (err: any) {
+      // 检查是否为401错误
+      const errorHandler = useErrorHandler()
+      if (await errorHandler.checkAndHandleFetchError(err)) {
+        return null
+      }
+      
       error.value = err.message || '清空通知失败'
       console.error('清空通知错误:', err)
       return null
@@ -311,4 +395,4 @@ export const useNotifications = () => {
     deleteNotification,
     clearAllNotifications
   }
-} 
+}
