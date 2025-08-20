@@ -135,7 +135,8 @@ export default defineEventHandler(async (event) => {
           played: schedule.song.played || false,
           cover: schedule.song.cover || null,
           musicPlatform: schedule.song.musicPlatform || null,
-          musicId: schedule.song.musicId || null
+          musicId: schedule.song.musicId || null,
+          semester: schedule.song.semester || null
         }
       }
     })
