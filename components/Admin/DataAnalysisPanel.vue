@@ -765,9 +765,16 @@ const loadActiveUsers = async () => {
 const getTrendPoints = (data) => {
   if (!data || data.length === 0) return ''
   
-  const maxCount = Math.max(...data.map(d => d.count))
-  return data.slice(0, 10).map((item, index) => {
-    const x = (index / 9) * 360 + 20
+  // 过滤并验证数据，确保 count 是有效数字
+  const validData = data.filter(d => d && typeof d.count === 'number' && !isNaN(d.count))
+  if (validData.length === 0) return ''
+  
+  const maxCount = Math.max(...validData.map(d => d.count))
+  // 防止除零错误
+  if (maxCount === 0) return ''
+  
+  return validData.slice(0, 10).map((item, index) => {
+    const x = (index / Math.max(validData.slice(0, 10).length - 1, 1)) * 360 + 20
     const y = 180 - (item.count / maxCount) * 160
     return `${x},${y}`
   }).join(' ')
