@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
     const user = event.context.user
-    if (!user || !user.isAdmin) {
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
         statusMessage: '需要管理员权限'
@@ -16,19 +16,36 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const { table } = body
 
-    // 支持的表列表
-    const supportedTables = ['Song']
+    // 支持的表列表和表名映射
+    const supportedTables = ['Song', 'User', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist']
+    
+    // Prisma模型名到数据库表名的映射
+    const tableNameMap: Record<string, string> = {
+      'Song': 'Song',
+      'User': 'User', 
+      'Vote': 'Vote',
+      'Schedule': 'Schedule',
+      'Notification': 'Notification',
+      'NotificationSettings': 'NotificationSettings',
+      'PlayTime': 'PlayTime',
+      'Semester': 'Semester',
+      'SystemSettings': 'SystemSettings',
+      'SongBlacklist': 'SongBlacklist'
+    }
+    
     if (!table || !supportedTables.includes(table)) {
       return {
         success: false,
         error: `不支持的表名。支持的表: ${supportedTables.join(', ')}`
       }
     }
+    
+    const dbTableName = tableNameMap[table]
 
     // 获取表的最大ID
-    const maxIdResult = await prisma.$queryRaw`
-      SELECT MAX(id) as max_id FROM ${table}
-    `
+    const maxIdResult = await prisma.$queryRaw(
+      Prisma.sql`SELECT MAX(id) as max_id FROM ${Prisma.raw(`"${dbTableName}"`)}`
+    )
     const maxId = Number((maxIdResult as any)[0]?.max_id || 0)
     
     if (maxId === 0) {
@@ -38,10 +55,10 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    // 获取序列名称
-    const sequenceNameResult = await prisma.$queryRaw`
-      SELECT pg_get_serial_sequence(${table}, 'id') as sequence_name
-    `
+    // 获取序列名称 - PostgreSQL中需要使用双引号包围大小写敏感的表名
+    const sequenceNameResult = await prisma.$queryRaw(
+      Prisma.sql`SELECT pg_get_serial_sequence(${Prisma.raw(`'"${dbTableName}"'`)}, 'id') as sequence_name`
+    )
     const sequenceName = (sequenceNameResult as any)[0]?.sequence_name
     
     if (!sequenceName) {
@@ -53,20 +70,20 @@ export default defineEventHandler(async (event) => {
     
     // 重置序列值到最大ID + 1
     const newSequenceValue = maxId + 1
-    await prisma.$queryRaw`
-      SELECT setval(${sequenceName}, ${newSequenceValue})
-    `
+    await prisma.$queryRaw(
+      Prisma.sql`SELECT setval(${sequenceName}, ${newSequenceValue})`
+    )
     
     // 验证重置是否成功
-    const verifyResult = await prisma.$queryRaw`
-      SELECT nextval(${sequenceName}) as next_value
-    `
+    const verifyResult = await prisma.$queryRaw(
+      Prisma.sql`SELECT nextval(${sequenceName}) as next_value`
+    )
     const nextValue = Number((verifyResult as any)[0]?.next_value)
     
     // 重置回正确的值（因为nextval消耗了一个值）
-    await prisma.$queryRaw`
-      SELECT setval(${sequenceName}, ${newSequenceValue})
-    `
+    await prisma.$queryRaw(
+      Prisma.sql`SELECT setval(${sequenceName}, ${newSequenceValue})`
+    )
     
     return {
       success: true,

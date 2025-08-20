@@ -964,15 +964,27 @@ export default defineEventHandler(async (event) => {
     // 重置所有自增序列
     console.log(`🔄 开始重置自增序列...`)
     const sequenceResetResults = []
-    const tablesToReset = ['User', 'Song', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings']
+    const tablesToReset = ['Song', 'User', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist']
     
     for (const tableName of tablesToReset) {
       try {
-        const result = await prisma.$queryRaw`
-          SELECT setval(pg_get_serial_sequence(${tableName}, 'id'), COALESCE(MAX(id), 0) + 1, false) 
-          FROM ${Prisma.raw(`"${tableName}"`)}` 
-        sequenceResetResults.push(`${tableName}: 序列已重置`)
-        console.log(`✅ ${tableName} 序列重置成功`)
+        // 调用 fix-sequence 端点
+        const response = await $fetch('/api/admin/fix-sequence', {
+          method: 'POST',
+          body: { table: tableName },
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (response.success) {
+          sequenceResetResults.push(`${tableName}: 序列已重置`)
+          console.log(`✅ ${tableName} 序列重置成功`)
+        } else {
+          const errorMsg = `${tableName}: 序列重置失败 - ${response.error}`
+          sequenceResetResults.push(errorMsg)
+          console.warn(`⚠️ ${errorMsg}`)
+        }
       } catch (sequenceError) {
         const errorMsg = `${tableName}: 序列重置失败 - ${sequenceError.message}`
         sequenceResetResults.push(errorMsg)

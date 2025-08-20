@@ -46,6 +46,24 @@
         </div>
       </div>
 
+      <!-- 重置序列 -->
+      <div class="operation-card">
+        <div class="card-icon sequence-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12h18m-9-9l9 9-9 9"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h4>重置序列</h4>
+          <p>修复数据表的自增序列</p>
+          <button @click="showSequenceModal = true" class="action-btn warning" :disabled="sequenceLoading">
+            <span v-if="sequenceLoading">重置中...</span>
+            <span v-else>重置序列</span>
+          </button>
+        </div>
+      </div>
+
       <!-- 重置数据库 -->
       <div class="operation-card danger">
         <div class="card-icon reset-icon">
@@ -171,6 +189,59 @@
       </div>
     </div>
 
+    <!-- 重置序列模态框 -->
+    <div v-if="showSequenceModal" class="modal-overlay" @click="showSequenceModal = false">
+      <div class="modal" @click.stop>
+        <div class="modal-header">
+          <h3>重置数据表序列</h3>
+          <button @click="showSequenceModal = false" class="close-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>选择要重置序列的数据表</label>
+            <select v-model="sequenceForm.table" class="form-select">
+              <option value="">请选择数据表</option>
+              <option value="Song">歌曲表 (Song)</option>
+              <option value="User">用户表 (User)</option>
+              <option value="Vote">投票表 (Vote)</option>
+              <option value="Schedule">排期表 (Schedule)</option>
+              <option value="Notification">通知表 (Notification)</option>
+              <option value="NotificationSettings">通知设置表 (NotificationSettings)</option>
+              <option value="PlayTime">播放时段表 (PlayTime)</option>
+              <option value="Semester">学期表 (Semester)</option>
+              <option value="SystemSettings">系统设置表 (SystemSettings)</option>
+              <option value="SongBlacklist">歌曲黑名单表 (SongBlacklist)</option>
+            </select>
+          </div>
+
+          <div class="info-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="l 4,-6 2,0 0,-2 -2,0 z"/>
+              <path d="l 4,2 2,0 0,6 -2,0 z"/>
+            </svg>
+            <div>
+              <h4>说明</h4>
+              <p>重置序列将修复数据表的自增ID序列，确保新记录的ID从正确的值开始。</p>
+              <p>此操作不会影响现有数据，只会调整序列的下一个值。</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="showSequenceModal = false" class="action-btn secondary">取消</button>
+          <button @click="resetSequence" class="action-btn warning" :disabled="sequenceLoading || !sequenceForm.table">
+            <span v-if="sequenceLoading">重置中...</span>
+            <span v-else>重置序列</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 重置数据库模态框 -->
     <div v-if="showResetModal" class="modal-overlay" @click="showResetModal = false">
       <div class="modal" @click.stop>
@@ -238,9 +309,11 @@ import { useAuth } from '~/composables/useAuth'
 const showCreateModal = ref(false)
 const showUploadModal = ref(false)
 const showResetModal = ref(false)
+const showSequenceModal = ref(false)
 const createLoading = ref(false)
 const uploadLoading = ref(false)
 const resetLoading = ref(false)
+const sequenceLoading = ref(false)
 const selectedFile = ref(null)
 const resetConfirmText = ref('')
 
@@ -253,6 +326,10 @@ const createForm = ref({
 
 const restoreForm = ref({
   mode: 'merge'
+})
+
+const sequenceForm = ref({
+  table: ''
 })
 
 // 文件选择处理
@@ -486,6 +563,46 @@ const resetDatabase = async () => {
   }
 }
 
+// 重置序列
+const resetSequence = async () => {
+  if (!sequenceForm.value.table) {
+    if (window.$showNotification) {
+      window.$showNotification('请选择要重置序列的数据表', 'error')
+    }
+    return
+  }
+
+  sequenceLoading.value = true
+  try {
+    const response = await $fetch('/api/admin/fix-sequence', {
+      method: 'POST',
+      body: {
+        table: sequenceForm.value.table
+      }
+    })
+
+    if (response.success) {
+      // 关闭模态框并重置表单
+      showSequenceModal.value = false
+      sequenceForm.value.table = ''
+      
+      // 显示成功通知
+      if (window.$showNotification) {
+        window.$showNotification(`${sequenceForm.value.table}表的序列重置成功！`, 'success')
+      }
+    } else {
+      throw new Error(response.error || '序列重置失败')
+    }
+  } catch (error) {
+    console.error('重置序列失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('重置序列失败: ' + error.message, 'error')
+    }
+  } finally {
+    sequenceLoading.value = false
+  }
+}
+
 
 </script>
 
@@ -569,6 +686,11 @@ const resetDatabase = async () => {
   color: #2196F3;
 }
 
+.sequence-icon {
+  background: rgba(255, 193, 7, 0.2);
+  color: #FFC107;
+}
+
 .reset-icon {
   background: rgba(244, 67, 54, 0.2);
   color: #F44336;
@@ -638,6 +760,16 @@ const resetDatabase = async () => {
 .action-btn.danger:hover:not(:disabled) {
   background: #F44336;
   color: #FFFFFF;
+}
+
+.action-btn.warning {
+  border-color: #FFC107;
+  color: #FFC107;
+}
+
+.action-btn.warning:hover:not(:disabled) {
+  background: #FFC107;
+  color: #000000;
 }
 
 .action-btn:disabled {
@@ -715,6 +847,42 @@ const resetDatabase = async () => {
   gap: 1rem;
   padding: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 信息框样式 */
+.info-box {
+  display: flex;
+  gap: 1rem;
+  background: rgba(33, 150, 243, 0.1);
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-box svg {
+  width: 20px;
+  height: 20px;
+  color: #2196F3;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.info-box h4 {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #FFFFFF;
+  margin: 0 0 0.5rem 0;
+}
+
+.info-box p {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 0.25rem 0;
+  line-height: 1.5;
 }
 
 /* 表单样式 */
