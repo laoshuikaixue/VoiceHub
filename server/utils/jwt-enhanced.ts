@@ -112,11 +112,6 @@ export class JWTEnhanced {
         throw new Error('Token has been revoked')
       }
 
-      // 验证会话指纹
-      if (!MemoryStore.validateSessionFingerprint(decoded.fingerprint, userAgent)) {
-        throw new Error('Invalid session fingerprint')
-      }
-
       return decoded
     } catch (error: any) {
       if (error.name === 'TokenExpiredError') {
@@ -133,7 +128,7 @@ export class JWTEnhanced {
    * 刷新access token
    */
   static refreshAccessToken(refreshToken: string, userAgent: string): string {
-    // 验证refresh token
+    // 验证refresh token（现在不包含会话指纹验证）
     const decoded = this.verifyToken(refreshToken, userAgent)
 
     // 确保是refresh token
