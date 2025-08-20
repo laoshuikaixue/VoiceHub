@@ -11,14 +11,14 @@ interface PendingRequest {
   timestamp: number
 }
 
-// 缓存配置 - 优化关键数据的缓存时间以提高实时性
+// 缓存配置 - 禁用数据库缓存，确保每次都请求数据库
 const CACHE_CONFIG = {
-  songs: 2 * 60 * 1000, // 2分钟 (从3分钟缩短)
-  publicSchedules: 1 * 60 * 1000, // 1分钟 (从5分钟缩短)
-  songCount: 10 * 60 * 1000, // 10分钟
-  notifications: 2 * 60 * 1000, // 2分钟
-  notificationSettings: 30 * 60 * 1000, // 30分钟
-  siteConfig: 60 * 60 * 1000, // 1小时
+  songs: 0, // 禁用缓存，每次都请求数据库
+  publicSchedules: 0, // 禁用缓存，每次都请求数据库
+  songCount: 0, // 禁用缓存，每次都请求数据库
+  notifications: 0, // 禁用缓存，每次都请求数据库
+  notificationSettings: 0, // 禁用缓存，每次都请求数据库
+  siteConfig: 0, // 禁用缓存，每次都请求数据库
 }
 
 // 请求去重超时时间

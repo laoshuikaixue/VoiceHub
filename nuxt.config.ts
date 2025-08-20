@@ -81,10 +81,40 @@ export default defineNuxtConfig({
     timing: true,
     // 增加请求超时时间
     routeRules: {
+      // 完全禁用所有API路由的缓存，确保每次都请求数据库
       '/api/**': {
         headers: {
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
           'Connection': 'keep-alive'
+        }
+      },
+      // 静态资源文件缓存配置
+      '/_nuxt/**': {
+        headers: {
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        }
+      },
+      '/assets/**': {
+        headers: {
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        }
+      },
+      '/favicon.ico': {
+        headers: {
+          'Cache-Control': 'public, max-age=86400'
+        }
+      },
+      // 图片、CSS、JS等静态资源缓存
+      '/**/*.{png,jpg,jpeg,gif,webp,svg,ico}': {
+        headers: {
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        }
+      },
+      '/**/*.{css,js}': {
+        headers: {
+          'Cache-Control': 'public, max-age=31536000, immutable'
         }
       },
       // 认证相关页面不缓存
