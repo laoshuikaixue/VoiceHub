@@ -1,25 +1,19 @@
-import { PrismaClient } from '@prisma/client'
-import jwt from 'jsonwebtoken'
-
-const prisma = new PrismaClient()
+import { prisma } from '~/server/models/schema'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 验证用户身份
-    const authHeader = getHeader(event, 'authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // 使用认证中间件提供的用户信息
+    const currentUser = event.context.user
+    if (!currentUser) {
       throw createError({
         statusCode: 401,
         statusMessage: '未授权访问'
       })
     }
 
-    const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-
     // 检查是否为管理员、歌曲管理员或超级管理员
     const allowedRoles = ['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN']
-    if (!allowedRoles.includes(decoded.role)) {
+    if (!allowedRoles.includes(currentUser.role)) {
       throw createError({
         statusCode: 403,
         statusMessage: '权限不足'

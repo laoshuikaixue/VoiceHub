@@ -1,35 +1,21 @@
-import { createError, defineEventHandler, getHeader } from 'h3'
-import { PrismaClient } from '@prisma/client'
-import jwt from 'jsonwebtoken'
-
-const prisma = new PrismaClient()
+import { createError, defineEventHandler } from 'h3'
+import { prisma } from '../../models/schema'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 验证用户身份
-    const authHeader = getHeader(event, 'authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // 使用认证中间件提供的用户信息
+    const user = event.context.user
+    if (!user) {
       throw createError({
         statusCode: 401,
         statusMessage: '未授权访问'
       })
     }
 
-    const token = authHeader.substring(7)
-    let decoded
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key')
-    } catch (error) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: '无效的访问令牌'
-      })
-    }
-
-    const userId = decoded.userId
+    const userId = user.id
 
     // 获取用户的社交账号绑定信息
-    const user = await prisma.user.findUnique({
+    const userData = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -38,7 +24,7 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    if (!user) {
+    if (!userData) {
       throw createError({
         statusCode: 404,
         statusMessage: '用户不存在'
@@ -48,10 +34,10 @@ export default defineEventHandler(async (event) => {
     const socialAccounts = {}
 
     // MeoW 账号信息
-    if (user.meowNickname) {
+    if (userData.meowNickname) {
       socialAccounts.meow = {
-        nickname: user.meowNickname,
-        boundAt: user.meowBoundAt
+        nickname: userData.meowNickname,
+        boundAt: userData.meowBoundAt
       }
     }
 

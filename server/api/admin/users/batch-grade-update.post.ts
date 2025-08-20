@@ -1,8 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '~/server/models/schema'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
-
-const prisma = new PrismaClient()
 
 export default defineEventHandler(async (event) => {
   try {
@@ -40,33 +37,13 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 验证用户身份和权限
-    const token = getCookie(event, 'auth-token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
+    // 使用认证中间件提供的用户信息
+    const currentUser = event.context.user
     
-    if (!token) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Authentication required'
-      })
-    }
-
-    let currentUser
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
-      currentUser = await prisma.user.findUnique({
-        where: { id: decoded.userId }
-      })
-    } catch (error) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Invalid token'
-      })
-    }
-
     if (!currentUser) {
       throw createError({
         statusCode: 401,
-        statusMessage: 'User not found'
+        statusMessage: 'Authentication required'
       })
     }
 
