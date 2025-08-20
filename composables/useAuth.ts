@@ -84,6 +84,14 @@ export const useAuth = () => {
         isAuthenticated.value = true
         isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(userData.user.role)
 
+        // 强制更新 nuxtApp.payload 状态
+        const nuxtApp = useNuxtApp()
+        if (nuxtApp.payload) {
+          nuxtApp.payload.user = userData.user
+          nuxtApp.payload.isAuthenticated = true
+          nuxtApp.payload.isAdmin = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(userData.user.role)
+        }
+
         if (process.client) {
           localStorage.setItem('user', JSON.stringify(userData.user))
           startSilentRefresh()
@@ -130,6 +138,14 @@ export const useAuth = () => {
     user.value = null
     isAuthenticated.value = false
     isAdmin.value = false
+
+    // 清理 nuxtApp.payload 中的用户信息
+    const nuxtApp = useNuxtApp()
+    if (nuxtApp.payload) {
+      nuxtApp.payload.user = null
+      nuxtApp.payload.isAuthenticated = false
+      nuxtApp.payload.isAdmin = false
+    }
 
     if (process.client) {
       localStorage.removeItem('user')
