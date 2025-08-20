@@ -127,6 +127,49 @@ export const useAuth = () => {
     }
   }
 
+  // 设置初始密码
+  const setInitialPassword = async (newPassword: string) => {
+    loading.value = true
+    try {
+      await $fetch('/api/auth/set-initial-password', {
+        method: 'POST',
+        body: { newPassword },
+      })
+      // 初始密码设置成功后，更新用户状态
+      if (user.value) {
+        user.value.needsPasswordChange = false
+      }
+    } catch (error: any) {
+      const errorMessage = error.data?.message || '初始密码设置失败'
+      throw new Error(errorMessage)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 刷新用户信息
+  const refreshUser = async () => {
+    try {
+      const nuxtApp = useNuxtApp()
+      const userData = await $fetch('/api/auth/me', {
+        headers: getAuthHeader()
+      })
+      user.value = userData
+      isAuthenticated.value = true
+      isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(userData.role)
+      
+      // 同时更新 nuxtApp.payload
+      if (nuxtApp.payload) {
+        nuxtApp.payload.user = userData
+        nuxtApp.payload.isAuthenticated = true
+        nuxtApp.payload.isAdmin = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(userData.role)
+      }
+    } catch (error: any) {
+      console.error('刷新用户信息失败:', error)
+      throw error
+    }
+  }
+
   // 注销
   const logout = async (redirect = true) => {
     try {
@@ -245,6 +288,8 @@ export const useAuth = () => {
     login,
     logout,
     changePassword,
+    setInitialPassword,
+    refreshUser,
     initAuth,
     authHeader,
     getAuthHeader,
