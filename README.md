@@ -65,7 +65,7 @@
 - **Nuxt Server API**：服务端API路由，支持中间件和认证
 - **Prisma**：现代化数据库ORM，支持类型安全的数据库操作
 - **PostgreSQL**：关系型数据库，支持复杂查询和事务
-- **JWT**：用户认证和授权，支持角色权限控制
+- **JWT Enhanced**：增强的双Token认证机制，支持Access Token和Refresh Token、会话管理、内存黑名单、会话指纹验证等安全防护
 - **bcrypt**：密码加密，安全的哈希算法
 - **Multer**：文件上传处理，支持多种存储方式
 
@@ -75,7 +75,7 @@
 - 使用Nuxt 3的服务端API构建后端服务
 - 使用Vue 3组合式API构建前端组件
 - 使用Prisma ORM连接PostgreSQL数据库
-- 使用JWT进行用户认证和授权
+- 使用增强的JWT认证系统，支持Access Token和Refresh Token双Token机制、内存黑名单、会话指纹验证等安全特性
 - 数据库自检和自动修复机制
 
 ## 部署指南
@@ -449,6 +449,7 @@ VoiceHub/
 │   │   │   ├── login.post.ts        # 用户登录
 │   │   │   ├── logout.post.ts       # 用户登出
 │   │   │   ├── me.get.ts            # 获取当前用户信息
+│   │   │   ├── refresh.post.ts      # 刷新Token
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
 │   │   │   └── verify.get.ts        # 验证Token
 │   │   ├── blacklist/      # 黑名单API
@@ -519,6 +520,8 @@ VoiceHub/
 │   ├── utils/              # 服务端工具函数
 │   │   ├── __tests__/      # 工具函数测试目录
 │   │   ├── db-pool.ts      # 数据库连接池管理
+│   │   ├── jwt-enhanced.ts # 增强JWT工具，支持双Token机制和安全防护
+│   │   ├── memory-store.ts # 内存存储管理，用于Token黑名单和会话管理
 │   │   └── permissions.js  # 权限系统配置
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义

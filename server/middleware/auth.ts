@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import { JWTEnhanced } from '../utils/jwt-enhanced'
 import { prisma } from '../models/schema'
 
 export default defineEventHandler(async (event) => {
@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
     '/api/auth/login',
     '/api/auth/register',
     '/api/auth/logout',
+    '/api/auth/refresh',
     '/api/semesters/current',
     '/api/play-times',
     '/api/schedules/public',
@@ -51,17 +52,11 @@ export default defineEventHandler(async (event) => {
   }
   
   try {
-    // 检查JWT_SECRET是否设置
-    if (!process.env.JWT_SECRET) {
-      throw new Error('服务器配置错误：缺少JWT_SECRET')
-    }
+    // 获取用户代理信息用于验证
+    const userAgent = getRequestHeader(event, 'user-agent') || 'Unknown'
     
-    // 验证令牌
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
-      userId: number,
-      role: string,
-      iat: number // 令牌发行时间
-    }
+    // 使用增强的JWT验证
+    const decoded = JWTEnhanced.verifyToken(token, userAgent)
     
     console.log('Token解码成功:', { userId: decoded.userId, role: decoded.role, pathname })
     
@@ -105,7 +100,15 @@ export default defineEventHandler(async (event) => {
       id: user.id,
       username: user.username,
       name: user.name,
-      role: user.role
+      role: user.role,
+      sessionId: decoded.sessionId,
+      tokenType: decoded.tokenType
+    }
+    
+    // 检查token是否即将过期（剩余时间少于5分钟）
+    if (decoded.tokenType === 'access' && JWTEnhanced.isTokenExpiringSoon(token, 5 * 60)) {
+      // 设置响应头提示前端刷新token
+      setResponseHeader(event, 'X-Token-Refresh-Needed', 'true')
     }
       
     // 检查管理员路径权限
@@ -118,24 +121,95 @@ export default defineEventHandler(async (event) => {
     }
     
   } catch (error: any) {
-    // 检查是否是JWT验证错误
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+    console.warn('Token verification failed:', error.message)
+    
+    // 如果是access token过期，尝试使用refresh token
+    if (error.message?.includes('过期') || error.message?.includes('expired')) {
+      const refreshToken = getCookie(event, 'refresh-token')
+      
+      if (refreshToken) {
+        try {
+          const userAgent = getRequestHeader(event, 'user-agent') || 'Unknown'
+          const newTokenPair = JWTEnhanced.refreshAccessToken(refreshToken, userAgent)
+          
+          // 设置新的access token cookie
+          setCookie(event, 'auth-token', newTokenPair.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 15 * 60, // 15分钟
+            path: '/'
+          })
+          
+          // 验证新token并设置用户上下文
+          const decoded = JWTEnhanced.verifyToken(newTokenPair.accessToken, userAgent)
+          
+          // 获取用户信息
+          let user
+          try {
+            user = await prisma.user.findUnique({
+              where: { id: decoded.userId },
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                role: true
+              }
+            })
+          } catch (schemaError) {
+            const result = await prisma.$queryRaw`
+              SELECT id, username, name, role FROM "User" WHERE id = ${decoded.userId}
+            `
+            user = Array.isArray(result) && result.length > 0 ? result[0] : null
+          }
+          
+          if (!user) {
+            throw createError({
+              statusCode: 401,
+              message: '用户不存在，请重新登录',
+              data: { invalidToken: true }
+            })
+          }
+          
+          event.context.user = {
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            role: user.role,
+            sessionId: decoded.sessionId,
+            tokenType: decoded.tokenType
+          }
+          
+          // 设置响应头表示token已刷新
+          setResponseHeader(event, 'X-Token-Refreshed', 'true')
+          
+        } catch (refreshError) {
+          console.warn('Token refresh failed:', refreshError)
+          throw createError({
+            statusCode: 401,
+            message: 'Token无效或已过期，请重新登录',
+            data: { invalidToken: true }
+          })
+        }
+      } else {
+        throw createError({
+          statusCode: 401,
+          message: 'Token已过期，请重新登录',
+          data: { invalidToken: true }
+        })
+      }
+    } else {
+      // 如果是我们自己抛出的错误，直接重新抛出
+      if (error.statusCode) {
+        throw error
+      }
+      
+      // 其他未知错误
       throw createError({
         statusCode: 401,
-        message: '无效或过期的令牌',
+        message: 'Token无效',
         data: { invalidToken: true }
       })
     }
-    
-    // 如果是我们自己抛出的错误，直接重新抛出
-    if (error.statusCode) {
-      throw error
-    }
-    
-    // 其他未知错误
-    throw createError({
-      statusCode: 500,
-      message: '服务器认证错误',
-    })
   }
 })
