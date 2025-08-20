@@ -17,10 +17,28 @@ export const useAuth = () => {
       
       // 检查返回的用户数据
       if (response && response.id) {
-        // 验证用户ID一致性（防止用户身份混乱）
-        if (user.value && user.value.id !== response.id) {
-          console.error(`[Auth] CRITICAL: User ID mismatch detected: current=${user.value.id}, server=${response.id}`)
-          await forceReauthentication('用户身份不匹配')
+        // 严格的用户ID一致性检查
+        const currentUserId = process.client ? localStorage.getItem('currentUserId') : null
+        const localUser = user.value
+        
+        // 如果当前有用户状态，必须验证ID一致性
+        if (localUser && localUser.id && localUser.id.toString() !== response.id.toString()) {
+          console.error('服务器返回的用户ID与本地不匹配！', {
+            local: localUser.id,
+            server: response.id,
+            timestamp: new Date().toISOString()
+          })
+          await forceReauthentication('用户身份验证失败')
+          return false
+        }
+        
+        if (currentUserId && currentUserId !== response.id.toString()) {
+          console.error('服务器返回的用户ID与存储的不匹配！', {
+            stored: currentUserId,
+            server: response.id,
+            timestamp: new Date().toISOString()
+          })
+          await forceReauthentication('用户身份验证失败')
           return false
         }
         
@@ -57,6 +75,7 @@ export const useAuth = () => {
         // 更新localStorage
         if (process.client) {
           localStorage.setItem('user', JSON.stringify(response))
+          localStorage.setItem('currentUserId', response.id.toString())
         }
         
         console.log(`[Auth] Server validation successful for user ${response.id} (${response.username})`)
@@ -110,6 +129,12 @@ export const useAuth = () => {
     // 立即清理所有状态
     await clearAuthState()
     
+    // 更新nuxtApp.payload以记录认证错误
+    const nuxtApp = useNuxtApp()
+    if (nuxtApp.payload) {
+      nuxtApp.payload.authError = reason
+    }
+    
     // 清理所有cookies
     if (process.client) {
       document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
@@ -117,14 +142,19 @@ export const useAuth = () => {
       // 显示警告信息
       console.warn(`[Auth] 检测到安全问题：${reason}，请重新登录`)
       
-      // 可以在这里添加用户通知逻辑
-      // 例如：显示toast通知或弹窗
+      // 可选：显示用户友好的警告
+      if (typeof alert !== 'undefined') {
+        alert(`安全警告：${reason}，请重新登录`)
+      }
       
       // 重定向到登录页面
       await navigateTo('/login', { replace: true })
     }
   }
 
+  // 防止重复初始化的标志
+  let isInitializing = false
+  
   // 从SSR payload或localStorage初始化用户状态
   const initAuth = async () => {
     // 防止重复初始化（竞态条件保护）
@@ -141,6 +171,8 @@ export const useAuth = () => {
         // 1. 优先从SSR payload获取 (在服务器端渲染时)
         if (nuxtApp.payload.user) {
           const payloadUser = nuxtApp.payload.user as any
+          const ssrSessionId = nuxtApp.payload.sessionId
+          const ssrRequestTimestamp = nuxtApp.payload.requestTimestamp
           
           // 验证payload的完整性和时效性
           if (payloadUser._userId && payloadUser._timestamp) {
@@ -180,6 +212,20 @@ export const useAuth = () => {
             }
           }
           
+          // 验证用户ID一致性（新增检查）
+          if (process.client) {
+            const storedUserId = localStorage.getItem('currentUserId')
+            if (storedUserId && storedUserId !== payloadUser.id?.toString()) {
+              console.error('检测到用户ID不匹配！强制重新登录', {
+                stored: storedUserId,
+                ssr: payloadUser.id,
+                sessionId: ssrSessionId
+              })
+              await forceReauthentication('用户身份验证失败')
+              return
+            }
+          }
+          
           // SSR payload有效，使用它初始化状态
           user.value = payloadUser as User
           isAuthenticated.value = true
@@ -190,6 +236,7 @@ export const useAuth = () => {
           if (process.client) {
             // 更新localStorage以保持同步
             localStorage.setItem('user', JSON.stringify(payloadUser))
+            localStorage.setItem('currentUserId', payloadUser.id?.toString() || '')
             startSilentRefresh()
           }
           return
@@ -198,7 +245,9 @@ export const useAuth = () => {
         // 2. 客户端从localStorage恢复状态并验证
         if (process.client) {
           const storedUser = localStorage.getItem('user')
-          if (storedUser) {
+          const storedUserId = localStorage.getItem('currentUserId')
+          
+          if (storedUser && storedUserId) {
             try {
               const parsedUser = JSON.parse(storedUser)
               
@@ -206,6 +255,16 @@ export const useAuth = () => {
               if (!parsedUser.id || !parsedUser.username) {
                 console.error('[Auth] Invalid stored user data, clearing...')
                 await clearAuthState()
+                return
+              }
+              
+              // 验证用户ID一致性
+              if (parsedUser.id?.toString() !== storedUserId) {
+                console.error('localStorage中用户ID不一致！', {
+                  parsed: parsedUser.id,
+                  stored: storedUserId
+                })
+                await forceReauthentication('用户数据不一致')
                 return
               }
               
@@ -266,13 +325,20 @@ export const useAuth = () => {
         // 强制更新 nuxtApp.payload 状态
         const nuxtApp = useNuxtApp()
         if (nuxtApp.payload) {
-          nuxtApp.payload.user = userData.user
+          nuxtApp.payload.user = {
+            ...userData.user,
+            _timestamp: Date.now(),
+            _userId: userData.user.id
+          }
           nuxtApp.payload.isAuthenticated = true
           nuxtApp.payload.isAdmin = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(userData.user.role)
+          nuxtApp.payload.sessionId = `session_${userData.user.id}_${Date.now()}`
+          nuxtApp.payload.requestTimestamp = Date.now()
         }
 
         if (process.client) {
           localStorage.setItem('user', JSON.stringify(userData.user))
+          localStorage.setItem('currentUserId', userData.user.id?.toString() || '')
           startSilentRefresh()
           
           const route = useRoute()
@@ -364,13 +430,16 @@ export const useAuth = () => {
     // 清理 nuxtApp.payload 中的用户信息
     const nuxtApp = useNuxtApp()
     if (nuxtApp.payload) {
-      nuxtApp.payload.user = null
+      delete nuxtApp.payload.user
       nuxtApp.payload.isAuthenticated = false
       nuxtApp.payload.isAdmin = false
+      delete nuxtApp.payload.sessionId
+      delete nuxtApp.payload.requestTimestamp
     }
 
     if (process.client) {
       localStorage.removeItem('user')
+      localStorage.removeItem('currentUserId')
       stopSilentRefresh()
       
       // 清理缓存
