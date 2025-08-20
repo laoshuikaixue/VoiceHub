@@ -374,7 +374,7 @@ const { fetchCurrentSemester, currentSemester } = useSemesters()
 
 const title = ref('')
 const artist = ref('')
-const platform = ref('netease') // 默认使用网易云音乐
+const platform = ref('tencent') // 默认使用QQ音乐
 const preferredPlayTimeId = ref('')
 const error = ref('')
 const success = ref('')
@@ -429,12 +429,14 @@ onMounted(async () => {
   fetchSubmissionStatus()
   // 获取当前学期
   await fetchCurrentSemester()
-  // 加载歌曲列表以便检查相似歌曲，只加载当前学期的歌曲
-  try {
-    const currentSemesterName = currentSemester.value?.name
-    await songService.fetchSongs(false, currentSemesterName)
-  } catch (error) {
-    console.error('加载歌曲列表失败:', error)
+  // 只有在用户已登录时才加载歌曲列表以便检查相似歌曲
+  if (auth.isAuthenticated.value) {
+    try {
+      const currentSemesterName = currentSemester.value?.name
+      await songService.fetchSongs(false, currentSemesterName)
+    } catch (error) {
+      console.error('加载歌曲列表失败:', error)
+    }
   }
 })
 
@@ -863,16 +865,18 @@ const submitSong = async (result) => {
   const songTitle = result.song || result.title
   const songArtist = result.singer || result.artist
 
-  // 检查是否已存在完全匹配的歌曲
-  const existingSong = songService.songs.value.find(song => 
-    song.title.toLowerCase() === songTitle.toLowerCase() && 
-    song.artist.toLowerCase() === songArtist.toLowerCase()
-  )
-  if (existingSong) {
-    // 显示重复歌曲弹窗
-    duplicateSong.value = existingSong
-    showDuplicateModal.value = true
-    return
+  // 只有在用户已登录且歌曲列表已加载时才检查是否已存在完全匹配的歌曲
+  if (auth.isAuthenticated.value && songService.songs.value && songService.songs.value.length > 0) {
+    const existingSong = songService.songs.value.find(song => 
+      song.title.toLowerCase() === songTitle.toLowerCase() && 
+      song.artist.toLowerCase() === songArtist.toLowerCase()
+    )
+    if (existingSong) {
+      // 显示重复歌曲弹窗
+      duplicateSong.value = existingSong
+      showDuplicateModal.value = true
+      return
+    }
   }
 
   submitting.value = true

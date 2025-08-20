@@ -19,8 +19,7 @@ export default defineEventHandler(async (event) => {
     '/api/play-times',
     '/api/schedules/public',
     '/api/songs/count',
-    '/api/songs',
-    '/api/songs/',
+    '/api/songs/public',
     '/api/upload',
     '/api/site-config'
   ]

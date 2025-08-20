@@ -4,7 +4,7 @@ import { getGlobalCache } from './useDataCache'
 import type { Song, Schedule, PlayTime } from '~/types'
 
 export const useSongs = () => {
-  const { getAuthHeader, isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, getAuthHeader } = useAuth()
   const cache = getGlobalCache()
   
   const songs = ref<Song[]>([])
@@ -72,11 +72,6 @@ export const useSongs = () => {
   
   // 获取歌曲列表（需要登录）- 显示加载状态
   const fetchSongs = async (silent = false, semester?: string, forceRefresh = false) => {
-    if (!isAuthenticated.value) {
-      error.value = '需要登录才能获取歌曲列表'
-      return
-    }
-    
     if (!silent) {
       loading.value = true
     }
@@ -88,9 +83,6 @@ export const useSongs = () => {
       const data = await cache.cachedRequest(
         'songs',
         async () => {
-          // 显式传递认证头
-          const authHeaders = getAuthHeader()
-          
           // 构建URL参数
           const params = new URLSearchParams()
           if (semester) {
@@ -98,20 +90,8 @@ export const useSongs = () => {
           }
           const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
           
-          // 使用fetch代替$fetch，以确保认证头被正确发送
-          const response = await fetch(url, {
-            headers: {
-              ...authHeaders.headers,
-              'Content-Type': 'application/json'
-            }
-          })
-          
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}))
-            throw new Error(errorData.message || `获取歌曲列表失败: ${response.status}`)
-          }
-          
-          return await response.json()
+          // 使用$fetch自动处理httpOnly cookie认证
+          return await $fetch(url)
         },
         requestParams,
         forceRefresh

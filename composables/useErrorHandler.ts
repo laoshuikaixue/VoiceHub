@@ -1,57 +1,89 @@
 import { navigateTo } from '#app'
 
+// 防抖机制：避免短时间内多次处理401错误
+let isHandling401 = false
+let lastHandle401Time = 0
+const HANDLE_401_DEBOUNCE_TIME = 2000 // 2秒内只处理一次401错误
+
 export const useErrorHandler = () => {
   /**
    * 处理401认证失效错误
    * 清除所有认证信息并重定向到首页
    */
   const handle401Error = async (message?: string) => {
+    const now = Date.now()
+    
+    // 防抖：如果正在处理401错误或距离上次处理时间太短，则跳过
+    if (isHandling401 || (now - lastHandle401Time < HANDLE_401_DEBOUNCE_TIME)) {
+      console.log('401错误处理被防抖机制跳过')
+      return
+    }
+    
+    isHandling401 = true
+    lastHandle401Time = now
+    
     console.log('检测到401错误，清除认证信息并重定向')
     
-    // 清除localStorage中的用户信息
-    if (process.client) {
-      localStorage.removeItem('user')
-      
-      // 清除所有相关的缓存
-      if ('caches' in window) {
-        try {
-          const cacheNames = await caches.keys()
-          await Promise.all(cacheNames.map(name => caches.delete(name)))
-        } catch (error) {
-          console.warn('清除缓存失败:', error)
+    try {
+      // 清除localStorage中的用户信息
+      if (process.client) {
+        localStorage.removeItem('user')
+        
+        // 清除所有相关的缓存
+        if ('caches' in window) {
+          try {
+            const cacheNames = await caches.keys()
+            await Promise.all(cacheNames.map(name => caches.delete(name)))
+          } catch (error) {
+            console.warn('清除缓存失败:', error)
+          }
         }
       }
-    }
-    
-    // 调用服务器端logout API清除cookie
-    try {
-      await $fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
+      
+      // 调用服务器端logout API清除cookie
+      try {
+        await $fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        })
+      } catch (error) {
+        console.warn('服务器端登出失败:', error)
+      }
+      
+      // 重置认证状态
+      const auth = useAuth()
+      auth.user.value = null
+      auth.isAuthenticated.value = false
+      auth.isAdmin.value = false
+      
+      // 智能重定向：只有在非首页时才重定向
+      const redirectMessage = message || '您的登录信息已失效，请重新登录'
+      
+      if (process.client) {
+        const currentPath = window.location.pathname
+        
+        // 如果当前已经在首页，只显示消息，不重定向
+        if (currentPath === '/') {
+          // 可以通过事件或状态管理显示消息
+          console.log('已在首页，显示登录失效消息:', redirectMessage)
+          // 这里可以触发一个全局消息显示
+          return
         }
-      })
-    } catch (error) {
-      console.warn('服务器端登出失败:', error)
-    }
-    
-    // 重置认证状态
-    const auth = useAuth()
-    auth.user.value = null
-    auth.isAuthenticated.value = false
-    auth.isAdmin.value = false
-    
-    // 重定向到首页并显示提示信息
-    const redirectMessage = message || '您的登录信息已失效，请重新登录'
-    
-    if (process.client) {
-      // 客户端重定向
-      const timestamp = new Date().getTime()
-      window.location.href = `/?message=${encodeURIComponent(redirectMessage)}&t=${timestamp}`
-    } else {
-      // 服务端重定向
-      await navigateTo(`/?message=${encodeURIComponent(redirectMessage)}`)
+        
+        // 使用客户端路由跳转，避免强制刷新
+        await navigateTo(`/?message=${encodeURIComponent(redirectMessage)}`)
+      } else {
+        // 服务端重定向
+        await navigateTo(`/?message=${encodeURIComponent(redirectMessage)}`)
+      }
+    } finally {
+      // 重置防抖标志
+      setTimeout(() => {
+        isHandling401 = false
+      }, 1000)
     }
   }
   

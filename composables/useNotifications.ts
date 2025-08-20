@@ -3,7 +3,7 @@ import { useAuth } from './useAuth'
 import type { Notification, NotificationSettings } from '~/types'
 
 export const useNotifications = () => {
-  const { getAuthHeader, isAuthenticated, user } = useAuth()
+  const { getAuthHeader, isAuthenticated } = useAuth()
   
   const notifications = ref<Notification[]>([])
   const unreadCount = ref(0)
@@ -14,7 +14,6 @@ export const useNotifications = () => {
   // 获取用户通知列表
   const fetchNotifications = async () => {
     if (!isAuthenticated.value) {
-      // 未登录时不显示错误，静默返回
       notifications.value = []
       unreadCount.value = 0
       return
@@ -28,18 +27,15 @@ export const useNotifications = () => {
       
       const { data, error: fetchError } = await useFetch('/api/notifications', {
         headers: {
-          ...authHeaders.headers,
-          'Content-Type': 'application/json'
+          ...authHeaders.headers
         }
       })
       
       if (fetchError.value) {
-        // 检查401错误
         const errorHandler = useErrorHandler()
         if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
           return
         }
-        
         throw new Error(fetchError.value.message || `获取通知失败: ${fetchError.value.statusCode}`)
       }
       
@@ -48,13 +44,10 @@ export const useNotifications = () => {
         unreadCount.value = data.value.unreadCount || 0
       }
     } catch (err: any) {
-      // 检查是否为401错误
       const errorHandler = useErrorHandler()
       if (await errorHandler.checkAndHandleFetchError(err)) {
         return
       }
-      
-      // 捕获错误但不显示在UI上
       console.error('获取通知错误:', err)
       notifications.value = []
       unreadCount.value = 0
@@ -66,7 +59,6 @@ export const useNotifications = () => {
   // 获取通知设置
   const fetchNotificationSettings = async () => {
     if (!isAuthenticated.value) {
-      // 未登录时不显示错误，静默返回
       settings.value = null
       return
     }
@@ -79,18 +71,15 @@ export const useNotifications = () => {
       
       const { data, error: fetchError } = await useFetch('/api/notifications/settings', {
         headers: {
-          ...authHeaders.headers,
-          'Content-Type': 'application/json'
+          ...authHeaders.headers
         }
       })
       
       if (fetchError.value) {
-        // 检查401错误
         const errorHandler = useErrorHandler()
         if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
           return
         }
-        
         throw new Error(fetchError.value.message || `获取通知设置失败: ${fetchError.value.statusCode}`)
       }
       
@@ -98,13 +87,10 @@ export const useNotifications = () => {
         settings.value = data.value
       }
     } catch (err: any) {
-      // 检查是否为401错误
       const errorHandler = useErrorHandler()
       if (await errorHandler.checkAndHandleFetchError(err)) {
         return
       }
-      
-      // 捕获错误但不显示在UI上
       console.error('获取通知设置错误:', err)
       settings.value = null
     } finally {
@@ -128,19 +114,16 @@ export const useNotifications = () => {
       const { data, error: fetchError } = await useFetch('/api/notifications/settings', {
         method: 'POST',
         headers: {
-          ...authHeaders.headers,
-          'Content-Type': 'application/json'
+          ...authHeaders.headers
         },
         body: newSettings
       })
       
       if (fetchError.value) {
-        // 检查401错误
         const errorHandler = useErrorHandler()
         if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
           return null
         }
-        
         throw new Error(fetchError.value.message || `更新通知设置失败: ${fetchError.value.statusCode}`)
       }
       
@@ -150,12 +133,10 @@ export const useNotifications = () => {
       }
       return null
     } catch (err: any) {
-      // 检查是否为401错误
       const errorHandler = useErrorHandler()
       if (await errorHandler.checkAndHandleFetchError(err)) {
         return null
       }
-      
       error.value = err.message || '更新通知设置失败'
       console.error('更新通知设置错误:', err)
       return null
@@ -180,22 +161,18 @@ export const useNotifications = () => {
       const { data, error: fetchError } = await useFetch(`/api/notifications/${notificationId}/read`, {
         method: 'POST',
         headers: {
-          ...authHeaders.headers,
-          'Content-Type': 'application/json'
+          ...authHeaders.headers
         }
       })
       
       if (fetchError.value) {
-        // 检查401错误
         const errorHandler = useErrorHandler()
         if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
           return null
         }
-        
         throw new Error(fetchError.value.message || `标记通知失败: ${fetchError.value.statusCode}`)
       }
       
-      // 更新本地通知状态
       const index = notifications.value.findIndex((n: Notification) => n.id === notificationId)
       if (index !== -1) {
         notifications.value[index].read = true
@@ -204,12 +181,10 @@ export const useNotifications = () => {
       
       return data.value
     } catch (err: any) {
-      // 检查是否为401错误
       const errorHandler = useErrorHandler()
       if (await errorHandler.checkAndHandleFetchError(err)) {
         return null
       }
-      
       error.value = err.message || '标记通知失败'
       console.error('标记通知错误:', err)
       return null
@@ -234,35 +209,29 @@ export const useNotifications = () => {
       const { data, error: fetchError } = await useFetch('/api/notifications/read-all', {
         method: 'POST',
         headers: {
-          ...authHeaders.headers,
-          'Content-Type': 'application/json'
+          ...authHeaders.headers
         }
       })
       
       if (fetchError.value) {
-        // 检查401错误
         const errorHandler = useErrorHandler()
         if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
           return null
         }
-        
         throw new Error(fetchError.value.message || `标记所有通知失败: ${fetchError.value.statusCode}`)
       }
       
-      // 更新本地通知状态
-      notifications.value.forEach((notification: Notification) => {
-        notification.read = true
-      })
-      unreadCount.value = 0
-      
-      return data.value
+      if (data.value) {
+        notifications.value.forEach(n => n.read = true)
+        unreadCount.value = 0
+        return data.value
+      }
+      return null
     } catch (err: any) {
-      // 检查是否为401错误
       const errorHandler = useErrorHandler()
       if (await errorHandler.checkAndHandleFetchError(err)) {
         return null
       }
-      
       error.value = err.message || '标记所有通知失败'
       console.error('标记所有通知错误:', err)
       return null
@@ -282,8 +251,6 @@ export const useNotifications = () => {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
-      
       const { data, error: fetchError } = await useFetch(`/api/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {

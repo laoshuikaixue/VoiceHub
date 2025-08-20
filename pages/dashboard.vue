@@ -340,7 +340,6 @@ const { siteTitle, initSiteConfig } = useSiteConfig()
 
 // 页面元数据
 definePageMeta({
-  middleware: 'auth',
   layout: false
 })
 

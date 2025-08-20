@@ -295,40 +295,7 @@
       </Transition>
     </Teleport>
 
-    <!-- 关于我们弹窗 -->
-    <Teleport to="body">
-      <Transition name="modal-animation">
-    <div v-if="showAbout" class="modal-overlay" @click.self="showAbout = false">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="text-xl font-bold">关于我们</h2>
-          <button @click="showAbout = false" class="close-button">×</button>
-        </div>
 
-        <div class="modal-body">
-          <div class="about-content">
-            <h3 v-if="siteTitle" class="font-bold mb-2">关于{{ siteTitle }}</h3>
-            <h3 v-else class="font-bold mb-2">关于VoiceHub</h3>
-            <p class="mb-4">VoiceHub是由LaoShui开发，计划服务于舟山市六横中学的点歌系统。</p>
-
-            <h3 class="font-bold mb-2">联系方式</h3>
-            <p>邮箱：contact@lao-shui.top</p>
-            <br>
-            <p>Powered by LaoShui @ 2025 | All Rights Reserved.</p>
-            <p>项目开源地址：<a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" class="github-link">
-  <span class="github-icon">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
-    </svg>
-  </span>
-  GitHub
-</a></p>
-          </div>
-        </div>
-      </div>
-    </div>
-      </Transition>
-    </Teleport>
 
     <!-- 旧的通知组件已移除，使用全局通知系统 -->
     
@@ -373,7 +340,6 @@ const isRequestOpen = ref(true)
 // 弹窗状态
 const showRequestModal = ref(false)
 const showRules = ref(false)
-const showAbout = ref(false)
 
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
@@ -996,7 +962,8 @@ const navigateToLogin = () => {
 // 显示登录提示
 const showLoginNotice = () => {
   if (window.$showNotification) {
-    window.$showNotification('需要登录才能查看通知', 'info')
+    const message = activeTab.value === 'request' ? '需要登录才能投稿歌曲' : '需要登录才能查看通知'
+    window.$showNotification(message, 'info')
   }
 }
 

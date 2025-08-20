@@ -8,9 +8,9 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   // 初始化认证状态
-  nuxtApp.hook('app:created', () => {
+  nuxtApp.hook('app:created', async () => {
     const auth = useAuth()
-    auth.initAuth()
+    await auth.initAuth()
   })
   
   // 为所有API请求确保包含cookie并处理401错误

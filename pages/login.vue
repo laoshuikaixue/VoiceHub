@@ -57,11 +57,7 @@ import LoginForm from '~/components/Auth/LoginForm.vue'
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
 
-// 服务器端安全的认证状态管理
-const isClientAuthenticated = ref(false)
-const router = useRouter()
-
-// 在组件挂载后初始化认证（只会在客户端执行）
+// 在组件挂载后初始化站点配置
 onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
@@ -69,13 +65,6 @@ onMounted(async () => {
   // 设置页面标题
   if (typeof document !== 'undefined' && siteTitle.value) {
     document.title = `登录 | ${siteTitle.value}`
-  }
-  
-  const auth = useAuth()
-  isClientAuthenticated.value = auth.isAuthenticated.value
-  
-  if (isClientAuthenticated.value) {
-    router.push('/') // 修改为返回主页
   }
 })
 </script>
