@@ -2,27 +2,29 @@ import jwt from 'jsonwebtoken'
 import { prisma } from '../models/schema'
 
 export default defineEventHandler(async (event) => {
-  const fullPath = getRequestPath(event)
-  
-  // 只获取路径部分，不包括查询参数
-  const path = fullPath.split('?')[0]
-  
-  // 无需认证的公共路径
-  const publicRoutes = [
+  const url = getRequestURL(event)
+  const pathname = url.pathname
+
+  // 只对API路径进行认证检查，前端页面路径直接跳过
+  if (!pathname.startsWith('/api/')) {
+    return
+  }
+
+  // 公共API路径，不需要认证
+  const publicApiPaths = [
     '/api/auth/login',
     '/api/auth/register',
     '/api/auth/logout',
-    '/api/songs/current',
-    '/api/songs/queue',
-    '/api/songs/history'
+    '/api/songs',
+    '/api/songs/',
+    '/api/upload'
   ]
-  
-  // 检查是否是公共路径或以公共路径开头
-  const isPublicPath = publicRoutes.some(route => 
-    path === route || path.startsWith(route + '/') || path.startsWith('/_nuxt/')
-  )
-  
-  if (isPublicPath) {
+
+  // 检查是否为公共API路径或歌曲相关路径
+  const isPublicApiPath = publicApiPaths.some(path => pathname.startsWith(path)) ||
+                          /^\/api\/songs\/\d+/.test(pathname)
+
+  if (isPublicApiPath) {
     return
   }
   
@@ -57,7 +59,7 @@ export default defineEventHandler(async (event) => {
       iat: number // 令牌发行时间
     }
     
-    console.log('Token解码成功:', { userId: decoded.userId, role: decoded.role, path })
+    console.log('Token解码成功:', { userId: decoded.userId, role: decoded.role, pathname })
     
     // 获取用户信息
     let user
@@ -103,8 +105,8 @@ export default defineEventHandler(async (event) => {
     }
       
     // 检查管理员路径权限
-    if (path.startsWith('/api/admin') && !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
-        console.log('权限检查失败:', { path, userRole: user.role, allowedRoles: ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'] })
+    if (pathname.startsWith('/api/admin') && !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
+        console.log('权限检查失败:', { pathname, userRole: user.role, allowedRoles: ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'] })
         throw createError({
         statusCode: 403,
         message: '需要管理员权限',
