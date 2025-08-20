@@ -282,13 +282,27 @@ export default defineEventHandler(async (event) => {
                         }
                       }
                     } else {
-                      // 完全恢复模式，直接使用原始ID
-                      createdUser = await tx.user.create({
-                        data: {
-                          ...buildUserData(true),
-                          id: record.id
-                        }
+                      // 完全恢复模式，检查ID是否已存在
+                      const existingUserWithId = await tx.user.findUnique({
+                        where: { id: record.id }
                       })
+                      
+                      if (existingUserWithId) {
+                        // ID已存在，使用upsert策略更新现有用户
+                        console.warn(`用户ID ${record.id} (${record.username}) 已存在，将更新现有用户`)
+                        createdUser = await tx.user.update({
+                          where: { id: record.id },
+                          data: buildUserData(false) // 不包含密码，避免覆盖现有密码
+                        })
+                      } else {
+                        // ID不存在，使用原始ID创建
+                        createdUser = await tx.user.create({
+                          data: {
+                            ...buildUserData(true),
+                            id: record.id
+                          }
+                        })
+                      }
                     }
                     // 建立ID映射
                     if (record.id && createdUser.id) {
@@ -415,13 +429,27 @@ export default defineEventHandler(async (event) => {
                         }
                       }
                     } else {
-                      // 完全恢复模式，直接使用原始ID
-                      createdSong = await tx.song.create({ 
-                        data: {
-                          ...songData,
-                          id: record.id
-                        }
+                      // 完全恢复模式，检查ID是否已存在
+                      const existingSongWithId = await tx.song.findUnique({
+                        where: { id: record.id }
                       })
+                      
+                      if (existingSongWithId) {
+                        // ID已存在，使用upsert策略更新现有歌曲
+                        console.warn(`歌曲ID ${record.id} (${record.title} - ${record.artist}) 已存在，将更新现有歌曲`)
+                        createdSong = await tx.song.update({
+                          where: { id: record.id },
+                          data: songData
+                        })
+                      } else {
+                        // ID不存在，使用原始ID创建
+                        createdSong = await tx.song.create({ 
+                          data: {
+                            ...songData,
+                            id: record.id
+                          }
+                        })
+                      }
                     }
                     // 建立歌曲ID映射
                     if (record.id && createdSong.id) {
@@ -460,13 +488,27 @@ export default defineEventHandler(async (event) => {
                         await tx.playTime.create({ data: playTimeData })
                       }
                     } else {
-                      // 完全恢复模式，使用原始ID
-                      await tx.playTime.create({ 
-                        data: {
-                          ...playTimeData,
-                          id: record.id
-                        }
+                      // 完全恢复模式，检查ID是否已存在
+                      const existingPlayTimeWithId = await tx.playTime.findUnique({
+                        where: { id: record.id }
                       })
+                      
+                      if (existingPlayTimeWithId) {
+                        // ID已存在，使用upsert策略更新现有播放时段
+                        console.warn(`播放时段ID ${record.id} (${record.name}) 已存在，将更新现有播放时段`)
+                        await tx.playTime.update({
+                          where: { id: record.id },
+                          data: playTimeData
+                        })
+                      } else {
+                        // ID不存在，使用原始ID创建
+                        await tx.playTime.create({ 
+                          data: {
+                            ...playTimeData,
+                            id: record.id
+                          }
+                        })
+                      }
                     }
                     break
 
@@ -491,13 +533,27 @@ export default defineEventHandler(async (event) => {
                         create: semesterData
                       })
                     } else {
-                      // 完全恢复模式，使用原始ID
-                      await tx.semester.create({
-                        data: {
-                          ...semesterData,
-                          id: record.id
-                        }
+                      // 完全恢复模式，检查ID是否已存在
+                      const existingSemesterWithId = await tx.semester.findUnique({
+                        where: { id: record.id }
                       })
+                      
+                      if (existingSemesterWithId) {
+                        // ID已存在，使用upsert策略更新现有学期
+                        console.warn(`学期ID ${record.id} (${record.name}) 已存在，将更新现有学期`)
+                        await tx.semester.update({
+                          where: { id: record.id },
+                          data: semesterData
+                        })
+                      } else {
+                        // ID不存在，使用原始ID创建
+                        await tx.semester.create({
+                          data: {
+                            ...semesterData,
+                            id: record.id
+                          }
+                        })
+                      }
                     }
                     break
 
@@ -541,13 +597,27 @@ export default defineEventHandler(async (event) => {
                         await tx.systemSettings.create({ data: systemSettingsData })
                       }
                     } else {
-                      // 完全恢复模式，使用原始ID
-                      await tx.systemSettings.create({ 
-                        data: {
-                          ...systemSettingsData,
-                          id: record.id
-                        }
+                      // 完全恢复模式，检查ID是否已存在
+                      const existingSystemSettingsWithId = await tx.systemSettings.findUnique({
+                        where: { id: record.id }
                       })
+                      
+                      if (existingSystemSettingsWithId) {
+                        // ID已存在，使用upsert策略更新现有系统设置
+                        console.warn(`系统设置ID ${record.id} 已存在，将更新现有系统设置`)
+                        await tx.systemSettings.update({
+                          where: { id: record.id },
+                          data: systemSettingsData
+                        })
+                      } else {
+                        // ID不存在，使用原始ID创建
+                        await tx.systemSettings.create({ 
+                          data: {
+                            ...systemSettingsData,
+                            id: record.id
+                          }
+                        })
+                      }
                     }
                     break
 
@@ -624,13 +694,27 @@ export default defineEventHandler(async (event) => {
                         await tx.schedule.create({ data: scheduleData })
                       }
                     } else {
-                      // 完全恢复模式，使用原始ID
-                      await tx.schedule.create({ 
-                        data: {
-                          ...scheduleData,
-                          id: record.id
-                        }
+                      // 完全恢复模式，检查ID是否已存在
+                      const existingScheduleWithId = await tx.schedule.findUnique({
+                        where: { id: record.id }
                       })
+                      
+                      if (existingScheduleWithId) {
+                        // ID已存在，使用upsert策略更新现有排期
+                        console.warn(`排期ID ${record.id} 已存在，将更新现有排期`)
+                        await tx.schedule.update({
+                          where: { id: record.id },
+                          data: scheduleData
+                        })
+                      } else {
+                        // ID不存在，使用原始ID创建
+                        await tx.schedule.create({ 
+                          data: {
+                            ...scheduleData,
+                            id: record.id
+                          }
+                        })
+                      }
                     }
                     break
 
@@ -689,13 +773,27 @@ export default defineEventHandler(async (event) => {
                         create: notificationSettingsData
                       })
                     } else {
-                      // 完全恢复模式，使用原始ID
-                      await tx.notificationSettings.create({
-                        data: {
-                          ...notificationSettingsData,
-                          id: record.id
-                        }
+                      // 完全恢复模式，检查ID是否已存在
+                      const existingNotificationSettingsWithId = await tx.notificationSettings.findUnique({
+                        where: { id: record.id }
                       })
+                      
+                      if (existingNotificationSettingsWithId) {
+                        // ID已存在，使用upsert策略更新现有通知设置
+                        console.warn(`通知设置ID ${record.id} 已存在，将更新现有通知设置`)
+                        await tx.notificationSettings.update({
+                          where: { id: record.id },
+                          data: notificationSettingsData
+                        })
+                      } else {
+                        // ID不存在，使用原始ID创建
+                        await tx.notificationSettings.create({
+                          data: {
+                            ...notificationSettingsData,
+                            id: record.id
+                          }
+                        })
+                      }
                     }
                     break
 
@@ -756,13 +854,27 @@ export default defineEventHandler(async (event) => {
                         await tx.notification.create({ data: notificationData })
                       }
                     } else {
-                      // 完全恢复模式，使用原始ID
-                      await tx.notification.create({ 
-                        data: {
-                          ...notificationData,
-                          id: record.id
-                        }
+                      // 完全恢复模式，检查ID是否已存在
+                      const existingNotificationWithId = await tx.notification.findUnique({
+                        where: { id: record.id }
                       })
+                      
+                      if (existingNotificationWithId) {
+                        // ID已存在，使用upsert策略更新现有通知
+                        console.warn(`通知ID ${record.id} 已存在，将更新现有通知`)
+                        await tx.notification.update({
+                          where: { id: record.id },
+                          data: notificationData
+                        })
+                      } else {
+                        // ID不存在，使用原始ID创建
+                        await tx.notification.create({ 
+                          data: {
+                            ...notificationData,
+                            id: record.id
+                          }
+                        })
+                      }
                     }
                     break
 
