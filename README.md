@@ -1,6 +1,6 @@
 # VoiceHub - 校园广播站点歌系统
 
-这是一个使用Nuxt 3全栈框架开发的校园广播站点歌系统。系统实现了用户点歌、投票、后台排期管理、通知系统、社交账号绑定以及歌单公示等功能，支持管理员通过拖拽方式进行排期管理。
+这是一个使用Nuxt 3全栈框架开发的现代化校园广播站点歌管理系统。系统提供完整的点歌、投票、排期管理、通知推送、数据分析、权限控制和数据库管理功能，支持多角色权限管理和灵活的系统配置。
 
 ## 项目截图
 <img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/db932613-6694-47ec-9f2e-5379c833591f" />
@@ -13,10 +13,10 @@
 ## 主要功能
 
 ### 🎵 核心功能
-- **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐和QQ音乐搜索
+- **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐和QQ音乐搜索，可选择期望播出时段
 - **投稿限额管理**：灵活配置用户投稿限制，支持按时间段、用户角色设置不同的投稿额度，有效控制系统负载
 - **歌曲去重功能**：智能识别重复歌曲，优化歌曲库管理，避免重复播放
-- **歌曲管理**：按热度排序，避免重复播放，动态URL防止链接过期
+- **歌曲管理**：按热度排序，避免重复播放，动态URL防止链接过期，支持黑名单管理
 - **音乐播放器**：内置音乐播放器，支持进度控制和音质实时切换
 - **音质切换**：支持多种音质选择（标准、HQ、无损、Hi-Res等），动态获取最新播放链接
 - **音乐下载功能**：支持管理员下载歌曲到本地，提供多种音质选择和批量下载
@@ -54,14 +54,20 @@
 
 ## 技术栈
 
-- **前端**：Nuxt 3、Vue 3、TypeScript
-- **后端**：Nuxt 3 Serverless API
-- **数据库**：PostgreSQL
-- **ORM**：Prisma
-- **认证**：JWT Token认证
-- **代理服务**：HTTP/HTTPS代理，解决混合内容问题，支持Range请求和缓存
-- **打印导出**：jsPDF、html2canvas，支持PDF生成和图片处理
-- **样式**：CSS变量，自定义动画，玻璃态设计，响应式布局
+### 前端技术
+- **Nuxt 3**：Vue.js全栈框架，提供SSR和SPA支持
+- **Vue 3**：响应式前端框架，使用Composition API
+- **TypeScript**：类型安全的JavaScript，提供完整的类型定义
+- **Tailwind CSS**：实用优先的CSS框架，响应式设计
+- **Vue Router**：前端路由管理
+
+### 后端技术
+- **Nuxt Server API**：服务端API路由，支持中间件和认证
+- **Prisma**：现代化数据库ORM，支持类型安全的数据库操作
+- **PostgreSQL**：关系型数据库，支持复杂查询和事务
+- **JWT**：用户认证和授权，支持角色权限控制
+- **bcrypt**：密码加密，安全的哈希算法
+- **Multer**：文件上传处理，支持多种存储方式
 
 ## 系统架构
 
@@ -266,7 +272,9 @@ VoiceHub/
 │   │   │   ├── SearchFilter.vue   # 搜索过滤组件
 │   │   │   └── StatCard.vue       # 统计卡片组件
 │   │   ├── BackupManager.vue      # 数据库备份管理
+│   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   ├── BlacklistManager.vue   # 黑名单管理
+│   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
@@ -293,21 +301,20 @@ VoiceHub/
 │   │   ├── RequestForm.vue        # 点歌表单
 │   │   ├── ScheduleList.vue       # 排期列表展示
 │   │   └── SongList.vue           # 歌曲列表
-│   ├── UI/                # 通用UI组件
-│   │   ├── AudioPlayer/   # 音频播放器组件模块
-│   │   │   ├── AudioElement.vue   # 音频元素组件
-│   │   │   ├── PlayerActions.vue  # 播放器操作组件
-│   │   │   ├── PlayerControls.vue # 播放器控制组件
-│   │   │   └── PlayerInfo.vue     # 播放器信息组件
-│   │   ├── Linear/        # Linear图标组件库
-│   │   │   └── icons/     # 图标文件
-│   │   ├── AudioPlayer.vue        # 主音频播放器组件
-│   │   ├── ConfirmDialog.vue      # 确认对话框
-│   │   ├── Icon.vue               # 图标组件
-│   │   ├── Notification.vue       # 单个通知组件
-│   │   ├── NotificationContainer.vue # 多通知容器组件
-│   │   ├── PageTransition.vue     # 页面过渡动画
-│   │   └── ProgressBar.vue        # 进度条组件
+│   └── UI/                # 通用UI组件
+│       ├── AudioPlayer/   # 音频播放器组件模块
+│       │   ├── AudioElement.vue   # 音频元素组件
+│       │   ├── PlayerActions.vue  # 播放器操作组件
+│       │   ├── PlayerControls.vue # 播放器控制组件
+│       │   └── PlayerInfo.vue     # 播放器信息组件
+│       ├── AudioPlayer.vue        # 主音频播放器组件
+│       ├── ConfirmDialog.vue      # 确认对话框
+│       ├── Icon.vue               # 图标组件
+│       ├── LyricsDisplay.vue      # 歌词显示组件
+│       ├── Notification.vue       # 单个通知组件
+│       ├── NotificationContainer.vue # 多通知容器组件
+│       ├── PageTransition.vue     # 页面过渡动画
+│       └── ProgressBar.vue        # 进度条组件
 ├── composables/           # Vue 3 组合式API
 │   ├── useAdmin.ts         # 管理员功能hooks
 │   ├── useAudioPlayer.ts   # 音频播放器hooks
@@ -316,6 +323,8 @@ VoiceHub/
 │   ├── useAudioPlayerSync.ts # 音频播放器同步hooks
 │   ├── useAudioQuality.ts  # 音质管理hooks
 │   ├── useAuth.ts          # 认证功能hooks
+│   ├── useDataCache.ts     # 数据缓存hooks
+│   ├── useErrorHandler.ts  # 错误处理hooks
 │   ├── useLyrics.ts        # 歌词功能hooks
 │   ├── useMusicWebSocket.ts # 音乐WebSocket hooks
 │   ├── useNotifications.ts # 通知功能hooks
@@ -328,7 +337,7 @@ VoiceHub/
 ├── layouts/               # 布局组件
 │   └── default.vue         # 默认布局模板
 ├── middleware/            # 中间件
-│   └── auth.ts             # 认证中间件
+│   └── auth.global.ts      # 全局认证中间件
 ├── pages/                 # 页面组件（Nuxt 3路由）
 │   ├── change-password.vue # 修改密码页面
 │   ├── dashboard.vue       # 用户仪表盘
@@ -360,10 +369,14 @@ VoiceHub/
 ├── server/                # 服务端代码（Nuxt 3 Server API）
 │   ├── api/                # API端点目录
 │   │   ├── admin/          # 管理员API
-│   │   │   ├── activities.get.ts    # 获取活动统计
+│   │   │   ├── activities/          # 活动管理API
 │   │   │   ├── analytics/           # 数据分析API
+│   │   │   │   ├── activity.get.ts  # 活动统计
+│   │   │   │   ├── overview.get.ts  # 概览统计
 │   │   │   │   ├── prediction/      # 预测分析子目录
-│   │   │   │   └── reports/         # 报告生成子目录
+│   │   │   │   ├── reports/         # 报告生成子目录
+│   │   │   │   ├── songs.get.ts     # 歌曲统计
+│   │   │   │   └── users.get.ts     # 用户统计
 │   │   │   ├── backup/              # 备份管理API
 │   │   │   │   ├── delete/          # 删除备份子目录
 │   │   │   │   ├── download/        # 下载备份子目录
@@ -380,6 +393,7 @@ VoiceHub/
 │   │   │   ├── database/            # 数据库管理API
 │   │   │   │   └── reset.post.ts    # 重置数据库
 │   │   │   ├── db-status.get.ts     # 数据库状态检查
+│   │   │   ├── fix-sequence.post.ts # 修复数据库序列
 │   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
 │   │   │   ├── music-sources/       # 音乐源管理API
 │   │   │   │   └── [id]/            # 音乐源详情操作子目录
@@ -423,21 +437,29 @@ VoiceHub/
 │   │   │       ├── [id].delete.ts   # 删除用户
 │   │   │       ├── [id].put.ts      # 更新用户
 │   │   │       ├── [id].ts          # 用户详情
+│   │   │       ├── batch-grade-update.post.ts # 批量年级更新
+│   │   │       ├── batch-update.post.ts # 批量更新用户
 │   │   │       ├── batch.post.ts    # 批量操作用户
+│   │   │       ├── excel-batch-update/ # Excel批量更新子目录
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       └── index.ts         # 用户管理
 │   │   ├── auth/           # 认证相关API
 │   │   │   ├── change-password.post.ts # 修改密码
 │   │   │   ├── login.post.ts        # 用户登录
+│   │   │   ├── logout.post.ts       # 用户登出
 │   │   │   ├── me.get.ts            # 获取当前用户信息
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
 │   │   │   └── verify.get.ts        # 验证Token
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
+│   │   ├── debug/          # 调试API目录
 │   │   ├── meow/           # MeoW账号绑定API
 │   │   │   ├── bind.post.ts         # 绑定MeoW账号
 │   │   │   └── unbind.post.ts       # 解绑MeoW账号
+│   │   ├── music/          # 音乐相关API
+│   │   │   ├── state.post.ts        # 音乐状态管理
+│   │   │   └── websocket.ts         # 音乐WebSocket连接
 │   │   ├── notifications/  # 通知系统API
 │   │   │   ├── [id]/                # 通知操作子目录
 │   │   │   │   └── read.post.ts     # 标记通知已读
@@ -462,6 +484,10 @@ VoiceHub/
 │   │   │   └── current.get.ts       # 获取当前学期
 │   │   ├── site-config.get.ts       # 站点配置API
 │   │   ├── songs/          # 歌曲相关API
+│   │   │   ├── [id]/                # 歌曲详情操作
+│   │   │   │   ├── update.put.ts    # 更新歌曲信息
+│   │   │   │   └── voters.get.ts    # 获取投票人员
+│   │   │   ├── add.post.ts          # 添加歌曲
 │   │   │   ├── count.get.ts         # 歌曲统计
 │   │   │   ├── index.get.ts         # 歌曲列表
 │   │   │   ├── public.get.ts        # 公开歌曲列表
@@ -558,6 +584,7 @@ VoiceHub/
 3. **排期管理**：可以看到左侧"待排歌曲"和右侧"播放顺序"
    - 通过拖拽将歌曲从左侧添加到右侧的排期列表
    - 可以在右侧拖拽调整歌曲播放顺序
+   - 支持播出时段管理，可设置不同时段的播放安排
    - 点击"保存顺序"按钮保存排期
 4. **打印排期**：专业的排期打印和导出功能
    - 选择纸张大小（A4、A3、Letter、Legal）和页面方向
@@ -566,21 +593,42 @@ VoiceHub/
    - 智能分组显示：按日期分组，有多个播出时段时自动按时间排序
    - 实时预览：所见即所得的打印预览
    - PDF导出：支持导出高质量PDF文件，自动处理跨域图片
-4. **歌曲管理**：查看和管理所有歌曲
+5. **歌曲管理**：查看和管理所有歌曲
    - 支持播放歌曲并实时切换音质
    - 动态获取最新的音乐播放链接
    - 提供歌曲下载功能，支持批量下载管理
-5. **学期管理**：设置和管理学期信息
+   - 批量更新歌曲信息和状态
+6. **数据分析**：查看系统使用统计和数据分析
+   - 实时统计数据：用户活跃度、歌曲热度、投票趋势
+   - 学期对比分析：不同学期的数据对比
+   - 用户参与度分析：用户行为和参与度统计
+   - 趋势分析：系统使用趋势和预测
+7. **数据库管理**：数据库备份恢复和维护
+   - 创建和下载数据库备份
+   - 上传和恢复备份文件
+   - 序列重置：修复数据库序列问题
+   - 数据库状态检查和完整性验证
+8. **学期管理**：设置和管理学期信息
    - 创建新学期（如"2024-2025学年上学期"）
    - 设置当前活跃学期
    - 点歌记录自动关联到当前学期
-6. **用户管理**：添加、编辑和删除用户
+9. **用户管理**：添加、编辑和删除用户
    - 单个添加：填写用户信息（包括姓名、账号、年级、班级）
    - 批量导入：通过EXCEL文件批量添加用户
    - 可以重置用户密码
-7. **通知管理**：向用户发送系统通知
-   - 支持按全体用户、年级、班级或多班级发送
-   - 实时显示发送进度和结果
+10. **黑名单管理**：管理歌曲和关键词黑名单
+    - 添加具体歌曲或关键词到黑名单
+    - 自动过滤包含黑名单内容的点歌请求
+    - 支持启用/禁用黑名单项
+11. **系统设置**：配置系统参数和功能开关
+    - 站点信息配置：标题、Logo、描述等
+    - 投稿限额设置：每日/每周投稿限制
+    - 播出时段管理：配置不同的播出时间段
+    - 功能开关：启用/禁用特定功能
+12. **通知管理**：向用户发送系统通知
+    - 支持按全体用户、年级、班级或多班级发送
+    - 实时显示发送进度和结果
+    - 通知历史记录和管理
 
 ## 数据库管理
 
@@ -607,6 +655,12 @@ VoiceHub/
    ```bash
    npm run clear-db
    ```
+
+### 数据库备份与恢复
+- **创建备份**：在管理后台的数据库管理页面点击"创建备份"按钮
+- **下载备份**：备份完成后可直接下载备份文件
+- **恢复备份**：上传备份文件并选择恢复模式（增量或完全恢复）
+- **序列重置**：修复数据库序列问题，确保自增ID正常工作
 
 ## 常见问题
 
