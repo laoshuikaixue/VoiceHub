@@ -15,9 +15,14 @@ export default defineEventHandler(async (event) => {
     '/api/auth/login',
     '/api/auth/register',
     '/api/auth/logout',
+    '/api/semesters/current',
+    '/api/play-times',
+    '/api/schedules/public',
+    '/api/songs/count',
     '/api/songs',
     '/api/songs/',
-    '/api/upload'
+    '/api/upload',
+    '/api/site-config'
   ]
 
   // 检查是否为公共API路径或歌曲相关路径
