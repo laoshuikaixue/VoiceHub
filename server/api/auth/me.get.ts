@@ -1,5 +1,5 @@
 import { prisma } from '../../models/schema'
-import jwt from 'jsonwebtoken'
+import { JWTEnhanced } from '../../utils/jwt-enhanced'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -25,7 +25,8 @@ export default defineEventHandler(async (event) => {
 
     // 验证token的有效性和用户ID一致性
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: number, iat: number }
+      const userAgent = getHeader(event, 'user-agent') || 'Unknown'
+      const decoded = JWTEnhanced.verifyToken(token, userAgent)
       
       // 检查token中的用户ID是否与context中的一致
       if (decoded.userId !== user.id) {
@@ -33,16 +34,6 @@ export default defineEventHandler(async (event) => {
         throw createError({
           statusCode: 401,
           message: '令牌用户身份不匹配'
-        })
-      }
-      
-      // 检查token是否过期（24小时）
-      const tokenAge = Date.now() - (decoded.iat * 1000)
-      if (tokenAge > 24 * 60 * 60 * 1000) {
-        console.warn(`[Auth API] Token expired for user ${user.id}, age: ${tokenAge}ms`)
-        throw createError({
-          statusCode: 401,
-          message: '令牌已过期'
         })
       }
     } catch (jwtError: any) {

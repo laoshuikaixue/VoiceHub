@@ -2,7 +2,7 @@ import { createError, defineEventHandler, readBody, getCookie } from 'h3'
 import { PrismaClient } from '@prisma/client'
 import jwt from 'jsonwebtoken'
 
-const prisma = new PrismaClient()
+import { prisma } from '../../models/schema'
 
 // 生成6位数字验证码
 function generateVerificationCode(): string {

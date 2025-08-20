@@ -2,7 +2,7 @@ import { createError, defineEventHandler, getCookie } from 'h3'
 import { PrismaClient } from '@prisma/client'
 import jwt from 'jsonwebtoken'
 
-const prisma = new PrismaClient()
+import { prisma } from '../../models/schema'
 
 export default defineEventHandler(async (event) => {
   try {
