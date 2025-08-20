@@ -968,12 +968,22 @@ export default defineEventHandler(async (event) => {
     
     for (const tableName of tablesToReset) {
       try {
-        // 调用 fix-sequence 端点
+        // 从当前请求中获取认证头信息
+        const authHeaders = {}
+        if (event.node.req.headers.authorization) {
+          authHeaders.authorization = event.node.req.headers.authorization
+        }
+        if (event.node.req.headers.cookie) {
+          authHeaders.cookie = event.node.req.headers.cookie
+        }
+        
+        // 调用 fix-sequence 端点，传递认证信息
         const response = await $fetch('/api/admin/fix-sequence', {
           method: 'POST',
           body: { table: tableName },
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...authHeaders
           }
         })
         
