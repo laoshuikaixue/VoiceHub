@@ -6,7 +6,7 @@
   NODE_VERSION = "20"
   NITRO_PRESET = "netlify"
   # 确保 Prisma 客户端在构建时生成
-  PRISMA_CLI_BINARY_TARGETS = "debian-openssl-1.1.x,rhel-openssl-1.0.x"
+  PRISMA_CLI_BINARY_TARGETS = "native,debian-openssl-1.1.x,rhel-openssl-1.0.x"
 
 [functions]
   directory = ".netlify/functions-internal"
