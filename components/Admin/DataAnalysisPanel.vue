@@ -510,10 +510,7 @@ const loadAnalysisData = async () => {
     
     // 调用API获取统计数据
     const response = await $fetch(`/api/admin/stats?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
+      method: 'GET'
     })
     
     // 更新分析数据
@@ -546,10 +543,7 @@ const loadRealtimeStats = async () => {
   try {
     currentLoadingStep.value = 3
     const response = await $fetch('/api/admin/stats/realtime', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
+      method: 'GET'
     })
     
     realtimeStats.value = {
@@ -583,10 +577,7 @@ const loadChartData = async () => {
   const loadTrends = async () => {
     try {
       const trends = await $fetch(`/api/admin/stats/trends?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        method: 'GET'
       })
       trendData.value = trends || []
       panelStates.value.trends.error = null
@@ -603,10 +594,7 @@ const loadChartData = async () => {
   const loadTopSongs = async () => {
     try {
       const topSongsData = await $fetch(`/api/admin/stats/top-songs?limit=10&${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        method: 'GET'
       })
       topSongs.value = topSongsData || []
       panelStates.value.topSongs.error = null
@@ -623,10 +611,7 @@ const loadChartData = async () => {
   const loadActiveUsers = async () => {
     try {
       const activeUsersData = await $fetch(`/api/admin/stats/active-users?limit=10&${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        method: 'GET'
       })
       activeUsers.value = activeUsersData || []
       panelStates.value.activeUsers.error = null
@@ -645,10 +630,7 @@ const loadChartData = async () => {
   const loadUserEngagement = async () => {
     try {
       const engagement = await $fetch(`/api/admin/stats/user-engagement?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        method: 'GET'
       })
       userEngagement.value = engagement || {}
       panelStates.value.userEngagement.error = null
@@ -665,10 +647,7 @@ const loadChartData = async () => {
   const loadSemesterComparison = async () => {
     try {
       const comparison = await $fetch('/api/admin/stats/semester-comparison', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        method: 'GET'
       })
       semesterComparison.value = comparison || []
       panelStates.value.semesterComparison.error = null
@@ -744,10 +723,7 @@ const loadActiveUsers = async () => {
   
   try {
     const activeUsersData = await $fetch(`/api/admin/stats/active-users?limit=10&${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
+      method: 'GET'
     })
     activeUsers.value = activeUsersData || []
     panelStates.value.activeUsers.error = null
