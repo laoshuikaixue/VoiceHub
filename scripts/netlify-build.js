@@ -94,15 +94,34 @@ async function netlifyBuild() {
     if (!safeExec('npm install --production=false')) {
       throw new Error('依赖安装失败');
     }
+    
+    // 确保 Prisma 相关依赖正确安装
+    logStep('🔍', '验证 Prisma 依赖...');
+    if (!safeExec('npm list @prisma/client prisma')) {
+      logStep('📦', '重新安装 Prisma 依赖...');
+      if (!safeExec('npm install @prisma/client prisma')) {
+        throw new Error('Prisma 依赖安装失败');
+      }
+    }
     logSuccess('依赖安装完成');
     
     // 4. 生成 Prisma 客户端（关键步骤）
     logStep('🔧', '生成 Prisma 客户端...');
+    
+    // 设置 Netlify 特定的环境变量
+    process.env.PRISMA_CLI_BINARY_TARGETS = 'debian-openssl-1.1.x,rhel-openssl-1.0.x,linux-musl';
+    process.env.PRISMA_GENERATE_SKIP_AUTOINSTALL = 'false';
+    
     if (!safeExec('node prisma/generate.js')) {
       // 如果专用脚本失败，尝试标准方法
       logWarning('专用生成脚本失败，尝试标准方法...');
-      if (!safeExec('npx prisma generate')) {
-        throw new Error('Prisma 客户端生成失败');
+      if (!safeExec('npx prisma generate --generator client')) {
+        // 最后尝试强制重新生成
+        logWarning('标准方法失败，尝试强制重新生成...');
+        safeExec('rm -rf node_modules/@prisma/client');
+        if (!safeExec('npx prisma generate --generator client --force-reinstall')) {
+          throw new Error('Prisma 客户端生成失败');
+        }
       }
     }
     logSuccess('Prisma 客户端生成完成');

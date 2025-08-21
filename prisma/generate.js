@@ -22,22 +22,41 @@ try {
   
   // 2. 设置环境变量
   if (isNetlify) {
-    process.env.PRISMA_CLI_BINARY_TARGETS = 'debian-openssl-1.1.x,rhel-openssl-1.0.x';
+    process.env.PRISMA_CLI_BINARY_TARGETS = 'debian-openssl-1.1.x,rhel-openssl-1.0.x,linux-musl';
+    process.env.PRISMA_GENERATE_SKIP_AUTOINSTALL = 'false';
     console.log('🔧 设置 Netlify 二进制目标');
   }
   
-  // 3. 生成客户端
+  // 3. 确保 @prisma/client 依赖存在
+  try {
+    console.log('🔍 检查 @prisma/client 依赖...');
+    execSync('npm list @prisma/client', { stdio: 'pipe' });
+    console.log('✅ @prisma/client 依赖已存在');
+  } catch (error) {
+    console.log('⚠️ @prisma/client 依赖缺失，尝试安装...');
+    try {
+      execSync('npm install @prisma/client', { stdio: 'inherit' });
+      console.log('✅ @prisma/client 安装完成');
+    } catch (installError) {
+      console.error('❌ @prisma/client 安装失败:', installError.message);
+      throw installError;
+    }
+  }
+  
+  // 4. 生成客户端
   console.log('🔧 生成 Prisma 客户端...');
   execSync('npx prisma generate', { 
     stdio: 'inherit',
     env: {
       ...process.env,
       // 确保在无数据库连接时也能生成客户端
-      PRISMA_GENERATE_SKIP_AUTOINSTALL: 'false'
+      PRISMA_GENERATE_SKIP_AUTOINSTALL: 'false',
+      // 强制使用指定的二进制目标
+      PRISMA_CLI_BINARY_TARGETS: isNetlify ? 'debian-openssl-1.1.x,rhel-openssl-1.0.x,linux-musl' : undefined
     }
   });
   
-  // 4. 验证生成结果
+  // 5. 验证生成结果
   const generatedFiles = [
     'node_modules/@prisma/client/index.js',
     'node_modules/@prisma/client/default.js',
