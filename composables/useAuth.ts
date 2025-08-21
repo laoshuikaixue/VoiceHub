@@ -1,42 +1,37 @@
-import { ref } from 'vue'
-import { navigateTo } from '#app'
+import { useState, navigateTo } from '#app'
 import type { User } from '~/types'
 
-const user = ref<User | null>(null)
-const token = ref<string | null>(null)
-const isAuthenticated = ref(false)
-const isAdmin = ref(false)
-const loading = ref(false)
-
 export const useAuth = () => {
-  // 清除认证状态
+  const user = useState<User | null>('user', () => null)
+  const token = useState<string | null>('token', () => null)
+  const isAuthenticated = useState<boolean>('isAuthenticated', () => false)
+  const isAdmin = useState<boolean>('isAdmin', () => false)
+  const loading = useState<boolean>('loading', () => false)
+
   const clearAuthState = () => {
     user.value = null
     token.value = null
     isAuthenticated.value = false
     isAdmin.value = false
-    
-    // 注意：httpOnly cookie无法通过JavaScript清除，需要通过服务器端清除
-    // 这里只清除客户端状态
   }
-  
-  // 初始化认证状态
+
   const initAuth = async () => {
+    // 如果认证状态已由SSR设置，则直接返回，避免不必要的客户端验证
+    if (isAuthenticated.value) {
+      return
+    }
+
+    // 仅在客户端执行
     if (typeof window === 'undefined') return
-    
+
     try {
-      // 尝试获取当前用户信息来验证认证状态
-      // 如果cookie中有有效的JWT，服务器会返回用户信息
-      const userData = await $fetch('/api/auth/verify', {
-        credentials: 'include'
-      })
+      const data = await $fetch<{ user: User }>('/api/auth/verify')
       
-      if (userData && userData.id) {
-        user.value = userData
+      if (data && data.user) {
+        user.value = data.user
         isAuthenticated.value = true
-        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(userData.role)
-        // token现在存储在httpOnly cookie中，客户端不需要直接访问
-        token.value = 'cookie-based' // 标识使用cookie认证
+        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
+        token.value = 'cookie-based' // 表示认证基于cookie
       } else {
         clearAuthState()
       }
@@ -46,32 +41,20 @@ export const useAuth = () => {
     }
   }
 
-  // 登录
   const login = async (username: string, password: string) => {
-    try {
-      const response = await $fetch('/api/auth/login', {
-        method: 'POST',
-        credentials: 'include', // 确保cookie会被设置
-        body: {
-          username,
-          password
-        }
-      })
-      
-      if (response.success && response.user) {
-        // 更新状态 - token现在存储在httpOnly cookie中
-        token.value = 'cookie-based' // 标识使用cookie认证
-        user.value = response.user
-        isAuthenticated.value = true
-        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(response.user.role)
-        
-        return response
-      } else {
-        throw new Error('登录响应格式错误')
-      }
-    } catch (error) {
-      console.error('登录失败:', error)
-      throw error
+    const response = await $fetch<{ success: boolean, user: User }>('/api/auth/login', {
+      method: 'POST',
+      body: { username, password }
+    })
+    
+    if (response.success && response.user) {
+      token.value = 'cookie-based'
+      user.value = response.user
+      isAuthenticated.value = true
+      isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(response.user.role)
+      return response
+    } else {
+      throw new Error('登录响应格式错误')
     }
   }
 
@@ -81,7 +64,6 @@ export const useAuth = () => {
       await $fetch('/api/auth/change-password', {
         method: 'POST',
         body: { currentPassword, newPassword },
-        ...getAuthConfig()
       })
     } finally {
       loading.value = false
@@ -94,7 +76,6 @@ export const useAuth = () => {
       await $fetch('/api/auth/set-initial-password', {
         method: 'POST',
         body: { newPassword },
-        ...getAuthConfig()
       })
       if (user.value) {
         user.value.needsPasswordChange = false
@@ -105,33 +86,25 @@ export const useAuth = () => {
   }
 
   const refreshUser = async () => {
-    const userData = await $fetch('/api/auth/verify', getAuthConfig())
-    user.value = userData
-    isAuthenticated.value = true
-    isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(userData.role)
+    const data = await $fetch<{ user: User }>('/api/auth/verify')
+    if (data && data.user) {
+      user.value = data.user
+      isAuthenticated.value = true
+      isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
+    }
   }
 
   const logout = async (redirect = true) => {
     try {
-      await $fetch('/api/auth/logout', { 
-        method: 'POST',
-        ...getAuthConfig()
-      })
+      await $fetch('/api/auth/logout', { method: 'POST' })
     } catch (error) {
-      // Ignore server-side logout errors
+      // 忽略服务器端登出错误
     }
 
     clearAuthState()
 
     if (process.client && redirect) {
       await navigateTo('/login')
-    }
-  }
-
-  // 获取认证配置（现在主要是确保cookie会被发送）
-  const getAuthConfig = () => {
-    return {
-      credentials: 'include' as RequestCredentials
     }
   }
 
@@ -147,6 +120,5 @@ export const useAuth = () => {
     setInitialPassword,
     refreshUser,
     initAuth,
-    getAuthConfig
   }
 }

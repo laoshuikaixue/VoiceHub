@@ -1,3 +1,4 @@
+import { getCookie } from 'h3'
 import { JWTEnhanced } from '~/server/utils/jwt-enhanced'
 import { prisma } from '~/prisma/client'
 
@@ -8,25 +9,30 @@ export default defineNuxtPlugin(async (nuxtApp) => {
   const event = nuxtApp.ssrContext?.event
   if (!event) return
 
+  // 使用 useState 确保每个请求的状态是隔离的
+  const userState = useState('user', () => null)
+  const isAuthenticatedState = useState('isAuthenticated', () => false)
+  const isAdminState = useState('isAdmin', () => false)
+
+  const resetAuthState = () => {
+    userState.value = null
+    isAuthenticatedState.value = false
+    isAdminState.value = false
+  }
+
   try {
-    // 从 Authorization 头获取 token
-    const authHeader = getRequestHeader(event, 'authorization')
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
-    
+    // 对于Web应用，token主要通过cookie传递
+    const token = getCookie(event, 'auth_token')
+
     if (!token) {
-      // 清理认证状态
-      nuxtApp.payload.user = null
-      nuxtApp.payload.isAuthenticated = false
-      nuxtApp.payload.isAdmin = false
+      resetAuthState()
       return
     }
 
     // 验证token
     const decoded = JWTEnhanced.verifyToken(token)
     if (!decoded) {
-      nuxtApp.payload.user = null
-      nuxtApp.payload.isAuthenticated = false
-      nuxtApp.payload.isAdmin = false
+      resetAuthState()
       return
     }
 
@@ -45,17 +51,27 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     })
 
     if (user) {
-      nuxtApp.payload.user = user
-      nuxtApp.payload.isAuthenticated = true
-      nuxtApp.payload.isAdmin = user.role === 'admin'
+      // 创建一个可序列化的纯数据对象
+      const userPayload = {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        grade: user.grade,
+        class: user.class,
+        role: user.role,
+        // 转换为ISO字符串以安全序列化
+        passwordChangedAt: user.passwordChangedAt ? user.passwordChangedAt.toISOString() : null
+      }
+      // 使用useState更新状态，这将安全地传递给客户端
+      userState.value = userPayload
+      isAuthenticatedState.value = true
+      // 修正角色检查逻辑，使用大写
+      isAdminState.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)
     } else {
-      nuxtApp.payload.user = null
-      nuxtApp.payload.isAuthenticated = false
-      nuxtApp.payload.isAdmin = false
+      resetAuthState()
     }
   } catch (error) {
-    nuxtApp.payload.user = null
-    nuxtApp.payload.isAuthenticated = false
-    nuxtApp.payload.isAdmin = false
+    console.error('Auth server plugin error:', error)
+    resetAuthState()
   }
 })
