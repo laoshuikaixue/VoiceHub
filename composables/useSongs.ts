@@ -1,11 +1,11 @@
 import { ref, computed } from 'vue'
 import { useAuth } from './useAuth'
-import { getGlobalCache } from './useDataCache'
+import { getGlobalDedup } from './useRequestDedup'
 import type { Song, Schedule, PlayTime } from '~/types'
 
 export const useSongs = () => {
   const { isAuthenticated, user, getAuthConfig } = useAuth()
-  const cache = getGlobalCache()
+  const dedup = getGlobalDedup()
   
   const songs = ref<Song[]>([])
   const publicSchedules = ref<Schedule[]>([])
@@ -80,7 +80,7 @@ export const useSongs = () => {
     try {
       const requestParams = semester ? { semester } : undefined
       
-      const data = await cache.cachedRequest(
+      const data = await dedup.dedupedRequest(
         'songs',
         async () => {
           // 构建URL参数
@@ -93,8 +93,7 @@ export const useSongs = () => {
           // 使用$fetch进行API请求
           return await $fetch(url)
         },
-        requestParams,
-        forceRefresh
+        requestParams
       )
       
       songs.value = data as Song[]
@@ -154,7 +153,7 @@ export const useSongs = () => {
     try {
       const requestParams = semester ? { semester } : undefined
       
-      const data = await cache.cachedRequest(
+      const data = await dedup.dedupedRequest(
         'public-schedules',
         async () => {
           // 构建URL参数
@@ -167,8 +166,7 @@ export const useSongs = () => {
           const response = await $fetch(url)
           return response
         },
-        requestParams,
-        forceRefresh
+        requestParams
       )
       
       // 确保每个排期的歌曲都有played属性，并处理null/undefined转换
@@ -749,14 +747,12 @@ export const useSongs = () => {
   // 获取歌曲总数（缓存版本）
   const fetchSongCount = async (forceRefresh = false) => {
     try {
-      const count = await cache.cachedRequest(
+      const count = await dedup.dedupedRequest(
         'song-count',
         async () => {
           const response = await $fetch('/api/songs/count')
           return response
-        },
-        undefined,
-        forceRefresh
+        }
       )
       
       songCount.value = count as number

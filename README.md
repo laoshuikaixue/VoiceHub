@@ -84,9 +84,6 @@
 
 本项目可以一键部署到Vercel/Netlify平台：
 
-> [!TIP]
-> 我们对Vercel做了专门的缓存优化配置，因此建议您使用Vercel进行部署
-
 [![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/laoshuikaixue/VoiceHub&env=DATABASE_URL,JWT_SECRET&envDescription=需要配置数据库连接和JWT密钥&envLink=https://github.com/laoshuikaixue/VoiceHub#环境变量说明)
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/laoshuikaixue/VoiceHub)
 
@@ -323,7 +320,6 @@ VoiceHub/
 │   ├── useAudioPlayerSync.ts # 音频播放器同步hooks
 │   ├── useAudioQuality.ts  # 音质管理hooks
 │   ├── useAuth.ts          # 认证功能hooks
-│   ├── useDataCache.ts     # 数据缓存hooks
 │   ├── useErrorHandler.ts  # 错误处理hooks
 │   ├── useLyrics.ts        # 歌词功能hooks
 │   ├── useMusicWebSocket.ts # 音乐WebSocket hooks
