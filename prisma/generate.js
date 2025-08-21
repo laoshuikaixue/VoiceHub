@@ -22,7 +22,7 @@ try {
   
   // 2. 设置环境变量
   if (isNetlify) {
-    process.env.PRISMA_CLI_BINARY_TARGETS = 'native,rhel-openssl-1.0.x';
+    process.env.PRISMA_CLI_BINARY_TARGETS = 'debian-openssl-1.1.x,rhel-openssl-1.0.x';
     console.log('🔧 设置 Netlify 二进制目标');
   }
   
