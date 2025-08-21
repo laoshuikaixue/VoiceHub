@@ -335,6 +335,11 @@ watch(semesterUpdateEvent, async () => {
   fetchAvailableSemesters()
 })
 
+// 监听搜索查询变化，重置分页
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
 // 确认对话框
 const confirmDialog = ref({
   show: false,
