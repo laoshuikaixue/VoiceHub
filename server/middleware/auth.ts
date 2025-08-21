@@ -24,8 +24,8 @@ export default defineEventHandler(async (event) => {
   // 检查是否为公共API路径
   const isPublicApiPath = publicApiPaths.some(path => pathname.startsWith(path))
 
-  // 如果不是公共API路径且不是认证相关路径，则需要认证
-  if (!isPublicApiPath && !pathname.startsWith('/api/auth/')) {
+  // 如果不是公共API路径，则需要认证
+  if (!isPublicApiPath) {
     // 尝试从Authorization头部或cookie获取token
     let token: string | null = null
 
@@ -38,6 +38,12 @@ export default defineEventHandler(async (event) => {
     // 如果Authorization头部没有token，尝试从cookie获取
     if (!token) {
       token = getCookie(event, 'auth-token') || null
+      console.log('Cookie token check:', {
+        pathname,
+        hasCookie: !!token,
+        cookieValue: token ? 'exists' : 'missing',
+        allCookies: Object.keys(parseCookies(event) || {})
+      })
     }
 
     if (!token) {
