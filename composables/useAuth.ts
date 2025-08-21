@@ -16,13 +16,15 @@ export const useAuth = () => {
   }
 
   const initAuth = async () => {
-    // 如果认证状态已由SSR设置，则直接返回，避免不必要的客户端验证
-    if (isAuthenticated.value) {
+    // 严格限制只在客户端执行，避免服务端状态污染
+    if (typeof window === 'undefined' || process.server) {
       return
     }
 
-    // 仅在客户端执行
-    if (typeof window === 'undefined') return
+    // 如果已经认证，跳过重复验证
+    if (isAuthenticated.value && user.value) {
+      return
+    }
 
     try {
       const data = await $fetch<{ user: User }>('/api/auth/verify')

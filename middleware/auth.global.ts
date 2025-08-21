@@ -4,15 +4,18 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const { isAuthenticated, initAuth } = useAuth();
   const publicRoutes = ['/login', '/', '/about']; // 公共页面
 
-  // 在服务器端和客户端都初始化认证状态
-  if (process.server) {
-    await initAuth();
-  } else if (!isAuthenticated.value) {
+  // 只在客户端初始化认证状态，避免服务端状态共享
+  if (process.client && !isAuthenticated.value) {
     await initAuth();
   }
 
   // 如果目标路由是公共页面，则不进行处理
   if (publicRoutes.includes(to.path)) {
+    return;
+  }
+
+  // 服务端跳过认证检查，由客户端处理
+  if (process.server) {
     return;
   }
 
