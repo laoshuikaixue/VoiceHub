@@ -59,41 +59,34 @@ export default defineEventHandler(async (event) => {
       cover: cover || null
     }
 
-    // 如果提供了投稿人信息，则更新投稿人
-    if (requester !== undefined && requester !== null) {
-      if (requester === '' || requester === 0) {
-        // 清空投稿人
-        updateData.requesterId = null
-      } else {
-        // 查找投稿人
-        let requesterUser = null
-        
-        // 如果是数字ID，直接查找
-        if (typeof requester === 'number' || !isNaN(parseInt(requester))) {
-          requesterUser = await prisma.user.findUnique({
-            where: { id: parseInt(requester) }
-          })
-        } else {
-          // 如果不是数字ID，按用户名或姓名查找
-          requesterUser = await prisma.user.findFirst({
-            where: {
-              OR: [
-                { username: String(requester) },
-                { name: String(requester) }
-              ]
-            }
-          })
-        }
-        
+    // 处理投稿人
+    if ('requester' in body) {
+      const requester = body.requester
+      
+      // 只有在传递有效投稿人信息时才更新
+      if (requester && requester !== '' && requester !== 0) {
+        // 查找投稿人用户
+        const requesterUser = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { id: typeof requester === 'number' ? requester : undefined },
+              { username: typeof requester === 'string' ? requester : undefined },
+              { name: typeof requester === 'string' ? requester : undefined }
+            ]
+          }
+        })
+
         if (!requesterUser) {
           throw createError({
-            statusCode: 400,
-            statusMessage: '找不到指定的投稿人'
+            statusCode: 404,
+            statusMessage: '投稿人用户不存在'
           })
         }
-        
-        updateData.requesterId = requesterUser.id
+
+        // 设置投稿人
+        updateData.requester = { connect: { id: requesterUser.id } }
       }
+      // 如果投稿人为空值，则跳过处理，保持原有投稿人不变
     }
 
     // 更新歌曲
