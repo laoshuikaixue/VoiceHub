@@ -4,21 +4,14 @@ import { executeWithPool } from '~/server/utils/db-pool'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查用户认证
+    // 获取用户信息（可选认证）
     const user = event.context.user
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        message: '需要登录才能获取歌曲列表'
-      })
-    }
 
     // 获取查询参数
     const query = getQuery(event)
     const semester = query.semester as string
 
-    console.log(`[Songs API] 用户 ${user.name} 请求歌曲列表${semester ? ` (学期: ${semester})` : ''}`)
+    console.log(`[Songs API] 用户 ${user?.name || '未登录用户'} 请求歌曲列表${semester ? ` (学期: ${semester})` : ''}`)
 
     // 使用连接池执行数据库操作
     const result = await executeWithPool(async () => {
@@ -117,9 +110,6 @@ export default defineEventHandler(async (event) => {
           }
         }
 
-        // 检查当前用户是否已对该歌曲投票
-        const voted = song.votes.some(vote => vote.userId === user.id)
-
         // 创建基本歌曲对象
         const songObject: any = {
           id: song.id,
@@ -134,14 +124,19 @@ export default defineEventHandler(async (event) => {
           createdAt: song.createdAt,
           requestedAt: song.createdAt.toLocaleString(), // 添加请求时间的格式化字符串
           scheduled: song.schedules.length > 0, // 添加是否已排期的标志
-          voted: voted, // 添加当前用户是否已投票的标志
           cover: song.cover || null, // 添加封面字段
           musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
           musicId: song.musicId || null // 添加音乐ID字段
         }
 
+        // 如果用户已登录，添加投票状态
+        if (user) {
+          const voted = song.votes.some(vote => vote.userId === user.id)
+          songObject.voted = voted
+        }
+
         // 只对管理员用户添加期望播放时段相关字段
-        if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+        if (user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN')) {
           songObject.preferredPlayTimeId = song.preferredPlayTimeId
 
           // 如果有期望播放时段，添加相关信息

@@ -90,7 +90,7 @@ export const useSongs = () => {
           }
           const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
           
-          // 使用$fetch自动处理httpOnly cookie认证
+          // 使用$fetch进行API请求
           return await $fetch(url)
         },
         requestParams,

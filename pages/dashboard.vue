@@ -491,8 +491,7 @@ onMounted(async () => {
   // 初始化服务
   auth = useAuth()
 
-  // 检查认证状态
-  await auth.initAuth()
+  // 检查认证状态（plugin已经初始化过了）
 
   if (!auth.isAuthenticated.value) {
     await navigateTo('/login')

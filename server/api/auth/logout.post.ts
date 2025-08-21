@@ -1,33 +1,8 @@
-import { JWTEnhanced } from '../../utils/jwt-enhanced'
-
 export default defineEventHandler(async (event) => {
   try {
-    // 获取tokens
-    const accessToken = getCookie(event, 'auth-token')
-    const refreshToken = getCookie(event, 'refresh-token')
-    
-    // 撤销tokens（加入黑名单）
-    if (accessToken) {
-      try {
-        JWTEnhanced.revokeToken(accessToken)
-        console.log('Access token revoked successfully')
-      } catch (error) {
-        console.warn('Failed to revoke access token:', error)
-      }
-    }
-    
-    if (refreshToken) {
-      try {
-        JWTEnhanced.revokeToken(refreshToken)
-        console.log('Refresh token revoked successfully')
-      } catch (error) {
-        console.warn('Failed to revoke refresh token:', error)
-      }
-    }
-    
-    // 删除认证cookies
-    deleteCookie(event, 'auth-token')
-    deleteCookie(event, 'refresh-token')
+    // 在JWT-only模式下，登出主要由客户端处理
+    // 服务端只需要返回成功响应
+    console.log('[Auth] User logout requested')
     
     return {
       success: true,
@@ -37,10 +12,7 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error('Logout error:', error)
     
-    // 即使出错也要删除cookies
-    deleteCookie(event, 'auth-token')
-    deleteCookie(event, 'refresh-token')
-    
+    // 即使出错也返回成功，因为JWT是无状态的
     return {
       success: true,
       message: '登出成功'

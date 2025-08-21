@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client'
-
+import { z } from 'zod'
 import { prisma } from '../../models/schema'
 
 export default defineEventHandler(async (event) => {

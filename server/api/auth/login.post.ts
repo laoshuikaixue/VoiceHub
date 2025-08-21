@@ -1,37 +1,26 @@
 import bcrypt from 'bcrypt'
 import { prisma, checkDatabaseConnection, reconnectDatabase } from '../../models/schema'
 import { JWTEnhanced } from '../../utils/jwt-enhanced'
-import { MemoryStore } from '../../utils/memory-store'
 
 export default defineEventHandler(async (event) => {
   // 记录请求开始时间，用于计算处理时间
   const startTime = Date.now()
   
   try {
-  const body = await readBody(event)
+    const body = await readBody(event)
     
     console.log('Login attempt for user:', body.username)
     console.log('Environment:', process.env.NODE_ENV, 'Vercel:', process.env.VERCEL === '1' ? 'Yes' : 'No')
     
-    // 获取客户端信息用于锁定检查
+    // 获取客户端信息
     const clientIp = getRequestIP(event, { xForwardedFor: true }) || '未知IP'
-    const identifier = `${body.username}:${clientIp}`
     
-    // 检查是否被锁定（防暴力破解）
-    if (MemoryStore.isBlocked(identifier)) {
-      const remainingTime = MemoryStore.getRemainingBlockTime(identifier)
+    if (!body.username || !body.password) {
       throw createError({
-        statusCode: 429,
-        message: `登录尝试过于频繁，请在 ${remainingTime} 分钟后重试`
+        statusCode: 400,
+        message: '账号名和密码不能为空'
       })
     }
-  
-  if (!body.username || !body.password) {
-    throw createError({
-      statusCode: 400,
-      message: '账号名和密码不能为空'
-    })
-  }
     
     // 检查 JWT_SECRET 是否已设置
     if (!process.env.JWT_SECRET) {
@@ -84,9 +73,9 @@ export default defineEventHandler(async (event) => {
           message: '数据库服务暂时不可用，请稍后再试'
         })
       }
-  }
-  
-  // 查找用户
+    }
+    
+    // 查找用户
     let user
     try {
       console.log('Querying database for user...')
@@ -95,8 +84,8 @@ export default defineEventHandler(async (event) => {
       try {
         // 首先尝试使用Prisma模型
         user = await prisma.user.findUnique({
-    where: {
-      username: body.username
+          where: {
+            username: body.username
           },
           select: {
             id: true,
@@ -109,8 +98,8 @@ export default defineEventHandler(async (event) => {
             lastLogin: true,
             lastLoginIp: true,
             passwordChangedAt: true // 添加密码修改时间字段
-    }
-  })
+          }
+        })
       } catch (schemaError) {
         console.warn('Schema mismatch detected, trying raw query:', schemaError)
         
@@ -159,15 +148,15 @@ export default defineEventHandler(async (event) => {
         })
       }
     }
-  
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '用户不存在'
-    })
-  }
-  
-  // 验证密码
+    
+    if (!user) {
+      throw createError({
+        statusCode: 401,
+        message: '用户不存在'
+      })
+    }
+    
+    // 验证密码
     let isPasswordValid
     try {
       console.log('Verifying password...')
@@ -180,25 +169,15 @@ export default defineEventHandler(async (event) => {
         message: '密码验证错误'
       })
     }
-  
-  if (!isPasswordValid) {
-    // 记录失败的登录尝试
-    MemoryStore.recordLoginAttempt(identifier, false)
     
-    throw createError({
-      statusCode: 401,
-      message: '密码不正确'
-    })
-  }
-  
-  // 登录成功，清除失败记录
-  MemoryStore.recordLoginAttempt(identifier, true)
-  
-  // 获取用户代理信息
-  const userAgent = getRequestHeader(event, 'user-agent') || 'Unknown'
-  console.log('Client info:', { ip: clientIp, userAgent: userAgent.substring(0, 100) })
-  
-  // 更新用户最后登录时间和IP
+    if (!isPasswordValid) {
+      throw createError({
+        statusCode: 401,
+        message: '密码不正确'
+      })
+    }
+    
+    // 更新用户最后登录时间和IP
     try {
       console.log('Updating user login information...')
       
@@ -215,17 +194,16 @@ export default defineEventHandler(async (event) => {
       console.error('Error updating user login time:', error)
       // 不中断登录流程，继续生成令牌
     }
-  
-  // 生成增强的JWT token对
-    let tokenPair
+    
+    // 生成简化的JWT token
+    let token
     try {
-      console.log('Generating enhanced JWT token pair...')
-      tokenPair = JWTEnhanced.generateTokenPair(
+      console.log('Generating JWT token...')
+      token = JWTEnhanced.generateToken(
         user.id,
-        user.role,
-        userAgent
+        user.role
       )
-      console.log('JWT token pair generated:', { sessionId: tokenPair.sessionId })
+      console.log('JWT token generated successfully')
     } catch (error) {
       console.error('JWT token generation error:', error)
       throw createError({
@@ -241,41 +219,22 @@ export default defineEventHandler(async (event) => {
     // 检查用户是否需要强制修改密码（passwordChangedAt为空表示使用默认密码）
     const needsPasswordChange = !user.passwordChangedAt
     console.log('Needs password change:', needsPasswordChange)
-  
-  // 设置httpOnly cookies
-  setCookie(event, 'auth-token', tokenPair.accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 15 * 60, // 15分钟
-    path: '/'
-  })
-  
-  setCookie(event, 'refresh-token', tokenPair.refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7天
-    path: '/'
-  })
-
-  return {
-    accessToken: tokenPair.accessToken,
-    refreshToken: tokenPair.refreshToken,
-    sessionId: tokenPair.sessionId,
-    expiresIn: 15 * 60, // access token过期时间（秒）
-    user: {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      grade: user.grade,
-      class: user.class,
-      role: user.role,
-      lastLogin: user.lastLogin,
-      lastLoginIp: user.lastLoginIp,
-      needsPasswordChange: needsPasswordChange // 是否需要强制修改密码
+    
+    return {
+      token: token,
+      expiresIn: 24 * 60 * 60, // token过期时间（秒）- 24小时
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        grade: user.grade,
+        class: user.class,
+        role: user.role,
+        lastLogin: user.lastLogin,
+        lastLoginIp: user.lastLoginIp,
+        needsPasswordChange: needsPasswordChange // 是否需要强制修改密码
+      }
     }
-  }
   } catch (error: any) {
     // 计算并记录错误处理时间
     const errorTime = Date.now() - startTime

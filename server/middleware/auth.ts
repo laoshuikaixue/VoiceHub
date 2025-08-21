@@ -14,49 +14,55 @@ export default defineEventHandler(async (event) => {
   const publicApiPaths = [
     '/api/auth/login',
     '/api/auth/register',
-    '/api/auth/logout',
-    '/api/auth/refresh',
     '/api/semesters/current',
     '/api/play-times',
     '/api/schedules/public',
-    '/api/songs/count',
-    '/api/songs/public',
+    '/api/songs',
     '/api/upload',
     '/api/site-config'
   ]
 
-  // 检查是否为公共API路径或歌曲相关路径
-  const isPublicApiPath = publicApiPaths.some(path => pathname.startsWith(path)) ||
-                          /^\/api\/songs\/\d+/.test(pathname)
+  // 需要认证的特定API路径（即使在公共路径下）
+  const authRequiredPaths = [
+    '/api/songs/submission-status',
+    '/api/songs/vote'
+  ]
 
-  if (isPublicApiPath) {
+  // 检查是否需要强制认证
+  const requiresAuth = authRequiredPaths.some(path => pathname.startsWith(path))
+  
+  // 检查是否为公共API路径或特定歌曲详情路径
+  const isPublicApiPath = publicApiPaths.some(path => pathname.startsWith(path)) ||
+                          /^\/api\/songs\/\d+$/.test(pathname)
+
+  // 如果不需要强制认证且是公共API路径，则跳过认证
+  if (!requiresAuth && isPublicApiPath) {
     return
   }
   
-  // 获取认证令牌 - 优先从cookie获取，其次从Authorization header
-  let token = getCookie(event, 'auth-token')
-  
-  if (!token) {
-    const authHeader = getRequestHeader(event, 'authorization')
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7) // 移除 'Bearer ' 前缀
-    }
+  // 强制要求从Authorization头部获取token
+  const authHeader = getRequestHeader(event, 'authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw createError({
+      statusCode: 401,
+      message: '未授权访问：缺少有效的Authorization头部',
+      data: { invalidToken: true }
+    })
   }
+
+  const token = authHeader.substring(7) // 移除 'Bearer ' 前缀
   
   if (!token) {
     throw createError({
       statusCode: 401,
-      message: '未授权访问',
+      message: '未授权访问：Token为空',
       data: { invalidToken: true }
     })
   }
   
   try {
-    // 获取用户代理信息用于验证
-    const userAgent = getRequestHeader(event, 'user-agent') || 'Unknown'
-    
-    // 使用增强的JWT验证
-    const decoded = JWTEnhanced.verifyToken(token, userAgent)
+    // 使用简化的JWT验证
+    const decoded = JWTEnhanced.verifyToken(token)
     
     console.log('Token解码成功:', { userId: decoded.userId, role: decoded.role, pathname })
     
@@ -65,20 +71,22 @@ export default defineEventHandler(async (event) => {
     try {
       // 尝试使用Prisma模型
       user = await prisma.user.findUnique({
-      where: {
-        id: decoded.userId
+        where: {
+          id: decoded.userId
         },
         select: {
           id: true,
           username: true,
           name: true,
+          grade: true,
+          class: true,
           role: true
-      }
-    })
+        }
+      })
     } catch (schemaError) {
       // 如果Prisma模型失败，使用原始SQL查询
       const result = await prisma.$queryRaw`
-        SELECT id, username, name, role FROM "User" WHERE id = ${decoded.userId}
+        SELECT id, username, name, grade, class, role FROM "User" WHERE id = ${decoded.userId}
       `
       
       user = Array.isArray(result) && result.length > 0 ? result[0] : null
@@ -100,116 +108,50 @@ export default defineEventHandler(async (event) => {
       id: user.id,
       username: user.username,
       name: user.name,
-      role: user.role,
-      sessionId: decoded.sessionId,
-      tokenType: decoded.tokenType
-    }
-    
-    // 检查token是否即将过期（剩余时间少于5分钟）
-    if (decoded.tokenType === 'access' && JWTEnhanced.isTokenExpiringSoon(token, 5 * 60)) {
-      // 设置响应头提示前端刷新token
-      setResponseHeader(event, 'X-Token-Refresh-Needed', 'true')
+      grade: user.grade,
+      class: user.class,
+      role: user.role
     }
       
     // 检查管理员路径权限
     if (pathname.startsWith('/api/admin') && !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
-        console.log('权限检查失败:', { pathname, userRole: user.role, allowedRoles: ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'] })
-        throw createError({
+      console.log('权限检查失败:', { pathname, userRole: user.role, allowedRoles: ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'] })
+      throw createError({
         statusCode: 403,
-        message: '需要管理员权限',
+        message: '需要管理员权限'
       })
     }
     
   } catch (error: any) {
     console.warn('Token verification failed:', error.message)
     
-    // 如果是access token过期，尝试使用refresh token
-    if (error.message?.includes('过期') || error.message?.includes('expired')) {
-      const refreshToken = getCookie(event, 'refresh-token')
-      
-      if (refreshToken) {
-        try {
-          const userAgent = getRequestHeader(event, 'user-agent') || 'Unknown'
-          const newTokenPair = JWTEnhanced.refreshAccessToken(refreshToken, userAgent)
-          
-          // 设置新的access token cookie
-          setCookie(event, 'auth-token', newTokenPair.accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 15 * 60, // 15分钟
-            path: '/'
-          })
-          
-          // 验证新token并设置用户上下文
-          const decoded = JWTEnhanced.verifyToken(newTokenPair.accessToken, userAgent)
-          
-          // 获取用户信息
-          let user
-          try {
-            user = await prisma.user.findUnique({
-              where: { id: decoded.userId },
-              select: {
-                id: true,
-                username: true,
-                name: true,
-                role: true
-              }
-            })
-          } catch (schemaError) {
-            const result = await prisma.$queryRaw`
-              SELECT id, username, name, role FROM "User" WHERE id = ${decoded.userId}
-            `
-            user = Array.isArray(result) && result.length > 0 ? result[0] : null
-          }
-          
-          if (!user) {
-            throw createError({
-              statusCode: 401,
-              message: '用户不存在，请重新登录',
-              data: { invalidToken: true }
-            })
-          }
-          
-          event.context.user = {
-            id: user.id,
-            username: user.username,
-            name: user.name,
-            role: user.role,
-            sessionId: decoded.sessionId,
-            tokenType: decoded.tokenType
-          }
-          
-          // 设置响应头表示token已刷新
-          setResponseHeader(event, 'X-Token-Refreshed', 'true')
-          
-        } catch (refreshError) {
-          console.warn('Token refresh failed:', refreshError)
-          throw createError({
-            statusCode: 401,
-            message: 'Token无效或已过期，请重新登录',
-            data: { invalidToken: true }
-          })
-        }
-      } else {
-        throw createError({
-          statusCode: 401,
-          message: 'Token已过期，请重新登录',
-          data: { invalidToken: true }
-        })
-      }
-    } else {
-      // 如果是我们自己抛出的错误，直接重新抛出
-      if (error.statusCode) {
-        throw error
-      }
-      
-      // 其他未知错误
+    // 如果是我们自己抛出的错误，直接重新抛出
+    if (error.statusCode) {
+      throw error
+    }
+    
+    // JWT验证失败的错误处理
+    if (error.message?.includes('expired') || error.message?.includes('过期')) {
       throw createError({
         statusCode: 401,
-        message: 'Token无效',
+        message: 'Token已过期，请重新登录',
         data: { invalidToken: true }
       })
     }
+    
+    if (error.message?.includes('signature') || error.message?.includes('签名')) {
+      throw createError({
+        statusCode: 401,
+        message: 'Token签名无效，请重新登录',
+        data: { invalidToken: true }
+      })
+    }
+    
+    // 其他JWT验证错误
+    throw createError({
+      statusCode: 401,
+      message: 'Token无效，请重新登录',
+      data: { invalidToken: true }
+    })
   }
 })

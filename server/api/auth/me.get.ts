@@ -3,44 +3,13 @@ import { JWTEnhanced } from '../../utils/jwt-enhanced'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查认证
+    // 检查认证中间件是否已经验证用户
     const user = event.context.user
     if (!user) {
       console.warn('[Auth API] No user context found')
       throw createError({
         statusCode: 401,
         message: '未授权'
-      })
-    }
-
-    // 额外的JWT token验证（双重验证）
-    const token = getCookie(event, 'auth-token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
-    if (!token) {
-      console.warn(`[Auth API] No token found for user ${user.id}`)
-      throw createError({
-        statusCode: 401,
-        message: '缺少认证令牌'
-      })
-    }
-
-    // 验证token的有效性和用户ID一致性
-    try {
-      const userAgent = getHeader(event, 'user-agent') || 'Unknown'
-      const decoded = JWTEnhanced.verifyToken(token, userAgent)
-      
-      // 检查token中的用户ID是否与context中的一致
-      if (decoded.userId !== user.id) {
-        console.error(`[Auth API] Token user ID mismatch: token=${decoded.userId}, context=${user.id}`)
-        throw createError({
-          statusCode: 401,
-          message: '令牌用户身份不匹配'
-        })
-      }
-    } catch (jwtError: any) {
-      console.error(`[Auth API] JWT verification failed for user ${user.id}:`, jwtError.message)
-      throw createError({
-        statusCode: 401,
-        message: '令牌验证失败'
       })
     }
 
@@ -81,12 +50,12 @@ export default defineEventHandler(async (event) => {
 
     console.log(`[Auth API] Successfully validated user ${currentUser.id} (${currentUser.username})`)
 
-    // 返回用户信息，包含needsPasswordChange字段和验证时间戳
+    // 返回用户信息
     return {
       ...currentUser,
       needsPasswordChange: !currentUser.passwordChangedAt,
-      _validatedAt: Date.now(), // 添加验证时间戳
-      _userId: currentUser.id // 添加用户ID用于客户端验证
+      _validatedAt: Date.now(),
+      _userId: currentUser.id
     }
   } catch (error: any) {
     console.error('获取用户信息错误:', error)

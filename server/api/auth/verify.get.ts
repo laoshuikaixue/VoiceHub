@@ -10,11 +10,14 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  // 返回用户基本信息，不包含敏感数据
+  // 返回用户完整信息
   return {
     id: user.id,
+    username: user.username,
     name: user.name,
+    grade: user.grade,
+    class: user.class,
     role: user.role,
     verified: true
   }
-}) 
+})

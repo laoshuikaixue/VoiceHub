@@ -1084,8 +1084,10 @@ const fetchSubmissionStatus = async () => {
   if (!user.value) return
   
   loadingSubmissionStatus.value = true
+  
   try {
-    const response = await $fetch('/api/songs/submission-status')
+    const authHeader = auth.getAuthHeader()
+    const response = await $fetch('/api/songs/submission-status', authHeader)
     submissionStatus.value = response
   } catch (err) {
     console.error('获取投稿状态失败:', err)

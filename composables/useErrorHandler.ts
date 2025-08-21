@@ -8,9 +8,9 @@ const HANDLE_401_DEBOUNCE_TIME = 2000 // 2秒内只处理一次401错误
 export const useErrorHandler = () => {
   /**
    * 处理401认证失效错误
-   * 清除所有认证信息并重定向到首页
+   * 区分登录失败和认证失效，只有在已登录状态下才执行完整的logout流程
    */
-  const handle401Error = async (message?: string) => {
+  const handle401Error = async (message?: string, skipLogout = false) => {
     const now = Date.now()
     
     // 防抖：如果正在处理401错误或距离上次处理时间太短，则跳过
@@ -22,9 +22,31 @@ export const useErrorHandler = () => {
     isHandling401 = true
     lastHandle401Time = now
     
-    console.log('检测到401错误，清除认证信息并重定向')
-    
     try {
+      // 检查当前页面和用户状态
+      const currentPath = process.client ? window.location.pathname : ''
+      const auth = useAuth()
+      const isCurrentlyLoggedIn = auth.isAuthenticated.value
+      
+      // 如果在登录页面或明确指定跳过logout，只清除本地状态，不调用logout API
+      if (currentPath === '/login' || skipLogout || !isCurrentlyLoggedIn) {
+        console.log('在登录页面或未登录状态，跳过logout API调用')
+        
+        // 只清除本地认证状态，不调用服务器logout
+        if (process.client) {
+          localStorage.removeItem('user')
+        }
+        
+        // 重置认证状态
+        auth.user.value = null
+        auth.isAuthenticated.value = false
+        auth.isAdmin.value = false
+        
+        return
+      }
+      
+      console.log('检测到已登录用户的401错误，执行完整logout流程')
+      
       // 清除localStorage中的用户信息
       if (process.client) {
         localStorage.removeItem('user')
@@ -40,7 +62,7 @@ export const useErrorHandler = () => {
         }
       }
       
-      // 调用服务器端logout API清除cookie
+      // 调用服务器端logout API（仅在已登录状态下）
       try {
         await $fetch('/api/auth/logout', {
           method: 'POST',
@@ -54,7 +76,6 @@ export const useErrorHandler = () => {
       }
       
       // 重置认证状态
-      const auth = useAuth()
       auth.user.value = null
       auth.isAuthenticated.value = false
       auth.isAdmin.value = false
@@ -63,13 +84,9 @@ export const useErrorHandler = () => {
       const redirectMessage = message || '您的登录信息已失效，请重新登录'
       
       if (process.client) {
-        const currentPath = window.location.pathname
-        
         // 如果当前已经在首页，只显示消息，不重定向
         if (currentPath === '/') {
-          // 可以通过事件或状态管理显示消息
           console.log('已在首页，显示登录失效消息:', redirectMessage)
-          // 这里可以触发一个全局消息显示
           return
         }
         

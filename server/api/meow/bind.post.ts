@@ -1,4 +1,4 @@
-import { createError, defineEventHandler, readBody, getCookie } from 'h3'
+import { createError, defineEventHandler, readBody } from 'h3'
 import { PrismaClient } from '@prisma/client'
 import jwt from 'jsonwebtoken'
 

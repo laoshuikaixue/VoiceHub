@@ -395,7 +395,7 @@ const createBackup = async () => {
           const downloadResponse = await fetch(downloadUrl, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${useCookie('auth-token').value}`
+              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
             }
           })
           
