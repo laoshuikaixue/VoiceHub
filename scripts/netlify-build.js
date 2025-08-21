@@ -84,7 +84,14 @@ async function netlifyBuild() {
     
     // 3. 安装依赖
     logStep('📦', '安装依赖...');
-    if (!safeExec('npm ci')) {
+    // 在CI环境中总是重新安装依赖
+    if (fileExists('node_modules')) {
+      logStep('🧹', '清理现有依赖...');
+      safeExec('rm -rf node_modules');
+    }
+    
+    // 在Netlify环境中使用npm install（无package-lock.json）
+    if (!safeExec('npm install --production=false')) {
       throw new Error('依赖安装失败');
     }
     logSuccess('依赖安装完成');
