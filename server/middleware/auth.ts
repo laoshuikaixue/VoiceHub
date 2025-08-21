@@ -40,22 +40,24 @@ export default defineEventHandler(async (event) => {
     return
   }
   
-  // 强制要求从Authorization头部获取token
+  // 尝试从Authorization头部或cookie获取token
+  let token: string | null = null
+  
+  // 首先尝试从Authorization头部获取
   const authHeader = getRequestHeader(event, 'authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问：缺少有效的Authorization头部',
-      data: { invalidToken: true }
-    })
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7) // 移除 'Bearer ' 前缀
   }
-
-  const token = authHeader.substring(7) // 移除 'Bearer ' 前缀
+  
+  // 如果Authorization头部没有token，尝试从cookie获取
+  if (!token) {
+    token = getCookie(event, 'auth-token') || null
+  }
   
   if (!token) {
     throw createError({
       statusCode: 401,
-      message: '未授权访问：Token为空',
+      message: '未授权访问：缺少有效的认证信息',
       data: { invalidToken: true }
     })
   }

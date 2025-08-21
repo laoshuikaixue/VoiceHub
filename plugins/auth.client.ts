@@ -7,26 +7,15 @@ export default defineNuxtPlugin((nuxtApp) => {
   const originalFetch = window.fetch
   const errorHandler = useErrorHandler()
   
-  // 获取token的辅助函数
-  const getToken = () => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return localStorage.getItem('auth_token')
-    }
-    return null
-  }
-  
   // 拦截window.fetch
   window.fetch = async function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    // 处理所有API请求
+    // 处理所有API请求 - cookie会自动发送，无需手动添加Authorization头
     if (typeof input === 'string' && input.startsWith('/api')) {
       init = init || {}
       init.headers = init.headers || {}
       
-      // 自动添加Authorization头（如果token存在）
-      const token = getToken()
-      if (token) {
-        (init.headers as any).Authorization = `Bearer ${token}`
-      }
+      // 确保cookie会被发送
+      init.credentials = 'include'
     }
     
     try {
@@ -63,17 +52,15 @@ export default defineNuxtPlugin((nuxtApp) => {
     const auth = useAuth()
     await auth.initAuth()
     
-    // 拦截$fetch请求，自动添加Authorization头
+    // 拦截$fetch请求，确保cookie会被发送
     const originalUseFetch = nuxtApp.$fetch
     if (originalUseFetch) {
       nuxtApp.$fetch = async function(request: any, options: any = {}) {
-        // 为所有API请求自动添加Authorization头
+        // 为所有API请求确保cookie会被发送
         if (typeof request === 'string' && request.startsWith('/api')) {
           options.headers = options.headers || {}
-          const token = getToken()
-          if (token) {
-            options.headers.Authorization = `Bearer ${token}`
-          }
+          // 确保cookie会被发送
+          options.credentials = 'include'
         }
         
         try {

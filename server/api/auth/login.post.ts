@@ -220,8 +220,19 @@ export default defineEventHandler(async (event) => {
     const needsPasswordChange = !user.passwordChangedAt
     console.log('Needs password change:', needsPasswordChange)
     
+    // 将JWT设置为httpOnly cookie
+    setCookie(event, 'auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // 生产环境使用HTTPS
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60, // 24小时
+      path: '/'
+    })
+    
+    console.log('JWT token set as httpOnly cookie')
+    
     return {
-      token: token,
+      success: true,
       expiresIn: 24 * 60 * 60, // token过期时间（秒）- 24小时
       user: {
         id: user.id,

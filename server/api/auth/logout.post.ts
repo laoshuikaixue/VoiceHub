@@ -1,8 +1,15 @@
 export default defineEventHandler(async (event) => {
   try {
-    // 在JWT-only模式下，登出主要由客户端处理
-    // 服务端只需要返回成功响应
     console.log('[Auth] User logout requested')
+    
+    // 清除httpOnly cookie
+    setCookie(event, 'auth-token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0, // 立即过期
+      path: '/'
+    })
     
     return {
       success: true,
@@ -12,7 +19,19 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error('Logout error:', error)
     
-    // 即使出错也返回成功，因为JWT是无状态的
+    // 即使出错也要尝试清除cookie
+    try {
+      setCookie(event, 'auth-token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 0,
+        path: '/'
+      })
+    } catch (cookieError) {
+      console.error('Failed to clear cookie:', cookieError)
+    }
+    
     return {
       success: true,
       message: '登出成功'
