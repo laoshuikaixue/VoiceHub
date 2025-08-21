@@ -106,7 +106,15 @@ export const useAuth = () => {
     clearAuthState()
 
     if (process.client && redirect) {
-      await navigateTo('/login')
+      await navigateTo('/')
+    }
+  }
+
+  const getAuthConfig = () => {
+    // 返回用于fetch请求的认证配置
+    // 由于使用cookie认证，需要确保credentials被包含
+    return {
+      credentials: 'include' as RequestCredentials
     }
   }
 
@@ -122,5 +130,6 @@ export const useAuth = () => {
     setInitialPassword,
     refreshUser,
     initAuth,
+    getAuthConfig,
   }
 }
