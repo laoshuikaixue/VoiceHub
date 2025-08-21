@@ -20,28 +20,81 @@ export default defineEventHandler(async (event) => {
 
     // 并行获取实时统计数据
     const [
-      activeUsers,
+      activeUsersData,
       todayRequests,
       popularGenres,
       peakHours
     ] = await Promise.all([
-      // 活跃用户数 (简化为最近1小时点歌的用户数)
+      // 活跃用户数和用户列表 (最近1小时点歌或登录的用户)
       (async () => {
         try {
-          const recentSongs = await prisma.song.findMany({
+          // 获取最近1小时内点歌的用户
+          const recentSongUsers = await prisma.song.findMany({
             where: {
               createdAt: {
                 gte: oneHourAgo
               }
             },
             select: {
-              requesterId: true
+              requesterId: true,
+              requester: {
+                select: {
+                  id: true,
+                  username: true,
+                  name: true
+                }
+              }
             },
             distinct: ['requesterId']
           })
-          return recentSongs.length
+          
+          // 获取最近1小时内登录的用户
+          const recentLoginUsers = await prisma.user.findMany({
+            where: {
+              lastLogin: {
+                gte: oneHourAgo
+              }
+            },
+            select: {
+              id: true,
+              username: true,
+              name: true
+            }
+          })
+          
+          // 合并并去重用户列表
+          const userMap = new Map()
+          
+          // 添加点歌用户
+          recentSongUsers.forEach(song => {
+            const user = song.requester
+            userMap.set(user.id, {
+              id: user.id,
+              username: user.username,
+              name: user.name
+            })
+          })
+          
+          // 添加登录用户
+          recentLoginUsers.forEach(user => {
+            userMap.set(user.id, {
+              id: user.id,
+              username: user.username,
+              name: user.name
+            })
+          })
+          
+          const activeUsersList = Array.from(userMap.values())
+          
+          return {
+            count: activeUsersList.length,
+            users: activeUsersList
+          }
         } catch (error) {
-          return 0
+          return {
+            count: 0,
+            users: []
+          }
         }
       })(),
 
@@ -103,7 +156,8 @@ export default defineEventHandler(async (event) => {
     ])
 
     return {
-      activeUsers,
+      activeUsers: activeUsersData.count,
+      activeUsersList: activeUsersData.users,
       todayRequests,
       popularGenres,
       peakHours,

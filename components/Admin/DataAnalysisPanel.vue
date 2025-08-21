@@ -139,8 +139,8 @@
           </div>
         </div>
         <div class="realtime-grid">
-          <div class="realtime-item">
-            <span class="realtime-label">在线用户</span>
+          <div class="realtime-item online-users-item" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave" ref="onlineUsersRef">
+            <span class="realtime-label">活跃用户</span>
             <span class="realtime-value">{{ realtimeStats.activeUsers }}</span>
           </div>
           <div class="realtime-item">
@@ -420,6 +420,46 @@
     </div>
     </div>
   </div>
+  
+  <!-- 全局悬浮提示框 -->
+  <Teleport to="body">
+    <div v-if="tooltip.show" class="users-tooltip-global" :style="tooltip.style" @mouseenter="handleTooltipMouseEnter" @mouseleave="handleTooltipMouseLeave">
+      <!-- 有活跃用户时的提示 -->
+      <div v-if="realtimeStats.activeUsersList && realtimeStats.activeUsersList.length > 0">
+        <div class="tooltip-header">
+          <h4>活跃用户列表</h4>
+          <span class="user-count">({{ realtimeStats.activeUsersList.length }}人)</span>
+        </div>
+        <div class="users-list">
+          <div v-for="user in realtimeStats.activeUsersList" :key="user.id" class="user-item-tooltip">
+            <div class="user-avatar">
+              <div class="avatar-placeholder">
+                {{ user.name ? user.name.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase() }}
+              </div>
+            </div>
+            <div class="user-info-tooltip">
+              <div class="user-name">{{ user.name || user.username }}</div>
+              <div class="user-username">@{{ user.username }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 无活跃用户时的提示 -->
+      <div v-else class="empty-tooltip">
+        <div class="tooltip-header">
+          <h4>活跃用户列表</h4>
+        </div>
+        <div class="empty-message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <p>暂无活跃用户</p>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -481,10 +521,77 @@ const panelStates = ref({
 })
 const realtimeStats = ref({
   activeUsers: 0,
+  activeUsersList: [],
   todayRequests: 0,
   popularGenres: [],
   peakHours: []
 })
+
+// 悬停提示状态
+const showUsersList = ref(false)
+
+// 全局tooltip状态
+const tooltip = ref({
+  show: false,
+  isHovered: false,
+  style: {
+    position: 'fixed',
+    top: '0px',
+    left: '0px',
+    zIndex: 999999
+  }
+})
+
+// 鼠标进入事件处理
+const handleMouseEnter = (event) => {
+  const rect = event.target.getBoundingClientRect()
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  
+  // 计算tooltip位置
+  let left = rect.left + rect.width / 2
+  let top = rect.top - 10
+  
+  // 确保tooltip不超出视口边界
+  const tooltipWidth = 320 // 预估tooltip宽度
+  const tooltipHeight = 300 // 预估tooltip高度
+  
+  if (left + tooltipWidth / 2 > viewportWidth) {
+    left = viewportWidth - tooltipWidth / 2 - 10
+  }
+  if (left - tooltipWidth / 2 < 0) {
+    left = tooltipWidth / 2 + 10
+  }
+  if (top - tooltipHeight < 0) {
+    top = rect.bottom + 10
+  }
+  
+  tooltip.value.style.left = `${left}px`
+  tooltip.value.style.top = `${top}px`
+  tooltip.value.style.transform = 'translateX(-50%)'
+  tooltip.value.show = true
+}
+
+// 鼠标离开事件处理
+const handleMouseLeave = () => {
+  // 延迟隐藏，给用户时间移动到tooltip上
+  setTimeout(() => {
+    if (!tooltip.value.isHovered) {
+      tooltip.value.show = false
+    }
+  }, 100)
+}
+
+// tooltip鼠标进入事件
+const handleTooltipMouseEnter = () => {
+  tooltip.value.isHovered = true
+}
+
+// tooltip鼠标离开事件
+const handleTooltipMouseLeave = () => {
+  tooltip.value.isHovered = false
+  tooltip.value.show = false
+}
 
 // 处理学期切换
 const handleSemesterChange = async () => {
@@ -548,6 +655,7 @@ const loadRealtimeStats = async () => {
     
     realtimeStats.value = {
       activeUsers: response.activeUsers || 0,
+      activeUsersList: response.activeUsersList || [],
       todayRequests: response.todayRequests || 0,
       popularGenres: response.popularGenres || [],
       peakHours: response.peakHours || []
@@ -1009,6 +1117,7 @@ const formatSemesterPeriod = (semester) => {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
 }
 
 .realtime-label {
@@ -1957,6 +2066,250 @@ const formatSemesterPeriod = (semester) => {
   color: #fca5a5;
 }
 
+/* 活跃用户悬停提示样式 */
+.online-users-item {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.online-users-item:hover {
+  background: rgba(79, 70, 229, 0.1);
+  border-radius: 8px;
+}
+
+.users-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 280px;
+  max-width: 320px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  z-index: 99999;
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.users-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  border-bottom: none;
+  border-right: none;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.tooltip-header h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #f1f5f9;
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.user-count {
+  font-size: 12px;
+  color: #0ea5e9;
+  background: rgba(14, 165, 233, 0.15);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.users-list {
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
+}
+
+.users-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.users-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.users-list::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 2px;
+}
+
+.user-item-tooltip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+  transition: all 0.2s ease;
+}
+
+.user-item-tooltip:last-child {
+  border-bottom: none;
+}
+
+.user-item-tooltip:hover {
+  background: rgba(100, 116, 139, 0.1);
+  border-radius: 6px;
+  padding: 8px 6px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.user-info-tooltip {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-info-tooltip .user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-info-tooltip .user-username {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty-tooltip {
+  text-align: center;
+}
+
+.empty-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #94a3b8;
+  padding: 20px 0;
+}
+
+.empty-message svg {
+  width: 36px;
+  height: 36px;
+  opacity: 0.5;
+  color: #0ea5e9;
+}
+
+.empty-message p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .users-tooltip {
+    min-width: 240px;
+    max-width: 280px;
+    left: 0;
+    transform: none;
+    margin-left: 0;
+  }
+  
+  .users-tooltip::before {
+    left: 24px;
+    transform: rotate(45deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .users-tooltip {
+    min-width: 200px;
+    max-width: 240px;
+    padding: 12px;
+  }
+  
+  .user-item-tooltip {
+    gap: 8px;
+  }
+  
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .avatar-placeholder {
+    font-size: 12px;
+  }
+  
+  .user-info-tooltip .user-name {
+    font-size: 13px;
+  }
+  
+  .user-info-tooltip .user-username {
+    font-size: 11px;
+  }
+}
+
 .retry-btn {
   padding: 8px 16px;
   background: rgba(239, 68, 68, 0.1);
@@ -1975,5 +2328,81 @@ const formatSemesterPeriod = (semester) => {
 
 .retry-btn:active {
   transform: translateY(1px);
+}
+
+/* 全局悬浮提示框样式 */
+.users-tooltip-global {
+  position: fixed;
+  z-index: 999999;
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  border-radius: 16px;
+  padding: 18px;
+  min-width: 280px;
+  max-width: 320px;
+  max-height: 300px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 10px 20px -5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(100, 116, 139, 0.2);
+  animation: tooltipFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.users-tooltip-global::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid rgba(15, 23, 42, 0.98);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+}
+
+/* 当tooltip在下方显示时，箭头在上方 */
+.users-tooltip-global.tooltip-below::before {
+  top: -8px;
+  border-top: none;
+  border-bottom: 8px solid rgba(15, 23, 42, 0.98);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* 响应式设计 - 全局tooltip */
+@media (max-width: 768px) {
+  .users-tooltip-global {
+    min-width: 240px;
+    max-width: 280px;
+    padding: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .users-tooltip-global {
+    min-width: 200px;
+    max-width: 240px;
+    padding: 12px;
+    font-size: 13px;
+  }
+  
+  .users-tooltip-global .tooltip-header h4 {
+    font-size: 13px;
+  }
+  
+  .users-tooltip-global .user-count {
+    font-size: 11px;
+  }
 }
 </style>
