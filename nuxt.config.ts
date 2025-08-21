@@ -158,10 +158,16 @@ export default defineNuxtConfig({
     ...(process.env.VERCEL ? {
       // Vercel 环境：让 Vercel 自动处理 Prisma
     } : process.env.NETLIFY ? {
-      // Netlify 环境：使用标准配置
+      // Netlify 环境：确保 Prisma 客户端正确打包
+      experimental: {
+        wasm: true
+      },
+      // 不将 Prisma 客户端标记为外部依赖，让它被打包进去
       rollupConfig: {
-        external: ['@prisma/client'],
-      }
+        external: []
+      },
+      // 确保 Prisma 客户端在服务器端可用
+      moduleSideEffects: ['@prisma/client']
     } : {
       // 其他环境：使用标准配置
       rollupConfig: {
@@ -177,7 +183,7 @@ export default defineNuxtConfig({
     },
     // 根据部署环境调整 SSR 配置
     ssr: {
-      noExternal: process.env.VERCEL ? [] : ['@prisma/client']
+      noExternal: process.env.NETLIFY ? ['@prisma/client'] : (process.env.VERCEL ? [] : ['@prisma/client'])
     }
   }
 })

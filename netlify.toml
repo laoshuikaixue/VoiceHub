@@ -5,10 +5,17 @@
 [build.environment]
   NODE_VERSION = "20"
   NITRO_PRESET = "netlify"
+  # 确保 Prisma 客户端在构建时生成
+  PRISMA_CLI_BINARY_TARGETS = "native,rhel-openssl-1.0.x"
 
 [functions]
   directory = ".netlify/functions-internal"
   node_bundler = "esbuild"
+  # 增加内存限制和超时时间
+  [functions."server"]
+    included_files = ["node_modules/@prisma/client/**/*", "prisma/**/*"]
+    external_node_modules = []
+    node_bundler = "esbuild"
 
 [[redirects]]
   from = "/*"
@@ -25,4 +32,4 @@
   JWT_SECRET = "JWT令牌签名密钥，建议使用强随机字符串"
   NUXT_PUBLIC_SITE_TITLE = "站点标题，默认为'校园广播站点歌系统'"
   NUXT_PUBLIC_SITE_LOGO = "站点Logo URL，可选"
-  NUXT_PUBLIC_SITE_DESCRIPTION = "站点描述，可选" 
+  NUXT_PUBLIC_SITE_DESCRIPTION = "站点描述，可选"

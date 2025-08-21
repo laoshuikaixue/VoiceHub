@@ -18,8 +18,9 @@
     "create-admin": "cd scripts && node create-admin.js",
     "clear-db": "cd scripts && node clear-database.js",
     "vercel-build": "node scripts/deploy.js",
-    "netlify-build": "node scripts/deploy.js",
-    "check-deploy": "node scripts/check-deploy.js"
+    "netlify-build": "node scripts/netlify-build.js",
+    "check-deploy": "node scripts/check-deploy.js",
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
