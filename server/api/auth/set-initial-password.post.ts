@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 检查用户是否需要强制修改密码（passwordChangedAt为空）
+    // 检查是否需要设置初始密码
     if (currentUser.passwordChangedAt) {
       throw createError({
         statusCode: 400,

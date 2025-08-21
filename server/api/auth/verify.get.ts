@@ -2,8 +2,7 @@ import { JWTEnhanced } from '../../utils/jwt-enhanced'
 import { prisma } from '../../models/schema'
 
 export default defineEventHandler(async (event) => {
-  // This endpoint verifies the user's token and returns user information.
-  // It is designed to be stateless and does not rely on event.context.user.
+  // 验证用户令牌并返回用户信息
 
   let token: string | null = null
   const authHeader = getRequestHeader(event, 'authorization')
@@ -43,7 +42,7 @@ export default defineEventHandler(async (event) => {
       }))
     }
 
-    // Return user data directly
+    // 返回用户数据
     return { user }
 
   } catch (error: any) {

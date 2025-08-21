@@ -161,7 +161,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 
-// Props
+// 组件属性
 const props = defineProps({
   isFirstLogin: {
     type: Boolean,
@@ -280,9 +280,9 @@ const handleChangePassword = async () => {
       newPassword.value = ''
       confirmPassword.value = ''
       
-      // 强制修改密码完成后，更新用户状态并跳转到相应页面
+      // 密码设置完成后跳转
       setTimeout(async () => {
-        // 重新获取用户信息以更新needsPasswordChange状态
+        // 更新用户状态
         await auth.refreshUser()
         
         if (auth.isAdmin.value) {
@@ -300,7 +300,7 @@ const handleChangePassword = async () => {
       newPassword.value = ''
       confirmPassword.value = ''
       
-      // 普通密码修改后登出用户
+      // 密码修改后登出
       setTimeout(() => {
         auth.logout()
         router.push('/login')

@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // 获取用户完整信息
+    // 获取用户信息
     let currentUser
     try {
       console.log(`查询用户 ID: ${user.id} 的详细信息`)
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     } catch (dbError: any) {
       console.error('查询用户信息数据库错误:', dbError)
       
-      // 尝试使用原始SQL查询
+      // 使用原始SQL查询
       try {
         console.log('尝试使用原始SQL查询用户信息')
         const result = await prisma.$queryRaw`
@@ -101,7 +101,7 @@ export default defineEventHandler(async (event) => {
     try {
       console.log(`更新用户 ID: ${user.id} 的密码`)
       
-      // 使用原始SQL更新，避免可能的模式不匹配问题
+      // 使用原始SQL更新
       await prisma.$executeRaw`
         UPDATE "User"
         SET password = ${hashedPassword},
@@ -124,18 +124,18 @@ export default defineEventHandler(async (event) => {
       message: '密码修改成功'
     }
   } catch (error: any) {
-    // 如果是已格式化的错误，直接抛出
+    // 已格式化的错误直接抛出
     if (error.statusCode) {
       throw error
     }
     
-    // 记录详细错误信息
+    // 记录错误信息
     console.error('修改密码过程中发生未处理的错误:', error)
     
-    // 创建通用错误响应
+    // 创建错误响应
     throw createError({
       statusCode: 500,
       message: '修改密码失败: ' + (error.message || '未知错误')
     })
   }
-}) 
+})

@@ -19,7 +19,6 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 使用认证配置
       const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/schedule', {
@@ -48,7 +47,6 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 使用认证配置
       const authConfig = getAuthConfig()
       
       const response = await $fetch<{success: boolean, message?: string, schedule?: any}>('/api/admin/schedule/remove', {
@@ -57,7 +55,7 @@ export const useAdmin = () => {
         ...authConfig
       })
       
-      // 检查响应是否包含success字段
+      // 检查响应
       if (!response.success) {
         error.value = response.message || '移除排期失败'
         return { success: false, message: error.value } as const
@@ -85,7 +83,6 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 使用认证配置
       const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/schedule/sequence', {
@@ -114,7 +111,6 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 使用认证配置
       const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/mark-played', {
@@ -152,7 +148,6 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 使用认证配置
       const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/notifications/send', {
@@ -181,7 +176,6 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 使用认证配置
       const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/system-settings', {

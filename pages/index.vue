@@ -294,14 +294,6 @@
     </div>
       </Transition>
     </Teleport>
-
-
-
-    <!-- 旧的通知组件已移除，使用全局通知系统 -->
-    
-
-    
-
   </div>
 </template>
 
@@ -323,12 +315,12 @@ const router = useRouter()
 // 站点配置
 const { siteTitle, description: siteDescription, guidelines: submissionGuidelines, icp: icpNumber, schoolLogoHomeUrl, initSiteConfig } = useSiteConfig()
 
-// 服务器端安全的认证状态管理
-const isClientAuthenticated = ref(false)
-const isAdmin = ref(false)
-const user = ref(null)
-let auth = null
-let songs = useSongs() // 立即初始化songs服务
+const auth = useAuth()
+
+const isClientAuthenticated = computed(() => auth?.isAuthenticated?.value || false)
+const isAdmin = computed(() => auth?.isAdmin?.value || false)
+const user = computed(() => auth?.user?.value || null)
+let songs = useSongs()
 let notificationsService = null
 const unreadNotificationCount = ref(0)
 
@@ -357,15 +349,14 @@ const calculateLoadTime = () => {
   }
 }
 
-// 旧的通知系统已移除，使用全局通知系统
 let refreshInterval = null
 
 // 添加通知相关变量
-const userNotifications = computed(() => notificationsService.notifications.value || [])
-const notificationsLoading = computed(() => notificationsService.loading.value)
-const hasUnreadNotifications = computed(() => notificationsService.unreadCount.value > 0)
+const userNotifications = computed(() => notificationsService?.notifications?.value || [])
+const notificationsLoading = computed(() => notificationsService?.loading?.value || false)
+const hasUnreadNotifications = computed(() => (notificationsService?.unreadCount?.value || 0) > 0)
 const showNotificationSettings = ref(false)
-// 修改通知设置变量
+
 const notificationSettings = ref({
   songSelectedNotify: true,
   songPlayedNotify: true,
@@ -490,22 +481,22 @@ const formatNotificationTime = (timeString) => {
   if (diff < 60000) {
     return '刚刚'
   }
-  
+
   // 小于1小时
   if (diff < 3600000) {
     return `${Math.floor(diff / 60000)}分钟前`
   }
-  
+
   // 小于24小时
   if (diff < 86400000) {
     return `${Math.floor(diff / 3600000)}小时前`
   }
-  
+
   // 小于30天
   if (diff < 2592000000) {
     return `${Math.floor(diff / 86400000)}天前`
   }
-  
+
   // 大于30天，显示具体日期
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
 }
@@ -532,7 +523,7 @@ const getCurrentDate = () => {
   const date = now.getDate();
   const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
   const weekDay = weekDays[now.getDay()];
-  
+
   return `${year}年${month}月${date}日 周${weekDay}`;
 }
 
@@ -573,32 +564,13 @@ onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
   
+  // 初始化认证状态
+  await auth.initAuth()
+  
   // 确保title正确设置
   if (typeof document !== 'undefined' && siteTitle.value) {
     document.title = `首页 | ${siteTitle.value}`
   }
-  
-  auth = useAuth()
-
-  // 初始化认证状态
-  await auth.initAuth()
-
-  isClientAuthenticated.value = auth.isAuthenticated.value
-  isAdmin.value = auth.isAdmin.value
-  user.value = auth.user.value
-
-  // 监听认证状态变化
-  watch(() => auth.isAuthenticated.value, (newVal) => {
-    isClientAuthenticated.value = newVal
-  })
-
-  watch(() => auth.isAdmin.value, (newVal) => {
-    isAdmin.value = newVal
-  })
-
-  watch(() => auth.user.value, (newVal) => {
-    user.value = newVal
-  })
 
   // 初始化通知服务
   notificationsService = useNotifications()
@@ -641,43 +613,26 @@ onMounted(async () => {
     
     refreshInterval = setInterval(async () => {
       try {
-        // 使用智能刷新，只刷新过期或即将过期的数据
-        const cache = songs.cache || (await import('~/composables/useDataCache')).getGlobalCache()
-        
+        // 定期刷新数据
         if (isClientAuthenticated.value) {
-          // 已登录用户：智能刷新歌曲列表、公共排期和通知
-          await cache.smartRefresh([
-            {
-              type: 'songs',
-              requestFn: () => songs.fetchSongs(true, undefined, true)
-            },
-            {
-              type: 'publicSchedules',
-              requestFn: () => songs.fetchPublicSchedules(true, undefined, true)
-            },
-            {
-              type: 'notifications',
-              requestFn: () => loadNotifications()
-            }
+          // 已登录用户：刷新歌曲列表、公共排期和通知
+          await Promise.allSettled([
+            songs.fetchSongs(true),
+            songs.fetchPublicSchedules(true),
+            loadNotifications()
           ])
         } else {
-          // 未登录用户：智能刷新公共排期和歌曲总数
-          await cache.smartRefresh([
-            {
-              type: 'publicSchedules',
-              requestFn: () => songs.fetchPublicSchedules(true, undefined, true)
-            },
-            {
-              type: 'songCount',
-              requestFn: () => songs.fetchSongCount(true)
-            }
+          // 未登录用户：刷新公共排期和歌曲总数
+          await Promise.allSettled([
+            songs.fetchPublicSchedules(true),
+            songs.fetchSongCount()
           ])
         }
         
         // 更新统计数据
         await updateSongCounts()
       } catch (error) {
-        console.error('智能刷新失败:', error)
+        console.error('定期刷新失败:', error)
       }
     }, intervalMs)
   }

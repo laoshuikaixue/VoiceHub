@@ -16,12 +16,12 @@ export const useAuth = () => {
   }
 
   const initAuth = async () => {
-    // 严格限制只在客户端执行，避免服务端状态污染
+    // 客户端执行
     if (typeof window === 'undefined' || process.server) {
       return
     }
 
-    // 如果已经认证，跳过重复验证
+    // 已认证跳过
     if (isAuthenticated.value && user.value) {
       return
     }
@@ -33,7 +33,7 @@ export const useAuth = () => {
         user.value = data.user
         isAuthenticated.value = true
         isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
-        token.value = 'cookie-based' // 表示认证基于cookie
+        token.value = 'cookie-based'
       } else {
         clearAuthState()
       }
@@ -100,7 +100,7 @@ export const useAuth = () => {
     try {
       await $fetch('/api/auth/logout', { method: 'POST' })
     } catch (error) {
-      // 忽略服务器端登出错误
+      // 忽略登出错误
     }
 
     clearAuthState()
@@ -111,8 +111,7 @@ export const useAuth = () => {
   }
 
   const getAuthConfig = () => {
-    // 返回用于fetch请求的认证配置
-    // 由于使用cookie认证，需要确保credentials被包含
+    // 返回认证配置
     return {
       credentials: 'include' as RequestCredentials
     }

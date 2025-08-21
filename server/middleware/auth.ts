@@ -2,7 +2,7 @@ import { JWTEnhanced } from '../utils/jwt-enhanced'
 import { prisma } from '../models/schema'
 
 export default defineEventHandler(async (event) => {
-  // Aggressively clear user context at the start of every request
+  // 清除用户上下文
   if (event.context.user) {
     delete event.context.user
   }
@@ -10,15 +10,15 @@ export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
   const pathname = url.pathname
 
-  // Skip middleware for non-API routes
+  // 跳过非API路由
   if (!pathname.startsWith('/api/')) {
     return
   }
 
-  // Define public API paths that do not require authentication
+  // 公共API路径
   const publicApiPaths = [
     '/api/auth/login',
-    '/api/auth/verify', // The verify endpoint handles its own token validation
+    '/api/auth/verify', // verify端点自行处理token验证
     '/api/semesters/current',
     '/api/play-times',
     '/api/schedules/public',
@@ -27,12 +27,12 @@ export default defineEventHandler(async (event) => {
     '/api/site-config'
   ]
 
-  // If the path is public, do not proceed with authentication checks
+  // 公共路径跳过认证检查
   if (publicApiPaths.some(path => pathname.startsWith(path))) {
     return
   }
 
-  // For protected routes, get the token from header or cookie
+  // 从请求头或cookie获取token
   let token: string | null = null
   const authHeader = getRequestHeader(event, 'authorization')
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
     token = getCookie(event, 'auth-token') || null
   }
 
-  // If no token is found for a protected route, send a 401 error
+  // 受保护路由缺少token时返回401错误
   if (!token) {
     return sendError(event, createError({
       statusCode: 401,
@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // Verify the token and fetch the user from the database
+    // 验证token并获取用户信息
     const decoded = JWTEnhanced.verifyToken(token)
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    // If user not found, the token is invalid
+    // 用户不存在时token无效
     if (!user) {
       return sendError(event, createError({
         statusCode: 401,
@@ -74,10 +74,10 @@ export default defineEventHandler(async (event) => {
       }))
     }
 
-    // Attach user information to the request context
+    // 将用户信息附加到请求上下文
     event.context.user = user
 
-    // Check for admin-only routes
+    // 检查管理员专用路由
     if (pathname.startsWith('/api/admin') && !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
       return sendError(event, createError({
         statusCode: 403,
@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
       }))
     }
   } catch (error: any) {
-    // Handle JWT verification errors (e.g., expired, invalid signature)
+    // 处理JWT验证错误
     return sendError(event, createError({
       statusCode: 401,
       message: `认证失败: ${error.message}`,

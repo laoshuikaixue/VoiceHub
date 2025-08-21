@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 数据库连接检查和重连逻辑
+    // 数据库连接检查
     const isConnected = await checkDatabaseConnection().catch(() => false)
     if (!isConnected) {
       const reconnected = await reconnectDatabase().catch(() => false)
@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 更新用户最后登录信息
+    // 更新登录信息
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -81,12 +81,12 @@ export default defineEventHandler(async (event) => {
     // 生成JWT
     const token = JWTEnhanced.generateToken(user.id, user.role)
 
-    // 设置httpOnly cookie
+    // 设置cookie
     setCookie(event, 'auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24, // 24小时
+      maxAge: 60 * 60 * 24,
       path: '/'
     })
 

@@ -134,13 +134,6 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 const { siteTitle, initSiteConfig } = useSiteConfig()
 
-
-// 中间件验证
-// definePageMeta({
-//   middleware: ['auth']
-// })
-
-
 const notificationsService = useNotifications()
 const loading = computed(() => notificationsService.loading.value)
 const notifications = computed(() => notificationsService.notifications.value || [])
@@ -167,7 +160,7 @@ const isAuthenticated = computed(() => auth.isAuthenticated.value)
 onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
-  
+
   // 设置页面标题
   if (typeof document !== 'undefined' && siteTitle.value) {
     document.title = `通知 | ${siteTitle.value}`
@@ -235,7 +228,7 @@ const handleConfirmAction = async () => {
     await notificationsService.clearAllNotifications()
   }
   
-  // 重置状态
+// 重置状态
   pendingAction.value = null
   pendingId.value = null
 }
@@ -272,7 +265,7 @@ const formatTime = (timeString) => {
   if (diff < 2592000000) {
     return `${Math.floor(diff / 86400000)}天前`
   }
-  
+
   // 大于30天，显示具体日期
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
 }

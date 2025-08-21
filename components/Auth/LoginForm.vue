@@ -119,7 +119,7 @@ const handleLogin = async () => {
     }
   } catch (err) {
     error.value = err.message || '登录失败，请检查账号密码'
-    // 如果是密码错误，清空密码字段
+    // 密码错误时清空密码字段
     if (error.value.includes('密码不正确')) {
       password.value = ''
     }

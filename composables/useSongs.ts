@@ -24,7 +24,7 @@ export const useSongs = () => {
     if (window.$showNotification) {
       window.$showNotification(message, type)
     } else {
-      // 备用方案：使用本地通知
+      // 备用方案
     notification.value = {
       show: true,
       message,
@@ -52,8 +52,8 @@ export const useSongs = () => {
         playTimes.value = response.playTimes.map(pt => ({
           id: pt.id,
           name: pt.name,
-          startTime: pt.startTime || undefined,  // 将null转换为undefined
-          endTime: pt.endTime || undefined,      // 将null转换为undefined
+          startTime: pt.startTime || undefined,
+          endTime: pt.endTime || undefined,
           enabled: pt.enabled,
           description: pt.description || undefined
         }))
@@ -70,7 +70,7 @@ export const useSongs = () => {
     }
   }
   
-  // 获取歌曲列表（需要登录）- 显示加载状态
+  // 获取歌曲列表
   const fetchSongs = async (silent = false, semester?: string, forceRefresh = false) => {
     if (!silent) {
       loading.value = true
@@ -90,7 +90,7 @@ export const useSongs = () => {
           }
           const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
           
-          // 使用$fetch进行API请求
+          // API请求
           return await $fetch(url)
         },
         requestParams

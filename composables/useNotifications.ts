@@ -4,14 +4,13 @@ import type { Notification, NotificationSettings } from '~/types'
 
 export const useNotifications = () => {
   const { getAuthConfig, isAuthenticated } = useAuth()
-  
+
   const notifications = ref<Notification[]>([])
   const unreadCount = ref(0)
   const settings = ref<NotificationSettings | null>(null)
   const loading = ref(false)
   const error = ref('')
-  
-  // 获取用户通知列表
+
   const fetchNotifications = async () => {
     if (!isAuthenticated.value) {
       notifications.value = []
@@ -53,8 +52,7 @@ export const useNotifications = () => {
       loading.value = false
     }
   }
-  
-  // 获取通知设置
+
   const fetchNotificationSettings = async () => {
     if (!isAuthenticated.value) {
       settings.value = null
@@ -93,8 +91,7 @@ export const useNotifications = () => {
       loading.value = false
     }
   }
-  
-  // 更新通知设置
+
   const updateNotificationSettings = async (newSettings: Partial<NotificationSettings>) => {
     if (!isAuthenticated.value) {
       error.value = '需要登录才能更新通知设置'
@@ -138,7 +135,7 @@ export const useNotifications = () => {
       loading.value = false
     }
   }
-  
+
   // 标记通知为已读
   const markAsRead = async (notificationId: number) => {
     if (!isAuthenticated.value) {
@@ -184,7 +181,7 @@ export const useNotifications = () => {
       loading.value = false
     }
   }
-  
+
   // 标记所有通知为已读
   const markAllAsRead = async () => {
     if (!isAuthenticated.value) {
@@ -229,7 +226,7 @@ export const useNotifications = () => {
       loading.value = false
     }
   }
-  
+
   // 删除通知
   const deleteNotification = async (notificationId: number) => {
     if (!isAuthenticated.value) {
@@ -282,7 +279,7 @@ export const useNotifications = () => {
       loading.value = false
     }
   }
-  
+
   // 清空所有通知
   const clearAllNotifications = async () => {
     if (!isAuthenticated.value) {
@@ -330,7 +327,7 @@ export const useNotifications = () => {
       loading.value = false
     }
   }
-  
+
   // 计算未读通知数量
   const computedUnreadCount = computed(() => unreadCount.value)
   
