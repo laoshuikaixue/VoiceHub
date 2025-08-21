@@ -479,7 +479,7 @@ const performGradeUpdate = async () => {
       targetGrade: targetGrade.value.trim(),
       keepClass: keepClass.value
     },
-    headers: auth.getAuthHeader().headers
+    ...auth.getAuthConfig()
   })
 
   if (!response.success) {
@@ -507,7 +507,7 @@ const performExcelUpdate = async () => {
     await $fetch('/api/admin/users/batch-update', {
       method: 'POST',
       body: { updates },
-      headers: auth.getAuthHeader().headers
+      ...auth.getAuthConfig()
     })
   }
 }
@@ -522,7 +522,7 @@ const fetchAllStudents = async () => {
         limit: 10000, // 获取所有数据
         role: 'USER'
       },
-      headers: auth.getAuthHeader().headers
+      ...auth.getAuthConfig()
     })
     
     if (response.success && response.users) {

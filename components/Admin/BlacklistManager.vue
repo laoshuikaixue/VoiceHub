@@ -204,7 +204,7 @@ const loadBlacklist = async () => {
     })
 
     const response = await $fetch(`/api/admin/blacklist?${params}`, {
-      ...useAuth().getAuthHeader()
+      ...useAuth().getAuthConfig()
     })
 
     blacklist.value = response.blacklist
@@ -233,7 +233,7 @@ const addBlacklistItem = async () => {
         value: newItem.value.trim(),
         reason: newItem.reason.trim() || null
       },
-      ...useAuth().getAuthHeader()
+      ...useAuth().getAuthConfig()
     })
 
     success.value = '黑名单项添加成功'
@@ -268,7 +268,7 @@ const toggleItemStatus = async (item) => {
       body: {
         isActive: !item.isActive
       },
-      ...useAuth().getAuthHeader()
+      ...useAuth().getAuthConfig()
     })
 
     item.isActive = !item.isActive
@@ -302,7 +302,7 @@ const confirmDelete = async () => {
   try {
     await $fetch(`/api/admin/blacklist/${deleteTargetItem.value.id}`, {
       method: 'DELETE',
-      ...useAuth().getAuthHeader()
+      ...useAuth().getAuthConfig()
     })
 
     if (window.$showNotification) {

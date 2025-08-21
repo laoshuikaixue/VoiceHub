@@ -170,7 +170,7 @@ const fetchUserSongs = async () => {
     const auth = useAuth()
 
     const response = await $fetch(`/api/admin/users/${props.userId}/songs`, {
-      headers: auth.getAuthHeader().headers
+      ...auth.getAuthConfig()
     })
 
     userSongs.value = response

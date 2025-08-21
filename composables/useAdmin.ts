@@ -3,7 +3,7 @@ import { useAuth } from './useAuth'
 import type { PlayTime, SystemSettings } from '~/types'
 
 export const useAdmin = () => {
-  const { getAuthHeader, isAdmin } = useAuth()
+  const { getAuthConfig, isAdmin } = useAuth()
   
   const loading = ref(false)
   const error = ref('')
@@ -19,13 +19,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/schedule', {
         method: 'POST',
         body: { songId, playDate, playTimeId, sequence },
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data
@@ -48,13 +48,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const response = await $fetch<{success: boolean, message?: string, schedule?: any}>('/api/admin/schedule/remove', {
         method: 'POST',
         body: { scheduleId },
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       // 检查响应是否包含success字段
@@ -85,13 +85,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/schedule/sequence', {
         method: 'POST',
         body: { schedules },
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data
@@ -114,13 +114,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/mark-played', {
         method: 'POST',
         body: { songId },
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data
@@ -152,13 +152,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/notifications/send', {
         method: 'POST',
         body: notificationData,
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data
@@ -181,11 +181,11 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/system-settings', {
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data as SystemSettings
@@ -208,13 +208,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/system-settings', {
         method: 'POST',
         body: settings,
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data as SystemSettings
@@ -237,11 +237,11 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/play-times', {
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data as PlayTime[]
@@ -264,13 +264,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/play-times', {
         method: 'POST',
         body: playTimeData,
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data as PlayTime
@@ -293,13 +293,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch(`/api/admin/play-times/${id}`, {
         method: 'PUT',
         body: playTimeData,
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data as PlayTime
@@ -322,12 +322,12 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch(`/api/admin/play-times/${id}`, {
         method: 'DELETE',
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data
@@ -350,13 +350,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/songs/delete', {
         method: 'POST',
         body: { songId },
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data
@@ -379,13 +379,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch(`/api/songs/${songId}/update`, {
         method: 'PUT',
         body: songData,
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data
@@ -408,13 +408,13 @@ export const useAdmin = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/songs/add', {
         method: 'POST',
         body: songData,
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       return data

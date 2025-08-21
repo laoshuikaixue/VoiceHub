@@ -210,7 +210,7 @@ const systemStatus = ref({
 const loadStats = async () => {
   try {
     const response = await $fetch('/api/admin/stats', {
-      ...useAuth().getAuthHeader()
+      ...useAuth().getAuthConfig()
     })
     stats.value = response
   } catch (error) {
@@ -222,7 +222,7 @@ const loadRecentActivities = async () => {
   loadingActivities.value = true
   try {
     const response = await $fetch('/api/admin/activities', {
-      ...useAuth().getAuthHeader()
+      ...useAuth().getAuthConfig()
     })
     recentActivities.value = response.activities || []
   } catch (error) {

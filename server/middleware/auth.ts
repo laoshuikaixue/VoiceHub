@@ -13,32 +13,19 @@ export default defineEventHandler(async (event) => {
   // 公共API路径，不需要认证
   const publicApiPaths = [
     '/api/auth/login',
-    '/api/auth/register',
     '/api/semesters/current',
     '/api/play-times',
     '/api/schedules/public',
-    '/api/songs',
-    '/api/upload',
+    '/api/songs/count',
+    '/api/songs/public',
     '/api/site-config'
   ]
 
-  // 需要认证的特定API路径（即使在公共路径下）
-  const authRequiredPaths = [
-    '/api/songs/submission-status',
-    '/api/songs/vote'
-  ]
+  // 检查是否为公共API路径
+  const isPublicApiPath = publicApiPaths.some(path => pathname.startsWith(path))
 
-  // 检查是否需要强制认证
-  const requiresAuth = authRequiredPaths.some(path => pathname.startsWith(path))
-  
-  // 检查是否为公共API路径或特定歌曲详情路径
-  const isPublicApiPath = publicApiPaths.some(path => pathname.startsWith(path)) ||
-                          /^\/api\/songs\/\d+$/.test(pathname)
-
-  // 如果不需要强制认证且是公共API路径，则跳过认证
-  if (!requiresAuth && isPublicApiPath) {
-    return
-  }
+  // 如果不是公共API路径且不是认证相关路径，则需要认证
+  if (!isPublicApiPath && !pathname.startsWith('/api/auth/')) {
   
   // 尝试从Authorization头部或cookie获取token
   let token: string | null = null
@@ -155,5 +142,6 @@ export default defineEventHandler(async (event) => {
       message: 'Token无效，请重新登录',
       data: { invalidToken: true }
     })
+  }
   }
 })

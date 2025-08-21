@@ -3,7 +3,7 @@ import { useAuth } from './useAuth'
 import type { Notification, NotificationSettings } from '~/types'
 
 export const useNotifications = () => {
-  const { getAuthHeader, isAuthenticated } = useAuth()
+  const { getAuthConfig, isAuthenticated } = useAuth()
   
   const notifications = ref<Notification[]>([])
   const unreadCount = ref(0)
@@ -23,12 +23,10 @@ export const useNotifications = () => {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
+      const authConfig = getAuthConfig()
       
       const { data, error: fetchError } = await useFetch('/api/notifications', {
-        headers: {
-          ...authHeaders.headers
-        }
+        ...authConfig
       })
       
       if (fetchError.value) {
@@ -67,12 +65,10 @@ export const useNotifications = () => {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
+      const authConfig = getAuthConfig()
       
       const { data, error: fetchError } = await useFetch('/api/notifications/settings', {
-        headers: {
-          ...authHeaders.headers
-        }
+        ...authConfig
       })
       
       if (fetchError.value) {
@@ -109,14 +105,12 @@ export const useNotifications = () => {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
+      const authConfig = getAuthConfig()
       
       const { data, error: fetchError } = await useFetch('/api/notifications/settings', {
         method: 'POST',
-        headers: {
-          ...authHeaders.headers
-        },
-        body: newSettings
+        body: newSettings,
+        ...authConfig
       })
       
       if (fetchError.value) {
@@ -156,13 +150,11 @@ export const useNotifications = () => {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
+      const authConfig = getAuthConfig()
       
       const { data, error: fetchError } = await useFetch(`/api/notifications/${notificationId}/read`, {
         method: 'POST',
-        headers: {
-          ...authHeaders.headers
-        }
+        ...authConfig
       })
       
       if (fetchError.value) {
@@ -204,13 +196,11 @@ export const useNotifications = () => {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
+      const authConfig = getAuthConfig()
       
       const { data, error: fetchError } = await useFetch('/api/notifications/read-all', {
         method: 'POST',
-        headers: {
-          ...authHeaders.headers
-        }
+        ...authConfig
       })
       
       if (fetchError.value) {
@@ -251,12 +241,11 @@ export const useNotifications = () => {
     error.value = ''
     
     try {
+      const authConfig = getAuthConfig()
+      
       const { data, error: fetchError } = await useFetch(`/api/notifications/${notificationId}`, {
         method: 'DELETE',
-        headers: {
-          ...authHeaders.headers,
-          'Content-Type': 'application/json'
-        }
+        ...authConfig
       })
       
       if (fetchError.value) {
@@ -305,14 +294,11 @@ export const useNotifications = () => {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
+      const authConfig = getAuthConfig()
       
       const { data, error: fetchError } = await useFetch('/api/notifications/clear-all', {
         method: 'DELETE',
-        headers: {
-          ...authHeaders.headers,
-          'Content-Type': 'application/json'
-        }
+        ...authConfig
       })
       
       if (fetchError.value) {

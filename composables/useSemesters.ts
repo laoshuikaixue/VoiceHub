@@ -77,7 +77,7 @@ export function useSemesters() {
 
   // 获取学期列表（管理员专用）
   const fetchSemesters = async () => {
-    const { isAuthenticated, getAuthHeader } = useAuth()
+    const { isAuthenticated, getAuthConfig } = useAuth()
     
     if (!isAuthenticated.value) {
       error.value = '需要登录才能获取学期列表'
@@ -88,13 +88,13 @@ export function useSemesters() {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
+      const authConfig = getAuthConfig()
       
       const response = await fetch('/api/admin/semesters', {
         headers: {
-          ...authHeaders.headers,
           'Content-Type': 'application/json'
-        }
+        },
+        ...authConfig
       })
       
       if (!response.ok) {
@@ -132,7 +132,7 @@ export function useSemesters() {
     name: string,
     isActive?: boolean
   }) => {
-    const { isAuthenticated, getAuthHeader } = useAuth()
+    const { isAuthenticated, getAuthConfig } = useAuth()
     
     if (!isAuthenticated.value) {
       error.value = '需要登录才能创建学期'
@@ -143,15 +143,15 @@ export function useSemesters() {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
+      const authConfig = getAuthConfig()
       
       const response = await fetch('/api/admin/semesters', {
         method: 'POST',
         headers: {
-          ...authHeaders.headers,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(semesterData)
+        body: JSON.stringify(semesterData),
+        ...authConfig
       })
       
       if (!response.ok) {
@@ -183,7 +183,7 @@ export function useSemesters() {
 
   // 设置活跃学期
   const setActiveSemester = async (semesterId: number) => {
-    const { isAuthenticated, getAuthHeader } = useAuth()
+    const { isAuthenticated, getAuthConfig } = useAuth()
     
     if (!isAuthenticated.value) {
       error.value = '需要登录才能设置活跃学期'
@@ -194,15 +194,15 @@ export function useSemesters() {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
+      const authConfig = getAuthConfig()
       
       const response = await fetch('/api/admin/semesters/set-active', {
         method: 'POST',
         headers: {
-          ...authHeaders.headers,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ semesterId })
+        body: JSON.stringify({ semesterId }),
+        ...authConfig
       })
       
       if (!response.ok) {
@@ -228,7 +228,7 @@ export function useSemesters() {
 
   // 删除学期
   const deleteSemester = async (semesterId: number) => {
-    const { isAuthenticated, getAuthHeader } = useAuth()
+    const { isAuthenticated, getAuthConfig } = useAuth()
     
     if (!isAuthenticated.value) {
       error.value = '需要登录才能删除学期'
@@ -239,14 +239,14 @@ export function useSemesters() {
     error.value = ''
     
     try {
-      const authHeaders = getAuthHeader()
+      const authConfig = getAuthConfig()
       
       const response = await fetch(`/api/admin/semesters/${semesterId}`, {
         method: 'DELETE',
         headers: {
-          ...authHeaders.headers,
           'Content-Type': 'application/json'
-        }
+        },
+        ...authConfig
       })
       
       if (!response.ok) {

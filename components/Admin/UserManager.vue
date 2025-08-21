@@ -805,7 +805,7 @@ const confirmDelete = async () => {
   try {
     await $fetch(`/api/admin/users/${deletingUser.value.id}`, {
       method: 'DELETE',
-      headers: auth.getAuthHeader().headers
+      ...auth.getAuthConfig()
     })
 
     await loadUsers()
@@ -883,13 +883,13 @@ const saveUser = async () => {
       await $fetch(`/api/admin/users/${editingUser.value.id}`, {
         method: 'PUT',
         body: userData,
-        headers: auth.getAuthHeader().headers
+        ...auth.getAuthConfig()
       })
     } else {
       await $fetch('/api/admin/users', {
         method: 'POST',
         body: userData,
-        headers: auth.getAuthHeader().headers
+        ...auth.getAuthConfig()
       })
     }
 
@@ -913,7 +913,7 @@ const saveUser = async () => {
             message: notificationMessage,
             type: 'system'
           },
-          headers: auth.getAuthHeader().headers
+          ...auth.getAuthConfig()
         })
       } catch (notificationError) {
         console.error('发送权限变更通知失败:', notificationError)
@@ -958,7 +958,7 @@ const confirmResetPassword = async () => {
       body: {
         newPassword: passwordForm.value.password
       },
-      headers: auth.getAuthHeader().headers
+      ...auth.getAuthConfig()
     })
 
     closeResetPassword()
@@ -984,7 +984,7 @@ const loadUsers = async (page = 1, limit = 100) => {
         search: searchQuery.value || undefined,
         role: roleFilter.value || undefined
       },
-      headers: auth.getAuthHeader().headers
+      ...auth.getAuthConfig()
     })
     
     // 处理分页响应数据
@@ -1195,7 +1195,7 @@ const importUsers = async () => {
       body: {
         users: previewData.value
       },
-      headers: auth.getAuthHeader().headers
+      ...auth.getAuthConfig()
     })
 
     // 更新用户列表

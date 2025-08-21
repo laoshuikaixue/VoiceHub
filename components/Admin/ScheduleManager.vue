@@ -984,9 +984,9 @@ const handleTouchDropToSequence = async (targetElement) => {
     const response = await $fetch('/api/admin/schedule', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        ...useAuth().getAuthHeader().headers
+        'Content-Type': 'application/json'
       },
+      ...useAuth().getAuthConfig(),
       body: JSON.stringify({
         songId: song.id,
         date: selectedDate.value,
@@ -1031,7 +1031,7 @@ const handleTouchReturnToDraggable = async () => {
   try {
     await $fetch(`/api/admin/schedule/${schedule.id}`, {
       method: 'DELETE',
-      ...useAuth().getAuthHeader()
+      ...useAuth().getAuthConfig()
     })
 
     localScheduledSongs.value.splice(scheduleIndex, 1)
@@ -1105,9 +1105,9 @@ const saveSequence = async () => {
       await $fetch('/api/admin/schedule', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          ...auth.getAuthHeader().headers
+          'Content-Type': 'application/json'
         },
+        ...auth.getAuthConfig(),
         body: JSON.stringify({
           songId: schedule.song.id,
           playDate: selectedDate.value,

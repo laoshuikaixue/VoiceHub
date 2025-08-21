@@ -205,7 +205,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 
-const { getAuthHeader } = useAuth()
+const { getAuthConfig } = useAuth()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -253,10 +253,8 @@ const originalData = ref({})
 const loadConfig = async () => {
   try {
     loading.value = true
-    const authHeaders = getAuthHeader()
-    
     const response = await fetch('/api/admin/system-settings', {
-      headers: authHeaders.headers
+      credentials: 'include'
     })
     
     if (!response.ok) {
@@ -308,8 +306,6 @@ const loadConfig = async () => {
 const saveConfig = async () => {
   try {
     saving.value = true
-    const authHeaders = getAuthHeader()
-    
     // 处理空值，使用默认值，确保二选一逻辑
     const configToSave = {
       siteTitle: formData.value.siteTitle.trim() || '校园广播站点歌系统',
@@ -328,9 +324,9 @@ const saveConfig = async () => {
     const response = await fetch('/api/admin/system-settings', {
       method: 'POST',
       headers: {
-        ...authHeaders.headers,
         'Content-Type': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify(configToSave)
     })
     

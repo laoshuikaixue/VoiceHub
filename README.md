@@ -448,9 +448,8 @@ VoiceHub/
 │   │   │   ├── change-password.post.ts # 修改密码
 │   │   │   ├── login.post.ts        # 用户登录
 │   │   │   ├── logout.post.ts       # 用户登出
-│   │   │   ├── me.get.ts            # 获取当前用户信息
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
-│   │   │   └── verify.get.ts        # 验证Token
+│   │   │   └── verify.get.ts        # 验证Token并获取用户信息
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
 │   │   ├── debug/          # 调试API目录

@@ -4,7 +4,7 @@ import { getGlobalCache } from './useDataCache'
 import type { Song, Schedule, PlayTime } from '~/types'
 
 export const useSongs = () => {
-  const { isAuthenticated, user, getAuthHeader } = useAuth()
+  const { isAuthenticated, user, getAuthConfig } = useAuth()
   const cache = getGlobalCache()
   
   const songs = ref<Song[]>([])
@@ -409,13 +409,13 @@ export const useSongs = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/songs/request', {
         method: 'POST',
         body: songData,
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       // 更新歌曲列表
@@ -461,8 +461,8 @@ export const useSongs = () => {
         return null
       }
       
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       try {
         const data = await $fetch('/api/songs/vote', {
@@ -471,7 +471,7 @@ export const useSongs = () => {
             songId: actualSongId,
             unvote: isUnvote // 添加取消投票参数
           },
-          headers: authHeaders.headers
+          ...authConfig
         })
         
         // 立即更新本地歌曲的投票状态
@@ -534,13 +534,13 @@ export const useSongs = () => {
       const targetSong = songs.value.find(s => s.id === songId)
       const songTitle = targetSong ? targetSong.title : '歌曲'
       
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/songs/withdraw', {
         method: 'POST',
         body: { songId },
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       // 更新歌曲列表
@@ -573,13 +573,13 @@ export const useSongs = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/songs/delete', {
         method: 'POST',
         body: { songId },
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       // 更新歌曲列表
@@ -608,13 +608,13 @@ export const useSongs = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/mark-played', {
         method: 'POST',
         body: { songId },
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       // 更新歌曲列表
@@ -643,13 +643,13 @@ export const useSongs = () => {
     error.value = ''
     
     try {
-      // 显式传递认证头
-      const authHeaders = getAuthHeader()
+      // 使用认证配置
+      const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/admin/mark-played', {
         method: 'POST',
         body: { songId, unmark: true },
-        headers: authHeaders.headers
+        ...authConfig
       })
       
       // 更新歌曲列表

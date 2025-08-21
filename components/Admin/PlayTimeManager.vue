@@ -199,7 +199,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import type { PlayTime } from '~/types'
 
-const { getAuthHeader, isAdmin } = useAuth()
+const { getAuthConfig, isAdmin } = useAuth()
 
 const playTimes = ref<PlayTime[]>([])
 const loading = ref(false)
@@ -240,12 +240,12 @@ const fetchPlayTimes = async () => {
   error.value = ''
   
   try {
-    const authHeaders = getAuthHeader()
+    const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/play-times', {
       headers: {
-        ...authHeaders.headers,
         'Content-Type': 'application/json'
-      }
+      },
+      ...authConfig
     })
     
     if (!response.ok) {
@@ -296,12 +296,12 @@ const fetchSystemSettings = async () => {
   if (!isAdmin.value) return
   
   try {
-    const authHeaders = getAuthHeader()
+    const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/system-settings', {
       headers: {
-        ...authHeaders.headers,
         'Content-Type': 'application/json'
-      }
+      },
+      ...authConfig
     })
     
     if (!response.ok) {
@@ -322,16 +322,16 @@ const updateSystemSettings = async () => {
   if (!isAdmin.value) return
   
   try {
-    const authHeaders = getAuthHeader()
+    const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/system-settings', {
       method: 'POST',
       headers: {
-        ...authHeaders.headers,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         enablePlayTimeSelection: enablePlayTimeSelection.value
-      })
+      }),
+      ...authConfig
     })
     
     if (!response.ok) {
@@ -361,16 +361,16 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
   if (!isAdmin.value) return
   
   try {
-    const authHeaders = getAuthHeader()
+    const authConfig = getAuthConfig()
     const response = await fetch(`/api/admin/play-times/${playTime.id}`, {
       method: 'PATCH',
       headers: {
-        ...authHeaders.headers,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         enabled: !playTime.enabled
-      })
+      }),
+      ...authConfig
     })
     
     if (!response.ok) {
@@ -398,12 +398,10 @@ const deletePlayTime = async () => {
   deleteInProgress.value = true
   
   try {
-    const authHeaders = getAuthHeader()
+    const authConfig = getAuthConfig()
     const response = await fetch(`/api/admin/play-times/${playTimeToDelete.value.id}`, {
       method: 'DELETE',
-      headers: {
-        ...authHeaders.headers
-      }
+      ...authConfig
     })
     
     if (!response.ok) {
@@ -453,12 +451,11 @@ const savePlayTime = async () => {
   formSubmitting.value = true
   
   try {
-    const authHeaders = getAuthHeader()
+    const authConfig = getAuthConfig()
     
     const response = await fetch(isUpdate ? `/api/admin/play-times/${formData.id}` : '/api/admin/play-times', {
       method: isUpdate ? 'PUT' : 'POST',
       headers: {
-        ...authHeaders.headers,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -467,7 +464,8 @@ const savePlayTime = async () => {
         endTime: formData.endTime || null,
         description: formData.description || null,
         enabled: formData.enabled
-      })
+      }),
+      ...authConfig
     })
     
     if (!response.ok) {
@@ -939,4 +937,4 @@ textarea.form-control {
   color: rgb(252, 165, 165);
   margin-top: 0.5rem;
 }
-</style> 
+</style>
