@@ -513,6 +513,13 @@ const voteForSimilar = async (song) => {
     song.voted = true
     song.voteCount = (song.voteCount || 0) + 1
     
+    // 投票成功后刷新歌曲列表
+    setTimeout(() => {
+      songService.refreshSongsSilent().catch(err => {
+        console.error('刷新歌曲列表失败', err)
+      })
+    }, 500)
+    
     // 清除表单并隐藏提示
     title.value = ''
     artist.value = ''

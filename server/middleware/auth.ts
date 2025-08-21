@@ -26,9 +26,8 @@ export default defineEventHandler(async (event) => {
 
   // 如果不是公共API路径且不是认证相关路径，则需要认证
   if (!isPublicApiPath && !pathname.startsWith('/api/auth/')) {
-  
-  // 尝试从Authorization头部或cookie获取token
-  let token: string | null = null
+    // 尝试从Authorization头部或cookie获取token
+    let token: string | null = null
   
   // 首先尝试从Authorization头部获取
   const authHeader = getRequestHeader(event, 'authorization')
