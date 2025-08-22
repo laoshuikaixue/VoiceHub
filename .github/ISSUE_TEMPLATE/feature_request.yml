@@ -1,0 +1,139 @@
+name: ✨ 功能建议
+description: 为VoiceHub系统提出新功能或改进建议
+title: "[Feature]: "
+labels: ["enhancement", "功能建议"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您为VoiceHub提出功能建议！您的想法将帮助我们改进系统，为用户提供更好的体验。
+
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: 功能类别
+      description: 请选择建议功能所属的类别
+      options:
+        - 音乐播放功能
+        - 点歌系统
+        - 用户管理
+        - 通知系统
+        - 管理员工具
+        - 用户界面
+        - 数据统计
+        - 安全功能
+        - API接口
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature-summary
+    attributes:
+      label: 功能概述
+      description: 简要描述您建议的功能
+      placeholder: 用一两句话概括您的功能建议...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: 问题描述
+      description: 描述当前存在的问题或不便之处
+      placeholder: 目前在使用VoiceHub时遇到了什么问题或不便？
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 建议方案
+      description: 详细描述您建议的解决方案
+      placeholder: |
+        请详细描述您的功能建议：
+        - 功能如何工作
+        - 用户如何使用
+        - 预期效果
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-stories
+    attributes:
+      label: 用户场景
+      description: 描述用户在什么情况下会使用这个功能
+      placeholder: |
+        作为一个[用户角色]，我希望[功能描述]，这样我就可以[预期收益]。
+        
+        例如：
+        - 作为学生，我希望能够预约点歌时间，这样我就可以在特定时间播放我的歌曲
+        - 作为管理员，我希望能够批量管理歌曲，这样我就可以更高效地维护歌曲库
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案
+      description: 是否考虑过其他解决方案？
+      placeholder: 描述您考虑过的其他可能的解决方案...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级
+      description: 您认为这个功能的重要程度如何？
+      options:
+        - 高 - 非常重要，急需实现
+        - 中 - 重要，希望尽快实现
+        - 低 - 有了更好，不急
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: 目标用户
+      description: 这个功能主要面向哪类用户？
+      options:
+        - 普通学生用户
+        - 管理员
+        - 所有用户
+        - 特定用户群体
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-considerations
+    attributes:
+      label: 技术考虑
+      description: 如果您有技术背景，可以提供一些技术实现的想法
+      placeholder: 实现思路、技术栈建议、性能考虑等...
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 附加信息
+      description: 任何其他有助于理解功能需求的信息
+      placeholder: 参考资料、类似功能的例子、设计草图等...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 确认事项
+      description: 请确认以下事项
+      options:
+        - label: 我已经搜索了现有的Issues，确认这不是重复建议
+          required: true
+        - label: 我愿意参与功能的讨论和测试
+          required: false
+        - label: 如果有能力，我愿意协助开发这个功能
+          required: false

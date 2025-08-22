@@ -1,0 +1,149 @@
+name: 🔒 安全问题报告
+description: 报告VoiceHub系统中的安全漏洞或安全相关问题
+title: "[Security]: "
+labels: ["security", "高优先级"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **重要提醒**：如果您发现了严重的安全漏洞，请不要在公开的Issue中详细描述。
+        请发送邮件至 `contact@lao-shui.top` 。
+        
+        感谢您帮助我们保护VoiceHub系统的安全！
+
+  - type: dropdown
+    id: security-type
+    attributes:
+      label: 安全问题类型
+      description: 请选择最符合的安全问题类型
+      options:
+        - 身份认证问题
+        - 权限控制问题
+        - 数据泄露风险
+        - 跨站脚本攻击(XSS)
+        - SQL注入
+        - 跨站请求伪造(CSRF)
+        - 文件上传安全
+        - 会话管理问题
+        - 密码安全
+        - API安全
+        - 其他安全问题
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 严重程度
+      description: 请评估安全问题的严重程度
+      options:
+        - 严重 - 可能导致系统完全被攻破
+        - 高 - 可能导致重要数据泄露
+        - 中 - 可能影响部分用户或功能
+        - 低 - 轻微的安全改进建议
+    validations:
+      required: true
+
+  - type: textarea
+    id: security-summary
+    attributes:
+      label: 安全问题概述
+      description: 简要描述发现的安全问题（避免详细的攻击步骤）
+      placeholder: 简要说明发现的安全问题类型和影响范围...
+    validations:
+      required: true
+
+  - type: textarea
+    id: affected-components
+    attributes:
+      label: 受影响的组件
+      description: 列出可能受到影响的系统组件或功能模块
+      placeholder: |
+        例如：
+        - 用户登录模块
+        - 文件上传功能
+        - 管理员面板
+        - API接口
+    validations:
+      required: true
+
+  - type: textarea
+    id: potential-impact
+    attributes:
+      label: 潜在影响
+      description: 描述这个安全问题可能造成的影响
+      placeholder: |
+        可能的影响包括：
+        - 用户数据泄露
+        - 未授权访问
+        - 系统功能被滥用
+        - 其他安全风险
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-info
+    attributes:
+      label: 复现信息
+      description: 提供必要的复现信息（请避免详细的攻击步骤）
+      placeholder: |
+        请提供：
+        - 发现问题的环境
+        - 触发条件
+        - 观察到的异常行为
+        
+        注意：请不要提供完整的攻击代码或详细攻击步骤
+    validations:
+      required: false
+
+  - type: textarea
+    id: mitigation-suggestions
+    attributes:
+      label: 缓解建议
+      description: 如果您有安全方面的建议，请提供
+      placeholder: |
+        可能的解决方案：
+        - 输入验证改进
+        - 权限检查加强
+        - 安全配置调整
+        - 其他安全措施
+    validations:
+      required: false
+
+  - type: dropdown
+    id: disclosure-timeline
+    attributes:
+      label: 披露时间线
+      description: 您希望的问题处理时间线
+      options:
+        - 立即处理 - 严重安全问题
+        - 1周内 - 重要安全问题
+        - 2周内 - 一般安全问题
+        - 1个月内 - 安全改进建议
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: 附加信息
+      description: 其他有助于理解和解决安全问题的信息
+      placeholder: 相关文档、参考资料、类似案例等...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: security-terms
+    attributes:
+      label: 安全报告确认
+      description: 请确认以下事项
+      options:
+        - label: 我理解这是一个安全相关的问题报告
+          required: true
+        - label: 我已经避免在公开Issue中透露详细的攻击方法
+          required: true
+        - label: 我愿意配合安全团队进行问题验证和修复
+          required: true
+        - label: 我同意遵循负责任的安全披露原则
+          required: true

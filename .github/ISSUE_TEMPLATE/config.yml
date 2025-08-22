@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 使用文档
+    url: https://docs.voicehub.lao-shui.top
+    about: 查看VoiceHub的使用文档和常见问题解答
+  - name: 💬 讨论区
+    url: https://github.com/VoiceHub/VoiceHub/discussions
+    about: 在讨论区提问、分享经验或参与社区讨论
+  - name: 🔒 安全问题私密报告
+    url: mailto:contact@lao-shui.top
+    about: 对于严重的安全漏洞，请通过邮件私密报告
+  - name: 📧 联系我们
+    url: mailto:contact@lao-shui.top
+    about: 如果您需要技术支持或有其他问题，可以直接联系我们
