@@ -46,7 +46,8 @@ export default defineEventHandler(async (event) => {
     await prisma.$executeRaw`
       UPDATE "User"
       SET password = ${hashedPassword},
-          "passwordChangedAt" = NOW()
+          "passwordChangedAt" = NOW(),
+          "forcePasswordChange" = false
       WHERE id = ${user.id}
     `
 

@@ -96,7 +96,7 @@ onMounted(async () => {
     const userJson = localStorage.getItem('user')
     if (userJson) {
       const user = JSON.parse(userJson)
-      isFirstLogin.value = user.needsPasswordChange === true
+      isFirstLogin.value = user.forcePasswordChange === true || !user.passwordChangedAt
     }
   }
 })

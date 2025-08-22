@@ -84,6 +84,16 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // 验证新密码不能与当前密码相同
+    const isSamePassword = await bcrypt.compare(body.newPassword, currentUser.password)
+    if (isSamePassword) {
+      console.log('修改密码失败：新密码不能与当前密码相同')
+      throw createError({
+        statusCode: 400,
+        message: '新密码不能与当前密码相同'
+      })
+    }
+    
     // 加密新密码
     let hashedPassword
     try {
@@ -105,7 +115,8 @@ export default defineEventHandler(async (event) => {
       await prisma.$executeRaw`
         UPDATE "User"
         SET password = ${hashedPassword},
-            "passwordChangedAt" = NOW()
+            "passwordChangedAt" = NOW(),
+            "forcePasswordChange" = false
         WHERE id = ${user.id}
       `
       

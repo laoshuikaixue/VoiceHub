@@ -931,7 +931,7 @@ const checkPasswordChangeRequired = async () => {
       
       // 检查用户是否需要修改密码
       const currentUser = auth.user.value
-      if (currentUser && currentUser.needsPasswordChange) {
+      if (currentUser && (currentUser.forcePasswordChange || !currentUser.passwordChangedAt)) {
         // 延迟1秒显示通知，确保页面加载完成
         setTimeout(() => {
           if (window.$showNotification) {

@@ -52,7 +52,8 @@ export default defineEventHandler(async (event) => {
       where: { id },
       data: {
         password: hashedPassword,
-        passwordChangedAt: null // 清空密码修改时间，强制用户修改密码
+        passwordChangedAt: null, // 清空密码修改时间，强制用户修改密码
+        forcePasswordChange: true // 强制用户修改密码
       }
     })
     

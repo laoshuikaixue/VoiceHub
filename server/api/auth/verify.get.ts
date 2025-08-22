@@ -31,7 +31,9 @@ export default defineEventHandler(async (event) => {
         name: true,
         grade: true,
         class: true,
-        role: true
+        role: true,
+        forcePasswordChange: true,
+        passwordChangedAt: true
       }
     })
 

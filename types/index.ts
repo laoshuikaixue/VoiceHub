@@ -7,6 +7,8 @@ export interface User {
   role: 'USER' | 'ADMIN'
   lastLoginAt?: Date | null
   lastLoginIp?: string | null
+  forcePasswordChange?: boolean
+  passwordChangedAt?: Date | null
 }
 
 export interface Song {

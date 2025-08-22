@@ -90,7 +90,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="user in paginatedUsers" :key="user.id" class="user-row">
+            <tr v-for="user in paginatedUsers" :key="user.id" class="user-row" @click="showUserDetail(user, $event)">
               <td>{{ user.id }}</td>
               <td>{{ user.name }}</td>
               <td>{{ user.username }}</td>
@@ -156,7 +156,7 @@
 
       <!-- 移动端卡片式布局 -->
       <div class="mobile-cards">
-        <div v-for="user in paginatedUsers" :key="user.id" class="user-card">
+        <div v-for="user in paginatedUsers" :key="user.id" class="user-card" @click="showUserDetail(user, $event)">
           <div class="card-header">
             <div class="user-primary-info">
               <div class="user-name-container">
@@ -592,6 +592,121 @@
     :user-id="selectedUserId"
     @close="closeUserSongsModal"
   />
+
+  <!-- 用户详细信息模态框 -->
+  <div v-if="showUserDetailModal" class="modal-overlay" @click="closeUserDetailModal">
+    <div class="modal-content user-detail-modal" @click.stop>
+      <div class="modal-header">
+        <h3>用户详细信息</h3>
+        <button @click="closeUserDetailModal" class="close-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body" v-if="selectedUserDetail">
+        <!-- 基本信息 -->
+        <div class="detail-section">
+          <h4 class="section-title">基本信息</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">用户ID:</span>
+              <span class="detail-value">{{ selectedUserDetail.id }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">姓名:</span>
+              <span class="detail-value">{{ selectedUserDetail.name }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">用户名:</span>
+              <span class="detail-value">{{ selectedUserDetail.username }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">角色:</span>
+              <span :class="['role-badge', getRoleClass(selectedUserDetail.role)]">
+                {{ getRoleDisplayName(selectedUserDetail.role) }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">年级:</span>
+              <span class="detail-value">{{ selectedUserDetail.grade || '未设置' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">班级:</span>
+              <span class="detail-value">{{ selectedUserDetail.class || '未设置' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 账户状态 -->
+        <div class="detail-section">
+          <h4 class="section-title">账户状态</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">密码状态:</span>
+              <span :class="['status-badge', (!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? 'status-success' : 'status-warning']">
+                {{ (!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? '密码已修改' : '需要修改密码' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">MeoW账号:</span>
+              <span :class="['status-badge', selectedUserDetail.meowNickname ? 'status-success' : 'status-inactive']">
+                {{ selectedUserDetail.meowNickname ? '已绑定' : '未绑定' }}
+              </span>
+            </div>
+            <div v-if="selectedUserDetail.meowNickname" class="detail-item">
+              <span class="detail-label">MeoW昵称:</span>
+              <span class="detail-value">{{ selectedUserDetail.meowNickname }}</span>
+            </div>
+            <div v-if="selectedUserDetail.meowBoundAt" class="detail-item">
+              <span class="detail-label">绑定时间:</span>
+              <span class="detail-value">{{ formatDate(selectedUserDetail.meowBoundAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 登录信息 -->
+        <div class="detail-section">
+          <h4 class="section-title">登录信息</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">最后登录:</span>
+              <span class="detail-value">{{ formatDate(selectedUserDetail.lastLogin) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">登录IP:</span>
+              <span class="detail-value">{{ selectedUserDetail.lastLoginIp || '未知' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 时间信息 -->
+        <div class="detail-section">
+          <h4 class="section-title">时间信息</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">创建时间:</span>
+              <span class="detail-value">{{ formatDate(selectedUserDetail.createdAt) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">更新时间:</span>
+              <span class="detail-value">{{ formatDate(selectedUserDetail.updatedAt) }}</span>
+            </div>
+            <div v-if="selectedUserDetail.passwordChangedAt" class="detail-item">
+              <span class="detail-label">密码修改时间:</span>
+              <span class="detail-value">{{ formatDate(selectedUserDetail.passwordChangedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button @click="closeUserDetailModal" class="btn-secondary">关闭</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -649,6 +764,10 @@ const deleting = ref(false)
 // 用户歌曲模态框状态
 const showUserSongsModal = ref(false)
 const selectedUserId = ref(null)
+
+// 用户详细信息模态框状态
+const showUserDetailModal = ref(false)
+const selectedUserDetail = ref(null)
 
 // 表单数据
 const userForm = ref({
@@ -778,6 +897,21 @@ const viewUserSongs = (user) => {
 const closeUserSongsModal = () => {
   showUserSongsModal.value = false
   selectedUserId.value = null
+}
+
+const showUserDetail = (user, event) => {
+  // 检查点击的是否是操作按钮或其子元素
+  if (event.target.closest('.action-btn') || event.target.closest('.action-buttons')) {
+    return // 如果点击的是操作按钮，不触发详情弹窗
+  }
+  
+  selectedUserDetail.value = user
+  showUserDetailModal.value = true
+}
+
+const closeUserDetailModal = () => {
+  showUserDetailModal.value = false
+  selectedUserDetail.value = null
 }
 
 const closeBatchUpdateModal = () => {
@@ -2226,5 +2360,135 @@ onMounted(async () => {
 .btn-danger:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 用户详细信息弹窗样式 */
+.user-detail-modal {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.detail-section {
+  margin-bottom: 2rem;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.detail-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #d1d5db;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  margin-right: 1rem;
+}
+
+.detail-value {
+  color: #ffffff;
+  font-size: 0.875rem;
+  text-align: right;
+  word-break: break-all;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-success {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-inactive {
+  background: rgba(107, 114, 128, 0.2);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .user-detail-modal {
+    max-width: 95vw;
+    margin: 1rem;
+  }
+  
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .detail-value {
+    text-align: left;
+  }
+}
+
+/* 表格行和卡片的点击样式 */
+.user-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.user-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.user-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 </style>
