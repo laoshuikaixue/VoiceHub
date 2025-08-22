@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt'
 import { prisma, checkDatabaseConnection, reconnectDatabase } from '../../models/schema'
 import { JWTEnhanced } from '../../utils/jwt-enhanced'
+import { isAccountLocked, getAccountLockRemainingTime, recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -36,6 +37,15 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // 检查账户是否被锁定
+    if (isAccountLocked(body.username)) {
+      const remainingTime = getAccountLockRemainingTime(body.username)
+      throw createError({
+        statusCode: 423,
+        message: `账户已被锁定，请在 ${remainingTime} 分钟后重试`
+      })
+    }
+
     // 查找用户
     const user = await prisma.user.findUnique({
       where: { username: body.username },
@@ -54,6 +64,8 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!user) {
+      // 记录登录失败（用户不存在）
+      recordLoginFailure(body.username, clientIp)
       throw createError({
         statusCode: 401,
         message: '用户不存在'
@@ -63,11 +75,16 @@ export default defineEventHandler(async (event) => {
     // 验证密码
     const isPasswordValid = await bcrypt.compare(body.password, user.password)
     if (!isPasswordValid) {
+      // 记录登录失败（密码错误）
+      recordLoginFailure(body.username, clientIp)
       throw createError({
         statusCode: 401,
         message: '密码不正确'
       })
     }
+
+    // 登录成功，清除失败记录
+    recordLoginSuccess(body.username)
 
     // 更新登录信息
     await prisma.user.update({
