@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
       popularGenres,
       peakHours
     ] = await Promise.all([
-      // 活跃用户数和用户列表 (最近1小时点歌或登录的用户)
+      // 活跃用户数和用户列表 (最近1小时点歌、登录或点赞的用户)
       (async () => {
         try {
           // 获取最近1小时内点歌的用户
@@ -62,6 +62,26 @@ export default defineEventHandler(async (event) => {
             }
           })
           
+          // 获取最近1小时内点赞过歌曲的用户
+          const recentVoteUsers = await prisma.vote.findMany({
+            where: {
+              createdAt: {
+                gte: oneHourAgo
+              }
+            },
+            select: {
+              userId: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  name: true
+                }
+              }
+            },
+            distinct: ['userId']
+          })
+          
           // 合并并去重用户列表
           const userMap = new Map()
           
@@ -77,6 +97,16 @@ export default defineEventHandler(async (event) => {
           
           // 添加登录用户
           recentLoginUsers.forEach(user => {
+            userMap.set(user.id, {
+              id: user.id,
+              username: user.username,
+              name: user.name
+            })
+          })
+          
+          // 添加点赞用户
+          recentVoteUsers.forEach(vote => {
+            const user = vote.user
             userMap.set(user.id, {
               id: user.id,
               username: user.username,
