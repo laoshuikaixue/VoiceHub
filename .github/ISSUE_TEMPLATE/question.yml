@@ -1,0 +1,112 @@
+name: "❓ 提问 / Question"
+description: "遇到问题需要帮助？在这里提问，我们会尽快为您解答！"
+title: "[Question]: "
+labels: ["question", "需要帮助"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您使用 VoiceHub 校园广播点歌系统！如果您在使用过程中遇到任何问题，请填写以下信息，我们会尽快为您提供帮助。
+        
+        💡 **提示**：提问前建议先查看已有的 Issues。
+
+  - type: dropdown
+    id: question-type
+    attributes:
+      label: "问题类型"
+      description: "请选择您遇到的问题类型"
+      options:
+        - "使用问题 - 不知道如何操作某个功能"
+        - "技术问题 - 功能无法正常工作"
+        - "配置问题 - 系统设置相关"
+        - "账户问题 - 登录、权限等"
+        - "音频问题 - 播放、上传相关"
+        - "界面问题 - 显示异常或操作困难"
+        - "其他问题"
+    validations:
+      required: true
+
+  - type: textarea
+    id: question-description
+    attributes:
+      label: "问题描述"
+      description: "请详细描述您遇到的问题，包括具体的操作步骤和现象"
+      placeholder: |
+        例如：
+        1. 我在尝试点歌时...
+        2. 点击"添加到播放列表"按钮后...
+        3. 期望的结果是...，但实际发生的是...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-role
+    attributes:
+      label: "用户角色"
+      description: "您在系统中的角色是什么？"
+      options:
+        - "学生用户"
+        - "教师用户"
+        - "管理员"
+        - "超级管理员"
+        - "访客"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: "使用环境"
+      description: "请提供您的使用环境信息"
+      placeholder: "例如：Chrome 120, Windows 11, 移动端Safari等"
+    validations:
+      required: false
+
+  - type: textarea
+    id: attempted-solutions
+    attributes:
+      label: "已尝试的解决方法"
+      description: "请描述您已经尝试过的解决方法（如果有的话）"
+      placeholder: |
+        例如：
+        - 刷新了页面
+        - 清除了浏览器缓存
+        - 尝试了不同的浏览器
+        - 重新登录了账户
+    validations:
+      required: false
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: "紧急程度"
+      description: "这个问题对您的使用影响有多大？"
+      options:
+        - "低 - 不影响正常使用，有时间时解决即可"
+        - "中 - 影响部分功能，希望尽快解决"
+        - "高 - 严重影响使用，需要紧急处理"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: "补充信息"
+      description: "任何其他可能有帮助的信息，如截图、错误信息等"
+      placeholder: "您可以在这里添加截图、错误截图或其他相关信息"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: "确认事项"
+      description: "请确认以下事项"
+      options:
+        - label: "我已经搜索了现有的 Issues，确认这不是重复问题"
+          required: true
+        # - label: "我已经查看了项目文档和常见问题"
+        #   required: false
+        - label: "我愿意提供更多信息来帮助解决这个问题"
+          required: false
