@@ -599,6 +599,11 @@ onMounted(async () => {
     onSeek: (time) => {
       control.seek(time)
       sync.updateGlobalPosition(time, control.duration.value)
+    },
+    onPositionUpdate: (time) => {
+      // 使用强制更新位置方法，确保UI同步
+      control.forceUpdatePosition(time)
+      sync.updateGlobalPosition(time, control.duration.value)
     }
   })
   

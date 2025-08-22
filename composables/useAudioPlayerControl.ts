@@ -644,6 +644,54 @@ export const useAudioPlayerControl = () => {
     isLoadingNewSong.value = false
   }
 
+  // 强制更新位置（用于鸿蒙侧同步）
+  const forceUpdatePosition = (timeInSeconds: number) => {
+    // 如果正在拖拽，不要更新位置
+    if (isDragging.value) {
+      return false
+    }
+    
+    if (!audioPlayer.value) {
+      return false
+    }
+    
+    try {
+      // 设置同步标志，防止触发其他事件
+      isSyncingFromGlobal.value = true
+      
+      // 如果有duration，使用它来限制范围；否则直接使用传入的时间
+      const targetTime = duration.value > 0 
+        ? Math.max(0, Math.min(timeInSeconds, duration.value))
+        : Math.max(0, timeInSeconds)
+      
+      // 更新音频播放器位置
+      audioPlayer.value.currentTime = targetTime
+      
+      // 强制更新UI状态
+      currentTime.value = targetTime
+      
+      // 只有在duration存在时才计算进度百分比
+      if (duration.value > 0) {
+        progress.value = (targetTime / duration.value) * 100
+      }
+      
+      // 更新歌词时间
+      const timeInMs = targetTime * 1000
+      lyrics.updateCurrentLyricIndex(timeInMs)
+      
+      // 使用nextTick确保DOM更新
+      nextTick(() => {
+        isSyncingFromGlobal.value = false
+      })
+      
+      return true
+    } catch (error) {
+      console.error('[AudioPlayerControl] 强制更新位置失败:', error)
+      isSyncingFromGlobal.value = false
+      return false
+    }
+  }
+
   return {
     // 状态
     audioPlayer,
@@ -667,6 +715,7 @@ export const useAudioPlayerControl = () => {
     seek,
     togglePlay,
     loadSong,
+    forceUpdatePosition,
     
     // 音频事件处理
     onTimeUpdate,

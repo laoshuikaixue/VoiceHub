@@ -50,39 +50,21 @@ export const useAudioPlayerSync = () => {
         lyrics: lyrics || '' // 添加歌词字段
       }
 
-      // 添加调试信息
-      if (action === 'metadata') {
-        console.log(`[HarmonyOS] 调试信息:`)
-        console.log(`  extraData:`, extraData)
-        console.log(`  song:`, song)
-        console.log(`  构建的songInfo:`, songInfo)
-      }
 
-      // 只记录重要的状态变化
-      if (action === 'metadata' || action === 'stop') {
-        console.log(`[HarmonyOS] ${action}:`, songInfo.title)
-        // 添加歌词传递调试信息
-        if (action === 'metadata') {
-          // 传递歌词给鸿蒙侧
-        }
-      }
 
       // 只有在鸿蒙环境中才调用相关API
       if (window.voiceHubPlayer) {
         if (action === 'play') {
-          console.log(`[HarmonyOS] 🎵 通知播放状态: 播放 - ${songInfo.title}, 位置=${songInfo.position}s, 时长=${songInfo.duration}s`)
           window.voiceHubPlayer.onPlayStateChanged(true, {
             position: songInfo.position,
             duration: songInfo.duration
           })
         } else if (action === 'pause') {
-          console.log(`[HarmonyOS] ⏸️ 通知播放状态: 暂停 - ${songInfo.title}, 位置=${songInfo.position}s, 时长=${songInfo.duration}s`)
           window.voiceHubPlayer.onPlayStateChanged(false, {
             position: songInfo.position,
             duration: songInfo.duration
           })
         } else if (action === 'stop') {
-          console.log(`[HarmonyOS] ⏹️ 通知播放状态: 停止 - ${songInfo.title}`)
           window.voiceHubPlayer.onPlayStateChanged(false, { position: 0, duration: songInfo.duration })
         } else if (action === 'progress') {
           // 进度更新时，只更新位置，不改变播放状态
@@ -434,39 +416,39 @@ export const useAudioPlayerSync = () => {
     onNext: () => void
     onPrevious: () => void
     onSeek: (time: number) => void
+    onPositionUpdate?: (time: number) => void
   }) => {
-    if (!isHarmonyOS()) return
-
     const handleHarmonyOSPlay = () => {
-      console.log('[HarmonyOS] 收到播放命令')
       callbacks.onPlay()
     }
 
     const handleHarmonyOSPause = () => {
-      console.log('[HarmonyOS] 收到暂停命令')
       callbacks.onPause()
     }
 
     const handleHarmonyOSStop = () => {
-      console.log('[HarmonyOS] 收到停止命令')
       callbacks.onStop()
     }
 
     const handleHarmonyOSNext = () => {
-      console.log('[HarmonyOS] 收到下一首命令')
       callbacks.onNext()
     }
 
     const handleHarmonyOSPrevious = () => {
-      console.log('[HarmonyOS] 收到上一首命令')
       callbacks.onPrevious()
     }
 
     const handleHarmonyOSSeek = (event: CustomEvent) => {
       const time = event.detail?.time || event.time
-      console.log('[HarmonyOS] 收到跳转命令:', time)
       if (typeof time === 'number') {
         callbacks.onSeek(time)
+      }
+    }
+
+    const handleHarmonyOSPositionUpdate = (event: CustomEvent) => {
+      const time = event.detail?.time || event.time
+      if (typeof time === 'number' && callbacks.onPositionUpdate) {
+        callbacks.onPositionUpdate(time)
       }
     }
 
@@ -477,7 +459,8 @@ export const useAudioPlayerSync = () => {
       handleHarmonyOSStop,
       handleHarmonyOSNext,
       handleHarmonyOSPrevious,
-      handleHarmonyOSSeek
+      handleHarmonyOSSeek,
+      handleHarmonyOSPositionUpdate
     }
     
     // 添加事件监听器
@@ -487,17 +470,19 @@ export const useAudioPlayerSync = () => {
     window.addEventListener('harmonyos-next', handleHarmonyOSNext)
     window.addEventListener('harmonyos-previous', handleHarmonyOSPrevious)
     window.addEventListener('harmonyos-seek', handleHarmonyOSSeek as EventListener)
+    window.addEventListener('harmonyos-position-update', handleHarmonyOSPositionUpdate as EventListener)
   }
 
   // 清理鸿蒙系统控制事件
   const cleanupHarmonyOSControls = () => {
-    if (isHarmonyOS() && harmonyOSHandlers) {
+    if (harmonyOSHandlers) {
       window.removeEventListener('harmonyos-play', harmonyOSHandlers.handleHarmonyOSPlay as EventListener)
       window.removeEventListener('harmonyos-pause', harmonyOSHandlers.handleHarmonyOSPause as EventListener)
       window.removeEventListener('harmonyos-stop', harmonyOSHandlers.handleHarmonyOSStop as EventListener)
       window.removeEventListener('harmonyos-next', harmonyOSHandlers.handleHarmonyOSNext as EventListener)
       window.removeEventListener('harmonyos-previous', harmonyOSHandlers.handleHarmonyOSPrevious as EventListener)
       window.removeEventListener('harmonyos-seek', harmonyOSHandlers.handleHarmonyOSSeek as EventListener)
+      window.removeEventListener('harmonyos-position-update', harmonyOSHandlers.handleHarmonyOSPositionUpdate as EventListener)
       harmonyOSHandlers = null
     }
   }
