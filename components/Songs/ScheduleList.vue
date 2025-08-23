@@ -526,7 +526,7 @@ const togglePlaySong = async (song) => {
             audioPlayer.playSong(playableSong)
           } else {
             if (window.$showNotification) {
-              window.$showNotification('无法获取音乐播放链接，可能是付费内容', 'error')
+              window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
             }
           }
         } catch (error) {
@@ -594,7 +594,7 @@ const togglePlaySong = async (song) => {
         audioPlayer.playSong(playableSong, playlist, songIndex)
       } else {
         if (window.$showNotification) {
-          window.$showNotification('无法获取音乐播放链接，可能是付费内容', 'error')
+          window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
         }
       }
     } catch (error) {

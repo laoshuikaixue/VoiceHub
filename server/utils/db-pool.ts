@@ -6,7 +6,6 @@ class DatabasePool {
   private lastHealthCheck = 0
   private healthCheckInterval = 30000 // 30秒
   private connectionAttempts = 0
-  // 移除最大重连次数限制，实现无限重试
   private reconnectDelay = 1000
   private maxReconnectDelay = 30000 // 最大延迟30秒
 
@@ -54,7 +53,7 @@ class DatabasePool {
     }
   }
 
-  // 重新连接数据库 - 无限重试机制
+  // 重新连接数据库
   async reconnect(): Promise<boolean> {
     this.connectionAttempts++
     console.log(`[DB Pool] 尝试重连 (第${this.connectionAttempts}次)`)
