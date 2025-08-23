@@ -6,8 +6,9 @@ class DatabasePool {
   private lastHealthCheck = 0
   private healthCheckInterval = 30000 // 30秒
   private connectionAttempts = 0
-  private maxConnectionAttempts = 5
+  // 移除最大重连次数限制，实现无限重试
   private reconnectDelay = 1000
+  private maxReconnectDelay = 30000 // 最大延迟30秒
 
   constructor() {
     this.initialize()
@@ -53,15 +54,10 @@ class DatabasePool {
     }
   }
 
-  // 重新连接数据库
+  // 重新连接数据库 - 无限重试机制
   async reconnect(): Promise<boolean> {
-    if (this.connectionAttempts >= this.maxConnectionAttempts) {
-      console.error('[DB Pool] 达到最大重连次数')
-      return false
-    }
-
     this.connectionAttempts++
-    console.log(`[DB Pool] 尝试重连 (${this.connectionAttempts}/${this.maxConnectionAttempts})`)
+    console.log(`[DB Pool] 尝试重连 (第${this.connectionAttempts}次)`)
 
     try {
       // 断开现有连接（忽略错误）
@@ -92,10 +88,15 @@ class DatabasePool {
       const errorMessage = error instanceof Error ? error.message : String(error)
       console.error(`[DB Pool] 重连失败 (尝试 ${this.connectionAttempts}):`, errorMessage)
 
-      // 增加延迟时间，使用指数退避
-      this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 30000)
-
-      return false
+      // 增加延迟时间，使用指数退避，但不放弃重试
+      this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, this.maxReconnectDelay)
+      
+      // 等待后继续重试
+      console.log(`[DB Pool] ${this.reconnectDelay}ms后将继续重试...`)
+      await new Promise(resolve => setTimeout(resolve, this.reconnectDelay))
+      
+      // 递归调用，实现无限重试
+      return await this.reconnect()
     }
   }
 

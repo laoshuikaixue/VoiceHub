@@ -14,7 +14,8 @@ export interface JWTPayload {
  */
 export class JWTEnhanced {
   private static readonly JWT_SECRET = process.env.JWT_SECRET as string
-  private static readonly TOKEN_EXPIRES = '24h' // 24小时有效期
+  private static readonly TOKEN_EXPIRES = '7d' // 7天有效期
+  private static readonly REFRESH_THRESHOLD = 24 * 60 * 60 // 24小时（秒），剩余时间少于此值时自动续期
 
   /**
    * 生成JWT token
@@ -107,6 +108,60 @@ export class JWTEnhanced {
 
     const now = Math.floor(Date.now() / 1000)
     return Math.max(0, decoded.exp - now)
+  }
+
+  /**
+   * 检查token是否需要续期
+   * @param token JWT token
+   * @param thresholdSeconds 续期阈值（秒），默认24小时
+   * @returns 是否需要续期
+   */
+  static shouldRefreshToken(token: string, thresholdSeconds: number = this.REFRESH_THRESHOLD): boolean {
+    const remainingTime = this.getTokenRemainingTime(token)
+    return remainingTime > 0 && remainingTime <= thresholdSeconds
+  }
+
+  /**
+   * 刷新token（生成新的token）
+   * @param oldToken 旧的token
+   * @returns 新的token
+   */
+  static refreshToken(oldToken: string): string {
+    const decoded = this.verifyToken(oldToken)
+    
+    // 使用原有的用户信息生成新token
+    return this.generateToken(decoded.userId, decoded.role)
+  }
+
+  /**
+   * 验证token并自动续期（如果需要）
+   * @param token JWT token
+   * @returns { valid: boolean, payload?: JWTPayload, newToken?: string }
+   */
+  static verifyAndRefresh(token: string): { valid: boolean; payload?: JWTPayload; newToken?: string } {
+    try {
+      const payload = this.verifyToken(token)
+      
+      // 检查是否需要续期
+      if (this.shouldRefreshToken(token)) {
+        const newToken = this.refreshToken(token)
+        console.log(`Token auto-refreshed for user ${payload.userId}`)
+        return {
+          valid: true,
+          payload,
+          newToken
+        }
+      }
+      
+      return {
+        valid: true,
+        payload
+      }
+    } catch (error) {
+      return {
+        valid: false
+      }
+    }
   }
 }
 
