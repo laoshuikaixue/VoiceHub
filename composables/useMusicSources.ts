@@ -332,14 +332,51 @@ export const useMusicSources = () => {
 
   /**
    * 获取歌曲播放URL（网易云备用源）
-   * 使用新版/song/url/v1接口，支持音质等级参数
+   * 优先使用meeting接口，失败后回退到/song/url/v1接口
    */
   const getSongUrl = async (id: number | string, quality?: number): Promise<{ success: boolean; url?: string; error?: string }> => {
     try {
-      // 获取网易云备用源
+      // 获取所有启用的音源
       const enabledSources = getEnabledSources()
       const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
+      const meetingSources = enabledSources.filter(source => source.id.includes('meeting'))
       
+      if (!neteaseSource && meetingSources.length === 0) {
+        console.error('[getSongUrl] 未找到网易云备用源或meeting音源')
+        return { success: false, error: '未找到网易云备用源或meeting音源' }
+      }
+      
+      // 优先尝试meeting接口获取播放链接
+      if (meetingSources.length > 0) {
+        console.log(`[getSongUrl] 尝试使用meeting接口获取播放链接: id=${id}`)
+        
+        for (const meetingSource of meetingSources) {
+          try {
+            // meeting接口直接跳转到音乐地址，构建URL作为播放链接
+            const playUrl = `${meetingSource.baseUrl}/?type=url&id=${id.toString()}`
+            
+            console.log(`[getSongUrl] Meeting接口构建播放链接: ${playUrl}`)
+            
+            // 验证URL格式
+            if (playUrl && playUrl.startsWith('http')) {
+              console.log(`[getSongUrl] Meeting接口成功构建播放链接: ${playUrl}`)
+              return { 
+                success: true, 
+                url: playUrl,
+                source: 'meeting',
+                sourceId: meetingSource.id
+              }
+            }
+          } catch (error: any) {
+            console.warn(`[getSongUrl] Meeting音源 ${meetingSource.id} 构建URL失败:`, error.message)
+            continue
+          }
+        }
+        
+        console.log('[getSongUrl] 所有meeting音源都失败，回退到网易云备用源')
+      }
+      
+      // 回退到网易云备用源的/song/url/v1接口
       if (!neteaseSource) {
         console.error('[getSongUrl] 未找到网易云备用源')
         return { success: false, error: '未找到网易云备用源' }
@@ -426,6 +463,67 @@ export const useMusicSources = () => {
     } catch (error: any) {
       console.error('[getSongUrl] 获取播放链接失败:', error)
       return { success: false, error: error.message || '获取播放链接失败' }
+    }
+  }
+
+  /**
+   * 通过Meeting接口获取LRC歌词
+   */
+  const getLyricsByMeeting = async (id: number | string): Promise<{ success: boolean; lrc?: string; error?: string }> => {
+    try {
+      // 获取启用的meeting音源
+      const enabledSources = getEnabledSources()
+      const meetingSources = enabledSources.filter(source => source.id.includes('meeting'))
+      
+      if (meetingSources.length === 0) {
+        console.error('[getLyricsByMeeting] 未找到meeting音源')
+        return { success: false, error: '未找到meeting音源' }
+      }
+      
+      console.log(`[getLyricsByMeeting] 尝试使用meeting接口获取歌词: id=${id}`)
+      
+      // 尝试所有meeting音源
+      for (const meetingSource of meetingSources) {
+        try {
+          const meetingResponse = await $fetch(`${meetingSource.baseUrl}/`, {
+            params: { 
+              type: 'lrc',
+              id: id.toString()
+            },
+            timeout: meetingSource.timeout || 8000
+          })
+          
+          console.log(`[getLyricsByMeeting] Meeting接口响应:`, meetingResponse)
+          
+          // meeting接口直接返回LRC字符串或包含lrc字段的对象
+          let lrcContent: string | null = null
+          if (typeof meetingResponse === 'string') {
+            lrcContent = meetingResponse.trim()
+          } else if (meetingResponse && typeof meetingResponse === 'object') {
+            lrcContent = meetingResponse.lrc || meetingResponse.data || null
+          }
+          
+          if (lrcContent && lrcContent !== 'null' && lrcContent !== 'undefined' && lrcContent.includes('[')) {
+            console.log(`[getLyricsByMeeting] Meeting接口成功获取歌词`)
+            return { 
+              success: true, 
+              lrc: lrcContent,
+              source: 'meeting',
+              sourceId: meetingSource.id
+            }
+          }
+        } catch (error: any) {
+          console.warn(`[getLyricsByMeeting] Meeting音源 ${meetingSource.id} 获取歌词失败:`, error.message)
+          continue
+        }
+      }
+      
+      console.log('[getLyricsByMeeting] 所有meeting音源都失败')
+      return { success: false, error: '所有meeting音源都失败' }
+      
+    } catch (error: any) {
+      console.error('[getLyricsByMeeting] 获取歌词失败:', error)
+      return { success: false, error: error.message || '获取歌词失败' }
     }
   }
 
@@ -727,6 +825,7 @@ export const useMusicSources = () => {
     searchSongs,
     getSongDetail,
     getSongUrl,
+    getLyricsByMeeting,
     updateSourceStatus
   }
 }

@@ -146,6 +146,28 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }
+    },
+    {
+      id: 'meeting-1',
+      name: 'Meeting音源1',
+      baseUrl: 'https://api.qijieya.cn/meting',
+      priority: 4,
+      enabled: true,
+      timeout: 8000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    },
+    {
+      id: 'meeting-2',
+      name: 'Meeting音源2',
+      baseUrl: 'https://api.obdo.cc/meting',
+      priority: 5,
+      enabled: true,
+      timeout: 8000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
     }
   ]
 }
