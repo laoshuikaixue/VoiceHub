@@ -148,8 +148,159 @@ export const useLyrics = () => {
     return lyrics.sort((a, b) => a.time - b.time)
   }
 
-  // 获取歌词（带重试逻辑）
-  const fetchLyrics = async (platform: string, musicId: string, maxRetries: number = 3): Promise<void> => {
+  // 从网易云备用源获取歌词
+  const fetchLyricsFromNetease = async (musicId: string): Promise<LyricData | null> => {
+    try {
+      // 获取网易云备用源配置
+      const { getEnabledSources } = await import('../utils/musicSources')
+      const enabledSources = getEnabledSources()
+      const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
+      
+      if (!neteaseSource) {
+        console.error('[fetchLyricsFromNetease] 未找到网易云备用源')
+        return null
+      }
+
+      console.log(`[fetchLyricsFromNetease] 开始获取歌词，歌曲ID: ${musicId}`)
+      
+      // 同时请求普通歌词和逐字歌词
+      const [lrcResponse, yrcResponse] = await Promise.allSettled([
+        // 普通歌词接口 /lyric
+        fetch(`${neteaseSource.baseUrl}/lyric?id=${musicId}`, {
+          timeout: neteaseSource.timeout || 8000,
+          headers: neteaseSource.headers || {}
+        }),
+        // 逐字歌词接口 /lyric/new
+        fetch(`${neteaseSource.baseUrl}/lyric/new?id=${musicId}`, {
+          timeout: neteaseSource.timeout || 8000,
+          headers: neteaseSource.headers || {}
+        })
+      ])
+
+      let lrcData: any = null
+      let yrcData: any = null
+
+      // 处理普通歌词响应
+      if (lrcResponse.status === 'fulfilled' && lrcResponse.value.ok) {
+        try {
+          lrcData = await lrcResponse.value.json()
+          console.log('[fetchLyricsFromNetease] 普通歌词获取成功')
+        } catch (error) {
+          console.warn('[fetchLyricsFromNetease] 普通歌词解析失败:', error)
+        }
+      } else {
+        console.warn('[fetchLyricsFromNetease] 普通歌词请求失败')
+      }
+
+      // 处理逐字歌词响应
+      if (yrcResponse.status === 'fulfilled' && yrcResponse.value.ok) {
+        try {
+          yrcData = await yrcResponse.value.json()
+          console.log('[fetchLyricsFromNetease] 逐字歌词获取成功')
+        } catch (error) {
+          console.warn('[fetchLyricsFromNetease] 逐字歌词解析失败:', error)
+        }
+      } else {
+        console.warn('[fetchLyricsFromNetease] 逐字歌词请求失败')
+      }
+
+      // 构建歌词数据
+      const lyricData: LyricData = {
+        lrc: '',
+        trans: '',
+        yrc: ''
+      }
+
+      // 处理普通歌词数据
+      if (lrcData && lrcData.code === 200) {
+        if (lrcData.lrc && lrcData.lrc.lyric) {
+          lyricData.lrc = lrcData.lrc.lyric
+        }
+        if (lrcData.tlyric && lrcData.tlyric.lyric) {
+          lyricData.trans = lrcData.tlyric.lyric
+        }
+      }
+
+      // 处理逐字歌词数据
+      if (yrcData && yrcData.code === 200 && yrcData.yrc && yrcData.yrc.lyric) {
+        lyricData.yrc = yrcData.yrc.lyric
+      }
+
+      // 检查是否获取到任何歌词
+      if (!lyricData.lrc && !lyricData.yrc) {
+        console.warn('[fetchLyricsFromNetease] 未获取到任何歌词数据')
+        return null
+      }
+
+      console.log('[fetchLyricsFromNetease] 歌词获取完成')
+      return lyricData
+
+    } catch (error) {
+      console.error('[fetchLyricsFromNetease] 获取歌词失败:', error)
+      return null
+    }
+  }
+
+  // 解析网易云新格式逐字歌词
+  const parseNeteaseYrcLyrics = (yrcText: string): LyricLine[] => {
+    if (!yrcText) return []
+    
+    const lines = yrcText.split('\n')
+    const lyrics: LyricLine[] = []
+    
+    for (const line of lines) {
+      try {
+        // 跳过JSON元数据行
+        if (line.startsWith('{"t":') && line.includes('"c":[')) {
+          // 这是JSON元数据，暂时跳过
+          continue
+        }
+        
+        // 解析逐字歌词行格式：[16210,3460](16210,670,0)还(16880,410,0)没...
+        const timeMatch = line.match(/^\[(\d+),(\d+)\](.*)$/)
+        if (timeMatch) {
+          const startTime = parseInt(timeMatch[1]) // 歌词行显示开始时间戳 (毫秒)
+          const duration = parseInt(timeMatch[2]) // 歌词行显示总时长(毫秒)
+          const wordsText = timeMatch[3]
+          
+          const words: Array<{ time: number; duration: number; content: string }> = []
+          let content = ''
+          
+          // 解析逐字信息：(时间戳,时长,0)文字
+          const wordMatches = wordsText.matchAll(/\((\d+),(\d+),\d+\)([^(]*)/g)
+          for (const wordMatch of wordMatches) {
+            const wordTime = parseInt(wordMatch[1]) // 逐字显示开始时间戳 (毫秒)
+            const wordDuration = parseInt(wordMatch[2]) * 10 // 逐字显示时长 (厘秒转毫秒)
+            const wordContent = wordMatch[3]
+            
+            if (wordContent) {
+              words.push({
+                time: wordTime,
+                duration: wordDuration,
+                content: wordContent
+              })
+              content += wordContent
+            }
+          }
+          
+          if (content.trim()) {
+            lyrics.push({
+              time: startTime,
+              content: content.trim(),
+              words: words.length > 0 ? words : undefined
+            })
+          }
+        }
+      } catch (e) {
+        console.warn('解析网易云逐字歌词行失败:', line, e)
+      }
+    }
+    
+    return lyrics.sort((a, b) => a.time - b.time)
+  }
+
+  // 获取歌词（优化策略：优先使用备用源，减少vkeys重试）
+  const fetchLyrics = async (platform: string, musicId: string, maxRetries: number = 2): Promise<void> => {
     // 开始获取歌词
     
     if (!platform || !musicId) {
@@ -176,6 +327,54 @@ export const useLyrics = () => {
     // 立即通知鸿蒙侧清空歌词
     notifyHarmonyOSLyricsUpdate('')
 
+    // 对于网易云平台，优先尝试备用源
+    if (platform === 'netease') {
+      console.log('网易云平台：优先尝试备用源获取歌词...')
+      try {
+        const backupLyricData = await fetchLyricsFromNetease(musicId)
+        
+        if (backupLyricData) {
+          console.log('网易云备用源获取歌词成功')
+          
+          // 优先使用逐字歌词，其次是普通歌词
+          if (backupLyricData.yrc) {
+            // 使用新的网易云逐字歌词解析函数
+            wordByWordLyrics.value = parseNeteaseYrcLyrics(backupLyricData.yrc)
+            // 逐字歌词也作为普通歌词显示
+            currentLyrics.value = wordByWordLyrics.value
+            console.log('使用逐字歌词作为主歌词')
+          } else if (backupLyricData.lrc) {
+            currentLyrics.value = parseLrcLyrics(backupLyricData.lrc)
+            console.log('使用普通歌词')
+          } else {
+            currentLyrics.value = []
+          }
+          
+          // 解析翻译歌词
+          if (backupLyricData.trans) {
+            translationLyrics.value = parseLrcLyrics(backupLyricData.trans)
+            showTranslation.value = true
+          } else {
+            translationLyrics.value = []
+            showTranslation.value = false
+          }
+          
+          // 获取成功后立即通知鸿蒙侧更新歌词
+          const harmonyLyrics = getFormattedLyricsForHarmonyOS()
+          notifyHarmonyOSLyricsUpdate(harmonyLyrics)
+          
+          // 备用源获取成功，清除错误状态
+          error.value = null
+          isLoading.value = false
+          return
+        }
+      } catch (backupError) {
+        console.error('网易云备用源获取歌词失败:', backupError)
+        // 继续尝试vkeys
+      }
+    }
+
+    // 备用源失败或非网易云平台，尝试vkeys（减少重试次数）
     let lastError: Error | null = null
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -195,7 +394,7 @@ export const useLyrics = () => {
         // 请求歌词API
         
         const response = await fetch(apiUrl, {
-          timeout: 10000, // 10秒超时
+          timeout: 8000, // 减少超时时间到8秒
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
           }
@@ -216,37 +415,31 @@ export const useLyrics = () => {
         // 解析歌词
         const lyricData = data.data
       
-      // 普通歌词
-      if (lyricData.lrc) {
-        currentLyrics.value = parseLrcLyrics(lyricData.lrc)
-      } else {
-        currentLyrics.value = []
-      }
-      
-      // 翻译歌词
-      if (lyricData.trans) {
-        translationLyrics.value = parseLrcLyrics(lyricData.trans)
-        // 如果有翻译歌词，自动启用翻译显示
-        showTranslation.value = true
-      } else {
-        // 没有翻译歌词，关闭翻译显示
-        translationLyrics.value = []
-        showTranslation.value = false
-      }
-      
-      // 逐字歌词
-      if (lyricData.yrc) {
-        wordByWordLyrics.value = parseYrcLyrics(lyricData.yrc)
-      } else {
-        wordByWordLyrics.value = []
-      }
-
-      // 不处理罗马音歌词（roma字段），按需求忽略
-
-        // 如果没有普通歌词但有逐字歌词，使用逐字歌词作为普通歌词
-        if (currentLyrics.value.length === 0 && wordByWordLyrics.value.length > 0) {
+        // 优先使用逐字歌词，其次是普通歌词
+        if (lyricData.yrc) {
+          wordByWordLyrics.value = parseYrcLyrics(lyricData.yrc)
+          // 逐字歌词也作为普通歌词显示
           currentLyrics.value = wordByWordLyrics.value
+          console.log('vkeys: 使用逐字歌词作为主歌词')
+        } else if (lyricData.lrc) {
+          currentLyrics.value = parseLrcLyrics(lyricData.lrc)
+          console.log('vkeys: 使用普通歌词')
+        } else {
+          currentLyrics.value = []
         }
+        
+        // 翻译歌词
+        if (lyricData.trans) {
+          translationLyrics.value = parseLrcLyrics(lyricData.trans)
+          // 如果有翻译歌词，自动启用翻译显示
+          showTranslation.value = true
+        } else {
+          // 没有翻译歌词，关闭翻译显示
+          translationLyrics.value = []
+          showTranslation.value = false
+        }
+
+        // 不处理罗马音歌词（roma字段），按需求忽略
         
         // 获取成功后立即通知鸿蒙侧更新歌词
         const harmonyLyrics = getFormattedLyricsForHarmonyOS()
@@ -258,19 +451,19 @@ export const useLyrics = () => {
 
       } catch (err) {
         lastError = err instanceof Error ? err : new Error('获取歌词失败')
-        console.error(`fetchLyrics 第${attempt}次尝试失败:`, lastError.message)
+        console.error(`fetchLyrics vkeys第${attempt}次尝试失败:`, lastError.message)
         
         // 如果不是最后一次尝试，等待一段时间后重试
         if (attempt < maxRetries) {
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000) // 指数退避，最大5秒
+          const delay = Math.min(1000 * attempt, 3000) // 线性退避，最大3秒
           console.log(`等待 ${delay}ms 后进行第${attempt + 1}次重试`)
           await new Promise(resolve => setTimeout(resolve, delay))
         }
       }
     }
     
-    // 所有重试都失败了
-    console.error('fetchLyrics 所有重试都失败:', lastError?.message)
+    // 所有方法都失败了
+    console.error('所有歌词获取方法都失败:', lastError?.message)
     error.value = lastError?.message || '获取歌词失败'
     
     // 清空歌词，确保不显示上一首歌的歌词

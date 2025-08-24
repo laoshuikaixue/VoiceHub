@@ -250,6 +250,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useSemesters } from '~/composables/useSemesters'
+import { useMusicSources } from '~/composables/useMusicSources'
+import { useAudioQuality } from '~/composables/useAudioQuality'
 import Icon from '~/components/UI/Icon.vue'
 import { convertToHttps } from '~/utils/url'
 
@@ -605,7 +607,7 @@ const togglePlaySong = async (song) => {
             audioPlayer.playSong(playableSong, playlist, currentIndex)
           } else {
             if (window.$showNotification) {
-              window.$showNotification('无法获取音乐播放链接，可能是付费内容', 'error')
+              window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
             }
           }
         } catch (error) {
@@ -634,7 +636,7 @@ const togglePlaySong = async (song) => {
         audioPlayer.playSong(playableSong, playlist, currentIndex)
       } else {
         if (window.$showNotification) {
-          window.$showNotification('无法获取音乐播放链接，可能是付费内容', 'error')
+          window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
         }
       }
     } catch (error) {
@@ -663,6 +665,7 @@ const buildPlayablePlaylist = async (currentSong) => {
 // 动态获取音乐URL
 const getMusicUrl = async (platform, musicId) => {
   const { getQuality } = useAudioQuality()
+  const { getSongUrl } = useMusicSources()
 
   try {
     let apiUrl
@@ -695,9 +698,26 @@ const getMusicUrl = async (platform, musicId) => {
       return url
     }
 
-    return null
+    throw new Error('vkeys返回成功但未获取到音乐URL')
   } catch (error) {
-    console.error('获取音乐URL错误:', error)
+    console.error('vkeys获取音乐URL失败:', error)
+    
+    // 如果是网易云平台，尝试使用备用源
+    if (platform === 'netease') {
+      try {
+        console.log('尝试使用网易云备用源获取音乐URL...')
+        const result = await getSongUrl(musicId)
+        if (result.success && result.url) {
+          console.log('网易云备用源获取成功:', result.url)
+          return result.url
+        } else {
+          console.error('网易云备用源获取失败:', result.error)
+        }
+      } catch (backupError) {
+        console.error('网易云备用源调用失败:', backupError)
+      }
+    }
+    
     throw error
   }
 }

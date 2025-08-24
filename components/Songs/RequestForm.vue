@@ -88,6 +88,8 @@
             </button>
           </div>
 
+
+
           <div class="results-content">
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
@@ -349,6 +351,8 @@ import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
+import { useMusicSources } from '~/composables/useMusicSources'
+import { getEnabledSources } from '~/utils/musicSources'
 import DuplicateSongModal from './DuplicateSongModal.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps } from '~/utils/url'
@@ -401,6 +405,16 @@ const selectedCover = ref('')
 const selectedUrl = ref('')
 const audioPlayer = useAudioPlayer() // 使用全局音频播放器
 
+// 音源管理器
+const musicSources = useMusicSources()
+const { 
+  currentSource, 
+  sourceStatus, 
+  sourceStatusSummary, 
+  currentSourceInfo 
+} = musicSources
+const searchError = ref('')
+
 // 手动输入相关
 const showManualModal = ref(false)
 const manualArtist = ref('')
@@ -438,6 +452,7 @@ onMounted(async () => {
       console.error('加载歌曲列表失败:', error)
     }
   }
+  // 音源健康检查功能已移除
 })
 
 // 过滤出启用的播出时段
@@ -631,6 +646,9 @@ const switchPlatform = (newPlatform) => {
 
   platform.value = newPlatform
 
+  // 清空之前的搜索结果，避免显示错误的平台来源
+  searchResults.value = []
+  
   // 如果已经有搜索结果，自动重新搜索
   if (title.value.trim() && hasSearched.value) {
     handleSearch()
@@ -641,6 +659,7 @@ const switchPlatform = (newPlatform) => {
 const handleSearch = async () => {
   error.value = ''
   success.value = ''
+  searchError.value = ''
 
   if (!title.value.trim()) {
     error.value = '歌曲名称不能为空'
@@ -652,65 +671,46 @@ const handleSearch = async () => {
 
   searching.value = true
   try {
-    // 只使用歌曲名称搜索
-    const searchWord = title.value.trim()
-
-    // 构建API URL
-    const apiUrl = `https://api.vkeys.cn/v2/music/${
-      platform.value
-    }?word=${encodeURIComponent(searchWord)}`
-
-    // 直接从前端调用API
-    const response = await fetch(apiUrl, {
-      headers: {
-        Accept: 'application/json',
-        Origin: window.location.origin,
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error('搜索请求失败，请稍后重试')
+    // 使用多音源搜索
+    const searchParams = {
+      keywords: title.value.trim(),
+      platform: platform.value,
+      limit: 20
     }
 
-    const data = await response.json()
-
-    if (data.code === 200) {
-      if (data.data && Array.isArray(data.data)) {
-        // 每个搜索结果初始不包含具体URL，选中后才会获取
-        searchResults.value = data.data.map((item) => ({
-          ...item,
-          musicId: item.id,
-          hasUrl: false,
-        }))
-      } else if (data.data) {
-        // 如果返回单个结果
-        searchResults.value = [
-          {
-            ...data.data,
-            musicId: data.data.id,
-            hasUrl: false,
-          },
-        ]
-      } else {
-        searchResults.value = []
-        error.value = '没有找到匹配的歌曲'
-      }
+    console.log('开始多音源搜索:', searchParams)
+    const results = await musicSources.searchSongs(searchParams)
+    
+    if (results && results.success && results.data && results.data.length > 0) {
+      // 转换搜索结果格式以兼容现有UI
+      searchResults.value = results.data.map((item) => ({
+        ...item,
+        musicId: item.id,
+        hasUrl: false,
+        // 统一字段名称
+        song: item.title || item.song,
+        singer: item.artist || item.singer,
+        // 保存实际的平台来源信息
+        actualSource: results.source,
+        actualMusicPlatform: item.musicPlatform || (results.source === 'netease-backup' ? 'netease' : results.source)
+      }))
+      
+      console.log('搜索成功，找到', results.data.length, '首歌曲')
     } else {
-      error.value = data.message || '搜索失败，请稍后重试'
+      searchResults.value = []
+      const errorMsg = results && results.error ? results.error : '没有找到匹配的歌曲'
+      error.value = errorMsg
       if (window.$showNotification) {
-        window.$showNotification(error.value, 'error')
+        window.$showNotification(errorMsg, 'info')
       }
     }
   } catch (err) {
     console.error('搜索错误:', err)
-    error.value = err.message || '搜索请求失败，请稍后重试'
+    searchError.value = err.message || '搜索请求失败，请稍后重试'
+    error.value = searchError.value
+    
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
-    }
-
-    if (error.value.includes('CORS') || error.value.includes('跨域')) {
-      error.value +=
-        '。请尝试使用能够处理跨域请求的浏览器扩展，或联系管理员配置服务器以允许跨域请求。'
     }
   } finally {
     searching.value = false
@@ -723,48 +723,145 @@ const getAudioUrl = async (result) => {
   if (result.hasUrl || result.url) return result
 
   try {
-    const { getQuality } = useAudioQuality()
-    const quality = getQuality(platform.value)
-
-    // 直接调用音乐API
-    let apiUrl
-    if (platform.value === 'netease') {
-      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${result.musicId}&quality=${quality}`
-    } else if (platform.value === 'tencent') {
-      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${result.musicId}&quality=${quality}`
-    } else {
-      throw new Error('不支持的音乐平台')
-    }
-
-    const response = await fetch(apiUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    // 根据搜索结果的sourceInfo.source字段判断音源类型
+    const sourceType = result.sourceInfo?.source || ''
+    console.log('获取音频URL，音源类型:', sourceType, '歌曲ID:', result.musicId || result.id)
+    console.log('完整的result对象:', result)
+    
+    // 对于vkeys音源的处理
+    if (sourceType === 'vkeys') {
+      if (result.url) {
+        result.hasUrl = true
+        console.log('Vkeys音源直接使用URL:', result.url)
+        return result
+      } else {
+        console.warn('Vkeys音源结果中没有找到URL字段，根据平台尝试备用源')
+        
+        // 根据平台直接尝试对应的备用源
+        if (platform.value === 'tencent') {
+          console.log('QQ音乐平台，直接使用vkeys的tencent/geturl接口获取播放链接')
+          try {
+            const songId = result.musicId || result.id
+            
+            // 构建QQ音乐geturl请求参数，使用id而不是mid
+            const params = new URLSearchParams()
+            if (songId) {
+              params.append('id', songId)
+            } else {
+              throw new Error('缺少歌曲ID参数')
+            }
+            params.append('quality', '8') // QQ音乐默认音质为8(HQ高音质)
+            
+            // 获取vkeys音源配置
+            const enabledSources = getEnabledSources()
+            const vkeysSource = enabledSources.find(source => source.id === 'vkeys')
+            
+            if (!vkeysSource) {
+              throw new Error('未找到vkeys音源配置')
+            }
+            
+            const getUrlResponse = await $fetch(`${vkeysSource.baseUrl}/tencent/geturl?${params.toString()}`, {
+              timeout: vkeysSource.timeout || 8000
+            })
+            
+            console.log('QQ音乐geturl返回结果:', getUrlResponse)
+            
+            if (getUrlResponse && getUrlResponse.code === 200 && getUrlResponse.data && getUrlResponse.data.url) {
+              result.url = getUrlResponse.data.url
+              result.hasUrl = true
+              // 更新其他信息
+              if (getUrlResponse.data.cover) result.cover = getUrlResponse.data.cover
+              if (getUrlResponse.data.song) result.title = getUrlResponse.data.song
+              if (getUrlResponse.data.singer) result.artist = getUrlResponse.data.singer
+              console.log('成功获取歌曲URL (QQ音乐geturl):', getUrlResponse.data.url)
+              return result
+            } else {
+              console.warn('QQ音乐geturl无法获取URL:', getUrlResponse)
+            }
+          } catch (qqError) {
+            console.error('QQ音乐geturl获取URL失败:', qqError)
+          }
+        } else if (platform.value === 'netease') {
+          console.log('网易云平台，尝试使用getSongDetail获取')
+          try {
+            const { getQuality } = useAudioQuality()
+            const quality = getQuality(platform.value)
+            const songDetail = await musicSources.getSongDetail({
+              ids: [result.musicId || result.id],
+              quality: quality
+            })
+            
+            if (songDetail && songDetail.url) {
+              result.url = songDetail.url
+              result.hasUrl = true
+              if (songDetail.cover) result.cover = songDetail.cover
+              if (songDetail.duration) result.duration = songDetail.duration
+              console.log('成功获取歌曲URL (vkeys getSongDetail):', songDetail.url)
+              return result
+            }
+          } catch (error) {
+            console.error('vkeys getSongDetail失败:', error)
+          }
+          
+          // 如果getSongDetail失败，尝试网易云备用源
+          console.log('vkeys失败，尝试使用网易云备用源获取播放链接')
+          try {
+            const { getQuality } = useAudioQuality()
+            const quality = getQuality(platform.value)
+            const songId = result.musicId || result.id
+            
+            const urlResult = await musicSources.getSongUrl(songId, quality)
+            console.log('网易云备用源返回结果:', urlResult)
+            
+            if (urlResult && urlResult.success && urlResult.url) {
+              result.url = urlResult.url
+              result.hasUrl = true
+              console.log('成功获取歌曲URL (网易云备用源):', urlResult.url)
+              return result
+            } else {
+              console.warn('网易云备用源也无法获取URL:', urlResult)
+            }
+          } catch (backupError) {
+            console.error('网易云备用源获取URL失败:', backupError)
+          }
+        }
       }
-    })
-
-    if (!response.ok) {
-      throw new Error('获取音乐URL失败')
     }
+    
+    // 对于网易云备用源，直接调用getSongUrl获取播放链接
+    if (sourceType === 'netease-backup') {
+      console.log('检测到网易云备用源，开始获取播放链接')
+      const { getQuality } = useAudioQuality()
+      const quality = getQuality(platform.value)
+      const songId = result.musicId || result.id
 
-    const data = await response.json()
-    if (data.code === 200 && data.data) {
-      // 将HTTP URL改为HTTPS
-      let url = data.data.url
-      if (url.startsWith('http://')) {
-        url = url.replace('http://', 'https://')
-      }
-      
-      // 更新结果中的URL和其他信息
-      result.url = url
-      result.hasUrl = true
-      // 检查URL是否可用
-
-      // 更新搜索结果中的对应项
-      const index = searchResults.value.findIndex(
-        (item) => item.musicId === result.musicId
-      )
-      if (index !== -1) {
-        searchResults.value[index] = { ...result }
+      console.log('调用getSongUrl，参数:', { songId, quality })
+      try {
+        const urlResult = await musicSources.getSongUrl(songId, quality)
+        console.log('getSongUrl返回结果:', urlResult)
+        
+        if (urlResult && urlResult.success && urlResult.url) {
+          // 更新结果中的URL和其他信息
+          result.url = urlResult.url
+          result.hasUrl = true
+          
+          // 更新搜索结果中的对应项
+          const index = searchResults.value.findIndex(
+            (item) => (item.musicId || item.id) === (result.musicId || result.id)
+          )
+          if (index !== -1) {
+            searchResults.value[index] = { ...result }
+          }
+          
+          console.log('成功获取歌曲URL (网易云备用源):', urlResult.url)
+        } else {
+          console.warn('未能获取到有效的歌曲URL，urlResult:', urlResult)
+          if (urlResult && urlResult.error) {
+            console.error('getSongUrl错误:', urlResult.error)
+          }
+        }
+      } catch (urlError) {
+        console.error('调用getSongUrl失败:', urlError)
       }
     }
 
@@ -933,7 +1030,7 @@ const submitSong = async (result) => {
         ? parseInt(preferredPlayTimeId.value)
         : null,
       cover: selectedCover.value,
-      musicPlatform: platform.value,
+      musicPlatform: result.actualMusicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
     }
 
@@ -1452,6 +1549,133 @@ defineExpose({
 .platform-btn:hover:not(.active) {
   background: rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* 音源状态显示 */
+.source-status-display {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.status-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'MiSans', sans-serif;
+}
+
+.status-summary {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+}
+
+.status-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.source-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+}
+
+.source-item.healthy {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+
+.source-item.unhealthy {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.source-item.checking {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+.source-item.current {
+  box-shadow: 0 0 0 2px rgba(11, 90, 254, 0.4);
+  transform: scale(1.02);
+}
+
+.source-name {
+  font-weight: 600;
+}
+
+.source-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.source-item.healthy .source-indicator {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+}
+
+.source-item.unhealthy .source-indicator {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+
+.source-item.checking .source-indicator {
+  background: #fbbf24;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: #f87171;
+  font-size: 12px;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
 }
 
 /* 搜索结果容器样式 */
@@ -2112,6 +2336,8 @@ defineExpose({
   margin: 0.25rem 0;
 }
 
+
+
 .result-actions {
   display: flex;
   align-items: center;
@@ -2385,6 +2611,45 @@ defineExpose({
     font-size: 13px;
     flex-shrink: 0;
     min-width: fit-content;
+  }
+
+  /* 移动端音源状态显示 */
+  .source-status-display {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .status-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .status-title {
+    font-size: 13px;
+  }
+
+  .status-summary {
+    font-size: 11px;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .status-sources {
+    gap: 0.4rem;
+  }
+
+  .source-item {
+    padding: 0.4rem 0.6rem;
+    font-size: 11px;
+  }
+
+  .source-indicator {
+    width: 6px;
+    height: 6px;
+  }
+
+  .error-message {
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 11px;
   }
 
   .form-row {

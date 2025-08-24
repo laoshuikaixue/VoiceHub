@@ -7,6 +7,7 @@
     <LazyUIAudioPlayer
       v-if="isPlayerVisible"
       :song="currentSong"
+      :is-playlist-mode="isPlaylistMode"
       @close="handlePlayerClose"
       @ended="handlePlayerEnded"
     />
@@ -22,9 +23,11 @@ import { onMounted, computed, ref, watch, nextTick } from 'vue'
 // 导入通知容器组件和音频播放器
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
+import { useRoute } from 'vue-router'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
+const route = useRoute()
 
 // 通知容器引用
 const notificationContainer = ref(null)
@@ -33,6 +36,18 @@ const notificationContainer = ref(null)
 const audioPlayer = useAudioPlayer()
 const currentSong = ref(null)
 const isPlayerVisible = ref(false) // 控制播放器显示/隐藏
+
+// 判断是否为播放列表模式
+// 投稿页面、搜索预览等场景不是播放列表模式，不应该自动跳过
+const isPlaylistMode = computed(() => {
+  const currentPath = route.path
+  // 投稿页面不是播放列表模式
+  if (currentPath.includes('/request') || currentPath.includes('/submit')) {
+    return false
+  }
+  // 其他页面默认为播放列表模式（如歌曲列表、播出排期等）
+  return true
+})
 
 
 // 监听当前播放的歌曲
