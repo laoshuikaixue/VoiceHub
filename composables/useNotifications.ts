@@ -24,21 +24,13 @@ export const useNotifications = () => {
     try {
       const authConfig = getAuthConfig()
       
-      const { data, error: fetchError } = await useFetch('/api/notifications', {
+      const data = await $fetch('/api/notifications', {
         ...authConfig
       })
       
-      if (fetchError.value) {
-        const errorHandler = useErrorHandler()
-        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
-          return
-        }
-        throw new Error(fetchError.value.message || `获取通知失败: ${fetchError.value.statusCode}`)
-      }
-      
-      if (data.value) {
-        notifications.value = data.value.notifications || []
-        unreadCount.value = data.value.unreadCount || 0
+      if (data) {
+        notifications.value = data.notifications || []
+        unreadCount.value = data.unreadCount || 0
       }
     } catch (err: any) {
       const errorHandler = useErrorHandler()
@@ -65,20 +57,12 @@ export const useNotifications = () => {
     try {
       const authConfig = getAuthConfig()
       
-      const { data, error: fetchError } = await useFetch('/api/notifications/settings', {
+      const data = await $fetch('/api/notifications/settings', {
         ...authConfig
       })
       
-      if (fetchError.value) {
-        const errorHandler = useErrorHandler()
-        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
-          return
-        }
-        throw new Error(fetchError.value.message || `获取通知设置失败: ${fetchError.value.statusCode}`)
-      }
-      
-      if (data.value) {
-        settings.value = data.value
+      if (data) {
+        settings.value = data
       }
     } catch (err: any) {
       const errorHandler = useErrorHandler()
@@ -104,23 +88,15 @@ export const useNotifications = () => {
     try {
       const authConfig = getAuthConfig()
       
-      const { data, error: fetchError } = await useFetch('/api/notifications/settings', {
+      const data = await $fetch('/api/notifications/settings', {
         method: 'POST',
         body: newSettings,
         ...authConfig
       })
       
-      if (fetchError.value) {
-        const errorHandler = useErrorHandler()
-        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
-          return null
-        }
-        throw new Error(fetchError.value.message || `更新通知设置失败: ${fetchError.value.statusCode}`)
-      }
-      
-      if (data.value) {
-        settings.value = data.value
-        return data.value
+      if (data) {
+        settings.value = data
+        return data
       }
       return null
     } catch (err: any) {
@@ -149,18 +125,10 @@ export const useNotifications = () => {
     try {
       const authConfig = getAuthConfig()
       
-      const { data, error: fetchError } = await useFetch(`/api/notifications/${notificationId}/read`, {
+      const data = await $fetch(`/api/notifications/${notificationId}/read`, {
         method: 'POST',
         ...authConfig
       })
-      
-      if (fetchError.value) {
-        const errorHandler = useErrorHandler()
-        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
-          return null
-        }
-        throw new Error(fetchError.value.message || `标记通知失败: ${fetchError.value.statusCode}`)
-      }
       
       const index = notifications.value.findIndex((n: Notification) => n.id === notificationId)
       if (index !== -1) {
@@ -168,7 +136,7 @@ export const useNotifications = () => {
         unreadCount.value = Math.max(0, unreadCount.value - 1)
       }
       
-      return data.value
+      return data
     } catch (err: any) {
       const errorHandler = useErrorHandler()
       if (await errorHandler.checkAndHandleFetchError(err)) {
@@ -195,23 +163,15 @@ export const useNotifications = () => {
     try {
       const authConfig = getAuthConfig()
       
-      const { data, error: fetchError } = await useFetch('/api/notifications/read-all', {
+      const data = await $fetch('/api/notifications/read-all', {
         method: 'POST',
         ...authConfig
       })
       
-      if (fetchError.value) {
-        const errorHandler = useErrorHandler()
-        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
-          return null
-        }
-        throw new Error(fetchError.value.message || `标记所有通知失败: ${fetchError.value.statusCode}`)
-      }
-      
-      if (data.value) {
+      if (data) {
         notifications.value.forEach(n => n.read = true)
         unreadCount.value = 0
-        return data.value
+        return data
       }
       return null
     } catch (err: any) {
@@ -240,20 +200,10 @@ export const useNotifications = () => {
     try {
       const authConfig = getAuthConfig()
       
-      const { data, error: fetchError } = await useFetch(`/api/notifications/${notificationId}`, {
+      await $fetch(`/api/notifications/${notificationId}`, {
         method: 'DELETE',
         ...authConfig
       })
-      
-      if (fetchError.value) {
-        // 检查401错误
-        const errorHandler = useErrorHandler()
-        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
-          return null
-        }
-        
-        throw new Error(fetchError.value.message || `删除通知失败: ${fetchError.value.statusCode}`)
-      }
       
       // 更新本地通知列表
       const index = notifications.value.findIndex((n: Notification) => n.id === notificationId)
@@ -293,20 +243,10 @@ export const useNotifications = () => {
     try {
       const authConfig = getAuthConfig()
       
-      const { data, error: fetchError } = await useFetch('/api/notifications/clear-all', {
+      await $fetch('/api/notifications/clear-all', {
         method: 'DELETE',
         ...authConfig
       })
-      
-      if (fetchError.value) {
-        // 检查401错误
-        const errorHandler = useErrorHandler()
-        if (await errorHandler.checkAndHandleFetchError(fetchError.value)) {
-          return null
-        }
-        
-        throw new Error(fetchError.value.message || `清空通知失败: ${fetchError.value.statusCode}`)
-      }
       
       // 清空本地通知列表
       notifications.value = []

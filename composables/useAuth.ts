@@ -18,12 +18,12 @@ export const useAuth = () => {
   const initAuth = async () => {
     // 客户端执行
     if (typeof window === 'undefined' || process.server) {
-      return
+      return null
     }
 
-    // 已认证跳过
+    // 已认证跳过，但仍返回用户信息
     if (isAuthenticated.value && user.value) {
-      return
+      return user.value
     }
 
     try {
@@ -34,12 +34,15 @@ export const useAuth = () => {
         isAuthenticated.value = true
         isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
         token.value = 'cookie-based'
+        return data.user
       } else {
         clearAuthState()
+        return null
       }
     } catch (error) {
       console.log('用户未认证或认证已过期')
       clearAuthState()
+      return null
     }
   }
 

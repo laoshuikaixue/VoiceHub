@@ -78,13 +78,24 @@
                v-ripple>
             投稿歌曲
           </div>
-          <div class="section-tab" 
-               :class="{ 'active': activeTab === 'notification', 'disabled': !isClientAuthenticated }" 
-               @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()"
-               v-ripple>
-            通知
-            <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
-          </div>
+          <ClientOnly>
+            <div class="section-tab" 
+                 ref="notificationTabRef"
+                 :key="notificationTabKey"
+                 data-tab="notification"
+                 :class="{ 'active': activeTab === 'notification', 'disabled': !isClientAuthenticated }" 
+                 @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()"
+                 v-ripple>
+              通知
+              <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
+            </div>
+            <template #fallback>
+              <div class="section-tab disabled" 
+                   data-tab="notification">
+                通知
+              </div>
+            </template>
+          </ClientOnly>
         </div>
 
         <!-- 内容区域 -->
@@ -298,7 +309,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
+import { ref, onMounted, computed, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 import Icon from '~/components/UI/Icon.vue'
@@ -335,6 +346,10 @@ const showRules = ref(false)
 
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
+
+// 通知按钮强制更新相关
+const notificationTabRef = ref(null)
+const notificationTabKey = ref(0)
 
 // Footer相关变量
 const systemVersion = packageJson.version
@@ -508,6 +523,19 @@ watch(activeTab, (newTab) => {
   }
 })
 
+// 监听登录状态变化，确保通知标签页状态立即更新
+watch(() => auth?.isAuthenticated?.value, (newAuthState) => {
+  if (newAuthState) {
+    // 用户刚登录，立即加载通知相关数据
+    nextTick(() => {
+      if (notificationsService) {
+        loadNotifications()
+        fetchNotificationSettings()
+      }
+    })
+  }
+}, { immediate: false })
+
 // 初始化时如果已经在通知标签页，则加载通知
 onMounted(() => {
   if (activeTab.value === 'notification') {
@@ -564,8 +592,59 @@ onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
   
-  // 初始化认证状态
-  await auth.initAuth()
+  // 初始化认证状态并获取用户信息
+  const currentUser = await auth.initAuth()
+  
+  // 监听登录状态变化，确保UI立即响应
+  watch(() => auth?.isAuthenticated?.value, async (newAuthState, oldAuthState) => {
+    if (newAuthState && !oldAuthState) {
+      // 用户刚刚登录成功，立即更新相关数据
+      console.log('用户登录状态变化，开始强制更新通知按钮')
+      
+      // 方法1: 更新key值强制重新渲染
+      notificationTabKey.value++
+      
+      await nextTick()
+      
+      // 方法2: 直接操作ref元素
+      if (notificationTabRef.value) {
+        notificationTabRef.value.classList.remove('disabled')
+        notificationTabRef.value.style.opacity = '1'
+        notificationTabRef.value.style.cursor = 'pointer'
+        notificationTabRef.value.style.pointerEvents = 'auto'
+      }
+      
+      // 方法3: 强制触发响应式更新
+      await nextTick(() => {
+        // 强制重新计算isClientAuthenticated
+        if (typeof window !== 'undefined') {
+          // 直接操作DOM确保样式立即更新
+          const notificationTab = document.querySelector('.section-tab[data-tab="notification"]')
+          if (notificationTab) {
+            notificationTab.classList.remove('disabled')
+            // 强制重新应用class绑定
+            notificationTab.style.opacity = '1'
+            notificationTab.style.cursor = 'pointer'
+            notificationTab.style.pointerEvents = 'auto'
+          }
+        }
+      })
+      
+      // 方法4: 再次更新key值确保完全重新渲染
+      await nextTick()
+      notificationTabKey.value++
+      
+      // 方法5: 再次使用nextTick确保Vue响应式系统完全更新
+      await nextTick()
+      
+      console.log('通知按钮强制更新完成')
+      
+      await Promise.all([
+        loadNotifications(),
+        fetchNotificationSettings()
+      ])
+    }
+  }, { immediate: false, flush: 'post' })
   
   // 确保title正确设置
   if (typeof document !== 'undefined' && siteTitle.value) {
@@ -586,7 +665,7 @@ onMounted(async () => {
     ])
     
     // 检查用户是否需要修改密码并显示提示
-    await checkPasswordChangeRequired()
+    await checkPasswordChangeRequired(currentUser)
   } else {
     // 未登录用户：并行加载歌曲总数和公共排期
     await Promise.all([
@@ -923,27 +1002,23 @@ const showLoginNotice = () => {
 }
 
 // 检查用户是否需要修改密码
-const checkPasswordChangeRequired = async () => {
+const checkPasswordChangeRequired = async (user = null) => {
   try {
-    // 获取最新的用户信息
-    if (auth && auth.refreshUser) {
-      await auth.refreshUser()
-      
-      // 检查用户是否需要修改密码
-      const currentUser = auth.user.value
-      if (currentUser && (currentUser.forcePasswordChange || !currentUser.passwordChangedAt)) {
-        // 延迟1秒显示通知，确保页面加载完成
-        setTimeout(() => {
-          if (window.$showNotification) {
-            window.$showNotification(
-              '为了您的账户安全，建议您修改密码。您可以点击右上角的"修改密码"按钮进行修改。',
-              'info',
-              true,
-              8000 // 显示8秒
-            )
-          }
-        }, 1000)
-      }
+    // 使用传入的用户信息或当前认证状态中的用户信息
+    const currentUser = user || auth?.user?.value
+    
+    if (currentUser && (currentUser.forcePasswordChange || !currentUser.passwordChangedAt)) {
+      // 延迟1秒显示通知，确保页面加载完成
+      setTimeout(() => {
+        if (window.$showNotification) {
+          window.$showNotification(
+            '为了您的账户安全，建议您修改密码。您可以点击右上角的"修改密码"按钮进行修改。',
+            'info',
+            true,
+            8000 // 显示8秒
+          )
+        }
+      }, 1000)
     }
   } catch (error) {
     console.error('检查密码修改状态失败:', error)
