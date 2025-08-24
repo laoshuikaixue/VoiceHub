@@ -1,12 +1,10 @@
 import { defineEventHandler } from 'h3'
-import { getDbStatus } from '~/utils/db-manager'
 import { getPoolStatus } from '~/server/utils/db-pool'
 import { prisma } from '~/prisma/client'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 获取数据库管理器状态
-    const dbManagerStatus = getDbStatus()
+    // 获取数据库连接池状态
     const poolStatus = getPoolStatus()
 
     // 尝试执行一个简单的数据库查询来测试连接
@@ -39,7 +37,6 @@ export default defineEventHandler(async (event) => {
       status: 'ok',
       database: {
         connected: dbTestResult,
-        managerStatus: dbManagerStatus,
         poolStatus: poolStatus,
         error: dbError
       },
@@ -51,7 +48,7 @@ export default defineEventHandler(async (event) => {
       error: error.message,
       database: {
         connected: false,
-        managerStatus: getDbStatus(),
+        poolStatus: getPoolStatus(),
         error: error.message
       }
     }

@@ -64,6 +64,11 @@ function createPrismaClient() {
         engine: {
           connectTimeout: 60000, // 60秒连接超时
           queryTimeout: 60000,   // 60秒查询超时
+          // 连接池配置
+          connectionLimit: 10,    // 最大连接数
+          poolTimeout: 30000,     // 连接池超时30秒
+          idleTimeout: 300000,    // 空闲连接超时5分钟
+          maxLifetime: 1800000,   // 连接最大生命周期30分钟
         }
       }
     });
@@ -76,6 +81,11 @@ function createPrismaClient() {
         engine: {
           connectTimeout: 30000,
           queryTimeout: 30000,
+          // 降级模式下的连接池配置
+          connectionLimit: 5,     // 降级模式下减少连接数
+          poolTimeout: 15000,     // 降级模式下减少超时时间
+          idleTimeout: 180000,    // 空闲连接超时3分钟
+          maxLifetime: 900000,    // 连接最大生命周期15分钟
         }
       }
     });
@@ -151,4 +161,4 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 } else {
   console.log('Running in production mode, not caching Prisma client globally');
-} 
+}

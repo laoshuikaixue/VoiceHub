@@ -522,7 +522,6 @@ VoiceHub/
 │   └── index.ts            # 项目类型定义
 ├── utils/                 # 客户端工具函数
 │   ├── __tests__/          # 工具函数测试目录
-│   ├── db-manager.ts       # 数据库管理工具
 │   ├── musicSources.ts     # 音乐源配置和管理工具
 │   ├── musicUrl.ts         # 音乐URL处理工具
 │   └── url.ts              # URL处理工具（HTTPS转换等）
