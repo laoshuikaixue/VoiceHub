@@ -1033,3 +1033,13 @@ VoiceHub是一个开源的校园广播站点歌管理系统，本项目：
 ## 许可证
 
 [GPL-3.0](LICENSE)
+
+## 星标历史
+
+<picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date" />
+ </picture>
+
+Powered By LaoShui @ 2025
