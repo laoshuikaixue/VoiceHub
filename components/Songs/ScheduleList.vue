@@ -186,6 +186,7 @@
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useMusicSources } from '~/composables/useMusicSources'
 import Icon from '~/components/UI/Icon.vue'
 import { convertToHttps } from '~/utils/url'
 
@@ -624,11 +625,12 @@ const getCurrentTimeSlot = (song) => {
 // 动态获取音乐URL
 const getMusicUrl = async (platform, musicId) => {
   const { getQuality } = useAudioQuality()
+  const { getSongUrl } = useMusicSources()
 
   try {
     const quality = getQuality(platform)
 
-    // 直接调用音乐API
+    // 首先尝试vkeys API
     let apiUrl
     if (platform === 'netease') {
       apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
@@ -645,7 +647,7 @@ const getMusicUrl = async (platform, musicId) => {
     })
 
     if (!response.ok) {
-      throw new Error('获取音乐URL失败')
+      throw new Error('vkeys API请求失败')
     }
 
     const data = await response.json()
@@ -655,13 +657,35 @@ const getMusicUrl = async (platform, musicId) => {
       if (url.startsWith('http://')) {
         url = url.replace('http://', 'https://')
       }
+      console.log('vkeys API获取音乐URL成功')
       return url
     }
 
-    return null
+    // vkeys API返回了响应但没有有效的URL，尝试备用源
+    throw new Error('vkeys API未返回有效的音乐URL')
   } catch (error) {
-    console.error('获取音乐URL错误:', error)
-    throw error
+    console.error('vkeys API获取音乐URL失败:', error)
+    
+    // 如果是网易云平台，尝试使用备用源
+    if (platform === 'netease') {
+      console.log('尝试使用网易云备用源获取音乐URL...')
+      try {
+        const quality = getQuality(platform)
+        const backupResult = await getSongUrl(musicId, quality)
+        
+        if (backupResult && backupResult.url) {
+          console.log('网易云备用源获取音乐URL成功')
+          return backupResult.url
+        } else {
+          console.error('网易云备用源未返回有效的URL')
+        }
+      } catch (backupError) {
+        console.error('网易云备用源获取音乐URL也失败:', backupError)
+      }
+    }
+    
+    // vkeys和备用源都失败了
+    throw new Error('所有音源都无法获取音乐播放链接')
   }
 }
 

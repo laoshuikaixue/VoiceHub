@@ -727,25 +727,14 @@ const getAudioUrl = async (result) => {
     console.log('获取音频URL，音源类型:', sourceType, '歌曲ID:', result.musicId || result.id)
     console.log('完整的result对象:', result)
     
-    // 如果是vkeys音源，直接使用搜索结果中的url字段
+    // 对于vkeys音源的处理
     if (sourceType === 'vkeys') {
       if (result.url) {
         result.hasUrl = true
         console.log('Vkeys音源直接使用URL:', result.url)
         return result
       } else {
-        console.warn('Vkeys音源结果中没有找到URL字段')
-        return result
-      }
-    }
-    
-    // 对于vkeys音源，如果已有URL则直接使用
-    if (sourceType === 'vkeys') {
-      if (result.url) {
-        console.log('vkeys音源已有URL，直接使用:', result.url)
-        result.hasUrl = true
-      } else {
-        console.log('vkeys音源无URL，调用getSongDetail获取')
+        console.warn('Vkeys音源结果中没有找到URL字段，尝试使用getSongDetail获取')
         try {
           const { getQuality } = useAudioQuality()
           const quality = getQuality(platform.value)
@@ -759,10 +748,35 @@ const getAudioUrl = async (result) => {
             result.hasUrl = true
             if (songDetail.cover) result.cover = songDetail.cover
             if (songDetail.duration) result.duration = songDetail.duration
-            console.log('成功获取歌曲URL (vkeys):', songDetail.url)
+            console.log('成功获取歌曲URL (vkeys getSongDetail):', songDetail.url)
+            return result
           }
         } catch (error) {
-          console.error('vkeys获取URL失败:', error)
+          console.error('vkeys getSongDetail失败:', error)
+        }
+        
+        // 如果vkeys完全失败且是网易云平台，尝试使用网易云备用源
+        if (platform.value === 'netease') {
+          console.log('vkeys失败，尝试使用网易云备用源获取播放链接')
+          try {
+            const { getQuality } = useAudioQuality()
+            const quality = getQuality(platform.value)
+            const songId = result.musicId || result.id
+            
+            const urlResult = await musicSources.getSongUrl(songId, quality)
+            console.log('网易云备用源返回结果:', urlResult)
+            
+            if (urlResult && urlResult.success && urlResult.url) {
+              result.url = urlResult.url
+              result.hasUrl = true
+              console.log('成功获取歌曲URL (网易云备用源):', urlResult.url)
+              return result
+            } else {
+              console.warn('网易云备用源也无法获取URL:', urlResult)
+            }
+          } catch (backupError) {
+            console.error('网易云备用源获取URL失败:', backupError)
+          }
         }
       }
     }
