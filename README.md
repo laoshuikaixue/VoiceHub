@@ -240,7 +240,7 @@ VoiceHub 实现了细粒度的权限控制系统：
 | 变量名          | 必填 | 说明                          | 示例值                                                                 |
 |--------------|----|-----------------------------|---------------------------------------------------------------------|
 | DATABASE_URL | 是  | PostgreSQL数据库连接字符串          | `postgresql://username:password@host:port/database?sslmode=require` |
-| JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串        | `your-very-secure-jwt-secret-key-with-at-least-32-characters`       |
+| JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串        | `your-very-secure-jwt-secret-key`       |
 | NODE_ENV     | 否  | 运行环境，development或production | `production`                                                        |
 | NITRO_PRESET | 否  | Nitro预设                     | `vercel`                                                            |
 
@@ -1019,7 +1019,15 @@ VoiceHub是一个开源的校园广播站点歌管理系统，本项目：
 
 ## 致谢
 
-特别感谢 [过客是个铁憨憨](https://github.com/1811304592) 为本项目提供UI设计
+### UI设计
+
+特别感谢 [过客是个铁憨憨](https://github.com/1811304592) 为本项目提供首页UI样式设计
+
+### 贡献者
+
+Thanks goes to these wonderful people:
+
+[![Contributors](http://contrib.nn.ci/api?repo=laoshuikaixue/VoiceHub&repo=laoshuikaixue/VoiceHub-docs&repo=laoshuikaixue/VoiceHub-hmos)](https://github.com/laoshuikaixue/VoiceHub/graphs/contributors)
 
 ### 参考项目
 
