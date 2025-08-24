@@ -112,15 +112,17 @@ export const useMusicSources = () => {
       
       transformResponse = (data: any) => transformVkeysResponse(data, platform)
     } else {
-      // 网易云备用API
-      url = `${source.baseUrl}/search?keywords=${encodeURIComponent(params.keywords)}&limit=${params.limit || 30}&offset=${params.offset || 0}&type=${params.type || 1}`
+      // 网易云备用API - 优先使用cloudsearch接口
+      url = `${source.baseUrl}/cloudsearch?keywords=${encodeURIComponent(params.keywords)}&limit=${params.limit || 30}&offset=${params.offset || 0}&type=${params.type || 1}`
       transformResponse = async (data: any) => await transformNeteaseResponse(data)
     }
 
     let response: any
+    let finalUrl = url
+    
     try {
-      console.log(`[${source.name}] 请求URL:`, url)
-      response = await $fetch(url, {
+      console.log(`[${source.name}] 请求URL:`, finalUrl)
+      response = await $fetch(finalUrl, {
         timeout: source.timeout || config.value.timeout,
         headers: {
           'Content-Type': 'application/json',
@@ -133,10 +135,39 @@ export const useMusicSources = () => {
       updateSourceStatus(source.id, 'online', undefined, responseTime)
 
     } catch (error: any) {
-      const responseTime = Date.now() - startTime
-      console.error(`[${source.name}] 网络请求失败:`, error.message)
-      updateSourceStatus(source.id, 'error', error.message, responseTime)
-      throw error
+      // 如果是网易云备用源且使用的是cloudsearch接口，尝试切换到search接口
+      if (source.id !== 'vkeys' && finalUrl.includes('/cloudsearch')) {
+        console.warn(`[${source.name}] cloudsearch接口失败，尝试使用search接口:`, error.message)
+        
+        const fallbackUrl = `${source.baseUrl}/search?keywords=${encodeURIComponent(params.keywords)}&limit=${params.limit || 30}&offset=${params.offset || 0}&type=${params.type || 1}`
+        
+        try {
+          console.log(`[${source.name}] 备用请求URL:`, fallbackUrl)
+          response = await $fetch(fallbackUrl, {
+            timeout: source.timeout || config.value.timeout,
+            headers: {
+              'Content-Type': 'application/json',
+              ...source.headers
+            }
+          })
+          console.log(`[${source.name}] 备用API响应:`, response)
+          
+          const responseTime = Date.now() - startTime
+          updateSourceStatus(source.id, 'online', undefined, responseTime)
+          finalUrl = fallbackUrl // 更新最终使用的URL
+          
+        } catch (fallbackError: any) {
+          const responseTime = Date.now() - startTime
+          console.error(`[${source.name}] 备用接口也失败:`, fallbackError.message)
+          updateSourceStatus(source.id, 'error', `cloudsearch和search接口均失败: ${error.message}, ${fallbackError.message}`, responseTime)
+          throw fallbackError
+        }
+      } else {
+        const responseTime = Date.now() - startTime
+        console.error(`[${source.name}] 网络请求失败:`, error.message)
+        updateSourceStatus(source.id, 'error', error.message, responseTime)
+        throw error
+      }
     }
 
     // 单独处理数据转换，避免网络成功但转换失败的情况
@@ -526,64 +557,88 @@ export const useMusicSources = () => {
       return []
     }
 
-    // 获取网易云备用源
-    const enabledSources = getEnabledSources()
-    const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
-    
-    if (!neteaseSource) {
-      console.error('[transformNeteaseResponse] 未找到网易云备用源')
-      throw new Error('未找到网易云备用源')
-    }
-
-    // 提取所有歌曲ID，准备批量获取详情
-    const songIds = songs.map(song => song.id).filter(id => id)
-    console.log(`[transformNeteaseResponse] 准备批量获取 ${songIds.length} 首歌曲的详情`)
+    // 检查是否是cloudsearch接口的响应（包含完整信息）
+    const hasCompleteInfo = songs.some(song => song.al?.picUrl)
+    console.log(`[transformNeteaseResponse] 检测到${hasCompleteInfo ? 'cloudsearch' : 'search'}接口响应`)
     
     let detailResponse: any = null
-    if (songIds.length > 0) {
-      try {
-        // 批量获取歌曲详情，包含封面信息
-        detailResponse = await $fetch(`${neteaseSource.baseUrl}/song/detail`, {
-          params: { ids: songIds.join(',') },
-          timeout: neteaseSource.timeout || 8000
+    let detailMap = new Map()
+    
+    // 如果是search接口响应（缺少完整信息），则需要获取详情
+    if (!hasCompleteInfo) {
+      // 获取网易云备用源
+      const enabledSources = getEnabledSources()
+      const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
+      
+      if (!neteaseSource) {
+        console.error('[transformNeteaseResponse] 未找到网易云备用源')
+        throw new Error('未找到网易云备用源')
+      }
+
+      // 提取所有歌曲ID，准备批量获取详情
+      const songIds = songs.map(song => song.id).filter(id => id)
+      console.log(`[transformNeteaseResponse] 准备批量获取 ${songIds.length} 首歌曲的详情`)
+      
+      if (songIds.length > 0) {
+        try {
+          // 批量获取歌曲详情，包含封面信息
+          detailResponse = await $fetch(`${neteaseSource.baseUrl}/song/detail`, {
+            params: { ids: songIds.join(',') },
+            timeout: neteaseSource.timeout || 8000
+          })
+          console.log(`[transformNeteaseResponse] 批量获取详情成功:`, detailResponse)
+        } catch (error) {
+          console.warn('[transformNeteaseResponse] 批量获取详情失败，将使用搜索结果的基本信息:', error)
+        }
+      }
+
+      // 创建详情映射，方便查找
+      if (detailResponse?.songs) {
+        detailResponse.songs.forEach((song: any) => {
+          detailMap.set(song.id, song)
         })
-        console.log(`[transformNeteaseResponse] 批量获取详情成功:`, detailResponse)
-      } catch (error) {
-        console.warn('[transformNeteaseResponse] 批量获取详情失败，将使用搜索结果的基本信息:', error)
       }
     }
 
-    // 创建详情映射，方便查找
-    const detailMap = new Map()
-    if (detailResponse?.songs) {
-      detailResponse.songs.forEach((song: any) => {
-        detailMap.set(song.id, song)
-      })
-    }
-
-    // 转换搜索结果，优先使用详情数据
+    // 转换搜索结果，根据接口类型使用不同的数据提取策略
     return songs.map((song: any, index: number) => {
       try {
-        const detail = detailMap.get(song.id)
+        let cover: string | null = null
+        let artist: string
+        let album: string | undefined
+        let duration: number
         
-        // 优先使用详情中的封面，其次使用搜索结果中的封面
-        let cover = detail?.al?.picUrl || 
-                   (song.album?.picId ? `https://p1.music.126.net/${song.album.picId}/${song.album.picId}.jpg` : null)
+        if (hasCompleteInfo) {
+          // cloudsearch接口响应，包含完整信息
+          cover = song.al?.picUrl || null
+          artist = song.ar?.map((artist: any) => artist.name).join(', ') || '未知艺术家'
+          album = song.al?.name
+          duration = song.dt
+        } else {
+          // search接口响应，需要从详情中获取信息
+          const detail = detailMap.get(song.id)
+          cover = detail?.al?.picUrl || 
+                 (song.album?.picId ? `https://p1.music.126.net/${song.album.picId}/${song.album.picId}.jpg` : null)
+          artist = song.artists?.map((artist: any) => artist.name).join(', ') || '未知艺术家'
+          album = song.album?.name
+          duration = song.duration
+        }
         
         const transformedSong = {
           id: song.id,
           title: song.name,
-          artist: song.artists?.map((artist: any) => artist.name).join(', ') || '未知艺术家',
+          artist,
           cover,
-          album: song.album?.name,
-          duration: song.duration,
+          album,
+          duration,
           musicPlatform: 'netease',
           musicId: song.id.toString(),
           sourceInfo: {
             source: 'netease-backup',
             originalId: song.id.toString(),
             fetchedAt: new Date(),
-            hasDetail: !!detail // 标记是否获取到了详情
+            hasDetail: hasCompleteInfo || !!detailMap.get(song.id), // 标记是否有完整信息
+            interface: hasCompleteInfo ? 'cloudsearch' : 'search' // 标记使用的接口类型
           }
         }
         console.log(`[transformNeteaseResponse] 转换歌曲 ${index + 1}:`, transformedSong)
