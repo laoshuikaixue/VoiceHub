@@ -285,6 +285,134 @@ export const useMusicSources = () => {
   }
 
   /**
+   * 将VoiceHub音质数值映射到网易云API的level参数
+   */
+  const mapQualityToLevel = (quality: number): string => {
+    // 根据网易云API文档映射音质等级
+    switch (quality) {
+      case 2: return 'standard'    // 标准 (128k)
+      case 4: return 'higher'      // HQ极高 (320k) 
+      case 5: return 'lossless'    // SQ无损
+      case 6: return 'hires'       // Hi-Res
+      case 9: return 'jymaster'    // 超清母带
+      default: return 'exhigh'     // 默认极高音质
+    }
+  }
+
+  /**
+   * 获取歌曲播放URL（网易云备用源）
+   * 使用新版/song/url/v1接口，支持音质等级参数
+   */
+  const getSongUrl = async (id: number | string, quality?: number): Promise<{ success: boolean; url?: string; error?: string }> => {
+    try {
+      // 获取网易云备用源
+      const enabledSources = getEnabledSources()
+      const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
+      
+      if (!neteaseSource) {
+        console.error('[getSongUrl] 未找到网易云备用源')
+        return { success: false, error: '未找到网易云备用源' }
+      }
+      
+      // 处理音质参数，如果未提供则使用默认音质设置
+      let level = 'exhigh' // 默认极高音质
+      if (quality !== undefined) {
+        level = mapQualityToLevel(quality)
+      } else {
+        // 尝试从音质设置中获取网易云的音质配置
+        try {
+          const { getQuality } = await import('./useAudioQuality')
+          const neteaseQuality = getQuality('netease')
+          level = mapQualityToLevel(neteaseQuality)
+        } catch (error) {
+          console.warn('[getSongUrl] 无法获取音质设置，使用默认音质')
+        }
+      }
+      
+      // 支持多个ID的批量查询（用逗号分隔）
+      const idParam = Array.isArray(id) ? id.join(',') : id.toString()
+      
+      console.log(`[getSongUrl] 开始获取歌曲播放链接: id=${idParam}, level=${level}`)
+      
+      // 获取用户IP地址（简单实现，实际项目中可能需要更复杂的IP获取逻辑）
+      let realIP = '116.25.146.177' // 默认IP，实际使用中应该获取用户真实IP
+      try {
+        // 尝试获取用户真实IP（这里使用一个简单的实现）
+        const ipResponse = await $fetch('https://api.ipify.org?format=json', { timeout: 3000 })
+        if (ipResponse?.ip) {
+          realIP = ipResponse.ip
+        }
+      } catch (error) {
+        console.warn('[getSongUrl] 获取用户IP失败，使用默认IP:', realIP)
+      }
+      
+      // 调用/song/url/v1接口获取播放链接
+      const response = await $fetch(`${neteaseSource.baseUrl}/song/url/v1`, {
+        params: { 
+          id: idParam,
+          level: level,
+          // 添加unblock参数以提高成功率
+          unblock: true,
+          // 添加realIP参数
+          realIP: realIP
+        },
+        timeout: neteaseSource.timeout || 8000
+      })
+      
+      console.log(`[getSongUrl] API响应:`, response)
+      
+      // 检查响应状态
+      if (response.code !== 200) {
+        const errorMsg = `API响应错误: ${response.message || '未知错误'} (code: ${response.code})`
+        console.error(`[getSongUrl] ${errorMsg}`)
+        return { success: false, error: errorMsg }
+      }
+      
+      // 检查是否有播放链接数据
+      if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+        console.error('[getSongUrl] 响应中没有播放链接数据')
+        return { success: false, error: '响应中没有播放链接数据' }
+      }
+      
+      const songData = response.data[0]
+      if (!songData.url) {
+        console.error('[getSongUrl] 歌曲播放链接为空，可能是VIP歌曲或地区限制')
+        return { success: false, error: '歌曲播放链接为空，可能是VIP歌曲或地区限制' }
+      }
+      
+      // 清理URL字符串：去除前后空格和反引号
+      let playUrl = songData.url.toString().trim().replace(/`/g, '')
+      console.log(`[getSongUrl] 原始URL: "${songData.url}", 清理后URL: "${playUrl}"`)
+      
+      // 验证URL有效性
+      if (!playUrl || playUrl === 'null' || playUrl === 'undefined') {
+        console.error('[getSongUrl] 清理后的URL无效:', playUrl)
+        return { success: false, error: '清理后的URL无效' }
+      }
+      
+      // 将HTTP URL改为HTTPS
+      if (playUrl.startsWith('http://')) {
+        playUrl = playUrl.replace('http://', 'https://')
+      }
+      
+      console.log(`[getSongUrl] 成功获取播放链接: ${playUrl} (level: ${level})`)
+      return { 
+        success: true, 
+        url: playUrl,
+        // 返回额外信息供调试使用
+        level: level,
+        size: songData.size,
+        br: songData.br,
+        type: songData.type
+      }
+      
+    } catch (error: any) {
+      console.error('[getSongUrl] 获取播放链接失败:', error)
+      return { success: false, error: error.message || '获取播放链接失败' }
+    }
+  }
+
+  /**
    * 转换 Vkeys API 响应
    */
   const transformVkeysResponse = (response: any, platform: string = 'netease'): any[] => {
@@ -322,6 +450,8 @@ export const useMusicSources = () => {
           duration: song.duration || song.dt,
           musicPlatform: 'tencent',
           musicId: (song.id || song.musicId)?.toString(),
+          url: song.url, // 添加vkeys API返回的播放链接
+          hasUrl: !!song.url, // 标记是否有播放链接
           sourceInfo: {
             source: 'vkeys',
             originalId: (song.id || song.musicId)?.toString(),
@@ -355,6 +485,8 @@ export const useMusicSources = () => {
           duration: song.interval || song.time, // 网易云使用interval字段表示时长，备用time字段
           musicPlatform: 'netease',
           musicId: song.id?.toString(),
+          url: song.url, // 添加vkeys API返回的播放链接
+          hasUrl: !!song.url, // 标记是否有播放链接
           sourceInfo: {
             source: 'vkeys',
             originalId: song.id?.toString(),
@@ -553,6 +685,7 @@ export const useMusicSources = () => {
     // 方法
     searchSongs,
     getSongDetail,
+    getSongUrl,
     updateSourceStatus
   }
 }

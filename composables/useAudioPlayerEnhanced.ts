@@ -138,7 +138,7 @@ export const useAudioPlayerEnhanced = () => {
   }
   
   // 处理播放错误，包含重试和音质切换逻辑
-  const handlePlaybackError = async (error, song, onSongChange, onNext, onClose) => {
+  const handlePlaybackError = async (error, song, onSongChange, onNext, onClose, isPlaylistMode = true) => {
     console.log('播放错误:', error, '重试次数:', retryCount.value)
     
     // 如果已经在重试中，避免重复处理
@@ -183,34 +183,48 @@ export const useAudioPlayerEnhanced = () => {
         return { handled: true, shouldRetry: true }
       }
       
-      // 重试次数用完，尝试下一首
-      console.log('当前歌曲重试次数用完，尝试下一首')
-      
-      if (onNext) {
-        const nextResult = await onNext()
-        if (nextResult?.success && nextResult?.newSong) {
-          // 重置重试状态，为新歌曲准备
-          resetRetryState()
-          isRetrying.value = false
-          return { handled: true, success: true, newSong: nextResult.newSong }
+      // 重试次数用完，根据播放模式决定是否自动跳过
+      if (isPlaylistMode) {
+        console.log('当前歌曲重试次数用完，尝试下一首')
+        
+        if (onNext) {
+          const nextResult = await onNext()
+          if (nextResult?.success && nextResult?.newSong) {
+            // 重置重试状态，为新歌曲准备
+            resetRetryState()
+            isRetrying.value = false
+            return { handled: true, success: true, newSong: nextResult.newSong }
+          }
         }
+        
+        // 如果没有下一首或下一首也失败，关闭播放器
+        console.log('没有可播放的歌曲，关闭播放器')
+        
+        addNotification({
+          type: 'error',
+          message: '播放失败，已关闭播放器',
+          duration: 3000
+        })
+        
+        if (onClose) {
+          onClose()
+        }
+        
+        isRetrying.value = false
+        return { handled: true, shouldClose: true }
+      } else {
+        // 非播放列表模式（如投稿页面），只显示错误提示，不自动跳过
+        console.log('播放失败，显示错误提示（非播放列表模式）')
+        
+        addNotification({
+          type: 'error',
+          message: '歌曲播放失败，请检查链接或稍后重试',
+          duration: 5000
+        })
+        
+        isRetrying.value = false
+        return { handled: true, showError: true }
       }
-      
-      // 如果没有下一首或下一首也失败，关闭播放器
-      console.log('没有可播放的歌曲，关闭播放器')
-      
-      addNotification({
-        type: 'error',
-        message: '播放失败，已关闭播放器',
-        duration: 3000
-      })
-      
-      if (onClose) {
-        onClose()
-      }
-      
-      isRetrying.value = false
-      return { handled: true, shouldClose: true }
       
     } catch (err) {
       console.error('处理播放错误时发生异常:', err)

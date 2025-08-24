@@ -168,8 +168,27 @@ export const useAudioPlayerControl = () => {
       // 如果传入的是歌曲对象，检查是否有音乐平台信息
       if (typeof songUrlOrSong === 'object' && songUrlOrSong !== null) {
         songInfo = songUrlOrSong
-        // 检查是否有音乐平台和ID信息
-        if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
+        
+        // 优先检查是否已有直接的播放URL
+        if (songUrlOrSong.musicUrl) {
+          songUrl = songUrlOrSong.musicUrl
+          
+          // 清理URL中的反引号和空格（特别是网易云备用源）
+          if (typeof songUrl === 'string') {
+            songUrl = songUrl.trim().replace(/`/g, '')
+            console.log('使用已有的播放URL:', songUrl)
+          }
+          
+          // 如果有音乐平台信息，加载歌词
+          if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
+            lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+          }
+        } else if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
+          // 检查是否是网易云备用源，如果是则不应该调用getMusicUrl
+          if (songUrlOrSong.sourceInfo?.source === 'netease-backup') {
+            throw new Error('网易云备用源歌曲缺少播放URL，请重新获取')
+          }
+          
           console.log('正在获取歌曲URL:', songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
           songUrl = await getMusicUrl(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
           if (!songUrl) {
@@ -177,15 +196,9 @@ export const useAudioPlayerControl = () => {
           }
           
           // 并行加载歌词（不阻塞音频加载）
-          // 加载歌词
           lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
         } else {
-          // 如果没有音乐平台信息，检查是否有直接的URL
-          if (songUrlOrSong.musicUrl) {
-            songUrl = songUrlOrSong.musicUrl
-          } else {
-            throw new Error('歌曲缺少播放信息（音乐平台ID或直接URL）')
-          }
+          throw new Error('歌曲缺少播放信息（音乐平台ID或直接URL）')
         }
       } else if (typeof songUrlOrSong === 'string') {
         songUrl = songUrlOrSong

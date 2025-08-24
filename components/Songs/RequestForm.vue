@@ -118,11 +118,6 @@
                       <h4 class="result-title">{{ result.song || result.title }}</h4>
                       <p class="result-artist">{{ result.singer || result.artist }}</p>
                       <p class="result-album" v-if="result.album">专辑：{{ result.album }}</p>
-                      <div class="result-platform" v-if="result.actualMusicPlatform">
-                        <span class="platform-tag" :class="`platform-${result.actualMusicPlatform}`">
-                          {{ result.actualMusicPlatform === 'tencent' ? 'QQ音乐' : result.actualMusicPlatform === 'netease' ? '网易云音乐' : result.actualMusicPlatform }}
-                        </span>
-                      </div>
                     </div>
                     <div class="result-actions">
                       <!-- 检查是否已存在相似歌曲 -->
@@ -456,13 +451,7 @@ onMounted(async () => {
       console.error('加载歌曲列表失败:', error)
     }
   }
-  // 初始化音源健康检查
-  try {
-    await musicSources.checkAllSourcesHealth()
-    console.log('音源健康检查完成')
-  } catch (error) {
-    console.error('音源健康检查失败:', error)
-  }
+  // 音源健康检查功能已移除
 })
 
 // 过滤出启用的播出时段
@@ -733,39 +722,86 @@ const getAudioUrl = async (result) => {
   if (result.hasUrl || result.url) return result
 
   try {
-    const { getQuality } = useAudioQuality()
-    const quality = getQuality(platform.value)
-
-    // 使用音源管理器获取歌曲详情
-    const songDetailParams = {
-      id: result.musicId || result.id,
-      platform: platform.value,
-      quality: quality
-    }
-
-    console.log('获取歌曲详情:', songDetailParams)
-    const songDetail = await musicSources.getSongDetail(songDetailParams)
+    // 根据搜索结果的sourceInfo.source字段判断音源类型
+    const sourceType = result.sourceInfo?.source || ''
+    console.log('获取音频URL，音源类型:', sourceType, '歌曲ID:', result.musicId || result.id)
+    console.log('完整的result对象:', result)
     
-    if (songDetail && songDetail.url) {
-      // 更新结果中的URL和其他信息
-      result.url = songDetail.url
-      result.hasUrl = true
-      
-      // 更新其他可能的信息
-      if (songDetail.cover) result.cover = songDetail.cover
-      if (songDetail.duration) result.duration = songDetail.duration
-      
-      // 更新搜索结果中的对应项
-      const index = searchResults.value.findIndex(
-        (item) => (item.musicId || item.id) === (result.musicId || result.id)
-      )
-      if (index !== -1) {
-        searchResults.value[index] = { ...result }
+    // 如果是vkeys音源，直接使用搜索结果中的url字段
+    if (sourceType === 'vkeys') {
+      if (result.url) {
+        result.hasUrl = true
+        console.log('Vkeys音源直接使用URL:', result.url)
+        return result
+      } else {
+        console.warn('Vkeys音源结果中没有找到URL字段')
+        return result
       }
-      
-      console.log('成功获取歌曲URL:', songDetail.url)
-    } else {
-      console.warn('未能获取到有效的歌曲URL')
+    }
+    
+    // 对于vkeys音源，如果已有URL则直接使用
+    if (sourceType === 'vkeys') {
+      if (result.url) {
+        console.log('vkeys音源已有URL，直接使用:', result.url)
+        result.hasUrl = true
+      } else {
+        console.log('vkeys音源无URL，调用getSongDetail获取')
+        try {
+          const { getQuality } = useAudioQuality()
+          const quality = getQuality(platform.value)
+          const songDetail = await musicSources.getSongDetail({
+            ids: [result.musicId || result.id],
+            quality: quality
+          })
+          
+          if (songDetail && songDetail.url) {
+            result.url = songDetail.url
+            result.hasUrl = true
+            if (songDetail.cover) result.cover = songDetail.cover
+            if (songDetail.duration) result.duration = songDetail.duration
+            console.log('成功获取歌曲URL (vkeys):', songDetail.url)
+          }
+        } catch (error) {
+          console.error('vkeys获取URL失败:', error)
+        }
+      }
+    }
+    
+    // 对于网易云备用源，直接调用getSongUrl获取播放链接
+    if (sourceType === 'netease-backup') {
+      console.log('检测到网易云备用源，开始获取播放链接')
+      const { getQuality } = useAudioQuality()
+      const quality = getQuality(platform.value)
+      const songId = result.musicId || result.id
+
+      console.log('调用getSongUrl，参数:', { songId, quality })
+      try {
+        const urlResult = await musicSources.getSongUrl(songId, quality)
+        console.log('getSongUrl返回结果:', urlResult)
+        
+        if (urlResult && urlResult.success && urlResult.url) {
+          // 更新结果中的URL和其他信息
+          result.url = urlResult.url
+          result.hasUrl = true
+          
+          // 更新搜索结果中的对应项
+          const index = searchResults.value.findIndex(
+            (item) => (item.musicId || item.id) === (result.musicId || result.id)
+          )
+          if (index !== -1) {
+            searchResults.value[index] = { ...result }
+          }
+          
+          console.log('成功获取歌曲URL (网易云备用源):', urlResult.url)
+        } else {
+          console.warn('未能获取到有效的歌曲URL，urlResult:', urlResult)
+          if (urlResult && urlResult.error) {
+            console.error('getSongUrl错误:', urlResult.error)
+          }
+        }
+      } catch (urlError) {
+        console.error('调用getSongUrl失败:', urlError)
+      }
     }
 
     return result
@@ -2239,33 +2275,7 @@ defineExpose({
   margin: 0.25rem 0;
 }
 
-.result-platform {
-  margin-top: 0.5rem;
-}
 
-.platform-tag {
-  display: inline-block;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: 'MiSans', sans-serif;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.platform-tag.platform-tencent {
-  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-  border-color: rgba(255, 107, 53, 0.5);
-  box-shadow: 0 2px 4px rgba(255, 107, 53, 0.2);
-}
-
-.platform-tag.platform-netease {
-  background: linear-gradient(135deg, #d33a2c 0%, #b91c1c 100%);
-  border-color: rgba(211, 58, 44, 0.5);
-  box-shadow: 0 2px 4px rgba(211, 58, 44, 0.2);
-}
 
 .result-actions {
   display: flex;

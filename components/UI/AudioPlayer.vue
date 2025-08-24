@@ -99,6 +99,10 @@ const props = defineProps({
   playlist: {
     type: Array,
     default: () => []
+  },
+  isPlaylistMode: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -263,7 +267,8 @@ const handleError = async (error) => {
     props.song,
     (newSong) => emit('songChange', newSong),
     handleNext,
-    () => emit('close')
+    () => emit('close'),
+    props.isPlaylistMode
   )
   
   if (result.handled) {
