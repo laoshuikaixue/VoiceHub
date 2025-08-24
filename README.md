@@ -235,7 +235,6 @@ VoiceHub 实现了细粒度的权限控制系统：
 - 后端API进行严格的权限验证
 - 支持页面级和功能级的权限控制
 
-
 ## 环境变量说明
 
 | 变量名          | 必填 | 说明                          | 示例值                                                                 |
@@ -244,7 +243,6 @@ VoiceHub 实现了细粒度的权限控制系统：
 | JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串        | `your-very-secure-jwt-secret-key-with-at-least-32-characters`       |
 | NODE_ENV     | 否  | 运行环境，development或production | `production`                                                        |
 | NITRO_PRESET | 否  | Nitro预设                     | `vercel`                                                            |
-
 
 ## 项目结构
 
@@ -322,6 +320,7 @@ VoiceHub/
 │   ├── useAuth.ts          # 认证功能hooks
 │   ├── useErrorHandler.ts  # 错误处理hooks
 │   ├── useLyrics.ts        # 歌词功能hooks
+│   ├── useMusicSources.ts  # 音乐源管理hooks
 │   ├── useMusicWebSocket.ts # 音乐WebSocket hooks
 │   ├── useNotifications.ts # 通知功能hooks
 │   ├── usePermissions.ts   # 权限管理hooks
@@ -524,6 +523,7 @@ VoiceHub/
 ├── utils/                 # 客户端工具函数
 │   ├── __tests__/          # 工具函数测试目录
 │   ├── db-manager.ts       # 数据库管理工具
+│   ├── musicSources.ts     # 音乐源配置和管理工具
 │   ├── musicUrl.ts         # 音乐URL处理工具
 │   └── url.ts              # URL处理工具（HTTPS转换等）
 ├── .env.example           # 环境变量示例文件
@@ -735,6 +735,270 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
 4. 确保同时更新`types/index.ts`中的TypeScript类型定义
 5. 验证数据库：`cd scripts && npm run check-db`
 
+
+### 音源扩展开发指南
+
+VoiceHub 采用了模块化的音源架构，支持多音源故障转移和动态扩展。开发者可以轻松添加新的音乐API源，提高系统的可用性和音乐资源覆盖率。
+
+#### 音源架构概述
+
+音源系统由以下核心组件构成：
+
+- **音源配置文件** (`utils/musicSources.ts`)：定义音源接口、配置和默认设置
+- **音源管理器** (`composables/useMusicSources.ts`)：提供多音源搜索、故障转移和状态监控
+- **数据转换层**：统一不同API的响应格式
+- **故障转移机制**：自动切换到可用的备用音源
+
+#### 音源接口定义
+
+每个音源都必须实现以下接口：
+
+```typescript
+export interface MusicSource {
+  /** 音源唯一标识 */
+  id: string
+  /** 音源显示名称 */
+  name: string
+  /** API基础URL */
+  baseUrl: string
+  /** 优先级，数字越小优先级越高 */
+  priority: number
+  /** 是否启用 */
+  enabled: boolean
+  /** 请求超时时间（毫秒），可选 */
+  timeout?: number
+  /** 自定义请求头，可选 */
+  headers?: Record<string, string>
+}
+```
+
+#### 如何添加新音源
+
+##### 1. 在配置文件中添加音源
+
+编辑 `utils/musicSources.ts` 文件，在 `MUSIC_SOURCE_CONFIG.sources` 数组中添加新音源：
+
+```typescript
+{
+  id: 'my-new-source',
+  name: '我的新音源',
+  baseUrl: 'https://api.example.com',
+  priority: 6, // 设置优先级
+  enabled: true,
+  timeout: 8000,
+  headers: {
+    // ...
+  }
+}
+```
+
+##### 2. 实现数据转换函数
+
+在 `composables/useMusicSources.ts` 中的 `searchWithSource` 函数里添加新音源的处理逻辑：
+
+```typescript
+if (source.id === 'my-new-source') {
+  // 构建API请求URL
+  url = `${source.baseUrl}/search?q=${encodeURIComponent(params.keywords)}&limit=${params.limit || 30}`
+  
+  // 定义响应数据转换函数
+  transformResponse = (data: any) => transformMyNewSourceResponse(data)
+}
+```
+
+##### 3. 编写数据转换函数
+
+创建对应的数据转换函数，将API响应转换为统一格式：
+
+```typescript
+const transformMyNewSourceResponse = (response: any): any[] => {
+  if (!response || !response.data) {
+    throw new Error('API响应数据为空')
+  }
+  
+  return response.data.map((song: any) => ({
+    id: song.songId,
+    title: song.songName,
+    artist: song.artistName || '未知艺术家',
+    cover: song.albumCover,
+    album: song.albumName,
+    duration: song.duration,
+    musicPlatform: 'my-platform',
+    musicId: song.songId?.toString(),
+    sourceInfo: {
+      source: 'my-new-source',
+      originalId: song.songId?.toString(),
+      fetchedAt: new Date()
+    }
+  }))
+}
+```
+
+#### 音源配置说明
+
+##### 优先级设置
+- **priority**: 数字越小优先级越高
+- 系统会按优先级顺序尝试音源
+
+##### 超时配置
+- **timeout**: 单个请求的超时时间（毫秒）
+- 建议设置为5000-10000ms
+
+##### 请求头配置
+- **headers**: 自定义HTTP请求头
+- 常用于设置User-Agent、Authorization等
+
+#### 数据转换函数编写
+
+##### 统一数据格式
+
+所有音源的搜索结果都应转换为以下统一格式：
+
+```typescript
+{
+  id: string | number,           // 歌曲ID
+  title: string,                 // 歌曲标题
+  artist: string,                // 艺术家
+  cover?: string,                // 封面图片URL
+  album?: string,                // 专辑名称
+  duration?: number,             // 时长（秒）
+  musicPlatform: string,         // 音乐平台标识
+  musicId: string,               // 音乐平台的歌曲ID
+  sourceInfo: {                  // 音源信息
+    source: string,              // 音源ID
+    originalId: string,          // 原始ID
+    fetchedAt: Date             // 获取时间
+  }
+}
+```
+
+##### 错误处理
+
+数据转换函数应包含完善的错误处理：
+
+```typescript
+const transformResponse = (response: any): any[] => {
+  // 检查响应状态
+  if (response.code !== 200) {
+    throw new Error(`API错误: ${response.message} (code: ${response.code})`)
+  }
+  
+  // 检查数据存在性
+  if (!response.data || !Array.isArray(response.data)) {
+    throw new Error('API响应数据格式错误')
+  }
+  
+  // 转换数据
+  return response.data.map((item: any) => {
+    // 验证必要字段
+    if (!item.id || !item.title) {
+      console.warn('跳过无效歌曲数据:', item)
+      return null
+    }
+    
+    return {
+      // ... 转换逻辑
+    }
+  }).filter(Boolean) // 过滤掉null值
+}
+```
+
+#### 故障转移机制
+
+系统内置了自动故障转移机制：
+
+##### 工作原理
+1. **按优先级尝试**：系统按priority从小到大的顺序尝试音源
+2. **错误检测**：当音源请求失败时，自动记录错误并尝试下一个音源
+3. **状态监控**：实时监控各音源的可用性和响应时间
+4. **智能重试**：支持配置重试次数和重试间隔
+
+##### 故障转移配置
+
+```typescript
+export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
+  primarySource: 'vkeys',        // 主音源ID
+  enableFailover: true,          // 启用故障转移
+  timeout: 10000,               // 默认超时时间
+  retryAttempts: 2,             // 重试次数
+  sources: [/* 音源列表 */]
+}
+```
+
+#### 开发示例
+
+以下是一个完整的音源扩展示例，展示如何添加一个虚构的"MusicAPI"音源：
+
+##### 1. 添加音源配置
+
+```typescript
+// utils/musicSources.ts
+{
+  id: 'music-api',
+  name: 'MusicAPI音源',
+  baseUrl: 'https://api.musicapi.com/v1',
+  priority: 4,
+  enabled: true,
+  timeout: 8000,
+  headers: {
+    'User-Agent': 'VoiceHub/1.0',
+    'X-API-Key': 'your-api-key'
+  }
+}
+```
+
+##### 2. 实现搜索逻辑
+
+```typescript
+// composables/useMusicSources.ts
+if (source.id === 'music-api') {
+  url = `${source.baseUrl}/search?query=${encodeURIComponent(params.keywords)}&limit=${params.limit || 30}&type=song`
+  transformResponse = (data: any) => transformMusicApiResponse(data)
+}
+```
+
+##### 3. 数据转换函数
+
+```typescript
+const transformMusicApiResponse = (response: any): any[] => {
+  console.log('[transformMusicApiResponse] 开始转换数据:', response)
+  
+  if (!response || response.status !== 'success') {
+    throw new Error(`MusicAPI错误: ${response.message || '未知错误'}`)
+  }
+  
+  if (!response.results || !Array.isArray(response.results)) {
+    throw new Error('MusicAPI响应数据格式错误')
+  }
+  
+  return response.results.map((song: any) => {
+    if (!song.id || !song.name) {
+      console.warn('[transformMusicApiResponse] 跳过无效歌曲:', song)
+      return null
+    }
+    
+    return {
+      id: song.id,
+      title: song.name,
+      artist: song.artists?.map((a: any) => a.name).join(', ') || '未知艺术家',
+      cover: song.album?.cover_url,
+      album: song.album?.name,
+      duration: song.duration_ms ? Math.floor(song.duration_ms / 1000) : undefined,
+      musicPlatform: 'musicapi',
+      musicId: song.id.toString(),
+      sourceInfo: {
+        source: 'music-api',
+        originalId: song.id.toString(),
+        fetchedAt: new Date(),
+        // 保存额外信息供后续使用
+        popularity: song.popularity,
+        explicit: song.explicit
+      }
+    }
+  }).filter(Boolean)
+}
+```
+
 ## 音乐服务免责声明
 
 VoiceHub是一个开源的校园广播站点歌管理系统，本项目：
@@ -757,6 +1021,14 @@ VoiceHub是一个开源的校园广播站点歌管理系统，本项目：
 ## 致谢
 
 特别感谢 [过客是个铁憨憨](https://github.com/1811304592) 为本项目提供UI设计
+
+### 参考项目
+
+本项目在开发过程中参考使用了以下优秀的开源项目和API服务：
+
+- [落月API](https://doc.vkeys.cn/api-doc/)
+- [NeteaseCloudMusicApiEnhanced](https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced)
+- [meting-api](https://github.com/injahow/meting-api)
 
 ## 许可证
 
