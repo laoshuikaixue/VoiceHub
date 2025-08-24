@@ -334,27 +334,13 @@ export const useMusicSources = () => {
       
       console.log(`[getSongUrl] 开始获取歌曲播放链接: id=${idParam}, level=${level}`)
       
-      // 获取用户IP地址（简单实现，实际项目中可能需要更复杂的IP获取逻辑）
-      let realIP = '116.25.146.177' // 默认IP，实际使用中应该获取用户真实IP
-      try {
-        // 尝试获取用户真实IP（这里使用一个简单的实现）
-        const ipResponse = await $fetch('https://api.ipify.org?format=json', { timeout: 3000 })
-        if (ipResponse?.ip) {
-          realIP = ipResponse.ip
-        }
-      } catch (error) {
-        console.warn('[getSongUrl] 获取用户IP失败，使用默认IP:', realIP)
-      }
-      
       // 调用/song/url/v1接口获取播放链接
       const response = await $fetch(`${neteaseSource.baseUrl}/song/url/v1`, {
         params: { 
           id: idParam,
           level: level,
           // 添加unblock参数以提高成功率
-          unblock: true,
-          // 添加realIP参数
-          realIP: realIP
+          unblock: true
         },
         timeout: neteaseSource.timeout || 8000
       })

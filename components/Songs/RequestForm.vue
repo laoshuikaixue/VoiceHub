@@ -352,6 +352,7 @@ import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
 import { useMusicSources } from '~/composables/useMusicSources'
+import { getEnabledSources } from '~/utils/musicSources'
 import DuplicateSongModal from './DuplicateSongModal.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps } from '~/utils/url'
@@ -734,29 +735,75 @@ const getAudioUrl = async (result) => {
         console.log('Vkeys音源直接使用URL:', result.url)
         return result
       } else {
-        console.warn('Vkeys音源结果中没有找到URL字段，尝试使用getSongDetail获取')
-        try {
-          const { getQuality } = useAudioQuality()
-          const quality = getQuality(platform.value)
-          const songDetail = await musicSources.getSongDetail({
-            ids: [result.musicId || result.id],
-            quality: quality
-          })
-          
-          if (songDetail && songDetail.url) {
-            result.url = songDetail.url
-            result.hasUrl = true
-            if (songDetail.cover) result.cover = songDetail.cover
-            if (songDetail.duration) result.duration = songDetail.duration
-            console.log('成功获取歌曲URL (vkeys getSongDetail):', songDetail.url)
-            return result
-          }
-        } catch (error) {
-          console.error('vkeys getSongDetail失败:', error)
-        }
+        console.warn('Vkeys音源结果中没有找到URL字段，根据平台尝试备用源')
         
-        // 如果vkeys完全失败且是网易云平台，尝试使用网易云备用源
-        if (platform.value === 'netease') {
+        // 根据平台直接尝试对应的备用源
+        if (platform.value === 'tencent') {
+          console.log('QQ音乐平台，直接使用vkeys的tencent/geturl接口获取播放链接')
+          try {
+            const songId = result.musicId || result.id
+            
+            // 构建QQ音乐geturl请求参数，使用id而不是mid
+            const params = new URLSearchParams()
+            if (songId) {
+              params.append('id', songId)
+            } else {
+              throw new Error('缺少歌曲ID参数')
+            }
+            params.append('quality', '8') // QQ音乐默认音质为8(HQ高音质)
+            
+            // 获取vkeys音源配置
+            const enabledSources = getEnabledSources()
+            const vkeysSource = enabledSources.find(source => source.id === 'vkeys')
+            
+            if (!vkeysSource) {
+              throw new Error('未找到vkeys音源配置')
+            }
+            
+            const getUrlResponse = await $fetch(`${vkeysSource.baseUrl}/tencent/geturl?${params.toString()}`, {
+              timeout: vkeysSource.timeout || 8000
+            })
+            
+            console.log('QQ音乐geturl返回结果:', getUrlResponse)
+            
+            if (getUrlResponse && getUrlResponse.code === 200 && getUrlResponse.data && getUrlResponse.data.url) {
+              result.url = getUrlResponse.data.url
+              result.hasUrl = true
+              // 更新其他信息
+              if (getUrlResponse.data.cover) result.cover = getUrlResponse.data.cover
+              if (getUrlResponse.data.song) result.title = getUrlResponse.data.song
+              if (getUrlResponse.data.singer) result.artist = getUrlResponse.data.singer
+              console.log('成功获取歌曲URL (QQ音乐geturl):', getUrlResponse.data.url)
+              return result
+            } else {
+              console.warn('QQ音乐geturl无法获取URL:', getUrlResponse)
+            }
+          } catch (qqError) {
+            console.error('QQ音乐geturl获取URL失败:', qqError)
+          }
+        } else if (platform.value === 'netease') {
+          console.log('网易云平台，尝试使用getSongDetail获取')
+          try {
+            const { getQuality } = useAudioQuality()
+            const quality = getQuality(platform.value)
+            const songDetail = await musicSources.getSongDetail({
+              ids: [result.musicId || result.id],
+              quality: quality
+            })
+            
+            if (songDetail && songDetail.url) {
+              result.url = songDetail.url
+              result.hasUrl = true
+              if (songDetail.cover) result.cover = songDetail.cover
+              if (songDetail.duration) result.duration = songDetail.duration
+              console.log('成功获取歌曲URL (vkeys getSongDetail):', songDetail.url)
+              return result
+            }
+          } catch (error) {
+            console.error('vkeys getSongDetail失败:', error)
+          }
+          
+          // 如果getSongDetail失败，尝试网易云备用源
           console.log('vkeys失败，尝试使用网易云备用源获取播放链接')
           try {
             const { getQuality } = useAudioQuality()

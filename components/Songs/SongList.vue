@@ -698,7 +698,7 @@ const getMusicUrl = async (platform, musicId) => {
       return url
     }
 
-    return null
+    throw new Error('vkeys返回成功但未获取到音乐URL')
   } catch (error) {
     console.error('vkeys获取音乐URL失败:', error)
     
