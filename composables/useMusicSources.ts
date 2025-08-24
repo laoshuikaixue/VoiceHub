@@ -114,7 +114,7 @@ export const useMusicSources = () => {
     } else {
       // 网易云备用API
       url = `${source.baseUrl}/search?keywords=${encodeURIComponent(params.keywords)}&limit=${params.limit || 30}&offset=${params.offset || 0}&type=${params.type || 1}`
-      transformResponse = transformNeteaseResponse
+      transformResponse = async (data: any) => await transformNeteaseResponse(data)
     }
 
     let response: any
@@ -141,7 +141,7 @@ export const useMusicSources = () => {
 
     // 单独处理数据转换，避免网络成功但转换失败的情况
     try {
-      const result = transformResponse(response)
+      const result = await transformResponse(response)
       console.log(`[${source.name}] 转换后的数据:`, result)
       return result
     } catch (error: any) {
@@ -256,14 +256,55 @@ export const useMusicSources = () => {
 
 
   /**
+   * 获取歌曲封面URL（网易云备用源）
+   * 实现两步搜索：先通过歌曲ID获取详情，然后提取封面URL
+   */
+  const getSongPicUrl = async (id: number): Promise<string> => {
+    try {
+      // 获取网易云备用源
+      const enabledSources = getEnabledSources()
+      const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
+      
+      if (!neteaseSource) {
+        console.error('[getSongPicUrl] 未找到网易云备用源')
+        return ''
+      }
+      
+      // 直接调用/song/detail接口获取歌曲详情
+      const response = await $fetch(`${neteaseSource.baseUrl}/song/detail`, {
+        params: { ids: id },
+        timeout: neteaseSource.timeout || 8000
+      })
+      
+      // 从响应中提取封面URL
+      return response.songs?.[0]?.al?.picUrl || ''
+    } catch (error) {
+      console.error('[getSongPicUrl] 获取封面失败:', error)
+      return ''
+    }
+  }
+
+  /**
    * 转换 Vkeys API 响应
    */
   const transformVkeysResponse = (response: any, platform: string = 'netease'): any[] => {
     console.log('[transformVkeysResponse] 开始转换数据:', { platform, response })
     
-    if (!response || response.code !== 200 || !response.data) {
-      console.log('[transformVkeysResponse] 响应无效:', { hasResponse: !!response, code: response?.code, hasData: !!response?.data })
-      return []
+    if (!response) {
+      console.log('[transformVkeysResponse] 响应为空')
+      throw new Error('API响应为空')
+    }
+
+    // 检查错误码，非200状态码抛出错误以触发备用源重试
+    if (response.code !== 200) {
+      const errorMessage = `vkeys API错误: ${response.message || '未知错误'} (code: ${response.code})`
+      console.log('[transformVkeysResponse] API错误:', errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    if (!response.data) {
+      console.log('[transformVkeysResponse] 响应数据为空')
+      throw new Error('API响应数据为空')
     }
 
     if (platform === 'tencent') {
@@ -334,8 +375,9 @@ export const useMusicSources = () => {
 
   /**
    * 转换网易云 API 搜索响应
+   * 实现两步搜索：处理搜索结果，然后批量获取歌曲详情和封面
    */
-  const transformNeteaseResponse = (response: any): any[] => {
+  const transformNeteaseResponse = async (response: any): Promise<any[]> => {
     console.log('[transformNeteaseResponse] 开始转换数据:', response)
     
     // 检查响应是否存在
@@ -366,13 +408,55 @@ export const useMusicSources = () => {
       return []
     }
 
+    // 获取网易云备用源
+    const enabledSources = getEnabledSources()
+    const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
+    
+    if (!neteaseSource) {
+      console.error('[transformNeteaseResponse] 未找到网易云备用源')
+      throw new Error('未找到网易云备用源')
+    }
+
+    // 提取所有歌曲ID，准备批量获取详情
+    const songIds = songs.map(song => song.id).filter(id => id)
+    console.log(`[transformNeteaseResponse] 准备批量获取 ${songIds.length} 首歌曲的详情`)
+    
+    let detailResponse: any = null
+    if (songIds.length > 0) {
+      try {
+        // 批量获取歌曲详情，包含封面信息
+        detailResponse = await $fetch(`${neteaseSource.baseUrl}/song/detail`, {
+          params: { ids: songIds.join(',') },
+          timeout: neteaseSource.timeout || 8000
+        })
+        console.log(`[transformNeteaseResponse] 批量获取详情成功:`, detailResponse)
+      } catch (error) {
+        console.warn('[transformNeteaseResponse] 批量获取详情失败，将使用搜索结果的基本信息:', error)
+      }
+    }
+
+    // 创建详情映射，方便查找
+    const detailMap = new Map()
+    if (detailResponse?.songs) {
+      detailResponse.songs.forEach((song: any) => {
+        detailMap.set(song.id, song)
+      })
+    }
+
+    // 转换搜索结果，优先使用详情数据
     return songs.map((song: any, index: number) => {
       try {
+        const detail = detailMap.get(song.id)
+        
+        // 优先使用详情中的封面，其次使用搜索结果中的封面
+        let cover = detail?.al?.picUrl || 
+                   (song.album?.picId ? `https://p1.music.126.net/${song.album.picId}/${song.album.picId}.jpg` : null)
+        
         const transformedSong = {
           id: song.id,
           title: song.name,
           artist: song.artists?.map((artist: any) => artist.name).join(', ') || '未知艺术家',
-          cover: song.album?.picId ? `https://p1.music.126.net/${song.album.picId}/${song.album.picId}.jpg` : null,
+          cover,
           album: song.album?.name,
           duration: song.duration,
           musicPlatform: 'netease',
@@ -380,7 +464,8 @@ export const useMusicSources = () => {
           sourceInfo: {
             source: 'netease-backup',
             originalId: song.id.toString(),
-            fetchedAt: new Date()
+            fetchedAt: new Date(),
+            hasDetail: !!detail // 标记是否获取到了详情
           }
         }
         console.log(`[transformNeteaseResponse] 转换歌曲 ${index + 1}:`, transformedSong)
