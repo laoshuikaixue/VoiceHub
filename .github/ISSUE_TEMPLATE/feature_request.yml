@@ -44,7 +44,7 @@ body:
       description: 描述当前存在的问题或不便之处
       placeholder: 目前在使用VoiceHub时遇到了什么问题或不便？
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: proposed-solution
@@ -57,7 +57,7 @@ body:
         - 用户如何使用
         - 预期效果
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: user-stories
@@ -100,9 +100,9 @@ body:
       label: 目标用户
       description: 这个功能主要面向哪类用户？
       options:
+        - 所有用户
         - 普通学生用户
         - 管理员
-        - 所有用户
         - 特定用户群体
     validations:
       required: true
