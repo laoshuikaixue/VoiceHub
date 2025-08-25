@@ -110,7 +110,6 @@ class DatabasePool {
   async initialize() {
     try {
       await this.ensureConnection()
-      this.startPeriodicHealthCheck()
       this.setupGracefulShutdown()
       console.log('[DB Pool] 数据库连接池初始化成功')
     } catch (error: unknown) {
@@ -417,8 +416,11 @@ class DatabasePool {
         console.log(`[DB Pool] 检测到连接错误，标记连接为不可用`)
         this.isConnected = false
         
-        // 只有在断路器允许的情况下才尝试重连
-        if (this.checkCircuitBreaker()) {
+        // 执行按需健康检查
+        const healthCheckPassed = await this.performOnDemandHealthCheck(operationName)
+        
+        // 只有在断路器允许且健康检查通过的情况下才尝试重连
+        if (healthCheckPassed && this.checkCircuitBreaker()) {
           const reconnected = await this.reconnect()
           if (reconnected) {
             console.log(`[DB Pool] 重连成功，重试操作: ${operationName}`)
@@ -440,34 +442,35 @@ class DatabasePool {
     }
   }
 
-  // 定期健康检查（增强版）
-  startPeriodicHealthCheck() {
-    setInterval(async () => {
-      try {
-        const startTime = Date.now()
-        const isHealthy = await this.ensureConnection()
-        const checkDuration = Date.now() - startTime
+  // 按需健康检查（仅在请求出错时触发）
+  async performOnDemandHealthCheck(operationName: string): Promise<boolean> {
+    try {
+      const startTime = Date.now()
+      console.log(`[DB Pool] 执行按需健康检查 - 操作: ${operationName}`)
+      
+      const isHealthy = await this.ensureConnection()
+      const checkDuration = Date.now() - startTime
+      
+      if (!isHealthy) {
+        console.warn(`[DB Pool] 按需健康检查失败，连接不可用 - 操作: ${operationName}`)
+        this.logConnectionEvent('ON_DEMAND_HEALTH_CHECK_FAILED', `操作: ${operationName}`)
+        return false
+      } else {
+        console.log(`[DB Pool] 按需健康检查成功，响应时间: ${checkDuration}ms - 操作: ${operationName}`)
+        this.logConnectionEvent('ON_DEMAND_HEALTH_CHECK_SUCCESS', `操作: ${operationName}, 响应时间: ${checkDuration}ms`)
         
-        if (!isHealthy) {
-          console.warn('[DB Pool] 定期健康检查失败，连接不可用')
-          
-          // 如果断路器允许，尝试重连
-          if (this.checkCircuitBreaker()) {
-            console.log('[DB Pool] 尝试自动重连')
-            await this.reconnect()
-          }
-        } else {
-          // 检查健康检查本身的性能
-          if (checkDuration > this.slowQueryThreshold) {
-            console.warn(`[DB Pool] 健康检查响应缓慢: ${checkDuration}ms`)
-          }
+        // 检查健康检查本身的性能
+        if (checkDuration > this.slowQueryThreshold) {
+          console.warn(`[DB Pool] 健康检查响应缓慢: ${checkDuration}ms - 操作: ${operationName}`)
         }
-      } catch (error) {
-        console.error('[DB Pool] 定期健康检查异常:', error)
+        return true
       }
-    }, this.healthCheckInterval)
-    
-    console.log(`[DB Pool] 已启动定期健康检查，间隔: ${this.healthCheckInterval}ms`)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`[DB Pool] 按需健康检查异常 - 操作: ${operationName}:`, errorMessage)
+      this.logConnectionEvent('ON_DEMAND_HEALTH_CHECK_ERROR', `操作: ${operationName}, 错误: ${errorMessage}`)
+      return false
+    }
   }
 
   // 获取连接状态（增强版）

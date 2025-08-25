@@ -53,23 +53,22 @@ function createPrismaClient() {
     return new PrismaClient({
       log: logLevels,
       errorFormat: 'pretty',
-      // 增强连接配置
       datasources: {
         db: {
-          url: process.env.DATABASE_URL
-        }
+          url: process.env.DATABASE_URL,
+        },
       },
-      // 添加连接池配置
+      log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
+      // 优化后的连接池配置 - 减少数据库计算时间消耗
       __internal: {
         engine: {
           connectTimeout: 60000, // 60秒连接超时
           queryTimeout: 60000,   // 60秒查询超时
-          // 连接池配置
-          connectionLimit: 10,    // 最大连接数
-          poolTimeout: 30000,     // 连接池超时30秒
-          idleTimeout: 300000,    // 空闲连接超时5分钟
-          maxLifetime: 1800000,   // 连接最大生命周期30分钟
-        }
+          connectionLimit: 3,    // 减少最大连接数从10到3
+          poolTimeout: 10000,    // 减少池超时从30秒到10秒
+          idleTimeout: 60000,    // 减少空闲超时从5分钟到1分钟
+          maxLifetime: 300000,   // 减少最大生命周期从30分钟到5分钟
+        },
       }
     });
   } catch (error) {
