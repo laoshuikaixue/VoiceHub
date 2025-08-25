@@ -80,7 +80,7 @@ export const useSongs = () => {
     try {
       const requestParams = semester ? { semester } : undefined
       
-      const data = await dedup.dedupedRequest(
+      const response = await dedup.dedupedRequest(
         'songs',
         async () => {
           // 构建URL参数
@@ -96,7 +96,13 @@ export const useSongs = () => {
         requestParams
       )
       
-      songs.value = data as Song[]
+      // 正确解析API返回的数据结构
+      if (response && response.success && response.data && Array.isArray(response.data.songs)) {
+        songs.value = response.data.songs as Song[]
+      } else {
+        songs.value = []
+        console.warn('API返回的数据格式不正确:', response)
+      }
     } catch (err: any) {
       error.value = err.message || '获取歌曲列表失败'
     } finally {
@@ -747,7 +753,7 @@ export const useSongs = () => {
   // 获取歌曲总数（缓存版本）
   const fetchSongCount = async (forceRefresh = false) => {
     try {
-      const count = await dedup.dedupedRequest(
+      const response = await dedup.dedupedRequest(
         'song-count',
         async () => {
           const response = await $fetch('/api/songs/count')
@@ -755,8 +761,15 @@ export const useSongs = () => {
         }
       )
       
-      songCount.value = count as number
-      return count
+      // 正确解析API返回的数据结构
+      if (response && typeof response.count === 'number') {
+        songCount.value = response.count
+        return response.count
+      } else {
+        console.warn('歌曲总数API返回的数据格式不正确:', response)
+        songCount.value = 0
+        return 0
+      }
     } catch (err: any) {
       console.error('获取歌曲总数失败:', err)
       return 0

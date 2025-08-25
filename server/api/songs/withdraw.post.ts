@@ -1,4 +1,5 @@
 import { prisma } from '../../models/schema'
+import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -109,6 +110,11 @@ export default defineEventHandler(async (event) => {
       id: body.songId
     }
   })
+  
+  // 清除歌曲列表缓存
+  const cacheService = new CacheService()
+  await cacheService.clearSongsCache()
+  console.log('[Cache] 歌曲缓存已清除（撤回歌曲）')
   
   return {
     message: canReturnQuota ? '歌曲已成功撤回，投稿配额已返还' : '歌曲已成功撤回',

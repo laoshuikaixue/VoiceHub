@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, readBody, getRouterParam } from 'h3'
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 import bcrypt from 'bcrypt'
 
 export default defineEventHandler(async (event) => {
@@ -110,6 +111,15 @@ export default defineEventHandler(async (event) => {
         updatedAt: true
       }
     })
+
+    // 清除相关缓存
+    try {
+      const cacheService = CacheService.getInstance()
+      await cacheService.clearSongsCache()
+      console.log('[Cache] 歌曲缓存已清除（用户更新）')
+    } catch (cacheError) {
+      console.warn('[Cache] 清除缓存失败:', cacheError)
+    }
 
     return {
       success: true,

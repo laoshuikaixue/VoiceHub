@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt'
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -88,6 +89,16 @@ export default defineEventHandler(async (event) => {
       }
     })
     
+    // 清除相关缓存
+    try {
+      const cacheService = CacheService.getInstance()
+      await cacheService.clearSongsCache()
+      await cacheService.clearStatsCache()
+      console.log('[Cache] 歌曲缓存和统计缓存已清除（用户创建）')
+    } catch (cacheError) {
+      console.warn('[Cache] 清除缓存失败:', cacheError)
+    }
+
     return {
       success: true,
       user: newUser,

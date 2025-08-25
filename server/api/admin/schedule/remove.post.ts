@@ -1,3 +1,5 @@
+import { CacheService } from '~/server/services/cacheService'
+
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
   const user = event.context.user
@@ -57,6 +59,13 @@ export default defineEventHandler(async (event) => {
     })
     
     console.log(`成功删除排期 ID=${scheduleIdNumber}`)
+    
+    // 清除相关缓存
+    const cacheService = CacheService.getInstance()
+    await cacheService.clearSchedulesCache(existingSchedule.playDate)
+    await cacheService.clearSchedulesCache() // 清除所有排期缓存
+    await cacheService.clearStatsCache()
+    console.log('[Cache] 排期缓存和统计缓存已清除（删除排期）')
     
     return {
       success: true,

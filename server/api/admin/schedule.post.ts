@@ -1,5 +1,6 @@
 import { prisma } from '../../models/schema'
 import { createSongSelectedNotification } from '../../services/notificationService'
+import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -138,6 +139,13 @@ export default defineEventHandler(async (event) => {
       artist: schedule.song.artist,
       playDate: schedule.playDate
     })
+    
+    // 清除相关缓存
+    const cacheService = CacheService.getInstance()
+    await cacheService.clearSchedulesCache(schedule.playDate)
+    await cacheService.clearSchedulesCache() // 清除所有排期缓存
+    await cacheService.clearStatsCache()
+    console.log('[Cache] 排期缓存和统计缓存已清除（创建排期）')
     
     return schedule
   } catch (error: any) {

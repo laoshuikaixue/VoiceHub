@@ -890,14 +890,22 @@ const refreshSongs = async () => {
   }
 }
 
-// 处理学期变化（优化版本）
+// 处理学期变化（前端过滤版本）
 const handleSemesterChange = async (semester) => {
   try {
-    if (isClientAuthenticated.value) {
-      await songs.fetchSongs(false, semester, true) // forceRefresh=true
-    } else {
-      await songs.fetchPublicSchedules(false, semester, true) // forceRefresh=true
-    }
+    // 通过事件总线通知SongList组件进行前端过滤
+    // 使用nextTick确保事件在DOM更新后触发
+    await nextTick()
+    
+    // 触发自定义事件，通知所有监听的组件
+    const event = new CustomEvent('semester-filter-change', {
+      detail: { semester }
+    })
+    window.dispatchEvent(event)
+    
+    console.log('学期切换事件已发送:', semester)
+    
+    // 更新歌曲计数（基于当前已有数据）
     await updateSongCounts(semester)
   } catch (err) {
     console.error('切换学期失败', err)

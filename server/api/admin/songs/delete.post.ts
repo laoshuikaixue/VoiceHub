@@ -1,4 +1,5 @@
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -70,6 +71,18 @@ export default defineEventHandler(async (event) => {
         deletedSchedules: deletedSchedules.count
       }
     })
+    
+    // 清除相关缓存
+    try {
+      const cacheService = CacheService.getInstance()
+      await cacheService.clearSongsCache()
+      if (result.deletedSchedules > 0) {
+        await cacheService.clearSchedulesCache()
+      }
+      console.log('[Cache] 歌曲和排期缓存已清除（删除歌曲）')
+    } catch (cacheError) {
+      console.warn('[Cache] 清除缓存失败:', cacheError)
+    }
     
     return result
     
