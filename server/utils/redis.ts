@@ -147,7 +147,6 @@ class RedisPool {
       try {
         this.stopHealthCheck()
         await this.client.quit()
-        console.log('[Redis] 连接已断开')
       } catch (error) {
         console.error('[Redis] 断开连接时出错:', error)
         // 强制断开

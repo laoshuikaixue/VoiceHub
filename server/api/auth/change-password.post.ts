@@ -2,134 +2,104 @@ import bcrypt from 'bcrypt'
 import { prisma } from '../../models/schema'
 
 export default defineEventHandler(async (event) => {
-  try {
-    console.log('处理修改密码请求')
-    
-    // 检查认证
-    const user = event.context.user
-    if (!user) {
-      console.log('修改密码失败：未授权')
-      throw createError({
-        statusCode: 401,
-        message: '未授权'
-      })
-    }
+  // 验证用户身份
+  const user = await requireAuth(event)
+  if (!user) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: '未授权'
+    })
+  }
+  
+  const body = await readBody(event)
+  if (!body.currentPassword || !body.newPassword) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: '当前密码和新密码都是必需的'
+    })
+  }
 
-    const body = await readBody(event)
-    console.log(`用户 ${user.id} 请求修改密码`)
-    
-    if (!body.currentPassword || !body.newPassword) {
-      console.log('修改密码失败：密码参数不完整')
-      throw createError({
-        statusCode: 400,
-        message: '当前密码和新密码不能为空'
-      })
-    }
-    
-    // 获取用户信息
-    let currentUser
+  try {
+    // 查询用户详细信息
+    let userDetails
     try {
-      console.log(`查询用户 ID: ${user.id} 的详细信息`)
-      currentUser = await prisma.user.findUnique({
-        where: {
-          id: user.id
+      userDetails = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+          id: true,
+          username: true,
+          password: true
         }
       })
-    } catch (dbError: any) {
-      console.error('查询用户信息数据库错误:', dbError)
-      
-      // 使用原始SQL查询
-      try {
-        console.log('尝试使用原始SQL查询用户信息')
-        const result = await prisma.$queryRaw`
-          SELECT * FROM "User" WHERE id = ${user.id}
-        `
-        currentUser = Array.isArray(result) && result.length > 0 ? result[0] : null
-      } catch (sqlError: any) {
-        console.error('原始SQL查询失败:', sqlError)
-        throw createError({
-          statusCode: 500,
-          message: '数据库查询错误，无法获取用户信息'
-        })
-      }
-    }
-    
-    if (!currentUser) {
-      console.log(`修改密码失败：未找到ID为 ${user.id} 的用户`)
-      throw createError({
-        statusCode: 404,
-        message: '用户不存在'
-      })
-    }
-    
-    // 验证当前密码
-    let isPasswordValid
-    try {
-      console.log('验证当前密码')
-      isPasswordValid = await bcrypt.compare(body.currentPassword, currentUser.password)
-      console.log('密码验证结果:', isPasswordValid)
-    } catch (bcryptError: any) {
-      console.error('bcrypt密码验证错误:', bcryptError)
-      throw createError({
-        statusCode: 500,
-        message: '密码验证过程中出错'
-      })
-    }
-    
-    if (!isPasswordValid) {
-      console.log('修改密码失败：当前密码不正确')
-      throw createError({
-        statusCode: 401,
-        message: '当前密码不正确'
-      })
-    }
-    
-    // 验证新密码不能与当前密码相同
-    const isSamePassword = await bcrypt.compare(body.newPassword, currentUser.password)
-    if (isSamePassword) {
-      console.log('修改密码失败：新密码不能与当前密码相同')
-      throw createError({
-        statusCode: 400,
-        message: '新密码不能与当前密码相同'
-      })
-    }
-    
-    // 加密新密码
-    let hashedPassword
-    try {
-      console.log('加密新密码')
-      hashedPassword = await bcrypt.hash(body.newPassword, 10)
-    } catch (hashError: any) {
-      console.error('密码加密错误:', hashError)
-      throw createError({
-        statusCode: 500,
-        message: '密码加密过程中出错'
-      })
-    }
-    
-    // 更新密码
-    try {
-      console.log(`更新用户 ID: ${user.id} 的密码`)
-      
-      // 使用原始SQL更新
-      await prisma.$executeRaw`
-        UPDATE "User"
-        SET password = ${hashedPassword},
-            "passwordChangedAt" = NOW(),
-            "forcePasswordChange" = false
+    } catch (prismaError: any) {
+      const result = await prisma.$queryRaw`
+        SELECT id, username, password 
+        FROM "User" 
         WHERE id = ${user.id}
       `
       
-      console.log('密码更新成功')
-    } catch (updateError: any) {
-      console.error('更新密码数据库错误:', updateError)
+      if (Array.isArray(result) && result.length > 0) {
+        userDetails = result[0] as any
+      }
+    }
+
+    if (!userDetails) {
       throw createError({
-        statusCode: 500,
-        message: '更新密码失败，请稍后重试'
+        statusCode: 404,
+        statusMessage: '用户不存在'
       })
     }
+
+    // 验证当前密码
+    const isPasswordValid = await bcrypt.compare(body.currentPassword, userDetails.password)
     
-    console.log(`用户 ID: ${user.id} 密码修改成功`)
+    if (!isPasswordValid) {
+      // 记录安全事件
+      await securityService.recordFailedAttempt(
+        userDetails.username, 
+        getClientIP(event), 
+        'password_change'
+      )
+      
+      throw createError({
+        statusCode: 400,
+        statusMessage: '当前密码不正确'
+      })
+    }
+
+    // 检查新密码是否与当前密码相同
+    const isSamePassword = await bcrypt.compare(body.newPassword, userDetails.password)
+    if (isSamePassword) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: '新密码不能与当前密码相同'
+      })
+    }
+
+    // 加密新密码
+    const hashedNewPassword = await bcrypt.hash(body.newPassword, 12)
+
+    // 更新密码
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedNewPassword }
+      })
+    } catch (updateError: any) {
+      // 如果Prisma更新失败，尝试使用原始SQL
+      await prisma.$executeRaw`
+        UPDATE "User" 
+        SET password = ${hashedNewPassword} 
+        WHERE id = ${user.id}
+      `
+    }
+    
+    // 记录成功的密码修改
+    await securityService.recordSuccessfulLogin(
+      userDetails.username, 
+      getClientIP(event)
+    )
+    
     return {
       success: true,
       message: '密码修改成功'

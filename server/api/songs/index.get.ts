@@ -4,41 +4,74 @@ import { CacheService } from '~/server/services/cacheService'
 import { executeWithPool } from '~/server/utils/db-pool'
 
 export default defineEventHandler(async (event) => {
+  const query = getQuery(event)
+  
+  const page = parseInt(query.page as string) || 1
+  const limit = parseInt(query.limit as string) || 20
+  const search = query.search as string || ''
+  const semester = query.semester as string || ''
+  const grade = query.grade as string || ''
+  const sortBy = query.sortBy as string || 'createdAt'
+  const sortOrder = query.sortOrder as string || 'desc'
+  
+  const skip = (page - 1) * limit
+  
   try {
-    // 获取用户信息（可选认证）
-    const user = event.context.user
-
-    // 获取查询参数
-    const query = getQuery(event)
-    const semester = query.semester as string
-
-    console.log(`[Songs API] 用户 ${user?.name || '未登录用户'} 请求歌曲列表${semester ? ` (学期: ${semester})` : ''}`)
-
-    // 根据用户登录状态生成不同的缓存键
-    const cacheService = new CacheService()
-    const baseCacheKey = semester ? `semester_${semester}` : 'all'
-    const cacheKey = user ? `user_${baseCacheKey}` : `public_${baseCacheKey}`
-    let cachedSongs = await cacheService.getSongList(cacheKey, user?.id)
+    // 构建查询条件
+    const where: any = {}
     
-    if (cachedSongs) {
-      console.log(`[Cache] 从缓存获取歌曲列表，用户类型: ${user ? '登录用户' : '未登录用户'}，缓存键: ${cacheKey}`)
-      return cachedSongs
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { artist: { contains: search, mode: 'insensitive' } },
+        { album: { contains: search, mode: 'insensitive' } }
+      ]
     }
-
-    // 使用连接池执行数据库操作
-    const result = await executeWithPool(async () => {
-      // 构建查询条件
-      const whereCondition: any = {}
-      if (semester) {
-        whereCondition.semester = semester
+    
+    if (semester) {
+      where.semester = semester
+    }
+    
+    if (grade) {
+      where.grade = grade
+    }
+    
+    // 查询歌曲总数
+    const total = await prisma.song.count({ where })
+    
+    // 查询歌曲列表
+    const songs = await prisma.song.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: {
+        [sortBy]: sortOrder
+      },
+      select: {
+        id: true,
+        title: true,
+        artist: true,
+        album: true,
+        duration: true,
+        semester: true,
+        grade: true,
+        createdAt: true,
+        updatedAt: true
       }
-      
-      // 如果是未登录用户，只查询已排期的歌曲
-      if (!user) {
-        whereCondition.schedules = {
-          some: {}
+    })
+    
+    return {
+      success: true,
+      data: {
+        songs,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
         }
       }
+    }
 
       // 获取歌曲及其投票数
       const songs = await prisma.song.findMany({

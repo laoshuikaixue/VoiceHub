@@ -197,13 +197,6 @@ class CacheService {
         // 序列化数据（内部已包含UTF-8验证）
         const serializedData = this.serialize(data)
         
-        // 在开发环境中添加详细的调试信息
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[Cache Debug] 准备写入缓存: ${key}`)
-          console.log(`[Cache Debug] 数据长度: ${serializedData.length}`)
-          console.log(`[Cache Debug] 数据预览: ${serializedData.substring(0, 200)}...`)
-        }
-        
         // 验证序列化后的数据长度，防止过大的数据
         if (serializedData.length > 10 * 1024 * 1024) { // 10MB限制
           console.warn(`[Cache] 缓存数据过大 (${serializedData.length} bytes): ${key}`)
@@ -218,24 +211,6 @@ class CacheService {
         
         // 写入Redis
         await client.setEx(key, this.getRandomTTL(ttl), serializedData)
-        
-        // 简化验证，只检查数据是否成功写入
-        if (process.env.NODE_ENV === 'development') {
-          const verification = await client.get(key)
-          if (!verification) {
-            console.error(`[Cache] 缓存写入失败，数据未找到: ${key}`)
-            return false
-          }
-          
-          // 验证数据是否可以正确解析
-          try {
-            JSON.parse(verification)
-          } catch (parseError) {
-            console.error(`[Cache] 缓存数据解析失败: ${key}`, parseError)
-            await client.del(key)
-            return false
-          }
-        }
         
         return true
       } catch (error) {
@@ -262,7 +237,6 @@ class CacheService {
         
         // 检查原始数据是否包含乱码
         if (this.containsInvalidUTF8(data)) {
-          console.warn(`[Cache] 检测到缓存键 ${key} 包含乱码数据，删除该缓存`)
           // 删除损坏的缓存
           await client.del(key)
           return null
@@ -273,7 +247,6 @@ class CacheService {
         
         // 如果反序列化返回null（可能因为乱码），记录日志
         if (result === null && data.length > 0) {
-          console.warn(`[Cache] 缓存键 ${key} 反序列化失败，可能存在编码问题`)
           // 删除有问题的缓存
           await client.del(key)
         }

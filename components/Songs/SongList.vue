@@ -735,13 +735,11 @@ const semesterError = ref('')
 const debouncedSemesterChange = debounce((semester) => {
   // 再次检查并清理学期数据
   if (containsCorruptedText(semester)) {
-    console.warn('防抖处理中检测到乱码学期数据:', semester)
     return
   }
   
   const cleanSemester = cleanCorruptedText(semester)
   if (!cleanSemester) {
-    console.warn('防抖处理中学期数据清理后为空:', semester)
     return
   }
   
@@ -828,12 +826,10 @@ const fetchAvailableSemesters = async () => {
         
         // 如果发现缓存中有乱码数据，清理缓存
         if (parsed.length !== existingSemesters.length) {
-          console.warn('检测到sessionStorage中的学期数据包含乱码，已清理')
           sessionStorage.removeItem('voicehub_available_semesters')
         }
       }
     } catch (error) {
-      console.warn('无法恢复缓存的学期信息:', error)
       // 清理可能损坏的缓存
       sessionStorage.removeItem('voicehub_available_semesters')
     }
@@ -864,7 +860,6 @@ const fetchAvailableSemesters = async () => {
         if (savedSemester) {
           // 检查保存的学期是否包含乱码
           if (containsCorruptedText(savedSemester)) {
-            console.warn('检测到sessionStorage中保存的学期包含乱码，清理缓存:', savedSemester)
             sessionStorage.removeItem('voicehub_selected_semester')
           } else {
             const cleanSavedSemester = cleanCorruptedText(savedSemester)
@@ -875,7 +870,6 @@ const fetchAvailableSemesters = async () => {
           }
         }
       } catch (error) {
-        console.warn('无法从sessionStorage恢复学期选择:', error)
         // 清理可能损坏的缓存
         sessionStorage.removeItem('voicehub_selected_semester')
       }
@@ -921,13 +915,11 @@ const onSemesterChange = (semester) => {
   
   // 检查并清理学期数据
   if (containsCorruptedText(semester)) {
-    console.warn('检测到乱码学期数据，跳过选择:', semester)
     return
   }
   
   const cleanSemester = cleanCorruptedText(semester)
   if (!cleanSemester) {
-    console.warn('学期数据清理后为空，跳过选择:', semester)
     return
   }
   
