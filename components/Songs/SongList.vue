@@ -246,12 +246,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useSemesters } from '~/composables/useSemesters'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
+import { useSongs } from '~/composables/useSongs'
 import Icon from '~/components/UI/Icon.vue'
 import { convertToHttps } from '~/utils/url'
 
@@ -290,6 +291,10 @@ const availableSemesters = ref([])
 const selectedSemester = ref('')
 const showSemesterDropdown = ref(false)
 
+// 获取完整歌曲数据源
+const songsComposable = useSongs()
+const allSongsData = computed(() => songsComposable?.visibleSongs?.value || [])
+
 // 音频播放相关
 const audioPlayer = useAudioPlayer()
 
@@ -318,10 +323,45 @@ const checkMobile = () => {
   isMobile.value = window.innerWidth < 768
 }
 
+// 处理学期过滤变化事件
+const handleSemesterFilterChange = (event) => {
+  const newSemester = event.detail.semester
+
+  
+  // 更新选中的学期
+  selectedSemester.value = newSemester
+  
+  // 重置到第一页
+  currentPage.value = 1
+  
+  // 保存到sessionStorage
+  if (newSemester) {
+    sessionStorage.setItem('voicehub_selected_semester', newSemester)
+  } else {
+    sessionStorage.removeItem('voicehub_selected_semester')
+  }
+}
+
 // 组件挂载和卸载时添加/移除窗口大小变化监听
 onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  
+  // 添加学期过滤变化事件监听器
+  window.addEventListener('semester-filter-change', handleSemesterFilterChange)
+  
+  // 首先从sessionStorage恢复学期选择状态
+  try {
+    const savedSemester = sessionStorage.getItem('voicehub_selected_semester')
+    if (savedSemester && !containsCorruptedText(savedSemester)) {
+      const cleanSavedSemester = cleanCorruptedText(savedSemester)
+      if (cleanSavedSemester) {
+        selectedSemester.value = cleanSavedSemester
+      }
+    }
+  } catch (error) {
+    console.warn('恢复学期选择状态失败:', error)
+  }
   
   isDataLoading.value = true
   try {
@@ -333,7 +373,7 @@ onMounted(async () => {
     
     // 标记组件初始化完成
     isComponentInitialized.value = true
-    console.log('组件初始化完成，学期选择逻辑将由watch监听器处理')
+  
   } catch (error) {
     console.error('组件初始化失败:', error)
   } finally {
@@ -343,16 +383,15 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
+  // 移除学期过滤变化事件监听器
+  window.removeEventListener('semester-filter-change', handleSemesterFilterChange)
 })
 
 // 监听歌曲数据变化，更新学期信息
 watch(() => props.songs, () => {
   // 只有在组件完全初始化后且不在获取学期信息时才处理数据更新
   if (isComponentInitialized.value && !isDataLoading.value && !isFetchingSemesters.value) {
-    console.log('歌曲数据变化，重新获取学期信息')
     fetchAvailableSemesters()
-  } else {
-    console.log('组件未完全初始化或正在获取学期信息，跳过歌曲数据变化处理')
   }
 }, { deep: true })
 
@@ -360,10 +399,7 @@ watch(() => props.songs, () => {
 watch(semesterUpdateEvent, async () => {
   // 只有在组件完全初始化后且不在获取学期信息时才处理学期更新
   if (isComponentInitialized.value && !isDataLoading.value && !isFetchingSemesters.value) {
-    console.log('学期更新事件触发，重新获取学期列表')
     fetchAvailableSemesters()
-  } else {
-    console.log('组件未完全初始化或正在获取学期信息，跳过学期更新事件处理')
   }
 })
 
@@ -371,6 +407,14 @@ watch(semesterUpdateEvent, async () => {
 watch(searchQuery, () => {
   currentPage.value = 1
 })
+
+// 监听allSongsData变化，当数据真正加载完成时重新获取学期信息
+watch(allSongsData, (newData) => {
+  // 只有在组件完全初始化后且数据真正有内容时才处理
+  if (isComponentInitialized.value && newData && newData.length > 0 && !isFetchingSemesters.value) {
+    fetchAvailableSemesters()
+  }
+}, { deep: true })
 
 // 确认对话框
 const confirmDialog = ref({
@@ -759,7 +803,6 @@ const semesterError = ref('')
 const debouncedSemesterChange = debounce((semester) => {
   // 增强的状态检查
   if (semesterLoading.value || isDataLoading.value || !isComponentInitialized.value) {
-    console.log('防抖函数检测到组件未就绪，跳过学期切换')
     return
   }
   
@@ -781,7 +824,7 @@ const debouncedSemesterChange = debounce((semester) => {
     return
   }
   
-  console.log('防抖函数执行学期切换:', cleanSemester)
+  // 执行学期切换
   
   selectedSemester.value = cleanSemester
   showSemesterDropdown.value = false
@@ -842,7 +885,11 @@ const cleanCorruptedText = (text) => {
 const fetchAvailableSemesters = async () => {
   // 防止重复请求和并发调用
   if (semesterLoading.value || isFetchingSemesters.value) {
-    console.log('fetchAvailableSemesters已在执行中，跳过重复调用')
+    return
+  }
+  
+  // 检查是否有歌曲数据，如果没有则等待
+  if (!props.songs || props.songs.length === 0) {
     return
   }
   
@@ -853,22 +900,35 @@ const fetchAvailableSemesters = async () => {
   // 如果组件正在初始化，设置数据加载状态
   if (!isComponentInitialized.value) {
     isDataLoading.value = true
-    console.log('组件初始化期间调用fetchAvailableSemesters')
   }
   
   try {
-    // 从歌曲数据中提取学期信息，并过滤乱码
-    const rawSemesters = [...new Set(props.songs.map(song => song.semester).filter(Boolean))]
+    // 使用完整的歌曲数据源而不是过滤后的props.songs
+    let completeSongs = allSongsData.value || []
+    
+    // 检查数据源状态
+    
+    // 如果allSongsData为空，但props.songs有数据，直接使用props.songs作为数据源
+    if (completeSongs.length === 0 && props.songs && props.songs.length > 0) {
+      completeSongs = props.songs
+    }
+    
+    // 如果完全没有数据，直接返回
+    if (completeSongs.length === 0) {
+      availableSemesters.value = []
+      return
+    }
+    
+    // 从完整歌曲数据中提取学期信息，并过滤乱码
+    const rawSemesters = [...new Set(completeSongs.map(song => song.semester).filter(Boolean))]
     const cleanSemesters = rawSemesters
       .filter(semester => !containsCorruptedText(semester))
       .map(semester => cleanCorruptedText(semester))
       .filter(semester => semester.length > 0)
     
-    // 提取到的原始学期和清理后的学期
-    
     // 统计每个学期的歌曲数量，只保留有数据的学期
     const semesterStats = {}
-    props.songs.forEach(song => {
+    completeSongs.forEach(song => {
       if (song.semester && !containsCorruptedText(song.semester)) {
         const cleanSemester = cleanCorruptedText(song.semester)
         if (cleanSemester) {
@@ -877,117 +937,40 @@ const fetchAvailableSemesters = async () => {
       }
     })
     
-    // 学期数据统计
-    
-    // 只保留有数据的学期
+    // 只保留有数据的学期，按时间倒序排列
     const semestersWithData = Object.keys(semesterStats)
       .filter(semester => semesterStats[semester] > 0)
-      .sort().reverse() // 按时间倒序排列
+      .sort().reverse()
     
-    // 有数据的学期
+    // 统计有数据的学期
+    
+    // 如果用户手动选择了学期，确保该学期保留在可用学期列表中
+    let finalSemesters = [...semestersWithData]
+    if (isUserManuallySelected.value && selectedSemester.value && 
+        !finalSemesters.includes(selectedSemester.value)) {
+      // 将用户选择的学期添加到列表中，保持时间倒序
+      finalSemesters.push(selectedSemester.value)
+      finalSemesters.sort().reverse()
+    }
     
     // 更新可用学期列表
-    availableSemesters.value = semestersWithData
+    availableSemesters.value = [...finalSemesters]
     
     // 缓存学期信息到sessionStorage
     try {
       sessionStorage.setItem('voicehub_available_semesters', JSON.stringify(availableSemesters.value))
     } catch (error) {
-      // 无法缓存学期信息
+      console.warn('无法缓存学期信息:', error)
     }
     
     // 如果组件未完全初始化，只设置availableSemesters，不执行学期选择逻辑
     if (!isComponentInitialized.value) {
-      console.log('组件初始化期间，仅更新可用学期列表，不执行学期选择逻辑')
       return
     }
     
-    // 恢复之前选择的学期或设置默认学期
+    // 执行学期选择逻辑
+    await selectDefaultSemester()
     
-    // 检查当前选中的学期是否还有数据
-    if (selectedSemester.value && !availableSemesters.value.includes(selectedSemester.value)) {
-      selectedSemester.value = ''
-    }
-    
-    // 优先级1: 当前活跃学期始终优先（如果有数据且不是用户手动选择的）
-    let shouldUseCurrentSemester = false
-    if (currentSemester.value && currentSemester.value.name && availableSemesters.value.length > 0) {
-      const currentSemesterName = currentSemester.value.name
-      
-      if (!containsCorruptedText(currentSemesterName)) {
-        const cleanCurrentSemester = cleanCorruptedText(currentSemesterName)
-        
-        // 只有当前学期在有数据的列表中才使用
-        if (cleanCurrentSemester && availableSemesters.value.includes(cleanCurrentSemester)) {
-          // 只有在用户没有手动选择学期时才使用当前活跃学期
-          if (!isUserManuallySelected.value) {
-            selectedSemester.value = cleanCurrentSemester
-            shouldUseCurrentSemester = true
-            console.log('使用当前活跃学期:', cleanCurrentSemester)
-            
-            // 保存选择到sessionStorage
-            try {
-              sessionStorage.setItem('voicehub_selected_semester', cleanCurrentSemester)
-            } catch (error) {
-              // 无法保存学期选择
-            }
-          } else {
-            console.log('保持用户手动选择的学期:', selectedSemester.value)
-            shouldUseCurrentSemester = true // 标记已处理，跳过后续逻辑
-          }
-        }
-      }
-    }
-    
-    // 如果没有使用当前活跃学期，则按其他优先级选择
-    if (!shouldUseCurrentSemester && !selectedSemester.value && availableSemesters.value.length > 0) {
-      // 优先级2: 尝试从sessionStorage恢复缓存的选择（如果有数据）
-      try {
-        const savedSemester = sessionStorage.getItem('voicehub_selected_semester')
-        if (savedSemester) {
-          console.log('检查缓存的学期选择:', savedSemester)
-          
-          // 检查保存的学期是否包含乱码
-          if (containsCorruptedText(savedSemester)) {
-            console.log('缓存的学期包含乱码，清理缓存')
-            sessionStorage.removeItem('voicehub_selected_semester')
-          } else {
-            const cleanSavedSemester = cleanCorruptedText(savedSemester)
-            // 只有缓存的学期在有数据的列表中才使用
-            if (cleanSavedSemester && availableSemesters.value.includes(cleanSavedSemester)) {
-              selectedSemester.value = cleanSavedSemester
-              console.log('使用缓存的学期选择:', cleanSavedSemester)
-            } else {
-              console.log('缓存的学期无数据，清理缓存')
-              sessionStorage.removeItem('voicehub_selected_semester')
-            }
-          }
-        }
-      } catch (error) {
-        console.warn('恢复缓存学期选择失败:', error)
-        // 清理可能损坏的缓存
-        sessionStorage.removeItem('voicehub_selected_semester')
-      }
-      
-      // 优先级3: 使用第一个有数据的学期作为后备
-      if (!selectedSemester.value && availableSemesters.value.length > 0) {
-        selectedSemester.value = availableSemesters.value[0]
-        console.log('使用第一个有数据的学期作为默认:', availableSemesters.value[0])
-        
-        // 保存选择到sessionStorage
-        try {
-          sessionStorage.setItem('voicehub_selected_semester', availableSemesters.value[0])
-        } catch (error) {
-          console.warn('无法保存学期选择:', error)
-        }
-      }
-    }
-    
-    // 如果没有任何有数据的学期，清空选择
-    if (availableSemesters.value.length === 0) {
-      selectedSemester.value = ''
-      console.log('没有任何有数据的学期')
-    }
   } catch (error) {
     console.error('获取学期信息失败:', error)
     semesterError.value = '获取学期信息失败，请刷新页面重试'
@@ -1011,10 +994,96 @@ const fetchAvailableSemesters = async () => {
   }
 }
 
+// 选择默认学期的逻辑
+const selectDefaultSemester = async () => {
+  // 如果没有可用学期，清空选择
+  if (availableSemesters.value.length === 0) {
+    selectedSemester.value = ''
+    return
+  }
+  
+  // 如果已经有选中的学期且该学期在可用列表中，保持选择（包括从sessionStorage恢复的选择）
+  if (selectedSemester.value && availableSemesters.value.includes(selectedSemester.value)) {
+    // 保存选择到sessionStorage以确保状态同步
+    try {
+      sessionStorage.setItem('voicehub_selected_semester', selectedSemester.value)
+    } catch (error) {
+      console.warn('无法保存学期选择:', error)
+    }
+    return
+  }
+  
+  // 如果当前选中的学期不在可用列表中，清空选择
+  if (selectedSemester.value && !availableSemesters.value.includes(selectedSemester.value)) {
+    selectedSemester.value = ''
+  }
+  
+  // 如果用户已手动选择学期且该学期仍有数据，保持选择
+  if (isUserManuallySelected.value && selectedSemester.value && 
+      availableSemesters.value.includes(selectedSemester.value)) {
+    return
+  }
+  
+  // 优先级1: 使用当前活跃学期（如果有数据且API已返回）
+  // 注意：只有在currentSemester API已经返回数据时才使用，避免在API未响应时进行切换
+  if (currentSemester.value && currentSemester.value.name) {
+    const currentSemesterName = currentSemester.value.name
+    
+    if (!containsCorruptedText(currentSemesterName)) {
+      const cleanCurrentSemester = cleanCorruptedText(currentSemesterName)
+      
+      // 检查当前学期是否在有数据的列表中
+      if (cleanCurrentSemester && availableSemesters.value.includes(cleanCurrentSemester)) {
+        selectedSemester.value = cleanCurrentSemester
+        
+        // 保存选择到sessionStorage
+        try {
+          sessionStorage.setItem('voicehub_selected_semester', cleanCurrentSemester)
+        } catch (error) {
+          console.warn('无法保存学期选择:', error)
+        }
+        return
+      }
+    }
+  }
+  
+  // 优先级2: 尝试从sessionStorage恢复缓存的选择（如果有数据）
+  if (!selectedSemester.value) {
+    try {
+      const savedSemester = sessionStorage.getItem('voicehub_selected_semester')
+      if (savedSemester && !containsCorruptedText(savedSemester)) {
+        const cleanSavedSemester = cleanCorruptedText(savedSemester)
+        
+        // 只有缓存的学期在有数据的列表中才使用
+        if (cleanSavedSemester && availableSemesters.value.includes(cleanSavedSemester)) {
+          selectedSemester.value = cleanSavedSemester
+          return
+        } else {
+          sessionStorage.removeItem('voicehub_selected_semester')
+        }
+      }
+    } catch (error) {
+      console.warn('恢复缓存学期选择失败:', error)
+      sessionStorage.removeItem('voicehub_selected_semester')
+    }
+  }
+  
+  // 优先级3: 使用第一个有数据的学期作为默认
+  if (!selectedSemester.value && availableSemesters.value.length > 0) {
+    selectedSemester.value = availableSemesters.value[0]
+    
+    // 保存选择到sessionStorage
+    try {
+      sessionStorage.setItem('voicehub_selected_semester', availableSemesters.value[0])
+    } catch (error) {
+      console.warn('无法保存学期选择:', error)
+    }
+  }
+}
+
 const onSemesterChange = (semester) => {
   // 增强的加载状态检查
   if (semesterLoading.value || isDataLoading.value || !isComponentInitialized.value) {
-    console.log('组件正在加载中，暂时无法切换学期')
     return // 防止在加载时或组件未初始化时切换
   }
   
@@ -1036,7 +1105,7 @@ const onSemesterChange = (semester) => {
     return
   }
   
-  console.log('用户手动切换学期:', cleanSemester)
+
   
   // 标记为用户手动选择
   isUserManuallySelected.value = true
@@ -1044,9 +1113,15 @@ const onSemesterChange = (semester) => {
   // 立即更新选中的学期，确保UI响应
   selectedSemester.value = cleanSemester
   
+  // 使用nextTick确保DOM更新后样式能正确应用
+  nextTick(() => {
+    // DOM已更新，学期选择样式应该已应用
+  })
+  
   // 保存学期选择到sessionStorage
   try {
     sessionStorage.setItem('voicehub_selected_semester', cleanSemester)
+    sessionStorage.setItem('voicehub_user_manually_selected', 'true')
   } catch (error) {
     console.warn('无法保存学期选择:', error)
   }
@@ -1062,11 +1137,9 @@ const onSemesterChange = (semester) => {
 const retrySemesterFetch = () => {
   // 检查组件状态，确保可以安全重试
   if (semesterLoading.value || isDataLoading.value) {
-    console.log('正在加载中，无法重试获取学期信息')
     return
   }
   
-  console.log('重试获取学期信息')
   semesterError.value = ''
   fetchAvailableSemesters()
 }
