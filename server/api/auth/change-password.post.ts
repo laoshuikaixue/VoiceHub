@@ -1,9 +1,10 @@
 import bcrypt from 'bcrypt'
 import { prisma } from '../../models/schema'
+import { recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份
-  const user = await requireAuth(event)
+  const user = event.context.user
   if (!user) {
     throw createError({
       statusCode: 401,
@@ -55,11 +56,8 @@ export default defineEventHandler(async (event) => {
     
     if (!isPasswordValid) {
       // 记录安全事件
-      await securityService.recordFailedAttempt(
-        userDetails.username, 
-        getClientIP(event), 
-        'password_change'
-      )
+      const clientIp = getRequestIP(event, { xForwardedFor: true }) || '未知IP'
+      recordLoginFailure(userDetails.username, clientIp)
       
       throw createError({
         statusCode: 400,
@@ -95,10 +93,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 记录成功的密码修改
-    await securityService.recordSuccessfulLogin(
-      userDetails.username, 
-      getClientIP(event)
-    )
+    recordLoginSuccess(userDetails.username)
     
     return {
       success: true,
@@ -116,7 +111,7 @@ export default defineEventHandler(async (event) => {
     // 创建错误响应
     throw createError({
       statusCode: 500,
-      message: '修改密码失败: ' + (error.message || '未知错误')
+      statusMessage: '修改密码失败: ' + (error.message || '未知错误')
     })
   }
 })
