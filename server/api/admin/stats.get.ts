@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { prisma } from '../../models/schema'
+import { CacheService } from '../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -15,6 +16,13 @@ export default defineEventHandler(async (event) => {
   const semester = query.semester as string
 
   try {
+    // 尝试从缓存获取数据
+    const cacheService = CacheService.getInstance()
+    const cachedStats = await cacheService.getAdminStats(semester)
+    if (cachedStats) {
+      console.log('[Cache] 管理员统计数据缓存命中')
+      return cachedStats
+    }
     // 获取当前时间相关的日期
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -273,7 +281,7 @@ export default defineEventHandler(async (event) => {
       })()
     ])
 
-    return {
+    const result = {
       totalSongs,
       totalUsers,
       todaySchedules,
@@ -290,6 +298,12 @@ export default defineEventHandler(async (event) => {
       schedulesTrend: trendData[2],
       requestsTrend: trendData[3]
     }
+
+    // 缓存结果
+    await cacheService.setAdminStats(semester, result)
+    console.log('[Cache] 管理员统计数据已缓存')
+
+    return result
   } catch (error) {
     console.error('获取统计数据失败:', error)
     throw createError({

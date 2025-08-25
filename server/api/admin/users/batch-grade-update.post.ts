@@ -1,5 +1,6 @@
 import { prisma } from '~/server/models/schema'
 import bcrypt from 'bcryptjs'
+import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -109,6 +110,16 @@ export default defineEventHandler(async (event) => {
         console.error('批量更新失败:', error)
         failed += existingUserIds.length
         errors.push('批量更新操作失败')
+      }
+    }
+
+    // 如果有用户更新成功，清除相关缓存
+    if (updated > 0) {
+      try {
+        await CacheService.clearSongsCache()
+        console.log('批量年级更新后缓存清除成功')
+      } catch (cacheError) {
+        console.error('批量年级更新后缓存清除失败:', cacheError)
       }
     }
 

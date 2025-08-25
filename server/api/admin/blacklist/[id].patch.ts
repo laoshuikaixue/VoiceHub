@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -43,6 +44,15 @@ export default defineEventHandler(async (event) => {
         ...(reason !== undefined && { reason: reason?.trim() || null })
       }
     })
+
+    // 清除歌曲缓存（黑名单变更可能影响歌曲提交验证）
+    try {
+      const cacheService = CacheService.getInstance()
+      await cacheService.clearSongsCache()
+      console.log('黑名单更新后歌曲缓存已清除')
+    } catch (cacheError) {
+      console.warn('清除歌曲缓存失败:', cacheError)
+    }
 
     return {
       success: true,

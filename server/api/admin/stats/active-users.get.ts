@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -11,11 +12,18 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const query = getQuery(event)
+  const semester = query.semester as string
+  const limit = parseInt(query.limit as string) || 20
+
   try {
-    // 获取查询参数
-    const query = getQuery(event)
-    const limit = parseInt(query.limit as string) || 10
-    const semester = query.semester as string
+    // 尝试从缓存获取数据
+    const cacheService = CacheService.getInstance()
+    const cachedStats = await cacheService.getActiveUsersStats(semester, limit)
+    if (cachedStats) {
+      console.log('[Cache] 活跃用户统计数据缓存命中')
+      return cachedStats
+    }
 
     // 构建查询条件 - 如果没有指定学期或学期为'all'，查询所有用户
     let songWhere = {}
@@ -42,7 +50,11 @@ export default defineEventHandler(async (event) => {
 
     // 如果没有活跃用户，返回空数组
     if (activeUsers.length === 0) {
-      return []
+      const emptyResult = []
+      // 缓存空结果
+      await cacheService.setActiveUsersStats(semester, limit, emptyResult)
+      console.log('[Cache] 活跃用户统计数据已缓存（空结果）')
+      return emptyResult
     }
 
     // 计算每个用户的活跃度数据
@@ -68,6 +80,10 @@ export default defineEventHandler(async (event) => {
     const sortedUsers = userStats
       .sort((a, b) => b.activityScore - a.activityScore)
       .slice(0, limit)
+
+    // 缓存结果
+    await cacheService.setActiveUsersStats(semester, limit, sortedUsers)
+    console.log('[Cache] 活跃用户统计数据已缓存')
 
     return sortedUsers
   } catch (error) {

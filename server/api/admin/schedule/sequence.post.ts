@@ -1,3 +1,5 @@
+import { CacheService } from '~/server/services/cacheService'
+
 export default defineEventHandler(async (event) => {
   // 验证用户认证和权限
   const user = event.context.user
@@ -34,7 +36,17 @@ export default defineEventHandler(async (event) => {
         })
       })
     )
-    
+
+    // 清除排期相关缓存
+    try {
+      const cacheService = CacheService.getInstance()
+      await cacheService.clearSchedulesCache()
+      await cacheService.clearStatsCache()
+      console.log('[Cache] 排期缓存和统计缓存已清除（更新排期顺序）')
+    } catch (error) {
+      console.error('清除排期缓存失败:', error)
+    }
+
     return {
       success: true,
       count: results.length

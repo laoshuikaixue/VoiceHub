@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/models/schema'
+import { CacheService } from '~/server/services/cacheService'
 
 // 请求体验证模式
 const batchUpdateSchema = z.object({
@@ -138,6 +139,16 @@ export default defineEventHandler(async (event) => {
     // 如果有部分失败，调整消息
     if (errors.length > 0) {
       response.message = `批量更新部分完成，成功更新 ${updateResults.length} 个用户，${errors.length} 个用户更新失败`
+    }
+
+    // 如果有用户更新成功，清除相关缓存
+    if (updateResults.length > 0) {
+      try {
+        await CacheService.clearSongsCache()
+        console.log('批量用户更新后缓存清除成功')
+      } catch (cacheError) {
+        console.error('批量用户更新后缓存清除失败:', cacheError)
+      }
     }
 
     return response

@@ -1,12 +1,16 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { prisma } from '../../models/schema'
 import { executeWithPool } from '~/server/utils/db-pool'
+import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   try {
     // 获取查询参数
     const query = getQuery(event)
     const semester = query.semester as string
+    
+    // 初始化缓存服务
+    const cacheService = new CacheService()
     
     // 获取当前日期，使用UTC时间
     const now = new Date()
@@ -16,6 +20,19 @@ export default defineEventHandler(async (event) => {
       now.getUTCDate(),
       0, 0, 0, 0
     ))
+    
+    // 尝试从缓存获取排期数据
+    const cacheKey = `public_schedules_${semester || 'all'}`
+    let cachedSchedules = await cacheService.getSchedulesList()
+    
+    if (cachedSchedules && (!semester || cachedSchedules.some(s => s.song?.semester === semester))) {
+      console.log('[Cache] 公共排期缓存命中')
+      // 如果指定了学期，过滤数据
+      if (semester) {
+        cachedSchedules = cachedSchedules.filter(s => s.song?.semester === semester)
+      }
+      return cachedSchedules
+    }
     
     // 获取排期的歌曲，包含播放时段信息
     const result = await executeWithPool(async () => {
@@ -143,6 +160,12 @@ export default defineEventHandler(async (event) => {
 
     return formattedSchedules
     }, 'getPublicSchedules')
+    
+    // 缓存结果
+    if (result && result.length > 0) {
+      await cacheService.setSchedulesList(result)
+      console.log(`[Cache] 公共排期已缓存，数量: ${result.length}`)
+    }
 
     return result
   } catch (error: any) {

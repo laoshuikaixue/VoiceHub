@@ -1,5 +1,6 @@
 import { prisma } from '../../models/schema'
 import { createSongPlayedNotification } from '../../services/notificationService'
+import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -69,6 +70,14 @@ export default defineEventHandler(async (event) => {
       playedAt: isUnmark ? null : new Date()
     }
   })
+
+  // 清除歌曲相关缓存
+  try {
+    const cacheService = new CacheService()
+    await cacheService.clearSongCaches()
+  } catch (error) {
+    console.error('清除歌曲缓存失败:', error)
+  }
   
   // 如果是标记为已播放，则发送通知
   if (!isUnmark) {

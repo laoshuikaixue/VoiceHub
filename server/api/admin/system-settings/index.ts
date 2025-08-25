@@ -1,4 +1,5 @@
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -19,8 +20,16 @@ export default defineEventHandler(async (event) => {
   }
   
   try {
-    // 获取系统设置，如果不存在则创建默认设置
-    let settings = await prisma.systemSettings.findFirst()
+    // 尝试从缓存获取系统设置
+    const cacheService = CacheService.getInstance()
+    let settings = await cacheService.getSystemSettings()
+    
+    if (settings) {
+      return settings
+    }
+    
+    // 缓存中没有，从数据库获取系统设置，如果不存在则创建默认设置
+    settings = await prisma.systemSettings.findFirst()
     
     if (!settings) {
       settings = await prisma.systemSettings.create({
@@ -39,6 +48,13 @@ export default defineEventHandler(async (event) => {
           showBlacklistKeywords: false
         }
       })
+    }
+    
+    // 将设置存入缓存
+    try {
+      await cacheService.setSystemSettings(settings)
+    } catch (cacheError) {
+      console.warn('缓存系统设置失败:', cacheError)
     }
     
     return settings

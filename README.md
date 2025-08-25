@@ -65,6 +65,7 @@
 - **Nuxt Server API**：服务端API路由，支持中间件和认证
 - **Prisma**：现代化数据库ORM，支持类型安全的数据库操作
 - **PostgreSQL**：关系型数据库，支持复杂查询和事务
+- **Redis**：高性能缓存数据库，提升系统响应速度
 - **JWT**：标准JWT认证机制，支持24小时token有效期
 - **bcrypt**：密码加密，安全的哈希算法
 - **Multer**：文件上传处理，支持多种存储方式
@@ -242,6 +243,8 @@ VoiceHub 实现了细粒度的权限控制系统：
 | DATABASE_URL | 是  | PostgreSQL数据库连接字符串          | `postgresql://username:password@host:port/database?sslmode=require` |
 | JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串        | `your-very-secure-jwt-secret-key`       |
 | NODE_ENV     | 否  | 运行环境，development或production | `production`                                                        |
+| REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                               |
+| PRISMA_LOG_LEVEL | 否  | Prisma日志级别，可选值：error、warn、info、query，默认为error | `error`                                                            |
 | NITRO_PRESET | 否  | Nitro预设                     | `vercel`                                                            |
 
 ## 项目结构
@@ -326,6 +329,7 @@ VoiceHub/
 │   ├── usePermissions.ts   # 权限管理hooks
 │   ├── useProgress.ts      # 进度条功能hooks
 │   ├── useProgressEvents.ts # 进度事件hooks
+│   ├── useRequestDedup.ts  # 请求去重hooks
 │   ├── useSemesters.ts     # 学期管理hooks
 │   ├── useSiteConfig.js    # 站点配置hooks
 │   └── useSongs.ts         # 歌曲功能hooks
@@ -342,13 +346,13 @@ VoiceHub/
 │   └── notifications.vue   # 通知中心页面
 ├── plugins/               # Nuxt插件
 │   ├── auth.client.ts      # 客户端认证插件
-│   ├── font-loader.client.ts # 字体加载插件
+│   ├── auth.server.ts      # 服务端认证插件
 │   └── prisma.ts           # Prisma ORM插件
 ├── prisma/                # Prisma ORM配置
 │   ├── client.ts           # Prisma客户端配置
+│   ├── generate.js         # Prisma生成脚本
 │   ├── migrations/         # 数据库迁移文件
-│   ├── schema.prisma      # 数据库模型定义
-│   └── seeds/             # 数据库种子文件目录
+│   └── schema.prisma      # 数据库模型定义
 ├── public/                # 公共静态资源
 │   ├── favicon.ico         # 网站图标
 │   ├── images/             # 图片资源
@@ -358,9 +362,13 @@ VoiceHub/
 │   │   └── thumbs-up.svg   # 点赞图标
 │   └── robots.txt          # 搜索引擎爬虫规则
 ├── scripts/               # 工具脚本目录
+│   ├── check-deploy.js            # 部署检查脚本
 │   ├── clear-database.js          # 数据库清空脚本
 │   ├── create-admin.js            # 创建管理员账户脚本
-│   └── package.json               # 脚本依赖配置
+│   ├── deploy.js                  # 部署脚本
+│   ├── netlify-build.js           # Netlify构建脚本
+│   ├── package.json               # 脚本依赖配置
+│   └── postinstall.js             # 安装后脚本
 ├── server/                # 服务端代码（Nuxt 3 Server API）
 │   ├── api/                # API端点目录
 │   │   ├── admin/          # 管理员API
@@ -508,14 +516,17 @@ VoiceHub/
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   └── prisma.ts       # Prisma服务端插件
 │   ├── services/           # 业务服务层
+│   │   ├── cacheService.ts # 缓存服务（Redis缓存管理）
+│   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
-│   │   └── meowNotificationService.ts # MeoW通知服务
+│   │   └── securityService.ts # 安全服务
 │   ├── utils/              # 服务端工具函数
 │   │   ├── __tests__/      # 工具函数测试目录
+│   │   ├── auth.ts         # 认证工具函数
 │   │   ├── db-pool.ts      # 数据库连接池管理
 │   │   ├── jwt-enhanced.ts # JWT工具
-│   │   ├── memory-store.ts # 内存存储管理
-│   │   └── permissions.js  # 权限系统配置
+│   │   ├── permissions.js  # 权限系统配置
+│   │   └── redis.ts        # Redis连接和操作工具
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义

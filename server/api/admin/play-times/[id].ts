@@ -1,4 +1,5 @@
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -121,7 +122,17 @@ export default defineEventHandler(async (event) => {
           enabled: body.enabled !== undefined ? body.enabled : true
         }
       })
-      
+
+      // 清除相关缓存
+      try {
+        const cacheService = CacheService.getInstance()
+        await cacheService.clearSchedulesCache()
+        await cacheService.clearPlayTimesCache()
+        console.log('[Cache] 排期缓存已清除（播放时间更新）')
+      } catch (cacheError) {
+        console.warn('[Cache] 清除缓存失败:', cacheError)
+      }
+
       return updatedPlayTime
     } catch (error: any) {
       console.error('更新播出时段失败:', error)
@@ -175,7 +186,17 @@ export default defineEventHandler(async (event) => {
           ...(body.enabled !== undefined && { enabled: body.enabled })
         }
       })
-      
+
+      // 清除相关缓存
+      try {
+        const cacheService = CacheService.getInstance()
+        await cacheService.clearSchedulesCache()
+        await cacheService.clearPlayTimesCache()
+        console.log('[Cache] 排期缓存已清除（播放时间部分更新）')
+      } catch (cacheError) {
+        console.warn('[Cache] 清除缓存失败:', cacheError)
+      }
+
       return updatedPlayTime
     } catch (error: any) {
       console.error('部分更新播出时段失败:', error)
@@ -221,6 +242,19 @@ export default defineEventHandler(async (event) => {
         })
       }
       
+      // 清除相关缓存
+      try {
+        const cacheService = CacheService.getInstance()
+        await cacheService.clearSchedulesCache()
+        await cacheService.clearPlayTimesCache()
+        if (songs > 0) {
+          await cacheService.clearSongsCache()
+        }
+        console.log('[Cache] 缓存已清除（播放时间删除）')
+      } catch (cacheError) {
+        console.warn('[Cache] 清除缓存失败:', cacheError)
+      }
+
       return {
         message: '播出时段已成功删除',
         affected: { songs, schedules }

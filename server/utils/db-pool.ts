@@ -11,16 +11,18 @@ enum CircuitBreakerState {
 class DatabasePool {
   private isConnected = false
   private lastHealthCheck = 0
-  private healthCheckInterval = 30000 // 30秒
+  private healthCheckInterval = 60000 // 60秒
   private connectionAttempts = 0
-  private reconnectDelay = 1000
-  private maxReconnectDelay = 30000 // 最大延迟30秒
+  private reconnectDelay = 2000 // 云环境增加初始延迟
+  private maxReconnectDelay = 60000 // 最大延迟60秒
+  private maxConnectionAttempts = 10 // 最大重连尝试次数
+  private connectionTimeout = 30000 // 连接超时30秒
   
-  // 断路器相关属性
+  // 断路器相关属性 - 云环境优化
   private circuitBreakerState = CircuitBreakerState.CLOSED
   private failureCount = 0
   private failureThreshold = 5 // 失败阈值
-  private recoveryTimeout = 60000 // 恢复超时时间（1分钟）
+  private recoveryTimeout = 120000 // 恢复超时时间（2分钟）
   private lastFailureTime = 0
   private successCount = 0
   private halfOpenMaxRequests = 3 // 半开状态下最大请求数
@@ -728,6 +730,13 @@ class DatabasePool {
       return false
     }
     
+    // 检查最大重连次数
+    if (this.connectionAttempts >= this.maxConnectionAttempts) {
+      console.error(`[DB Pool] 已达到最大重连次数 ${this.maxConnectionAttempts}，停止重连`)
+      this.logConnectionEvent('MAX_RECONNECT_ATTEMPTS_REACHED', `已达到最大重连次数: ${this.maxConnectionAttempts}`)
+      return false
+    }
+    
     this.connectionAttempts++
     
     try {
@@ -765,14 +774,20 @@ class DatabasePool {
       this.recordErrorStats(errorType)
       
       // 指数退避：增加重连延迟
-      this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000) // 最大30秒
+      this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, this.maxReconnectDelay)
       
-      // 继续尝试重连（无限重试）
-      setTimeout(() => {
-        this.reconnect().catch(retryError => {
-          console.error('[DB Pool] 重连重试失败:', retryError)
-        })
-      }, this.reconnectDelay)
+      // 如果还没达到最大重连次数，继续尝试
+      if (this.connectionAttempts < this.maxConnectionAttempts) {
+        console.log(`[DB Pool] 将在 ${this.reconnectDelay}ms 后重试重连 (${this.connectionAttempts}/${this.maxConnectionAttempts})`)
+        setTimeout(() => {
+          this.reconnect().catch(retryError => {
+            console.error('[DB Pool] 重连重试失败:', retryError)
+          })
+        }, this.reconnectDelay)
+      } else {
+        console.error('[DB Pool] 已达到最大重连次数，停止重连尝试')
+        this.logConnectionEvent('RECONNECT_ATTEMPTS_EXHAUSTED', `重连尝试已用尽: ${this.connectionAttempts}/${this.maxConnectionAttempts}`)
+      }
       
       return false
     }

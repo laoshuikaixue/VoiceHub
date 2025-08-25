@@ -1,4 +1,5 @@
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -19,13 +20,28 @@ export default defineEventHandler(async (event) => {
   }
   
   try {
-    // 获取所有播出时段
-    const playTimes = await prisma.playTime.findMany({
+    // 尝试从缓存获取播放时间数据
+    const cacheService = CacheService.getInstance()
+    let playTimes = await cacheService.getPlayTimes()
+    
+    if (playTimes) {
+      return playTimes
+    }
+    
+    // 缓存中没有，从数据库获取所有播出时段
+    playTimes = await prisma.playTime.findMany({
       orderBy: [
         { enabled: 'desc' }, // 启用的排在前面
         { startTime: 'asc' } // 按开始时间排序
       ]
     })
+    
+    // 将数据存入缓存
+    try {
+      await cacheService.setPlayTimes(playTimes)
+    } catch (cacheError) {
+      console.warn('缓存播放时间数据失败:', cacheError)
+    }
     
     return playTimes
   } catch (error) {

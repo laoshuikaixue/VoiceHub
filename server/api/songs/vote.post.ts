@@ -1,6 +1,7 @@
 import { prisma } from '../../models/schema'
 import { createSongVotedNotification } from '../../services/notificationService'
 import { executeWithPool } from '~/server/utils/db-pool'
+import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -98,6 +99,12 @@ export default defineEventHandler(async (event) => {
           }
         })
 
+        // 清除歌曲列表缓存和统计缓存
+        const cacheService = CacheService.getInstance()
+        await cacheService.clearSongsCache()
+        await cacheService.clearStatsCache()
+        console.log('[Cache] 歌曲缓存和统计缓存已清除（取消投票）')
+
         return {
           success: true,
           message: '取消投票成功',
@@ -146,6 +153,12 @@ export default defineEventHandler(async (event) => {
             // 发送通知失败不影响主流程
           })
         }
+
+        // 清除歌曲列表缓存和统计缓存
+        const cacheService = CacheService.getInstance()
+        await cacheService.clearSongsCache()
+        await cacheService.clearStatsCache()
+        console.log('[Cache] 歌曲缓存和统计缓存已清除（投票）')
 
         return {
           success: true,

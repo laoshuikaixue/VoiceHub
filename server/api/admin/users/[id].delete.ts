@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -38,6 +39,17 @@ export default defineEventHandler(async (event) => {
     await prisma.user.delete({
       where: { id: parseInt(userId) }
     })
+
+    // 清除相关缓存
+    try {
+      const cacheService = CacheService.getInstance()
+      await cacheService.clearSongsCache()
+      await cacheService.clearSchedulesCache()
+      await cacheService.clearStatsCache()
+      console.log('[Cache] 歌曲、排期和统计缓存已清除（用户删除）')
+    } catch (cacheError) {
+      console.warn('[Cache] 清除缓存失败:', cacheError)
+    }
 
     return {
       success: true,

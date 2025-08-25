@@ -1,5 +1,6 @@
 import { createError, defineEventHandler } from 'h3'
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -12,6 +13,13 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    // 尝试从缓存获取数据
+    const cacheService = CacheService.getInstance()
+    const cachedStats = await cacheService.getRealtimeStats()
+    if (cachedStats) {
+      console.log('[Cache] 实时统计数据缓存命中')
+      return cachedStats
+    }
     // 获取当前时间相关的日期
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -185,7 +193,7 @@ export default defineEventHandler(async (event) => {
       })()
     ])
 
-    return {
+    const result = {
       activeUsers: activeUsersData.count,
       activeUsersList: activeUsersData.users,
       todayRequests,
@@ -193,6 +201,12 @@ export default defineEventHandler(async (event) => {
       peakHours,
       timestamp: now.toISOString()
     }
+
+    // 缓存结果
+    await cacheService.setRealtimeStats(result)
+    console.log('[Cache] 实时统计数据已缓存')
+
+    return result
   } catch (error) {
     throw createError({
       statusCode: 500,

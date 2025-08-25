@@ -1,4 +1,5 @@
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -152,6 +153,14 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // 清除系统设置缓存
+    try {
+      const cacheService = CacheService.getInstance()
+      await cacheService.clearSystemSettingsCache()
+    } catch (cacheError) {
+      console.warn('清除系统设置缓存失败:', cacheError)
+    }
+
     return settings
   } catch (error) {
     console.error('更新系统设置失败:', error)
