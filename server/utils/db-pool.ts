@@ -35,6 +35,57 @@ class DatabasePool {
   private lastPerformanceCheck = 0 // 上次性能检查时间
   private performanceCheckInterval = 300000 // 性能检查间隔（5分钟）
   
+  // 智能连接池管理相关属性
+  private queryFrequencyHistory: Array<{timestamp: number, count: number}> = [] // 查询频率历史
+  private currentMinuteQueries = 0 // 当前分钟查询数
+  private currentMinuteStart = Math.floor(Date.now() / 60000) * 60000 // 当前分钟开始时间
+  private lastRequestTime = 0 // 上次请求时间
+  private idleThreshold = 300000 // 空闲阈值（5分钟）
+  private isIdleMode = false // 是否处于空闲模式
+  private idleCheckInterval = 60000 // 空闲检查间隔（1分钟）
+  private lastIdleCheck = 0 // 上次空闲检查时间
+  
+  // 动态连接池配置
+  private minConnections = 1 // 最小连接数
+  private maxConnections = 5 // 最大连接数
+  private currentConnections = 1 // 当前连接数
+  private targetConnections = 1 // 目标连接数
+  private connectionAdjustmentThreshold = 10 // 连接调整阈值（查询数）
+  private highLoadThreshold = 30 // 高负载阈值（每分钟查询数）
+  private lowLoadThreshold = 5 // 低负载阈值（每分钟查询数）
+  
+  // 负载评估相关
+  private loadScore = 0 // 当前负载评分（0-100）
+  private loadHistory: number[] = [] // 负载历史记录
+  private loadHistorySize = 10 // 负载历史记录大小
+  
+  // 连接使用统计
+  private connectionUsageStats = {
+    totalConnectionsCreated: 0,
+    totalConnectionsDestroyed: 0,
+    connectionReuseCount: 0,
+    averageConnectionLifetime: 0,
+    peakConnections: 0,
+    connectionCreationTime: [] as number[],
+    connectionLifetimes: [] as number[]
+  }
+  
+  // 资源监控
+  private resourceMonitoring = {
+    memoryUsage: {
+      heapUsed: 0,
+      heapTotal: 0,
+      external: 0,
+      rss: 0
+    },
+    cpuUsage: {
+      user: 0,
+      system: 0
+    },
+    lastResourceCheck: 0,
+    resourceCheckInterval: 30000 // 30秒
+  }
+  
   // 连接状态监控和日志相关属性
   private connectionEvents: Array<{timestamp: number, event: string, details?: string}> = [] // 连接事件历史
   private maxEventHistory = 50 // 最大事件历史记录数
@@ -49,6 +100,7 @@ class DatabasePool {
   constructor() {
     this.logConnectionEvent('POOL_INITIALIZED', '数据库连接池启动')
     this.initialize()
+    this.startIntelligentPoolManagement()
   }
   
   // 记录连接事件
@@ -138,6 +190,132 @@ class DatabasePool {
     }
     
     this.totalQueries++
+    
+    // 更新智能负载监控
+    this.updateLoadMonitoring(responseTime)
+  }
+  
+  // 智能负载监控更新
+  private updateLoadMonitoring(responseTime?: number): void {
+    const now = Date.now()
+    this.lastRequestTime = now
+    
+    // 更新当前分钟查询计数
+    const currentMinute = Math.floor(now / 60000) * 60000
+    if (currentMinute !== this.currentMinuteStart) {
+      // 新的分钟开始，保存上一分钟的数据
+      if (this.currentMinuteQueries > 0) {
+        this.queryFrequencyHistory.push({
+          timestamp: this.currentMinuteStart,
+          count: this.currentMinuteQueries
+        })
+        
+        // 保持历史记录在限制范围内
+        if (this.queryFrequencyHistory.length > 60) { // 保留最近60分钟
+          this.queryFrequencyHistory.shift()
+        }
+      }
+      
+      this.currentMinuteStart = currentMinute
+      this.currentMinuteQueries = 1
+    } else {
+      this.currentMinuteQueries++
+    }
+    
+    // 计算负载评分（如果提供了响应时间）
+    if (responseTime !== undefined) {
+      this.calculateLoadScore(responseTime)
+    }
+    
+    // 检查是否需要调整连接池
+    this.evaluateConnectionPoolAdjustment()
+    
+    // 检查空闲状态
+    this.checkIdleStatus()
+  }
+  
+  // 计算负载评分（0-100）
+  private calculateLoadScore(responseTime: number): void {
+    let score = 0
+    
+    // 基于查询频率的评分（40%权重）
+    const frequencyScore = Math.min((this.currentMinuteQueries / this.highLoadThreshold) * 40, 40)
+    score += frequencyScore
+    
+    // 基于响应时间的评分（40%权重）
+    const responseTimeScore = Math.min((responseTime / this.slowQueryThreshold) * 40, 40)
+    score += responseTimeScore
+    
+    // 基于平均响应时间的评分（20%权重）
+    const avgResponseTimeScore = Math.min((this.averageResponseTime / this.slowQueryThreshold) * 20, 20)
+    score += avgResponseTimeScore
+    
+    this.loadScore = Math.min(score, 100)
+    
+    // 更新负载历史
+    this.loadHistory.push(this.loadScore)
+    if (this.loadHistory.length > this.loadHistorySize) {
+      this.loadHistory.shift()
+    }
+    
+    // 记录高负载情况
+    if (this.loadScore > 70) {
+      console.warn(`[DB Pool] 检测到高负载，负载评分: ${this.loadScore.toFixed(1)}, 查询频率: ${this.currentMinuteQueries}/min, 响应时间: ${responseTime}ms`)
+    }
+  }
+  
+  // 评估连接池调整需求
+  private evaluateConnectionPoolAdjustment(): void {
+    // 只有在有足够数据时才进行评估
+    if (this.loadHistory.length < 3) return
+    
+    const avgLoad = this.loadHistory.reduce((sum, load) => sum + load, 0) / this.loadHistory.length
+    const currentLoad = this.loadScore
+    
+    // 计算目标连接数
+    let newTargetConnections = this.targetConnections
+    
+    if (avgLoad > 60 && currentLoad > 70) {
+      // 高负载，增加连接
+      newTargetConnections = Math.min(this.targetConnections + 1, this.maxConnections)
+    } else if (avgLoad < 20 && currentLoad < 30 && this.currentMinuteQueries < this.lowLoadThreshold) {
+      // 低负载，减少连接
+      newTargetConnections = Math.max(this.targetConnections - 1, this.minConnections)
+    }
+    
+    if (newTargetConnections !== this.targetConnections) {
+      console.log(`[DB Pool] 负载评估建议调整连接数: ${this.targetConnections} -> ${newTargetConnections} (负载评分: ${avgLoad.toFixed(1)})`)
+      this.targetConnections = newTargetConnections
+      this.adjustConnectionPool().catch(error => {
+        console.error('[DB Pool] 连接池调整失败:', error)
+      })
+    }
+  }
+  
+  // 检查空闲状态
+  private checkIdleStatus(): void {
+    const now = Date.now()
+    
+    // 定期检查空闲状态
+    if (now - this.lastIdleCheck > this.idleCheckInterval) {
+      this.lastIdleCheck = now
+      
+      const timeSinceLastRequest = now - this.lastRequestTime
+      
+      if (!this.isIdleMode && timeSinceLastRequest > this.idleThreshold) {
+        // 进入空闲模式
+        console.log(`[DB Pool] 检测到空闲状态，上次请求时间: ${timeSinceLastRequest}ms 前`)
+        this.enterIdleMode().catch(error => {
+          console.error('[DB Pool] 进入空闲模式失败:', error)
+        })
+      } else if (this.isIdleMode && timeSinceLastRequest < this.idleCheckInterval) {
+        // 退出空闲模式
+        console.log('[DB Pool] 检测到新活动，退出空闲模式')
+        this.exitIdleMode().catch(error => {
+          console.error('[DB Pool] 退出空闲模式失败:', error)
+        })
+      }
+    }
   }
   
   // 性能健康检查
@@ -261,7 +439,286 @@ class DatabasePool {
     }
   }
   
-  // 重新连接数据库
+  // 动态调整连接池
+  async adjustConnectionPool(): Promise<void> {
+    if (this.currentConnections === this.targetConnections) {
+      return // 已经是目标连接数
+    }
+    
+    const adjustment = this.targetConnections - this.currentConnections
+    console.log(`[DB Pool] 开始调整连接池: ${this.currentConnections} -> ${this.targetConnections} (${adjustment > 0 ? '+' : ''}${adjustment})`)
+    
+    try {
+      if (adjustment > 0) {
+        // 增加连接
+        await this.scaleUpConnections(adjustment)
+      } else {
+        // 减少连接
+        await this.scaleDownConnections(Math.abs(adjustment))
+      }
+      
+      this.currentConnections = this.targetConnections
+      this.logConnectionEvent('CONNECTION_POOL_ADJUSTED', `连接数调整为: ${this.currentConnections}`)
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('[DB Pool] 连接池调整失败:', errorMessage)
+      this.logConnectionEvent('CONNECTION_POOL_ADJUSTMENT_FAILED', errorMessage)
+    }
+  }
+  
+  // 扩展连接数
+  private async scaleUpConnections(count: number): Promise<void> {
+    console.log(`[DB Pool] 扩展连接池，增加 ${count} 个连接`)
+    
+    // 对于Prisma，我们通过预热连接来模拟连接池扩展
+    for (let i = 0; i < count; i++) {
+      try {
+        await this.warmUpConnection()
+        // 记录连接创建统计
+        this.recordConnectionCreation()
+        console.log(`[DB Pool] 成功预热连接 ${i + 1}/${count}`)
+      } catch (error) {
+        console.warn(`[DB Pool] 预热连接 ${i + 1}/${count} 失败:`, error)
+      }
+    }
+  }
+  
+  // 缩减连接数
+  private async scaleDownConnections(count: number): Promise<void> {
+    console.log(`[DB Pool] 缩减连接池，减少 ${count} 个连接`)
+    
+    // 对于Prisma，我们通过断开并重连来模拟连接池缩减
+    try {
+      // 记录连接销毁统计
+      for (let i = 0; i < count; i++) {
+        this.recordConnectionDestruction()
+      }
+      await prisma.$disconnect()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await prisma.$connect()
+      console.log(`[DB Pool] 连接池缩减完成`)
+    } catch (error) {
+      console.warn('[DB Pool] 连接池缩减过程中出现错误:', error)
+    }
+  }
+  
+  // 连接预热
+  private async warmUpConnection(): Promise<void> {
+    try {
+      await prisma.$queryRaw`SELECT 1 as warmup`
+    } catch (error) {
+      throw new Error(`连接预热失败: ${error}`)
+    }
+  }
+  
+  // 进入空闲模式
+  async enterIdleMode(): Promise<void> {
+    if (this.isIdleMode) return
+    
+    console.log('[DB Pool] 进入空闲模式，关闭所有连接以节省资源')
+    this.isIdleMode = true
+    
+    try {
+      // 断开所有连接
+      await prisma.$disconnect()
+      this.isConnected = false
+      this.currentConnections = 0
+      
+      this.logConnectionEvent('IDLE_MODE_ENTERED', '已进入空闲模式，所有连接已关闭')
+      console.log('[DB Pool] 空闲模式激活，资源已释放')
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('[DB Pool] 进入空闲模式失败:', errorMessage)
+      this.logConnectionEvent('IDLE_MODE_ENTER_FAILED', errorMessage)
+    }
+  }
+  
+  // 退出空闲模式
+  async exitIdleMode(): Promise<void> {
+    if (!this.isIdleMode) return
+    
+    console.log('[DB Pool] 退出空闲模式，恢复连接池')
+    this.isIdleMode = false
+    
+    try {
+      // 重新建立连接
+      await prisma.$connect()
+      
+      // 验证连接
+      const isConnected = await this.ensureConnection()
+      
+      if (isConnected) {
+        this.currentConnections = this.minConnections
+        this.targetConnections = this.minConnections
+        
+        // 预热连接
+        await this.warmUpConnection()
+        
+        this.logConnectionEvent('IDLE_MODE_EXITED', '已退出空闲模式，连接池已恢复')
+        console.log('[DB Pool] 空闲模式已退出，连接池已恢复')
+        
+      } else {
+        throw new Error('连接验证失败')
+      }
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('[DB Pool] 退出空闲模式失败:', errorMessage)
+      this.logConnectionEvent('IDLE_MODE_EXIT_FAILED', errorMessage)
+      
+      // 重试退出空闲模式
+      setTimeout(() => {
+        this.exitIdleMode().catch(retryError => {
+          console.error('[DB Pool] 重试退出空闲模式失败:', retryError)
+        })
+      }, 5000)
+    }
+   }
+   
+   // 启动智能连接池管理定时任务
+   private startIntelligentPoolManagement(): void {
+     // 每分钟检查一次空闲状态和连接池优化
+     setInterval(() => {
+       this.performIntelligentPoolMaintenance().catch(error => {
+         console.error('[DB Pool] 智能连接池维护失败:', error)
+       })
+     }, 60000) // 1分钟
+     
+     console.log('[DB Pool] 智能连接池管理定时任务已启动')
+   }
+   
+   // 执行智能连接池维护
+    private async performIntelligentPoolMaintenance(): Promise<void> {
+      try {
+        // 更新资源监控
+        this.updateResourceMonitoring()
+        
+        // 检查空闲状态
+        this.checkIdleStatus()
+        
+        // 如果不在空闲模式，评估连接池调整
+        if (!this.isIdleMode) {
+          this.evaluateConnectionPoolAdjustment()
+          await this.adjustConnectionPool()
+        }
+        
+        // 清理过期的查询频率历史记录
+        this.cleanupQueryHistory()
+        
+        // 记录维护事件
+        const memUsedMB = Math.round(this.resourceMonitoring.memoryUsage.heapUsed / 1024 / 1024)
+        this.logConnectionEvent('INTELLIGENT_POOL_MAINTENANCE', 
+          `负载评分: ${this.loadScore.toFixed(2)}, 连接数: ${this.currentConnections}/${this.targetConnections}, 空闲模式: ${this.isIdleMode}, 内存: ${memUsedMB}MB`)
+        
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.error('[DB Pool] 智能连接池维护过程中出现错误:', errorMessage)
+        this.logConnectionEvent('INTELLIGENT_POOL_MAINTENANCE_ERROR', errorMessage)
+      }
+    }
+   
+   // 清理过期的查询频率历史记录
+    private cleanupQueryHistory(): void {
+      const now = Date.now()
+      const tenMinutesAgo = now - (10 * 60 * 1000) // 10分钟前
+      
+      this.queryFrequencyHistory = this.queryFrequencyHistory.filter(
+        record => record.timestamp > tenMinutesAgo
+      )
+    }
+    
+    // 更新资源监控
+    private updateResourceMonitoring(): void {
+      const now = Date.now()
+      
+      // 检查是否需要更新资源监控
+      if (now - this.resourceMonitoring.lastResourceCheck < this.resourceMonitoring.resourceCheckInterval) {
+        return
+      }
+      
+      try {
+        // 获取内存使用情况
+        const memUsage = process.memoryUsage()
+        this.resourceMonitoring.memoryUsage = {
+          heapUsed: memUsage.heapUsed,
+          heapTotal: memUsage.heapTotal,
+          external: memUsage.external,
+          rss: memUsage.rss
+        }
+        
+        // 获取CPU使用情况
+        const cpuUsage = process.cpuUsage()
+        this.resourceMonitoring.cpuUsage = {
+          user: cpuUsage.user,
+          system: cpuUsage.system
+        }
+        
+        this.resourceMonitoring.lastResourceCheck = now
+        
+        // 记录资源监控事件
+        const memUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024)
+        const memTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024)
+        
+        this.logConnectionEvent('RESOURCE_MONITORING', 
+          `内存: ${memUsedMB}MB/${memTotalMB}MB, CPU: ${cpuUsage.user}μs/${cpuUsage.system}μs`)
+        
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.error('[DB Pool] 资源监控更新失败:', errorMessage)
+      }
+    }
+    
+    // 记录连接创建
+    private recordConnectionCreation(): void {
+      const now = Date.now()
+      this.connectionUsageStats.totalConnectionsCreated++
+      this.connectionUsageStats.connectionCreationTime.push(now)
+      
+      // 更新峰值连接数
+      if (this.currentConnections > this.connectionUsageStats.peakConnections) {
+        this.connectionUsageStats.peakConnections = this.currentConnections
+      }
+      
+      // 限制创建时间历史记录大小
+      if (this.connectionUsageStats.connectionCreationTime.length > 100) {
+        this.connectionUsageStats.connectionCreationTime = 
+          this.connectionUsageStats.connectionCreationTime.slice(-50)
+      }
+      
+      console.log(`[DB Pool] 连接创建记录: 总创建数 ${this.connectionUsageStats.totalConnectionsCreated}, 当前连接数 ${this.currentConnections}`)
+    }
+    
+    // 记录连接销毁
+    private recordConnectionDestruction(connectionLifetime?: number): void {
+      this.connectionUsageStats.totalConnectionsDestroyed++
+      
+      if (connectionLifetime !== undefined) {
+        this.connectionUsageStats.connectionLifetimes.push(connectionLifetime)
+        
+        // 计算平均连接生命周期
+        const totalLifetime = this.connectionUsageStats.connectionLifetimes.reduce((sum, lifetime) => sum + lifetime, 0)
+        this.connectionUsageStats.averageConnectionLifetime = 
+          totalLifetime / this.connectionUsageStats.connectionLifetimes.length
+        
+        // 限制生命周期历史记录大小
+        if (this.connectionUsageStats.connectionLifetimes.length > 100) {
+          this.connectionUsageStats.connectionLifetimes = 
+            this.connectionUsageStats.connectionLifetimes.slice(-50)
+        }
+      }
+      
+      console.log(`[DB Pool] 连接销毁记录: 总销毁数 ${this.connectionUsageStats.totalConnectionsDestroyed}, 平均生命周期 ${Math.round(this.connectionUsageStats.averageConnectionLifetime)}ms`)
+    }
+    
+    // 记录连接复用
+    private recordConnectionReuse(): void {
+      this.connectionUsageStats.connectionReuseCount++
+      console.log(`[DB Pool] 连接复用记录: 总复用次数 ${this.connectionUsageStats.connectionReuseCount}`)
+    }
+   
+   // 重新连接数据库
   async reconnect(): Promise<boolean> {
     console.log('[DB Pool] 开始重连数据库...')
     
@@ -374,12 +831,22 @@ class DatabasePool {
   
   // 执行数据库操作，带连接检查和断路器保护
   async execute<T>(operation: () => Promise<T>, operationName = 'Unknown'): Promise<T> {
+    // 更新负载监控
+    this.updateLoadMonitoring(0)
+    
+    // 如果处于空闲模式，先退出空闲模式
+    if (this.isIdleMode) {
+      await this.exitIdleMode()
+    }
+    
     // 检查断路器状态
     if (!this.checkCircuitBreaker()) {
       const error = new Error(`数据库断路器已打开，拒绝执行操作: ${operationName}`)
       console.warn(`[DB Pool] ${error.message}`)
       throw error
     }
+    
+    const startTime = Date.now()
     
     // 确保连接可用
     const isConnected = await this.ensureConnection()
@@ -395,7 +862,13 @@ class DatabasePool {
       console.log(`[DB Pool] 操作成功: ${operationName}`)
       
       // 记录成功
+      const responseTime = Date.now() - startTime
       this.recordSuccess()
+      this.updateResponseTimeStats(responseTime)
+      
+      // 记录连接复用统计
+      this.recordConnectionReuse()
+      
       return result
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -479,6 +952,7 @@ class DatabasePool {
     const slowQueryRatio = this.totalQueries > 0 ? this.slowQueryCount / this.totalQueries : 0
     const uptime = now - this.connectionStartTime
     const currentDowntime = this.currentDowntimeStart > 0 ? now - this.currentDowntimeStart : 0
+    const idleTime = now - this.lastRequestTime
     
     // 转换错误统计为对象
     const errorStatsObj: Record<string, number> = {}
@@ -495,6 +969,54 @@ class DatabasePool {
         lastSuccessfulConnection: this.lastSuccessfulConnection ? new Date(this.lastSuccessfulConnection).toISOString() : null,
         healthCheckInterval: this.healthCheckInterval,
         reconnectDelay: this.reconnectDelay
+      },
+      
+      // 智能连接池状态
+      intelligentPool: {
+        isIdleMode: this.isIdleMode,
+        currentConnections: this.currentConnections,
+        targetConnections: this.targetConnections,
+        minConnections: this.minConnections,
+        maxConnections: this.maxConnections,
+        loadScore: Math.round(this.loadScore * 100) / 100,
+        idleTime: idleTime,
+        idleTimeFormatted: this.formatDuration(idleTime),
+        idleThreshold: this.idleThreshold,
+        lastRequestTime: this.lastRequestTime ? new Date(this.lastRequestTime).toISOString() : null,
+        queryFrequency: {
+          currentMinute: this.currentMinuteQueries,
+          currentMinuteStart: new Date(this.currentMinuteStart).toISOString(),
+          historyLength: this.queryFrequencyHistory.length,
+          recentHistory: this.queryFrequencyHistory.slice(-5).map(record => ({
+            timestamp: new Date(record.timestamp).toISOString(),
+            count: record.count
+          }))
+        },
+        loadHistory: this.loadHistory.slice(-5)
+      },
+      
+      // 连接使用统计
+      connectionUsageStats: {
+        totalConnectionsCreated: this.connectionUsageStats.totalConnectionsCreated,
+        totalConnectionsDestroyed: this.connectionUsageStats.totalConnectionsDestroyed,
+        connectionReuseCount: this.connectionUsageStats.connectionReuseCount,
+        averageConnectionLifetime: this.connectionUsageStats.averageConnectionLifetime,
+        peakConnections: this.connectionUsageStats.peakConnections,
+        connectionCreationTime: this.connectionUsageStats.connectionCreationTime,
+        connectionLifetimes: this.connectionUsageStats.connectionLifetimes.slice(-10) // 只显示最近10个
+      },
+      
+      // 资源监控
+      resourceMonitoring: {
+        memoryUsage: {
+          heapUsed: Math.round(this.resourceMonitoring.memoryUsage.heapUsed / 1024 / 1024), // MB
+          heapTotal: Math.round(this.resourceMonitoring.memoryUsage.heapTotal / 1024 / 1024), // MB
+          external: Math.round(this.resourceMonitoring.memoryUsage.external / 1024 / 1024), // MB
+          rss: Math.round(this.resourceMonitoring.memoryUsage.rss / 1024 / 1024) // MB
+        },
+        cpuUsage: this.resourceMonitoring.cpuUsage,
+         lastResourceCheckTime: this.resourceMonitoring.lastResourceCheckTime,
+         resourceCheckInterval: this.resourceMonitoring.resourceCheckInterval
       },
       
       // 断路器状态
