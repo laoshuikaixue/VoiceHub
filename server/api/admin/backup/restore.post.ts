@@ -879,6 +879,102 @@ export default defineEventHandler(async (event) => {
                     }
                     break
 
+                  case 'votes':
+                    // 验证外键约束
+                    let validVoteUserId = record.userId
+                    let validVoteSongId = record.songId
+                    
+                    // 使用ID映射查找实际的用户ID
+                    if (record.userId) {
+                      const mappedUserId = userIdMapping.get(record.userId)
+                      if (mappedUserId) {
+                        validVoteUserId = mappedUserId
+                      } else {
+                        // 尝试直接查找用户ID
+                        const userExists = await tx.user.findUnique({
+                          where: { id: record.userId }
+                        })
+                        if (!userExists) {
+                          console.warn(`投票记录的用户ID ${record.userId} 不存在，跳过此记录`)
+                          return // 跳过此记录，因为userId是必需的
+                        }
+                      }
+                    } else {
+                      console.warn(`投票记录缺少userId，跳过此记录`)
+                      return // 跳过此记录，因为userId是必需的
+                    }
+                    
+                    // 使用ID映射查找实际的歌曲ID
+                    if (record.songId) {
+                      const mappedSongId = songIdMapping.get(record.songId)
+                      if (mappedSongId) {
+                        validVoteSongId = mappedSongId
+                      } else {
+                        // 尝试直接查找歌曲ID
+                        const songExists = await tx.song.findUnique({
+                          where: { id: record.songId }
+                        })
+                        if (!songExists) {
+                          console.warn(`投票记录的歌曲ID ${record.songId} 不存在，跳过此记录`)
+                          return // 跳过此记录，因为songId是必需的
+                        }
+                      }
+                    } else {
+                      console.warn(`投票记录缺少songId，跳过此记录`)
+                      return // 跳过此记录，因为songId是必需的
+                    }
+                    
+                    // 构建投票数据
+                    const voteData = {
+                      userId: validVoteUserId,
+                      songId: validVoteSongId,
+                      createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+                    }
+                    
+                    if (mode === 'merge') {
+                      // 检查是否存在相同的投票（同一用户对同一歌曲的投票）
+                      const existingVote = await tx.vote.findFirst({
+                        where: {
+                          userId: validVoteUserId,
+                          songId: validVoteSongId
+                        }
+                      })
+                      
+                      if (existingVote) {
+                        // 如果存在相同投票，更新它
+                        await tx.vote.update({
+                          where: { id: existingVote.id },
+                          data: voteData
+                        })
+                      } else {
+                        // 如果不存在，创建新投票（不指定ID，让数据库自动生成）
+                        await tx.vote.create({ data: voteData })
+                      }
+                    } else {
+                      // 完全恢复模式，检查ID是否已存在
+                      const existingVoteWithId = await tx.vote.findUnique({
+                        where: { id: record.id }
+                      })
+                      
+                      if (existingVoteWithId) {
+                        // ID已存在，使用upsert策略更新现有投票
+                        console.warn(`投票ID ${record.id} 已存在，将更新现有投票`)
+                        await tx.vote.update({
+                          where: { id: record.id },
+                          data: voteData
+                        })
+                      } else {
+                        // ID不存在，使用原始ID创建
+                        await tx.vote.create({ 
+                          data: {
+                            ...voteData,
+                            id: record.id
+                          }
+                        })
+                      }
+                    }
+                    break
+
                   // 其他表的处理逻辑...
                   default:
                     console.warn(`暂不支持恢复表: ${tableName}`)

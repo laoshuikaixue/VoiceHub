@@ -306,7 +306,7 @@ const handleChangePassword = async () => {
         router.push('/login')
       }, 2000)
     }
-  } catch (err: any) {
+  } catch (err) {
     // 提取错误信息，支持多种错误格式
     if (err.data && err.data.statusMessage) {
       error.value = err.data.statusMessage
