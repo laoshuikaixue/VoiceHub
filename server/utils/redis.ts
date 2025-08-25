@@ -35,7 +35,9 @@ class RedisPool {
       }
     },
     // 启用离线队列，在断线时缓存命令
-    enableOfflineQueue: false
+    enableOfflineQueue: false,
+    // 确保使用UTF-8编码
+    encoding: 'utf8'
   }
 
   constructor() {

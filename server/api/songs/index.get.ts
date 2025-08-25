@@ -181,7 +181,7 @@ export default defineEventHandler(async (event) => {
     
     // 缓存歌曲列表
     await cacheService.setSongList(cacheKey, result, user?.id)
-    console.log(`[Cache] 歌曲列表已缓存，用户类型: ${user ? '登录用户' : '未登录用户'}，缓存键: ${cacheKey}`)}],"thought":"修改API逻辑，区分登录和未登录用户的数据返回和缓存策略"}}}
+    console.log(`[Cache] 歌曲列表已缓存，用户类型: ${user ? '登录用户' : '未登录用户'}，缓存键: ${cacheKey}`)
     
     return result
 

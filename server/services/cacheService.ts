@@ -51,23 +51,141 @@ class CacheService {
     return baseTTL + offset
   }
 
-  // 序列化数据
+  // 序列化数据（确保UTF-8编码）
   private serialize(data: any): string {
-    return JSON.stringify(data)
+    try {
+      // 在序列化前清理数据中的乱码字符
+      const cleanedData = this.cleanCorruptedData(data)
+      
+      // 使用JSON.stringify确保正确处理中文字符
+      const jsonString = JSON.stringify(cleanedData)
+      
+      // 验证序列化后的字符串是否包含有效的UTF-8字符
+      if (this.containsInvalidUTF8(jsonString)) {
+        console.warn('[Cache] 检测到编码问题，进行二次清理')
+        // 对JSON字符串本身进行清理
+        const cleanedJsonString = this.cleanCorruptedString(jsonString)
+        
+        // 验证清理后的字符串是否为有效JSON
+        try {
+          JSON.parse(cleanedJsonString)
+          return cleanedJsonString
+        } catch {
+          console.error('[Cache] 清理后的数据不是有效JSON，使用原始数据')
+          return JSON.stringify(cleanedData, null, 0)
+        }
+      }
+      
+      return jsonString
+    } catch (error) {
+      console.error('[Cache] 序列化失败:', error)
+      throw new Error(`序列化失败: ${error}`)
+    }
   }
 
-  // 反序列化数据
+  // 反序列化数据（确保UTF-8编码）
   private deserialize<T>(data: string | null): T | null {
     if (!data) return null
+    
     try {
-      return JSON.parse(data) as T
+      // 检查数据是否包含乱码字符
+      if (this.containsInvalidUTF8(data)) {
+        console.warn('[Cache] 检测到缓存数据包含乱码字符:', data.substring(0, 100))
+        return null
+      }
+      
+      const parsed = JSON.parse(data) as T
+      
+      // 递归检查解析后的对象是否包含乱码
+      if (this.hasCorruptedText(parsed)) {
+        console.warn('[Cache] 解析后的数据包含乱码，返回null')
+        return null
+      }
+      
+      return parsed
     } catch (error) {
       console.error('[Cache] 反序列化失败:', error)
       return null
     }
   }
 
-  // 设置缓存
+  // 检查字符串是否包含无效的UTF-8字符或乱码
+  private containsInvalidUTF8(str: string): boolean {
+    // 检查是否包含替换字符（�）或其他常见乱码模式
+    const invalidPatterns = [
+      /\uFFFD/g, // Unicode替换字符
+      /�/g,      // 乱码字符
+      // 移除对正常JSON Unicode转义的误判
+      // /\\u[0-9a-fA-F]{4}/g // 这会误判正常的JSON Unicode转义
+    ]
+    
+    // 检查是否包含明显的乱码模式
+    const corruptedPatterns = [
+      /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, // 控制字符（除了\t\n\r）
+      /[\uD800-\uDFFF]/g, // 孤立的代理对字符
+    ]
+    
+    return invalidPatterns.some(pattern => pattern.test(str)) ||
+           corruptedPatterns.some(pattern => pattern.test(str))
+  }
+
+  // 递归检查对象是否包含乱码文本
+  private hasCorruptedText(obj: any): boolean {
+    if (typeof obj === 'string') {
+      return this.containsInvalidUTF8(obj)
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.some(item => this.hasCorruptedText(item))
+    }
+    
+    if (obj && typeof obj === 'object') {
+      return Object.values(obj).some(value => this.hasCorruptedText(value))
+    }
+    
+    return false
+  }
+
+  // 清理字符串中的乱码字符
+  private cleanCorruptedString(str: string): string {
+    if (typeof str !== 'string') return str
+    
+    return str
+      // 移除Unicode替换字符
+      .replace(/\uFFFD/g, '')
+      // 移除乱码字符
+      .replace(/�/g, '')
+      // 移除控制字符（保留\t\n\r）
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+      // 移除孤立的代理对字符
+      .replace(/[\uD800-\uDFFF]/g, '')
+      // 规范化Unicode字符
+      .normalize('NFC')
+  }
+
+  // 递归清理对象中的乱码文本
+  private cleanCorruptedData(obj: any): any {
+    if (typeof obj === 'string') {
+      return this.cleanCorruptedString(obj)
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.cleanCorruptedData(item))
+    }
+    
+    if (obj && typeof obj === 'object') {
+      const cleaned: any = {}
+      for (const [key, value] of Object.entries(obj)) {
+        const cleanedKey = this.cleanCorruptedString(key)
+        cleaned[cleanedKey] = this.cleanCorruptedData(value)
+      }
+      return cleaned
+    }
+    
+    return obj
+  }
+
+  // 设置缓存（带编码验证）
   private async setCache(key: string, data: any, ttl: number): Promise<boolean> {
     if (!isRedisReady()) return false
 
@@ -75,12 +193,59 @@ class CacheService {
       const client = (await import('../utils/redis')).getRedisClient()
       if (!client) return false
       
-      await client.setEx(key, this.getRandomTTL(ttl), this.serialize(data))
-      return true
+      try {
+        // 序列化数据（内部已包含UTF-8验证）
+        const serializedData = this.serialize(data)
+        
+        // 在开发环境中添加详细的调试信息
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Cache Debug] 准备写入缓存: ${key}`)
+          console.log(`[Cache Debug] 数据长度: ${serializedData.length}`)
+          console.log(`[Cache Debug] 数据预览: ${serializedData.substring(0, 200)}...`)
+        }
+        
+        // 验证序列化后的数据长度，防止过大的数据
+        if (serializedData.length > 10 * 1024 * 1024) { // 10MB限制
+          console.warn(`[Cache] 缓存数据过大 (${serializedData.length} bytes): ${key}`)
+          return false
+        }
+        
+        // 简化验证逻辑，只检查明显的乱码
+        if (this.containsInvalidUTF8(serializedData)) {
+          console.warn(`[Cache] 检测到潜在编码问题，但继续写入: ${key}`)
+          // 不再阻止写入，只是记录警告
+        }
+        
+        // 写入Redis
+        await client.setEx(key, this.getRandomTTL(ttl), serializedData)
+        
+        // 简化验证，只检查数据是否成功写入
+        if (process.env.NODE_ENV === 'development') {
+          const verification = await client.get(key)
+          if (!verification) {
+            console.error(`[Cache] 缓存写入失败，数据未找到: ${key}`)
+            return false
+          }
+          
+          // 验证数据是否可以正确解析
+          try {
+            JSON.parse(verification)
+          } catch (parseError) {
+            console.error(`[Cache] 缓存数据解析失败: ${key}`, parseError)
+            await client.del(key)
+            return false
+          }
+        }
+        
+        return true
+      } catch (error) {
+        console.error(`[Cache] 设置缓存失败 ${key}:`, error)
+        return false
+      }
     }) || false
   }
 
-  // 获取缓存
+  // 获取缓存（带编码验证）
   private async getCache<T>(key: string): Promise<T | null> {
     if (!isRedisReady()) return null
 
@@ -88,8 +253,36 @@ class CacheService {
       const client = (await import('../utils/redis')).getRedisClient()
       if (!client) return null
       
-      const data = await client.get(key)
-      return this.deserialize<T>(data)
+      try {
+        const data = await client.get(key)
+        
+        if (!data) {
+          return null
+        }
+        
+        // 检查原始数据是否包含乱码
+        if (this.containsInvalidUTF8(data)) {
+          console.warn(`[Cache] 检测到缓存键 ${key} 包含乱码数据，删除该缓存`)
+          // 删除损坏的缓存
+          await client.del(key)
+          return null
+        }
+        
+        // 反序列化数据（内部已包含UTF-8验证）
+        const result = this.deserialize<T>(data)
+        
+        // 如果反序列化返回null（可能因为乱码），记录日志
+        if (result === null && data.length > 0) {
+          console.warn(`[Cache] 缓存键 ${key} 反序列化失败，可能存在编码问题`)
+          // 删除有问题的缓存
+          await client.del(key)
+        }
+        
+        return result
+      } catch (error) {
+        console.error(`[Cache] 获取缓存失败 ${key}:`, error)
+        return null
+      }
     }) || null
   }
 
@@ -202,17 +395,11 @@ class CacheService {
   // ==================== 歌曲相关缓存 ====================
 
   // 获取歌曲列表缓存
-  async getSongList(semester?: string, userId?: number): Promise<any[] | null> {
-    const key = this.generateKey(
-      CACHE_PREFIXES.SONGS, 
-      'list', 
-      semester || 'all',
-      userId ? `user_${userId}` : 'public'
-    )
-    
-    const cached = await this.getCache<any[]>(key)
+  async getSongList(cacheKey: string, userId?: number): Promise<any[] | null> {
+    // 直接使用传入的缓存键，不再重新生成
+    const cached = await this.getCache<any[]>(cacheKey)
     if (cached) {
-      console.log(`[Cache] 歌曲列表缓存命中: ${key}`)
+      console.log(`[Cache] 歌曲列表缓存命中: ${cacheKey}`)
       // 检查是否是空结果缓存
       if (Array.isArray(cached) && cached.length === 1 && cached[0]?.__empty) {
         return []
@@ -224,20 +411,15 @@ class CacheService {
   }
 
   // 设置歌曲列表缓存
-  async setSongList(songs: any[], semester?: string, userId?: number): Promise<void> {
-    const key = this.generateKey(
-      CACHE_PREFIXES.SONGS, 
-      'list', 
-      semester || 'all',
-      userId ? `user_${userId}` : 'public'
-    )
+  async setSongList(cacheKey: string, songs: any[], userId?: number): Promise<void> {
+    // 直接使用传入的缓存键，不再重新生成
     
     // 如果是空结果，设置特殊标记防止缓存穿透
     const cacheData = songs.length === 0 ? [{ __empty: true }] : songs
     const ttl = songs.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SONGS_LIST
     
-    await this.setCache(key, cacheData, ttl)
-    console.log(`[Cache] 歌曲列表已缓存: ${key}, 数量: ${songs.length}`)
+    await this.setCache(cacheKey, cacheData, ttl)
+    console.log(`[Cache] 歌曲列表已缓存: ${cacheKey}, 数量: ${songs.length}`)
   }
 
   // 获取歌曲数量缓存
@@ -277,6 +459,113 @@ class CacheService {
     }
     
     console.log(`[Cache] 歌曲相关缓存已清除${semester ? ` (学期: ${semester})` : ''}`)
+  }
+
+  // 清理损坏的缓存数据（UTF-8编码问题）
+  async cleanCorruptedCache(): Promise<void> {
+    if (!isRedisReady()) {
+      console.log('[Cache] Redis未就绪，跳过损坏缓存清理')
+      return
+    }
+
+    await executeRedisCommand(async () => {
+      const client = (await import('../utils/redis')).getRedisClient()
+      if (!client) return
+
+      try {
+        console.log('[Cache] 开始清理损坏的缓存数据...')
+        
+        // 获取所有缓存键
+        const keys = await client.keys('*')
+        let corruptedCount = 0
+        let checkedCount = 0
+        let repairedCount = 0
+        
+        for (const key of keys) {
+          try {
+            const data = await client.get(key)
+            checkedCount++
+            
+            if (!data) continue
+            
+            // 检查数据是否可以正确解析
+            try {
+              const parsedData = JSON.parse(data)
+              
+              // 检查解析后的数据是否包含乱码
+              if (this.hasCorruptedText(parsedData)) {
+                console.warn(`[Cache] 检测到缓存键 ${key} 包含乱码数据，尝试修复`)
+                
+                // 尝试清理数据
+                const cleanedData = this.cleanCorruptedData(parsedData)
+                const cleanedJsonString = this.serialize(cleanedData)
+                
+                // 获取原始TTL
+                const ttl = await client.ttl(key)
+                const newTtl = ttl > 0 ? ttl : 3600 // 如果没有TTL，设置为1小时
+                
+                // 重新写入清理后的数据
+                await client.setEx(key, newTtl, cleanedJsonString)
+                repairedCount++
+                console.log(`[Cache] 已修复缓存键: ${key}`)
+              }
+            } catch (parseError) {
+              console.warn(`[Cache] 缓存键 ${key} 数据无法解析，删除该缓存`)
+              await client.del(key)
+              corruptedCount++
+            }
+          } catch (error) {
+            console.error(`[Cache] 检查缓存键 ${key} 时出错:`, error)
+            // 如果无法读取，也删除这个键
+            await client.del(key)
+            corruptedCount++
+          }
+        }
+        
+        console.log(`[Cache] 缓存清理完成: 检查了 ${checkedCount} 个键，删除了 ${corruptedCount} 个损坏的缓存，修复了 ${repairedCount} 个缓存`)
+      } catch (error) {
+        console.error('[Cache] 清理损坏缓存时出错:', error)
+      }
+    })
+  }
+
+  // 手动修复特定缓存键的数据
+  async repairCacheKey(key: string): Promise<boolean> {
+    if (!isRedisReady()) return false
+
+    return await executeRedisCommand(async () => {
+      const client = (await import('../utils/redis')).getRedisClient()
+      if (!client) return false
+      
+      try {
+        const data = await client.get(key)
+        if (!data) {
+          console.log(`[Cache] 缓存键 ${key} 不存在`)
+          return false
+        }
+        
+        const parsedData = JSON.parse(data)
+        
+        if (this.hasCorruptedText(parsedData)) {
+          console.log(`[Cache] 修复缓存键: ${key}`)
+          const cleanedData = this.cleanCorruptedData(parsedData)
+          const cleanedJsonString = this.serialize(cleanedData)
+          
+          const ttl = await client.ttl(key)
+          const newTtl = ttl > 0 ? ttl : 3600
+          
+          await client.setEx(key, newTtl, cleanedJsonString)
+          console.log(`[Cache] 缓存键 ${key} 修复完成`)
+          return true
+        } else {
+          console.log(`[Cache] 缓存键 ${key} 数据正常，无需修复`)
+          return true
+        }
+      } catch (error) {
+        console.error(`[Cache] 修复缓存键 ${key} 失败:`, error)
+        return false
+      }
+    }) || false
   }
 
   // ==================== 排期相关缓存 ====================
@@ -491,7 +780,8 @@ class CacheService {
       }, 'warmupSongsCache')
       
       if (songs) {
-        await this.setSongList(songs, semester)
+        const cacheKey = semester ? `public_${semester}` : 'public_all'
+        await this.setSongList(cacheKey, songs)
         await this.setSongCount(songs.length, semester)
       }
       
