@@ -1,13 +1,6 @@
 {
   "buildCommand": "node scripts/deploy.js",
   "installCommand": "npm install",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "DIRECT_URL": "@direct_url",
-    "JWT_SECRET": "@jwt_secret",
-    "REDIS_URL": "@redis_url",
-    "NODE_ENV": "production"
-  },
   "headers": [
     {
       "source": "/(.*)",
