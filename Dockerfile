@@ -32,6 +32,20 @@ RUN echo "Node version:" && node --version && \
 # 复制应用代码
 COPY . .
 
+# 构建应用
+RUN echo "Building application..." && \
+    (npm run build 2>&1 | tee build.log) || \
+    (echo "Build failed, showing log:" && cat build.log && \
+     echo "Trying build with unsafe-perm..." && \
+     npm run build --unsafe-perm 2>&1 | tee build.log) || \
+    (echo "Build still failed, showing detailed log:" && \
+     echo "=== BUILD DEBUG INFO ===" && \
+     echo "Node version:" && node --version && \
+     echo "NPM version:" && npm --version && \
+     echo "Directory contents:" && ls -la && \
+     echo "=== BUILD LOG ===" && cat build.log && \
+     echo "=== END OF LOGS ===" && false)
+
 # 生成Prisma客户端，增加详细错误日志
 RUN echo "Generating Prisma client..." && \
     (npx prisma generate --schema=./prisma/schema.prisma 2>&1 | tee prisma-generate.log) || \
