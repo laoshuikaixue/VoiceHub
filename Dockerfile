@@ -32,6 +32,9 @@ RUN echo "Node version:" && node --version && \
 # 复制应用代码
 COPY . .
 
+# 设置环境变量
+ENV NODE_ENV=production
+
 # 生成Prisma客户端，增加详细错误日志
 RUN echo "Generating Prisma client..." && \
     (npx prisma generate --schema=./prisma/schema.prisma 2>&1 | tee prisma-generate.log) || \
