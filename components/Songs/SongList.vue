@@ -480,7 +480,14 @@ const displayedSongs = computed(() => {
   // 对每个分组内部进行排序
   const sortSongs = (songs) => {
     if (sortBy.value === 'popularity') {
-      return songs.sort((a, b) => b.voteCount - a.voteCount)
+      return songs.sort((a, b) => {
+        // 首先按投票数降序排列
+        if (b.voteCount !== a.voteCount) {
+          return b.voteCount - a.voteCount
+        }
+        // 投票数相同时，按创建时间升序排列（投稿早的在前面）
+        return new Date(a.createdAt) - new Date(b.createdAt)
+      })
     } else if (sortBy.value === 'date') {
       return songs.sort((a, b) => {
         const dateA = new Date(a.createdAt)
