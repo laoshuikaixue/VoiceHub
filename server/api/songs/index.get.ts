@@ -4,6 +4,18 @@ import { CacheService } from '~/server/services/cacheService'
 import { executeWithPool } from '~/server/utils/db-pool'
 import { verifyUserAuth } from '~/server/utils/auth'
 
+// 格式化日期时间为统一格式：YYYY/M/D H:mm:ss
+function formatDateTime(date: Date): string {
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const hours = date.getHours()
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const seconds = date.getSeconds().toString().padStart(2, '0')
+  
+  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
+}
+
 const cacheService = new CacheService()
 
 export default defineEventHandler(async (event) => {
@@ -165,7 +177,7 @@ export default defineEventHandler(async (event) => {
           grade: song.grade,
           createdAt: song.createdAt,
           updatedAt: song.updatedAt,
-          requestedAt: song.createdAt.toLocaleString(), // 添加请求时间的格式化字符串
+          requestedAt: formatDateTime(song.createdAt), // 添加请求时间的格式化字符串
           scheduled: song.schedules.length > 0, // 添加是否已排期的标志
           cover: song.cover || null, // 添加封面字段
           musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
