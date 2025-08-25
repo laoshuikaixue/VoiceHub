@@ -7,14 +7,19 @@ WORKDIR /app
 # 复制package.json和package-lock.json（如果存在）
 COPY package*.json ./
 
-# 安装依赖
-RUN npm ci --only=production
+# 安装依赖，增加错误处理和重试机制
+RUN npm ci --only=production || \
+    (echo "npm ci failed, trying npm install..." && npm install --only=production) || \
+    (echo "npm install failed, trying with unsafe-perm..." && npm install --only=production --unsafe-perm)
 
 # 复制应用代码
 COPY . .
 
-# 生成Prisma客户端
-RUN npx prisma generate
+# 生成Prisma客户端，增加错误处理
+RUN npx prisma generate || \
+    (echo "Prisma generate failed, trying with force..." && npx prisma generate --force) || \
+    (echo "Prisma generate still failed, installing prisma and trying again..." && \
+     npm install prisma @prisma/client && npx prisma generate)
 
 # 暴露端口
 EXPOSE 3000
