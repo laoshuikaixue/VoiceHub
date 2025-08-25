@@ -1,5 +1,6 @@
 import { createError, defineEventHandler } from 'h3'
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 // 重置所有表的自增序列
 async function resetAutoIncrementSequences() {
@@ -109,6 +110,17 @@ export default defineEventHandler(async (event) => {
       }
       
       resetResults.details.sequencesReset = 10 // 重置的表数量
+
+      // 清除所有缓存
+      try {
+        const cacheService = CacheService.getInstance()
+        await cacheService.clearAllCaches()
+        console.log('数据库重置后缓存已清除')
+      } catch (cacheError) {
+        console.warn('清除缓存失败:', cacheError)
+        resetResults.details.warnings = resetResults.details.warnings || []
+        resetResults.details.warnings.push('清除缓存失败')
+      }
 
       return resetResults
 

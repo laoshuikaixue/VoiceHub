@@ -1,4 +1,5 @@
 import { prisma } from '../../../models/schema'
+import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -81,7 +82,15 @@ export default defineEventHandler(async (event) => {
         enabled: body.enabled !== undefined ? body.enabled : true
       }
     })
-    
+
+    // 清除相关缓存
+    try {
+      await CacheService.clearSchedulesCache()
+      await CacheService.clearPlayTimesCache()
+    } catch (cacheError) {
+      console.warn('清除缓存失败:', cacheError)
+    }
+
     return newPlayTime
   } catch (error: any) {
     console.error('创建播出时段失败:', error)

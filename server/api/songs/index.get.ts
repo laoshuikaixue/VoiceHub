@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { prisma } from '../../models/schema'
+import { CacheService } from '~/server/services/cacheService'
 import { executeWithPool } from '~/server/utils/db-pool'
 
 export default defineEventHandler(async (event) => {
@@ -13,12 +14,30 @@ export default defineEventHandler(async (event) => {
 
     console.log(`[Songs API] 用户 ${user?.name || '未登录用户'} 请求歌曲列表${semester ? ` (学期: ${semester})` : ''}`)
 
+    // 根据用户登录状态生成不同的缓存键
+    const cacheService = new CacheService()
+    const baseCacheKey = semester ? `semester_${semester}` : 'all'
+    const cacheKey = user ? `user_${baseCacheKey}` : `public_${baseCacheKey}`
+    let cachedSongs = await cacheService.getSongList(cacheKey, user?.id)
+    
+    if (cachedSongs) {
+      console.log(`[Cache] 从缓存获取歌曲列表，用户类型: ${user ? '登录用户' : '未登录用户'}，缓存键: ${cacheKey}`)
+      return cachedSongs
+    }
+
     // 使用连接池执行数据库操作
     const result = await executeWithPool(async () => {
       // 构建查询条件
       const whereCondition: any = {}
       if (semester) {
         whereCondition.semester = semester
+      }
+      
+      // 如果是未登录用户，只查询已排期的歌曲
+      if (!user) {
+        whereCondition.schedules = {
+          some: {}
+        }
       }
 
       // 获取歌曲及其投票数
@@ -134,6 +153,7 @@ export default defineEventHandler(async (event) => {
           const voted = song.votes.some(vote => vote.userId === user.id)
           songObject.voted = voted
         }
+        // 注意：未登录用户不会有voted字段
 
         // 只对管理员用户添加期望播放时段相关字段
         if (user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN')) {
@@ -157,7 +177,12 @@ export default defineEventHandler(async (event) => {
       return formattedSongs
     }, 'getSongsList')
 
-    console.log(`[Songs API] 成功返回 ${result.length} 首歌曲`)
+    console.log(`[Songs API] 成功返回 ${result.length} 首歌曲，用户类型: ${user ? '登录用户' : '未登录用户'}`)
+    
+    // 缓存歌曲列表
+    await cacheService.setSongList(cacheKey, result, user?.id)
+    console.log(`[Cache] 歌曲列表已缓存，用户类型: ${user ? '登录用户' : '未登录用户'}，缓存键: ${cacheKey}`)}],"thought":"修改API逻辑，区分登录和未登录用户的数据返回和缓存策略"}}}
+    
     return result
 
   } catch (error: any) {
