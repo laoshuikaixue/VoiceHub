@@ -108,6 +108,96 @@
    ```bash
    npm run start
    ```
+### Docker 部署
+
+github 的镜像源
+
+```
+docker run \
+  -p 3000:3000 \
+  -e JWT_SECRET=your-very-secure-jwt-secret-key \
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  ghcr.io/laoshuikaixue/voicehub:main
+```
+
+或使用 南京大学的镜像
+
+```
+docker run \
+  -p 3000:3000 \
+  -e JWT_SECRET=your-very-secure-jwt-secret-key \
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  ghcr.nju.edc.cn/laoshuikaixue/voicehub:main
+```
+
+### Docker-compose 部署
+
+github 的镜像源
+```
+services:
+  voicehub:
+    image: ghcr.io/laoshuikaixue/voicehub:main
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
+      - JWT_SECRET=your-jwt-secret-here
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=voicehub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+```
+
+或使用 南京大学的镜像
+
+```
+services:
+  voicehub:
+    image: ghcr.nju.edc.cn/laoshuikaixue/voicehub:main
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
+      - JWT_SECRET=your-jwt-secret-here
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=voicehub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+```
 
 ## 安装与运行
 
@@ -151,28 +241,23 @@ npm run db:migrate
 npm run setup
 ```
 
-6. 创建管理员账户
-```bash
-npm run create-admin
-```
-
-7. 创建管理员账户（如果需要）
+6. 创建管理员账户（如果需要）
 ```bash
 # 创建超级管理员账户
 npm run create-admin
 ```
 
-8. 启动开发服务器
+7. 启动开发服务器
 ```bash
 npm run dev
 ```
 
-9. 构建生产版本
+8. 构建生产版本
 ```bash
 npm run build
 ```
 
-10. 运行生产版本
+9. 运行生产版本
 ```bash
 npm start
 ```
@@ -1038,7 +1123,7 @@ VoiceHub是一个开源的校园广播站点歌管理系统，本项目：
 
 Thanks goes to these wonderful people:
 
-[![Contributors](http://contrib.nn.ci/api?repo=laoshuikaixue/VoiceHub&repo=laoshuikaixue/VoiceHub-docs&repo=laoshuikaixue/VoiceHub-hmos)](https://github.com/laoshuikaixue/VoiceHub/graphs/contributors)
+<img src="https://contrib.rocks/image?repo=laoshuikaixue/VoiceHub" />
 
 ### 参考项目
 
