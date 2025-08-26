@@ -82,4 +82,4 @@ RUN addgroup -g 1001 -S nodejs && \
 USER nextjs
 
 # 启动应用
-CMD ["sh", "-c", "node scripts/deploy.js && npm run dev"]
+CMD ["sh", "-c", "npm run vercel-build && npm run dev"]
