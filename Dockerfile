@@ -70,9 +70,15 @@ RUN echo "Building application..." && \
 # 暴露端口
 EXPOSE 3000
 
-# 创建非root用户
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+# 创建非root用户并设置目录权限
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001 && \
+    # 关键修复：将应用目录所有权赋予nextjs用户和nodejs组
+    chown -R nextjs:nodejs /app && \
+    # 确保需要写入的目录有适当权限
+    chmod -R 755 /app
+
+# 切换到非root用户
 USER nextjs
 
 # 启动应用
