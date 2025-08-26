@@ -76,4 +76,4 @@ RUN adduser -S nextjs -u 1001
 USER nextjs
 
 # 启动应用
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "dev"]
