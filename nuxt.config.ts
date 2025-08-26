@@ -17,6 +17,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // 服务器私有键（不会暴露到客户端）
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
+    // Redis配置（可选）
+    redisUrl: process.env.REDIS_URL || '',
+    // Prisma日志配置
+    prismaLogLevel: process.env.PRISMA_LOG_LEVEL || 'error',
     // 公共键（会暴露到客户端）
     public: {
       apiBase: '/api',

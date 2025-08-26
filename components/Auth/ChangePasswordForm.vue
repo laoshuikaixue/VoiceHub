@@ -307,7 +307,18 @@ const handleChangePassword = async () => {
       }, 2000)
     }
   } catch (err) {
-    error.value = err.message || '操作失败，请重试'
+    // 提取错误信息，支持多种错误格式
+    if (err.data && err.data.statusMessage) {
+      error.value = err.data.statusMessage
+    } else if (err.data && err.data.message) {
+      error.value = err.data.message
+    } else if (err.statusMessage) {
+      error.value = err.statusMessage
+    } else if (err.message) {
+      error.value = err.message
+    } else {
+      error.value = '操作失败，请重试'
+    }
   } finally {
     loading.value = false
   }

@@ -45,10 +45,12 @@ function createPrismaClient() {
 
     console.log(`Running in ${isVercelEnv ? 'Vercel' : 'standard'} environment`);
 
-    // 在Vercel环境中使用更保守的日志设置
-    const logLevels: Prisma.LogLevel[] = isVercelEnv
-      ? ['error']
-      : ['error', 'warn'];
+    // 获取日志级别配置
+    const logLevel = process.env.PRISMA_LOG_LEVEL || 'error';
+    const logLevels: Prisma.LogLevel[] = logLevel === 'error' ? ['error'] : 
+      logLevel === 'warn' ? ['error', 'warn'] : 
+      logLevel === 'info' ? ['error', 'warn', 'info'] : 
+      logLevel === 'query' ? ['error', 'warn', 'info', 'query'] : ['error'];
 
     return new PrismaClient({
       log: logLevels,
@@ -58,7 +60,6 @@ function createPrismaClient() {
           url: process.env.DATABASE_URL,
         },
       },
-      log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
       // 优化后的连接池配置 - 减少数据库计算时间消耗
       __internal: {
         engine: {

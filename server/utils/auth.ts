@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken'
-import { supabase } from './supabase'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 interface AuthResult {
   success: boolean
@@ -56,14 +58,13 @@ export async function verifyAdminAuth(event: any): Promise<AuthResult> {
     }
 
     // 从数据库获取用户信息
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, username, name, role')
-      .eq('id', decoded.userId)
-      .single()
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, username: true, name: true, role: true }
+    })
 
-    if (error || !user) {
-      console.error('获取用户信息失败:', error)
+    if (!user) {
+      console.error('获取用户信息失败: 用户不存在')
       return {
         success: false,
         message: '用户不存在'
@@ -164,14 +165,13 @@ export async function verifyUserAuth(event: any): Promise<AuthResult> {
     }
 
     // 从数据库获取用户信息
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, username, name, role')
-      .eq('id', decoded.userId)
-      .single()
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, username: true, name: true, role: true }
+    })
 
-    if (error || !user) {
-      console.error('获取用户信息失败:', error)
+    if (!user) {
+      console.error('获取用户信息失败: 用户不存在')
       return {
         success: false,
         message: '用户不存在'

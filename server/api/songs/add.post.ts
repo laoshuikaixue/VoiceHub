@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '../../models/schema'
+import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -105,6 +106,12 @@ export default defineEventHandler(async (event) => {
       }
     })
 
+    // 清除歌曲列表缓存和统计缓存
+    const cacheService = CacheService.getInstance()
+    await cacheService.clearSongsCache()
+    await cacheService.clearStatsCache()
+    console.log('[Cache] 歌曲缓存和统计缓存已清除（添加歌曲）')
+    
     return {
       success: true,
       song: newSong
