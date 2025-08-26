@@ -29,6 +29,8 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64  # 添加多架构支持
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -47,6 +49,11 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            # 添加架构特定标签
+            type=raw,value={{branch}}-amd64,enable={{is_default_branch}}
+            type=raw,value={{branch}}-arm64,enable={{is_default_branch}}
+            type=raw,value=latest-amd64,enable={{is_default_branch}}
+            type=raw,value=latest-arm64,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -55,5 +62,6 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64  # 指定构建架构
           cache-from: type=gha
           cache-to: type=gha,mode=max
