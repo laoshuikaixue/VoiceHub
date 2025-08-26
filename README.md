@@ -110,7 +110,16 @@
    ```
 ### Docker 部署
 
-Github 的镜像源
+本地构建
+
+```
+git clone https://github.com/laoshuikaixue/VoiceHub.git
+cd VoiceHub
+docker build -t voicehub
+docker run voicehub
+```
+
+或使用 Github 的镜像源
 
 ```
 docker run \
@@ -120,7 +129,7 @@ docker run \
   ghcr.io/laoshuikaixue/voicehub:main
 ```
 
-或使用 南京大学的镜像
+或使用 南京大学 的镜像
 
 ```
 docker run \
@@ -132,7 +141,16 @@ docker run \
 
 ### Docker-compose 部署
 
-Github 的镜像源
+本地构建
+
+```
+git clone https://github.com/laoshuikaixue/VoiceHub.git
+cd VoiceHub
+docker-compose up
+```
+
+或使用 Github 的镜像源
+
 ```
 services:
   voicehub:
@@ -165,7 +183,7 @@ volumes:
   postgres_data:
 ```
 
-或使用 南京大学的镜像
+或使用 南京大学 的镜像
 
 ```
 services:
