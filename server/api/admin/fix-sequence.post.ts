@@ -2,6 +2,91 @@ import { PrismaClient, Prisma } from '@prisma/client'
 
 import { prisma } from '../../models/schema'
 
+// 修复单个表的序列
+async function fixTableSequence(table: string, dbTableName: string) {
+  try {
+    // 获取表的最大ID
+    const maxIdResult = await prisma.$queryRaw(
+      Prisma.sql`SELECT MAX(id) as max_id FROM ${Prisma.raw(`"${dbTableName}"`)}`
+    )
+    const maxId = Number((maxIdResult as any)[0]?.max_id || 0)
+    
+    if (maxId === 0) {
+      return {
+        success: true,
+        table: table,
+        message: `表 ${table} 为空，无需修复序列`,
+        data: {
+          table: table,
+          maxId: 0,
+          skipped: true
+        }
+      }
+    }
+    
+    // 获取序列名称
+    const sequenceNameResult = await prisma.$queryRaw(
+      Prisma.sql`SELECT pg_get_serial_sequence(${Prisma.raw(`'"${dbTableName}"'`)}, 'id') as sequence_name`
+    )
+    const sequenceName = (sequenceNameResult as any)[0]?.sequence_name
+    
+    if (!sequenceName) {
+      return {
+        success: false,
+        table: table,
+        error: `无法找到表 ${table}.id 的序列`
+      }
+    }
+    
+    // 获取当前序列值
+    const currentSeqResult = await prisma.$queryRaw(
+      Prisma.sql`SELECT last_value FROM ${Prisma.raw(sequenceName)}`
+    )
+    const currentSeqValue = Number((currentSeqResult as any)[0]?.last_value || 0)
+    
+    // 重置序列值到最大ID + 1
+    const newSequenceValue = maxId + 1
+    
+    // 检查序列是否已经正确
+    if (currentSeqValue >= newSequenceValue) {
+      return {
+        success: true,
+        table: table,
+        message: `表 ${table} 序列值已正确，无需修复`,
+        data: {
+          table: table,
+          maxId: maxId,
+          currentSequenceValue: currentSeqValue,
+          alreadyCorrect: true
+        }
+      }
+    }
+    
+    await prisma.$queryRaw(
+      Prisma.sql`SELECT setval(${sequenceName}, ${newSequenceValue})`
+    )
+    
+    return {
+      success: true,
+      table: table,
+      message: `表 ${table} 的序列已成功重置 (${currentSeqValue} → ${newSequenceValue})`,
+      data: {
+        table: table,
+        maxId: maxId,
+        oldSequenceValue: currentSeqValue,
+        newSequenceValue: newSequenceValue,
+        sequenceName: sequenceName
+      }
+    }
+  } catch (error) {
+    return {
+      success: false,
+      table: table,
+      error: error instanceof Error ? error.message : '未知错误'
+    }
+  }
+}
+
 export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
@@ -33,69 +118,67 @@ export default defineEventHandler(async (event) => {
       'SongBlacklist': 'SongBlacklist'
     }
     
-    if (!table || !supportedTables.includes(table)) {
+    // 如果没有指定表名或指定为'all'，则修复所有表
+    if (!table || table === 'all') {
+      const results = []
+      let hasError = false
+      let fixedCount = 0
+      let skippedCount = 0
+      let errorCount = 0
+      
+      for (const tableName of supportedTables) {
+        try {
+          const result = await fixTableSequence(tableName, tableNameMap[tableName])
+          results.push(result)
+          
+          if (result.success) {
+            if (result.data?.skipped || result.data?.alreadyCorrect) {
+              skippedCount++
+            } else {
+              fixedCount++
+            }
+          } else {
+            hasError = true
+            errorCount++
+          }
+        } catch (error) {
+          const errorResult = {
+            success: false,
+            table: tableName,
+            error: error instanceof Error ? error.message : '未知错误'
+          }
+          results.push(errorResult)
+          hasError = true
+          errorCount++
+        }
+      }
+      
+      return {
+        success: !hasError,
+        message: hasError 
+          ? `序列修复完成，但有 ${errorCount} 个表失败` 
+          : `所有表序列修复完成`,
+        summary: {
+          total: supportedTables.length,
+          fixed: fixedCount,
+          skipped: skippedCount,
+          errors: errorCount
+        },
+        results: results
+      }
+    }
+    
+    if (!supportedTables.includes(table)) {
       return {
         success: false,
-        error: `不支持的表名。支持的表: ${supportedTables.join(', ')}`
+        error: `不支持的表名。支持的表: ${supportedTables.join(', ')}, 或使用 'all' 修复所有表`
       }
     }
     
     const dbTableName = tableNameMap[table]
-
-    // 获取表的最大ID
-    const maxIdResult = await prisma.$queryRaw(
-      Prisma.sql`SELECT MAX(id) as max_id FROM ${Prisma.raw(`"${dbTableName}"`)}`
-    )
-    const maxId = Number((maxIdResult as any)[0]?.max_id || 0)
     
-    if (maxId === 0) {
-      return {
-        success: false,
-        error: `表 ${table} 中没有找到记录`
-      }
-    }
-    
-    // 获取序列名称 - PostgreSQL中需要使用双引号包围大小写敏感的表名
-    const sequenceNameResult = await prisma.$queryRaw(
-      Prisma.sql`SELECT pg_get_serial_sequence(${Prisma.raw(`'"${dbTableName}"'`)}, 'id') as sequence_name`
-    )
-    const sequenceName = (sequenceNameResult as any)[0]?.sequence_name
-    
-    if (!sequenceName) {
-      return {
-        success: false,
-        error: `无法找到表 ${table}.id 的序列`
-      }
-    }
-    
-    // 重置序列值到最大ID + 1
-    const newSequenceValue = maxId + 1
-    await prisma.$queryRaw(
-      Prisma.sql`SELECT setval(${sequenceName}, ${newSequenceValue})`
-    )
-    
-    // 验证重置是否成功
-    const verifyResult = await prisma.$queryRaw(
-      Prisma.sql`SELECT nextval(${sequenceName}) as next_value`
-    )
-    const nextValue = Number((verifyResult as any)[0]?.next_value)
-    
-    // 重置回正确的值（因为nextval消耗了一个值）
-    await prisma.$queryRaw(
-      Prisma.sql`SELECT setval(${sequenceName}, ${newSequenceValue})`
-    )
-    
-    return {
-      success: true,
-      message: `表 ${table} 的序列已成功重置`,
-      data: {
-        table: table,
-        maxId: maxId,
-        newSequenceValue: newSequenceValue,
-        sequenceName: sequenceName,
-        verified: nextValue === newSequenceValue + 1
-      }
-    }
+    // 使用辅助函数修复单个表
+    return await fixTableSequence(table, dbTableName)
   } catch (error) {
     console.error('Fix sequence error:', error)
     return {

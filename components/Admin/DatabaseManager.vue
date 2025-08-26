@@ -206,6 +206,7 @@
             <label>选择要重置序列的数据表</label>
             <select v-model="sequenceForm.table" class="form-select">
               <option value="">请选择数据表</option>
+              <option value="all">重置所有表 (All)</option>
               <option value="Song">歌曲表 (Song)</option>
               <option value="User">用户表 (User)</option>
               <option value="Vote">投票表 (Vote)</option>
@@ -573,11 +574,13 @@ const resetSequence = async () => {
   }
 
   sequenceLoading.value = true
+  const selectedTable = sequenceForm.value.table
+  
   try {
     const response = await $fetch('/api/admin/fix-sequence', {
       method: 'POST',
       body: {
-        table: sequenceForm.value.table
+        table: selectedTable
       }
     })
 
@@ -588,7 +591,10 @@ const resetSequence = async () => {
       
       // 显示成功通知
       if (window.$showNotification) {
-        window.$showNotification(`${sequenceForm.value.table}表的序列重置成功！`, 'success')
+        const successMessage = selectedTable === 'all' 
+          ? '所有表的序列重置成功！' 
+          : `${selectedTable}表的序列重置成功！`
+        window.$showNotification(successMessage, 'success')
       }
     } else {
       throw new Error(response.error || '序列重置失败')

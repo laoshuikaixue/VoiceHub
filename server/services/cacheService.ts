@@ -290,7 +290,7 @@ class CacheService {
       
       const keys = await client.keys(pattern)
       if (keys.length > 0) {
-        await client.del(keys)
+        await client.del(...keys)
       }
       return true
     }) || false
