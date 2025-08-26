@@ -110,7 +110,7 @@
    ```
 ### Docker 部署
 
-github 的镜像源
+Github 的镜像源
 
 ```
 docker run \
@@ -132,7 +132,7 @@ docker run \
 
 ### Docker-compose 部署
 
-github 的镜像源
+Github 的镜像源
 ```
 services:
   voicehub:
@@ -204,6 +204,7 @@ volumes:
 ### 前提条件
 - Node.js 20+
 - PostgreSQL数据库
+- Redis数据库（可选）
 
 ### 安装步骤
 
@@ -227,6 +228,7 @@ cp .env.example .env
 4. 编辑`.env`文件，设置数据库连接和JWT密钥：
 ```
 DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
+REDIS_URL="redis://username:password@host:port"
 JWT_SECRET="your-very-secure-jwt-secret-key"
 ```
 
@@ -1123,7 +1125,7 @@ VoiceHub是一个开源的校园广播站点歌管理系统，本项目：
 
 Thanks goes to these wonderful people:
 
-<img src="https://contrib.rocks/image?repo=laoshuikaixue/VoiceHub" />
+[![Contributors](https://contrib.rocks/image?repo=laoshuikaixue/VoiceHub&repo=laoshuikaixue/VoiceHub-docs&repo=laoshuikaixue/VoiceHub-hmos)](https://github.com/laoshuikaixue/VoiceHub/graphs/contributors)
 
 ### 参考项目
 

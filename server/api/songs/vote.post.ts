@@ -100,11 +100,10 @@ export default defineEventHandler(async (event) => {
           }
         })
 
-        // 清除歌曲数量缓存
+        // 清除统计缓存
         const cacheService = CacheService.getInstance()
-        await cacheService.clearSongsCache()
         await cacheService.clearStatsCache()
-        console.log('[Cache] 歌曲缓存和统计缓存已清除（取消投票）')
+        console.log('[Cache] 统计缓存已清除（取消投票）')
 
         return {
           success: true,
@@ -193,11 +192,10 @@ export default defineEventHandler(async (event) => {
           })
         }
 
-        // 清除歌曲列表缓存和统计缓存
+        // 清除统计缓存
         const cacheService = CacheService.getInstance()
-        await cacheService.clearSongsCache()
         await cacheService.clearStatsCache()
-        console.log('[Cache] 歌曲缓存和统计缓存已清除（投票）')
+        console.log('[Cache] 统计缓存已清除（投票）')
 
         return {
           success: true,
