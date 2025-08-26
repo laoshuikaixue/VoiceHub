@@ -119,6 +119,10 @@ export default defineEventHandler(async (event) => {
       semesters: {
         query: () => prisma.semester.findMany(),
         description: '学期数据'
+      },
+      songBlacklist: {
+        query: () => prisma.songBlacklist.findMany(),
+        description: '歌曲黑名单'
       }
     }
 

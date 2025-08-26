@@ -156,6 +156,7 @@ export default defineEventHandler(async (event) => {
       'playTimes', 
       'semesters',
       'users',
+      'songBlacklist',
       'songs',
       'votes',
       'schedules',
@@ -879,6 +880,82 @@ export default defineEventHandler(async (event) => {
                     }
                     break
 
+                  case 'songBlacklist':
+                    // 验证createdBy字段（可选）
+                    let validCreatedBy = record.createdBy
+                    
+                    if (record.createdBy) {
+                      // 使用ID映射查找实际的用户ID
+                      const mappedUserId = userIdMapping.get(record.createdBy)
+                      if (mappedUserId) {
+                        validCreatedBy = mappedUserId
+                      } else {
+                        // 尝试直接查找用户ID
+                        const userExists = await tx.user.findUnique({
+                          where: { id: record.createdBy }
+                        })
+                        if (!userExists) {
+                          console.warn(`黑名单记录的创建者ID ${record.createdBy} 不存在，将设为null`)
+                          validCreatedBy = null
+                        }
+                      }
+                    }
+                    
+                    // 构建黑名单数据
+                    const blacklistData = {
+                      type: record.type || 'KEYWORD', // 默认为关键词类型
+                      value: record.value || '',
+                      reason: record.reason || null,
+                      isActive: record.hasOwnProperty('isActive') ? record.isActive : true,
+                      createdBy: validCreatedBy,
+                      createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                      updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+                    }
+                    
+                    if (mode === 'merge') {
+                      // 检查是否存在相同的黑名单记录（相同类型和值）
+                      const existingBlacklist = await tx.songBlacklist.findFirst({
+                        where: {
+                          type: blacklistData.type,
+                          value: blacklistData.value
+                        }
+                      })
+                      
+                      if (existingBlacklist) {
+                        // 如果存在相同记录，更新它
+                        await tx.songBlacklist.update({
+                          where: { id: existingBlacklist.id },
+                          data: blacklistData
+                        })
+                      } else {
+                        // 如果不存在，创建新记录（不指定ID，让数据库自动生成）
+                        await tx.songBlacklist.create({ data: blacklistData })
+                      }
+                    } else {
+                      // 完全恢复模式，检查ID是否已存在
+                      const existingBlacklistWithId = await tx.songBlacklist.findUnique({
+                        where: { id: record.id }
+                      })
+                      
+                      if (existingBlacklistWithId) {
+                        // ID已存在，使用upsert策略更新现有记录
+                        console.warn(`黑名单ID ${record.id} 已存在，将更新现有记录`)
+                        await tx.songBlacklist.update({
+                          where: { id: record.id },
+                          data: blacklistData
+                        })
+                      } else {
+                        // ID不存在，使用原始ID创建
+                        await tx.songBlacklist.create({ 
+                          data: {
+                            ...blacklistData,
+                            id: record.id
+                          }
+                        })
+                      }
+                    }
+                    break
+
                   case 'votes':
                     // 验证外键约束
                     let validVoteUserId = record.userId
@@ -951,26 +1028,23 @@ export default defineEventHandler(async (event) => {
                         await tx.vote.create({ data: voteData })
                       }
                     } else {
-                      // 完全恢复模式，检查ID是否已存在
-                      const existingVoteWithId = await tx.vote.findUnique({
-                        where: { id: record.id }
+                      // 完全恢复模式，检查是否存在相同的投票（同一用户对同一歌曲的投票）
+                      const existingVote = await tx.vote.findFirst({
+                        where: {
+                          userId: validVoteUserId,
+                          songId: validVoteSongId
+                        }
                       })
                       
-                      if (existingVoteWithId) {
-                        // ID已存在，使用upsert策略更新现有投票
-                        console.warn(`投票ID ${record.id} 已存在，将更新现有投票`)
+                      if (existingVote) {
+                        // 如果存在相同投票，更新它
                         await tx.vote.update({
-                          where: { id: record.id },
+                          where: { id: existingVote.id },
                           data: voteData
                         })
                       } else {
-                        // ID不存在，使用原始ID创建
-                        await tx.vote.create({ 
-                          data: {
-                            ...voteData,
-                            id: record.id
-                          }
-                        })
+                        // 如果不存在，创建新投票（不指定ID，让数据库自动生成）
+                        await tx.vote.create({ data: voteData })
                       }
                     }
                     break
