@@ -11,6 +11,9 @@ on:
         description: 'Reason for manual trigger'
         required: false
         default: 'Manual trigger'
+  # 新增：当发布发行版时触发
+  release:
+    types: [published]  # 包括正式发布和预发布
 
 env:
   REGISTRY: ghcr.io
@@ -47,6 +50,8 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            # 为发行版添加特定标签
+            type=release,event=release
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
