@@ -227,22 +227,43 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
       return null
     }
     
-    // 创建通知
     const message = `您投稿的歌曲《${song.title}》获得了一个新的投票，当前共有 ${song.votes.length} 个投票。`
+    
+    // 使用upsert操作来避免竞态条件
+    // 基于userId, type, songId的组合来确定唯一性
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+    
+    // 先尝试查找并更新最近5分钟内的未读通知
+    const existingNotification = await prisma.notification.findFirst({
+      where: {
+        userId: song.requesterId,
+        type: 'SONG_VOTED',
+        songId: songId,
+        read: false,
+        createdAt: {
+          gte: fiveMinutesAgo
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+    
     let notification
-    try {
-      notification = await prisma.notification.create({
+    if (existingNotification) {
+      // 更新现有通知
+      notification = await prisma.notification.update({
+        where: {
+          id: existingNotification.id
+        },
         data: {
-          userId: song.requesterId,
-          type: 'SONG_VOTED',
           message,
-          songId: songId
+          updatedAt: new Date()
         }
       })
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-        // ID 冲突，重置序列并重试
-        await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('Notification', 'id'), COALESCE(MAX(id), 0) + 1, false) FROM "Notification"`
+    } else {
+      // 创建新通知，使用简单的错误处理
+      try {
         notification = await prisma.notification.create({
           data: {
             userId: song.requesterId,
@@ -251,8 +272,25 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
             songId: songId
           }
         })
-      } else {
-        throw error
+      } catch (error) {
+        // 如果创建失败（可能是并发导致的），尝试查找刚创建的通知
+        if (error.code === 'P2002') {
+          notification = await prisma.notification.findFirst({
+            where: {
+              userId: song.requesterId,
+              type: 'SONG_VOTED',
+              songId: songId,
+              createdAt: {
+                gte: fiveMinutesAgo
+              }
+            },
+            orderBy: {
+              createdAt: 'desc'
+            }
+          })
+        } else {
+          throw error
+        }
       }
     }
     
@@ -291,30 +329,13 @@ export async function createSystemNotification(userId: number, title: string, co
     }
     
     // 创建通知
-    let notification
-    try {
-      notification = await prisma.notification.create({
-        data: {
-          userId: userId,
-          type: 'SYSTEM_NOTICE',
-          message: content
-        }
-      })
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-        // ID 冲突，重置序列并重试
-        await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('Notification', 'id'), COALESCE(MAX(id), 0) + 1, false) FROM "Notification"`
-        notification = await prisma.notification.create({
-          data: {
-            userId: userId,
-            type: 'SYSTEM_NOTICE',
-            message: content
-          }
-        })
-      } else {
-        throw error
+    const notification = await prisma.notification.create({
+      data: {
+        userId: userId,
+        type: 'SYSTEM_NOTICE',
+        message: content
       }
-    }
+    })
     
     // 同步发送 MeoW 通知
     try {
