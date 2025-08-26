@@ -115,7 +115,7 @@
 ```
 git clone https://github.com/laoshuikaixue/VoiceHub.git
 cd VoiceHub
-docker build -t voicehub
+docker build -t voicehub .
 docker run voicehub
 ```
 
