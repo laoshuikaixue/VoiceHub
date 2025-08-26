@@ -2,6 +2,7 @@ import { prisma } from '../../models/schema'
 import { createSongVotedNotification } from '../../services/notificationService'
 import { executeWithPool } from '~/server/utils/db-pool'
 import { CacheService } from '~/server/services/cacheService'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -124,21 +125,59 @@ export default defineEventHandler(async (event) => {
           })
         }
 
-        // 创建新的投票
-        const newVote = await prisma.vote.create({
-          data: {
-            song: {
-              connect: {
-                id: body.songId
-              }
-            },
-            user: {
-              connect: {
-                id: user.id
+        // 创建新的投票（带ID冲突重试机制）
+        let newVote
+        try {
+          newVote = await prisma.vote.create({
+            data: {
+              song: {
+                connect: {
+                  id: body.songId
+                }
+              },
+              user: {
+                connect: {
+                  id: user.id
+                }
               }
             }
+          })
+        } catch (voteError) {
+          // 检查是否为唯一约束冲突错误（通常是序列问题）
+          if (voteError instanceof PrismaClientKnownRequestError && voteError.code === 'P2002') {
+            console.log('检测到投票ID唯一约束冲突，尝试重置序列...')
+            
+            try {
+              // 重置Vote表的id序列
+              await prisma.$executeRaw`
+                SELECT setval(pg_get_serial_sequence('Vote', 'id'), COALESCE(MAX(id), 0) + 1, false) FROM "Vote"
+              `
+              
+              console.log('Vote表序列重置成功，重试创建投票...')
+              
+              // 重试创建投票
+              newVote = await prisma.vote.create({
+                data: {
+                  song: {
+                    connect: {
+                      id: body.songId
+                    }
+                  },
+                  user: {
+                    connect: {
+                      id: user.id
+                    }
+                  }
+                }
+              })
+            } catch (retryError) {
+              console.error('Vote表序列重置后重试仍失败:', retryError)
+              throw voteError // 抛出原始错误
+            }
+          } else {
+            throw voteError // 非序列问题，直接抛出
           }
-        })
+        }
 
         // 获取投票总数
         const voteCount = await prisma.vote.count({
