@@ -1,5 +1,6 @@
 import { prisma } from '../models/schema'
 import { sendMeowNotificationToUser, sendBatchMeowNotifications } from './meowNotificationService'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 
 /**
  * 创建歌曲被选中的通知
@@ -52,14 +53,32 @@ export async function createSongSelectedNotification(
       message += `播出时段：${schedule.playTime.name}${timeInfo ? ' ' + timeInfo : ''}。`;
     }
     
-    const notification = await prisma.notification.create({
-      data: {
-        userId,
-        type: 'SONG_SELECTED',
-        message,
-        songId
+    let notification
+    try {
+      notification = await prisma.notification.create({
+        data: {
+          userId,
+          type: 'SONG_SELECTED',
+          message,
+          songId
+        }
+      })
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        // ID 冲突，重置序列并重试
+        await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('Notification', 'id'), COALESCE(MAX(id), 0) + 1, false) FROM "Notification"`
+        notification = await prisma.notification.create({
+          data: {
+            userId,
+            type: 'SONG_SELECTED',
+            message,
+            songId
+          }
+        })
+      } else {
+        throw error
       }
-    })
+    }
     
     // 同步发送 MeoW 通知
     try {
@@ -117,14 +136,32 @@ export async function createSongPlayedNotification(songId: number) {
     
     // 创建通知
     const message = `您投稿的歌曲《${song.title}》已播放。`
-    const notification = await prisma.notification.create({
-      data: {
-        userId: song.requesterId,
-        type: 'SONG_PLAYED',
-        message,
-        songId: songId
+    let notification
+    try {
+      notification = await prisma.notification.create({
+        data: {
+          userId: song.requesterId,
+          type: 'SONG_PLAYED',
+          message,
+          songId: songId
+        }
+      })
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        // ID 冲突，重置序列并重试
+        await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('Notification', 'id'), COALESCE(MAX(id), 0) + 1, false) FROM "Notification"`
+        notification = await prisma.notification.create({
+          data: {
+            userId: song.requesterId,
+            type: 'SONG_PLAYED',
+            message,
+            songId: songId
+          }
+        })
+      } else {
+        throw error
       }
-    })
+    }
     
     // 同步发送 MeoW 通知
     try {
@@ -192,14 +229,32 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
     
     // 创建通知
     const message = `您投稿的歌曲《${song.title}》获得了一个新的投票，当前共有 ${song.votes.length} 个投票。`
-    const notification = await prisma.notification.create({
-      data: {
-        userId: song.requesterId,
-        type: 'SONG_VOTED',
-        message,
-        songId: songId
+    let notification
+    try {
+      notification = await prisma.notification.create({
+        data: {
+          userId: song.requesterId,
+          type: 'SONG_VOTED',
+          message,
+          songId: songId
+        }
+      })
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        // ID 冲突，重置序列并重试
+        await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('Notification', 'id'), COALESCE(MAX(id), 0) + 1, false) FROM "Notification"`
+        notification = await prisma.notification.create({
+          data: {
+            userId: song.requesterId,
+            type: 'SONG_VOTED',
+            message,
+            songId: songId
+          }
+        })
+      } else {
+        throw error
       }
-    })
+    }
     
     // 同步发送 MeoW 通知
     try {
@@ -236,13 +291,30 @@ export async function createSystemNotification(userId: number, title: string, co
     }
     
     // 创建通知
-    const notification = await prisma.notification.create({
-      data: {
-        userId: userId,
-        type: 'SYSTEM_NOTICE',
-        message: content
+    let notification
+    try {
+      notification = await prisma.notification.create({
+        data: {
+          userId: userId,
+          type: 'SYSTEM_NOTICE',
+          message: content
+        }
+      })
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        // ID 冲突，重置序列并重试
+        await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('Notification', 'id'), COALESCE(MAX(id), 0) + 1, false) FROM "Notification"`
+        notification = await prisma.notification.create({
+          data: {
+            userId: userId,
+            type: 'SYSTEM_NOTICE',
+            message: content
+          }
+        })
+      } else {
+        throw error
       }
-    })
+    }
     
     // 同步发送 MeoW 通知
     try {

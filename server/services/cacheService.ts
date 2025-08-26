@@ -14,7 +14,6 @@ const CACHE_PREFIXES = {
 
 // 缓存TTL配置（秒）
 const CACHE_TTL = {
-  SONGS_LIST: 300, // 5分钟
   SCHEDULES: 600, // 10分钟
   SONG_COUNT: 180, // 3分钟
   USER_VOTES: 120, // 2分钟
@@ -194,6 +193,12 @@ class CacheService {
       if (!client) return false
       
       try {
+        // 验证TTL参数
+        if (!ttl || typeof ttl !== 'number' || ttl <= 0) {
+          console.error(`[Cache] 无效的TTL值: ${ttl}, 使用默认值`)
+          ttl = CACHE_TTL.SCHEDULES // 使用默认TTL
+        }
+        
         // 序列化数据（内部已包含UTF-8验证）
         const serializedData = this.serialize(data)
         
@@ -209,8 +214,11 @@ class CacheService {
           // 不再阻止写入，只是记录警告
         }
         
+        // 计算最终TTL
+        const finalTTL = this.getRandomTTL(ttl)
+        
         // 写入Redis
-        await client.setEx(key, this.getRandomTTL(ttl), serializedData)
+        await client.setEx(key, finalTTL, serializedData)
         
         return true
       } catch (error) {
@@ -365,35 +373,6 @@ class CacheService {
     return await refreshPromise
   }
 
-  // ==================== 歌曲相关缓存 ====================
-
-  // 获取歌曲列表缓存
-  async getSongList(cacheKey: string, userId?: number): Promise<any[] | null> {
-    // 直接使用传入的缓存键，不再重新生成
-    const cached = await this.getCache<any[]>(cacheKey)
-    if (cached) {
-      console.log(`[Cache] 歌曲列表缓存命中: ${cacheKey}`)
-      // 检查是否是空结果缓存
-      if (Array.isArray(cached) && cached.length === 1 && cached[0]?.__empty) {
-        return []
-      }
-      return cached
-    }
-    
-    return null
-  }
-
-  // 设置歌曲列表缓存
-  async setSongList(cacheKey: string, songs: any[], userId?: number): Promise<void> {
-    // 直接使用传入的缓存键，不再重新生成
-    
-    // 如果是空结果，设置特殊标记防止缓存穿透
-    const cacheData = songs.length === 0 ? [{ __empty: true }] : songs
-    const ttl = songs.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SONGS_LIST
-    
-    await this.setCache(cacheKey, cacheData, ttl)
-    console.log(`[Cache] 歌曲列表已缓存: ${cacheKey}, 数量: ${songs.length}`)
-  }
 
   // 获取歌曲数量缓存
   async getSongCount(semester?: string): Promise<number | null> {
@@ -422,7 +401,6 @@ class CacheService {
   // 清除歌曲相关缓存
   async clearSongsCache(semester?: string): Promise<void> {
     const patterns = [
-      this.generateKey(CACHE_PREFIXES.SONGS, '*'),
       this.generateKey(CACHE_PREFIXES.SONG_COUNT, '*'),
       this.generateKey(CACHE_PREFIXES.USER_VOTES, '*')
     ]
@@ -700,65 +678,26 @@ class CacheService {
   async warmupSongsCache(semester?: string): Promise<void> {
     if (!isRedisReady()) return
     
-    console.log(`[Cache] 开始预热歌曲缓存${semester ? ` (学期: ${semester})` : ''}`)
+    console.log(`[Cache] 开始预热歌曲数量缓存${semester ? ` (学期: ${semester})` : ''}`)
     
     try {
-      // 预热歌曲列表
-      const songs = await executeWithPool(async () => {
+      // 只预热歌曲数量，不缓存歌曲列表（因为每个用户的voted状态不同）
+      const songCount = await executeWithPool(async () => {
         const whereCondition: any = {}
         if (semester) {
           whereCondition.semester = semester
         }
         
-        return await prisma.song.findMany({
-          where: whereCondition,
-          include: {
-            requester: {
-              select: {
-                id: true,
-                name: true,
-                grade: true,
-                class: true
-              }
-            },
-            votes: {
-              select: {
-                id: true,
-                userId: true
-              }
-            },
-            _count: {
-              select: {
-                votes: true
-              }
-            },
-            schedules: {
-              select: {
-                id: true
-              }
-            },
-            preferredPlayTime: true
-          },
-          orderBy: [
-            {
-              votes: {
-                _count: 'desc'
-              }
-            },
-            {
-              createdAt: 'asc'
-            }
-          ]
+        return await prisma.song.count({
+          where: whereCondition
         })
       }, 'warmupSongsCache')
       
-      if (songs) {
-        const cacheKey = semester ? `public_${semester}` : 'public_all'
-        await this.setSongList(cacheKey, songs)
-        await this.setSongCount(songs.length, semester)
+      if (songCount !== undefined) {
+        await this.setSongCount(songCount, semester)
       }
       
-      console.log(`[Cache] 歌曲缓存预热完成，缓存了 ${songs?.length || 0} 首歌曲`)
+      console.log(`[Cache] 歌曲数量缓存预热完成，歌曲数量: ${songCount || 0}`)
     } catch (error) {
       console.error('[Cache] 歌曲缓存预热失败:', error)
     }

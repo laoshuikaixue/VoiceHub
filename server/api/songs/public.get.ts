@@ -132,7 +132,7 @@ export default defineEventHandler(async (event) => {
       
       return {
         id: schedule.id,
-        playDate: dateOnly,
+        playDate: dateOnly.toISOString().split('T')[0], // 转换为YYYY-MM-DD格式字符串
         sequence: schedule.sequence || 1,
         played: schedule.played || false,
         playTimeId: schedule.playTimeId, // 添加播放时段ID

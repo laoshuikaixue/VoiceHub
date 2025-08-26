@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
   // 清除歌曲相关缓存
   try {
     const cacheService = new CacheService()
-    await cacheService.clearSongCaches()
+    await cacheService.clearSongsCache()
   } catch (error) {
     console.error('清除歌曲缓存失败:', error)
   }

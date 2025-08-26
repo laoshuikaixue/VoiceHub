@@ -100,7 +100,7 @@ export default defineEventHandler(async (event) => {
           }
         })
 
-        // 清除歌曲列表缓存和统计缓存
+        // 清除歌曲数量缓存
         const cacheService = CacheService.getInstance()
         await cacheService.clearSongsCache()
         await cacheService.clearStatsCache()
