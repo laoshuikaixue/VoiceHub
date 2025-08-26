@@ -121,6 +121,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
+import { getMusicUrl as getUnifiedMusicUrl } from '~/utils/musicUrl'
 
 const props = defineProps({
   show: {
@@ -193,42 +194,16 @@ const closeDialog = () => {
   }
 }
 
-// 获取音频URL
+// 获取音乐播放URL（使用统一的方法）
 const getMusicUrl = async (platform, musicId, quality) => {
   try {
-    // 直接调用音乐API
-    let apiUrl
-    if (platform === 'netease') {
-      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
-    } else if (platform === 'tencent') {
-      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
-    } else {
-      throw new Error('不支持的音乐平台')
-    }
-
-    const response = await fetch(apiUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    })
-
-    if (!response.ok) {
-      throw new Error('获取音乐URL失败')
-    }
-
-    const data = await response.json()
-    if (data.code !== 200 || !data.data?.url) {
+    const url = await getUnifiedMusicUrl(platform, musicId)
+    if (!url) {
       throw new Error('无法获取音乐播放链接')
-    }
-
-    // 将HTTP URL改为HTTPS
-    let url = data.data.url
-    if (url.startsWith('http://')) {
-      url = url.replace('http://', 'https://')
     }
     return url
   } catch (error) {
-    console.error('获取音频URL失败:', error)
+    console.error('获取音乐播放链接失败:', error)
     throw new Error('获取音乐播放链接失败: ' + error.message)
   }
 }
