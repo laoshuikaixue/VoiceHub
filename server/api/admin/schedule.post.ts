@@ -1,6 +1,7 @@
 import { prisma } from '../../models/schema'
 import { createSongSelectedNotification } from '../../services/notificationService'
 import { CacheService } from '~/server/services/cacheService'
+import { executeWithPool } from '~/server/utils/db-pool'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -140,12 +141,133 @@ export default defineEventHandler(async (event) => {
       playDate: schedule.playDate
     })
     
-    // 清除相关缓存
+    // 清除相关缓存并重新缓存完整的排期列表
     const cacheService = CacheService.getInstance()
     await cacheService.clearSchedulesCache(schedule.playDate)
     await cacheService.clearSchedulesCache() // 清除所有排期缓存
     await cacheService.clearStatsCache()
     console.log('[Cache] 排期缓存和统计缓存已清除（创建排期）')
+    
+    // 重新缓存完整的排期列表
+    try {
+      const completeSchedules = await executeWithPool(async () => {
+        const schedules = await prisma.schedule.findMany({
+          include: {
+            song: {
+              include: {
+                requester: {
+                  select: {
+                    name: true,
+                    grade: true,
+                    class: true
+                  }
+                },
+                _count: {
+                  select: {
+                    votes: true
+                  }
+                }
+              }
+            },
+            playTime: true
+          },
+          orderBy: [
+            { playDate: 'asc' }
+          ]
+        })
+        
+        // 获取所有用户的姓名列表，用于检测同名用户
+        const users = await prisma.user.findMany({
+          select: {
+            id: true,
+            name: true,
+            grade: true,
+            class: true
+          }
+        })
+        
+        // 创建姓名到用户数组的映射
+        const nameToUsers = new Map()
+        users.forEach(user => {
+          if (user.name) {
+            if (!nameToUsers.has(user.name)) {
+              nameToUsers.set(user.name, [])
+            }
+            nameToUsers.get(user.name).push(user)
+          }
+        })
+        
+        // 转换数据格式
+        const formattedSchedules = schedules.map(schedule => {
+          const originalDate = new Date(schedule.playDate)
+          const dateOnly = new Date(Date.UTC(
+            originalDate.getUTCFullYear(),
+            originalDate.getUTCMonth(),
+            originalDate.getUTCDate(),
+            0, 0, 0, 0
+          ))
+          
+          // 处理投稿人姓名，如果是同名用户则添加后缀
+          let requesterName = schedule.song.requester.name || '未知用户'
+          
+          const sameNameUsers = nameToUsers.get(requesterName)
+          if (sameNameUsers && sameNameUsers.length > 1) {
+            const requesterWithGradeClass = schedule.song.requester
+            
+            if (requesterWithGradeClass.grade) {
+              const sameGradeUsers = sameNameUsers.filter((u: {id: number, name: string | null, grade: string | null, class: string | null}) => 
+                u.grade === requesterWithGradeClass.grade
+              )
+              
+              if (sameGradeUsers.length > 1 && requesterWithGradeClass.class) {
+                requesterName = `${requesterName}（${requesterWithGradeClass.grade} ${requesterWithGradeClass.class}）`
+              } else {
+                requesterName = `${requesterName}（${requesterWithGradeClass.grade}）`
+              }
+            }
+          }
+          
+          return {
+            id: schedule.id,
+            playDate: dateOnly.toISOString().split('T')[0],
+            sequence: schedule.sequence || 1,
+            played: schedule.played || false,
+            playTimeId: schedule.playTimeId,
+            playTime: schedule.playTime ? {
+              id: schedule.playTime.id,
+              name: schedule.playTime.name,
+              startTime: schedule.playTime.startTime,
+              endTime: schedule.playTime.endTime,
+              enabled: schedule.playTime.enabled
+            } : null,
+            song: {
+              id: schedule.song.id,
+              title: schedule.song.title,
+              artist: schedule.song.artist,
+              requester: requesterName,
+              voteCount: schedule.song._count.votes,
+              played: schedule.song.played || false,
+              cover: schedule.song.cover || null,
+              musicPlatform: schedule.song.musicPlatform || null,
+              musicId: schedule.song.musicId || null,
+              semester: schedule.song.semester || null
+            }
+          }
+        })
+        
+        return formattedSchedules
+      }, 'refreshCompleteSchedules')
+      
+      // 重新缓存完整的排期列表
+      if (completeSchedules && completeSchedules.length > 0) {
+        await cacheService.setSchedulesList(completeSchedules)
+        console.log(`[Cache] 完整排期列表已重新缓存，数量: ${completeSchedules.length}`)
+      } else {
+        console.log('[Cache] 没有排期数据需要缓存')
+      }
+    } catch (cacheError) {
+      console.warn('[Cache] 重新缓存完整排期列表失败，但不影响排期创建:', cacheError)
+    }
     
     return schedule
   } catch (error: any) {
