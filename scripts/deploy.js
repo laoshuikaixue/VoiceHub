@@ -95,32 +95,28 @@ async function deploy() {
       logSuccess('依赖安装完成');
     }
     
-    // 2. 生成 Prisma 客户端
-    logStep('🔧', '生成 Prisma 客户端...');
-    if (!safeExec('npx prisma generate')) {
-      throw new Error('Prisma 客户端生成失败');
+    // 2. 检查 Drizzle 配置
+    logStep('🔧', '检查 Drizzle 配置...');
+    if (!fileExists('drizzle.config.ts')) {
+      throw new Error('Drizzle 配置文件不存在');
     }
-    logSuccess('Prisma 客户端生成完成');
+    if (!fileExists('drizzle/schema.ts')) {
+      throw new Error('Drizzle schema 文件不存在');
+    }
+    logSuccess('Drizzle 配置检查完成');
     
     // 3. 数据库迁移
     logStep('🗄️', '同步数据库结构...');
     let dbSyncSuccess = false;
     
-    // 首先尝试 migrate deploy
-    if (safeExec('npx prisma migrate deploy')) {
-      logSuccess('数据库迁移成功');
+    // 使用 Drizzle 进行数据库同步
+    if (safeExec('npm run db:push')) {
+      logSuccess('数据库同步成功');
       dbSyncSuccess = true;
     } else {
-      logWarning('迁移失败，尝试使用 db push 同步数据库...');
-      
-      // 如果迁移失败，尝试 db push
-      if (safeExec('npx prisma db push --accept-data-loss')) {
-        logSuccess('数据库同步成功');
-        dbSyncSuccess = true;
-      } else {
-        logError('数据库同步失败');
-        // 不直接退出，继续尝试构建
-      }
+      logWarning('数据库同步失败，可能数据库不可访问...');
+      logWarning('继续构建应用...');
+      // 不直接退出，继续尝试构建
     }
     
     // 4. 创建管理员账户（如果脚本存在）

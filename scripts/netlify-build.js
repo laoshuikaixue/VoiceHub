@@ -95,72 +95,54 @@ async function netlifyBuild() {
       throw new Error('依赖安装失败');
     }
     
-    // 确保 Prisma 相关依赖正确安装
-    logStep('🔍', '验证 Prisma 依赖...');
-    if (!safeExec('npm list @prisma/client prisma')) {
-      logStep('📦', '重新安装 Prisma 依赖...');
-      if (!safeExec('npm install @prisma/client prisma')) {
-        throw new Error('Prisma 依赖安装失败');
+    // 确保 Drizzle 相关依赖正确安装
+    logStep('🔍', '验证 Drizzle 依赖...');
+    if (!safeExec('npm list drizzle-orm drizzle-kit')) {
+      logStep('📦', '重新安装 Drizzle 依赖...');
+      if (!safeExec('npm install drizzle-orm drizzle-kit')) {
+        throw new Error('Drizzle 依赖安装失败');
       }
     }
     logSuccess('依赖安装完成');
     
-    // 4. 生成 Prisma 客户端（关键步骤）
-    logStep('🔧', '生成 Prisma 客户端...');
+    // 4. 检查 Drizzle 配置（关键步骤）
+    logStep('🔧', '检查 Drizzle 配置...');
     
-    // 设置 Netlify 特定的环境变量
-    process.env.PRISMA_CLI_BINARY_TARGETS = 'debian-openssl-1.1.x,rhel-openssl-1.0.x,linux-musl';
-    process.env.PRISMA_GENERATE_SKIP_AUTOINSTALL = 'false';
-    
-    if (!safeExec('node prisma/generate.js')) {
-      // 如果专用脚本失败，尝试标准方法
-      logWarning('专用生成脚本失败，尝试标准方法...');
-      if (!safeExec('npx prisma generate --generator client')) {
-        // 最后尝试强制重新生成
-        logWarning('标准方法失败，尝试强制重新生成...');
-        safeExec('rm -rf node_modules/@prisma/client');
-        if (!safeExec('npx prisma generate --generator client --force-reinstall')) {
-          throw new Error('Prisma 客户端生成失败');
-        }
-      }
-    }
-    logSuccess('Prisma 客户端生成完成');
-    
-    // 5. 验证 Prisma 客户端是否正确生成
-    logStep('🔍', '验证 Prisma 客户端...');
-    const prismaClientPath = 'node_modules/@prisma/client';
-    if (!fileExists(prismaClientPath)) {
-      throw new Error('Prisma 客户端未正确生成');
+    // 检查 Drizzle 配置文件
+    if (!fileExists('drizzle.config.ts')) {
+      throw new Error('Drizzle 配置文件不存在');
     }
     
-    // 检查关键文件
-    const keyFiles = [
-      'node_modules/@prisma/client/index.js',
-      'node_modules/@prisma/client/default.js'
-    ];
-    
-    for (const file of keyFiles) {
-      if (!fileExists(file)) {
-        logWarning(`缺少文件: ${file}`);
-      } else {
-        logSuccess(`找到文件: ${file}`);
-      }
+    if (!fileExists('drizzle/schema.ts')) {
+      throw new Error('Drizzle schema 文件不存在');
     }
+    
+    logSuccess('Drizzle 配置检查完成');
+    
+    // 5. 验证 Drizzle 配置是否正确
+    logStep('🔍', '验证 Drizzle 配置...');
+    const drizzleConfigPath = 'drizzle.config.ts';
+    const drizzleSchemaPath = 'drizzle/schema.ts';
+    
+    if (!fileExists(drizzleConfigPath)) {
+      throw new Error('Drizzle 配置文件未找到');
+    }
+    
+    if (!fileExists(drizzleSchemaPath)) {
+      throw new Error('Drizzle schema 文件未找到');
+    }
+    
+    logSuccess('Drizzle 配置验证成功');
     
     // 6. 数据库迁移（如果有数据库连接）
     if (process.env.DATABASE_URL) {
       logStep('🗄️', '同步数据库结构...');
       
-      // 首先尝试 migrate deploy
-      if (safeExec('npx prisma migrate deploy')) {
-        logSuccess('数据库迁移成功');
+      // 使用 Drizzle 进行数据库同步
+      if (safeExec('npm run db:push')) {
+        logSuccess('数据库同步成功');
       } else {
-        logWarning('迁移失败，尝试使用 db push...');
-        if (safeExec('npx prisma db push --accept-data-loss')) {
-          logSuccess('数据库同步成功');
-        } else {
-          logWarning('数据库同步失败，继续构建...');
-        }
+        logWarning('数据库同步失败，继续构建...');
       }
     } else {
       logWarning('未设置 DATABASE_URL，跳过数据库迁移');
@@ -175,14 +157,14 @@ async function netlifyBuild() {
     
     // 8. 验证构建输出
     logStep('🔍', '验证构建输出...');
-    if (!fileExists('dist')) {
+    if (!fileExists('.output')) {
       throw new Error('构建输出目录不存在');
     }
     
-    if (!fileExists('.netlify/functions-internal/server.mjs')) {
-      logWarning('服务器函数文件不存在，检查构建配置');
+    if (!fileExists('.output/server/index.mjs')) {
+      logWarning('服务器入口文件不存在，检查构建配置');
     } else {
-      logSuccess('服务器函数文件生成成功');
+      logSuccess('服务器入口文件生成成功');
     }
     
     log('🎉 Netlify 构建完成！', 'green');
