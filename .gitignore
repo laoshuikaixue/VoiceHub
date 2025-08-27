@@ -27,6 +27,7 @@ backups/
 .vercel
 .vscode
 .trae
+.qoder
 package-lock.json
 
 # Local env files
