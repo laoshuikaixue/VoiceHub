@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt'
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import { recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
 
 export default defineEventHandler(async (event) => {
@@ -22,27 +24,16 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 查询用户详细信息
-    let userDetails
-    try {
-      userDetails = await db.user.findUnique({
-        where: { id: user.id },
-        select: {
-          id: true,
-          username: true,
-          password: true
-        }
-      })
-    } catch (prismaError: any) {
-      const result = await db.$queryRaw`
-        SELECT id, username, password 
-        FROM "User" 
-        WHERE id = ${user.id}
-      `
-      
-      if (Array.isArray(result) && result.length > 0) {
-        userDetails = result[0] as any
-      }
-    }
+    const userDetailsResult = await db.select({
+      id: users.id,
+      username: users.username,
+      password: users.password
+    })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1)
+    
+    const userDetails = userDetailsResult[0]
 
     if (!userDetails) {
       throw createError({
@@ -78,19 +69,9 @@ export default defineEventHandler(async (event) => {
     const hashedNewPassword = await bcrypt.hash(body.newPassword, 12)
 
     // 更新密码
-    try {
-      await db.user.update({
-        where: { id: user.id },
-        data: { password: hashedNewPassword }
-      })
-    } catch (updateError: any) {
-      // 如果Prisma更新失败，尝试使用原始SQL
-      await db.$executeRaw`
-        UPDATE "User" 
-        SET password = ${hashedNewPassword} 
-        WHERE id = ${user.id}
-      `
-    }
+    await db.update(users)
+      .set({ password: hashedNewPassword })
+      .where(eq(users.id, user.id))
     
     // 记录成功的密码修改
     recordLoginSuccess(userDetails.username)

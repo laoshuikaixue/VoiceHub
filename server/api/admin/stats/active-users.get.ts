@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
+import { users, songs, votes } from '~/drizzle/schema'
+import { eq, and } from 'drizzle-orm'
 import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -32,19 +34,31 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取活跃用户数据 - 有投稿歌曲的用户
-    const activeUsers = await db.user.findMany({
-      where: {
-        songs: {
-          some: songWhere
-        }
-      },
-      include: {
-        songs: {
-          where: songWhere,
-          include: {
-            votes: true
-          }
-        }
+    const allUsers = await db.select().from(users)
+    const allSongs = await db.select().from(songs)
+    const allVotes = await db.select().from(votes)
+    
+    // 过滤有投稿歌曲的用户
+    const activeUsers = allUsers.filter(user => {
+      const userSongs = allSongs.filter(song => {
+        if (song.requesterId !== user.id) return false
+        if (semester && semester !== 'all' && song.semester !== semester) return false
+        return true
+      })
+      return userSongs.length > 0
+    }).map(user => {
+      const userSongs = allSongs.filter(song => {
+        if (song.requesterId !== user.id) return false
+        if (semester && semester !== 'all' && song.semester !== semester) return false
+        return true
+      }).map(song => ({
+        ...song,
+        votes: allVotes.filter(vote => vote.songId === song.id)
+      }))
+      
+      return {
+        ...user,
+        songs: userSongs
       }
     })
 

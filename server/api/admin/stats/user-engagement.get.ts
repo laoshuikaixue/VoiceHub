@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
+import { users, songs } from '~/drizzle/schema'
+import { eq, and, gte, count } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -20,24 +22,25 @@ export default defineEventHandler(async (event) => {
 
     // 获取用户参与度数据
     // 1. 获取总用户数
-    const totalUsers = await db.user.count()
+    const totalUsersResult = await db.select({ count: count() }).from(users)
+    const totalUsers = totalUsersResult[0].count
     
     // 2. 获取有请求歌曲的用户数
-    const activeUsers = await db.user.count({
-      where: {
-        songs: {
-          some: where
-        }
-      }
-    })
+    const allUsers = await db.select().from(users)
+    const allSongs = await db.select().from(songs)
+    
+    const activeUsers = allUsers.filter(user => {
+      return allSongs.some(song => {
+        if (song.requesterId !== user.id) return false
+        if (semester && semester !== 'all' && song.semester !== semester) return false
+        return true
+      })
+    }).length
     
     // 3. 获取用户请求歌曲的平均数量
-    const userSongCounts = await db.user.findMany({
-      include: {
-        _count: {
-          select: { songs: true }
-        }
-      }
+    const userSongCounts = allUsers.map(user => {
+      const songCount = allSongs.filter(song => song.requesterId === user.id).length
+      return { ...user, _count: { songs: songCount } }
     })
     
     const totalSongRequests = userSongCounts.reduce((sum, user) => sum + user._count.songs, 0)
@@ -47,18 +50,14 @@ export default defineEventHandler(async (event) => {
     const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
     
-    const recentActiveUsers = await db.user.count({
-      where: {
-        songs: {
-          some: {
-            ...where,
-            createdAt: {
-              gte: oneWeekAgo
-            }
-          }
-        }
-      }
-    })
+    const recentActiveUsers = allUsers.filter(user => {
+      return allSongs.some(song => {
+        if (song.requesterId !== user.id) return false
+        if (semester && semester !== 'all' && song.semester !== semester) return false
+        if (song.createdAt < oneWeekAgo) return false
+        return true
+      })
+    }).length
 
     return {
       totalUsers,

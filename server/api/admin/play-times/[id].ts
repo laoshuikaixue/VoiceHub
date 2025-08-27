@@ -1,5 +1,7 @@
 import { db } from '~/drizzle/db'
 import { CacheService } from '../../../services/cacheService'
+import { playTimes, songs, schedules } from '~/drizzle/schema'
+import { eq, ne, and, count } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -35,9 +37,8 @@ export default defineEventHandler(async (event) => {
   if (method === 'GET') {
     try {
       // 获取指定播出时段
-      const playTime = await db.playTime.findUnique({
-        where: { id }
-      })
+      const playTimeResult = await db.select().from(playTimes).where(eq(playTimes.id, id)).limit(1)
+      const playTime = playTimeResult[0]
       
       if (!playTime) {
         throw createError({
@@ -92,17 +93,12 @@ export default defineEventHandler(async (event) => {
     
     try {
       // 检查名称是否已存在（排除当前ID）
-      const existingPlayTime = await db.playTime.findFirst({
-        where: {
-          name: {
-            equals: body.name,
-            mode: 'insensitive' // 忽略大小写
-          },
-          id: {
-            not: id
-          }
-        }
-      })
+      const existingPlayTimeResult = await db.select().from(playTimes)
+        .where(and(
+          eq(playTimes.name, body.name),
+          ne(playTimes.id, id)
+        )).limit(1)
+      const existingPlayTime = existingPlayTimeResult[0]
       
       if (existingPlayTime) {
         throw createError({
@@ -112,16 +108,17 @@ export default defineEventHandler(async (event) => {
       }
       
       // 更新播出时段
-      const updatedPlayTime = await db.playTime.update({
-        where: { id },
-        data: {
+      const updatedPlayTimeResult = await db.update(playTimes)
+        .set({
           name: body.name,
           startTime: body.startTime || null,
           endTime: body.endTime || null,
           description: body.description ?? null,
           enabled: body.enabled !== undefined ? body.enabled : true
-        }
-      })
+        })
+        .where(eq(playTimes.id, id))
+        .returning()
+      const updatedPlayTime = updatedPlayTimeResult[0]
 
       // 清除相关缓存
       try {
@@ -155,17 +152,12 @@ export default defineEventHandler(async (event) => {
       // 如果要更新名称，先检查是否存在重名
       if (body.name !== undefined) {
         // 检查名称是否已存在（排除当前ID）
-        const existingPlayTime = await db.playTime.findFirst({
-          where: {
-            name: {
-              equals: body.name,
-              mode: 'insensitive' // 忽略大小写
-            },
-            id: {
-              not: id
-            }
-          }
-        })
+        const existingPlayTimeResult = await db.select().from(playTimes)
+          .where(and(
+            eq(playTimes.name, body.name),
+            ne(playTimes.id, id)
+          )).limit(1)
+        const existingPlayTime = existingPlayTimeResult[0]
         
         if (existingPlayTime) {
           throw createError({
@@ -176,16 +168,18 @@ export default defineEventHandler(async (event) => {
       }
       
       // 更新播出时段
-      const updatedPlayTime = await db.playTime.update({
-        where: { id },
-        data: {
-          ...(body.name !== undefined && { name: body.name }),
-          ...(body.startTime !== undefined && { startTime: body.startTime }),
-          ...(body.endTime !== undefined && { endTime: body.endTime }),
-          ...(body.description !== undefined && { description: body.description }),
-          ...(body.enabled !== undefined && { enabled: body.enabled })
-        }
-      })
+      const updateData: any = {}
+      if (body.name !== undefined) updateData.name = body.name
+      if (body.startTime !== undefined) updateData.startTime = body.startTime
+      if (body.endTime !== undefined) updateData.endTime = body.endTime
+      if (body.description !== undefined) updateData.description = body.description
+      if (body.enabled !== undefined) updateData.enabled = body.enabled
+      
+      const updatedPlayTimeResult = await db.update(playTimes)
+        .set(updateData)
+        .where(eq(playTimes.id, id))
+        .returning()
+      const updatedPlayTime = updatedPlayTimeResult[0]
 
       // 清除相关缓存
       try {
@@ -214,32 +208,31 @@ export default defineEventHandler(async (event) => {
   } else if (method === 'DELETE') {
     try {
       // 检查该播出时段是否有关联的歌曲或排期
-      const songs = await db.song.count({
-        where: { preferredPlayTimeId: id }
-      })
+      const songsCountResult = await db.select({ count: count() }).from(songs)
+        .where(eq(songs.preferredPlayTimeId, id))
+      const songsCount = songsCountResult[0].count
       
-      const schedules = await db.schedule.count({
-        where: { playTimeId: id }
-      })
+      const schedulesCountResult = await db.select({ count: count() }).from(schedules)
+        .where(eq(schedules.playTimeId, id))
+      const schedulesCount = schedulesCountResult[0].count
       
       // 删除该播出时段
-      const deletedPlayTime = await db.playTime.delete({
-        where: { id }
-      })
+      const deletedPlayTimeResult = await db.delete(playTimes)
+        .where(eq(playTimes.id, id))
+        .returning()
+      const deletedPlayTime = deletedPlayTimeResult[0]
       
       // 如果有关联的歌曲或排期，将它们的playTimeId设为null
-      if (songs > 0) {
-        await db.song.updateMany({
-          where: { preferredPlayTimeId: id },
-          data: { preferredPlayTimeId: null }
-        })
+      if (songsCount > 0) {
+        await db.update(songs)
+          .set({ preferredPlayTimeId: null })
+          .where(eq(songs.preferredPlayTimeId, id))
       }
       
-      if (schedules > 0) {
-        await db.schedule.updateMany({
-          where: { playTimeId: id },
-          data: { playTimeId: null }
-        })
+      if (schedulesCount > 0) {
+        await db.update(schedules)
+          .set({ playTimeId: null })
+          .where(eq(schedules.playTimeId, id))
       }
       
       // 清除相关缓存
@@ -247,7 +240,7 @@ export default defineEventHandler(async (event) => {
         const cacheService = CacheService.getInstance()
         await cacheService.clearSchedulesCache()
         await cacheService.clearPlayTimesCache()
-        if (songs > 0) {
+        if (songsCount > 0) {
           await cacheService.clearSongsCache()
         }
         console.log('[Cache] 缓存已清除（播放时间删除）')
@@ -257,7 +250,7 @@ export default defineEventHandler(async (event) => {
 
       return {
         message: '播出时段已成功删除',
-        affected: { songs, schedules }
+        affected: { songs: songsCount, schedules: schedulesCount }
       }
     } catch (error) {
       console.error('删除播出时段失败:', error)

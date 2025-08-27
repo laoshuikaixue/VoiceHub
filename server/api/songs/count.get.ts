@@ -1,24 +1,26 @@
+import { defineEventHandler, getQuery, createError } from 'h3'
 import { db } from '~/drizzle/db'
+import { songs } from '~/drizzle/schema'
+import { count, eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
     // 获取查询参数
-    const query = getQuery(event)
-    const semester = query.semester as string
-    
-    // 构建查询条件
-    const whereCondition: any = {}
-    if (semester) {
-      whereCondition.semester = semester
-    }
+    const queryParams = getQuery(event)
+    const semester = queryParams.semester as string
     
     // 获取歌曲总数
-    const count = await db.song.count({
-      where: whereCondition
-    })
+    let dbQuery = db.select({ count: count() }).from(songs)
+    
+    if (semester) {
+      dbQuery = dbQuery.where(eq(songs.semester, semester))
+    }
+    
+    const result = await dbQuery
+    const songCount = result[0]?.count || 0
     
     return {
-      count
+      count: songCount
     }
   } catch (error) {
     console.error('Error fetching song count:', error)

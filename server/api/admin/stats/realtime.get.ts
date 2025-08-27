@@ -1,6 +1,8 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { CacheService } from '../../../services/cacheService'
+import { songs, users, votes } from '~/drizzle/schema'
+import { gte, count, eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -37,69 +39,47 @@ export default defineEventHandler(async (event) => {
       (async () => {
         try {
           // 获取最近1小时内点歌的用户
-          const recentSongUsers = await db.song.findMany({
-            where: {
-              createdAt: {
-                gte: oneHourAgo
-              }
-            },
-            select: {
-              requesterId: true,
-              requester: {
-                select: {
-                  id: true,
-                  username: true,
-                  name: true
-                }
-              }
-            },
-            distinct: ['requesterId']
+          const recentSongUsers = await db.select({
+            requesterId: songs.requesterId,
+            requesterName: users.name,
+            requesterUsername: users.username,
+            requesterId2: users.id
           })
+          .from(songs)
+          .innerJoin(users, eq(songs.requesterId, users.id))
+          .where(gte(songs.createdAt, oneHourAgo))
+          .groupBy(songs.requesterId, users.id, users.name, users.username)
           
           // 获取最近1小时内登录的用户
-          const recentLoginUsers = await db.user.findMany({
-            where: {
-              lastLogin: {
-                gte: oneHourAgo
-              }
-            },
-            select: {
-              id: true,
-              username: true,
-              name: true
-            }
+          const recentLoginUsers = await db.select({
+            id: users.id,
+            username: users.username,
+            name: users.name
           })
+          .from(users)
+          .where(gte(users.lastLogin, oneHourAgo))
           
           // 获取最近1小时内点赞过歌曲的用户
-          const recentVoteUsers = await db.vote.findMany({
-            where: {
-              createdAt: {
-                gte: oneHourAgo
-              }
-            },
-            select: {
-              userId: true,
-              user: {
-                select: {
-                  id: true,
-                  username: true,
-                  name: true
-                }
-              }
-            },
-            distinct: ['userId']
+          const recentVoteUsers = await db.select({
+            userId: votes.userId,
+            userName: users.name,
+            userUsername: users.username,
+            userId2: users.id
           })
+          .from(votes)
+          .innerJoin(users, eq(votes.userId, users.id))
+          .where(gte(votes.createdAt, oneHourAgo))
+          .groupBy(votes.userId, users.id, users.name, users.username)
           
           // 合并并去重用户列表
           const userMap = new Map()
           
           // 添加点歌用户
           recentSongUsers.forEach(song => {
-            const user = song.requester
-            userMap.set(user.id, {
-              id: user.id,
-              username: user.username,
-              name: user.name
+            userMap.set(song.requesterId2, {
+              id: song.requesterId2,
+              username: song.requesterUsername,
+              name: song.requesterName
             })
           })
           
@@ -114,11 +94,10 @@ export default defineEventHandler(async (event) => {
           
           // 添加点赞用户
           recentVoteUsers.forEach(vote => {
-            const user = vote.user
-            userMap.set(user.id, {
-              id: user.id,
-              username: user.username,
-              name: user.name
+            userMap.set(vote.userId2, {
+              id: vote.userId2,
+              username: vote.userUsername,
+              name: vote.userName
             })
           })
           
@@ -139,13 +118,10 @@ export default defineEventHandler(async (event) => {
       // 今日点歌数
       (async () => {
         try {
-          return await db.song.count({
-            where: {
-              createdAt: {
-                gte: today
-              }
-            }
-          })
+          const todayCountResult = await db.select({ count: count() })
+            .from(songs)
+            .where(gte(songs.createdAt, today))
+          return todayCountResult[0].count
         } catch (error) {
           return 0
         }
@@ -160,19 +136,14 @@ export default defineEventHandler(async (event) => {
       (async () => {
         try {
           const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-          const songs = await db.song.findMany({
-            where: {
-              createdAt: {
-                gte: sevenDaysAgo
-              }
-            },
-            select: {
-              createdAt: true
-            }
+          const songsData = await db.select({
+            createdAt: songs.createdAt
           })
+          .from(songs)
+          .where(gte(songs.createdAt, sevenDaysAgo))
 
           // 按小时统计
-          const hourCount = songs.reduce((acc, song) => {
+          const hourCount = songsData.reduce((acc, song) => {
             const hour = song.createdAt.getHours()
             acc[hour] = (acc[hour] || 0) + 1
             return acc

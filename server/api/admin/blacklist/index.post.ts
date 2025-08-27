@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
+import { songBlacklists } from '~/drizzle/schema'
+import { eq, and } from 'drizzle-orm'
 import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -32,14 +34,15 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 检查是否已存在
-    const existing = await db.songBlacklist.findFirst({
-      where: {
-        type,
-        value: value.trim()
-      }
-    })
+    const existing = await db.select()
+      .from(songBlacklists)
+      .where(and(
+        eq(songBlacklists.type, type),
+        eq(songBlacklists.value, value.trim())
+      ))
+      .limit(1)
 
-    if (existing) {
+    if (existing.length > 0) {
       throw createError({
         statusCode: 409,
         message: '该项目已在黑名单中'
@@ -47,15 +50,15 @@ export default defineEventHandler(async (event) => {
     }
 
     // 创建黑名单项
-    const blacklistItem = await db.songBlacklist.create({
-      data: {
+    const blacklistItem = await db.insert(songBlacklists)
+      .values({
         type,
         value: value.trim(),
         reason: reason?.trim() || null,
         createdBy: user.id,
         isActive: true
-      }
-    })
+      })
+      .returning()
 
     // 清除歌曲缓存（黑名单变更可能影响歌曲提交验证）
     try {
@@ -69,7 +72,7 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       message: '黑名单项添加成功',
-      item: blacklistItem
+      item: blacklistItem[0]
     }
   } catch (error) {
     if (error.statusCode) {

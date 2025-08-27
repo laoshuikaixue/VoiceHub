@@ -1,5 +1,7 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { count, sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -7,19 +9,17 @@ export default defineEventHandler(async (event) => {
       connected: false,
       tables: {
         user: false,
-        role: false,
         song: false,
         vote: false,
         schedule: false,
         notification: false
       },
-      userCount: 0,
-      roleCount: 0
+      userCount: 0
     }
 
     // 检查数据库连接
     try {
-      await db.$queryRaw`SELECT 1`
+      await db.execute(sql`SELECT 1`)
       status.connected = true
     } catch (error) {
       console.error('数据库连接失败:', error)
@@ -27,18 +27,18 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查各个表是否存在
-    const tables = ['user', 'role', 'song', 'vote', 'schedule', 'notification']
+    const tables = ['user', 'song', 'vote', 'schedule', 'notification']
     
     for (const tableName of tables) {
       try {
-        const result = await db.$queryRaw`
+        const result = await db.execute(sql`
           SELECT EXISTS (
             SELECT FROM information_schema.tables 
             WHERE table_schema = 'public' 
             AND table_name = ${tableName}
           )
-        `
-        status.tables[tableName] = result[0]?.exists || false
+        `)
+        status.tables[tableName] = result.rows[0]?.exists || false
       } catch (error) {
         console.error(`检查表 ${tableName} 失败:`, error)
         status.tables[tableName] = false
@@ -48,19 +48,14 @@ export default defineEventHandler(async (event) => {
     // 如果表存在，获取记录数
     if (status.tables.user) {
       try {
-        status.userCount = await db.user.count()
+        const userCountResult = await db.select({ count: count() }).from(users)
+        status.userCount = userCountResult[0]?.count || 0
       } catch (error) {
         console.error('获取用户数量失败:', error)
       }
     }
 
-    if (status.tables.role) {
-      try {
-        status.roleCount = await db.role.count()
-      } catch (error) {
-        console.error('获取角色数量失败:', error)
-      }
-    }
+
 
     return {
       success: true,

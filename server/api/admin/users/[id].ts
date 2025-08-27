@@ -1,4 +1,6 @@
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -33,26 +35,26 @@ export default defineEventHandler(async (event) => {
     }
     
     try {
-      const updatedUser = await db.user.update({
-        where: { id },
-        data: {
+      const updatedUserResult = await db.update(users)
+        .set({
           name: body.name,
           role: body.role,
           grade: body.grade,
           class: body.class
-        },
-        select: {
-          id: true,
-          name: true,
-          role: true,
-          createdAt: true,
-          updatedAt: true,
-          grade: true,
-          class: true,
-          username: true,
-          passwordChangedAt: true
-        }
-      })
+        })
+        .where(eq(users.id, id))
+        .returning({
+          id: users.id,
+          name: users.name,
+          role: users.role,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          grade: users.grade,
+          class: users.class,
+          username: users.username,
+          passwordChangedAt: users.passwordChangedAt
+        })
+      const updatedUser = updatedUserResult[0]
       
       return updatedUser
     } catch (error) {
@@ -75,9 +77,8 @@ export default defineEventHandler(async (event) => {
         })
       }
       
-      await db.user.delete({
-        where: { id }
-      })
+      await db.delete(users)
+        .where(eq(users.id, id))
       
       return { success: true }
     } catch (error) {

@@ -1,5 +1,7 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
+import { users, notificationSettings } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import type { NotificationSettings, DBNotificationSettings } from '~/types'
 
 export default defineEventHandler(async (event) => {
@@ -15,35 +17,31 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 获取用户信息（包含meowNickname）
-    const userInfo = await db.user.findUnique({
-      where: {
-        id: user.id
-      },
-      select: {
-        meowNickname: true
-      }
-    })
+    const userInfoResult = await db.select({
+      meowNickname: users.meowNickname
+    }).from(users).where(eq(users.id, user.id)).limit(1)
+    
+    const userInfo = userInfoResult[0]
 
     // 获取用户的通知设置，如果不存在则创建默认设置
-    let dbSettings: any = await db.notificationSettings.findUnique({
-      where: {
-        userId: user.id
-      }
-    })
+    const dbSettingsResult = await db.select().from(notificationSettings)
+      .where(eq(notificationSettings.userId, user.id)).limit(1)
+    
+    let dbSettings: any = dbSettingsResult[0]
     
     if (!dbSettings) {
       // 创建默认设置
-      dbSettings = await db.notificationSettings.create({
-        data: {
-          userId: user.id,
-          enabled: true,
-          songRequestEnabled: true,
-          songVotedEnabled: true,
-          songPlayedEnabled: true,
-          refreshInterval: 60,
-          songVotedThreshold: 1
-        }
-      })
+      const insertResult = await db.insert(notificationSettings).values({
+        userId: user.id,
+        enabled: true,
+        songRequestEnabled: true,
+        songVotedEnabled: true,
+        songPlayedEnabled: true,
+        refreshInterval: 60,
+        songVotedThreshold: 1
+      }).returning()
+      
+      dbSettings = insertResult[0]
     }
     
     // 转换为前端期望的格式

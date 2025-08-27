@@ -1,5 +1,7 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
+import { notifications } from '~/drizzle/schema'
+import { eq, desc, and, count } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -14,25 +16,21 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 获取用户的所有通知
-    const notifications = await db.notification.findMany({
-      where: {
-        userId: user.id
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
+    const userNotifications = await db.select().from(notifications)
+      .where(eq(notifications.userId, user.id))
+      .orderBy(desc(notifications.createdAt))
     
     // 计算未读通知数量
-    const unreadCount = await db.notification.count({
-      where: {
-        userId: user.id,
-        read: false
-      }
-    })
+    const unreadCountResult = await db.select({ count: count() }).from(notifications)
+      .where(and(
+        eq(notifications.userId, user.id),
+        eq(notifications.read, false)
+      ))
+    
+    const unreadCount = unreadCountResult[0]?.count || 0
     
     return {
-      notifications,
+      notifications: userNotifications,
       unreadCount
     }
   } catch (err) {
@@ -42,4 +40,4 @@ export default defineEventHandler(async (event) => {
       message: '获取通知失败'
     })
   }
-}) 
+})

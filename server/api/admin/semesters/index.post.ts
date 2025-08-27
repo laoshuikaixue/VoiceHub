@@ -1,4 +1,6 @@
 import { db } from '~/drizzle/db'
+import { semesters } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -28,11 +30,8 @@ export default defineEventHandler(async (event) => {
   }
   
   // 检查学期名称是否已存在
-  const existingSemester = await db.semester.findUnique({
-    where: {
-      name: body.name
-    }
-  })
+  const existingSemesterResult = await db.select().from(semesters).where(eq(semesters.name, body.name)).limit(1)
+  const existingSemester = existingSemesterResult[0]
   
   if (existingSemester) {
     throw createError({
@@ -43,23 +42,15 @@ export default defineEventHandler(async (event) => {
   
   // 如果设置为活跃学期，先将其他学期设为非活跃
   if (body.isActive) {
-    await db.semester.updateMany({
-      where: {
-        isActive: true
-      },
-      data: {
-        isActive: false
-      }
-    })
+    await db.update(semesters).set({ isActive: false }).where(eq(semesters.isActive, true))
   }
   
   // 创建新学期
-  const semester = await db.semester.create({
-    data: {
-      name: body.name,
-      isActive: body.isActive || false
-    }
-  })
+  const semesterResult = await db.insert(semesters).values({
+    name: body.name,
+    isActive: body.isActive || false
+  }).returning()
+  const semester = semesterResult[0]
   
   return semester
 })

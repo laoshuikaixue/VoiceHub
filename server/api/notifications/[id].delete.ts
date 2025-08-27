@@ -1,4 +1,6 @@
 import { db } from '~/drizzle/db'
+import { notifications } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -23,11 +25,8 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 检查通知是否属于当前用户
-    const notification = await db.notification.findUnique({
-      where: {
-        id: id
-      }
-    })
+    const notificationResult = await db.select().from(notifications).where(eq(notifications.id, id)).limit(1)
+    const notification = notificationResult[0]
     
     if (!notification) {
       throw createError({
@@ -44,11 +43,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 删除通知
-    await db.notification.delete({
-      where: {
-        id: id
-      }
-    })
+    await db.delete(notifications).where(eq(notifications.id, id))
     
     return {
       success: true
@@ -60,4 +55,4 @@ export default defineEventHandler(async (event) => {
       message: '删除通知失败'
     })
   }
-}) 
+})

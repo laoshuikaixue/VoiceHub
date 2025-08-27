@@ -1,4 +1,6 @@
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { asc } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -12,24 +14,21 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 获取所有用户
-    const users = await db.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        role: true,
-        grade: true,
-        class: true,
-        lastLoginAt: true,
-        lastLoginIp: true,
-        passwordChangedAt: true
-      },
-      orderBy: {
-        id: 'asc'
-      }
+    const usersList = await db.select({
+      id: users.id,
+      name: users.name,
+      username: users.username,
+      role: users.role,
+      grade: users.grade,
+      class: users.class,
+      lastLoginAt: users.lastLoginAt,
+      lastLoginIp: users.lastLoginIp,
+      passwordChangedAt: users.passwordChangedAt
     })
+    .from(users)
+    .orderBy(asc(users.id))
 
-    return users
+    return usersList
   } catch (error) {
     console.error('获取用户列表失败:', error)
     throw createError({

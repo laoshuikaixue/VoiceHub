@@ -1,4 +1,6 @@
 import { db } from '~/drizzle/db'
+import { systemSettings, songs } from '~/drizzle/schema'
+import { eq, and, gte, lt, count } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -13,12 +15,13 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 获取系统设置
-    const systemSettings = await db.systemSettings.findFirst()
+    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
+    const systemSettingsData = systemSettingsResult[0]
     
     // 超级管理员和管理员不受投稿限制
     const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
     
-    if (!systemSettings?.enableSubmissionLimit) {
+    if (!systemSettingsData?.enableSubmissionLimit) {
       return {
         limitEnabled: false,
         dailyLimit: null,
@@ -32,8 +35,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // 确定生效的限额类型（二选一逻辑）
-    const dailyLimit = systemSettings.dailySubmissionLimit
-    const weeklyLimit = systemSettings.weeklySubmissionLimit
+    const dailyLimit = systemSettingsData.dailySubmissionLimit
+    const weeklyLimit = systemSettingsData.weeklySubmissionLimit
     
     let effectiveLimit = null
     let limitType = null
@@ -70,15 +73,14 @@ export default defineEventHandler(async (event) => {
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
       
-      dailyUsed = await db.song.count({
-        where: {
-          requesterId: user.id,
-          createdAt: {
-            gte: startOfDay,
-            lt: endOfDay
-          }
-        }
-      })
+      const dailyUsedResult = await db.select({ count: count() }).from(songs)
+        .where(and(
+          eq(songs.requesterId, user.id),
+          gte(songs.createdAt, startOfDay),
+          lt(songs.createdAt, endOfDay)
+        ))
+      
+      dailyUsed = dailyUsedResult[0]?.count || 0
     } else if (limitType === 'weekly' && effectiveLimit > 0) {
       const startOfWeek = new Date(now)
       const dayOfWeek = now.getDay()
@@ -88,15 +90,14 @@ export default defineEventHandler(async (event) => {
       
       const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
       
-      weeklyUsed = await db.song.count({
-        where: {
-          requesterId: user.id,
-          createdAt: {
-            gte: startOfWeek,
-            lt: endOfWeek
-          }
-        }
-      })
+      const weeklyUsedResult = await db.select({ count: count() }).from(songs)
+        .where(and(
+          eq(songs.requesterId, user.id),
+          gte(songs.createdAt, startOfWeek),
+          lt(songs.createdAt, endOfWeek)
+        ))
+      
+      weeklyUsed = weeklyUsedResult[0]?.count || 0
     }
     
     return {

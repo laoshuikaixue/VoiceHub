@@ -1,4 +1,6 @@
 import { db } from '~/drizzle/db'
+import { songs, votes, schedules } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -22,13 +24,10 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 使用事务确保删除操作的原子性
-    const result = await db.$transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // 在事务中重新检查歌曲是否存在
-      const song = await tx.song.findUnique({
-        where: {
-          id: body.songId
-        }
-      })
+      const songResult = await tx.select().from(songs).where(eq(songs.id, body.songId)).limit(1)
+      const song = songResult[0]
       
       if (!song) {
         throw createError({
@@ -40,35 +39,24 @@ export default defineEventHandler(async (event) => {
       console.log(`开始删除歌曲: ${song.title} (ID: ${body.songId})`)
       
       // 删除歌曲的所有投票
-      const deletedVotes = await tx.vote.deleteMany({
-        where: {
-          songId: body.songId
-        }
-      })
-      console.log(`删除了 ${deletedVotes.count} 个投票记录`)
+      const deletedVotes = await tx.delete(votes).where(eq(votes.songId, body.songId))
+      console.log(`删除了投票记录`)
       
       // 删除歌曲的所有排期
-      const deletedSchedules = await tx.schedule.deleteMany({
-        where: {
-          songId: body.songId
-        }
-      })
-      console.log(`删除了 ${deletedSchedules.count} 个排期记录`)
+      const deletedSchedules = await tx.delete(schedules).where(eq(schedules.songId, body.songId))
+      console.log(`删除了排期记录`)
       
       // 删除歌曲
-      const deletedSong = await tx.song.delete({
-        where: {
-          id: body.songId
-        }
-      })
+      const deletedSong = await tx.delete(songs).where(eq(songs.id, body.songId)).returning()
+      const deletedSongData = deletedSong[0]
       
-      console.log(`成功删除歌曲: ${deletedSong.title}`)
+      console.log(`成功删除歌曲: ${deletedSongData?.title}`)
       
       return {
         message: '歌曲已成功删除',
         songId: body.songId,
-        deletedVotes: deletedVotes.count,
-        deletedSchedules: deletedSchedules.count
+        deletedVotes: true,
+        deletedSchedules: true
       }
     })
     
@@ -76,7 +64,7 @@ export default defineEventHandler(async (event) => {
     try {
       const { cache } = await import('~/server/utils/cache-helpers')
       await cache.deletePattern('songs:*')
-      if (result.deletedSchedules > 0) {
+      if (result.deletedSchedules) {
         await cache.deletePattern('schedules:*')
       }
       console.log('[Cache] 歌曲和排期缓存已清除（删除歌曲）')

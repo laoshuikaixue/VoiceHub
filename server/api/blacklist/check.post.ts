@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
+import { systemSettings, songBlacklists } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -14,13 +16,12 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 获取系统设置
-    const systemSettings = await db.systemSettings.findFirst()
-    const showBlacklistKeywords = systemSettings?.showBlacklistKeywords ?? false
+    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
+    const systemSettingsData = systemSettingsResult[0]
+    const showBlacklistKeywords = systemSettingsData?.showBlacklistKeywords ?? false
 
     // 获取所有活跃的黑名单项
-    const blacklistItems = await db.songBlacklist.findMany({
-      where: { isActive: true }
-    })
+    const blacklistItems = await db.select().from(songBlacklists).where(eq(songBlacklists.isActive, true))
 
     const songFullName = `${title} - ${artist || ''}`.toLowerCase()
     const blocked = []

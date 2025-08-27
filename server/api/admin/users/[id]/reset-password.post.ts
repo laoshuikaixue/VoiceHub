@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt'
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -33,9 +35,11 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 查询用户是否存在
-    const userExists = await db.user.findUnique({
-      where: { id }
-    })
+    const userExistsResult = await db.select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1)
+    const userExists = userExistsResult[0]
     
     if (!userExists) {
       throw createError({
@@ -48,14 +52,13 @@ export default defineEventHandler(async (event) => {
     const hashedPassword = await bcrypt.hash(body.newPassword, 10)
     
     // 更新密码，清空passwordChangedAt字段，强制用户下次登录时修改密码
-    await db.user.update({
-      where: { id },
-      data: {
+    await db.update(users)
+      .set({
         password: hashedPassword,
         passwordChangedAt: null, // 清空密码修改时间，强制用户修改密码
         forcePasswordChange: true // 强制用户修改密码
-      }
-    })
+      })
+      .where(eq(users.id, id))
     
     // 清除该用户的认证缓存（密码已重置）
     try {

@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
 import { db } from '~/drizzle/db'
+import { songBlacklists } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -25,11 +27,12 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 检查黑名单项是否存在
-    const blacklistItem = await db.songBlacklist.findUnique({
-      where: { id }
-    })
+    const existingItemResult = await db.select()
+      .from(songBlacklists)
+      .where(eq(songBlacklists.id, id))
+      .limit(1)
 
-    if (!blacklistItem) {
+    if (blacklistItem.length === 0) {
       throw createError({
         statusCode: 404,
         message: '黑名单项不存在'
@@ -37,13 +40,18 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新黑名单项
-    const updatedItem = await db.songBlacklist.update({
-      where: { id },
-      data: {
-        ...(typeof isActive === 'boolean' && { isActive }),
-        ...(reason !== undefined && { reason: reason?.trim() || null })
-      }
-    })
+    const updateData = {}
+    if (typeof isActive === 'boolean') {
+      updateData.isActive = isActive
+    }
+    if (reason !== undefined) {
+      updateData.reason = reason?.trim() || null
+    }
+    
+    const updatedItem = await db.update(songBlacklists)
+      .set(updateData)
+      .where(eq(songBlacklists.id, id))
+      .returning()
 
     // 清除歌曲缓存（黑名单变更可能影响歌曲提交验证）
     try {
@@ -57,7 +65,7 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       message: '黑名单项更新成功',
-      item: updatedItem
+      item: updatedItem[0]
     }
   } catch (error) {
     if (error.statusCode) {

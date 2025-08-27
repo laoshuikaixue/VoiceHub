@@ -1,4 +1,6 @@
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq, and, or } from 'drizzle-orm'
 import { createBatchSystemNotifications, createSystemNotification } from '../../../services/notificationService'
 
 export default defineEventHandler(async (event) => {
@@ -64,9 +66,7 @@ export default defineEventHandler(async (event) => {
     
     if (scope === 'ALL') {
       // 查询所有用户
-      const allUsers = await db.user.findMany({
-        select: { id: true }
-      })
+      const allUsers = await db.select({ id: users.id }).from(users)
       userIds = allUsers.map(user => user.id)
     } 
     else if (scope === 'GRADE') {
@@ -78,10 +78,9 @@ export default defineEventHandler(async (event) => {
         })
       }
       
-      const gradeUsers = await db.user.findMany({
-        where: { grade: filter.grade },
-        select: { id: true }
-      })
+      const gradeUsers = await db.select({ id: users.id })
+        .from(users)
+        .where(eq(users.grade, filter.grade))
       userIds = gradeUsers.map(user => user.id)
     } 
     else if (scope === 'CLASS') {
@@ -93,13 +92,12 @@ export default defineEventHandler(async (event) => {
         })
       }
       
-      const classUsers = await db.user.findMany({
-        where: {
-          grade: filter.grade,
-          class: filter.class
-        },
-        select: { id: true }
-      })
+      const classUsers = await db.select({ id: users.id })
+        .from(users)
+        .where(and(
+          eq(users.grade, filter.grade),
+          eq(users.class, filter.class)
+        ))
       userIds = classUsers.map(user => user.id)
     }
     else if (scope === 'MULTI_CLASS') {
@@ -112,17 +110,16 @@ export default defineEventHandler(async (event) => {
       }
       
       // 构建查询条件，使用OR连接多个班级条件
-      const whereConditions = filter.classes.map((cls: { grade: string, class: string }) => ({
-        grade: cls.grade,
-        class: cls.class
-      }))
+      const whereConditions = filter.classes.map((cls: { grade: string, class: string }) => 
+        and(
+          eq(users.grade, cls.grade),
+          eq(users.class, cls.class)
+        )
+      )
       
-      const multiClassUsers = await db.user.findMany({
-        where: {
-          OR: whereConditions
-        },
-        select: { id: true }
-      })
+      const multiClassUsers = await db.select({ id: users.id })
+        .from(users)
+        .where(or(...whereConditions))
       userIds = multiClassUsers.map(user => user.id)
     }
     

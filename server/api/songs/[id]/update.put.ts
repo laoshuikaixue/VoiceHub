@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { db } from '~/drizzle/db'
+import { songs, users } from '~/drizzle/schema'
+import { eq, or } from 'drizzle-orm'
 import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -67,17 +69,21 @@ export default defineEventHandler(async (event) => {
       // 只有在传递有效投稿人信息时才更新
       if (requester && requester !== '' && requester !== 0) {
         // 查找投稿人用户
-        const requesterUser = await db.user.findFirst({
-          where: {
-            OR: [
-              { id: typeof requester === 'number' ? requester : undefined },
-              { username: typeof requester === 'string' ? requester : undefined },
-              { name: typeof requester === 'string' ? requester : undefined }
-            ]
-          }
-        })
+        const conditions = []
+        if (typeof requester === 'number') {
+          conditions.push(eq(users.id, requester))
+        }
+        if (typeof requester === 'string') {
+          conditions.push(eq(users.username, requester))
+          conditions.push(eq(users.name, requester))
+        }
+        
+        const requesterUser = await db.select()
+          .from(users)
+          .where(or(...conditions))
+          .limit(1)
 
-        if (!requesterUser) {
+        if (requesterUser.length === 0) {
           throw createError({
             statusCode: 404,
             statusMessage: '投稿人用户不存在'
@@ -85,25 +91,46 @@ export default defineEventHandler(async (event) => {
         }
 
         // 设置投稿人
-        updateData.requester = { connect: { id: requesterUser.id } }
+        updateData.requesterId = requesterUser[0].id
       }
       // 如果投稿人为空值，则跳过处理，保持原有投稿人不变
     }
 
     // 更新歌曲
-    const updatedSong = await db.song.update({
-      where: { id: songId },
-      data: updateData,
-      include: {
-        requester: {
-          select: {
-            id: true,
-            username: true,
-            name: true
-          }
-        }
+    const updatedSongResult = await db.update(songs)
+      .set(updateData)
+      .where(eq(songs.id, songId))
+      .returning()
+    
+    if (updatedSongResult.length === 0) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: '歌曲不存在'
+      })
+    }
+    
+    // 获取完整的歌曲信息（包含投稿人）
+    const updatedSong = await db.select({
+      id: songs.id,
+      title: songs.title,
+      artist: songs.artist,
+      semester: songs.semester,
+      musicPlatform: songs.musicPlatform,
+      musicId: songs.musicId,
+      cover: songs.cover,
+      requesterId: songs.requesterId,
+      createdAt: songs.createdAt,
+      updatedAt: songs.updatedAt,
+      requester: {
+        id: users.id,
+        username: users.username,
+        name: users.name
       }
     })
+      .from(songs)
+      .leftJoin(users, eq(songs.requesterId, users.id))
+      .where(eq(songs.id, songId))
+      .limit(1)
 
     // 清除歌曲列表缓存
     const { cache } = await import('~/server/utils/cache-helpers')
@@ -112,7 +139,7 @@ export default defineEventHandler(async (event) => {
     
     return {
       success: true,
-      song: updatedSong
+      song: updatedSong[0]
     }
 
   } catch (error) {

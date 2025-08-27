@@ -1,5 +1,7 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,14 +17,12 @@ export default defineEventHandler(async (event) => {
     const userId = user.id
 
     // 获取用户的 MeoW 绑定信息
-    const userData = await db.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        username: true,
-        meowNickname: true
-      }
-    })
+    const userDataResult = await db.select({
+      id: users.id,
+      username: users.username,
+      meowNickname: users.meowNickname
+    }).from(users).where(eq(users.id, userId)).limit(1)
+    const userData = userDataResult[0]
 
     if (!userData) {
       throw createError({

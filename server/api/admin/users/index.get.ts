@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq, and, or, ilike, count, asc } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,41 +17,35 @@ export default defineEventHandler(async (event) => {
     } = query
 
     // 构建筛选条件
-    const where: any = {}
+    const whereConditions = []
 
     // 年级筛选
     if (grade && typeof grade === 'string' && grade.trim()) {
-      where.grade = grade.trim()
+      whereConditions.push(eq(users.grade, grade.trim()))
     }
 
     // 班级筛选
     if (className && typeof className === 'string' && className.trim()) {
-      where.class = className.trim()
+      whereConditions.push(eq(users.class, className.trim()))
     }
 
     // 角色筛选
     if (role && typeof role === 'string' && role.trim()) {
-      where.role = role.trim()
+      whereConditions.push(eq(users.role, role.trim()))
     }
 
     // 搜索功能（姓名或用户名）
     if (search && typeof search === 'string' && search.trim()) {
       const searchTerm = search.trim()
-      where.OR = [
-        {
-          name: {
-            contains: searchTerm,
-            mode: 'insensitive'
-          }
-        },
-        {
-          username: {
-            contains: searchTerm,
-            mode: 'insensitive'
-          }
-        }
-      ]
+      whereConditions.push(
+        or(
+          ilike(users.name, `%${searchTerm}%`),
+          ilike(users.username, `%${searchTerm}%`)
+        )
+      )
     }
+    
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
 
     // 分页参数
     const pageNum = Math.max(1, parseInt(page as string) || 1)
@@ -57,30 +53,30 @@ export default defineEventHandler(async (event) => {
     const skip = (pageNum - 1) * limitNum
 
     // 获取总数
-    const total = await db.user.count({ where })
+    const totalResult = await db.select({ count: count() })
+      .from(users)
+      .where(whereClause)
+    const total = totalResult[0].count
 
     // 获取用户列表
-    const users = await db.user.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        role: true,
-        grade: true,
-        class: true,
-        lastLogin: true,
-        lastLoginIp: true,
-        passwordChangedAt: true,
-        createdAt: true,
-        updatedAt: true
-      },
-      orderBy: {
-        id: 'asc'
-      },
-      skip,
-      take: limitNum
+    const usersList = await db.select({
+      id: users.id,
+      name: users.name,
+      username: users.username,
+      role: users.role,
+      grade: users.grade,
+      class: users.class,
+      lastLogin: users.lastLogin,
+      lastLoginIp: users.lastLoginIp,
+      passwordChangedAt: users.passwordChangedAt,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt
     })
+      .from(users)
+      .where(whereClause)
+      .orderBy(asc(users.id))
+      .limit(limitNum)
+      .offset(skip)
 
     // 计算分页信息
     const totalPages = Math.ceil(total / limitNum)
@@ -89,7 +85,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      users,
+      users: usersList,
       pagination: {
         total,
         page: pageNum,

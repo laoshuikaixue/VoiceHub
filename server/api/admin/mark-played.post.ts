@@ -1,6 +1,8 @@
 import { db } from '~/drizzle/db'
 import { createSongPlayedNotification } from '../../services/notificationService'
 import { CacheService } from '~/server/services/cacheService'
+import { songs } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -31,11 +33,11 @@ export default defineEventHandler(async (event) => {
   }
   
   // 查找歌曲
-  const song = await db.song.findUnique({
-    where: {
-      id: body.songId
-    }
-  })
+  const songResult = await db.select()
+    .from(songs)
+    .where(eq(songs.id, body.songId))
+    .limit(1)
+  const song = songResult[0]
   
   if (!song) {
     throw createError({
@@ -61,15 +63,14 @@ export default defineEventHandler(async (event) => {
   }
   
   // 更新歌曲状态
-  const updatedSong = await db.song.update({
-    where: {
-      id: body.songId
-    },
-    data: {
+  const updatedSongResult = await db.update(songs)
+    .set({
       played: !isUnmark,
       playedAt: isUnmark ? null : new Date()
-    }
-  })
+    })
+    .where(eq(songs.id, body.songId))
+    .returning()
+  const updatedSong = updatedSongResult[0]
 
   // 清除歌曲相关缓存
   try {

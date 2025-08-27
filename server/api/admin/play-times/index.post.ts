@@ -1,5 +1,7 @@
 import { db } from '~/drizzle/db'
 import { CacheService } from '../../../services/cacheService'
+import { playTimes } from '~/drizzle/schema'
+import { eq, ilike } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -56,14 +58,8 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 检查名称是否已存在
-    const existingPlayTime = await db.playTime.findFirst({
-      where: {
-        name: {
-          equals: body.name,
-          mode: 'insensitive' // 忽略大小写
-        }
-      }
-    })
+    const existingPlayTimeResult = await db.select().from(playTimes).where(ilike(playTimes.name, body.name)).limit(1)
+    const existingPlayTime = existingPlayTimeResult[0]
     
     if (existingPlayTime) {
       throw createError({
@@ -73,15 +69,14 @@ export default defineEventHandler(async (event) => {
     }
     
     // 创建新的播出时段
-    const newPlayTime = await db.playTime.create({
-      data: {
-        name: body.name,
-        startTime: body.startTime || null,
-        endTime: body.endTime || null,
-        description: body.description || null,
-        enabled: body.enabled !== undefined ? body.enabled : true
-      }
-    })
+    const newPlayTimeResult = await db.insert(playTimes).values({
+      name: body.name,
+      startTime: body.startTime || null,
+      endTime: body.endTime || null,
+      description: body.description || null,
+      enabled: body.enabled !== undefined ? body.enabled : true
+    }).returning()
+    const newPlayTime = newPlayTimeResult[0]
 
     // 清除相关缓存
     try {

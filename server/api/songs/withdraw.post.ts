@@ -1,5 +1,7 @@
 import { db } from '~/drizzle/db'
 import { CacheService } from '~/server/services/cacheService'
+import { songs, schedules, systemSettings, votes } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -22,11 +24,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // 查找歌曲
-  const song = await db.song.findUnique({
-    where: {
-      id: body.songId
-    }
-  })
+  const songResult = await db.select().from(songs).where(eq(songs.id, body.songId)).limit(1)
+  const song = songResult[0]
 
   if (!song) {
     throw createError({
@@ -52,11 +51,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查歌曲是否已排期
-  const schedule = await db.schedule.findFirst({
-    where: {
-      songId: body.songId
-    }
-  })
+  const scheduleResult = await db.select().from(schedules).where(eq(schedules.songId, body.songId)).limit(1)
+  const schedule = scheduleResult[0]
 
   if (schedule) {
     throw createError({
@@ -66,7 +62,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // 获取系统设置以检查限制类型
-  const settings = await db.systemSettings.findFirst()
+  const settingsResult = await db.select().from(systemSettings).limit(1)
+  const settings = settingsResult[0]
   const dailyLimit = settings?.dailySubmissionLimit || 0
   const weeklyLimit = settings?.weeklySubmissionLimit || 0
 
@@ -98,18 +95,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // 删除歌曲的所有投票
-  await db.vote.deleteMany({
-    where: {
-      songId: body.songId
-    }
-  })
+  await db.delete(votes).where(eq(votes.songId, body.songId))
 
   // 删除歌曲
-  await db.song.delete({
-    where: {
-      id: body.songId
-    }
-  })
+  await db.delete(songs).where(eq(songs.id, body.songId))
 
   // 清除歌曲列表缓存
   const cacheService = new CacheService()

@@ -1,6 +1,8 @@
 import bcrypt from 'bcrypt'
 import { db } from '~/drizzle/db'
 import { CacheService } from '../../../services/cacheService'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -24,11 +26,11 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 检查用户名是否已存在
-    const existingUser = await db.user.findUnique({
-      where: {
-        username: body.username
-      }
-    })
+    const existingUserResult = await db.select()
+      .from(users)
+      .where(eq(users.username, body.username))
+      .limit(1)
+    const existingUser = existingUserResult[0]
     
     if (existingUser) {
       throw createError({
@@ -68,26 +70,26 @@ export default defineEventHandler(async (event) => {
     }
 
     // 创建用户
-    const newUser = await db.user.create({
-      data: {
+    const newUserResult = await db.insert(users)
+      .values({
         name: body.name,
         username: body.username,
         password: hashedPassword,
         role: validRole,
         grade: body.grade,
         class: body.class
-      },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        role: true,
-        grade: true,
-        class: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    })
+      })
+      .returning({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        role: users.role,
+        grade: users.grade,
+        class: users.class,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt
+      })
+    const newUser = newUserResult[0]
     
     // 清除相关缓存
     try {
