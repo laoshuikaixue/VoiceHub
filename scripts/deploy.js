@@ -103,23 +103,55 @@ async function deploy() {
     if (!fileExists('drizzle/schema.ts')) {
       throw new Error('Drizzle schema 文件不存在');
     }
+    if (!fileExists('drizzle/db.ts')) {
+      throw new Error('Drizzle 数据库连接文件不存在');
+    }
     logSuccess('Drizzle 配置检查完成');
+    
+    // 2.1. 确保迁移目录存在
+    if (!fileExists('drizzle/migrations')) {
+      logStep('📁', '创建迁移目录...');
+      fs.mkdirSync('drizzle/migrations', { recursive: true });
+      logSuccess('迁移目录创建完成');
+    }
     
     // 3. 数据库安全迁移（使用专用脚本保证数据安全）
     logStep('🗄️', '执行数据库安全迁移...');
     let dbSyncSuccess = false;
     
     if (process.env.DATABASE_URL) {
-      // 使用专用的安全迁移脚本
-      if (safeExec('npm run safe-migrate')) {
-        logSuccess('数据库安全迁移成功');
-        dbSyncSuccess = true;
-      } else {
-        logError('安全迁移失败');
-        logWarning('请检查数据库连接和迁移文件');
+      try {
+        // 首先尝试生成迁移文件
+        logStep('📝', '生成数据库迁移文件...');
+        if (safeExec('npm run db:generate')) {
+          logSuccess('迁移文件生成成功');
+        } else {
+          logWarning('迁移文件生成失败，继续尝试同步...');
+        }
+        
+        // 使用专用的安全迁移脚本
+        if (safeExec('npm run safe-migrate')) {
+          logSuccess('数据库安全迁移成功');
+          dbSyncSuccess = true;
+        } else {
+          logWarning('安全迁移脚本失败，尝试直接同步...');
+          
+          // 备用方案：直接使用drizzle-kit push
+          if (safeExec('npm run db:push')) {
+            logSuccess('数据库直接同步成功');
+            dbSyncSuccess = true;
+          } else {
+            logError('所有数据库迁移方案都失败');
+            logWarning('请检查数据库连接和迁移文件');
+          }
+        }
+      } catch (error) {
+        logError(`数据库迁移过程中发生错误: ${error.message}`);
+        logWarning('将在应用启动时尝试连接数据库');
       }
     } else {
       logWarning('未设置 DATABASE_URL，跳过数据库迁移');
+      logWarning('请确保在部署平台设置了正确的数据库连接字符串');
     }
     
     // 4. 创建管理员账户（如果脚本存在）

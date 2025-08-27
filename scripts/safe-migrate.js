@@ -57,38 +57,70 @@ function fileExists(filePath) {
   }
 }
 
+// 处理数据冲突的函数
+async function handleDataConflicts() {
+  try {
+    // 在Vercel环境中，我们主要关注schema同步而不是数据冲突处理
+    log('检查数据库连接...', 'cyan');
+    
+    // 简单的连接测试
+    if (!safeExec('npx drizzle-kit check', { stdio: 'pipe' })) {
+      logWarning('数据库schema检查失败，将尝试强制同步');
+    }
+    
+    logSuccess('数据冲突检查完成');
+  } catch (error) {
+    logWarning(`数据冲突处理警告: ${error.message}`);
+  }
+}
+
 async function safeMigrate() {
   log('🔄 开始安全数据库迁移流程...', 'bright');
   
   try {
-    // 1. 检查迁移文件
+    // 1. 确保drizzle配置存在
+    if (!fileExists('drizzle.config.ts')) {
+      throw new Error('drizzle.config.ts 配置文件不存在');
+    }
+    
+    // 2. 检查schema文件
+    if (!fileExists('drizzle/schema.ts')) {
+      throw new Error('drizzle/schema.ts 文件不存在');
+    }
+    
+    // 3. 创建迁移目录（如果不存在）
     if (!fileExists('drizzle/migrations')) {
-      logWarning('未找到迁移文件目录，将生成迁移文件...');
-      if (!safeExec('npm run db:generate')) {
-        throw new Error('生成迁移文件失败');
-      }
+      log('创建迁移目录...', 'cyan');
+      fs.mkdirSync('drizzle/migrations', { recursive: true });
+    }
+    
+    // 4. 生成迁移文件（如果需要）
+    log('生成数据库迁移文件...', 'cyan');
+    if (!safeExec('npm run db:generate')) {
+      logWarning('迁移文件生成失败，尝试直接同步...');
+    } else {
       logSuccess('迁移文件生成完成');
     }
     
-    // 2. 预处理数据冲突
+    // 5. 预处理数据冲突
     log('🔍 检查并处理数据冲突...', 'cyan');
     await handleDataConflicts();
     
-    // 3. 检查迁移状态（非交互式）
-    log('📋 检查数据库迁移状态...', 'cyan');
-    // 使用 push 命令的 --force 选项避免交互提示
-    if (!safeExec('npx drizzle-kit push --force')) {
-      logWarning('强制同步失败，尝试标准迁移...');
+    // 6. 执行数据库同步（优先使用push，适合Vercel环境）
+    log('📋 同步数据库schema...', 'cyan');
+    if (safeExec('npm run db:push')) {
+      logSuccess('数据库schema同步成功');
+    } else {
+      logWarning('schema同步失败，尝试标准迁移...');
       
-      // 4. 执行迁移（作为后备）
+      // 7. 执行迁移（作为后备）
       if (!safeExec('npm run db:migrate')) {
         throw new Error('数据库迁移完全失败');
       }
+      logSuccess('数据库迁移成功');
     }
     
-    logSuccess('数据库迁移成功');
-    
-    // 5. 验证迁移结果
+    // 8. 验证迁移结果
     log('✅ 数据库迁移流程完成！', 'green');
     
   } catch (error) {

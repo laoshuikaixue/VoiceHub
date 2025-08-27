@@ -2,7 +2,7 @@
  * 数据库清空脚本 
  * 这个脚本会清空所有表的数据，但保留表结构 
  */ 
-import { db, users, songs, votes, schedules, notifications, notificationSettings, playTimes, semesters, systemSettings, songBlacklists } from '../drizzle/db.js'
+import { db, users, songs, votes, schedules, notifications, notificationSettings, playTimes, semesters, systemSettings, songBlacklists } from '../drizzle/db.ts'
 import bcrypt from 'bcrypt'
 import { eq } from 'drizzle-orm'
 

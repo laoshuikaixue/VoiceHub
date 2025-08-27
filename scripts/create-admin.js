@@ -1,4 +1,4 @@
-import { db, users, notificationSettings, systemSettings } from '../drizzle/db.js';
+import { db, users, notificationSettings, systemSettings } from '../drizzle/db.ts';
 import bcrypt from 'bcrypt';
 import { fileURLToPath } from 'url';
 import path from 'path';
