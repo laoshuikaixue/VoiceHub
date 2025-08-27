@@ -126,11 +126,11 @@ export default defineEventHandler(async (event) => {
     }
     
     // 获取当前设置，如果不存在则创建
-    let settings = await prisma.systemSettings.findFirst()
+    let settings = await db.systemSettings.findFirst()
     
     if (!settings) {
       // 如果不存在，创建新设置
-      settings = await prisma.systemSettings.create({
+      settings = await db.systemSettings.create({
         data: {
           hideStudentInfo: updateData.hideStudentInfo ?? false,
           enablePlayTimeSelection: updateData.enablePlayTimeSelection ?? false,
@@ -156,7 +156,7 @@ export default defineEventHandler(async (event) => {
       })
     } else {
       // 如果存在，更新设置
-      settings = await prisma.systemSettings.update({
+      settings = await db.systemSettings.update({
         where: {
           id: settings.id
         },

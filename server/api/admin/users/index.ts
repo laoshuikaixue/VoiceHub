@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 获取所有用户
-    const users = await prisma.user.findMany({
+    const users = await db.user.findMany({
       select: {
         id: true,
         name: true,

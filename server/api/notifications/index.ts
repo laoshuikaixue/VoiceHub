@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 获取用户的所有通知
-    const notifications = await prisma.notification.findMany({
+    const notifications = await db.notification.findMany({
       where: {
         userId: user.id
       },
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     })
     
     // 计算未读通知数量
-    const unreadCount = await prisma.notification.count({
+    const unreadCount = await db.notification.count({
       where: {
         userId: user.id,
         read: false

@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 获取歌曲总数
-    const count = await prisma.song.count({
+    const count = await db.song.count({
       where: whereCondition
     })
     

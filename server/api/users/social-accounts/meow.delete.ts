@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
     const userId = user.id
 
     // 检查用户是否存在
-    const userData = await prisma.user.findUnique({
+    const userData = await db.user.findUnique({
       where: { id: userId }
     })
 
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 解除 MeoW 绑定
-    await prisma.user.update({
+    await db.user.update({
       where: { id: userId },
       data: {
         meowNickname: null,

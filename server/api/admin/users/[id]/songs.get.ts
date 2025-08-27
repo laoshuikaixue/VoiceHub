@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证用户是否存在
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { id: userId },
       select: { id: true, name: true, username: true, grade: true, class: true }
     })
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户投稿的歌曲
-    const submittedSongs = await prisma.song.findMany({
+    const submittedSongs = await db.song.findMany({
       where: { requesterId: userId },
       select: {
         id: true,
@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
     })
 
     // 获取用户投票的歌曲
-    const votedSongs = await prisma.vote.findMany({
+    const votedSongs = await db.vote.findMany({
       where: { userId: userId },
       include: {
         song: {

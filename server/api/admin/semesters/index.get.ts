@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // 获取所有学期，按创建时间倒序排列
-  const semesters = await prisma.semester.findMany({
+  const semesters = await db.semester.findMany({
     orderBy: {
       createdAt: 'desc'
     }

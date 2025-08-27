@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 查找歌曲
-  const song = await prisma.song.findUnique({
+  const song = await db.song.findUnique({
     where: {
       id: body.songId
     }
@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查歌曲是否已排期
-  const schedule = await prisma.schedule.findFirst({
+  const schedule = await db.schedule.findFirst({
     where: {
       songId: body.songId
     }
@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 获取系统设置以检查限制类型
-  const settings = await prisma.systemSettings.findFirst()
+  const settings = await db.systemSettings.findFirst()
   const dailyLimit = settings?.dailySubmissionLimit || 0
   const weeklyLimit = settings?.weeklySubmissionLimit || 0
 
@@ -98,14 +98,14 @@ export default defineEventHandler(async (event) => {
   }
 
   // 删除歌曲的所有投票
-  await prisma.vote.deleteMany({
+  await db.vote.deleteMany({
     where: {
       songId: body.songId
     }
   })
 
   // 删除歌曲
-  await prisma.song.delete({
+  await db.song.delete({
     where: {
       id: body.songId
     }

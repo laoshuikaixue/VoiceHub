@@ -29,10 +29,10 @@ export default defineEventHandler(async (event) => {
     }
     
     // 缓存中没有，从数据库获取系统设置，如果不存在则创建默认设置
-    settings = await prisma.systemSettings.findFirst()
+    settings = await db.systemSettings.findFirst()
     
     if (!settings) {
-      settings = await prisma.systemSettings.create({
+      settings = await db.systemSettings.create({
         data: {
           enablePlayTimeSelection: false,
           siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',

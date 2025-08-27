@@ -60,14 +60,14 @@ export default defineEventHandler(async (event) => {
       blacklistCount
     ] = await Promise.all([
       // 总歌曲数
-      prisma.song.count({ where }),
+      db.song.count({ where }),
       
       // 总用户数
-      prisma.user.count(),
+      db.user.count(),
       
       // 今日排期数 (按天计算)
     (async () => {
-      const todaySchedules = await prisma.schedule.findMany({
+      const todaySchedules = await db.schedule.findMany({
         where: todayScheduleWhere,
         select: { playDate: true }
       });
@@ -80,7 +80,7 @@ export default defineEventHandler(async (event) => {
       // 总排期数 (按天计算)
     (async () => {
       const scheduleWhere = semester && semester !== 'all' ? { song: { semester: semester } } : {};
-      const schedules = await prisma.schedule.findMany({
+      const schedules = await db.schedule.findMany({
         where: scheduleWhere,
         select: { playDate: true }
       });
@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
     })(),
       
       // 本周点歌数
-      prisma.song.count({
+      db.song.count({
         where: {
           ...where,
           createdAt: {
@@ -101,7 +101,7 @@ export default defineEventHandler(async (event) => {
       }),
       
       // 上周点歌数
-      prisma.song.count({
+      db.song.count({
         where: {
           ...where,
           createdAt: {
@@ -112,7 +112,7 @@ export default defineEventHandler(async (event) => {
       }),
       
       // 本周新增歌曲
-      prisma.song.count({
+      db.song.count({
         where: {
           ...where,
           createdAt: {
@@ -122,7 +122,7 @@ export default defineEventHandler(async (event) => {
       }),
       
       // 上周新增歌曲
-      prisma.song.count({
+      db.song.count({
         where: {
           ...where,
           createdAt: {
@@ -133,7 +133,7 @@ export default defineEventHandler(async (event) => {
       }),
       
       // 本周新增用户
-      prisma.user.count({
+      db.user.count({
         where: {
           createdAt: {
             gte: weekAgo
@@ -142,7 +142,7 @@ export default defineEventHandler(async (event) => {
       }),
       
       // 上周新增用户
-      prisma.user.count({
+      db.user.count({
         where: {
           createdAt: {
             gte: twoWeeksAgo,
@@ -152,13 +152,13 @@ export default defineEventHandler(async (event) => {
       }),
       
       // 当前学期
-      prisma.semester.findFirst({
+      db.semester.findFirst({
         where: { isActive: true },
         select: { name: true }
       }),
       
       // 黑名单项目数
-      prisma.songBlacklist.count({
+      db.songBlacklist.count({
         where: { isActive: true }
       })
     ])
@@ -181,7 +181,7 @@ export default defineEventHandler(async (event) => {
           const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
           const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
           
-          const count = await prisma.song.count({
+          const count = await db.song.count({
             where: {
               ...where,
               createdAt: {
@@ -207,7 +207,7 @@ export default defineEventHandler(async (event) => {
           const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
           const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
           
-          const count = await prisma.user.count({
+          const count = await db.user.count({
             where: {
               createdAt: {
                 gte: startOfDay,
@@ -232,7 +232,7 @@ export default defineEventHandler(async (event) => {
           const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
           const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
           
-          const schedules = await prisma.schedule.findMany({
+          const schedules = await db.schedule.findMany({
             where: {
               ...scheduleBaseWhere,
               playDate: {
@@ -262,7 +262,7 @@ export default defineEventHandler(async (event) => {
           const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
           const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
           
-          const count = await prisma.song.count({
+          const count = await db.song.count({
             where: {
               ...where,
               createdAt: {

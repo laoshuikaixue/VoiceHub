@@ -5,7 +5,7 @@ import { db } from '~/drizzle/db'
  */
 async function getSiteTitle(): Promise<string> {
   try {
-    const settings = await prisma.systemSettings.findFirst()
+    const settings = await db.systemSettings.findFirst()
     return settings?.siteTitle || process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub'
   } catch (error) {
     console.error('获取站点标题失败:', error)
@@ -67,7 +67,7 @@ export async function sendMeowNotificationToUser(
 ): Promise<boolean> {
   try {
     // 获取用户信息
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { id: userId },
       select: {
         name: true,
@@ -91,7 +91,7 @@ export async function sendMeowNotificationToUser(
     }
     
     // 检查是否有其他用户绑定了相同的 MeoW ID
-    const usersWithSameMeowId = await prisma.user.findMany({
+    const usersWithSameMeowId = await db.user.findMany({
       where: {
         meowNickname: user.meowNickname,
         id: { not: userId }
@@ -144,7 +144,7 @@ export async function sendBatchMeowNotifications(
   let failed = 0
   
   // 获取所有绑定了 MeoW 的用户
-  const users = await prisma.user.findMany({
+  const users = await db.user.findMany({
     where: {
       id: { in: userIds },
       meowNickname: { not: null }

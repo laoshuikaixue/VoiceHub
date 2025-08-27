@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 获取用户当前的通知设置
-    let dbSettings: any = await prisma.notificationSettings.findUnique({
+    let dbSettings: any = await db.notificationSettings.findUnique({
       where: {
         userId: user.id
       }
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     
     if (dbSettings) {
       // 更新现有设置
-      dbSettings = await prisma.notificationSettings.update({
+      dbSettings = await db.notificationSettings.update({
         where: {
           userId: user.id
         },
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
       })
     } else {
       // 创建新设置
-      dbSettings = await prisma.notificationSettings.create({
+      dbSettings = await db.notificationSettings.create({
         data: {
           userId: user.id,
           enabled: body.systemNotify !== undefined ? body.systemNotify : true,

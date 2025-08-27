@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
     // 检查数据库连接
     try {
-      await prisma.$queryRaw`SELECT 1`
+      await db.$queryRaw`SELECT 1`
       status.connected = true
     } catch (error) {
       console.error('数据库连接失败:', error)
@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     
     for (const tableName of tables) {
       try {
-        const result = await prisma.$queryRaw`
+        const result = await db.$queryRaw`
           SELECT EXISTS (
             SELECT FROM information_schema.tables 
             WHERE table_schema = 'public' 
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     // 如果表存在，获取记录数
     if (status.tables.user) {
       try {
-        status.userCount = await prisma.user.count()
+        status.userCount = await db.user.count()
       } catch (error) {
         console.error('获取用户数量失败:', error)
       }
@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
 
     if (status.tables.role) {
       try {
-        status.roleCount = await prisma.role.count()
+        status.roleCount = await db.role.count()
       } catch (error) {
         console.error('获取角色数量失败:', error)
       }

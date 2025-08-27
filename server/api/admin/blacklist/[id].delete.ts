@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 检查黑名单项是否存在
-    const blacklistItem = await prisma.songBlacklist.findUnique({
+    const blacklistItem = await db.songBlacklist.findUnique({
       where: { id }
     })
 
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 删除黑名单项
-    await prisma.songBlacklist.delete({
+    await db.songBlacklist.delete({
       where: { id }
     })
 

@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 检查黑名单项是否存在
-    const blacklistItem = await prisma.songBlacklist.findUnique({
+    const blacklistItem = await db.songBlacklist.findUnique({
       where: { id }
     })
 
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新黑名单项
-    const updatedItem = await prisma.songBlacklist.update({
+    const updatedItem = await db.songBlacklist.update({
       where: { id },
       data: {
         ...(typeof isActive === 'boolean' && { isActive }),

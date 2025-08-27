@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 检查用户名是否已存在
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await db.user.findUnique({
       where: {
         username: body.username
       }
@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 创建用户
-    const newUser = await prisma.user.create({
+    const newUser = await db.user.create({
       data: {
         name: body.name,
         username: body.username,

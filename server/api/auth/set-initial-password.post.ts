@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户信息
-    const currentUser = await prisma.user.findUnique({
+    const currentUser = await db.user.findUnique({
       where: { id: user.id }
     })
     if (!currentUser) {
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
     const hashedPassword = await bcrypt.hash(body.newPassword, 10)
 
     // 更新密码
-    await prisma.$executeRaw`
+    await db.$executeRaw`
       UPDATE "User"
       SET password = ${hashedPassword},
           "passwordChangedAt" = NOW(),

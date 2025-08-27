@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // 查找歌曲
-  const song = await prisma.song.findUnique({
+  const song = await db.song.findUnique({
     where: {
       id: body.songId
     }
@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // 更新歌曲状态
-  const updatedSong = await prisma.song.update({
+  const updatedSong = await db.song.update({
     where: {
       id: body.songId
     },

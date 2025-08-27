@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证用户ID是否存在
-    const existingUsers = await prisma.user.findMany({
+    const existingUsers = await db.user.findMany({
       where: {
         id: {
           in: userIds
@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
         // 如果不保持班级不变，可以在这里添加班级更新逻辑
         // 当前实现中keepClass固定为true，所以不更新班级
 
-        const updateResult = await prisma.user.updateMany({
+        const updateResult = await db.user.updateMany({
           where: {
             id: {
               in: existingUserIds

@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 检查名称是否已存在
-    const existingPlayTime = await prisma.playTime.findFirst({
+    const existingPlayTime = await db.playTime.findFirst({
       where: {
         name: {
           equals: body.name,
@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 创建新的播出时段
-    const newPlayTime = await prisma.playTime.create({
+    const newPlayTime = await db.playTime.create({
       data: {
         name: body.name,
         startTime: body.startTime || null,

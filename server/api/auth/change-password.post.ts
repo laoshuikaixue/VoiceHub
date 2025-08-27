@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     // 查询用户详细信息
     let userDetails
     try {
-      userDetails = await prisma.user.findUnique({
+      userDetails = await db.user.findUnique({
         where: { id: user.id },
         select: {
           id: true,
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
         }
       })
     } catch (prismaError: any) {
-      const result = await prisma.$queryRaw`
+      const result = await db.$queryRaw`
         SELECT id, username, password 
         FROM "User" 
         WHERE id = ${user.id}
@@ -79,13 +79,13 @@ export default defineEventHandler(async (event) => {
 
     // 更新密码
     try {
-      await prisma.user.update({
+      await db.user.update({
         where: { id: user.id },
         data: { password: hashedNewPassword }
       })
     } catch (updateError: any) {
       // 如果Prisma更新失败，尝试使用原始SQL
-      await prisma.$executeRaw`
+      await db.$executeRaw`
         UPDATE "User" 
         SET password = ${hashedNewPassword} 
         WHERE id = ${user.id}

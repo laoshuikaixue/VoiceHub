@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // 检查学期名称是否已存在
-  const existingSemester = await prisma.semester.findUnique({
+  const existingSemester = await db.semester.findUnique({
     where: {
       name: body.name
     }
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
   
   // 如果设置为活跃学期，先将其他学期设为非活跃
   if (body.isActive) {
-    await prisma.semester.updateMany({
+    await db.semester.updateMany({
       where: {
         isActive: true
       },
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // 创建新学期
-  const semester = await prisma.semester.create({
+  const semester = await db.semester.create({
     data: {
       name: body.name,
       isActive: body.isActive || false

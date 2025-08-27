@@ -20,10 +20,10 @@ export default defineEventHandler(async (event) => {
 
     // 获取用户参与度数据
     // 1. 获取总用户数
-    const totalUsers = await prisma.user.count()
+    const totalUsers = await db.user.count()
     
     // 2. 获取有请求歌曲的用户数
-    const activeUsers = await prisma.user.count({
+    const activeUsers = await db.user.count({
       where: {
         songs: {
           some: where
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     })
     
     // 3. 获取用户请求歌曲的平均数量
-    const userSongCounts = await prisma.user.findMany({
+    const userSongCounts = await db.user.findMany({
       include: {
         _count: {
           select: { songs: true }
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
     const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
     
-    const recentActiveUsers = await prisma.user.count({
+    const recentActiveUsers = await db.user.count({
       where: {
         songs: {
           some: {

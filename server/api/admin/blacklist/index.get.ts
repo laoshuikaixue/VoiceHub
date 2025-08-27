@@ -30,10 +30,10 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取总数
-    const total = await prisma.songBlacklist.count({ where })
+    const total = await db.songBlacklist.count({ where })
 
     // 获取黑名单列表
-    const blacklist = await prisma.songBlacklist.findMany({
+    const blacklist = await db.songBlacklist.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,

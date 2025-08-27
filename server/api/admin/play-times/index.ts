@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 缓存中没有，从数据库获取所有播出时段
-    playTimes = await prisma.playTime.findMany({
+    playTimes = await db.playTime.findMany({
       orderBy: [
         { enabled: 'desc' }, // 启用的排在前面
         { startTime: 'asc' } // 按开始时间排序

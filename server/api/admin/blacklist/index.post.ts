@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 检查是否已存在
-    const existing = await prisma.songBlacklist.findFirst({
+    const existing = await db.songBlacklist.findFirst({
       where: {
         type,
         value: value.trim()
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 创建黑名单项
-    const blacklistItem = await prisma.songBlacklist.create({
+    const blacklistItem = await db.songBlacklist.create({
       data: {
         type,
         value: value.trim(),

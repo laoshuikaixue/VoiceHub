@@ -415,7 +415,7 @@ class DatabasePool {
       const startTime = Date.now()
       
       // 执行健康检查
-      await prisma.$queryRaw`SELECT 1 as health_check`
+      await db.$queryRaw`SELECT 1 as health_check`
       
       const responseTime = Date.now() - startTime
       this.updateResponseTimeStats(responseTime)
@@ -467,14 +467,14 @@ class DatabasePool {
     
     try {
       // 先断开现有连接
-      await prisma.$disconnect()
+      await db.$disconnect()
       console.log('[DB Pool] 已断开现有连接')
       
       // 短暂等待
       await new Promise(resolve => setTimeout(resolve, 500))
       
       // 重新连接
-      await prisma.$connect()
+      await db.$connect()
       console.log('[DB Pool] 强制重连成功')
       
       // 重置性能统计
@@ -554,9 +554,9 @@ class DatabasePool {
       for (let i = 0; i < count; i++) {
         this.recordConnectionDestruction()
       }
-      await prisma.$disconnect()
+      await db.$disconnect()
       await new Promise(resolve => setTimeout(resolve, 100))
-      await prisma.$connect()
+      await db.$connect()
       console.log(`[DB Pool] 连接池缩减完成`)
     } catch (error) {
       console.warn('[DB Pool] 连接池缩减过程中出现错误:', error)
@@ -572,7 +572,7 @@ class DatabasePool {
       try {
         // 使用超时保护的预热查询
         await Promise.race([
-          prisma.$queryRaw`SELECT 1 as warmup`,
+          db.$queryRaw`SELECT 1 as warmup`,
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('预热查询超时')), timeoutMs)
           )
@@ -612,7 +612,7 @@ class DatabasePool {
     
     try {
       // 断开所有连接
-      await prisma.$disconnect()
+      await db.$disconnect()
       this.isConnected = false
       this.currentConnections = 0
       
@@ -640,7 +640,7 @@ class DatabasePool {
     
     try {
       // 重新建立连接
-      await prisma.$connect()
+      await db.$connect()
       
       // 等待连接完全建立（给Prisma引擎时间初始化）
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -654,7 +654,7 @@ class DatabasePool {
         try {
           // 使用超时保护的连接验证
           await Promise.race([
-            prisma.$queryRaw`SELECT 1 as connection_test`,
+            db.$queryRaw`SELECT 1 as connection_test`,
             new Promise((_, reject) => 
               setTimeout(() => reject(new Error('连接验证超时')), 2000)
             )
@@ -683,9 +683,9 @@ class DatabasePool {
             // 在重试前尝试重新连接
             if (retryCount > 2) {
               try {
-                await prisma.$disconnect()
+                await db.$disconnect()
                 await new Promise(resolve => setTimeout(resolve, 500))
-                await prisma.$connect()
+                await db.$connect()
                 await new Promise(resolve => setTimeout(resolve, 1000))
               } catch (reconnectError) {
                 console.warn('[DB Pool] 重连失败:', reconnectError)
@@ -918,14 +918,14 @@ class DatabasePool {
     
     try {
       // 先断开现有连接
-      await prisma.$disconnect()
+      await db.$disconnect()
       console.log('[DB Pool] 已断开现有连接')
       
       // 等待一段时间后重连
       await new Promise(resolve => setTimeout(resolve, this.reconnectDelay))
       
       // 尝试重新连接
-      await prisma.$connect()
+      await db.$connect()
       console.log('[DB Pool] 重新连接成功')
       
       // 验证连接
@@ -1434,7 +1434,7 @@ class DatabasePool {
     const cleanup = async () => {
       console.log('[DB Pool] 应用关闭，清理数据库连接...')
       try {
-        await prisma.$disconnect()
+        await db.$disconnect()
         console.log('[DB Pool] 数据库连接已清理')
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error)

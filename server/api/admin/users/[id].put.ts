@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查用户是否存在
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await db.user.findUnique({
       where: { id: parseInt(userId) }
     })
 
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
 
     // 检查用户名是否被其他用户使用
     if (username !== existingUser.username) {
-      const duplicateUser = await prisma.user.findUnique({
+      const duplicateUser = await db.user.findUnique({
         where: { username }
       })
 
@@ -94,7 +94,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新用户
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await db.user.update({
       where: { id: parseInt(userId) },
       data: updateData,
       select: {

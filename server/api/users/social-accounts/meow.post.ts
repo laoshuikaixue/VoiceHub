@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查用户是否存在
-    const userData = await prisma.user.findUnique({
+    const userData = await db.user.findUnique({
       where: { id: userId }
     })
 
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查是否有其他用户绑定了相同的昵称（仅用于记录，不阻止绑定）
-    const existingUsers = await prisma.user.findMany({
+    const existingUsers = await db.user.findMany({
       where: {
         meowNickname: nickname,
         id: { not: userId }
@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新用户的 MeoW 绑定信息
-    await prisma.user.update({
+    await db.user.update({
       where: { id: userId },
       data: {
         meowNickname: nickname,

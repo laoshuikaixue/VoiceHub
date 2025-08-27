@@ -3,7 +3,7 @@ import { db } from '~/drizzle/db'
 export default defineEventHandler(async (event) => {
   try {
     // 获取当前活跃的学期
-    const currentSemester = await prisma.semester.findFirst({
+    const currentSemester = await db.semester.findFirst({
       where: {
         isActive: true
       }

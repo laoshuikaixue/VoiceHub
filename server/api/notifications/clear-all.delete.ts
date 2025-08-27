@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 删除该用户的所有通知
-    const result = await prisma.notification.deleteMany({
+    const result = await db.notification.deleteMany({
       where: {
         userId: user.id
       }

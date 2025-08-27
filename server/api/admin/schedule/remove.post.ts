@@ -1,3 +1,4 @@
+import { db, users, songs, notifications, notificationSettings, schedules, votes, playTimes, semesters, songBlacklists, systemSettings, roles, eq, and, or, count, exists, desc, asc } from '~/drizzle/db'
 import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -21,25 +22,21 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    const prisma = event.context.prisma
     const scheduleIdNumber = Number(scheduleId)
     
     console.log(`准备删除排期 ID=${scheduleIdNumber}`)
     
     // 先检查排期是否存在
-    const existingSchedule = await prisma.schedule.findUnique({
-      where: {
-        id: scheduleIdNumber
-      },
-      include: {
-        song: {
-          select: {
-            title: true,
-            artist: true
-          }
-        }
-      }
+    const existingSchedule = await db.select({
+      id: schedules.id,
+      songTitle: songs.title,
+      songArtist: songs.artist
     })
+    .from(schedules)
+    .leftJoin(songs, eq(schedules.songId, songs.id))
+    .where(eq(schedules.id, scheduleIdNumber))
+    .limit(1)
+    .then(rows => rows[0])
     
     if (!existingSchedule) {
       console.log(`排期不存在 ID=${scheduleIdNumber}`)
@@ -49,14 +46,12 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    console.log(`找到排期 ID=${scheduleIdNumber}, 歌曲=${existingSchedule.song?.title || '未知歌曲'}`)
+    console.log(`找到排期 ID=${scheduleIdNumber}, 歌曲=${existingSchedule.songTitle || '未知歌曲'}`)
     
     // 删除排期
-    const deletedSchedule = await prisma.schedule.delete({
-      where: {
-        id: scheduleIdNumber
-      }
-    })
+    const deletedSchedule = await db.delete(schedules)
+      .where(eq(schedules.id, scheduleIdNumber))
+      .returning()
     
     console.log(`成功删除排期 ID=${scheduleIdNumber}`)
     
@@ -73,8 +68,8 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error('移除排期失败:', error)
     
-    // 处理Prisma特定错误
-    if (error.code === 'P2025') {
+    // 处理数据库特定错误
+    if (error.message?.includes('not found') || error.message?.includes('does not exist')) {
       return {
         success: false,
         message: '排期不存在或已被删除'

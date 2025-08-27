@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
     
     if (scope === 'ALL') {
       // 查询所有用户
-      const allUsers = await prisma.user.findMany({
+      const allUsers = await db.user.findMany({
         select: { id: true }
       })
       userIds = allUsers.map(user => user.id)
@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
         })
       }
       
-      const gradeUsers = await prisma.user.findMany({
+      const gradeUsers = await db.user.findMany({
         where: { grade: filter.grade },
         select: { id: true }
       })
@@ -93,7 +93,7 @@ export default defineEventHandler(async (event) => {
         })
       }
       
-      const classUsers = await prisma.user.findMany({
+      const classUsers = await db.user.findMany({
         where: {
           grade: filter.grade,
           class: filter.class
@@ -117,7 +117,7 @@ export default defineEventHandler(async (event) => {
         class: cls.class
       }))
       
-      const multiClassUsers = await prisma.user.findMany({
+      const multiClassUsers = await db.user.findMany({
         where: {
           OR: whereConditions
         },

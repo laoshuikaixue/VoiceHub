@@ -170,7 +170,7 @@ async function triggerSecurityAlert(ip: string, attemptedAccounts: string[]): Pr
     console.log(`安全警报：IP ${ip} 在 ${SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES} 分钟内尝试登录 ${attemptedAccounts.length} 个不同账户`)
     
     // 获取所有超级管理员
-    const superAdmins = await prisma.user.findMany({
+    const superAdmins = await db.user.findMany({
       where: {
         role: 'SUPER_ADMIN'
       },

@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     
-    const trendData = await prisma.song.groupBy({
+    const trendData = await db.song.groupBy({
       by: ['createdAt'],
       where: {
         ...where,

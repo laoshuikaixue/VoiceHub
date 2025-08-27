@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     }> = []
 
     // 获取最近的歌曲活动
-    const recentSongs = await prisma.song.findMany({
+    const recentSongs = await db.song.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     // 移除了新用户注册活动记录
 
     // 获取最近的排期活动
-    const recentSchedules = await prisma.schedule.findMany({
+    const recentSchedules = await db.schedule.findMany({
       take: 3,
       orderBy: { createdAt: 'desc' },
       include: {

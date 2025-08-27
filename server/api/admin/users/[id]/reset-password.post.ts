@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 查询用户是否存在
-    const userExists = await prisma.user.findUnique({
+    const userExists = await db.user.findUnique({
       where: { id }
     })
     
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     const hashedPassword = await bcrypt.hash(body.newPassword, 10)
     
     // 更新密码，清空passwordChangedAt字段，强制用户下次登录时修改密码
-    await prisma.user.update({
+    await db.user.update({
       where: { id },
       data: {
         password: hashedPassword,

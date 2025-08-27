@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     const userId = getRouterParam(event, 'id')
 
     // 检查用户是否存在
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await db.user.findUnique({
       where: { id: parseInt(userId) }
     })
 
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 删除用户
-    await prisma.user.delete({
+    await db.user.delete({
       where: { id: parseInt(userId) }
     })
 

@@ -57,10 +57,10 @@ export default defineEventHandler(async (event) => {
     const skip = (pageNum - 1) * limitNum
 
     // 获取总数
-    const total = await prisma.user.count({ where })
+    const total = await db.user.count({ where })
 
     // 获取用户列表
-    const users = await prisma.user.findMany({
+    const users = await db.user.findMany({
       where,
       select: {
         id: true,

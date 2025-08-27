@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     }
     
     try {
-      const updatedUser = await prisma.user.update({
+      const updatedUser = await db.user.update({
         where: { id },
         data: {
           name: body.name,
@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
         })
       }
       
-      await prisma.user.delete({
+      await db.user.delete({
         where: { id }
       })
       

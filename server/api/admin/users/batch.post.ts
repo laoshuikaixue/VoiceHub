@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // 检查用户名是否已存在
-      const existingUser = await prisma.user.findFirst({
+      const existingUser = await db.user.findFirst({
         where: {
           username: userData.username
         }
@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // 创建用户
-      const newUser = await prisma.user.create({
+      const newUser = await db.user.create({
         data: {
           name: userData.name,
           username: userData.username,

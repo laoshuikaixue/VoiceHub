@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
       // 只有在传递有效投稿人信息时才更新
       if (requester && requester !== '' && requester !== 0) {
         // 查找投稿人用户
-        const requesterUser = await prisma.user.findFirst({
+        const requesterUser = await db.user.findFirst({
           where: {
             OR: [
               { id: typeof requester === 'number' ? requester : undefined },
@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新歌曲
-    const updatedSong = await prisma.song.update({
+    const updatedSong = await db.song.update({
       where: { id: songId },
       data: updateData,
       include: {

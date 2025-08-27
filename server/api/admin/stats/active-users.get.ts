@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取活跃用户数据 - 有投稿歌曲的用户
-    const activeUsers = await prisma.user.findMany({
+    const activeUsers = await db.user.findMany({
       where: {
         songs: {
           some: songWhere

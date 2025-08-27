@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
     // 定义要备份的表和对应的查询
     const tablesToBackup = {
       users: {
-        query: () => prisma.user.findMany({
+        query: () => db.user.findMany({
           include: {
             notificationSettings: true
           }
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
         description: '用户数据'
       },
       songs: {
-        query: () => prisma.song.findMany({
+        query: () => db.song.findMany({
           include: {
             requester: {
               select: { id: true, username: true, name: true }
@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
         description: '歌曲数据'
       },
       votes: {
-        query: () => prisma.vote.findMany({
+        query: () => db.vote.findMany({
           include: {
             user: {
               select: { id: true, username: true, name: true }
@@ -79,7 +79,7 @@ export default defineEventHandler(async (event) => {
         description: '投票数据'
       },
       schedules: {
-        query: () => prisma.schedule.findMany({
+        query: () => db.schedule.findMany({
           include: {
             song: {
               select: { id: true, title: true, artist: true }
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
         description: '排期数据'
       },
       notifications: {
-        query: () => prisma.notification.findMany({
+        query: () => db.notification.findMany({
           include: {
             user: {
               select: { id: true, username: true, name: true }
@@ -103,7 +103,7 @@ export default defineEventHandler(async (event) => {
         description: '通知数据'
       },
       notificationSettings: {
-        query: () => prisma.notificationSettings.findMany({
+        query: () => db.notificationSettings.findMany({
           include: {
             user: {
               select: { id: true, username: true, name: true }
@@ -113,15 +113,15 @@ export default defineEventHandler(async (event) => {
         description: '通知设置'
       },
       playTimes: {
-        query: () => prisma.playTime.findMany(),
+        query: () => db.playTime.findMany(),
         description: '播出时段'
       },
       semesters: {
-        query: () => prisma.semester.findMany(),
+        query: () => db.semester.findMany(),
         description: '学期数据'
       },
       songBlacklist: {
-        query: () => prisma.songBlacklist.findMany(),
+        query: () => db.songBlacklist.findMany(),
         description: '歌曲黑名单'
       }
     }
@@ -129,7 +129,7 @@ export default defineEventHandler(async (event) => {
     // 如果包含系统数据，添加系统设置表
     if (includeSystemData) {
       tablesToBackup.systemSettings = {
-        query: () => prisma.systemSettings.findMany(),
+        query: () => db.systemSettings.findMany(),
         description: '系统设置'
       }
     }

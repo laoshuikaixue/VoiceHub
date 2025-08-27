@@ -14,11 +14,11 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 获取系统设置
-    const systemSettings = await prisma.systemSettings.findFirst()
+    const systemSettings = await db.systemSettings.findFirst()
     const showBlacklistKeywords = systemSettings?.showBlacklistKeywords ?? false
 
     // 获取所有活跃的黑名单项
-    const blacklistItems = await prisma.songBlacklist.findMany({
+    const blacklistItems = await db.songBlacklist.findMany({
       where: { isActive: true }
     })
 

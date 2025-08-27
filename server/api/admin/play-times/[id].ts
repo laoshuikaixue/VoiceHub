@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
   if (method === 'GET') {
     try {
       // 获取指定播出时段
-      const playTime = await prisma.playTime.findUnique({
+      const playTime = await db.playTime.findUnique({
         where: { id }
       })
       
@@ -92,7 +92,7 @@ export default defineEventHandler(async (event) => {
     
     try {
       // 检查名称是否已存在（排除当前ID）
-      const existingPlayTime = await prisma.playTime.findFirst({
+      const existingPlayTime = await db.playTime.findFirst({
         where: {
           name: {
             equals: body.name,
@@ -112,7 +112,7 @@ export default defineEventHandler(async (event) => {
       }
       
       // 更新播出时段
-      const updatedPlayTime = await prisma.playTime.update({
+      const updatedPlayTime = await db.playTime.update({
         where: { id },
         data: {
           name: body.name,
@@ -155,7 +155,7 @@ export default defineEventHandler(async (event) => {
       // 如果要更新名称，先检查是否存在重名
       if (body.name !== undefined) {
         // 检查名称是否已存在（排除当前ID）
-        const existingPlayTime = await prisma.playTime.findFirst({
+        const existingPlayTime = await db.playTime.findFirst({
           where: {
             name: {
               equals: body.name,
@@ -176,7 +176,7 @@ export default defineEventHandler(async (event) => {
       }
       
       // 更新播出时段
-      const updatedPlayTime = await prisma.playTime.update({
+      const updatedPlayTime = await db.playTime.update({
         where: { id },
         data: {
           ...(body.name !== undefined && { name: body.name }),
@@ -214,29 +214,29 @@ export default defineEventHandler(async (event) => {
   } else if (method === 'DELETE') {
     try {
       // 检查该播出时段是否有关联的歌曲或排期
-      const songs = await prisma.song.count({
+      const songs = await db.song.count({
         where: { preferredPlayTimeId: id }
       })
       
-      const schedules = await prisma.schedule.count({
+      const schedules = await db.schedule.count({
         where: { playTimeId: id }
       })
       
       // 删除该播出时段
-      const deletedPlayTime = await prisma.playTime.delete({
+      const deletedPlayTime = await db.playTime.delete({
         where: { id }
       })
       
       // 如果有关联的歌曲或排期，将它们的playTimeId设为null
       if (songs > 0) {
-        await prisma.song.updateMany({
+        await db.song.updateMany({
           where: { preferredPlayTimeId: id },
           data: { preferredPlayTimeId: null }
         })
       }
       
       if (schedules > 0) {
-        await prisma.schedule.updateMany({
+        await db.schedule.updateMany({
           where: { playTimeId: id },
           data: { playTimeId: null }
         })

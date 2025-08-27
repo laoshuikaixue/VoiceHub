@@ -1,3 +1,4 @@
+import { db, users, songs, notifications, notificationSettings, schedules, votes, playTimes, semesters, songBlacklists, systemSettings, roles, eq, and, or, count, exists, desc, asc } from '~/drizzle/db'
 import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -21,19 +22,12 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    const prisma = event.context.prisma
-    
     // 批量更新排期顺序
     const results = await Promise.all(
       schedules.map(async (item) => {
-        return prisma.schedule.update({
-          where: {
-            id: Number(item.id)
-          },
-          data: {
-            sequence: item.sequence
-          }
-        })
+        return db.update(schedules)
+          .set({ sequence: item.sequence })
+          .where(eq(schedules.id, Number(item.id)))
       })
     )
 

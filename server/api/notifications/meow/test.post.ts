@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
     const userId = user.id
 
     // 获取用户的 MeoW 绑定信息
-    const userData = await prisma.user.findUnique({
+    const userData = await db.user.findUnique({
       where: { id: userId },
       select: {
         id: true,

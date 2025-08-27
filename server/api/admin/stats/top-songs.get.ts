@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     const where = semester && semester !== 'all' ? { semester: semester } : {}
 
     // 获取热门歌曲排行
-    const topSongs = await prisma.song.findMany({
+    const topSongs = await db.song.findMany({
       where,
       orderBy: {
         votes: {

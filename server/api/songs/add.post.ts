@@ -50,12 +50,12 @@ export default defineEventHandler(async (event) => {
       
       if (!isNaN(parsedId) && parsedId > 0) {
         // 如果是有效的数字ID，直接按ID查找
-        requesterUser = await prisma.user.findUnique({
+        requesterUser = await db.user.findUnique({
           where: { id: parsedId }
         })
       } else {
         // 如果不是数字ID，按用户名或姓名查找
-        requesterUser = await prisma.user.findFirst({
+        requesterUser = await db.user.findFirst({
           where: {
             OR: [
               { username: String(requester) },
@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查歌曲是否已存在
-    const existingSong = await prisma.song.findFirst({
+    const existingSong = await db.song.findFirst({
       where: {
         title: title.trim(),
         artist: artist.trim(),
@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 创建歌曲
-    const newSong = await prisma.song.create({
+    const newSong = await db.song.create({
       data: {
         title: title.trim(),
         artist: artist.trim(),

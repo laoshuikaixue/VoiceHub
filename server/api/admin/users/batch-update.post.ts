@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
     const userIds = updates.map(update => update.userId)
     
     // 验证用户是否存在且为学生角色
-    const existingUsers = await prisma.user.findMany({
+    const existingUsers = await db.user.findMany({
       where: {
         id: {
           in: userIds
@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
         }
 
         // 更新用户信息
-        const updatedUser = await prisma.user.update({
+        const updatedUser = await db.user.update({
           where: { id: update.userId },
           data: updateData,
           select: {

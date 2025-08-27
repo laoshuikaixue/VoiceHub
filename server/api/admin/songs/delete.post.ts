@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 使用事务确保删除操作的原子性
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       // 在事务中重新检查歌曲是否存在
       const song = await tx.song.findUnique({
         where: {

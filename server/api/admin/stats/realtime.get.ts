@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
       (async () => {
         try {
           // 获取最近1小时内点歌的用户
-          const recentSongUsers = await prisma.song.findMany({
+          const recentSongUsers = await db.song.findMany({
             where: {
               createdAt: {
                 gte: oneHourAgo
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
           })
           
           // 获取最近1小时内登录的用户
-          const recentLoginUsers = await prisma.user.findMany({
+          const recentLoginUsers = await db.user.findMany({
             where: {
               lastLogin: {
                 gte: oneHourAgo
@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
           })
           
           // 获取最近1小时内点赞过歌曲的用户
-          const recentVoteUsers = await prisma.vote.findMany({
+          const recentVoteUsers = await db.vote.findMany({
             where: {
               createdAt: {
                 gte: oneHourAgo
@@ -139,7 +139,7 @@ export default defineEventHandler(async (event) => {
       // 今日点歌数
       (async () => {
         try {
-          return await prisma.song.count({
+          return await db.song.count({
             where: {
               createdAt: {
                 gte: today
@@ -160,7 +160,7 @@ export default defineEventHandler(async (event) => {
       (async () => {
         try {
           const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-          const songs = await prisma.song.findMany({
+          const songs = await db.song.findMany({
             where: {
               createdAt: {
                 gte: sevenDaysAgo

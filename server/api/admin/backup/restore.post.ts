@@ -123,21 +123,21 @@ export default defineEventHandler(async (event) => {
       console.log('清空现有数据...')
       try {
         // 按照外键依赖顺序删除数据
-        await prisma.notification.deleteMany()
-        await prisma.notificationSettings.deleteMany()
-        await prisma.schedule.deleteMany()
-        await prisma.vote.deleteMany()
-        await prisma.song.deleteMany()
-        await prisma.user.deleteMany({
+        await db.notification.deleteMany()
+        await db.notificationSettings.deleteMany()
+        await db.schedule.deleteMany()
+        await db.vote.deleteMany()
+        await db.song.deleteMany()
+        await db.user.deleteMany({
           where: {
             role: {
               not: 'SUPER_ADMIN'
             }
           }
         })
-        await prisma.playTime.deleteMany()
-        await prisma.semester.deleteMany()
-        await prisma.systemSettings.deleteMany()
+        await db.playTime.deleteMany()
+        await db.semester.deleteMany()
+        await db.systemSettings.deleteMany()
         console.log('✅ 现有数据已清空')
       } catch (error) {
         console.error('清空数据失败:', error)
@@ -191,7 +191,7 @@ export default defineEventHandler(async (event) => {
             
             while (retryCount <= maxRetries) {
               try {
-                await prisma.$transaction(async (tx) => {
+                await db.$transaction(async (tx) => {
                 // 根据表名选择恢复策略
                 switch (tableName) {
                   case 'users':

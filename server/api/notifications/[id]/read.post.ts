@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 检查通知是否属于当前用户
-    const notification = await prisma.notification.findUnique({
+    const notification = await db.notification.findUnique({
       where: {
         id: id
       }
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 标记为已读
-    const updatedNotification = await prisma.notification.update({
+    const updatedNotification = await db.notification.update({
       where: {
         id: id
       },

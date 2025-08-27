@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 获取系统设置
-    const systemSettings = await prisma.systemSettings.findFirst()
+    const systemSettings = await db.systemSettings.findFirst()
     
     // 超级管理员和管理员不受投稿限制
     const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
@@ -70,7 +70,7 @@ export default defineEventHandler(async (event) => {
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
       
-      dailyUsed = await prisma.song.count({
+      dailyUsed = await db.song.count({
         where: {
           requesterId: user.id,
           createdAt: {
@@ -88,7 +88,7 @@ export default defineEventHandler(async (event) => {
       
       const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
       
-      weeklyUsed = await prisma.song.count({
+      weeklyUsed = await db.song.count({
         where: {
           requesterId: user.id,
           createdAt: {

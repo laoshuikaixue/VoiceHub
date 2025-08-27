@@ -1,4 +1,4 @@
-import { db } from '~/drizzle/db'
+import { db, notifications, eq, and } from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -13,15 +13,14 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 标记该用户的所有未读通知为已读
-    const result = await prisma.notification.updateMany({
-      where: {
-        userId: user.id,
-        read: false
-      },
-      data: {
-        read: true
-      }
-    })
+    const result = await db.update(notifications)
+      .set({ read: true })
+      .where(
+        and(
+          eq(notifications.userId, user.id),
+          eq(notifications.read, false)
+        )
+      )
     
     return {
       success: true,
@@ -34,4 +33,4 @@ export default defineEventHandler(async (event) => {
       message: '标记所有通知失败'
     })
   }
-}) 
+})

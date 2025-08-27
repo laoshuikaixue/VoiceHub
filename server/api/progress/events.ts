@@ -88,7 +88,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户信息验证权限
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { id: decoded.userId },
       select: { id: true, role: true }
     })

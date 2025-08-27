@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // 检查学期是否存在
-  const semester = await prisma.semester.findUnique({
+  const semester = await db.semester.findUnique({
     where: {
       id: body.semesterId
     }
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // 使用事务确保数据一致性
-  await prisma.$transaction(async (tx) => {
+  await db.$transaction(async (tx) => {
     // 先将所有学期设为非活跃
     await tx.semester.updateMany({
       where: {

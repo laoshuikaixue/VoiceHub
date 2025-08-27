@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 获取用户信息（包含meowNickname）
-    const userInfo = await prisma.user.findUnique({
+    const userInfo = await db.user.findUnique({
       where: {
         id: user.id
       },
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     })
 
     // 获取用户的通知设置，如果不存在则创建默认设置
-    let dbSettings: any = await prisma.notificationSettings.findUnique({
+    let dbSettings: any = await db.notificationSettings.findUnique({
       where: {
         userId: user.id
       }
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     
     if (!dbSettings) {
       // 创建默认设置
-      dbSettings = await prisma.notificationSettings.create({
+      dbSettings = await db.notificationSettings.create({
         data: {
           userId: user.id,
           enabled: true,
