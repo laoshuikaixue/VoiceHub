@@ -25,6 +25,16 @@ export default defineEventHandler(async (event) => {
     // 验证请求体
     const updateData: any = {}
     
+    if (body.hideStudentInfo !== undefined) {
+      if (typeof body.hideStudentInfo !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'hideStudentInfo 必须是布尔值'
+        })
+      }
+      updateData.hideStudentInfo = body.hideStudentInfo
+    }
+    
     if (body.enablePlayTimeSelection !== undefined) {
       if (typeof body.enablePlayTimeSelection !== 'boolean') {
         throw createError({
@@ -122,6 +132,7 @@ export default defineEventHandler(async (event) => {
       // 如果不存在，创建新设置
       settings = await prisma.systemSettings.create({
         data: {
+          hideStudentInfo: updateData.hideStudentInfo ?? false,
           enablePlayTimeSelection: updateData.enablePlayTimeSelection ?? false,
           siteTitle: updateData.siteTitle ?? 'VoiceHub',
           siteLogoUrl: updateData.siteLogoUrl ?? '/favicon.ico',

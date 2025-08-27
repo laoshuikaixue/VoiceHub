@@ -1,8 +1,23 @@
-import { createError, defineEventHandler, getQuery } from 'h3'
+import { createError, defineEventHandler, getQuery, getCookie, getHeader } from 'h3'
+import jwt from 'jsonwebtoken'
 import { prisma } from '../../models/schema'
 import { executeWithPool } from '~/server/utils/db-pool'
 import { CacheService } from '~/server/services/cacheService'
 import { isRedisReady, executeRedisCommand } from '../../utils/redis'
+
+// 姓名模糊化函数
+function maskStudentName(name: string): string {
+  if (!name) return name
+  
+  const length = name.length
+  if (length === 1) {
+    return '*'
+  } else if (length === 2) {
+    return name[0] + '*'
+  } else {
+    return name[0] + '*'.repeat(length - 1)
+  }
+}
 
 // 公共排期缓存（永久缓存，数据修改时主动失效）
 
@@ -11,6 +26,24 @@ export default defineEventHandler(async (event) => {
     // 获取查询参数
     const query = getQuery(event)
     const semester = query.semester as string
+    
+    // 检查用户是否已登录
+    const token = getCookie(event, 'auth-token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
+    let isLoggedIn = false
+    
+    if (token) {
+      try {
+        jwt.verify(token, process.env.JWT_SECRET!)
+        isLoggedIn = true
+      } catch (error) {
+        // Token 无效，用户未登录
+        isLoggedIn = false
+      }
+    }
+    
+    // 获取系统设置
+    const systemSettings = await prisma.systemSettings.findFirst()
+    const shouldHideStudentInfo = systemSettings?.hideStudentInfo ?? true
     
     // 初始化缓存服务
     const cacheService = new CacheService()
@@ -36,7 +69,18 @@ export default defineEventHandler(async (event) => {
         const data = await client.get(cacheKey)
         if (data) {
           console.log(`[API] 公共排期缓存命中: ${cacheKey}`)
-          return JSON.parse(data)
+          const parsedData = JSON.parse(data)
+          // 深拷贝数据以避免修改缓存的原始数据
+          const resultData = JSON.parse(JSON.stringify(parsedData))
+          // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
+          if (shouldHideStudentInfo && !isLoggedIn) {
+            resultData.forEach((item: any) => {
+              if (item.song?.requester) {
+                item.song.requester = maskStudentName(item.song.requester)
+              }
+            })
+          }
+          return resultData
         }
         
         return null
@@ -53,22 +97,34 @@ export default defineEventHandler(async (event) => {
     if (cachedSchedules && (!semester || cachedSchedules.some(s => s.song?.semester === semester))) {
       console.log('[Cache] CacheService排期缓存命中')
       // 如果指定了学期，过滤数据
+      let filteredSchedules = cachedSchedules
       if (semester) {
-        cachedSchedules = cachedSchedules.filter(s => s.song?.semester === semester)
+        filteredSchedules = cachedSchedules.filter(s => s.song?.semester === semester)
       }
       
-      // 将过滤后的数据缓存到Redis
+      // 将过滤后的数据缓存到Redis（缓存完整数据，不进行模糊化）
       if (isRedisReady()) {
         await executeRedisCommand(async () => {
           const client = (await import('../../utils/redis')).getRedisClient()
           if (!client) return
           
-          await client.set(cacheKey, JSON.stringify(cachedSchedules))
+          await client.set(cacheKey, JSON.stringify(filteredSchedules))
           console.log(`[API] 排期数据已缓存到Redis: ${cacheKey}`)
         })
       }
       
-      return cachedSchedules
+      // 深拷贝数据以避免修改缓存的原始数据
+      const resultData = JSON.parse(JSON.stringify(filteredSchedules))
+      // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
+      if (shouldHideStudentInfo && !isLoggedIn) {
+        resultData.forEach((item: any) => {
+          if (item.song?.requester) {
+            item.song.requester = maskStudentName(item.song.requester)
+          }
+        })
+      }
+      
+      return resultData
     }
     
     // 获取排期的歌曲，包含播放时段信息
@@ -167,6 +223,9 @@ export default defineEventHandler(async (event) => {
         }
       }
       
+      // 注意：这里不进行模糊化处理，保持完整数据用于缓存
+      // 模糊化处理将在最终返回时进行
+      
       return {
         id: schedule.id,
         playDate: dateOnly.toISOString().split('T')[0], // 转换为YYYY-MM-DD格式字符串
@@ -210,7 +269,7 @@ export default defineEventHandler(async (event) => {
       finalResult = result.filter(s => s.song?.semester === semester)
     }
     
-    // 缓存结果到Redis（如果可用）
+    // 缓存结果到Redis（如果可用）- 缓存完整数据
     if (finalResult && isRedisReady()) {
       await executeRedisCommand(async () => {
         const client = (await import('../../utils/redis')).getRedisClient()
@@ -221,7 +280,19 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    return finalResult || result
+    // 深拷贝数据以避免修改缓存的原始数据
+    const resultToReturn = JSON.parse(JSON.stringify(finalResult || result))
+    
+    // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
+    if (shouldHideStudentInfo && !isLoggedIn && resultToReturn) {
+      resultToReturn.forEach((item: any) => {
+        if (item.song?.requester) {
+          item.song.requester = maskStudentName(item.song.requester)
+        }
+      })
+    }
+
+    return resultToReturn
   } catch (error: any) {
     console.error('获取公共排期失败:', error)
     throw createError({

@@ -151,6 +151,9 @@ model SystemSettings {
 
   // 黑名单设置
   showBlacklistKeywords  Boolean  @default(false) // 是否显示具体的黑名单关键词
+  
+  // 隐私设置
+  hideStudentInfo        Boolean  @default(true) // 是否隐藏学生信息
 }
 
 // 歌曲黑名单模型

@@ -164,11 +164,38 @@
           <label class="checkbox-label">
             <input
               type="checkbox"
+              v-model="formData.enableBlacklist"
+            />
+            <span class="checkbox-text">启用黑名单功能</span>
+          </label>
+          <small class="help-text">开启后，系统将检查投稿内容是否包含黑名单关键词</small>
+        </div>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
               v-model="formData.showBlacklistKeywords"
             />
             <span class="checkbox-text">显示具体黑名单关键词</span>
           </label>
           <small class="help-text">开启后，在投稿时会显示"包含关键词：XXX"；关闭时只显示"包含关键词"</small>
+        </div>
+      </div>
+
+      <!-- 隐私设置 -->
+      <div class="form-section">
+        <h4 class="section-title">隐私设置</h4>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              v-model="formData.hideStudentInfo"
+            />
+            <span class="checkbox-text">隐藏学生信息</span>
+          </label>
+          <small class="help-text">开启后，未登录用户将无法查看完整的学生姓名</small>
         </div>
       </div>
 
@@ -244,7 +271,8 @@ const formData = ref({
   enableSubmissionLimit: false,
   dailySubmissionLimit: 0,
   weeklySubmissionLimit: 0,
-  showBlacklistKeywords: false
+  showBlacklistKeywords: false,
+  hideStudentInfo: true
 })
 
 const originalData = ref({})
@@ -274,7 +302,8 @@ const loadConfig = async () => {
       enableSubmissionLimit: data.enableSubmissionLimit || false,
       dailySubmissionLimit: data.dailySubmissionLimit !== undefined ? data.dailySubmissionLimit : 5,
       weeklySubmissionLimit: data.weeklySubmissionLimit !== undefined ? data.weeklySubmissionLimit : null,
-      showBlacklistKeywords: data.showBlacklistKeywords || false
+      showBlacklistKeywords: data.showBlacklistKeywords || false,
+      hideStudentInfo: data.hideStudentInfo ?? true
     }
     
     // 保存原始数据用于重置
@@ -327,7 +356,10 @@ const saveConfig = async () => {
         'Content-Type': 'application/json'
       },
       credentials: 'include',
-      body: JSON.stringify(configToSave)
+      body: JSON.stringify({
+        ...configToSave,
+        hideStudentInfo: formData.value.hideStudentInfo
+      })
     })
     
     if (!response.ok) {
