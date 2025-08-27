@@ -3,12 +3,6 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'Dockerfile'
-      - '.github/workflows/docker-publish.yml'
-      - 'src/**' # 根据你的项目结构调整
-      - 'package.json'
-      - 'pnpm-lock.yaml'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -59,18 +53,14 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
-      # 核心构建步骤
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
-          # 仅在非 pull_request 事件中推送到镜像仓库
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # 指定需要构建的平台，Buildx 会处理所有平台的构建和 manifest 的合并
           platforms: linux/amd64,linux/arm64
-          # 启用缓存，利用 GHA 缓存加速后续构建
           cache-from: type=gha
           cache-to: type=gha,mode=max
