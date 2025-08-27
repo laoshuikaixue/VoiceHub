@@ -1,21 +1,25 @@
 #!/usr/bin/env node
 
 import { execSync } from 'child_process';
+import fs from 'fs';
 
 // 检查是否在CI环境中
 const isCI = process.env.CI || process.env.NETLIFY || process.env.VERCEL;
 
 if (isCI) {
-  console.log('🔧 CI环境检测到，生成 Prisma 客户端...');
+  console.log('🔧 CI环境检测到，检查 Drizzle 配置...');
   
   try {
-    execSync('npx prisma generate', { stdio: 'inherit' });
-    console.log('✅ Prisma 客户端生成完成');
+    // 检查 Drizzle 配置文件是否存在
+    if (fs.existsSync('drizzle.config.ts') && fs.existsSync('drizzle/schema.ts')) {
+      console.log('✅ Drizzle 配置检查完成');
+    } else {
+      console.warn('⚠️ Drizzle 配置文件不完整');
+    }
   } catch (error) {
-    console.error('❌ Prisma 客户端生成失败:', error.message);
-    // 在CI环境中不要因为Prisma生成失败而中断整个安装过程
-    // 因为可能还没有设置DATABASE_URL
+    console.error('❌ Drizzle 配置检查失败:', error.message);
+    // 在CI环境中不要因为配置检查失败而中断整个安装过程
   }
 } else {
-  console.log('📝 本地开发环境，跳过自动生成 Prisma 客户端');
+  console.log('📝 本地开发环境，跳过自动检查');
 }

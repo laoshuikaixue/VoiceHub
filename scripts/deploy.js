@@ -105,18 +105,38 @@ async function deploy() {
     }
     logSuccess('Drizzle 配置检查完成');
     
-    // 3. 数据库迁移
-    logStep('🗄️', '同步数据库结构...');
+    // 3. 数据库迁移（平滑迁移，保护现有数据）
+    logStep('🗄️', '执行数据库迁移...');
     let dbSyncSuccess = false;
     
-    // 使用 Drizzle 进行数据库同步
-    if (safeExec('npm run db:push')) {
-      logSuccess('数据库同步成功');
-      dbSyncSuccess = true;
+    // 使用 Drizzle 迁移文件，确保数据安全
+    if (process.env.DATABASE_URL) {
+      logStep('📋', '检查迁移文件...');
+      if (fileExists('drizzle/migrations')) {
+        // 使用迁移文件进行安全的数据库更新
+        if (safeExec('npm run db:migrate')) {
+          logSuccess('数据库迁移成功');
+          dbSyncSuccess = true;
+        } else {
+          logWarning('迁移失败，尝试使用 db:push 作为后备方案...');
+          if (safeExec('npm run db:push')) {
+            logSuccess('数据库同步成功（使用 push 方式）');
+            dbSyncSuccess = true;
+          } else {
+            logError('数据库同步失败');
+          }
+        }
+      } else {
+        logWarning('未找到迁移文件，使用 db:push 同步schema...');
+        if (safeExec('npm run db:push')) {
+          logSuccess('数据库schema同步成功');
+          dbSyncSuccess = true;
+        } else {
+          logError('数据库schema同步失败');
+        }
+      }
     } else {
-      logWarning('数据库同步失败，可能数据库不可访问...');
-      logWarning('继续构建应用...');
-      // 不直接退出，继续尝试构建
+      logWarning('未设置 DATABASE_URL，跳过数据库迁移');
     }
     
     // 4. 创建管理员账户（如果脚本存在）
@@ -143,6 +163,11 @@ async function deploy() {
     }
     
     log('🎉 部署流程完成！', 'green');
+    
+    if (!dbSyncSuccess) {
+      logWarning('注意：数据库迁移可能未完全成功，请检查数据库连接');
+      logWarning('建议手动运行: npm run db:migrate 或 npm run db:push');
+    }
     
     if (!dbSyncSuccess) {
       logWarning('注意：数据库同步可能未完全成功，请检查数据库连接');
