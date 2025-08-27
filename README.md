@@ -94,6 +94,32 @@
 
 您可以参考[环境变量说明](#环境变量说明)了解更多详情。
 
+### Claw 部署
+[![Claw](https://ap-southeast-1.run.claw.cloud/logo.svg)](https://ap-southeast-1.run.claw.cloud/)
+
+1. **点击部署按钮**：选择上方的 Claw 部署按钮
+
+2. **打开应用程序启动板**：打开  App Lauchpad （应用程序启动板）
+
+3. **创建应用**：选 Create App （创建应用）
+
+4. **相关配置**：
+
+   ```
+   Application Name：VoiceHub 或 其它
+   Image Name: ghcr.io/laoshuikaixue/voicehub:main
+   Usage：按需调整
+   Network：3000 ，开 Public Access
+   Environment Variables：
+      DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
+      JWT_SECRET=your-jwt-secret-here
+      # 按实际情况填写
+   ```
+
+5. **等待部署**：平台会自动构建和部署应用
+
+6. **访问应用**：部署完成后，您将获得一个可访问的 URL
+
 ### 其他平台部署
 
 1. 构建生产版本
@@ -115,7 +141,7 @@
 ```
 git clone https://github.com/laoshuikaixue/VoiceHub.git
 cd VoiceHub
-docker build -t voicehub
+docker build -t voicehub .
 docker run voicehub
 ```
 
