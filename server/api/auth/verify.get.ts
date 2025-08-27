@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
         const client = (await import('../../utils/redis')).getRedisClient()
         if (!client) return null
         
-        const cacheKey = `user_auth:${userId}`
+        const cacheKey = `auth:user:${userId}`
         const userData = await client.get(cacheKey)
         
         if (userData) {
@@ -51,19 +51,21 @@ export default defineEventHandler(async (event) => {
         where: { id: userId },
         select: {
           id: true,
+          username: true,
           name: true,
           grade: true,
           class: true,
           role: true,
-          isActive: true
+          forcePasswordChange: true,
+          passwordChangedAt: true
         }
       })
     }, 'getUserAuth')
 
-    if (!user || !user.isActive) {
+    if (!user) {
       throw createError({
         statusCode: 401,
-        statusMessage: '用户不存在或已被禁用'
+        statusMessage: '用户不存在'
       })
     }
 
@@ -73,7 +75,7 @@ export default defineEventHandler(async (event) => {
         const client = (await import('../../utils/redis')).getRedisClient()
         if (!client) return
         
-        const cacheKey = `user_auth:${userId}`
+        const cacheKey = `auth:user:${userId}`
         await client.set(cacheKey, JSON.stringify(user))
         console.log(`[API] 用户认证状态已缓存: ${userId}`)
       })

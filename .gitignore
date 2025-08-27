@@ -5,6 +5,7 @@
 .nitro
 .cache
 dist
+docs
 
 # Node dependencies
 node_modules
@@ -25,6 +26,7 @@ backups/
 .cursor
 .vercel
 .vscode
+.trae
 package-lock.json
 
 # Local env files
