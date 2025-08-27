@@ -22,6 +22,8 @@
     "create-admin": "cd scripts && node create-admin.js",
     "clear-db": "cd scripts && node clear-database.js",
     "safe-migrate": "cd scripts && node safe-migrate.js",
+    "force-deploy-migrate": "cd scripts && node force-deploy-migrate.js",
+    "auto-answer-migrate": "cd scripts && node auto-answer-migrate.js",
     "vercel-build": "node scripts/deploy.js",
     "netlify-build": "node scripts/netlify-build.js",
     "check-deploy": "node scripts/check-deploy.js",

@@ -48,32 +48,66 @@ function safeExec(command, options = {}) {
   }
 }
 
-// 处理数据冲突
+// 处理数据冲突和验证数据完整性
 async function handleDataConflicts() {
   try {
     // 导入数据库连接
-    const { db, semesters } = await import('../drizzle/db.js');
+    const { db } = await import('../drizzle/db.js');
     const { sql } = await import('drizzle-orm');
     
-    logWarning('检查Semester表的重复数据...');
+    log('🔍 检查数据库表结构和数据完整性...', 'cyan');
     
-    // 查找重复的学期名称
+    // 1. 检查Semester表是否存在
+    const tableExists = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'Semester'
+      )
+    `);
+    
+    if (!tableExists.rows[0]?.exists) {
+      logSuccess('Semester表不存在，跳过数据检查');
+      return;
+    }
+    
+    // 2. 检查当前数据
+    const currentData = await db.execute(sql`
+      SELECT id, name, "isActive", "createdAt" 
+      FROM "Semester" 
+      ORDER BY id
+    `);
+    
+    log(`📊 发现 ${currentData.rows.length} 条学期记录`);
+    
+    if (currentData.rows.length > 0) {
+      // 打印当前数据用于调试
+      console.table(currentData.rows.map(row => ({
+        ID: row.id,
+        Name: row.name,
+        Active: row.isActive,
+        Created: new Date(row.createdAt).toLocaleDateString()
+      })));
+    }
+    
+    // 3. 检查重复的学期名称
     const duplicates = await db.execute(sql`
-      SELECT name, COUNT(*) as count 
+      SELECT name, COUNT(*) as count, array_agg(id) as ids
       FROM "Semester" 
       GROUP BY name 
       HAVING COUNT(*) > 1
     `);
     
     if (duplicates.rows && duplicates.rows.length > 0) {
-      logWarning('发现重复的学期名称，正在处理...');
+      logWarning(`发现 ${duplicates.rows.length} 组重复的学期名称，正在处理...`);
       
       for (const duplicate of duplicates.rows) {
         const name = duplicate.name;
-        logWarning(`处理重复学期: ${name}`);
+        const count = duplicate.count;
+        logWarning(`处理重复学期: "${name}" (${count} 条记录)`);
         
-        // 保留最新的记录，删除旧的重复记录
-        await db.execute(sql`
+        // 保留最新的记录（最大ID），删除旧的重复记录
+        const deleted = await db.execute(sql`
           DELETE FROM "Semester" 
           WHERE name = ${name} 
           AND id NOT IN (
@@ -82,16 +116,32 @@ async function handleDataConflicts() {
             WHERE name = ${name}
           )
         `);
+        
+        logSuccess(`已删除 ${count - 1} 条重复记录，保留最新的记录`);
       }
       
       logSuccess('重复数据清理完成');
     } else {
-      logSuccess('未发现重复数据');
+      logSuccess('未发现重复数据，数据完整性良好');
+    }
+    
+    // 4. 验证唯一性约束是否可以安全添加
+    const finalCheck = await db.execute(sql`
+      SELECT name, COUNT(*) as count 
+      FROM "Semester" 
+      GROUP BY name 
+      HAVING COUNT(*) > 1
+    `);
+    
+    if (finalCheck.rows.length === 0) {
+      logSuccess('✅ 数据验证通过，可以安全添加唯一性约束');
+    } else {
+      logError('❌ 仍存在重复数据，可能需要人工干预');
     }
     
   } catch (error) {
     logWarning(`数据冲突检查失败: ${error.message}`);
-    logWarning('继续执行迁移，可能需要手动处理数据冲突');
+    logWarning('继续执行迁移，使用强制模式跳过冲突检查');
   }
 }
 

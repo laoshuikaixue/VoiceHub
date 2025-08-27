@@ -134,20 +134,17 @@ async function netlifyBuild() {
     
     logSuccess('Drizzle 配置验证成功');
     
-    // 6. 数据库迁移（非交互模式，保护现有数据）
+    // 6. 数据库强制迁移（完全避免交互提示）
     if (process.env.DATABASE_URL) {
-      logStep('🗄️', '执行数据库迁移...');
+      logStep('🗄️', '执行数据库强制迁移...');
       
-      // 使用强制迁移命令，避免交互提示
-      if (safeExec('npm run db:push-force')) {
+      // 使用专门的强制部署迁移脚本
+      if (safeExec('npm run force-deploy-migrate')) {
+        logSuccess('数据库强制迁移成功');
+      } else if (safeExec('npm run db:push-force')) {
         logSuccess('数据库强制同步成功');
       } else {
-        logWarning('强制同步失败，尝试安全迁移...');
-        if (safeExec('npm run safe-migrate')) {
-          logSuccess('数据库安全迁移成功');
-        } else {
-          logWarning('数据库迁移失败，继续构建...');
-        }
+        logWarning('数据库迁移失败，继续构建...');
       }
     } else {
       logWarning('未设置 DATABASE_URL，跳过数据库迁移');

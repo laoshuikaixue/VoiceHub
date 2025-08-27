@@ -105,21 +105,27 @@ async function deploy() {
     }
     logSuccess('Drizzle 配置检查完成');
     
-    // 3. 数据库安全迁移（使用非交互模式）
-    logStep('🗄️', '执行数据库安全迁移...');
+    // 3. 数据库强制迁移（完全避免交互提示）
+    logStep('🗄️', '执行数据库强制迁移（非交互模式）...');
     let dbSyncSuccess = false;
     
     if (process.env.DATABASE_URL) {
-      // 优先使用强制迁移命令，避免交互提示
-      if (safeExec('npm run db:push-force')) {
+      // 多级回退策略，确保成功
+      if (safeExec('npm run force-deploy-migrate')) {
+        logSuccess('数据库强制迁移成功');
+        dbSyncSuccess = true;
+      } else if (safeExec('npm run auto-answer-migrate')) {
+        logSuccess('数据库自动应答迁移成功');
+        dbSyncSuccess = true;
+      } else if (safeExec('npm run db:push-force')) {
         logSuccess('数据库强制同步成功');
         dbSyncSuccess = true;
       } else if (safeExec('npm run safe-migrate')) {
         logSuccess('数据库安全迁移成功');
         dbSyncSuccess = true;
       } else {
-        logError('数据库迁移失败');
-        logWarning('请检查数据库连接和迁移文件');
+        logError('所有数据库迁移策略均失败');
+        logWarning('请检查数据库连接和配置');
       }
     } else {
       logWarning('未设置 DATABASE_URL，跳过数据库迁移');
