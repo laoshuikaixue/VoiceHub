@@ -185,11 +185,11 @@ export default defineEventHandler(async (event) => {
             whereConditions.push(eq(songs.semester, semester))
           }
           const result = await db.select({ count: count() }).from(songs).where(and(...whereConditions))
-          const count = result[0].count
+          const countValue = result[0].count
           
           trends.push({
             date: startOfDay.toISOString().split('T')[0],
-            count
+            count: countValue
           })
         }
         return trends
@@ -204,11 +204,11 @@ export default defineEventHandler(async (event) => {
           const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
           
           const result = await db.select({ count: count() }).from(users).where(and(gte(users.createdAt, startOfDay), lt(users.createdAt, endOfDay)))
-          const count = result[0].count
+          const countValue = result[0].count
           
           trends.push({
             date: startOfDay.toISOString().split('T')[0],
-            count
+            count: countValue
           })
         }
         return trends
@@ -253,11 +253,11 @@ export default defineEventHandler(async (event) => {
             whereConditions.push(eq(songs.semester, semester))
           }
           const result = await db.select({ count: count() }).from(songs).where(and(...whereConditions))
-          const count = result[0].count
+          const countValue = result[0].count
           
           trends.push({
             date: startOfDay.toISOString().split('T')[0],
-            count
+            count: countValue
           })
         }
         return trends
