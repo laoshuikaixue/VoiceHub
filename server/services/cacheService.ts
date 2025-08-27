@@ -246,7 +246,11 @@ class CacheService {
         // 检查原始数据是否包含乱码
         if (this.containsInvalidUTF8(data)) {
           // 删除损坏的缓存
-          await client.del(key)
+          await executeRedisCommand(async () => {
+            const redisClient = (await import('../utils/redis')).getRedisClient()
+            if (!redisClient) return
+            await redisClient.del(key)
+          }, async () => {})
           return null
         }
         
@@ -256,7 +260,11 @@ class CacheService {
         // 如果反序列化返回null（可能因为乱码），记录日志
         if (result === null && data.length > 0) {
           // 删除有问题的缓存
-          await client.del(key)
+          await executeRedisCommand(async () => {
+            const redisClient = (await import('../utils/redis')).getRedisClient()
+            if (!redisClient) return
+            await redisClient.del(key)
+          }, async () => {})
         }
         
         return result
@@ -277,7 +285,7 @@ class CacheService {
       
       await client.del(key)
       return true
-    }) || false
+    }, async () => false) || false
   }
 
   // 批量删除缓存（按模式）
@@ -293,7 +301,7 @@ class CacheService {
         await client.del(...keys)
       }
       return true
-    }) || false
+    }, async () => false) || false
   }
 
   // 获取分布式锁
@@ -321,7 +329,7 @@ class CacheService {
       if (!client) return
       
       await client.del(lockKey)
-    })
+    }, async () => {})
   }
 
   // 防缓存击穿的数据获取
@@ -462,13 +470,21 @@ class CacheService {
               }
             } catch (parseError) {
               console.warn(`[Cache] 缓存键 ${key} 数据无法解析，删除该缓存`)
-              await client.del(key)
+              try {
+                await client.del(key)
+              } catch (delError) {
+                console.error(`[Cache] 删除损坏缓存键 ${key} 失败:`, delError)
+              }
               corruptedCount++
             }
           } catch (error) {
             console.error(`[Cache] 检查缓存键 ${key} 时出错:`, error)
             // 如果无法读取，也删除这个键
-            await client.del(key)
+            try {
+              await client.del(key)
+            } catch (delError) {
+              console.error(`[Cache] 删除问题缓存键 ${key} 失败:`, delError)
+            }
             corruptedCount++
           }
         }
@@ -901,8 +917,12 @@ class CacheService {
       
       const allKeys = [...keys, ...realtimeKeys, ...activeUserKeys]
       if (allKeys.length > 0) {
-        await client.del(allKeys)
-        console.log(`[Cache] 已清除 ${allKeys.length} 个统计缓存键`)
+        try {
+          await client.del(allKeys)
+          console.log(`[Cache] 已清除 ${allKeys.length} 个统计缓存键`)
+        } catch (delError) {
+          console.error(`[Cache] 删除统计缓存键失败:`, delError)
+        }
       }
     })
   }

@@ -93,12 +93,14 @@ export class CacheHelper {
       // 从Redis删除
       if (isRedisReady()) {
         redisSuccess = await executeRedisCommand(
-          async (client) => {
+          async () => {
+            const client = (await import('./redis')).getRedisClient()
+            if (!client) return false
             await client.del(key)
             return true
           },
-          false
-        )
+          async () => false
+        ) || false
       }
       
       // 从内存缓存删除
@@ -127,15 +129,17 @@ export class CacheHelper {
       // 从Redis批量删除
       if (isRedisReady()) {
         redisSuccess = await executeRedisCommand(
-          async (client) => {
+          async () => {
+            const client = (await import('./redis')).getRedisClient()
+            if (!client) return false
             const keys = await client.keys(pattern)
             if (keys.length > 0) {
               await client.del(...keys)
             }
             return true
           },
-          false
-        )
+          async () => false
+        ) || false
       }
       
       // 从内存缓存批量删除

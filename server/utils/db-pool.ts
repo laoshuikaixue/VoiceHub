@@ -1,5 +1,5 @@
 import { prisma } from '~/prisma/client'
-import { isRedisReady } from './redis'
+import { isRedisReady, connectRedis } from './redis'
 
 // 断路器状态枚举
 enum CircuitBreakerState {
@@ -99,14 +99,63 @@ class DatabasePool {
   private lastSuccessfulConnection = 0 // 上次成功连接时间
   private longestDowntime = 0 // 最长停机时间
   private currentDowntimeStart = 0 // 当前停机开始时间
+  
+  // 空闲模式控制标志
+  private enableIdleMode: boolean
 
   constructor() {
-    // 根据Redis配置调整连接池策略
-    this.adjustPoolConfigForRedis()
+    // 读取ENABLE_IDLE_MODE环境变量，默认为true
+    this.enableIdleMode = process.env.ENABLE_IDLE_MODE !== 'false'
     
-    this.logConnectionEvent('POOL_INITIALIZED', '数据库连接池启动')
-    this.initialize()
-    this.startIntelligentPoolManagement()
+    this.logConnectionEvent('POOL_INITIALIZED', 
+      `数据库连接池启动，空闲模式: ${this.enableIdleMode ? '启用' : '禁用'}`)
+    
+    // 异步初始化Redis配置和连接池
+    this.initializeAsync()
+  }
+  
+  // 异步初始化方法
+  private async initializeAsync() {
+    try {
+      // 根据Redis配置调整连接池策略
+      await this.adjustPoolConfigForRedis()
+      
+      // 初始化连接池
+      await this.initialize()
+      
+      // 启动智能连接池管理
+      this.startIntelligentPoolManagement()
+      
+      // 启动Redis状态定期检查
+      this.startRedisStatusMonitoring()
+      
+      console.log('[DB Pool] 异步初始化完成')
+    } catch (error) {
+      console.error('[DB Pool] 异步初始化失败:', error)
+      // 即使Redis配置失败，也要启动基本的连接池功能
+      await this.initialize()
+      this.startIntelligentPoolManagement()
+      this.startRedisStatusMonitoring()
+    }
+  }
+  
+  // 启动Redis状态监控
+  private startRedisStatusMonitoring() {
+    // 每2分钟检查一次Redis状态
+    setInterval(async () => {
+      try {
+        const currentRedisStatus = isRedisReady()
+        const newRedisStatus = await this.checkRedisAvailability()
+        
+        // 如果Redis状态发生变化，重新配置连接池
+        if (currentRedisStatus !== newRedisStatus) {
+          console.log(`[DB Pool] Redis状态变化: ${currentRedisStatus} -> ${newRedisStatus}，重新配置连接池`)
+          await this.adjustPoolConfigForRedis()
+        }
+      } catch (error) {
+        console.error('[DB Pool] Redis状态监控出错:', error)
+      }
+    }, 120000) // 2分钟
   }
   
   // 记录连接事件
@@ -300,6 +349,11 @@ class DatabasePool {
   
   // 检查空闲状态
   private checkIdleStatus(): void {
+    // 如果禁用了空闲模式，直接返回
+    if (!this.enableIdleMode) {
+      return
+    }
+    
     const now = Date.now()
     
     // 定期检查空闲状态
@@ -547,6 +601,12 @@ class DatabasePool {
   async enterIdleMode(): Promise<void> {
     if (this.isIdleMode) return
     
+    // 检查是否启用了空闲模式
+    if (!this.enableIdleMode) {
+      console.log('[DB Pool] 空闲模式已禁用，跳过进入空闲模式')
+      return
+    }
+    
     console.log('[DB Pool] 进入空闲模式，关闭所有连接以节省资源')
     this.isIdleMode = true
     
@@ -569,6 +629,12 @@ class DatabasePool {
   // 退出空闲模式
   async exitIdleMode(): Promise<void> {
     if (!this.isIdleMode) return
+    
+    // 检查是否启用了空闲模式
+    if (!this.enableIdleMode) {
+      console.log('[DB Pool] 空闲模式已禁用，无需退出空闲模式')
+      return
+    }
     
     console.log('[DB Pool] 退出空闲模式，恢复连接池')
     
@@ -1298,37 +1364,68 @@ class DatabasePool {
 
 
   // 根据Redis配置调整连接池策略
-  private adjustPoolConfigForRedis() {
-    const redisEnabled = isRedisReady()
-    
-    if (redisEnabled) {
-      // Redis可用时，减少数据库连接数，因为缓存会减轻数据库负载
-      this.minConnections = Math.max(1, Math.floor(this.minConnections * 0.7))
-      this.maxConnections = Math.max(3, Math.floor(this.maxConnections * 0.8))
-      this.targetConnections = Math.max(2, Math.floor(this.targetConnections * 0.75))
+  private async adjustPoolConfigForRedis() {
+    try {
+      // 尝试连接Redis并等待连接完成
+      const redisEnabled = await this.checkRedisAvailability()
       
-      // 增加空闲阈值，因为有缓存支持
-      this.idleThreshold = this.idleThreshold * 1.5
+      if (redisEnabled) {
+        // Redis可用时，减少数据库连接数，因为缓存会减轻数据库负载
+        this.minConnections = Math.max(1, Math.floor(this.minConnections * 0.7))
+        this.maxConnections = Math.max(3, Math.floor(this.maxConnections * 0.8))
+        this.targetConnections = Math.max(2, Math.floor(this.targetConnections * 0.75))
+        
+        // 增加空闲阈值，因为有缓存支持
+        this.idleThreshold = this.idleThreshold * 1.5
+        
+        // 调整健康检查间隔，Redis可用时可以减少检查频率
+        this.healthCheckInterval = Math.min(this.healthCheckInterval * 1.2, 60000)
+        
+        console.log('[DB Pool] Redis可用，已优化数据库连接池配置:', {
+          minConnections: this.minConnections,
+          maxConnections: this.maxConnections,
+          targetConnections: this.targetConnections,
+          idleThreshold: this.idleThreshold,
+          healthCheckInterval: this.healthCheckInterval
+        })
+      } else {
+        // Redis不可用时，保持默认配置或稍微增加连接数
+        console.log('[DB Pool] Redis不可用，使用默认数据库连接池配置:', {
+          minConnections: this.minConnections,
+          maxConnections: this.maxConnections,
+          targetConnections: this.targetConnections,
+          idleThreshold: this.idleThreshold,
+          healthCheckInterval: this.healthCheckInterval
+        })
+      }
+    } catch (error) {
+      console.error('[DB Pool] Redis可用性检查失败:', error)
+      console.log('[DB Pool] 使用默认数据库连接池配置')
+    }
+  }
+
+  // 检查Redis可用性（异步方式）
+  private async checkRedisAvailability(): Promise<boolean> {
+    try {
+      // 首先检查Redis是否已经连接
+      if (isRedisReady()) {
+        return true
+      }
       
-      // 调整健康检查间隔，Redis可用时可以减少检查频率
-      this.healthCheckInterval = Math.min(this.healthCheckInterval * 1.2, 60000)
+      // 如果没有连接，尝试连接Redis
+      console.log('[DB Pool] Redis未连接，尝试建立连接...')
+      const connected = await connectRedis()
       
-      console.log('[DB Pool] Redis可用，已优化数据库连接池配置:', {
-        minConnections: this.minConnections,
-        maxConnections: this.maxConnections,
-        targetConnections: this.targetConnections,
-        idleThreshold: this.idleThreshold,
-        healthCheckInterval: this.healthCheckInterval
-      })
-    } else {
-      // Redis不可用时，保持默认配置或稍微增加连接数
-      console.log('[DB Pool] Redis不可用，使用默认数据库连接池配置:', {
-        minConnections: this.minConnections,
-        maxConnections: this.maxConnections,
-        targetConnections: this.targetConnections,
-        idleThreshold: this.idleThreshold,
-        healthCheckInterval: this.healthCheckInterval
-      })
+      if (connected) {
+        console.log('[DB Pool] Redis连接成功')
+        return true
+      } else {
+        console.log('[DB Pool] Redis连接失败')
+        return false
+      }
+    } catch (error) {
+      console.error('[DB Pool] Redis连接检查出错:', error)
+      return false
     }
   }
 
