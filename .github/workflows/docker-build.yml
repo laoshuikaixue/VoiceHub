@@ -27,6 +27,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx and driver
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-containerd
+          
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -48,7 +53,7 @@ jobs:
         with:
           context: .
           platforms: linux/amd64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
           tags: ${{ steps.meta.outputs.tags }}-amd64
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=amd64
@@ -64,8 +69,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx and QEMU
+      - name: Set up Docker Buildx, QEMU and driver
         uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-containerd
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -88,7 +95,7 @@ jobs:
         with:
           context: .
           platforms: linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
           tags: ${{ steps.meta.outputs.tags }}-arm64
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=arm64
@@ -97,7 +104,7 @@ jobs:
   # Job 3: Create and push multi-arch manifest
   create-manifest:
     runs-on: ubuntu-latest
-    needs: [build-amd64, build-arm64] # 确保在前面两个构建完成后再运行
+    needs: [build-amd64, build-arm64]
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: read
@@ -125,8 +132,19 @@ jobs:
       
       - name: Create and push multi-arch manifest
         run: |
+          VERSION_TAG=${{ steps.meta.outputs.version }}
+          SHA_TAG=${{ steps.meta.outputs.sha }}
+          
+          # Create and push manifest for version tag
+          if [ -n "$VERSION_TAG" ]; then
+            docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION_TAG \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION_TAG-amd64 \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION_TAG-arm64
+            docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION_TAG
+          fi
+
+          # Create and push manifest for branch/latest tag
           docker manifest create ${{ steps.meta.outputs.tags }} \
             ${{ steps.meta.outputs.tags }}-amd64 \
             ${{ steps.meta.outputs.tags }}-arm64
-            
           docker manifest push ${{ steps.meta.outputs.tags }}
