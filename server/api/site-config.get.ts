@@ -33,7 +33,8 @@ export default defineEventHandler(async (event) => {
             enableSubmissionLimit: false,
             dailySubmissionLimit: null,
             weeklySubmissionLimit: null,
-            showBlacklistKeywords: false
+            showBlacklistKeywords: false,
+            hideStudentInfo: true
           }
         })
       }
