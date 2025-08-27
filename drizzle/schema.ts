@@ -9,7 +9,7 @@ export const users = pgTable('User', {
   id: serial('id').primaryKey(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-  username: text('username').unique().notNull(),
+  username: text('username').notNull(),
   name: text('name'),
   grade: text('grade'),
   class: text('class'),

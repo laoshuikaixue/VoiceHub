@@ -12,7 +12,7 @@
     "start": "node .output/server/index.mjs",
     "db:migrate": "npx drizzle-kit migrate",
     "db:generate": "npx drizzle-kit generate",
-    "db:push": "npx drizzle-kit push",
+    "db:push": "npx drizzle-kit push --force",
     "db:studio": "npx drizzle-kit studio",
     "db:drop": "npx drizzle-kit drop",
     "db:check": "npx drizzle-kit check",

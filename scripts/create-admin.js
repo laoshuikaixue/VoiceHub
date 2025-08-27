@@ -16,14 +16,14 @@ if (!process.env.DATABASE_URL) {
 async function main() {
   try {
     // 检查是否已有超级管理员用户
-    const existingAdmin = await db.select()
+    const existingSuperAdmin = await db.select()
       .from(users)
-      .where(eq(users.username, 'admin'))
+      .where(eq(users.role, 'SUPER_ADMIN'))
       .limit(1);
 
-    if (existingAdmin.length > 0) {
-      console.log('✅ 管理员用户已存在，跳过创建');
-      return existingAdmin[0];
+    if (existingSuperAdmin.length > 0) {
+      console.log('✅ 超级管理员用户已存在，跳过创建');
+      return existingSuperAdmin[0];
     }
 
     // 加密密码

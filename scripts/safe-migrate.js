@@ -78,20 +78,26 @@ async function safeMigrate() {
   log('🔄 开始安全数据库迁移流程...', 'bright');
   
   try {
+    // 获取项目根目录路径
+    const projectRoot = path.resolve(process.cwd(), '..');
+    const drizzleConfigPath = path.join(projectRoot, 'drizzle.config.ts');
+    const schemaPath = path.join(projectRoot, 'drizzle/schema.ts');
+    const migrationsPath = path.join(projectRoot, 'drizzle/migrations');
+    
     // 1. 确保drizzle配置存在
-    if (!fileExists('drizzle.config.ts')) {
-      throw new Error('drizzle.config.ts 配置文件不存在');
+    if (!fileExists(drizzleConfigPath)) {
+      throw new Error(`drizzle.config.ts 配置文件不存在: ${drizzleConfigPath}`);
     }
     
     // 2. 检查schema文件
-    if (!fileExists('drizzle/schema.ts')) {
-      throw new Error('drizzle/schema.ts 文件不存在');
+    if (!fileExists(schemaPath)) {
+      throw new Error(`drizzle/schema.ts 文件不存在: ${schemaPath}`);
     }
     
     // 3. 创建迁移目录（如果不存在）
-    if (!fileExists('drizzle/migrations')) {
+    if (!fileExists(migrationsPath)) {
       log('创建迁移目录...', 'cyan');
-      fs.mkdirSync('drizzle/migrations', { recursive: true });
+      fs.mkdirSync(migrationsPath, { recursive: true });
     }
     
     // 4. 生成迁移文件（如果需要）
@@ -108,13 +114,22 @@ async function safeMigrate() {
     
     // 6. 执行数据库同步（优先使用push，适合Vercel环境）
     log('📋 同步数据库schema...', 'cyan');
-    if (safeExec('npm run db:push')) {
+    
+    // 设置非交互式环境变量，跳过所有确认提示
+    const env = {
+      ...process.env,
+      DRIZZLE_KIT_FORCE: 'true',
+      CI: 'true',
+      NODE_ENV: 'production'
+    };
+    
+    if (safeExec('npx drizzle-kit push --force', { env })) {
       logSuccess('数据库schema同步成功');
     } else {
       logWarning('schema同步失败，尝试标准迁移...');
       
       // 7. 执行迁移（作为后备）
-      if (!safeExec('npm run db:migrate')) {
+      if (!safeExec('npm run db:migrate', { env })) {
         throw new Error('数据库迁移完全失败');
       }
       logSuccess('数据库迁移成功');
