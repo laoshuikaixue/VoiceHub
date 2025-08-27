@@ -1,4 +1,4 @@
-import { prisma } from '~/server/models/schema'
+import { db } from '~/drizzle/db'
 import bcrypt from 'bcryptjs'
 import { CacheService } from '~/server/services/cacheService'
 

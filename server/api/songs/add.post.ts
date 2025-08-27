@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
 import { CacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {

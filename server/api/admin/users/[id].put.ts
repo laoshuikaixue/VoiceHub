@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, readBody, getRouterParam } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
 import { CacheService } from '../../../services/cacheService'
 import bcrypt from 'bcrypt'
 

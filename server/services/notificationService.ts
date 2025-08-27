@@ -1,6 +1,7 @@
-import { prisma } from '../models/schema'
+import { db } from '~/drizzle/db'
+import { schedules, playTimes, notificationSettings, notifications, songs, users, votes } from '~/drizzle/schema'
+import { eq, and, gte, inArray } from 'drizzle-orm'
 import { sendMeowNotificationToUser, sendBatchMeowNotifications } from './meowNotificationService'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 
 /**
  * 创建歌曲被选中的通知
@@ -12,22 +13,27 @@ export async function createSongSelectedNotification(
 ) {
   try {
     // 获取排期对应的播出时段
-    const schedule = await prisma.schedule.findFirst({
-      where: {
-        songId,
-        playDate: songInfo.playDate
-      },
-      include: {
-        playTime: true
+    const scheduleResult = await db.select({
+      id: schedules.id,
+      songId: schedules.songId,
+      playDate: schedules.playDate,
+      playTimeId: schedules.playTimeId,
+      playTime: {
+        id: playTimes.id,
+        name: playTimes.name,
+        startTime: playTimes.startTime,
+        endTime: playTimes.endTime
       }
     })
+    .from(schedules)
+    .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
+    .where(and(eq(schedules.songId, songId), eq(schedules.playDate, songInfo.playDate)))
+    .limit(1)
+    const schedule = scheduleResult[0]
     
     // 获取用户通知设置
-    const settings = await prisma.notificationSettings.findUnique({
-      where: {
-        userId
-      }
-    })
+    const settingsResult = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, userId)).limit(1)
+    const settings = settingsResult[0]
     
     // 如果用户关闭了此类通知，则不发送
     if (settings && !settings.enabled) {
@@ -55,14 +61,13 @@ export async function createSongSelectedNotification(
     
     let notification
     try {
-      notification = await prisma.notification.create({
-        data: {
-          userId,
-          type: 'SONG_SELECTED',
-          message,
-          songId
-        }
-      })
+      const notificationResult = await db.insert(notifications).values({
+        userId,
+        type: 'SONG_SELECTED',
+        message,
+        songId
+      }).returning()
+      notification = notificationResult[0]
     } catch (error) {
       throw error
     }
@@ -99,22 +104,16 @@ function formatDate(date: Date): string {
 export async function createSongPlayedNotification(songId: number) {
   try {
     // 获取歌曲信息
-    const song = await prisma.song.findUnique({
-      where: {
-        id: songId
-      }
-    })
+    const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
+    const song = songResult[0]
     
     if (!song) {
       return null
     }
     
     // 获取用户通知设置
-    const settings = await prisma.notificationSettings.findUnique({
-      where: {
-        userId: song.requesterId
-      }
-    })
+    const settingsResult = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, song.requesterId)).limit(1)
+    const settings = settingsResult[0]
     
     // 如果用户关闭了此类通知，则不发送
     if (settings && !settings.songPlayedEnabled) {
@@ -125,14 +124,13 @@ export async function createSongPlayedNotification(songId: number) {
     const message = `您投稿的歌曲《${song.title}》已播放。`
     let notification
     try {
-      notification = await prisma.notification.create({
-        data: {
-          userId: song.requesterId,
-          type: 'SONG_PLAYED',
-          message,
-          songId: songId
-        }
-      })
+      const notificationResult = await db.insert(notifications).values({
+        userId: song.requesterId,
+        type: 'SONG_PLAYED',
+        message,
+        songId: songId
+      }).returning()
+      notification = notificationResult[0]
     } catch (error) {
       throw error
     }
@@ -160,36 +158,27 @@ export async function createSongPlayedNotification(songId: number) {
 export async function createSongVotedNotification(songId: number, voterId: number) {
   try {
     // 获取歌曲信息
-    const song = await prisma.song.findUnique({
-      where: {
-        id: songId
-      },
-      include: {
-        votes: true
-      }
-    })
+    const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
+    const song = songResult[0]
     
     if (!song) {
       return null
     }
     
+    // 获取歌曲的投票信息
+    const songVotes = await db.select().from(votes).where(eq(votes.songId, songId))
+    
     // 获取投票用户信息
-    const voter = await prisma.user.findUnique({
-      where: {
-        id: voterId
-      }
-    })
+    const voterResult = await db.select().from(users).where(eq(users.id, voterId)).limit(1)
+    const voter = voterResult[0]
     
     if (!voter) {
       return null
     }
     
     // 获取用户通知设置
-    const settings = await prisma.notificationSettings.findUnique({
-      where: {
-        userId: song.requesterId
-      }
-    })
+    const settingsResult = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, song.requesterId)).limit(1)
+    const settings = settingsResult[0]
     
     // 如果用户关闭了此类通知，则不发送
     if (settings && !settings.songVotedEnabled) {
@@ -201,48 +190,43 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
       return null
     }
     
-    const message = `您投稿的歌曲《${song.title}》获得了一个新的投票，当前共有 ${song.votes.length} 个投票。`
+    const message = `您投稿的歌曲《${song.title}》获得了一个新的投票，当前共有 ${songVotes.length} 个投票。`
     
     // 防重复通知：检查最近5分钟内是否有相同歌曲的投票通知
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
     
-    const existingNotification = await prisma.notification.findFirst({
-      where: {
-        userId: song.requesterId,
-        type: 'SONG_VOTED',
-        songId: songId,
-        read: false,
-        createdAt: {
-          gte: fiveMinutesAgo
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
+    const existingNotificationResult = await db.select().from(notifications)
+      .where(and(
+        eq(notifications.userId, song.requesterId),
+        eq(notifications.type, 'SONG_VOTED'),
+        eq(notifications.songId, songId),
+        eq(notifications.read, false),
+        gte(notifications.createdAt, fiveMinutesAgo)
+      ))
+      .orderBy(notifications.createdAt)
+      .limit(1)
+    const existingNotification = existingNotificationResult[0]
     
     let notification
     if (existingNotification) {
       // 更新现有通知
-      notification = await prisma.notification.update({
-        where: {
-          id: existingNotification.id
-        },
-        data: {
+      const updateResult = await db.update(notifications)
+        .set({
           message,
           updatedAt: new Date()
-        }
-      })
+        })
+        .where(eq(notifications.id, existingNotification.id))
+        .returning()
+      notification = updateResult[0]
     } else {
       // 创建新通知
-      notification = await prisma.notification.create({
-        data: {
-          userId: song.requesterId,
-          type: 'SONG_VOTED',
-          message,
-          songId: songId
-        }
-      })
+      const createResult = await db.insert(notifications).values({
+        userId: song.requesterId,
+        type: 'SONG_VOTED',
+        message,
+        songId: songId
+      }).returning()
+      notification = createResult[0]
     }
     
     // 同步发送 MeoW 通知
@@ -268,11 +252,8 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
 export async function createSystemNotification(userId: number, title: string, content: string) {
   try {
     // 获取用户通知设置
-    const settings = await prisma.notificationSettings.findUnique({
-      where: {
-        userId: userId
-      }
-    })
+    const settingsResult = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, userId)).limit(1)
+    const settings = settingsResult[0]
     
     // 如果用户关闭了通知，则不发送
     if (settings && !settings.enabled) {
@@ -280,13 +261,12 @@ export async function createSystemNotification(userId: number, title: string, co
     }
     
     // 创建通知
-    const notification = await prisma.notification.create({
-      data: {
-        userId: userId,
-        type: 'SYSTEM_NOTICE',
-        message: content
-      }
-    })
+    const notificationResult = await db.insert(notifications).values({
+      userId: userId,
+      type: 'SYSTEM_NOTICE',
+      message: content
+    }).returning()
+    const notification = notificationResult[0]
     
     // 同步发送 MeoW 通知
     try {
@@ -319,11 +299,7 @@ export async function createBatchSystemNotifications(
     }
     
     // 获取用户通知设置
-    const userSettings = await prisma.notificationSettings.findMany({
-      where: {
-        userId: { in: userIds }
-      }
-    })
+    const userSettings = await db.select().from(notificationSettings).where(inArray(notificationSettings.userId, userIds))
     
     // 构建用户ID到通知设置的映射
     const settingsMap = new Map()
@@ -355,9 +331,8 @@ export async function createBatchSystemNotifications(
     }
     
     // 批量创建通知
-    const notifications = await prisma.notification.createMany({
-      data: notificationsToCreate
-    })
+    const createdNotifications = await db.insert(notifications).values(notificationsToCreate).returning()
+    const notificationCount = { count: createdNotifications.length }
     
     // 同步发送 MeoW 通知
     let meowResults = { success: 0, failed: 0 }
@@ -372,7 +347,7 @@ export async function createBatchSystemNotifications(
     }
     
     return {
-      count: notifications.count,
+      count: notificationCount.count,
       total: userIds.length,
       meowNotifications: meowResults
     }

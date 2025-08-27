@@ -1,6 +1,5 @@
 import { createError, defineEventHandler, readBody, readMultipartFormData } from 'h3'
-import { prisma } from '../../../models/schema'
-import { Prisma } from '@prisma/client'
+import { db } from '~/drizzle/db'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { CacheService } from '../../../services/cacheService'

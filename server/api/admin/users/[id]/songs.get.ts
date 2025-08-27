@@ -1,4 +1,4 @@
-import { prisma } from '~/server/models/schema'
+import { db } from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   try {

@@ -1,8 +1,9 @@
 import { createError, defineEventHandler, readBody } from 'h3'
-import { PrismaClient } from '@prisma/client'
 import jwt from 'jsonwebtoken'
 
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq, ne, and } from 'drizzle-orm'
 
 // 生成6位数字验证码
 function generateVerificationCode(): string {
@@ -60,13 +61,12 @@ export default defineEventHandler(async (event) => {
       }
 
       // 验证通过，绑定账号
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
+      await db.update(users)
+        .set({
           meowNickname: meowId,
           meowBoundAt: new Date()
-        }
-      })
+        })
+        .where(eq(users.id, userId))
 
       // 清除验证码
       verificationCodes.delete(meowId)
@@ -95,11 +95,10 @@ export default defineEventHandler(async (event) => {
       }
 
     // 检查用户是否存在
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    })
+    const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+    const userExists = userResult[0]
 
-    if (!user) {
+    if (!userExists) {
       throw createError({
         statusCode: 404,
         statusMessage: '用户不存在'
@@ -107,16 +106,13 @@ export default defineEventHandler(async (event) => {
     }
 
       // 检查是否有其他用户绑定了相同的 MeoW ID（仅用于记录，不阻止绑定）
-      const existingUsers = await prisma.user.findMany({
-        where: {
-          meowNickname: meowId,
-          id: { not: userId }
-        },
-        select: {
-          name: true,
-          username: true
-        }
-      })
+      const existingUsers = await db.select({
+        name: users.name,
+        username: users.username
+      }).from(users).where(and(
+        eq(users.meowNickname, meowId),
+        ne(users.id, userId)
+      ))
 
       if (existingUsers.length > 0) {
         console.log(`MeoW ID "${meowId}" 已被 ${existingUsers.length} 个其他用户绑定:`, 

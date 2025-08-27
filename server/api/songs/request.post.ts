@@ -1,6 +1,5 @@
-import { prisma } from '../../models/schema'
+import { db, songs, systemSettings, semesters, playTimes, eq, and, gte, lt } from '~/drizzle/db'
 import { createSongVotedNotification } from '../../services/notificationService'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -38,17 +37,12 @@ export default defineEventHandler(async (event) => {
 
     // 检查是否已有完全相同的歌曲（标准化后完全匹配，仅限当前学期）
     const currentSemester = await getCurrentSemesterName()
-    const allSongs = await prisma.song.findMany({
-      where: {
-        semester: currentSemester
-      },
-      select: {
-        id: true,
-        title: true,
-        artist: true,
-        semester: true
-      }
-    })
+    const allSongs = await db.select({
+      id: songs.id,
+      title: songs.title,
+      artist: songs.artist,
+      semester: songs.semester
+    }).from(songs).where(eq(songs.semester, currentSemester))
 
     const existingSong = allSongs.find(song => {
       const songTitle = normalizeForMatch(song.title)
@@ -64,12 +58,13 @@ export default defineEventHandler(async (event) => {
     }
     
     // 检查投稿限额（管理员不受限制）
-    const systemSettings = await prisma.systemSettings.findFirst()
+    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
+    const systemSettingsData = systemSettingsResult[0]
     const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
     
-    if (systemSettings?.enableSubmissionLimit && !isAdmin) {
-      const dailyLimit = systemSettings.dailySubmissionLimit
-      const weeklyLimit = systemSettings.weeklySubmissionLimit
+    if (systemSettingsData?.enableSubmissionLimit && !isAdmin) {
+      const dailyLimit = systemSettingsData.dailySubmissionLimit
+      const weeklyLimit = systemSettingsData.weeklySubmissionLimit
       
       // 确定生效的限额类型（二选一逻辑）
       let effectiveLimit = null
@@ -101,15 +96,14 @@ export default defineEventHandler(async (event) => {
           const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
           const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
           
-          currentCount = await prisma.song.count({
-            where: {
-              requesterId: user.id,
-              createdAt: {
-                gte: startOfDay,
-                lt: endOfDay
-              }
-            }
-          })
+          const dailySongs = await db.select().from(songs).where(
+            and(
+              eq(songs.requesterId, user.id),
+              gte(songs.createdAt, startOfDay),
+              lt(songs.createdAt, endOfDay)
+            )
+          )
+          currentCount = dailySongs.length
           
           if (currentCount >= effectiveLimit) {
             throw createError({
@@ -127,15 +121,14 @@ export default defineEventHandler(async (event) => {
           
           const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
           
-          currentCount = await prisma.song.count({
-            where: {
-              requesterId: user.id,
-              createdAt: {
-                gte: startOfWeek,
-                lt: endOfWeek
-              }
-            }
-          })
+          const weeklySongs = await db.select().from(songs).where(
+            and(
+              eq(songs.requesterId, user.id),
+              gte(songs.createdAt, startOfWeek),
+              lt(songs.createdAt, endOfWeek)
+            )
+          )
+          currentCount = weeklySongs.length
           
           if (currentCount >= effectiveLimit) {
             throw createError({
@@ -151,7 +144,7 @@ export default defineEventHandler(async (event) => {
     let preferredPlayTime = null
     if (body.preferredPlayTimeId) {
       // 检查系统设置是否允许选择播出时段
-      if (!systemSettings?.enablePlayTimeSelection) {
+      if (!systemSettingsData?.enablePlayTimeSelection) {
         throw createError({
           statusCode: 400,
           message: '播出时段选择功能未启用'
@@ -159,12 +152,13 @@ export default defineEventHandler(async (event) => {
       }
       
       // 检查播出时段是否存在且已启用
-      preferredPlayTime = await prisma.playTime.findUnique({
-        where: {
-          id: body.preferredPlayTimeId,
-          enabled: true
-        }
-      })
+      const playTimeResult = await db.select().from(playTimes).where(
+        and(
+          eq(playTimes.id, body.preferredPlayTimeId),
+          eq(playTimes.enabled, true)
+        )
+      ).limit(1)
+      preferredPlayTime = playTimeResult[0]
       
       if (!preferredPlayTime) {
         throw createError({
@@ -175,18 +169,17 @@ export default defineEventHandler(async (event) => {
     }
     
     // 创建歌曲
-    const song = await prisma.song.create({
-      data: {
-        title: body.title,
-        artist: body.artist,
-        requesterId: user.id,
-        preferredPlayTimeId: preferredPlayTime?.id || null,
-        semester: await getCurrentSemesterName(),
-        cover: body.cover || null,
-        musicPlatform: body.musicPlatform || null,
-        musicId: body.musicId ? String(body.musicId) : null
-      }
-    })
+    const songResult = await db.insert(songs).values({
+      title: body.title,
+      artist: body.artist,
+      requesterId: user.id,
+      preferredPlayTimeId: preferredPlayTime?.id || null,
+      semester: await getCurrentSemesterName(),
+      cover: body.cover || null,
+      musicPlatform: body.musicPlatform || null,
+      musicId: body.musicId ? String(body.musicId) : null
+    }).returning()
+    const song = songResult[0]
     
     // 移除了投稿者自动投票的逻辑
     
@@ -209,11 +202,8 @@ export default defineEventHandler(async (event) => {
 async function getCurrentSemesterName() {
   try {
     // 获取当前活跃的学期
-    const currentSemester = await prisma.semester.findFirst({
-      where: {
-        isActive: true
-      }
-    })
+    const currentSemesterResult = await db.select().from(semesters).where(eq(semesters.isActive, true)).limit(1)
+    const currentSemester = currentSemesterResult[0]
 
     if (currentSemester) {
       return currentSemester.name

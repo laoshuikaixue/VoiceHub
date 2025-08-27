@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt'
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
 import { recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
 
 export default defineEventHandler(async (event) => {

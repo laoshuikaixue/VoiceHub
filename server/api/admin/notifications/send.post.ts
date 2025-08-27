@@ -1,4 +1,4 @@
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
 import { createBatchSystemNotifications, createSystemNotification } from '../../../services/notificationService'
 
 export default defineEventHandler(async (event) => {

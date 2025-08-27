@@ -1,5 +1,5 @@
 import { createError, defineEventHandler } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限

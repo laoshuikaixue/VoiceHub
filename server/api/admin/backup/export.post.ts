@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, readBody } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
 import { promises as fs } from 'fs'
 import path from 'path'
 

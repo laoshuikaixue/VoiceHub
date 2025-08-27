@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import jwt from 'jsonwebtoken'
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
 
 // 存储活跃的连接及其ID
 const connections = new Map()

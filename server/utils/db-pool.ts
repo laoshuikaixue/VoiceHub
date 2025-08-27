@@ -1,4 +1,4 @@
-import { prisma } from '~/prisma/client'
+import { db } from '~/drizzle/db'
 import { isRedisReady, connectRedis } from './redis'
 
 // 断路器状态枚举

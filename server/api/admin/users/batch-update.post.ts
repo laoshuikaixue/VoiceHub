@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { prisma } from '~/server/models/schema'
+import { db } from '~/drizzle/db'
 import { CacheService } from '~/server/services/cacheService'
 
 // 请求体验证模式

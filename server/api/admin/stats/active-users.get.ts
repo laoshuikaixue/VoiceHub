@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
 import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {

@@ -1,13 +1,12 @@
-import { PrismaClient, Prisma } from '@prisma/client'
-
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { sql } from 'drizzle-orm'
 
 // 修复单个表的序列
 async function fixTableSequence(table: string, dbTableName: string) {
   try {
     // 获取表的最大ID
-    const maxIdResult = await prisma.$queryRaw(
-      Prisma.sql`SELECT MAX(id) as max_id FROM ${Prisma.raw(`"${dbTableName}"`)}`
+    const maxIdResult = await db.execute(
+      sql.raw(`SELECT MAX(id) as max_id FROM "${dbTableName}"`)
     )
     const maxId = Number((maxIdResult as any)[0]?.max_id || 0)
     
@@ -25,8 +24,8 @@ async function fixTableSequence(table: string, dbTableName: string) {
     }
     
     // 获取序列名称
-    const sequenceNameResult = await prisma.$queryRaw(
-      Prisma.sql`SELECT pg_get_serial_sequence(${Prisma.raw(`'"${dbTableName}"'`)}, 'id') as sequence_name`
+    const sequenceNameResult = await db.execute(
+      sql.raw(`SELECT pg_get_serial_sequence('"${dbTableName}"', 'id') as sequence_name`)
     )
     const sequenceName = (sequenceNameResult as any)[0]?.sequence_name
     
@@ -39,8 +38,8 @@ async function fixTableSequence(table: string, dbTableName: string) {
     }
     
     // 获取当前序列值
-    const currentSeqResult = await prisma.$queryRaw(
-      Prisma.sql`SELECT last_value FROM ${Prisma.raw(sequenceName)}`
+    const currentSeqResult = await db.execute(
+      sql.raw(`SELECT last_value FROM ${sequenceName}`)
     )
     const currentSeqValue = Number((currentSeqResult as any)[0]?.last_value || 0)
     
@@ -62,8 +61,8 @@ async function fixTableSequence(table: string, dbTableName: string) {
       }
     }
     
-    await prisma.$queryRaw(
-      Prisma.sql`SELECT setval(${sequenceName}, ${newSequenceValue})`
+    await db.execute(
+      sql.raw(`SELECT setval('${sequenceName}', ${newSequenceValue})`)
     )
     
     return {

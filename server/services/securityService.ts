@@ -1,6 +1,6 @@
 import { createSystemNotification } from './notificationService'
 import { sendMeowNotificationToUser } from './meowNotificationService'
-import { prisma } from '../models/schema'
+import { db } from '~/drizzle/db'
 
 // 账户锁定信息接口
 interface AccountLockInfo {

@@ -1,4 +1,4 @@
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
 import { createSongPlayedNotification } from '../../services/notificationService'
 import { CacheService } from '~/server/services/cacheService'
 

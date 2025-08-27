@@ -1,4 +1,4 @@
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
 import type { NotificationSettings } from '~/types'
 
 export default defineEventHandler(async (event) => {

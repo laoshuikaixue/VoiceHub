@@ -89,7 +89,7 @@ export const notificationSettings = pgTable('NotificationSettings', {
   id: serial('id').primaryKey(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-  userId: integer('userId').unique().notNull(),
+  userId: integer('userId').notNull(),
   enabled: boolean('enabled').default(true).notNull(),
   songRequestEnabled: boolean('songRequestEnabled').default(true).notNull(),
   songVotedEnabled: boolean('songVotedEnabled').default(true).notNull(),

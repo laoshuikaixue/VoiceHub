@@ -1,5 +1,6 @@
 import { JWTEnhanced } from '../utils/jwt-enhanced'
-import { prisma } from '../models/schema'
+import { db, users } from '~/drizzle/db'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 清除用户上下文
@@ -54,17 +55,16 @@ export default defineEventHandler(async (event) => {
   try {
     // 验证token并获取用户信息
     const decoded = JWTEnhanced.verifyToken(token)
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        grade: true,
-        class: true,
-        role: true
-      }
-    })
+    const userResult = await db.select({
+      id: users.id,
+      username: users.username,
+      name: users.name,
+      grade: users.grade,
+      class: users.class,
+      role: users.role
+    }).from(users).where(eq(users.id, decoded.userId)).limit(1)
+    
+    const user = userResult[0] || null
 
     // 用户不存在时token无效
     if (!user) {

@@ -1,4 +1,4 @@
-import { prisma } from '~/prisma/client'
+import { db } from '~/drizzle/db'
 
 export default defineNitroPlugin(async (nitroApp) => {
   // 全局未处理的Promise拒绝处理器

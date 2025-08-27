@@ -1,9 +1,7 @@
 import jwt from 'jsonwebtoken'
-import { PrismaClient } from '@prisma/client'
 import { getHeader, getCookie } from 'h3'
 import { JWTEnhanced } from './jwt-enhanced'
-
-const prisma = new PrismaClient()
+import { db, users, eq } from '~/drizzle/db'
 
 interface AuthResult {
   success: boolean
@@ -67,10 +65,13 @@ export async function verifyAdminAuth(event: any): Promise<AuthResult> {
     }
 
     // 从数据库获取用户信息
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, username: true, name: true, role: true }
-    })
+    const userResult = await db.select({
+      id: users.id,
+      username: users.username,
+      name: users.name,
+      role: users.role
+    }).from(users).where(eq(users.id, decoded.userId)).limit(1)
+    const user = userResult[0]
 
     if (!user) {
       console.error('获取用户信息失败: 用户不存在')
@@ -172,10 +173,13 @@ export async function verifyUserAuth(event: any): Promise<AuthResult> {
     }
 
     // 从数据库获取用户信息
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, username: true, name: true, role: true }
-    })
+    const userResult = await db.select({
+      id: users.id,
+      username: users.username,
+      name: users.name,
+      role: users.role
+    }).from(users).where(eq(users.id, decoded.userId)).limit(1)
+    const user = userResult[0]
 
     if (!user) {
       console.error('获取用户信息失败: 用户不存在')

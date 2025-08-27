@@ -1,5 +1,5 @@
 import { createError, defineEventHandler } from 'h3'
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
 import type { NotificationSettings, DBNotificationSettings } from '~/types'
 
 export default defineEventHandler(async (event) => {

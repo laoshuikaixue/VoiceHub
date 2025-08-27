@@ -1,4 +1,4 @@
-import { prisma } from '../models/schema'
+import { db } from '~/drizzle/db'
 
 /**
  * 获取站点标题

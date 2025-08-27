@@ -1,8 +1,9 @@
 import { createError, defineEventHandler } from 'h3'
-import { PrismaClient } from '@prisma/client'
 import jwt from 'jsonwebtoken'
 
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -18,9 +19,8 @@ export default defineEventHandler(async (event) => {
     const userId = user.id
 
     // 检查用户是否存在
-    const userRecord = await prisma.user.findUnique({
-      where: { id: userId }
-    })
+    const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+    const userRecord = userResult[0]
 
     if (!userRecord) {
       throw createError({
@@ -38,13 +38,12 @@ export default defineEventHandler(async (event) => {
     }
 
     // 解绑 MeoW 账号
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
+    await db.update(users)
+      .set({
         meowNickname: null,
         meowBoundAt: null
-      }
-    })
+      })
+      .where(eq(users.id, userId))
 
     return {
       success: true,

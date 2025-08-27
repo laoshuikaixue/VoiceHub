@@ -1,4 +1,4 @@
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
