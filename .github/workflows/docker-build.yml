@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Image (Parallel)
 
 on:
   push:
@@ -17,11 +17,23 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push:
+  # =================================================================
+  # STAGE 1: 并行构建每个平台的镜像
+  # =================================================================
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    
+    # 使用矩阵策略，为每个平台组合创建一个并行的 Job
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+          - platform: linux/arm64
+            arch: arm64
 
     steps:
       - name: Checkout repository
@@ -31,7 +43,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        id: buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to the Container registry
@@ -41,26 +52,102 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
+      # 为每个架构生成一个临时的、带架构后缀的标签
+      # 例如：ghcr.io/user/repo:latest-amd64
+      - name: Extract metadata for architecture-specific image
+        id: meta-arch
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest-${{ matrix.arch }}
+            type=sha,prefix={{branch}}-,suffix=-${{ matrix.arch }}
 
-      - name: Build and push Docker image
+      # 只构建并推送当前矩阵的平台镜像
+      - name: Build and push single-architecture image
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta-arch.outputs.tags }}
+          labels: ${{ steps.meta-arch.outputs.labels }}
+          platforms: ${{ matrix.platform }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # 输出镜像的摘要（digest），这是合并 manifest 的关键
+          outputs: type=registry,push-by-digest=true,name-canonical=true
+
+      # 将当前架构的镜像信息（标签和摘要）保存为 artifact
+      # 以便下一个 Job 使用
+      - name: Export image metadata as artifact
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p /tmp/artifacts
+          echo "${{ steps.meta-arch.outputs.tags }}" > /tmp/artifacts/${{ matrix.arch }}_tags.txt
+          echo "${{ steps.build-and-push.outputs.digest }}" > /tmp/artifacts/${{ matrix.arch }}_digest.txt
+      
+      - name: Upload image metadata artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-metadata-${{ matrix.arch }}
+          path: /tmp/artifacts
+
+  # =================================================================
+  # STAGE 2: 合并所有平台的镜像到一个 manifest list
+  # =================================================================
+  push-manifest:
+    # 依赖 build Job，确保所有平台的镜像都已构建完成
+    needs: build
+    # 仅在非 pull_request 事件中运行
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    
+    steps:
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      # 下载所有架构的 metadata artifacts
+      - name: Download all image metadata artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/image-metadata
+          pattern: image-metadata-*
+          merge-multiple: true
+
+      - name: Display downloaded metadata
+        run: ls -R /tmp/image-metadata
+
+      # 生成最终的多架构标签（不带 -amd64 或 -arm64 后缀）
+      - name: Extract final metadata
+        id: meta-final
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-
+
+      # 读取 artifacts 中的信息，并创建和推送 manifest list
+      - name: Create and push manifest list
+        run: |
+          # 从 artifacts 中读取每个架构的镜像信息
+          amd64_image_ref=$(cat /tmp/image-metadata/amd64_tags.txt)@$(cat /tmp/image-metadata/amd64_digest.txt)
+          arm64_image_ref=$(cat /tmp/image-metadata/arm64_tags.txt)@$(cat /tmp/image-metadata/arm64_digest.txt)
+
+          echo "AMD64 Image Ref: $amd64_image_ref"
+          echo "ARM64 Image Ref: $arm64_image_ref"
+
+          # 遍历所有最终标签，为每个标签创建并推送 manifest
+          for tag in ${{ steps.meta-final.outputs.tags }}; do
+            echo "Creating and pushing manifest for tag: $tag"
+            docker manifest create "$tag" "$amd64_image_ref" "$arm64_image_ref"
+            docker manifest push "$tag"
+          done
