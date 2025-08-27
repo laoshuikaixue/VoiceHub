@@ -1,8 +1,14 @@
-name: Build and Push Docker Image (Parallel)
+name: Build and Push Docker Image
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - '.github/workflows/docker-publish.yml'
+      - 'src/**' # 根据你的项目结构调整
+      - 'package.json'
+      - 'pnpm-lock.yaml'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -17,100 +23,21 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Job 1: Build and push AMD64 image
-  build-amd64:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx and driver
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-containerd
-          
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha
-
-      - name: Build and push AMD64 image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64
-          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-          tags: ${{ steps.meta.outputs.tags }}-amd64
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=amd64
-          cache-to: type=gha,mode=max,scope=amd64
-  
-  # Job 2: Build and push ARM64 image
-  build-arm64:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx, QEMU and driver
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-containerd
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha
-
-      - name: Build and push ARM64 image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/arm64
-          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-          tags: ${{ steps.meta.outputs.tags }}-arm64
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=arm64
-          cache-to: type=gha,mode=max,scope=arm64
-          
-  # Job 3: Create and push multi-arch manifest
-  create-manifest:
-    runs-on: ubuntu-latest
-    needs: [build-amd64, build-arm64]
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    permissions:
-      contents: read
-      packages: write
-    steps:
       - name: Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to the Container registry
@@ -119,32 +46,31 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch
+            type=ref,event=pr
             type=semver,pattern={{version}}
-            type=sha
-      
-      - name: Create and push multi-arch manifest
-        run: |
-          VERSION_TAG=${{ steps.meta.outputs.version }}
-          SHA_TAG=${{ steps.meta.outputs.sha }}
-          
-          # Create and push manifest for version tag
-          if [ -n "$VERSION_TAG" ]; then
-            docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION_TAG \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION_TAG-amd64 \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION_TAG-arm64
-            docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION_TAG
-          fi
+            type=semver,pattern={{major}}.{{minor}}
 
-          # Create and push manifest for branch/latest tag
-          docker manifest create ${{ steps.meta.outputs.tags }} \
-            ${{ steps.meta.outputs.tags }}-amd64 \
-            ${{ steps.meta.outputs.tags }}-arm64
-          docker manifest push ${{ steps.meta.outputs.tags }}
+      # 核心构建步骤
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          # 仅在非 pull_request 事件中推送到镜像仓库
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # 指定需要构建的平台，Buildx 会处理所有平台的构建和 manifest 的合并
+          platforms: linux/amd64,linux/arm64
+          # 启用缓存，利用 GHA 缓存加速后续构建
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
