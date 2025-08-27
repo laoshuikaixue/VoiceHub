@@ -1,4 +1,5 @@
 import { prisma } from '~/prisma/client'
+import { isRedisReady } from './redis'
 
 // 断路器状态枚举
 enum CircuitBreakerState {
@@ -98,6 +99,9 @@ class DatabasePool {
   private currentDowntimeStart = 0 // 当前停机开始时间
 
   constructor() {
+    // 根据Redis配置调整连接池策略
+    this.adjustPoolConfigForRedis()
+    
     this.logConnectionEvent('POOL_INITIALIZED', '数据库连接池启动')
     this.initialize()
     this.startIntelligentPoolManagement()
@@ -1015,8 +1019,8 @@ class DatabasePool {
           rss: Math.round(this.resourceMonitoring.memoryUsage.rss / 1024 / 1024) // MB
         },
         cpuUsage: this.resourceMonitoring.cpuUsage,
-         lastResourceCheckTime: this.resourceMonitoring.lastResourceCheckTime,
-         resourceCheckInterval: this.resourceMonitoring.resourceCheckInterval
+        lastResourceCheck: this.resourceMonitoring.lastResourceCheck,
+        resourceCheckInterval: this.resourceMonitoring.resourceCheckInterval
       },
       
       // 断路器状态
@@ -1119,6 +1123,41 @@ class DatabasePool {
   }
 
 
+
+  // 根据Redis配置调整连接池策略
+  private adjustPoolConfigForRedis() {
+    const redisEnabled = isRedisReady()
+    
+    if (redisEnabled) {
+      // Redis可用时，减少数据库连接数，因为缓存会减轻数据库负载
+      this.minConnections = Math.max(1, Math.floor(this.minConnections * 0.7))
+      this.maxConnections = Math.max(3, Math.floor(this.maxConnections * 0.8))
+      this.targetConnections = Math.max(2, Math.floor(this.targetConnections * 0.75))
+      
+      // 增加空闲阈值，因为有缓存支持
+      this.idleThreshold = this.idleThreshold * 1.5
+      
+      // 调整健康检查间隔，Redis可用时可以减少检查频率
+      this.healthCheckInterval = Math.min(this.healthCheckInterval * 1.2, 60000)
+      
+      console.log('[DB Pool] Redis可用，已优化数据库连接池配置:', {
+        minConnections: this.minConnections,
+        maxConnections: this.maxConnections,
+        targetConnections: this.targetConnections,
+        idleThreshold: this.idleThreshold,
+        healthCheckInterval: this.healthCheckInterval
+      })
+    } else {
+      // Redis不可用时，保持默认配置或稍微增加连接数
+      console.log('[DB Pool] Redis不可用，使用默认数据库连接池配置:', {
+        minConnections: this.minConnections,
+        maxConnections: this.maxConnections,
+        targetConnections: this.targetConnections,
+        idleThreshold: this.idleThreshold,
+        healthCheckInterval: this.healthCheckInterval
+      })
+    }
+  }
 
   // 设置优雅关闭
   setupGracefulShutdown() {

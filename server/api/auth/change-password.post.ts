@@ -95,6 +95,15 @@ export default defineEventHandler(async (event) => {
     // 记录成功的密码修改
     recordLoginSuccess(userDetails.username)
     
+    // 清除用户认证缓存（密码已变更）
+    try {
+      const { cache } = await import('~/server/utils/cache-helpers')
+      await cache.delete(`auth:user:${user.id}`)
+      console.log(`[Cache] 用户认证缓存已清除（密码修改）: ${user.id}`)
+    } catch (cacheError) {
+      console.warn('[Cache] 清除用户认证缓存失败:', cacheError)
+    }
+    
     return {
       success: true,
       message: '密码修改成功'

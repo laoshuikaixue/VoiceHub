@@ -2,6 +2,20 @@ export default defineEventHandler(async (event) => {
   try {
     console.log('[Auth] User logout requested')
 
+    // 获取当前用户信息（如果存在）
+    const user = event.context.user
+    
+    // 清除用户认证缓存
+    if (user) {
+      try {
+        const { cache } = await import('~/server/utils/cache-helpers')
+        await cache.delete(`auth:user:${user.id}`)
+        console.log(`[Cache] 用户认证缓存已清除（用户登出）: ${user.id}`)
+      } catch (cacheError) {
+        console.warn('[Cache] 清除用户认证缓存失败:', cacheError)
+      }
+    }
+
     // 清除cookie
     setCookie(event, 'auth-token', '', {
       httpOnly: true,

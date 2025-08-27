@@ -57,6 +57,15 @@ export default defineEventHandler(async (event) => {
       }
     })
     
+    // 清除该用户的认证缓存（密码已重置）
+    try {
+      const { cache } = await import('~/server/utils/cache-helpers')
+      await cache.delete(`auth:user:${id}`)
+      console.log(`[Cache] 用户认证缓存已清除（密码重置）: ${id}`)
+    } catch (cacheError) {
+      console.warn('[Cache] 清除用户认证缓存失败:', cacheError)
+    }
+    
     return {
       success: true,
       message: '密码重置成功'

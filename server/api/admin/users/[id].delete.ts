@@ -42,11 +42,13 @@ export default defineEventHandler(async (event) => {
 
     // 清除相关缓存
     try {
-      const cacheService = CacheService.getInstance()
-      await cacheService.clearSongsCache()
-      await cacheService.clearSchedulesCache()
-      await cacheService.clearStatsCache()
-      console.log('[Cache] 歌曲、排期和统计缓存已清除（用户删除）')
+      const { cache } = await import('~/server/utils/cache-helpers')
+      await cache.deletePattern('songs:*')
+      await cache.deletePattern('schedules:*')
+      await cache.deletePattern('stats:*')
+      // 清除该用户的认证缓存
+      await cache.delete(`auth:user:${existingUser.id}`)
+      console.log('[Cache] 歌曲、排期、统计和用户认证缓存已清除（用户删除）')
     } catch (cacheError) {
       console.warn('[Cache] 清除缓存失败:', cacheError)
     }

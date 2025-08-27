@@ -85,8 +85,10 @@ export default defineEventHandler(async (event) => {
 
     // 清除相关缓存
     try {
-      await CacheService.clearSchedulesCache()
-      await CacheService.clearPlayTimesCache()
+      const { cache } = await import('~/server/utils/cache-helpers')
+      await cache.deletePattern('schedules:*')
+      await cache.deletePattern('playtimes:*')
+      console.log('[Cache] 排期和播放时间缓存已清除（创建播放时间）')
     } catch (cacheError) {
       console.warn('清除缓存失败:', cacheError)
     }

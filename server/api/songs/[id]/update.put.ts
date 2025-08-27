@@ -106,8 +106,8 @@ export default defineEventHandler(async (event) => {
     })
 
     // 清除歌曲列表缓存
-    const cacheService = new CacheService()
-    await cacheService.clearSongsCache()
+    const { cache } = await import('~/server/utils/cache-helpers')
+    await cache.deletePattern('songs:*')
     console.log('[Cache] 歌曲缓存已清除（更新歌曲）')
     
     return {

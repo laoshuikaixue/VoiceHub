@@ -141,11 +141,10 @@ export default defineEventHandler(async (event) => {
       playDate: schedule.playDate
     })
     
-    // 清除相关缓存并重新缓存完整的排期列表
-    const cacheService = CacheService.getInstance()
-    await cacheService.clearSchedulesCache(schedule.playDate)
-    await cacheService.clearSchedulesCache() // 清除所有排期缓存
-    await cacheService.clearStatsCache()
+    // 清除相关缓存
+    const { cache } = await import('~/server/utils/cache-helpers')
+    await cache.deletePattern('schedules:*')
+    await cache.deletePattern('stats:*')
     console.log('[Cache] 排期缓存和统计缓存已清除（创建排期）')
     
     // 重新缓存完整的排期列表

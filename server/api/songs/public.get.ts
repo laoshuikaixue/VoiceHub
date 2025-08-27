@@ -2,6 +2,9 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { prisma } from '../../models/schema'
 import { executeWithPool } from '~/server/utils/db-pool'
 import { CacheService } from '~/server/services/cacheService'
+import { isRedisReady, executeRedisCommand } from '../../utils/redis'
+
+// 公共排期缓存（永久缓存，数据修改时主动失效）
 
 export default defineEventHandler(async (event) => {
   try {
@@ -21,16 +24,50 @@ export default defineEventHandler(async (event) => {
       0, 0, 0, 0
     ))
     
-    // 尝试从缓存获取排期数据
-    const cacheKey = `public_schedules_${semester || 'all'}`
+    // 构建缓存键
+    const cacheKey = semester ? `public_schedules_semester:${semester}` : 'public_schedules_all'
+    
+    // 优先从Redis缓存获取排期数据
+    if (isRedisReady()) {
+      const cachedData = await executeRedisCommand(async () => {
+        const client = (await import('../../utils/redis')).getRedisClient()
+        if (!client) return null
+        
+        const data = await client.get(cacheKey)
+        if (data) {
+          console.log(`[API] 公共排期缓存命中: ${cacheKey}`)
+          return JSON.parse(data)
+        }
+        
+        return null
+      })
+      
+      if (cachedData) {
+        return cachedData
+      }
+    }
+    
+    // Redis缓存未命中，尝试从CacheService获取
     let cachedSchedules = await cacheService.getSchedulesList()
     
     if (cachedSchedules && (!semester || cachedSchedules.some(s => s.song?.semester === semester))) {
-      console.log('[Cache] 公共排期缓存命中')
+      console.log('[Cache] CacheService排期缓存命中')
       // 如果指定了学期，过滤数据
       if (semester) {
         cachedSchedules = cachedSchedules.filter(s => s.song?.semester === semester)
       }
+      
+      // 将过滤后的数据缓存到Redis
+      if (isRedisReady()) {
+        await executeRedisCommand(async () => {
+          const client = (await import('../../utils/redis')).getRedisClient()
+          if (!client) return
+          
+          await client.set(cacheKey, JSON.stringify(cachedSchedules))
+          console.log(`[API] 排期数据已缓存到Redis: ${cacheKey}`)
+        })
+      }
+      
       return cachedSchedules
     }
     
@@ -161,13 +198,30 @@ export default defineEventHandler(async (event) => {
     return formattedSchedules
     }, 'getPublicSchedules')
     
-    // 缓存结果
+    // 缓存结果到CacheService
     if (result && result.length > 0) {
       await cacheService.setSchedulesList(result)
-      console.log(`[Cache] 公共排期已缓存，数量: ${result.length}`)
+      console.log(`[Cache] 公共排期已缓存到CacheService，数量: ${result.length}`)
+    }
+    
+    // 准备要返回和缓存的数据
+    let finalResult = result
+    if (semester && result) {
+      finalResult = result.filter(s => s.song?.semester === semester)
+    }
+    
+    // 缓存结果到Redis（如果可用）
+    if (finalResult && isRedisReady()) {
+      await executeRedisCommand(async () => {
+        const client = (await import('../../utils/redis')).getRedisClient()
+        if (!client) return
+        
+        await client.set(cacheKey, JSON.stringify(finalResult))
+        console.log(`[API] 排期数据已缓存到Redis: ${cacheKey}，数量: ${finalResult.length}`)
+      })
     }
 
-    return result
+    return finalResult || result
   } catch (error: any) {
     console.error('获取公共排期失败:', error)
     throw createError({

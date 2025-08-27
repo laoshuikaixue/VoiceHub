@@ -1,54 +1,58 @@
 import { prisma } from '../models/schema'
-
-const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
-2. 除DJ外，其他类型歌曲均接收（包括小语种）
-3. 禁止投递含有违规内容的歌曲
-4. 点播的歌曲将由管理员进行审核
-5. 审核通过后将安排在播放时段播出
-6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出
-7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。
-8. 最终解释权归广播站所有`
+import { cacheService } from '../services/cacheService'
+import { isRedisReady } from '../utils/redis'
+import { executeWithPool } from '../utils/db-pool'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 获取系统设置
-    let settings = await prisma.systemSettings.findFirst()
-    
-    if (!settings) {
-      // 如果不存在设置，返回默认值
-      return {
-        siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',
-        siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico',
-        schoolLogoHomeUrl: '',
-        schoolLogoPrintUrl: '',
-        siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
-        submissionGuidelines: defaultSubmissionGuidelines,
-        icpNumber: ''
+    // 优先从Redis缓存获取系统设置
+    if (isRedisReady()) {
+      const cachedSettings = await cacheService.getSystemSettings()
+      if (cachedSettings) {
+        console.log('[API] 系统设置缓存命中')
+        return cachedSettings
       }
     }
-    
-    // 只返回公开的站点配置信息
-    return {
-      siteTitle: settings.siteTitle || 'VoiceHub',
-      siteLogoUrl: settings.siteLogoUrl || '/favicon.ico',
-      schoolLogoHomeUrl: settings.schoolLogoHomeUrl || '',
-      schoolLogoPrintUrl: settings.schoolLogoPrintUrl || '',
-      siteDescription: settings.siteDescription || '校园广播站点歌系统 - 让你的声音被听见',
-      submissionGuidelines: settings.submissionGuidelines || defaultSubmissionGuidelines,
-      icpNumber: settings.icpNumber || ''
+
+    // 缓存未命中或Redis不可用，从数据库获取
+    const settings = await executeWithPool(async () => {
+      let dbSettings = await prisma.systemSettings.findFirst()
+      
+      if (!dbSettings) {
+        // 如果不存在，创建默认设置
+        dbSettings = await prisma.systemSettings.create({
+          data: {
+            enablePlayTimeSelection: false,
+            siteTitle: 'VoiceHub',
+            siteLogoUrl: '/favicon.ico',
+            schoolLogoHomeUrl: null,
+            schoolLogoPrintUrl: null,
+            siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
+            submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
+            icpNumber: null,
+            enableSubmissionLimit: false,
+            dailySubmissionLimit: null,
+            weeklySubmissionLimit: null,
+            showBlacklistKeywords: false
+          }
+        })
+      }
+      
+      return dbSettings
+    }, 'getSiteConfig')
+
+    // 将结果缓存到Redis（如果可用）- 永久缓存
+    if (settings && isRedisReady()) {
+      await cacheService.setSystemSettings(settings)
+      console.log('[API] 系统设置已缓存到Redis')
     }
+
+    return settings
   } catch (error) {
-    console.error('获取站点配置失败:', error)
-    
-    // 发生错误时返回默认配置
-    return {
-      siteTitle: 'VoiceHub',
-      siteLogoUrl: '/favicon.ico',
-      schoolLogoHomeUrl: '',
-      schoolLogoPrintUrl: '',
-      siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
-      submissionGuidelines: defaultSubmissionGuidelines,
-      icpNumber: ''
-    }
+    console.error('获取系统设置失败:', error)
+    throw createError({
+      statusCode: 500,
+      statusMessage: '获取系统设置失败'
+    })
   }
 })

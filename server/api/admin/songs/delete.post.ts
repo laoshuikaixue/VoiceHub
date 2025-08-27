@@ -74,10 +74,10 @@ export default defineEventHandler(async (event) => {
     
     // 清除相关缓存
     try {
-      const cacheService = CacheService.getInstance()
-      await cacheService.clearSongsCache()
+      const { cache } = await import('~/server/utils/cache-helpers')
+      await cache.deletePattern('songs:*')
       if (result.deletedSchedules > 0) {
-        await cacheService.clearSchedulesCache()
+        await cache.deletePattern('schedules:*')
       }
       console.log('[Cache] 歌曲和排期缓存已清除（删除歌曲）')
     } catch (cacheError) {

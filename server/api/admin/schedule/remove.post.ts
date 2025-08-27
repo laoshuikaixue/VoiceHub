@@ -61,10 +61,9 @@ export default defineEventHandler(async (event) => {
     console.log(`成功删除排期 ID=${scheduleIdNumber}`)
     
     // 清除相关缓存
-    const cacheService = CacheService.getInstance()
-    await cacheService.clearSchedulesCache(existingSchedule.playDate)
-    await cacheService.clearSchedulesCache() // 清除所有排期缓存
-    await cacheService.clearStatsCache()
+    const { cache } = await import('~/server/utils/cache-helpers')
+    await cache.deletePattern('schedules:*')
+    await cache.deletePattern('stats:*')
     console.log('[Cache] 排期缓存和统计缓存已清除（删除排期）')
     
     return {
