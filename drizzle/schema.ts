@@ -103,7 +103,7 @@ export const semesters = pgTable('Semester', {
   id: serial('id').primaryKey(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-  name: text('name').unique().notNull(),
+  name: text('name').notNull(),
   isActive: boolean('isActive').default(false).notNull(),
 });
 
