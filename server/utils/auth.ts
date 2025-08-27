@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { PrismaClient } from '@prisma/client'
+import { getHeader, getCookie } from 'h3'
+import { JWTEnhanced } from './jwt-enhanced'
 
 const prisma = new PrismaClient()
 
@@ -16,39 +18,46 @@ interface AuthResult {
  */
 export async function verifyAdminAuth(event: any): Promise<AuthResult> {
   try {
-    // 获取Authorization头
+    // 首先检查认证中间件是否已经验证了用户
+    if (event.context?.user) {
+      const user = event.context.user
+      // 检查用户角色
+      if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+        return {
+          success: false,
+          message: '权限不足，需要管理员权限'
+        }
+      }
+      
+      return {
+        success: true,
+        message: '认证成功',
+        user: user
+      }
+    }
+
+    // 如果context中没有用户信息，尝试从Authorization头或cookie获取token
+    let token: string | null = null
     const authHeader = getHeader(event, 'authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7)
+    }
+
+    if (!token) {
+      token = getCookie(event, 'auth-token') || null
+    }
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       return {
         success: false,
         message: '缺少认证令牌'
       }
     }
 
-    // 提取token
-    const token = authHeader.substring(7)
-    
-    if (!token) {
-      return {
-        success: false,
-        message: '无效的认证令牌'
-      }
-    }
-
     // 验证JWT token
-    const jwtSecret = process.env.JWT_SECRET
-    if (!jwtSecret) {
-      console.error('JWT_SECRET环境变量未设置')
-      return {
-        success: false,
-        message: '服务器配置错误'
-      }
-    }
-
     let decoded: any
     try {
-      decoded = jwt.verify(token, jwtSecret)
+      decoded = JWTEnhanced.verifyToken(token)
     } catch (jwtError) {
       console.error('JWT验证失败:', jwtError)
       return {
@@ -123,39 +132,37 @@ export async function verifySuperAdminAuth(event: any): Promise<AuthResult> {
  */
 export async function verifyUserAuth(event: any): Promise<AuthResult> {
   try {
-    // 获取Authorization头
+    // 首先检查认证中间件是否已经验证了用户
+    if (event.context?.user) {
+      return {
+        success: true,
+        message: '认证成功',
+        user: event.context.user
+      }
+    }
+
+    // 如果context中没有用户信息，尝试从Authorization头或cookie获取token
+    let token: string | null = null
     const authHeader = getHeader(event, 'authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7)
+    }
+
+    if (!token) {
+      token = getCookie(event, 'auth-token') || null
+    }
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       return {
         success: false,
         message: '缺少认证令牌'
       }
     }
 
-    // 提取token
-    const token = authHeader.substring(7)
-    
-    if (!token) {
-      return {
-        success: false,
-        message: '无效的认证令牌'
-      }
-    }
-
     // 验证JWT token
-    const jwtSecret = process.env.JWT_SECRET
-    if (!jwtSecret) {
-      console.error('JWT_SECRET环境变量未设置')
-      return {
-        success: false,
-        message: '服务器配置错误'
-      }
-    }
-
     let decoded: any
     try {
-      decoded = jwt.verify(token, jwtSecret)
+      decoded = JWTEnhanced.verifyToken(token)
     } catch (jwtError) {
       console.error('JWT验证失败:', jwtError)
       return {

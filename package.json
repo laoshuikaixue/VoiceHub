@@ -5,16 +5,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npx prisma generate && nuxt build",
+    "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
-    "db:generate": "npx prisma generate",
-    "db:migrate": "npx prisma migrate deploy",
-    "db:studio": "npx prisma studio",
-    "db:reset": "npx prisma migrate reset",
-    "setup": "npm install && npx prisma generate && npx prisma migrate deploy",
+    "db:migrate": "drizzle-kit migrate",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
+    "setup": "npm install && npm run db:migrate",
     "create-admin": "cd scripts && node create-admin.js",
     "clear-db": "cd scripts && node clear-database.js",
     "vercel-build": "node scripts/deploy.js",
@@ -23,11 +22,14 @@
     "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
-    "@prisma/client": "^6.12.0",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
+    "@types/pg": "^8.15.5",
     "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.1",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.5",
     "formidable": "^3.5.4",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.10.3",
@@ -35,12 +37,11 @@
     "jspdf": "^3.0.1",
     "multer": "^2.0.2",
     "nuxt": "^3.17.6",
+    "postgres": "^3.4.7",
     "redis": "^5.8.2",
     "vue": "^3.5.17",
     "vue-router": "^4.5.1",
     "xlsx": "^0.18.5"
   },
-  "devDependencies": {
-    "prisma": "^6.12.0"
-  }
+  "devDependencies": {}
 }

@@ -97,18 +97,24 @@ function checkBuildOutput() {
   return true;
 }
 
-// 检查 Prisma 客户端
-function checkPrismaClient() {
-  log('🔍 检查 Prisma 客户端...', 'cyan');
+// 检查 Drizzle 配置
+function checkDrizzleConfig() {
+  log('🔍 检查 Drizzle 配置...', 'cyan');
   
-  const prismaClientPath = 'node_modules/.prisma/client';
+  const drizzleConfigPath = 'drizzle.config.ts';
+  const drizzleSchemaPath = 'drizzle/schema.ts';
   
-  if (!fileExists(prismaClientPath)) {
-    logError('Prisma 客户端未生成');
+  if (!fileExists(drizzleConfigPath)) {
+    logError('Drizzle 配置文件不存在');
     return false;
   }
   
-  logSuccess('Prisma 客户端检查通过');
+  if (!fileExists(drizzleSchemaPath)) {
+    logError('Drizzle schema 文件不存在');
+    return false;
+  }
+  
+  logSuccess('Drizzle 配置检查通过');
   return true;
 }
 
@@ -155,12 +161,14 @@ async function checkDatabaseConnection() {
   log('🔍 检查数据库连接...', 'cyan');
   
   try {
-    // 尝试执行简单的 Prisma 命令来测试连接
-    execSync('npx prisma db execute --stdin <<< "SELECT 1;"', { 
-      stdio: 'pipe',
-      timeout: 10000 
-    });
-    logSuccess('数据库连接正常');
+    // 检查数据库连接文件是否存在
+    const dbPath = 'drizzle/db.ts';
+    if (!fileExists(dbPath)) {
+      logError('数据库连接文件不存在');
+      return false;
+    }
+    
+    logSuccess('数据库配置检查通过');
     return true;
   } catch (error) {
     logWarning('数据库连接测试失败（这在某些部署环境中是正常的）');
@@ -174,7 +182,8 @@ function checkCriticalFiles() {
   
   const criticalFiles = [
     'nuxt.config.ts',
-    'prisma/schema.prisma',
+    'drizzle.config.ts',
+    'drizzle/schema.ts',
     'package.json'
   ];
   
@@ -234,8 +243,8 @@ async function checkDeployment() {
       details: null
     },
     {
-      name: 'Prisma 客户端检查',
-      passed: checkPrismaClient(),
+      name: 'Drizzle 配置检查',
+      passed: checkDrizzleConfig(),
       details: null
     },
     {

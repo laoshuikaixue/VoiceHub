@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken'
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
 import { isRedisReady, executeRedisCommand } from '../../utils/redis'
-import { executeWithPool } from '../../utils/db-pool'
+import { eq } from 'drizzle-orm'
 
 // 用户认证缓存（永久缓存，登出或权限变更时主动失效）
 
@@ -46,21 +47,18 @@ export default defineEventHandler(async (event) => {
     }
     
     // 缓存未命中或Redis不可用，从数据库获取用户信息
-    const user = await executeWithPool(async () => {
-      return await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          username: true,
-          name: true,
-          grade: true,
-          class: true,
-          role: true,
-          forcePasswordChange: true,
-          passwordChangedAt: true
-        }
-      })
-    }, 'getUserAuth')
+    const userResult = await db.select({
+      id: users.id,
+      username: users.username,
+      name: users.name,
+      grade: users.grade,
+      class: users.class,
+      role: users.role,
+      forcePasswordChange: users.forcePasswordChange,
+      passwordChangedAt: users.passwordChangedAt
+    }).from(users).where(eq(users.id, userId))
+    
+    const user = userResult[0] || null
 
     if (!user) {
       throw createError({

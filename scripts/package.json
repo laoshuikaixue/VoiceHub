@@ -8,10 +8,11 @@
     "clear-db": "node clear-database.js"
   },
   "dependencies": {
-    "@prisma/client": "^6.11.1",
     "bcrypt": "^6.0.0",
     "chalk": "^4.1.2",
     "dotenv": "^16.3.1",
-    "prompts": "^2.4.2"
+    "prompts": "^2.4.2",
+    "drizzle-orm": "^0.44.5",
+    "postgres": "^3.4.7"
   }
 }

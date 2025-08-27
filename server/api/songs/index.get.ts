@@ -1,6 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { prisma } from '../../models/schema'
-import { executeWithPool } from '~/server/utils/db-pool'
+import { db } from '~/drizzle/db'
+import { songs, users, votes, schedules, playTimes } from '~/drizzle/schema'
+import { eq, and, count, sql, like, or, desc, asc } from 'drizzle-orm'
 
 // 格式化日期时间为统一格式：YYYY/M/D H:mm:ss
 function formatDateTime(date: Date): string {
@@ -33,100 +34,126 @@ export default defineEventHandler(async (event) => {
       userRole: user?.role
     })
 
-    // 使用数据库连接池执行查询
-    const result = await executeWithPool(async () => {
-      // 构建查询条件
-      const whereCondition: any = {}
+    // 构建查询条件
+    const conditions = []
+    
+    if (search) {
+      conditions.push(
+        or(
+          like(songs.title, `%${search}%`),
+          like(songs.artist, `%${search}%`)
+        )
+      )
+    }
+    
+    if (semester) {
+      conditions.push(eq(songs.semester, semester))
+    }
+    
+    if (grade) {
+      conditions.push(eq(users.grade, grade))
+    }
+    
+    const whereCondition = conditions.length > 0 ? and(...conditions) : undefined
+    
+    // 查询歌曲总数
+    const totalResult = await db.select({ count: count() })
+      .from(songs)
+      .leftJoin(users, eq(songs.requesterId, users.id))
+      .where(whereCondition)
+    const total = totalResult[0].count
 
-      if (search) {
-        whereCondition.OR = [
-          { title: { contains: search, mode: 'insensitive' } },
-          { artist: { contains: search, mode: 'insensitive' } }
-        ]
+    // 获取歌曲数据
+    const songsData = await db.select({
+      id: songs.id,
+      title: songs.title,
+      artist: songs.artist,
+      played: songs.played,
+      playedAt: songs.playedAt,
+      semester: songs.semester,
+      createdAt: songs.createdAt,
+      updatedAt: songs.updatedAt,
+      cover: songs.cover,
+      musicPlatform: songs.musicPlatform,
+      musicId: songs.musicId,
+      preferredPlayTimeId: songs.preferredPlayTimeId,
+      requester: {
+        id: users.id,
+        name: users.name,
+        grade: users.grade,
+        class: users.class
       }
-
-      if (semester) {
-        whereCondition.semester = semester
+    })
+    .from(songs)
+    .leftJoin(users, eq(songs.requesterId, users.id))
+    .where(whereCondition)
+    .orderBy(
+      sortBy === 'createdAt' ? (sortOrder === 'desc' ? desc(songs.createdAt) : asc(songs.createdAt)) :
+      sortBy === 'title' ? (sortOrder === 'desc' ? desc(songs.title) : asc(songs.title)) :
+      sortBy === 'artist' ? (sortOrder === 'desc' ? desc(songs.artist) : asc(songs.artist)) :
+      desc(songs.createdAt)
+    )
+    
+    // 获取每首歌的投票数
+    const voteCountsQuery = await db.select({
+      songId: votes.songId,
+      count: count(votes.id)
+    })
+    .from(votes)
+    .groupBy(votes.songId)
+    
+    const voteCounts = new Map(voteCountsQuery.map(v => [v.songId, v.count]))
+    
+    // 获取每首歌的投票详情（用于检查用户是否已投票）
+    const songVotesQuery = await db.select({
+      songId: votes.songId,
+      userId: votes.userId
+    })
+    .from(votes)
+    
+    const songVotes = new Map()
+    songVotesQuery.forEach(vote => {
+      if (!songVotes.has(vote.songId)) {
+        songVotes.set(vote.songId, [])
       }
+      songVotes.get(vote.songId).push(vote.userId)
+    })
+    
+    // 获取每首歌的排期状态
+    const schedulesQuery = await db.select({
+      songId: schedules.songId
+    })
+    .from(schedules)
+    
+    const scheduledSongs = new Set(schedulesQuery.map(s => s.songId))
+    
+    // 获取期望播放时段信息
+    const playTimesQuery = await db.select()
+      .from(playTimes)
+    
+    const playTimesMap = new Map(playTimesQuery.map(pt => [pt.id, pt]))
 
-      if (grade) {
-        // 注意：Song模型中没有grade字段，这个过滤条件通过requester的grade来实现
-        whereCondition.requester = {
-          grade: grade
+    // 获取所有用户的姓名列表，用于检测同名用户
+    const allUsers = await db.select({
+      id: users.id,
+      name: users.name,
+      grade: users.grade,
+      class: users.class
+    }).from(users)
+
+    // 创建姓名到用户数组的映射
+    const nameToUsers = new Map()
+    allUsers.forEach(u => {
+      if (u.name) {
+        if (!nameToUsers.has(u.name)) {
+          nameToUsers.set(u.name, [])
         }
+        nameToUsers.get(u.name).push(u)
       }
+    })
 
-      // 查询歌曲总数
-      const total = await prisma.song.count({ where: whereCondition })
-
-      // 获取歌曲及其投票数
-      const songs = await prisma.song.findMany({
-        where: whereCondition,
-        include: {
-          requester: {
-            select: {
-              id: true,
-              name: true,
-              grade: true,
-              class: true
-            }
-          },
-          votes: {
-            select: {
-              id: true,
-              userId: true
-            }
-          },
-          _count: {
-            select: {
-              votes: true
-            }
-          },
-          schedules: {
-            select: {
-              id: true
-            }
-          },
-          // 包含期望播放时段信息
-          preferredPlayTime: true
-        },
-        orderBy: sortBy === 'votes' ? [
-          {
-            votes: {
-              _count: sortOrder as 'asc' | 'desc'
-            }
-          },
-          {
-            createdAt: 'asc'  // 投票数相同时，按提交时间排序（较早提交的优先）
-          }
-        ] : {
-          [sortBy]: sortOrder
-        }
-      })
-
-      // 获取所有用户的姓名列表，用于检测同名用户
-      const users = await prisma.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          grade: true,
-          class: true
-        }
-      })
-
-      // 创建姓名到用户数组的映射
-      const nameToUsers = new Map()
-      users.forEach(u => {
-        if (u.name) {
-          if (!nameToUsers.has(u.name)) {
-            nameToUsers.set(u.name, [])
-          }
-          nameToUsers.get(u.name).push(u)
-        }
-      })
-
-      // 转换数据格式
-      const formattedSongs = songs.map(song => {
+    // 转换数据格式
+    const formattedSongs = songsData.map(song => {
         // 处理投稿人姓名，如果是同名用户则添加后缀
         let requesterName = song.requester?.name || '未知用户'
 
@@ -157,14 +184,14 @@ export default defineEventHandler(async (event) => {
           artist: song.artist,
           requester: requesterName,
           requesterId: song.requester?.id,
-          voteCount: song._count.votes,
+          voteCount: voteCounts.get(song.id) || 0,
           played: song.played,
           playedAt: song.playedAt,
           semester: song.semester,
           createdAt: song.createdAt,
           updatedAt: song.updatedAt,
           requestedAt: formatDateTime(song.createdAt), // 添加请求时间的格式化字符串
-          scheduled: song.schedules.length > 0, // 添加是否已排期的标志
+          scheduled: scheduledSongs.has(song.id), // 添加是否已排期的标志
           cover: song.cover || null, // 添加封面字段
           musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
           musicId: song.musicId || null // 添加音乐ID字段
@@ -172,35 +199,49 @@ export default defineEventHandler(async (event) => {
 
         // 如果用户已登录，添加投票状态
         if (user) {
-          const voted = song.votes.some(vote => vote.userId === user.id)
-          songObject.voted = voted
+          const userVotes = songVotes.get(song.id) || []
+          songObject.voted = userVotes.includes(user.id)
         }
 
         // 添加期望播放时段相关字段
         songObject.preferredPlayTimeId = song.preferredPlayTimeId
 
         // 如果有期望播放时段，添加相关信息
-        if (song.preferredPlayTime) {
-          songObject.preferredPlayTime = {
-            id: song.preferredPlayTime.id,
-            name: song.preferredPlayTime.name,
-            startTime: song.preferredPlayTime.startTime,
-            endTime: song.preferredPlayTime.endTime,
-            enabled: song.preferredPlayTime.enabled
+        if (song.preferredPlayTimeId) {
+          const preferredPlayTime = playTimesMap.get(song.preferredPlayTimeId)
+          if (preferredPlayTime) {
+            songObject.preferredPlayTime = {
+              id: preferredPlayTime.id,
+              name: preferredPlayTime.name,
+              startTime: preferredPlayTime.startTime,
+              endTime: preferredPlayTime.endTime,
+              enabled: preferredPlayTime.enabled
+            }
           }
         }
 
         return songObject
       })
 
-      return {
-        success: true,
-        data: {
-          songs: formattedSongs,
-          total
+    // 如果按投票数排序，需要重新排序
+    if (sortBy === 'votes') {
+      formattedSongs.sort((a, b) => {
+        const diff = sortOrder === 'desc' ? b.voteCount - a.voteCount : a.voteCount - b.voteCount
+        if (diff === 0) {
+          // 投票数相同时，按提交时间排序（较早提交的优先）
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         }
+        return diff
+      })
+    }
+    
+    const result = {
+      success: true,
+      data: {
+        songs: formattedSongs,
+        total
       }
-    }, 'getSongsList')
+    }
 
     console.log(`[Songs API] 成功返回 ${result.data.songs.length} 首歌曲，用户类型: ${user ? '登录用户' : '未登录用户'}`)
 

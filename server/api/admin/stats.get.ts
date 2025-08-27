@@ -301,7 +301,12 @@ export default defineEventHandler(async (event) => {
 
     // 缓存结果
     await cacheService.setAdminStats(semester, result)
-    console.log('[Cache] 管理员统计数据已缓存')
+    
+    // 只在Redis可用时显示缓存提示
+    const { isRedisReady } = await import('../../utils/redis')
+    if (isRedisReady()) {
+      console.log('[Cache] 管理员统计数据已缓存')
+    }
 
     return result
   } catch (error) {

@@ -1,6 +1,7 @@
 import { executeRedisCommand, isRedisReady } from '../utils/redis'
-import { prisma } from '../models/schema'
-import { executeWithPool } from '../utils/db-pool'
+import { db } from '~/drizzle/db'
+import { songs, schedules, systemSettings, users, playTimes } from '~/drizzle/schema'
+import { eq, and, gte, lte, sql } from 'drizzle-orm'
 
 // 缓存键前缀
 const CACHE_PREFIXES = {
@@ -698,16 +699,10 @@ class CacheService {
     
     try {
       // 只预热歌曲数量，不缓存歌曲列表（因为每个用户的voted状态不同）
-      const songCount = await executeWithPool(async () => {
-        const whereCondition: any = {}
-        if (semester) {
-          whereCondition.semester = semester
-        }
-        
-        return await prisma.song.count({
-          where: whereCondition
-        })
-      }, 'warmupSongsCache')
+      const songCount = await db.select({ count: sql<number>`count(*)` })
+        .from(songs)
+        .where(semester ? eq(songs.semester, semester) : undefined)
+        .then(result => result[0]?.count || 0)
       
       if (songCount !== undefined) {
         await this.setSongCount(songCount, semester)
@@ -731,42 +726,44 @@ class CacheService {
       const endDate = new Date(today)
       endDate.setDate(today.getDate() + 7)
       
-      const schedules = await executeWithPool(async () => {
-        return await prisma.schedule.findMany({
-          where: {
-            playDate: {
-              gte: today,
-              lte: endDate
-            }
-          },
-          include: {
-            song: {
-              include: {
-                requester: {
-                  select: {
-                    id: true,
-                    name: true,
-                    grade: true,
-                    class: true
-                  }
-                }
-              }
-            },
-            playTime: true
-          },
-          orderBy: [
-            { playDate: 'asc' },
-            { sequence: 'asc' }
-          ]
-        })
-      }, 'warmupSchedulesCache')
+      const schedulesList = await db.select({
+        id: schedules.id,
+        playDate: schedules.playDate,
+        sequence: schedules.sequence,
+        song: {
+          id: songs.id,
+          title: songs.title,
+          artist: songs.artist,
+          requester: {
+            id: users.id,
+            name: users.name,
+            grade: users.grade,
+            class: users.class
+          }
+        },
+        playTime: {
+          id: playTimes.id,
+          name: playTimes.name,
+          startTime: playTimes.startTime,
+          endTime: playTimes.endTime
+        }
+      })
+      .from(schedules)
+      .leftJoin(songs, eq(schedules.songId, songs.id))
+      .leftJoin(users, eq(songs.requesterId, users.id))
+      .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
+      .where(and(
+        gte(schedules.playDate, today),
+        lte(schedules.playDate, endDate)
+      ))
+      .orderBy(schedules.playDate, schedules.sequence)
       
-      if (schedules) {
-        await this.setSchedulesList(schedules, today, endDate)
+      if (schedulesList) {
+        await this.setSchedulesList(schedulesList, today, endDate)
         
         // 按日期分组缓存
         const schedulesByDate = new Map<string, any[]>()
-        schedules.forEach(schedule => {
+        schedulesList.forEach(schedule => {
           const dateStr = schedule.playDate.toISOString().split('T')[0]
           if (!schedulesByDate.has(dateStr)) {
             schedulesByDate.set(dateStr, [])
@@ -780,7 +777,7 @@ class CacheService {
         }
       }
       
-      console.log(`[Cache] 排期缓存预热完成，缓存了 ${schedules?.length || 0} 个排期`)
+      console.log(`[Cache] 排期缓存预热完成，缓存了 ${schedulesList?.length || 0} 个排期`)
     } catch (error) {
       console.error('[Cache] 排期缓存预热失败:', error)
     }
@@ -789,27 +786,25 @@ class CacheService {
   // 预热系统设置缓存
   async warmUpSystemSettings(): Promise<void> {
     try {
-      const { prisma } = await import('../models/schema')
-      let settings = await prisma.systemSettings.findFirst()
+      let settings = await db.select().from(systemSettings).limit(1).then(result => result[0])
       
       if (!settings) {
         // 如果不存在，创建默认设置
-        settings = await prisma.systemSettings.create({
-          data: {
-            enablePlayTimeSelection: false,
-            siteTitle: 'VoiceHub',
-            siteLogoUrl: '/favicon.ico',
-            schoolLogoHomeUrl: null,
-            schoolLogoPrintUrl: null,
-            siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
-            submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
-            icpNumber: null,
-            enableSubmissionLimit: false,
-            dailySubmissionLimit: null,
-            weeklySubmissionLimit: null,
-            showBlacklistKeywords: false
-          }
-        })
+        const [newSettings] = await db.insert(systemSettings).values({
+          enablePlayTimeSelection: false,
+          siteTitle: 'VoiceHub',
+          siteLogoUrl: '/favicon.ico',
+          schoolLogoHomeUrl: null,
+          schoolLogoPrintUrl: null,
+          siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
+          submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
+          icpNumber: null,
+          enableSubmissionLimit: false,
+          dailySubmissionLimit: null,
+          weeklySubmissionLimit: null,
+          showBlacklistKeywords: false
+        }).returning()
+        settings = newSettings
       }
       
       await this.setSystemSettings(settings)

@@ -63,7 +63,7 @@
 
 ### 后端技术
 - **Nuxt Server API**：服务端API路由，支持中间件和认证
-- **Prisma**：现代化数据库ORM，支持类型安全的数据库操作
+- **Drizzle ORM**：现代化数据库ORM，支持类型安全的数据库操作和高性能查询
 - **PostgreSQL**：关系型数据库，支持复杂查询和事务
 - **Redis**：高性能缓存数据库，提升系统响应速度
 - **JWT**：标准JWT认证机制，支持24小时token有效期
@@ -75,7 +75,7 @@
 系统采用了Nuxt 3的全栈架构：
 - 使用Nuxt 3的服务端API构建后端服务
 - 使用Vue 3组合式API构建前端组件
-- 使用Prisma ORM连接PostgreSQL数据库
+- 使用Drizzle ORM连接PostgreSQL数据库，提供类型安全和高性能的数据库操作
 - 使用标准JWT认证系统，支持24小时token有效期
 - 数据库自检和自动修复机制
 
@@ -276,7 +276,7 @@ REDIS_URL="redis://username:password@host:port"
 JWT_SECRET="your-very-secure-jwt-secret-key"
 ```
 
-5. 初始化数据库和Prisma客户端
+5. 初始化数据库和生成数据库模式
 ```bash
 npm run db:generate
 npm run db:migrate
@@ -369,14 +369,13 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 ## 环境变量说明
 
-| 变量名          | 必填 | 说明                          | 示例值                                                                 |
-|--------------|----|-----------------------------|---------------------------------------------------------------------|
-| DATABASE_URL | 是  | PostgreSQL数据库连接字符串          | `postgresql://username:password@host:port/database?sslmode=require` |
-| JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串        | `your-very-secure-jwt-secret-key`       |
-| NODE_ENV     | 否  | 运行环境，development或production | `production`                                                        |
-| REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                               |
-| PRISMA_LOG_LEVEL | 否  | Prisma日志级别，可选值：error、warn、info、query，默认为error | `error`                                                            |
-| NITRO_PRESET | 否  | Nitro预设                     | `vercel`                                                            |
+| 变量名          | 必填 | 说明                              | 示例值                                                                 |
+|--------------|----|---------------------------------|---------------------------------------------------------------------|
+| DATABASE_URL | 是  | PostgreSQL数据库连接字符串              | `postgresql://username:password@host:port/database?sslmode=require` |
+| JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串            | `your-very-secure-jwt-secret-key`                                   |
+| NODE_ENV     | 否  | 运行环境，development或production     | `production`                                                        |
+| REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                                |
+| NITRO_PRESET | 否  | Nitro预设                         | `vercel`                                                            |
 
 ## 项目结构
 
@@ -477,13 +476,11 @@ VoiceHub/
 │   └── notifications.vue   # 通知中心页面
 ├── plugins/               # Nuxt插件
 │   ├── auth.client.ts      # 客户端认证插件
-│   ├── auth.server.ts      # 服务端认证插件
-│   └── prisma.ts           # Prisma ORM插件
-├── prisma/                # Prisma ORM配置
-│   ├── client.ts           # Prisma客户端配置
-│   ├── generate.js         # Prisma生成脚本
-│   ├── migrations/         # 数据库迁移文件
-│   └── schema.prisma      # 数据库模型定义
+│   └── auth.server.ts      # 服务端认证插件
+├── drizzle/               # Drizzle ORM配置
+│   ├── db.ts              # 数据库连接配置
+│   ├── migrations/        # 数据库迁移文件
+│   └── schema.ts          # 数据库模型定义
 ├── public/                # 公共静态资源
 │   ├── favicon.ico         # 网站图标
 │   ├── images/             # 图片资源
@@ -500,6 +497,7 @@ VoiceHub/
 │   ├── netlify-build.js           # Netlify构建脚本
 │   ├── package.json               # 脚本依赖配置
 │   └── postinstall.js             # 安装后脚本
+├── drizzle.config.ts      # Drizzle ORM配置文件
 ├── server/                # 服务端代码（Nuxt 3 Server API）
 │   ├── api/                # API端点目录
 │   │   ├── admin/          # 管理员API
@@ -644,8 +642,7 @@ VoiceHub/
 │   │   └── schema.ts       # 数据模型定义
 │   ├── plugins/            # 服务端插件
 │   │   ├── db-pool-init.ts # 数据库连接池初始化
-│   │   ├── error-handler.ts # 错误处理插件
-│   │   └── prisma.ts       # Prisma服务端插件
+│   │   └── error-handler.ts # 错误处理插件
 │   ├── services/           # 业务服务层
 │   │   ├── cacheService.ts # 缓存服务（Redis缓存管理）
 │   │   ├── meowNotificationService.ts # MeoW通知服务
@@ -770,11 +767,29 @@ VoiceHub/
 
 ## 数据库管理
 
+### Drizzle ORM 配置
+
+项目使用 Drizzle ORM 作为数据库 ORM，提供类型安全和高性能的数据库操作：
+
+- **配置文件**：`drizzle.config.ts` - Drizzle ORM 主配置
+- **数据库连接**：`drizzle/db.ts` - 数据库连接和客户端配置
+- **数据模式**：`drizzle/schema.ts` - 数据库表结构定义
+- **迁移文件**：`drizzle/migrations/` - 数据库迁移脚本
+
+### 数据库备份与恢复
+```bash
+# 备份数据库
+pg_dump -h localhost -U username -d database_name > backup.sql
+
+# 恢复数据库
+psql -h localhost -U username -d database_name < backup.sql
+```
+
 ### 数据库初始化
 
 首次部署时，系统会自动初始化数据库结构。如需手动管理数据库：
 
-1. **生成Prisma客户端**：
+1. **生成数据库模式**：
    ```bash
    npm run db:generate
    ```
@@ -784,9 +799,9 @@ VoiceHub/
    npm run db:migrate
    ```
 
-3. **重置数据库**（慎用，会删除所有数据）：
+3. **推送数据库模式变更**：
    ```bash
-   npm run db:reset
+   npm run db:push
    ```
 
 4. **清空数据库并创建管理员**：
