@@ -20,11 +20,13 @@ class DatabasePool {
   // 断路器相关属性
   private circuitBreakerState = CircuitBreakerState.CLOSED
   private failureCount = 0
-  private failureThreshold = 5 // 失败阈值
-  private recoveryTimeout = 60000 // 恢复超时时间（1分钟）
+  private failureThreshold = 3 // 失败阈值
+  private recoveryTimeout = 15000 // 恢复超时时间（15秒）
   private lastFailureTime = 0
   private successCount = 0
-  private halfOpenMaxRequests = 3 // 半开状态下最大请求数
+  private halfOpenMaxRequests = 2 // 半开状态下最大请求数
+  private fastRecoveryMode = false // 快速恢复模式
+  private consecutiveSuccesses = 0 // 连续成功次数
   
   // 性能监控相关属性
   private responseTimeHistory: number[] = [] // 响应时间历史记录
@@ -509,10 +511,35 @@ class DatabasePool {
   
   // 连接预热
   private async warmUpConnection(): Promise<void> {
-    try {
-      await prisma.$queryRaw`SELECT 1 as warmup`
-    } catch (error) {
-      throw new Error(`连接预热失败: ${error}`)
+    const maxRetries = 3
+    const timeoutMs = 2000
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // 使用超时保护的预热查询
+        await Promise.race([
+          prisma.$queryRaw`SELECT 1 as warmup`,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('预热查询超时')), timeoutMs)
+          )
+        ])
+        
+        console.log('[DB Pool] 连接预热成功')
+        return
+        
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error)
+        console.warn(`[DB Pool] 连接预热失败 (尝试 ${attempt}/${maxRetries}): ${errorMsg}`)
+        
+        if (attempt < maxRetries) {
+          // 短暂延迟后重试
+          const delay = 200 * attempt
+          await new Promise(resolve => setTimeout(resolve, delay))
+        } else {
+          // 最后一次尝试失败，抛出错误
+          throw new Error(`连接预热失败，已尝试 ${maxRetries} 次: ${errorMsg}`)
+        }
+      }
     }
   }
   
@@ -544,27 +571,96 @@ class DatabasePool {
     if (!this.isIdleMode) return
     
     console.log('[DB Pool] 退出空闲模式，恢复连接池')
-    this.isIdleMode = false
     
     try {
       // 重新建立连接
       await prisma.$connect()
       
-      // 验证连接
-      const isConnected = await this.ensureConnection()
+      // 等待连接完全建立（给Prisma引擎时间初始化）
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // 使用更安全的连接验证方式
+      let isConnected = false
+      let retryCount = 0
+      const maxRetries = 5 // 增加重试次数
+      
+      while (!isConnected && retryCount < maxRetries) {
+        try {
+          // 使用超时保护的连接验证
+          await Promise.race([
+            prisma.$queryRaw`SELECT 1 as connection_test`,
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('连接验证超时')), 2000)
+            )
+          ])
+          
+          isConnected = true
+          this.isConnected = true
+          this.lastHealthCheck = Date.now()
+          console.log('[DB Pool] 连接验证成功')
+        } catch (verifyError) {
+          retryCount++
+          const errorMsg = verifyError instanceof Error ? verifyError.message : String(verifyError)
+          console.warn(`[DB Pool] 连接验证失败，重试 ${retryCount}/${maxRetries}: ${errorMsg}`)
+          
+          if (retryCount < maxRetries) {
+            // 智能退避策略：根据错误类型调整延迟
+            let delay = 500 * retryCount
+            if (errorMsg.includes('Engine is not yet connected')) {
+              delay = 1000 * retryCount // 引擎未连接时延迟更长
+            } else if (errorMsg.includes('timeout')) {
+              delay = 300 * retryCount // 超时错误延迟较短
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, delay))
+            
+            // 在重试前尝试重新连接
+            if (retryCount > 2) {
+              try {
+                await prisma.$disconnect()
+                await new Promise(resolve => setTimeout(resolve, 500))
+                await prisma.$connect()
+                await new Promise(resolve => setTimeout(resolve, 1000))
+              } catch (reconnectError) {
+                console.warn('[DB Pool] 重连失败:', reconnectError)
+              }
+            }
+          }
+        }
+      }
       
       if (isConnected) {
+        this.isIdleMode = false
         this.currentConnections = this.minConnections
         this.targetConnections = this.minConnections
         
-        // 预热连接
-        await this.warmUpConnection()
+        // 预热连接（带超时保护）
+        try {
+          await Promise.race([
+            this.warmUpConnection(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('连接预热超时')), 3000)
+            )
+          ])
+        } catch (warmupError) {
+          console.warn('[DB Pool] 连接预热失败，但连接已可用:', warmupError)
+        }
+        
+        // 重置断路器状态和相关计数器
+        this.failureCount = 0
+        this.connectionAttempts = 0 // 重置连接尝试次数
+        this.consecutiveSuccesses = 0
+        if (this.circuitBreakerState === CircuitBreakerState.OPEN) {
+          this.circuitBreakerState = CircuitBreakerState.CLOSED
+          this.fastRecoveryMode = false
+          console.log('[DB Pool] 断路器已重置为关闭状态')
+        }
         
         this.logConnectionEvent('IDLE_MODE_EXITED', '已退出空闲模式，连接池已恢复')
         console.log('[DB Pool] 空闲模式已退出，连接池已恢复')
         
       } else {
-        throw new Error('连接验证失败')
+        throw new Error('连接验证失败，已达到最大重试次数')
       }
       
     } catch (error: unknown) {
@@ -572,12 +668,32 @@ class DatabasePool {
       console.error('[DB Pool] 退出空闲模式失败:', errorMessage)
       this.logConnectionEvent('IDLE_MODE_EXIT_FAILED', errorMessage)
       
-      // 重试退出空闲模式
-      setTimeout(() => {
-        this.exitIdleMode().catch(retryError => {
-          console.error('[DB Pool] 重试退出空闲模式失败:', retryError)
-        })
-      }, 5000)
+      // 增加连接尝试计数
+      this.connectionAttempts++
+      
+      // 智能重试策略：根据失败次数和错误类型调整延迟
+      let baseDelay = 1000
+      if (errorMessage.includes('Engine is not yet connected')) {
+        baseDelay = 2000 // 引擎连接问题需要更长延迟
+      } else if (errorMessage.includes('timeout')) {
+        baseDelay = 800 // 超时问题延迟较短
+      }
+      
+      const retryDelay = Math.min(baseDelay * Math.pow(1.5, this.connectionAttempts), 15000)
+      
+      // 限制最大重试次数，避免无限重试
+      if (this.connectionAttempts < 10) {
+        console.log(`[DB Pool] 将在 ${retryDelay}ms 后重试退出空闲模式 (尝试 ${this.connectionAttempts}/10)`)
+        
+        setTimeout(() => {
+          this.exitIdleMode().catch(retryError => {
+            console.error('[DB Pool] 重试退出空闲模式失败:', retryError)
+          })
+        }, retryDelay)
+      } else {
+        console.error('[DB Pool] 已达到最大重试次数，停止尝试退出空闲模式')
+        this.logConnectionEvent('IDLE_MODE_EXIT_ABANDONED', '已达到最大重试次数，停止尝试')
+      }
     }
    }
    
@@ -791,9 +907,12 @@ class DatabasePool {
         return true // 正常状态，允许请求
         
       case CircuitBreakerState.OPEN:
-        // 检查是否到了恢复时间
-        if (now - this.lastFailureTime >= this.recoveryTimeout) {
-          console.log('[DB Pool] 断路器进入半开状态')
+        // 检查是否到了恢复时间（快速恢复模式下时间更短）
+        const actualRecoveryTimeout = this.fastRecoveryMode ? 
+          Math.min(this.recoveryTimeout / 2, 5000) : this.recoveryTimeout
+        
+        if (now - this.lastFailureTime >= actualRecoveryTimeout) {
+          console.log(`[DB Pool] 断路器进入半开状态 (${this.fastRecoveryMode ? '快速恢复模式' : '正常模式'})`)
           this.circuitBreakerState = CircuitBreakerState.HALF_OPEN
           this.successCount = 0
           return true
@@ -811,6 +930,7 @@ class DatabasePool {
   // 记录操作成功
   private recordSuccess(): void {
     this.failureCount = 0
+    this.consecutiveSuccesses++
     
     if (this.circuitBreakerState === CircuitBreakerState.HALF_OPEN) {
       this.successCount++
@@ -818,6 +938,13 @@ class DatabasePool {
         console.log('[DB Pool] 断路器恢复到关闭状态')
         this.circuitBreakerState = CircuitBreakerState.CLOSED
         this.successCount = 0
+        // 如果连续成功次数足够，启用快速恢复模式
+        this.fastRecoveryMode = this.consecutiveSuccesses >= 5
+      }
+    } else if (this.circuitBreakerState === CircuitBreakerState.CLOSED) {
+      // 维持快速恢复模式状态
+      if (this.consecutiveSuccesses >= 10) {
+        this.fastRecoveryMode = true
       }
     }
   }
@@ -826,6 +953,8 @@ class DatabasePool {
   private recordFailure(): void {
     this.failureCount++
     this.lastFailureTime = Date.now()
+    this.consecutiveSuccesses = 0 // 重置连续成功计数
+    this.fastRecoveryMode = false // 失败时禁用快速恢复模式
     
     if (this.failureCount >= this.failureThreshold) {
       console.log(`[DB Pool] 断路器打开，失败次数: ${this.failureCount}`)
@@ -834,7 +963,7 @@ class DatabasePool {
   }
   
   // 执行数据库操作，带连接检查和断路器保护
-  async execute<T>(operation: () => Promise<T>, operationName = 'Unknown'): Promise<T> {
+  async execute<T>(operation: () => Promise<T>, operationName = 'Unknown', fallback?: () => Promise<T>): Promise<T> {
     // 更新负载监控
     this.updateLoadMonitoring(0)
     
@@ -845,7 +974,19 @@ class DatabasePool {
     
     // 检查断路器状态
     if (!this.checkCircuitBreaker()) {
-      const error = new Error(`数据库断路器已打开，拒绝执行操作: ${operationName}`)
+      // 如果提供了fallback函数，使用优雅降级
+      if (fallback) {
+        console.log(`[DB Pool] 断路器打开，使用降级策略执行: ${operationName}`)
+        try {
+          return await fallback()
+        } catch (fallbackError) {
+          console.error(`[DB Pool] 降级策略也失败: ${operationName}`, fallbackError)
+          throw new Error(`服务暂时不可用，请稍后重试 (${operationName})`)
+        }
+      }
+      
+      // 提供更友好的错误信息
+      const error = new Error(`服务正在恢复中，请稍后重试 (${operationName})`)
       console.warn(`[DB Pool] ${error.message}`)
       throw error
     }
@@ -857,6 +998,17 @@ class DatabasePool {
     
     if (!isConnected) {
       this.recordFailure()
+      
+      // 如果提供了fallback，在连接不可用时使用
+      if (fallback) {
+        console.log(`[DB Pool] 连接不可用，使用降级策略: ${operationName}`)
+        try {
+          return await fallback()
+        } catch (fallbackError) {
+          console.error(`[DB Pool] 降级策略失败: ${operationName}`, fallbackError)
+        }
+      }
+      
       throw new Error('数据库连接不可用')
     }
 
@@ -909,8 +1061,29 @@ class DatabasePool {
               const retryErrorMessage = retryError instanceof Error ? retryError.message : String(retryError)
               console.error(`[DB Pool] 重试操作失败: ${operationName}`, retryErrorMessage)
               this.recordFailure() // 重试失败，记录失败
+              
+              // 如果提供了fallback，在重连失败时使用
+              if (fallback) {
+                console.log(`[DB Pool] 重连后仍失败，使用降级策略: ${operationName}`)
+                try {
+                  return await fallback()
+                } catch (fallbackError) {
+                  console.error(`[DB Pool] 降级策略失败: ${operationName}`, fallbackError)
+                }
+              }
+              
               throw retryError
             }
+          }
+        }
+        
+        // 如果重连失败且提供了fallback，使用降级策略
+        if (fallback) {
+          console.log(`[DB Pool] 重连失败，使用降级策略: ${operationName}`)
+          try {
+            return await fallback()
+          } catch (fallbackError) {
+            console.error(`[DB Pool] 降级策略失败: ${operationName}`, fallbackError)
           }
         }
       }
