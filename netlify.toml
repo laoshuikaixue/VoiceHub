@@ -1,6 +1,6 @@
 [build]
   command = "npm run deploy"
-  publish = ".output/public"
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
