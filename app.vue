@@ -73,10 +73,13 @@ const handlePlayerClose = () => {
 
 // 处理播放结束事件
 const handlePlayerEnded = () => {
+  // 播放完成后直接停止播放器
   audioPlayer.stopSong()
+  // 延迟隐藏播放器，让动画有时间执行
+  setTimeout(() => {
+    isPlayerVisible.value = false
+  }, 400) // 略大于动画持续时间
 }
-
-
 
 // 使用onMounted确保只在客户端初始化认证
 let auth = null
