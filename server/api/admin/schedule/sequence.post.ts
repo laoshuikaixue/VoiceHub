@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
       // 清除歌曲列表缓存，确保scheduled状态更新
       const { cache } = await import('~/server/utils/cache-helpers')
       await cache.deletePattern('songs:*')
-      await cache.deletePattern('public_schedules_*')  // 清除公共排期缓存
+      await cache.deletePattern('public_schedules:*')  // 清除公共排期缓存
       
       console.log('[Cache] 排期缓存、统计缓存、歌曲列表缓存和公共排期缓存已清除（更新排期顺序）')
     } catch (error) {

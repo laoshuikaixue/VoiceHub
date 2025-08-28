@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
     ))
     
     // 构建缓存键
-    const cacheKey = semester ? `public_schedules_semester:${semester}` : 'public_schedules_all'
+    const cacheKey = semester ? `public_schedules:${semester}` : 'public_schedules:all'
     
     // 优先从Redis缓存获取排期数据
     if (isRedisReady()) {

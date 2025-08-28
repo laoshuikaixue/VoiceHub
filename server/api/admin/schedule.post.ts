@@ -141,7 +141,7 @@ export default defineEventHandler(async (event) => {
     await cache.deletePattern('schedules:*')
     await cache.deletePattern('stats:*')
     await cache.deletePattern('songs:*')  // 清除歌曲列表缓存，确保scheduled状态更新
-    await cache.deletePattern('public_schedules_*')
+    await cache.deletePattern('public_schedules:*')
     console.log('[Cache] 排期缓存、统计缓存和歌曲列表缓存已清除（创建排期）')
     
     // 重新缓存完整的排期列表
