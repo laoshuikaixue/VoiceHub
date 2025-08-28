@@ -7,9 +7,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // 加载环境变量
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-config({ path: path.resolve(__dirname, '../.env') });
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+config({ path: path.resolve(currentDir, '../.env') });
 
 // 检查环境变量
 if (!process.env.DATABASE_URL) {
