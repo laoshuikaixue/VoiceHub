@@ -957,9 +957,26 @@ const openAddSongModal = () => {
 
 
 const saveAddSong = async () => {
+  // 验证必填字段
   if (!addForm.value.title || !addForm.value.artist) {
     if (window.$showNotification) {
       window.$showNotification('请填写歌曲名称和歌手', 'error')
+    }
+    return
+  }
+
+  // 验证投稿人是否已选择
+  if (!selectedUser.value || !addForm.value.requester) {
+    if (window.$showNotification) {
+      window.$showNotification('请选择投稿人', 'error')
+    }
+    return
+  }
+
+  // 验证学期是否已选择
+  if (!addForm.value.semester) {
+    if (window.$showNotification) {
+      window.$showNotification('请选择学期', 'error')
     }
     return
   }
@@ -970,7 +987,7 @@ const saveAddSong = async () => {
     await addSong({
       title: addForm.value.title,
       artist: addForm.value.artist,
-      requester: addForm.value.requester,
+      requester: addForm.value.requester, // 这里应该是用户ID
       semester: addForm.value.semester,
       musicPlatform: addForm.value.musicPlatform || null,
       musicId: addForm.value.musicId || null,
