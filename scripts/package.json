@@ -6,9 +6,9 @@
   "scripts": {
     "create-admin": "npx tsx create-admin.js",
     "clear-db": "npx tsx clear-database.js",
+    "safe-migrate": "npx tsx safe-migrate.js",
     "db:generate": "cd .. && npx drizzle-kit generate --config=drizzle.config.ts",
-    "db:migrate": "cd .. && npx drizzle-kit migrate --config=drizzle.config.ts",
-    "safe-migrate": "npx tsx safe-migrate.js"
+    "db:migrate": "cd .. && npx drizzle-kit migrate --config=drizzle.config.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -16,6 +16,7 @@
     "dotenv": "^16.4.5",
     "prompts": "^2.4.2",
     "drizzle-orm": "^0.36.4",
-    "postgres": "^3.4.5"
+    "postgres": "^3.4.5",
+    "tsx": "^4.7.0"
   }
 }
