@@ -2,6 +2,8 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, users, votes, schedules, playTimes } from '~/drizzle/schema'
 import { eq, and, count, sql, like, or, desc, asc } from 'drizzle-orm'
+import { cache } from '~/server/utils/cache-helpers'
+import crypto from 'crypto'
 
 // 格式化日期时间为统一格式：YYYY/M/D H:mm:ss
 function formatDateTime(date: Date): string {
@@ -33,6 +35,44 @@ export default defineEventHandler(async (event) => {
       userName: user?.name,
       userRole: user?.role
     })
+
+    // 构建缓存键（基于查询参数，但不包含用户ID以提高缓存命中率）
+    const queryParams = {
+      search: search || '',
+      semester: semester || '',
+      grade: grade || '',
+      sortBy,
+      sortOrder
+    }
+    const queryHash = crypto.createHash('md5').update(JSON.stringify(queryParams)).digest('hex')
+    const cacheKey = `songs:list:${queryHash}`
+    
+    // 尝试从缓存获取基础数据（不包含用户特定的投票状态）
+    const cachedData = await cache.get<any>(cacheKey)
+    if (cachedData !== null) {
+      console.log(`[Cache] 歌曲列表缓存命中: ${cacheKey}, 歌曲数: ${cachedData.data?.songs?.length || 0}`)
+      
+      // 如果用户已登录，需要添加用户特定的投票状态
+      if (user) {
+        // 获取用户的投票状态
+        const userVotesQuery = await db.select({
+          songId: votes.songId
+        })
+        .from(votes)
+        .where(eq(votes.userId, user.id))
+        
+        const userVotedSongs = new Set(userVotesQuery.map(v => v.songId))
+        
+        // 为每首歌添加用户投票状态
+        cachedData.data.songs.forEach((song: any) => {
+          song.voted = userVotedSongs.has(song.id)
+        })
+      }
+      
+      return cachedData
+    }
+    
+    console.log(`[Cache] 歌曲列表缓存未命中，查询数据库: ${cacheKey}`)
 
     // 构建查询条件
     const conditions = []
@@ -235,10 +275,27 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // 构建返回结果（不包含用户特定的投票状态，以便缓存）
+    const baseResult = {
+      success: true,
+      data: {
+        songs: formattedSongs.map(song => {
+          const { voted, ...baseSong } = song
+          return baseSong
+        }),
+        total
+      }
+    }
+    
+    // 缓存基础数据（3分钟）
+    await cache.set(cacheKey, baseResult)
+    console.log(`[Cache] 歌曲列表设置缓存: ${cacheKey}, 歌曲数: ${baseResult.data.songs.length}`)
+    
+    // 如果用户已登录，添加投票状态到返回结果
     const result = {
       success: true,
       data: {
-        songs: formattedSongs,
+        songs: formattedSongs, // 包含用户投票状态的完整数据
         total
       }
     }

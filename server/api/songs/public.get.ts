@@ -6,6 +6,18 @@ import { eq, and, count, sql } from 'drizzle-orm'
 import { CacheService } from '~/server/services/cacheService'
 import { isRedisReady, executeRedisCommand } from '../../utils/redis'
 
+// 格式化日期时间为统一格式：YYYY/M/D H:mm:ss
+function formatDateTime(date: Date): string {
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const hours = date.getHours()
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const seconds = date.getSeconds().toString().padStart(2, '0')
+
+  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
+}
+
 // 姓名模糊化函数
 function maskStudentName(name: string): string {
   if (!name) return name
@@ -19,8 +31,6 @@ function maskStudentName(name: string): string {
     return name[0] + '*'.repeat(length - 1)
   }
 }
-
-// 公共排期缓存（永久缓存，数据修改时主动失效）
 
 export default defineEventHandler(async (event) => {
   try {
@@ -69,8 +79,8 @@ export default defineEventHandler(async (event) => {
         
         const data = await client.get(cacheKey)
         if (data) {
-          console.log(`[API] 公共排期缓存命中: ${cacheKey}`)
           const parsedData = JSON.parse(data)
+          console.log(`[Cache] 公共排期Redis缓存命中: ${cacheKey}，数量: ${parsedData.length}`)
           // 深拷贝数据以避免修改缓存的原始数据
           const resultData = JSON.parse(JSON.stringify(parsedData))
           // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
@@ -96,7 +106,7 @@ export default defineEventHandler(async (event) => {
     let cachedSchedules = await cacheService.getSchedulesList()
     
     if (cachedSchedules && (!semester || cachedSchedules.some(s => s.song?.semester === semester))) {
-      console.log('[Cache] CacheService排期缓存命中')
+      console.log(`[Cache] CacheService排期缓存命中，数量: ${cachedSchedules.length}`)
       // 如果指定了学期，过滤数据
       let filteredSchedules = cachedSchedules
       if (semester) {
@@ -110,7 +120,7 @@ export default defineEventHandler(async (event) => {
           if (!client) return
           
           await client.set(cacheKey, JSON.stringify(filteredSchedules))
-          console.log(`[API] 排期数据已缓存到Redis: ${cacheKey}`)
+          console.log(`[Cache] 排期数据设置Redis缓存: ${cacheKey}`)
         })
       }
       
@@ -144,7 +154,8 @@ export default defineEventHandler(async (event) => {
         musicPlatform: songs.musicPlatform,
         musicId: songs.musicId,
         semester: songs.semester,
-        requesterId: songs.requesterId
+        requesterId: songs.requesterId,
+        createdAt: songs.createdAt
       },
       requester: {
         name: users.name,
@@ -259,7 +270,8 @@ export default defineEventHandler(async (event) => {
           cover: schedule.song.cover || null,
           musicPlatform: schedule.song.musicPlatform || null,
           musicId: schedule.song.musicId || null,
-          semester: schedule.song.semester || null
+          semester: schedule.song.semester || null,
+          requestedAt: schedule.song.createdAt ? formatDateTime(schedule.song.createdAt) : null
         }
       }
     })
@@ -269,7 +281,7 @@ export default defineEventHandler(async (event) => {
     // 缓存结果到CacheService
     if (result && result.length > 0) {
       await cacheService.setSchedulesList(result)
-      console.log(`[Cache] 公共排期已缓存到CacheService，数量: ${result.length}`)
+      console.log(`[Cache] 公共排期设置CacheService缓存，数量: ${result.length}`)
     }
     
     // 准备要返回和缓存的数据
@@ -285,7 +297,7 @@ export default defineEventHandler(async (event) => {
         if (!client) return
         
         await client.set(cacheKey, JSON.stringify(finalResult))
-        console.log(`[API] 排期数据已缓存到Redis: ${cacheKey}，数量: ${finalResult.length}`)
+        console.log(`[Cache] 排期数据设置Redis缓存: ${cacheKey}，数量: ${finalResult.length}`)
       })
     }
 

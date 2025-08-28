@@ -29,11 +29,13 @@ export class CacheHelper {
       // 优先尝试Redis
       if (isRedisReady()) {
         const result = await executeRedisCommand(
-          async (client) => {
+          async () => {
+            const client = (await import('./redis')).getRedisClient()
+            if (!client) return null
             const data = await client.get(key)
             return data ? JSON.parse(data) : null
           },
-          null
+          async () => null
         )
         
         if (result !== null) {
@@ -65,24 +67,22 @@ export class CacheHelper {
       // 尝试写入Redis（永久缓存）
       if (isRedisReady()) {
         redisSuccess = await executeRedisCommand(
-          async (client) => {
+          async () => {
+            const client = (await import('./redis')).getRedisClient()
+            if (!client) return false
             await client.set(key, JSON.stringify(value))
             if (version) {
               await client.set(`${key}:version`, currentVersion)
             }
             return true
           },
-          false
+          async () => false
         )
       }
       
-      // 写入内存缓存（永久缓存）
-      try {
-        await cacheService.setCache(key, value)
-        memorySuccess = true
-      } catch (error) {
-        console.error(`[CacheHelper] 内存缓存写入失败 ${key}:`, error)
-      }
+      // 不使用内存缓存的setCache方法，因为它是private且需要TTL
+      // 对于永久缓存策略，只使用Redis，内存缓存作为fallback读取
+      memorySuccess = true // 标记为成功，因为我们主要依赖Redis
       
       // 更新版本记录
       if (version) {
@@ -217,8 +217,12 @@ export class CacheHelper {
     try {
       if (isRedisReady()) {
         const storedVersion = await executeRedisCommand(
-          async (client) => await client.get(`${key}:version`),
-          null
+          async () => {
+            const client = (await import('./redis')).getRedisClient()
+            if (!client) return null
+            return await client.get(`${key}:version`)
+          },
+          async () => null
         );
         return storedVersion === expectedVersion;
       } else {

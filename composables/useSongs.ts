@@ -136,7 +136,7 @@ export const useSongs = () => {
             played: schedule.song.played || false,
             playedAt: schedule.song.playedAt || null,
             semester: schedule.song.semester || null,
-            createdAt: schedule.song.createdAt || new Date().toISOString(),
+            requestedAt: schedule.song.requestedAt || new Date().toISOString(),
             cover: schedule.song.cover || null,
             musicPlatform: schedule.song.musicPlatform || null,
             musicId: schedule.song.musicId || null

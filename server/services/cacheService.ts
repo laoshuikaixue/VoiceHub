@@ -411,7 +411,9 @@ class CacheService {
   async clearSongsCache(semester?: string): Promise<void> {
     const patterns = [
       this.generateKey(CACHE_PREFIXES.SONG_COUNT, '*'),
-      this.generateKey(CACHE_PREFIXES.USER_VOTES, '*')
+      this.generateKey(CACHE_PREFIXES.USER_VOTES, '*'),
+      'songs:count:*',  // 新的歌曲数量缓存
+      'songs:list:*'    // 新的歌曲列表缓存
     ]
     
     for (const pattern of patterns) {
