@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt'
-import { prisma, checkDatabaseConnection, reconnectDatabase } from '../../models/schema'
+import { db, users, eq } from '~/drizzle/db'
 import { JWTEnhanced } from '../../utils/jwt-enhanced'
 import { isAccountLocked, getAccountLockRemainingTime, recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
 
@@ -25,16 +25,15 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 数据库连接检查
-    const isConnected = await checkDatabaseConnection().catch(() => false)
-    if (!isConnected) {
-      const reconnected = await reconnectDatabase().catch(() => false)
-      if (!reconnected) {
-        throw createError({
-          statusCode: 503,
-          message: '数据库服务暂时不可用'
-        })
-      }
+    // 数据库连接检查 - 使用简单的查询测试连接
+    try {
+      await db.select().from(users).limit(1)
+    } catch (error) {
+      console.error('Database connection error:', error)
+      throw createError({
+        statusCode: 503,
+        message: '数据库服务暂时不可用'
+      })
     }
 
     // 检查账户是否被锁定
@@ -47,21 +46,20 @@ export default defineEventHandler(async (event) => {
     }
 
     // 查找用户
-    const user = await prisma.user.findUnique({
-      where: { username: body.username },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        grade: true,
-        class: true,
-        password: true,
-        role: true,
-        lastLogin: true,
-        lastLoginIp: true,
-        passwordChangedAt: true
-      }
-    })
+    const userResult = await db.select({
+      id: users.id,
+      username: users.username,
+      name: users.name,
+      grade: users.grade,
+      class: users.class,
+      password: users.password,
+      role: users.role,
+      lastLogin: users.lastLogin,
+      lastLoginIp: users.lastLoginIp,
+      passwordChangedAt: users.passwordChangedAt
+    }).from(users).where(eq(users.username, body.username)).limit(1)
+    
+    const user = userResult[0] || null
 
     if (!user) {
       // 记录登录失败（用户不存在）
@@ -87,13 +85,13 @@ export default defineEventHandler(async (event) => {
     recordLoginSuccess(body.username)
 
     // 更新登录信息
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
+    await db.update(users)
+      .set({
         lastLogin: new Date(),
         lastLoginIp: clientIp
-      }
-    }).catch(err => console.error('Error updating user login info:', err))
+      })
+      .where(eq(users.id, user.id))
+      .catch(err => console.error('Error updating user login info:', err))
 
     // 生成JWT
     const token = JWTEnhanced.generateToken(user.id, user.role)

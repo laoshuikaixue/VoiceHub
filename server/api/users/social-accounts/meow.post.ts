@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, readBody } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq, ne, and } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,9 +34,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查用户是否存在
-    const userData = await prisma.user.findUnique({
-      where: { id: userId }
-    })
+    const userDataResult = await db.select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+    const userData = userDataResult[0]
 
     if (!userData) {
       throw createError({
@@ -44,16 +48,15 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查是否有其他用户绑定了相同的昵称（仅用于记录，不阻止绑定）
-    const existingUsers = await prisma.user.findMany({
-      where: {
-        meowNickname: nickname,
-        id: { not: userId }
-      },
-      select: {
-        name: true,
-        username: true
-      }
+    const existingUsers = await db.select({
+      name: users.name,
+      username: users.username
     })
+    .from(users)
+    .where(and(
+      eq(users.meowNickname, nickname),
+      ne(users.id, userId)
+    ))
 
     if (existingUsers.length > 0) {
       console.log(`MeoW ID "${nickname}" 已被 ${existingUsers.length} 个其他用户绑定:`, 
@@ -61,13 +64,12 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新用户的 MeoW 绑定信息
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
+    await db.update(users)
+      .set({
         meowNickname: nickname,
         meowBoundAt: new Date()
-      }
-    })
+      })
+      .where(eq(users.id, userId))
 
     return {
       success: true,

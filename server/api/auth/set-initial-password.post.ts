@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt'
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq, sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -21,9 +23,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户信息
-    const currentUser = await prisma.user.findUnique({
-      where: { id: user.id }
-    })
+    const currentUserResult = await db.select().from(users).where(eq(users.id, user.id)).limit(1)
+    const currentUser = currentUserResult[0]
     if (!currentUser) {
       throw createError({
         statusCode: 404,
@@ -43,13 +44,13 @@ export default defineEventHandler(async (event) => {
     const hashedPassword = await bcrypt.hash(body.newPassword, 10)
 
     // 更新密码
-    await prisma.$executeRaw`
-      UPDATE "User"
-      SET password = ${hashedPassword},
-          "passwordChangedAt" = NOW(),
-          "forcePasswordChange" = false
-      WHERE id = ${user.id}
-    `
+    await db.update(users)
+      .set({
+        password: hashedPassword,
+        passwordChangedAt: sql`NOW()`,
+        forcePasswordChange: false
+      })
+      .where(eq(users.id, user.id))
 
     return {
       success: true,

@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import jwt from 'jsonwebtoken'
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
 
 // 存储活跃的连接及其ID
 const connections = new Map()
@@ -88,7 +88,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户信息验证权限
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { id: decoded.userId },
       select: { id: true, role: true }
     })

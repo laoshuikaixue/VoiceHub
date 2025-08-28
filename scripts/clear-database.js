@@ -2,10 +2,9 @@
  * 数据库清空脚本 
  * 这个脚本会清空所有表的数据，但保留表结构 
  */ 
-import { PrismaClient } from '@prisma/client'
+import { db, users, songs, votes, schedules, notifications, notificationSettings, playTimes, semesters, systemSettings, songBlacklists } from '../drizzle/db.ts'
 import bcrypt from 'bcrypt'
-
-const prisma = new PrismaClient()
+import { eq } from 'drizzle-orm'
 
 // 重置所有表的自增序列
 async function resetAutoIncrementSequences() {
@@ -28,7 +27,7 @@ async function resetAutoIncrementSequences() {
     try {
       // PostgreSQL 重置序列的 SQL 命令
       const sequenceName = `"${table}_id_seq"`
-      await prisma.$executeRawUnsafe(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`)
+      await db.execute(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`)
     } catch (error) {
       console.warn(`重置 ${table} 表序列失败: ${error.message}`)
     }
@@ -41,15 +40,16 @@ async function main() {
   // 清空所有表数据 
   try {
     // 按照关联关系顺序删除数据 
-    await prisma.notification.deleteMany()
-    await prisma.notificationSettings.deleteMany()
-    await prisma.schedule.deleteMany()
-    await prisma.vote.deleteMany()
-    await prisma.song.deleteMany()
-    await prisma.playTime.deleteMany()
-    await prisma.semester.deleteMany()
-    await prisma.systemSettings.deleteMany()
-    await prisma.user.deleteMany()
+    await db.delete(notifications)
+    await db.delete(notificationSettings)
+    await db.delete(schedules)
+    await db.delete(votes)
+    await db.delete(songs)
+    await db.delete(playTimes)
+    await db.delete(semesters)
+    await db.delete(systemSettings)
+    await db.delete(songBlacklists)
+    await db.delete(users)
     
     console.log('数据库已清空，开始重置自增序列...')
     
@@ -62,14 +62,13 @@ async function main() {
     const hashedPassword = await bcrypt.hash('admin123', 10)
     
     // 创建超级管理员用户 
-    const admin = await prisma.user.create({
-      data: {
-        name: '超级管理员',
-        username: 'admin',
-        password: hashedPassword,
-        role: 'SUPER_ADMIN'
-      }
-    })
+    const [admin] = await db.insert(users).values({
+      name: '超级管理员',
+      username: 'admin',
+      password: hashedPassword,
+      role: 'SUPER_ADMIN',
+      forcePasswordChange: false
+    }).returning()
     
     console.log('默认超级管理员账户已创建:')
     console.log('账号名: admin')
@@ -79,7 +78,7 @@ async function main() {
     // 调整User表的自增序列，确保下一个用户从admin.id + 1开始
     try {
       const nextId = admin.id + 1
-      await prisma.$executeRawUnsafe(`ALTER SEQUENCE "User_id_seq" RESTART WITH ${nextId}`)
+      await db.execute(`ALTER SEQUENCE "User_id_seq" RESTART WITH ${nextId}`)
     } catch (error) {
       console.warn(`调整User表序列失败: ${error.message}`)
     }
@@ -95,7 +94,4 @@ main()
   .catch((e) => {
     console.error(e)
     process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
   })

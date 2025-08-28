@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, getRouterParam } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -16,9 +18,8 @@ export default defineEventHandler(async (event) => {
     const userId = getRouterParam(event, 'id')
 
     // 检查用户是否存在
-    const existingUser = await prisma.user.findUnique({
-      where: { id: parseInt(userId) }
-    })
+    const existingUserResult = await db.select().from(users).where(eq(users.id, parseInt(userId))).limit(1)
+    const existingUser = existingUserResult[0]
 
     if (!existingUser) {
       throw createError({
@@ -36,9 +37,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 删除用户
-    await prisma.user.delete({
-      where: { id: parseInt(userId) }
-    })
+    await db.delete(users).where(eq(users.id, parseInt(userId)))
 
     // 清除相关缓存
     try {

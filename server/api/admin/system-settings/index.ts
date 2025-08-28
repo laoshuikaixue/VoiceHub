@@ -1,4 +1,5 @@
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { systemSettings } from '~/drizzle/schema'
 import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -29,25 +30,25 @@ export default defineEventHandler(async (event) => {
     }
     
     // 缓存中没有，从数据库获取系统设置，如果不存在则创建默认设置
-    settings = await prisma.systemSettings.findFirst()
+    const settingsResult = await db.select().from(systemSettings).limit(1)
+    settings = settingsResult[0]
     
     if (!settings) {
-      settings = await prisma.systemSettings.create({
-        data: {
-          enablePlayTimeSelection: false,
-          siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',
-          siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico',
-          schoolLogoHomeUrl: null,
-          schoolLogoPrintUrl: null,
-          siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
-          submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
-          icpNumber: null,
-          enableSubmissionLimit: false,
-          dailySubmissionLimit: null,
-          weeklySubmissionLimit: null,
-          showBlacklistKeywords: false
-        }
-      })
+      const newSettingsResult = await db.insert(systemSettings).values({
+        enablePlayTimeSelection: false,
+        siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',
+        siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico',
+        schoolLogoHomeUrl: null,
+        schoolLogoPrintUrl: null,
+        siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
+        submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
+        icpNumber: null,
+        enableSubmissionLimit: false,
+        dailySubmissionLimit: null,
+        weeklySubmissionLimit: null,
+        showBlacklistKeywords: false
+      }).returning()
+      settings = newSettingsResult[0]
     }
     
     // 将设置存入缓存

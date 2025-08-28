@@ -1,7 +1,8 @@
 import { createError, defineEventHandler, getQuery, getCookie, getHeader } from 'h3'
 import jwt from 'jsonwebtoken'
-import { prisma } from '../../models/schema'
-import { executeWithPool } from '~/server/utils/db-pool'
+import { db } from '~/drizzle/db'
+import { schedules, songs, users, playTimes, systemSettings, votes } from '~/drizzle/schema'
+import { eq, and, count, sql } from 'drizzle-orm'
 import { CacheService } from '~/server/services/cacheService'
 import { isRedisReady, executeRedisCommand } from '../../utils/redis'
 
@@ -42,8 +43,8 @@ export default defineEventHandler(async (event) => {
     }
     
     // 获取系统设置
-    const systemSettings = await prisma.systemSettings.findFirst()
-    const shouldHideStudentInfo = systemSettings?.hideStudentInfo ?? true
+    const systemSettingsData = await db.select().from(systemSettings).limit(1).then(result => result[0])
+    const shouldHideStudentInfo = systemSettingsData?.hideStudentInfo ?? true
     
     // 初始化缓存服务
     const cacheService = new CacheService()
@@ -128,55 +129,64 @@ export default defineEventHandler(async (event) => {
     }
     
     // 获取排期的歌曲，包含播放时段信息
-    const result = await executeWithPool(async () => {
-      // 构建查询条件
-      const whereCondition: any = {}
-      if (semester) {
-        whereCondition.song = {
-          semester: semester
-        }
-      }
-      
-      const schedules = await prisma.schedule.findMany({
-        where: whereCondition,
-        include: {
-          song: {
-            include: {
-              requester: {
-                select: {
-                  name: true,
-                  grade: true,
-                  class: true
-                }
-              },
-              _count: {
-                select: {
-                  votes: true
-                }
-              }
-            }
-          },
-          playTime: true // 包含播放时段信息
-        },
-        orderBy: [
-          { playDate: 'asc' }
-          // 不使用sequence字段排序
-        ]
-      })
-
-      // 获取所有用户的姓名列表，用于检测同名用户
-      const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        grade: true,
-        class: true
+    const schedulesData = await db.select({
+      id: schedules.id,
+      playDate: schedules.playDate,
+      sequence: schedules.sequence,
+      played: schedules.played,
+      playTimeId: schedules.playTimeId,
+      song: {
+        id: songs.id,
+        title: songs.title,
+        artist: songs.artist,
+        played: songs.played,
+        cover: songs.cover,
+        musicPlatform: songs.musicPlatform,
+        musicId: songs.musicId,
+        semester: songs.semester,
+        requesterId: songs.requesterId
+      },
+      requester: {
+        name: users.name,
+        grade: users.grade,
+        class: users.class
+      },
+      playTime: {
+        id: playTimes.id,
+        name: playTimes.name,
+        startTime: playTimes.startTime,
+        endTime: playTimes.endTime,
+        enabled: playTimes.enabled
       }
     })
+    .from(schedules)
+    .leftJoin(songs, eq(schedules.songId, songs.id))
+    .leftJoin(users, eq(songs.requesterId, users.id))
+    .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
+    .where(semester ? eq(songs.semester, semester) : undefined)
+    .orderBy(schedules.playDate)
+
+    // 获取每首歌的投票数
+    const voteCountsQuery = await db.select({
+      songId: votes.songId,
+      count: count(votes.id)
+    })
+    .from(votes)
+    .groupBy(votes.songId)
+    
+    const voteCounts = new Map(voteCountsQuery.map(v => [v.songId, v.count]))
+
+    // 获取所有用户的姓名列表，用于检测同名用户
+    const allUsers = await db.select({
+      id: users.id,
+      name: users.name,
+      grade: users.grade,
+      class: users.class
+    }).from(users)
     
     // 创建姓名到用户数组的映射
     const nameToUsers = new Map()
-    users.forEach(user => {
+    allUsers.forEach(user => {
       if (user.name) {
         if (!nameToUsers.has(user.name)) {
           nameToUsers.set(user.name, [])
@@ -186,7 +196,7 @@ export default defineEventHandler(async (event) => {
     })
     
     // 转换数据格式
-    const formattedSchedules = schedules.map(schedule => {
+    const formattedSchedules = schedulesData.map(schedule => {
       // 获取原始日期，并确保使用UTC时间
       const originalDate = new Date(schedule.playDate)
       
@@ -199,12 +209,12 @@ export default defineEventHandler(async (event) => {
       ))
       
       // 处理投稿人姓名，如果是同名用户则添加后缀
-      let requesterName = schedule.song.requester.name || '未知用户'
+      let requesterName = schedule.requester.name || '未知用户'
       
       // 检查是否有同名用户
       const sameNameUsers = nameToUsers.get(requesterName)
       if (sameNameUsers && sameNameUsers.length > 1) {
-        const requesterWithGradeClass = schedule.song.requester
+        const requesterWithGradeClass = schedule.requester
         
         // 如果有年级信息，则添加年级后缀
         if (requesterWithGradeClass.grade) {
@@ -244,7 +254,7 @@ export default defineEventHandler(async (event) => {
           title: schedule.song.title,
           artist: schedule.song.artist,
           requester: requesterName,
-          voteCount: schedule.song._count.votes,
+          voteCount: voteCounts.get(schedule.song.id) || 0,
           played: schedule.song.played || false,
           cover: schedule.song.cover || null,
           musicPlatform: schedule.song.musicPlatform || null,
@@ -254,8 +264,7 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    return formattedSchedules
-    }, 'getPublicSchedules')
+    const result = formattedSchedules
     
     // 缓存结果到CacheService
     if (result && result.length > 0) {

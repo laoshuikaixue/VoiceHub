@@ -1,4 +1,6 @@
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { semesters } from '~/drizzle/schema'
+import { desc } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -19,11 +21,9 @@ export default defineEventHandler(async (event) => {
   }
   
   // 获取所有学期，按创建时间倒序排列
-  const semesters = await prisma.semester.findMany({
-    orderBy: {
-      createdAt: 'desc'
-    }
-  })
+  const semestersList = await db.select()
+    .from(semesters)
+    .orderBy(desc(semesters.createdAt))
   
-  return semesters
+  return semestersList
 })

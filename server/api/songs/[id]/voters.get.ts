@@ -1,6 +1,7 @@
 import { createError, defineEventHandler, getRouterParam } from 'h3'
-import { prisma } from '../../../models/schema'
-import { executeWithPool } from '~/server/utils/db-pool'
+import { db } from '~/drizzle/db'
+import { songs, votes, users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,16 +33,17 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    return await executeWithPool(async () => {
-      // 检查歌曲是否存在
-      const song = await prisma.song.findUnique({
-        where: { id: songId },
-        select: {
-          id: true,
-          title: true,
-          artist: true
-        }
-      })
+    // 检查歌曲是否存在
+    const songResult = await db.select({
+      id: songs.id,
+      title: songs.title,
+      artist: songs.artist
+    })
+      .from(songs)
+      .where(eq(songs.id, songId))
+      .limit(1)
+    
+    const song = songResult[0]
 
       if (!song) {
         throw createError({
@@ -50,57 +52,49 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // 获取投票人员列表
-      const votes = await prisma.vote.findMany({
-        where: {
-          songId: songId
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              username: true,
-              grade: true,
-              class: true
-            }
-          }
-        },
-        orderBy: {
-          createdAt: 'asc' // 按投票时间排序
-        }
-      })
+    // 获取投票人员列表
+    const votesResult = await db.select({
+      userId: votes.userId,
+      createdAt: votes.createdAt,
+      userName: users.name,
+      username: users.username,
+      grade: users.grade,
+      class: users.class
+    })
+      .from(votes)
+      .innerJoin(users, eq(votes.userId, users.id))
+      .where(eq(votes.songId, songId))
+      .orderBy(votes.createdAt)
 
-      // 处理用户名显示逻辑，总是显示年级和班级信息
-      const votersWithDisplayName = votes.map(vote => {
-        let displayName = vote.user.name || vote.user.username
+    // 处理用户名显示逻辑，总是显示年级和班级信息
+    const votersWithDisplayName = votesResult.map(vote => {
+      let displayName = vote.userName || vote.username
 
-        // 如果有年级信息，添加年级和班级后缀
-        if (vote.user.grade) {
-          if (vote.user.class) {
-            displayName = `${displayName}（${vote.user.grade} ${vote.user.class}）`
-          } else {
-            displayName = `${displayName}（${vote.user.grade}）`
-          }
+      // 如果有年级信息，添加年级和班级后缀
+      if (vote.grade) {
+        if (vote.class) {
+          displayName = `${displayName}（${vote.grade} ${vote.class}）`
+        } else {
+          displayName = `${displayName}（${vote.grade}）`
         }
-
-        return {
-          id: vote.user.id,
-          name: displayName,
-          votedAt: vote.createdAt
-        }
-      })
+      }
 
       return {
-        song: {
-          id: song.id,
-          title: song.title,
-          artist: song.artist
-        },
-        voters: votersWithDisplayName,
-        totalVotes: votersWithDisplayName.length
+        id: vote.userId,
+        name: displayName,
+        votedAt: vote.createdAt
       }
     })
+
+    return {
+      song: {
+        id: song.id,
+        title: song.title,
+        artist: song.artist
+      },
+      voters: votersWithDisplayName,
+      totalVotes: votersWithDisplayName.length
+    }
 
   } catch (error: any) {
     console.error('获取投票人员列表失败:', error)

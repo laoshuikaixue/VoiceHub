@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { users, songs, schedules, semesters, songBlacklists } from '~/drizzle/schema'
+import { eq, gte, lt, and, count } from 'drizzle-orm'
 import { CacheService } from '../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -60,107 +62,104 @@ export default defineEventHandler(async (event) => {
       blacklistCount
     ] = await Promise.all([
       // 总歌曲数
-      prisma.song.count({ where }),
+      (async () => {
+        const whereCondition = semester && semester !== 'all' ? eq(songs.semester, semester) : undefined
+        const result = await db.select({ count: count() }).from(songs).where(whereCondition)
+        return result[0].count
+      })(),
       
       // 总用户数
-      prisma.user.count(),
+      (async () => {
+        const result = await db.select({ count: count() }).from(users)
+        return result[0].count
+      })(),
       
       // 今日排期数 (按天计算)
     (async () => {
-      const todaySchedules = await prisma.schedule.findMany({
-        where: todayScheduleWhere,
-        select: { playDate: true }
-      });
+      const todaySchedulesList = await db.select({ playDate: schedules.playDate })
+        .from(schedules)
+        .where(and(
+          gte(schedules.playDate, today),
+          lt(schedules.playDate, new Date(today.getTime() + 24 * 60 * 60 * 1000))
+        ))
       
       // 按日期去重计算天数
-      const uniqueDates = new Set(todaySchedules.map(s => s.playDate.toISOString().split('T')[0]));
-      return uniqueDates.size;
+      const uniqueDates = new Set(todaySchedulesList.map(s => s.playDate.toISOString().split('T')[0]))
+      return uniqueDates.size
     })(),
       
       // 总排期数 (按天计算)
     (async () => {
-      const scheduleWhere = semester && semester !== 'all' ? { song: { semester: semester } } : {};
-      const schedules = await prisma.schedule.findMany({
-        where: scheduleWhere,
-        select: { playDate: true }
-      });
+      const allSchedules = await db.select({ playDate: schedules.playDate }).from(schedules)
       
       // 按日期去重计算天数
-      const uniqueDates = new Set(schedules.map(s => s.playDate.toISOString().split('T')[0]));
-      return uniqueDates.size;
+      const uniqueDates = new Set(allSchedules.map(s => s.playDate.toISOString().split('T')[0]))
+      return uniqueDates.size
     })(),
       
       // 本周点歌数
-      prisma.song.count({
-        where: {
-          ...where,
-          createdAt: {
-            gte: weekAgo
-          }
+      (async () => {
+        const whereConditions = [gte(songs.createdAt, weekAgo)]
+        if (semester && semester !== 'all') {
+          whereConditions.push(eq(songs.semester, semester))
         }
-      }),
+        const result = await db.select({ count: count() }).from(songs).where(and(...whereConditions))
+        return result[0].count
+      })(),
       
       // 上周点歌数
-      prisma.song.count({
-        where: {
-          ...where,
-          createdAt: {
-            gte: twoWeeksAgo,
-            lt: weekAgo
-          }
+      (async () => {
+        const whereConditions = [gte(songs.createdAt, twoWeeksAgo), lt(songs.createdAt, weekAgo)]
+        if (semester && semester !== 'all') {
+          whereConditions.push(eq(songs.semester, semester))
         }
-      }),
+        const result = await db.select({ count: count() }).from(songs).where(and(...whereConditions))
+        return result[0].count
+      })(),
       
       // 本周新增歌曲
-      prisma.song.count({
-        where: {
-          ...where,
-          createdAt: {
-            gte: weekAgo
-          }
+      (async () => {
+        const whereConditions = [gte(songs.createdAt, weekAgo)]
+        if (semester && semester !== 'all') {
+          whereConditions.push(eq(songs.semester, semester))
         }
-      }),
+        const result = await db.select({ count: count() }).from(songs).where(and(...whereConditions))
+        return result[0].count
+      })(),
       
       // 上周新增歌曲
-      prisma.song.count({
-        where: {
-          ...where,
-          createdAt: {
-            gte: twoWeeksAgo,
-            lt: weekAgo
-          }
+      (async () => {
+        const whereConditions = [gte(songs.createdAt, twoWeeksAgo), lt(songs.createdAt, weekAgo)]
+        if (semester && semester !== 'all') {
+          whereConditions.push(eq(songs.semester, semester))
         }
-      }),
+        const result = await db.select({ count: count() }).from(songs).where(and(...whereConditions))
+        return result[0].count
+      })(),
       
       // 本周新增用户
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: weekAgo
-          }
-        }
-      }),
+      (async () => {
+        const result = await db.select({ count: count() }).from(users).where(gte(users.createdAt, weekAgo))
+        return result[0].count
+      })(),
       
       // 上周新增用户
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: twoWeeksAgo,
-            lt: weekAgo
-          }
-        }
-      }),
+      (async () => {
+        const result = await db.select({ count: count() }).from(users).where(and(gte(users.createdAt, twoWeeksAgo), lt(users.createdAt, weekAgo)))
+        return result[0].count
+      })(),
       
       // 当前学期
-      prisma.semester.findFirst({
-        where: { isActive: true },
-        select: { name: true }
-      }),
+      (async () => {
+        const result = await db.select({ name: semesters.name }).from(semesters).where(eq(semesters.isActive, true)).limit(1)
+        return result[0]
+      })(),
       
       // 黑名单项目数
-      prisma.songBlacklist.count({
-        where: { isActive: true }
-      })
+      (async () => {
+        const blacklistCount = await db.select({ count: count() }).from(songBlacklists).where(eq(songBlacklists.isActive, true))
+         return blacklistCount[0].count
+      })()
     ])
 
     // 计算变化百分比
@@ -181,19 +180,16 @@ export default defineEventHandler(async (event) => {
           const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
           const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
           
-          const count = await prisma.song.count({
-            where: {
-              ...where,
-              createdAt: {
-                gte: startOfDay,
-                lt: endOfDay
-              }
-            }
-          })
+          const whereConditions = [gte(songs.createdAt, startOfDay), lt(songs.createdAt, endOfDay)]
+          if (semester && semester !== 'all') {
+            whereConditions.push(eq(songs.semester, semester))
+          }
+          const result = await db.select({ count: count() }).from(songs).where(and(...whereConditions))
+          const countValue = result[0].count
           
           trends.push({
             date: startOfDay.toISOString().split('T')[0],
-            count
+            count: countValue
           })
         }
         return trends
@@ -207,18 +203,12 @@ export default defineEventHandler(async (event) => {
           const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
           const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
           
-          const count = await prisma.user.count({
-            where: {
-              createdAt: {
-                gte: startOfDay,
-                lt: endOfDay
-              }
-            }
-          })
+          const result = await db.select({ count: count() }).from(users).where(and(gte(users.createdAt, startOfDay), lt(users.createdAt, endOfDay)))
+          const countValue = result[0].count
           
           trends.push({
             date: startOfDay.toISOString().split('T')[0],
-            count
+            count: countValue
           })
         }
         return trends
@@ -232,19 +222,15 @@ export default defineEventHandler(async (event) => {
           const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
           const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
           
-          const schedules = await prisma.schedule.findMany({
-            where: {
-              ...scheduleBaseWhere,
-              playDate: {
-                gte: startOfDay,
-                lt: endOfDay
-              }
-            },
-            select: { playDate: true }
-          })
+          const schedulesList = await db.select({ playDate: schedules.playDate })
+            .from(schedules)
+            .where(and(
+              gte(schedules.playDate, startOfDay),
+              lt(schedules.playDate, endOfDay)
+            ))
           
           // 按日期去重计算天数
-          const uniqueDates = new Set(schedules.map(s => s.playDate.toISOString().split('T')[0]))
+          const uniqueDates = new Set(schedulesList.map(s => s.playDate.toISOString().split('T')[0]))
           
           trends.push({
             date: startOfDay.toISOString().split('T')[0],
@@ -262,19 +248,16 @@ export default defineEventHandler(async (event) => {
           const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
           const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
           
-          const count = await prisma.song.count({
-            where: {
-              ...where,
-              createdAt: {
-                gte: startOfDay,
-                lt: endOfDay
-              }
-            }
-          })
+          const whereConditions = [gte(songs.createdAt, startOfDay), lt(songs.createdAt, endOfDay)]
+          if (semester && semester !== 'all') {
+            whereConditions.push(eq(songs.semester, semester))
+          }
+          const result = await db.select({ count: count() }).from(songs).where(and(...whereConditions))
+          const countValue = result[0].count
           
           trends.push({
             date: startOfDay.toISOString().split('T')[0],
-            count
+            count: countValue
           })
         }
         return trends
@@ -301,7 +284,12 @@ export default defineEventHandler(async (event) => {
 
     // 缓存结果
     await cacheService.setAdminStats(semester, result)
-    console.log('[Cache] 管理员统计数据已缓存')
+    
+    // 只在Redis可用时显示缓存提示
+    const { isRedisReady } = await import('../../utils/redis')
+    if (isRedisReady()) {
+      console.log('[Cache] 管理员统计数据已缓存')
+    }
 
     return result
   } catch (error) {

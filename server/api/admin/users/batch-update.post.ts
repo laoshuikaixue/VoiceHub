@@ -1,6 +1,8 @@
 import { z } from 'zod'
-import { prisma } from '~/server/models/schema'
+import { db } from '~/drizzle/db'
 import { CacheService } from '~/server/services/cacheService'
+import { users } from '~/drizzle/schema'
+import { eq, inArray, and } from 'drizzle-orm'
 
 // 请求体验证模式
 const batchUpdateSchema = z.object({
@@ -50,20 +52,15 @@ export default defineEventHandler(async (event) => {
     const userIds = updates.map(update => update.userId)
     
     // 验证用户是否存在且为学生角色
-    const existingUsers = await prisma.user.findMany({
-      where: {
-        id: {
-          in: userIds
-        },
-        role: 'USER'
-      },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        role: true
-      }
-    })
+    const existingUsers = await db.select({
+      id: users.id,
+      name: users.name,
+      username: users.username,
+      role: users.role
+    }).from(users).where(and(
+      inArray(users.id, userIds),
+      eq(users.role, 'USER')
+    ))
 
     // 检查是否所有用户都存在且为学生
     const existingUserIds = new Set(existingUsers.map(user => user.id))
@@ -99,17 +96,18 @@ export default defineEventHandler(async (event) => {
         }
 
         // 更新用户信息
-        const updatedUser = await prisma.user.update({
-          where: { id: update.userId },
-          data: updateData,
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            grade: true,
-            class: true
-          }
-        })
+        const updatedUserResult = await db.update(users)
+          .set(updateData)
+          .where(eq(users.id, update.userId))
+          .returning({
+            id: users.id,
+            name: users.name,
+            username: users.username,
+            grade: users.grade,
+            class: users.class
+          })
+        
+        const updatedUser = updatedUserResult[0]
 
         updateResults.push(updatedUser)
       } catch (error) {

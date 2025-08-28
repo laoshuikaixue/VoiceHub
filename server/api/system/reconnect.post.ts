@@ -1,27 +1,30 @@
 import { defineEventHandler } from 'h3'
-import { dbPool } from '~/server/utils/db-pool'
+import { databaseManager } from '~/server/utils/database-manager'
 
 export default defineEventHandler(async (event) => {
   try {
     console.log('[Reconnect API] 收到强制重连请求')
     
-    // 强制重连数据库
-    const success = await dbPool.forceReconnect()
+    // 测试数据库连接
+    const connectionStatus = await databaseManager.getConnectionStatus()
+    const poolStatus = await databaseManager.getConnectionPoolStatus()
     
-    if (success) {
-      console.log('[Reconnect API] 重连成功')
+    if (connectionStatus.connected) {
+      console.log('[Reconnect API] 数据库连接正常')
       return {
         success: true,
-        message: '数据库重连成功',
-        status: dbPool.getStatus(),
+        message: '数据库连接正常',
+        connectionStatus,
+        poolStatus,
         timestamp: new Date().toISOString()
       }
     } else {
-      console.log('[Reconnect API] 重连失败')
+      console.log('[Reconnect API] 数据库连接异常')
       return {
         success: false,
-        message: '数据库重连失败',
-        status: dbPool.getStatus(),
+        message: '数据库连接异常',
+        connectionStatus,
+        poolStatus,
         timestamp: new Date().toISOString()
       }
     }

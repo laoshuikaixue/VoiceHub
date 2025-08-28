@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { songs, users, votes } from '~/drizzle/schema'
+import { eq, desc, count, sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -16,36 +18,30 @@ export default defineEventHandler(async (event) => {
   const limit = parseInt(query.limit as string) || 10
 
   try {
-    // 构建查询条件
-    const where = semester && semester !== 'all' ? { semester: semester } : {}
-
     // 获取热门歌曲排行
-    const topSongs = await prisma.song.findMany({
-      where,
-      orderBy: {
-        votes: {
-          _count: 'desc'
-        }
-      },
-      take: limit,
-      include: {
-        requester: {
-          select: {
-            name: true,
-            username: true
-          }
-        },
-        votes: true
-      }
+    const topSongs = await db.select({
+      id: songs.id,
+      title: songs.title,
+      artist: songs.artist,
+      requesterName: users.name,
+      requesterUsername: users.username,
+      voteCount: count(votes.id)
     })
+    .from(songs)
+    .leftJoin(users, eq(songs.requesterId, users.id))
+    .leftJoin(votes, eq(songs.id, votes.songId))
+    .where(semester && semester !== 'all' ? eq(songs.semester, semester) : sql`1=1`)
+    .groupBy(songs.id, songs.title, songs.artist, users.name, users.username)
+    .orderBy(desc(count(votes.id)))
+    .limit(limit)
 
     // 格式化数据
     const formattedData = topSongs.map(song => ({
       id: song.id,
       title: song.title,
       artist: song.artist,
-      voteCount: song.votes.length,
-      requester: song.requester?.name || song.requester?.username || '未知用户'
+      voteCount: Number(song.voteCount),
+      requester: song.requesterName || song.requesterUsername || '未知用户'
     }))
 
     return formattedData

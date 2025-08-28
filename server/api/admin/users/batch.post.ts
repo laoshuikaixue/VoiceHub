@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -40,13 +42,12 @@ export default defineEventHandler(async (event) => {
       }
 
       // 检查用户名是否已存在
-      const existingUser = await prisma.user.findFirst({
-        where: {
-          username: userData.username
-        }
-      })
+      const existingUser = await db.select()
+        .from(users)
+        .where(eq(users.username, userData.username))
+        .limit(1)
 
-      if (existingUser) {
+      if (existingUser.length > 0) {
         results.failed++
         continue
       }
@@ -73,16 +74,16 @@ export default defineEventHandler(async (event) => {
       }
 
       // 创建用户
-      const newUser = await prisma.user.create({
-        data: {
+      const newUser = await db.insert(users)
+        .values({
           name: userData.name,
           username: userData.username,
           password: hashedPassword,
           role: validRole,
           grade: userData.grade,
           class: userData.class
-        }
-      })
+        })
+        .returning()
 
       results.created++
       

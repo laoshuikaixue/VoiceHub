@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { songBlacklists } from '~/drizzle/schema'
+import { eq, and, ilike, count, desc } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -19,26 +21,29 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 构建查询条件
-    const where = {
-      ...(type && { type }),
-      ...(search && {
-        value: {
-          contains: search,
-          mode: 'insensitive'
-        }
-      })
+    const whereConditions = []
+    if (type) {
+      whereConditions.push(eq(songBlacklists.type, type))
     }
+    if (search) {
+      whereConditions.push(ilike(songBlacklists.value, `%${search}%`))
+    }
+    
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
 
     // 获取总数
-    const total = await prisma.songBlacklist.count({ where })
+    const totalResult = await db.select({ count: count() })
+      .from(songBlacklists)
+      .where(whereClause)
+    const total = totalResult[0].count
 
     // 获取黑名单列表
-    const blacklist = await prisma.songBlacklist.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit
-    })
+    const blacklist = await db.select()
+      .from(songBlacklists)
+      .where(whereClause)
+      .orderBy(desc(songBlacklists.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit)
 
     return {
       blacklist,

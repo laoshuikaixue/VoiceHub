@@ -1,4 +1,6 @@
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { notifications } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -23,11 +25,8 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 检查通知是否属于当前用户
-    const notification = await prisma.notification.findUnique({
-      where: {
-        id: id
-      }
-    })
+    const notificationResult = await db.select().from(notifications).where(eq(notifications.id, id)).limit(1)
+    const notification = notificationResult[0]
     
     if (!notification) {
       throw createError({
@@ -44,14 +43,11 @@ export default defineEventHandler(async (event) => {
     }
     
     // 标记为已读
-    const updatedNotification = await prisma.notification.update({
-      where: {
-        id: id
-      },
-      data: {
-        read: true
-      }
-    })
+    const updatedNotificationResult = await db.update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.id, id))
+      .returning()
+    const updatedNotification = updatedNotificationResult[0]
     
     return updatedNotification
   } catch (err) {
@@ -61,4 +57,4 @@ export default defineEventHandler(async (event) => {
       message: '标记通知失败'
     })
   }
-}) 
+})

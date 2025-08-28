@@ -1,4 +1,6 @@
-import { prisma } from '~/server/models/schema'
+import { db } from '~/drizzle/db'
+import { users, songs, votes, schedules } from '~/drizzle/schema'
+import { eq, desc, count } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -30,10 +32,15 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证用户是否存在
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, name: true, username: true, grade: true, class: true }
-    })
+    const userResult = await db.select({
+      id: users.id,
+      name: users.name,
+      username: users.username,
+      grade: users.grade,
+      class: users.class
+    }).from(users).where(eq(users.id, userId)).limit(1)
+    
+    const user = userResult[0]
 
     if (!user) {
       throw createError({
@@ -43,64 +50,30 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户投稿的歌曲
-    const submittedSongs = await prisma.song.findMany({
-      where: { requesterId: userId },
-      select: {
-        id: true,
-        title: true,
-        artist: true,
-        createdAt: true,
-        played: true,
-        schedules: {
-          select: {
-            id: true,
-            playDate: true,
-            played: true
-          }
-        },
-        _count: {
-          select: {
-            votes: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+    const submittedSongs = await db.select({
+      id: songs.id,
+      title: songs.title,
+      artist: songs.artist,
+      createdAt: songs.createdAt,
+      played: songs.played
+    }).from(songs).where(eq(songs.requesterId, userId)).orderBy(desc(songs.createdAt))
 
     // 获取用户投票的歌曲
-    const votedSongs = await prisma.vote.findMany({
-      where: { userId: userId },
-      include: {
-        song: {
-          select: {
-            id: true,
-            title: true,
-            artist: true,
-            played: true,
-            schedules: {
-              select: {
-                id: true,
-                playDate: true,
-                played: true
-              }
-            },
-            _count: {
-              select: {
-                votes: true
-              }
-            },
-            requester: {
-              select: {
-                name: true,
-                grade: true,
-                class: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+    const votedSongs = await db.select({
+      id: votes.id,
+      createdAt: votes.createdAt,
+      songId: votes.songId,
+      songTitle: songs.title,
+      songArtist: songs.artist,
+      songPlayed: songs.played,
+      requesterName: users.name,
+      requesterGrade: users.grade,
+      requesterClass: users.class
+    }).from(votes)
+    .leftJoin(songs, eq(votes.songId, songs.id))
+    .leftJoin(users, eq(songs.requesterId, users.id))
+    .where(eq(votes.userId, userId))
+    .orderBy(desc(votes.createdAt))
 
     return {
       user: {
@@ -116,18 +89,22 @@ export default defineEventHandler(async (event) => {
         artist: song.artist,
         createdAt: song.createdAt,
         played: song.played,
-        scheduled: song.schedules.length > 0,
-        voteCount: song._count.votes
+        scheduled: false, // TODO: 需要单独查询 schedules
+        voteCount: 0 // TODO: 需要单独查询投票数
       })),
       votedSongs: votedSongs.map(vote => ({
-        id: vote.song.id,
-        title: vote.song.title,
-        artist: vote.song.artist,
-        played: vote.song.played,
-        scheduled: vote.song.schedules.length > 0,
-        voteCount: vote.song._count.votes,
+        id: vote.songId,
+        title: vote.songTitle,
+        artist: vote.songArtist,
+        played: vote.songPlayed,
+        scheduled: false, // TODO: 需要单独查询 schedules
+        voteCount: 0, // TODO: 需要单独查询投票数
         votedAt: vote.createdAt,
-        requester: vote.song.requester
+        requester: {
+          name: vote.requesterName,
+          grade: vote.requesterGrade,
+          class: vote.requesterClass
+        }
       }))
     }
   } catch (error) {

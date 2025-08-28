@@ -1,5 +1,7 @@
 import { createError, defineEventHandler } from 'h3'
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,14 +17,15 @@ export default defineEventHandler(async (event) => {
     const userId = user.id
 
     // 获取用户的社交账号绑定信息
-    const userData = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        meowNickname: true,
-        meowBoundAt: true
-      }
+    const userDataResult = await db.select({
+      id: users.id,
+      meowNickname: users.meowNickname,
+      meowBoundAt: users.meowBoundAt
     })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+    const userData = userDataResult[0]
 
     if (!userData) {
       throw createError({

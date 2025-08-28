@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, readBody } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { users, songs, votes, schedules, notifications, notificationSettings, playTimes, semesters, songBlacklists, systemSettings } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import { promises as fs } from 'fs'
 import path from 'path'
 
@@ -39,89 +41,104 @@ export default defineEventHandler(async (event) => {
     // 定义要备份的表和对应的查询
     const tablesToBackup = {
       users: {
-        query: () => prisma.user.findMany({
-          include: {
-            notificationSettings: true
-          }
-        }),
+        query: async () => {
+          const usersData = await db.select().from(users)
+          const settingsData = await db.select().from(notificationSettings)
+          
+          // 手动关联通知设置
+          return usersData.map(user => ({
+            ...user,
+            notificationSettings: settingsData.filter(setting => setting.userId === user.id)
+          }))
+        },
         description: '用户数据'
       },
       songs: {
-        query: () => prisma.song.findMany({
-          include: {
-            requester: {
-              select: { id: true, username: true, name: true }
-            },
-            votes: {
-              include: {
-                user: {
-                  select: { id: true, username: true, name: true }
-                }
-              }
-            },
-            schedules: true,
-            preferredPlayTime: true
-          }
-        }),
+        query: async () => {
+          const songsData = await db.select().from(songs)
+          const usersData = await db.select({ id: users.id, username: users.username, name: users.name }).from(users)
+          const votesData = await db.select().from(votes)
+          const schedulesData = await db.select().from(schedules)
+          const playTimesData = await db.select().from(playTimes)
+          
+          // 手动关联数据
+          return songsData.map(song => ({
+            ...song,
+            requester: usersData.find(user => user.id === song.requesterId),
+            votes: votesData.filter(vote => vote.songId === song.id).map(vote => ({
+              ...vote,
+              user: usersData.find(user => user.id === vote.userId)
+            })),
+            schedules: schedulesData.filter(schedule => schedule.songId === song.id),
+            preferredPlayTime: playTimesData.find(pt => pt.id === song.preferredPlayTimeId)
+          }))
+        },
         description: '歌曲数据'
       },
       votes: {
-        query: () => prisma.vote.findMany({
-          include: {
-            user: {
-              select: { id: true, username: true, name: true }
-            },
-            song: {
-              select: { id: true, title: true, artist: true }
-            }
-          }
-        }),
+        query: async () => {
+          const votesData = await db.select().from(votes)
+          const usersData = await db.select({ id: users.id, username: users.username, name: users.name }).from(users)
+          const songsData = await db.select({ id: songs.id, title: songs.title, artist: songs.artist }).from(songs)
+          
+          return votesData.map(vote => ({
+            ...vote,
+            user: usersData.find(user => user.id === vote.userId),
+            song: songsData.find(song => song.id === vote.songId)
+          }))
+        },
         description: '投票数据'
       },
       schedules: {
-        query: () => prisma.schedule.findMany({
-          include: {
-            song: {
-              select: { id: true, title: true, artist: true }
-            },
-            playTime: true
-          }
-        }),
+        query: async () => {
+          const schedulesData = await db.select().from(schedules)
+          const songsData = await db.select({ id: songs.id, title: songs.title, artist: songs.artist }).from(songs)
+          const playTimesData = await db.select().from(playTimes)
+          
+          return schedulesData.map(schedule => ({
+            ...schedule,
+            song: songsData.find(song => song.id === schedule.songId),
+            playTime: playTimesData.find(pt => pt.id === schedule.playTimeId)
+          }))
+        },
         description: '排期数据'
       },
       notifications: {
-        query: () => prisma.notification.findMany({
-          include: {
-            user: {
-              select: { id: true, username: true, name: true }
-            },
-            song: {
-              select: { id: true, title: true, artist: true }
-            }
-          }
-        }),
+        query: async () => {
+          const notificationsData = await db.select().from(notifications)
+          const usersData = await db.select({ id: users.id, username: users.username, name: users.name }).from(users)
+          const songsData = await db.select({ id: songs.id, title: songs.title, artist: songs.artist }).from(songs)
+          
+          return notificationsData.map(notification => ({
+            ...notification,
+            user: usersData.find(user => user.id === notification.userId),
+            song: notification.songId ? songsData.find(song => song.id === notification.songId) : null
+          }))
+        },
         description: '通知数据'
       },
       notificationSettings: {
-        query: () => prisma.notificationSettings.findMany({
-          include: {
-            user: {
-              select: { id: true, username: true, name: true }
-            }
-          }
-        }),
+        query: async () => {
+          const settingsData = await db.select().from(notificationSettings)
+          const usersData = await db.select({ id: users.id, username: users.username, name: users.name }).from(users)
+          
+          return settingsData.map(setting => ({
+            ...setting,
+            user: usersData.find(user => user.id === setting.userId)
+          }))
+        },
         description: '通知设置'
       },
       playTimes: {
-        query: () => prisma.playTime.findMany(),
+        query: () => db.select().from(playTimes),
         description: '播出时段'
       },
       semesters: {
-        query: () => prisma.semester.findMany(),
+        query: () => db.select().from(semesters),
         description: '学期数据'
       },
       songBlacklist: {
-        query: () => prisma.songBlacklist.findMany(),
+        query: () => db.select().from(songBlacklists),
         description: '歌曲黑名单'
       }
     }
@@ -129,7 +146,7 @@ export default defineEventHandler(async (event) => {
     // 如果包含系统数据，添加系统设置表
     if (includeSystemData) {
       tablesToBackup.systemSettings = {
-        query: () => prisma.systemSettings.findMany(),
+        query: () => db.select().from(systemSettings),
         description: '系统设置'
       }
     }

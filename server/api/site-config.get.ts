@@ -1,7 +1,7 @@
-import { prisma } from '../models/schema'
+import { db } from '~/drizzle/db'
+import { systemSettings } from '~/drizzle/schema'
 import { cacheService } from '../services/cacheService'
 import { isRedisReady } from '../utils/redis'
-import { executeWithPool } from '../utils/db-pool'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,32 +15,29 @@ export default defineEventHandler(async (event) => {
     }
 
     // 缓存未命中或Redis不可用，从数据库获取
-    const settings = await executeWithPool(async () => {
-      let dbSettings = await prisma.systemSettings.findFirst()
+    const settingsResult = await db.select().from(systemSettings).limit(1)
+    let settings = settingsResult[0] || null
+    
+    if (!settings) {
+      // 如果不存在，创建默认设置
+      const newSettings = await db.insert(systemSettings).values({
+        enablePlayTimeSelection: false,
+        siteTitle: 'VoiceHub',
+        siteLogoUrl: '/favicon.ico',
+        schoolLogoHomeUrl: null,
+        schoolLogoPrintUrl: null,
+        siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
+        submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
+        icpNumber: null,
+        enableSubmissionLimit: false,
+        dailySubmissionLimit: null,
+        weeklySubmissionLimit: null,
+        showBlacklistKeywords: false,
+        hideStudentInfo: true
+      }).returning()
       
-      if (!dbSettings) {
-        // 如果不存在，创建默认设置
-        dbSettings = await prisma.systemSettings.create({
-          data: {
-            enablePlayTimeSelection: false,
-            siteTitle: 'VoiceHub',
-            siteLogoUrl: '/favicon.ico',
-            schoolLogoHomeUrl: null,
-            schoolLogoPrintUrl: null,
-            siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
-            submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
-            icpNumber: null,
-            enableSubmissionLimit: false,
-            dailySubmissionLimit: null,
-            weeklySubmissionLimit: null,
-            showBlacklistKeywords: false,
-            hideStudentInfo: true
-          }
-        })
-      }
-      
-      return dbSettings
-    }, 'getSiteConfig')
+      settings = newSettings[0]
+    }
 
     // 将结果缓存到Redis（如果可用）- 永久缓存
     if (settings && isRedisReady()) {

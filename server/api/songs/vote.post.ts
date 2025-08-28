@@ -1,8 +1,8 @@
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { songs, votes, schedules } from '~/drizzle/schema'
+import { eq, and, count } from 'drizzle-orm'
 import { createSongVotedNotification } from '../../services/notificationService'
-import { executeWithPool } from '~/server/utils/db-pool'
 import { CacheService } from '~/server/services/cacheService'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -27,16 +27,13 @@ export default defineEventHandler(async (event) => {
   const isUnvote = body.unvote === true
   
   try {
-    return await executeWithPool(async () => {
-      // 检查歌曲是否存在
-      const song = await prisma.song.findUnique({
-        where: {
-          id: body.songId
-        },
-        include: {
-          schedules: true
-        }
-      })
+    // 检查歌曲是否存在
+    const songResult = await db.select()
+      .from(songs)
+      .where(eq(songs.id, body.songId))
+      .limit(1)
+    
+    const song = songResult[0]
 
       if (!song) {
         throw createError({
@@ -54,7 +51,12 @@ export default defineEventHandler(async (event) => {
       }
 
       // 检查歌曲是否已排期
-      if (song.schedules && song.schedules.length > 0) {
+      const schedulesResult = await db.select()
+        .from(schedules)
+        .where(eq(schedules.songId, body.songId))
+        .limit(1)
+      
+      if (schedulesResult.length > 0) {
         throw createError({
           statusCode: 400,
           message: '该歌曲已排期，无法进行投票操作'
@@ -70,12 +72,15 @@ export default defineEventHandler(async (event) => {
       }
 
       // 检查用户是否已经投过票
-      const existingVote = await prisma.vote.findFirst({
-        where: {
-          songId: body.songId,
-          userId: user.id
-        }
-      })
+      const existingVoteResult = await db.select()
+        .from(votes)
+        .where(and(
+          eq(votes.songId, body.songId),
+          eq(votes.userId, user.id)
+        ))
+        .limit(1)
+      
+      const existingVote = existingVoteResult[0]
 
       if (isUnvote) {
         // 撤销投票逻辑
@@ -87,18 +92,15 @@ export default defineEventHandler(async (event) => {
         }
 
         // 删除投票
-        await prisma.vote.delete({
-          where: {
-            id: existingVote.id
-          }
-        })
+        await db.delete(votes)
+          .where(eq(votes.id, existingVote.id))
 
         // 获取投票总数
-        const voteCount = await prisma.vote.count({
-          where: {
-            songId: body.songId
-          }
-        })
+        const voteCountResult = await db.select({ count: count() })
+          .from(votes)
+          .where(eq(votes.songId, body.songId))
+        
+        const voteCount = voteCountResult[0].count
 
         // 清除统计缓存
         const cacheService = CacheService.getInstance()
@@ -124,66 +126,20 @@ export default defineEventHandler(async (event) => {
           })
         }
 
-        // 创建新的投票（带ID冲突重试机制）
-        let newVote
-        try {
-          newVote = await prisma.vote.create({
-            data: {
-              song: {
-                connect: {
-                  id: body.songId
-                }
-              },
-              user: {
-                connect: {
-                  id: user.id
-                }
-              }
-            }
+        // 创建新的投票
+        const newVote = await db.insert(votes)
+          .values({
+            songId: body.songId,
+            userId: user.id
           })
-        } catch (voteError) {
-          // 检查是否为唯一约束冲突错误（通常是序列问题）
-          if (voteError instanceof PrismaClientKnownRequestError && voteError.code === 'P2002') {
-            console.log('检测到投票ID唯一约束冲突，尝试重置序列...')
-            
-            try {
-              // 重置Vote表的id序列
-              await prisma.$executeRaw`
-                SELECT setval(pg_get_serial_sequence('Vote', 'id'), COALESCE(MAX(id), 0) + 1, false) FROM "Vote"
-              `
-              
-              console.log('Vote表序列重置成功，重试创建投票...')
-              
-              // 重试创建投票
-              newVote = await prisma.vote.create({
-                data: {
-                  song: {
-                    connect: {
-                      id: body.songId
-                    }
-                  },
-                  user: {
-                    connect: {
-                      id: user.id
-                    }
-                  }
-                }
-              })
-            } catch (retryError) {
-              console.error('Vote表序列重置后重试仍失败:', retryError)
-              throw voteError // 抛出原始错误
-            }
-          } else {
-            throw voteError // 非序列问题，直接抛出
-          }
-        }
+          .returning()
 
         // 获取投票总数
-        const voteCount = await prisma.vote.count({
-          where: {
-            songId: body.songId
-          }
-        })
+        const voteCountResult = await db.select({ count: count() })
+          .from(votes)
+          .where(eq(votes.songId, body.songId))
+        
+        const voteCount = voteCountResult[0].count
 
         // 发送通知（异步，不阻塞响应）
         if (song.requesterId !== user.id) {
@@ -208,7 +164,7 @@ export default defineEventHandler(async (event) => {
           }
         }
       }
-    }, 'songVote')
+
   } catch (error: any) {
     if (error.statusCode) {
       throw error

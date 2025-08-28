@@ -1,11 +1,14 @@
-import { prisma } from '../models/schema'
+import { db } from '~/drizzle/db'
+import { users, systemSettings, notificationSettings } from '~/drizzle/schema'
+import { eq, ne, inArray, isNotNull, and } from 'drizzle-orm'
 
 /**
  * 获取站点标题
  */
 async function getSiteTitle(): Promise<string> {
   try {
-    const settings = await prisma.systemSettings.findFirst()
+    const settingsResult = await db.select().from(systemSettings).limit(1)
+    const settings = settingsResult[0]
     return settings?.siteTitle || process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub'
   } catch (error) {
     console.error('获取站点标题失败:', error)
@@ -67,18 +70,22 @@ export async function sendMeowNotificationToUser(
 ): Promise<boolean> {
   try {
     // 获取用户信息
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        name: true,
-        meowNickname: true,
-        notificationSettings: {
-          select: {
-            enabled: true
-          }
-        }
-      }
-    })
+    const userResult = await db.select({
+      name: users.name,
+      meowNickname: users.meowNickname,
+      id: users.id
+    }).from(users).where(eq(users.id, userId)).limit(1)
+    
+    const user = userResult[0]
+    
+    // 获取用户通知设置
+    let userNotificationSettings = null
+    if (user) {
+      const settingsResult = await db.select({
+        enabled: notificationSettings.enabled
+      }).from(notificationSettings).where(eq(notificationSettings.userId, userId)).limit(1)
+      userNotificationSettings = settingsResult[0]
+    }
     
     // 检查用户是否绑定了 MeoW 账号
     if (!user?.meowNickname) {
@@ -86,20 +93,19 @@ export async function sendMeowNotificationToUser(
     }
     
     // 检查用户是否启用了通知
-    if (user.notificationSettings && !user.notificationSettings.enabled) {
+    if (userNotificationSettings && !userNotificationSettings.enabled) {
       return false
     }
     
     // 检查是否有其他用户绑定了相同的 MeoW ID
-    const usersWithSameMeowId = await prisma.user.findMany({
-      where: {
-        meowNickname: user.meowNickname,
-        id: { not: userId }
-      },
-      select: {
-        name: true
-      }
-    })
+    const usersWithSameMeowId = await db.select({
+      name: users.name
+    }).from(users).where(
+      and(
+        eq(users.meowNickname, user.meowNickname!),
+        ne(users.id, userId)
+      )
+    )
     
     // 获取站点标题
     const siteTitle = await getSiteTitle()
@@ -144,22 +150,31 @@ export async function sendBatchMeowNotifications(
   let failed = 0
   
   // 获取所有绑定了 MeoW 的用户
-  const users = await prisma.user.findMany({
-    where: {
-      id: { in: userIds },
-      meowNickname: { not: null }
-    },
-    select: {
-      id: true,
-      name: true,
-      meowNickname: true,
-      notificationSettings: {
-        select: {
-          enabled: true
-        }
-      }
-    }
-  })
+  const usersWithMeow = await db.select({
+    id: users.id,
+    name: users.name,
+    meowNickname: users.meowNickname
+  }).from(users).where(
+    and(
+      inArray(users.id, userIds),
+      isNotNull(users.meowNickname)
+    )
+  )
+  
+  // 获取这些用户的通知设置
+  const userNotificationSettingsMap = new Map()
+  if (usersWithMeow.length > 0) {
+    const settingsResults = await db.select({
+      userId: notificationSettings.userId,
+      enabled: notificationSettings.enabled
+    }).from(notificationSettings).where(
+      inArray(notificationSettings.userId, usersWithMeow.map(u => u.id))
+    )
+    
+    settingsResults.forEach(setting => {
+      userNotificationSettingsMap.set(setting.userId, setting)
+    })
+  }
   
   // 获取站点标题
   const siteTitle = await getSiteTitle()
@@ -167,19 +182,20 @@ export async function sendBatchMeowNotifications(
   
   // 统计每个 MeoW ID 绑定的用户数量
   const meowIdCounts = new Map<string, number>()
-  users.forEach(user => {
+  usersWithMeow.forEach(user => {
     const count = meowIdCounts.get(user.meowNickname!) || 0
     meowIdCounts.set(user.meowNickname!, count + 1)
   })
   
   // 并发发送通知（限制并发数）
   const batchSize = 5
-  for (let i = 0; i < users.length; i += batchSize) {
-    const batch = users.slice(i, i + batchSize)
+  for (let i = 0; i < usersWithMeow.length; i += batchSize) {
+    const batch = usersWithMeow.slice(i, i + batchSize)
     
     const promises = batch.map(async (user) => {
       // 检查用户是否启用了通知
-      if (user.notificationSettings && !user.notificationSettings.enabled) {
+      const userSettings = userNotificationSettingsMap.get(user.id)
+      if (userSettings && !userSettings.enabled) {
         return false
       }
       

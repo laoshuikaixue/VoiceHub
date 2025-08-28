@@ -1,7 +1,8 @@
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { songs, schedules, users, playTimes, votes } from '~/drizzle/schema'
+import { eq, gte, lte, desc, asc, count, and } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
 import { CacheService } from '~/server/services/cacheService'
-import { executeWithPool } from '~/server/utils/db-pool'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -32,11 +33,12 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 检查歌曲是否存在
-    const song = await prisma.song.findUnique({
-      where: {
-        id: body.songId
-      }
-    })
+    const songResult = await db.select()
+      .from(songs)
+      .where(eq(songs.id, body.songId))
+      .limit(1)
+    
+    const song = songResult[0]
     
     if (!song) {
       throw createError({
@@ -46,19 +48,16 @@ export default defineEventHandler(async (event) => {
     }
     
     // 检查是否已经为该歌曲创建过排期，如果有则删除旧的排期
-    const existingSchedule = await prisma.schedule.findFirst({
-      where: {
-        songId: body.songId
-      }
-    })
+    const existingScheduleResult = await db.select()
+      .from(schedules)
+      .where(eq(schedules.songId, body.songId))
+      .limit(1)
     
+    const existingSchedule = existingScheduleResult[0]
     if (existingSchedule) {
       // 删除现有排期
-      await prisma.schedule.delete({
-        where: {
-          id: existingSchedule.id
-        }
-      })
+      await db.delete(schedules)
+        .where(eq(schedules.id, existingSchedule.id))
     }
     
     // 获取序号，如果未提供则查找当天最大序号+1
@@ -84,18 +83,14 @@ export default defineEventHandler(async (event) => {
         结束时间: endOfDay.toISOString()
       })
       
-      const sameDaySchedules = await prisma.schedule.findMany({
-        where: {
-          playDate: {
-            gte: startOfDay,
-            lte: endOfDay
-          }
-        },
-        orderBy: {
-          sequence: 'desc'
-        },
-        take: 1
-      })
+      const sameDaySchedules = await db.select()
+        .from(schedules)
+        .where(and(
+          gte(schedules.playDate, startOfDay),
+          lte(schedules.playDate, endOfDay)
+        ))
+        .orderBy(desc(schedules.sequence))
+        .limit(1)
       
       if (sameDaySchedules.length > 0) {
         sequence = (sameDaySchedules[0].sequence || 0) + 1
@@ -115,24 +110,24 @@ export default defineEventHandler(async (event) => {
     const playDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0))
     
     // 创建排期
-    const schedule = await prisma.schedule.create({
-      data: {
+    const scheduleResult = await db.insert(schedules)
+      .values({
         songId: body.songId,
         playDate: playDate,
         sequence: sequence,
         playTimeId: body.playTimeId || null
-      },
-      include: {
-        song: {
-          select: {
-            id: true,
-            title: true,
-            artist: true,
-            requesterId: true
-          }
-        }
+      })
+      .returning()
+    
+    const schedule = {
+      ...scheduleResult[0],
+      song: {
+        id: song.id,
+        title: song.title,
+        artist: song.artist,
+        requesterId: song.requesterId
       }
-    })
+    }
     
     // 创建通知
     await createSongSelectedNotification(schedule.song.requesterId, schedule.song.id, {
@@ -149,113 +144,126 @@ export default defineEventHandler(async (event) => {
     
     // 重新缓存完整的排期列表
     try {
-      const completeSchedules = await executeWithPool(async () => {
-        const schedules = await prisma.schedule.findMany({
-          include: {
-            song: {
-              include: {
-                requester: {
-                  select: {
-                    name: true,
-                    grade: true,
-                    class: true
-                  }
-                },
-                _count: {
-                  select: {
-                    votes: true
-                  }
-                }
-              }
-            },
-            playTime: true
-          },
-          orderBy: [
-            { playDate: 'asc' }
-          ]
-        })
+      // 获取所有排期数据
+      const schedulesData = await db.select({
+        id: schedules.id,
+        playDate: schedules.playDate,
+        sequence: schedules.sequence,
+        played: schedules.played,
+        playTimeId: schedules.playTimeId,
+        songId: schedules.songId,
+        songTitle: songs.title,
+        songArtist: songs.artist,
+        songRequesterId: songs.requesterId,
+        songPlayed: songs.played,
+        songCover: songs.cover,
+        songMusicPlatform: songs.musicPlatform,
+        songMusicId: songs.musicId,
+        songSemester: songs.semester,
+        requesterName: users.name,
+        requesterGrade: users.grade,
+        requesterClass: users.class,
+        playTimeName: playTimes.name,
+        playTimeStartTime: playTimes.startTime,
+        playTimeEndTime: playTimes.endTime,
+        playTimeEnabled: playTimes.enabled
+      })
+        .from(schedules)
+        .innerJoin(songs, eq(schedules.songId, songs.id))
+        .innerJoin(users, eq(songs.requesterId, users.id))
+        .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
+        .orderBy(asc(schedules.playDate))
         
-        // 获取所有用户的姓名列表，用于检测同名用户
-        const users = await prisma.user.findMany({
-          select: {
-            id: true,
-            name: true,
-            grade: true,
-            class: true
+      // 获取所有用户的姓名列表，用于检测同名用户
+      const allUsers = await db.select({
+        id: users.id,
+        name: users.name,
+        grade: users.grade,
+        class: users.class
+      })
+        .from(users)
+        
+      // 创建姓名到用户数组的映射
+      const nameToUsers = new Map()
+      allUsers.forEach(user => {
+        if (user.name) {
+          if (!nameToUsers.has(user.name)) {
+            nameToUsers.set(user.name, [])
           }
-        })
+          nameToUsers.get(user.name).push(user)
+        }
+      })
         
-        // 创建姓名到用户数组的映射
-        const nameToUsers = new Map()
-        users.forEach(user => {
-          if (user.name) {
-            if (!nameToUsers.has(user.name)) {
-              nameToUsers.set(user.name, [])
-            }
-            nameToUsers.get(user.name).push(user)
-          }
+      // 获取每首歌的投票数
+      const songIds = schedulesData.map(s => s.songId)
+      const voteCounts = await Promise.all(
+        songIds.map(async (songId) => {
+          const voteCountResult = await db.select({ count: count() })
+            .from(votes)
+            .where(eq(votes.songId, songId))
+          return { songId, count: voteCountResult[0].count }
         })
+      )
+      
+      const voteCountMap = new Map(voteCounts.map(v => [v.songId, v.count]))
+      
+      // 转换数据格式
+      const formattedSchedules = schedulesData.map(schedule => {
+        const originalDate = new Date(schedule.playDate)
+        const dateOnly = new Date(Date.UTC(
+          originalDate.getUTCFullYear(),
+          originalDate.getUTCMonth(),
+          originalDate.getUTCDate(),
+          0, 0, 0, 0
+        ))
         
-        // 转换数据格式
-        const formattedSchedules = schedules.map(schedule => {
-          const originalDate = new Date(schedule.playDate)
-          const dateOnly = new Date(Date.UTC(
-            originalDate.getUTCFullYear(),
-            originalDate.getUTCMonth(),
-            originalDate.getUTCDate(),
-            0, 0, 0, 0
-          ))
-          
-          // 处理投稿人姓名，如果是同名用户则添加后缀
-          let requesterName = schedule.song.requester.name || '未知用户'
-          
-          const sameNameUsers = nameToUsers.get(requesterName)
-          if (sameNameUsers && sameNameUsers.length > 1) {
-            const requesterWithGradeClass = schedule.song.requester
+        // 处理投稿人姓名，如果是同名用户则添加后缀
+        let requesterName = schedule.requesterName || '未知用户'
+        
+        const sameNameUsers = nameToUsers.get(requesterName)
+        if (sameNameUsers && sameNameUsers.length > 1) {
+          if (schedule.requesterGrade) {
+            const sameGradeUsers = sameNameUsers.filter((u: {id: number, name: string | null, grade: string | null, class: string | null}) => 
+              u.grade === schedule.requesterGrade
+            )
             
-            if (requesterWithGradeClass.grade) {
-              const sameGradeUsers = sameNameUsers.filter((u: {id: number, name: string | null, grade: string | null, class: string | null}) => 
-                u.grade === requesterWithGradeClass.grade
-              )
-              
-              if (sameGradeUsers.length > 1 && requesterWithGradeClass.class) {
-                requesterName = `${requesterName}（${requesterWithGradeClass.grade} ${requesterWithGradeClass.class}）`
-              } else {
-                requesterName = `${requesterName}（${requesterWithGradeClass.grade}）`
-              }
+            if (sameGradeUsers.length > 1 && schedule.requesterClass) {
+              requesterName = `${requesterName}（${schedule.requesterGrade} ${schedule.requesterClass}）`
+            } else {
+              requesterName = `${requesterName}（${schedule.requesterGrade}）`
             }
           }
+        }
           
-          return {
-            id: schedule.id,
-            playDate: dateOnly.toISOString().split('T')[0],
-            sequence: schedule.sequence || 1,
-            played: schedule.played || false,
-            playTimeId: schedule.playTimeId,
-            playTime: schedule.playTime ? {
-              id: schedule.playTime.id,
-              name: schedule.playTime.name,
-              startTime: schedule.playTime.startTime,
-              endTime: schedule.playTime.endTime,
-              enabled: schedule.playTime.enabled
-            } : null,
-            song: {
-              id: schedule.song.id,
-              title: schedule.song.title,
-              artist: schedule.song.artist,
-              requester: requesterName,
-              voteCount: schedule.song._count.votes,
-              played: schedule.song.played || false,
-              cover: schedule.song.cover || null,
-              musicPlatform: schedule.song.musicPlatform || null,
-              musicId: schedule.song.musicId || null,
-              semester: schedule.song.semester || null
-            }
+        return {
+          id: schedule.id,
+          playDate: dateOnly.toISOString().split('T')[0],
+          sequence: schedule.sequence || 1,
+          played: schedule.played || false,
+          playTimeId: schedule.playTimeId,
+          playTime: schedule.playTimeName ? {
+            id: schedule.playTimeId,
+            name: schedule.playTimeName,
+            startTime: schedule.playTimeStartTime,
+            endTime: schedule.playTimeEndTime,
+            enabled: schedule.playTimeEnabled
+          } : null,
+          song: {
+            id: schedule.songId,
+            title: schedule.songTitle,
+            artist: schedule.songArtist,
+            requester: requesterName,
+            voteCount: voteCountMap.get(schedule.songId) || 0,
+            played: schedule.songPlayed || false,
+            cover: schedule.songCover || null,
+            musicPlatform: schedule.songMusicPlatform || null,
+            musicId: schedule.songMusicId || null,
+            semester: schedule.songSemester || null
           }
-        })
-        
-        return formattedSchedules
-      }, 'refreshCompleteSchedules')
+        }
+      })
+      
+      const completeSchedules = formattedSchedules
       
       // 重新缓存完整的排期列表
       if (completeSchedules && completeSchedules.length > 0) {

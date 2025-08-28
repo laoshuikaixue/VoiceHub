@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { songs, users, schedules } from '~/drizzle/schema'
+import { desc, eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -25,22 +27,24 @@ export default defineEventHandler(async (event) => {
     }> = []
 
     // 获取最近的歌曲活动
-    const recentSongs = await prisma.song.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        requester: {
-          select: { name: true, username: true }
-        }
-      }
+    const recentSongs = await db.select({
+      id: songs.id,
+      title: songs.title,
+      createdAt: songs.createdAt,
+      requesterName: users.name,
+      requesterUsername: users.username
     })
+    .from(songs)
+    .leftJoin(users, eq(songs.requesterId, users.id))
+    .orderBy(desc(songs.createdAt))
+    .limit(5)
 
     recentSongs.forEach(song => {
       activities.push({
         id: `song-${song.id}`,
         type: 'song',
         title: '新歌曲投稿',
-        description: `${song.requester?.name || song.requester?.username || '用户'} 投稿了《${song.title}》`,
+        description: `${song.requesterName || song.requesterUsername || '用户'} 投稿了《${song.title}》`,
         createdAt: song.createdAt
       })
     })
@@ -48,22 +52,23 @@ export default defineEventHandler(async (event) => {
     // 移除了新用户注册活动记录
 
     // 获取最近的排期活动
-    const recentSchedules = await prisma.schedule.findMany({
-      take: 3,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        song: {
-          select: { title: true, artist: true }
-        }
-      }
+    const recentSchedules = await db.select({
+      id: schedules.id,
+      createdAt: schedules.createdAt,
+      songTitle: songs.title,
+      songArtist: songs.artist
     })
+    .from(schedules)
+    .leftJoin(songs, eq(schedules.songId, songs.id))
+    .orderBy(desc(schedules.createdAt))
+    .limit(3)
 
     recentSchedules.forEach(schedule => {
       activities.push({
         id: `schedule-${schedule.id}`,
         type: 'schedule',
         title: '排期更新',
-        description: `《${schedule.song.title}》已安排到播放排期`,
+        description: `《${schedule.songTitle}》已安排到播放排期`,
         createdAt: schedule.createdAt
       })
     })

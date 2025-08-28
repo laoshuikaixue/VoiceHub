@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client'
-
-import { prisma } from '../../../models/schema'
+import { db, semesters, songs, eq } from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -22,9 +20,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查学期是否存在
-  const semester = await prisma.semester.findUnique({
-    where: { id: semesterId }
-  })
+  const semesterResult = await db.select().from(semesters).where(eq(semesters.id, semesterId)).limit(1)
+  const semester = semesterResult[0]
 
   if (!semester) {
     throw createError({
@@ -42,9 +39,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查是否有关联的歌曲
-  const songCount = await prisma.song.count({
-    where: { semester: semester.name }
-  })
+  const songCountResult = await db.select().from(songs).where(eq(songs.semester, semester.name))
+  const songCount = songCountResult.length
 
   if (songCount > 0) {
     throw createError({
@@ -54,9 +50,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 删除学期
-  await prisma.semester.delete({
-    where: { id: semesterId }
-  })
+  await db.delete(semesters).where(eq(semesters.id, semesterId))
 
   return {
     success: true,

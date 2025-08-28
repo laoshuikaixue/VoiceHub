@@ -35,22 +35,17 @@ COPY . .
 # 设置环境变量
 ENV NODE_ENV=production
 
-# 生成Prisma客户端，增加详细错误日志
-RUN echo "Generating Prisma client..." && \
-    (npx prisma generate --schema=./prisma/schema.prisma 2>&1 | tee prisma-generate.log) || \
-    (echo "Prisma generate failed, showing log:" && cat prisma-generate.log && \
-     echo "Trying Prisma generate with force..." && \
-     npx prisma generate --schema=./prisma/schema.prisma --force 2>&1 | tee prisma-generate.log) || \
-    (echo "Prisma generate still failed, showing log:" && cat prisma-generate.log && \
-     echo "Installing prisma and @prisma/client..." && \
-     npm install prisma @prisma/client && \
-     echo "Trying Prisma generate after reinstall..." && \
-     npx prisma generate --schema=./prisma/schema.prisma 2>&1 | tee prisma-generate.log) || \
-    (echo "All Prisma generate methods failed, showing detailed log:" && \
-     echo "=== PRISMA DEBUG INFO ===" && \
-     echo "Prisma version:" && npx prisma --version && \
-     echo "Schema file contents:" && cat ./prisma/schema.prisma && \
-     echo "=== PRISMA GENERATE LOG ===" && cat prisma-generate.log && \
+# 检查Drizzle配置，增加详细错误日志
+RUN echo "Checking Drizzle configuration..." && \
+    (ls -la drizzle/ 2>&1 | tee drizzle-check.log) || \
+    (echo "Drizzle directory check failed, showing log:" && cat drizzle-check.log && \
+     echo "Creating drizzle directory if needed..." && \
+     mkdir -p drizzle 2>&1 | tee drizzle-check.log) || \
+    (echo "Drizzle setup failed, showing detailed log:" && \
+     echo "=== DRIZZLE DEBUG INFO ===" && \
+     echo "Directory contents:" && ls -la && \
+     echo "Drizzle config:" && cat drizzle.config.ts && \
+     echo "=== DRIZZLE CHECK LOG ===" && cat drizzle-check.log && \
      echo "=== END OF LOGS ===" && false)
 
 # 构建应用

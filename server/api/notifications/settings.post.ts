@@ -1,4 +1,6 @@
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { notificationSettings } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import type { NotificationSettings } from '~/types'
 
 export default defineEventHandler(async (event) => {
@@ -24,40 +26,35 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 获取用户当前的通知设置
-    let dbSettings: any = await prisma.notificationSettings.findUnique({
-      where: {
-        userId: user.id
-      }
-    })
+    const existingSettingsResult = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, user.id)).limit(1)
+    let dbSettings: any = existingSettingsResult[0]
     
     if (dbSettings) {
       // 更新现有设置
-      dbSettings = await prisma.notificationSettings.update({
-        where: {
-          userId: user.id
-        },
-        data: {
+      const updatedSettingsResult = await db.update(notificationSettings)
+        .set({
           enabled: body.systemNotify !== undefined ? body.systemNotify : dbSettings.enabled,
           songRequestEnabled: body.songSelectedNotify !== undefined ? body.songSelectedNotify : dbSettings.songRequestEnabled,
           songPlayedEnabled: body.songPlayedNotify !== undefined ? body.songPlayedNotify : dbSettings.songPlayedEnabled,
           songVotedEnabled: body.songVotedNotify !== undefined ? body.songVotedNotify : dbSettings.songVotedEnabled,
           songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : dbSettings.songVotedThreshold,
           refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : dbSettings.refreshInterval
-        }
-      })
+        })
+        .where(eq(notificationSettings.userId, user.id))
+        .returning()
+      dbSettings = updatedSettingsResult[0]
     } else {
       // 创建新设置
-      dbSettings = await prisma.notificationSettings.create({
-        data: {
-          userId: user.id,
-          enabled: body.systemNotify !== undefined ? body.systemNotify : true,
-          songRequestEnabled: body.songSelectedNotify !== undefined ? body.songSelectedNotify : true,
-          songPlayedEnabled: body.songPlayedNotify !== undefined ? body.songPlayedNotify : true,
-          songVotedEnabled: body.songVotedNotify !== undefined ? body.songVotedNotify : true,
-          songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : 1,
-          refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : 60
-        }
-      })
+      const newSettingsResult = await db.insert(notificationSettings).values({
+        userId: user.id,
+        enabled: body.systemNotify !== undefined ? body.systemNotify : true,
+        songRequestEnabled: body.songSelectedNotify !== undefined ? body.songSelectedNotify : true,
+        songPlayedEnabled: body.songPlayedNotify !== undefined ? body.songPlayedNotify : true,
+        songVotedEnabled: body.songVotedNotify !== undefined ? body.songVotedNotify : true,
+        songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : 1,
+        refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : 60
+      }).returning()
+      dbSettings = newSettingsResult[0]
     }
     
     // 转换为前端期望的格式

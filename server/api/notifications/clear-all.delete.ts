@@ -1,4 +1,6 @@
-import { prisma } from '../../models/schema'
+import { db } from '~/drizzle/db'
+import { notifications } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -13,15 +15,12 @@ export default defineEventHandler(async (event) => {
   
   try {
     // 删除该用户的所有通知
-    const result = await prisma.notification.deleteMany({
-      where: {
-        userId: user.id
-      }
-    })
+    const result = await db.delete(notifications)
+      .where(eq(notifications.userId, user.id))
     
     return {
       success: true,
-      count: result.count
+      count: result.rowCount || 0
     }
   } catch (err) {
     console.error('清空通知失败:', err)
@@ -30,4 +29,4 @@ export default defineEventHandler(async (event) => {
       message: '清空通知失败'
     })
   }
-}) 
+})

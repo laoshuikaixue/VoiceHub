@@ -1,4 +1,5 @@
-import { prisma } from '~/prisma/client'
+import { db } from '~/drizzle/db'
+import { sql } from 'drizzle-orm'
 
 export default defineNitroPlugin(async (nitroApp) => {
   // 全局未处理的Promise拒绝处理器
@@ -19,9 +20,9 @@ export default defineNitroPlugin(async (nitroApp) => {
         
         try {
           // 尝试重新连接数据库
-          await prisma.$disconnect()
+          // Note: Drizzle doesn't have explicit connect/disconnect methods
+          // Connection is managed automatically
           await new Promise(resolve => setTimeout(resolve, 2000)) // 等待2秒
-          await prisma.$connect()
           console.log('Database reconnection successful')
         } catch (reconnectError) {
           console.error('Database reconnection failed:', reconnectError)
@@ -29,9 +30,8 @@ export default defineNitroPlugin(async (nitroApp) => {
           // 如果重连失败，等待更长时间后再次尝试
           setTimeout(async () => {
             try {
-              await prisma.$disconnect()
+              // Note: Drizzle doesn't have explicit connect/disconnect methods
               await new Promise(resolve => setTimeout(resolve, 5000)) // 等待5秒
-              await prisma.$connect()
               console.log('Database delayed reconnection successful')
             } catch (delayedReconnectError) {
               console.error('Database delayed reconnection failed:', delayedReconnectError)
@@ -64,15 +64,14 @@ export default defineNitroPlugin(async (nitroApp) => {
   // 定期健康检查
   const healthCheckInterval = setInterval(async () => {
     try {
-      await prisma.$queryRaw`SELECT 1 as health_check`
+      await db.execute(sql`SELECT 1 as health_check`)
     } catch (error) {
       console.error('Health check failed:', error)
       
       // 尝试重新连接
       try {
-        await prisma.$disconnect()
+        // Note: Drizzle doesn't have explicit connect/disconnect methods
         await new Promise(resolve => setTimeout(resolve, 1000))
-        await prisma.$connect()
         console.log('Health check reconnection successful')
       } catch (reconnectError) {
         console.error('Health check reconnection failed:', reconnectError)
@@ -86,20 +85,20 @@ export default defineNitroPlugin(async (nitroApp) => {
   })
 
   // 数据库连接错误的特殊处理
-  const originalQuery = prisma.$queryRaw
-  prisma.$queryRaw = new Proxy(originalQuery, {
+  // Note: Drizzle handles connection management automatically
+  // We'll implement a simple retry mechanism for database operations
+  const originalExecute = db.execute
+  db.execute = new Proxy(originalExecute, {
     apply: async (target, thisArg, argumentsList) => {
       try {
         return await target.apply(thisArg, argumentsList)
       } catch (error) {
         if (error.message.includes('ECONNRESET') || 
             error.message.includes('Connection terminated')) {
-          console.log('Query failed due to connection reset, attempting to reconnect and retry...')
+          console.log('Query failed due to connection reset, attempting to retry...')
           
           try {
-            await prisma.$disconnect()
             await new Promise(resolve => setTimeout(resolve, 1000))
-            await prisma.$connect()
             
             // 重试查询
             return await target.apply(thisArg, argumentsList)

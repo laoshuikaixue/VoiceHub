@@ -1,4 +1,6 @@
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { playTimes } from '~/drizzle/schema'
+import { desc, asc } from 'drizzle-orm'
 import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -29,12 +31,10 @@ export default defineEventHandler(async (event) => {
     }
     
     // 缓存中没有，从数据库获取所有播出时段
-    playTimes = await prisma.playTime.findMany({
-      orderBy: [
-        { enabled: 'desc' }, // 启用的排在前面
-        { startTime: 'asc' } // 按开始时间排序
-      ]
-    })
+    const playTimesResult = await db.select().from(playTimes)
+      .orderBy(desc(playTimes.enabled), asc(playTimes.startTime))
+    
+    playTimes = playTimesResult
     
     // 将数据存入缓存
     try {

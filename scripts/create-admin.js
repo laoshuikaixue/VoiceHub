@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { db, users, notificationSettings, systemSettings } from '../drizzle/db.ts';
 import bcrypt from 'bcrypt';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { eq } from 'drizzle-orm';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,61 +13,47 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const prisma = new PrismaClient({
-  log: ['error'],
-  errorFormat: 'pretty'
-});
-
 async function main() {
   try {
-    await prisma.$connect();
-
     // 检查是否已有超级管理员用户
-    const existingAdmin = await prisma.user.findUnique({
-      where: { username: 'admin' }
-    });
+    const existingSuperAdmin = await db.select()
+      .from(users)
+      .where(eq(users.role, 'SUPER_ADMIN'))
+      .limit(1);
 
-    if (existingAdmin) {
-      console.log('✅ 管理员用户已存在，跳过创建');
-      return existingAdmin;
+    if (existingSuperAdmin.length > 0) {
+      console.log('✅ 超级管理员用户已存在，跳过创建');
+      return existingSuperAdmin[0];
     }
 
     // 加密密码
     const hashedPassword = await bcrypt.hash('admin123', 10);
 
     // 创建超级管理员用户
-    const admin = await prisma.user.create({
-      data: {
-        username: 'admin',
-        name: '超级管理员',
-        password: hashedPassword,
-        role: 'SUPER_ADMIN'
-      }
-    });
+    const [admin] = await db.insert(users).values({
+      username: 'admin',
+      name: '超级管理员',
+      password: hashedPassword,
+      role: 'SUPER_ADMIN',
+      forcePasswordChange: false
+    }).returning();
 
     // 为管理员创建通知设置
-    await prisma.notificationSettings.upsert({
-      where: { userId: admin.id },
-      update: {},
-      create: {
-        userId: admin.id,
-        enabled: true,
-        songRequestEnabled: true,
-        songVotedEnabled: true,
-        songPlayedEnabled: true,
-        refreshInterval: 60,
-        songVotedThreshold: 1
-      }
-    });
+    await db.insert(notificationSettings).values({
+      userId: admin.id,
+      enabled: true,
+      songRequestEnabled: true,
+      songVotedEnabled: true,
+      songPlayedEnabled: true,
+      refreshInterval: 60,
+      songVotedThreshold: 1
+    }).onConflictDoNothing();
 
     // 创建或更新系统设置
-    await prisma.systemSettings.upsert({
-      where: { id: 1 },
-      update: {},
-      create: {
-        enablePlayTimeSelection: false
-      }
-    });
+    await db.insert(systemSettings).values({
+      id: 1,
+      enablePlayTimeSelection: false
+    }).onConflictDoNothing();
 
     console.log('✅ 管理员用户创建成功 (admin/admin123)');
 
@@ -78,11 +65,7 @@ async function main() {
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
   .catch(async (error) => {
     console.error('管理员初始化失败:', error.message);
-    await prisma.$disconnect();
     process.exit(1);
   });

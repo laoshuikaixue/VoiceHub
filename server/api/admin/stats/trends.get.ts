@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     
-    const trendData = await prisma.song.groupBy({
+    const trendData = await db.song.groupBy({
       by: ['createdAt'],
       where: {
         ...where,

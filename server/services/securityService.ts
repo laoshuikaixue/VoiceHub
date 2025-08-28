@@ -1,6 +1,8 @@
 import { createSystemNotification } from './notificationService'
 import { sendMeowNotificationToUser } from './meowNotificationService'
-import { prisma } from '../models/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 // 账户锁定信息接口
 interface AccountLockInfo {
@@ -170,16 +172,11 @@ async function triggerSecurityAlert(ip: string, attemptedAccounts: string[]): Pr
     console.log(`安全警报：IP ${ip} 在 ${SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES} 分钟内尝试登录 ${attemptedAccounts.length} 个不同账户`)
     
     // 获取所有超级管理员
-    const superAdmins = await prisma.user.findMany({
-      where: {
-        role: 'SUPER_ADMIN'
-      },
-      select: {
-        id: true,
-        name: true,
-        meowNickname: true
-      }
-    })
+    const superAdmins = await db.select({
+      id: users.id,
+      name: users.name,
+      meowNickname: users.meowNickname
+    }).from(users).where(eq(users.role, 'SUPER_ADMIN'))
     
     // 向所有超级管理员发送站内信
     for (const admin of superAdmins) {

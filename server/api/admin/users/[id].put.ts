@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, readBody, getRouterParam } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import { CacheService } from '../../../services/cacheService'
 import bcrypt from 'bcrypt'
 
@@ -27,11 +29,12 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查用户是否存在
-    const existingUser = await prisma.user.findUnique({
-      where: { id: parseInt(userId) }
-    })
+    const existingUser = await db.select()
+      .from(users)
+      .where(eq(users.id, parseInt(userId)))
+      .limit(1)
 
-    if (!existingUser) {
+    if (existingUser.length === 0) {
       throw createError({
         statusCode: 404,
         statusMessage: '用户不存在'
@@ -39,12 +42,13 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查用户名是否被其他用户使用
-    if (username !== existingUser.username) {
-      const duplicateUser = await prisma.user.findUnique({
-        where: { username }
-      })
+    if (username !== existingUser[0].username) {
+      const duplicateUser = await db.select()
+        .from(users)
+        .where(eq(users.username, username))
+        .limit(1)
 
-      if (duplicateUser) {
+      if (duplicateUser.length > 0) {
         throw createError({
           statusCode: 400,
           statusMessage: '用户名已被其他用户使用'
@@ -94,23 +98,22 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新用户
-    const updatedUser = await prisma.user.update({
-      where: { id: parseInt(userId) },
-      data: updateData,
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        role: true,
-        grade: true,
-        class: true,
-        lastLogin: true,
-        lastLoginIp: true,
-        passwordChangedAt: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    })
+    const updatedUser = await db.update(users)
+      .set(updateData)
+      .where(eq(users.id, parseInt(userId)))
+      .returning({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        role: users.role,
+        grade: users.grade,
+        class: users.class,
+        lastLogin: users.lastLogin,
+        lastLoginIp: users.lastLoginIp,
+        passwordChangedAt: users.passwordChangedAt,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt
+      })
 
     // 清除相关缓存
     try {
@@ -125,7 +128,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      user: updatedUser,
+      user: updatedUser[0],
       message: '用户更新成功'
     }
   } catch (error) {

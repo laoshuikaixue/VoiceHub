@@ -1,5 +1,7 @@
 import { createError, defineEventHandler, getRouterParam } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
+import { songBlacklists } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -22,9 +24,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 检查黑名单项是否存在
-    const blacklistItem = await prisma.songBlacklist.findUnique({
-      where: { id }
-    })
+    const blacklistItemResult = await db.select().from(songBlacklists).where(eq(songBlacklists.id, id)).limit(1)
+    const blacklistItem = blacklistItemResult[0]
 
     if (!blacklistItem) {
       throw createError({
@@ -34,9 +35,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 删除黑名单项
-    await prisma.songBlacklist.delete({
-      where: { id }
-    })
+    await db.delete(songBlacklists).where(eq(songBlacklists.id, id))
 
     // 清除歌曲缓存（黑名单变更可能影响歌曲提交验证）
     try {

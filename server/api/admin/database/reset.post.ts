@@ -1,5 +1,5 @@
 import { createError, defineEventHandler } from 'h3'
-import { prisma } from '../../../models/schema'
+import { db } from '~/drizzle/db'
 import { CacheService } from '../../../services/cacheService'
 
 // 重置所有表的自增序列
@@ -21,7 +21,7 @@ async function resetAutoIncrementSequences() {
     try {
       // PostgreSQL 重置序列的 SQL 命令
       const sequenceName = `"${table}_id_seq"`
-      await prisma.$executeRawUnsafe(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`)
+      await db.$executeRawUnsafe(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`)
     } catch (error) {
       console.warn(`重置 ${table} 表序列失败: ${error.message}`)
     }
@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
 
     try {
       // 使用事务确保数据一致性
-      await prisma.$transaction(async (tx) => {
+      await db.$transaction(async (tx) => {
         // 按照外键依赖顺序删除数据
         const deletedNotifications = await tx.notification.deleteMany()
         resetResults.details.recordsDeleted += deletedNotifications.count
@@ -104,7 +104,7 @@ export default defineEventHandler(async (event) => {
       // 特别处理User表的序列，确保下一个用户ID不会与保留的管理员冲突
       try {
         const nextUserId = user.id + 1
-        await prisma.$executeRawUnsafe(`ALTER SEQUENCE "User_id_seq" RESTART WITH ${nextUserId}`)
+        await db.$executeRawUnsafe(`ALTER SEQUENCE "User_id_seq" RESTART WITH ${nextUserId}`)
       } catch (error) {
         console.warn(`调整User表序列失败: ${error.message}`)
       }

@@ -5,16 +5,13 @@
 [build.environment]
   NODE_VERSION = "20"
   NITRO_PRESET = "netlify"
-  # 确保 Prisma 客户端在构建时生成
-  PRISMA_CLI_BINARY_TARGETS = "debian-openssl-1.1.x,rhel-openssl-1.0.x,linux-musl"
-  PRISMA_GENERATE_SKIP_AUTOINSTALL = "false"
 
 [functions]
   directory = ".netlify/functions-internal"
   node_bundler = "esbuild"
   # 增加内存限制和超时时间
   [functions."server"]
-    included_files = ["node_modules/@prisma/client/**/*", "prisma/**/*"]
+    included_files = ["drizzle/**/*"]
     external_node_modules = []
     node_bundler = "esbuild"
 

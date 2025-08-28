@@ -19,8 +19,6 @@ export default defineNuxtConfig({
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
     // Redis配置（可选）
     redisUrl: process.env.REDIS_URL || '',
-    // Prisma日志配置
-    prismaLogLevel: process.env.PRISMA_LOG_LEVEL || 'error',
     // 公共键（会暴露到客户端）
     public: {
       apiBase: '/api',
@@ -160,34 +158,25 @@ export default defineNuxtConfig({
     },
     // 根据部署环境调整配置
     ...(process.env.VERCEL ? {
-      // Vercel 环境：让 Vercel 自动处理 Prisma
+      // Vercel 环境：使用标准配置
     } : process.env.NETLIFY ? {
-      // Netlify 环境：确保 Prisma 客户端正确打包
+      // Netlify 环境：确保 Drizzle 正确打包
       experimental: {
         wasm: true
-      },
-      // 不将 Prisma 客户端标记为外部依赖，让它被打包进去
-      rollupConfig: {
-        external: []
-      },
-      // 确保 Prisma 客户端在服务器端可用
-      moduleSideEffects: ['@prisma/client']
+      }
     } : {
       // 其他环境：使用标准配置
-      rollupConfig: {
-        external: ['@prisma/client'],
-      }
     })
   },
   
   // Vite 配置
   vite: {
     optimizeDeps: {
-      include: ['@prisma/client']
+      include: ['drizzle-orm']
     },
     // 根据部署环境调整 SSR 配置
     ssr: {
-      noExternal: process.env.NETLIFY ? ['@prisma/client'] : (process.env.VERCEL ? [] : ['@prisma/client'])
+      noExternal: process.env.NETLIFY ? ['drizzle-orm', 'postgres'] : (process.env.VERCEL ? [] : ['drizzle-orm', 'postgres'])
     }
   }
 })

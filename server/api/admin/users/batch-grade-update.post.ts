@@ -1,6 +1,8 @@
-import { prisma } from '~/server/models/schema'
+import { db } from '~/drizzle/db'
 import bcrypt from 'bcryptjs'
 import { CacheService } from '~/server/services/cacheService'
+import { users } from '~/drizzle/schema'
+import { inArray } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -57,20 +59,15 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证用户ID是否存在
-    const existingUsers = await prisma.user.findMany({
-      where: {
-        id: {
-          in: userIds
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        grade: true,
-        class: true
-      }
+    const existingUsers = await db.select({
+      id: users.id,
+      name: users.name,
+      username: users.username,
+      grade: users.grade,
+      class: users.class
     })
+    .from(users)
+    .where(inArray(users.id, userIds))
 
     const existingUserIds = existingUsers.map(user => user.id)
     const nonExistentUserIds = userIds.filter(id => !existingUserIds.includes(id))
@@ -96,16 +93,12 @@ export default defineEventHandler(async (event) => {
         // 如果不保持班级不变，可以在这里添加班级更新逻辑
         // 当前实现中keepClass固定为true，所以不更新班级
 
-        const updateResult = await prisma.user.updateMany({
-          where: {
-            id: {
-              in: existingUserIds
-            }
-          },
-          data: updateData
-        })
+        const updateResult = await db.update(users)
+          .set(updateData)
+          .where(inArray(users.id, existingUserIds))
+          .returning({ id: users.id })
 
-        updated = updateResult.count
+        updated = updateResult.length
       } catch (error) {
         console.error('批量更新失败:', error)
         failed += existingUserIds.length

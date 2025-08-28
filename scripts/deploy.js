@@ -95,32 +95,63 @@ async function deploy() {
       logSuccess('依赖安装完成');
     }
     
-    // 2. 生成 Prisma 客户端
-    logStep('🔧', '生成 Prisma 客户端...');
-    if (!safeExec('npx prisma generate')) {
-      throw new Error('Prisma 客户端生成失败');
+    // 2. 检查 Drizzle 配置
+    logStep('🔧', '检查 Drizzle 配置...');
+    if (!fileExists('drizzle.config.ts')) {
+      throw new Error('Drizzle 配置文件不存在');
     }
-    logSuccess('Prisma 客户端生成完成');
+    if (!fileExists('drizzle/schema.ts')) {
+      throw new Error('Drizzle schema 文件不存在');
+    }
+    if (!fileExists('drizzle/db.ts')) {
+      throw new Error('Drizzle 数据库连接文件不存在');
+    }
+    logSuccess('Drizzle 配置检查完成');
     
-    // 3. 数据库迁移
-    logStep('🗄️', '同步数据库结构...');
+    // 2.1. 确保迁移目录存在
+    if (!fileExists('drizzle/migrations')) {
+      logStep('📁', '创建迁移目录...');
+      fs.mkdirSync('drizzle/migrations', { recursive: true });
+      logSuccess('迁移目录创建完成');
+    }
+    
+    // 3. 数据库安全迁移（使用专用脚本保证数据安全）
+    logStep('🗄️', '执行数据库安全迁移...');
     let dbSyncSuccess = false;
     
-    // 首先尝试 migrate deploy
-    if (safeExec('npx prisma migrate deploy')) {
-      logSuccess('数据库迁移成功');
-      dbSyncSuccess = true;
-    } else {
-      logWarning('迁移失败，尝试使用 db push 同步数据库...');
-      
-      // 如果迁移失败，尝试 db push
-      if (safeExec('npx prisma db push --accept-data-loss')) {
-        logSuccess('数据库同步成功');
-        dbSyncSuccess = true;
-      } else {
-        logError('数据库同步失败');
-        // 不直接退出，继续尝试构建
+    if (process.env.DATABASE_URL) {
+      try {
+        // 首先尝试生成迁移文件
+        logStep('📝', '生成数据库迁移文件...');
+        if (safeExec('npm run db:generate')) {
+          logSuccess('迁移文件生成成功');
+        } else {
+          logWarning('迁移文件生成失败，继续尝试同步...');
+        }
+        
+        // 使用专用的安全迁移脚本
+        if (safeExec('npm run safe-migrate')) {
+          logSuccess('数据库安全迁移成功');
+          dbSyncSuccess = true;
+        } else {
+          logWarning('安全迁移脚本失败，尝试直接同步...');
+          
+          // 备用方案：直接使用drizzle-kit push
+          if (safeExec('npm run db:push')) {
+            logSuccess('数据库直接同步成功');
+            dbSyncSuccess = true;
+          } else {
+            logError('所有数据库迁移方案都失败');
+            logWarning('请检查数据库连接和迁移文件');
+          }
+        }
+      } catch (error) {
+        logError(`数据库迁移过程中发生错误: ${error.message}`);
+        logWarning('将在应用启动时尝试连接数据库');
       }
+    } else {
+      logWarning('未设置 DATABASE_URL，跳过数据库迁移');
+      logWarning('请确保在部署平台设置了正确的数据库连接字符串');
     }
     
     // 4. 创建管理员账户（如果脚本存在）
@@ -147,6 +178,11 @@ async function deploy() {
     }
     
     log('🎉 部署流程完成！', 'green');
+    
+    if (!dbSyncSuccess) {
+      logWarning('注意：数据库迁移可能未完全成功，请检查数据库连接');
+      logWarning('建议手动运行: npm run db:migrate 或 npm run db:push');
+    }
     
     if (!dbSyncSuccess) {
       logWarning('注意：数据库同步可能未完全成功，请检查数据库连接');
