@@ -38,9 +38,10 @@ export const useMusicSources = () => {
   /**
    * 搜索歌曲（带故障转移）
    */
-  const searchSongs = async (params: MusicSearchParams): Promise<MusicSearchResult> => {
-    if (isSearching.value) {
-      throw new Error('搜索正在进行中，请稍候')
+  const searchSongs = async (params: MusicSearchParams, signal?: AbortSignal): Promise<MusicSearchResult> => {
+    // 检查请求是否已被取消
+    if (signal?.aborted) {
+      throw new DOMException('搜索请求已被取消', 'AbortError')
     }
 
     isSearching.value = true
@@ -54,9 +55,14 @@ export const useMusicSources = () => {
 
       // 按优先级尝试每个音源
       for (const source of enabledSources) {
+        // 在每次尝试前检查请求是否已被取消
+        if (signal?.aborted) {
+          throw new DOMException('搜索请求已被取消', 'AbortError')
+        }
+        
         try {
           console.log(`尝试使用音源: ${source.name}`)
-          const result = await searchWithSource(source, params)
+          const result = await searchWithSource(source, params, signal)
           
           // 更新状态
           currentSource.value = source.id
@@ -91,7 +97,7 @@ export const useMusicSources = () => {
   /**
    * 使用指定音源搜索
    */
-  const searchWithSource = async (source: MusicSource, params: MusicSearchParams): Promise<any[]> => {
+  const searchWithSource = async (source: MusicSource, params: MusicSearchParams, signal?: AbortSignal): Promise<any[]> => {
     const startTime = Date.now()
     
     let url: string
@@ -124,6 +130,7 @@ export const useMusicSources = () => {
       console.log(`[${source.name}] 请求URL:`, finalUrl)
       response = await $fetch(finalUrl, {
         timeout: source.timeout || config.value.timeout,
+        signal,
         headers: {
           'Content-Type': 'application/json',
           ...source.headers
@@ -145,6 +152,7 @@ export const useMusicSources = () => {
           console.log(`[${source.name}] 备用请求URL:`, fallbackUrl)
           response = await $fetch(fallbackUrl, {
             timeout: source.timeout || config.value.timeout,
+            signal,
             headers: {
               'Content-Type': 'application/json',
               ...source.headers

@@ -405,6 +405,9 @@ const selectedCover = ref('')
 const selectedUrl = ref('')
 const audioPlayer = useAudioPlayer() // 使用全局音频播放器
 
+// 搜索请求控制器
+const searchAbortController = ref(null)
+
 // 音源管理器
 const musicSources = useMusicSources()
 const { 
@@ -644,6 +647,13 @@ const handleLikeDuplicate = async (songId) => {
 const switchPlatform = (newPlatform) => {
   if (platform.value === newPlatform) return
 
+  // 如果有正在进行的搜索请求，立即取消
+  if (searchAbortController.value) {
+    searchAbortController.value.abort()
+    searchAbortController.value = null
+    searching.value = false
+  }
+
   platform.value = newPlatform
 
   // 清空之前的搜索结果，避免显示错误的平台来源
@@ -669,13 +679,24 @@ const handleSearch = async () => {
     return
   }
 
+  // 如果有正在进行的搜索请求，先取消
+  if (searchAbortController.value) {
+    searchAbortController.value.abort()
+    searchAbortController.value = null
+  }
+
+  // 创建新的AbortController
+  searchAbortController.value = new AbortController()
+  const signal = searchAbortController.value.signal
+
   searching.value = true
   try {
     // 使用多音源搜索
     const searchParams = {
       keywords: title.value.trim(),
       platform: platform.value,
-      limit: 20
+      limit: 20,
+      signal: signal // 传递AbortSignal
     }
 
     console.log('开始多音源搜索:', searchParams)
@@ -705,6 +726,12 @@ const handleSearch = async () => {
       }
     }
   } catch (err) {
+    // 如果请求被取消，不显示错误信息
+    if (err.name === 'AbortError' || signal.aborted) {
+      console.log('搜索请求已被取消')
+      return
+    }
+    
     console.error('搜索错误:', err)
     searchError.value = err.message || '搜索请求失败，请稍后重试'
     error.value = searchError.value
@@ -713,8 +740,13 @@ const handleSearch = async () => {
       window.$showNotification(error.value, 'error')
     }
   } finally {
-    searching.value = false
-    hasSearched.value = true
+    // 只有在请求没有被取消的情况下才更新状态
+    if (!signal.aborted) {
+      searching.value = false
+      hasSearched.value = true
+      // 清理AbortController
+      searchAbortController.value = null
+    }
   }
 }
 
