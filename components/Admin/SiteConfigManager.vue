@@ -452,7 +452,7 @@ onMounted(() => {
 .form-section {
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-secondary);
 }
 
 .section-title {
@@ -484,7 +484,7 @@ onMounted(() => {
   margin-top: 16px;
   padding: 16px;
   background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
 }
 
@@ -527,7 +527,7 @@ onMounted(() => {
 .form-group textarea {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -538,7 +538,7 @@ onMounted(() => {
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--primary);
 }
 
 .form-group textarea {
@@ -558,7 +558,7 @@ onMounted(() => {
   gap: 12px;
   margin-top: 30px;
   padding-top: 20px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-secondary);
 }
 
 .btn {
@@ -613,8 +613,8 @@ onMounted(() => {
 .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--border-color);
-  border-top: 3px solid var(--primary-color);
+  border: 3px solid var(--border-secondary);
+  border-top: 3px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
