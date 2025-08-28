@@ -1,7 +1,15 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq, and, gte, lt, count, exists, desc, asc, or } from 'drizzle-orm';
 import postgres from 'postgres';
-import * as schema from './schema';
+import * as schema from './schema.ts';
+import { config } from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// 加载环境变量
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+config({ path: path.resolve(__dirname, '../.env') });
 
 // 检查环境变量
 if (!process.env.DATABASE_URL) {
@@ -45,7 +53,7 @@ export const db = drizzle(client, { schema });
 export { client };
 
 // 导出schema以便在其他地方使用
-export * from './schema';
+export * from './schema.ts';
 
 // 导出drizzle-orm函数
 export { eq, and, gte, lt, count, exists, desc, asc, or };

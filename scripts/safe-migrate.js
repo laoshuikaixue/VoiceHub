@@ -3,6 +3,10 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { config } from 'dotenv';
+
+// 加载环境变量
+config({ path: path.resolve(process.cwd(), '../.env') });
 
 // 颜色输出函数
 const colors = {
@@ -64,7 +68,7 @@ async function handleDataConflicts() {
     log('检查数据库连接...', 'cyan');
     
     // 简单的连接测试
-    if (!safeExec('npx drizzle-kit check', { stdio: 'pipe' })) {
+    if (!safeExec('cd .. && npx drizzle-kit check --config=drizzle.config.ts', { stdio: 'pipe' })) {
       logWarning('数据库schema检查失败，将尝试强制同步');
     }
     
@@ -123,13 +127,13 @@ async function safeMigrate() {
       NODE_ENV: 'production'
     };
     
-    if (safeExec('npx drizzle-kit push --force', { env })) {
+    if (safeExec('cd .. && npx drizzle-kit push --force --config=drizzle.config.ts', { env })) {
       logSuccess('数据库schema同步成功');
     } else {
       logWarning('schema同步失败，尝试标准迁移...');
       
       // 7. 执行迁移（作为后备）
-      if (!safeExec('npm run db:migrate', { env })) {
+      if (!safeExec('cd .. && npm run db:migrate', { env })) {
         throw new Error('数据库迁移完全失败');
       }
       logSuccess('数据库迁移成功');

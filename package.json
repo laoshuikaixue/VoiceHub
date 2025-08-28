@@ -17,9 +17,9 @@
     "db:drop": "npx drizzle-kit drop",
     "db:check": "npx drizzle-kit check",
     "setup": "npm install && npm run db:migrate",
-    "create-admin": "cd scripts && node create-admin.js",
-    "clear-db": "cd scripts && node clear-database.js",
-    "safe-migrate": "cd scripts && node safe-migrate.js",
+    "create-admin": "cd scripts && npx tsx create-admin.js",
+    "clear-db": "cd scripts && npx tsx clear-database.js",
+    "safe-migrate": "cd scripts && npx tsx safe-migrate.js",
     "vercel-build": "node scripts/deploy.js",
     "netlify-build": "node scripts/netlify-build.js",
     "check-deploy": "node scripts/check-deploy.js",
@@ -47,5 +47,7 @@
     "vue-router": "^4.5.1",
     "xlsx": "^0.18.5"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "tsx": "^4.20.5"
+  }
 }

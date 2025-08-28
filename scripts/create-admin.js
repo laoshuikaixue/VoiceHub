@@ -1,7 +1,16 @@
+#!/usr/bin/env node
+
+import { config } from 'dotenv';
+import path from 'path';
+
+// 加载环境变量（必须在导入db之前）
+config({ path: path.resolve(process.cwd(), '../.env') });
+
 import { db, users, notificationSettings, systemSettings } from '../drizzle/db.ts';
 import bcrypt from 'bcrypt';
+import prompts from 'prompts';
+import chalk from 'chalk';
 import { fileURLToPath } from 'url';
-import path from 'path';
 import { eq } from 'drizzle-orm';
 
 const __filename = fileURLToPath(import.meta.url);
