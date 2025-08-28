@@ -689,131 +689,6 @@ class CacheService {
     console.log('[Cache] 播放时间缓存已清除')
   }
 
-  // ==================== 缓存预热 ====================
-
-  // 预热歌曲缓存
-  async warmupSongsCache(semester?: string): Promise<void> {
-    if (!isRedisReady()) return
-    
-    console.log(`[Cache] 开始预热歌曲数量缓存${semester ? ` (学期: ${semester})` : ''}`)
-    
-    try {
-      // 只预热歌曲数量，不缓存歌曲列表（因为每个用户的voted状态不同）
-      const songCount = await db.select({ count: sql<number>`count(*)` })
-        .from(songs)
-        .where(semester ? eq(songs.semester, semester) : undefined)
-        .then(result => result[0]?.count || 0)
-      
-      if (songCount !== undefined) {
-        await this.setSongCount(songCount, semester)
-      }
-      
-      console.log(`[Cache] 歌曲数量缓存预热完成，歌曲数量: ${songCount || 0}`)
-    } catch (error) {
-      console.error('[Cache] 歌曲缓存预热失败:', error)
-    }
-  }
-
-  // 预热排期缓存
-  async warmupSchedulesCache(): Promise<void> {
-    if (!isRedisReady()) return
-    
-    console.log('[Cache] 开始预热排期缓存')
-    
-    try {
-      // 预热未来7天的排期
-      const today = new Date()
-      const endDate = new Date(today)
-      endDate.setDate(today.getDate() + 7)
-      
-      const schedulesList = await db.select({
-        id: schedules.id,
-        playDate: schedules.playDate,
-        sequence: schedules.sequence,
-        song: {
-          id: songs.id,
-          title: songs.title,
-          artist: songs.artist,
-          requester: {
-            id: users.id,
-            name: users.name,
-            grade: users.grade,
-            class: users.class
-          }
-        },
-        playTime: {
-          id: playTimes.id,
-          name: playTimes.name,
-          startTime: playTimes.startTime,
-          endTime: playTimes.endTime
-        }
-      })
-      .from(schedules)
-      .leftJoin(songs, eq(schedules.songId, songs.id))
-      .leftJoin(users, eq(songs.requesterId, users.id))
-      .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
-      .where(and(
-        gte(schedules.playDate, today),
-        lte(schedules.playDate, endDate)
-      ))
-      .orderBy(schedules.playDate, schedules.sequence)
-      
-      if (schedulesList) {
-        await this.setSchedulesList(schedulesList, today, endDate)
-        
-        // 按日期分组缓存
-        const schedulesByDate = new Map<string, any[]>()
-        schedulesList.forEach(schedule => {
-          const dateStr = schedule.playDate.toISOString().split('T')[0]
-          if (!schedulesByDate.has(dateStr)) {
-            schedulesByDate.set(dateStr, [])
-          }
-          schedulesByDate.get(dateStr)!.push(schedule)
-        })
-        
-        // 缓存每日排期
-        for (const [dateStr, daySchedules] of schedulesByDate) {
-          await this.setSchedulesByDate(daySchedules, new Date(dateStr))
-        }
-      }
-      
-      console.log(`[Cache] 排期缓存预热完成，缓存了 ${schedulesList?.length || 0} 个排期`)
-    } catch (error) {
-      console.error('[Cache] 排期缓存预热失败:', error)
-    }
-  }
-
-  // 预热系统设置缓存
-  async warmUpSystemSettings(): Promise<void> {
-    try {
-      let settings = await db.select().from(systemSettings).limit(1).then(result => result[0])
-      
-      if (!settings) {
-        // 如果不存在，创建默认设置
-        const [newSettings] = await db.insert(systemSettings).values({
-          enablePlayTimeSelection: false,
-          siteTitle: 'VoiceHub',
-          siteLogoUrl: '/favicon.ico',
-          schoolLogoHomeUrl: null,
-          schoolLogoPrintUrl: null,
-          siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
-          submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
-          icpNumber: null,
-          enableSubmissionLimit: false,
-          dailySubmissionLimit: null,
-          weeklySubmissionLimit: null,
-          showBlacklistKeywords: false
-        }).returning()
-        settings = newSettings
-      }
-      
-      await this.setSystemSettings(settings)
-      console.log('[Cache] 系统设置缓存预热完成')
-    } catch (error) {
-      console.error('[Cache] 系统设置缓存预热失败:', error)
-    }
-  }
-
   // ==================== 统计数据缓存 ====================
 
   // 获取管理员统计数据
@@ -968,36 +843,8 @@ class CacheService {
 
     console.log('[Cache] 启动定期刷新任务')
     
-    // 每5分钟刷新歌曲缓存
-    setInterval(async () => {
-      try {
-        await this.warmupSongsCache()
-        console.log('[Cache] 定期歌曲缓存刷新完成')
-      } catch (error) {
-        console.error('[Cache] 定期歌曲缓存刷新失败:', error)
-      }
-    }, 5 * 60 * 1000)
-
-    // 每10分钟刷新排期缓存
-    setInterval(async () => {
-      try {
-        await this.warmupSchedulesCache()
-        console.log('[Cache] 定期排期缓存刷新完成')
-      } catch (error) {
-        console.error('[Cache] 定期排期缓存刷新失败:', error)
-      }
-    }, 10 * 60 * 1000)
-
-    // 每30分钟刷新系统设置缓存
-    setInterval(async () => {
-      try {
-        await this.warmUpSystemSettings()
-        console.log('[Cache] 定期系统设置缓存刷新完成')
-      } catch (error) {
-        console.error('[Cache] 定期系统设置缓存刷新失败:', error)
-      }
-    }, 30 * 60 * 1000)
-
+    // 注意：移除了歌曲和排期的定期预热，改为按需缓存
+    
     // 每小时清理过期的刷新锁
     setInterval(() => {
       const now = Date.now()
@@ -1034,14 +881,6 @@ class CacheService {
     console.log('[Cache] 初始化缓存系统')
     
     try {
-      // 预热核心缓存
-      await Promise.all([
-        this.warmupSongsCache(),
-        this.warmupSchedulesCache(),
-        this.warmUpSystemSettings()
-      ])
-      
-      // 启动定期刷新
       this.startPeriodicRefresh()
       
       console.log('[Cache] 缓存系统初始化完成')
