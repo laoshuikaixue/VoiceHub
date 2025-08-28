@@ -1,7 +1,50 @@
 import { db, apiKeys, apiKeyPermissions } from '~/drizzle/db'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import crypto from 'crypto'
 import { ApiLogService } from '~/server/services/apiLogService'
+import { 
+  API_KEY_CONSTANTS, 
+  HTTP_STATUS, 
+  API_ERROR_CODES, 
+  API_ERROR_MESSAGES,
+  LOG_CONSTANTS 
+} from '~/server/config/constants'
+import { logManager } from '~/server/utils/log-manager'
+import { openApiCache } from '~/server/utils/open-api-cache'
+
+/**
+ * 记录API访问日志
+ */
+async function logApiAccess(
+  apiKeyId: number,
+  method: string,
+  endpoint: string,
+  statusCode: number,
+  responseTimeMs: number,
+  ipAddress: string,
+  userAgent: string,
+  requestBody?: string,
+  responseBody?: any,
+  errorMessage?: string
+) {
+  try {
+    // 写入数据库日志
+    await ApiLogService.logAccess({
+      apiKeyId,
+      endpoint,
+      method,
+      ipAddress,
+      userAgent,
+      statusCode,
+      responseTimeMs,
+      requestBody,
+      responseBody: responseBody ? openApiCache.truncateResponseBody(responseBody) : undefined,
+      errorMessage
+    })
+  } catch (error) {
+    console.error('[API Auth Middleware] 记录API访问日志失败:', error)
+  }
+}
 
 /**
  * API Key认证中间件
@@ -53,8 +96,8 @@ export default defineEventHandler(async (event) => {
     })
     
     return sendError(event, createError({
-      statusCode: 401,
-      message: 'API Key is required. Please provide a valid API Key in the X-API-Key header.'
+      statusCode: HTTP_STATUS.UNAUTHORIZED,
+      message: API_ERROR_MESSAGES[API_ERROR_CODES.MISSING_API_KEY]
     }))
   }
 
@@ -62,13 +105,13 @@ export default defineEventHandler(async (event) => {
     // 验证API Key格式 (应该是 vhub_xxxxxxxxxxxxxxxx 格式)
     console.log(`[API Auth Middleware] 验证API Key格式: 长度=${apiKey.length}, 前缀=${apiKey.startsWith('vhub_')}`)
     
-    if (!apiKey.startsWith('vhub_') || apiKey.length !== 37) {
+    if (!apiKey.startsWith(API_KEY_CONSTANTS.PREFIX) || apiKey.length !== API_KEY_CONSTANTS.TOTAL_LENGTH) {
       console.log(`[API Auth Middleware] API Key格式无效`)
-      throw new Error('Invalid API Key format')
+      throw new Error(API_ERROR_MESSAGES[API_ERROR_CODES.INVALID_API_KEY_FORMAT])
     }
 
     // 提取前缀和哈希API Key
-    const keyPrefix = apiKey.substring(0, 10) // vhub_xxxxx
+    const keyPrefix = apiKey.substring(0, API_KEY_CONSTANTS.PREFIX_LENGTH)
     const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex')
     
     console.log(`[API Auth Middleware] 查询API Key哈希: ${keyHash.substring(0, 10)}...`)
@@ -100,12 +143,12 @@ export default defineEventHandler(async (event) => {
         method,
         ipAddress,
         userAgent,
-        statusCode: 401,
+        statusCode: HTTP_STATUS.UNAUTHORIZED,
         responseTimeMs: Date.now() - startTime,
-        errorMessage: 'Invalid API Key'
+        errorMessage: API_ERROR_MESSAGES[API_ERROR_CODES.INVALID_API_KEY]
       })
       
-      throw new Error('Invalid API Key')
+      throw new Error(API_ERROR_MESSAGES[API_ERROR_CODES.INVALID_API_KEY])
     }
 
     console.log(`[API Auth Middleware] API Key记录: ID=${apiKeyRecord.id}, 名称=${apiKeyRecord.name}, 过期时间=${apiKeyRecord.expiresAt}`)
@@ -118,12 +161,12 @@ export default defineEventHandler(async (event) => {
         method,
         ipAddress,
         userAgent,
-        statusCode: 403,
+        statusCode: HTTP_STATUS.FORBIDDEN,
         responseTimeMs: Date.now() - startTime,
-        errorMessage: 'API Key is disabled'
+        errorMessage: API_ERROR_MESSAGES[API_ERROR_CODES.API_KEY_DISABLED]
       })
       
-      throw new Error('API Key is disabled')
+      throw new Error(API_ERROR_MESSAGES[API_ERROR_CODES.API_KEY_DISABLED])
     }
 
     // 检查API Key是否过期
@@ -135,12 +178,12 @@ export default defineEventHandler(async (event) => {
         method,
         ipAddress,
         userAgent,
-        statusCode: 403,
+        statusCode: HTTP_STATUS.FORBIDDEN,
         responseTimeMs: Date.now() - startTime,
-        errorMessage: 'API Key has expired'
+        errorMessage: API_ERROR_MESSAGES[API_ERROR_CODES.API_KEY_EXPIRED]
       })
       
-      throw new Error('API Key has expired')
+      throw new Error(API_ERROR_MESSAGES[API_ERROR_CODES.API_KEY_EXPIRED])
     }
 
 
@@ -168,41 +211,41 @@ export default defineEventHandler(async (event) => {
           method,
           ipAddress,
           userAgent,
-          statusCode: 403,
+          statusCode: HTTP_STATUS.FORBIDDEN,
           responseTimeMs: Date.now() - startTime,
-          errorMessage: `Missing required permission: ${requiredPermission}`
+          errorMessage: `${API_ERROR_MESSAGES[API_ERROR_CODES.INSUFFICIENT_PERMISSIONS]}: ${requiredPermission}`
         })
         
-        throw new Error(`Insufficient permissions. Required: ${requiredPermission}`)
+        throw new Error(`${API_ERROR_MESSAGES[API_ERROR_CODES.INSUFFICIENT_PERMISSIONS]}. Required: ${requiredPermission}`)
       }
     }
 
-    // 更新API Key使用统计
-    console.log(`[API Auth Middleware] 开始更新API Key使用统计`)
+    // 使用原子操作更新API Key使用统计
+    console.log(`[API Auth Middleware] 开始原子更新API Key使用统计`)
     await db.update(apiKeys)
       .set({
         lastUsedAt: new Date(),
-        usageCount: apiKeyRecord.usageCount + 1,
+        usageCount: sql`${apiKeys.usageCount} + 1`,
         updatedAt: new Date()
       })
       .where(eq(apiKeys.id, apiKeyRecord.id))
-    console.log(`[API Auth Middleware] API Key使用统计更新完成`)
+    console.log(`[API Auth Middleware] API Key使用统计原子更新完成`)
 
-    // 记录API访问日志
+    // 记录成功的API访问
     console.log(`[API Auth Middleware] 开始记录API访问日志`)
     try {
-      await ApiLogService.logAccess({
-        apiKeyId: apiKeyRecord.id,
-        endpoint: pathname,
+      await logApiAccess(
+        apiKeyRecord.id,
         method,
-        statusCode: 200,
-        responseTimeMs: Date.now() - startTime,
-        userAgent: getHeader(event, 'user-agent') || 'Unknown',
-        ipAddress
-      })
+        pathname,
+        HTTP_STATUS.OK,
+        Date.now() - startTime,
+        ipAddress,
+        getHeader(event, 'user-agent') || 'Unknown'
+      )
       console.log(`[API Auth Middleware] API访问日志记录完成`)
-    } catch (logError) {
-      console.error(`[API Auth Middleware] API访问日志记录失败:`, logError)
+    } catch (error) {
+      console.error(`[API Auth Middleware] 记录API访问日志失败:`, error)
     }
 
     console.log(`[API Auth Middleware] 验证成功，继续处理请求`)
@@ -211,27 +254,35 @@ export default defineEventHandler(async (event) => {
     event.context.apiKey = apiKeyRecord
     
     // 记录成功的API访问（在响应后记录）
-    event.context.logApiAccess = async (statusCode: number, responseBody?: string, errorMessage?: string) => {
-      await ApiLogService.logAccess({
-        apiKeyId: apiKeyRecord.id,
-        endpoint: pathname,
+    event.context.logApiAccess = async (statusCode: number, responseBody?: any, errorMessage?: string) => {
+      const requestBody = method !== 'GET' ? await readBody(event).catch(() => null) : null
+      await logApiAccess(
+        apiKeyRecord.id,
         method,
+        pathname,
+        statusCode,
+        Date.now() - startTime,
         ipAddress,
         userAgent,
-        statusCode,
-        responseTimeMs: Date.now() - startTime,
-        requestBody: method !== 'GET' ? await readBody(event).catch(() => null) : null,
-        responseBody: responseBody ? JSON.stringify(responseBody).substring(0, 10000) : null, // 限制响应体大小
+        requestBody ? JSON.stringify(requestBody) : undefined,
+        responseBody,
         errorMessage
-      })
+      )
     }
     
     // 验证成功，让请求继续到API端点
     return
 
   } catch (error: any) {
+    const statusCode = error.message.includes('expired') || 
+                      error.message.includes('disabled') || 
+                      error.message.includes('permissions') || 
+                      error.message.includes('IP address') 
+                      ? HTTP_STATUS.FORBIDDEN 
+                      : HTTP_STATUS.UNAUTHORIZED
+    
     return sendError(event, createError({
-      statusCode: error.message.includes('expired') || error.message.includes('disabled') || error.message.includes('permissions') || error.message.includes('IP address') ? 403 : 401,
+      statusCode,
       message: error.message
     }))
   }

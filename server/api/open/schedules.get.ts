@@ -2,8 +2,8 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { schedules, songs, users, playTimes } from '~/drizzle/schema'
 import { eq, and, desc, asc, like, or, sql, gte, lt } from 'drizzle-orm'
-import { cache } from '~/server/utils/cache-helpers'
-import crypto from 'crypto'
+import { openApiCache } from '~/server/utils/open-api-cache'
+import { CACHE_CONSTANTS } from '~/server/config/constants'
 
 // 格式化日期时间为统一格式：YYYY/M/D H:mm:ss
 function formatDateTime(date: Date): string {
@@ -56,17 +56,13 @@ export default defineEventHandler(async (event) => {
       sortBy,
       sortOrder
     }
-    const queryHash = crypto.createHash('md5').update(JSON.stringify(queryParams)).digest('hex')
-    const cacheKey = `open:schedules:${queryHash}`
+    const cacheKey = openApiCache.generateKey('schedules', queryParams)
 
     // 尝试从缓存获取数据
-    const cachedData = await cache.get<any>(cacheKey)
-    if (cachedData !== null) {
-      console.log(`[Open API Cache] 排期列表缓存命中: ${cacheKey}`)
+    const cachedData = await openApiCache.get(cacheKey)
+    if (cachedData) {
       return cachedData
     }
-
-    console.log(`[Open API Cache] 排期列表缓存未命中，查询数据库: ${cacheKey}`)
 
     // 构建查询条件
     const conditions = []
@@ -207,9 +203,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 缓存结果（5分钟）
-    await cache.set(cacheKey, result, 300)
-    console.log(`[Open API Cache] 排期列表设置缓存: ${cacheKey}, 数量: ${formattedSchedules.length}`)
+    // 缓存结果
+    await openApiCache.set(cacheKey, result, CACHE_CONSTANTS.DEFAULT_TTL)
 
     return result
 
