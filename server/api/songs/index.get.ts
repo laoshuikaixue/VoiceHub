@@ -47,10 +47,23 @@ export default defineEventHandler(async (event) => {
     const queryHash = crypto.createHash('md5').update(JSON.stringify(queryParams)).digest('hex')
     const cacheKey = `songs:list:${queryHash}`
     
-    // 尝试从缓存获取基础数据（不包含用户特定的投票状态）
+    // 尝试从缓存获取基础数据（不包含用户特定的投票状态和动态状态）
     const cachedData = await cache.get<any>(cacheKey)
     if (cachedData !== null) {
       console.log(`[Cache] 歌曲列表缓存命中: ${cacheKey}, 歌曲数: ${cachedData.data?.songs?.length || 0}`)
+      
+      // 重新获取动态状态数据（scheduled状态可能已变化）
+      const schedulesQuery = await db.select({
+        songId: schedules.songId
+      })
+      .from(schedules)
+      
+      const scheduledSongs = new Set(schedulesQuery.map(s => s.songId))
+      
+      // 更新缓存数据中的scheduled状态
+      cachedData.data.songs.forEach((song: any) => {
+        song.scheduled = scheduledSongs.has(song.id)
+      })
       
       // 如果用户已登录，需要添加用户特定的投票状态
       if (user) {
