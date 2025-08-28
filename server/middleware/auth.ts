@@ -25,7 +25,8 @@ export default defineEventHandler(async (event) => {
     '/api/schedules/public',
     '/api/songs/count',
     '/api/songs/public',
-    '/api/site-config'
+    '/api/site-config',
+    '/api/open/' // 开放API路径，由api-auth中间件处理认证
   ]
 
   // 公共路径跳过认证检查

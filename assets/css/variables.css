@@ -136,23 +136,27 @@
   --btn-primary-bg: var(--primary);
   --btn-primary-hover: var(--primary-hover);
   --btn-primary-text: var(--text-primary);
+  --btn-primary-border: var(--primary-border);
   
-  --btn-secondary-bg: var(--bg-tertiary);
-  --btn-secondary-hover: var(--bg-quaternary);
-  --btn-secondary-text: var(--text-secondary);
-  --btn-secondary-border: var(--border-tertiary);
+  --btn-secondary-bg: #3a3a3a;
+  --btn-secondary-hover: #4a4a4a;
+  --btn-secondary-text: var(--text-primary);
+  --btn-secondary-border: #555555;
   
   --btn-success-bg: var(--success);
   --btn-success-hover: var(--success-hover);
   --btn-success-text: var(--text-primary);
+  --btn-success-border: var(--success-border);
   
   --btn-warning-bg: var(--warning);
   --btn-warning-hover: var(--warning-hover);
   --btn-warning-text: var(--text-primary);
+  --btn-warning-border: var(--warning-border);
   
   --btn-error-bg: var(--error);
   --btn-error-hover: var(--error-hover);
   --btn-error-text: var(--text-primary);
+  --btn-error-border: var(--error-border);
   
   --btn-disabled-bg: var(--bg-tertiary);
   --btn-disabled-text: var(--text-disabled);

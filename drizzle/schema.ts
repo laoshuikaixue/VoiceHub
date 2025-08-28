@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, boolean, integer, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, boolean, integer, pgEnum, uuid, varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // 枚举定义
@@ -139,6 +139,47 @@ export const songBlacklists = pgTable('SongBlacklist', {
   createdBy: integer('createdBy'),
 });
 
+// API Keys表
+export const apiKeys = pgTable('api_keys', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  keyHash: varchar('key_hash', { length: 255 }).notNull().unique(),
+  keyPrefix: varchar('key_prefix', { length: 10 }).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  createdByUserId: integer('created_by_user_id').notNull(),
+  usageCount: integer('usage_count').default(0).notNull(),
+
+});
+
+// API Key权限表
+export const apiKeyPermissions = pgTable('api_key_permissions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  apiKeyId: uuid('api_key_id').notNull(),
+  permission: varchar('permission', { length: 100 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// API访问日志表
+export const apiLogs = pgTable('api_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  apiKeyId: uuid('api_key_id'),
+  endpoint: varchar('endpoint', { length: 500 }).notNull(),
+  method: varchar('method', { length: 10 }).notNull(),
+  ipAddress: text('ip_address').notNull(),
+  userAgent: text('user_agent'),
+  statusCode: integer('status_code').notNull(),
+  responseTimeMs: integer('response_time_ms').notNull(),
+  requestBody: text('request_body'),
+  responseBody: text('response_body'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  errorMessage: text('error_message'),
+});
+
 // 关系定义
 export const usersRelations = relations(users, ({ many, one }) => ({
   songs: many(songs),
@@ -148,6 +189,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     fields: [users.id],
     references: [notificationSettings.userId],
   }),
+  apiKeys: many(apiKeys),
 }));
 
 export const songsRelations = relations(songs, ({ one, many }) => ({
@@ -209,6 +251,30 @@ export const playTimesRelations = relations(playTimes, ({ many }) => ({
   schedules: many(schedules),
 }));
 
+// API框架关系定义
+export const apiKeysRelations = relations(apiKeys, ({ one, many }) => ({
+  createdByUser: one(users, {
+    fields: [apiKeys.createdByUserId],
+    references: [users.id],
+  }),
+  permissions: many(apiKeyPermissions),
+  logs: many(apiLogs),
+}));
+
+export const apiKeyPermissionsRelations = relations(apiKeyPermissions, ({ one }) => ({
+  apiKey: one(apiKeys, {
+    fields: [apiKeyPermissions.apiKeyId],
+    references: [apiKeys.id],
+  }),
+}));
+
+export const apiLogsRelations = relations(apiLogs, ({ one }) => ({
+  apiKey: one(apiKeys, {
+    fields: [apiLogs.apiKeyId],
+    references: [apiKeys.id],
+  }),
+}));
+
 // 导出所有表的类型
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -230,3 +296,9 @@ export type SystemSettings = typeof systemSettings.$inferSelect;
 export type NewSystemSettings = typeof systemSettings.$inferInsert;
 export type SongBlacklist = typeof songBlacklists.$inferSelect;
 export type NewSongBlacklist = typeof songBlacklists.$inferInsert;
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;
+export type ApiKeyPermission = typeof apiKeyPermissions.$inferSelect;
+export type NewApiKeyPermission = typeof apiKeyPermissions.$inferInsert;
+export type ApiLog = typeof apiLogs.$inferSelect;
+export type NewApiLog = typeof apiLogs.$inferInsert;

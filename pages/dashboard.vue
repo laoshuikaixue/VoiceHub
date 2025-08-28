@@ -133,6 +133,23 @@
               </button>
             </div>
             
+            <!-- API管理 - 只有超级管理员可见 -->
+            <div v-if="permissions.canAccessPage('api-keys')" class="nav-section">
+              <div class="nav-section-title">API管理</div>
+              <button
+                v-if="permissions.canAccessPage('api-keys')"
+                :class="['nav-item', { active: activeTab === 'api-keys' }]"
+                @click="activeTab = 'api-keys'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <circle cx="12" cy="16" r="1"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                API密钥管理
+              </button>
+            </div>
+            
             <!-- 系统管理 - 只有超级管理员可见 -->
             <div v-if="permissions.canAccessPage('notifications') || permissions.canAccessPage('playtimes') || permissions.canAccessPage('semesters') || permissions.canAccessPage('blacklist') || permissions.canAccessPage('site-config') || permissions.canAccessPage('database')" class="nav-section">
               <div class="nav-section-title">系统管理</div>
@@ -320,6 +337,13 @@
             <div v-if="activeTab === 'database' && permissions.canAccessPage('database')" class="content-section">
               <LazyAdminDatabaseManager />
             </div>
+            
+            <!-- API密钥管理 -->
+            <div v-if="activeTab === 'api-keys' && permissions.canAccessPage('api-keys')" class="content-section">
+              <LazyAdminApiKeyManager />
+            </div>
+            
+
           </div>
         </main>
       </div>
