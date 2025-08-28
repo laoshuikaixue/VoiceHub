@@ -4,6 +4,8 @@ import { songs, users, votes, schedules, playTimes } from '~/drizzle/schema'
 import { eq, and, or, like, desc, asc, count, sql, inArray } from 'drizzle-orm'
 import { openApiCache } from '~/server/utils/open-api-cache'
 import { CACHE_CONSTANTS } from '~/server/config/constants'
+import { cache } from '~/server/utils/cache-helpers'
+import crypto from 'crypto'
 
 // 格式化日期时间为统一格式：YYYY/M/D H:mm:ss
 function formatDateTime(date: Date): string {
@@ -40,24 +42,67 @@ export default defineEventHandler(async (event) => {
     const sortBy = query.sortBy as string || 'createdAt'
     const sortOrder = query.sortOrder as string || 'desc'
 
-    // 构建缓存键
+    // 优先从普通API缓存获取数据
+    // 构建与普通API相同的缓存键
     const queryParams = {
-      search,
-      semester,
-      grade,
-      played,
-      scheduled,
-      page,
-      limit,
+      search: search || '',
+      semester: semester || '',
       sortBy,
       sortOrder
     }
-    const cacheKey = openApiCache.generateKey('songs', queryParams)
-
-    // 尝试从缓存获取数据
-    const cachedData = await openApiCache.get(cacheKey)
-    if (cachedData) {
-      return cachedData
+    const queryHash = crypto.createHash('md5').update(JSON.stringify(queryParams)).digest('hex')
+    const normalApiCacheKey = `songs:list:${queryHash}`
+    
+    // 尝试从普通API缓存获取基础数据
+    const cachedSongsData = await cache.get<any>(normalApiCacheKey)
+    if (cachedSongsData !== null) {
+      console.log(`[OpenAPI Cache] 使用普通API歌曲缓存数据: ${normalApiCacheKey}`)
+      
+      // 转换为开放API格式
+      const songs = cachedSongsData.data?.songs || []
+      const total = cachedSongsData.data?.total || 0
+      
+      // 应用分页
+      const startIndex = (page - 1) * limit
+      const endIndex = startIndex + limit
+      const paginatedSongs = songs.slice(startIndex, endIndex)
+      
+      const result = {
+        success: true,
+        data: {
+          songs: paginatedSongs.map((song: any) => ({
+            id: song.id,
+            title: song.title,
+            artist: song.artist,
+            semester: song.semester,
+            cover: song.cover,
+            musicPlatform: song.musicPlatform,
+            musicId: song.musicId,
+            voteCount: song.voteCount || 0,
+            scheduled: song.scheduled || false,
+            played: song.played || false,
+            playedAt: song.playedAt,
+            createdAt: song.createdAt,
+            requester: song.requester ? {
+              name: song.requester.name,
+              grade: song.requester.grade,
+              class: song.requester.class
+            } : null
+          })),
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+          },
+          filters: {
+            search: search || null,
+            semester: semester || null
+          }
+        }
+      }
+      
+      return result
     }
 
     // 构建查询条件
@@ -274,9 +319,36 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 缓存结果
-    await openApiCache.set(cacheKey, result, CACHE_CONSTANTS.DEFAULT_TTL)
-
+    // 将查询结果缓存到普通API缓存中，供普通API和开放API共享
+    const normalApiResult = {
+      success: true,
+      data: {
+        songs: songsWithDetails,
+        total,
+        pagination: {
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      }
+    }
+    
+    // 使用与普通API相同的缓存键格式（变量已在前面声明）
+    
+    await cache.set(normalApiCacheKey, normalApiResult, 300) // 5分钟缓存
+    console.log(`[OpenAPI Cache] 歌曲数据已缓存到普通API缓存: ${normalApiCacheKey}，数量: ${songsWithDetails.length}`)
+    
+    // 可选：也缓存到开放API专用缓存（保留原有逻辑，但优先级较低）
+    const openApiCacheKey = openApiCache.generateKey('songs', {
+      search,
+      semester,
+      page,
+      limit,
+      sortBy,
+      sortOrder
+    })
+    await openApiCache.set(openApiCacheKey, result, CACHE_CONSTANTS.DEFAULT_TTL)
+    
     return result
 
   } catch (error: any) {
