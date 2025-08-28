@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
     '/api/songs/count',
     '/api/songs/public',
     '/api/site-config',
+    '/api/proxy/', // 代理API路径，用于图片代理等功能
     '/api/open/' // 开放API路径，由api-auth中间件处理认证
   ]
 
