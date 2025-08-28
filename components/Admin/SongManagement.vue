@@ -1008,28 +1008,48 @@ const cancelAddSong = () => {
 }
 
 // 用户搜索功能
-const fetchUsers = async () => {
+// 防抖定时器
+let searchTimeout = null
+
+// API搜索用户函数
+const searchUsersFromAPI = async (query) => {
+  if (!query.trim()) {
+    return []
+  }
+  
   try {
-    const response = await $fetch('/api/admin/users')
-    allUsers.value = response.users || []
+    const response = await $fetch('/api/admin/users', {
+      method: 'GET',
+      query: {
+        search: query,
+        limit: 20 // 限制返回数量，提高性能
+      }
+    })
+    return response.users || []
   } catch (error) {
-    console.error('获取用户列表失败:', error)
+    console.error('搜索用户失败:', error)
+    return []
   }
 }
 
-const searchUsers = () => {
+const searchUsers = async () => {
   if (!userSearchQuery.value.trim()) {
     filteredUsers.value = []
     showUserDropdown.value = false
     return
   }
 
-  const query = userSearchQuery.value.toLowerCase()
-  filteredUsers.value = allUsers.value.filter(user =>
-    user.name?.toLowerCase().includes(query) ||
-    user.username?.toLowerCase().includes(query)
-  )
-  showUserDropdown.value = true
+  // 清除之前的定时器
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  // 设置防抖
+  searchTimeout = setTimeout(async () => {
+    const users = await searchUsersFromAPI(userSearchQuery.value)
+    filteredUsers.value = users
+    showUserDropdown.value = users.length > 0
+  }, 300) // 300ms防抖延迟
 }
 
 const selectUser = (user) => {
@@ -1047,19 +1067,27 @@ const clearSelectedUser = () => {
 }
 
 // 编辑模态框的用户搜索功能
-const searchEditUsers = () => {
+// 编辑模态框防抖定时器
+let editSearchTimeout = null
+
+const searchEditUsers = async () => {
   if (!editUserSearchQuery.value.trim()) {
     filteredEditUsers.value = []
     showEditUserDropdown.value = false
     return
   }
 
-  const query = editUserSearchQuery.value.toLowerCase()
-  filteredEditUsers.value = allUsers.value.filter(user =>
-    user.name?.toLowerCase().includes(query) ||
-    user.username?.toLowerCase().includes(query)
-  )
-  showEditUserDropdown.value = true
+  // 清除之前的定时器
+  if (editSearchTimeout) {
+    clearTimeout(editSearchTimeout)
+  }
+
+  // 设置防抖
+  editSearchTimeout = setTimeout(async () => {
+    const users = await searchUsersFromAPI(editUserSearchQuery.value)
+    filteredEditUsers.value = users
+    showEditUserDropdown.value = users.length > 0
+  }, 300) // 300ms防抖延迟
 }
 
 const selectEditUser = (user) => {
@@ -1116,8 +1144,7 @@ onMounted(async () => {
     selectedSemester.value = currentSemester.value.name
   }
   
-  // 获取用户列表
-  await fetchUsers()
+  // 用户搜索改为实时API搜索，不再预加载用户列表
   
   // 添加点击外部关闭下拉框的事件监听
   document.addEventListener('click', handleClickOutside)
