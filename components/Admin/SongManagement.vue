@@ -336,14 +336,24 @@
           <div class="form-group">
             <label>投稿人</label>
             <div class="user-search-container">
-              <input
-                v-model="editUserSearchQuery"
-                type="text"
-                class="form-input"
-                placeholder="搜索用户姓名或用户名"
-                @input="searchEditUsers"
-                @focus="showEditUserDropdown = true"
-              />
+              <div class="search-input-wrapper">
+                <input
+                  v-model="editUserSearchQuery"
+                  type="text"
+                  class="form-input"
+                  placeholder="搜索用户姓名或用户名"
+                  @input="searchEditUsers"
+                  @focus="showEditUserDropdown = true"
+                />
+                <div v-if="editUserSearchLoading" class="search-loading">
+                  <svg class="loading-spinner" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                      <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                      <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                    </circle>
+                  </svg>
+                </div>
+              </div>
               <div v-if="showEditUserDropdown && filteredEditUsers.length > 0" class="user-dropdown">
                 <div
                   v-for="user in filteredEditUsers.slice(0, 10)"
@@ -448,14 +458,24 @@
           <div class="form-group">
             <label>投稿人</label>
             <div class="user-search-container">
-              <input
-                v-model="userSearchQuery"
-                type="text"
-                class="form-input"
-                placeholder="搜索用户姓名或用户名"
-                @input="searchUsers"
-                @focus="showUserDropdown = true"
-              />
+              <div class="search-input-wrapper">
+                <input
+                  v-model="userSearchQuery"
+                  type="text"
+                  class="form-input"
+                  placeholder="搜索用户姓名或用户名"
+                  @input="searchUsers"
+                  @focus="showUserDropdown = true"
+                />
+                <div v-if="userSearchLoading" class="search-loading">
+                  <svg class="loading-spinner" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                      <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                      <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                    </circle>
+                  </svg>
+                </div>
+              </div>
               <div v-if="showUserDropdown && filteredUsers.length > 0" class="user-dropdown">
                 <div
                   v-for="user in filteredUsers.slice(0, 10)"
@@ -595,12 +615,14 @@ const showUserDropdown = ref(false)
 const selectedUser = ref(null)
 const allUsers = ref([])
 const filteredUsers = ref([])
+const userSearchLoading = ref(false)
 
 // 编辑模态框的用户搜索
 const editUserSearchQuery = ref('')
 const showEditUserDropdown = ref(false)
 const selectedEditUser = ref(null)
 const filteredEditUsers = ref([])
+const editUserSearchLoading = ref(false)
 
 // 数据
 const songs = ref([])
@@ -917,8 +939,19 @@ const saveEditSong = async () => {
     }
   } catch (error) {
     console.error('更新歌曲失败:', error)
+    
+    // 提取具体的错误信息
+    let errorMessage = '更新失败'
+    if (error.data && error.data.message) {
+      errorMessage = error.data.message
+    } else if (error.message) {
+      errorMessage = error.message
+    } else if (error.statusMessage) {
+      errorMessage = error.statusMessage
+    }
+    
     if (window.$showNotification) {
-      window.$showNotification('更新失败: ' + error.message, 'error')
+      window.$showNotification(errorMessage, 'error')
     }
   } finally {
     editLoading.value = false
@@ -997,13 +1030,36 @@ const saveAddSong = async () => {
     await refreshSongs()
     showAddSongModal.value = false
     
+    // 清空表单内容
+    addForm.value = {
+      title: '',
+      artist: '',
+      requester: '',
+      semester: '',
+      musicPlatform: '',
+      musicId: '',
+      cover: ''
+    }
+    clearSelectedUser()
+    
     if (window.$showNotification) {
       window.$showNotification('歌曲添加成功', 'success')
     }
   } catch (error) {
     console.error('添加歌曲失败:', error)
+    
+    // 提取具体的错误信息
+    let errorMessage = '添加失败'
+    if (error.data && error.data.message) {
+      errorMessage = error.data.message
+    } else if (error.message) {
+      errorMessage = error.message
+    } else if (error.statusMessage) {
+      errorMessage = error.statusMessage
+    }
+    
     if (window.$showNotification) {
-      window.$showNotification('添加失败: ' + error.message, 'error')
+      window.$showNotification(errorMessage, 'error')
     }
   } finally {
     addLoading.value = false
@@ -1053,6 +1109,7 @@ const searchUsers = async () => {
   if (!userSearchQuery.value.trim()) {
     filteredUsers.value = []
     showUserDropdown.value = false
+    userSearchLoading.value = false
     return
   }
 
@@ -1063,9 +1120,18 @@ const searchUsers = async () => {
 
   // 设置防抖
   searchTimeout = setTimeout(async () => {
-    const users = await searchUsersFromAPI(userSearchQuery.value)
-    filteredUsers.value = users
-    showUserDropdown.value = users.length > 0
+    userSearchLoading.value = true
+    try {
+      const users = await searchUsersFromAPI(userSearchQuery.value)
+      filteredUsers.value = users
+      showUserDropdown.value = users.length > 0
+    } catch (error) {
+      console.error('搜索用户失败:', error)
+      filteredUsers.value = []
+      showUserDropdown.value = false
+    } finally {
+      userSearchLoading.value = false
+    }
   }, 300) // 300ms防抖延迟
 }
 
@@ -1091,6 +1157,7 @@ const searchEditUsers = async () => {
   if (!editUserSearchQuery.value.trim()) {
     filteredEditUsers.value = []
     showEditUserDropdown.value = false
+    editUserSearchLoading.value = false
     return
   }
 
@@ -1101,9 +1168,18 @@ const searchEditUsers = async () => {
 
   // 设置防抖
   editSearchTimeout = setTimeout(async () => {
-    const users = await searchUsersFromAPI(editUserSearchQuery.value)
-    filteredEditUsers.value = users
-    showEditUserDropdown.value = users.length > 0
+    editUserSearchLoading.value = true
+    try {
+      const users = await searchUsersFromAPI(editUserSearchQuery.value)
+      filteredEditUsers.value = users
+      showEditUserDropdown.value = users.length > 0
+    } catch (error) {
+      console.error('搜索用户失败:', error)
+      filteredEditUsers.value = []
+      showEditUserDropdown.value = false
+    } finally {
+      editUserSearchLoading.value = false
+    }
   }, 300) // 300ms防抖延迟
 }
 
@@ -2064,6 +2140,28 @@ onUnmounted(() => {
 /* 用户搜索样式 */
 .user-search-container {
   position: relative;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-loading {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  color: #667eea;
 }
 
 .user-dropdown {

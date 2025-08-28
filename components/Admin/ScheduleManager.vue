@@ -106,6 +106,30 @@
         <div class="panel-header">
           <h3>待排歌曲</h3>
           <div class="header-controls">
+            <div class="search-section">
+              <div class="search-input-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  placeholder="搜索歌曲标题、艺术家或投稿人..."
+                  class="search-input"
+                />
+                <button
+                  v-if="searchQuery"
+                  @click="searchQuery = ''"
+                  class="clear-search-btn"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
             <div class="semester-selector">
               <label class="semester-label">学期：</label>
               <select v-model="selectedSemester" @change="onSemesterChange" class="semester-select">
@@ -352,6 +376,7 @@ const selectedDate = ref(new Date().toISOString().split('T')[0])
 const loading = ref(false)
 const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
+const searchQuery = ref('')
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
@@ -444,9 +469,23 @@ const availableDates = computed(() => {
 const allUnscheduledSongs = computed(() => {
   if (!songs.value) return []
   
-  const unscheduledSongs = songs.value.filter(song =>
+  let unscheduledSongs = songs.value.filter(song =>
     !song.played && !scheduledSongIds.value.has(song.id)
   )
+  
+  // 搜索过滤
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    unscheduledSongs = unscheduledSongs.filter(song => {
+      const title = (song.title || '').toLowerCase()
+      const artist = (song.artist || '').toLowerCase()
+      const requester = (song.requester || '').toLowerCase()
+      
+      return title.includes(query) || 
+             artist.includes(query) || 
+             requester.includes(query)
+    })
+  }
   
   return [...unscheduledSongs].sort((a, b) => {
     switch (songSortOption.value) {
@@ -575,6 +614,11 @@ watch(selectedDate, async () => {
 
 // 监听排序选项变化，重置分页
 watch(songSortOption, () => {
+  currentPage.value = 1
+})
+
+// 监听搜索查询变化，重置分页
+watch(searchQuery, () => {
   currentPage.value = 1
 })
 
@@ -1447,6 +1491,75 @@ const openDownloadDialog = () => {
   display: flex;
   align-items: center;
   gap: 24px;
+  flex-wrap: wrap;
+}
+
+.search-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  color: #888888;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-input {
+  padding: 8px 40px 8px 36px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  width: 280px;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.search-input::placeholder {
+  color: #666666;
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #888888;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+  color: #ffffff;
+  background: #3a3a3a;
+}
+
+.clear-search-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 .semester-selector {
