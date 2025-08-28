@@ -20,6 +20,7 @@
     "create-admin": "cd scripts && npx tsx create-admin.js",
     "clear-db": "cd scripts && npx tsx clear-database.js",
     "safe-migrate": "cd scripts && npx tsx safe-migrate.js",
+    "deploy": "node scripts/deploy.js",
     "vercel-build": "node scripts/deploy.js",
     "netlify-build": "node scripts/netlify-build.js",
     "check-deploy": "node scripts/check-deploy.js",

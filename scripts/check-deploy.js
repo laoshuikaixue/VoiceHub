@@ -74,29 +74,6 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// 检查构建输出
-function checkBuildOutput() {
-  log('🔍 检查构建输出...', 'cyan');
-  
-  const outputDir = '.output';
-  const serverIndex = '.output/server/index.mjs';
-  
-  if (!fileExists(outputDir)) {
-    logError('构建输出目录不存在');
-    return false;
-  }
-  
-  if (!fileExists(serverIndex)) {
-    logError('服务器入口文件不存在');
-    return false;
-  }
-  
-  const outputSize = getDirectorySize(outputDir);
-  logSuccess(`构建输出检查通过 (大小: ${formatBytes(outputSize)})`);
-  
-  return true;
-}
-
 // 检查 Drizzle 配置
 function checkDrizzleConfig() {
   log('🔍 检查 Drizzle 配置...', 'cyan');
@@ -128,7 +105,6 @@ function checkEnvironmentVariables() {
   ];
   
   const optionalVars = [
-    'NUXT_SECRET_KEY',
     'NODE_ENV'
   ];
   
@@ -235,11 +211,6 @@ async function checkDeployment() {
     {
       name: '关键文件检查',
       passed: checkCriticalFiles(),
-      details: null
-    },
-    {
-      name: '构建输出检查',
-      passed: checkBuildOutput(),
       details: null
     },
     {

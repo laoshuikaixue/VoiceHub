@@ -1,6 +1,6 @@
 [build]
-  command = "npm run netlify-build"
-  publish = "dist"
+  command = "npm run deploy"
+  publish = ".output/public"
 
 [build.environment]
   NODE_VERSION = "20"
@@ -26,8 +26,6 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 [template.environment]
-  DATABASE_URL = "PostgreSQL数据库连接字符串，格式如：postgresql://username:password@host:port/database?sslmode=require"
+  DATABASE_URL = "Neon数据库连接字符串，格式如：postgresql://username:password@host:port/database?sslmode=require"
   JWT_SECRET = "JWT令牌签名密钥，建议使用强随机字符串"
-  NUXT_PUBLIC_SITE_TITLE = "站点标题，默认为'校园广播站点歌系统'"
-  NUXT_PUBLIC_SITE_LOGO = "站点Logo URL，可选"
-  NUXT_PUBLIC_SITE_DESCRIPTION = "站点描述，可选"
+  REDIS_URL = "Redis缓存服务（可选，用于提升性能）"

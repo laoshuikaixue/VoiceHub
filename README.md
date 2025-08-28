@@ -87,11 +87,11 @@
 
 本项目可以一键部署到Vercel/Netlify平台：
 
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/laoshuikaixue/VoiceHub&env=DATABASE_URL,JWT_SECRET&envDescription=需要配置数据库连接和JWT密钥&envLink=https://github.com/laoshuikaixue/VoiceHub#环境变量说明)
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/laoshuikaixue/VoiceHub&env=DATABASE_URL,JWT_SECRET&envDescription=需要配置Neon数据库地址和JWT密钥&envLink=https://github.com/laoshuikaixue/VoiceHub#环境变量说明)
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/laoshuikaixue/VoiceHub)
 
 在部署过程中，需要输入必要的环境变量：
-1. `DATABASE_URL`：PostgreSQL数据库连接字符串
+1. `DATABASE_URL`：PostgreSQL数据库连接地址
 2. `JWT_SECRET`：JWT令牌签名密钥
 
 您可以参考[环境变量说明](#环境变量说明)了解更多详情。
@@ -249,7 +249,7 @@ volumes:
 
 ### 前提条件
 - Node.js 20+
-- PostgreSQL数据库
+- PostgreSQL数据库（推荐Neon）
 - Redis数据库（可选）
 
 ### 安装步骤
