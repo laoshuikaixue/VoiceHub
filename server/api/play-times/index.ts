@@ -1,4 +1,4 @@
-import { db, systemSettings, playTimes, eq } from '~/drizzle/db'
+import { db, systemSettings, playTimes, eq, asc } from '~/drizzle/db'
 import type { PlayTime } from '~/drizzle/schema'
 
 export default defineEventHandler(async (event) => {
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     // 如果启用了播出时段选择，则获取所有启用的播出时段
     let playTimesData: PlayTime[] = []
     if (enabled) {
-      playTimesData = await db.select().from(playTimes).where(eq(playTimes.enabled, true)).orderBy(playTimes.startTime)
+      playTimesData = await db.select().from(playTimes).where(eq(playTimes.enabled, true)).orderBy(asc(playTimes.startTime))
     }
     
     return {
