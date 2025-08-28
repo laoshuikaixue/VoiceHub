@@ -162,10 +162,11 @@
           <div class="template-info">
             <h5>Excel文件格式要求：</h5>
             <ul>
-              <li>第一行为表头：用户名、姓名、年级、班级</li>
+              <li>第一行为表头：用户名、姓名、年级、班级、新用户名</li>
               <li>用户名列用于匹配现有用户</li>
-              <li>年级和班级列为要更新的新值</li>
+              <li>年级、班级、新用户名列为要更新的新值</li>
               <li>如果某个字段为空，则不更新该字段</li>
+              <li>新用户名列为可选，如果不填写则保持原用户名不变</li>
             </ul>
             <button @click="downloadTemplate" class="btn-link">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -190,6 +191,7 @@
                     <th>当前班级</th>
                     <th>新年级</th>
                     <th>新班级</th>
+                    <th>新用户名</th>
                     <th>状态</th>
                   </tr>
                 </thead>
@@ -201,6 +203,7 @@
                     <td>{{ row.currentClass || '-' }}</td>
                     <td>{{ row.newGrade || '-' }}</td>
                     <td>{{ row.newClass || '-' }}</td>
+                    <td>{{ row.newUsername || '-' }}</td>
                     <td>
                       <span v-if="row.error" class="status-error">{{ row.error }}</span>
                       <span v-else class="status-success">准备更新</span>
@@ -385,6 +388,7 @@ const parseExcelData = (jsonData) => {
     const name = row['姓名'] || row['name'] || ''
     const newGrade = row['年级'] || row['grade'] || ''
     const newClass = row['班级'] || row['class'] || ''
+    const newUsername = row['新用户名'] || row['new_username'] || ''
 
     if (!username) {
       previewData.push({
@@ -392,6 +396,7 @@ const parseExcelData = (jsonData) => {
         name: name,
         newGrade: newGrade,
         newClass: newClass,
+        newUsername: newUsername,
         error: '用户名不能为空'
       })
       return
@@ -404,6 +409,7 @@ const parseExcelData = (jsonData) => {
         name: name,
         newGrade: newGrade,
         newClass: newClass,
+        newUsername: newUsername,
         error: '用户不存在'
       })
       return
@@ -416,7 +422,8 @@ const parseExcelData = (jsonData) => {
       currentGrade: existingUser.grade,
       currentClass: existingUser.class,
       newGrade: newGrade,
-      newClass: newClass
+      newClass: newClass,
+      newUsername: newUsername
     })
   })
 
@@ -440,8 +447,8 @@ const loadXLSX = async () => {
 
 const downloadTemplate = () => {
   const templateData = [
-    { '用户名': 'student001', '姓名': '张三', '年级': '2025', '班级': '1班' },
-    { '用户名': 'student002', '姓名': '李四', '年级': '2025', '班级': '2班' }
+    { '用户名': 'student001', '姓名': '张三', '年级': '2025', '班级': '1班', '新用户名': 'new_student001' },
+    { '用户名': 'student002', '姓名': '李四', '年级': '2025', '班级': '2班', '新用户名': '' }
   ]
 
   const ws = window.XLSX.utils.json_to_sheet(templateData)
@@ -501,7 +508,8 @@ const performExcelUpdate = async () => {
     const updates = batch.map(row => ({
       userId: row.userId,
       grade: row.newGrade || undefined,
-      class: row.newClass || undefined
+      class: row.newClass || undefined,
+      username: row.newUsername || undefined
     }))
 
     await $fetch('/api/admin/users/batch-update', {

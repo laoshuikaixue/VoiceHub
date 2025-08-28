@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { db } from '~/drizzle/db'
 import { CacheService } from '~/server/services/cacheService'
 import { users } from '~/drizzle/schema'
-import { eq, inArray, and } from 'drizzle-orm'
+import { eq, inArray, and, ne } from 'drizzle-orm'
 
 // 请求体验证模式
 const batchUpdateSchema = z.object({
@@ -10,7 +10,8 @@ const batchUpdateSchema = z.object({
     z.object({
       userId: z.number().int().positive(),
       grade: z.string().optional(),
-      class: z.string().optional()
+      class: z.string().optional(),
+      username: z.string().optional()
     })
   ).min(1).max(100) // 限制批量更新数量
 })
@@ -88,6 +89,30 @@ export default defineEventHandler(async (event) => {
         
         if (update.class !== undefined && update.class.trim()) {
           updateData.class = update.class.trim()
+        }
+
+        // 处理用户名更新
+        if (update.username !== undefined && update.username.trim()) {
+          const newUsername = update.username.trim()
+          
+          // 检查用户名是否已存在（排除当前用户）
+          const existingUser = await db.select({ id: users.id })
+            .from(users)
+            .where(and(
+              eq(users.username, newUsername),
+              ne(users.id, update.userId)
+            ))
+            .limit(1)
+          
+          if (existingUser.length > 0) {
+            errors.push({
+              userId: update.userId,
+              error: `用户名 "${newUsername}" 已存在`
+            })
+            continue
+          }
+          
+          updateData.username = newUsername
         }
 
         // 如果没有要更新的字段，跳过
