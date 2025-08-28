@@ -102,15 +102,16 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    // Redis缓存未命中，尝试从CacheService获取
+    // Redis缓存未命中，尝试从CacheService获取（CacheService缓存所有学期数据）
     let cachedSchedules = await cacheService.getSchedulesList()
     
-    if (cachedSchedules && (!semester || cachedSchedules.some(s => s.song?.semester === semester))) {
-      console.log(`[Cache] CacheService排期缓存命中，数量: ${cachedSchedules.length}`)
+    if (cachedSchedules && cachedSchedules.length > 0) {
+      console.log(`[Cache] CacheService排期缓存命中（所有学期），数量: ${cachedSchedules.length}`)
       // 如果指定了学期，过滤数据
       let filteredSchedules = cachedSchedules
       if (semester) {
         filteredSchedules = cachedSchedules.filter(s => s.song?.semester === semester)
+        console.log(`[Cache] 过滤学期 ${semester} 后的数量: ${filteredSchedules.length}`)
       }
       
       // 将过滤后的数据缓存到Redis（缓存完整数据，不进行模糊化）
@@ -120,7 +121,7 @@ export default defineEventHandler(async (event) => {
           if (!client) return
           
           await client.set(cacheKey, JSON.stringify(filteredSchedules))
-          console.log(`[Cache] 排期数据设置Redis缓存: ${cacheKey}`)
+          console.log(`[Cache] 排期数据设置Redis缓存: ${cacheKey}，数量: ${filteredSchedules.length}`)
         })
       }
       
@@ -138,7 +139,7 @@ export default defineEventHandler(async (event) => {
       return resultData
     }
     
-    // 获取排期的歌曲，包含播放时段信息
+    // 获取排期的歌曲，包含播放时段信息（查询所有学期的数据）
     const schedulesData = await db.select({
       id: schedules.id,
       playDate: schedules.playDate,
@@ -174,7 +175,6 @@ export default defineEventHandler(async (event) => {
     .leftJoin(songs, eq(schedules.songId, songs.id))
     .leftJoin(users, eq(songs.requesterId, users.id))
     .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
-    .where(semester ? eq(songs.semester, semester) : undefined)
     .orderBy(schedules.playDate)
 
     // 获取每首歌的投票数
@@ -276,21 +276,21 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    const result = formattedSchedules
+    const allSchedulesResult = formattedSchedules
     
-    // 缓存结果到CacheService
-    if (result && result.length > 0) {
-      await cacheService.setSchedulesList(result)
-      console.log(`[Cache] 公共排期设置CacheService缓存，数量: ${result.length}`)
+    // 始终缓存所有学期的数据到CacheService
+    if (allSchedulesResult && allSchedulesResult.length > 0) {
+      await cacheService.setSchedulesList(allSchedulesResult)
+      console.log(`[Cache] 公共排期设置CacheService缓存（所有学期），数量: ${allSchedulesResult.length}`)
     }
     
     // 准备要返回和缓存的数据
-    let finalResult = result
-    if (semester && result) {
-      finalResult = result.filter(s => s.song?.semester === semester)
+    let finalResult = allSchedulesResult
+    if (semester && allSchedulesResult) {
+      finalResult = allSchedulesResult.filter(s => s.song?.semester === semester)
     }
     
-    // 缓存结果到Redis（如果可用）- 缓存完整数据
+    // 缓存结果到Redis（如果可用）- 根据请求参数缓存相应数据
     if (finalResult && isRedisReady()) {
       await executeRedisCommand(async () => {
         const client = (await import('../../utils/redis')).getRedisClient()
@@ -302,7 +302,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 深拷贝数据以避免修改缓存的原始数据
-    const resultToReturn = JSON.parse(JSON.stringify(finalResult || result))
+    const resultToReturn = JSON.parse(JSON.stringify(finalResult || allSchedulesResult))
     
     // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
     if (shouldHideStudentInfo && !isLoggedIn && resultToReturn) {
