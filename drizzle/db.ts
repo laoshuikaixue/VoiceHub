@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq, and, gte, lt, count, exists, desc, asc, or } from 'drizzle-orm';
 import postgres from 'postgres';
-import * as schema from '~/drizzle/schema';
+import * as schema from './schema';
 
 // 检查环境变量
 if (!process.env.DATABASE_URL) {
