@@ -157,7 +157,7 @@ async function deploy() {
     // 4. 创建管理员账户（如果脚本存在）
     if (fileExists('scripts/create-admin.js')) {
       logStep('👤', '检查管理员账户...');
-      if (safeExec('npx tsx scripts/create-admin.js')) {
+      if (safeExec('npm run create-admin')) {
         logSuccess('管理员账户检查完成');
       } else {
         logWarning('管理员账户创建跳过（可能已存在或数据库未连接）');
