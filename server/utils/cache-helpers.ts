@@ -16,6 +16,11 @@ export const CACHE_PREFIXES = {
 
 // 统一缓存操作接口
 export class CacheHelper {
+  private static cacheVersions = new Map<string, string>(); // 缓存版本管理
+
+  private static generateVersion(): string {
+    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+  }
   /**
    * 获取缓存数据，优先从Redis获取，fallback到CacheService
    */
@@ -51,16 +56,20 @@ export class CacheHelper {
   /**
    * 设置缓存（永久缓存）
    */
-  static async set<T>(key: string, value: T): Promise<boolean> {
+  static async set<T>(key: string, value: T, version?: string): Promise<boolean> {
     try {
       let redisSuccess = false
       let memorySuccess = false
+      const currentVersion = version || this.generateVersion()
       
       // 尝试写入Redis（永久缓存）
       if (isRedisReady()) {
         redisSuccess = await executeRedisCommand(
           async (client) => {
             await client.set(key, JSON.stringify(value))
+            if (version) {
+              await client.set(`${key}:version`, currentVersion)
+            }
             return true
           },
           false
@@ -73,6 +82,11 @@ export class CacheHelper {
         memorySuccess = true
       } catch (error) {
         console.error(`[CacheHelper] 内存缓存写入失败 ${key}:`, error)
+      }
+      
+      // 更新版本记录
+      if (version) {
+        this.cacheVersions.set(key, currentVersion)
       }
       
       return redisSuccess || memorySuccess
@@ -195,53 +209,83 @@ export class CacheHelper {
   }
   
   /**
+   * 检查缓存版本是否有效
+   */
+  static async isVersionValid(key: string, expectedVersion?: string): Promise<boolean> {
+    if (!expectedVersion) return true;
+    
+    try {
+      if (isRedisReady()) {
+        const storedVersion = await executeRedisCommand(
+          async (client) => await client.get(`${key}:version`),
+          null
+        );
+        return storedVersion === expectedVersion;
+      } else {
+        const cached = await cacheService.getCache(key);
+        return cached?.version === expectedVersion;
+      }
+    } catch (error) {
+      console.error('版本检查失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 批量失效相关缓存
+   */
+  static async invalidateRelated(patterns: string[]): Promise<void> {
+    try {
+      for (const pattern of patterns) {
+        await this.deletePattern(pattern);
+        console.log(`[CacheHelper] 已失效缓存模式: ${pattern}`);
+      }
+    } catch (error) {
+      console.error('[CacheHelper] 批量失效缓存失败:', error);
+    }
+  }
+
+  /**
    * 获取缓存统计信息
    */
   static async getStats(): Promise<{
-    redis: { enabled: boolean; keys?: number; memory?: string }
-    memory: { enabled: boolean; keys?: number; memory?: string }
+    redis: { enabled: boolean; keyCount?: number };
+    memory: { keyCount: number; memoryUsage: number };
+    versions: { count: number };
   }> {
     const stats = {
-      redis: { enabled: false as boolean, keys: undefined as number | undefined, memory: undefined as string | undefined },
-      memory: { enabled: true, keys: undefined as number | undefined, memory: undefined as string | undefined }
-    }
-    
+      redis: { enabled: false as boolean, keyCount: undefined as number | undefined },
+      memory: { keyCount: 0, memoryUsage: 0 },
+      versions: { count: this.cacheVersions.size }
+    };
+
     // Redis统计
     if (isRedisReady()) {
-      stats.redis.enabled = true
+      stats.redis.enabled = true;
       try {
-        const redisStats = await executeRedisCommand(
+        const keyCount = await executeRedisCommand(
           async (client) => {
-            const info = await client.info('memory')
-            const dbsize = await client.dbsize()
-            return { info, dbsize }
+            const keys = await client.keys('*');
+            return keys.length;
           },
-          null
-        )
-        
-        if (redisStats) {
-          stats.redis.keys = redisStats.dbsize
-          // 解析内存使用信息
-          const memoryMatch = redisStats.info.match(/used_memory_human:([^\r\n]+)/)
-          if (memoryMatch) {
-            stats.redis.memory = memoryMatch[1].trim()
-          }
-        }
+          0
+        );
+        stats.redis.keyCount = keyCount;
       } catch (error) {
-        console.error('[CacheHelper] 获取Redis统计失败:', error)
+        console.error('获取Redis统计失败:', error);
       }
     }
-    
+
     // 内存缓存统计
     try {
-      const memoryStats = await cacheService.getCacheStats()
-      stats.memory.keys = memoryStats.keyCount
-      stats.memory.memory = memoryStats.memoryInfo
+      const memoryStats = await cacheService.getCacheStats();
+      stats.memory.keyCount = memoryStats.keyCount || 0;
+      stats.memory.memoryUsage = JSON.stringify(memoryStats).length;
     } catch (error) {
-      console.error('[CacheHelper] 获取内存缓存统计失败:', error)
+      console.error('[CacheHelper] 获取内存缓存统计失败:', error);
     }
-    
-    return stats
+
+    return stats;
   }
 }
 
@@ -275,5 +319,72 @@ export const scheduleCache = {
   setPublic: (schedules: any) => cache.set(cache.buildKey(CACHE_PREFIXES.SCHEDULE, 'public'), schedules),
   getSemester: (semesterId: string) => cache.get(cache.buildKey(CACHE_PREFIXES.SCHEDULE, 'semester', semesterId)),
   setSemester: (semesterId: string, schedules: any) => cache.set(cache.buildKey(CACHE_PREFIXES.SCHEDULE, 'semester', semesterId), schedules),
-  clearAll: () => cache.deletePattern(cache.buildKey(CACHE_PREFIXES.SCHEDULE, '*'))
+  clearAll: () => cache.deletePattern(cache.buildKey(CACHE_PREFIXES.SCHEDULE, '*')),
+  
+  // 智能缓存失效 - 数据变更时自动更新相关缓存
+  async invalidateOnScheduleChange(changeType: 'public' | 'semester' | 'all', semesterId?: string): Promise<void> {
+    try {
+      console.log(`[ScheduleCache] 排期数据变更，失效缓存类型: ${changeType}`);
+      
+      switch (changeType) {
+        case 'public':
+          // 公共排期变更，清除公共排期缓存
+          await cache.delete(cache.buildKey(CACHE_PREFIXES.SCHEDULE, 'public'));
+          console.log('[ScheduleCache] 已清除公共排期缓存');
+          break;
+          
+        case 'semester':
+          // 学期排期变更，清除特定学期缓存
+          if (semesterId) {
+            await cache.delete(cache.buildKey(CACHE_PREFIXES.SCHEDULE, 'semester', semesterId));
+            console.log(`[ScheduleCache] 已清除学期 ${semesterId} 排期缓存`);
+          }
+          break;
+          
+        case 'all':
+          // 全部排期变更，清除所有排期缓存
+          await cache.deletePattern(cache.buildKey(CACHE_PREFIXES.SCHEDULE, '*'));
+          console.log('[ScheduleCache] 已清除所有排期缓存');
+          break;
+      }
+      
+      // 触发相关统计缓存失效
+      await cache.deletePattern(cache.buildKey(CACHE_PREFIXES.STATS, 'schedule', '*'));
+      console.log('[ScheduleCache] 已清除相关统计缓存');
+      
+    } catch (error) {
+      console.error('[ScheduleCache] 缓存失效操作失败:', error);
+    }
+  },
+  
+  // 预热缓存 - 在数据变更后主动加载新数据到缓存
+  async warmupCache(loader: {
+    loadPublic?: () => Promise<any>;
+    loadSemester?: (semesterId: string) => Promise<any>;
+  }, semesterId?: string): Promise<void> {
+    try {
+      console.log('[ScheduleCache] 开始预热缓存');
+      
+      // 预热公共排期缓存
+      if (loader.loadPublic) {
+        const publicSchedules = await loader.loadPublic();
+        if (publicSchedules) {
+          await this.setPublic(publicSchedules);
+          console.log('[ScheduleCache] 公共排期缓存预热完成');
+        }
+      }
+      
+      // 预热学期排期缓存
+      if (loader.loadSemester && semesterId) {
+        const semesterSchedules = await loader.loadSemester(semesterId);
+        if (semesterSchedules) {
+          await this.setSemester(semesterId, semesterSchedules);
+          console.log(`[ScheduleCache] 学期 ${semesterId} 排期缓存预热完成`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('[ScheduleCache] 缓存预热失败:', error);
+    }
+  }
 }

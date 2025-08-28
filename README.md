@@ -63,21 +63,23 @@
 
 ### 后端技术
 - **Nuxt Server API**：服务端API路由，支持中间件和认证
-- **Drizzle ORM**：现代化数据库ORM，支持类型安全的数据库操作和高性能查询
-- **PostgreSQL**：关系型数据库，支持复杂查询和事务
-- **Redis**：高性能缓存数据库，提升系统响应速度
+- **Drizzle ORM**：现代化数据库ORM，提供类型安全的数据库操作和高性能查询
+- **Neon Database**：Serverless PostgreSQL数据库，支持自动启停和无缝扩展
+- **PostgreSQL**：关系型数据库，支持复杂查询和事务处理
+- **Redis**：高性能缓存数据库，提升系统响应速度（可选）
 - **JWT**：标准JWT认证机制，支持24小时token有效期
 - **bcrypt**：密码加密，安全的哈希算法
 - **Multer**：文件上传处理，支持多种存储方式
 
 ## 系统架构
 
-系统采用了Nuxt 3的全栈架构：
-- 使用Nuxt 3的服务端API构建后端服务
-- 使用Vue 3组合式API构建前端组件
-- 使用Drizzle ORM连接PostgreSQL数据库，提供类型安全和高性能的数据库操作
-- 使用标准JWT认证系统，支持24小时token有效期
-- 数据库自检和自动修复机制
+系统采用了现代化的 Serverless 全栈架构：
+- **前端**：使用 Nuxt 3 + Vue 3 组合式API构建响应式用户界面
+- **后端**：使用 Nuxt Server API 构建 RESTful API 服务
+- **数据库**：使用 Drizzle ORM + Neon Database，提供类型安全和高性能的数据库操作
+- **认证**：标准 JWT 认证系统
+- **缓存**：可选的 Redis 缓存层，提升系统响应速度
+- **部署**：支持 Vercel、Netlify 等 Serverless 平台一键部署
 
 ## 部署指南
 
@@ -480,6 +482,9 @@ VoiceHub/
 ├── drizzle/               # Drizzle ORM配置
 │   ├── db.ts              # 数据库连接配置
 │   ├── migrations/        # 数据库迁移文件
+│   │   ├── meta/          # 迁移元数据
+│   │   ├── relations.ts   # 数据库关系定义
+│   │   └── schema.ts      # 迁移模式定义
 │   └── schema.ts          # 数据库模型定义
 ├── public/                # 公共静态资源
 │   ├── favicon.ico         # 网站图标
@@ -641,7 +646,6 @@ VoiceHub/
 │   ├── models/             # 数据模型
 │   │   └── schema.ts       # 数据模型定义
 │   ├── plugins/            # 服务端插件
-│   │   ├── db-pool-init.ts # 数据库连接池初始化
 │   │   └── error-handler.ts # 错误处理插件
 │   ├── services/           # 业务服务层
 │   │   ├── cacheService.ts # 缓存服务（Redis缓存管理）
@@ -651,7 +655,9 @@ VoiceHub/
 │   ├── utils/              # 服务端工具函数
 │   │   ├── __tests__/      # 工具函数测试目录
 │   │   ├── auth.ts         # 认证工具函数
-│   │   ├── db-pool.ts      # 数据库连接池管理
+│   │   ├── cache-helpers.ts # 缓存辅助工具
+│   │   ├── database-health.ts # 数据库健康检查
+│   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── jwt-enhanced.ts # JWT工具
 │   │   ├── permissions.js  # 权限系统配置
 │   │   └── redis.ts        # Redis连接和操作工具
@@ -683,7 +689,7 @@ VoiceHub/
 - **`pages/`**: 页面组件，Nuxt 3自动路由
 - **`server/api/`**: 服务端API，RESTful接口设计
 - **`composables/`**: Vue 3组合式API，业务逻辑复用
-- **`prisma/`**: 数据库ORM配置和迁移
+- **`drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
 
 #### 配置目录
 - **`assets/css/`**: 样式文件，支持CSS变量和主题
@@ -767,14 +773,21 @@ VoiceHub/
 
 ## 数据库管理
 
-### Drizzle ORM 配置
+### Drizzle ORM + Neon Database
 
-项目使用 Drizzle ORM 作为数据库 ORM，提供类型安全和高性能的数据库操作：
+项目使用 Drizzle ORM 作为数据库 ORM，配合 Neon Database 提供现代化的数据库解决方案：
 
-- **配置文件**：`drizzle.config.ts` - Drizzle ORM 主配置
-- **数据库连接**：`drizzle/db.ts` - 数据库连接和客户端配置
-- **数据模式**：`drizzle/schema.ts` - 数据库表结构定义
-- **迁移文件**：`drizzle/migrations/` - 数据库迁移脚本
+#### 核心文件结构
+- **`drizzle.config.ts`** - Drizzle ORM 主配置文件
+- **`drizzle/db.ts`** - 数据库连接和客户端配置，针对 Neon Database 优化
+- **`drizzle/schema.ts`** - 数据库表结构定义，使用 TypeScript 类型安全
+- **`drizzle/migrations/`** - 数据库迁移脚本目录
+
+#### 技术优势
+- **类型安全**：完整的 TypeScript 支持，编译时类型检查
+- **高性能**：针对 Serverless 环境优化的查询性能
+- **自动启停**：Neon Database 支持自动启停，降低成本
+- **无缝扩展**：根据负载自动扩展数据库资源
 
 ### 数据库备份与恢复
 ```bash
@@ -789,7 +802,7 @@ psql -h localhost -U username -d database_name < backup.sql
 
 首次部署时，系统会自动初始化数据库结构。如需手动管理数据库：
 
-1. **生成数据库模式**：
+1. **生成迁移文件**：
    ```bash
    npm run db:generate
    ```
@@ -799,12 +812,17 @@ psql -h localhost -U username -d database_name < backup.sql
    npm run db:migrate
    ```
 
-3. **推送数据库模式变更**：
+3. **推送模式变更到数据库**：
    ```bash
    npm run db:push
    ```
 
-4. **清空数据库并创建管理员**：
+4. **启动 Drizzle Studio（数据库管理界面）**：
+   ```bash
+   npm run db:studio
+   ```
+
+5. **清空数据库并创建管理员**：
    ```bash
    npm run clear-db
    ```
@@ -817,25 +835,17 @@ psql -h localhost -U username -d database_name < backup.sql
 
 ## 常见问题
 
-### Prisma客户端初始化错误
+### 数据库连接问题
 
-如果您在首次运行项目时遇到以下错误：
-```
-Error: @prisma/client did not initialize yet. Please run "prisma generate" and try to import it again.
-```
-
-这是因为需要先生成Prisma客户端代码。请按以下步骤解决：
+如果遇到数据库连接错误，请检查以下配置：
 
 1. 确保已正确配置根目录的`.env`文件（包含有效的DATABASE_URL）
-2. 运行以下命令生成Prisma客户端：
+2. 检查数据库连接字符串格式是否正确
+3. 确保数据库服务正在运行并可访问
+4. 运行数据库迁移确保表结构最新：
    ```bash
-   npm run db:generate
+   npm run db:migrate
    ```
-3. 如果在Windows系统上遇到PowerShell执行策略限制，请先运行：
-   ```bash
-   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-   ```
-   然后再执行`npm run db:generate`
 
 ### 数据库迁移问题
 
@@ -885,11 +895,11 @@ Error: @prisma/client did not initialize yet. Please run "prisma generate" and t
 
 如需修改数据库模型：
 
-1. 编辑`prisma/schema.prisma`文件
-2. 运行迁移命令：`npx prisma migrate dev --name your_migration_name`
-3. 更新客户端：`npx prisma generate`
+1. 编辑`drizzle/schema.ts`文件中的表结构定义
+2. 生成新的迁移文件：`npm run db:generate`
+3. 应用迁移到数据库：`npm run db:migrate`
 4. 确保同时更新`types/index.ts`中的TypeScript类型定义
-5. 验证数据库：`cd scripts && npm run check-db`
+5. 使用Drizzle Studio查看数据库：`npm run db:studio`
 
 
 ### 音源扩展开发指南
@@ -1193,6 +1203,8 @@ Thanks goes to these wonderful people:
 - [落月API](https://doc.vkeys.cn/api-doc/)
 - [NeteaseCloudMusicApiEnhanced](https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced)
 - [meting-api](https://github.com/injahow/meting-api)
+- [the1068fm - 深中风华子衿广播站点歌系统](https://github.com/SMS-COSMO/the1068fm)
+- [official-website - Sparkinit](https://github.com/Sparkinit/official-website)
 
 ## 许可证
 
