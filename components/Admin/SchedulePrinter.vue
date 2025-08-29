@@ -695,11 +695,20 @@ const downloadImageAsBase64 = async (url) => {
       
       // 确保图片元素在打印时保持正确的样式
       if (img.classList.contains('school-logo-print')) {
-        // 学校Logo按原尺寸显示
+        // 学校Logo保持原始比例，设置最大尺寸
+        img.style.maxWidth = '70px !important'
+        img.style.maxHeight = '60px !important'
+        img.style.width = 'auto !important'
+        img.style.height = 'auto !important'
         img.style.objectFit = 'contain !important'
+        img.style.borderRadius = '4px !important'
+        img.style.flexShrink = '0 !important'
       } else if (img.classList.contains('logo')) {
         // 系统Logo按原尺寸显示
+        img.style.width = '70px !important'
+        img.style.height = 'auto !important'
         img.style.objectFit = 'contain !important'
+        img.style.borderRadius = '4px !important'
       } else if (img.classList.contains('song-cover')) {
         // 歌曲封面保持固定尺寸
         img.style.width = '40px !important'
@@ -845,7 +854,11 @@ const exportImage = async () => {
     // 克隆预览内容，保持原有样式
     const clonedPage = printPage.cloneNode(true)
 
-    // 创建长图渲染容器
+    // 获取原始页面尺寸
+    const originalWidth = printPage.offsetWidth
+    const originalHeight = printPage.offsetHeight
+    
+    // 创建长图渲染容器，保持原始比例
     const imageContainer = document.createElement('div')
     imageContainer.style.cssText = `
       position: absolute;
@@ -854,17 +867,17 @@ const exportImage = async () => {
       z-index: -1;
       background: white;
       color: black;
-      width: 880px;
-      padding: 40px 40px 40px 40px;
+      width: ${originalWidth}px;
+      padding: 40px;
       box-sizing: border-box;
     `
 
-    // 调整克隆页面的样式
+    // 调整克隆页面的样式，保持原始尺寸
     clonedPage.style.cssText = `
       background: white !important;
       color: black !important;
       box-sizing: border-box !important;
-      width: 800px !important;
+      width: ${originalWidth - 80}px !important;
       margin: 0 auto !important;
       padding: 0 !important;
     `
@@ -1551,9 +1564,14 @@ watch(() => settings.value, () => {
 }
 
 .school-logo-print {
-  object-fit: contain;
-  border-radius: 4px;
-}
+    max-width: 70px;
+    max-height: 60px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
 
 .title-section h1 {
   font-size: 24px;
@@ -1794,6 +1812,15 @@ watch(() => settings.value, () => {
 .orientation-landscape .logo-section {
   flex-direction: row;
 }
+
+.orientation-landscape .school-logo-print {
+      max-width: 70px;
+      max-height: 60px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
 
 .orientation-landscape .schedule-content {
   columns: 2;
