@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { db } from '~/drizzle/db'
 import { users, songs } from '~/drizzle/schema'
 import { eq, or, and } from 'drizzle-orm'
-import { CacheService } from '~/server/services/cacheService'
+import { cacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -115,10 +115,10 @@ export default defineEventHandler(async (event) => {
       requester: requesterInfo
     }
 
-    // 清除歌曲数量缓存
-    const cacheService = CacheService.getInstance()
+    // 清除歌曲相关缓存
     try {
       await cacheService.clearSongsCache()
+      console.log('[Cache] 歌曲缓存已清除（添加歌曲）')
     } catch (error) {
       console.error('清除歌曲缓存失败:', error)
     }

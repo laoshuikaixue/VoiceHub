@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { db } from '~/drizzle/db'
 import { songs, users } from '~/drizzle/schema'
 import { eq, or } from 'drizzle-orm'
-import { CacheService } from '~/server/services/cacheService'
+import { cacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -132,10 +132,13 @@ export default defineEventHandler(async (event) => {
       .where(eq(songs.id, songId))
       .limit(1)
 
-    // 清除歌曲列表缓存
-    const { cache } = await import('~/server/utils/cache-helpers')
-    await cache.deletePattern('songs:*')
-    console.log('[Cache] 歌曲缓存已清除（更新歌曲）')
+    // 清除歌曲相关缓存
+    try {
+      await cacheService.clearSongsCache()
+      console.log('[Cache] 歌曲缓存已清除（更新歌曲）')
+    } catch (cacheError) {
+      console.error('[Cache] 清除歌曲缓存失败:', cacheError)
+    }
     
     return {
       success: true,

@@ -2,7 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, users, votes, schedules, playTimes } from '~/drizzle/schema'
 import { eq, and, count, sql, like, or, desc, asc } from 'drizzle-orm'
-import { cache } from '~/server/utils/cache-helpers'
+import { cacheService } from '~/server/services/cacheService'
 import crypto from 'crypto'
 
 // 格式化日期时间为统一格式：YYYY/M/D H:mm:ss
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     const cacheKey = `songs:list:${queryHash}`
     
     // 尝试从缓存获取基础数据（不包含用户特定的投票状态和动态状态）
-    const cachedData = await cache.get<any>(cacheKey)
+    const cachedData = await cacheService.getCache<any>(cacheKey)
     if (cachedData !== null) {
       console.log(`[Cache] 歌曲列表缓存命中: ${cacheKey}, 歌曲数: ${cachedData.data?.songs?.length || 0}`)
       
@@ -300,8 +300,8 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    // 缓存基础数据（3分钟）
-    await cache.set(cacheKey, baseResult)
+    // 缓存基础数据（3分钟，与开放API保持一致）
+    await cacheService.setCache(cacheKey, baseResult, 180) // 180秒 = 3分钟
     console.log(`[Cache] 歌曲列表设置缓存: ${cacheKey}, 歌曲数: ${baseResult.data.songs.length}`)
     
     // 如果用户已登录，添加投票状态到返回结果

@@ -328,8 +328,8 @@ export default defineEventHandler(async (event) => {
     }
     
     // 使用与普通API相同的缓存键格式（变量已在前面声明）
-    
-    await cache.set(normalApiCacheKey, normalApiResult, 300) // 5分钟缓存
+  
+    await cache.set(normalApiCacheKey, normalApiResult, 180) // 3分钟缓存
     console.log(`[OpenAPI Cache] 歌曲数据已缓存到普通API缓存: ${normalApiCacheKey}，数量: ${songsWithDetails.length}`)
     
     // 可选：也缓存到开放API专用缓存（保留原有逻辑，但优先级较低）

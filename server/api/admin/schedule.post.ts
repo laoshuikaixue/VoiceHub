@@ -138,12 +138,13 @@ export default defineEventHandler(async (event) => {
     })
     
     // 清除相关缓存
-    const { cache } = await import('~/server/utils/cache-helpers')
-    await cache.deletePattern('schedules:*')
-    await cache.deletePattern('stats:*')
-    await cache.deletePattern('songs:*')  // 清除歌曲列表缓存，确保scheduled状态更新
-    await cache.deletePattern('public_schedules:*')
-    console.log('[Cache] 排期缓存、统计缓存和歌曲列表缓存已清除（创建排期）')
+    try {
+      await cacheService.clearSchedulesCache()
+      await cacheService.clearSongsCache()  // 清除歌曲列表缓存，确保scheduled状态更新
+      console.log('[Cache] 排期缓存和歌曲列表缓存已清除（创建排期）')
+    } catch (cacheError) {
+      console.error('[Cache] 清除缓存失败:', cacheError)
+    }
     
     // 重新缓存完整的排期列表
     try {

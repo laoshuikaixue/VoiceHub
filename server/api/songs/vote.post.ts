@@ -102,10 +102,15 @@ export default defineEventHandler(async (event) => {
         
         const voteCount = voteCountResult[0].count
 
-        // 清除统计缓存
+        // 清除统计缓存和歌曲缓存
         const cacheService = CacheService.getInstance()
-        await cacheService.clearStatsCache()
-        console.log('[Cache] 统计缓存已清除（取消投票）')
+        try {
+          await cacheService.clearStatsCache()
+          await cacheService.clearSongsCache()
+          console.log('[Cache] 统计缓存和歌曲缓存已清除（取消投票）')
+        } catch (cacheError) {
+          console.error('[Cache] 缓存清除失败（取消投票）:', cacheError)
+        }
 
         return {
           success: true,
@@ -148,10 +153,15 @@ export default defineEventHandler(async (event) => {
           })
         }
 
-        // 清除统计缓存
+        // 清除统计缓存和歌曲缓存
         const cacheService = CacheService.getInstance()
-        await cacheService.clearStatsCache()
-        console.log('[Cache] 统计缓存已清除（投票）')
+        try {
+          await cacheService.clearStatsCache()
+          await cacheService.clearSongsCache()
+          console.log('[Cache] 统计缓存和歌曲缓存已清除（投票）')
+        } catch (cacheError) {
+          console.error('[Cache] 缓存清除失败（投票）:', cacheError)
+        }
 
         return {
           success: true,

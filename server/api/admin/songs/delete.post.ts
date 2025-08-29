@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { songs, votes, schedules } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { CacheService } from '../../../services/cacheService'
+import { cacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -62,10 +62,9 @@ export default defineEventHandler(async (event) => {
     
     // 清除相关缓存
     try {
-      const { cache } = await import('~/server/utils/cache-helpers')
-      await cache.deletePattern('songs:*')
+      await cacheService.clearSongsCache()
       if (result.deletedSchedules) {
-        await cache.deletePattern('schedules:*')
+        await cacheService.clearSchedulesCache()
       }
       console.log('[Cache] 歌曲和排期缓存已清除（删除歌曲）')
     } catch (cacheError) {

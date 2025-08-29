@@ -1,5 +1,5 @@
 import { db, users, songs, notifications, notificationSettings, schedules, votes, playTimes, semesters, songBlacklists, systemSettings, roles, eq, and, or, count, exists, desc, asc } from '~/drizzle/db'
-import { CacheService } from '~/server/services/cacheService'
+import { cacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 验证用户认证和权限
@@ -37,14 +37,13 @@ export default defineEventHandler(async (event) => {
       await cacheService.clearSchedulesCache()
       await cacheService.clearStatsCache()
       
-      // 清除歌曲列表缓存，确保scheduled状态更新
-      const { cache } = await import('~/server/utils/cache-helpers')
-      await cache.deletePattern('songs:*')
-      await cache.deletePattern('public_schedules:*')  // 清除公共排期缓存
+      // 清除相关缓存
+      await cacheService.clearSchedulesCache()
+      await cacheService.clearSongsCache()
       
-      console.log('[Cache] 排期缓存、统计缓存、歌曲列表缓存和公共排期缓存已清除（更新排期顺序）')
-    } catch (error) {
-      console.error('清除排期缓存失败:', error)
+      console.log('[Cache] 排期缓存和歌曲列表缓存已清除（更新排期顺序）')
+    } catch (cacheError) {
+      console.error('[Cache] 清除缓存失败:', cacheError)
     }
 
     return {
