@@ -4,7 +4,7 @@ import { getGlobalDedup } from './useRequestDedup'
 import type { Song, Schedule, PlayTime } from '~/types'
 
 export const useSongs = () => {
-  const { isAuthenticated, user, getAuthConfig } = useAuth()
+  const { isAuthenticated, user, getAuthConfig, isAdmin } = useAuth()
   const dedup = getGlobalDedup()
   
   const songs = ref<Song[]>([])
@@ -71,7 +71,7 @@ export const useSongs = () => {
   }
   
   // 获取歌曲列表
-  const fetchSongs = async (silent = false, semester?: string, forceRefresh = false) => {
+  const fetchSongs = async (silent = false, semester?: string, forceRefresh = false, bypassCache = false) => {
     if (!silent) {
       loading.value = true
     }
@@ -87,6 +87,10 @@ export const useSongs = () => {
           const params = new URLSearchParams()
           if (semester) {
             params.append('semester', semester)
+          }
+          // 只有当 bypassCache 为 true 时才添加 bypass_cache 参数
+          if (bypassCache) {
+            params.append('bypass_cache', 'true')
           }
           const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
           
@@ -150,7 +154,7 @@ export const useSongs = () => {
   }
   
   // 获取公共排期（无需登录）
-  const fetchPublicSchedules = async (silent = false, semester?: string, forceRefresh = false) => {
+  const fetchPublicSchedules = async (silent = false, semester?: string, forceRefresh = false, bypassCache = false) => {
     if (!silent) {
     loading.value = true
     }
@@ -166,6 +170,10 @@ export const useSongs = () => {
           const params = new URLSearchParams()
           if (semester) {
             params.append('semester', semester)
+          }
+          // 只有当 bypassCache 为 true 时才添加 bypass_cache 参数
+          if (bypassCache) {
+            params.append('bypass_cache', 'true')
           }
           const url = `/api/songs/public${params.toString() ? '?' + params.toString() : ''}`
           

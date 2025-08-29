@@ -31,6 +31,7 @@ export default defineEventHandler(async (event) => {
     // 获取查询参数
     const query = getQuery(event)
     const semester = query.semester as string
+    const bypassCache = query.bypass_cache === 'true'
     
     // 检查用户是否已登录
     const token = getCookie(event, 'auth-token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
@@ -65,8 +66,8 @@ export default defineEventHandler(async (event) => {
     // 构建缓存键
     const cacheKey = semester ? `public_schedules:${semester}` : 'public_schedules:all'
     
-    // 优先从Redis缓存获取排期数据
-    if (isRedisReady()) {
+    // 如果不绕过缓存，优先从Redis缓存获取排期数据
+    if (!bypassCache && isRedisReady()) {
       const cachedData = await executeRedisCommand(async () => {
         const client = (await import('../../utils/redis')).getRedisClient()
         if (!client) return null
@@ -96,8 +97,11 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    // Redis缓存未命中，尝试从CacheService获取（CacheService缓存所有学期数据）
-    let cachedSchedules = await cacheService.getSchedulesList()
+    // 如果不绕过缓存，Redis缓存未命中，尝试从CacheService获取（CacheService缓存所有学期数据）
+    let cachedSchedules = null
+    if (!bypassCache) {
+      cachedSchedules = await cacheService.getSchedulesList()
+    }
     
     if (cachedSchedules && cachedSchedules.length > 0) {
       console.log(`[Cache] CacheService排期缓存命中（所有学期），数量: ${cachedSchedules.length}`)

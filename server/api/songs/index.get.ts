@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
     const grade = query.grade as string || ''
     const sortBy = query.sortBy as string || 'createdAt'
     const sortOrder = query.sortOrder as string || 'desc'
+    const bypassCache = query.bypass_cache === 'true'
 
     // 获取用户身份
     const user = event.context.user || null
@@ -47,8 +48,11 @@ export default defineEventHandler(async (event) => {
     const queryHash = crypto.createHash('md5').update(JSON.stringify(queryParams)).digest('hex')
     const cacheKey = `songs:list:${queryHash}`
     
-    // 尝试从缓存获取基础数据（不包含用户特定的投票状态和动态状态）
-    const cachedData = await cacheService.getCache<any>(cacheKey)
+    // 如果不绕过缓存，尝试从缓存获取基础数据（不包含用户特定的投票状态和动态状态）
+    let cachedData = null
+    if (!bypassCache) {
+      cachedData = await cacheService.getCache<any>(cacheKey)
+    }
     if (cachedData !== null) {
       console.log(`[Cache] 歌曲列表缓存命中: ${cacheKey}, 歌曲数: ${cachedData.data?.songs?.length || 0}`)
       
@@ -85,7 +89,7 @@ export default defineEventHandler(async (event) => {
       return cachedData
     }
     
-    console.log(`[Cache] 歌曲列表缓存未命中，查询数据库: ${cacheKey}`)
+    console.log(`[Cache] 歌曲列表${bypassCache ? '绕过缓存' : '缓存未命中'}，查询数据库: ${cacheKey}`)
 
     // 构建查询条件
     const conditions = []
@@ -300,9 +304,11 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    // 缓存基础数据（3分钟，与开放API保持一致）
-    await cacheService.setCache(cacheKey, baseResult, 180) // 180秒 = 3分钟
-    console.log(`[Cache] 歌曲列表设置缓存: ${cacheKey}, 歌曲数: ${baseResult.data.songs.length}`)
+    // 如果不绕过缓存，缓存基础数据（3分钟，与开放API保持一致）
+    if (!bypassCache) {
+      await cacheService.setCache(cacheKey, baseResult, 180) // 180秒 = 3分钟
+      console.log(`[Cache] 歌曲列表设置缓存: ${cacheKey}, 歌曲数: ${baseResult.data.songs.length}`)
+    }
     
     // 如果用户已登录，添加投票状态到返回结果
     const result = {

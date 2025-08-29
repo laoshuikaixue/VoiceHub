@@ -628,8 +628,8 @@ const loadData = async () => {
   try {
     // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
     const semester = selectedSemester.value === '全部' ? undefined : selectedSemester.value
-    await songsService.fetchSongs(false, semester)
-    await songsService.fetchPublicSchedules(false, semester)
+    await songsService.fetchSongs(false, semester, false, true) // 添加 bypassCache: true
+    await songsService.fetchPublicSchedules(false, semester, false, true) // 添加 bypassCache: true
     await loadPlayTimes()
 
     songs.value = songsService.songs.value
@@ -748,6 +748,9 @@ const updateLocalScheduledSongs = () => {
       s.playTimeId === parseInt(selectedPlayTime.value)
     )
   }
+
+  // 按 sequence 字段排序
+  todaySchedules.sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
 
   localScheduledSongs.value = todaySchedules.map(s => ({ ...s }))
 
