@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份
@@ -70,7 +71,10 @@ export default defineEventHandler(async (event) => {
 
     // 更新密码
     await db.update(users)
-      .set({ password: hashedNewPassword })
+      .set({ 
+        password: hashedNewPassword,
+        passwordChangedAt: getBeijingTime()
+      })
       .where(eq(users.id, user.id))
     
     // 记录成功的密码修改

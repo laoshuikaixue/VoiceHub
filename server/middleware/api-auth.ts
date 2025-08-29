@@ -11,6 +11,7 @@ import {
 } from '~/server/config/constants'
 import { logManager } from '~/server/utils/log-manager'
 import { openApiCache } from '~/server/utils/open-api-cache'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 /**
  * 记录API访问日志
@@ -170,7 +171,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查API Key是否过期
-    if (apiKeyRecord.expiresAt && new Date() > apiKeyRecord.expiresAt) {
+    if (apiKeyRecord.expiresAt && getBeijingTime() > apiKeyRecord.expiresAt) {
       console.log(`[API Auth Middleware] API Key已过期`)
       await ApiLogService.logAccess({
         apiKeyId: apiKeyRecord.id,

@@ -3,6 +3,7 @@ import { createSongPlayedNotification } from '../../services/notificationService
 import { CacheService } from '~/server/services/cacheService'
 import { songs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -66,7 +67,7 @@ export default defineEventHandler(async (event) => {
   const updatedSongResult = await db.update(songs)
     .set({
       played: !isUnmark,
-      playedAt: isUnmark ? null : new Date()
+      playedAt: isUnmark ? null : getBeijingTime()
     })
     .where(eq(songs.id, body.songId))
     .returning()

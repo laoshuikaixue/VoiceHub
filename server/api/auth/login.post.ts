@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt'
 import { db, users, eq } from '~/drizzle/db'
 import { JWTEnhanced } from '../../utils/jwt-enhanced'
 import { isAccountLocked, getAccountLockRemainingTime, recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -87,7 +88,7 @@ export default defineEventHandler(async (event) => {
     // 更新登录信息
     await db.update(users)
       .set({
-        lastLogin: new Date(),
+        lastLogin: getBeijingTime(),
         lastLoginIp: clientIp
       })
       .where(eq(users.id, user.id))

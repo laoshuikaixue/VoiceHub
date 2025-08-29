@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { schedules, playTimes, notificationSettings, notifications, songs, users, votes } from '~/drizzle/schema'
 import { eq, and, gte, inArray } from 'drizzle-orm'
 import { sendMeowNotificationToUser, sendBatchMeowNotifications } from './meowNotificationService'
+import { formatBeijingTime, getBeijingTime } from '~/utils/timeUtils'
 
 /**
  * 创建歌曲被选中的通知
@@ -89,13 +90,9 @@ export async function createSongSelectedNotification(
   }
 }
 
-// 格式化日期为 yyyy-MM-dd 格式
+// 格式化日期为 yyyy-MM-dd 格式（北京时间）
 function formatDate(date: Date): string {
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return formatBeijingTime(date, 'YYYY-MM-DD')
 }
 
 /**
@@ -193,7 +190,7 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
     const message = `您投稿的歌曲《${song.title}》获得了一个新的投票，当前共有 ${songVotes.length} 个投票。`
     
     // 防重复通知：检查最近5分钟内是否有相同歌曲的投票通知
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+    const fiveMinutesAgo = new Date(getBeijingTime().getTime() - 5 * 60 * 1000)
     
     const existingNotificationResult = await db.select().from(notifications)
       .where(and(
@@ -212,8 +209,7 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
       // 更新现有通知
       const updateResult = await db.update(notifications)
         .set({
-          message,
-          updatedAt: new Date()
+          message
         })
         .where(eq(notifications.id, existingNotification.id))
         .returning()

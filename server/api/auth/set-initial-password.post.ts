@@ -1,7 +1,8 @@
 import bcrypt from 'bcrypt'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -47,7 +48,7 @@ export default defineEventHandler(async (event) => {
     await db.update(users)
       .set({
         password: hashedPassword,
-        passwordChangedAt: sql`NOW()`,
+        passwordChangedAt: getBeijingTime(),
         forcePasswordChange: false
       })
       .where(eq(users.id, user.id))

@@ -2,21 +2,15 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { schedules, songs, users, playTimes } from '~/drizzle/schema'
 import { eq, and, desc, asc, like, or, sql, gte, lt } from 'drizzle-orm'
+import { formatBeijingTime } from '~/utils/timeUtils'
 import { openApiCache } from '~/server/utils/open-api-cache'
 import { CACHE_CONSTANTS } from '~/server/config/constants'
 import { CacheService } from '~/server/services/cacheService'
 import { isRedisReady, executeRedisCommand } from '~/server/utils/redis'
 
-// 格式化日期时间为统一格式：YYYY/M/D H:mm:ss
+// 格式化日期时间为统一格式：YYYY/M/D H:mm:ss（北京时间）
 function formatDateTime(date: Date): string {
-  const year = date.getFullYear()
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const hours = date.getHours()
-  const minutes = date.getMinutes().toString().padStart(2, '0')
-  const seconds = date.getSeconds().toString().padStart(2, '0')
-
-  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
+  return formatBeijingTime(date, 'YYYY/M/D H:mm:ss')
 }
 
 export default defineEventHandler(async (event) => {

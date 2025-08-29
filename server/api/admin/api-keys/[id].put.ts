@@ -1,6 +1,7 @@
 import { db, apiKeys, apiKeyPermissions } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 /**
  * 更新API Key
@@ -65,7 +66,7 @@ export default defineEventHandler(async (event) => {
           // 处理预设选项格式 (3d, 7d, 30d, 60d, 90d)
           if (validatedData.expiresAt.match(/^\d+d$/)) {
             const days = parseInt(validatedData.expiresAt.replace('d', ''))
-            expiresAt = new Date()
+            expiresAt = getBeijingTime()
             expiresAt.setDate(expiresAt.getDate() + days)
           } else {
             // 处理传统的日期时间格式（向后兼容）
@@ -78,7 +79,7 @@ export default defineEventHandler(async (event) => {
               })
             }
             // 验证过期时间不能是过去的时间
-            if (expiresAt <= new Date()) {
+            if (expiresAt <= getBeijingTime()) {
               throw createError({
                 statusCode: 400,
                 statusMessage: '过期时间不能是过去的时间'
@@ -100,9 +101,7 @@ export default defineEventHandler(async (event) => {
     // 开始事务
     const result = await db.transaction(async (tx) => {
       // 准备更新数据
-      const updateData: any = {
-        updatedAt: new Date()
-      }
+      const updateData: any = {}
 
       if (validatedData.name !== undefined) updateData.name = validatedData.name
       if ('description' in validatedData) updateData.description = validatedData.description
@@ -124,8 +123,7 @@ export default defineEventHandler(async (event) => {
         // 插入新权限
         const permissionValues = validatedData.permissions.map(permission => ({
           apiKeyId,
-          permission,
-          createdAt: new Date()
+          permission
         }))
 
         await tx.insert(apiKeyPermissions).values(permissionValues)

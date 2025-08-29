@@ -1,5 +1,7 @@
+import { sql } from 'drizzle-orm'
 import { pgTable, serial, text, timestamp, boolean, integer, pgEnum, uuid, varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { getBeijingTimestamp } from '../utils/timeUtils'
 
 // 枚举定义
 export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
@@ -7,8 +9,8 @@ export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
 // 用户表
 export const users = pgTable('User', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
   username: text('username').notNull(),
   name: text('name'),
   grade: text('grade'),
@@ -26,8 +28,8 @@ export const users = pgTable('User', {
 // 播出时段表
 export const playTimes = pgTable('PlayTime', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
   name: text('name').notNull(),
   startTime: text('startTime'),
   endTime: text('endTime'),
@@ -38,13 +40,13 @@ export const playTimes = pgTable('PlayTime', {
 // 歌曲表
 export const songs = pgTable('Song', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
   title: text('title').notNull(),
   artist: text('artist').notNull(),
   requesterId: integer('requesterId').notNull(),
   played: boolean('played').default(false).notNull(),
-  playedAt: timestamp('playedAt'),
+  playedAt: timestamp('playedAt').default(sql`${getBeijingTimestamp()}`),
   semester: text('semester'),
   preferredPlayTimeId: integer('preferredPlayTimeId'),
   cover: text('cover'),
@@ -55,7 +57,7 @@ export const songs = pgTable('Song', {
 // 投票表
 export const votes = pgTable('Vote', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
   songId: integer('songId').notNull(),
   userId: integer('userId').notNull(),
 });
@@ -63,8 +65,8 @@ export const votes = pgTable('Vote', {
 // 排期表
 export const schedules = pgTable('Schedule', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
   songId: integer('songId').notNull(),
   playDate: timestamp('playDate').notNull(),
   played: boolean('played').default(false).notNull(),
@@ -75,8 +77,8 @@ export const schedules = pgTable('Schedule', {
 // 通知表
 export const notifications = pgTable('Notification', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
   type: text('type').notNull(),
   message: text('message').notNull(),
   read: boolean('read').default(false).notNull(),
@@ -87,8 +89,8 @@ export const notifications = pgTable('Notification', {
 // 通知设置表
 export const notificationSettings = pgTable('NotificationSettings', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
   userId: integer('userId').notNull(),
   enabled: boolean('enabled').default(true).notNull(),
   songRequestEnabled: boolean('songRequestEnabled').default(true).notNull(),
@@ -101,8 +103,8 @@ export const notificationSettings = pgTable('NotificationSettings', {
 // 学期表
 export const semesters = pgTable('Semester', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
   name: text('name').notNull(),
   isActive: boolean('isActive').default(false).notNull(),
 });
@@ -110,8 +112,8 @@ export const semesters = pgTable('Semester', {
 // 系统设置表
 export const systemSettings = pgTable('SystemSettings', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
   enablePlayTimeSelection: boolean('enablePlayTimeSelection').default(false).notNull(),
   siteTitle: text('siteTitle'),
   siteLogoUrl: text('siteLogoUrl'),
@@ -130,8 +132,8 @@ export const systemSettings = pgTable('SystemSettings', {
 // 歌曲黑名单表
 export const songBlacklists = pgTable('SongBlacklist', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
   type: blacklistTypeEnum('type').notNull(),
   value: text('value').notNull(),
   reason: text('reason'),
@@ -148,8 +150,8 @@ export const apiKeys = pgTable('api_keys', {
   keyPrefix: varchar('key_prefix', { length: 10 }).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).default(sql`${getBeijingTimestamp()}`).notNull(),
   lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
   createdByUserId: integer('created_by_user_id').notNull(),
   usageCount: integer('usage_count').default(0).notNull(),
@@ -161,7 +163,7 @@ export const apiKeyPermissions = pgTable('api_key_permissions', {
   id: uuid('id').primaryKey().defaultRandom(),
   apiKeyId: uuid('api_key_id').notNull(),
   permission: varchar('permission', { length: 100 }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).default(sql`${getBeijingTimestamp()}`).notNull(),
 });
 
 // API访问日志表
@@ -176,7 +178,7 @@ export const apiLogs = pgTable('api_logs', {
   responseTimeMs: integer('response_time_ms').notNull(),
   requestBody: text('request_body'),
   responseBody: text('response_body'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).default(sql`${getBeijingTimestamp()}`).notNull(),
   errorMessage: text('error_message'),
 });
 

@@ -3,6 +3,7 @@ import { songs, schedules, users, playTimes, votes } from '~/drizzle/schema'
 import { eq, gte, lte, desc, asc, count, and } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
 import { CacheService } from '~/server/services/cacheService'
+import { createBeijingTime, getBeijingTimestamp } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -107,7 +108,7 @@ export default defineEventHandler(async (event) => {
     const day = parseInt(dateParts[2])
     
     // 创建UTC日期，只包含日期部分
-    const playDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0))
+    const playDate = createBeijingTime(year, month, day, 0, 0, 0)
     
     // 创建排期
     const scheduleResult = await db.insert(schedules)
@@ -211,13 +212,7 @@ export default defineEventHandler(async (event) => {
       
       // 转换数据格式
       const formattedSchedules = schedulesData.map(schedule => {
-        const originalDate = new Date(schedule.playDate)
-        const dateOnly = new Date(Date.UTC(
-          originalDate.getUTCFullYear(),
-          originalDate.getUTCMonth(),
-          originalDate.getUTCDate(),
-          0, 0, 0, 0
-        ))
+        const dateOnly = schedule.playDate
         
         // 处理投稿人姓名，如果是同名用户则添加后缀
         let requesterName = schedule.requesterName || '未知用户'

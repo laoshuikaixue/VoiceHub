@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { apiLogs, apiKeys } from '~/drizzle/schema'
 import { eq, desc, and, count, sql, gte, lte, like, or } from 'drizzle-orm'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 /**
  * API访问日志服务
@@ -44,8 +45,7 @@ export class ApiLogService {
         responseTimeMs: logData.responseTimeMs,
         requestBody: logData.requestBody,
         responseBody: logData.responseBody,
-        errorMessage: logData.errorMessage,
-        createdAt: new Date()
+        errorMessage: logData.errorMessage
       })
       
       console.log(`[ApiLogService] API访问日志记录成功`)
