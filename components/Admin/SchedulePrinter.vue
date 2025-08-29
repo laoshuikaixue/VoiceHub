@@ -144,6 +144,14 @@
             </svg>
             {{ isExporting ? '导出中...' : '导出PDF' }}
           </button>
+          <button @click="exportImage" class="btn btn-warning" :disabled="isExportingImage">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="9" cy="9" r="2"/>
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+            {{ isExportingImage ? '导出中...' : '导出长图' }}
+          </button>
         </div>
       </div>
 
@@ -267,7 +275,7 @@
                 <span>生成时间：{{ new Date().toLocaleString() }}</span>
                 <span v-if="settings.remark" class="remark-text">备注：{{ settings.remark }}</span>
               </div>
-              <span class="footer-right">VoiceHub 广播管理系统</span>
+              <span class="footer-right">Powered By LaoShui @ 2025 | VoiceHub 广播管理系统</span>
             </div>
           </div>
         </div>
@@ -282,6 +290,7 @@ import { useRuntimeConfig } from '#app'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { convertToHttps } from '~/utils/url'
+import html2canvas from 'html2canvas'
 
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
@@ -307,6 +316,7 @@ const logoUrl = computed(() => {
 const schedules = ref([])
 const loading = ref(false)
 const isExporting = ref(false)
+const isExportingImage = ref(false)
 const isPrinting = ref(false)
 const previewContent = ref(null)
 
@@ -815,6 +825,125 @@ const exportPDF = async () => {
     }
   } finally {
     isExporting.value = false
+  }
+}
+
+const exportImage = async () => {
+  isExportingImage.value = true
+  try {
+
+    if (!previewContent.value) {
+      throw new Error('预览内容未找到')
+    }
+
+    // 获取预览页面元素
+    const printPage = previewContent.value.querySelector('.print-page')
+    if (!printPage) {
+      throw new Error('打印页面元素未找到')
+    }
+
+    // 克隆预览内容，保持原有样式
+    const clonedPage = printPage.cloneNode(true)
+
+    // 创建长图渲染容器
+    const imageContainer = document.createElement('div')
+    imageContainer.style.cssText = `
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      z-index: -1;
+      background: white;
+      color: black;
+      width: 880px;
+      padding: 40px 40px 40px 40px;
+      box-sizing: border-box;
+    `
+
+    // 调整克隆页面的样式
+    clonedPage.style.cssText = `
+      background: white !important;
+      color: black !important;
+      box-sizing: border-box !important;
+      width: 800px !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+    `
+
+    // 确保所有子元素的颜色和样式正确
+    const allElements = clonedPage.querySelectorAll('*')
+    allElements.forEach(el => {
+      if (el.style) {
+        // 强制设置文字颜色为黑色
+        el.style.color = 'black !important'
+        
+        // 保持背景为白色
+        el.style.background = 'white !important'
+        el.style.backgroundColor = 'white !important'
+      }
+
+      // 特别处理页面元素的背景
+      if (el.classList && (
+          el.classList.contains('print-page') ||
+          el.classList.contains('page-header') ||
+          el.classList.contains('page-footer') ||
+          el.classList.contains('schedule-content'))) {
+        el.style.background = 'white !important'
+        el.style.backgroundColor = 'white !important'
+      }
+    })
+
+    imageContainer.appendChild(clonedPage)
+    document.body.appendChild(imageContainer)
+
+    // 预处理图片
+    await preprocessImages(clonedPage)
+
+    try {
+      // 等待渲染完成
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // 使用html2canvas生成图片
+      const canvas = await html2canvas(imageContainer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: imageContainer.offsetWidth,
+        height: imageContainer.offsetHeight,
+        scrollX: 0,
+        scrollY: 0
+      })
+
+      // 创建下载链接
+      const link = document.createElement('a')
+      link.download = `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.png`
+      link.href = canvas.toDataURL('image/png', 1.0)
+
+      // 触发下载
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      // 移除临时容器
+      document.body.removeChild(imageContainer)
+
+      if (window.$showNotification) {
+        window.$showNotification('长图导出成功', 'success')
+      }
+    } catch (error) {
+      // 移除临时容器
+      if (document.body.contains(imageContainer)) {
+        document.body.removeChild(imageContainer)
+      }
+      throw error
+    }
+  } catch (error) {
+    console.error('导出长图失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('导出长图失败: ' + error.message, 'error')
+    }
+  } finally {
+    isExportingImage.value = false
   }
 }
 
