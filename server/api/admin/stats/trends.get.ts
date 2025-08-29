@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { db } from '~/drizzle/db'
+import { db, songs, gte, count, eq, and } from '~/drizzle/db'
+import { sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -22,26 +23,27 @@ export default defineEventHandler(async (event) => {
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     
-    const trendData = await db.song.groupBy({
-      by: ['createdAt'],
-      where: {
-        ...where,
-        createdAt: {
-          gte: thirtyDaysAgo
-        }
-      },
-      _count: {
-        _all: true
-      },
-      orderBy: {
-        createdAt: 'asc'
-      }
-    })
+    // 构建where条件
+    let whereCondition = gte(songs.createdAt, thirtyDaysAgo)
+    if (semester && semester !== 'all') {
+      whereCondition = and(whereCondition, eq(songs.semester, semester))
+    }
+    
+    // 使用Drizzle ORM的正确语法进行分组查询
+    const trendData = await db
+      .select({
+        date: sql<string>`DATE(${songs.createdAt})`,
+        count: count(songs.id)
+      })
+      .from(songs)
+      .where(whereCondition)
+      .groupBy(sql`DATE(${songs.createdAt})`)
+      .orderBy(sql`DATE(${songs.createdAt}) ASC`)
 
     // 格式化数据
     const formattedData = trendData.map(item => ({
-      date: item.createdAt.toISOString().split('T')[0],
-      count: item._count._all
+      date: item.date,
+      count: item.count
     }))
 
     return formattedData
