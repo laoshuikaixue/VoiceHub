@@ -96,7 +96,8 @@ export default defineEventHandler(async (event) => {
   // 如果有用户创建成功，清除相关缓存
   if (results.created > 0) {
     try {
-      await CacheService.clearSongsCache()
+      const cacheService = CacheService.getInstance()
+      await cacheService.clearSongsCache()
       console.log('批量用户创建后缓存清除成功')
     } catch (cacheError) {
       console.error('批量用户创建后缓存清除失败:', cacheError)

@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
     const shouldHideStudentInfo = systemSettingsData?.hideStudentInfo ?? true
     
     // 初始化缓存服务
-    const cacheService = new CacheService()
+    const cacheService = CacheService.getInstance()
     
     // 获取当前日期，使用UTC时间
     const now = new Date()

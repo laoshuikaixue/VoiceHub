@@ -109,7 +109,8 @@ export default defineEventHandler(async (event) => {
     // 如果有用户更新成功，清除相关缓存
     if (updated > 0) {
       try {
-        await CacheService.clearSongsCache()
+        const cacheService = CacheService.getInstance()
+        await cacheService.clearSongsCache()
         console.log('批量年级更新后缓存清除成功')
       } catch (cacheError) {
         console.error('批量年级更新后缓存清除失败:', cacheError)

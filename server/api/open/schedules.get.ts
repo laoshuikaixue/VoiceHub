@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
     const sortOrder = query.sortOrder as string || 'asc'
 
     // 优先从普通API缓存获取数据
-    const cacheService = new CacheService()
+    const cacheService = CacheService.getInstance()
     
     // 尝试从CacheService获取排期数据
     let cachedSchedules = await cacheService.getSchedulesList()

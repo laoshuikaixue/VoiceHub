@@ -101,7 +101,7 @@ export default defineEventHandler(async (event) => {
   await db.delete(songs).where(eq(songs.id, body.songId))
 
   // 清除歌曲列表缓存
-  const cacheService = new CacheService()
+  const cacheService = CacheService.getInstance()
   await cacheService.clearSongsCache()
   console.log('[Cache] 歌曲缓存已清除（撤回歌曲）')
 
