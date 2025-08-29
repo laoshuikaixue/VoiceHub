@@ -2,7 +2,7 @@ import { db } from '~/drizzle/db'
 import { songs, schedules, users, playTimes, votes } from '~/drizzle/schema'
 import { eq, gte, lte, desc, asc, count, and } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
-import { CacheService } from '~/server/services/cacheService'
+import { cacheService } from '~/server/services/cacheService'
 import { createBeijingTime, getBeijingTimestamp } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {

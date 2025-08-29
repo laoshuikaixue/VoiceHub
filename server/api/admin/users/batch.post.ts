@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { CacheService } from '../../../services/cacheService'
+import { cacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -96,7 +96,6 @@ export default defineEventHandler(async (event) => {
   // 如果有用户创建成功，清除相关缓存
   if (results.created > 0) {
     try {
-      const cacheService = CacheService.getInstance()
       await cacheService.clearSongsCache()
       console.log('批量用户创建后缓存清除成功')
     } catch (cacheError) {

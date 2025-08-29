@@ -2,7 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, songs, schedules, semesters, songBlacklists } from '~/drizzle/schema'
 import { eq, gte, lt, and, count } from 'drizzle-orm'
-import { CacheService } from '../../services/cacheService'
+import { cacheService } from '../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -19,7 +19,6 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 尝试从缓存获取数据
-    const cacheService = CacheService.getInstance()
     const cachedStats = await cacheService.getAdminStats(semester)
     if (cachedStats) {
       console.log('[Cache] 管理员统计数据缓存命中')

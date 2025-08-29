@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import { db } from '~/drizzle/db'
 import { schedules, songs, users, playTimes, systemSettings, votes } from '~/drizzle/schema'
 import { eq, and, count, sql } from 'drizzle-orm'
-import { CacheService } from '~/server/services/cacheService'
+import { cacheService } from '~/server/services/cacheService'
 import { isRedisReady, executeRedisCommand } from '../../utils/redis'
 import { formatBeijingTime } from '~/utils/timeUtils'
 
@@ -52,7 +52,6 @@ export default defineEventHandler(async (event) => {
     const shouldHideStudentInfo = systemSettingsData?.hideStudentInfo ?? true
     
     // 初始化缓存服务
-    const cacheService = CacheService.getInstance()
     
     // 获取当前日期，使用UTC时间
     const now = new Date()

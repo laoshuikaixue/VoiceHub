@@ -2,7 +2,7 @@ import { db } from '~/drizzle/db'
 import { songs, votes, schedules } from '~/drizzle/schema'
 import { eq, and, count } from 'drizzle-orm'
 import { createSongVotedNotification } from '../../services/notificationService'
-import { CacheService } from '~/server/services/cacheService'
+import { cacheService } from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -103,7 +103,6 @@ export default defineEventHandler(async (event) => {
         const voteCount = voteCountResult[0].count
 
         // 清除统计缓存和歌曲缓存
-        const cacheService = CacheService.getInstance()
         try {
           await cacheService.clearStatsCache()
           await cacheService.clearSongsCache()
@@ -154,7 +153,6 @@ export default defineEventHandler(async (event) => {
         }
 
         // 清除统计缓存和歌曲缓存
-        const cacheService = CacheService.getInstance()
         try {
           await cacheService.clearStatsCache()
           await cacheService.clearSongsCache()

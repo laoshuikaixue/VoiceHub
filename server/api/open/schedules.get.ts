@@ -5,7 +5,7 @@ import { eq, and, desc, asc, like, or, sql, gte, lt } from 'drizzle-orm'
 import { formatBeijingTime } from '~/utils/timeUtils'
 import { openApiCache } from '~/server/utils/open-api-cache'
 import { CACHE_CONSTANTS } from '~/server/config/constants'
-import { CacheService } from '~/server/services/cacheService'
+import { cacheService } from '~/server/services/cacheService'
 import { isRedisReady, executeRedisCommand } from '~/server/utils/redis'
 
 // 格式化日期时间为统一格式：YYYY/M/D H:mm:ss（北京时间）
@@ -42,7 +42,6 @@ export default defineEventHandler(async (event) => {
     const sortOrder = query.sortOrder as string || 'asc'
 
     // 优先从普通API缓存获取数据
-    const cacheService = CacheService.getInstance()
     
     // 尝试从CacheService获取排期数据
     let cachedSchedules = await cacheService.getSchedulesList()
