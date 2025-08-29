@@ -125,12 +125,7 @@
 
               <div class="song-info">
                 <h3 class="song-title" :title="song.title + ' - ' + song.artist">
-                  <div class="song-title-container" :ref="el => setSongTitleRef(el, song.id)">
-                    <div class="song-title-scroll" :class="{ 'scrolling': shouldScroll(song.id) }">
-                      <span class="song-title-text">{{ song.title }} - {{ song.artist }}</span>
-                      <span class="song-title-text song-title-duplicate" v-if="shouldScroll(song.id)">{{ song.title }} - {{ song.artist }}</span>
-                    </div>
-                  </div>
+                  <marquee-text :text="`${song.title} - ${song.artist}`" />
                   <span v-if="song.played" class="played-tag">已播放</span>
                   <span v-else-if="song.scheduled" class="scheduled-tag">已排期</span>
                 </h3>
@@ -259,6 +254,7 @@ import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useSongs } from '~/composables/useSongs'
 import Icon from '~/components/UI/Icon.vue'
+import MarqueeText from '~/components/UI/MarqueeText.vue'
 import { convertToHttps } from '~/utils/url'
 
 const props = defineProps({
@@ -316,60 +312,6 @@ const isFetchingSemesters = ref(false)
 // 用户手动选择学期标志
 const isUserManuallySelected = ref(false)
 
-// 歌曲标题滚动相关
-const songTitleRefs = ref(new Map())
-const scrollingSongs = ref(new Set())
-
-// 设置歌曲标题ref
-const setSongTitleRef = (el, songId) => {
-
-  if (el) {
-    songTitleRefs.value.set(songId, el)
-    // 检查是否需要滚动
-    nextTick(() => {
-
-      checkTitleOverflow(songId)
-    })
-  } else {
-    songTitleRefs.value.delete(songId)
-    scrollingSongs.value.delete(songId)
-  }
-}
-
-// 检查标题是否溢出需要滚动
-const checkTitleOverflow = (songId) => {
-  const container = songTitleRefs.value.get(songId)
-  if (!container) return
-  
-  const scrollElement = container.querySelector('.song-title-scroll')
-  const textElement = container.querySelector('.song-title-text')
-  
-  if (!scrollElement || !textElement) return
-  
-  // 临时移除滚动类以获取真实宽度
-  scrollElement.classList.remove('scrolling')
-  
-  const containerWidth = container.offsetWidth
-  const textWidth = textElement.offsetWidth
-  
-  if (textWidth > containerWidth) {
-    // 需要滚动
-    scrollingSongs.value.add(songId)
-    nextTick(() => {
-      scrollElement.classList.add('scrolling')
-    })
-  } else {
-    // 不需要滚动，确保移除滚动状态
-    scrollingSongs.value.delete(songId)
-    scrollElement.classList.remove('scrolling')
-  }
-}
-
-// 判断歌曲是否需要滚动
-const shouldScroll = (songId) => {
-  return scrollingSongs.value.has(songId)
-}
-
 // 切换活动标签
 const setActiveTab = (tab) => {
   if (activeTab.value === tab) return; // 如果点击的是当前标签，不执行切换
@@ -377,42 +319,10 @@ const setActiveTab = (tab) => {
   currentPage.value = 1 // 重置为第一页
 }
 
-// 防抖函数
-const debounce = (func, wait) => {
-  let timeout
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout)
-      func(...args)
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
-}
-
-// 重新计算所有歌曲标题的滚动需求
-const recalculateAllTitles = () => {
-  // 重新检查所有已设置ref的歌曲标题
-  songTitleRefs.value.forEach((_, songId) => {
-    checkTitleOverflow(songId)
-  })
-}
-
 // 检测设备是否为移动设备
 const checkMobile = () => {
-  const wasMobile = isMobile.value
   isMobile.value = window.innerWidth < 768
-  
-  // 如果设备类型发生变化或窗口大小变化，重新计算所有标题
-  if (wasMobile !== isMobile.value || true) {
-    nextTick(() => {
-      recalculateAllTitles()
-    })
-  }
 }
-
-// 创建防抖版本的checkMobile函数
-const debouncedCheckMobile = debounce(checkMobile, 150)
 
 // 处理学期过滤变化事件
 const handleSemesterFilterChange = (event) => {
@@ -435,9 +345,8 @@ const handleSemesterFilterChange = (event) => {
 
 // 组件挂载和卸载时添加/移除窗口大小变化监听
 onMounted(async () => {
-
   checkMobile()
-  window.addEventListener('resize', debouncedCheckMobile)
+  window.addEventListener('resize', checkMobile)
   
   // 添加学期过滤变化事件监听器
   window.addEventListener('semester-filter-change', handleSemesterFilterChange)
@@ -474,28 +383,16 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', debouncedCheckMobile)
+  window.removeEventListener('resize', checkMobile)
   // 移除学期过滤变化事件监听器
   window.removeEventListener('semester-filter-change', handleSemesterFilterChange)
 })
 
 // 监听歌曲数据变化，更新学期信息
-watch(() => props.songs, (newSongs) => {
+watch(() => props.songs, () => {
   // 只有在组件完全初始化后且不在获取学期信息时才处理数据更新
   if (isComponentInitialized.value && !isDataLoading.value && !isFetchingSemesters.value) {
     fetchAvailableSemesters()
-  }
-  
-  // 当歌曲数据变化时，重新检查所有歌曲标题的滚动需求
-  if (newSongs && newSongs.length > 0) {
-
-    nextTick(() => {
-      newSongs.forEach(song => {
-        if (songTitleRefs.value.has(song.id)) {
-          checkTitleOverflow(song.id)
-        }
-      })
-    })
   }
 }, { deep: true })
 
@@ -1255,6 +1152,19 @@ const retrySemesterFetch = () => {
   fetchAvailableSemesters()
 }
 
+// 防抖函数实现
+function debounce(func, wait) {
+  let timeout
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+}
+
 // 当组件销毁时不需要特殊处理，音频播放由全局管理
 
 // 波纹效果指令
@@ -1695,36 +1605,13 @@ const vRipple = {
   align-items: center;
 }
 
-/* 歌曲标题滚动容器 */
-.song-title-container {
-  width: 100%;
-  overflow: hidden;
-  position: relative;
-}
-
-.song-title-scroll {
-  display: flex;
-  white-space: nowrap;
-  transition: transform 0.3s ease;
-}
-
+/* 添加一个包装器来处理歌曲标题和歌手的文本溢出 */
 .song-title-text {
-  flex-shrink: 0;
   white-space: nowrap;
-}
-
-.song-title-duplicate {
-  margin-left: 2em; /* 在重复文本前添加间距 */
-}
-
-/* 滚动动画 */
-@keyframes scroll-text {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0; /* 允许文本收缩 */
 }
 
 .song-meta {
@@ -2052,19 +1939,6 @@ button:disabled {
   
   .action-area {
     gap: 0.5rem;
-  }
-  
-  /* 移动端歌曲标题滚动优化 */
-  .song-title-scroll.scrolling {
-    animation: scroll-text 6s linear infinite; /* 移动端稍快一些 */
-  }
-  
-  .song-title-duplicate {
-    margin-left: 1.5em; /* 移动端减少间距 */
-  }
-  
-  .song-title {
-    font-size: 14px; /* 移动端稍小的字体 */
   }
   
   .pagination {
