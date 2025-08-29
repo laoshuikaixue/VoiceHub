@@ -1015,7 +1015,7 @@ const checkPasswordChangeRequired = async (user = null) => {
     // 使用传入的用户信息或当前认证状态中的用户信息
     const currentUser = user || auth?.user?.value
     
-    if (currentUser && (currentUser.forcePasswordChange || !currentUser.passwordChangedAt)) {
+    if (currentUser && currentUser.requirePasswordChange) {
       // 延迟1秒显示通知，确保页面加载完成
       setTimeout(() => {
         if (window.$showNotification) {

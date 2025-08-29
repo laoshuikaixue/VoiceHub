@@ -39,8 +39,18 @@ export default defineEventHandler(async (event) => {
       })
       
       if (cachedUser) {
+        // 为缓存的用户数据添加requirePasswordChange字段
+        const userWithRequirePasswordChange = {
+          id: cachedUser.id,
+          username: cachedUser.username,
+          name: cachedUser.name,
+          grade: cachedUser.grade,
+          class: cachedUser.class,
+          role: cachedUser.role,
+          requirePasswordChange: cachedUser.forcePasswordChange || !cachedUser.passwordChangedAt
+        }
         return {
-          user: cachedUser,
+          user: userWithRequirePasswordChange,
           valid: true
         }
       }
@@ -58,13 +68,24 @@ export default defineEventHandler(async (event) => {
       passwordChangedAt: users.passwordChangedAt
     }).from(users).where(eq(users.id, userId))
     
-    const user = userResult[0] || null
-
-    if (!user) {
+    const dbUser = userResult[0] || null
+    
+    if (!dbUser) {
       throw createError({
         statusCode: 401,
         statusMessage: '用户不存在'
       })
+    }
+    
+    // 构建返回的用户对象，只包含需要的字段
+    const user = {
+      id: dbUser.id,
+      username: dbUser.username,
+      name: dbUser.name,
+      grade: dbUser.grade,
+      class: dbUser.class,
+      role: dbUser.role,
+      requirePasswordChange: dbUser.forcePasswordChange || !dbUser.passwordChangedAt
     }
 
     // 将用户认证状态缓存到Redis（如果可用）- 永久缓存
@@ -74,7 +95,8 @@ export default defineEventHandler(async (event) => {
         if (!client) return
         
         const cacheKey = `auth:user:${userId}`
-        await client.set(cacheKey, JSON.stringify(user))
+        // 缓存完整的数据库用户信息，用于后续验证
+        await client.set(cacheKey, JSON.stringify(dbUser))
         console.log(`[API] 用户认证状态已缓存: ${userId}`)
       })
     }
