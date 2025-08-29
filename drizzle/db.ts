@@ -18,32 +18,51 @@ if (!process.env.DATABASE_URL) {
 // 创建PostgreSQL连接
 const connectionString = process.env.DATABASE_URL;
 
-// Neon Database 优化配置 - Serverless 架构
-const client = postgres(connectionString, {
-  // Neon Database 连接池优化
-  max: process.env.NODE_ENV === 'production' ? 3 : 5, // Neon 推荐较少连接数
-  idle_timeout: 10, // 快速释放空闲连接，支持自动启停
-  connect_timeout: 10, // Neon 连接速度快，减少超时时间
-  max_lifetime: 3600, // 连接最大生命周期（1小时）
-  
-  // SSL 配置 - Neon 默认需要 SSL
-  ssl: 'require',
-  
-  // 性能优化
-  prepare: false, // 禁用预处理语句以提高兼容性
-  transform: {
-    undefined: null, // 将undefined转换为null
-  },
-  
-  // 连接标识和调试
-  connection: {
-    application_name: 'voicehub-app'
-  },
-  
-  // Neon Database 特定优化
-  onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
-  debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
-});
+// 检测数据库类型
+const isNeonDatabase = connectionString.includes('neon.tech') || connectionString.includes('neon.database.com');
+
+// 根据数据库类型选择配置
+const getDatabaseConfig = () => {
+  if (isNeonDatabase) {
+    // Neon Database Serverless 优化配置
+    return {
+      max: process.env.NODE_ENV === 'production' ? 3 : 5, // Neon 推荐较少连接数
+      idle_timeout: 10, // 快速释放空闲连接，支持自动启停
+      connect_timeout: 10, // Neon 连接速度快，减少超时时间
+      max_lifetime: 3600, // 连接最大生命周期（1小时）
+      ssl: 'require', // Neon 默认需要 SSL
+      prepare: false, // 禁用预处理语句以提高兼容性
+      transform: {
+        undefined: null, // 将undefined转换为null
+      },
+      connection: {
+        application_name: 'voicehub-app'
+      },
+      onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
+      debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
+    };
+  } else {
+    // 标准 PostgreSQL 数据库配置
+    return {
+      max: process.env.NODE_ENV === 'production' ? 10 : 5, // 普通PostgreSQL可以支持更多连接
+      idle_timeout: 20, // 增加空闲超时时间
+      connect_timeout: 30, // 增加连接超时时间以适应网络延迟
+      max_lifetime: 3600, // 连接最大生命周期（1小时）
+      ssl: connectionString.includes('sslmode=require') || connectionString.includes('ssl=true') ? 'require' : false,
+      prepare: false, // 禁用预处理语句以提高兼容性
+      transform: {
+        undefined: null, // 将undefined转换为null
+      },
+      connection: {
+        application_name: 'voicehub-app'
+      },
+      onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
+      debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
+    };
+  }
+};
+
+const client = postgres(connectionString, getDatabaseConfig());
 
 // 创建Drizzle数据库实例
 export const db = drizzle(client, { schema });
@@ -79,9 +98,10 @@ export function getConnectionStatus() {
   };
 }
 
-// 自动启停管理 - 适配 Neon Database Serverless
+// 连接管理 - 根据数据库类型自适应
 let idleTimer: NodeJS.Timeout | null = null;
-const IDLE_TIMEOUT = 5 * 60 * 1000; // 5分钟空闲后自动断开
+// Neon 数据库使用更短的空闲时间以支持自动启停，普通 PostgreSQL 使用更长的空闲时间
+const IDLE_TIMEOUT = isNeonDatabase ? 5 * 60 * 1000 : 10 * 60 * 1000; // Neon: 5分钟，PostgreSQL: 10分钟
 
 // 重置空闲计时器
 function resetIdleTimer() {
@@ -94,8 +114,9 @@ function resetIdleTimer() {
     idleTimer = setTimeout(async () => {
       try {
         if (!client.ended) {
-          console.log('🔄 Auto-closing idle database connections for Neon optimization');
-          await client.end({ timeout: 5 });
+          const dbType = isNeonDatabase ? 'Neon' : 'PostgreSQL';
+          console.log(`🔄 Auto-closing idle ${dbType} database connections${isNeonDatabase ? ' for Serverless optimization' : ''}`);
+          await client.end({ timeout: isNeonDatabase ? 5 : 10 });
         }
       } catch (error) {
         console.error('❌ Error during auto-close:', error);
@@ -114,9 +135,10 @@ export function withAutoReconnect<T extends any[], R>(
     try {
       return await operation(...args);
     } catch (error: any) {
-      // 如果连接已关闭，记录信息但不重连（Neon 会自动处理）
+      // 如果连接已关闭，记录信息
       if (error?.code === 'CONNECTION_ENDED' || client.ended) {
-        console.log('🔄 Database connection ended, Neon will auto-reconnect on next query');
+        const dbType = isNeonDatabase ? 'Neon' : 'PostgreSQL';
+        console.log(`🔄 ${dbType} database connection ended${isNeonDatabase ? ', Neon will auto-reconnect on next query' : ', will reconnect on next query'}`);
       }
       throw error;
     }

@@ -3,6 +3,10 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { config } from 'dotenv';
+
+// 加载环境变量
+config();
 
 // 颜色输出函数
 const colors = {
@@ -121,23 +125,31 @@ async function deploy() {
     
     if (process.env.DATABASE_URL) {
       try {
+        // 设置非交互式环境变量
+        const nonInteractiveEnv = {
+          ...process.env,
+          DRIZZLE_KIT_FORCE: 'true',
+          CI: 'true',
+          NODE_ENV: 'production'
+        };
+        
         // 首先尝试生成迁移文件
         logStep('📝', '生成数据库迁移文件...');
-        if (safeExec('npm run db:generate')) {
+        if (safeExec('npm run db:generate', { env: nonInteractiveEnv })) {
           logSuccess('迁移文件生成成功');
         } else {
           logWarning('迁移文件生成失败，继续尝试同步...');
         }
         
         // 使用专用的安全迁移脚本
-        if (safeExec('npm run safe-migrate')) {
+        if (safeExec('npm run safe-migrate', { env: nonInteractiveEnv })) {
           logSuccess('数据库安全迁移成功');
           dbSyncSuccess = true;
         } else {
           logWarning('安全迁移脚本失败，尝试直接同步...');
           
           // 备用方案：直接使用drizzle-kit push
-          if (safeExec('npm run db:push')) {
+          if (safeExec('npm run db:push', { env: nonInteractiveEnv })) {
             logSuccess('数据库直接同步成功');
             dbSyncSuccess = true;
           } else {

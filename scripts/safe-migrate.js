@@ -106,7 +106,16 @@ async function safeMigrate() {
     
     // 4. 生成迁移文件（如果需要）
     log('生成数据库迁移文件...', 'cyan');
-    if (!safeExec('npm run db:generate')) {
+    
+    // 设置非交互式环境变量
+    const nonInteractiveEnv = {
+      ...process.env,
+      DRIZZLE_KIT_FORCE: 'true',
+      CI: 'true',
+      NODE_ENV: 'production'
+    };
+    
+    if (!safeExec('npm run db:generate', { env: nonInteractiveEnv })) {
       logWarning('迁移文件生成失败，尝试直接同步...');
     } else {
       logSuccess('迁移文件生成完成');
