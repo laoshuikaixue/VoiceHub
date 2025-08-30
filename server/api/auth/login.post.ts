@@ -83,7 +83,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 登录成功，清除失败记录
-    recordLoginSuccess(body.username)
+    recordLoginSuccess(body.username, clientIp)
 
     // 更新登录信息
     await db.update(users)
