@@ -627,8 +627,37 @@ class CacheService {
         await this.deleteCachePattern(pattern)
       }
       
+      // 清除 Redis 中的 public_schedules 相关缓存
+      await this.clearPublicSchedulesCache()
+      
       console.log('[Cache] 所有排期缓存已清除')
     }
+  }
+
+  // 清除 Redis 中的 public_schedules 相关缓存
+  private async clearPublicSchedulesCache(): Promise<void> {
+    if (!isRedisReady()) {
+      console.log('[Cache] Redis未就绪，跳过public_schedules缓存清理')
+      return
+    }
+
+    await executeRedisCommand(async () => {
+      const client = (await import('../utils/redis')).getRedisClient()
+      if (!client) return
+      
+      try {
+        // 清除所有 public_schedules 相关的缓存键
+        const keys = await client.keys('public_schedules:*')
+        if (keys.length > 0) {
+          await client.del(keys)
+          console.log(`[Cache] 已清除 ${keys.length} 个 public_schedules 缓存键`)
+        } else {
+          console.log('[Cache] 未找到 public_schedules 缓存键')
+        }
+      } catch (error) {
+        console.error('[Cache] 清除 public_schedules 缓存失败:', error)
+      }
+    })
   }
 
   // ==================== 系统设置相关缓存 ====================

@@ -116,8 +116,11 @@ export function recordLoginFailure(username: string, ip: string): void {
 /**
  * 记录成功登录（清除失败记录）
  */
-export function recordLoginSuccess(username: string): void {
+export function recordLoginSuccess(username: string, ip: string): void {
   accountLocks.delete(username)
+  
+  // 记录IP监控信息（成功登录也需要监控）
+  recordIPAttempt(ip, username)
 }
 
 /**

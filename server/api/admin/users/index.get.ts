@@ -34,13 +34,14 @@ export default defineEventHandler(async (event) => {
       whereConditions.push(eq(users.role, role.trim()))
     }
 
-    // 搜索功能（姓名或用户名）
+    // 搜索功能（姓名、用户名或IP地址）
     if (search && typeof search === 'string' && search.trim()) {
       const searchTerm = search.trim()
       whereConditions.push(
         or(
           ilike(users.name, `%${searchTerm}%`),
-          ilike(users.username, `%${searchTerm}%`)
+          ilike(users.username, `%${searchTerm}%`),
+          ilike(users.lastLoginIp, `%${searchTerm}%`)
         )
       )
     }
