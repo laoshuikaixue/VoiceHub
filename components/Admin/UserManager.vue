@@ -17,7 +17,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="搜索用户..."
+            placeholder="搜索用户（姓名、用户名、IP地址）..."
             class="search-input"
           />
         </div>
