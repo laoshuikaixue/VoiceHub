@@ -105,6 +105,47 @@
             </div>
           </div>
 
+          <!-- 图片导出设置 -->
+          <div class="setting-group">
+            <h3>图片导出设置</h3>
+            
+            <!-- 图片格式 -->
+            <div class="setting-item">
+              <label>图片格式</label>
+              <select v-model="settings.imageFormat" class="setting-select">
+                <option value="png">PNG (高质量)</option>
+                <option value="jpeg">JPEG (较小文件)</option>
+                <option value="webp">WebP (现代格式)</option>
+              </select>
+            </div>
+
+            <!-- 图片质量 -->
+            <div class="setting-item" v-if="settings.imageFormat !== 'png'">
+              <label>图片质量</label>
+              <div class="quality-setting">
+                <input 
+                  type="range" 
+                  v-model="settings.imageQuality" 
+                  min="0.1" 
+                  max="1.0" 
+                  step="0.1" 
+                  class="quality-slider"
+                />
+                <span class="quality-value">{{ Math.round(settings.imageQuality * 100) }}%</span>
+              </div>
+            </div>
+
+            <!-- 图片缩放 -->
+            <div class="setting-item">
+              <label>图片缩放</label>
+              <select v-model="settings.imageScale" class="setting-select">
+                <option value="1">标准 (1x)</option>
+                <option value="2">高清 (2x)</option>
+                <option value="3">超高清 (3x)</option>
+              </select>
+            </div>
+          </div>
+
           <!-- 备注设置 -->
           <div class="setting-group">
             <label class="setting-label">备注</label>
@@ -333,7 +374,11 @@ const settings = ref({
   showVotes: true,
   showSequence: true,
   showSchoolLogo: false,
-  remark: ''
+  remark: '',
+  // 图片导出设置
+  imageFormat: 'png',
+  imageQuality: 0.9,
+  imageScale: 2
 })
 
 // 计算属性
@@ -917,7 +962,7 @@ const exportImage = async () => {
 
       // 使用html2canvas生成图片
       const canvas = await html2canvas(imageContainer, {
-        scale: 2,
+        scale: parseInt(settings.value.imageScale),
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -927,10 +972,35 @@ const exportImage = async () => {
         scrollY: 0
       })
 
+      // 根据设置的格式和质量生成图片
+      const imageFormat = settings.value.imageFormat
+      const imageQuality = settings.value.imageQuality
+      
+      let mimeType, fileExtension, dataURL
+      
+      switch (imageFormat) {
+        case 'jpeg':
+          mimeType = 'image/jpeg'
+          fileExtension = 'jpg'
+          dataURL = canvas.toDataURL(mimeType, imageQuality)
+          break
+        case 'webp':
+          mimeType = 'image/webp'
+          fileExtension = 'webp'
+          dataURL = canvas.toDataURL(mimeType, imageQuality)
+          break
+        case 'png':
+        default:
+          mimeType = 'image/png'
+          fileExtension = 'png'
+          dataURL = canvas.toDataURL(mimeType, 1.0) // PNG 始终使用最高质量
+          break
+      }
+
       // 创建下载链接
       const link = document.createElement('a')
-      link.download = `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.png`
-      link.href = canvas.toDataURL('image/png', 1.0)
+      link.download = `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.${fileExtension}`
+      link.href = dataURL
 
       // 触发下载
       document.body.appendChild(link)
@@ -941,7 +1011,7 @@ const exportImage = async () => {
       document.body.removeChild(imageContainer)
 
       if (window.$showNotification) {
-        window.$showNotification('长图导出成功', 'success')
+        window.$showNotification(`${imageFormat.toUpperCase()}长图导出成功`, 'success')
       }
     } catch (error) {
       // 移除临时容器
@@ -1414,6 +1484,86 @@ watch(() => settings.value, () => {
   background: #2a2a2a;
   border-color: #4f46e5;
   color: #ffffff;
+}
+
+/* 图片导出设置样式 */
+.quality-setting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quality-slider {
+  flex: 1;
+  height: 6px;
+  background: #1f1f1f;
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.quality-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #4F46E5;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quality-slider::-webkit-slider-thumb:hover {
+  background: #6366F1;
+  transform: scale(1.1);
+}
+
+.quality-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #4F46E5;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.quality-slider::-moz-range-thumb:hover {
+  background: #6366F1;
+  transform: scale(1.1);
+}
+
+.quality-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4F46E5;
+  min-width: 40px;
+  text-align: right;
+}
+
+.remark-input {
+  width: 100%;
+  padding: 12px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.remark-input:focus {
+  outline: none;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.remark-input::placeholder {
+  color: #666;
 }
 
 .action-buttons {
