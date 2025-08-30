@@ -60,12 +60,12 @@ export const usePermissions = () => {
   // 权限组合检查
   const isAdminOrAbove = computed(() => {
     const role = auth.user.value?.role
-    return ['ADMIN', 'SUPER_ADMIN'].includes(role)
+    return role ? ['ADMIN', 'SUPER_ADMIN'].includes(role) : false
   })
 
   const isSongAdminOrAbove = computed(() => {
     const role = auth.user.value?.role
-    return ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(role)
+    return role ? ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(role) : false
   })
 
   // 检查是否可以管理用户角色
@@ -87,6 +87,12 @@ export const usePermissions = () => {
     return ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(role)
   })
 
+  // 检查用户是否拥有指定角色之一
+  const hasRole = (roles: string[]): boolean => {
+    if (!auth.user.value) return false
+    return roles.includes(auth.user.value.role)
+  }
+
   return {
     // 页面访问权限
     canAccessAdmin,
@@ -100,6 +106,7 @@ export const usePermissions = () => {
     isSuperAdmin,
     isAdminOrAbove,
     isSongAdminOrAbove,
+    hasRole,
     
     // 功能权限
     canPrintSchedule,

@@ -4,7 +4,7 @@ export interface User {
   name: string | null
   grade?: string | null
   class?: string | null
-  role: 'USER' | 'ADMIN'
+  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN' | 'SONG_ADMIN'
   lastLoginAt?: Date | null
   lastLoginIp?: string | null
   forcePasswordChange?: boolean

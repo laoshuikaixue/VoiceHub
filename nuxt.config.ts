@@ -2,6 +2,7 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: [],
+  compatibilityDate: '2025-08-30',
   
   // 引入全局CSS
   css: [

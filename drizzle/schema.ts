@@ -129,6 +129,25 @@ export const systemSettings = pgTable('SystemSettings', {
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
 });
 
+// 公告表
+export const announcements = pgTable('Announcement', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  type: text('type').notNull(), // 'INTERNAL' (站内) 或 'EXTERNAL' (站外)
+  isActive: boolean('isActive').default(true).notNull(),
+  priority: integer('priority').default(0).notNull(), // 优先级，数字越大优先级越高
+  startDate: timestamp('startDate'),
+  endDate: timestamp('endDate'),
+  createdByUserId: integer('createdByUserId').notNull(),
+  viewCount: integer('viewCount').default(0).notNull(),
+  backgroundColor: text('backgroundColor').default('#1a1a1a'),
+  textColor: text('textColor').default('#ffffff'),
+  buttonColor: text('buttonColor').default('#4F46E5'),
+});
+
 // 歌曲黑名单表
 export const songBlacklists = pgTable('SongBlacklist', {
   id: serial('id').primaryKey(),
@@ -192,6 +211,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     references: [notificationSettings.userId],
   }),
   apiKeys: many(apiKeys),
+  announcements: many(announcements),
 }));
 
 export const songsRelations = relations(songs, ({ one, many }) => ({
@@ -277,6 +297,13 @@ export const apiLogsRelations = relations(apiLogs, ({ one }) => ({
   }),
 }));
 
+export const announcementsRelations = relations(announcements, ({ one }) => ({
+  createdBy: one(users, {
+    fields: [announcements.createdByUserId],
+    references: [users.id],
+  }),
+}));
+
 // 导出所有表的类型
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -296,6 +323,8 @@ export type Semester = typeof semesters.$inferSelect;
 export type NewSemester = typeof semesters.$inferInsert;
 export type SystemSettings = typeof systemSettings.$inferSelect;
 export type NewSystemSettings = typeof systemSettings.$inferInsert;
+export type Announcement = typeof announcements.$inferSelect;
+export type NewAnnouncement = typeof announcements.$inferInsert;
 export type SongBlacklist = typeof songBlacklists.$inferSelect;
 export type NewSongBlacklist = typeof songBlacklists.$inferInsert;
 export type ApiKey = typeof apiKeys.$inferSelect;
