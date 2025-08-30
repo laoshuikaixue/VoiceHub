@@ -27,13 +27,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 新增步骤：从package.json中提取版本号
+      # 提取版本号并处理成不同格式
       - name: Extract version from package.json
         id: extract-version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Extracted version: $VERSION"
+          # 提取完整版本号
+          FULL_VERSION=$(node -p "require('./package.json').version")
+          # 提取主版本.次版本 (如 1.2 从 1.2.3)
+          MAJOR_MINOR_VERSION=$(echo "$FULL_VERSION" | sed -E 's/^([0-9]+\.[0-9]+)\.[0-9]+$/\1/')
+          
+          echo "full-version=$FULL_VERSION" >> $GITHUB_OUTPUT
+          echo "major-minor-version=$MAJOR_MINOR_VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted full version: $FULL_VERSION"
+          echo "Extracted major.minor version: $MAJOR_MINOR_VERSION"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -58,10 +64,10 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch
             type=ref,event=pr
-            # 使用从package.json提取的版本号
-            type=raw,value=${{ steps.extract-version.outputs.version }}
-            # 也可以添加主版本.次版本的格式
-            type=raw,value=${{ steps.extract-version.outputs.version | split('.') | slice(0,2) | join('.') }}
+            # 使用从package.json提取的完整版本号
+            type=raw,value=${{ steps.extract-version.outputs.full-version }}
+            # 使用主版本.次版本格式
+            type=raw,value=${{ steps.extract-version.outputs.major-minor-version }}
 
       - name: Build and push Docker image
         id: build-and-push
