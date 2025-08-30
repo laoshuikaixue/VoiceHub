@@ -1,7 +1,13 @@
 import { sql } from 'drizzle-orm'
 import { pgTable, serial, text, timestamp, boolean, integer, pgEnum, uuid, varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { getBeijingTimestamp } from '../utils/timeUtils'
+
+// 获取北京时间时间戳的辅助函数
+const getBeijingTimestamp = (): Date => {
+  const now = new Date()
+  const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000))
+  return beijingTime
+}
 
 // 枚举定义
 export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
@@ -132,8 +138,8 @@ export const systemSettings = pgTable('SystemSettings', {
 // 公告表
 export const announcements = pgTable('Announcement', {
   id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').default(sql`${getBeijingTimestamp()}`).notNull(),
-  updatedAt: timestamp('updatedAt').default(sql`${getBeijingTimestamp()}`).notNull(),
+  createdAt: timestamp('createdAt').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp('updatedAt').default(sql`CURRENT_TIMESTAMP`).notNull(),
   title: text('title').notNull(),
   content: text('content').notNull(),
   type: text('type').notNull(), // 'INTERNAL' (站内) 或 'EXTERNAL' (站外)

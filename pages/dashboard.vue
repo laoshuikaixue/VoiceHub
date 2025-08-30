@@ -151,7 +151,7 @@
             </div>
             
             <!-- 系统管理 - 只有超级管理员可见 -->
-            <div v-if="permissions.canAccessPage('notifications') || permissions.canAccessPage('playtimes') || permissions.canAccessPage('semesters') || permissions.canAccessPage('blacklist') || permissions.canAccessPage('site-config') || permissions.canAccessPage('database')" class="nav-section">
+            <div v-if="permissions.canAccessPage('notifications') || permissions.canAccessPage('playtimes') || permissions.canAccessPage('semesters') || permissions.canAccessPage('announcements') || permissions.canAccessPage('blacklist') || permissions.canAccessPage('site-config') || permissions.canAccessPage('database')" class="nav-section">
               <div class="nav-section-title">系统管理</div>
               <button 
                 v-if="permissions.canAccessPage('notifications')"
@@ -185,6 +185,18 @@
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                 </svg>
                 学期管理
+              </button>
+              <button
+                v-if="permissions.canAccessPage('announcements')"
+                :class="['nav-item', { active: activeTab === 'announcements' }]"
+                @click="activeTab = 'announcements'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 2h12a2 2 0 0 1 2 2v5H4V4a2 2 0 0 1 2-2z"/>
+                  <path d="M4 9v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/>
+                  <circle cx="12" cy="13" r="2"/>
+                </svg>
+                公告管理
               </button>
               <button
                 v-if="permissions.canAccessPage('blacklist')"
@@ -323,6 +335,11 @@
               <LazyAdminSemesterManager />
             </div>
             
+            <!-- 公告管理 -->
+            <div v-if="activeTab === 'announcements' && permissions.canAccessPage('announcements')" class="content-section">
+              <LazyUIAnnouncementManager />
+            </div>
+            
             <!-- 黑名单管理 -->
             <div v-if="activeTab === 'blacklist' && permissions.canAccessPage('blacklist')" class="content-section">
               <LazyAdminBlacklistManager />
@@ -388,6 +405,7 @@ const getPageTitle = () => {
     notifications: '通知管理',
     playtimes: '播出时段',
     semesters: '学期管理',
+    announcements: '公告管理',
     blacklist: '黑名单管理',
     'site-config': '站点配置',
     database: '数据库操作'

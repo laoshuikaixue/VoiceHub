@@ -85,12 +85,25 @@ export default defineEventHandler(async (event) => {
       .where(and(...whereConditions))
       .orderBy(desc(announcements.priority), desc(announcements.createdAt))
     
-    return announcementList
+    return {
+      success: true,
+      data: announcementList,
+      count: announcementList.length
+    }
   } catch (error) {
     console.error('获取公告失败:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace'
+    const errorCause = error instanceof Error ? error.cause : undefined
+    
+    console.error('错误详情:', {
+      message: errorMessage,
+      stack: errorStack,
+      cause: errorCause
+    })
     throw createError({
       statusCode: 500,
-      statusMessage: '获取公告失败'
+      statusMessage: `获取公告失败: ${errorMessage}`
     })
   }
 })
