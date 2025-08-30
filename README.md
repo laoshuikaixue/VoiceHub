@@ -109,7 +109,7 @@
 
    ```
    Application Name：VoiceHub 或 其它
-   Image Name: ghcr.io/laoshuikaixue/voicehub:main
+   Image Name: ghcr.io/laoshuikaixue/voicehub:latest
    Usage：按需调整
    Network：3000 ，开 Public Access
    Environment Variables：
@@ -154,7 +154,7 @@ docker run \
   -p 3000:3000 \
   -e JWT_SECRET=your-very-secure-jwt-secret-key \
   -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
-  ghcr.io/laoshuikaixue/voicehub:main
+  ghcr.io/laoshuikaixue/voicehub:latest
 ```
 
 或使用 南京大学 的镜像
@@ -164,7 +164,7 @@ docker run \
   -p 3000:3000 \
   -e JWT_SECRET=your-very-secure-jwt-secret-key \
   -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
-  ghcr.nju.edc.cn/laoshuikaixue/voicehub:main
+  ghcr.nju.edc.cn/laoshuikaixue/voicehub:latest
 ```
 
 ### Docker-compose 部署
@@ -182,7 +182,7 @@ docker-compose up
 ```
 services:
   voicehub:
-    image: ghcr.io/laoshuikaixue/voicehub:main
+    image: ghcr.io/laoshuikaixue/voicehub:latest
     ports:
       - "3000:3000"
     environment:
@@ -216,7 +216,7 @@ volumes:
 ```
 services:
   voicehub:
-    image: ghcr.nju.edc.cn/laoshuikaixue/voicehub:main
+    image: ghcr.nju.edc.cn/laoshuikaixue/voicehub:latest
     ports:
       - "3000:3000"
     environment:
