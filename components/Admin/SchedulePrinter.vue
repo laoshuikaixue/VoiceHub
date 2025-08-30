@@ -1721,6 +1721,7 @@ watch(() => settings.value, () => {
   max-width: 400px;
   word-wrap: break-word;
   line-height: 1.3;
+  white-space: pre-wrap;
 }
 
 .remark-input {
