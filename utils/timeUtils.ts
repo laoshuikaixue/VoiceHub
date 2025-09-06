@@ -9,9 +9,12 @@
  */
 export function getBeijingTime(): Date {
   const now = new Date()
-  // 获取UTC时间戳，然后加上8小时（北京时间是UTC+8）
-  const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000))
-  return beijingTime
+  // 直接基于当前时间戳，加上北京时区与本地时区的差值
+  // 北京时间是UTC+8，所以需要加8小时，再减去本地时区偏移
+  const beijingOffset = 8 * 60 // 北京时区偏移（分钟）
+  const localOffset = now.getTimezoneOffset() // 本地时区偏移（分钟，UTC-本地时间）
+  const offsetDiff = (beijingOffset + localOffset) * 60000 // 转换为毫秒
+  return new Date(now.getTime() + offsetDiff)
 }
 
 /**
@@ -20,9 +23,12 @@ export function getBeijingTime(): Date {
  * @returns Date 转换后的北京时间
  */
 export function toBeijingTime(date: Date): Date {
-  // 获取输入时间的UTC时间戳，然后加上8小时
-  const beijingTime = new Date(date.getTime() + (8 * 60 * 60 * 1000))
-  return beijingTime
+  // 直接基于输入时间戳，加上北京时区与本地时区的差值
+  // 北京时间是UTC+8，所以需要加8小时，再减去本地时区偏移
+  const beijingOffset = 8 * 60 // 北京时区偏移（分钟）
+  const localOffset = date.getTimezoneOffset() // 本地时区偏移（分钟，UTC-本地时间）
+  const offsetDiff = (beijingOffset + localOffset) * 60000 // 转换为毫秒
+  return new Date(date.getTime() + offsetDiff)
 }
 
 /**

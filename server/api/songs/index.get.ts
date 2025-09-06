@@ -3,18 +3,12 @@ import { db } from '~/drizzle/db'
 import { songs, users, votes, schedules, playTimes } from '~/drizzle/schema'
 import { eq, and, count, sql, like, or, desc, asc } from 'drizzle-orm'
 import { cacheService } from '~/server/services/cacheService'
+import { formatBeijingTime } from '~/utils/timeUtils'
 import crypto from 'crypto'
 
-// 格式化日期时间为统一格式：YYYY/M/D H:mm:ss
+// 格式化日期时间为统一格式：YYYY/M/D H:mm:ss（北京时间）
 function formatDateTime(date: Date): string {
-  const year = date.getFullYear()
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const hours = date.getHours()
-  const minutes = date.getMinutes().toString().padStart(2, '0')
-  const seconds = date.getSeconds().toString().padStart(2, '0')
-
-  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
+  return formatBeijingTime(date, 'YYYY/M/D H:mm:ss')
 }
 
 export default defineEventHandler(async (event) => {
