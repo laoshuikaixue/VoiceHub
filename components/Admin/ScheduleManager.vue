@@ -370,6 +370,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
+import ConfirmDialog from '../UI/ConfirmDialog.vue'
 
 // 响应式数据
 const selectedDate = ref(new Date().toISOString().split('T')[0])
@@ -1181,27 +1182,68 @@ const saveSequence = async () => {
 }
 
 const markAllAsPlayed = async () => {
+  // 检查是否有可标记的歌曲
+  const unplayedSongs = localScheduledSongs.value.filter(schedule => 
+    schedule.song && !schedule.song.played
+  )
+  
+  if (unplayedSongs.length === 0) {
+    if (window.$showNotification) {
+      window.$showNotification('没有需要标记的歌曲', 'info')
+    }
+    return
+  }
+  
   confirmDialogTitle.value = '标记已播放'
-  confirmDialogMessage.value = '确定要将所有排期歌曲标记为已播放吗？'
+  confirmDialogMessage.value = `确定要将 ${unplayedSongs.length} 首排期歌曲标记为已播放吗？`
   confirmDialogType.value = 'info'
   confirmDialogConfirmText.value = '标记'
   confirmAction.value = async () => {
+    let successCount = 0
+    let failedCount = 0
+    const errors = []
+    
     try {
       loading.value = true
+      console.log(`开始标记 ${unplayedSongs.length} 首歌曲为已播放`)
 
-      for (const schedule of localScheduledSongs.value) {
-        if (schedule.song && !schedule.song.played) {
+      // 检查songsService是否已初始化
+      if (!songsService || !songsService.markPlayed) {
+        throw new Error('歌曲服务未正确初始化')
+      }
+
+      // 逐个标记歌曲
+      for (const schedule of unplayedSongs) {
+        try {
+          console.log(`标记歌曲: ${schedule.song.title} (ID: ${schedule.song.id})`)
           await songsService.markPlayed(schedule.song.id)
+          successCount++
+        } catch (error) {
+          console.error(`标记歌曲失败 (ID: ${schedule.song.id}):`, error)
+          failedCount++
+          errors.push(`${schedule.song.title}: ${error.message}`)
         }
       }
 
+      // 重新加载数据以更新界面
+      console.log('重新加载数据以更新界面状态')
       await loadData()
 
-      if (window.$showNotification) {
-        window.$showNotification('所有歌曲已标记为已播放', 'success')
+      // 显示结果通知
+      if (failedCount === 0) {
+        if (window.$showNotification) {
+          window.$showNotification(`成功标记 ${successCount} 首歌曲为已播放`, 'success')
+        }
+        console.log(`所有歌曲标记成功，共 ${successCount} 首`)
+      } else {
+        const message = `标记完成：成功 ${successCount} 首，失败 ${failedCount} 首`
+        if (window.$showNotification) {
+          window.$showNotification(message, failedCount > successCount ? 'error' : 'warning')
+        }
+        console.warn(message, '失败详情:', errors)
       }
     } catch (error) {
-      console.error('标记已播放失败:', error)
+      console.error('批量标记已播放操作失败:', error)
       if (window.$showNotification) {
         window.$showNotification('标记已播放失败: ' + error.message, 'error')
       }
