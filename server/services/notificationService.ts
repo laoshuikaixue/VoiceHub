@@ -1,5 +1,5 @@
 import { db } from '~/drizzle/db'
-import { schedules, playTimes, notificationSettings, notifications, songs, users, votes } from '~/drizzle/schema'
+import { schedules, playTimes, notificationSettings, notifications, songs, users, votes, systemSettings } from '~/drizzle/schema'
 import { eq, and, gte, inArray } from 'drizzle-orm'
 import { sendMeowNotificationToUser, sendBatchMeowNotifications } from './meowNotificationService'
 import { formatBeijingTime, getBeijingTime } from '~/utils/timeUtils'
@@ -13,6 +13,11 @@ export async function createSongSelectedNotification(
   songInfo: { title: string, artist: string, playDate: Date }
 ) {
   try {
+    // 获取系统设置，检查是否启用播出时段功能
+    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
+    const systemConfig = systemSettingsResult[0]
+    const isPlayTimeEnabled = systemConfig?.enablePlayTimeSelection || false
+    
     // 获取排期对应的播出时段
     const scheduleResult = await db.select({
       id: schedules.id,
@@ -41,11 +46,11 @@ export async function createSongSelectedNotification(
       return null
     }
     
-    // 创建通知，添加播出时段信息
+    // 创建通知，根据播出时段功能启用状态决定显示内容
     let message = `您投稿的歌曲《${songInfo.title}》已被安排播放，播放日期：${formatDate(songInfo.playDate)}。`
     
-    // 如果有播出时段信息，添加到通知中
-    if (schedule?.playTime) {
+    // 只有在启用播出时段功能且有播出时段信息时，才添加播出时段详情
+    if (isPlayTimeEnabled && schedule?.playTime) {
       let timeInfo = '';
       
       // 根据开始和结束时间的情况，格式化显示
