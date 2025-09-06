@@ -19,6 +19,10 @@ const props = defineProps({
     type: Number,
     default: 40, // pixels per second
   },
+  activated: {
+    type: Boolean,
+    default: true, // 默认为true保持向后兼容性
+  },
 });
 
 const containerEl = ref(null);
@@ -34,8 +38,8 @@ const checkOverflow = async () => {
   scrolling.value = false;
   await nextTick();
 
-  if (!isMobile.value) {
-    return; // No scrolling on desktop.
+  if (!isMobile.value || !props.activated) {
+    return; // No scrolling on desktop or when not activated.
   }
 
   const containerWidth = containerEl.value.offsetWidth;
@@ -86,6 +90,10 @@ onUnmounted(() => {
 });
 
 watch(() => props.text, () => {
+  checkOverflow();
+});
+
+watch(() => props.activated, () => {
   checkOverflow();
 });
 </script>

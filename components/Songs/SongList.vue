@@ -97,7 +97,8 @@
             v-for="song in paginatedSongs" 
             :key="song.id" 
             class="song-card"
-            :class="{ 'played': song.played, 'scheduled': song.scheduled }"
+            :class="{ 'played': song.played, 'scheduled': song.scheduled, 'focused': isSongFocused(song.id) }"
+            @click="handleSongCardClick(song)"
           >
             <!-- 歌曲卡片主体 -->
             <div class="song-card-main">
@@ -115,7 +116,7 @@
                   {{ getFirstChar(song.title) }}
                 </div>
                 <!-- 添加播放按钮 - 在有平台信息时显示 -->
-                <div v-if="song.musicPlatform && song.musicId" class="play-button-overlay" @click="togglePlaySong(song)">
+                <div v-if="song.musicPlatform && song.musicId" class="play-button-overlay" @click.stop="togglePlaySong(song)">
                   <button class="play-button" :title="isCurrentPlaying(song.id) ? '暂停' : '播放'">
                     <Icon v-if="isCurrentPlaying(song.id)" name="pause" :size="16" color="white" />
                     <Icon v-else name="play" :size="16" color="white" />
@@ -125,7 +126,7 @@
 
               <div class="song-info">
                 <h3 class="song-title" :title="song.title + ' - ' + song.artist">
-                  <marquee-text :text="`${song.title} - ${song.artist}`" />
+                  <marquee-text :text="`${song.title} - ${song.artist}`" :activated="isSongFocused(song.id)" />
                   <span v-if="song.played" class="played-tag">已播放</span>
                   <span v-else-if="song.scheduled" class="scheduled-tag">已排期</span>
                 </h3>
@@ -147,7 +148,7 @@
                   <button 
                     class="like-button"
                     :class="{ 'liked': song.voted, 'disabled': song.played || song.scheduled || isMySong(song) || voteInProgress }"
-                    @click="handleVote(song)"
+                    @click.stop="handleVote(song)"
                     :disabled="song.played || song.scheduled || voteInProgress"
                     :title="song.played ? '已播放的歌曲不能点赞' : song.scheduled ? '已排期的歌曲不能点赞' : isMySong(song) ? '不允许自己给自己点赞' : (song.voted ? '点击取消点赞' : '点赞')"
                   >
@@ -169,7 +170,7 @@
               <button 
                 v-if="isMySong(song) && !song.played && !song.scheduled" 
                 class="withdraw-button"
-                @click="handleWithdraw(song)"
+                @click.stop="handleWithdraw(song)"
                 :disabled="actionInProgress"
                 title="撤回投稿"
               >
@@ -285,6 +286,25 @@ const searchQuery = ref('') // 搜索查询
 const activeTab = ref('all') // 默认显示全部投稿
 const auth = useAuth()
 const isAuthenticated = computed(() => auth && auth.isAuthenticated && auth.isAuthenticated.value)
+
+// 焦点状态管理
+const focusedSongId = ref(null)
+
+// 处理歌曲卡片焦点切换
+const handleSongCardClick = (song) => {
+  // 如果点击的是当前已获得焦点的歌曲，则取消焦点
+  if (focusedSongId.value === song.id) {
+    focusedSongId.value = null
+  } else {
+    // 否则设置新的焦点歌曲
+    focusedSongId.value = song.id
+  }
+}
+
+// 判断歌曲是否获得焦点
+const isSongFocused = (songId) => {
+  return focusedSongId.value === songId
+}
 
 // 学期相关
 const { fetchCurrentSemester, currentSemester, semesterUpdateEvent } = useSemesters()
@@ -1485,6 +1505,8 @@ const vRipple = {
   display: flex;
   flex-direction: column;
   align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .song-card-main {
