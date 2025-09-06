@@ -75,6 +75,14 @@
                   >
                     多班级选择
                   </button>
+                  
+                  <button 
+                    type="button" 
+                    :class="['scope-btn', { active: form.scope === 'SPECIFIC_USERS' }]"
+                    @click="form.scope = 'SPECIFIC_USERS'"
+                  >
+                    指定用户
+                  </button>
                 </div>
               </div>
               
@@ -186,6 +194,103 @@
                   </div>
                 </div>
               </div>
+              
+              <!-- 指定用户选择 -->
+              <div v-if="form.scope === 'SPECIFIC_USERS'" class="form-group">
+                <div class="user-selector">
+                  <div class="user-search-controls">
+                    <label>搜索并选择用户</label>
+                    <div class="search-input-container">
+                      <div class="search-box">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="11" cy="11" r="8"/>
+                          <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input 
+                          v-model="userSearchQuery" 
+                          type="text" 
+                          placeholder="按姓名、用户名或ID搜索用户" 
+                          class="input search-input"
+                          @input="onUserSearchInput"
+                        />
+                      </div>
+                    </div>
+                    
+                    <!-- 搜索结果列表 -->
+                    <div v-if="showUserSearchResults && userSearchResults.length > 0" class="search-results">
+                      <div class="search-results-header">
+                        <span>搜索结果 ({{ userSearchResults.length }})</span>
+                      </div>
+                      <div class="search-results-list">
+                        <div 
+                          v-for="user in userSearchResults" 
+                          :key="user.id"
+                          class="search-result-item"
+                          @click="addUserToSelection(user)"
+                        >
+                          <div class="user-info">
+                            <div class="user-name">{{ user.name || user.username }}</div>
+                            <div class="user-details">
+                              <span class="user-username">@{{ user.username }}</span>
+                              <span v-if="user.grade && user.class" class="user-class">{{ user.grade }} {{ user.class }}</span>
+                              <span class="user-role">{{ getRoleText(user.role) }}</span>
+                            </div>
+                          </div>
+                          <button 
+                            type="button" 
+                            class="add-user-btn"
+                            :disabled="isUserSelected(user.id)"
+                          >
+                            {{ isUserSelected(user.id) ? '已选择' : '选择' }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- 无搜索结果 -->
+                    <div v-else-if="showUserSearchResults && userSearchQuery && userSearchResults.length === 0" class="no-search-results">
+                      未找到匹配的用户
+                    </div>
+                  </div>
+                  
+                  <!-- 已选择的用户 -->
+                  <div v-if="form.selectedUsers.length > 0" class="selected-users">
+                    <div class="selected-users-header">
+                      <label>已选择的用户 ({{ form.selectedUsers.length }})</label>
+                      <button 
+                        type="button" 
+                        @click="clearAllSelectedUsers" 
+                        class="clear-all-btn"
+                      >
+                        清空全部
+                      </button>
+                    </div>
+                    <div class="user-tags">
+                      <div 
+                        v-for="(user, index) in form.selectedUsers" 
+                        :key="user.id"
+                        class="user-tag"
+                      >
+                        <div class="user-tag-info">
+                          <span class="user-tag-name">{{ user.name || user.username }}</span>
+                          <span class="user-tag-details">@{{ user.username }}</span>
+                        </div>
+                        <button 
+                          type="button" 
+                          @click="removeUserFromSelection(index)" 
+                          class="remove-tag"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div v-else class="empty-selection">
+                    未选择任何用户
+                  </div>
+                </div>
+              </div>
 
               <!-- 操作按钮 -->
               <div class="form-actions">
@@ -232,11 +337,12 @@ const { sendAdminNotification } = useAdmin()
 const form = ref({
   title: '',
   content: '',
-  scope: 'ALL', // 'ALL', 'GRADE', 'CLASS', 'MULTI_CLASS'
+  scope: 'ALL', // 'ALL', 'GRADE', 'CLASS', 'MULTI_CLASS', 'SPECIFIC_USERS'
   grade: '',
   classGrade: '',
   className: '',
-  selectedClasses: [] // 用于多班级选择
+  selectedClasses: [], // 用于多班级选择
+  selectedUsers: [] // 用于指定用户选择
 })
 
 // 多班级选择表单
@@ -248,6 +354,13 @@ const multiClassForm = ref({
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+
+// 用户搜索相关
+const userSearchQuery = ref('')
+const userSearchResults = ref([])
+const showUserSearchResults = ref(false)
+const userSearchLoading = ref(false)
+let userSearchTimeout = null
 
 // 判断是否可以添加班级
 const canAddClass = computed(() => {
@@ -280,6 +393,92 @@ const removeClassFromSelection = (index) => {
   form.value.selectedClasses.splice(index, 1)
 }
 
+// 用户搜索输入处理（防抖）
+const onUserSearchInput = () => {
+  clearTimeout(userSearchTimeout)
+  
+  if (!userSearchQuery.value.trim()) {
+    userSearchResults.value = []
+    showUserSearchResults.value = false
+    return
+  }
+  
+  userSearchTimeout = setTimeout(async () => {
+    await searchUsers(userSearchQuery.value.trim())
+  }, 300)
+}
+
+// 搜索用户API调用
+const searchUsers = async (query) => {
+  if (!query) return
+  
+  try {
+    userSearchLoading.value = true
+    const response = await $fetch('/api/admin/users', {
+      method: 'GET',
+      query: {
+        search: query,
+        limit: 20
+      }
+    })
+    
+    if (response.success) {
+      userSearchResults.value = response.users || []
+      showUserSearchResults.value = true
+    }
+  } catch (err) {
+    console.error('搜索用户失败:', err)
+    userSearchResults.value = []
+    showUserSearchResults.value = false
+  } finally {
+    userSearchLoading.value = false
+  }
+}
+
+// 检查用户是否已被选择
+const isUserSelected = (userId) => {
+  return form.value.selectedUsers.some(user => user.id === userId)
+}
+
+// 添加用户到选择列表
+const addUserToSelection = (user) => {
+  if (isUserSelected(user.id)) return
+  
+  form.value.selectedUsers.push({
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    grade: user.grade,
+    class: user.class,
+    role: user.role
+  })
+  
+  // 清空搜索
+  userSearchQuery.value = ''
+  userSearchResults.value = []
+  showUserSearchResults.value = false
+}
+
+// 从选择列表中移除用户
+const removeUserFromSelection = (index) => {
+  form.value.selectedUsers.splice(index, 1)
+}
+
+// 清空所有已选用户
+const clearAllSelectedUsers = () => {
+  form.value.selectedUsers = []
+}
+
+// 获取角色文本
+const getRoleText = (role) => {
+  const roleMap = {
+    'admin': '管理员',
+    'teacher': '教师',
+    'student': '学生'
+  }
+  return roleMap[role] || role
+}
+
 // 表单验证
 const isFormValid = computed(() => {
   if (!form.value.title || !form.value.content) {
@@ -298,6 +497,10 @@ const isFormValid = computed(() => {
     return false
   }
   
+  if (form.value.scope === 'SPECIFIC_USERS' && form.value.selectedUsers.length === 0) {
+    return false
+  }
+  
   return true
 })
 
@@ -309,17 +512,19 @@ const scopeDescription = computed(() => {
     case 'GRADE':
       return form.value.grade ? `${form.value.grade}年级` : '请选择年级'
     case 'CLASS':
-      if (form.value.classGrade && form.value.className) {
-        return `${form.value.classGrade} ${form.value.className}`
-      }
-      return '请选择班级'
+      return (form.value.classGrade && form.value.className) 
+        ? `${form.value.classGrade}年级${form.value.className}班` 
+        : '请选择班级'
     case 'MULTI_CLASS':
-      if (form.value.selectedClasses.length > 0) {
-        return `${form.value.selectedClasses.length}个班级`
-      }
-      return '请选择班级'
+      return form.value.selectedClasses.length > 0 
+        ? `${form.value.selectedClasses.length}个班级` 
+        : '请选择班级'
+    case 'SPECIFIC_USERS':
+      return form.value.selectedUsers.length > 0 
+        ? `已选择${form.value.selectedUsers.length}个用户` 
+        : '请选择用户'
     default:
-      return '请选择范围'
+      return ''
   }
 })
 
@@ -356,6 +561,8 @@ const sendNotification = async () => {
       notificationData.filter.class = form.value.className
     } else if (form.value.scope === 'MULTI_CLASS') {
       notificationData.filter.classes = form.value.selectedClasses
+    } else if (form.value.scope === 'SPECIFIC_USERS') {
+      notificationData.filter.userIds = form.value.selectedUsers.map(user => user.id)
     }
     
     // 发送通知
@@ -372,8 +579,19 @@ const sendNotification = async () => {
         grade: '',
         classGrade: '',
         className: '',
-        selectedClasses: []
+        selectedClasses: [],
+        selectedUsers: []
       }
+      multiClassForm.value = {
+        grade: '',
+        class: ''
+      }
+      // 清空用户搜索相关状态
+      userSearchQuery.value = ''
+      userSearchResults.value = []
+      showUserSearchResults.value = false
+      userSearchLoading.value = false
+      clearTimeout(userSearchTimeout)
     } else {
       throw new Error(result?.message || '发送通知失败')
     }
@@ -642,6 +860,258 @@ const sendNotification = async () => {
   }
 }
 
+/* 用户搜索样式 */
+.user-selector {
+  margin-top: 16px;
+}
+
+.user-search-controls {
+  margin-bottom: 20px;
+}
+
+.search-input-container {
+  margin-top: 8px;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  width: 18px;
+  height: 18px;
+  color: #9ca3af;
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 14px;
+  background: rgba(15, 23, 42, 0.5);
+  color: #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25), 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.search-input:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.search-input::placeholder {
+  color: #64748b;
+}
+
+/* 搜索结果样式 */
+.search-results {
+  margin-top: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.search-results-header {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.search-results-list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: rgba(59, 130, 246, 0.1);
+  transform: translateX(4px);
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+}
+
+.user-details {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.user-username {
+  color: #60a5fa;
+}
+
+.user-class {
+  color: #34d399;
+}
+
+.user-role {
+  color: #fbbf24;
+}
+
+.add-user-btn {
+  padding: 6px 12px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  color: #60a5fa;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-user-btn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.05);
+}
+
+.add-user-btn:disabled {
+  background: rgba(107, 114, 128, 0.2);
+  border-color: rgba(107, 114, 128, 0.3);
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.no-search-results {
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* 已选用户样式 */
+.selected-users {
+  margin-top: 20px;
+}
+
+.selected-users-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.clear-all-btn {
+  padding: 4px 8px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  color: #f87171;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-all-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.user-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-tag {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.user-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.user-tag-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-tag-name {
+  font-weight: 500;
+  color: #f1f5f9;
+}
+
+.user-tag-details {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.remove-tag {
+  background: none;
+  border: none;
+  color: #f87171;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.remove-tag:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(1.1);
+}
+
 @media (max-width: 640px) {
   .grid-2 {
     grid-template-columns: 1fr;
@@ -652,6 +1122,14 @@ const sendNotification = async () => {
   }
   
   .scope-btn {
+    width: 100%;
+  }
+  
+  .user-tags {
+    flex-direction: column;
+  }
+  
+  .user-tag {
     width: 100%;
   }
 }

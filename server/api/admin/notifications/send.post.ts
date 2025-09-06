@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    if (!scope || !['ALL', 'GRADE', 'CLASS', 'MULTI_CLASS'].includes(scope)) {
+    if (!scope || !['ALL', 'GRADE', 'CLASS', 'MULTI_CLASS', 'SPECIFIC_USERS'].includes(scope)) {
       throw createError({
         statusCode: 400,
         message: '无效的通知范围'
@@ -121,6 +121,17 @@ export default defineEventHandler(async (event) => {
         .from(users)
         .where(or(...whereConditions))
       userIds = multiClassUsers.map(user => user.id)
+    }
+    else if (scope === 'SPECIFIC_USERS') {
+      // 指定用户
+      if (!filter?.userIds || !Array.isArray(filter.userIds) || filter.userIds.length === 0) {
+        throw createError({
+          statusCode: 400,
+          message: '未选择任何用户'
+        })
+      }
+      
+      userIds = filter.userIds
     }
     
     if (userIds.length === 0) {
