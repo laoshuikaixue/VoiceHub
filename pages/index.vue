@@ -231,9 +231,10 @@
                 <!-- 底部操作按钮 -->
                 <div v-if="userNotifications.length > 0" class="notification-actions-bar">
                   <button 
-                    v-if="hasUnreadNotifications" 
                     @click="markAllNotificationsAsRead" 
+                    :disabled="!hasUnreadNotifications"
                     class="action-button-large"
+                    :class="{ 'disabled': !hasUnreadNotifications }"
                   >
                     全部标记为已读
                   </button>
@@ -332,7 +333,8 @@ const isClientAuthenticated = computed(() => auth?.isAuthenticated?.value || fal
 const isAdmin = computed(() => auth?.isAdmin?.value || false)
 const user = computed(() => auth?.user?.value || null)
 let songs = useSongs()
-let notificationsService = null
+// 立即初始化通知服务，避免时序问题
+const notificationsService = useNotifications()
 const unreadNotificationCount = ref(0)
 
 // 模拟数据初始值
@@ -369,7 +371,14 @@ let refreshInterval = null
 // 添加通知相关变量
 const userNotifications = computed(() => notificationsService?.notifications?.value || [])
 const notificationsLoading = computed(() => notificationsService?.loading?.value || false)
-const hasUnreadNotifications = computed(() => (notificationsService?.unreadCount?.value || 0) > 0)
+const hasUnreadNotifications = computed(() => {
+  // 确保notificationsService已初始化且有unreadCount
+  if (!notificationsService || !notificationsService.unreadCount) {
+    return false
+  }
+  const unreadCount = notificationsService.unreadCount.value
+  return unreadCount > 0
+})
 const showNotificationSettings = ref(false)
 
 const notificationSettings = ref({
@@ -388,44 +397,60 @@ const toggleNotificationSettings = () => {
 
 // 获取通知设置
 const fetchNotificationSettings = async () => {
-  await notificationsService.fetchNotificationSettings()
-  if (notificationsService.settings.value) {
-    notificationSettings.value = {
-      songSelectedNotify: notificationsService.settings.value.songSelectedNotify,
-      songPlayedNotify: notificationsService.settings.value.songPlayedNotify,
-      songVotedNotify: notificationsService.settings.value.songVotedNotify,
-      songVotedThreshold: notificationsService.settings.value.songVotedThreshold || 1,
-      systemNotify: notificationsService.settings.value.systemNotify,
-      refreshInterval: notificationsService.settings.value.refreshInterval || 60
+  if (notificationsService) {
+    await notificationsService.fetchNotificationSettings()
+    if (notificationsService.settings.value) {
+      notificationSettings.value = {
+        songSelectedNotify: notificationsService.settings.value.songSelectedNotify,
+        songPlayedNotify: notificationsService.settings.value.songPlayedNotify,
+        songVotedNotify: notificationsService.settings.value.songVotedNotify,
+        songVotedThreshold: notificationsService.settings.value.songVotedThreshold || 1,
+        systemNotify: notificationsService.settings.value.systemNotify,
+        refreshInterval: notificationsService.settings.value.refreshInterval || 60
+      }
     }
   }
 }
 
 // 保存通知设置
 const saveNotificationSettings = async () => {
-  await notificationsService.updateNotificationSettings(notificationSettings.value)
-  
-  // 如果在首页，更新刷新间隔
-  if (typeof setupRefreshInterval === 'function') {
-    setupRefreshInterval()
+  if (notificationsService) {
+    await notificationsService.updateNotificationSettings(notificationSettings.value)
+    
+    // 如果在首页，更新刷新间隔
+    if (typeof setupRefreshInterval === 'function') {
+      setupRefreshInterval()
+    }
   }
 }
 
 // 加载通知
 const loadNotifications = async () => {
-  if (isClientAuthenticated.value) {
-    await notificationsService.fetchNotifications()
+  if (isClientAuthenticated.value && notificationsService) {
+    try {
+      await notificationsService.fetchNotifications()
+    } catch (error) {
+      console.error('[通知获取] 加载通知失败:', error)
+    }
   }
 }
 
 // 标记通知为已读
 const markNotificationAsRead = async (id) => {
-  await notificationsService.markAsRead(id)
+  if (notificationsService) {
+    await notificationsService.markAsRead(id)
+  }
 }
 
 // 标记所有通知为已读
 const markAllNotificationsAsRead = async () => {
-  await notificationsService.markAllAsRead()
+  try {
+    if (notificationsService) {
+      await notificationsService.markAllAsRead()
+    }
+  } catch (error) {
+    console.error('[通知操作] 标记所有通知为已读失败:', error)
+  }
 }
 
 // 删除通知
@@ -469,11 +494,13 @@ const pendingId = ref(null)
 
 // 处理确认操作
 const handleConfirmAction = async () => {
-  if (pendingAction.value === 'delete') {
-    await notificationsService.deleteNotification(pendingId.value)
-    pendingId.value = null
-  } else if (pendingAction.value === 'clearAll') {
-    await notificationsService.clearAllNotifications()
+  if (notificationsService) {
+    if (pendingAction.value === 'delete') {
+      await notificationsService.deleteNotification(pendingId.value)
+      pendingId.value = null
+    } else if (pendingAction.value === 'clearAll') {
+      await notificationsService.clearAllNotifications()
+    }
   }
   showConfirmDialog.value = false
   pendingAction.value = ''
@@ -651,8 +678,7 @@ onMounted(async () => {
     document.title = `首页 | ${siteTitle.value}`
   }
 
-  // 初始化通知服务
-  notificationsService = useNotifications()
+  // 通知服务已在setup阶段初始化，这里不需要重复初始化
 
   // 优化数据加载流程：根据用户状态加载不同数据
   if (isClientAuthenticated.value) {
@@ -917,14 +943,7 @@ const updateNotificationCount = async () => {
   // 函数保留但不再使用
 }
 
-// 导航到通知页面
-const navigateToNotifications = () => {
-  if (isClientAuthenticated.value) {
-    router.push('/notifications')
-  } else {
-    showNotification('请先登录以查看通知', 'info')
-  }
-}
+
 
 // 处理登出
 const handleLogout = () => {
@@ -1729,6 +1748,17 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
 .action-button-large.danger:hover {
   background-color: rgba(239, 68, 68, 0.2);
+}
+
+.action-button-large.disabled {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.action-button-large.disabled:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 /* 修改移动端通知样式 */

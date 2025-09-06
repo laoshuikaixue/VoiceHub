@@ -147,13 +147,6 @@ export default defineNuxtConfig({
           'Pragma': 'no-cache',
           'Expires': '0'
         }
-      },
-      '/notifications': {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
       }
     },
     // 根据部署环境调整配置

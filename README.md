@@ -424,7 +424,6 @@ VoiceHub/
 │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   └── LoginForm.vue         # 登录表单
 │   ├── Notifications/     # 通知系统组件
-│   │   ├── NotificationIcon.vue   # 通知图标
 │   │   └── NotificationSettings.vue # 通知设置
 │   ├── Songs/             # 歌曲相关组件
 │   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
@@ -474,8 +473,7 @@ VoiceHub/
 │   ├── dashboard.vue       # 用户仪表盘
 │   ├── index.vue           # 首页
 │   ├── login.vue           # 登录页面
-│   ├── notification-settings.vue # 通知设置页面
-│   └── notifications.vue   # 通知中心页面
+│   └── notification-settings.vue # 通知设置页面
 ├── plugins/               # Nuxt插件
 │   ├── auth.client.ts      # 客户端认证插件
 │   └── auth.server.ts      # 服务端认证插件
