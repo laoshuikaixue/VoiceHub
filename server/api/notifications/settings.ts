@@ -16,9 +16,11 @@ export default defineEventHandler(async (event) => {
   }
   
   try {
-    // 获取用户信息（包含meowNickname）
+    // 获取用户信息（包含meowNickname和邮箱信息）
     const userInfoResult = await db.select({
-      meowNickname: users.meowNickname
+      meowNickname: users.meowNickname,
+      email: users.email,
+      emailVerified: users.emailVerified
     }).from(users).where(eq(users.id, user.id)).limit(1)
     
     const userInfo = userInfoResult[0]
@@ -38,7 +40,13 @@ export default defineEventHandler(async (event) => {
         songVotedEnabled: true,
         songPlayedEnabled: true,
         refreshInterval: 60,
-        songVotedThreshold: 1
+        songVotedThreshold: 1,
+        // 邮件通知默认设置
+        emailEnabled: false,
+        emailSongRequestEnabled: true,
+        emailSongVotedEnabled: true,
+        emailSongPlayedEnabled: true,
+        emailSystemNoticeEnabled: true
       }).returning()
       
       dbSettings = insertResult[0]
@@ -54,7 +62,16 @@ export default defineEventHandler(async (event) => {
       systemNotify: dbSettings.enabled,
       refreshInterval: dbSettings.refreshInterval,
       songVotedThreshold: dbSettings.songVotedThreshold,
-      meowUserId: userInfo?.meowNickname || ''
+      meowUserId: userInfo?.meowNickname || '',
+      // 邮件通知设置
+      emailNotify: dbSettings.emailEnabled || false,
+      emailSongSelectedNotify: dbSettings.emailSongRequestEnabled || true,
+      emailSongPlayedNotify: dbSettings.emailSongPlayedEnabled || true,
+      emailSongVotedNotify: dbSettings.emailSongVotedEnabled || true,
+      emailSystemNotify: dbSettings.emailSystemNoticeEnabled || true,
+      // 用户邮箱信息
+      userEmail: userInfo?.email || '',
+      emailVerified: userInfo?.emailVerified || false
     }
     
     return {

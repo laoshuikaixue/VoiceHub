@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { schedules, playTimes, notificationSettings, notifications, songs, users, votes, systemSettings } from '~/drizzle/schema'
 import { eq, and, gte, inArray } from 'drizzle-orm'
 import { sendMeowNotificationToUser, sendBatchMeowNotifications } from './meowNotificationService'
+import { sendEmailNotificationToUser, sendBatchEmailNotifications } from './smtpService'
 import { formatBeijingTime, getBeijingTime } from '~/utils/timeUtils'
 
 /**
@@ -88,6 +89,17 @@ export async function createSongSelectedNotification(
     } catch (error) {
       console.error('发送 MeoW 通知失败:', error)
     }
+
+    // 同步发送邮件通知
+    try {
+      await sendEmailNotificationToUser(
+        userId,
+        '歌曲被选中',
+        message
+      )
+    } catch (error) {
+      console.error('发送邮件通知失败:', error)
+    }
     
     return notification
   } catch (err) {
@@ -146,6 +158,17 @@ export async function createSongPlayedNotification(songId: number) {
       )
     } catch (error) {
       console.error('发送 MeoW 通知失败:', error)
+    }
+
+    // 同步发送邮件通知
+    try {
+      await sendEmailNotificationToUser(
+        song.requesterId,
+        '歌曲已播放',
+        message
+      )
+    } catch (error) {
+      console.error('发送邮件通知失败:', error)
     }
     
     return notification
@@ -240,6 +263,17 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
     } catch (error) {
       console.error('发送 MeoW 通知失败:', error)
     }
+
+    // 同步发送邮件通知
+    try {
+      await sendEmailNotificationToUser(
+        song.requesterId,
+        '收到新投票',
+        message
+      )
+    } catch (error) {
+      console.error('发送邮件通知失败:', error)
+    }
     
     return notification
   } catch (err) {
@@ -278,6 +312,17 @@ export async function createSystemNotification(userId: number, title: string, co
       )
     } catch (error) {
       console.error('发送 MeoW 通知失败:', error)
+    }
+
+    // 同步发送邮件通知
+    try {
+      await sendEmailNotificationToUser(
+        userId,
+        title,
+        content
+      )
+    } catch (error) {
+      console.error('发送邮件通知失败:', error)
     }
     
     return notification
@@ -346,11 +391,24 @@ export async function createBatchSystemNotifications(
     } catch (error) {
       console.error('批量发送 MeoW 通知失败:', error)
     }
-    
+
+    // 同步发送邮件通知
+    let emailResults = { success: 0, failed: 0 }
+    try {
+      emailResults = await sendBatchEmailNotifications(
+        userIds,
+        title,
+        content
+      )
+    } catch (error) {
+      console.error('批量发送邮件通知失败:', error)
+    }
+
     return {
       count: notificationCount.count,
       total: userIds.length,
-      meowNotifications: meowResults
+      meowNotifications: meowResults,
+      emailNotifications: emailResults
     }
   } catch (err) {
     return null

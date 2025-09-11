@@ -117,6 +117,71 @@
               </div>
             </div>
 
+            <!-- 邮件通知总开关 -->
+            <div class="setting-card">
+              <div class="setting-info">
+                <h3>邮件通知</h3>
+                <p>启用邮件通知功能</p>
+              </div>
+              <div class="setting-control">
+                <label class="toggle-switch">
+                  <input 
+                    type="checkbox" 
+                    v-model="localSettings.emailNotify"
+                    :disabled="!emailVerified"
+                  >
+                  <span class="switch" :class="{ disabled: !emailVerified }"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 邮件通知细分设置 -->
+            <div v-if="localSettings.emailNotify && emailVerified" class="setting-card email-details">
+              <div class="setting-info">
+                <h3>邮件通知类型</h3>
+                <p>选择接收邮件通知的类型</p>
+              </div>
+              <div class="setting-control">
+                <div class="email-settings-grid">
+                  <label class="email-setting-item">
+                    <input 
+                      type="checkbox" 
+                      v-model="localSettings.emailSongSelectedNotify"
+                    >
+                    <span class="checkmark"></span>
+                    歌曲被选中
+                  </label>
+                  
+                  <label class="email-setting-item">
+                    <input 
+                      type="checkbox" 
+                      v-model="localSettings.emailSongPlayedNotify"
+                    >
+                    <span class="checkmark"></span>
+                    歌曲已播放
+                  </label>
+                  
+                  <label class="email-setting-item">
+                    <input 
+                      type="checkbox" 
+                      v-model="localSettings.emailSongVotedNotify"
+                    >
+                    <span class="checkmark"></span>
+                    收到投票
+                  </label>
+                  
+                  <label class="email-setting-item">
+                    <input 
+                      type="checkbox" 
+                      v-model="localSettings.emailSystemNotify"
+                    >
+                    <span class="checkmark"></span>
+                    系统通知
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <!-- 通知刷新间隔 -->
             <div class="setting-card">
               <div class="setting-info">
@@ -148,6 +213,78 @@
           </div>
 
           <div class="settings-grid">
+            <!-- 邮箱绑定 -->
+            <div class="setting-card email-card">
+              <div class="setting-info">
+                <h3>邮箱通知</h3>
+                <p v-if="!userEmail">绑定邮箱以接收邮件通知</p>
+                <p v-else-if="!emailVerified" class="pending-info">邮箱：<span class="email-address">{{ userEmail }}</span> <span class="status pending">待验证</span></p>
+                <p v-else class="bound-info">已绑定邮箱：<span class="email-address">{{ userEmail }}</span> <span class="status verified">已验证</span></p>
+              </div>
+              <div class="setting-control">
+                <!-- 未绑定状态 -->
+                <div v-if="!userEmail" class="email-bind-section">
+                  <div class="bind-step">
+                    <input 
+                      type="email" 
+                      v-model="newEmail" 
+                      placeholder="请输入邮箱地址"
+                      class="email-input"
+                      :disabled="bindingEmail"
+                    >
+                    <button 
+                      @click="bindEmail" 
+                      class="btn btn-primary"
+                      :disabled="!newEmail || bindingEmail"
+                    >
+                      {{ bindingEmail ? '绑定中...' : '绑定邮箱' }}
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- 待验证状态 -->
+                <div v-else-if="!emailVerified" class="email-verify-section">
+                  <div class="verify-info">
+                    <p>验证邮件已发送到您的邮箱，请点击邮件中的链接完成验证</p>
+                  </div>
+                  <div class="verify-actions">
+                    <button 
+                      @click="resendVerificationEmail" 
+                      class="btn btn-secondary"
+                      :disabled="resendingEmail"
+                    >
+                      {{ resendingEmail ? '发送中...' : '重新发送验证邮件' }}
+                    </button>
+                    <button 
+                      @click="changeEmail" 
+                      class="btn btn-outline"
+                    >
+                      更换邮箱
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- 已验证状态 -->
+                <div v-else class="email-bound-section">
+                  <div class="bound-actions">
+                    <button 
+                      @click="changeEmail" 
+                      class="btn btn-outline"
+                    >
+                      更换邮箱
+                    </button>
+                    <button 
+                      @click="unbindEmail" 
+                      class="btn btn-danger"
+                      :disabled="unbindingEmail"
+                    >
+                      {{ unbindingEmail ? '解绑中...' : '解绑邮箱' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- MeoW 账号绑定 -->
             <div class="setting-card meow-card">
               <div class="setting-info">
@@ -265,7 +402,13 @@ const localSettings = ref({
   songVotedThreshold: 5,
   systemNotify: true,
   refreshInterval: 60,
-  meowUserId: ''
+  meowUserId: '',
+  // 邮件通知设置
+  emailNotify: false,
+  emailSongSelectedNotify: true,
+  emailSongPlayedNotify: true,
+  emailSongVotedNotify: true,
+  emailSystemNotify: true
 })
 
 // MeoW 绑定相关
@@ -273,6 +416,14 @@ const meowUserId = ref('')
 const verificationSent = ref(false)
 const verificationCode = ref('')
 const verificationCodeError = ref(false)
+
+// 邮箱绑定相关
+const userEmail = ref('')
+const emailVerified = ref(false)
+const newEmail = ref('')
+const bindingEmail = ref(false)
+const resendingEmail = ref(false)
+const unbindingEmail = ref(false)
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
@@ -383,8 +534,18 @@ const loadSettings = async () => {
         songVotedThreshold: response.data.songVotedThreshold || 5,
         systemNotify: response.data.systemNotify || true,
         refreshInterval: response.data.refreshInterval || 60,
-        meowUserId: response.data.meowUserId || ''
+        meowUserId: response.data.meowUserId || '',
+        // 邮件通知设置
+        emailNotify: response.data.emailNotify || false,
+        emailSongSelectedNotify: response.data.emailSongSelectedNotify || true,
+        emailSongPlayedNotify: response.data.emailSongPlayedNotify || true,
+        emailSongVotedNotify: response.data.emailSongVotedNotify || true,
+        emailSystemNotify: response.data.emailSystemNotify || true
       }
+      
+      // 加载用户邮箱信息
+      userEmail.value = response.data.userEmail || ''
+      emailVerified.value = response.data.emailVerified || false
     }
   } catch (err) {
     console.error('加载设置失败:', err)
@@ -516,6 +677,108 @@ const performUnbind = async () => {
   } catch (err) {
     console.error('解绑失败:', err)
     showNotification(err.data?.message || '解绑失败，请重试', 'error')
+  } finally {
+    confirmDialog.value.loading = false
+  }
+}
+
+// 邮箱绑定相关方法
+const bindEmail = async () => {
+  if (!newEmail.value) {
+    showNotification('请输入邮箱地址', 'error')
+    return
+  }
+
+  // 简单的邮箱格式验证
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(newEmail.value)) {
+    showNotification('请输入有效的邮箱地址', 'error')
+    return
+  }
+
+  bindingEmail.value = true
+  try {
+    const response = await $fetch('/api/user/email/bind', {
+      method: 'POST',
+      body: { email: newEmail.value }
+    })
+    
+    if (response.success) {
+      userEmail.value = newEmail.value
+      emailVerified.value = false
+      newEmail.value = ''
+      showNotification('验证邮件已发送，请查收邮件并点击验证链接', 'success')
+    } else {
+      showNotification(response.message || '绑定失败', 'error')
+    }
+  } catch (err) {
+    console.error('绑定邮箱失败:', err)
+    showNotification(err.data?.message || '绑定邮箱失败，请重试', 'error')
+  } finally {
+    bindingEmail.value = false
+  }
+}
+
+const resendVerificationEmail = async () => {
+  resendingEmail.value = true
+  try {
+    const response = await $fetch('/api/user/email/resend-verification', {
+      method: 'POST'
+    })
+    
+    if (response.success) {
+      showNotification('验证邮件已重新发送', 'success')
+    } else {
+      showNotification(response.message || '发送失败', 'error')
+    }
+  } catch (err) {
+    console.error('重发验证邮件失败:', err)
+    showNotification(err.data?.message || '发送失败，请重试', 'error')
+  } finally {
+    resendingEmail.value = false
+  }
+}
+
+const changeEmail = () => {
+  userEmail.value = ''
+  emailVerified.value = false
+  newEmail.value = ''
+}
+
+const unbindEmail = async () => {
+  confirmDialog.value = {
+    title: '确认解绑邮箱',
+    message: '解绑后将无法接收邮件通知，确定要继续吗？',
+    type: 'warning',
+    loading: false,
+    onConfirm: performEmailUnbind,
+    onCancel: () => {
+      showConfirmDialog.value = false
+    }
+  }
+  showConfirmDialog.value = true
+}
+
+const performEmailUnbind = async () => {
+  try {
+    confirmDialog.value.loading = true
+    
+    const response = await $fetch('/api/user/email/unbind', {
+      method: 'POST'
+    })
+    
+    if (response.success) {
+      userEmail.value = ''
+      emailVerified.value = false
+      localSettings.value.emailNotify = false
+      showNotification('邮箱已解绑', 'success')
+      showConfirmDialog.value = false
+    } else {
+      showNotification(response.message || '解绑失败', 'error')
+    }
+  } catch (err) {
+    console.error('解绑邮箱失败:', err)
+    showNotification(err.data?.message || '解绑邮箱失败，请重试', 'error')
   } finally {
     confirmDialog.value.loading = false
   }
@@ -745,6 +1008,143 @@ const saveSettings = async () => {
 
 .toggle-switch input[type="checkbox"]:checked + .switch::before {
   transform: translateX(24px);
+}
+
+/* 禁用状态的开关 */
+.switch.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 邮箱相关样式 */
+.email-card .setting-info {
+  margin-bottom: 1rem;
+}
+
+.email-address {
+  color: var(--primary);
+  font-weight: var(--font-medium);
+}
+
+.status {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  margin-left: 0.5rem;
+}
+
+.status.verified {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.status.pending {
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+}
+
+.email-bind-section .bind-step,
+.email-verify-section,
+.email-bound-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.email-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-tertiary);
+  border-radius: var(--radius-md);
+  background: var(--bg-quaternary);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  transition: var(--transition-normal);
+}
+
+.email-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.email-input::placeholder {
+  color: var(--text-quaternary);
+}
+
+.verify-actions,
+.bound-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-tertiary);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--bg-quaternary);
+  border-color: var(--border-secondary);
+  color: var(--text-primary);
+}
+
+/* 邮件通知细分设置 */
+.email-details {
+  border-left: 3px solid var(--primary);
+}
+
+.email-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.email-setting-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  transition: var(--transition-normal);
+}
+
+.email-setting-item:hover {
+  color: var(--text-primary);
+}
+
+.email-setting-item input[type="checkbox"] {
+  display: none;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-tertiary);
+  border-radius: var(--radius-sm);
+  position: relative;
+  transition: var(--transition-normal);
+}
+
+.email-setting-item input[type="checkbox"]:checked + .checkmark {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.email-setting-item input[type="checkbox"]:checked + .checkmark::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 /* 阈值输入 */

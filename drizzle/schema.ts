@@ -23,6 +23,9 @@ export const users = pgTable('User', {
   forcePasswordChange: boolean('forcePasswordChange').default(true).notNull(),
   meowNickname: text('meowNickname'),
   meowBoundAt: timestamp('meowBoundAt'),
+  email: text('email'),
+  emailVerified: boolean('emailVerified').default(false).notNull(),
+  emailVerifiedAt: timestamp('emailVerifiedAt'),
 });
 
 // 播出时段表
@@ -98,6 +101,12 @@ export const notificationSettings = pgTable('NotificationSettings', {
   songPlayedEnabled: boolean('songPlayedEnabled').default(true).notNull(),
   refreshInterval: integer('refreshInterval').default(60).notNull(),
   songVotedThreshold: integer('songVotedThreshold').default(1).notNull(),
+  // 邮件通知设置
+  emailEnabled: boolean('emailEnabled').default(false).notNull(),
+  emailSongRequestEnabled: boolean('emailSongRequestEnabled').default(true).notNull(),
+  emailSongVotedEnabled: boolean('emailSongVotedEnabled').default(true).notNull(),
+  emailSongPlayedEnabled: boolean('emailSongPlayedEnabled').default(true).notNull(),
+  emailSystemNoticeEnabled: boolean('emailSystemNoticeEnabled').default(true).notNull(),
 });
 
 // 学期表
@@ -127,6 +136,15 @@ export const systemSettings = pgTable('SystemSettings', {
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
   showBlacklistKeywords: boolean('showBlacklistKeywords').default(false).notNull(),
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
+  // SMTP 邮件配置
+  smtpEnabled: boolean('smtpEnabled').default(false).notNull(),
+  smtpHost: text('smtpHost'),
+  smtpPort: integer('smtpPort').default(587),
+  smtpSecure: boolean('smtpSecure').default(false).notNull(),
+  smtpUsername: text('smtpUsername'),
+  smtpPassword: text('smtpPassword'),
+  smtpFromEmail: text('smtpFromEmail'),
+  smtpFromName: text('smtpFromName'),
 });
 
 // 歌曲黑名单表
