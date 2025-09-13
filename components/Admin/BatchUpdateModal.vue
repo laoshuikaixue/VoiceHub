@@ -345,6 +345,17 @@ const processExcelFile = async (file) => {
     loading.value = true
     error.value = ''
 
+    // 确保学生数据已加载
+    if (students.value.length === 0) {
+      console.log('学生数据为空，重新获取数据...')
+      await fetchAllStudents()
+      // 等待一小段时间确保数据更新
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    
+    console.log('当前学生数据数量:', students.value.length)
+    console.log('前5个学生用户名:', students.value.slice(0, 5).map(s => s.username))
+
     // 动态加载XLSX库
     if (typeof window.XLSX === 'undefined') {
       await loadXLSX()
@@ -363,28 +374,47 @@ const processExcelFile = async (file) => {
       } catch (parseError) {
         console.error('解析Excel文件失败:', parseError)
         error.value = 'Excel文件格式错误，请检查文件格式'
+        loading.value = false
       }
     }
+    
+    reader.onerror = () => {
+      console.error('读取文件失败')
+      error.value = '读取文件失败，请重试'
+      loading.value = false
+    }
+    
     reader.readAsArrayBuffer(file)
   } catch (err) {
     console.error('处理Excel文件失败:', err)
-    error.value = '处理Excel文件失败: ' + err.message
-  } finally {
+    const errorMessage = err && err.message ? err.message : '未知错误，请检查文件格式或网络连接'
+    error.value = '处理Excel文件失败: ' + errorMessage
     loading.value = false
   }
 }
 
 const parseExcelData = (jsonData) => {
+  console.log('开始解析Excel数据，当前学生数量:', students.value.length)
+  
   const previewData = []
   const userMap = new Map()
   
-  // 创建用户映射
+  // 创建用户映射，同时处理用户名标准化
   students.value.forEach(user => {
-    userMap.set(user.username, user)
+    if (user.username) {
+      // 标准化用户名：去除首尾空格，转换为小写
+      const normalizedUsername = user.username.trim().toLowerCase()
+      userMap.set(normalizedUsername, user)
+      // 同时保存原始用户名映射
+      userMap.set(user.username, user)
+    }
   })
+  
+  console.log('用户映射创建完成，映射数量:', userMap.size)
+  console.log('前10个用户名:', Array.from(userMap.keys()).slice(0, 10))
 
   jsonData.forEach((row, index) => {
-    const username = row['用户名'] || row['username'] || ''
+    const username = (row['用户名'] || row['username'] || '').toString().trim()
     const name = row['姓名'] || row['name'] || ''
     const newGrade = row['年级'] || row['grade'] || ''
     const newClass = row['班级'] || row['class'] || ''
@@ -402,7 +432,13 @@ const parseExcelData = (jsonData) => {
       return
     }
 
-    const existingUser = userMap.get(username)
+    // 尝试多种方式匹配用户名
+    let existingUser = userMap.get(username) || 
+                      userMap.get(username.toLowerCase()) || 
+                      userMap.get(username.toUpperCase())
+    
+    console.log(`查找用户名: "${username}", 找到用户:`, existingUser ? existingUser.username : '未找到')
+    
     if (!existingUser) {
       previewData.push({
         username: username,
@@ -427,7 +463,11 @@ const parseExcelData = (jsonData) => {
     })
   })
 
+  console.log('Excel数据解析完成，预览数据数量:', previewData.length)
+  console.log('有错误的数据:', previewData.filter(d => d.error).length)
+  
   excelPreviewData.value = previewData
+  loading.value = false
 }
 
 const loadXLSX = async () => {
@@ -440,7 +480,10 @@ const loadXLSX = async () => {
     const script = document.createElement('script')
     script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
     script.onload = resolve
-    script.onerror = reject
+    script.onerror = (error) => {
+      console.error('加载XLSX库失败:', error)
+      reject(new Error('无法加载Excel处理库，请检查网络连接'))
+    }
     document.head.appendChild(script)
   })
 }
@@ -523,6 +566,7 @@ const performExcelUpdate = async () => {
 // 获取所有学生用户数据
 const fetchAllStudents = async () => {
   try {
+    console.log('开始获取所有学生数据...')
     const response = await $fetch('/api/admin/users', {
       method: 'GET',
       query: {
@@ -537,12 +581,17 @@ const fetchAllStudents = async () => {
       const users = response.users
       allStudents.value = users
       
+      console.log('成功获取学生数据，数量:', users.length)
+      console.log('前5个学生:', users.slice(0, 5).map(u => ({ username: u.username, name: u.name })))
+      
       // 同时更新年级班级信息
       const grades = [...new Set(users.map(u => u.grade).filter(Boolean))].sort()
       const classes = [...new Set(users.map(u => u.class).filter(Boolean))].sort()
       
       allGrades.value = grades
       allClasses.value = classes
+    } else {
+      console.warn('获取学生数据响应异常:', response)
     }
   } catch (err) {
     console.error('获取所有学生数据失败:', err)
