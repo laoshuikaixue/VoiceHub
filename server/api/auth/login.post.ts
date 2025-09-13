@@ -57,7 +57,8 @@ export default defineEventHandler(async (event) => {
       role: users.role,
       lastLogin: users.lastLogin,
       lastLoginIp: users.lastLoginIp,
-      passwordChangedAt: users.passwordChangedAt
+      passwordChangedAt: users.passwordChangedAt,
+      status: users.status
     }).from(users).where(eq(users.username, body.username)).limit(1)
     
     const user = userResult[0] || null
@@ -79,6 +80,14 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 401,
         message: '密码不正确'
+      })
+    }
+
+    // 检查用户状态
+    if (user.status === 'withdrawn') {
+      throw createError({
+        statusCode: 403,
+        message: '账户已停用，无法登录系统。如有疑问请联系管理员。'
       })
     }
 

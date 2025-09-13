@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, readBody, readMultipartFormData } from 'h3'
 import { db } from '~/drizzle/db'
+import { userStatusLogs } from '~/drizzle/schema'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { CacheService } from '../../../services/cacheService'
@@ -155,6 +156,7 @@ export default defineEventHandler(async (event) => {
       'playTimes', 
       'semesters',
       'users',
+      'userStatusLogs',
       'songBlacklist',
       'songs',
       'votes',
@@ -308,6 +310,73 @@ export default defineEventHandler(async (event) => {
                     // 建立ID映射
                     if (record.id && createdUser.id) {
                       userIdMapping.set(record.id, createdUser.id)
+                    }
+                    break
+
+                  case 'userStatusLogs':
+                    // 验证外键约束 - 用户ID
+                    let validUserStatusLogUserId = record.userId
+                    
+                    // 使用ID映射查找实际的用户ID
+                      if (record.userId) {
+                        const mappedUserId = userIdMapping.get(record.userId)
+                        if (mappedUserId) {
+                          validUserStatusLogUserId = mappedUserId
+                      } else {
+                        // 尝试直接查找用户ID
+                        const userExists = await tx.user.findUnique({
+                          where: { id: record.userId }
+                        })
+                        if (!userExists) {
+                          console.warn(`用户状态日志的用户ID ${record.userId} 不存在，跳过此记录`)
+                          return // 跳过此记录，因为userId是必需的
+                        }
+                      }
+                    } else {
+                      console.warn(`用户状态日志缺少userId，跳过此记录`)
+                      return // 跳过此记录，因为userId是必需的
+                    }
+                    
+                    // 构建用户状态日志数据
+                      const userStatusLogData = {
+                        userId: validUserStatusLogUserId,
+                      previousStatus: record.previousStatus || null,
+                      newStatus: record.newStatus,
+                      reason: record.reason || null,
+                      changedBy: record.changedBy || null,
+                      createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+                    }
+                    
+                    if (mode === 'merge') {
+                      // 对于状态日志，通常不需要检查重复，直接创建新记录
+                      await tx.userStatusLog.create({ data: userStatusLogData })
+                    } else {
+                      // 完全恢复模式，检查ID是否已存在
+                      if (record.id) {
+                        const existingLogWithId = await tx.userStatusLog.findUnique({
+                          where: { id: record.id }
+                        })
+                        
+                        if (existingLogWithId) {
+                          // ID已存在，更新现有记录
+                          console.warn(`用户状态日志ID ${record.id} 已存在，将更新现有记录`)
+                          await tx.userStatusLog.update({
+                            where: { id: record.id },
+                            data: userStatusLogData
+                          })
+                        } else {
+                          // ID不存在，使用原始ID创建
+                          await tx.userStatusLog.create({
+                            data: {
+                              ...userStatusLogData,
+                              id: record.id
+                            }
+                          })
+                        }
+                      } else {
+                        // 没有ID，让数据库自动生成
+                        await tx.userStatusLog.create({ data: userStatusLogData })
+                      }
                     }
                     break
 
@@ -1134,7 +1203,7 @@ export default defineEventHandler(async (event) => {
     // 重置所有自增序列
     console.log(`🔄 开始重置自增序列...`)
     const sequenceResetResults = []
-    const tablesToReset = ['Song', 'User', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist']
+    const tablesToReset = ['Song', 'User', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist']
     
     for (const tableName of tablesToReset) {
       try {

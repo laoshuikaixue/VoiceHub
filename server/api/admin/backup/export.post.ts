@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
-import { users, songs, votes, schedules, notifications, notificationSettings, playTimes, semesters, songBlacklists, systemSettings } from '~/drizzle/schema'
+import { users, songs, votes, schedules, notifications, notificationSettings, playTimes, semesters, songBlacklists, systemSettings, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { promises as fs } from 'fs'
 import path from 'path'
@@ -140,6 +140,18 @@ export default defineEventHandler(async (event) => {
       songBlacklist: {
         query: () => db.select().from(songBlacklists),
         description: '歌曲黑名单'
+      },
+      userStatusLogs: {
+        query: async () => {
+          const statusLogsData = await db.select().from(userStatusLogs)
+          const usersData = await db.select({ id: users.id, username: users.username, name: users.name }).from(users)
+          
+          return statusLogsData.map(log => ({
+            ...log,
+            user: usersData.find(user => user.id === log.userId)
+          }))
+        },
+        description: '用户状态变更日志'
       }
     }
 
@@ -157,7 +169,7 @@ export default defineEventHandler(async (event) => {
       tablesToProcess = Object.keys(tablesToBackup)
     } else if (tables === 'users') {
       // 仅备份用户相关数据
-      tablesToProcess = ['users', 'notificationSettings']
+      tablesToProcess = ['users', 'notificationSettings', 'userStatusLogs']
     } else if (Array.isArray(tables)) {
       tablesToProcess = tables
     } else {
