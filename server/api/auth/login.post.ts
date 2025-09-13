@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt'
 import { db, users, eq } from '~/drizzle/db'
 import { JWTEnhanced } from '../../utils/jwt-enhanced'
-import { isAccountLocked, getAccountLockRemainingTime, recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
+import { isAccountLocked, getAccountLockRemainingTime, recordLoginFailure, recordLoginSuccess, isIPBlocked, getIPBlockRemainingTime } from '../../services/securityService'
 import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
@@ -34,6 +34,15 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 503,
         message: '数据库服务暂时不可用'
+      })
+    }
+
+    // 检查IP是否被限制
+    if (isIPBlocked(clientIp)) {
+      const remainingTime = getIPBlockRemainingTime(clientIp)
+      throw createError({
+        statusCode: 423,
+        message: `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`
       })
     }
 

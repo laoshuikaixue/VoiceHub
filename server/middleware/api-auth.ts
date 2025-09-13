@@ -12,6 +12,7 @@ import {
 import { logManager } from '~/server/utils/log-manager'
 import { openApiCache } from '~/server/utils/open-api-cache'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { isIPBlocked, getIPBlockRemainingTime } from '~/server/services/securityService'
 
 /**
  * 记录API访问日志
@@ -78,6 +79,26 @@ export default defineEventHandler(async (event) => {
   }
   
   const ipAddress = getClientIP(event)
+
+  // 检查IP是否被限制
+  if (isIPBlocked(ipAddress)) {
+    const remainingTime = getIPBlockRemainingTime(ipAddress)
+    await ApiLogService.logAccess({
+      apiKeyId: null,
+      endpoint: pathname,
+      method,
+      ipAddress,
+      userAgent,
+      statusCode: 423,
+      responseTimeMs: Date.now() - startTime,
+      errorMessage: `IP地址已被限制访问，剩余时间: ${remainingTime}分钟`
+    })
+    
+    return sendError(event, createError({
+      statusCode: 423,
+      message: `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`
+    }))
+  }
 
   // 获取API Key
   const apiKey = getHeader(event, 'x-api-key')

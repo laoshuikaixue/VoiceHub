@@ -18,16 +18,25 @@ interface IPMonitorInfo {
   lastAttemptTime: Date
 }
 
+// IP黑名单信息接口
+interface IPBlockInfo {
+  blockedUntil: Date
+  reason: string
+  blockedTime: Date
+}
+
 // 内存存储
 const accountLocks = new Map<string, AccountLockInfo>()
 const ipMonitor = new Map<string, IPMonitorInfo>()
+const ipBlacklist = new Map<string, IPBlockInfo>()
 
 // 配置常量
 const SECURITY_CONFIG = {
   MAX_FAILED_ATTEMPTS: 5,
   LOCK_DURATION_MINUTES: 10,
   IP_MONITOR_WINDOW_MINUTES: 10,
-  IP_MAX_DIFFERENT_ACCOUNTS: 3
+  IP_MAX_DIFFERENT_ACCOUNTS: 3,
+  IP_BLOCK_DURATION_MINUTES: 10 // IP被限制的时长（分钟）
 }
 
 /**
@@ -48,6 +57,14 @@ function cleanupExpiredLocks() {
     const windowStart = new Date(now.getTime() - SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES * 60 * 1000)
     if (monitorInfo.firstAttemptTime < windowStart) {
       ipMonitor.delete(ip)
+    }
+  }
+  
+  // 清理过期的IP黑名单记录
+  for (const [ip, blockInfo] of ipBlacklist.entries()) {
+    if (blockInfo.blockedUntil <= now) {
+      ipBlacklist.delete(ip)
+      console.log(`IP ${ip} 已从黑名单中移除`)
     }
   }
 }
@@ -81,6 +98,53 @@ export function getAccountLockRemainingTime(username: string): number {
   }
   
   return Math.ceil((lockInfo.lockedUntil.getTime() - now.getTime()) / (1000 * 60))
+}
+
+/**
+ * 检查IP是否被限制
+ */
+export function isIPBlocked(ip: string): boolean {
+  cleanupExpiredLocks()
+  
+  const blockInfo = ipBlacklist.get(ip)
+  if (!blockInfo) {
+    return false
+  }
+  
+  return blockInfo.blockedUntil > new Date()
+}
+
+/**
+ * 获取IP限制剩余时间（分钟）
+ */
+export function getIPBlockRemainingTime(ip: string): number {
+  const blockInfo = ipBlacklist.get(ip)
+  if (!blockInfo) {
+    return 0
+  }
+  
+  const now = new Date()
+  if (blockInfo.blockedUntil <= now) {
+    return 0
+  }
+  
+  return Math.ceil((blockInfo.blockedUntil.getTime() - now.getTime()) / (1000 * 60))
+}
+
+/**
+ * 将IP加入黑名单
+ */
+function blockIP(ip: string, reason: string): void {
+  const now = new Date()
+  const blockedUntil = new Date(now.getTime() + SECURITY_CONFIG.IP_BLOCK_DURATION_MINUTES * 60 * 1000)
+  
+  ipBlacklist.set(ip, {
+    blockedUntil,
+    reason,
+    blockedTime: now
+  })
+  
+  console.log(`IP ${ip} 已被加入黑名单，限制时长 ${SECURITY_CONFIG.IP_BLOCK_DURATION_MINUTES} 分钟，原因：${reason}`)
 }
 
 /**
@@ -172,7 +236,21 @@ async function triggerSecurityAlert(ip: string, attemptedAccounts: string[]): Pr
 建议立即检查该IP的登录活动并采取必要的安全措施。
     `.trim()
     
+    // Meow通知内容，包含完整的涉及账户信息
+    const meowAlertContent = `
+检测时间：${now.toLocaleString('zh-CN')}
+异常IP：${ip}
+时间窗口：${SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES}分钟内
+尝试登录账户数：${attemptedAccounts.length}
+涉及账户：${attemptedAccounts.join(', ')}
+
+建议立即检查该IP的登录活动并采取必要的安全措施。
+    `.trim()
+    
     console.log(`安全警报：IP ${ip} 在 ${SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES} 分钟内尝试登录 ${attemptedAccounts.length} 个不同账户`)
+    
+    // 将触发警报的IP加入黑名单
+    blockIP(ip, `异常登录行为：${SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES}分钟内尝试登录${attemptedAccounts.length}个不同账户`)
     
     // 获取所有超级管理员
     const superAdmins = await db.select({
@@ -192,7 +270,7 @@ async function triggerSecurityAlert(ip: string, attemptedAccounts: string[]): Pr
           const success = await sendMeowNotificationToUser(
             admin.id,
             alertTitle,
-            `检测到异常登录行为：IP ${ip} 在 ${SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES} 分钟内尝试登录 ${attemptedAccounts.length} 个不同账户。请立即检查系统安全状态。`
+            meowAlertContent
           )
           
           if (success) {
@@ -223,6 +301,7 @@ export function getSecurityStats() {
   return {
     lockedAccounts: accountLocks.size,
     monitoredIPs: ipMonitor.size,
+    blockedIPs: ipBlacklist.size,
     config: SECURITY_CONFIG
   }
 }
