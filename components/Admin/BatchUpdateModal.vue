@@ -416,8 +416,9 @@ const parseExcelData = (jsonData) => {
   jsonData.forEach((row, index) => {
     const username = (row['用户名'] || row['username'] || '').toString().trim()
     const name = row['姓名'] || row['name'] || ''
-    const newGrade = row['年级'] || row['grade'] || ''
-    const newClass = row['班级'] || row['class'] || ''
+    // 确保年级和班级转换为字符串类型
+    const newGrade = (row['年级'] || row['grade']) ? String(row['年级'] || row['grade']).trim() : ''
+    const newClass = (row['班级'] || row['class']) ? String(row['班级'] || row['class']).trim() : ''
     const newUsername = row['新用户名'] || row['new_username'] || ''
 
     if (!username) {
@@ -550,9 +551,9 @@ const performExcelUpdate = async () => {
     const batch = validUpdates.slice(i, i + batchSize)
     const updates = batch.map(row => ({
       userId: row.userId,
-      grade: row.newGrade || undefined,
-      class: row.newClass || undefined,
-      username: row.newUsername || undefined
+      grade: row.newGrade ? String(row.newGrade).trim() : undefined,
+      class: row.newClass ? String(row.newClass).trim() : undefined,
+      username: row.newUsername ? String(row.newUsername).trim() : undefined
     }))
 
     await $fetch('/api/admin/users/batch-update', {
