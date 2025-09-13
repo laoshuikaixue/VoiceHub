@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
 
       // 创建测试transporter
       const nodemailer = await import('nodemailer')
-      smtpService.transporter = nodemailer.default.createTransporter({
+      smtpService.transporter = nodemailer.default.createTransport({
         host: smtpService.smtpConfig.host,
         port: smtpService.smtpConfig.port,
         secure: smtpService.smtpConfig.secure,
@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
     console.error('测试SMTP连接失败:', error)
     return {
       success: false,
-      message: error.message || '测试连接失败'
+      message: error instanceof Error ? error.message : '测试连接失败'
     }
   }
 })

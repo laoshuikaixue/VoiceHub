@@ -39,16 +39,22 @@
               class="form-input"
             >
           </div>
-          <div class="form-group">
-            <label class="switch-label">
-              <input 
-                type="checkbox" 
-                v-model="config.smtpSecure"
-                class="switch-input"
-              >
-              <span class="switch-slider"></span>
-              使用SSL/TLS
-            </label>
+          <div class="form-group form-group-switch">
+            <label>SSL/TLS开关</label>
+            <div class="ssl-switch-wrapper">
+              <label class="ssl-switch-label">
+                <input 
+                  type="checkbox" 
+                  v-model="config.smtpSecure"
+                  class="ssl-switch-input"
+                >
+                <span
+                  class="ssl-switch-slider"
+                  :title="config.smtpSecure ? 'SSL/TLS 未启用' : 'SSL/TLS 已启用'"
+                ></span>
+                <span class="ssl-switch-text">{{ config.smtpSecure ? '未启用' : '已启用' }}</span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -368,6 +374,15 @@ onMounted(() => {
   flex: 1;
 }
 
+.form-group-switch {
+  display: flex;
+  flex-direction: column;
+}
+
+.switch-wrapper {
+  margin-top: 8px;
+}
+
 .form-group label {
   display: block;
   color: #cccccc;
@@ -436,6 +451,96 @@ onMounted(() => {
 
 .switch-input:checked + .switch-slider::before {
   transform: translateX(20px);
+}
+
+/* SSL开关特殊样式 */
+.ssl-switch-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 0;
+}
+
+.ssl-switch-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  color: #cccccc;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.ssl-switch-label:hover {
+  color: #ffffff;
+}
+
+.ssl-switch-input {
+  display: none;
+}
+
+.ssl-switch-slider {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  background: #2d3748;
+  border-radius: 14px;
+  transition: all 0.3s ease;
+  border: 2px solid #4a5568;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.ssl-switch-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.ssl-switch-input:checked + .ssl-switch-slider {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.ssl-switch-input:checked + .ssl-switch-slider::before {
+  transform: translateX(26px);
+  background: #ffffff;
+}
+
+.ssl-switch-text {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 50px;
+  transition: all 0.2s ease;
+}
+
+.ssl-switch-input:checked ~ .ssl-switch-text {
+  color: #4ade80;
+}
+
+.ssl-switch-input:not(:checked) ~ .ssl-switch-text {
+  color: #9ca3af;
+}
+
+/* 悬停效果 */
+.ssl-switch-label:hover .ssl-switch-slider {
+  transform: scale(1.05);
+}
+
+.ssl-switch-label:hover .ssl-switch-input:not(:checked) + .ssl-switch-slider {
+  border-color: #6b7280;
+  background: #374151;
+}
+
+.ssl-switch-label:hover .ssl-switch-input:checked + .ssl-switch-slider {
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3);
 }
 
 .smtp-config {

@@ -8,8 +8,8 @@ import { eq, and, isNotNull } from 'drizzle-orm'
  */
 export class SmtpService {
   private static instance: SmtpService
-  private transporter: nodemailer.Transporter | null = null
-  private smtpConfig: any = null
+  public transporter: nodemailer.Transporter | null = null
+  public smtpConfig: any = null
 
   private constructor() {}
 
@@ -33,10 +33,13 @@ export class SmtpService {
         return false
       }
 
+      const port = settings.smtpPort || 587
+      const secure = settings.smtpSecure || false
+      
       this.smtpConfig = {
         host: settings.smtpHost,
-        port: settings.smtpPort || 587,
-        secure: settings.smtpSecure || false,
+        port: port,
+        secure: secure,
         auth: settings.smtpUsername && settings.smtpPassword ? {
           user: settings.smtpUsername,
           pass: settings.smtpPassword
@@ -45,13 +48,35 @@ export class SmtpService {
         fromName: settings.smtpFromName || '校园广播站'
       }
 
-      // 创建transporter
-      this.transporter = nodemailer.createTransporter({
+      // 创建transporter配置
+      const transporterConfig: any = {
         host: this.smtpConfig.host,
         port: this.smtpConfig.port,
         secure: this.smtpConfig.secure,
         auth: this.smtpConfig.auth
-      })
+      }
+
+      // 根据端口和安全设置调整配置
+      if (port === 587 && !secure) {
+        // STARTTLS - 端口587通常使用STARTTLS
+        transporterConfig.requireTLS = true
+        transporterConfig.tls = {
+          // 不验证服务器证书（用于测试环境）
+          rejectUnauthorized: false
+        }
+      } else if (port === 465) {
+        // SSL/TLS - 端口465必须使用SSL
+        transporterConfig.secure = true
+      } else if (port === 25) {
+        // 通常不加密
+        transporterConfig.secure = false
+        transporterConfig.tls = {
+          rejectUnauthorized: false
+        }
+      }
+
+      // 创建transporter
+      this.transporter = nodemailer.createTransport(transporterConfig)
 
       // 验证SMTP连接
       await this.transporter.verify()
@@ -109,7 +134,7 @@ export class SmtpService {
       await this.transporter!.verify()
       return { success: true, message: 'SMTP连接测试成功' }
     } catch (error) {
-      return { success: false, message: `SMTP连接测试失败: ${error.message}` }
+      return { success: false, message: `SMTP连接测试失败: ${error instanceof Error ? error.message : '未知错误'}` }
     }
   }
 
@@ -285,6 +310,10 @@ export async function sendBatchEmailNotifications(
   for (let i = 0; i < targetUsers.length; i += batchSize) {
     const batch = targetUsers.slice(i, i + batchSize)
     const promises = batch.map(async (user) => {
+      // 确保 email 不为 null
+      if (!user.email) {
+        return false
+      }
       const emailSuccess = await smtpService.sendMail(
         user.email,
         `${notificationTitle} | 校园广播站通知`,

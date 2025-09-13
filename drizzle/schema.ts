@@ -16,6 +16,8 @@ export const users = pgTable('User', {
   class: text('class'),
   role: text('role').default('USER').notNull(),
   password: text('password').notNull(),
+  email: text('email'),
+  emailVerified: boolean('emailVerified').default(false),
   lastLogin: timestamp('lastLogin'),
   lastLoginIp: text('lastLoginIp'),
   passwordChangedAt: timestamp('passwordChangedAt'),
@@ -98,6 +100,7 @@ export const notificationSettings = pgTable('NotificationSettings', {
   songRequestEnabled: boolean('songRequestEnabled').default(true).notNull(),
   songVotedEnabled: boolean('songVotedEnabled').default(true).notNull(),
   songPlayedEnabled: boolean('songPlayedEnabled').default(true).notNull(),
+  emailEnabled: boolean('emailEnabled').default(false).notNull(),
   refreshInterval: integer('refreshInterval').default(60).notNull(),
   songVotedThreshold: integer('songVotedThreshold').default(1).notNull(),
 });
@@ -129,6 +132,15 @@ export const systemSettings = pgTable('SystemSettings', {
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
   showBlacklistKeywords: boolean('showBlacklistKeywords').default(false).notNull(),
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
+  // SMTP 邮件配置
+  smtpEnabled: boolean('smtpEnabled').default(false).notNull(),
+  smtpHost: text('smtpHost'),
+  smtpPort: integer('smtpPort').default(587),
+  smtpSecure: boolean('smtpSecure').default(false),
+  smtpUsername: text('smtpUsername'),
+  smtpPassword: text('smtpPassword'),
+  smtpFromEmail: text('smtpFromEmail'),
+  smtpFromName: text('smtpFromName').default('校园广播站'),
 });
 
 // 歌曲黑名单表

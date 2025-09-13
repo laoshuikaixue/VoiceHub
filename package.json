@@ -11,7 +11,7 @@
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
     "db:migrate": "npx drizzle-kit migrate",
-    "db:generate": "npx drizzle-kit generate --force",
+    "db:generate": "npx drizzle-kit generate",
     "db:push": "npx drizzle-kit push --force",
     "db:studio": "npx drizzle-kit studio",
     "db:drop": "npx drizzle-kit drop",
@@ -51,7 +51,8 @@
     "redis": "^5.8.2",
     "vue": "^3.5.17",
     "vue-router": "^4.5.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "tsx": "^4.20.5"
