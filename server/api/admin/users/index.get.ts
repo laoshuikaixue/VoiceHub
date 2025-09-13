@@ -13,7 +13,8 @@ export default defineEventHandler(async (event) => {
       search,
       page = '1',
       limit = '50',
-      role
+      role,
+      status
     } = query
 
     // 构建筛选条件
@@ -32,6 +33,11 @@ export default defineEventHandler(async (event) => {
     // 角色筛选
     if (role && typeof role === 'string' && role.trim()) {
       whereConditions.push(eq(users.role, role.trim()))
+    }
+
+    // 状态筛选
+    if (status && typeof status === 'string' && status.trim()) {
+      whereConditions.push(eq(users.status, status.trim()))
     }
 
     // 搜索功能（姓名、用户名或IP地址）
@@ -67,6 +73,8 @@ export default defineEventHandler(async (event) => {
       role: users.role,
       grade: users.grade,
       class: users.class,
+      status: users.status,
+      statusChangedAt: users.statusChangedAt,
       lastLogin: users.lastLogin,
       lastLoginIp: users.lastLoginIp,
       passwordChangedAt: users.passwordChangedAt,
@@ -99,6 +107,7 @@ export default defineEventHandler(async (event) => {
         grade: grade || null,
         class: className || null,
         role: role || null,
+        status: status || null,
         search: search || null
       }
     }

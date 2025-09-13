@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, readBody, getRouterParam } from 'h3'
 import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
+import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { CacheService } from '../../../services/cacheService'
 import bcrypt from 'bcrypt'
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
     const userId = getRouterParam(event, 'id')
     const body = await readBody(event)
-    const { name, username, password, role, grade, class: userClass } = body
+    const { name, username, password, role, grade, class: userClass, status } = body
 
     // 验证必填字段
     if (!name || !username) {
@@ -83,6 +83,14 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // 验证status字段的有效性
+    if (status && !['active', 'withdrawn'].includes(status)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: '用户状态只能是active或withdrawn'
+      })
+    }
+
     // 准备更新数据
     const updateData = {
       name,
@@ -90,6 +98,13 @@ export default defineEventHandler(async (event) => {
       role: validRole,
       grade,
       class: userClass
+    }
+
+    // 如果提供了status，则更新状态相关字段
+    if (status && status !== existingUser[0].status) {
+      updateData.status = status
+      updateData.statusChangedAt = new Date()
+      updateData.statusChangedBy = user.id
     }
 
     // 如果提供了密码，则加密并更新
@@ -108,12 +123,26 @@ export default defineEventHandler(async (event) => {
         role: users.role,
         grade: users.grade,
         class: users.class,
+        status: users.status,
+        statusChangedAt: users.statusChangedAt,
+        statusChangedBy: users.statusChangedBy,
         lastLogin: users.lastLogin,
         lastLoginIp: users.lastLoginIp,
         passwordChangedAt: users.passwordChangedAt,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt
       })
+
+    // 如果状态发生变更，记录到状态变更日志
+    if (status && status !== existingUser[0].status) {
+      await db.insert(userStatusLogs).values({
+        userId: parseInt(userId),
+        oldStatus: existingUser[0].status,
+        newStatus: status,
+        reason: `管理员${user.name || user.username}修改用户状态`,
+        operatorId: user.id
+      })
+    }
 
     // 清除相关缓存
     try {

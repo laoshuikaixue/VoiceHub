@@ -74,7 +74,13 @@ export function formatBeijingTime(date: Date, format: string = 'YYYY/M/D H:mm:ss
     return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
   }
   
-  // 可以根据需要添加更多格式
+  if (format === 'YYYY-MM-DD') {
+    const monthPadded = month.toString().padStart(2, '0')
+    const dayPadded = day.toString().padStart(2, '0')
+    return `${year}-${monthPadded}-${dayPadded}`
+  }
+  
+  // 默认格式
   return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
 }
 

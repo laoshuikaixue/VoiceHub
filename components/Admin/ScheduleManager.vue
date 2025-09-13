@@ -91,7 +91,10 @@
       </div>
     </div>
 
-
+    <!-- 触控拖拽帮助提示 -->
+    <div v-if="showTouchHint" class="touch-drag-hint show">
+      {{ touchHintText }}
+    </div>
 
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-container">
@@ -399,8 +402,25 @@ const draggedSchedule = ref(null)
 // 触摸拖拽状态
 const touchDragData = ref(null)
 const touchStartPos = ref({ x: 0, y: 0 })
+const touchCurrentPos = ref({ x: 0, y: 0 })
 const isDragging = ref(false)
+const isLongPressing = ref(false)
 const dragElement = ref(null)
+const longPressTimer = ref(null)
+const touchStartTime = ref(0)
+
+// 触控拖拽配置
+const TOUCH_CONFIG = {
+  LONG_PRESS_DURATION: 500, // 长按识别时间（毫秒）
+  DRAG_THRESHOLD: 15, // 拖拽触发阈值（像素）
+  VIBRATION_DURATION: 50, // 震动时长（毫秒）
+  SCROLL_THRESHOLD: 10 // 滚动阈值（像素）
+}
+
+// 触控帮助提示
+const showTouchHint = ref(false)
+const touchHintText = ref('')
+const touchHintTimer = ref(null)
 
 // DOM引用
 const dateSelector = ref(null)
@@ -942,39 +962,179 @@ const handleTouchStart = (event, item, type) => {
 
   const touch = event.touches[0]
   touchStartPos.value = { x: touch.clientX, y: touch.clientY }
+  touchCurrentPos.value = { x: touch.clientX, y: touch.clientY }
+  touchStartTime.value = Date.now()
   touchDragData.value = { item, type }
-
-  // 防止页面滚动
-  event.preventDefault()
+  
+  // 重置状态
+  isDragging.value = false
+  isLongPressing.value = false
+  
+  // 清除之前的长按定时器
+  if (longPressTimer.value) {
+    clearTimeout(longPressTimer.value)
+  }
+  
+  // 设置长按识别定时器
+  longPressTimer.value = setTimeout(() => {
+    if (!isDragging.value && touchDragData.value) {
+      isLongPressing.value = true
+      
+      // 触发震动反馈（如果设备支持）
+      if (navigator.vibrate) {
+        navigator.vibrate(TOUCH_CONFIG.VIBRATION_DURATION)
+      }
+      
+      // 显示长按提示
+      showTouchDragHint('已识别长按，现在可以拖拽歌曲', 2000)
+      
+      // 添加长按视觉反馈
+      const target = event.target.closest('.draggable-song, .scheduled-song')
+      if (target) {
+        target.classList.add('long-pressing')
+        dragElement.value = target
+      }
+    }
+  }, TOUCH_CONFIG.LONG_PRESS_DURATION)
+  
+  // 只在必要时防止默认行为
+  // event.preventDefault()
 }
 
 const handleTouchMove = (event) => {
   if (!touchDragData.value || window.innerWidth > 768) return
 
   const touch = event.touches[0]
+  touchCurrentPos.value = { x: touch.clientX, y: touch.clientY }
+  
   const deltaX = Math.abs(touch.clientX - touchStartPos.value.x)
   const deltaY = Math.abs(touch.clientY - touchStartPos.value.y)
+  const totalDelta = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
 
-  // 如果移动距离超过阈值，开始拖拽
-  if ((deltaX > 10 || deltaY > 10) && !isDragging.value) {
+  // 如果移动距离较小，可能是滚动操作，不触发拖拽
+  if (totalDelta < TOUCH_CONFIG.SCROLL_THRESHOLD) {
+    return
+  }
+  
+  // 清除长按定时器（用户开始移动）
+  if (longPressTimer.value) {
+    clearTimeout(longPressTimer.value)
+    longPressTimer.value = null
+  }
+  
+  // 只有在长按识别后或移动距离超过阈值时才开始拖拽
+  if (!isDragging.value && (isLongPressing.value || totalDelta > TOUCH_CONFIG.DRAG_THRESHOLD)) {
     isDragging.value = true
+
+    // 显示拖拽提示
+    showTouchDragHint('正在拖拽，移动到目标位置后松开', 2000)
 
     // 创建拖拽元素
     const target = event.target.closest('.draggable-song, .scheduled-song')
     if (target) {
-      target.classList.add('dragging')
+      target.classList.remove('long-pressing')
+      target.classList.add('dragging', 'touch-dragging')
       dragElement.value = target
+      
+      // 触发拖拽开始震动
+      if (navigator.vibrate) {
+        navigator.vibrate(TOUCH_CONFIG.VIBRATION_DURATION)
+      }
     }
   }
-
-  // 防止页面滚动
+  
+  // 更新拖拽位置指示
   if (isDragging.value) {
+    updateDragPosition(touch.clientX, touch.clientY)
     event.preventDefault()
+  }
+}
+
+// 更新拖拽位置指示
+const updateDragPosition = (x, y) => {
+  const elementBelow = document.elementFromPoint(x, y)
+  if (!elementBelow) return
+  
+  // 清除之前的高亮
+  document.querySelectorAll('.drag-target-highlight').forEach(el => {
+    el.classList.remove('drag-target-highlight')
+  })
+  
+  // 高亮当前目标区域
+  const sequenceList = elementBelow.closest('.sequence-list')
+  const scheduledSong = elementBelow.closest('.scheduled-song')
+  const draggableSongs = elementBelow.closest('.draggable-songs')
+  
+  if (sequenceList) {
+    sequenceList.classList.add('drag-target-highlight')
+  } else if (scheduledSong) {
+    scheduledSong.classList.add('drag-target-highlight')
+  } else if (draggableSongs) {
+    draggableSongs.classList.add('drag-target-highlight')
+  }
+}
+
+// 清除拖拽位置指示
+const clearDragPosition = () => {
+  document.querySelectorAll('.drag-target-highlight').forEach(el => {
+    el.classList.remove('drag-target-highlight')
+  })
+}
+
+// 清理触控拖拽状态
+const cleanupTouchDrag = () => {
+  if (dragElement.value) {
+    dragElement.value.classList.remove('dragging', 'touch-dragging', 'long-pressing')
+    dragElement.value = null
+  }
+  
+  // 重置状态
+  isDragging.value = false
+  isLongPressing.value = false
+  touchDragData.value = null
+  dragOverIndex.value = -1
+  isSequenceOver.value = false
+  isDraggableOver.value = false
+  
+  // 清除位置指示
+  clearDragPosition()
+}
+
+// 显示触控帮助提示
+const showTouchDragHint = (message, duration = 3000) => {
+  if (window.innerWidth > 768) return // 只在移动端显示
+  
+  touchHintText.value = message
+  showTouchHint.value = true
+  
+  // 清除之前的定时器
+  if (touchHintTimer.value) {
+    clearTimeout(touchHintTimer.value)
+  }
+  
+  // 设置自动隐藏
+  touchHintTimer.value = setTimeout(() => {
+    showTouchHint.value = false
+  }, duration)
+}
+
+// 隐藏触控帮助提示
+const hideTouchDragHint = () => {
+  showTouchHint.value = false
+  if (touchHintTimer.value) {
+    clearTimeout(touchHintTimer.value)
+    touchHintTimer.value = null
   }
 }
 
 const handleTouchEnd = (event) => {
   if (!touchDragData.value || window.innerWidth > 768) return
+
+  // 清除长按定时器
+  if (longPressTimer.value) {
+    clearTimeout(longPressTimer.value)
+    longPressTimer.value = null
+  }
 
   if (isDragging.value) {
     const touch = event.changedTouches[0]
@@ -989,28 +1149,30 @@ const handleTouchEnd = (event) => {
       if (touchDragData.value.type === 'song' && sequenceList) {
         // 从左侧拖拽到右侧
         handleTouchDropToSequence(scheduledSong)
+        // 成功拖拽震动反馈
+        if (navigator.vibrate) {
+          navigator.vibrate([30, 50, 30])
+        }
       } else if (touchDragData.value.type === 'schedule' && scheduledSong) {
         // 在右侧重新排序
         handleTouchReorder(scheduledSong)
+        // 成功拖拽震动反馈
+        if (navigator.vibrate) {
+          navigator.vibrate([30, 50, 30])
+        }
       } else if (touchDragData.value.type === 'schedule' && draggableSongs) {
         // 从右侧拖拽回左侧
         handleTouchReturnToDraggable()
+        // 成功拖拽震动反馈
+        if (navigator.vibrate) {
+          navigator.vibrate([30, 50, 30])
+        }
       }
-    }
-
-    // 清理拖拽状态
-    if (dragElement.value) {
-      dragElement.value.classList.remove('dragging')
-      dragElement.value = null
     }
   }
 
-  // 重置状态
-  isDragging.value = false
-  touchDragData.value = null
-  dragOverIndex.value = -1
-  isSequenceOver.value = false
-  isDraggableOver.value = false
+  // 清理拖拽状态
+  cleanupTouchDrag()
 }
 
 const handleTouchDropToSequence = async (targetElement) => {
@@ -1299,6 +1461,21 @@ const updateScrollButtonState = () => {
 const openDownloadDialog = () => {
   showDownloadDialog.value = true
 }
+
+// 检查是否为移动设备
+const isMobileDevice = () => {
+  return window.innerWidth <= 768 || 'ontouchstart' in window
+}
+
+// 组件挂载时显示触控使用指南
+onMounted(() => {
+  // 延迟显示，确保组件完全加载
+  setTimeout(() => {
+    if (isMobileDevice()) {
+      showTouchDragHint('长按歌曲卡片开始拖拽，或直接拖拽移动', 4000)
+    }
+  }, 1000)
+})
 </script>
 
 <style scoped>
@@ -2307,6 +2484,7 @@ const openDownloadDialog = () => {
   .scheduled-song {
     touch-action: none; /* 防止滚动干扰拖拽 */
     user-select: none;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
   }
 
   .drag-handle {
@@ -2320,13 +2498,59 @@ const openDownloadDialog = () => {
     height: 20px;
   }
 
-  /* 拖拽时的视觉反馈 */
-  .draggable-song.dragging,
-  .scheduled-song.dragging {
+  /* 长按识别视觉反馈 */
+  .draggable-song.long-pressing,
+  .scheduled-song.long-pressing {
+    transform: scale(1.02);
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    animation: pulse-glow 1s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-glow {
+    0% {
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    }
+    100% {
+      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+    }
+  }
+
+  /* 触控拖拽时的视觉反馈 */
+  .draggable-song.touch-dragging,
+  .scheduled-song.touch-dragging {
+    opacity: 0.9;
+    transform: scale(1.08) rotate(1deg);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    border: 2px solid #667eea;
+    background: rgba(102, 126, 234, 0.15);
+  }
+
+  /* 传统拖拽时的视觉反馈 */
+  .draggable-song.dragging:not(.touch-dragging),
+  .scheduled-song.dragging:not(.touch-dragging) {
     opacity: 0.8;
     transform: scale(1.05);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     z-index: 1000;
+  }
+
+  /* 拖拽目标高亮 */
+  .drag-target-highlight {
+    background: rgba(102, 126, 234, 0.2) !important;
+    border: 2px dashed #667eea !important;
+    animation: target-pulse 0.8s ease-in-out infinite alternate;
+  }
+
+  @keyframes target-pulse {
+    0% {
+      background: rgba(102, 126, 234, 0.15) !important;
+    }
+    100% {
+      background: rgba(102, 126, 234, 0.25) !important;
+    }
   }
 
   /* 拖拽区域高亮 */
@@ -2340,6 +2564,27 @@ const openDownloadDialog = () => {
     border-color: #667eea;
     background: rgba(102, 126, 234, 0.15);
     transform: translateY(-3px);
+  }
+
+  /* 触控拖拽帮助提示 */
+  .touch-drag-hint {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    z-index: 2000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .touch-drag-hint.show {
+    opacity: 1;
   }
 }
 </style>

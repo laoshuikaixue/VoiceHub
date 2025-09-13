@@ -27,6 +27,11 @@
             {{ role.displayName }}
           </option>
         </select>
+        <select v-model="statusFilter" class="filter-select">
+          <option value="">全部状态</option>
+          <option value="active">正常</option>
+          <option value="withdrawn">退学</option>
+        </select>
         <div class="action-buttons">
           <button @click="showAddModal = true" class="btn-primary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -82,6 +87,7 @@
               <th>姓名</th>
               <th>用户名</th>
               <th>角色</th>
+              <th>状态</th>
               <th>年级</th>
               <th>班级</th>
               <th>最后登录</th>
@@ -97,6 +103,11 @@
               <td>
                 <span :class="['role-badge', getRoleClass(user.role)]">
                   {{ getRoleDisplayName(user.role) }}
+                </span>
+              </td>
+              <td>
+                <span :class="['status-badge', getStatusClass(user.status)]">
+                  {{ getStatusDisplayName(user.status) }}
                 </span>
               </td>
               <td>{{ user.grade || '-' }}</td>
@@ -137,6 +148,7 @@
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                   </svg>
                 </button>
+
                 <button
                   @click="confirmDeleteUser(user)"
                   class="action-btn delete-btn"
@@ -163,6 +175,9 @@
                 <span class="user-name-label">{{ user.name }}</span>
                 <span :class="['role-badge', getRoleClass(user.role)]">
                   {{ getRoleDisplayName(user.role) }}
+                </span>
+                <span :class="['status-badge', getStatusClass(user.status)]">
+                  {{ getStatusDisplayName(user.status) }}
                 </span>
               </div>
               <div class="user-username">{{ user.username }}</div>
@@ -199,6 +214,7 @@
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
               </button>
+
               <button
                 @click="confirmDeleteUser(user)"
                 class="action-btn delete-btn"
@@ -206,10 +222,7 @@
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3,6 5,6 21,6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  <line x1="10" y1="11" x2="10" y2="17"/>
-                  <line x1="14" y1="11" x2="14" y2="17"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>
               </button>
             </div>
@@ -322,6 +335,14 @@
               <option v-for="role in availableRoles" :key="role.name" :value="role.name">
                 {{ role.displayName }}
               </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>用户状态</label>
+            <select v-model="userForm.status" class="form-select">
+              <option value="active">正常</option>
+              <option value="withdrawn">退学</option>
             </select>
           </div>
 
@@ -700,6 +721,71 @@
             </div>
           </div>
         </div>
+
+        <!-- 状态变更日志 -->
+        <div class="detail-section">
+          <h4 class="section-title">状态变更日志</h4>
+          <div v-if="statusLogsLoading" class="loading-container">
+            <div class="loading-spinner"></div>
+            <span>加载中...</span>
+          </div>
+          <div v-else-if="statusLogsError" class="error-container">
+            <p class="error-message">{{ statusLogsError }}</p>
+          </div>
+          <div v-else-if="statusLogs.length === 0" class="empty-container">
+            <p class="empty-message">暂无状态变更记录</p>
+          </div>
+          <div v-else class="status-logs-timeline">
+            <div v-for="log in statusLogs" :key="log.id" class="timeline-item">
+              <div class="timeline-marker"></div>
+              <div class="timeline-content">
+                <div class="log-header">
+                  <div class="status-change">
+                    <span class="status-badge" :class="getStatusClass(log.oldStatus)">
+                      {{ log.oldStatusDisplay || '初始状态' }}
+                    </span>
+                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                      <polyline points="12,5 19,12 12,19"/>
+                    </svg>
+                    <span class="status-badge" :class="getStatusClass(log.newStatus)">
+                      {{ log.newStatusDisplay }}
+                    </span>
+                  </div>
+                  <div class="log-time">{{ formatStatusLogDate(log.createdAt) }}</div>
+                </div>
+                <div v-if="log.reason" class="log-reason">
+                  <span class="reason-label">变更原因:</span>
+                  <span class="reason-text">{{ log.reason }}</span>
+                </div>
+                <div class="log-operator">
+                  <span class="operator-label">操作者:</span>
+                  <span class="operator-name">{{ log.operator?.name || '系统' }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- 分页 -->
+            <div v-if="statusLogsPagination.totalPages > 1" class="logs-pagination">
+              <button
+                @click="loadStatusLogsPage(statusLogsPagination.page - 1)"
+                :disabled="!statusLogsPagination.hasPrevPage"
+                class="btn-secondary btn-sm"
+              >
+                上一页
+              </button>
+              <span class="pagination-info">
+                第 {{ statusLogsPagination.page }} 页，共 {{ statusLogsPagination.totalPages }} 页
+              </span>
+              <button
+                @click="loadStatusLogsPage(statusLogsPagination.page + 1)"
+                :disabled="!statusLogsPagination.hasNextPage"
+                class="btn-secondary btn-sm"
+              >
+                下一页
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -721,6 +807,7 @@ const loading = ref(false)
 const users = ref([])
 const searchQuery = ref('')
 const roleFilter = ref('')
+const statusFilter = ref('')
 const currentPage = ref(1)
 const pageSize = ref(50)
 const totalUsers = ref(0)
@@ -769,12 +856,25 @@ const selectedUserId = ref(null)
 const showUserDetailModal = ref(false)
 const selectedUserDetail = ref(null)
 
+// 状态变更日志模态框状态
+
+const statusLogs = ref([])
+const statusLogsLoading = ref(false)
+const statusLogsError = ref('')
+const statusLogsPagination = ref({
+  page: 1,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPrevPage: false
+})
+
 // 表单数据
 const userForm = ref({
   name: '',
   username: '',
   password: '',
   role: 'USER',
+  status: 'active',
   grade: '',
   class: ''
 })
@@ -813,7 +913,7 @@ const paginatedUsers = computed(() => {
 })
 
 // 监听搜索和过滤条件变化
-watch([searchQuery, roleFilter], () => {
+watch([searchQuery, roleFilter, statusFilter], () => {
   currentPage.value = 1
   loadUsers(1, pageSize.value)
 }, { debounce: 300 })
@@ -858,6 +958,22 @@ const getRoleDisplayName = (role) => {
   return names[role] || role
 }
 
+const getStatusClass = (status) => {
+  const classes = {
+    'active': 'status-active',
+    'withdrawn': 'status-withdrawn'
+  }
+  return classes[status] || 'status-active'
+}
+
+const getStatusDisplayName = (status) => {
+  const names = {
+    'active': '正常',
+    'withdrawn': '退学'
+  }
+  return names[status] || '正常'
+}
+
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
     currentPage.value = page
@@ -871,6 +987,7 @@ const editUser = (user) => {
     username: user.username,
     password: '',
     role: user.role,
+    status: user.status || 'active',
     grade: user.grade || '',
     class: user.class || ''
   }
@@ -907,6 +1024,9 @@ const showUserDetail = (user, event) => {
   
   selectedUserDetail.value = user
   showUserDetailModal.value = true
+  
+  // 自动加载状态变更日志
+  loadStatusLogsPage(1)
 }
 
 const closeUserDetailModal = () => {
@@ -967,6 +1087,7 @@ const closeModal = () => {
     username: '',
     password: '',
     role: 'USER',
+    status: 'active',
     grade: '',
     class: ''
   }
@@ -1000,6 +1121,7 @@ const saveUser = async () => {
       name: userForm.value.name,
       username: userForm.value.username,
       role: userForm.value.role,
+      status: userForm.value.status,
       grade: userForm.value.grade,
       class: userForm.value.class
     }
@@ -1116,7 +1238,8 @@ const loadUsers = async (page = 1, limit = 100) => {
         page: page.toString(),
         limit: limit.toString(),
         search: searchQuery.value || undefined,
-        role: roleFilter.value || undefined
+        role: roleFilter.value || undefined,
+        status: statusFilter.value || undefined
       },
       ...auth.getAuthConfig()
     })
@@ -1355,6 +1478,44 @@ const importUsers = async () => {
   }
 }
 
+// 状态日志相关方法
+
+const loadStatusLogsPage = async (page) => {
+  if (!selectedUserDetail.value) return
+  
+  statusLogsLoading.value = true
+  statusLogsError.value = ''
+  
+  try {
+    const response = await $fetch(`/api/admin/users/${selectedUserDetail.value.id}/status-logs`, {
+      query: {
+        page: page.toString(),
+        limit: '10'
+      },
+      ...auth.getAuthConfig()
+    })
+    
+    statusLogs.value = response.logs || []
+    statusLogsPagination.value = response.pagination || {
+      page: 1,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPrevPage: false
+    }
+  } catch (error) {
+    console.error('加载状态日志失败:', error)
+    statusLogsError.value = error.message || '加载状态日志失败'
+  } finally {
+    statusLogsLoading.value = false
+  }
+}
+
+const formatStatusLogDate = (dateString) => {
+  if (!dateString) return '未知时间'
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN')
+}
+
 // 生命周期
 onMounted(async () => {
   await loadUsers(1, pageSize.value)
@@ -1472,12 +1633,6 @@ onMounted(async () => {
   background: #2a2a2a;
   color: #ffffff;
   padding: 8px 12px;
-}
-
-.filter-select option {
-  text-align: center;
-  background: #2a2a2a;
-  color: #ffffff;
 }
 
 .filter-select:focus {
@@ -1692,6 +1847,206 @@ onMounted(async () => {
 
 .delete-btn:hover {
   background: #ef4444;
+}
+
+.status-log-btn {
+  background: #059669;
+  color: #ffffff;
+}
+
+.status-log-btn:hover {
+  background: #10b981;
+}
+
+/* 状态变更日志样式 */
+.status-logs-timeline {
+  position: relative;
+  padding-left: 20px;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 24px;
+  border-left: 2px solid #e5e7eb;
+}
+
+.timeline-item:last-child {
+  border-left-color: transparent;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -6px;
+  top: 8px;
+  width: 10px;
+  height: 10px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px #e5e7eb;
+}
+
+.timeline-content {
+  margin-left: 20px;
+  background: #1f2937;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #374151;
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.status-change {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-badge.active {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.inactive {
+  background-color: #fef2f2;
+  color: #991b1b;
+}
+
+.status-badge.suspended {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.arrow-icon {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+}
+
+.log-time {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.log-reason {
+  margin-bottom: 8px;
+  padding: 8px;
+  background: #111827;
+  border-radius: 4px;
+  border-left: 3px solid #3b82f6;
+}
+
+.reason-label {
+  font-weight: 500;
+  color: #d1d5db;
+  margin-right: 8px;
+}
+
+.reason-text {
+  color: #9ca3af;
+}
+
+.log-operator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.operator-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.operator-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #e5e7eb;
+  background: #374151;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.loading-container, .error-container, .empty-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.empty-message {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.logs-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pagination-info {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.btn-secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #e5e7eb;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* 分页 */
@@ -2430,6 +2785,18 @@ onMounted(async () => {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.status-active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-withdrawn {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .status-success {

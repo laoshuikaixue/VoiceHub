@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt'
 import { db, users, eq } from '~/drizzle/db'
 import { JWTEnhanced } from '../../utils/jwt-enhanced'
-import { isAccountLocked, getAccountLockRemainingTime, recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
+import { isAccountLocked, getAccountLockRemainingTime, recordLoginFailure, recordLoginSuccess, isIPBlocked, getIPBlockRemainingTime } from '../../services/securityService'
 import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
@@ -37,6 +37,15 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // 检查IP是否被限制
+    if (isIPBlocked(clientIp)) {
+      const remainingTime = getIPBlockRemainingTime(clientIp)
+      throw createError({
+        statusCode: 423,
+        message: `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`
+      })
+    }
+
     // 检查账户是否被锁定
     if (isAccountLocked(body.username)) {
       const remainingTime = getAccountLockRemainingTime(body.username)
@@ -57,7 +66,8 @@ export default defineEventHandler(async (event) => {
       role: users.role,
       lastLogin: users.lastLogin,
       lastLoginIp: users.lastLoginIp,
-      passwordChangedAt: users.passwordChangedAt
+      passwordChangedAt: users.passwordChangedAt,
+      status: users.status
     }).from(users).where(eq(users.username, body.username)).limit(1)
     
     const user = userResult[0] || null
@@ -79,6 +89,14 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 401,
         message: '密码不正确'
+      })
+    }
+
+    // 检查用户状态
+    if (user.status === 'withdrawn') {
+      throw createError({
+        statusCode: 403,
+        message: '账户已停用，无法登录系统。如有疑问请联系管理员。'
       })
     }
 
