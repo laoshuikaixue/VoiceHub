@@ -186,12 +186,19 @@
         </ul>
       </div>
     </div>
+
+    <!-- 模板管理 -->
+    <div class="templates-section" style="margin-top: 24px;">
+      <h3 style="color:#fff; font-size:18px; margin:0 0 12px;">邮件模板</h3>
+      <EmailTemplateManager />
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from '~/composables/useToast'
+  import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
 
 const { showNotification } = useToast()
 

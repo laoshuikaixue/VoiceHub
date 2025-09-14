@@ -17,16 +17,12 @@ export async function sendEmailVerificationCode(userId: number, email: string, n
 
   const smtp = SmtpService.getInstance()
   await smtp.initializeSmtpConfig()
-  const html = smtp.generateEmailTemplate(
-    '邮箱验证码',
-    `<p>您好，${name || '用户'}！</p>
-     <p>您正在验证邮箱：<strong>${email}</strong></p>
-     <p>请在5分钟内输入以下验证码完成验证：</p>
-     <h2 style="letter-spacing: 4px;">${code}</h2>
-     <p style=\"color:#888\">若非本人操作，请忽略本邮件。</p>`
-  )
-
-  const sent = await smtp.sendMail(email, '邮箱验证码 | 校园广播站', html)
+  const sent = await smtp.renderAndSend(email, 'verification.code', {
+    name: name || '用户',
+    email,
+    code,
+    expiresInMinutes: 5
+  })
   if (!sent) {
     throw createError({ statusCode: 500, message: '验证码发送失败，请稍后重试' })
   }

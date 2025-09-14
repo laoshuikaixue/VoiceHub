@@ -90,12 +90,22 @@ export async function createSongSelectedNotification(
       console.error('发送 MeoW 通知失败:', error)
     }
 
-    // 同步发送邮件通知
+    // 同步发送 邮件通知
     try {
       await sendEmailNotificationToUser(
         userId,
         '歌曲被选中',
-        message
+        message,
+        undefined,
+        'notification.songSelected',
+        {
+          songTitle: songInfo.title,
+          playDate: formatDate(songInfo.playDate),
+          playTimeName: isPlayTimeEnabled && schedule?.playTime ? schedule.playTime.name : '',
+          playTimeRange: isPlayTimeEnabled && schedule?.playTime && (schedule.playTime.startTime || schedule.playTime.endTime)
+            ? `${schedule.playTime.startTime || ''}${schedule.playTime.startTime && schedule.playTime.endTime ? '-' : ''}${schedule.playTime.endTime || ''}`
+            : ''
+        }
       )
     } catch (error) {
       console.error('发送邮件通知失败:', error)
@@ -160,12 +170,15 @@ export async function createSongPlayedNotification(songId: number) {
       console.error('发送 MeoW 通知失败:', error)
     }
 
-    // 同步发送邮件通知
+    // 同步发送 邮件通知
     try {
       await sendEmailNotificationToUser(
         song.requesterId,
         '歌曲已播放',
-        message
+        message,
+        undefined,
+        'notification.songPlayed',
+        { songTitle: song.title }
       )
     } catch (error) {
       console.error('发送邮件通知失败:', error)
@@ -264,12 +277,15 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
       console.error('发送 MeoW 通知失败:', error)
     }
 
-    // 同步发送邮件通知
+    // 同步发送 邮件通知
     try {
       await sendEmailNotificationToUser(
         song.requesterId,
         '收到新投票',
-        message
+        message,
+        undefined,
+        'notification.songVoted',
+        { songTitle: song.title, votesCount: songVotes.length }
       )
     } catch (error) {
       console.error('发送邮件通知失败:', error)

@@ -1216,4 +1216,14 @@ Thanks goes to these wonderful people:
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date" />
  </picture>
 
+## 邮件模板
+
+- 内置模板：
+  - `verification.code`：邮箱验证码（变量：`name`, `email`, `code`, `expiresInMinutes`）
+  - `notification.generic`：通用通知（变量：`title`, `message`, `actionUrl`, `fromName`）
+- 管理入口：管理员后台 → SMTP 邮件服务配置 → 邮件模板
+- 自定义方式：支持编辑“主题”和“HTML内容”，占位符使用 `{{var}}`，条件块支持 `{{#if var}}...{{/if}}`
+- 预览：在模板管理中可一键预览渲染效果
+- 恢复默认：对内置模板可删除自定义以恢复内置
+
 Powered By LaoShui @ 2025
