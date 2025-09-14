@@ -53,48 +53,37 @@ export default defineEventHandler(async (event) => {
     await db.update(users)
       .set({
         email: email,
-        emailVerified: false,
-        emailVerifiedAt: null
+        emailVerified: false
       })
       .where(eq(users.id, user.id))
 
-    // 发送验证邮件
+    // 发送邮箱验证码
     try {
-      const smtpService = SmtpService.getInstance()
-      await smtpService.initializeSmtpConfig()
-
-      // 生成验证token（这里简化处理，实际应该使用JWT或其他安全token）
-      const verificationToken = Buffer.from(`${user.id}:${email}:${Date.now()}`).toString('base64')
-      const verificationUrl = `${getRequestURL(event).origin}/verify-email?token=${verificationToken}`
-
-      const emailContent = smtpService.generateEmailTemplate(
-        '验证您的邮箱地址',
-        `
-          <p>您好，${user.name || '用户'}！</p>
-          <p>您正在绑定邮箱地址 <strong>${email}</strong> 到您的校园广播站账号。</p>
-          <p>请点击下方按钮完成邮箱验证：</p>
-        `,
-        verificationUrl
-      )
-
-      await smtpService.sendMail(
-        email,
-        '邮箱验证 | 校园广播站',
-        emailContent
-      )
+      const { default: sendHandler } = await import('~/server/api/user/email/send-code.post')
+      // 构造一个模拟的子请求上下文传递 email
+      const reqEvent: any = {
+        ...event,
+        node: event.node,
+        context: event.context
+      }
+      // 直接调用发送逻辑
+      await sendHandler({
+        ...reqEvent,
+        method: 'POST',
+        toString() { return '[internal-send-email-code]' }
+      } as any)
     } catch (emailError) {
-      console.error('发送验证邮件失败:', emailError)
-      // 即使邮件发送失败，也不要回滚邮箱绑定，用户可以重新发送
+      console.error('发送邮箱验证码失败:', emailError)
     }
 
     return {
       success: true,
-      message: '验证邮件已发送，请查收邮件并点击验证链接'
+      message: '验证码已发送，请查收邮箱并输入验证码完成验证'
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('绑定邮箱失败:', error)
     
-    if (error.statusCode) {
+    if (error?.statusCode) {
       throw error
     }
     

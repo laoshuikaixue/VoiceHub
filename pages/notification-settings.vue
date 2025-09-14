@@ -242,25 +242,38 @@
                   </div>
                 </div>
                 
-                <!-- 待验证状态 -->
+                <!-- 待验证状态：验证码方式 -->
                 <div v-else-if="!emailVerified" class="email-verify-section">
                   <div class="verify-info">
-                    <p>验证邮件已发送到您的邮箱，请点击邮件中的链接完成验证</p>
+                    <p>验证码已发送到您的邮箱：<span class="email-address">{{ userEmail }}</span></p>
+                    <p>请在5分钟内输入6位验证码完成验证：</p>
                   </div>
-                  <div class="verify-actions">
-                    <button 
-                      @click="resendVerificationEmail" 
-                      class="btn btn-secondary"
-                      :disabled="resendingEmail"
+                  <div class="verify-input-group">
+                    <input
+                      v-model="emailCode"
+                      type="text"
+                      placeholder="输入6位验证码"
+                      class="verify-input"
+                      :class="{ 'complete': emailCode.length === 6, 'error': emailCodeError }"
+                      maxlength="6"
+                      :disabled="bindingEmail"
+                      @input="handleEmailCodeInput"
+                      @keydown="handleEmailCodeKeydown"
+                      autocomplete="off"
+                      inputmode="numeric"
+                      pattern="[0-9]*"
                     >
-                      {{ resendingEmail ? '发送中...' : '重新发送验证邮件' }}
-                    </button>
-                    <button 
-                      @click="changeEmail" 
-                      class="btn btn-outline"
-                    >
-                      更换邮箱
-                    </button>
+                    <div class="verify-actions">
+                      <button @click="verifyEmailCode" class="btn btn-primary" :disabled="bindingEmail || emailCode.length !== 6">
+                        {{ bindingEmail ? '验证中...' : '确认验证' }}
+                      </button>
+                      <button @click="resendVerificationEmail" class="btn btn-secondary" :disabled="resendingEmail">
+                        {{ resendingEmail ? '发送中...' : '重新发送验证码' }}
+                      </button>
+                      <button @click="changeEmail" class="btn btn-outline">
+                        更换邮箱
+                      </button>
+                    </div>
                   </div>
                 </div>
                 
@@ -424,6 +437,8 @@ const newEmail = ref('')
 const bindingEmail = ref(false)
 const resendingEmail = ref(false)
 const unbindingEmail = ref(false)
+const emailCode = ref('')
+const emailCodeError = ref(false)
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
@@ -707,7 +722,7 @@ const bindEmail = async () => {
       userEmail.value = newEmail.value
       emailVerified.value = false
       newEmail.value = ''
-      showNotification('验证邮件已发送，请查收邮件并点击验证链接', 'success')
+      showNotification('验证码已发送，请查收邮箱', 'success')
     } else {
       showNotification(response.message || '绑定失败', 'error')
     }
@@ -722,20 +737,58 @@ const bindEmail = async () => {
 const resendVerificationEmail = async () => {
   resendingEmail.value = true
   try {
-    const response = await $fetch('/api/user/email/resend-verification', {
-      method: 'POST'
-    })
-    
+    const response = await $fetch('/api/user/email/resend-verification', { method: 'POST' })
     if (response.success) {
-      showNotification('验证邮件已重新发送', 'success')
+      showNotification('验证码已重新发送', 'success')
     } else {
       showNotification(response.message || '发送失败', 'error')
     }
   } catch (err) {
-    console.error('重发验证邮件失败:', err)
+    console.error('重发验证码失败:', err)
     showNotification(err.data?.message || '发送失败，请重试', 'error')
   } finally {
     resendingEmail.value = false
+  }
+}
+
+const handleEmailCodeInput = (event) => {
+  const value = event.target.value.replace(/[^0-9]/g, '')
+  emailCode.value = value
+  if (emailCodeError.value) emailCodeError.value = false
+}
+
+const handleEmailCodeKeydown = (event) => {
+  const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','0','1','2','3','4','5','6','7','8','9']
+  if (!allowed.includes(event.key)) { event.preventDefault(); return }
+  if (event.key === 'Enter' && emailCode.value.length === 6) verifyEmailCode()
+}
+
+const verifyEmailCode = async () => {
+  if (emailCode.value.length !== 6) {
+    emailCodeError.value = true
+    showNotification('请输入6位验证码', 'error')
+    return
+  }
+  try {
+    bindingEmail.value = true
+    const response = await $fetch('/api/user/email/verify-code', {
+      method: 'POST',
+      body: { email: userEmail.value, code: emailCode.value }
+    })
+    if (response.success) {
+      emailVerified.value = true
+      emailCode.value = ''
+      showNotification('邮箱验证成功', 'success')
+    } else {
+      emailCodeError.value = true
+      showNotification(response.message || '验证码错误或已过期', 'error')
+    }
+  } catch (err) {
+    console.error('邮箱验证失败:', err)
+    emailCodeError.value = true
+    showNotification(err.data?.message || '邮箱验证失败，请重试', 'error')
+  } finally {
+    bindingEmail.value = false
   }
 }
 
@@ -1191,6 +1244,7 @@ const saveSettings = async () => {
   background: var(--bg-quaternary);
   border-radius: 3px;
   outline: none;
+  appearance: none;
   -webkit-appearance: none;
 }
 

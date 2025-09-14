@@ -45,46 +45,29 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 发送验证邮件
+    // 发送邮箱验证码
     try {
-      const smtpService = SmtpService.getInstance()
-      await smtpService.initializeSmtpConfig()
-
-      // 生成验证token
-      const verificationToken = Buffer.from(`${user.id}:${currentUser.email}:${Date.now()}`).toString('base64')
-      const verificationUrl = `${getRequestURL(event).origin}/verify-email?token=${verificationToken}`
-
-      const emailContent = smtpService.generateEmailTemplate(
-        '验证您的邮箱地址',
-        `
-          <p>您好，${user.name || '用户'}！</p>
-          <p>您正在验证邮箱地址 <strong>${currentUser.email}</strong>。</p>
-          <p>请点击下方按钮完成邮箱验证：</p>
-        `,
-        verificationUrl
-      )
-
-      await smtpService.sendMail(
-        currentUser.email,
-        '邮箱验证 | 校园广播站',
-        emailContent
-      )
-
-      return {
-        success: true,
-        message: '验证邮件已重新发送'
+      const { default: sendHandler } = await import('~/server/api/user/email/send-code.post')
+      const reqEvent: any = {
+        ...event,
+        node: event.node,
+        context: event.context
       }
+      await sendHandler({
+        ...reqEvent,
+        method: 'POST',
+        toString() { return '[internal-resend-email-code]' }
+      } as any)
+
+      return { success: true, message: '验证码已重新发送' }
     } catch (emailError) {
-      console.error('发送验证邮件失败:', emailError)
-      throw createError({
-        statusCode: 500,
-        message: '发送验证邮件失败，请稍后重试'
-      })
+      console.error('发送邮箱验证码失败:', emailError)
+      throw createError({ statusCode: 500, message: '发送验证码失败，请稍后重试' })
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('重新发送验证邮件失败:', error)
     
-    if (error.statusCode) {
+    if (error?.statusCode) {
       throw error
     }
     
