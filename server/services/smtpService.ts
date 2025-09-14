@@ -222,17 +222,7 @@ export async function sendEmailNotificationToUser(
       return false
     }
     
-    // 获取用户通知设置
-    const settingsResult = await db.select({
-      emailEnabled: notificationSettings.emailEnabled
-    }).from(notificationSettings).where(eq(notificationSettings.userId, userId)).limit(1)
-    
-    const settings = settingsResult[0]
-    
-    // 检查用户是否启用了邮件通知
-    if (settings && !settings.emailEnabled) {
-      return false
-    }
+    // 不再校验 notificationSettings.emailEnabled；只要邮箱已验证即发送
     
     // 生成邮件内容
     const emailContent = smtpService.generateEmailTemplate(
@@ -279,20 +269,7 @@ export async function sendBatchEmailNotifications(
     )
   )
   
-  // 获取这些用户的邮件通知设置
-  const userNotificationSettingsMap = new Map()
-  if (usersWithEmail.length > 0) {
-    const settingsResults = await db.select({
-      userId: notificationSettings.userId,
-      emailEnabled: notificationSettings.emailEnabled
-    }).from(notificationSettings).where(
-      eq(notificationSettings.emailEnabled, true)
-    )
-    
-    settingsResults.forEach(setting => {
-      userNotificationSettingsMap.set(setting.userId, setting)
-    })
-  }
+  // 不再依赖 notificationSettings.emailEnabled；绑定并验证邮箱即视为启用
   
   // 生成邮件内容
   const emailContent = smtpService.generateEmailTemplate(
@@ -303,9 +280,7 @@ export async function sendBatchEmailNotifications(
   
   // 并发发送邮件（限制并发数）
   const batchSize = 5
-  const targetUsers = usersWithEmail.filter(user => 
-    userIds.includes(user.id) && userNotificationSettingsMap.has(user.id)
-  )
+  const targetUsers = usersWithEmail.filter(user => userIds.includes(user.id))
   
   for (let i = 0; i < targetUsers.length; i += batchSize) {
     const batch = targetUsers.slice(i, i + batchSize)

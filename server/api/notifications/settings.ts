@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     
     let dbSettings: any = dbSettingsResult[0]
     
-    if (!dbSettings) {
+  if (!dbSettings) {
       // 创建默认设置
       const insertResult = await db.insert(notificationSettings).values({
         userId: user.id,
@@ -40,20 +40,14 @@ export default defineEventHandler(async (event) => {
         songVotedEnabled: true,
         songPlayedEnabled: true,
         refreshInterval: 60,
-        songVotedThreshold: 1,
-        // 邮件通知默认设置
-        emailEnabled: false,
-        emailSongRequestEnabled: true,
-        emailSongVotedEnabled: true,
-        emailSongPlayedEnabled: true,
-        emailSystemNoticeEnabled: true
+        songVotedThreshold: 1
       }).returning()
       
       dbSettings = insertResult[0]
     }
     
-    // 转换为前端期望的格式
-    const settings: NotificationSettings = {
+    // 转换为前端期望的格式（包含用户邮箱状态）
+    const settings = {
       id: dbSettings.id,
       userId: dbSettings.userId,
       songSelectedNotify: dbSettings.songRequestEnabled,
@@ -63,12 +57,7 @@ export default defineEventHandler(async (event) => {
       refreshInterval: dbSettings.refreshInterval,
       songVotedThreshold: dbSettings.songVotedThreshold,
       meowUserId: userInfo?.meowNickname || '',
-      // 邮件通知设置
-      emailNotify: dbSettings.emailEnabled || false,
-      emailSongSelectedNotify: dbSettings.emailSongRequestEnabled || true,
-      emailSongPlayedNotify: dbSettings.emailSongPlayedEnabled || true,
-      emailSongVotedNotify: dbSettings.emailSongVotedEnabled || true,
-      emailSystemNotify: dbSettings.emailSystemNoticeEnabled || true,
+  // 邮件通知总开关移除：以邮箱绑定状态为准
       // 用户邮箱信息
       userEmail: userInfo?.email || '',
       emailVerified: userInfo?.emailVerified || false

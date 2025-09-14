@@ -39,12 +39,7 @@ export default defineEventHandler(async (event) => {
           songVotedEnabled: body.songVotedNotify !== undefined ? body.songVotedNotify : dbSettings.songVotedEnabled,
           songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : dbSettings.songVotedThreshold,
           refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : dbSettings.refreshInterval,
-          // 邮件通知设置
-          emailEnabled: body.emailNotify !== undefined ? body.emailNotify : dbSettings.emailEnabled,
-          emailSongRequestEnabled: body.emailSongSelectedNotify !== undefined ? body.emailSongSelectedNotify : dbSettings.emailSongRequestEnabled,
-          emailSongPlayedEnabled: body.emailSongPlayedNotify !== undefined ? body.emailSongPlayedNotify : dbSettings.emailSongPlayedEnabled,
-          emailSongVotedEnabled: body.emailSongVotedNotify !== undefined ? body.emailSongVotedNotify : dbSettings.emailSongVotedEnabled,
-          emailSystemNoticeEnabled: body.emailSystemNotify !== undefined ? body.emailSystemNotify : dbSettings.emailSystemNoticeEnabled
+          // 邮件通知总开关移除
         })
         .where(eq(notificationSettings.userId, user.id))
         .returning()
@@ -58,13 +53,7 @@ export default defineEventHandler(async (event) => {
         songPlayedEnabled: body.songPlayedNotify !== undefined ? body.songPlayedNotify : true,
         songVotedEnabled: body.songVotedNotify !== undefined ? body.songVotedNotify : true,
         songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : 1,
-        refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : 60,
-        // 邮件通知默认设置
-        emailEnabled: body.emailNotify !== undefined ? body.emailNotify : false,
-        emailSongRequestEnabled: body.emailSongSelectedNotify !== undefined ? body.emailSongSelectedNotify : true,
-        emailSongPlayedEnabled: body.emailSongPlayedNotify !== undefined ? body.emailSongPlayedNotify : true,
-        emailSongVotedEnabled: body.emailSongVotedNotify !== undefined ? body.emailSongVotedNotify : true,
-        emailSystemNoticeEnabled: body.emailSystemNotify !== undefined ? body.emailSystemNotify : true
+        refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : 60
       }).returning()
       dbSettings = newSettingsResult[0]
     }

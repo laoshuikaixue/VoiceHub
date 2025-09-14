@@ -5,7 +5,7 @@ import { SmtpService } from '~/server/services/smtpService'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法
-  if (getMethod(event) !== 'POST') {
+  if (event.method !== 'POST') {
     throw createError({
       statusCode: 405,
       message: '方法不被允许'

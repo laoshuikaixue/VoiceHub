@@ -117,70 +117,9 @@
               </div>
             </div>
 
-            <!-- 邮件通知总开关 -->
-            <div class="setting-card">
-              <div class="setting-info">
-                <h3>邮件通知</h3>
-                <p>启用邮件通知功能</p>
-              </div>
-              <div class="setting-control">
-                <label class="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    v-model="localSettings.emailNotify"
-                    :disabled="!emailVerified"
-                  >
-                  <span class="switch" :class="{ disabled: !emailVerified }"></span>
-                </label>
-              </div>
-            </div>
+            <!-- 邮件通知总开关移除：绑定且已验证邮箱即启用邮件通知 -->
 
-            <!-- 邮件通知细分设置 -->
-            <div v-if="localSettings.emailNotify && emailVerified" class="setting-card email-details">
-              <div class="setting-info">
-                <h3>邮件通知类型</h3>
-                <p>选择接收邮件通知的类型</p>
-              </div>
-              <div class="setting-control">
-                <div class="email-settings-grid">
-                  <label class="email-setting-item">
-                    <input 
-                      type="checkbox" 
-                      v-model="localSettings.emailSongSelectedNotify"
-                    >
-                    <span class="checkmark"></span>
-                    歌曲被选中
-                  </label>
-                  
-                  <label class="email-setting-item">
-                    <input 
-                      type="checkbox" 
-                      v-model="localSettings.emailSongPlayedNotify"
-                    >
-                    <span class="checkmark"></span>
-                    歌曲已播放
-                  </label>
-                  
-                  <label class="email-setting-item">
-                    <input 
-                      type="checkbox" 
-                      v-model="localSettings.emailSongVotedNotify"
-                    >
-                    <span class="checkmark"></span>
-                    收到投票
-                  </label>
-                  
-                  <label class="email-setting-item">
-                    <input 
-                      type="checkbox" 
-                      v-model="localSettings.emailSystemNotify"
-                    >
-                    <span class="checkmark"></span>
-                    系统通知
-                  </label>
-                </div>
-              </div>
-            </div>
+            <!-- 邮件通知细分设置移除：邮件沿用上面的通知类型设置 -->
 
             <!-- 通知刷新间隔 -->
             <div class="setting-card">
@@ -417,11 +356,7 @@ const localSettings = ref({
   refreshInterval: 60,
   meowUserId: '',
   // 邮件通知设置
-  emailNotify: false,
-  emailSongSelectedNotify: true,
-  emailSongPlayedNotify: true,
-  emailSongVotedNotify: true,
-  emailSystemNotify: true
+  // 邮件通知总开关移除：以邮箱是否已验证判断
 })
 
 // MeoW 绑定相关
@@ -550,12 +485,7 @@ const loadSettings = async () => {
         systemNotify: response.data.systemNotify || true,
         refreshInterval: response.data.refreshInterval || 60,
         meowUserId: response.data.meowUserId || '',
-        // 邮件通知设置
-        emailNotify: response.data.emailNotify || false,
-        emailSongSelectedNotify: response.data.emailSongSelectedNotify || true,
-        emailSongPlayedNotify: response.data.emailSongPlayedNotify || true,
-        emailSongVotedNotify: response.data.emailSongVotedNotify || true,
-        emailSystemNotify: response.data.emailSystemNotify || true
+  // 邮件通知总开关移除
       }
       
       // 加载用户邮箱信息
@@ -823,7 +753,7 @@ const performEmailUnbind = async () => {
     if (response.success) {
       userEmail.value = ''
       emailVerified.value = false
-      localSettings.value.emailNotify = false
+  // 邮件通知总开关移除，无需重置
       showNotification('邮箱已解绑', 'success')
       showConfirmDialog.value = false
     } else {
