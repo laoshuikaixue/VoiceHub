@@ -1,4 +1,3 @@
-ALTER TABLE "NotificationSettings" ADD COLUMN "emailEnabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "SystemSettings" ADD COLUMN "smtpEnabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "SystemSettings" ADD COLUMN "smtpHost" text;--> statement-breakpoint
 ALTER TABLE "SystemSettings" ADD COLUMN "smtpPort" integer DEFAULT 587;--> statement-breakpoint

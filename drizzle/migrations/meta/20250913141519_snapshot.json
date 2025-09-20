@@ -286,13 +286,6 @@
           "notNull": true,
           "default": true
         },
-        "emailEnabled": {
-          "name": "emailEnabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "refreshInterval": {
           "name": "refreshInterval",
           "type": "integer",

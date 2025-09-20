@@ -1,1 +1,0 @@
-ALTER TABLE "NotificationSettings" DROP COLUMN "emailEnabled";

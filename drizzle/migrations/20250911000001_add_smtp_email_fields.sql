@@ -14,7 +14,6 @@ ALTER TABLE "SystemSettings" ADD COLUMN "smtpFromEmail" text;
 ALTER TABLE "SystemSettings" ADD COLUMN "smtpFromName" text;
 
 -- 添加通知设置邮件通知字段
-ALTER TABLE "NotificationSettings" ADD COLUMN "emailEnabled" boolean DEFAULT false NOT NULL;
 ALTER TABLE "NotificationSettings" ADD COLUMN "emailSongRequestEnabled" boolean DEFAULT true NOT NULL;
 ALTER TABLE "NotificationSettings" ADD COLUMN "emailSongVotedEnabled" boolean DEFAULT true NOT NULL;
 ALTER TABLE "NotificationSettings" ADD COLUMN "emailSongPlayedEnabled" boolean DEFAULT true NOT NULL;
