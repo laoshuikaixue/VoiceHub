@@ -317,14 +317,3 @@ function getRequiredPermission(pathname: string, method: string): string | null 
   
   return null
 }
-
-/**
- * 获取客户端真实IP地址
- */
-export function getClientIP(event: any): string {
-  const xForwardedFor = event.node.req.headers['x-forwarded-for'] as string
-  if (xForwardedFor) {
-    return xForwardedFor.split(',')[0].trim()
-  }
-  return event.node.req.socket.remoteAddress || 'unknown'
-}

@@ -6,6 +6,20 @@ import { eq, and, isNotNull } from 'drizzle-orm'
 import { formatIPForEmail } from '../utils/ip-utils'
 
 /**
+ * 获取站点标题
+ */
+async function getSiteTitle(): Promise<string> {
+  try {
+    const settingsResult = await db.select().from(systemSettings).limit(1)
+    const settings = settingsResult[0]
+    return settings?.siteTitle || process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub'
+  } catch (error) {
+    console.error('获取站点标题失败:', error)
+    return 'VoiceHub'
+  }
+}
+
+/**
  * SMTP邮件服务
  */
 export class SmtpService {
@@ -49,7 +63,7 @@ export class SmtpService {
     },
     'notification.generic': {
       name: '通用通知',
-      subject: '{{title}} | 校园广播站通知',
+      subject: '{{title}} | {{siteTitle}}通知推送',
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
           <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -77,7 +91,7 @@ export class SmtpService {
     ,
     'notification.songSelected': {
       name: '歌曲被选中',
-      subject: '歌曲被选中：{{songTitle}}',
+      subject: '歌曲被选中：{{songTitle}} | {{siteTitle}}通知推送',
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
           <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -108,7 +122,7 @@ export class SmtpService {
     },
     'notification.songPlayed': {
       name: '歌曲已播放',
-      subject: '歌曲已播放：{{songTitle}}',
+      subject: '歌曲已播放：{{songTitle}} | {{siteTitle}}通知推送',
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
           <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -135,7 +149,7 @@ export class SmtpService {
     },
     'notification.songVoted': {
       name: '收到新投票',
-      subject: '收到新投票：{{songTitle}}（共{{votesCount}}票）',
+      subject: '收到新投票：{{songTitle}}（共{{votesCount}}票） | {{siteTitle}}通知推送',
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
           <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -343,7 +357,8 @@ export class SmtpService {
       // 忽略读取失败，走内置
     }
 
-    const mergedData = { fromName: this.smtpConfig?.fromName || '校园广播站', ...data }
+    const siteTitle = await getSiteTitle()
+    const mergedData = { fromName: this.smtpConfig?.fromName || '校园广播站', siteTitle, ...data }
     return {
       subject: this.renderString(subject, mergedData),
       html: this.renderString(html, mergedData)
@@ -362,8 +377,9 @@ export class SmtpService {
     const { subject, html } = await this.renderTemplate(key, data)
     if (!subject || !html) {
       // 若模板缺失，退回到简单包装
+      const siteTitle = await getSiteTitle()
       const fallbackHtml = this.generateEmailTemplate(data.title || '通知', data.message || '', data.actionUrl, ipAddress)
-      const fallbackSubject = `${data.title || '通知'} | 校园广播站通知`
+      const fallbackSubject = `${data.title || '通知'} | ${siteTitle}通知推送`
       return this.sendMail(to, fallbackSubject, fallbackHtml, undefined, ipAddress)
     }
     return this.sendMail(to, subject, html, undefined, ipAddress)
@@ -392,7 +408,8 @@ export class SmtpService {
    * 发送测试邮件
    */
   async sendTestEmail(to: string, ipAddress?: string): Promise<{ success: boolean; message: string }> {
-    const subject = '测试邮件 - 校园广播站'
+    const siteTitle = await getSiteTitle()
+    const subject = `测试邮件 | ${siteTitle}通知推送`
     const htmlContent = this.generateEmailTemplate(
       '测试邮件',
       '这是一封来自校园广播站系统的测试邮件。<br>如果您收到这封邮件，说明SMTP配置已经正确设置。',
