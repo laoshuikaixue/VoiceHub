@@ -370,7 +370,7 @@ export async function sendEmailNotificationToUser(
   try {
     const smtpService = SmtpService.getInstance()
     
-    // 获取用户信息
+    // 获取用户信息和通知设置
     const userResult = await db.select({
       name: users.name,
       email: users.email,
@@ -384,7 +384,15 @@ export async function sendEmailNotificationToUser(
       return false
     }
     
-    // 不再校验 notificationSettings.emailEnabled；只要邮箱已验证即发送
+    // 检查用户是否启用了邮件通知
+    const notificationResult = await db.select({
+      emailEnabled: notificationSettings.emailEnabled
+    }).from(notificationSettings).where(eq(notificationSettings.userId, userId)).limit(1)
+    
+    const notification = notificationResult[0]
+    if (!notification?.emailEnabled) {
+      return false
+    }
     
     // 使用指定模板，否则回退通用模板
     if (templateKey) {
@@ -415,19 +423,20 @@ export async function sendBatchEmailNotifications(
   
   const smtpService = SmtpService.getInstance()
   
-  // 获取有邮箱且已验证的用户
+  // 获取有邮箱且已验证并启用邮件通知的用户
   const usersWithEmail = await db.select({
     id: users.id,
     name: users.name,
     email: users.email
-  }).from(users).where(
+  }).from(users)
+  .innerJoin(notificationSettings, eq(users.id, notificationSettings.userId))
+  .where(
     and(
       eq(users.emailVerified, true),
-      isNotNull(users.email)
+      isNotNull(users.email),
+      eq(notificationSettings.emailEnabled, true)
     )
   )
-  
-  // 不再依赖 notificationSettings.emailEnabled；绑定并验证邮箱即视为启用
   
   // 并发发送邮件（限制并发数）
   const batchSize = 5
