@@ -271,12 +271,41 @@ watch(availableDates, (newDates) => {
   }
 }, { immediate: false })
 
+// 自动滚动到指定日期项的函数
+const scrollToDateItem = async (index) => {
+  if (isMobile.value) return // 移动端不需要滚动日期列表
+  
+  await nextTick() // 等待DOM更新
+  
+  const dateList = document.querySelector('.date-list')
+  const dateItems = document.querySelectorAll('.date-item')
+  
+  if (!dateList || !dateItems || index >= dateItems.length) return
+  
+  const targetItem = dateItems[index]
+  const listRect = dateList.getBoundingClientRect()
+  const itemRect = targetItem.getBoundingClientRect()
+  
+  // 计算目标位置，使选中项居中显示
+  const listCenter = listRect.height / 2
+  const itemCenter = itemRect.height / 2
+  const scrollTop = dateList.scrollTop + (itemRect.top - listRect.top) - listCenter + itemCenter
+  
+  // 平滑滚动到目标位置
+  dateList.scrollTo({
+    top: Math.max(0, scrollTop),
+    behavior: 'smooth'
+  })
+}
+
 // 提取日期选择逻辑到独立函数
-const findAndSelectTodayOrClosestDate = () => {
+const findAndSelectTodayOrClosestDate = async () => {
   if (availableDates.value.length === 0) return
 
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  
+  let selectedIndex = 0
   
   // 在宽屏模式下，优先显示最近的日期（今天或之后最近的日期）
   if (!isMobile.value) {
@@ -303,34 +332,30 @@ const findAndSelectTodayOrClosestDate = () => {
     
     // 如果找到了今天或未来的日期，选择它
     if (closestFutureIndex >= 0) {
-      currentDateIndex.value = closestFutureIndex
-      return
-    }
-    
-    // 如果没有今天或未来的日期，选择最近的过去日期
-    let closestPastIndex = -1
-    let minPastDiff = Number.MAX_SAFE_INTEGER
-    
-    availableDates.value.forEach((dateStr, index) => {
-      const dateParts = dateStr.split('-')
-      const date = new Date(
-        parseInt(dateParts[0]),
-        parseInt(dateParts[1]) - 1,
-        parseInt(dateParts[2])
-      )
-      const diff = todayTime - date.getTime()
-      
-      if (diff > 0 && diff < minPastDiff) {
-        minPastDiff = diff
-        closestPastIndex = index
-      }
-    })
-    
-    if (closestPastIndex >= 0) {
-      currentDateIndex.value = closestPastIndex
+      selectedIndex = closestFutureIndex
     } else {
-      // 如果都没找到，默认选择第一个
-      currentDateIndex.value = 0
+      // 如果没有今天或未来的日期，选择最近的过去日期
+      let closestPastIndex = -1
+      let minPastDiff = Number.MAX_SAFE_INTEGER
+      
+      availableDates.value.forEach((dateStr, index) => {
+        const dateParts = dateStr.split('-')
+        const date = new Date(
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2])
+        )
+        const diff = todayTime - date.getTime()
+        
+        if (diff > 0 && diff < minPastDiff) {
+          minPastDiff = diff
+          closestPastIndex = index
+        }
+      })
+      
+      if (closestPastIndex >= 0) {
+        selectedIndex = closestPastIndex
+      }
     }
   } else {
     // 移动端保持原有逻辑：优先选择今天
@@ -338,7 +363,7 @@ const findAndSelectTodayOrClosestDate = () => {
     
     if (todayIndex >= 0) {
       // 如果找到今天的日期，则选择它
-      currentDateIndex.value = todayIndex
+      selectedIndex = todayIndex
     } else {
       // 如果今天没有排期，找到最接近今天的日期
       const todayTime = today.getTime()
@@ -361,10 +386,16 @@ const findAndSelectTodayOrClosestDate = () => {
       })
       
       if (closestDate >= 0) {
-        currentDateIndex.value = closestDate
+        selectedIndex = closestDate
       }
     }
   }
+  
+  // 设置选中的日期索引
+  currentDateIndex.value = selectedIndex
+  
+  // 自动滚动到选中的日期项
+  await scrollToDateItem(selectedIndex)
 }
 
 // 格式化当前日期
@@ -380,28 +411,73 @@ const currentDateSchedules = computed(() => {
 })
 
 // 上一个日期
-const previousDate = () => {
+const previousDate = async () => {
   if (currentDateIndex.value > 0) {
     currentDateIndex.value--
+    // 在桌面端自动滚动到新选中的日期
+    if (!isMobile.value) {
+      await scrollToDateItem(currentDateIndex.value)
+    }
   }
 }
 
 // 下一个日期
-const nextDate = () => {
+const nextDate = async () => {
   if (currentDateIndex.value < availableDates.value.length - 1) {
     currentDateIndex.value++
+    // 在桌面端自动滚动到新选中的日期
+    if (!isMobile.value) {
+      await scrollToDateItem(currentDateIndex.value)
+    }
   }
 }
 
 // 选择特定日期
-const selectDate = (index) => {
+const selectDate = async (index) => {
   currentDateIndex.value = index
   showDatePicker.value = false
+  
+  // 自动滚动到选中的日期项
+  await scrollToDateItem(index)
 }
 
 // 切换日期选择器显示状态
-const toggleDatePicker = () => {
+const toggleDatePicker = async () => {
   showDatePicker.value = !showDatePicker.value
+  
+  // 如果弹窗打开，自动滚动到当前选中的日期
+  if (showDatePicker.value) {
+    await nextTick() // 等待DOM渲染完成
+    scrollToSelectedDateInModal()
+  }
+}
+
+// 在移动端弹窗中滚动到选中的日期项
+const scrollToSelectedDateInModal = () => {
+  const modalList = document.querySelector('.date-picker-list')
+  const modalItems = document.querySelectorAll('.date-picker-item')
+  
+  if (!modalList || !modalItems || currentDateIndex.value >= modalItems.length) return
+  
+  const targetItem = modalItems[currentDateIndex.value]
+  const listRect = modalList.getBoundingClientRect()
+  const itemRect = targetItem.getBoundingClientRect()
+  
+  // 计算目标位置，使选中项在可视区域内，并增加向下偏移
+  const listCenter = listRect.height / 2
+  const itemCenter = itemRect.height / 2
+  const downwardOffset = 280
+  const scrollTop = modalList.scrollTop + (itemRect.top - listRect.top) - listCenter + itemCenter + downwardOffset
+  
+  // 确保滚动位置不会超出边界
+  const maxScrollTop = modalList.scrollHeight - modalList.clientHeight
+  const finalScrollTop = Math.max(0, Math.min(scrollTop, maxScrollTop))
+  
+  // 平滑滚动到目标位置
+  modalList.scrollTo({
+    top: finalScrollTop,
+    behavior: 'smooth'
+  })
 }
 
 // 选择日期并关闭弹窗
@@ -457,8 +533,15 @@ const isMobile = ref(window.innerWidth <= 768)
 // 定义窗口大小变化处理函数
 const handleResize = () => {
   clearTimeout(resizeTimer)
-  resizeTimer = setTimeout(() => {
+  resizeTimer = setTimeout(async () => {
+    const wasMobile = isMobile.value
     isMobile.value = window.innerWidth <= 768
+    
+    // 如果从移动端切换到桌面端，需要重新滚动到当前选中的日期
+    if (wasMobile && !isMobile.value && availableDates.value.length > 0) {
+      await nextTick()
+      await scrollToDateItem(currentDateIndex.value)
+    }
   }, 100)
 }
 
