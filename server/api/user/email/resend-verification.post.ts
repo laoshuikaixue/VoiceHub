@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SmtpService } from '~/server/services/smtpService'
+import { getClientIP } from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法
@@ -47,17 +48,10 @@ export default defineEventHandler(async (event) => {
 
     // 发送邮箱验证码
     try {
-      const { default: sendHandler } = await import('~/server/api/user/email/send-code.post')
-      const reqEvent: any = {
-        ...event,
-        node: event.node,
-        context: event.context
-      }
-      await sendHandler({
-        ...reqEvent,
-        method: 'POST',
-        toString() { return '[internal-resend-email-code]' }
-      } as any)
+      const { sendEmailVerificationCode } = await import('~/server/api/user/email/send-code.post')
+      const clientIP = getClientIP(event)
+      
+      await sendEmailVerificationCode(currentUser.id, currentUser.email, currentUser.name, clientIP)
 
       return { success: true, message: '验证码已重新发送' }
     } catch (emailError) {

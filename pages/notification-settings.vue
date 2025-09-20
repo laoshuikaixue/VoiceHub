@@ -388,6 +388,22 @@ const confirmDialog = ref({
 
 
 
+// 通知显示函数
+const showNotification = (message, type = 'info') => {
+  if (typeof window !== 'undefined' && window.$showNotification) {
+    window.$showNotification(message, type)
+  } else {
+    console.log(`[${type.toUpperCase()}] ${message}`)
+  }
+}
+
+// 返回主页
+const goBack = () => {
+  if (typeof window !== 'undefined') {
+    window.history.back()
+  }
+}
+
 // 页面初始化
 onMounted(async () => {
   // 设置页面标题
@@ -412,20 +428,6 @@ const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleString('zh-CN')
-}
-
-// 返回主页
-const goBack = () => {
-  navigateTo('/')
-}
-
-// 显示通知
-const showNotification = (message, type = 'info') => {
-  if (window.$showNotification) {
-    window.$showNotification(message, type)
-  } else {
-    console.log(`[${type.toUpperCase()}] ${message}`)
-  }
 }
 
 // 处理验证码输入
@@ -664,22 +666,7 @@ const bindEmail = async () => {
   }
 }
 
-const resendVerificationEmail = async () => {
-  resendingEmail.value = true
-  try {
-    const response = await $fetch('/api/user/email/resend-verification', { method: 'POST' })
-    if (response.success) {
-      showNotification('验证码已重新发送', 'success')
-    } else {
-      showNotification(response.message || '发送失败', 'error')
-    }
-  } catch (err) {
-    console.error('重发验证码失败:', err)
-    showNotification(err.data?.message || '发送失败，请重试', 'error')
-  } finally {
-    resendingEmail.value = false
-  }
-}
+
 
 const handleEmailCodeInput = (event) => {
   const value = event.target.value.replace(/[^0-9]/g, '')
@@ -723,9 +710,56 @@ const verifyEmailCode = async () => {
 }
 
 const changeEmail = () => {
+  // 显示确认对话框
+  confirmDialog.value = {
+    title: '更换邮箱',
+    message: '更换邮箱将清除当前绑定的邮箱信息，需要重新验证新邮箱。确定要继续吗？',
+    type: 'warning',
+    loading: false,
+    onConfirm: performChangeEmail,
+    onCancel: () => {
+      showConfirmDialog.value = false
+    }
+  }
+  showConfirmDialog.value = true
+}
+
+const performChangeEmail = () => {
   userEmail.value = ''
   emailVerified.value = false
   newEmail.value = ''
+  emailCode.value = ''
+  emailCodeError.value = false
+  showConfirmDialog.value = false
+  showNotification('已清除邮箱信息，请输入新邮箱地址', 'info')
+}
+
+const resendVerificationEmail = async () => {
+  if (!userEmail.value) {
+    showNotification('邮箱信息丢失，请重新绑定', 'error')
+    return
+  }
+
+  try {
+    resendingEmail.value = true
+    
+    const response = await $fetch('/api/user/email/resend-verification', {
+      method: 'POST'
+    })
+    
+    if (response.success) {
+      emailCode.value = ''
+      emailCodeError.value = false
+      showNotification('验证码已重新发送，请查收邮箱', 'success')
+    } else {
+      showNotification(response.message || '重新发送失败，请稍后重试', 'error')
+    }
+  } catch (err) {
+    console.error('重新发送验证码失败:', err)
+    showNotification(err.data?.message || '重新发送失败，请稍后重试', 'error')
+  } finally {
+    resendingEmail.value = false
+  }
 }
 
 const unbindEmail = async () => {

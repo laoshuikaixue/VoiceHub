@@ -59,19 +59,11 @@ export default defineEventHandler(async (event) => {
 
     // 发送邮箱验证码
     try {
-      const { default: sendHandler } = await import('~/server/api/user/email/send-code.post')
-      // 构造一个模拟的子请求上下文传递 email
-      const reqEvent: any = {
-        ...event,
-        node: event.node,
-        context: event.context
-      }
-      // 直接调用发送逻辑
-      await sendHandler({
-        ...reqEvent,
-        method: 'POST',
-        toString() { return '[internal-send-email-code]' }
-      } as any)
+      const { sendEmailVerificationCode } = await import('~/server/api/user/email/send-code.post')
+      const { getClientIP } = await import('~/server/utils/ip-utils')
+      const clientIP = getClientIP(event)
+      
+      await sendEmailVerificationCode(user.id, email, user.name, clientIP)
     } catch (emailError) {
       console.error('发送邮箱验证码失败:', emailError)
     }
