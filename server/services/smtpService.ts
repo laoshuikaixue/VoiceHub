@@ -3,7 +3,8 @@ import type { Transporter } from 'nodemailer'
 import { db } from '~/drizzle/db'
 import { systemSettings, users, emailTemplates } from '~/drizzle/schema'
 import { eq, and, isNotNull } from 'drizzle-orm'
-import { formatIPForEmail } from '../utils/ip-utils'
+import { getSiteTitle } from '~/server/utils/cache-helpers'
+import { formatIPForEmail } from '~/server/utils/ip-utils'
 
 /**
  * 获取站点标题
@@ -54,7 +55,7 @@ export class SmtpService {
             
             <p style="color: #666; font-size: 12px; text-align: center;">
                 此邮件由系统自动发送，请勿回复。<br>
-                如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: {{ipAddress}}{{/if}}
+                如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">{{ipAddress}}</span>{{/if}}
               </p>
           </div>
         </div>
@@ -113,7 +114,7 @@ export class SmtpService {
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #666; font-size: 12px; text-align: center;">
               此邮件由系统自动发送，请勿回复。<br>
-              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: {{ipAddress}}{{/if}}
+              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">{{ipAddress}}</span>{{/if}}
             </p>
           </div>
         </div>
@@ -140,7 +141,7 @@ export class SmtpService {
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #666; font-size: 12px; text-align: center;">
               此邮件由系统自动发送，请勿回复。<br>
-              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: {{ipAddress}}{{/if}}
+              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">{{ipAddress}}</span>{{/if}}
             </p>
           </div>
         </div>
@@ -374,7 +375,11 @@ export class SmtpService {
       return false
     }
 
-    const { subject, html } = await this.renderTemplate(key, data)
+    // 格式化IP地址用于模板渲染
+    const formattedIP = ipAddress ? formatIPForEmail(ipAddress) : undefined
+    const templateData = { ...data, ipAddress: formattedIP }
+
+    const { subject, html } = await this.renderTemplate(key, templateData)
     if (!subject || !html) {
       // 若模板缺失，退回到简单包装
       const siteTitle = await getSiteTitle()
@@ -452,7 +457,7 @@ export class SmtpService {
           
           <p style="color: #666; font-size: 12px; text-align: center;">
             此邮件由系统自动发送，请勿回复。<br>
-            如有疑问，请联系管理员。${ipAddress ? `<br><br>This email was requested from: ${ipAddress}` : ''}
+            如有疑问，请联系管理员。${ipAddress ? `<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">${formatIPForEmail(ipAddress)}</span>` : ''}
           </p>
         </div>
       </div>
