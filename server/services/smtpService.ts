@@ -13,126 +13,110 @@ export class SmtpService {
   private static instance: SmtpService
   public transporter: nodemailer.Transporter | null = null
   public smtpConfig: any = null
-  private builtinTemplates: Record<string, { name: string; subject: string; html: string }> = {
+  // 基础邮件模板结构
+  private baseTemplate = `
+    <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
+      <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #333; margin: 0;">{{fromName}}</h1>
+          <p style="color: #666; margin: 5px 0 0 0;">{{headerSubtitle}}</p>
+        </div>
+        
+        {{#if title}}
+        <h2 style="color: #333; margin-bottom: 20px;">{{title}}</h2>
+        {{/if}}
+        
+        <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
+          {{contentBlock}}
+        </div>
+        
+        {{#if actionUrl}}
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="{{actionUrl}}" style="display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">{{actionText}}</a>
+        </div>
+        {{/if}}
+        
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        
+        <p style="color: #666; font-size: 12px; text-align: center;">
+          此邮件由系统自动发送，请勿回复。<br>
+          如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">{{ipAddress}}</span>{{/if}}
+        </p>
+      </div>
+    </div>
+  `
+
+  // 内容块模板
+  private contentBlocks: Record<string, string> = {
+    'verification': `
+      <p>您好，{{name}}！</p>
+      <p>您正在验证邮箱：<strong>{{email}}</strong></p>
+      <p>请在{{expiresInMinutes}}分钟内输入以下验证码完成验证：</p>
+      <div style="text-align: center; margin: 20px 0;">
+        <h2 style="letter-spacing: 4px; color: #007bff; background: #f8f9fa; padding: 15px; border-radius: 4px; display: inline-block;">{{code}}</h2>
+      </div>
+      <p style="color:#888">若非本人操作，请忽略本邮件。</p>
+    `,
+    'generic': `
+      <div style="white-space: pre-wrap;">{{message}}</div>
+    `,
+    'songSelected': `
+      <p>您投稿的歌曲《{{songTitle}}》已被安排播放。</p>
+      <p>播放日期：<strong>{{playDate}}</strong></p>
+      {{#if playTimeName}}
+      <p>播出时段：<strong>{{playTimeName}}</strong>{{#if playTimeRange}}（{{playTimeRange}}）{{/if}}</p>
+      {{/if}}
+      {{#if message}}
+      <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
+      {{/if}}
+    `,
+    'songPlayed': `
+      <p>您投稿的歌曲《{{songTitle}}》已播放。</p>
+      {{#if message}}
+      <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
+      {{/if}}
+    `,
+    'songVoted': `
+      <p>您投稿的歌曲《{{songTitle}}》获得了新的投票。</p>
+      <p>当前共有 <strong>{{votesCount}}</strong> 个投票。</p>
+      {{#if message}}
+      <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
+      {{/if}}
+    `
+  }
+
+  // 重构后的模板配置
+  private builtinTemplates: Record<string, { name: string; subject: string; contentType: string; headerSubtitle: string; actionText?: string }> = {
     'verification.code': {
       name: '邮箱验证码',
       subject: '邮箱验证码 | {{siteTitle}}',
-      html: `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
-          <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #333; margin: 0;">{{fromName}}</h1>
-              <p style="color: #666; margin: 5px 0 0 0;">邮箱验证</p>
-            </div>
-            
-            <h2 style="color: #333; margin-bottom: 20px;">邮箱验证码</h2>
-            
-            <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
-              <p>您好，{{name}}！</p>
-              <p>您正在验证邮箱：<strong>{{email}}</strong></p>
-              <p>请在{{expiresInMinutes}}分钟内输入以下验证码完成验证：</p>
-              <div style="text-align: center; margin: 20px 0;">
-                <h2 style="letter-spacing: 4px; color: #007bff; background: #f8f9fa; padding: 15px; border-radius: 4px; display: inline-block;">{{code}}</h2>
-              </div>
-              <p style="color:#888">若非本人操作，请忽略本邮件。</p>
-            </div>
-            
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            
-            <p style="color: #666; font-size: 12px; text-align: center;">
-                此邮件由系统自动发送，请勿回复。<br>
-                如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">{{ipAddress}}</span>{{/if}}
-              </p>
-          </div>
-        </div>
-      `
+      contentType: 'verification',
+      headerSubtitle: '邮箱验证'
     },
     'notification.generic': {
       name: '通用通知',
       subject: '{{title}} | {{siteTitle}}通知推送',
-      html: `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
-          <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #333; margin: 0;">{{fromName}}</h1>
-              <p style="color: #666; margin: 5px 0 0 0;">通知推送</p>
-            </div>
-            <h2 style="color: #333; margin-bottom: 20px;">{{title}}</h2>
-            <div style="color: #555; line-height: 1.6; margin-bottom: 30px; white-space: pre-wrap;">{{message}}</div>
-            {{#if actionUrl}}
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="{{actionUrl}}" style="display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">查看详情</a>
-            </div>
-            {{/if}}
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 12px; text-align: center;">
-              此邮件由系统自动发送，请勿回复。<br>
-              如有疑问，请联系管理员。
-            </p>
-          </div>
-        </div>
-      `
-    }
-    ,
+      contentType: 'generic',
+      headerSubtitle: '通知推送',
+      actionText: '查看详情'
+    },
     'notification.songSelected': {
       name: '歌曲被选中',
-      subject: '🎵 您的歌曲已被选中 | {{siteTitle}}',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #333; text-align: center; margin-bottom: 30px;">🎵 恭喜！您的歌曲已被选中</h2>
-            <p style="color: #666; font-size: 16px; line-height: 1.6;">亲爱的听众，</p>
-            <p style="color: #666; font-size: 16px; line-height: 1.6;">您点播的歌曲 <strong>{{songTitle}}</strong> 已被选中，将在 {{playTimeName}} 播放！</p>
-            <div style="background-color: #e8f5e8; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #28a745;">
-              <p style="margin: 0; color: #155724; font-weight: bold;">播放信息</p>
-              <p style="margin: 5px 0 0 0; color: #155724;">节目：{{playTimeName}}</p>
-              <p style="margin: 5px 0 0 0; color: #155724;">歌曲：{{songTitle}}</p>
-            </div>
-            <p style="color: #666; font-size: 14px; line-height: 1.6;">感谢您对校园广播站的支持！</p>
-            {{#if ipAddress}}<br><br><span style="color: #999; font-size: 12px; font-family: monospace; word-break: break-all;">This email was requested from: {{ipAddress}}</span>{{/if}}
-          </div>
-        </div>
-      `
+      subject: '收到新选中 | {{siteTitle}}通知推送',
+      contentType: 'songSelected',
+      headerSubtitle: '通知推送'
     },
     'notification.songPlayed': {
       name: '歌曲已播放',
-      subject: '🎵 您点播的歌曲正在播放 | {{siteTitle}}',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #333; text-align: center; margin-bottom: 30px;">🎵 您的歌曲正在播放</h2>
-            <p style="color: #666; font-size: 16px; line-height: 1.6;">亲爱的听众，</p>
-            <p style="color: #666; font-size: 16px; line-height: 1.6;">您点播的歌曲 <strong>{{songTitle}}</strong> 现在正在 {{playTimeName}} 播放中！</p>
-            <div style="background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
-              <p style="margin: 0; color: #856404; font-weight: bold;">🎵 正在播放</p>
-              <p style="margin: 5px 0 0 0; color: #856404;">节目：{{playTimeName}}</p>
-              <p style="margin: 5px 0 0 0; color: #856404;">歌曲：{{songTitle}}</p>
-            </div>
-            <p style="color: #666; font-size: 14px; line-height: 1.6;">请收听校园广播，享受您点播的音乐！</p>
-            {{#if ipAddress}}<br><br><span style="color: #999; font-size: 12px; font-family: monospace; word-break: break-all;">This email was requested from: {{ipAddress}}</span>{{/if}}
-          </div>
-        </div>
-      `
-      },
+      subject: '歌曲已播放 | {{siteTitle}}通知推送',
+      contentType: 'songPlayed',
+      headerSubtitle: '通知推送'
+    },
     'notification.songVoted': {
       name: '收到新投票',
-      subject: '🗳️ 您的歌曲收到新投票 | {{siteTitle}}',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #333; text-align: center; margin-bottom: 30px;">🗳️ 您的歌曲收到新投票</h2>
-            <p style="color: #666; font-size: 16px; line-height: 1.6;">亲爱的听众，</p>
-            <p style="color: #666; font-size: 16px; line-height: 1.6;">您点播的歌曲 <strong>{{songTitle}}</strong> 收到了新的投票！</p>
-            <div style="background-color: #e3f2fd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #2196f3;">
-              <p style="margin: 0; color: #0d47a1; font-weight: bold;">🗳️ 投票信息</p>
-              <p style="margin: 5px 0 0 0; color: #0d47a1;">歌曲：{{songTitle}}</p>
-              <p style="margin: 5px 0 0 0; color: #0d47a1;">当前票数：{{voteCount}}</p>
-            </div>
-            <p style="color: #666; font-size: 14px; line-height: 1.6;">继续为您喜欢的歌曲投票，让更多人听到美妙的音乐！</p>
-            {{#if ipAddress}}<br><br><span style="color: #999; font-size: 12px; font-family: monospace; word-break: break-all;">This email was requested from: {{ipAddress}}</span>{{/if}}
-          </div>
-        </div>
-      `
+      subject: '收到新投票 | {{siteTitle}}通知推送',
+      contentType: 'songVoted',
+      headerSubtitle: '通知推送'
     }
   }
 
@@ -151,7 +135,24 @@ export class SmtpService {
 
   // 暴露内置模板（只读）
   getBuiltinTemplates(): Record<string, { name: string; subject: string; html: string }> {
-    return this.builtinTemplates
+    const templates: Record<string, { name: string; subject: string; html: string }> = {}
+    
+    for (const [key, config] of Object.entries(this.builtinTemplates)) {
+      const contentBlock = this.contentBlocks[config.contentType] || ''
+      const html = this.renderString(this.baseTemplate, {
+        contentBlock,
+        headerSubtitle: config.headerSubtitle,
+        actionText: config.actionText || '查看详情'
+      })
+      
+      templates[key] = {
+        name: config.name,
+        subject: config.subject,
+        html
+      }
+    }
+    
+    return templates
   }
 
   /**
@@ -281,19 +282,36 @@ export class SmtpService {
   }
 
   /**
-   * 基本占位符渲染：用 {{var}} 替换，支持 {{#if var}}...{{/if}} 简单条件
+   * 基本占位符渲染：用 {{var}} 替换，支持 {{#if var}}...{{/if}} 嵌套条件
    */
   private renderString(tpl: string, data: Record<string, any>): string {
-    // 处理 if 块
-    tpl = tpl.replace(/\{\{#if\s+([a-zA-Z0-9_\.]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, key, inner) => {
-      const v = key.split('.').reduce((acc: any, k: string) => (acc ? acc[k] : undefined), data)
-      return v ? inner : ''
-    })
+    // 递归处理嵌套的 if 块
+    const processIfBlocks = (template: string): string => {
+      let hasChanges = true
+      let result = template
+      
+      while (hasChanges) {
+        hasChanges = false
+        // 从最内层开始处理，匹配不包含嵌套{{#if}}的if块
+        result = result.replace(/\{\{#if\s+([a-zA-Z0-9_\.]+)\}\}((?:(?!\{\{#if)[\s\S])*?)\{\{\/if\}\}/g, (match, key, inner) => {
+          const v = key.split('.').reduce((acc: any, k: string) => (acc ? acc[k] : undefined), data)
+          hasChanges = true
+          return v ? inner : ''
+        })
+      }
+      
+      return result
+    }
+    
+    // 处理所有if块
+    tpl = processIfBlocks(tpl)
+    
     // 处理变量
     tpl = tpl.replace(/\{\{\s*([a-zA-Z0-9_\.]+)\s*\}\}/g, (_, key) => {
       const v = key.split('.').reduce((acc: any, k: string) => (acc ? acc[k] : undefined), data)
       return v == null ? '' : String(v)
     })
+    
     return tpl
   }
 
@@ -311,7 +329,7 @@ export class SmtpService {
   async renderTemplate(key: string, data: Record<string, any>): Promise<{ subject: string; html: string }> {
     const builtin = this.builtinTemplates[key]
     let subject = builtin?.subject || ''
-    let html = builtin?.html || ''
+    let html = ''
 
     try {
       const rows = await db.select().from(emailTemplates).where(eq(emailTemplates.key, key)).limit(1)
@@ -324,10 +342,27 @@ export class SmtpService {
       // 忽略读取失败，走内置
     }
 
-    const mergedData = await this.prepareTemplateData(data)
+    let mergedData: Record<string, any>
+    
+    // 如果没有自定义模板，使用内置模板系统
+    if (!html && builtin) {
+      mergedData = await this.prepareTemplateData(data)
+      const contentBlock = this.renderString(this.contentBlocks[builtin.contentType] || '', mergedData)
+      const templateData = {
+        ...mergedData,
+        contentBlock,
+        headerSubtitle: builtin.headerSubtitle,
+        actionText: builtin.actionText || '查看详情'
+      }
+      html = this.renderString(this.baseTemplate, templateData)
+    } else {
+      mergedData = await this.prepareTemplateData(data)
+      html = this.renderString(html, mergedData)
+    }
+
     return {
       subject: this.renderString(subject, mergedData),
-      html: this.renderString(html, mergedData)
+      html
     }
   }
 
