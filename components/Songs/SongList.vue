@@ -212,6 +212,29 @@
           <div class="page-info">
             {{ currentPage }} / {{ totalPages }} 页
           </div>
+          
+          <!-- 自定义跳转控件 -->
+          <div class="page-jump">
+            <span class="jump-label">跳转至</span>
+            <input 
+              type="number" 
+              v-model.number="jumpPageInput"
+              @keyup.enter="handleJumpToPage"
+              @input="validateJumpInput"
+              :placeholder="'1-' + totalPages"
+              class="jump-input"
+              :min="1"
+              :max="totalPages"
+            />
+            <button 
+              @click="handleJumpToPage"
+              :disabled="!isValidJumpPage"
+              class="jump-button"
+              title="跳转到指定页面"
+            >
+              跳转
+            </button>
+          </div>
         </div>
         
         <!-- 确认对话框 -->
@@ -323,6 +346,10 @@ const audioPlayer = useAudioPlayer()
 const currentPage = ref(1)
 const pageSize = ref(12) // 每页显示12首歌曲，适合横向布局
 const isMobile = ref(false)
+
+// 自定义跳转相关
+const jumpPageInput = ref('')
+const isValidJumpPage = ref(false)
 
 // 组件初始化状态
 const isComponentInitialized = ref(false)
@@ -580,6 +607,27 @@ const displayedPageNumbers = computed(() => {
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
+  }
+}
+
+// 验证跳转输入
+const validateJumpInput = () => {
+  const page = parseInt(jumpPageInput.value)
+  isValidJumpPage.value = !isNaN(page) && page >= 1 && page <= totalPages.value
+}
+
+// 处理跳转到指定页面
+const handleJumpToPage = () => {
+  const page = parseInt(jumpPageInput.value)
+  if (!isNaN(page) && page >= 1 && page <= totalPages.value) {
+    goToPage(page)
+    jumpPageInput.value = '' // 清空输入框
+    isValidJumpPage.value = false
+  } else {
+    // 输入无效时给出提示
+    if (window.$showNotification) {
+      window.$showNotification(`请输入有效的页码 (1-${totalPages.value})`, 'error')
+    }
   }
 }
 
@@ -1860,6 +1908,65 @@ button:disabled {
   font-size: 0.875rem;
 }
 
+/* 自定义跳转控件 */
+.page-jump {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+}
+
+.jump-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.jump-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: #FFFFFF;
+  width: 60px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.jump-input:focus {
+  outline: none;
+  border-color: #0B5AFE;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.jump-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+}
+
+.jump-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.jump-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.jump-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* 确认对话框 */
 .confirm-dialog-backdrop {
   position: fixed;
@@ -1966,6 +2073,7 @@ button:disabled {
   .pagination {
     flex-wrap: wrap;
     justify-content: center;
+    gap: 0.25rem;
   }
   
   .page-numbers {
@@ -1974,6 +2082,33 @@ button:disabled {
     display: flex;
     justify-content: center;
     margin-top: 0.5rem;
+  }
+  
+  .page-info {
+    order: 4;
+    margin: 0.5rem 0 0 0;
+    text-align: center;
+  }
+  
+  .page-jump {
+    order: 5;
+    margin: 0.5rem 0 0 0;
+    justify-content: center;
+  }
+  
+  .jump-label {
+    font-size: 0.75rem;
+  }
+  
+  .jump-input {
+    width: 50px;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .jump-button {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
   }
 }
 
