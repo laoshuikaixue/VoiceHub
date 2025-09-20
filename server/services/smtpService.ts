@@ -30,7 +30,7 @@ export class SmtpService {
   private builtinTemplates: Record<string, { name: string; subject: string; html: string; exampleData?: Record<string, any> }> = {
     'verification.code': {
       name: '邮箱验证码',
-      subject: '邮箱验证码 | 校园广播站',
+      subject: '邮箱验证码 | {{siteTitle}}',
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
           <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -169,7 +169,7 @@ export class SmtpService {
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #666; font-size: 12px; text-align: center;">
               此邮件由系统自动发送，请勿回复。<br>
-              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: {{ipAddress}}{{/if}}
+              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">{{ipAddress}}</span>{{/if}}
             </p>
           </div>
         </div>
