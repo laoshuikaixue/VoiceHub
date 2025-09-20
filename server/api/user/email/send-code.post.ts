@@ -2,7 +2,7 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SmtpService } from '~/server/services/smtpService'
-import { formatIPForEmail, getClientIP } from '~/server/utils/ip-utils'
+import { getClientIP } from '~/server/utils/ip-utils'
 
 // 简易验证码存储（如需分布式/重启持久，建议迁移到Redis）
 const emailVerificationCodes = new Map<string, { code: string, userId: number, expiresAt: number }>()
@@ -22,8 +22,7 @@ export async function sendEmailVerificationCode(userId: number, email: string, n
     name: name || '用户',
     email,
     code,
-    expiresInMinutes: 5,
-    ipAddress: ipAddress ? formatIPForEmail(ipAddress) : undefined
+    expiresInMinutes: 5
   }, ipAddress)
   if (!sent) {
     throw createError({ statusCode: 500, message: '验证码发送失败，请稍后重试' })

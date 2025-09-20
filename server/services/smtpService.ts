@@ -3,22 +3,8 @@ import type { Transporter } from 'nodemailer'
 import { db } from '~/drizzle/db'
 import { systemSettings, users, emailTemplates } from '~/drizzle/schema'
 import { eq, and, isNotNull } from 'drizzle-orm'
-import { getSiteTitle } from '~/server/utils/cache-helpers'
+import { getSiteTitle } from '~/server/utils/siteUtils'
 import { formatIPForEmail } from '~/server/utils/ip-utils'
-
-/**
- * 获取站点标题
- */
-async function getSiteTitle(): Promise<string> {
-  try {
-    const settingsResult = await db.select().from(systemSettings).limit(1)
-    const settings = settingsResult[0]
-    return settings?.siteTitle || process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub'
-  } catch (error) {
-    console.error('获取站点标题失败:', error)
-    return 'VoiceHub'
-  }
-}
 
 /**
  * SMTP邮件服务
@@ -27,7 +13,7 @@ export class SmtpService {
   private static instance: SmtpService
   public transporter: nodemailer.Transporter | null = null
   public smtpConfig: any = null
-  private builtinTemplates: Record<string, { name: string; subject: string; html: string; exampleData?: Record<string, any> }> = {
+  private builtinTemplates: Record<string, { name: string; subject: string; html: string }> = {
     'verification.code': {
       name: '邮箱验证码',
       subject: '邮箱验证码 | {{siteTitle}}',
@@ -59,8 +45,7 @@ export class SmtpService {
               </p>
           </div>
         </div>
-      `,
-      exampleData: { name: '张三', email: 'example@school.edu', code: '123456', expiresInMinutes: 5 }
+      `
     },
     'notification.generic': {
       name: '通用通知',
@@ -86,95 +71,68 @@ export class SmtpService {
             </p>
           </div>
         </div>
-      `,
-      exampleData: { title: '系统通知', message: '您的歌曲已被选中~', actionUrl: 'https://example.com' }
+      `
     }
     ,
     'notification.songSelected': {
       name: '歌曲被选中',
-      subject: '歌曲被选中：{{songTitle}} | {{siteTitle}}通知推送',
+      subject: '🎵 您的歌曲已被选中 | {{siteTitle}}',
       html: `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
-          <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #333; margin: 0;">{{fromName}}</h1>
-              <p style="color: #666; margin: 5px 0 0 0;">通知推送</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; text-align: center; margin-bottom: 30px;">🎵 恭喜！您的歌曲已被选中</h2>
+            <p style="color: #666; font-size: 16px; line-height: 1.6;">亲爱的听众，</p>
+            <p style="color: #666; font-size: 16px; line-height: 1.6;">您点播的歌曲 <strong>{{songTitle}}</strong> 已被选中，将在 {{playTimeName}} 播放！</p>
+            <div style="background-color: #e8f5e8; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #28a745;">
+              <p style="margin: 0; color: #155724; font-weight: bold;">播放信息</p>
+              <p style="margin: 5px 0 0 0; color: #155724;">节目：{{playTimeName}}</p>
+              <p style="margin: 5px 0 0 0; color: #155724;">歌曲：{{songTitle}}</p>
             </div>
-            <h2 style="color: #333; margin-bottom: 20px;">歌曲被选中</h2>
-            <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
-              <p>您投稿的歌曲《{{songTitle}}》已被安排播放。</p>
-              <p>播放日期：<strong>{{playDate}}</strong></p>
-              {{#if playTimeName}}
-              <p>播出时段：<strong>{{playTimeName}}</strong>{{#if playTimeRange}}（{{playTimeRange}}）{{/if}}</p>
-              {{/if}}
-              {{#if message}}
-              <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
-              {{/if}}
-            </div>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 12px; text-align: center;">
-              此邮件由系统自动发送，请勿回复。<br>
-              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">{{ipAddress}}</span>{{/if}}
-            </p>
+            <p style="color: #666; font-size: 14px; line-height: 1.6;">感谢您对校园广播站的支持！</p>
+            {{#if ipAddress}}<br><br><span style="color: #999; font-size: 12px; font-family: monospace; word-break: break-all;">This email was requested from: {{ipAddress}}</span>{{/if}}
           </div>
         </div>
-      `,
-      exampleData: { songTitle: '夜空中最亮的星', playDate: '2025-09-14', playTimeName: '午间时段', playTimeRange: '12:30-13:00' }
+      `
     },
     'notification.songPlayed': {
       name: '歌曲已播放',
-      subject: '歌曲已播放：{{songTitle}} | {{siteTitle}}通知推送',
+      subject: '🎵 您点播的歌曲正在播放 | {{siteTitle}}',
       html: `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
-          <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #333; margin: 0;">{{fromName}}</h1>
-              <p style="color: #666; margin: 5px 0 0 0;">通知推送</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; text-align: center; margin-bottom: 30px;">🎵 您的歌曲正在播放</h2>
+            <p style="color: #666; font-size: 16px; line-height: 1.6;">亲爱的听众，</p>
+            <p style="color: #666; font-size: 16px; line-height: 1.6;">您点播的歌曲 <strong>{{songTitle}}</strong> 现在正在 {{playTimeName}} 播放中！</p>
+            <div style="background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+              <p style="margin: 0; color: #856404; font-weight: bold;">🎵 正在播放</p>
+              <p style="margin: 5px 0 0 0; color: #856404;">节目：{{playTimeName}}</p>
+              <p style="margin: 5px 0 0 0; color: #856404;">歌曲：{{songTitle}}</p>
             </div>
-            <h2 style="color: #333; margin-bottom: 20px;">歌曲已播放</h2>
-            <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
-              <p>您投稿的歌曲《{{songTitle}}》已播放。</p>
-              {{#if message}}
-              <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
-              {{/if}}
-            </div>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 12px; text-align: center;">
-              此邮件由系统自动发送，请勿回复。<br>
-              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">{{ipAddress}}</span>{{/if}}
-            </p>
+            <p style="color: #666; font-size: 14px; line-height: 1.6;">请收听校园广播，享受您点播的音乐！</p>
+            {{#if ipAddress}}<br><br><span style="color: #999; font-size: 12px; font-family: monospace; word-break: break-all;">This email was requested from: {{ipAddress}}</span>{{/if}}
           </div>
         </div>
-      `,
-      exampleData: { songTitle: '夜空中最亮的星' }
-    },
+      `
+      },
     'notification.songVoted': {
       name: '收到新投票',
-      subject: '收到新投票：{{songTitle}}（共{{votesCount}}票） | {{siteTitle}}通知推送',
+      subject: '🗳️ 您的歌曲收到新投票 | {{siteTitle}}',
       html: `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
-          <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #333; margin: 0;">{{fromName}}</h1>
-              <p style="color: #666; margin: 5px 0 0 0;">通知推送</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; text-align: center; margin-bottom: 30px;">🗳️ 您的歌曲收到新投票</h2>
+            <p style="color: #666; font-size: 16px; line-height: 1.6;">亲爱的听众，</p>
+            <p style="color: #666; font-size: 16px; line-height: 1.6;">您点播的歌曲 <strong>{{songTitle}}</strong> 收到了新的投票！</p>
+            <div style="background-color: #e3f2fd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #2196f3;">
+              <p style="margin: 0; color: #0d47a1; font-weight: bold;">🗳️ 投票信息</p>
+              <p style="margin: 5px 0 0 0; color: #0d47a1;">歌曲：{{songTitle}}</p>
+              <p style="margin: 5px 0 0 0; color: #0d47a1;">当前票数：{{voteCount}}</p>
             </div>
-            <h2 style="color: #333; margin-bottom: 20px;">收到新投票</h2>
-            <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
-              <p>您投稿的歌曲《{{songTitle}}》获得了新的投票。</p>
-              <p>当前共有 <strong>{{votesCount}}</strong> 个投票。</p>
-              {{#if message}}
-              <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
-              {{/if}}
-            </div>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 12px; text-align: center;">
-              此邮件由系统自动发送，请勿回复。<br>
-              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">{{ipAddress}}</span>{{/if}}
-            </p>
+            <p style="color: #666; font-size: 14px; line-height: 1.6;">继续为您喜欢的歌曲投票，让更多人听到美妙的音乐！</p>
+            {{#if ipAddress}}<br><br><span style="color: #999; font-size: 12px; font-family: monospace; word-break: break-all;">This email was requested from: {{ipAddress}}</span>{{/if}}
           </div>
         </div>
-      `,
-      exampleData: { songTitle: '夜空中最亮的星', votesCount: 5 }
+      `
     }
   }
 
@@ -192,7 +150,7 @@ export class SmtpService {
   }
 
   // 暴露内置模板（只读）
-  getBuiltinTemplates(): Record<string, { name: string; subject: string; html: string; exampleData?: Record<string, any> }> {
+  getBuiltinTemplates(): Record<string, { name: string; subject: string; html: string }> {
     return this.builtinTemplates
   }
 
@@ -340,6 +298,14 @@ export class SmtpService {
   }
 
   /**
+   * 准备模板渲染数据
+   */
+  private async prepareTemplateData(data: Record<string, any>): Promise<Record<string, any>> {
+    const siteTitle = await getSiteTitle()
+    return { fromName: this.smtpConfig?.fromName || '校园广播站', siteTitle, ...data }
+  }
+
+  /**
    * 渲染模板：优先使用自定义模板，否则回退到内置模板
    */
   async renderTemplate(key: string, data: Record<string, any>): Promise<{ subject: string; html: string }> {
@@ -358,8 +324,7 @@ export class SmtpService {
       // 忽略读取失败，走内置
     }
 
-    const siteTitle = await getSiteTitle()
-    const mergedData = { fromName: this.smtpConfig?.fromName || '校园广播站', siteTitle, ...data }
+    const mergedData = await this.prepareTemplateData(data)
     return {
       subject: this.renderString(subject, mergedData),
       html: this.renderString(html, mergedData)
@@ -375,16 +340,16 @@ export class SmtpService {
       return false
     }
 
-    // 格式化IP地址用于模板渲染
+    // 格式化IP地址用于模板渲染（统一处理）
     const formattedIP = ipAddress ? formatIPForEmail(ipAddress) : undefined
     const templateData = { ...data, ipAddress: formattedIP }
 
     const { subject, html } = await this.renderTemplate(key, templateData)
     if (!subject || !html) {
-      // 若模板缺失，退回到简单包装
-      const siteTitle = await getSiteTitle()
-      const fallbackHtml = this.generateEmailTemplate(data.title || '通知', data.message || '', data.actionUrl, ipAddress)
-      const fallbackSubject = `${data.title || '通知'} | ${siteTitle}通知推送`
+      // 若模板缺失，退回到简单包装（传入已格式化的IP）
+      const mergedData = await this.prepareTemplateData(templateData)
+      const fallbackHtml = this.generateEmailTemplate(data.title || '通知', data.message || '', data.actionUrl, formattedIP)
+      const fallbackSubject = `${data.title || '通知'} | ${mergedData.siteTitle}通知推送`
       return this.sendMail(to, fallbackSubject, fallbackHtml, undefined, ipAddress)
     }
     return this.sendMail(to, subject, html, undefined, ipAddress)
@@ -413,13 +378,14 @@ export class SmtpService {
    * 发送测试邮件
    */
   async sendTestEmail(to: string, ipAddress?: string): Promise<{ success: boolean; message: string }> {
-    const siteTitle = await getSiteTitle()
-    const subject = `测试邮件 | ${siteTitle}通知推送`
+    const formattedIP = ipAddress ? formatIPForEmail(ipAddress) : undefined
+    const templateData = await this.prepareTemplateData({ ipAddress: formattedIP })
+    const subject = `测试邮件 | ${templateData.siteTitle}通知推送`
     const htmlContent = this.generateEmailTemplate(
       '测试邮件',
       '这是一封来自校园广播站系统的测试邮件。<br>如果您收到这封邮件，说明SMTP配置已经正确设置。',
       undefined,
-      ipAddress
+      formattedIP
     )
 
     const success = await this.sendMail(to, subject, htmlContent, undefined, ipAddress)
@@ -432,7 +398,7 @@ export class SmtpService {
   /**
    * 生成邮件HTML模板
    */
-  generateEmailTemplate(title: string, content: string, actionUrl?: string, ipAddress?: string): string {
+  generateEmailTemplate(title: string, content: string, actionUrl?: string, formattedIP?: string): string {
     return `
       <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
         <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -457,7 +423,7 @@ export class SmtpService {
           
           <p style="color: #666; font-size: 12px; text-align: center;">
             此邮件由系统自动发送，请勿回复。<br>
-            如有疑问，请联系管理员。${ipAddress ? `<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">${formatIPForEmail(ipAddress)}</span>` : ''}
+            如有疑问，请联系管理员。${formattedIP ? `<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">${formattedIP}</span>` : ''}
           </p>
         </div>
       </div>
