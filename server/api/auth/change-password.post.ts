@@ -4,6 +4,7 @@ import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { getClientIP } from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份
@@ -48,7 +49,7 @@ export default defineEventHandler(async (event) => {
     
     if (!isPasswordValid) {
       // 记录安全事件
-      const clientIp = getRequestIP(event, { xForwardedFor: true }) || '未知IP'
+      const clientIp = getClientIP(event)
       recordLoginFailure(userDetails.username, clientIp)
       
       throw createError({

@@ -1,7 +1,9 @@
 import nodemailer from 'nodemailer'
+import type { Transporter } from 'nodemailer'
 import { db } from '~/drizzle/db'
-import { systemSettings, users, notificationSettings, emailTemplates } from '~/drizzle/schema'
+import { systemSettings, users, emailTemplates } from '~/drizzle/schema'
 import { eq, and, isNotNull } from 'drizzle-orm'
+import { formatIPForEmail } from '../utils/ip-utils'
 
 /**
  * SMTP邮件服务
@@ -15,13 +17,32 @@ export class SmtpService {
       name: '邮箱验证码',
       subject: '邮箱验证码 | 校园广播站',
       html: `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-          <h2 style="color: #333;">邮箱验证码</h2>
-          <p>您好，{{name}}！</p>
-          <p>您正在验证邮箱：<strong>{{email}}</strong></p>
-          <p>请在{{expiresInMinutes}}分钟内输入以下验证码完成验证：</p>
-          <h2 style="letter-spacing: 4px;">{{code}}</h2>
-          <p style="color:#888">若非本人操作，请忽略本邮件。</p>
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
+          <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #333; margin: 0;">{{fromName}}</h1>
+              <p style="color: #666; margin: 5px 0 0 0;">邮箱验证</p>
+            </div>
+            
+            <h2 style="color: #333; margin-bottom: 20px;">邮箱验证码</h2>
+            
+            <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
+              <p>您好，{{name}}！</p>
+              <p>您正在验证邮箱：<strong>{{email}}</strong></p>
+              <p>请在{{expiresInMinutes}}分钟内输入以下验证码完成验证：</p>
+              <div style="text-align: center; margin: 20px 0;">
+                <h2 style="letter-spacing: 4px; color: #007bff; background: #f8f9fa; padding: 15px; border-radius: 4px; display: inline-block;">{{code}}</h2>
+              </div>
+              <p style="color:#888">若非本人操作，请忽略本邮件。</p>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="color: #666; font-size: 12px; text-align: center;">
+                此邮件由系统自动发送，请勿回复。<br>
+                如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: {{ipAddress}}{{/if}}
+              </p>
+          </div>
         </div>
       `,
       exampleData: { name: '张三', email: 'example@school.edu', code: '123456', expiresInMinutes: 5 }
@@ -58,18 +79,29 @@ export class SmtpService {
       name: '歌曲被选中',
       subject: '歌曲被选中：{{songTitle}}',
       html: `
-        <div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;">
-          <h2 style="color:#333;">歌曲被选中</h2>
-          <p>您投稿的歌曲《{{songTitle}}》已被安排播放。</p>
-          <p>播放日期：<strong>{{playDate}}</strong></p>
-          {{#if playTimeName}}
-          <p>播出时段：<strong>{{playTimeName}}</strong>{{#if playTimeRange}}（{{playTimeRange}}）{{/if}}</p>
-          {{/if}}
-          {{#if message}}
-          <p style="color:#555;white-space:pre-wrap;">{{message}}</p>
-          {{/if}}
-          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
-          <p style="color:#888;font-size:12px;">此邮件由系统自动发送，请勿回复。</p>
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
+          <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #333; margin: 0;">{{fromName}}</h1>
+              <p style="color: #666; margin: 5px 0 0 0;">通知推送</p>
+            </div>
+            <h2 style="color: #333; margin-bottom: 20px;">歌曲被选中</h2>
+            <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
+              <p>您投稿的歌曲《{{songTitle}}》已被安排播放。</p>
+              <p>播放日期：<strong>{{playDate}}</strong></p>
+              {{#if playTimeName}}
+              <p>播出时段：<strong>{{playTimeName}}</strong>{{#if playTimeRange}}（{{playTimeRange}}）{{/if}}</p>
+              {{/if}}
+              {{#if message}}
+              <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
+              {{/if}}
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #666; font-size: 12px; text-align: center;">
+              此邮件由系统自动发送，请勿回复。<br>
+              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: {{ipAddress}}{{/if}}
+            </p>
+          </div>
         </div>
       `,
       exampleData: { songTitle: '夜空中最亮的星', playDate: '2025-09-14', playTimeName: '午间时段', playTimeRange: '12:30-13:00' }
@@ -78,14 +110,25 @@ export class SmtpService {
       name: '歌曲已播放',
       subject: '歌曲已播放：{{songTitle}}',
       html: `
-        <div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;">
-          <h2 style="color:#333;">歌曲已播放</h2>
-          <p>您投稿的歌曲《{{songTitle}}》已播放。</p>
-          {{#if message}}
-          <p style="color:#555;white-space:pre-wrap;">{{message}}</p>
-          {{/if}}
-          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
-          <p style="color:#888;font-size:12px;">此邮件由系统自动发送，请勿回复。</p>
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
+          <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #333; margin: 0;">{{fromName}}</h1>
+              <p style="color: #666; margin: 5px 0 0 0;">通知推送</p>
+            </div>
+            <h2 style="color: #333; margin-bottom: 20px;">歌曲已播放</h2>
+            <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
+              <p>您投稿的歌曲《{{songTitle}}》已播放。</p>
+              {{#if message}}
+              <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
+              {{/if}}
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #666; font-size: 12px; text-align: center;">
+              此邮件由系统自动发送，请勿回复。<br>
+              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: {{ipAddress}}{{/if}}
+            </p>
+          </div>
         </div>
       `,
       exampleData: { songTitle: '夜空中最亮的星' }
@@ -94,15 +137,26 @@ export class SmtpService {
       name: '收到新投票',
       subject: '收到新投票：{{songTitle}}（共{{votesCount}}票）',
       html: `
-        <div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;">
-          <h2 style="color:#333;">收到新投票</h2>
-          <p>您投稿的歌曲《{{songTitle}}》获得了新的投票。</p>
-          <p>当前共有 <strong>{{votesCount}}</strong> 个投票。</p>
-          {{#if message}}
-          <p style="color:#555;white-space:pre-wrap;">{{message}}</p>
-          {{/if}}
-          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
-          <p style="color:#888;font-size:12px;">此邮件由系统自动发送，请勿回复。</p>
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
+          <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #333; margin: 0;">{{fromName}}</h1>
+              <p style="color: #666; margin: 5px 0 0 0;">通知推送</p>
+            </div>
+            <h2 style="color: #333; margin-bottom: 20px;">收到新投票</h2>
+            <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
+              <p>您投稿的歌曲《{{songTitle}}》获得了新的投票。</p>
+              <p>当前共有 <strong>{{votesCount}}</strong> 个投票。</p>
+              {{#if message}}
+              <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
+              {{/if}}
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #666; font-size: 12px; text-align: center;">
+              此邮件由系统自动发送，请勿回复。<br>
+              如有疑问，请联系管理员。{{#if ipAddress}}<br><br>This email was requested from: {{ipAddress}}{{/if}}
+            </p>
+          </div>
         </div>
       `,
       exampleData: { songTitle: '夜空中最亮的星', votesCount: 5 }
@@ -114,6 +168,10 @@ export class SmtpService {
   static getInstance(): SmtpService {
     if (!SmtpService.instance) {
       SmtpService.instance = new SmtpService()
+      // 首次创建实例时，尝试初始化SMTP配置（异步执行，不阻塞）
+      SmtpService.instance.initializeSmtpConfig().catch(error => {
+        console.log('SmtpService实例创建时初始化配置失败:', error.message)
+      })
     }
     return SmtpService.instance
   }
@@ -131,8 +189,15 @@ export class SmtpService {
       const settingsResult = await db.select().from(systemSettings).limit(1)
       const settings = settingsResult[0]
 
-      if (!settings || !settings.smtpEnabled || !settings.smtpHost) {
-        console.log('SMTP未启用或配置不完整')
+      if (!settings) {
+        return false
+      }
+
+      if (!settings.smtpEnabled) {
+        return false
+      }
+
+      if (!settings.smtpHost) {
         return false
       }
 
@@ -183,25 +248,45 @@ export class SmtpService {
 
       // 验证SMTP连接
       await this.transporter.verify()
-      console.log('SMTP配置初始化成功')
       return true
     } catch (error) {
-      console.error('初始化SMTP配置失败:', error)
+      console.error('初始化SMTP配置失败:', error instanceof Error ? error.message : '未知错误')
       this.transporter = null
       return false
     }
   }
 
   /**
+   * 确保SMTP配置已初始化
+   */
+  private async ensureInitialized(): Promise<boolean> {
+    if (!this.transporter) {
+      return await this.initializeSmtpConfig()
+    }
+    return true
+  }
+
+  /**
    * 发送邮件
    */
-  async sendMail(to: string, subject: string, htmlContent: string, textContent?: string): Promise<boolean> {
-    if (!this.transporter || !this.smtpConfig) {
-      console.log('SMTP未配置，跳过邮件发送')
+  async sendMail(to: string, subject: string, htmlContent: string, textContent?: string, ipAddress?: string): Promise<boolean> {
+    // 确保配置已初始化
+    if (!(await this.ensureInitialized())) {
       return false
     }
 
     try {
+      // 如果提供了IP地址，在邮件内容中添加IP信息
+      let finalHtml = htmlContent
+      if (ipAddress) {
+        const formattedIP = formatIPForEmail(ipAddress)
+        // 在邮件末尾添加IP信息
+        finalHtml = htmlContent.replace(
+          /(<p[^>]*style="[^"]*text-align: center[^"]*"[^>]*>.*?此邮件由系统自动发送，请勿回复。.*?<\/p>)/s,
+          `$1`.replace('此邮件由系统自动发送，请勿回复。', `此邮件由系统自动发送，请勿回复。<br><br>This email was requested from: ${formattedIP}`)
+        )
+      }
+
       const mailOptions = {
         from: {
           name: this.smtpConfig.fromName,
@@ -209,8 +294,8 @@ export class SmtpService {
         },
         to,
         subject,
-        html: htmlContent,
-        text: textContent || htmlContent.replace(/<[^>]*>/g, '') // 简单的HTML转文本
+        html: finalHtml,
+        text: textContent || finalHtml.replace(/<[^>]*>/g, '') // 简单的HTML转文本
       }
 
       const result = await this.transporter.sendMail(mailOptions)
@@ -268,15 +353,20 @@ export class SmtpService {
   /**
    * 渲染并发送模板
    */
-  async renderAndSend(to: string, key: string, data: Record<string, any>): Promise<boolean> {
+  async renderAndSend(to: string, key: string, data: Record<string, any>, ipAddress?: string): Promise<boolean> {
+    // 确保配置已初始化
+    if (!(await this.ensureInitialized())) {
+      return false
+    }
+
     const { subject, html } = await this.renderTemplate(key, data)
     if (!subject || !html) {
       // 若模板缺失，退回到简单包装
-      const fallbackHtml = this.generateEmailTemplate(data.title || '通知', data.message || '', data.actionUrl)
+      const fallbackHtml = this.generateEmailTemplate(data.title || '通知', data.message || '', data.actionUrl, ipAddress)
       const fallbackSubject = `${data.title || '通知'} | 校园广播站通知`
-      return this.sendMail(to, fallbackSubject, fallbackHtml)
+      return this.sendMail(to, fallbackSubject, fallbackHtml, undefined, ipAddress)
     }
-    return this.sendMail(to, subject, html)
+    return this.sendMail(to, subject, html, undefined, ipAddress)
   }
 
   /**
@@ -301,19 +391,16 @@ export class SmtpService {
   /**
    * 发送测试邮件
    */
-  async sendTestEmail(to: string): Promise<{ success: boolean; message: string }> {
+  async sendTestEmail(to: string, ipAddress?: string): Promise<{ success: boolean; message: string }> {
     const subject = '测试邮件 - 校园广播站'
-    const htmlContent = `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-        <h2 style="color: #333;">测试邮件</h2>
-        <p>这是一封来自校园广播站系统的测试邮件。</p>
-        <p>如果您收到这封邮件，说明SMTP配置已经正确设置。</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-        <p style="color: #666; font-size: 12px;">此邮件由系统自动发送，请勿回复。</p>
-      </div>
-    `
+    const htmlContent = this.generateEmailTemplate(
+      '测试邮件',
+      '这是一封来自校园广播站系统的测试邮件。<br>如果您收到这封邮件，说明SMTP配置已经正确设置。',
+      undefined,
+      ipAddress
+    )
 
-    const success = await this.sendMail(to, subject, htmlContent)
+    const success = await this.sendMail(to, subject, htmlContent, undefined, ipAddress)
     return {
       success,
       message: success ? '测试邮件发送成功' : '测试邮件发送失败'
@@ -323,7 +410,7 @@ export class SmtpService {
   /**
    * 生成邮件HTML模板
    */
-  generateEmailTemplate(title: string, content: string, actionUrl?: string): string {
+  generateEmailTemplate(title: string, content: string, actionUrl?: string, ipAddress?: string): string {
     return `
       <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
         <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -348,7 +435,7 @@ export class SmtpService {
           
           <p style="color: #666; font-size: 12px; text-align: center;">
             此邮件由系统自动发送，请勿回复。<br>
-            如有疑问，请联系管理员。
+            如有疑问，请联系管理员。${ipAddress ? `<br><br>This email was requested from: ${ipAddress}` : ''}
           </p>
         </div>
       </div>
@@ -365,12 +452,13 @@ export async function sendEmailNotificationToUser(
   notificationMessage: string,
   url?: string,
   templateKey?: string,
-  templateData?: Record<string, any>
+  templateData?: Record<string, any>,
+  ipAddress?: string
 ): Promise<boolean> {
   try {
     const smtpService = SmtpService.getInstance()
     
-    // 获取用户信息和通知设置
+    // 获取用户信息
     const userResult = await db.select({
       name: users.name,
       email: users.email,
@@ -379,30 +467,20 @@ export async function sendEmailNotificationToUser(
     
     const user = userResult[0]
     
-    // 检查用户是否有邮箱且已验证
+    // 仅检查用户是否有邮箱且已验证
     if (!user?.email || !user.emailVerified) {
-      return false
-    }
-    
-    // 检查用户是否启用了邮件通知
-    const notificationResult = await db.select({
-      emailEnabled: notificationSettings.emailEnabled
-    }).from(notificationSettings).where(eq(notificationSettings.userId, userId)).limit(1)
-    
-    const notification = notificationResult[0]
-    if (!notification?.emailEnabled) {
       return false
     }
     
     // 使用指定模板，否则回退通用模板
     if (templateKey) {
-      return await smtpService.renderAndSend(user.email, templateKey, templateData || {})
+      return await smtpService.renderAndSend(user.email, templateKey, templateData || {}, ipAddress)
     }
     return await smtpService.renderAndSend(user.email, 'notification.generic', {
       title: notificationTitle,
       message: notificationMessage,
       actionUrl: url
-    })
+    }, ipAddress)
   } catch (error) {
     console.error('发送邮件通知失败:', error)
     return false
@@ -416,25 +494,24 @@ export async function sendBatchEmailNotifications(
   userIds: number[],
   notificationTitle: string,
   notificationMessage: string,
-  url?: string
+  url?: string,
+  ipAddress?: string
 ): Promise<{ success: number; failed: number }> {
   let success = 0
   let failed = 0
   
   const smtpService = SmtpService.getInstance()
   
-  // 获取有邮箱且已验证并启用邮件通知的用户
+  // 获取有邮箱且已验证的用户
   const usersWithEmail = await db.select({
     id: users.id,
     name: users.name,
     email: users.email
   }).from(users)
-  .innerJoin(notificationSettings, eq(users.id, notificationSettings.userId))
   .where(
     and(
       eq(users.emailVerified, true),
-      isNotNull(users.email),
-      eq(notificationSettings.emailEnabled, true)
+      isNotNull(users.email)
     )
   )
   
@@ -453,7 +530,7 @@ export async function sendBatchEmailNotifications(
         title: notificationTitle,
         message: notificationMessage,
         actionUrl: url
-      })
+      }, ipAddress)
       return emailSuccess
     })
     

@@ -8,11 +8,7 @@ import { formatBeijingTime, getBeijingTime } from '~/utils/timeUtils'
 /**
  * 创建歌曲被选中的通知
  */
-export async function createSongSelectedNotification(
-  userId: number, 
-  songId: number, 
-  songInfo: { title: string, artist: string, playDate: Date }
-) {
+export async function createSongSelectedNotification(userId: number, songId: number, songInfo: { title: string, artist: string, playDate: Date }, ipAddress?: string) {
   try {
     // 获取系统设置，检查是否启用播出时段功能
     const systemSettingsResult = await db.select().from(systemSettings).limit(1)
@@ -96,7 +92,7 @@ export async function createSongSelectedNotification(
         userId,
         '歌曲被选中',
         message,
-        undefined,
+        ipAddress,
         'notification.songSelected',
         {
           songTitle: songInfo.title,
@@ -125,7 +121,7 @@ function formatDate(date: Date): string {
 /**
  * 创建歌曲已播放的通知
  */
-export async function createSongPlayedNotification(songId: number) {
+export async function createSongPlayedNotification(songId: number, ipAddress?: string) {
   try {
     // 获取歌曲信息
     const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
@@ -176,7 +172,7 @@ export async function createSongPlayedNotification(songId: number) {
         song.requesterId,
         '歌曲已播放',
         message,
-        undefined,
+        ipAddress,
         'notification.songPlayed',
         { songTitle: song.title }
       )
@@ -193,7 +189,7 @@ export async function createSongPlayedNotification(songId: number) {
 /**
  * 创建歌曲获得投票的通知
  */
-export async function createSongVotedNotification(songId: number, voterId: number) {
+export async function createSongVotedNotification(songId: number, voterId: number, ipAddress?: string) {
   try {
     // 获取歌曲信息
     const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
@@ -283,7 +279,7 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
         song.requesterId,
         '收到新投票',
         message,
-        undefined,
+        ipAddress,
         'notification.songVoted',
         { songTitle: song.title, votesCount: songVotes.length }
       )
@@ -300,7 +296,7 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
 /**
  * 创建系统通知
  */
-export async function createSystemNotification(userId: number, title: string, content: string) {
+export async function createSystemNotification(userId: number, title: string, content: string, ipAddress?: string) {
   try {
     // 获取用户通知设置
     const settingsResult = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, userId)).limit(1)
@@ -335,7 +331,11 @@ export async function createSystemNotification(userId: number, title: string, co
       await sendEmailNotificationToUser(
         userId,
         title,
-        content
+        content,
+        undefined,
+        undefined,
+        undefined,
+        ipAddress
       )
     } catch (error) {
       console.error('发送邮件通知失败:', error)
@@ -353,7 +353,8 @@ export async function createSystemNotification(userId: number, title: string, co
 export async function createBatchSystemNotifications(
   userIds: number[],
   title: string,
-  content: string
+  content: string,
+  ipAddress?: string
 ) {
   try {
     if (!userIds.length) {
@@ -414,7 +415,10 @@ export async function createBatchSystemNotifications(
       emailResults = await sendBatchEmailNotifications(
         userIds,
         title,
-        content
+        content,
+        undefined,
+        undefined,
+        ipAddress
       )
     } catch (error) {
       console.error('批量发送邮件通知失败:', error)

@@ -4,6 +4,7 @@ import { CacheService } from '~/server/services/cacheService'
 import { songs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { getClientIP } from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -83,7 +84,10 @@ export default defineEventHandler(async (event) => {
   
   // 如果是标记为已播放，则发送通知
   if (!isUnmark) {
-    createSongPlayedNotification(body.songId).catch(err => {
+    // 获取客户端IP地址
+    const clientIP = getClientIP(event)
+    
+    createSongPlayedNotification(body.songId, clientIP).catch(err => {
       console.error('发送歌曲已播放通知失败:', err)
     })
   }

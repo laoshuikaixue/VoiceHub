@@ -1,4 +1,5 @@
 import { SmtpService } from '~/server/services/smtpService'
+import { getClientIP } from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法
@@ -81,8 +82,11 @@ export default defineEventHandler(async (event) => {
         auth: smtpService.smtpConfig.auth
       })
 
+      // 获取客户端IP地址
+      const clientIP = getClientIP(event)
+      
       // 发送测试邮件
-      const result = await smtpService.sendTestEmail(body.testEmail)
+      const result = await smtpService.sendTestEmail(body.testEmail, clientIP)
       
       return result
     } finally {

@@ -13,6 +13,7 @@ import { logManager } from '~/server/utils/log-manager'
 import { openApiCache } from '~/server/utils/open-api-cache'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { isIPBlocked, getIPBlockRemainingTime } from '~/server/services/securityService'
+import { getClientIP } from '~/server/utils/ip-utils'
 
 /**
  * 记录API访问日志
@@ -70,14 +71,6 @@ export default defineEventHandler(async (event) => {
   const userAgent = getHeader(event, 'user-agent') || ''
   
   // 获取客户端真实IP地址
-  const getClientIP = (event: any): string => {
-    const xForwardedFor = event.node.req.headers['x-forwarded-for'] as string
-    if (xForwardedFor) {
-      return xForwardedFor.split(',')[0].trim()
-    }
-    return event.node.req.socket.remoteAddress || 'unknown'
-  }
-  
   const ipAddress = getClientIP(event)
 
   // 检查IP是否被限制
@@ -323,4 +316,15 @@ function getRequiredPermission(pathname: string, method: string): string | null 
   }
   
   return null
+}
+
+/**
+ * 获取客户端真实IP地址
+ */
+export function getClientIP(event: any): string {
+  const xForwardedFor = event.node.req.headers['x-forwarded-for'] as string
+  if (xForwardedFor) {
+    return xForwardedFor.split(',')[0].trim()
+  }
+  return event.node.req.socket.remoteAddress || 'unknown'
 }
