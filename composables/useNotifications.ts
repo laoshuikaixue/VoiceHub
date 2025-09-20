@@ -2,6 +2,15 @@ import { ref, computed } from 'vue'
 import { useAuth } from './useAuth'
 import type { Notification, NotificationSettings } from '~/types'
 
+interface PaginationInfo {
+  currentPage: number
+  totalPages: number
+  totalCount: number
+  limit: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
+
 export const useNotifications = () => {
   const { getAuthConfig, isAuthenticated } = useAuth()
 
@@ -10,27 +19,60 @@ export const useNotifications = () => {
   const settings = ref<NotificationSettings | null>(null)
   const loading = ref(false)
   const error = ref('')
+  
+  // 分页相关状态
+  const currentPage = ref(1)
+  const pageSize = ref(10)
+  const totalPages = ref(0)
+  const totalCount = ref(0)
+  const hasNextPage = computed(() => currentPage.value < totalPages.value)
+  const hasPrevPage = computed(() => currentPage.value > 1)
+  const isPaginationLoading = ref(false)
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (page?: number, limit?: number) => {
     if (!isAuthenticated.value) {
       notifications.value = []
       unreadCount.value = 0
+      resetPagination()
       return
     }
     
-    loading.value = true
+    // 如果是分页请求（非初始加载），显示分页加载状态
+    if (page && page !== 1) {
+      isPaginationLoading.value = true
+    } else {
+      loading.value = true
+    }
     error.value = ''
+    
+    // 使用传入的参数或当前状态
+    const requestPage = page || currentPage.value
+    const requestLimit = limit || pageSize.value
     
     try {
       const authConfig = getAuthConfig()
       
       const data = await $fetch('/api/notifications', {
+        query: {
+          page: requestPage,
+          limit: requestLimit
+        },
         ...authConfig
       })
       
       if (data) {
         notifications.value = data.notifications || []
         unreadCount.value = data.unreadCount || 0
+        
+        // 更新分页信息
+        if (data.pagination) {
+          currentPage.value = data.pagination.currentPage
+          totalPages.value = data.pagination.totalPages
+          totalCount.value = data.pagination.totalCount
+          pageSize.value = data.pagination.limit
+          hasNextPage.value = data.pagination.hasNextPage
+          hasPrevPage.value = data.pagination.hasPrevPage
+        }
       }
     } catch (err: any) {
       const errorHandler = useErrorHandler()
@@ -40,8 +82,48 @@ export const useNotifications = () => {
       console.error('获取通知错误:', err)
       notifications.value = []
       unreadCount.value = 0
+      resetPagination()
     } finally {
       loading.value = false
+      isPaginationLoading.value = false
+    }
+  }
+  
+  // 重置分页状态
+  const resetPagination = () => {
+    currentPage.value = 1
+    totalPages.value = 0
+    totalCount.value = 0
+    hasNextPage.value = false
+    hasPrevPage.value = false
+  }
+  
+  // 分页导航方法
+  const goToPage = async (page: number) => {
+    if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+      await fetchNotifications(page, pageSize.value)
+    }
+  }
+  
+  const nextPage = async () => {
+    if (hasNextPage.value) {
+      await goToPage(currentPage.value + 1)
+    }
+  }
+  
+  const prevPage = async () => {
+    if (hasPrevPage.value) {
+      await goToPage(currentPage.value - 1)
+    }
+  }
+  
+  const changePageSize = async (newSize: number) => {
+    if (newSize !== pageSize.value) {
+      pageSize.value = newSize
+      // 重新计算当前页，确保不超出范围
+      const newTotalPages = Math.ceil(totalCount.value / newSize)
+      const newCurrentPage = Math.min(currentPage.value, newTotalPages || 1)
+      await fetchNotifications(newCurrentPage, newSize)
     }
   }
 
@@ -277,12 +359,27 @@ export const useNotifications = () => {
     settings,
     loading,
     error,
+    // 分页相关状态
+    currentPage,
+    pageSize,
+    totalPages,
+    totalCount,
+    hasNextPage,
+    hasPrevPage,
+    isPaginationLoading,
+    // 原有方法
     fetchNotifications,
     fetchNotificationSettings,
     updateNotificationSettings,
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    clearAllNotifications
+    clearAllNotifications,
+    // 分页方法
+    goToPage,
+    nextPage,
+    prevPage,
+    changePageSize,
+    resetPagination
   }
 }

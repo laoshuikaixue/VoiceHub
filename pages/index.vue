@@ -182,14 +182,16 @@
                     <p>暂无通知</p>
                   </div>
                   
-                  <div v-else class="notification-items">
-                    <div 
-                      v-for="notification in userNotifications" 
-                      :key="notification.id"
-                      class="notification-card"
-                      :class="{ 'unread': !notification.read }"
-                      @click="viewNotification(notification)"
-                    >
+                  <Transition name="notification-list-fade" mode="out-in">
+                    <div v-if="userNotifications.length > 0" class="notification-items" :key="notificationsService.currentPage.value">
+                      <div 
+                        v-for="(notification, index) in userNotifications" 
+                        :key="notification.id"
+                        class="notification-card"
+                        :class="{ 'unread': !notification.read }"
+                        :style="{ '--animation-delay': index * 0.1 + 's' }"
+                        @click="viewNotification(notification)"
+                      >
                       <div class="notification-card-header">
                         <div class="notification-icon-type">
                           <Icon v-if="notification.type === 'SONG_SELECTED'" name="target" :size="20" color="#4f46e5" />
@@ -225,6 +227,81 @@
                         </button>
                       </div>
                     </div>
+                  </div>
+                  </Transition>
+                </div>
+                
+                <!-- 分页控件 -->
+                <div v-if="notificationsService.totalCount.value > 0" class="notification-pagination">
+                  <div class="pagination-info">
+                    <span class="pagination-text">
+                      共 {{ notificationsService.totalCount.value }} 条通知，
+                      第 {{ notificationsService.currentPage.value }} / {{ notificationsService.totalPages.value }} 页
+                    </span>
+                  </div>
+                  
+                  <div class="pagination-controls">
+                    <!-- 每页显示数量选择器 -->
+                    <div class="page-size-selector">
+                      <label for="pageSize">每页显示：</label>
+                      <select 
+                        id="pageSize"
+                        :value="notificationsService.pageSize.value" 
+                        @change="handlePageSizeChange($event.target.value)"
+                        class="page-size-select"
+                      >
+                        <option value="5">5条</option>
+                        <option value="10">10条</option>
+                        <option value="20">20条</option>
+                        <option value="50">50条</option>
+                      </select>
+                    </div>
+                    
+                    <!-- 页码导航 -->
+                    <div class="page-navigation">
+                      <button 
+                        @click="notificationsService.prevPage()"
+                        :disabled="!notificationsService.hasPrevPage.value || notificationsService.isPaginationLoading.value"
+                        class="page-nav-button"
+                        title="上一页"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                      </button>
+                      
+                      <!-- 页码按钮 -->
+                      <div class="page-numbers">
+                        <template v-for="page in getVisiblePages()" :key="page">
+                          <button 
+                            v-if="page !== '...'"
+                            @click="notificationsService.goToPage(page)"
+                            :class="['page-number-button', { 'active': page === notificationsService.currentPage.value }]"
+                            :disabled="notificationsService.isPaginationLoading.value"
+                          >
+                            {{ page }}
+                          </button>
+                          <span v-else class="page-ellipsis">...</span>
+                        </template>
+                      </div>
+                      
+                      <button 
+                        @click="notificationsService.nextPage()"
+                        :disabled="!notificationsService.hasNextPage.value || notificationsService.isPaginationLoading.value"
+                        class="page-nav-button"
+                        title="下一页"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- 分页加载状态 -->
+                  <div v-if="notificationsService.isPaginationLoading.value" class="pagination-loading">
+                    <div class="loading-spinner"></div>
+                    <span>加载中...</span>
                   </div>
                 </div>
                 
@@ -511,6 +588,58 @@ const handleCancelAction = () => {
   showConfirmDialog.value = false
   pendingAction.value = ''
   pendingId.value = null
+}
+
+// 分页相关方法
+const handlePageSizeChange = async (newSize) => {
+  const size = parseInt(newSize)
+  if (notificationsService) {
+    await notificationsService.changePageSize(size)
+  }
+}
+
+// 获取可见的页码列表
+const getVisiblePages = () => {
+  if (!notificationsService) return []
+  
+  const currentPage = notificationsService.currentPage.value
+  const totalPages = notificationsService.totalPages.value
+  const pages = []
+  
+  if (totalPages <= 7) {
+    // 总页数少于等于7页，显示所有页码
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i)
+    }
+  } else {
+    // 总页数大于7页，显示省略号
+    if (currentPage <= 4) {
+      // 当前页在前面
+      for (let i = 1; i <= 5; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(totalPages)
+    } else if (currentPage >= totalPages - 3) {
+      // 当前页在后面
+      pages.push(1)
+      pages.push('...')
+      for (let i = totalPages - 4; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      // 当前页在中间
+      pages.push(1)
+      pages.push('...')
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(totalPages)
+    }
+  }
+  
+  return pages
 }
 
 // 格式化通知时间
@@ -1301,6 +1430,48 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   transform: translateY(-20px);
 }
 
+/* 通知列表过渡动画 */
+.notification-list-fade-enter-active,
+.notification-list-fade-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.notification-list-fade-enter-from {
+  opacity: 0;
+  transform: translateY(30px) scale(0.95);
+}
+
+.notification-list-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(1.02);
+}
+
+/* 通知项交错进入动画 */
+.notification-card {
+  animation: notification-item-enter 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: var(--animation-delay, 0s);
+  opacity: 0;
+  transform: translateY(20px);
+  will-change: transform, opacity;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+}
+
+.notification-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes notification-item-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* 选项卡切换动画 */
 .section-tab {
   position: relative;
@@ -1385,6 +1556,26 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   
   .schedule-tab-pane {
     padding: 0;
+  }
+  
+  /* 移动端分页控件样式 */
+  .pagination-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .page-size-selector {
+    justify-content: center;
+  }
+  
+  .page-navigation {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .page-numbers {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
 
@@ -1540,8 +1731,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .notification-items {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  padding: 5px;
+  gap: 12px;
+  will-change: transform, opacity;
 }
 
 .notification-card {
@@ -1716,6 +1907,211 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   padding: 10px;
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
+}
+
+/* 分页控件样式 */
+.notification-pagination {
+  padding: 15px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pagination-info {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.pagination-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.page-size-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-size-selector label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.page-size-select {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--light);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-size-select:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.page-size-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(11, 90, 254, 0.2);
+}
+
+.page-size-select option {
+  background-color: rgba(30, 30, 30, 0.95);
+  color: var(--light);
+  padding: 8px 12px;
+  border: none;
+}
+
+.page-size-select option:hover {
+  background-color: rgba(50, 50, 50, 0.95);
+}
+
+.page-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-nav-button {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--light);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, background-color;
+}
+
+.page-nav-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.page-nav-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.95);
+  transition: all 0.1s ease;
+}
+
+.page-nav-button:disabled {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-number-button {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--light);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, background-color;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-number-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.page-number-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.95);
+  transition: all 0.1s ease;
+}
+
+.page-number-button.active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.page-number-button.active:hover {
+  background-color: #0952e8;
+  border-color: #0952e8;
+}
+
+.page-number-button:disabled {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+.page-ellipsis {
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0 4px;
+  font-size: 0.85rem;
+}
+
+/* 分页加载状态 */
+.pagination-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  animation: fade-in 0.3s ease;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top: 2px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 底部操作栏 */
