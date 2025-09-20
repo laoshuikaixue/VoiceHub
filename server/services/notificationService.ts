@@ -2,16 +2,13 @@ import { db } from '~/drizzle/db'
 import { schedules, playTimes, notificationSettings, notifications, songs, users, votes, systemSettings } from '~/drizzle/schema'
 import { eq, and, gte, inArray } from 'drizzle-orm'
 import { sendMeowNotificationToUser, sendBatchMeowNotifications } from './meowNotificationService'
+import { sendEmailNotificationToUser, sendBatchEmailNotifications } from './smtpService'
 import { formatBeijingTime, getBeijingTime } from '~/utils/timeUtils'
 
 /**
  * 创建歌曲被选中的通知
  */
-export async function createSongSelectedNotification(
-  userId: number, 
-  songId: number, 
-  songInfo: { title: string, artist: string, playDate: Date }
-) {
+export async function createSongSelectedNotification(userId: number, songId: number, songInfo: { title: string, artist: string, playDate: Date }, ipAddress?: string) {
   try {
     // 获取系统设置，检查是否启用播出时段功能
     const systemSettingsResult = await db.select().from(systemSettings).limit(1)
@@ -88,6 +85,27 @@ export async function createSongSelectedNotification(
     } catch (error) {
       console.error('发送 MeoW 通知失败:', error)
     }
+
+    // 同步发送 邮件通知
+    try {
+      await sendEmailNotificationToUser(
+        userId,
+        '歌曲被选中',
+        message,
+        ipAddress,
+        'notification.songSelected',
+        {
+          songTitle: songInfo.title,
+          playDate: formatDate(songInfo.playDate),
+          playTimeName: isPlayTimeEnabled && schedule?.playTime ? schedule.playTime.name : '',
+          playTimeRange: isPlayTimeEnabled && schedule?.playTime && (schedule.playTime.startTime || schedule.playTime.endTime)
+            ? `${schedule.playTime.startTime || ''}${schedule.playTime.startTime && schedule.playTime.endTime ? '-' : ''}${schedule.playTime.endTime || ''}`
+            : ''
+        }
+      )
+    } catch (error) {
+      console.error('发送邮件通知失败:', error)
+    }
     
     return notification
   } catch (err) {
@@ -103,7 +121,7 @@ function formatDate(date: Date): string {
 /**
  * 创建歌曲已播放的通知
  */
-export async function createSongPlayedNotification(songId: number) {
+export async function createSongPlayedNotification(songId: number, ipAddress?: string) {
   try {
     // 获取歌曲信息
     const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
@@ -147,6 +165,20 @@ export async function createSongPlayedNotification(songId: number) {
     } catch (error) {
       console.error('发送 MeoW 通知失败:', error)
     }
+
+    // 同步发送 邮件通知
+    try {
+      await sendEmailNotificationToUser(
+        song.requesterId,
+        '歌曲已播放',
+        message,
+        ipAddress,
+        'notification.songPlayed',
+        { songTitle: song.title }
+      )
+    } catch (error) {
+      console.error('发送邮件通知失败:', error)
+    }
     
     return notification
   } catch (err) {
@@ -157,7 +189,7 @@ export async function createSongPlayedNotification(songId: number) {
 /**
  * 创建歌曲获得投票的通知
  */
-export async function createSongVotedNotification(songId: number, voterId: number) {
+export async function createSongVotedNotification(songId: number, voterId: number, ipAddress?: string) {
   try {
     // 获取歌曲信息
     const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
@@ -240,6 +272,20 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
     } catch (error) {
       console.error('发送 MeoW 通知失败:', error)
     }
+
+    // 同步发送 邮件通知
+    try {
+      await sendEmailNotificationToUser(
+        song.requesterId,
+        '收到新投票',
+        message,
+        ipAddress,
+        'notification.songVoted',
+        { songTitle: song.title, votesCount: songVotes.length }
+      )
+    } catch (error) {
+      console.error('发送邮件通知失败:', error)
+    }
     
     return notification
   } catch (err) {
@@ -250,7 +296,7 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
 /**
  * 创建系统通知
  */
-export async function createSystemNotification(userId: number, title: string, content: string) {
+export async function createSystemNotification(userId: number, title: string, content: string, ipAddress?: string) {
   try {
     // 获取用户通知设置
     const settingsResult = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, userId)).limit(1)
@@ -279,6 +325,21 @@ export async function createSystemNotification(userId: number, title: string, co
     } catch (error) {
       console.error('发送 MeoW 通知失败:', error)
     }
+
+    // 同步发送邮件通知
+    try {
+      await sendEmailNotificationToUser(
+        userId,
+        title,
+        content,
+        undefined,
+        undefined,
+        undefined,
+        ipAddress
+      )
+    } catch (error) {
+      console.error('发送邮件通知失败:', error)
+    }
     
     return notification
   } catch (err) {
@@ -292,7 +353,8 @@ export async function createSystemNotification(userId: number, title: string, co
 export async function createBatchSystemNotifications(
   userIds: number[],
   title: string,
-  content: string
+  content: string,
+  ipAddress?: string
 ) {
   try {
     if (!userIds.length) {
@@ -346,11 +408,27 @@ export async function createBatchSystemNotifications(
     } catch (error) {
       console.error('批量发送 MeoW 通知失败:', error)
     }
-    
+
+    // 同步发送邮件通知
+    let emailResults = { success: 0, failed: 0 }
+    try {
+      emailResults = await sendBatchEmailNotifications(
+        userIds,
+        title,
+        content,
+        undefined,
+        undefined,
+        ipAddress
+      )
+    } catch (error) {
+      console.error('批量发送邮件通知失败:', error)
+    }
+
     return {
       count: notificationCount.count,
       total: userIds.length,
-      meowNotifications: meowResults
+      meowNotifications: meowResults,
+      emailNotifications: emailResults
     }
   } catch (err) {
     return null

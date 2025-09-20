@@ -164,6 +164,17 @@
                 </svg>
                 通知管理
               </button>
+              <button 
+                v-if="permissions.canAccessPage('smtp-config')"
+                :class="['nav-item', { active: activeTab === 'smtp-config' }]" 
+                @click="activeTab = 'smtp-config'"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                邮件配置
+              </button>
               <button
                 v-if="permissions.canAccessPage('playtimes')"
                 :class="['nav-item', { active: activeTab === 'playtimes' }]"
@@ -312,6 +323,11 @@
             <div v-if="activeTab === 'notifications' && permissions.canAccessPage('notifications')" class="content-section">
               <LazyAdminNotificationSender />
             </div>
+
+            <!-- SMTP邮件配置 -->
+            <div v-if="activeTab === 'smtp-config' && permissions.canAccessPage('smtp-config')" class="content-section">
+              <LazyAdminSmtpManager />
+            </div>
             
             <!-- 播出时段 -->
             <div v-if="activeTab === 'playtimes' && permissions.canAccessPage('playtimes')" class="content-section">
@@ -386,6 +402,7 @@ const getPageTitle = () => {
     print: '打印排期',
     users: '用户管理',
     notifications: '通知管理',
+    'smtp-config': '邮件配置',
     playtimes: '播出时段',
     semesters: '学期管理',
     blacklist: '黑名单管理',

@@ -16,6 +16,8 @@ export const users = pgTable('User', {
   class: text('class'),
   role: text('role').default('USER').notNull(),
   password: text('password').notNull(),
+  email: text('email'),
+  emailVerified: boolean('emailVerified').default(false),
   lastLogin: timestamp('lastLogin'),
   lastLoginIp: text('lastLoginIp'),
   passwordChangedAt: timestamp('passwordChangedAt'),
@@ -129,6 +131,15 @@ export const systemSettings = pgTable('SystemSettings', {
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
   showBlacklistKeywords: boolean('showBlacklistKeywords').default(false).notNull(),
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
+  // SMTP 邮件配置
+  smtpEnabled: boolean('smtpEnabled').default(false).notNull(),
+  smtpHost: text('smtpHost'),
+  smtpPort: integer('smtpPort').default(587),
+  smtpSecure: boolean('smtpSecure').default(false),
+  smtpUsername: text('smtpUsername'),
+  smtpPassword: text('smtpPassword'),
+  smtpFromEmail: text('smtpFromEmail'),
+  smtpFromName: text('smtpFromName').default('校园广播站'),
 });
 
 // 歌曲黑名单表
@@ -306,6 +317,18 @@ export const userStatusLogsRelations = relations(userStatusLogs, ({ one }) => ({
   }),
 }));
 
+// 邮件模板表（仅存储自定义覆盖，内置模板在代码中定义）
+export const emailTemplates = pgTable('EmailTemplate', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  key: varchar('key', { length: 100 }).notNull(),
+  name: varchar('name', { length: 200 }).notNull(),
+  subject: varchar('subject', { length: 300 }).notNull(),
+  html: text('html').notNull(),
+  updatedByUserId: integer('updatedByUserId'),
+});
+
 // 导出所有表的类型
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -335,3 +358,5 @@ export type ApiLog = typeof apiLogs.$inferSelect;
 export type NewApiLog = typeof apiLogs.$inferInsert;
 export type UserStatusLog = typeof userStatusLogs.$inferSelect;
 export type NewUserStatusLog = typeof userStatusLogs.$inferInsert;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type NewEmailTemplate = typeof emailTemplates.$inferInsert;

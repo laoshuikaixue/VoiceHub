@@ -16,9 +16,11 @@ export default defineEventHandler(async (event) => {
   }
   
   try {
-    // 获取用户信息（包含meowNickname）
+    // 获取用户信息（包含meowNickname和邮箱信息）
     const userInfoResult = await db.select({
-      meowNickname: users.meowNickname
+      meowNickname: users.meowNickname,
+      email: users.email,
+      emailVerified: users.emailVerified
     }).from(users).where(eq(users.id, user.id)).limit(1)
     
     const userInfo = userInfoResult[0]
@@ -29,7 +31,7 @@ export default defineEventHandler(async (event) => {
     
     let dbSettings: any = dbSettingsResult[0]
     
-    if (!dbSettings) {
+  if (!dbSettings) {
       // 创建默认设置
       const insertResult = await db.insert(notificationSettings).values({
         userId: user.id,
@@ -44,8 +46,8 @@ export default defineEventHandler(async (event) => {
       dbSettings = insertResult[0]
     }
     
-    // 转换为前端期望的格式
-    const settings: NotificationSettings = {
+    // 转换为前端期望的格式（包含用户邮箱状态）
+    const settings = {
       id: dbSettings.id,
       userId: dbSettings.userId,
       songSelectedNotify: dbSettings.songRequestEnabled,
@@ -54,7 +56,11 @@ export default defineEventHandler(async (event) => {
       systemNotify: dbSettings.enabled,
       refreshInterval: dbSettings.refreshInterval,
       songVotedThreshold: dbSettings.songVotedThreshold,
-      meowUserId: userInfo?.meowNickname || ''
+      meowUserId: userInfo?.meowNickname || '',
+  // 邮件通知总开关移除：以邮箱绑定状态为准
+      // 用户邮箱信息
+      userEmail: userInfo?.email || '',
+      emailVerified: userInfo?.emailVerified || false
     }
     
     return {

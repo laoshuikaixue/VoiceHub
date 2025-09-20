@@ -4,6 +4,7 @@ import { eq, gte, lte, desc, asc, count, and } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
 import { cacheService } from '~/server/services/cacheService'
 import { createBeijingTime, getBeijingTimestamp } from '~/utils/timeUtils'
+import { getClientIP } from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -130,12 +131,15 @@ export default defineEventHandler(async (event) => {
       }
     }
     
+    // 获取客户端IP地址
+    const clientIP = getClientIP(event)
+    
     // 创建通知
     await createSongSelectedNotification(schedule.song.requesterId, schedule.song.id, {
       title: schedule.song.title,
       artist: schedule.song.artist,
       playDate: schedule.playDate
-    })
+    }, clientIP)
     
     // 清除相关缓存
     try {

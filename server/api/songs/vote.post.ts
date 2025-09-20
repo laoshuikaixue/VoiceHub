@@ -3,6 +3,7 @@ import { songs, votes, schedules } from '~/drizzle/schema'
 import { eq, and, count } from 'drizzle-orm'
 import { createSongVotedNotification } from '../../services/notificationService'
 import { cacheService } from '~/server/services/cacheService'
+import { getClientIP } from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -147,7 +148,10 @@ export default defineEventHandler(async (event) => {
 
         // 发送通知（异步，不阻塞响应）
         if (song.requesterId !== user.id) {
-          createSongVotedNotification(body.songId, user.id).catch(() => {
+          // 获取客户端IP地址
+          const clientIP = getClientIP(event)
+          
+          createSongVotedNotification(body.songId, user.id, clientIP).catch(() => {
             // 发送通知失败不影响主流程
           })
         }

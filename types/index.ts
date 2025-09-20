@@ -72,6 +72,8 @@ export interface NotificationSettings {
   refreshInterval: number
   songVotedThreshold: number
   meowUserId?: string
+  userEmail?: string
+  emailVerified?: boolean
 }
 
 // 数据库中的通知设置接口

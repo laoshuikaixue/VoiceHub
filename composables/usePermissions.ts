@@ -41,7 +41,7 @@ export const usePermissions = () => {
     
     switch (role) {
       case 'SUPER_ADMIN':
-        return ['overview', 'schedule', 'print', 'songs', 'users', 'notifications', 'playtimes', 'semesters', 'blacklist', 'site-config', 'database', 'api-keys']
+        return ['overview', 'schedule', 'print', 'songs', 'users', 'notifications', 'smtp-config', 'playtimes', 'semesters', 'blacklist', 'site-config', 'database', 'api-keys']
       case 'ADMIN':
         return ['overview', 'schedule', 'print', 'songs', 'users', 'data-analysis']
       case 'SONG_ADMIN':

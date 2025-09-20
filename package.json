@@ -11,7 +11,7 @@
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
     "db:migrate": "npx drizzle-kit migrate",
-    "db:generate": "npx drizzle-kit generate --force",
+    "db:generate": "npx drizzle-kit generate",
     "db:push": "npx drizzle-kit push --force",
     "db:studio": "npx drizzle-kit studio",
     "db:drop": "npx drizzle-kit drop",
@@ -30,6 +30,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
+    "@types/nodemailer": "^6.4.19",
     "@types/pg": "^8.15.5",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
@@ -43,13 +44,15 @@
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.1",
     "multer": "^2.0.2",
+    "nodemailer": "^6.10.1",
     "nuxt": "^3.17.6",
     "postgres": "^3.4.7",
     "prompts": "^2.4.2",
     "redis": "^5.8.2",
     "vue": "^3.5.17",
     "vue-router": "^4.5.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "tsx": "^4.20.5"

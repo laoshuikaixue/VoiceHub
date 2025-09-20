@@ -401,11 +401,13 @@ VoiceHub/
 │   │   │   ├── LoadingState.vue   # 加载状态组件
 │   │   │   ├── SearchFilter.vue   # 搜索过滤组件
 │   │   │   └── StatCard.vue       # 统计卡片组件
+│   │   ├── ApiKeyManager.vue      # API密钥管理
 │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   ├── BlacklistManager.vue   # 黑名单管理
 │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   ├── DatabaseManager.vue    # 数据库管理
+│   │   ├── EmailTemplateManager.vue # 邮件模板管理
 │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   ├── PlayTimeManager.vue    # 播放时间管理
@@ -415,6 +417,7 @@ VoiceHub/
 │   │   ├── SchedulePrinter.vue    # 排期打印功能
 │   │   ├── SemesterManager.vue    # 学期管理
 │   │   ├── SiteConfigManager.vue  # 站点配置管理
+│   │   ├── SmtpManager.vue        # SMTP邮件服务管理
 │   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
 │   │   ├── SongManagement.vue     # 歌曲管理
 │   │   ├── UserManager.vue        # 用户管理
@@ -504,14 +507,17 @@ VoiceHub/
 ├── server/                # 服务端代码（Nuxt 3 Server API）
 │   ├── api/                # API端点目录
 │   │   ├── admin/          # 管理员API
-│   │   │   ├── activities/          # 活动管理API
+│   │   │   ├── activities.get.ts    # 活动管理API
 │   │   │   ├── analytics/           # 数据分析API
-│   │   │   │   ├── activity.get.ts  # 活动统计
-│   │   │   │   ├── overview.get.ts  # 概览统计
 │   │   │   │   ├── prediction/      # 预测分析子目录
-│   │   │   │   ├── reports/         # 报告生成子目录
-│   │   │   │   ├── songs.get.ts     # 歌曲统计
-│   │   │   │   └── users.get.ts     # 用户统计
+│   │   │   │   └── reports/         # 报告生成子目录
+│   │   │   ├── api-keys/            # API密钥管理API
+│   │   │   │   ├── [id].delete.ts   # 删除API密钥
+│   │   │   │   ├── [id].get.ts      # 获取API密钥详情
+│   │   │   │   ├── [id].put.ts      # 更新API密钥
+│   │   │   │   ├── index.get.ts     # 获取API密钥列表
+│   │   │   │   ├── index.post.ts    # 创建API密钥
+│   │   │   │   └── logs.get.ts      # API使用日志
 │   │   │   ├── backup/              # 备份管理API
 │   │   │   │   ├── delete/          # 删除备份子目录
 │   │   │   │   ├── download/        # 下载备份子目录
@@ -526,8 +532,17 @@ VoiceHub/
 │   │   │   │   ├── index.get.ts     # 获取黑名单列表
 │   │   │   │   └── index.post.ts    # 添加黑名单项
 │   │   │   ├── database/            # 数据库管理API
-│   │   │   │   └── reset.post.ts    # 重置数据库
+│   │   │   │   ├── cleanup.post.ts  # 数据库清理
+│   │   │   │   ├── performance.get.ts # 数据库性能监控
+│   │   │   │   ├── pool-status.get.ts # 连接池状态
+│   │   │   │   ├── reset.post.ts    # 重置数据库
+│   │   │   │   └── status.get.ts    # 数据库状态
 │   │   │   ├── db-status.get.ts     # 数据库状态检查
+│   │   │   ├── email-templates/     # 邮件模板管理API
+│   │   │   │   ├── index.delete.ts  # 删除邮件模板
+│   │   │   │   ├── index.get.ts     # 获取邮件模板列表
+│   │   │   │   ├── index.post.ts    # 创建/更新邮件模板
+│   │   │   │   └── preview.post.ts  # 预览邮件模板
 │   │   │   ├── fix-sequence.post.ts # 修复数据库序列
 │   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
 │   │   │   ├── music-sources/       # 音乐源管理API
@@ -552,6 +567,9 @@ VoiceHub/
 │   │   │   │   ├── index.get.ts     # 获取学期列表
 │   │   │   │   ├── index.post.ts    # 创建学期
 │   │   │   │   └── set-active.post.ts # 设置活跃学期
+│   │   │   ├── smtp/                # SMTP邮件服务API
+│   │   │   │   ├── test-connection.post.ts # 测试SMTP连接
+│   │   │   │   └── test-email.post.ts # 发送测试邮件
 │   │   │   ├── songs/               # 管理员歌曲管理API
 │   │   │   │   └── delete.post.ts   # 删除歌曲
 │   │   │   ├── stats.get.ts         # 统计数据
@@ -567,18 +585,18 @@ VoiceHub/
 │   │   │   │   └── index.ts         # 获取系统设置
 │   │   │   └── users/               # 用户管理API
 │   │   │       ├── [id]/            # 用户详情操作子目录
-│   │   │       │   ├── reset-password.post.ts # 重置用户密码
-│   │   │       │   └── songs.get.ts # 获取用户歌曲信息
 │   │   │       ├── [id].delete.ts   # 删除用户
 │   │   │       ├── [id].put.ts      # 更新用户
 │   │   │       ├── [id].ts          # 用户详情
 │   │   │       ├── batch-grade-update.post.ts # 批量年级更新
+│   │   │       ├── batch-status.put.ts # 批量状态更新
 │   │   │       ├── batch-update.post.ts # 批量更新用户
 │   │   │       ├── batch.post.ts    # 批量操作用户
 │   │   │       ├── excel-batch-update/ # Excel批量更新子目录
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
-│   │   │       └── index.ts         # 用户管理
+│   │   │       ├── index.ts         # 用户管理
+│   │   │       └── status-logs.get.ts # 用户状态日志
 │   │   ├── auth/           # 认证相关API
 │   │   │   ├── change-password.post.ts # 修改密码
 │   │   │   ├── login.post.ts        # 用户登录
@@ -606,6 +624,9 @@ VoiceHub/
 │   │   │   ├── read-all.post.ts     # 标记所有已读
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
+│   │   ├── open/           # 开放API（无需认证）
+│   │   │   ├── schedules.get.ts     # 获取公开排期
+│   │   │   └── songs.get.ts         # 获取公开歌曲列表
 │   │   ├── play-times/     # 播放时间API
 │   │   │   └── index.ts             # 播放时间管理
 │   │   ├── progress/       # 进度条API
@@ -632,6 +653,13 @@ VoiceHub/
 │   │   ├── system/         # 系统API
 │   │   │   ├── reconnect.post.ts    # 重连数据库
 │   │   │   └── status.get.ts        # 系统状态
+│   │   ├── user/           # 用户相关API
+│   │   │   └── email/               # 用户邮箱管理
+│   │   │       ├── bind.post.ts     # 绑定邮箱
+│   │   │       ├── resend-verification.post.ts # 重发验证邮件
+│   │   │       ├── send-code.post.ts # 发送验证码
+│   │   │       ├── unbind.post.ts   # 解绑邮箱
+│   │   │       └── verify-code.post.ts # 验证邮箱验证码
 │   │   └── users/          # 用户API
 │   │       ├── meow/                # 用户MeoW相关子目录
 │   │       ├── social-accounts/     # 社交账号管理
@@ -646,10 +674,12 @@ VoiceHub/
 │   ├── plugins/            # 服务端插件
 │   │   └── error-handler.ts # 错误处理插件
 │   ├── services/           # 业务服务层
+│   │   ├── apiLogService.ts # API日志服务
 │   │   ├── cacheService.ts # 缓存服务（Redis缓存管理）
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
-│   │   └── securityService.ts # 安全服务
+│   │   ├── securityService.ts # 安全服务
+│   │   └── smtpService.ts  # SMTP邮件服务
 │   ├── utils/              # 服务端工具函数
 │   │   ├── __tests__/      # 工具函数测试目录
 │   │   ├── auth.ts         # 认证工具函数

@@ -38,7 +38,8 @@ export default defineEventHandler(async (event) => {
           songPlayedEnabled: body.songPlayedNotify !== undefined ? body.songPlayedNotify : dbSettings.songPlayedEnabled,
           songVotedEnabled: body.songVotedNotify !== undefined ? body.songVotedNotify : dbSettings.songVotedEnabled,
           songVotedThreshold: body.songVotedThreshold !== undefined ? Math.max(1, Math.min(10, body.songVotedThreshold)) : dbSettings.songVotedThreshold,
-          refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : dbSettings.refreshInterval
+          refreshInterval: body.refreshInterval !== undefined ? Math.max(10, Math.min(300, body.refreshInterval)) : dbSettings.refreshInterval,
+          // 邮件通知总开关移除
         })
         .where(eq(notificationSettings.userId, user.id))
         .returning()

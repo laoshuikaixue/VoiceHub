@@ -1,20 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users, systemSettings, notificationSettings } from '~/drizzle/schema'
 import { eq, ne, inArray, isNotNull, and } from 'drizzle-orm'
-
-/**
- * 获取站点标题
- */
-async function getSiteTitle(): Promise<string> {
-  try {
-    const settingsResult = await db.select().from(systemSettings).limit(1)
-    const settings = settingsResult[0]
-    return settings?.siteTitle || process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub'
-  } catch (error) {
-    console.error('获取站点标题失败:', error)
-    return 'VoiceHub'
-  }
-}
+import { getSiteTitle } from '~/server/utils/siteUtils'
 
 /**
  * 发送 MeoW 通知

@@ -117,6 +117,10 @@
               </div>
             </div>
 
+            <!-- 邮件通知总开关移除：绑定且已验证邮箱即启用邮件通知 -->
+
+            <!-- 邮件通知细分设置移除：邮件沿用上面的通知类型设置 -->
+
             <!-- 通知刷新间隔 -->
             <div class="setting-card">
               <div class="setting-info">
@@ -148,6 +152,91 @@
           </div>
 
           <div class="settings-grid">
+            <!-- 邮箱绑定 -->
+            <div class="setting-card email-card">
+              <div class="setting-info">
+                <h3>邮箱通知</h3>
+                <p v-if="!userEmail">绑定邮箱以接收邮件通知</p>
+                <p v-else-if="!emailVerified" class="pending-info">邮箱：<span class="email-address">{{ userEmail }}</span> <span class="status pending">待验证</span></p>
+                <p v-else class="bound-info">已绑定邮箱：<span class="email-address">{{ userEmail }}</span> <span class="status verified">已验证</span></p>
+              </div>
+              <div class="setting-control">
+                <!-- 未绑定状态 -->
+                <div v-if="!userEmail" class="email-bind-section">
+                  <div class="bind-step">
+                    <input 
+                      type="email" 
+                      v-model="newEmail" 
+                      placeholder="请输入邮箱地址"
+                      class="email-input"
+                      :disabled="bindingEmail"
+                    >
+                    <button 
+                      @click="bindEmail" 
+                      class="btn btn-primary"
+                      :disabled="!newEmail || bindingEmail"
+                    >
+                      {{ bindingEmail ? '绑定中...' : '绑定邮箱' }}
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- 待验证状态：验证码方式 -->
+                <div v-else-if="!emailVerified" class="email-verify-section">
+                  <div class="verify-info">
+                    <p>验证码已发送到您的邮箱：<span class="email-address">{{ userEmail }}</span></p>
+                    <p>请在5分钟内输入6位验证码完成验证：</p>
+                  </div>
+                  <div class="verify-input-group">
+                    <input
+                      v-model="emailCode"
+                      type="text"
+                      placeholder="输入6位验证码"
+                      class="verify-input"
+                      :class="{ 'complete': emailCode.length === 6, 'error': emailCodeError }"
+                      maxlength="6"
+                      :disabled="bindingEmail"
+                      @input="handleEmailCodeInput"
+                      @keydown="handleEmailCodeKeydown"
+                      autocomplete="off"
+                      inputmode="numeric"
+                      pattern="[0-9]*"
+                    >
+                    <div class="verify-actions">
+                      <button @click="verifyEmailCode" class="btn btn-primary" :disabled="bindingEmail || emailCode.length !== 6">
+                        {{ bindingEmail ? '验证中...' : '确认验证' }}
+                      </button>
+                      <button @click="resendVerificationEmail" class="btn btn-secondary" :disabled="resendingEmail">
+                        {{ resendingEmail ? '发送中...' : '重新发送验证码' }}
+                      </button>
+                      <button @click="changeEmail" class="btn btn-outline">
+                        更换邮箱
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 已验证状态 -->
+                <div v-else class="email-bound-section">
+                  <div class="bound-actions">
+                    <button 
+                      @click="changeEmail" 
+                      class="btn btn-outline"
+                    >
+                      更换邮箱
+                    </button>
+                    <button 
+                      @click="unbindEmail" 
+                      class="btn btn-danger"
+                      :disabled="unbindingEmail"
+                    >
+                      {{ unbindingEmail ? '解绑中...' : '解绑邮箱' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- MeoW 账号绑定 -->
             <div class="setting-card meow-card">
               <div class="setting-info">
@@ -265,7 +354,9 @@ const localSettings = ref({
   songVotedThreshold: 5,
   systemNotify: true,
   refreshInterval: 60,
-  meowUserId: ''
+  meowUserId: '',
+  // 邮件通知设置
+  // 邮件通知总开关移除：以邮箱是否已验证判断
 })
 
 // MeoW 绑定相关
@@ -273,6 +364,16 @@ const meowUserId = ref('')
 const verificationSent = ref(false)
 const verificationCode = ref('')
 const verificationCodeError = ref(false)
+
+// 邮箱绑定相关
+const userEmail = ref('')
+const emailVerified = ref(false)
+const newEmail = ref('')
+const bindingEmail = ref(false)
+const resendingEmail = ref(false)
+const unbindingEmail = ref(false)
+const emailCode = ref('')
+const emailCodeError = ref(false)
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
@@ -286,6 +387,22 @@ const confirmDialog = ref({
 })
 
 
+
+// 通知显示函数
+const showNotification = (message, type = 'info') => {
+  if (typeof window !== 'undefined' && window.$showNotification) {
+    window.$showNotification(message, type)
+  } else {
+    console.log(`[${type.toUpperCase()}] ${message}`)
+  }
+}
+
+// 返回主页
+const goBack = () => {
+  if (typeof window !== 'undefined') {
+    window.history.back()
+  }
+}
 
 // 页面初始化
 onMounted(async () => {
@@ -311,20 +428,6 @@ const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleString('zh-CN')
-}
-
-// 返回主页
-const goBack = () => {
-  navigateTo('/')
-}
-
-// 显示通知
-const showNotification = (message, type = 'info') => {
-  if (window.$showNotification) {
-    window.$showNotification(message, type)
-  } else {
-    console.log(`[${type.toUpperCase()}] ${message}`)
-  }
 }
 
 // 处理验证码输入
@@ -383,8 +486,13 @@ const loadSettings = async () => {
         songVotedThreshold: response.data.songVotedThreshold || 5,
         systemNotify: response.data.systemNotify || true,
         refreshInterval: response.data.refreshInterval || 60,
-        meowUserId: response.data.meowUserId || ''
+        meowUserId: response.data.meowUserId || '',
+  // 邮件通知总开关移除
       }
+      
+      // 加载用户邮箱信息
+      userEmail.value = response.data.userEmail || ''
+      emailVerified.value = response.data.emailVerified || false
     }
   } catch (err) {
     console.error('加载设置失败:', err)
@@ -516,6 +624,178 @@ const performUnbind = async () => {
   } catch (err) {
     console.error('解绑失败:', err)
     showNotification(err.data?.message || '解绑失败，请重试', 'error')
+  } finally {
+    confirmDialog.value.loading = false
+  }
+}
+
+// 邮箱绑定相关方法
+const bindEmail = async () => {
+  if (!newEmail.value) {
+    showNotification('请输入邮箱地址', 'error')
+    return
+  }
+
+  // 简单的邮箱格式验证
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(newEmail.value)) {
+    showNotification('请输入有效的邮箱地址', 'error')
+    return
+  }
+
+  bindingEmail.value = true
+  try {
+    const response = await $fetch('/api/user/email/bind', {
+      method: 'POST',
+      body: { email: newEmail.value }
+    })
+    
+    if (response.success) {
+      userEmail.value = newEmail.value
+      emailVerified.value = false
+      newEmail.value = ''
+      showNotification('验证码已发送，请查收邮箱', 'success')
+    } else {
+      showNotification(response.message || '绑定失败', 'error')
+    }
+  } catch (err) {
+    console.error('绑定邮箱失败:', err)
+    showNotification(err.data?.message || '绑定邮箱失败，请重试', 'error')
+  } finally {
+    bindingEmail.value = false
+  }
+}
+
+
+
+const handleEmailCodeInput = (event) => {
+  const value = event.target.value.replace(/[^0-9]/g, '')
+  emailCode.value = value
+  if (emailCodeError.value) emailCodeError.value = false
+}
+
+const handleEmailCodeKeydown = (event) => {
+  const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','0','1','2','3','4','5','6','7','8','9']
+  if (!allowed.includes(event.key)) { event.preventDefault(); return }
+  if (event.key === 'Enter' && emailCode.value.length === 6) verifyEmailCode()
+}
+
+const verifyEmailCode = async () => {
+  if (emailCode.value.length !== 6) {
+    emailCodeError.value = true
+    showNotification('请输入6位验证码', 'error')
+    return
+  }
+  try {
+    bindingEmail.value = true
+    const response = await $fetch('/api/user/email/verify-code', {
+      method: 'POST',
+      body: { email: userEmail.value, code: emailCode.value }
+    })
+    if (response.success) {
+      emailVerified.value = true
+      emailCode.value = ''
+      showNotification('邮箱验证成功', 'success')
+    } else {
+      emailCodeError.value = true
+      showNotification(response.message || '验证码错误或已过期', 'error')
+    }
+  } catch (err) {
+    console.error('邮箱验证失败:', err)
+    emailCodeError.value = true
+    showNotification(err.data?.message || '邮箱验证失败，请重试', 'error')
+  } finally {
+    bindingEmail.value = false
+  }
+}
+
+const changeEmail = () => {
+  // 显示确认对话框
+  confirmDialog.value = {
+    title: '更换邮箱',
+    message: '更换邮箱将清除当前绑定的邮箱信息，需要重新验证新邮箱。确定要继续吗？',
+    type: 'warning',
+    loading: false,
+    onConfirm: performChangeEmail,
+    onCancel: () => {
+      showConfirmDialog.value = false
+    }
+  }
+  showConfirmDialog.value = true
+}
+
+const performChangeEmail = () => {
+  userEmail.value = ''
+  emailVerified.value = false
+  newEmail.value = ''
+  emailCode.value = ''
+  emailCodeError.value = false
+  showConfirmDialog.value = false
+  showNotification('已清除邮箱信息，请输入新邮箱地址', 'info')
+}
+
+const resendVerificationEmail = async () => {
+  if (!userEmail.value) {
+    showNotification('邮箱信息丢失，请重新绑定', 'error')
+    return
+  }
+
+  try {
+    resendingEmail.value = true
+    
+    const response = await $fetch('/api/user/email/resend-verification', {
+      method: 'POST'
+    })
+    
+    if (response.success) {
+      emailCode.value = ''
+      emailCodeError.value = false
+      showNotification('验证码已重新发送，请查收邮箱', 'success')
+    } else {
+      showNotification(response.message || '重新发送失败，请稍后重试', 'error')
+    }
+  } catch (err) {
+    console.error('重新发送验证码失败:', err)
+    showNotification(err.data?.message || '重新发送失败，请稍后重试', 'error')
+  } finally {
+    resendingEmail.value = false
+  }
+}
+
+const unbindEmail = async () => {
+  confirmDialog.value = {
+    title: '确认解绑邮箱',
+    message: '解绑后将无法接收邮件通知，确定要继续吗？',
+    type: 'warning',
+    loading: false,
+    onConfirm: performEmailUnbind,
+    onCancel: () => {
+      showConfirmDialog.value = false
+    }
+  }
+  showConfirmDialog.value = true
+}
+
+const performEmailUnbind = async () => {
+  try {
+    confirmDialog.value.loading = true
+    
+    const response = await $fetch('/api/user/email/unbind', {
+      method: 'POST'
+    })
+    
+    if (response.success) {
+      userEmail.value = ''
+      emailVerified.value = false
+  // 邮件通知总开关移除，无需重置
+      showNotification('邮箱已解绑', 'success')
+      showConfirmDialog.value = false
+    } else {
+      showNotification(response.message || '解绑失败', 'error')
+    }
+  } catch (err) {
+    console.error('解绑邮箱失败:', err)
+    showNotification(err.data?.message || '解绑邮箱失败，请重试', 'error')
   } finally {
     confirmDialog.value.loading = false
   }
@@ -747,6 +1027,143 @@ const saveSettings = async () => {
   transform: translateX(24px);
 }
 
+/* 禁用状态的开关 */
+.switch.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 邮箱相关样式 */
+.email-card .setting-info {
+  margin-bottom: 1rem;
+}
+
+.email-address {
+  color: var(--primary);
+  font-weight: var(--font-medium);
+}
+
+.status {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  margin-left: 0.5rem;
+}
+
+.status.verified {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.status.pending {
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+}
+
+.email-bind-section .bind-step,
+.email-verify-section,
+.email-bound-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.email-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-tertiary);
+  border-radius: var(--radius-md);
+  background: var(--bg-quaternary);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  transition: var(--transition-normal);
+}
+
+.email-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.email-input::placeholder {
+  color: var(--text-quaternary);
+}
+
+.verify-actions,
+.bound-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-tertiary);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--bg-quaternary);
+  border-color: var(--border-secondary);
+  color: var(--text-primary);
+}
+
+/* 邮件通知细分设置 */
+.email-details {
+  border-left: 3px solid var(--primary);
+}
+
+.email-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.email-setting-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  transition: var(--transition-normal);
+}
+
+.email-setting-item:hover {
+  color: var(--text-primary);
+}
+
+.email-setting-item input[type="checkbox"] {
+  display: none;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-tertiary);
+  border-radius: var(--radius-sm);
+  position: relative;
+  transition: var(--transition-normal);
+}
+
+.email-setting-item input[type="checkbox"]:checked + .checkmark {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.email-setting-item input[type="checkbox"]:checked + .checkmark::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
 /* 阈值输入 */
 .threshold-input {
   display: flex;
@@ -791,6 +1208,7 @@ const saveSettings = async () => {
   background: var(--bg-quaternary);
   border-radius: 3px;
   outline: none;
+  appearance: none;
   -webkit-appearance: none;
 }
 
