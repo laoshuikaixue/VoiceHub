@@ -159,6 +159,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 const blacklist = ref([])
 const loading = ref(false)

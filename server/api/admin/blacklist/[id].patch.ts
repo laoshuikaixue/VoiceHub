@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
       .where(eq(songBlacklists.id, id))
       .limit(1)
 
-    if (blacklistItem.length === 0) {
+    if (existingItemResult.length === 0) {
       throw createError({
         statusCode: 404,
         message: '黑名单项不存在'
