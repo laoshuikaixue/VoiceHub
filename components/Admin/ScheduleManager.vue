@@ -271,7 +271,7 @@
             <button 
               @click="saveDraft" 
               class="draft-btn" 
-              :disabled="!hasChanges && localScheduledSongs.length === 0"
+              :disabled="!hasChanges || localScheduledSongs.length === 0"
             >
               保存草稿
             </button>
@@ -287,7 +287,7 @@
             <button 
               @click="saveSequence" 
               class="save-btn" 
-              :disabled="!hasChanges"
+              :disabled="!hasChanges && localScheduledSongs.length > 0"
             >
               保存并发布
             </button>
