@@ -194,8 +194,8 @@ const closeDialog = () => {
   }
 }
 
-// 获取音乐播放URL（使用统一的方法）
-const getMusicUrl = async (platform, musicId, quality) => {
+// 获取音乐播放URL（使用统一的方法，带重试机制）
+const getMusicUrl = async (platform, musicId, quality, retryCount = 0) => {
   try {
     const url = await getUnifiedMusicUrl(platform, musicId)
     if (!url) {
@@ -204,6 +204,14 @@ const getMusicUrl = async (platform, musicId, quality) => {
     return url
   } catch (error) {
     console.error('获取音乐播放链接失败:', error)
+    
+    // 如果是第一次失败且还没有重试过，则自动重试一次
+    if (retryCount === 0) {
+      console.log(`正在重试获取音乐链接: ${platform}, ${musicId}`)
+      await new Promise(resolve => setTimeout(resolve, 1000)) // 等待1秒后重试
+      return getMusicUrl(platform, musicId, quality, 1)
+    }
+    
     throw new Error('获取音乐播放链接失败: ' + error.message)
   }
 }

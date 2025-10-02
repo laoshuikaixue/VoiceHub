@@ -78,6 +78,19 @@
         
         <button
           v-if="selectedSongs.length > 0"
+          @click="openDownloadDialog"
+          class="batch-download-btn"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7,10 12,15 17,10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          下载选中 ({{ selectedSongs.length }})
+        </button>
+        
+        <button
+          v-if="selectedSongs.length > 0"
           @click="batchDelete"
           class="batch-delete-btn"
         >
@@ -364,6 +377,13 @@
     @close="closeVotersModal"
   />
 
+  <!-- 下载歌曲对话框 -->
+  <SongDownloadDialog
+    :show="showDownloadDialog"
+    :songs="selectedSongsForDownload"
+    @close="closeDownloadDialog"
+  />
+
   <!-- 编辑歌曲模态框 -->
   <div v-if="showEditModal" class="modal-overlay" @click="cancelEditSong">
     <div class="modal-content" @click.stop>
@@ -613,6 +633,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
+import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
 import { useAuth } from '~/composables/useAuth'
@@ -640,6 +661,10 @@ const deleteAction = ref(null)
 // 投票人员弹窗相关
 const showVotersModal = ref(false)
 const selectedSongId = ref(null)
+
+// 下载对话框相关
+const showDownloadDialog = ref(false)
+const selectedSongsForDownload = ref([])
 
 // 驳回歌曲相关
 const showRejectDialog = ref(false)
@@ -942,6 +967,32 @@ const showVoters = (songId) => {
 const closeVotersModal = () => {
   showVotersModal.value = false
   selectedSongId.value = null
+}
+
+// 打开下载对话框
+const openDownloadDialog = () => {
+  // 将选中的歌曲转换为下载对话框需要的格式（与ScheduleManager保持一致）
+  selectedSongsForDownload.value = selectedSongs.value.map(songId => {
+    const song = songs.value.find(s => s.id === songId)
+    return {
+      id: `temp-${song.id}`, // 临时ID，因为这不是真正的排期
+      song: {
+        id: song.id,
+        title: song.title,
+        artist: song.artist,
+        musicPlatform: song.musicPlatform || 'unknown',
+        requester: song.requester || '未知',
+        musicId: song.musicId
+      }
+    }
+  })
+  showDownloadDialog.value = true
+}
+
+// 关闭下载对话框
+const closeDownloadDialog = () => {
+  showDownloadDialog.value = false
+  selectedSongsForDownload.value = []
 }
 
 // 确认删除
@@ -1530,6 +1581,7 @@ onUnmounted(() => {
 }
 
 .refresh-btn,
+.batch-download-btn,
 .batch-delete-btn {
   display: flex;
   align-items: center;
@@ -1558,6 +1610,15 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 
+.batch-download-btn {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.batch-download-btn:hover {
+  background: #059669;
+}
+
 .batch-delete-btn {
   background: #ef4444;
   color: #ffffff;
@@ -1568,6 +1629,7 @@ onUnmounted(() => {
 }
 
 .refresh-btn svg,
+.batch-download-btn svg,
 .batch-delete-btn svg {
   width: 16px;
   height: 16px;
