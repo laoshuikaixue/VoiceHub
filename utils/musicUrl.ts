@@ -5,9 +5,22 @@ import { useMusicSources } from '~/composables/useMusicSources'
  * 动态获取音乐播放URL
  * @param platform 音乐平台 ('netease' | 'tencent')
  * @param musicId 音乐ID
+ * @param playUrl 用户提供的播放链接（可选）
  * @returns Promise<string | null> 返回播放URL或null
  */
-export async function getMusicUrl(platform: string, musicId: string | number): Promise<string | null> {
+export async function getMusicUrl(platform: string, musicId: string | number, playUrl?: string): Promise<string | null> {
+  // 如果用户提供了播放链接，优先使用
+  if (playUrl && playUrl.trim()) {
+    console.log(`[getMusicUrl] 使用用户提供的播放链接: ${playUrl}`)
+    return playUrl.trim()
+  }
+
+  // 如果没有playUrl，但platform或musicId为空或无效，则无法获取播放链接
+  if (!platform || !musicId || platform === 'unknown' || platform === '' || musicId === null || musicId === '') {
+    console.warn(`[getMusicUrl] 缺少必要参数: platform=${platform}, musicId=${musicId}`)
+    throw new Error('缺少音乐平台或音乐ID信息')
+  }
+
   const { getQuality } = useAudioQuality()
   const { getSongUrl } = useMusicSources()
 
@@ -61,7 +74,7 @@ export async function getMusicUrl(platform: string, musicId: string | number): P
         const backupResult = await getSongUrl(Number(musicId), qualityNum)
         
         if (backupResult.success && backupResult.url) {
-          console.log(`[getMusicUrl] 网易云备用源成功获取播放链接 (level: ${backupResult.level || 'unknown'})`)
+          console.log(`[getMusicUrl] 网易云备用源成功获取播放链接`)
           return backupResult.url
         } else {
           console.error(`[getMusicUrl] 网易云备用源获取失败:`, backupResult.error)

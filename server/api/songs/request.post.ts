@@ -177,7 +177,8 @@ export default defineEventHandler(async (event) => {
       semester: await getCurrentSemesterName(),
       cover: body.cover || null,
       musicPlatform: body.musicPlatform || null,
-      musicId: body.musicId ? String(body.musicId) : null
+      musicId: body.musicId ? String(body.musicId) : null,
+      playUrl: body.playUrl || null
     }).returning()
     const song = songResult[0]
     

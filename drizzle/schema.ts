@@ -54,6 +54,7 @@ export const songs = pgTable('Song', {
   semester: text('semester'),
   preferredPlayTimeId: integer('preferredPlayTimeId'),
   cover: text('cover'),
+  playUrl: text('playUrl'),
   musicPlatform: text('musicPlatform'),
   musicId: text('musicId'),
 });

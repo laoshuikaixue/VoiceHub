@@ -163,6 +163,7 @@ export default defineEventHandler(async (event) => {
         songCover: songs.cover,
         songMusicPlatform: songs.musicPlatform,
         songMusicId: songs.musicId,
+        songPlayUrl: songs.playUrl,
         songSemester: songs.semester,
         requesterName: users.name,
         requesterGrade: users.grade,
@@ -256,6 +257,7 @@ export default defineEventHandler(async (event) => {
             cover: schedule.songCover || null,
             musicPlatform: schedule.songMusicPlatform || null,
             musicId: schedule.songMusicId || null,
+            playUrl: schedule.songPlayUrl || null,
             semester: schedule.songSemester || null
           }
         }

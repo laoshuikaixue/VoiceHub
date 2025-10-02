@@ -8,6 +8,7 @@ interface PlayableSong {
   cover?: string | null
   musicPlatform?: string
   musicId?: string
+  playUrl?: string | null
 }
 
 interface PlaylistItem {
@@ -104,7 +105,7 @@ export function useAudioPlayer() {
       if (nextSong.musicPlatform && nextSong.musicId) {
         try {
           const { getMusicUrl } = await import('~/utils/musicUrl')
-          const url = await getMusicUrl(nextSong.musicPlatform, nextSong.musicId)
+          const url = await getMusicUrl(nextSong.musicPlatform, nextSong.musicId, nextSong.playUrl)
           if (url) {
             nextSong.musicUrl = url
             currentPlaylistIndex.value = nextIndex
@@ -159,7 +160,7 @@ export function useAudioPlayer() {
       if (prevSong.musicPlatform && prevSong.musicId) {
         try {
           const { getMusicUrl } = await import('~/utils/musicUrl')
-          const url = await getMusicUrl(prevSong.musicPlatform, prevSong.musicId)
+          const url = await getMusicUrl(prevSong.musicPlatform, prevSong.musicId, prevSong.playUrl)
           if (url) {
             prevSong.musicUrl = url
             currentPlaylistIndex.value = prevIndex

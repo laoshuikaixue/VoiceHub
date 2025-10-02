@@ -485,14 +485,26 @@
           </div>
           <div class="form-group">
             <label>歌曲封面URL <span class="optional-label">（可选）</span></label>
-            <input
-              v-model="editForm.cover"
-              type="url"
-              class="form-input"
-              placeholder="请输入歌曲封面图片的URL地址"
-            />
-            <div class="field-hint">
-              歌曲封面将显示在歌曲列表中，建议使用高质量的图片链接
+            <div class="input-wrapper">
+              <input
+                v-model="editForm.cover"
+                type="url"
+                class="form-input"
+                placeholder="请输入歌曲封面图片的URL地址"
+                :class="{ 'error': editForm.cover && !editCoverValidation.valid }"
+              />
+              <div v-if="editCoverValidation.validating" class="validation-loading">
+                验证中...
+              </div>
+              <div v-if="editForm.cover && !editCoverValidation.valid && !editCoverValidation.validating" class="validation-error">
+                {{ editCoverValidation.error }}
+              </div>
+              <div v-if="editForm.cover && editCoverValidation.valid && !editCoverValidation.validating" class="validation-success">
+                ✓ URL有效
+              </div>
+              <div class="field-hint">
+                歌曲封面将显示在歌曲列表中，建议使用高质量的图片链接
+              </div>
             </div>
           </div>
           <div class="form-actions">
@@ -607,19 +619,55 @@
           </div>
           <div class="form-group">
             <label>歌曲封面URL <span class="optional-label">（可选）</span></label>
-            <input
-              v-model="addForm.cover"
-              type="url"
-              class="form-input"
-              placeholder="请输入歌曲封面图片的URL地址"
-            />
-            <div class="field-hint">
-              歌曲封面将显示在歌曲列表中，建议使用高质量的图片链接
+            <div class="input-wrapper">
+              <input
+                v-model="addForm.cover"
+                type="url"
+                class="form-input"
+                placeholder="请输入歌曲封面图片的URL地址"
+                :class="{ 'error': addForm.cover && !addCoverValidation.valid }"
+              />
+              <div v-if="addCoverValidation.validating" class="validation-loading">
+                验证中...
+              </div>
+              <div v-if="addForm.cover && !addCoverValidation.valid && !addCoverValidation.validating" class="validation-error">
+                {{ addCoverValidation.error }}
+              </div>
+              <div v-if="addForm.cover && addCoverValidation.valid && !addCoverValidation.validating" class="validation-success">
+                ✓ URL有效
+              </div>
+              <div class="field-hint">
+                歌曲封面将显示在歌曲列表中，建议使用高质量的图片链接
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>播放地址URL <span class="optional-label">（可选）</span></label>
+            <div class="input-wrapper">
+              <input
+                v-model="addForm.playUrl"
+                type="url"
+                class="form-input"
+                placeholder="请输入歌曲播放的URL地址"
+                :class="{ 'error': addForm.playUrl && !addPlayUrlValidation.valid }"
+              />
+              <div v-if="addPlayUrlValidation.validating" class="validation-loading">
+                验证中...
+              </div>
+              <div v-if="addForm.playUrl && !addPlayUrlValidation.valid && !addPlayUrlValidation.validating" class="validation-error">
+                {{ addPlayUrlValidation.error }}
+              </div>
+              <div v-if="addForm.playUrl && addPlayUrlValidation.valid && !addPlayUrlValidation.validating" class="validation-success">
+                ✓ URL有效
+              </div>
+              <div class="field-hint">
+                播放地址是音乐播放器直接播放的链接，如果提供将优先使用此地址播放
+              </div>
             </div>
           </div>
           <div class="form-actions">
             <button type="button" @click="cancelAddSong" class="btn-cancel">取消</button>
-            <button type="submit" class="btn-primary" :disabled="addLoading">
+            <button type="submit" class="btn-primary" :disabled="!canSubmitAddForm || addLoading">
               {{ addLoading ? '添加中...' : '添加歌曲' }}
             </button>
           </div>
@@ -638,6 +686,7 @@ import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
+import { validateUrl } from '~/utils/url'
 
 // 响应式数据
 const loading = ref(false)
@@ -703,8 +752,14 @@ const addForm = ref({
   semester: '',
   musicPlatform: '',
   musicId: '',
-  cover: ''
+  cover: '',
+  playUrl: ''
 })
+
+// URL验证状态
+const addCoverValidation = ref({ valid: true, error: '', validating: false })
+const addPlayUrlValidation = ref({ valid: true, error: '', validating: false })
+const editCoverValidation = ref({ valid: true, error: '', validating: false })
 
 // 用户搜索相关
 const userSearchQuery = ref('')
@@ -813,6 +868,30 @@ const pendingCount = computed(() => {
 const isAllSelected = computed(() => {
   return paginatedSongs.value.length > 0 &&
          paginatedSongs.value.every(song => selectedSongs.value.includes(song.id))
+})
+
+// 计算属性：检查添加歌曲表单是否可以提交
+const canSubmitAddForm = computed(() => {
+  // 必填字段检查
+  if (!addForm.value.title.trim() || 
+      !addForm.value.artist.trim() || 
+      !selectedUser.value || 
+      !addForm.value.semester) {
+    return false
+  }
+  
+  // 可选字段验证检查
+  // 如果输入了封面URL，必须验证通过且不在验证中
+  if (addForm.value.cover && (!addCoverValidation.value.valid || addCoverValidation.value.validating)) {
+    return false
+  }
+  
+  // 如果输入了播放URL，必须验证通过且不在验证中
+  if (addForm.value.playUrl && (!addPlayUrlValidation.value.valid || addPlayUrlValidation.value.validating)) {
+    return false
+  }
+  
+  return true
 })
 
 // 方法
@@ -982,7 +1061,8 @@ const openDownloadDialog = () => {
         artist: song.artist,
         musicPlatform: song.musicPlatform || 'unknown',
         requester: song.requester || '未知',
-        musicId: song.musicId
+        musicId: song.musicId,
+        playUrl: song.playUrl  // 添加缺失的playUrl字段
       }
     }
   })
@@ -1114,6 +1194,22 @@ const saveEditSong = async () => {
     return
   }
 
+  // 检查封面URL验证状态
+  if (editForm.value.cover && !editCoverValidation.value.valid) {
+    if (window.$showNotification) {
+      window.$showNotification('请等待封面URL验证完成或修正无效的URL', 'error')
+    }
+    return
+  }
+
+  // 检查是否正在验证中
+  if (editCoverValidation.value.validating) {
+    if (window.$showNotification) {
+      window.$showNotification('正在验证URL，请稍候...', 'warning')
+    }
+    return
+  }
+
   editLoading.value = true
   try {
     const { updateSong } = adminService
@@ -1167,6 +1263,8 @@ const cancelEditSong = () => {
     musicId: '',
     cover: ''
   }
+  // 重置验证状态
+  editCoverValidation.value = { valid: true, error: '', validating: false }
   clearSelectedEditUser()
 }
 
@@ -1211,6 +1309,37 @@ const saveAddSong = async () => {
     return
   }
 
+  // 验证可选字段URL有效性 - 如果输入了可选字段，必须验证通过
+  if (addForm.value.cover) {
+    if (!addCoverValidation.value.valid) {
+      if (window.$showNotification) {
+        window.$showNotification('歌曲封面URL无效，请检查后重试', 'error')
+      }
+      return
+    }
+    if (addCoverValidation.value.validating) {
+      if (window.$showNotification) {
+        window.$showNotification('正在验证封面URL，请稍候...', 'warning')
+      }
+      return
+    }
+  }
+
+  if (addForm.value.playUrl) {
+    if (!addPlayUrlValidation.value.valid) {
+      if (window.$showNotification) {
+        window.$showNotification('播放地址URL无效，请检查后重试', 'error')
+      }
+      return
+    }
+    if (addPlayUrlValidation.value.validating) {
+      if (window.$showNotification) {
+        window.$showNotification('正在验证播放地址URL，请稍候...', 'warning')
+      }
+      return
+    }
+  }
+
   addLoading.value = true
   try {
     const { addSong } = adminService
@@ -1221,7 +1350,8 @@ const saveAddSong = async () => {
       semester: addForm.value.semester,
       musicPlatform: addForm.value.musicPlatform || null,
       musicId: addForm.value.musicId || null,
-      cover: addForm.value.cover || null
+      cover: addForm.value.cover || null,
+      playUrl: addForm.value.playUrl || null
     })
     
     await refreshSongs()
@@ -1235,7 +1365,8 @@ const saveAddSong = async () => {
       semester: '',
       musicPlatform: '',
       musicId: '',
-      cover: ''
+      cover: '',
+      playUrl: ''
     }
     clearSelectedUser()
     
@@ -1272,8 +1403,12 @@ const cancelAddSong = () => {
     semester: '',
     musicPlatform: '',
     musicId: '',
-    cover: ''
+    cover: '',
+    playUrl: ''
   }
+  // 重置URL验证状态
+  addCoverValidation.value = { valid: true, error: '', validating: false }
+  addPlayUrlValidation.value = { valid: true, error: '', validating: false }
   clearSelectedUser()
 }
 
@@ -1440,6 +1575,89 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   
   await refreshSongs()
+})
+
+// URL验证函数
+const validateAddCoverUrl = async (url) => {
+  if (!url) {
+    addCoverValidation.value = { valid: true, error: '', validating: false }
+    return
+  }
+
+  addCoverValidation.value.validating = true
+  const result = validateUrl(url)
+  addCoverValidation.value = {
+    valid: result.valid,
+    error: result.error || '',
+    validating: false
+  }
+}
+
+const validateAddPlayUrl = async (url) => {
+  if (!url) {
+    addPlayUrlValidation.value = { valid: true, error: '', validating: false }
+    return
+  }
+
+  addPlayUrlValidation.value.validating = true
+  const result = validateUrl(url)
+  addPlayUrlValidation.value = {
+    valid: result.valid,
+    error: result.error || '',
+    validating: false
+  }
+}
+
+const validateEditCoverUrl = async (url) => {
+  if (!url) {
+    editCoverValidation.value = { valid: true, error: '', validating: false }
+    return
+  }
+
+  editCoverValidation.value.validating = true
+  const result = validateUrl(url)
+  editCoverValidation.value = {
+    valid: result.valid,
+    error: result.error || '',
+    validating: false
+  }
+}
+
+// 监听URL变化并验证
+watch(() => addForm.value.cover, (newUrl) => {
+  if (newUrl) {
+    // 防抖处理，避免频繁验证
+    clearTimeout(addCoverValidation.value.debounceTimer)
+    addCoverValidation.value.debounceTimer = setTimeout(() => {
+      validateAddCoverUrl(newUrl)
+    }, 1000)
+  } else {
+    addCoverValidation.value = { valid: true, error: '', validating: false }
+  }
+})
+
+watch(() => addForm.value.playUrl, (newUrl) => {
+  if (newUrl) {
+    // 防抖处理，避免频繁验证
+    clearTimeout(addPlayUrlValidation.value.debounceTimer)
+    addPlayUrlValidation.value.debounceTimer = setTimeout(() => {
+      validateAddPlayUrl(newUrl)
+    }, 1000)
+  } else {
+    addPlayUrlValidation.value = { valid: true, error: '', validating: false }
+  }
+})
+
+watch(() => editForm.value.cover, (newUrl) => {
+  if (newUrl) {
+    // 防抖处理，避免频繁验证
+    clearTimeout(editCoverValidation.value.debounceTimer)
+    editCoverValidation.value.debounceTimer = setTimeout(() => {
+      validateEditCoverUrl(newUrl)
+    }, 1000)
+  } else {
+    editCoverValidation.value = { valid: true, error: '', validating: false }
+  }
 })
 
 // 组件卸载时移除事件监听
@@ -2561,5 +2779,33 @@ onUnmounted(() => {
   font-size: 0.75rem;
   color: #888888;
   line-height: 1.4;
+}
+
+/* URL验证状态样式 */
+.validation-loading {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #667eea;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.validation-error {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #ef4444;
+  line-height: 1.4;
+}
+
+.validation-success {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #10b981;
+  line-height: 1.4;
+}
+
+.input-wrapper .form-input.error {
+  border-color: #ef4444;
 }
 </style>

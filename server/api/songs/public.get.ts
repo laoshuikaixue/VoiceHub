@@ -151,6 +151,7 @@ export default defineEventHandler(async (event) => {
         cover: songs.cover,
         musicPlatform: songs.musicPlatform,
         musicId: songs.musicId,
+        playUrl: songs.playUrl,
         semester: songs.semester,
         requesterId: songs.requesterId,
         createdAt: songs.createdAt
@@ -268,6 +269,7 @@ export default defineEventHandler(async (event) => {
           cover: schedule.song.cover || null,
           musicPlatform: schedule.song.musicPlatform || null,
           musicId: schedule.song.musicId || null,
+          playUrl: schedule.song.playUrl || null,
           semester: schedule.song.semester || null,
           requestedAt: schedule.song.createdAt ? formatDateTime(schedule.song.createdAt) : null
         }

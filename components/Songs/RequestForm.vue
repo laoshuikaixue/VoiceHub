@@ -88,8 +88,6 @@
             </button>
           </div>
 
-
-
           <div class="results-content">
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
@@ -319,6 +317,52 @@
                 </div>
               </div>
 
+              <div class="form-group">
+                <label for="modal-cover">歌曲封面地址（选填）</label>
+                <div class="input-wrapper">
+                  <input
+                    id="modal-cover"
+                    v-model="manualCover"
+                    type="url"
+                    placeholder="请输入歌曲封面图片URL"
+                    class="form-input"
+                    :class="{ 'error': manualCover && !coverValidation.valid }"
+                  />
+                  <div v-if="coverValidation.validating" class="validation-loading">
+                    验证中...
+                  </div>
+                  <div v-if="manualCover && !coverValidation.valid && !coverValidation.validating" class="validation-error">
+                    {{ coverValidation.error }}
+                  </div>
+                  <div v-if="manualCover && coverValidation.valid && !coverValidation.validating" class="validation-success">
+                    ✓ URL有效
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="modal-play-url">播放地址（选填）</label>
+                <div class="input-wrapper">
+                  <input
+                    id="modal-play-url"
+                    v-model="manualPlayUrl"
+                    type="url"
+                    placeholder="请输入歌曲播放URL"
+                    class="form-input"
+                    :class="{ 'error': manualPlayUrl && !playUrlValidation.valid }"
+                  />
+                  <div v-if="playUrlValidation.validating" class="validation-loading">
+                    验证中...
+                  </div>
+                  <div v-if="manualPlayUrl && !playUrlValidation.valid && !playUrlValidation.validating" class="validation-error">
+                    {{ playUrlValidation.error }}
+                  </div>
+                  <div v-if="manualPlayUrl && playUrlValidation.valid && !playUrlValidation.validating" class="validation-success">
+                    ✓ URL有效
+                  </div>
+                </div>
+              </div>
+
               <div class="modal-actions">
                 <button
                   type="button"
@@ -331,7 +375,7 @@
                   type="button"
                   class="btn btn-primary"
                   @click="handleManualSubmit"
-                  :disabled="!manualArtist.trim() || submitting"
+                  :disabled="!canSubmitManualForm || submitting"
                 >
                   {{ submitting ? '提交中...' : '确认提交' }}
                 </button>
@@ -355,7 +399,7 @@ import { useMusicSources } from '~/composables/useMusicSources'
 import { getEnabledSources } from '~/utils/musicSources'
 import DuplicateSongModal from './DuplicateSongModal.vue'
 import Icon from '../UI/Icon.vue'
-import { convertToHttps } from '~/utils/url'
+import { convertToHttps, validateUrl } from '~/utils/url'
 
 const props = defineProps({
   loading: {
@@ -421,7 +465,13 @@ const searchError = ref('')
 // 手动输入相关
 const showManualModal = ref(false)
 const manualArtist = ref('')
+const manualCover = ref('')
+const manualPlayUrl = ref('')
 const hasSearched = ref(false)
+
+// URL验证相关
+const coverValidation = ref({ valid: true, error: '', validating: false })
+const playUrlValidation = ref({ valid: true, error: '', validating: false })
 
 // 获取播出时段
 const fetchPlayTimes = async () => {
@@ -1136,6 +1186,23 @@ const handleManualSubmit = async () => {
     return
   }
 
+  // 验证URL
+  if (manualCover.value && !coverValidation.value.valid) {
+    error.value = '请修正封面URL错误后再提交'
+    if (window.$showNotification) {
+      window.$showNotification('请修正封面URL错误后再提交', 'error')
+    }
+    return
+  }
+
+  if (manualPlayUrl.value && !playUrlValidation.value.valid) {
+    error.value = '请修正播放地址URL错误后再提交'
+    if (window.$showNotification) {
+      window.$showNotification('请修正播放地址URL错误后再提交', 'error')
+    }
+    return
+  }
+
   // 检查投稿限额
   const limitCheck = checkSubmissionLimit()
   if (!limitCheck.canSubmit) {
@@ -1175,7 +1242,8 @@ const handleManualSubmit = async () => {
       preferredPlayTimeId: preferredPlayTimeId.value
         ? parseInt(preferredPlayTimeId.value)
         : null,
-      cover: '',
+      cover: manualCover.value || '',
+      playUrl: manualPlayUrl.value || '',
       musicPlatform: platform.value,
       musicId: null, // 手动输入时没有musicId
     }
@@ -1207,7 +1275,12 @@ const resetForm = () => {
   selectedUrl.value = ''
   showManualModal.value = false
   manualArtist.value = ''
+  manualCover.value = ''
+  manualPlayUrl.value = ''
   hasSearched.value = false
+  // 重置URL验证状态
+  coverValidation.value = { valid: true, error: '', validating: false }
+  playUrlValidation.value = { valid: true, error: '', validating: false }
 }
 
 // 停止播放
@@ -1271,6 +1344,83 @@ const checkSubmissionLimit = () => {
 
   return { canSubmit: true, message: '' }
 }
+
+// URL验证函数
+const validateCoverUrl = async (url) => {
+  if (!url) {
+    coverValidation.value = { valid: true, error: '', validating: false }
+    return
+  }
+
+  coverValidation.value.validating = true
+  const result = validateUrl(url)
+  coverValidation.value = {
+    valid: result.valid,
+    error: result.error || '',
+    validating: false
+  }
+}
+
+const validatePlayUrl = async (url) => {
+  if (!url) {
+    playUrlValidation.value = { valid: true, error: '', validating: false }
+    return
+  }
+
+  playUrlValidation.value.validating = true
+  const result = validateUrl(url)
+  playUrlValidation.value = {
+    valid: result.valid,
+    error: result.error || '',
+    validating: false
+  }
+}
+
+// 监听URL变化并验证
+watch(manualCover, (newUrl) => {
+  if (newUrl) {
+    // 防抖处理，避免频繁验证
+    clearTimeout(coverValidation.value.debounceTimer)
+    coverValidation.value.debounceTimer = setTimeout(() => {
+      validateCoverUrl(newUrl)
+    }, 1000)
+  } else {
+    coverValidation.value = { valid: true, error: '', validating: false }
+  }
+})
+
+watch(manualPlayUrl, (newUrl) => {
+  if (newUrl) {
+    // 防抖处理，避免频繁验证
+    clearTimeout(playUrlValidation.value.debounceTimer)
+    playUrlValidation.value.debounceTimer = setTimeout(() => {
+      validatePlayUrl(newUrl)
+    }, 1000)
+  } else {
+    playUrlValidation.value = { valid: true, error: '', validating: false }
+  }
+})
+
+// 计算属性：检查手动表单是否可以提交
+const canSubmitManualForm = computed(() => {
+  // 必填字段检查
+  if (!manualArtist.value.trim()) {
+    return false
+  }
+  
+  // 可选字段验证检查
+  // 如果输入了封面URL，必须验证通过且不在验证中
+  if (manualCover.value && (!coverValidation.value.valid || coverValidation.value.validating)) {
+    return false
+  }
+  
+  // 如果输入了播放URL，必须验证通过且不在验证中
+  if (manualPlayUrl.value && (!playUrlValidation.value.valid || playUrlValidation.value.validating)) {
+    return false
+  }
+  
+  return true
+})
 
 // 暴露方法给父组件
 defineExpose({
@@ -2848,5 +2998,32 @@ defineExpose({
     z-index: 20;
     position: relative;
   }
+}
+
+/* URL验证状态样式 */
+.validation-loading {
+  color: #fbbf24;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.validation-error {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.validation-success {
+  color: #10b981;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.form-input.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #ef4444;
 }
 </style>

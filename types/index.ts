@@ -26,6 +26,7 @@ export interface Song {
   cover?: string | null        // 音乐封面URL
   musicPlatform?: string | null // 音乐平台（netease, tencent等）
   musicId?: string | null      // 平台上的歌曲ID
+  playUrl?: string | null      // 播放地址URL
   createdAt: string
   voted?: boolean
 }
@@ -45,6 +46,7 @@ export interface Schedule {
     cover?: string | null
     musicPlatform?: string | null
     musicId?: string | null
+    playUrl?: string | null
   }
 }
 

@@ -115,8 +115,8 @@
                 <div v-else class="text-cover">
                   {{ getFirstChar(song.title) }}
                 </div>
-                <!-- 添加播放按钮 - 在有平台信息时显示 -->
-                <div v-if="song.musicPlatform && song.musicId" class="play-button-overlay" @click.stop="togglePlaySong(song)">
+                <!-- 添加播放按钮 - 在有播放信息时显示 -->
+                <div v-if="(song.musicPlatform && song.musicId) || song.playUrl" class="play-button-overlay" @click.stop="togglePlaySong(song)">
                   <button class="play-button" :title="isCurrentPlaying(song.id) ? '暂停' : '播放'">
                     <Icon v-if="isCurrentPlaying(song.id)" name="pause" :size="16" color="white" />
                     <Icon v-else name="play" :size="16" color="white" />
@@ -743,9 +743,9 @@ const togglePlaySong = async (song) => {
       audioPlayer.playSong(currentGlobalSong)
     } else {
       // 如果没有URL，重新获取
-      if (song.musicPlatform && song.musicId) {
+      if ((song.musicPlatform && song.musicId) || song.playUrl) {
         try {
-          const url = await getMusicUrl(song.musicPlatform, song.musicId)
+          const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
           if (url) {
             const playableSong = {
               ...song,
@@ -770,10 +770,10 @@ const togglePlaySong = async (song) => {
     return
   }
 
-  // 如果有平台和ID信息，动态获取URL
-  if (song.musicPlatform && song.musicId) {
+  // 如果有平台和ID信息或playUrl，动态获取URL
+  if ((song.musicPlatform && song.musicId) || song.playUrl) {
     try {
-      const url = await getMusicUrl(song.musicPlatform, song.musicId)
+      const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
       if (url) {
         const playableSong = {
           ...song,
@@ -800,18 +800,29 @@ const togglePlaySong = async (song) => {
 const buildPlayablePlaylist = async (currentSong) => {
   // 获取当前显示的歌曲列表（已经过滤和排序）
   const songsToProcess = paginatedSongs.value.filter(song => 
-    song.musicPlatform && song.musicId && song.id !== currentSong.id
+    ((song.musicPlatform && song.musicId) || song.playUrl) && song.id !== currentSong.id
   )
   
   // 将当前歌曲添加到列表中正确的位置
   const allSongs = [...paginatedSongs.value]
   
   // 只返回有播放信息的歌曲，保持原有顺序
-  return allSongs.filter(song => song.musicPlatform && song.musicId)
+  return allSongs.filter(song => (song.musicPlatform && song.musicId) || song.playUrl)
 }
 
 // 动态获取音乐URL
-const getMusicUrl = async (platform, musicId) => {
+const getMusicUrl = async (platform, musicId, playUrl) => {
+  // 如果有自定义播放链接，优先使用
+  if (playUrl && playUrl.trim()) {
+    console.log(`[SongList] 使用自定义播放链接: ${playUrl}`)
+    return playUrl.trim()
+  }
+  
+  // 如果没有playUrl，检查platform和musicId是否有效
+  if (!platform || !musicId) {
+    throw new Error('歌曲缺少音乐平台或音乐ID信息，无法获取播放链接')
+  }
+  
   const { getQuality } = useAudioQuality()
   const { getSongUrl } = useMusicSources()
 

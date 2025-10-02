@@ -86,7 +86,7 @@ export const useAudioPlayerEnhanced = () => {
       const newQuality = qualityOptions[i].value
       console.log(`尝试切换到音质: ${qualityOptions[i].label}`)
       
-      const result = await getMusicUrl(platform, song.musicId, newQuality)
+      const result = await getMusicUrl(platform, song.musicId, song.playUrl)
       if (result.success) {
         // 保存新音质设置
         saveQuality(platform, newQuality)
@@ -112,7 +112,7 @@ export const useAudioPlayerEnhanced = () => {
       const newQuality = qualityOptions[i].value
       console.log(`尝试切换到音质: ${qualityOptions[i].label}`)
       
-      const result = await getMusicUrl(platform, song.musicId, newQuality)
+      const result = await getMusicUrl(platform, song.musicId, song.playUrl)
       if (result.success) {
         // 保存新音质设置
         saveQuality(platform, newQuality)
@@ -248,7 +248,7 @@ export const useAudioPlayerEnhanced = () => {
       console.log(`尝试切换到音质: ${newQuality}`)
       
       // 先尝试获取新音质的链接
-      const result = await getMusicUrl(song.musicPlatform, song.musicId, newQuality)
+      const result = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
       
       if (result.success) {
         // 保存音质设置

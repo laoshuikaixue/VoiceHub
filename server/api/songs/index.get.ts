@@ -127,6 +127,7 @@ export default defineEventHandler(async (event) => {
       cover: songs.cover,
       musicPlatform: songs.musicPlatform,
       musicId: songs.musicId,
+      playUrl: songs.playUrl,
       preferredPlayTimeId: songs.preferredPlayTimeId,
       requester: {
         id: users.id,
@@ -245,7 +246,8 @@ export default defineEventHandler(async (event) => {
           scheduled: scheduledSongs.has(song.id), // 添加是否已排期的标志
           cover: song.cover || null, // 添加封面字段
           musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
-          musicId: song.musicId || null // 添加音乐ID字段
+          musicId: song.musicId || null, // 添加音乐ID字段
+          playUrl: song.playUrl || null // 添加播放地址字段
         }
 
         // 如果用户已登录，添加投票状态

@@ -121,7 +121,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
-import { getMusicUrl as getUnifiedMusicUrl } from '~/utils/musicUrl'
+import { getMusicUrl } from '~/utils/musicUrl'
 
 const props = defineProps({
   show: {
@@ -163,6 +163,10 @@ const getPlatformName = (platform) => {
       return '网易云音乐'
     case 'tencent':
       return 'QQ音乐'
+    case null:
+    case undefined:
+    case '':
+      return '自定义链接'
     default:
       return '未知平台'
   }
@@ -194,10 +198,11 @@ const closeDialog = () => {
   }
 }
 
-// 获取音乐播放URL（使用统一的方法，带重试机制）
-const getMusicUrl = async (platform, musicId, quality, retryCount = 0) => {
+// 获取音乐播放URL（直接使用utils中的统一方法）
+const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
   try {
-    const url = await getUnifiedMusicUrl(platform, musicId)
+    // 直接调用统一的getMusicUrl方法，它会自动处理playUrl优先级
+    const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
     if (!url) {
       throw new Error('无法获取音乐播放链接')
     }
@@ -205,11 +210,11 @@ const getMusicUrl = async (platform, musicId, quality, retryCount = 0) => {
   } catch (error) {
     console.error('获取音乐播放链接失败:', error)
     
-    // 如果是第一次失败且还没有重试过，则自动重试一次
-    if (retryCount === 0) {
-      console.log(`正在重试获取音乐链接: ${platform}, ${musicId}`)
+    // 如果是第一次失败且有音乐平台信息，则自动重试一次
+    if (retryCount === 0 && song.musicPlatform && song.musicId) {
+      console.log(`正在重试获取音乐链接: ${song.musicPlatform}, ${song.musicId}`)
       await new Promise(resolve => setTimeout(resolve, 1000)) // 等待1秒后重试
-      return getMusicUrl(platform, musicId, quality, 1)
+      return getMusicUrlForDownload(song, quality, 1)
     }
     
     throw new Error('获取音乐播放链接失败: ' + error.message)
@@ -253,7 +258,7 @@ const startDownload = async () => {
 
     try {
       // 获取音频URL
-      const audioUrl = await getMusicUrl(song.musicPlatform, song.musicId, selectedQuality.value)
+      const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
       
       // 生成文件名：歌手名 - 歌曲名.mp3
       const filename = `${song.artist} - ${song.title}.mp3`

@@ -190,7 +190,7 @@ export const useAudioPlayerControl = () => {
           }
           
           console.log('正在获取歌曲URL:', songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
-          songUrl = await getMusicUrl(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+          songUrl = await getMusicUrl(songUrlOrSong.musicPlatform, songUrlOrSong.musicId, songUrlOrSong.playUrl)
           if (!songUrl) {
             throw new Error('无法获取歌曲URL')
           }
@@ -292,7 +292,7 @@ export const useAudioPlayerControl = () => {
       saveQuality(platform, qualityValue)
 
       // 获取新音质的URL
-      const newUrl = await getMusicUrl(platform, musicId, qualityValue)
+      const newUrl = await getMusicUrl(platform, musicId, currentSong.value?.playUrl)
       if (!newUrl) {
         throw new Error('获取新音质URL失败')
       }
