@@ -107,6 +107,32 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // 获取投稿歌曲的排期状态
+    let submittedScheduleMap = new Map()
+    if (submittedSongIds.length > 0) {
+      const submittedScheduleResult = await db.select({
+        songId: schedules.songId
+      }).from(schedules)
+      .where(inArray(schedules.songId, submittedSongIds))
+      
+      submittedScheduleResult.forEach(item => {
+        submittedScheduleMap.set(item.songId, true)
+      })
+    }
+
+    // 获取投票歌曲的排期状态
+    let votedScheduleMap = new Map()
+    if (votedSongIds.length > 0) {
+      const votedScheduleResult = await db.select({
+        songId: schedules.songId
+      }).from(schedules)
+      .where(inArray(schedules.songId, votedSongIds))
+      
+      votedScheduleResult.forEach(item => {
+        votedScheduleMap.set(item.songId, true)
+      })
+    }
+
     return {
       user: {
         id: user.id,
@@ -121,7 +147,7 @@ export default defineEventHandler(async (event) => {
         artist: song.artist,
         createdAt: song.createdAt,
         played: song.played,
-        scheduled: false, // TODO: 需要单独查询 schedules
+        scheduled: submittedScheduleMap.has(song.id),
         voteCount: submittedVoteCountsMap.get(song.id) || 0
       })),
       votedSongs: votedSongs.map(vote => ({
@@ -129,7 +155,7 @@ export default defineEventHandler(async (event) => {
         title: vote.songTitle,
         artist: vote.songArtist,
         played: vote.songPlayed,
-        scheduled: false, // TODO: 需要单独查询 schedules
+        scheduled: votedScheduleMap.has(vote.songId),
         voteCount: votedVoteCountsMap.get(vote.songId) || 0,
         votedAt: vote.createdAt,
         requester: {
