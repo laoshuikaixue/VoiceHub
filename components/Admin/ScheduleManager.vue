@@ -697,8 +697,8 @@ const loadData = async () => {
     
     // 并行加载数据
     await Promise.all([
-      songsService.fetchSongs(false, semester, false, true), // 添加 bypassCache: true
-      songsService.fetchPublicSchedules(false, semester, false, true), // 添加 bypassCache: true
+      songsService.fetchSongs(false, semester, false, true),
+      songsService.fetchPublicSchedules(false, semester, false, true),
       loadPlayTimes(),
       loadDrafts() // 加载草稿列表
     ])
@@ -1901,49 +1901,56 @@ onMounted(() => {
 .date-selector-container {
   display: flex;
   align-items: center;
-  gap: 16px;
-  background: #1a1a1a;
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid #2a2a2a;
+  gap: 20px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #1f1f1f 100%);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  margin-bottom: 24px;
 }
 
 /* 播出时段选择器 */
 .playtime-selector-container {
-  background: #1a1a1a;
-  border-radius: 12px;
-  border: 1px solid #2a2a2a;
-  padding: 16px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #1f1f1f 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
   margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
 }
 
 .playtime-selector {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .playtime-label {
   color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
+  font-size: 15px;
 }
 
 .playtime-select {
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
+  background: rgba(30, 30, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
   color: white;
-  padding: 8px 12px;
+  padding: 10px 14px;
   font-size: 14px;
-  min-width: 200px;
+  min-width: 220px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .playtime-select:hover {
-  border-color: #4a4a4a;
-  background: #333333;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(30, 30, 30, 0.9);
 }
 
 .playtime-select:focus {
@@ -1955,17 +1962,18 @@ onMounted(() => {
 
 
 .date-nav-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  color: #cccccc;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(42, 42, 42, 0.8) 0%, rgba(35, 35, 35, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .date-nav-btn:hover:not(:disabled) {
@@ -1974,22 +1982,23 @@ onMounted(() => {
 }
 
 .date-nav-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
 }
 
 .date-nav-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
 }
 
 .date-selector {
   flex: 1;
   display: flex;
-  gap: 8px;
+  gap: 12px;
   overflow-x: auto;
   scroll-behavior: smooth;
-  padding: 4px 0;
+  padding: 6px 0;
 }
 
 .date-selector::-webkit-scrollbar {
@@ -1997,23 +2006,34 @@ onMounted(() => {
 }
 
 .date-btn {
-  min-width: 60px;
-  padding: 12px 8px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  color: #cccccc;
+  min-width: 70px;
+  padding: 14px 10px;
+  background: linear-gradient(135deg, rgba(42, 42, 42, 0.8) 0%, rgba(35, 35, 35, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.date-btn::before {
+  display: none;
 }
 
 .date-btn:hover {
   background: #3a3a3a;
   color: #ffffff;
+}
+
+.date-btn:hover::before {
+  display: none;
 }
 
 .date-btn.active {
@@ -2027,19 +2047,24 @@ onMounted(() => {
 }
 
 .date-day {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .date-month {
   font-size: 12px;
   opacity: 0.8;
+  font-weight: 500;
 }
 
 .date-weekday {
   font-size: 10px;
   opacity: 0.6;
   margin-top: 2px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* 加载状态 */
@@ -2048,40 +2073,58 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
-  gap: 16px;
+  padding: 80px 20px;
+  gap: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #2a2a2a;
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
   border-top: 3px solid #667eea;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { 
+    transform: rotate(0deg);
+  }
+  100% { 
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text {
-  color: #888888;
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
 }
 
 /* 排期内容 */
 .schedule-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  min-height: 600px;
+  grid-template-columns: 2fr 3fr;
+  gap: 24px;
+  min-height: 700px;
   width: 100%;
   box-sizing: border-box;
+  align-items: start;
 }
 
 /* 响应式设计 */
+@media (max-width: 1400px) {
+  .schedule-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+}
+
 @media (max-width: 1200px) {
   .schedule-content {
     grid-template-columns: 1fr;
@@ -2099,29 +2142,43 @@ onMounted(() => {
   min-width: 0;
   overflow: hidden;
   box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.song-list-panel:hover,
+.sequence-panel:hover {
+  border-color: #3a3a3a;
 }
 
 .panel-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid #2a2a2a;
+  padding: 24px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .panel-header h3 {
   margin: 0;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #f8fafc;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
   flex-wrap: wrap;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .search-section {
@@ -2147,20 +2204,22 @@ onMounted(() => {
 }
 
 .search-input {
-  padding: 8px 40px 8px 36px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
+  padding: 10px 40px 10px 36px;
+  background: rgba(30, 30, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   color: #ffffff;
   font-size: 14px;
-  width: 280px;
-  transition: all 0.2s ease;
+  width: 320px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .search-input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  background: rgba(30, 30, 30, 0.9);
 }
 
 .search-input::placeholder {
@@ -2205,20 +2264,21 @@ onMounted(() => {
 }
 
 .semester-select {
-  padding: 6px 12px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
+  padding: 8px 14px;
+  background: rgba(30, 30, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   color: #ffffff;
   font-size: 14px;
-  min-width: 150px;
+  min-width: 160px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .semester-select:hover {
-  border-color: #4a4a4a;
-  background: #333333;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(30, 30, 30, 0.9);
 }
 
 .semester-select:focus {
@@ -2250,78 +2310,120 @@ onMounted(() => {
 .sequence-actions {
   display: flex;
   gap: 12px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .save-btn,
 .mark-played-btn,
-.download-btn {
-  padding: 8px 16px;
-  border-radius: 6px;
+.download-btn,
+.draft-btn,
+.publish-btn {
+  padding: 10px 18px;
+  border-radius: 8px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.save-btn::before,
+.mark-played-btn::before,
+.download-btn::before,
+.draft-btn::before,
+.publish-btn::before {
+  display: none;
 }
 
 .save-btn {
   background: #667eea;
   color: #ffffff;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 .save-btn:hover:not(:disabled) {
   background: #5a67d8;
-}
-
-.save-btn:disabled {
-  background: #3a3a3a;
-  color: #666666;
-  cursor: not-allowed;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .mark-played-btn {
   background: #10b981;
   color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 
 .mark-played-btn:hover:not(:disabled) {
   background: #059669;
-}
-
-.mark-played-btn:disabled {
-  background: #3a3a3a;
-  color: #666666;
-  cursor: not-allowed;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .download-btn {
   background: #f59e0b;
   color: #ffffff;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
 }
 
 .download-btn:hover:not(:disabled) {
   background: #d97706;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
-.download-btn:disabled {
-  background: #3a3a3a;
-  color: #666666;
+.draft-btn {
+  background: #fbbf24;
+  color: #1a1a1a;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+}
+
+.draft-btn:hover:not(:disabled) {
+  background: #f59e0b;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.publish-btn {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.publish-btn:hover:not(:disabled) {
+  background: #059669;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.save-btn:disabled,
+.mark-played-btn:disabled,
+.download-btn:disabled,
+.draft-btn:disabled,
+.publish-btn:disabled {
+  background: rgba(60, 60, 60, 0.5);
+  color: rgba(255, 255, 255, 0.4);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* 拖拽区域 */
 .draggable-songs,
 .sequence-list {
   flex: 1;
-  padding: 16px;
+  padding: 20px;
   overflow-y: auto;
-  min-height: 400px;
+  min-height: 450px;
+  position: relative;
 }
 
 .draggable-songs.drag-over,
 .sequence-list.drag-over {
   background: rgba(102, 126, 234, 0.1);
   border: 2px dashed #667eea;
+  border-radius: 12px;
 }
 
 /* 歌曲项 */
@@ -2329,14 +2431,19 @@ onMounted(() => {
 .scheduled-song {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  gap: 16px;
+  padding: 18px;
   background: #2a2a2a;
   border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  margin-bottom: 8px;
+  border-radius: 12px;
+  margin-bottom: 12px;
   cursor: grab;
   transition: all 0.2s ease;
+}
+
+.draggable-song::before,
+.scheduled-song::before {
+  display: none;
 }
 
 .draggable-song:hover,
@@ -2345,15 +2452,20 @@ onMounted(() => {
   border-color: #4a4a4a;
 }
 
+.draggable-song:hover::before,
+.scheduled-song:hover::before {
+  display: none;
+}
+
 .draggable-song.dragging,
 .scheduled-song.dragging {
-  opacity: 0.5;
-  transform: rotate(5deg);
+  opacity: 0.6;
+  transform: scale(1.02);
 }
 
 .scheduled-song.drag-over {
   border-color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(102, 126, 234, 0.15);
 }
 
 .song-info,
@@ -2386,9 +2498,9 @@ onMounted(() => {
 
 .song-title {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   color: #ffffff;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2485,17 +2597,25 @@ onMounted(() => {
 
 /* 排期项特有样式 */
 .order-number {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: #667eea;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 16px;
   flex-shrink: 0;
+}
+
+.order-number::before {
+  display: none;
+}
+
+.scheduled-song:hover .order-number::before {
+  display: none;
 }
 
 .song-actions {
@@ -2667,82 +2787,94 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  color: #666666;
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 16px;
   text-align: center;
-  border: 2px dashed #3a3a3a;
-  border-radius: 8px;
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
   margin: 20px 0;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.empty-message::before {
+  display: none;
 }
 
 /* 分页控件 */
 .pagination-container {
-  margin-top: 16px;
-  padding: 16px;
-  background: #2a2a2a;
-  border-radius: 8px;
-  border: 1px solid #3a3a3a;
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(42, 42, 42, 0.6) 0%, rgba(35, 35, 35, 0.6) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .pagination-info {
   text-align: center;
-  color: #cccccc;
+  color: rgba(255, 255, 255, 0.8);
   font-size: 14px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  font-weight: 500;
 }
 
 .pagination-controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .pagination-btn {
-  padding: 8px 16px;
-  background: #3a3a3a;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, rgba(60, 60, 60, 0.8) 0%, rgba(45, 45, 45, 0.8) 100%);
   color: #ffffff;
-  border: 1px solid #4a4a4a;
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .pagination-btn:hover:not(:disabled) {
   background: #4a4a4a;
-  border-color: #5a5a5a;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .pagination-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
 }
 
 .page-numbers {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 .page-number {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #3a3a3a;
+  background: linear-gradient(135deg, rgba(60, 60, 60, 0.8) 0%, rgba(45, 45, 45, 0.8) 100%);
   color: #ffffff;
-  border: 1px solid #4a4a4a;
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .page-number:hover {
   background: #4a4a4a;
-  border-color: #5a5a5a;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .page-number.active {
@@ -2752,12 +2884,28 @@ onMounted(() => {
 }
 
 .page-ellipsis {
-  color: #666666;
+  color: rgba(255, 255, 255, 0.4);
   padding: 0 8px;
   font-size: 14px;
+  font-weight: 600;
 }
 
 /* 响应式设计 */
+@media (max-width: 1400px) {
+  .schedule-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .search-input {
+    width: 280px;
+  }
+
+  .panel-header h3 {
+    font-size: 22px;
+  }
+}
+
 @media (max-width: 1200px) {
   .schedule-content {
     grid-template-columns: 1fr;
@@ -2767,12 +2915,22 @@ onMounted(() => {
   .panel-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 16px;
+    padding: 20px 24px;
+  }
+
+  .header-controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 12px;
   }
 
   .sequence-actions {
     width: 100%;
     justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .pagination-controls {
@@ -2792,96 +2950,157 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-
   .date-selector-container {
-    padding: 12px;
+    padding: 16px;
+    border-radius: 12px;
   }
 
   .date-nav-btn {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
   }
 
   .date-btn {
-    min-width: 50px;
-    padding: 8px 6px;
+    min-width: 60px;
+    padding: 12px 8px;
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+  }
+
+  .panel-header h3 {
+    font-size: 20px;
+  }
+
+  .header-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .draggable-songs,
+  .sequence-list {
+    padding: 16px;
+    min-height: 350px;
   }
 
   .draggable-song,
   .scheduled-song {
-    padding: 12px;
+    padding: 16px;
+    gap: 12px;
   }
 
   .song-meta {
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+  }
+
+  .sequence-actions {
+    gap: 8px;
+    padding: 6px 8px;
+  }
+
+  .save-btn,
+  .mark-played-btn,
+  .download-btn,
+  .draft-btn,
+  .publish-btn {
+    padding: 8px 14px;
+    font-size: 13px;
   }
 
   .pagination-container {
-    padding: 12px;
+    padding: 16px;
   }
 
   .pagination-info {
-    font-size: 12px;
-    margin-bottom: 8px;
+    font-size: 13px;
+    margin-bottom: 12px;
   }
 
   .pagination-btn {
-    padding: 6px 12px;
-    font-size: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
   }
 
   .page-number {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
   }
 }
 
 /* 草稿相关样式 */
 .scheduled-song.is-draft {
   border-left: 4px solid #fbbf24;
-  background: linear-gradient(90deg, rgba(251, 191, 36, 0.1) 0%, transparent 100%);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.scheduled-song.is-draft::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 20px 20px 0;
+  border-color: transparent #fbbf24 transparent transparent;
 }
 
 .draft-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 8px;
-  margin-left: 8px;
+  padding: 3px 10px;
+  margin-left: 10px;
   background: #fbbf24;
   color: #1a1a1a;
   font-size: 11px;
-  font-weight: 600;
-  border-radius: 12px;
+  font-weight: 700;
+  border-radius: 16px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
 }
 
 .publish-single-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   background: #10b981;
   color: #ffffff;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-right: 8px;
+  margin-right: 10px;
+}
+
+.publish-single-btn::before {
+  display: none;
 }
 
 .publish-single-btn:hover {
   background: #059669;
-  transform: translateY(-1px);
+}
+
+.publish-single-btn:hover::before {
+  display: none;
 }
 
 .publish-single-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .drafts-panel {

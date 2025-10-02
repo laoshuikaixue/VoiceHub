@@ -1,22 +1,22 @@
 import { db } from '~/drizzle/db'
 import { songs, schedules, users, playTimes, votes } from '~/drizzle/schema'
-import { eq, asc, count, and, or } from 'drizzle-orm'
+import { eq, asc, count, and, or, gte, lt } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
-  // Check user authentication and permissions
+  // 检查用户身份验证和权限
   const user = event.context.user
   
   if (!user) {
     throw createError({
       statusCode: 401,
-      message: 'Unauthorized access'
+      message: '未授权访问'
     })
   }
   
   if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
-      message: 'Only song administrators and above can access full schedule data'
+      message: '只有歌曲管理员及以上权限才能访问完整排期数据'
     })
   }
   
@@ -24,10 +24,10 @@ export default defineEventHandler(async (event) => {
   const { date, playTimeId, includeDrafts = 'true' } = query
   
   try {
-    // Build query conditions
+    // 构建查询条件
     const conditions = []
     
-    // Date filter
+    // 日期过滤
     if (date) {
       const targetDate = new Date(date as string)
       const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
@@ -41,22 +41,22 @@ export default defineEventHandler(async (event) => {
       )
     }
     
-    // Play time filter
+    // 播放时间过滤
     if (playTimeId) {
       conditions.push(eq(schedules.playTimeId, parseInt(playTimeId as string)))
     }
     
-    // Draft inclusion filter - by default include both drafts and published
+    // 草稿包含过滤 - 默认包含草稿和已发布的排期
     if (includeDrafts === 'false') {
       conditions.push(eq(schedules.isDraft, false))
     } else if (includeDrafts === 'only') {
       conditions.push(eq(schedules.isDraft, true))
     }
-    // If includeDrafts === 'true' or not specified, include both (no filter needed)
+    // 如果 includeDrafts === 'true' 或未指定，则包含两者（无需过滤）
     
     const whereCondition = conditions.length > 0 ? and(...conditions) : undefined
     
-    // Get full schedule data including drafts
+    // 获取完整的排期数据，包括草稿
     const schedulesData = await db.select({
       id: schedules.id,
       createdAt: schedules.createdAt,
@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
         asc(schedules.createdAt)
       )
       
-    // Get all users for name disambiguation
+    // 获取所有用户用于姓名消歧
     const allUsers = await db.select({
       id: users.id,
       name: users.name,
@@ -105,7 +105,7 @@ export default defineEventHandler(async (event) => {
     })
       .from(users)
       
-    // Create name to users mapping for disambiguation
+    // 创建姓名到用户的映射用于消歧
     const nameToUsers = new Map()
     allUsers.forEach(user => {
       if (user.name) {
@@ -116,7 +116,7 @@ export default defineEventHandler(async (event) => {
       }
     })
       
-    // Get vote counts for each song
+    // 获取每首歌的投票数
     const songIds = schedulesData.map(s => s.songId)
     const voteCounts = songIds.length > 0 ? await Promise.all(
       songIds.map(async (songId) => {
@@ -129,11 +129,11 @@ export default defineEventHandler(async (event) => {
     
     const voteCountMap = new Map(voteCounts.map(v => [v.songId, v.count]))
     
-    // Format response data
+    // 格式化响应数据
     const formattedSchedules = schedulesData.map(schedule => {
       const dateOnly = schedule.playDate
       
-      // Handle requester name disambiguation
+      // 处理投稿人姓名消歧
       let requesterName = schedule.requesterName || 'Unknown User'
       
       const sameNameUsers = nameToUsers.get(requesterName)
@@ -159,7 +159,7 @@ export default defineEventHandler(async (event) => {
         sequence: schedule.sequence || 1,
         played: schedule.played || false,
         playTimeId: schedule.playTimeId,
-        // Draft state information
+        // 草稿状态信息
         isDraft: schedule.isDraft || false,
         publishedAt: schedule.publishedAt,
         status: schedule.isDraft ? 'draft' : 'published',
@@ -187,7 +187,7 @@ export default defineEventHandler(async (event) => {
       }
     })
     
-    // Group by date for better organization
+    // 按日期分组以便更好地组织
     const groupedByDate = {}
     formattedSchedules.forEach(schedule => {
       const date = schedule.playDate
@@ -211,12 +211,12 @@ export default defineEventHandler(async (event) => {
       }
     })
     
-    // Convert to array and sort by date
+    // 转换为数组并按日期排序
     const dateGroups = Object.values(groupedByDate).sort((a: any, b: any) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
     
-    // Summary statistics
+    // 汇总统计
     const summary = {
       totalSchedules: formattedSchedules.length,
       draftCount: formattedSchedules.filter(s => s.isDraft).length,
@@ -238,10 +238,10 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (error: any) {
-    console.error('Get full schedule data failed:', error)
+    console.error('获取完整排期数据失败:', error)
     throw createError({
       statusCode: 500,
-      message: error.message || 'Failed to retrieve full schedule data'
+      message: error.message || '获取完整排期数据失败'
     })
   }
 })
