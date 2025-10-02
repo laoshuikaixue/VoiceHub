@@ -212,7 +212,21 @@
           </div>
           
           <div v-if="filteredUnscheduledSongs.length === 0" class="empty-message">
-            没有待排歌曲
+            <div v-if="searchQuery" class="empty-content">
+              <div class="empty-icon">🔍</div>
+              <div class="empty-title">未找到匹配的歌曲</div>
+              <div class="empty-subtitle">尝试调整搜索条件或清空搜索框</div>
+            </div>
+            <div v-else-if="allUnscheduledSongs.length === 0" class="empty-content">
+              <div class="empty-icon">🎵</div>
+              <div class="empty-title">暂无待排歌曲</div>
+              <div class="empty-subtitle">所有歌曲都已安排或播放完毕</div>
+            </div>
+            <div v-else class="empty-content">
+              <div class="empty-icon">📄</div>
+              <div class="empty-title">本页无歌曲</div>
+              <div class="empty-subtitle">查看其他页面或调整每页显示数量</div>
+            </div>
           </div>
         </div>
         
@@ -271,7 +285,7 @@
             <button 
               @click="saveDraft" 
               class="draft-btn" 
-              :disabled="!hasChanges || localScheduledSongs.length === 0"
+              :disabled="!hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts"
             >
               保存草稿
             </button>
@@ -317,7 +331,11 @@
           @drop.stop.prevent="dropToSequence"
         >
           <div v-if="localScheduledSongs.length === 0" class="empty-message">
-            将歌曲拖到此处安排播放顺序
+            <div class="empty-content">
+              <div class="empty-icon">🎧</div>
+              <div class="empty-title">空的播放列表</div>
+              <div class="empty-subtitle">将歌曲拖到此处安排播放顺序</div>
+            </div>
           </div>
 
           <TransitionGroup
@@ -1366,8 +1384,8 @@ const deleteDraftConfirmed = async (draft) => {
 
 // 触摸拖拽方法
 const handleTouchStart = (event, item, type) => {
-  if (window.innerWidth > 768) return // 只在移动端启用触摸拖拽
-
+  // 在所有设备上启用触摸拖拽，但桌面端优先使用原生拖拽
+  
   const touch = event.touches[0]
   touchStartPos.value = { x: touch.clientX, y: touch.clientY }
   touchCurrentPos.value = { x: touch.clientX, y: touch.clientY }
@@ -1383,6 +1401,9 @@ const handleTouchStart = (event, item, type) => {
     clearTimeout(longPressTimer.value)
   }
   
+  // 在移动端使用较短的长按时间，桌面端使用较长时间
+  const longPressDelay = window.innerWidth <= 768 ? 300 : TOUCH_CONFIG.LONG_PRESS_DURATION
+  
   // 设置长按识别定时器
   longPressTimer.value = setTimeout(() => {
     if (!isDragging.value && touchDragData.value) {
@@ -1394,7 +1415,9 @@ const handleTouchStart = (event, item, type) => {
       }
       
       // 显示长按提示
-      showTouchDragHint('已识别长按，现在可以拖拽歌曲', 2000)
+      if (window.innerWidth <= 768) {
+        showTouchDragHint('长按开始拖拽，拖到目标区域后松开', 2000)
+      }
       
       // 添加长按视觉反馈
       const target = event.target.closest('.draggable-song, .scheduled-song')
@@ -1403,14 +1426,14 @@ const handleTouchStart = (event, item, type) => {
         dragElement.value = target
       }
     }
-  }, TOUCH_CONFIG.LONG_PRESS_DURATION)
+  }, longPressDelay)
   
   // 只在必要时防止默认行为
   // event.preventDefault()
 }
 
 const handleTouchMove = (event) => {
-  if (!touchDragData.value || window.innerWidth > 768) return
+  if (!touchDragData.value) return
 
   const touch = event.touches[0]
   touchCurrentPos.value = { x: touch.clientX, y: touch.clientY }
@@ -1430,12 +1453,17 @@ const handleTouchMove = (event) => {
     longPressTimer.value = null
   }
   
+  // 在移动端使用较小的拖拽阈值，桌面端需要长按
+  const dragThreshold = window.innerWidth <= 768 ? 10 : TOUCH_CONFIG.DRAG_THRESHOLD
+  
   // 只有在长按识别后或移动距离超过阈值时才开始拖拽
-  if (!isDragging.value && (isLongPressing.value || totalDelta > TOUCH_CONFIG.DRAG_THRESHOLD)) {
+  if (!isDragging.value && (isLongPressing.value || totalDelta > dragThreshold)) {
     isDragging.value = true
 
     // 显示拖拽提示
-    showTouchDragHint('正在拖拽，移动到目标位置后松开', 2000)
+    if (window.innerWidth <= 768) {
+      showTouchDragHint('正在拖拽，移动到目标位置后松开', 2000)
+    }
 
     // 创建拖拽元素
     const target = event.target.closest('.draggable-song, .scheduled-song')
@@ -1472,13 +1500,23 @@ const updateDragPosition = (x, y) => {
   const sequenceList = elementBelow.closest('.sequence-list')
   const scheduledSong = elementBelow.closest('.scheduled-song')
   const draggableSongs = elementBelow.closest('.draggable-songs')
+  const songListPanel = elementBelow.closest('.song-list-panel')
   
-  if (sequenceList) {
-    sequenceList.classList.add('drag-target-highlight')
-  } else if (scheduledSong) {
-    scheduledSong.classList.add('drag-target-highlight')
-  } else if (draggableSongs) {
-    draggableSongs.classList.add('drag-target-highlight')
+  // 根据拖拽类型高亮不同的目标区域
+  if (touchDragData.value?.type === 'song') {
+    // 拖拽待排歌曲时，高亮播放列表区域
+    if (sequenceList) {
+      sequenceList.classList.add('drag-target-highlight')
+    } else if (scheduledSong) {
+      scheduledSong.classList.add('drag-target-highlight')
+    }
+  } else if (touchDragData.value?.type === 'schedule') {
+    // 拖拽已排歌曲时，高亮待排区域或其他已排歌曲
+    if (draggableSongs || songListPanel) {
+      (draggableSongs || songListPanel).classList.add('drag-target-highlight')
+    } else if (scheduledSong) {
+      scheduledSong.classList.add('drag-target-highlight')
+    }
   }
 }
 
@@ -1510,8 +1548,6 @@ const cleanupTouchDrag = () => {
 
 // 显示触控帮助提示
 const showTouchDragHint = (message, duration = 3000) => {
-  if (window.innerWidth > 768) return // 只在移动端显示
-  
   touchHintText.value = message
   showTouchHint.value = true
   
@@ -1536,7 +1572,7 @@ const hideTouchDragHint = () => {
 }
 
 const handleTouchEnd = (event) => {
-  if (!touchDragData.value || window.innerWidth > 768) return
+  if (!touchDragData.value) return
 
   // 清除长按定时器
   if (longPressTimer.value) {
@@ -1553,8 +1589,9 @@ const handleTouchEnd = (event) => {
       const sequenceList = elementBelow.closest('.sequence-list')
       const scheduledSong = elementBelow.closest('.scheduled-song')
       const draggableSongs = elementBelow.closest('.draggable-songs')
+      const songListPanel = elementBelow.closest('.song-list-panel')
 
-      if (touchDragData.value.type === 'song' && sequenceList) {
+      if (touchDragData.value.type === 'song' && (sequenceList || scheduledSong)) {
         // 从左侧拖拽到右侧
         handleTouchDropToSequence(scheduledSong)
         // 成功拖拽震动反馈
@@ -1568,12 +1605,21 @@ const handleTouchEnd = (event) => {
         if (navigator.vibrate) {
           navigator.vibrate([30, 50, 30])
         }
-      } else if (touchDragData.value.type === 'schedule' && draggableSongs) {
-        // 从右侧拖拽回左侧
+      } else if (touchDragData.value.type === 'schedule' && (draggableSongs || songListPanel)) {
+        // 从右侧拖拽回左侧 - 扩大检测范围
         handleTouchReturnToDraggable()
         // 成功拖拽震动反馈
         if (navigator.vibrate) {
           navigator.vibrate([30, 50, 30])
+        }
+      } else {
+        // 拖拽到无效区域的提示
+        if (window.innerWidth <= 768) {
+          if (touchDragData.value.type === 'schedule') {
+            showTouchDragHint('将歌曲拖到左侧待排区域可移出播放列表', 2000)
+          } else {
+            showTouchDragHint('将歌曲拖到右侧播放列表可添加到队列', 2000)
+          }
         }
       }
     }
@@ -1598,27 +1644,25 @@ const handleTouchDropToSequence = async (targetElement) => {
     }
   }
 
-  try {
-    const response = await $fetch('/api/admin/schedule', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      ...useAuth().getAuthConfig(),
-      body: JSON.stringify({
-        songId: song.id,
-        date: selectedDate.value,
-        playTimeId: selectedPlayTime.value || null,
-        sequence: insertIndex + 1
-      })
-    })
-
-    localScheduledSongs.value.splice(insertIndex, 0, response)
-    updateSequenceNumbers()
-    hasChanges.value = true
-  } catch (error) {
-    console.error('添加排期失败:', error)
+  // 直接添加到本地列表，不发送请求
+  const newSchedule = {
+    id: Date.now(),
+    song: song,
+    playDate: selectedDate.value,
+    sequence: insertIndex + 1,
+    isNew: true,
+    isLocalOnly: true
   }
+
+  scheduledSongIds.value.add(song.id)
+  localScheduledSongs.value.splice(insertIndex, 0, newSchedule)
+  
+  // 更新序列号
+  localScheduledSongs.value.forEach((item, idx) => {
+    item.sequence = idx + 1
+  })
+  
+  hasChanges.value = true
 }
 
 const handleTouchReorder = async (targetElement) => {
@@ -1646,17 +1690,20 @@ const handleTouchReturnToDraggable = async () => {
   const scheduleIndex = localScheduledSongs.value.findIndex(s => s.id === schedule.id)
   if (scheduleIndex === -1) return
 
-  try {
-    await $fetch(`/api/admin/schedule/${schedule.id}`, {
-      method: 'DELETE',
-      ...useAuth().getAuthConfig()
-    })
+  // 从本地播放列表中移除
+  scheduledSongIds.value.delete(schedule.song.id)
+  localScheduledSongs.value.splice(scheduleIndex, 1)
 
-    localScheduledSongs.value.splice(scheduleIndex, 1)
-    updateSequenceNumbers()
-    hasChanges.value = true
-  } catch (error) {
-    console.error('删除排期失败:', error)
+  // 更新序列号
+  localScheduledSongs.value.forEach((item, idx) => {
+    item.sequence = idx + 1
+  })
+
+  hasChanges.value = true
+  
+  // 显示成功提示
+  if (window.innerWidth <= 768) {
+    showTouchDragHint('歌曲已移出播放列表', 1500)
   }
 }
 
@@ -1880,9 +1927,9 @@ onMounted(() => {
   // 延迟显示，确保组件完全加载
   setTimeout(() => {
     if (isMobileDevice()) {
-      showTouchDragHint('长按歌曲卡片开始拖拽，或直接拖拽移动', 4000)
+      showTouchDragHint('📱 移动端：可以双向拖拽歌曲，左右互相移动', 4000)
     }
-  }, 1000)
+  }, 1500)
 })
 </script>
 
@@ -1999,6 +2046,7 @@ onMounted(() => {
   overflow-x: auto;
   scroll-behavior: smooth;
   padding: 6px 0;
+  min-width: 0; /* 防止容器溢出 */
 }
 
 .date-selector::-webkit-scrollbar {
@@ -2021,6 +2069,7 @@ onMounted(() => {
   backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
+  flex-shrink: 0; /* 防止按钮被压缩 */
 }
 
 .date-btn::before {
@@ -2794,6 +2843,33 @@ onMounted(() => {
   border-radius: 12px;
   margin: 20px 0;
   background: rgba(255, 255, 255, 0.02);
+  min-height: 120px;
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.empty-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 4px;
+}
+
+.empty-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.4;
 }
 
 .empty-message::before {
@@ -2950,60 +3026,108 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .schedule-manager {
+    padding: 0 8px;
+  }
+
   .date-selector-container {
-    padding: 16px;
+    padding: 12px;
     border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .date-selector {
+    gap: 8px;
+    padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
   }
 
   .date-nav-btn {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
   }
 
   .date-btn {
-    min-width: 60px;
-    padding: 12px 8px;
+    min-width: 50px;
+    padding: 8px 6px;
+    flex-shrink: 0;
+  }
+
+  .playtime-selector-container {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .playtime-selector {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .playtime-select {
+    width: 100%;
+    min-width: auto;
   }
 
   .panel-header {
-    padding: 16px 20px;
+    padding: 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
 
   .panel-header h3 {
-    font-size: 20px;
+    font-size: 18px;
+    text-align: center;
   }
 
   .header-controls {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
-    padding: 12px;
+    padding: 8px;
+    background: none;
+    border: none;
+  }
+
+  .search-section {
+    order: 1;
+  }
+
+  .semester-selector {
+    order: 2;
+    justify-content: stretch;
+  }
+
+  .semester-select {
+    flex: 1;
+    min-width: auto;
+  }
+
+  .sort-options {
+    order: 3;
+    justify-content: stretch;
+  }
+
+  .sort-select {
+    flex: 1;
+    padding: 8px 12px;
   }
 
   .search-input {
     width: 100%;
-  }
-
-  .draggable-songs,
-  .sequence-list {
-    padding: 16px;
-    min-height: 350px;
-  }
-
-  .draggable-song,
-  .scheduled-song {
-    padding: 16px;
-    gap: 12px;
-  }
-
-  .song-meta {
-    flex-direction: column;
-    gap: 6px;
+    font-size: 16px; /* 防止iOS缩放 */
   }
 
   .sequence-actions {
-    gap: 8px;
-    padding: 6px 8px;
+    gap: 6px;
+    padding: 4px;
+    background: none;
+    border: none;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .save-btn,
@@ -3011,28 +3135,157 @@ onMounted(() => {
   .download-btn,
   .draft-btn,
   .publish-btn {
-    padding: 8px 14px;
+    padding: 10px 12px;
     font-size: 13px;
+    min-width: 80px;
+    white-space: nowrap;
+  }
+
+  .draggable-songs,
+  .sequence-list {
+    padding: 12px;
+    min-height: 300px;
+  }
+
+  .draggable-song,
+  .scheduled-song {
+    padding: 12px;
+    gap: 12px;
+    margin-bottom: 8px;
+    /* 移动端触摸优化 */
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .song-info,
+  .scheduled-song-info {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .song-side {
+    align-items: stretch;
+    text-align: left;
+    min-height: auto;
+  }
+
+  .song-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .drag-handle {
+    width: 28px;
+    height: 28px;
+    /* 增大触摸区域 */
+    padding: 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .order-number {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .song-actions {
+    gap: 6px;
+  }
+
+  .publish-single-btn {
+    width: 32px;
+    height: 32px;
+    margin-right: 6px;
   }
 
   .pagination-container {
-    padding: 16px;
+    padding: 12px;
+    margin-top: 12px;
+  }
+
+  .pagination-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .page-numbers {
+    order: -1;
+    justify-content: center;
   }
 
   .pagination-info {
-    font-size: 13px;
-    margin-bottom: 12px;
+    font-size: 12px;
+    margin-bottom: 8px;
   }
 
   .pagination-btn {
-    padding: 8px 14px;
-    font-size: 13px;
+    padding: 8px 12px;
+    font-size: 12px;
   }
 
   .page-number {
-    width: 36px;
-    height: 36px;
-    font-size: 13px;
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  /* 移动端空状态优化 */
+  .empty-message {
+    padding: 30px 15px;
+    font-size: 14px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 触摸拖拽帮助文字 */
+  .touch-drag-hint {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    text-align: center;
+    z-index: 2000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .touch-drag-hint.show {
+    opacity: 1;
+  }
+
+  /* 长按拖拽视觉反馈优化 */
+  .draggable-song.long-pressing,
+  .scheduled-song.long-pressing {
+    transform: scale(1.02);
+    background: rgba(102, 126, 234, 0.15);
+    border-color: #667eea;
+  }
+
+  .draggable-song.touch-dragging,
+  .scheduled-song.touch-dragging {
+    opacity: 0.8;
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    border: 2px solid #667eea;
+  }
+
+  /* 拖拽目标区域高亮 */
+  .drag-target-highlight {
+    background: rgba(102, 126, 234, 0.2) !important;
+    border: 2px dashed #667eea !important;
   }
 }
 
@@ -3428,6 +3681,20 @@ onMounted(() => {
     animation: target-pulse 0.8s ease-in-out infinite alternate;
   }
 
+  /* 待排歌曲区域拖拽目标 */
+  .song-list-panel.drag-target-highlight,
+  .draggable-songs.drag-target-highlight {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border: 2px dashed #10b981 !important;
+  }
+
+  /* 播放列表拖拽目标 */
+  .sequence-panel.drag-target-highlight,
+  .sequence-list.drag-target-highlight {
+    background: rgba(102, 126, 234, 0.15) !important;
+    border: 2px dashed #667eea !important;
+  }
+
   @keyframes target-pulse {
     0% {
       background: rgba(102, 126, 234, 0.15) !important;
@@ -3453,18 +3720,22 @@ onMounted(() => {
   /* 触控拖拽帮助提示 */
   .touch-drag-hint {
     position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+    background: rgba(0, 0, 0, 0.9);
     color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
+    padding: 8px 12px;
+    border-radius: 8px;
     font-size: 12px;
+    text-align: center;
     z-index: 2000;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .touch-drag-hint.show {
