@@ -267,12 +267,29 @@
         <div class="panel-header">
           <h3>播放顺序</h3>
           <div class="sequence-actions">
+            <!-- 草稿保存按钮 -->
+            <button 
+              @click="saveDraft" 
+              class="draft-btn" 
+              :disabled="!hasChanges && localScheduledSongs.length === 0"
+            >
+              保存草稿
+            </button>
+            <!-- 发布按钮 -->
+            <button 
+              @click="publishSchedule" 
+              class="publish-btn" 
+              :disabled="!canPublish"
+            >
+              发布排期
+            </button>
+            <!-- 保存并发布 -->
             <button 
               @click="saveSequence" 
               class="save-btn" 
               :disabled="!hasChanges"
             >
-              保存排期
+              保存并发布
             </button>
             <button 
               @click="openDownloadDialog" 
@@ -311,7 +328,7 @@
             <div
               v-for="(schedule, index) in localScheduledSongs"
               :key="schedule.id"
-              :class="['scheduled-song', { 'drag-over': dragOverIndex === index }]"
+              :class="['scheduled-song', { 'drag-over': dragOverIndex === index, 'is-draft': schedule.isDraft }]"
               :data-schedule-id="schedule.id"
               draggable="true"
               @dragstart="dragScheduleStart($event, schedule)"
@@ -327,12 +344,26 @@
             <div class="order-number">{{ index + 1 }}</div>
             <div class="scheduled-song-info">
               <div class="song-main">
-                <div class="song-title">{{ schedule.song.title }}</div>
+                <div class="song-title">
+                  {{ schedule.song.title }}
+                  <span v-if="schedule.isDraft" class="draft-badge">草稿</span>
+                </div>
                 <div class="song-artist">{{ schedule.song.artist }}</div>
                 <div class="song-requester">投稿人: {{ schedule.song.requester }}</div>
               </div>
             </div>
             <div class="song-actions">
+              <!-- 草稿状态显示发布按钮 -->
+              <button 
+                v-if="schedule.isDraft" 
+                @click="publishSingleDraft(schedule)" 
+                class="publish-single-btn"
+                title="发布此草稿"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5,3 19,12 5,21 5,3"/>
+                </svg>
+              </button>
               <div class="drag-handle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="8" cy="8" r="1.5"/>
@@ -435,6 +466,20 @@ const songs = ref([])
 const publicSchedules = ref([])
 const localScheduledSongs = ref([])
 const scheduledSongIds = ref(new Set())
+
+// 计算是否有未发布的草稿
+const hasUnpublishedDrafts = computed(() => {
+  return localScheduledSongs.value.some(schedule => schedule.isDraft)
+})
+
+// 计算是否有变化或有未发布的草稿
+const canPublish = computed(() => {
+  return (hasChanges.value && localScheduledSongs.value.length > 0) || hasUnpublishedDrafts.value
+})
+
+// 草稿相关数据
+const drafts = ref([])
+const isDraftMode = ref(false)
 
 // 播出时段相关
 const playTimes = ref([])
@@ -649,13 +694,19 @@ const loadData = async () => {
   try {
     // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
     const semester = selectedSemester.value === '全部' ? undefined : selectedSemester.value
-    await songsService.fetchSongs(false, semester, false, true) // 添加 bypassCache: true
-    await songsService.fetchPublicSchedules(false, semester, false, true) // 添加 bypassCache: true
-    await loadPlayTimes()
+    
+    // 并行加载数据
+    await Promise.all([
+      songsService.fetchSongs(false, semester, false, true), // 添加 bypassCache: true
+      songsService.fetchPublicSchedules(false, semester, false, true), // 添加 bypassCache: true
+      loadPlayTimes(),
+      loadDrafts() // 加载草稿列表
+    ])
 
     songs.value = songsService.songs.value
     publicSchedules.value = songsService.publicSchedules.value
 
+    // 在草稿加载完成后再更新本地排期数据
     updateLocalScheduledSongs()
     hasChanges.value = false
   } catch (error) {
@@ -755,28 +806,49 @@ const onSemesterChange = async () => {
   await loadData()
 }
 
-// 更新本地排期数据
+// 更新本地排期数据（包括草稿）
 const updateLocalScheduledSongs = () => {
+  console.log('更新本地排期数据 - 当前日期:', selectedDate.value)
+  console.log('公开排期数量:', publicSchedules.value.length)
+  console.log('草稿数量:', drafts.value.length)
+  
+  // 获取已发布的排期
   let todaySchedules = publicSchedules.value.filter(s => {
     if (!s.playDate) return false
     const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
     return scheduleDateStr === selectedDate.value
   })
 
+  // 获取草稿排期
+  let todayDrafts = drafts.value.filter(draft => {
+    if (!draft.playDate) return false
+    const draftDateStr = new Date(draft.playDate).toISOString().split('T')[0]
+    return draftDateStr === selectedDate.value
+  })
+  
+  console.log('当天已发布排期:', todaySchedules.length)
+  console.log('当天草稿排期:', todayDrafts.length)
+
+  // 合并已发布和草稿排期
+  let allSchedules = [...todaySchedules, ...todayDrafts]
+
   // 如果选择了特定播出时段，进行过滤
   if (selectedPlayTime.value) {
-    todaySchedules = todaySchedules.filter(s =>
+    allSchedules = allSchedules.filter(s =>
       s.playTimeId === parseInt(selectedPlayTime.value)
     )
   }
 
   // 按 sequence 字段排序
-  todaySchedules.sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+  allSchedules.sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
 
-  localScheduledSongs.value = todaySchedules.map(s => ({ ...s }))
+  localScheduledSongs.value = allSchedules.map(s => ({ ...s }))
+  
+  console.log('最终显示排期数量:', localScheduledSongs.value.length)
 
+  // 更新已排期歌曲ID集合（包括草稿）
   scheduledSongIds.value = new Set(
-    publicSchedules.value
+    [...publicSchedules.value, ...drafts.value]
       .filter(s => s.song && s.song.id)
       .map(s => s.song.id)
   )
@@ -870,13 +942,10 @@ const dropToSequence = async (event) => {
       const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
       if (existingIndex !== -1) return
 
-      const dateOnly = new Date(selectedDate.value)
-      dateOnly.setHours(0, 0, 0, 0)
-
       const newSchedule = {
         id: Date.now(),
         song: song,
-        playDate: dateOnly,
+        playDate: selectedDate.value, // 直接使用日期字符串
         sequence: localScheduledSongs.value.length + 1,
         isNew: true,
         isLocalOnly: true
@@ -926,13 +995,10 @@ const dropReorder = async (event, dropIndex) => {
       const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
       if (existingIndex !== -1) return
 
-      const dateOnly = new Date(selectedDate.value)
-      dateOnly.setHours(0, 0, 0, 0)
-
       const newSchedule = {
         id: Date.now(),
         song: song,
-        playDate: dateOnly,
+        playDate: selectedDate.value, // 直接使用日期字符串
         sequence: dropIndex + 1,
         isNew: true
       }
@@ -954,6 +1020,348 @@ const dropReorder = async (event, dropIndex) => {
   }
 
   draggedSchedule.value = null
+}
+
+// 草稿相关方法
+
+// 加载草稿列表（使用新的综合API）
+const loadDrafts = async () => {
+  try {
+    const response = await $fetch('/api/admin/schedule/full', {
+      ...auth.getAuthConfig(),
+      query: {
+        includeDrafts: 'only'  // 只获取草稿
+      }
+    })
+    
+    drafts.value = response.data?.schedules || []
+    console.log('加载草稿列表:', drafts.value.length)
+  } catch (error) {
+    console.error('加载草稿列表失败:', error)
+    // 如果加载失败，设置为空数组避免错误
+    drafts.value = []
+  }
+}
+
+// 加载完整的排期数据（包括草稿）
+const loadFullScheduleData = async (date = null, playTimeId = null, includeDrafts = 'true') => {
+  try {
+    const query = {}
+    if (date) query.date = date
+    if (playTimeId) query.playTimeId = playTimeId
+    query.includeDrafts = includeDrafts
+    
+    const response = await $fetch('/api/admin/schedule/full', {
+      ...auth.getAuthConfig(),
+      query
+    })
+    
+    return response.data || { schedules: [], summary: {} }
+  } catch (error) {
+    console.error('加载完整排期数据失败:', error)
+    return { schedules: [], summary: {} }
+  }
+}
+
+// 刷新草稿列表
+const refreshDrafts = async () => {
+  await loadDrafts()
+  updateLocalScheduledSongs() // 更新播放顺序列表
+}
+
+// 保存草稿（无需确认）
+const saveDraft = async () => {
+  loading.value = true
+  
+  try {
+    // 删除当天指定播出时段的所有排期和草稿
+    const existingSchedules = [...publicSchedules.value, ...drafts.value].filter(s => {
+      if (!s.playDate) return false
+      const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
+      const isTargetDate = scheduleDateStr === selectedDate.value
+      
+      if (selectedPlayTime.value) {
+        return isTargetDate && s.playTimeId === parseInt(selectedPlayTime.value)
+      }
+      return isTargetDate
+    })
+    
+    // 删除现有的排期和草稿
+    for (const schedule of existingSchedules) {
+      try {
+        await $fetch(`/api/admin/schedule/remove`, {
+          method: 'POST',
+          body: { scheduleId: schedule.id },
+          ...auth.getAuthConfig()
+        })
+      } catch (deleteError) {
+        console.warn('删除排期失败:', deleteError)
+      }
+    }
+    
+    // 如果有歌曲，创建草稿排期
+    if (localScheduledSongs.value.length > 0) {
+      for (let i = 0; i < localScheduledSongs.value.length; i++) {
+        const song = localScheduledSongs.value[i]
+        
+        try {
+          await $fetch('/api/admin/schedule/draft', {
+            method: 'POST',
+            body: {
+              songId: song.song.id,
+              playDate: selectedDate.value, // 直接传递日期字符串
+              sequence: i + 1,
+              playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null
+            },
+            ...auth.getAuthConfig()
+          })
+        } catch (error) {
+          console.error(`创建草稿排期失败 (歌曲: ${song.song.title}):`, error)
+          throw error
+        }
+      }
+    }
+    
+    hasChanges.value = false
+    await loadData() // 重新加载数据
+    
+    // 确保草稿显示在播放顺序中
+    updateLocalScheduledSongs()
+    
+    if (window.$showNotification) {
+      if (localScheduledSongs.value.length > 0) {
+        window.$showNotification('排期草稿保存成功！', 'success')
+      } else {
+        window.$showNotification('所有草稿已删除！', 'success')
+      }
+    }
+  } catch (error) {
+    console.error('保存草稿失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('保存草稿失败: ' + (error.data?.message || error.message), 'error')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 发布排期（需要确认）
+const publishSchedule = async () => {
+  if (localScheduledSongs.value.length === 0) return
+  
+  try {
+    confirmDialogTitle.value = '发布排期'
+    confirmDialogMessage.value = '确定要发布当前排期吗？发布后将立即公示并发送通知。'
+    confirmDialogType.value = 'warning'
+    confirmDialogConfirmText.value = '发布排期'
+    confirmAction.value = async () => {
+      await publishScheduleConfirmed()
+    }
+    showConfirmDialog.value = true
+  } catch (error) {
+    console.error('发布排期失败:', error)
+  }
+}
+
+// 确认发布排期
+const publishScheduleConfirmed = async () => {
+  loading.value = true
+  
+  try {
+    // 删除当天指定播出时段的所有排期和草稿
+    const existingSchedules = [...publicSchedules.value, ...drafts.value].filter(s => {
+      if (!s.playDate) return false
+      const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
+      const isTargetDate = scheduleDateStr === selectedDate.value
+      
+      if (selectedPlayTime.value) {
+        return isTargetDate && s.playTimeId === parseInt(selectedPlayTime.value)
+      }
+      return isTargetDate
+    })
+    
+    // 删除现有的排期和草稿
+    for (const schedule of existingSchedules) {
+      try {
+        await $fetch(`/api/admin/schedule/remove`, {
+          method: 'POST',
+          body: { scheduleId: schedule.id },
+          ...auth.getAuthConfig()
+        })
+      } catch (deleteError) {
+        console.warn('删除排期失败:', deleteError)
+      }
+    }
+    
+    // 直接发布排期（不是草稿）
+    for (let i = 0; i < localScheduledSongs.value.length; i++) {
+      const song = localScheduledSongs.value[i]
+      
+      try {
+        await $fetch('/api/admin/schedule', {
+          method: 'POST',
+          body: {
+            songId: song.song.id,
+            playDate: selectedDate.value, // 直接传递日期字符串
+            sequence: i + 1,
+            playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null,
+            isDraft: false // 直接发布
+          },
+          ...auth.getAuthConfig()
+        })
+      } catch (error) {
+        console.error(`发布排期失败 (歌曲: ${song.song.title}):`, error)
+        throw error
+      }
+    }
+    
+    hasChanges.value = false
+    await loadData() // 重新加载数据
+    
+    // 确保界面更新
+    updateLocalScheduledSongs()
+    
+    if (window.$showNotification) {
+      window.$showNotification('排期发布成功，通知已发送！', 'success')
+    }
+  } catch (error) {
+    console.error('发布排期失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('发布排期失败: ' + (error.data?.message || error.message), 'error')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 发布单个草稿（需要确认）
+const publishSingleDraft = async (draft) => {
+  try {
+    confirmDialogTitle.value = '发布草稿'
+    confirmDialogMessage.value = `确定要发布草稿《${draft.song.title}》吗？发布后将立即公示并发送通知。`
+    confirmDialogType.value = 'warning'
+    confirmDialogConfirmText.value = '发布'
+    confirmAction.value = async () => {
+      await publishSingleDraftConfirmed(draft)
+    }
+    showConfirmDialog.value = true
+  } catch (error) {
+    console.error('发布单个草稿失败:', error)
+  }
+}
+
+// 确认发布单个草稿
+const publishSingleDraftConfirmed = async (draft) => {
+  loading.value = true
+  
+  try {
+    await $fetch('/api/admin/schedule/publish', {
+      method: 'POST',
+      body: { scheduleId: draft.id },
+      ...auth.getAuthConfig()
+    })
+    
+    await loadData() // 重新加载数据
+    
+    // 确保界面更新
+    updateLocalScheduledSongs()
+    
+    if (window.$showNotification) {
+      window.$showNotification(`草稿《${draft.song.title}》发布成功，通知已发送！`, 'success')
+    }
+  } catch (error) {
+    console.error('发布单个草稿失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('发布草稿失败: ' + (error.data?.message || error.message), 'error')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 发布草稿
+const publishDraft = async (draft) => {
+  try {
+    confirmDialogTitle.value = '发布草稿'
+    confirmDialogMessage.value = `确定要发布草稿《${draft.song.title}》吗？发布后将立即公示并发送通知。`
+    confirmDialogType.value = 'warning'
+    confirmDialogConfirmText.value = '发布'
+    confirmAction.value = async () => {
+      await publishDraftConfirmed(draft)
+    }
+    showConfirmDialog.value = true
+  } catch (error) {
+    console.error('发布草稿失败:', error)
+  }
+}
+
+// 确认发布草稿
+const publishDraftConfirmed = async (draft) => {
+  loading.value = true
+  
+  try {
+    await $fetch('/api/admin/schedule/publish', {
+      method: 'POST',
+      body: { scheduleId: draft.id },
+      ...auth.getAuthConfig()
+    })
+    
+    await loadData() // 重新加载数据
+    await loadDrafts() // 刷新草稿列表
+    
+    if (window.$showNotification) {
+      window.$showNotification(`草稿《${draft.song.title}》发布成功，通知已发送！`, 'success')
+    }
+  } catch (error) {
+    console.error('发布草稿失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('发布草稿失败: ' + (error.data?.message || error.message), 'error')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 删除草稿
+const deleteDraft = async (draft) => {
+  try {
+    confirmDialogTitle.value = '删除草稿'
+    confirmDialogMessage.value = `确定要删除草稿《${draft.song.title}》吗？此操作不可恢复。`
+    confirmDialogType.value = 'danger'
+    confirmDialogConfirmText.value = '删除'
+    confirmAction.value = async () => {
+      await deleteDraftConfirmed(draft)
+    }
+    showConfirmDialog.value = true
+  } catch (error) {
+    console.error('删除草稿失败:', error)
+  }
+}
+
+// 确认删除草稿
+const deleteDraftConfirmed = async (draft) => {
+  loading.value = true
+  
+  try {
+    await $fetch('/api/admin/schedule/remove', {
+      method: 'POST',
+      body: { scheduleId: draft.id },
+      ...auth.getAuthConfig()
+    })
+    
+    await loadDrafts() // 刷新草稿列表
+    
+    if (window.$showNotification) {
+      window.$showNotification(`草稿《${draft.song.title}》已删除`, 'success')
+    }
+  } catch (error) {
+    console.error('删除草稿失败:', error) 
+    if (window.$showNotification) {
+      window.$showNotification('删除草稿失败: ' + (error.data?.message || error.message), 'error')
+    }
+  } finally {
+    loading.value = false
+  }
 }
 
 // 触摸拖拽方法
@@ -2427,6 +2835,263 @@ onMounted(() => {
     width: 32px;
     height: 32px;
     font-size: 12px;
+  }
+}
+
+/* 草稿相关样式 */
+.scheduled-song.is-draft {
+  border-left: 4px solid #fbbf24;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.1) 0%, transparent 100%);
+}
+
+.draft-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  margin-left: 8px;
+  background: #fbbf24;
+  color: #1a1a1a;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.publish-single-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.publish-single-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.publish-single-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.drafts-panel {
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.drafts-panel .panel-header {
+  background: #2a2a2a;
+  padding: 16px 20px;
+  border-bottom: 1px solid #3a3a3a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drafts-panel .panel-header h3 {
+  color: #ffd700; /* 金色，表示草稿状态 */
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #3a3a3a;
+  color: #ffffff;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-btn:hover {
+  background: #4a4a4a;
+  border-color: #5a5a5a;
+}
+
+.refresh-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.drafts-list {
+  padding: 16px;
+}
+
+.draft-item {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.draft-item:hover {
+  border-color: #ffd700;
+  background: #2d2d2d;
+}
+
+.draft-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.draft-song {
+  flex: 1;
+}
+
+.draft-song .song-title {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.draft-song .song-artist {
+  color: #cccccc;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.draft-song .song-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: #999999;
+}
+
+.draft-song .song-meta span {
+  white-space: nowrap;
+}
+
+.draft-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.publish-draft-btn {
+  padding: 8px 16px;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.publish-draft-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.delete-draft-btn {
+  padding: 8px 16px;
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-draft-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* 新增的按钮样式 */
+.draft-btn {
+  background: #fbbf24;
+  color: #1a1a1a;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.draft-btn:hover:not(:disabled) {
+  background: #f59e0b;
+  transform: translateY(-1px);
+}
+
+.draft-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.publish-btn {
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.publish-btn:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.publish-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 在移动端调整草稿列表 */
+@media (max-width: 768px) {
+  .draft-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .draft-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .draft-song .song-meta {
+    gap: 8px;
   }
 }
 
