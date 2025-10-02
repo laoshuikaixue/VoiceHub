@@ -128,7 +128,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
     {
       id: 'netease-backup-1',
       name: '网易云备用源1',
-      baseUrl: 'http://ncmapi.chenlvin.cc:80',
+      baseUrl: 'https://api.voicehub.lao-shui.top:443',
       priority: 2,
       enabled: true,
       timeout: 8000,
@@ -139,7 +139,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
     {
       id: 'netease-backup-2',
       name: '网易云备用源2',
-      baseUrl: 'https://api.voicehub.lao-shui.top:443',
+      baseUrl: 'https://ncmapi.zcy.life:443',
       priority: 3,
       enabled: true,
       timeout: 8000,
