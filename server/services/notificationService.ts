@@ -294,6 +294,77 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
 }
 
 /**
+ * 创建歌曲驳回通知
+ */
+export async function createSongRejectedNotification(
+  userId: number, 
+  songInfo: { title: string, artist: string }, 
+  reason: string, 
+  ipAddress?: string
+) {
+  try {
+    // 获取用户通知设置
+    const settingsResult = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, userId)).limit(1)
+    const settings = settingsResult[0]
+    
+    // 如果用户关闭了通知，则不发送
+    if (settings && !settings.enabled) {
+      return null
+    }
+    
+    // 创建通知消息
+    const message = `您投稿的歌曲《${songInfo.title} - ${songInfo.artist}》已被管理员驳回。驳回原因：${reason}`
+    
+    // 创建站内通知
+    let notification
+    try {
+      const notificationResult = await db.insert(notifications).values({
+        userId,
+        type: 'SONG_REJECTED',
+        message,
+      }).returning()
+      notification = notificationResult[0]
+    } catch (error) {
+      throw error
+    }
+    
+    // 同步发送 MeoW 通知
+    try {
+      await sendMeowNotificationToUser(
+        userId,
+        '歌曲被驳回',
+        message
+      )
+    } catch (error) {
+      console.error('发送 MeoW 通知失败:', error)
+    }
+
+    // 同步发送邮件通知
+    try {
+      await sendEmailNotificationToUser(
+        userId,
+        '歌曲被驳回',
+        message,
+        ipAddress,
+        'notification.songRejected',
+        {
+          songTitle: songInfo.title,
+          songArtist: songInfo.artist,
+          reason: reason
+        }
+      )
+    } catch (error) {
+      console.error('发送邮件通知失败:', error)
+    }
+    
+    return notification
+  } catch (err) {
+    console.error('创建歌曲驳回通知失败:', err)
+    return null
+  }
+}
+
+/**
  * 创建系统通知
  */
 export async function createSystemNotification(userId: number, title: string, content: string, ipAddress?: string) {

@@ -577,7 +577,8 @@ VoiceHub/
 │   │   │   │   ├── test-connection.post.ts # 测试SMTP连接
 │   │   │   │   └── test-email.post.ts # 发送测试邮件
 │   │   │   ├── songs/               # 管理员歌曲管理API
-│   │   │   │   └── delete.post.ts   # 删除歌曲
+│   │   │   │   ├── delete.post.ts   # 删除歌曲
+│   │   │   │   └── reject.post.ts  # 驳回歌曲
 │   │   │   ├── stats.get.ts         # 统计数据
 │   │   │   ├── stats/               # 详细统计API
 │   │   │   │   ├── active-users.get.ts # 活跃用户统计

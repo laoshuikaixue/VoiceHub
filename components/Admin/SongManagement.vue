@@ -229,6 +229,18 @@
               </button>
               
               <button
+                @click="rejectSong(song.id)"
+                class="action-btn reject-btn"
+                title="驳回歌曲"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+              </button>
+              
+              <button
                 @click="deleteSong(song.id)"
                 class="action-btn delete-btn"
                 title="删除歌曲"
@@ -296,6 +308,54 @@
     @confirm="confirmDelete"
     @close="showDeleteDialog = false"
   />
+
+  <!-- 驳回歌曲对话框 -->
+  <div v-if="showRejectDialog" class="modal-overlay" @click="cancelReject">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h3>驳回歌曲</h3>
+        <button @click="cancelReject" class="close-btn">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="reject-song-info">
+          <div class="song-title">{{ rejectSongInfo.title }}</div>
+          <div class="song-artist">{{ rejectSongInfo.artist }}</div>
+          <div class="song-submitter">投稿人：{{ rejectSongInfo.requester }}</div>
+        </div>
+        <form @submit.prevent="confirmReject">
+          <div class="form-group">
+            <label>驳回原因</label>
+            <textarea
+              v-model="rejectReason"
+              class="form-textarea"
+              placeholder="请输入驳回原因，将通过系统通知发送给投稿人..."
+              rows="4"
+              required
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input
+                v-model="addToBlacklist"
+                type="checkbox"
+                class="checkbox"
+              />
+              <span class="checkbox-text">同时将此歌曲加入黑名单</span>
+            </label>
+            <div class="field-hint">
+              加入黑名单后，该歌曲将无法再次被投稿
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="cancelReject" class="btn-cancel">取消</button>
+            <button type="submit" class="btn-danger" :disabled="rejectLoading">
+              {{ rejectLoading ? '驳回中...' : '确认驳回' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- 投票人员弹窗 -->
   <VotersModal
@@ -581,6 +641,18 @@ const deleteAction = ref(null)
 const showVotersModal = ref(false)
 const selectedSongId = ref(null)
 
+// 驳回歌曲相关
+const showRejectDialog = ref(false)
+const rejectLoading = ref(false)
+const rejectReason = ref('')
+const addToBlacklist = ref(false)
+const rejectSongInfo = ref({
+  id: null,
+  title: '',
+  artist: '',
+  requester: ''
+})
+
 // 编辑歌曲相关
 const showEditModal = ref(false)
 const editLoading = ref(false)
@@ -762,10 +834,10 @@ const toggleSelectSong = (songId) => {
   }
 }
 
-const refreshSongs = async () => {
+const refreshSongs = async (bypassCache = false) => {
   loading.value = true
   try {
-    await songsService.fetchSongs()
+    await songsService.fetchSongs(false, undefined, false, bypassCache)
     songs.value = songsService.songs.value || []
     selectedSongs.value = []
   } catch (error) {
@@ -879,6 +951,80 @@ const confirmDelete = async () => {
   }
   showDeleteDialog.value = false
   deleteAction.value = null
+}
+
+// 驳回歌曲
+const rejectSong = (songId) => {
+  const song = songs.value.find(s => s.id === songId)
+  if (!song) return
+
+  rejectSongInfo.value = {
+    id: song.id,
+    title: song.title || '',
+    artist: song.artist || '',
+    requester: song.requester || song.requester_name || '未知'
+  }
+  
+  rejectReason.value = ''
+  addToBlacklist.value = false
+  showRejectDialog.value = true
+}
+
+// 确认驳回
+const confirmReject = async () => {
+  if (!rejectReason.value.trim()) {
+    if (window.$showNotification) {
+      window.$showNotification('请填写驳回原因', 'error')
+    }
+    return
+  }
+
+  rejectLoading.value = true
+  try {
+    const response = await $fetch('/api/admin/songs/reject', {
+      method: 'POST',
+      body: {
+        songId: rejectSongInfo.value.id,
+        reason: rejectReason.value.trim(),
+        addToBlacklist: addToBlacklist.value
+      }
+    })
+
+    // 强制绕过缓存刷新歌曲列表
+    await refreshSongs(true)
+    
+    // 从选中列表中移除
+    const index = selectedSongs.value.indexOf(rejectSongInfo.value.id)
+    if (index > -1) {
+      selectedSongs.value.splice(index, 1)
+    }
+
+    showRejectDialog.value = false
+    
+    if (window.$showNotification) {
+      window.$showNotification('歌曲驳回成功，已通知投稿人', 'success')
+    }
+  } catch (error) {
+    console.error('驳回歌曲失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('驳回失败: ' + (error.data?.message || error.message), 'error')
+    }
+  } finally {
+    rejectLoading.value = false
+  }
+}
+
+// 取消驳回
+const cancelReject = () => {
+  showRejectDialog.value = false
+  rejectReason.value = ''
+  addToBlacklist.value = false
+  rejectSongInfo.value = {
+    id: null,
+    title: '',
+    artist: '',
+    requester: ''
+  }
 }
 
 // 编辑歌曲
@@ -1515,7 +1661,7 @@ onUnmounted(() => {
 
 .table-header {
   display: grid;
-  grid-template-columns: 50px 1fr 150px 100px 100px 120px;
+  grid-template-columns: 50px 2fr 150px 100px 100px 160px;
   gap: 16px;
   padding: 16px 20px;
   background: #2a2a2a;
@@ -1532,7 +1678,7 @@ onUnmounted(() => {
 
 .song-row {
   display: grid;
-  grid-template-columns: 50px 1fr 150px 100px 100px 120px;
+  grid-template-columns: 50px 2fr 150px 100px 100px 160px;
   gap: 16px;
   padding: 16px 20px;
   border-bottom: 1px solid #2a2a2a;
@@ -1679,12 +1825,13 @@ onUnmounted(() => {
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .action-btn {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
@@ -1724,6 +1871,15 @@ onUnmounted(() => {
 
 .delete-btn:hover {
   background: #dc2626;
+}
+
+.reject-btn {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.reject-btn:hover {
+  background: #d97706;
 }
 
 /* 分页 */
@@ -1781,7 +1937,7 @@ onUnmounted(() => {
 
   .table-header,
   .song-row {
-    grid-template-columns: 50px 1fr 120px 80px 80px 100px;
+    grid-template-columns: 50px 2fr 120px 80px 80px 140px;
     gap: 12px;
     padding: 12px 16px;
   }
@@ -1908,17 +2064,37 @@ onUnmounted(() => {
 .form-input,
 .form-select {
   width: 100%;
-  padding: 12px 16px;
+  padding: 12px;
   background: #2a2a2a;
   border: 1px solid #3a3a3a;
   border-radius: 8px;
-  color: #ffffff;
+  color: #e2e8f0;
   font-size: 14px;
   transition: all 0.2s ease;
 }
 
 .form-input:focus,
 .form-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 12px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+.form-textarea:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -2102,6 +2278,74 @@ onUnmounted(() => {
   background: #3a3a3a;
   color: #666666;
   cursor: not-allowed;
+}
+
+.btn-danger {
+  padding: 12px 24px;
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-danger:disabled {
+  background: #3a3a3a;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+/* 驳回歌曲对话框样式 */
+.reject-song-info {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.reject-song-info .song-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.reject-song-info .song-artist {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.reject-song-info .song-submitter {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.checkbox-label .checkbox {
+  margin: 0;
+  margin-top: 2px;
+}
+
+.checkbox-text {
+  font-size: 14px;
+  color: #e2e8f0;
+  line-height: 1.4;
 }
 
 .search-input-group {
