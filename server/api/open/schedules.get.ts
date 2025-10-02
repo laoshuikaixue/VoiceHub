@@ -142,7 +142,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // 构建查询条件
-    const conditions = []
+    const conditions = [
+      eq(schedules.isDraft, false)  // 只查询已发布的排期
+    ]
 
     if (semester) {
       conditions.push(eq(songs.semester, semester))
@@ -155,9 +157,9 @@ export default defineEventHandler(async (event) => {
       
       conditions.push(
         and(
-          gte(schedules.playDate, startOfDay),
-          lt(schedules.playDate, endOfDay)
-        )
+          gte(schedules.playDate, startOfDay)!,
+          lt(schedules.playDate, endOfDay)!
+        )!
       )
     }
 
@@ -168,9 +170,9 @@ export default defineEventHandler(async (event) => {
     if (search) {
       conditions.push(
         or(
-          like(songs.title, `%${search}%`),
-          like(songs.artist, `%${search}%`)
-        )
+          like(songs.title, `%${search}%`)!,
+          like(songs.artist, `%${search}%`)!
+        )!
       )
     }
 
@@ -194,7 +196,8 @@ export default defineEventHandler(async (event) => {
         musicId: songs.musicId,
         played: songs.played,
         playedAt: songs.playedAt,
-        createdAt: songs.createdAt
+        createdAt: songs.createdAt,
+        semester: songs.semester  // 添加semester字段
       },
       requester: {
         id: users.id,

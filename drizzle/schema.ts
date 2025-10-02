@@ -76,6 +76,9 @@ export const schedules = pgTable('Schedule', {
   played: boolean('played').default(false).notNull(),
   sequence: integer('sequence').default(1).notNull(),
   playTimeId: integer('playTimeId'),
+  // 草稿支持字段
+  isDraft: boolean('isDraft').default(false).notNull(),
+  publishedAt: timestamp('publishedAt'),
 });
 
 // 通知表

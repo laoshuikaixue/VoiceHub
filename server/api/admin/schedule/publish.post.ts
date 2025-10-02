@@ -1,9 +1,9 @@
 import { db } from '~/drizzle/db'
 import { songs, schedules, users, playTimes, votes } from '~/drizzle/schema'
-import { eq, gte, lte, desc, asc, count, and } from 'drizzle-orm'
-import { createSongSelectedNotification } from '../../services/notificationService'
+import { eq, asc, count, and } from 'drizzle-orm'
+import { createSongSelectedNotification } from '~/server/services/notificationService'
 import { cacheService } from '~/server/services/cacheService'
-import { createBeijingTime, getBeijingTimestamp } from '~/utils/timeUtils'
+import { getBeijingTimestamp } from '~/utils/timeUtils'
 import { getClientIP } from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
@@ -20,141 +20,104 @@ export default defineEventHandler(async (event) => {
   if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
-      message: '只有歌曲管理员及以上权限才能创建排期'
+      message: '只有歌曲管理员及以上权限才能发布排期'
     })
   }
   
   const body = await readBody(event)
   
-  if (!body.songId || !body.playDate) {
+  if (!body.scheduleId) {
     throw createError({
       statusCode: 400,
-      message: '歌曲ID和播放日期不能为空'
+      message: '排期ID不能为空'
     })
   }
   
-  // 检查是否为草稿模式（默认直接发布）
-  const isDraft = body.isDraft === true
-  
   try {
-    // 检查歌曲是否存在
-    const songResult = await db.select()
-      .from(songs)
-      .where(eq(songs.id, body.songId))
+    // 检查草稿是否存在
+    const draftResult = await db.select({
+      id: schedules.id,
+      songId: schedules.songId,
+      playDate: schedules.playDate,
+      sequence: schedules.sequence,
+      playTimeId: schedules.playTimeId,
+      isDraft: schedules.isDraft,
+      publishedAt: schedules.publishedAt,
+      song: {
+        id: songs.id,
+        title: songs.title,
+        artist: songs.artist,
+        requesterId: songs.requesterId
+      }
+    })
+      .from(schedules)
+      .innerJoin(songs, eq(schedules.songId, songs.id))
+      .where(and(
+        eq(schedules.id, body.scheduleId),
+        eq(schedules.isDraft, true)  // 确保是草稿状态
+      ))
       .limit(1)
     
-    const song = songResult[0]
+    const draft = draftResult[0]
     
-    if (!song) {
+    if (!draft) {
       throw createError({
         statusCode: 404,
-        message: '歌曲不存在'
+        message: '找不到指定的排期草稿'
       })
     }
     
-    // 检查是否已经为该歌曲创建过排期，如果有则删除旧的排期
-    const existingScheduleResult = await db.select()
-      .from(schedules)
-      .where(eq(schedules.songId, body.songId))
-      .limit(1)
+    // 更新草稿为已发布状态
+    const publishedAt = new Date(getBeijingTimestamp())
     
-    const existingSchedule = existingScheduleResult[0]
-    if (existingSchedule) {
-      // 删除现有排期
-      await db.delete(schedules)
-        .where(eq(schedules.id, existingSchedule.id))
-    }
-    
-    // 获取序号，如果未提供则查找当天最大序号+1
-    let sequence = body.sequence || 1
-    
-    if (!body.sequence) {
-      // 解析输入的日期字符串
-      const inputDateStr = typeof body.playDate === 'string' ? body.playDate : body.playDate.toISOString()
-      
-      // 创建当天的开始和结束时间
-      const startOfDay = new Date(inputDateStr + 'T00:00:00.000Z')
-      const endOfDay = new Date(inputDateStr + 'T23:59:59.999Z')
-      
-      console.log('查询当天排期范围:', {
-        输入日期: body.playDate,
-        开始时间: startOfDay.toISOString(),
-        结束时间: endOfDay.toISOString()
+    const publishResult = await db.update(schedules)
+      .set({
+        isDraft: false,
+        publishedAt: publishedAt,
+        updatedAt: publishedAt
       })
-      
-      const sameDaySchedules = await db.select()
-        .from(schedules)
-        .where(and(
-          gte(schedules.playDate, startOfDay),
-          lte(schedules.playDate, endOfDay)
-        ))
-        .orderBy(desc(schedules.sequence))
-        .limit(1)
-      
-      if (sameDaySchedules.length > 0) {
-        sequence = (sameDaySchedules[0].sequence || 0) + 1
-      }
-    }
-    
-    // 解析输入的日期字符串，确保日期正确
-    const inputDateStr = typeof body.playDate === 'string' ? body.playDate : body.playDate.toISOString()
-    
-    // 直接使用输入的日期字符串，添加时间部分以避免时区问题
-    const playDate = new Date(inputDateStr + 'T00:00:00.000Z')
-    
-    // 创建排期
-    const scheduleResult = await db.insert(schedules)
-      .values({
-        songId: body.songId,
-        playDate: playDate,
-        sequence: sequence,
-        playTimeId: body.playTimeId || null,
-        // 草稿支持：根据参数决定是否为草稿
-        isDraft: isDraft,
-        publishedAt: isDraft ? null : new Date()
-      })
+      .where(eq(schedules.id, body.scheduleId))
       .returning()
     
-    const schedule = {
-      ...scheduleResult[0],
-      song: {
-        id: song.id,
-        title: song.title,
-        artist: song.artist,
-        requesterId: song.requesterId
-      }
+    const publishedSchedule = publishResult[0]
+    
+    if (!publishedSchedule) {
+      throw createError({
+        statusCode: 500,
+        message: '发布排期失败'
+      })
     }
     
     // 获取客户端IP地址
     const clientIP = getClientIP(event)
     
-    // 只有在非草稿模式下才创建通知
-    if (!isDraft) {
-      await createSongSelectedNotification(schedule.song.requesterId, schedule.song.id, {
-        title: schedule.song.title,
-        artist: schedule.song.artist,
-        playDate: schedule.playDate
-      }, clientIP)
-    }
+    // 发布后发送通知（这是与草稿保存的主要区别）
+    await createSongSelectedNotification(draft.song.requesterId, draft.song.id, {
+      title: draft.song.title,
+      artist: draft.song.artist,
+      playDate: draft.playDate
+    }, clientIP)
     
     // 清除相关缓存
     try {
       await cacheService.clearSchedulesCache()
-      await cacheService.clearSongsCache()  // 清除歌曲列表缓存，确保scheduled状态更新
-      console.log(`[Cache] 排期缓存和歌曲列表缓存已清除（${isDraft ? '保存草稿' : '创建排期'}）`)
+      await cacheService.clearSongsCache()
+      console.log('[Cache] 排期缓存和歌曲列表缓存已清除（发布排期）')
     } catch (cacheError) {
       console.error('[Cache] 清除缓存失败:', cacheError)
     }
     
     // 重新缓存完整的排期列表
     try {
-      // 获取所有排期数据
+      // 获取所有已发布的排期数据
       const schedulesData = await db.select({
         id: schedules.id,
         playDate: schedules.playDate,
         sequence: schedules.sequence,
         played: schedules.played,
         playTimeId: schedules.playTimeId,
+        isDraft: schedules.isDraft,
+        publishedAt: schedules.publishedAt,
         songId: schedules.songId,
         songTitle: songs.title,
         songArtist: songs.artist,
@@ -176,6 +139,7 @@ export default defineEventHandler(async (event) => {
         .innerJoin(songs, eq(schedules.songId, songs.id))
         .innerJoin(users, eq(songs.requesterId, users.id))
         .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
+        .where(eq(schedules.isDraft, false))  // 只缓存已发布的排期
         .orderBy(asc(schedules.playDate))
         
       // 获取所有用户的姓名列表，用于检测同名用户
@@ -239,6 +203,8 @@ export default defineEventHandler(async (event) => {
           sequence: schedule.sequence || 1,
           played: schedule.played || false,
           playTimeId: schedule.playTimeId,
+          isDraft: schedule.isDraft,
+          publishedAt: schedule.publishedAt,
           playTime: schedule.playTimeName ? {
             id: schedule.playTimeId,
             name: schedule.playTimeName,
@@ -266,25 +232,25 @@ export default defineEventHandler(async (event) => {
       // 重新缓存完整的排期列表
       if (completeSchedules && completeSchedules.length > 0) {
         await cacheService.setSchedulesList(completeSchedules)
-        console.log(`[Cache] 完整排期列表已重新缓存，数量: ${completeSchedules.length}`)
+        console.log(`[Cache] 已发布排期列表已重新缓存，数量: ${completeSchedules.length}`)
       } else {
-        console.log('[Cache] 没有排期数据需要缓存')
+        console.log('[Cache] 没有已发布排期数据需要缓存')
       }
     } catch (cacheError) {
-      console.warn('[Cache] 重新缓存完整排期列表失败，但不影响排期创建:', cacheError)
+      console.warn('[Cache] 重新缓存完整排期列表失败，但不影响排期发布:', cacheError)
     }
     
     return {
-      ...schedule,
-      isDraft: isDraft,
-      publishedAt: isDraft ? null : schedule.publishedAt,
-      message: isDraft ? '排期草稿保存成功' : '排期创建成功，通知已发送'
+      ...draft,
+      isDraft: false,
+      publishedAt: publishedAt,
+      message: '排期发布成功，通知已发送'
     }
   } catch (error: any) {
-    console.error('创建排期失败:', error)
+    console.error('发布排期失败:', error)
     throw createError({
       statusCode: 500,
-      message: error.message || '创建排期失败'
+      message: error.message || '发布排期失败'
     })
   }
 })

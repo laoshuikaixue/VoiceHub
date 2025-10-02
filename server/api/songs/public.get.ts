@@ -172,6 +172,7 @@ export default defineEventHandler(async (event) => {
     .leftJoin(songs, eq(schedules.songId, songs.id))
     .leftJoin(users, eq(songs.requesterId, users.id))
     .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
+    .where(eq(schedules.isDraft, false))  // 只查询已发布的排期
     .orderBy(schedules.playDate)
 
     // 获取每首歌的投票数
