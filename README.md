@@ -1063,7 +1063,7 @@ const transformMyNewSourceResponse = (response: any): any[] => {
 {
   id: string | number,           // 歌曲ID
   title: string,                 // 歌曲标题
-  artist: string,                // 艺术家
+  artist: string,                // 艺术家（多个艺术家使用 / 分隔）
   cover?: string,                // 封面图片URL
   album?: string,                // 专辑名称
   duration?: number,             // 时长（秒）
@@ -1076,6 +1076,12 @@ const transformMyNewSourceResponse = (response: any): any[] => {
   }
 }
 ```
+
+**注意**：为了确保歌曲重复匹配判断的准确性，所有音源返回的歌手信息都应使用 `/` 作为分隔符。例如：
+- 单个歌手：`"周深"`
+- 多个歌手：`"颜人中/VaVa娃娃"`
+
+这是为了保证各个音源的歌手格式保持一致，避免因分隔符不同导致的重复歌曲匹配失效。
 
 ##### 错误处理
 
@@ -1185,7 +1191,7 @@ const transformMusicApiResponse = (response: any): any[] => {
     return {
       id: song.id,
       title: song.name,
-      artist: song.artists?.map((a: any) => a.name).join(', ') || '未知艺术家',
+      artist: song.artists?.map((a: any) => a.name).join('/') || '未知艺术家',
       cover: song.album?.cover_url,
       album: song.album?.name,
       duration: song.duration_ms ? Math.floor(song.duration_ms / 1000) : undefined,

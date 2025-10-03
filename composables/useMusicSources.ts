@@ -717,7 +717,7 @@ export const useMusicSources = () => {
         if (hasCompleteInfo) {
           // cloudsearch接口响应，包含完整信息
           cover = song.al?.picUrl || null
-          artist = song.ar?.map((artist: any) => artist.name).join(', ') || '未知艺术家'
+          artist = song.ar?.map((artist: any) => artist.name).join('/') || '未知艺术家'
           album = song.al?.name
           duration = song.dt
         } else {
@@ -725,7 +725,7 @@ export const useMusicSources = () => {
           const detail = detailMap.get(song.id)
           cover = detail?.al?.picUrl || 
                  (song.album?.picId ? `https://p1.music.126.net/${song.album.picId}/${song.album.picId}.jpg` : null)
-          artist = song.artists?.map((artist: any) => artist.name).join(', ') || '未知艺术家'
+          artist = song.artists?.map((artist: any) => artist.name).join('/') || '未知艺术家'
           album = song.album?.name
           duration = song.duration
         }
@@ -763,7 +763,7 @@ export const useMusicSources = () => {
     return response.songs.map((song: any) => ({
       id: song.id,
       title: song.name,
-      artist: song.ar?.map((artist: any) => artist.name).join(', ') || '未知艺术家',
+      artist: song.ar?.map((artist: any) => artist.name).join('/') || '未知艺术家',
       cover: song.al?.picUrl,
       album: song.al?.name,
       duration: song.dt,
