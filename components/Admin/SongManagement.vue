@@ -908,12 +908,14 @@ const formatDate = (dateString) => {
 
 const getStatusClass = (song) => {
   if (song.played) return 'played'
-  return 'pending'
+  if (song.scheduled) return 'pending'
+  return 'unscheduled'
 }
 
 const getStatusText = (song) => {
   if (song.played) return '已播放'
-  return '待播放'
+  if (song.scheduled) return '待播放'
+  return '未排期'
 }
 
 const toggleSelectAll = () => {
@@ -2095,6 +2097,12 @@ onUnmounted(() => {
   background: rgba(251, 191, 36, 0.1);
   color: #fbbf24;
   border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.status-badge.unscheduled {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.2);
 }
 
 .status-badge.played {
