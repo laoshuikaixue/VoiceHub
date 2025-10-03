@@ -1,6 +1,6 @@
 import { db } from '~/drizzle/db'
 import { users, songs, votes, schedules } from '~/drizzle/schema'
-import { eq, desc, count, inArray } from 'drizzle-orm'
+import { eq, desc, count, inArray, and } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -108,12 +108,16 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取投稿歌曲的排期状态
+    // 只查询已发布的排期，草稿不算作已排期
     let submittedScheduleMap = new Map()
     if (submittedSongIds.length > 0) {
       const submittedScheduleResult = await db.select({
         songId: schedules.songId
       }).from(schedules)
-      .where(inArray(schedules.songId, submittedSongIds))
+      .where(and(
+        inArray(schedules.songId, submittedSongIds),
+        eq(schedules.isDraft, false)
+      ))
       
       submittedScheduleResult.forEach(item => {
         submittedScheduleMap.set(item.songId, true)
@@ -121,12 +125,16 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取投票歌曲的排期状态
+    // 只查询已发布的排期，草稿不算作已排期
     let votedScheduleMap = new Map()
     if (votedSongIds.length > 0) {
       const votedScheduleResult = await db.select({
         songId: schedules.songId
       }).from(schedules)
-      .where(inArray(schedules.songId, votedSongIds))
+      .where(and(
+        inArray(schedules.songId, votedSongIds),
+        eq(schedules.isDraft, false)
+      ))
       
       votedScheduleResult.forEach(item => {
         votedScheduleMap.set(item.songId, true)

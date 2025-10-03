@@ -51,10 +51,13 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // 检查歌曲是否已排期
+      // 检查歌曲是否已排期（只检查已发布的排期，草稿不算）
       const schedulesResult = await db.select()
         .from(schedules)
-        .where(eq(schedules.songId, body.songId))
+        .where(and(
+          eq(schedules.songId, body.songId),
+          eq(schedules.isDraft, false)
+        ))
         .limit(1)
       
       if (schedulesResult.length > 0) {

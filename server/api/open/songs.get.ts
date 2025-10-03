@@ -185,11 +185,15 @@ export default defineEventHandler(async (event) => {
     const voteCounts = new Map(voteCountsQuery.map(v => [v.songId, v.count]))
     
     // 获取每首歌的排期状态
+    // 只查询已发布的排期，草稿不算作已排期
     const schedulesQuery = songIds.length > 0 ? await db.select({
       songId: schedules.songId
     })
     .from(schedules)
-    .where(inArray(schedules.songId, songIds)) : []
+    .where(and(
+      inArray(schedules.songId, songIds),
+      eq(schedules.isDraft, false)
+    )) : []
     
     const scheduledSongs = new Set(schedulesQuery.map(s => s.songId))
     

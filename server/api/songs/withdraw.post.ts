@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { cacheService } from '~/server/services/cacheService'
 import { songs, schedules, systemSettings, votes } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -50,8 +50,11 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 检查歌曲是否已排期
-  const scheduleResult = await db.select().from(schedules).where(eq(schedules.songId, body.songId)).limit(1)
+  // 检查歌曲是否已排期（只检查已发布的排期，草稿不算）
+  const scheduleResult = await db.select().from(schedules).where(and(
+    eq(schedules.songId, body.songId),
+    eq(schedules.isDraft, false)
+  )).limit(1)
   const schedule = scheduleResult[0]
 
   if (schedule) {

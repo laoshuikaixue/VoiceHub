@@ -51,10 +51,12 @@ export default defineEventHandler(async (event) => {
       console.log(`[Cache] 歌曲列表缓存命中: ${cacheKey}, 歌曲数: ${cachedData.data?.songs?.length || 0}`)
       
       // 重新获取动态状态数据（scheduled状态可能已变化）
+      // 只查询已发布的排期，草稿不算作已排期
       const schedulesQuery = await db.select({
         songId: schedules.songId
       })
       .from(schedules)
+      .where(eq(schedules.isDraft, false))
       
       const scheduledSongs = new Set(schedulesQuery.map(s => s.songId))
       
@@ -172,10 +174,12 @@ export default defineEventHandler(async (event) => {
     })
     
     // 获取每首歌的排期状态
+    // 只查询已发布的排期，草稿不算作已排期
     const schedulesQuery = await db.select({
       songId: schedules.songId
     })
     .from(schedules)
+    .where(eq(schedules.isDraft, false))
     
     const scheduledSongs = new Set(schedulesQuery.map(s => s.songId))
     
