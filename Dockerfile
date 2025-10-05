@@ -40,4 +40,4 @@ ENV NODE_ENV=production \
 
 # 暴露端口并设置启动命令
 EXPOSE $PORT
-CMD ["sh", "-c", "npm run db:migrate && node scripts/deploy.js && npm run dev"]
+CMD ["sh", "-c", "npm run db:migrate && npm run deploy && npm run dev"]
