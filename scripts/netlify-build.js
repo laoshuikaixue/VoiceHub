@@ -90,8 +90,7 @@ async function netlifyBuild() {
       safeExec('rm -rf node_modules');
     }
     
-    // 在Netlify环境中使用npm install（无package-lock.json）
-    if (!safeExec('npm install --production=false')) {
+    if (!safeExec('npm ci')) {
       throw new Error('依赖安装失败');
     }
     
