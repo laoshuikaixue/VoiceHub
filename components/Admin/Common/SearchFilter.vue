@@ -3,25 +3,25 @@
     <!-- 搜索输入框 -->
     <div class="search-section">
       <div class="search-input-wrapper">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="8"/>
           <path d="m21 21-4.35-4.35"/>
         </svg>
         <input
-          :value="searchQuery"
-          @input="$emit('update:searchQuery', $event.target.value)"
-          type="text"
-          :placeholder="searchPlaceholder"
-          class="search-input"
+            :placeholder="searchPlaceholder"
+            :value="searchQuery"
+            class="search-input"
+            type="text"
+            @input="$emit('update:searchQuery', $event.target.value)"
         />
         <button
-          v-if="searchQuery"
-          @click="$emit('update:searchQuery', '')"
-          class="clear-search-btn"
+            v-if="searchQuery"
+            class="clear-search-btn"
+            @click="$emit('update:searchQuery', '')"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
           </svg>
         </button>
       </div>
@@ -30,73 +30,73 @@
     <!-- 过滤器 -->
     <div v-if="filters.length > 0" class="filters-section">
       <div
-        v-for="filter in filters"
-        :key="filter.key"
-        class="filter-group"
+          v-for="filter in filters"
+          :key="filter.key"
+          class="filter-group"
       >
         <label v-if="filter.label" class="filter-label">{{ filter.label }}</label>
-        
+
         <!-- 选择框过滤器 -->
         <select
-          v-if="filter.type === 'select'"
-          :value="filterValues[filter.key]"
-          @change="updateFilter(filter.key, $event.target.value)"
-          class="filter-select"
+            v-if="filter.type === 'select'"
+            :value="filterValues[filter.key]"
+            class="filter-select"
+            @change="updateFilter(filter.key, $event.target.value)"
         >
           <option
-            v-for="option in filter.options"
-            :key="option.value"
-            :value="option.value"
+              v-for="option in filter.options"
+              :key="option.value"
+              :value="option.value"
           >
             {{ option.label }}
           </option>
         </select>
-        
+
         <!-- 日期范围过滤器 -->
         <div v-else-if="filter.type === 'dateRange'" class="date-range-filter">
           <input
-            :value="filterValues[filter.key]?.start || ''"
-            @input="updateDateRange(filter.key, 'start', $event.target.value)"
-            type="date"
-            class="date-input"
-            :placeholder="filter.startPlaceholder || '开始日期'"
+              :placeholder="filter.startPlaceholder || '开始日期'"
+              :value="filterValues[filter.key]?.start || ''"
+              class="date-input"
+              type="date"
+              @input="updateDateRange(filter.key, 'start', $event.target.value)"
           />
           <span class="date-separator">至</span>
           <input
-            :value="filterValues[filter.key]?.end || ''"
-            @input="updateDateRange(filter.key, 'end', $event.target.value)"
-            type="date"
-            class="date-input"
-            :placeholder="filter.endPlaceholder || '结束日期'"
+              :placeholder="filter.endPlaceholder || '结束日期'"
+              :value="filterValues[filter.key]?.end || ''"
+              class="date-input"
+              type="date"
+              @input="updateDateRange(filter.key, 'end', $event.target.value)"
           />
         </div>
-        
+
         <!-- 多选过滤器 -->
         <div v-else-if="filter.type === 'multiSelect'" class="multi-select-filter">
-          <div class="multi-select-dropdown" :class="{ open: openDropdown === filter.key }">
+          <div :class="{ open: openDropdown === filter.key }" class="multi-select-dropdown">
             <button
-              @click="toggleDropdown(filter.key)"
-              class="multi-select-trigger"
+                class="multi-select-trigger"
+                @click="toggleDropdown(filter.key)"
             >
               <span>
                 {{ getMultiSelectLabel(filter) }}
               </span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <polyline points="6,9 12,15 18,9"/>
               </svg>
             </button>
-            
+
             <div v-if="openDropdown === filter.key" class="multi-select-options">
               <label
-                v-for="option in filter.options"
-                :key="option.value"
-                class="multi-select-option"
+                  v-for="option in filter.options"
+                  :key="option.value"
+                  class="multi-select-option"
               >
                 <input
-                  type="checkbox"
-                  :checked="(filterValues[filter.key] || []).includes(option.value)"
-                  @change="toggleMultiSelectOption(filter.key, option.value)"
-                  class="checkbox"
+                    :checked="(filterValues[filter.key] || []).includes(option.value)"
+                    class="checkbox"
+                    type="checkbox"
+                    @change="toggleMultiSelectOption(filter.key, option.value)"
                 />
                 <span>{{ option.label }}</span>
               </label>
@@ -109,17 +109,17 @@
     <!-- 操作按钮 -->
     <div v-if="showActions" class="actions-section">
       <button
-        @click="clearAllFilters"
-        class="btn-base btn-secondary btn-sm"
-        :disabled="!hasActiveFilters"
+          :disabled="!hasActiveFilters"
+          class="btn-base btn-secondary btn-sm"
+          @click="clearAllFilters"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
           <path d="M3 3v5h5"/>
         </svg>
         清除筛选
       </button>
-      
+
       <slot name="actions"></slot>
     </div>
   </div>
@@ -160,34 +160,34 @@ const emit = defineEmits([
 const openDropdown = ref(null)
 
 const hasActiveFilters = computed(() => {
-  return props.searchQuery || 
-         Object.values(props.filterValues).some(value => {
-           if (Array.isArray(value)) return value.length > 0
-           if (typeof value === 'object' && value !== null) {
-             return Object.values(value).some(v => v)
-           }
-           return value !== '' && value !== null && value !== undefined
-         })
+  return props.searchQuery ||
+      Object.values(props.filterValues).some(value => {
+        if (Array.isArray(value)) return value.length > 0
+        if (typeof value === 'object' && value !== null) {
+          return Object.values(value).some(v => v)
+        }
+        return value !== '' && value !== null && value !== undefined
+      })
 })
 
 const updateFilter = (key, value) => {
-  const newValues = { ...props.filterValues, [key]: value }
+  const newValues = {...props.filterValues, [key]: value}
   emit('update:filterValues', newValues)
-  emit('filter-change', { key, value, allValues: newValues })
+  emit('filter-change', {key, value, allValues: newValues})
 }
 
 const updateDateRange = (key, type, value) => {
   const currentRange = props.filterValues[key] || {}
-  const newRange = { ...currentRange, [type]: value }
+  const newRange = {...currentRange, [type]: value}
   updateFilter(key, newRange)
 }
 
 const toggleMultiSelectOption = (filterKey, optionValue) => {
   const currentValues = props.filterValues[filterKey] || []
   const newValues = currentValues.includes(optionValue)
-    ? currentValues.filter(v => v !== optionValue)
-    : [...currentValues, optionValue]
-  
+      ? currentValues.filter(v => v !== optionValue)
+      : [...currentValues, optionValue]
+
   updateFilter(filterKey, newValues)
 }
 
@@ -214,7 +214,7 @@ const closeDropdown = () => {
 const clearAllFilters = () => {
   emit('update:searchQuery', '')
   emit('update:filterValues', {})
-  emit('filter-change', { key: null, value: null, allValues: {} })
+  emit('filter-change', {key: null, value: null, allValues: {}})
 }
 
 // 点击外部关闭下拉框
@@ -446,20 +446,20 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-section {
     min-width: auto;
   }
-  
+
   .filters-section {
     flex-direction: column;
   }
-  
+
   .date-range-filter {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .actions-section {
     justify-content: center;
   }

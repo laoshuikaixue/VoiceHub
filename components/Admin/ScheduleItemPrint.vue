@@ -8,15 +8,15 @@
 
       <!-- 歌曲封面 -->
       <div v-if="settings.showCover" class="cover-section">
-        <img 
-          v-if="schedule.song.cover" 
-          :src="convertToHttps(schedule.song.cover)" 
-          :alt="schedule.song.title"
-          class="song-cover"
-          @error="handleImageError"
+        <img
+            v-if="schedule.song.cover"
+            :alt="schedule.song.title"
+            :src="convertToHttps(schedule.song.cover)"
+            class="song-cover"
+            @error="handleImageError"
         />
         <div v-else class="cover-placeholder">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"/>
             <path d="M12 1v6m0 6v6"/>
             <path d="m21 12-6-3-6 3-6-3"/>

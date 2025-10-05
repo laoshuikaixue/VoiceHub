@@ -3,43 +3,43 @@
     <!-- 统计卡片 -->
     <div class="stats-grid">
       <StatCard
-        label="总歌曲数"
-        :value="stats.totalSongs"
-        icon="songs"
-        icon-class="primary"
-        :change="stats.songsChange"
+          :change="stats.songsChange"
+          :value="stats.totalSongs"
+          icon="songs"
+          icon-class="primary"
+          label="总歌曲数"
       />
 
       <StatCard
-        label="注册用户"
-        :value="stats.totalUsers"
-        icon="users"
-        icon-class="success"
+          :value="stats.totalUsers"
+          icon="users"
+          icon-class="success"
+          label="注册用户"
       />
 
       <StatCard
-        label="今日排期"
-        :value="stats.todaySchedules"
-        icon="schedule"
-        icon-class="info"
+          :value="stats.todaySchedules"
+          icon="schedule"
+          icon-class="info"
+          label="今日排期"
       />
 
       <StatCard
-        label="本周点歌"
-        :value="stats.weeklyRequests"
-        icon="votes"
-        icon-class="warning"
-        :change="stats.requestsChange"
+          :change="stats.requestsChange"
+          :value="stats.weeklyRequests"
+          icon="votes"
+          icon-class="warning"
+          label="本周点歌"
       />
     </div>
-    
+
     <!-- 图表和活动 -->
     <div class="dashboard-grid">
       <div class="dashboard-card">
         <div class="card-header">
           <h3>最近活动</h3>
-          <button @click="refreshActivities" class="refresh-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="refresh-btn" @click="refreshActivities">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <polyline points="23,4 23,10 17,10"/>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
             </svg>
@@ -51,7 +51,7 @@
             <span>加载中...</span>
           </div>
           <div v-else-if="recentActivities.length === 0" class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10"/>
               <path d="M8 12h8"/>
             </svg>
@@ -59,25 +59,28 @@
           </div>
           <div v-else>
             <div v-for="activity in recentActivities" :key="activity.id" class="activity-item">
-              <div class="activity-icon" :class="activity.type">
-                <svg v-if="activity.type === 'song'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <div :class="activity.type" class="activity-icon">
+                <svg v-if="activity.type === 'song'" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M12 1v6m0 6v6"/>
                 </svg>
-                <svg v-else-if="activity.type === 'user'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg v-else-if="activity.type === 'user'" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
-                <svg v-else-if="activity.type === 'schedule'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
+                <svg v-else-if="activity.type === 'schedule'" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24">
+                  <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
+                  <line x1="16" x2="16" y1="2" y2="6"/>
+                  <line x1="8" x2="8" y1="2" y2="6"/>
+                  <line x1="3" x2="21" y1="10" y2="10"/>
                 </svg>
-                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  <line x1="12" x2="12" y1="8" y2="12"/>
+                  <line x1="12" x2="12.01" y1="16" y2="16"/>
                 </svg>
               </div>
               <div class="activity-content">
@@ -89,32 +92,32 @@
           </div>
         </div>
       </div>
-      
+
       <div class="dashboard-card">
         <div class="card-header">
           <h3>系统状态</h3>
-          <div class="status-indicator" :class="{ online: systemStatus.online }">
+          <div :class="{ online: systemStatus.online }" class="status-indicator">
             {{ systemStatus.online ? '在线' : '离线' }}
           </div>
         </div>
         <div class="system-status">
           <div class="status-item">
-            <div class="status-dot" :class="{ active: systemStatus.database }"></div>
+            <div :class="{ active: systemStatus.database }" class="status-dot"></div>
             <span>数据库连接</span>
             <div class="status-value">{{ systemStatus.database ? '正常' : '异常' }}</div>
           </div>
           <div class="status-item">
-            <div class="status-dot" :class="{ active: systemStatus.api }"></div>
+            <div :class="{ active: systemStatus.api }" class="status-dot"></div>
             <span>API服务</span>
             <div class="status-value">{{ systemStatus.api ? '正常' : '异常' }}</div>
           </div>
           <div class="status-item">
-            <div class="status-dot" :class="{ active: !!stats.currentSemester }"></div>
+            <div :class="{ active: !!stats.currentSemester }" class="status-dot"></div>
             <span>当前学期</span>
             <div class="status-value">{{ stats.currentSemester || '未设置' }}</div>
           </div>
           <div class="status-item">
-            <div class="status-dot" :class="{ active: stats.blacklistCount >= 0 }"></div>
+            <div :class="{ active: stats.blacklistCount >= 0 }" class="status-dot"></div>
             <span>黑名单项目</span>
             <div class="status-value">{{ stats.blacklistCount }} 项</div>
           </div>
@@ -125,39 +128,39 @@
           </div>
         </div>
       </div>
-      
+
       <div class="dashboard-card">
         <div class="card-header">
           <h3>快速操作</h3>
         </div>
         <div class="quick-actions">
-          <button @click="navigateTo('schedule')" class="action-btn primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
+          <button class="action-btn primary" @click="navigateTo('schedule')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
+              <line x1="16" x2="16" y1="2" y2="6"/>
+              <line x1="8" x2="8" y1="2" y2="6"/>
+              <line x1="3" x2="21" y1="10" y2="10"/>
             </svg>
             管理排期
           </button>
-          <button @click="navigateTo('users')" class="action-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="action-btn" @click="navigateTo('users')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
             </svg>
             用户管理
           </button>
-          <button @click="navigateTo('notifications')" class="action-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="action-btn" @click="navigateTo('notifications')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
             发送通知
           </button>
-          <button @click="navigateTo('blacklist')" class="action-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="action-btn" @click="navigateTo('blacklist')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10"/>
-              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+              <line x1="4.93" x2="19.07" y1="4.93" y2="19.07"/>
             </svg>
             黑名单管理
           </button>
@@ -241,7 +244,7 @@ const formatTime = (dateString) => {
   const date = new Date(dateString)
   const now = new Date()
   const diff = now - date
-  
+
   if (diff < 60000) return '刚刚'
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
@@ -438,8 +441,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state svg {

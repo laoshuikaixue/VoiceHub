@@ -3,10 +3,10 @@
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <h3 class="modal-title">投票人员列表</h3>
-        <button @click="closeModal" class="close-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+        <button class="close-btn" @click="closeModal">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
           </svg>
         </button>
       </div>
@@ -17,8 +17,9 @@
           <h4 class="song-title">{{ songInfo.title }}</h4>
           <p class="song-artist">{{ songInfo.artist }}</p>
           <div class="vote-summary">
-            <svg class="heart-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            <svg class="heart-icon" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
             <span class="vote-count">{{ totalVotes }} 票</span>
           </div>
@@ -32,13 +33,13 @@
 
         <!-- 错误状态 -->
         <div v-else-if="error" class="error-container">
-          <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="error-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10"/>
-            <line x1="15" y1="9" x2="9" y2="15"/>
-            <line x1="9" y1="9" x2="15" y2="15"/>
+            <line x1="15" x2="9" y1="9" y2="15"/>
+            <line x1="9" x2="15" y1="9" y2="15"/>
           </svg>
           <p class="error-message">{{ error }}</p>
-          <button @click="fetchVoters" class="retry-btn">重试</button>
+          <button class="retry-btn" @click="fetchVoters">重试</button>
         </div>
 
         <!-- 投票人员列表 -->
@@ -48,9 +49,9 @@
           </div>
           <div class="voters-container">
             <div
-              v-for="(voter, index) in voters"
-              :key="voter.id"
-              class="voter-item"
+                v-for="(voter, index) in voters"
+                :key="voter.id"
+                class="voter-item"
             >
               <div class="voter-info">
                 <div class="voter-avatar">
@@ -68,15 +69,16 @@
 
         <!-- 无投票状态 -->
         <div v-else class="empty-state">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          <svg class="empty-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
           <p>暂无投票</p>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button @click="closeModal" class="close-button">关闭</button>
+        <button class="close-button" @click="closeModal">关闭</button>
       </div>
     </div>
   </div>
@@ -120,7 +122,7 @@ const fetchVoters = async () => {
 
   try {
     const response = await $fetch(`/api/songs/${props.songId}/voters`)
-    
+
     songInfo.value = response.song
     voters.value = response.voters || []
     totalVotes.value = response.totalVotes || 0
@@ -148,7 +150,7 @@ const formatVoteTime = (dateString) => {
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
   if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`
-  
+
   return date.toLocaleDateString('zh-CN', {
     month: 'short',
     day: 'numeric',
@@ -296,8 +298,12 @@ watch(() => props.show, (newShow) => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-container {
@@ -489,22 +495,22 @@ watch(() => props.show, (newShow) => {
   .modal-overlay {
     padding: 10px;
   }
-  
+
   .modal-content {
     max-height: 90vh;
   }
-  
+
   .modal-header,
   .modal-body,
   .modal-footer {
     padding-left: 16px;
     padding-right: 16px;
   }
-  
+
   .voter-item {
     padding: 10px 12px;
   }
-  
+
   .voter-avatar {
     width: 32px;
     height: 32px;

@@ -5,7 +5,7 @@
       <div class="brand-section">
         <div class="brand-content">
           <div class="logo-section">
-            <img src="/images/logo.svg" alt="VoiceHub Logo" class="brand-logo" />
+            <img alt="VoiceHub Logo" class="brand-logo" src="/images/logo.svg"/>
             <h1 v-if="siteTitle" class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
           </div>
           <p class="brand-description">
@@ -13,7 +13,7 @@
           </p>
           <div class="feature-list">
             <div class="feature-item">
-              <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="feature-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M12 1v6m0 6v6"/>
                 <path d="m21 12-6-3-6 3-6-3"/>
@@ -21,16 +21,16 @@
               <span>智能点歌管理</span>
             </div>
             <div class="feature-item">
-              <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
+              <svg class="feature-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
+                <line x1="16" x2="16" y1="2" y2="6"/>
+                <line x1="8" x2="8" y1="2" y2="6"/>
+                <line x1="3" x2="21" y1="10" y2="10"/>
               </svg>
               <span>可视化排期</span>
             </div>
             <div class="feature-item">
-              <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="feature-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
@@ -43,7 +43,7 @@
       <!-- 右侧登录表单 -->
       <div class="form-section">
         <ClientOnly>
-          <LoginForm />
+          <LoginForm/>
         </ClientOnly>
       </div>
     </div>
@@ -55,13 +55,13 @@ import {onMounted} from 'vue'
 import LoginForm from '~/components/Auth/LoginForm.vue'
 
 // 使用站点配置
-const { siteTitle, initSiteConfig } = useSiteConfig()
+const {siteTitle, initSiteConfig} = useSiteConfig()
 
 // 在组件挂载后初始化站点配置
 onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
-  
+
   // 设置页面标题
   if (typeof document !== 'undefined' && siteTitle.value) {
     document.title = `登录 | ${siteTitle.value}`

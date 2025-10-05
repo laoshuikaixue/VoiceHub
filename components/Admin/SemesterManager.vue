@@ -24,45 +24,45 @@
     <!-- 学期列表 -->
     <div class="semester-list">
       <h3>所有学期</h3>
-      
+
       <div v-if="loading" class="loading">
         <div class="loading-spinner"></div>
         <p>加载中...</p>
       </div>
-      
+
       <div v-else-if="error" class="error">
         <p>{{ error }}</p>
-        <button @click="fetchSemesters" class="retry-btn">重试</button>
+        <button class="retry-btn" @click="fetchSemesters">重试</button>
       </div>
-      
+
       <div v-else-if="semesters.length === 0" class="empty">
         <p>暂无学期数据</p>
       </div>
-      
+
       <div v-else class="semester-grid">
-        <div 
-          v-for="semester in semesters" 
-          :key="semester.id"
-          class="semester-card"
-          :class="{ active: semester.isActive }"
+        <div
+            v-for="semester in semesters"
+            :key="semester.id"
+            :class="{ active: semester.isActive }"
+            class="semester-card"
         >
           <div class="semester-info">
             <h4>{{ semester.name }}</h4>
           </div>
           <div class="semester-actions">
-            <button 
-              v-if="!semester.isActive"
-              @click="setActive(semester.id)"
-              class="set-active-btn"
-              :disabled="loading"
+            <button
+                v-if="!semester.isActive"
+                :disabled="loading"
+                class="set-active-btn"
+                @click="setActive(semester.id)"
             >
               设为当前
             </button>
-            <button 
-              v-if="!semester.isActive"
-              @click="deleteSemester(semester.id)"
-              class="delete-btn"
-              :disabled="loading"
+            <button
+                v-if="!semester.isActive"
+                :disabled="loading"
+                class="delete-btn"
+                @click="deleteSemester(semester.id)"
             >
               删除
             </button>
@@ -79,35 +79,35 @@
           <h3>添加新学期</h3>
           <button class="close-btn" @click="closeAddModal">×</button>
         </div>
-        
-        <form @submit.prevent="handleAddSemester" class="modal-body">
+
+        <form class="modal-body" @submit.prevent="handleAddSemester">
           <div class="form-group">
             <label for="semesterName">学期名称</label>
             <input
-              id="semesterName"
-              v-model="newSemester.name"
-              type="text"
-              placeholder="例如：2024-2025学年上学期"
-              required
+                id="semesterName"
+                v-model="newSemester.name"
+                placeholder="例如：2024-2025学年上学期"
+                required
+                type="text"
             />
           </div>
-          
+
           <div class="form-group">
             <label class="checkbox-label">
               <input
-                v-model="newSemester.isActive"
-                type="checkbox"
+                  v-model="newSemester.isActive"
+                  type="checkbox"
               />
               <span class="checkmark"></span>
               设为当前活跃学期
             </label>
           </div>
-          
+
           <div class="modal-actions">
-            <button type="button" @click="closeAddModal" class="cancel-btn">
+            <button class="cancel-btn" type="button" @click="closeAddModal">
               取消
             </button>
-            <button type="submit" class="submit-btn" :disabled="submitting">
+            <button :disabled="submitting" class="submit-btn" type="submit">
               {{ submitting ? '创建中...' : '创建学期' }}
             </button>
           </div>
@@ -118,15 +118,15 @@
 
   <!-- 确认删除对话框 -->
   <ConfirmDialog
-    :show="showDeleteDialog"
-    title="删除学期"
-    message="确定要删除这个学期吗？此操作不可撤销。"
-    type="danger"
-    confirm-text="删除"
-    cancel-text="取消"
-    :loading="loading"
-    @confirm="confirmDelete"
-    @close="showDeleteDialog = false"
+      :loading="loading"
+      :show="showDeleteDialog"
+      cancel-text="取消"
+      confirm-text="删除"
+      message="确定要删除这个学期吗？此操作不可撤销。"
+      title="删除学期"
+      type="danger"
+      @close="showDeleteDialog = false"
+      @confirm="confirmDelete"
   />
 </template>
 
@@ -134,14 +134,14 @@
 import {onMounted, ref} from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
-const { 
-  semesters, 
-  currentSemester, 
-  loading, 
-  error, 
-  fetchSemesters, 
-  fetchCurrentSemester, 
-  createSemester, 
+const {
+  semesters,
+  currentSemester,
+  loading,
+  error,
+  fetchSemesters,
+  fetchCurrentSemester,
+  createSemester,
   setActiveSemester,
   deleteSemester: deleteSemesterAPI
 } = useSemesters()
@@ -174,12 +174,12 @@ const deleteSemester = async (semesterId) => {
 // 确认删除
 const confirmDelete = async () => {
   if (!deleteTargetId.value) return
-  
+
   const success = await deleteSemesterAPI(deleteTargetId.value)
   if (success && window.$showNotification) {
     window.$showNotification('学期删除成功！', 'success')
   }
-  
+
   showDeleteDialog.value = false
   deleteTargetId.value = null
 }
@@ -187,7 +187,7 @@ const confirmDelete = async () => {
 // 处理添加学期
 const handleAddSemester = async () => {
   submitting.value = true
-  
+
   try {
     const result = await createSemester(newSemester.value)
     if (result) {
@@ -389,8 +389,12 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .retry-btn {

@@ -2,18 +2,18 @@
   <div class="home">
     <!-- 添加顶部Ellipse 1效果 -->
     <div class="ellipse-effect"></div>
-    
+
     <div class="main-content">
       <!-- 顶部区域：Logo和用户信息 -->
       <div class="top-bar">
         <div class="logo-section">
-          <NuxtLink to="/" class="logo-link">
-            <img src="/images/logo.svg" alt="VoiceHub Logo" class="logo-image" />
+          <NuxtLink class="logo-link" to="/">
+            <img alt="VoiceHub Logo" class="logo-image" src="/images/logo.svg"/>
           </NuxtLink>
           <!-- 横线和学校logo -->
           <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider-container">
             <div class="logo-divider"></div>
-            <img :src="proxiedSchoolLogoUrl" alt="学校Logo" class="school-logo" />
+            <img :src="proxiedSchoolLogoUrl" alt="学校Logo" class="school-logo"/>
           </div>
         </div>
 
@@ -33,20 +33,20 @@
 
               <div class="user-actions">
                 <!-- 删除通知铃铛按钮 -->
-                <button @click="handleLogout" class="action-button logout-button">
+                <button class="action-button logout-button" @click="handleLogout">
                   <span class="logout-text">退出登录</span>
                 </button>
-                <NuxtLink v-if="isAdmin" to="/dashboard" class="action-button dashboard-button">
+                <NuxtLink v-if="isAdmin" class="action-button dashboard-button" to="/dashboard">
                   管理后台
                 </NuxtLink>
-                <NuxtLink v-else to="/change-password" class="action-button password-button">
+                <NuxtLink v-else class="action-button password-button" to="/change-password">
                   修改密码
                 </NuxtLink>
               </div>
             </div>
 
             <div v-else class="login-options">
-              <NuxtLink to="/login" class="btn btn-outline no-underline">登录</NuxtLink>
+              <NuxtLink class="btn btn-outline no-underline" to="/login">登录</NuxtLink>
             </div>
           </ClientOnly>
         </div>
@@ -60,37 +60,37 @@
       <div class="content-area">
         <!-- 选项卡区域 - 添加ripple指令 -->
         <div class="tabs-row">
-          <div class="section-tab" 
-               :class="{ 'active': activeTab === 'schedule' }" 
-               @click="handleTabClick('schedule')"
-               v-ripple>
+          <div v-ripple
+               :class="{ 'active': activeTab === 'schedule' }"
+               class="section-tab"
+               @click="handleTabClick('schedule')">
             播出排期
           </div>
-          <div class="section-tab" 
-               :class="{ 'active': activeTab === 'songs' }" 
-               @click="handleTabClick('songs')"
-               v-ripple>
+          <div v-ripple
+               :class="{ 'active': activeTab === 'songs' }"
+               class="section-tab"
+               @click="handleTabClick('songs')">
             歌曲列表
           </div>
-          <div class="section-tab" 
-               :class="{ 'active': activeTab === 'request' }" 
-               @click="handleTabClick('request')"
-               v-ripple>
+          <div v-ripple
+               :class="{ 'active': activeTab === 'request' }"
+               class="section-tab"
+               @click="handleTabClick('request')">
             投稿歌曲
           </div>
           <ClientOnly>
-            <div class="section-tab" 
+            <div :key="notificationTabKey"
                  ref="notificationTabRef"
-                 :key="notificationTabKey"
+                 v-ripple
+                 :class="{ 'active': activeTab === 'notification', 'disabled': !isClientAuthenticated }"
+                 class="section-tab"
                  data-tab="notification"
-                 :class="{ 'active': activeTab === 'notification', 'disabled': !isClientAuthenticated }" 
-                 @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()"
-                 v-ripple>
+                 @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()">
               通知
               <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
             </div>
             <template #fallback>
-              <div class="section-tab disabled" 
+              <div class="section-tab disabled"
                    data-tab="notification">
                 通知
               </div>
@@ -101,55 +101,55 @@
         <!-- 内容区域 -->
         <div class="tab-content-container">
           <!-- 使用Transition组件包裹每个tab-pane -->
-          <Transition name="tab-fade" mode="out-in">
+          <Transition mode="out-in" name="tab-fade">
             <!-- 播出排期内容 -->
-            <div v-if="activeTab === 'schedule'" class="tab-pane schedule-tab-pane" key="schedule">
+            <div v-if="activeTab === 'schedule'" key="schedule" class="tab-pane schedule-tab-pane">
               <ClientOnly class="full-width">
                 <LazySongsScheduleList
-                  :schedules="publicSchedules"
-                  :loading="loading"
-                  :error="error"
-                  @semester-change="handleSemesterChange"
+                    :error="error"
+                    :loading="loading"
+                    :schedules="publicSchedules"
+                    @semester-change="handleSemesterChange"
                 />
               </ClientOnly>
             </div>
-            
+
             <!-- 歌曲列表内容 -->
-            <div v-else-if="activeTab === 'songs'" class="tab-pane" key="songs">
+            <div v-else-if="activeTab === 'songs'" key="songs" class="tab-pane">
               <div class="song-list-container">
                 <ClientOnly>
                   <LazySongsSongList
-                    :songs="filteredSongs"
-                    :loading="loading"
-                    :error="error"
-                    :isAdmin="isAdmin"
-                    @vote="handleVote"
-                    @withdraw="handleWithdraw"
-                    @refresh="refreshSongs"
-                    @semester-change="handleSemesterChange"
+                      :error="error"
+                      :isAdmin="isAdmin"
+                      :loading="loading"
+                      :songs="filteredSongs"
+                      @refresh="refreshSongs"
+                      @vote="handleVote"
+                      @withdraw="handleWithdraw"
+                      @semester-change="handleSemesterChange"
                   />
                 </ClientOnly>
               </div>
             </div>
-            
+
             <!-- 投稿歌曲内容 -->
-            <div v-else-if="activeTab === 'request'" class="tab-pane request-pane" key="request">
+            <div v-else-if="activeTab === 'request'" key="request" class="tab-pane request-pane">
               <LazySongsRequestForm
-                ref="requestFormRef"
-                :loading="loading"
-                @request="handleRequest"
-                @vote="handleVote"
+                  ref="requestFormRef"
+                  :loading="loading"
+                  @request="handleRequest"
+                  @vote="handleVote"
               />
             </div>
-            
+
             <!-- 通知内容 -->
-            <div v-else-if="activeTab === 'notification'" class="tab-pane notification-pane" key="notification">
+            <div v-else-if="activeTab === 'notification'" key="notification" class="tab-pane notification-pane">
               <div v-if="!isClientAuthenticated" class="login-required-container">
                 <div class="login-required-content">
                   <div class="login-icon">🔒</div>
                   <h3>需要登录</h3>
                   <p>您需要登录才能查看通知</p>
-                  <button @click="navigateToLogin" class="login-button">
+                  <button class="login-button" @click="navigateToLogin">
                     立即登录
                   </button>
                 </div>
@@ -158,14 +158,15 @@
                 <!-- 标题和设置按钮 -->
                 <div class="notification-header">
                   <h2 class="notification-title">通知中心</h2>
-                  <button @click="toggleNotificationSettings" class="settings-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <button class="settings-icon" @click="toggleNotificationSettings">
+                    <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                         stroke-width="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
                       <circle cx="12" cy="12" r="3"></circle>
-                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                      <path
+                          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                   </button>
                 </div>
-
 
 
                 <!-- 通知列表 -->
@@ -174,63 +175,70 @@
                     <div class="loading-spinner"></div>
                     <span>加载中...</span>
                   </div>
-                  
+
                   <div v-else-if="userNotifications.length === 0" class="empty-notification">
                     <div class="empty-icon">
-                      <Icon name="bell" :size="48" color="#6b7280" />
+                      <Icon :size="48" color="#6b7280" name="bell"/>
                     </div>
                     <p>暂无通知</p>
                   </div>
-                  
-                  <Transition name="notification-list-fade" mode="out-in">
-                    <div v-if="userNotifications.length > 0" class="notification-items" :key="notificationsService.currentPage.value">
-                      <div 
-                        v-for="(notification, index) in userNotifications" 
-                        :key="notification.id"
-                        class="notification-card"
-                        :class="{ 'unread': !notification.read }"
-                        :style="{ '--animation-delay': index * 0.1 + 's' }"
-                        @click="viewNotification(notification)"
+
+                  <Transition mode="out-in" name="notification-list-fade">
+                    <div v-if="userNotifications.length > 0" :key="notificationsService.currentPage.value"
+                         class="notification-items">
+                      <div
+                          v-for="(notification, index) in userNotifications"
+                          :key="notification.id"
+                          :class="{ 'unread': !notification.read }"
+                          :style="{ '--animation-delay': index * 0.1 + 's' }"
+                          class="notification-card"
+                          @click="viewNotification(notification)"
                       >
-                      <div class="notification-card-header">
-                        <div class="notification-icon-type">
-                          <Icon v-if="notification.type === 'SONG_SELECTED'" name="target" :size="20" color="#4f46e5" />
-                          <Icon v-else-if="notification.type === 'SONG_PLAYED'" name="music" :size="20" color="#10b981" />
-                          <Icon v-else-if="notification.type === 'SONG_VOTED'" name="thumbs-up" :size="20" color="#f59e0b" />
-                          <Icon v-else name="speaker" :size="20" color="#6b7280" />
-                        </div>
-                        <div class="notification-title-row">
-                          <div class="notification-title">
-                            <span v-if="notification.type === 'SONG_SELECTED'">歌曲已选中</span>
-                            <span v-else-if="notification.type === 'SONG_PLAYED'">歌曲已播放</span>
-                            <span v-else-if="notification.type === 'SONG_VOTED'">收到新投票</span>
-                            <span v-else>系统通知</span>
-                            <span v-if="!notification.read" class="unread-indicator"></span>
+                        <div class="notification-card-header">
+                          <div class="notification-icon-type">
+                            <Icon v-if="notification.type === 'SONG_SELECTED'" :size="20" color="#4f46e5"
+                                  name="target"/>
+                            <Icon v-else-if="notification.type === 'SONG_PLAYED'" :size="20" color="#10b981"
+                                  name="music"/>
+                            <Icon v-else-if="notification.type === 'SONG_VOTED'" :size="20" color="#f59e0b"
+                                  name="thumbs-up"/>
+                            <Icon v-else :size="20" color="#6b7280" name="speaker"/>
                           </div>
-                          <div class="notification-time">{{ formatNotificationTime(notification.createdAt) }}</div>
+                          <div class="notification-title-row">
+                            <div class="notification-title">
+                              <span v-if="notification.type === 'SONG_SELECTED'">歌曲已选中</span>
+                              <span v-else-if="notification.type === 'SONG_PLAYED'">歌曲已播放</span>
+                              <span v-else-if="notification.type === 'SONG_VOTED'">收到新投票</span>
+                              <span v-else>系统通知</span>
+                              <span v-if="!notification.read" class="unread-indicator"></span>
+                            </div>
+                            <div class="notification-time">{{ formatNotificationTime(notification.createdAt) }}</div>
+                          </div>
                         </div>
-                      </div>
-                      <div class="notification-card-body">
-                        <div class="notification-text">{{ notification.message }}</div>
-                      </div>
-                      <div class="notification-card-actions">
-                        <button 
-                          @click.stop="deleteNotification(notification.id)" 
-                          class="action-button delete"
-                          title="删除"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                          </svg>
-                          <span>删除</span>
-                        </button>
+                        <div class="notification-card-body">
+                          <div class="notification-text">{{ notification.message }}</div>
+                        </div>
+                        <div class="notification-card-actions">
+                          <button
+                              class="action-button delete"
+                              title="删除"
+                              @click.stop="deleteNotification(notification.id)"
+                          >
+                            <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round"
+                                 stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16"
+                                 xmlns="http://www.w3.org/2000/svg">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path
+                                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            <span>删除</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
                   </Transition>
                 </div>
-                
+
                 <!-- 分页控件 -->
                 <div v-if="notificationsService.totalCount.value > 0" class="notification-pagination">
                   <div class="pagination-info">
@@ -239,16 +247,16 @@
                       第 {{ notificationsService.currentPage.value }} / {{ notificationsService.totalPages.value }} 页
                     </span>
                   </div>
-                  
+
                   <div class="pagination-controls">
                     <!-- 每页显示数量选择器 -->
                     <div class="page-size-selector">
                       <label for="pageSize">每页显示：</label>
-                      <select 
-                        id="pageSize"
-                        :value="notificationsService.pageSize.value" 
-                        @change="handlePageSizeChange($event.target.value)"
-                        class="page-size-select"
+                      <select
+                          id="pageSize"
+                          :value="notificationsService.pageSize.value"
+                          class="page-size-select"
+                          @change="handlePageSizeChange($event.target.value)"
                       >
                         <option value="5">5条</option>
                         <option value="10">10条</option>
@@ -256,103 +264,106 @@
                         <option value="50">50条</option>
                       </select>
                     </div>
-                    
+
                     <!-- 页码导航 -->
                     <div class="page-navigation">
-                      <button 
-                        @click="notificationsService.prevPage()"
-                        :disabled="!notificationsService.hasPrevPage.value || notificationsService.isPaginationLoading.value"
-                        class="page-nav-button"
-                        title="上一页"
+                      <button
+                          :disabled="!notificationsService.hasPrevPage.value || notificationsService.isPaginationLoading.value"
+                          class="page-nav-button"
+                          title="上一页"
+                          @click="notificationsService.prevPage()"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
                           <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                       </button>
-                      
+
                       <!-- 页码按钮 -->
                       <div class="page-numbers">
                         <template v-for="page in getVisiblePages()" :key="page">
-                          <button 
-                            v-if="page !== '...'"
-                            @click="notificationsService.goToPage(page)"
-                            :class="['page-number-button', { 'active': page === notificationsService.currentPage.value }]"
-                            :disabled="notificationsService.isPaginationLoading.value"
+                          <button
+                              v-if="page !== '...'"
+                              :class="['page-number-button', { 'active': page === notificationsService.currentPage.value }]"
+                              :disabled="notificationsService.isPaginationLoading.value"
+                              @click="notificationsService.goToPage(page)"
                           >
                             {{ page }}
                           </button>
                           <span v-else class="page-ellipsis">...</span>
                         </template>
                       </div>
-                      
-                      <button 
-                        @click="notificationsService.nextPage()"
-                        :disabled="!notificationsService.hasNextPage.value || notificationsService.isPaginationLoading.value"
-                        class="page-nav-button"
-                        title="下一页"
+
+                      <button
+                          :disabled="!notificationsService.hasNextPage.value || notificationsService.isPaginationLoading.value"
+                          class="page-nav-button"
+                          title="下一页"
+                          @click="notificationsService.nextPage()"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
                           <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                       </button>
                     </div>
                   </div>
-                  
+
                   <!-- 分页加载状态 -->
                   <div v-if="notificationsService.isPaginationLoading.value" class="pagination-loading">
                     <div class="loading-spinner"></div>
                     <span>加载中...</span>
                   </div>
                 </div>
-                
+
                 <!-- 底部操作按钮 -->
                 <div v-if="userNotifications.length > 0" class="notification-actions-bar">
-                  <button 
-                    @click="markAllNotificationsAsRead" 
-                    :disabled="!hasUnreadNotifications"
-                    class="action-button-large"
-                    :class="{ 'disabled': !hasUnreadNotifications }"
+                  <button
+                      :class="{ 'disabled': !hasUnreadNotifications }"
+                      :disabled="!hasUnreadNotifications"
+                      class="action-button-large"
+                      @click="markAllNotificationsAsRead"
                   >
                     全部标记为已读
                   </button>
-                  <button 
-                    @click="clearAllNotifications" 
-                    class="action-button-large danger"
+                  <button
+                      class="action-button-large danger"
+                      @click="clearAllNotifications"
                   >
                     清空所有通知
                   </button>
                 </div>
-                
+
                 <!-- 确认对话框 -->
                 <ConfirmDialog
-                  v-model:show="showConfirmDialog"
-                  :title="confirmDialogConfig.title"
-                  :message="confirmDialogConfig.message"
-                  :type="confirmDialogConfig.type"
-                  :confirm-text="confirmDialogConfig.confirmText"
-                  :cancel-text="confirmDialogConfig.cancelText"
-                  @confirm="handleConfirmAction"
-                  @cancel="handleCancelAction"
+                    v-model:show="showConfirmDialog"
+                    :cancel-text="confirmDialogConfig.cancelText"
+                    :confirm-text="confirmDialogConfig.confirmText"
+                    :message="confirmDialogConfig.message"
+                    :title="confirmDialogConfig.title"
+                    :type="confirmDialogConfig.type"
+                    @cancel="handleCancelAction"
+                    @confirm="handleConfirmAction"
                 />
               </div>
             </div>
           </Transition>
         </div>
       </div>
-      
+
       <!-- 页脚信息显示 -->
       <div class="site-footer">
         <div class="footer-info">
           <span v-if="icpNumber" class="footer-item">
-            <a :href="`https://beian.miit.gov.cn/`" target="_blank" rel="noopener noreferrer" class="icp-link">
+            <a :href="`https://beian.miit.gov.cn/`" class="icp-link" rel="noopener noreferrer" target="_blank">
               {{ icpNumber }}
             </a>
           </span>
           <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }}</span>
-           <span v-else class="footer-item">© {{ currentYear }} LaoShui</span>
-           <span class="footer-item">Worker in {{ responseTime }}ms</span>
+          <span v-else class="footer-item">© {{ currentYear }} LaoShui</span>
+          <span class="footer-item">Worker in {{ responseTime }}ms</span>
           <span class="footer-item">
-            <a href="https://github.com/laoshuikaixue/VoiceHub" target="_blank" rel="noopener noreferrer" class="voicehub-link">
+            <a class="voicehub-link" href="https://github.com/laoshuikaixue/VoiceHub" rel="noopener noreferrer"
+               target="_blank">
               VoiceHub v{{ systemVersion }}
             </a>
           </span>
@@ -363,24 +374,25 @@
     <!-- 规则弹窗 -->
     <Teleport to="body">
       <Transition name="modal-animation">
-    <div v-if="showRules" class="modal-overlay" @click.self="showRules = false">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="text-xl font-bold">点歌规则</h2>
-          <button @click="showRules = false" class="close-button">×</button>
-        </div>
+        <div v-if="showRules" class="modal-overlay" @click.self="showRules = false">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2 class="text-xl font-bold">点歌规则</h2>
+              <button class="close-button" @click="showRules = false">×</button>
+            </div>
 
-        <div class="modal-body">
-          <div class="rules-content">
-            <h3 class="font-bold mb-2">投稿须知</h3>
-            <div v-if="submissionGuidelines" class="guidelines-content" v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+            <div class="modal-body">
+              <div class="rules-content">
+                <h3 class="font-bold mb-2">投稿须知</h3>
+                <div v-if="submissionGuidelines" class="guidelines-content"
+                     v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
 
-            <h3 class="font-bold mb-2">播放时间</h3>
-            <p>每天夜自修静班前</p>
+                <h3 class="font-bold mb-2">播放时间</h3>
+                <p>每天夜自修静班前</p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
       </Transition>
     </Teleport>
   </div>
@@ -402,7 +414,14 @@ const config = useRuntimeConfig()
 const router = useRouter()
 
 // 站点配置
-const { siteTitle, description: siteDescription, guidelines: submissionGuidelines, icp: icpNumber, schoolLogoHomeUrl, initSiteConfig } = useSiteConfig()
+const {
+  siteTitle,
+  description: siteDescription,
+  guidelines: submissionGuidelines,
+  icp: icpNumber,
+  schoolLogoHomeUrl,
+  initSiteConfig
+} = useSiteConfig()
 
 const auth = useAuth()
 
@@ -493,7 +512,7 @@ const fetchNotificationSettings = async () => {
 const saveNotificationSettings = async () => {
   if (notificationsService) {
     await notificationsService.updateNotificationSettings(notificationSettings.value)
-    
+
     // 如果在首页，更新刷新间隔
     if (typeof setupRefreshInterval === 'function') {
       setupRefreshInterval()
@@ -601,11 +620,11 @@ const handlePageSizeChange = async (newSize) => {
 // 获取可见的页码列表
 const getVisiblePages = () => {
   if (!notificationsService) return []
-  
+
   const currentPage = notificationsService.currentPage.value
   const totalPages = notificationsService.totalPages.value
   const pages = []
-  
+
   if (totalPages <= 7) {
     // 总页数少于等于7页，显示所有页码
     for (let i = 1; i <= totalPages; i++) {
@@ -638,7 +657,7 @@ const getVisiblePages = () => {
       pages.push(totalPages)
     }
   }
-  
+
   return pages
 }
 
@@ -647,7 +666,7 @@ const formatNotificationTime = (timeString) => {
   const date = new Date(timeString)
   const now = new Date()
   const diff = now.getTime() - date.getTime()
-  
+
   // 小于1分钟
   if (diff < 60000) {
     return '刚刚'
@@ -690,7 +709,7 @@ watch(() => auth?.isAuthenticated?.value, (newAuthState) => {
       }
     })
   }
-}, { immediate: false })
+}, {immediate: false})
 
 // 初始化时如果已经在通知标签页，则加载通知
 onMounted(() => {
@@ -741,27 +760,27 @@ watch(siteTitle, (newSiteTitle) => {
   if (typeof document !== 'undefined' && newSiteTitle) {
     document.title = `首页 | ${newSiteTitle}`
   }
-}, { immediate: true })
+}, {immediate: true})
 
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
-  
+
   // 初始化认证状态并获取用户信息
   const currentUser = await auth.initAuth()
-  
+
   // 监听登录状态变化，确保UI立即响应
   watch(() => auth?.isAuthenticated?.value, async (newAuthState, oldAuthState) => {
     if (newAuthState && !oldAuthState) {
       // 用户刚刚登录成功，立即更新相关数据
       console.log('用户登录状态变化，开始强制更新通知按钮')
-      
+
       // 方法1: 更新key值强制重新渲染
       notificationTabKey.value++
-      
+
       await nextTick()
-      
+
       // 方法2: 直接操作ref元素
       if (notificationTabRef.value) {
         notificationTabRef.value.classList.remove('disabled')
@@ -769,7 +788,7 @@ onMounted(async () => {
         notificationTabRef.value.style.cursor = 'pointer'
         notificationTabRef.value.style.pointerEvents = 'auto'
       }
-      
+
       // 方法3: 强制触发响应式更新
       await nextTick(() => {
         // 强制重新计算isClientAuthenticated
@@ -785,23 +804,23 @@ onMounted(async () => {
           }
         }
       })
-      
+
       // 方法4: 再次更新key值确保完全重新渲染
       await nextTick()
       notificationTabKey.value++
-      
+
       // 方法5: 再次使用nextTick确保Vue响应式系统完全更新
       await nextTick()
-      
+
       console.log('通知按钮强制更新完成')
-      
+
       await Promise.all([
         loadNotifications(),
         fetchNotificationSettings()
       ])
     }
-  }, { immediate: false, flush: 'post' })
-  
+  }, {immediate: false, flush: 'post'})
+
   // 确保title正确设置
   if (typeof document !== 'undefined' && siteTitle.value) {
     document.title = `首页 | ${siteTitle.value}`
@@ -818,7 +837,7 @@ onMounted(async () => {
       loadNotifications(),
       fetchNotificationSettings()
     ])
-    
+
     // 检查用户是否需要修改密码并显示提示
     await checkPasswordChangeRequired(currentUser)
   } else {
@@ -838,13 +857,13 @@ onMounted(async () => {
     if (refreshInterval) {
       clearInterval(refreshInterval)
     }
-    
+
     // 获取用户设置的刷新间隔（秒），默认60秒
     const intervalSeconds = notificationSettings.value.refreshInterval || 60
     const intervalMs = intervalSeconds * 1000
-    
+
     console.log(`设置智能刷新间隔: ${intervalSeconds}秒`)
-    
+
     refreshInterval = setInterval(async () => {
       try {
         // 定期刷新数据
@@ -862,7 +881,7 @@ onMounted(async () => {
             songs.fetchSongCount()
           ])
         }
-        
+
         // 更新统计数据
         await updateSongCounts()
       } catch (error) {
@@ -870,7 +889,7 @@ onMounted(async () => {
       }
     }, intervalMs)
   }
-  
+
   // 初始设置刷新间隔
   setupRefreshInterval()
 
@@ -919,14 +938,14 @@ const proxiedSchoolLogoUrl = computed(() => {
   if (!schoolLogoHomeUrl.value || !schoolLogoHomeUrl.value.trim()) {
     return ''
   }
-  
+
   const logoUrl = schoolLogoHomeUrl.value.trim()
-  
+
   // 如果是HTTP链接，通过代理访问
   if (logoUrl.startsWith('http://')) {
     return `/api/proxy/image?url=${encodeURIComponent(logoUrl)}`
   }
-  
+
   // HTTPS链接或相对路径直接返回
   return logoUrl
 })
@@ -997,7 +1016,7 @@ const handleVote = async (song) => {
       // 保持向后兼容，传递ID
       await songs.voteSong(song.id)
     }
-    
+
     // 静默刷新歌曲列表以获取最新状态，但不影响当前视图
     setTimeout(() => {
       songs.refreshSongsSilent().catch(err => {
@@ -1005,8 +1024,8 @@ const handleVote = async (song) => {
       })
     }, 500)
   } catch (err) {
-      // 不做任何处理，因为useSongs中已经处理了错误提示
-      console.log('API错误已在useSongs中处理')
+    // 不做任何处理，因为useSongs中已经处理了错误提示
+    console.log('API错误已在useSongs中处理')
   }
 }
 
@@ -1023,7 +1042,7 @@ const handleWithdraw = async (song) => {
     // 调用撤回API - 通知已在composable中处理
     await songs.withdrawSong(song.id)
     // 更新计数
-      updateSongCounts()
+    updateSongCounts()
   } catch (err) {
     // 不做任何处理，因为useSongs中已经处理了错误提示
     console.log('API错误已在useSongs中处理')
@@ -1051,15 +1070,15 @@ const handleSemesterChange = async (semester) => {
     // 通过事件总线通知SongList组件进行前端过滤
     // 使用nextTick确保事件在DOM更新后触发
     await nextTick()
-    
+
     // 触发自定义事件，通知所有监听的组件
     const event = new CustomEvent('semester-filter-change', {
-      detail: { semester }
+      detail: {semester}
     })
     window.dispatchEvent(event)
-    
+
     console.log('学期切换事件已发送:', semester)
-    
+
     // 更新歌曲计数（基于当前已有数据）
     await updateSongCounts(semester)
   } catch (err) {
@@ -1071,7 +1090,6 @@ const handleSemesterChange = async (semester) => {
 const updateNotificationCount = async () => {
   // 函数保留但不再使用
 }
-
 
 
 // 处理登出
@@ -1111,9 +1129,9 @@ const formatRefreshInterval = (seconds) => {
   } else {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
-    return remainingSeconds > 0 
-      ? `${minutes}分${remainingSeconds}秒` 
-      : `${minutes}分钟`
+    return remainingSeconds > 0
+        ? `${minutes}分${remainingSeconds}秒`
+        : `${minutes}分钟`
   }
 }
 
@@ -1124,14 +1142,14 @@ const vRipple = {
       const rect = el.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       const ripple = document.createElement('span');
       ripple.className = 'ripple-effect';
       ripple.style.left = `${x}px`;
       ripple.style.top = `${y}px`;
-      
+
       el.appendChild(ripple);
-      
+
       setTimeout(() => {
         ripple.remove();
       }, 600); // 与CSS动画时间一致
@@ -1162,16 +1180,16 @@ const checkPasswordChangeRequired = async (user = null) => {
   try {
     // 使用传入的用户信息或当前认证状态中的用户信息
     const currentUser = user || auth?.user?.value
-    
+
     if (currentUser && currentUser.requirePasswordChange) {
       // 延迟1秒显示通知，确保页面加载完成
       setTimeout(() => {
         if (window.$showNotification) {
           window.$showNotification(
-            '为了您的账户安全，建议您修改密码。您可以点击右上角的"修改密码"按钮进行修改。',
-            'info',
-            true,
-            8000 // 显示8秒
+              '为了您的账户安全，建议您修改密码。您可以点击右上角的"修改密码"按钮进行修改。',
+              'info',
+              true,
+              8000 // 显示8秒
           )
         }
       }, 1000)
@@ -1553,26 +1571,26 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   .tab-pane {
     padding: 0.5rem;
   }
-  
+
   .schedule-tab-pane {
     padding: 0;
   }
-  
+
   /* 移动端分页控件样式 */
   .pagination-controls {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .page-size-selector {
     justify-content: center;
   }
-  
+
   .page-navigation {
     justify-content: center;
     flex-wrap: wrap;
   }
-  
+
   .page-numbers {
     flex-wrap: wrap;
     justify-content: center;
@@ -1681,7 +1699,6 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 
-
 /* 通知列表 */
 .notification-list {
   flex: 1;
@@ -1710,8 +1727,12 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-notification {
@@ -2099,8 +2120,12 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fade-in {
@@ -2168,16 +2193,16 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   .notification-title {
     font-size: 1.2rem;
   }
-  
+
   .settings-form .form-group {
     padding: 8px;
   }
-  
+
   .notification-actions-bar {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .action-button-large {
     width: 100%;
   }
@@ -2190,49 +2215,49 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     gap: 1.5rem;
     align-items: center;
   }
-  
+
   .logo-section {
     justify-content: center;
   }
-  
+
   .logo-image {
     width: 120px;
   }
-  
+
   .user-section {
     align-items: center;
     width: 100%;
   }
-  
+
   .user-info {
     flex-direction: column;
     align-items: center;
     gap: 1rem;
   }
-  
+
   .user-details {
     text-align: center;
   }
-  
+
   .user-actions {
     width: 100%;
     justify-content: center;
   }
-  
+
   .tabs-row {
     flex-wrap: nowrap; /* 保持水平排列 */
     justify-content: flex-start; /* 左对齐 */
     overflow-x: auto; /* 允许水平滚动 */
     padding-bottom: 5px;
   }
-  
+
   .section-tab {
     flex: 0 0 auto; /* 不要拉伸或压缩 */
     padding: 12px 20px;
     font-size: 14px;
     white-space: nowrap;
   }
-  
+
   .tab-content-container {
     padding: 0.5rem;
     border-radius: 0 0 15px 15px; /* 修改圆角，只保留底部圆角 */
@@ -2244,11 +2269,11 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   .request-pane {
     flex-direction: column;
   }
-  
+
   .site-title h2 {
     font-size: 28px;
   }
-  
+
   .ellipse-effect {
     top: -100px;
     left: 50%;
@@ -2263,27 +2288,27 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     padding: 10px 15px;
     font-size: 13px;
   }
-  
+
   .logo-image {
     width: 100px;
   }
-  
+
   .action-button {
     padding: 0.4rem 0.8rem;
     font-size: 12px;
   }
-  
+
   .site-title h2 {
     font-size: 24px;
   }
-  
+
   .tab-content-container {
     padding: 0.5rem;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
   }
-  
+
   .schedule-tab-pane {
     padding: 0;
   }
@@ -2483,15 +2508,15 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     padding: 15px 0;
     margin-top: 20px;
   }
-  
+
   .footer-info {
     gap: 0;
   }
-  
+
   .footer-item {
     font-size: 11px;
   }
-  
+
   .footer-item:not(:last-child)::after {
     margin: 0 2px;
   }

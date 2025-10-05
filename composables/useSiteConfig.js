@@ -11,89 +11,89 @@ const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 
 // 站点配置状态
 const siteConfig = ref({
-  siteTitle: '',
-  siteLogoUrl: '',
-  schoolLogoHomeUrl: '',
-  schoolLogoPrintUrl: '',
-  siteDescription: '',
-  submissionGuidelines: '',
-  icpNumber: ''
+    siteTitle: '',
+    siteLogoUrl: '',
+    schoolLogoHomeUrl: '',
+    schoolLogoPrintUrl: '',
+    siteDescription: '',
+    submissionGuidelines: '',
+    icpNumber: ''
 })
 
 const isLoaded = ref(false)
 const isLoading = ref(false)
 
 export const useSiteConfig = () => {
-  // 获取站点配置
-  const fetchSiteConfig = async () => {
-    if (isLoading.value) return
-    
-    try {
-      isLoading.value = true
-      
-      const response = await fetch('/api/site-config')
-      if (!response.ok) {
-        throw new Error('获取站点配置失败')
-      }
-      
-      const data = await response.json()
-      siteConfig.value = data
-      isLoaded.value = true
-      
-    } catch (error) {
-      console.error('获取站点配置失败:', error)
-      
-      // 使用默认配置
-      siteConfig.value = {
-        siteTitle: '校园广播站点歌系统',
-        siteLogoUrl: '/favicon.ico',
-        schoolLogoHomeUrl: '',
-        schoolLogoPrintUrl: '',
-        siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
-        submissionGuidelines: defaultSubmissionGuidelines,
-        icpNumber: ''
-      }
-      isLoaded.value = true
-    } finally {
-      isLoading.value = false
+    // 获取站点配置
+    const fetchSiteConfig = async () => {
+        if (isLoading.value) return
+
+        try {
+            isLoading.value = true
+
+            const response = await fetch('/api/site-config')
+            if (!response.ok) {
+                throw new Error('获取站点配置失败')
+            }
+
+            const data = await response.json()
+            siteConfig.value = data
+            isLoaded.value = true
+
+        } catch (error) {
+            console.error('获取站点配置失败:', error)
+
+            // 使用默认配置
+            siteConfig.value = {
+                siteTitle: '校园广播站点歌系统',
+                siteLogoUrl: '/favicon.ico',
+                schoolLogoHomeUrl: '',
+                schoolLogoPrintUrl: '',
+                siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
+                submissionGuidelines: defaultSubmissionGuidelines,
+                icpNumber: ''
+            }
+            isLoaded.value = true
+        } finally {
+            isLoading.value = false
+        }
     }
-  }
 
-  // 计算属性
-  const siteTitle = computed(() => siteConfig.value.siteTitle || '校园广播站点歌系统')
-  const logoUrl = computed(() => siteConfig.value.siteLogoUrl || '/favicon.ico')
-  const schoolLogoHomeUrl = computed(() => siteConfig.value.schoolLogoHomeUrl || '')
-  const schoolLogoPrintUrl = computed(() => siteConfig.value.schoolLogoPrintUrl || '')
-  const description = computed(() => siteConfig.value.siteDescription || '校园广播站点歌系统 - 让你的声音被听见')
-  const guidelines = computed(() => siteConfig.value.submissionGuidelines || defaultSubmissionGuidelines)
-  const icp = computed(() => siteConfig.value.icpNumber || '')
+    // 计算属性
+    const siteTitle = computed(() => siteConfig.value.siteTitle || '校园广播站点歌系统')
+    const logoUrl = computed(() => siteConfig.value.siteLogoUrl || '/favicon.ico')
+    const schoolLogoHomeUrl = computed(() => siteConfig.value.schoolLogoHomeUrl || '')
+    const schoolLogoPrintUrl = computed(() => siteConfig.value.schoolLogoPrintUrl || '')
+    const description = computed(() => siteConfig.value.siteDescription || '校园广播站点歌系统 - 让你的声音被听见')
+    const guidelines = computed(() => siteConfig.value.submissionGuidelines || defaultSubmissionGuidelines)
+    const icp = computed(() => siteConfig.value.icpNumber || '')
 
-  // 初始化配置（仅在客户端执行）
-  const initSiteConfig = async () => {
-    if (typeof window !== 'undefined' && !isLoaded.value) {
-      await fetchSiteConfig()
+    // 初始化配置（仅在客户端执行）
+    const initSiteConfig = async () => {
+        if (typeof window !== 'undefined' && !isLoaded.value) {
+            await fetchSiteConfig()
+        }
     }
-  }
 
-  // 刷新配置
-  const refreshSiteConfig = async () => {
-    isLoaded.value = false
-    await fetchSiteConfig()
-  }
+    // 刷新配置
+    const refreshSiteConfig = async () => {
+        isLoaded.value = false
+        await fetchSiteConfig()
+    }
 
-  return {
-    siteConfig: readonly(siteConfig),
-    isLoaded: readonly(isLoaded),
-    isLoading: readonly(isLoading),
-    siteTitle,
-    logoUrl,
-    schoolLogoHomeUrl,
-    schoolLogoPrintUrl,
-    description,
-    guidelines,
-    icp,
-    fetchSiteConfig,
-    initSiteConfig,
-    refreshSiteConfig
-  }
+    return {
+        siteConfig: readonly(siteConfig),
+        isLoaded: readonly(isLoaded),
+        isLoading: readonly(isLoading),
+        siteTitle,
+        logoUrl,
+        schoolLogoHomeUrl,
+        schoolLogoPrintUrl,
+        description,
+        guidelines,
+        icp,
+        fetchSiteConfig,
+        initSiteConfig,
+        refreshSiteConfig
+    }
 }

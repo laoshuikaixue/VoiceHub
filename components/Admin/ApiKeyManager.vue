@@ -7,10 +7,10 @@
         <p class="manager-description">管理开放API的访问密钥，控制第三方应用的访问权限</p>
       </div>
       <div class="header-actions">
-        <button @click="showCreateModal = true" class="btn btn-primary">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
+        <button class="btn btn-primary" @click="showCreateModal = true">
+          <svg class="btn-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="12" x2="12" y1="5" y2="19"/>
+            <line x1="5" x2="19" y1="12" y2="12"/>
           </svg>
           创建API密钥
         </button>
@@ -23,11 +23,11 @@
         <div class="filter-group">
           <label class="filter-label">搜索</label>
           <input
-            v-model="filters.search"
-            type="text"
-            placeholder="搜索API密钥名称或描述"
-            class="filter-input"
-            @input="debouncedSearch"
+              v-model="filters.search"
+              class="filter-input"
+              placeholder="搜索API密钥名称或描述"
+              type="text"
+              @input="debouncedSearch"
           />
         </div>
         <div class="filter-group">
@@ -42,11 +42,11 @@
         <div class="filter-group">
           <label class="filter-label">创建者</label>
           <input
-            v-model="filters.createdBy"
-            type="text"
-            placeholder="创建者用户名"
-            class="filter-input"
-            @input="debouncedSearch"
+              v-model="filters.createdBy"
+              class="filter-input"
+              placeholder="创建者用户名"
+              type="text"
+              @input="debouncedSearch"
           />
         </div>
       </div>
@@ -60,8 +60,8 @@
       </div>
 
       <div v-else-if="apiKeys.length === 0" class="empty-state">
-        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <svg class="empty-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
           <circle cx="12" cy="16" r="1"/>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
@@ -71,33 +71,33 @@
 
       <div v-else class="api-keys-grid">
         <div
-          v-for="apiKey in apiKeys"
-          :key="apiKey.id"
-          class="api-key-card"
-          :class="{ 'card-inactive': !apiKey.isActive, 'card-expired': apiKey.isExpired }"
+            v-for="apiKey in apiKeys"
+            :key="apiKey.id"
+            :class="{ 'card-inactive': !apiKey.isActive, 'card-expired': apiKey.isExpired }"
+            class="api-key-card"
         >
           <div class="card-header">
             <div class="card-title-section">
               <h3 class="card-title">{{ apiKey.name }}</h3>
-              <span class="status-badge" :class="`status-${apiKey.status}`">
+              <span :class="`status-${apiKey.status}`" class="status-badge">
                 {{ getStatusText(apiKey.status) }}
               </span>
             </div>
             <div class="card-actions">
-              <button @click="viewApiKey(apiKey)" class="action-btn" title="查看详情">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button class="action-btn" title="查看详情" @click="viewApiKey(apiKey)">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
               </button>
-              <button @click="editApiKey(apiKey)" class="action-btn" title="编辑">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button class="action-btn" title="编辑" @click="editApiKey(apiKey)">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
               </button>
-              <button @click="deleteApiKey(apiKey)" class="action-btn action-btn-danger" title="删除">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button class="action-btn action-btn-danger" title="删除" @click="deleteApiKey(apiKey)">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="3,6 5,6 21,6"/>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>
@@ -107,7 +107,7 @@
 
           <div class="card-content">
             <p class="card-description">{{ apiKey.description || '暂无描述' }}</p>
-            
+
             <div class="card-info">
               <div class="info-item">
                 <span class="info-label">创建者:</span>
@@ -119,7 +119,7 @@
               </div>
               <div v-if="apiKey.expiresAt" class="info-item">
                 <span class="info-label">过期时间:</span>
-                <span class="info-value" :class="{ 'text-danger': apiKey.isExpired }">
+                <span :class="{ 'text-danger': apiKey.isExpired }" class="info-value">
                   {{ formatDate(apiKey.expiresAt) }}
                 </span>
               </div>
@@ -127,9 +127,9 @@
                 <span class="info-label">权限:</span>
                 <div class="permissions-list">
                   <span
-                    v-for="permission in apiKey.permissions.slice(0, 3)"
-                    :key="permission"
-                    class="permission-tag"
+                      v-for="permission in apiKey.permissions.slice(0, 3)"
+                      :key="permission"
+                      class="permission-tag"
                   >
                     {{ permission }}
                   </span>
@@ -147,9 +147,9 @@
       <div v-if="pagination.totalPages > 1" class="pagination-section">
         <div class="pagination">
           <button
-            @click="changePage(pagination.page - 1)"
-            :disabled="pagination.page <= 1"
-            class="pagination-btn"
+              :disabled="pagination.page <= 1"
+              class="pagination-btn"
+              @click="changePage(pagination.page - 1)"
           >
             上一页
           </button>
@@ -157,9 +157,9 @@
             第 {{ pagination.page }} 页，共 {{ pagination.totalPages }} 页
           </span>
           <button
-            @click="changePage(pagination.page + 1)"
-            :disabled="pagination.page >= pagination.totalPages"
-            class="pagination-btn"
+              :disabled="pagination.page >= pagination.totalPages"
+              class="pagination-btn"
+              @click="changePage(pagination.page + 1)"
           >
             下一页
           </button>
@@ -174,10 +174,10 @@
           <h3 class="modal-title">
             {{ showCreateModal ? '创建API密钥' : '编辑API密钥' }}
           </h3>
-          <button @click="closeModals" class="modal-close">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+          <button class="modal-close" @click="closeModals">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
             </svg>
           </button>
         </div>
@@ -187,29 +187,29 @@
             <div class="form-group">
               <label class="form-label">名称 *</label>
               <input
-                v-model="form.name"
-                type="text"
-                class="form-input"
-                placeholder="输入API密钥名称"
-                required
+                  v-model="form.name"
+                  class="form-input"
+                  placeholder="输入API密钥名称"
+                  required
+                  type="text"
               />
             </div>
 
             <div class="form-group">
               <label class="form-label">描述</label>
               <textarea
-                v-model="form.description"
-                class="form-textarea"
-                placeholder="输入API密钥描述（可选）"
-                rows="3"
+                  v-model="form.description"
+                  class="form-textarea"
+                  placeholder="输入API密钥描述（可选）"
+                  rows="3"
               ></textarea>
             </div>
 
             <div class="form-group">
               <label class="form-label">过期时间</label>
               <select
-                v-model="form.expiresAt"
-                class="form-select"
+                  v-model="form.expiresAt"
+                  class="form-select"
               >
                 <option value="">永不过期</option>
                 <option value="3d">3天后过期</option>
@@ -222,19 +222,18 @@
             </div>
 
 
-
             <div class="form-group">
               <label class="form-label">权限设置 *</label>
               <div class="permissions-grid">
                 <label
-                  v-for="permission in availablePermissions"
-                  :key="permission.value"
-                  class="permission-checkbox"
+                    v-for="permission in availablePermissions"
+                    :key="permission.value"
+                    class="permission-checkbox"
                 >
                   <input
-                    v-model="form.permissions"
-                    type="checkbox"
-                    :value="permission.value"
+                      v-model="form.permissions"
+                      :value="permission.value"
+                      type="checkbox"
                   />
                   <span class="checkbox-label">
                     <strong>{{ permission.label }}</strong>
@@ -246,16 +245,16 @@
 
             <div class="form-group">
               <label class="permission-checkbox">
-                <input v-model="form.isActive" type="checkbox" />
+                <input v-model="form.isActive" type="checkbox"/>
                 <span class="checkbox-label">启用此API密钥</span>
               </label>
             </div>
 
             <div class="form-actions">
-              <button type="button" @click="closeModals" class="btn btn-secondary">
+              <button class="btn btn-secondary" type="button" @click="closeModals">
                 取消
               </button>
-              <button type="submit" class="btn btn-primary" :disabled="submitting">
+              <button :disabled="submitting" class="btn btn-primary" type="submit">
                 {{ submitting ? '保存中...' : (showCreateModal ? '创建' : '保存') }}
               </button>
             </div>
@@ -269,15 +268,15 @@
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
           <h3 class="modal-title">API密钥详情</h3>
-          <button @click="closeModals" class="modal-close">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+          <button class="modal-close" @click="closeModals">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
             </svg>
           </button>
         </div>
 
-        <div class="modal-body" v-if="selectedApiKey">
+        <div v-if="selectedApiKey" class="modal-body">
           <div class="detail-section">
             <h4 class="detail-title">基本信息</h4>
             <div class="detail-grid">
@@ -287,7 +286,7 @@
               </div>
               <div class="detail-item">
                 <span class="detail-label">状态:</span>
-                <span class="status-badge" :class="`status-${selectedApiKey.status}`">
+                <span :class="`status-${selectedApiKey.status}`" class="status-badge">
                   {{ getStatusText(selectedApiKey.status) }}
                 </span>
               </div>
@@ -305,7 +304,7 @@
               </div>
               <div v-if="selectedApiKey.expiresAt" class="detail-item">
                 <span class="detail-label">过期时间:</span>
-                <span class="detail-value" :class="{ 'text-danger': selectedApiKey.isExpired }">
+                <span :class="{ 'text-danger': selectedApiKey.isExpired }" class="detail-value">
                   {{ formatDate(selectedApiKey.expiresAt) }}
                 </span>
               </div>
@@ -321,7 +320,9 @@
               </div>
               <div class="stat-item">
                 <span class="stat-label">最后使用:</span>
-                <span class="stat-value">{{ selectedApiKey.lastUsedAt ? formatDate(selectedApiKey.lastUsedAt) : '从未使用' }}</span>
+                <span class="stat-value">{{
+                    selectedApiKey.lastUsedAt ? formatDate(selectedApiKey.lastUsedAt) : '从未使用'
+                  }}</span>
               </div>
             </div>
           </div>
@@ -339,9 +340,11 @@
               <div v-else class="logs-list">
                 <div v-for="log in apiLogs" :key="log.id" class="log-item">
                   <div class="log-header">
-                    <span class="log-method" :class="`method-${log.method.toLowerCase()}`">{{ log.method }}</span>
+                    <span :class="`method-${log.method.toLowerCase()}`" class="log-method">{{ log.method }}</span>
                     <span class="log-endpoint">{{ log.endpoint }}</span>
-                    <span class="log-status" :class="`status-${Math.floor(log.statusCode / 100)}`">{{ log.statusCode }}</span>
+                    <span :class="`status-${Math.floor(log.statusCode / 100)}`" class="log-status">{{
+                        log.statusCode
+                      }}</span>
                   </div>
                   <div class="log-details">
                     <span class="log-time">{{ formatDate(log.createdAt) }}</span>
@@ -351,20 +354,20 @@
                 </div>
               </div>
               <div v-if="apiLogs.length > 0 && logsPagination.totalPages > 1" class="logs-pagination">
-                <button 
-                  @click="loadApiLogs(logsPagination.page - 1)"
-                  :disabled="logsPagination.page <= 1"
-                  class="btn btn-secondary btn-sm"
+                <button
+                    :disabled="logsPagination.page <= 1"
+                    class="btn btn-secondary btn-sm"
+                    @click="loadApiLogs(logsPagination.page - 1)"
                 >
                   上一页
                 </button>
                 <span class="pagination-info">
                   {{ logsPagination.page }} / {{ logsPagination.totalPages }}
                 </span>
-                <button 
-                  @click="loadApiLogs(logsPagination.page + 1)"
-                  :disabled="logsPagination.page >= logsPagination.totalPages"
-                  class="btn btn-secondary btn-sm"
+                <button
+                    :disabled="logsPagination.page >= logsPagination.totalPages"
+                    class="btn btn-secondary btn-sm"
+                    @click="loadApiLogs(logsPagination.page + 1)"
                 >
                   下一页
                 </button>
@@ -376,9 +379,9 @@
             <h4 class="detail-title">权限列表</h4>
             <div class="permissions-display">
               <span
-                v-for="permission in selectedApiKey.permissions"
-                :key="permission"
-                class="permission-tag"
+                  v-for="permission in selectedApiKey.permissions"
+                  :key="permission"
+                  class="permission-tag"
               >
                 {{ permission }}
               </span>
@@ -395,18 +398,18 @@
       <div class="modal modal-large" @click.stop>
         <div class="modal-header">
           <h3 class="modal-title">API密钥创建成功</h3>
-          <button @click="closeModals" class="modal-close">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+          <button class="modal-close" @click="closeModals">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
             </svg>
           </button>
         </div>
 
-        <div class="modal-body" v-if="newApiKey">
+        <div v-if="newApiKey" class="modal-body">
           <div class="success-message">
             <div class="success-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                 <polyline points="22,4 12,14.01 9,11.01"/>
               </svg>
@@ -445,12 +448,12 @@
             <h4 class="detail-title">完整API密钥</h4>
             <div class="api-key-display">
               <input
-                :value="newApiKey.apiKey"
-                type="text"
-                class="api-key-input"
-                readonly
+                  :value="newApiKey.apiKey"
+                  class="api-key-input"
+                  readonly
+                  type="text"
               />
-              <button @click="copyToClipboard(newApiKey.apiKey)" class="btn btn-secondary">
+              <button class="btn btn-secondary" @click="copyToClipboard(newApiKey.apiKey)">
                 复制
               </button>
             </div>
@@ -463,9 +466,9 @@
             <h4 class="detail-title">权限列表</h4>
             <div class="permissions-display">
               <span
-                v-for="permission in newApiKey.permissions"
-                :key="permission"
-                class="permission-tag"
+                  v-for="permission in newApiKey.permissions"
+                  :key="permission"
+                  class="permission-tag"
               >
                 {{ permission }}
               </span>
@@ -473,7 +476,7 @@
           </div>
 
           <div class="form-actions">
-            <button @click="closeModals" class="btn btn-primary">
+            <button class="btn btn-primary" @click="closeModals">
               我已保存，关闭窗口
             </button>
           </div>
@@ -483,14 +486,14 @@
 
     <!-- 确认删除对话框 -->
     <ConfirmDialog
-      v-model:show="showConfirmDialog"
-      :title="confirmDialogConfig.title"
-      :message="confirmDialogConfig.message"
-      :type="confirmDialogConfig.type"
-      :confirm-text="confirmDialogConfig.confirmText"
-      :cancel-text="confirmDialogConfig.cancelText"
-      @confirm="confirmDelete"
-      @cancel="cancelDelete"
+        v-model:show="showConfirmDialog"
+        :cancel-text="confirmDialogConfig.cancelText"
+        :confirm-text="confirmDialogConfig.confirmText"
+        :message="confirmDialogConfig.message"
+        :title="confirmDialogConfig.title"
+        :type="confirmDialogConfig.type"
+        @cancel="cancelDelete"
+        @confirm="confirmDelete"
     />
   </div>
 </template>
@@ -598,7 +601,7 @@ const loadApiKeys = async () => {
     if (filters.createdBy) params.append('createdBy', filters.createdBy)
 
     const response = await $fetch(`/api/admin/api-keys?${params}`)
-    
+
     if (response.success) {
       apiKeys.value = response.data.items
       pagination.value = response.data.pagination
@@ -646,7 +649,7 @@ const createApiKey = async () => {
 
 const updateApiKey = async () => {
   if (!selectedApiKey.value) return
-  
+
   submitting.value = true
   try {
     const data = {
@@ -736,17 +739,17 @@ const editApiKey = async (apiKey) => {
     const response = await $fetch(`/api/admin/api-keys/${apiKey.id}`)
     if (response.success) {
       selectedApiKey.value = response.data
-      
+
       // 填充表单
       form.name = response.data.name
       form.description = response.data.description || ''
-      form.expiresAt = response.data.expiresAt 
-        ? new Date(response.data.expiresAt).toISOString().slice(0, 16)
-        : ''
+      form.expiresAt = response.data.expiresAt
+          ? new Date(response.data.expiresAt).toISOString().slice(0, 16)
+          : ''
 
       form.permissions = response.data.permissions || []
       form.isActive = response.data.isActive
-      
+
       showEditModal.value = true
     }
   } catch (error) {
@@ -757,7 +760,7 @@ const editApiKey = async (apiKey) => {
 
 const loadApiLogs = async (page = 1) => {
   if (!selectedApiKey.value) return
-  
+
   loadingLogs.value = true
   try {
     const response = await $fetch('/api/admin/api-keys/logs', {
@@ -769,7 +772,7 @@ const loadApiLogs = async (page = 1) => {
         sortOrder: 'desc'
       }
     })
-    
+
     if (response.logs) {
       apiLogs.value = response.logs
       logsPagination.value = {
@@ -1230,8 +1233,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .logs-list {
@@ -1394,8 +1401,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-icon {
@@ -1879,34 +1890,34 @@ onMounted(() => {
   .api-key-manager {
     padding: 16px;
   }
-  
+
   .manager-header {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .filters-row {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .api-keys-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal {
     margin: 10px;
     max-width: none;
   }
-  
+
   .permissions-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .detail-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .api-key-display {
     flex-direction: column;
     align-items: stretch;

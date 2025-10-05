@@ -1,60 +1,60 @@
 <template>
-  <div class="stat-card" :class="{ 'loading': isLoading }">
-    <div class="stat-icon" :class="[iconClass, { 'pulse': isLoading }]">
-      <component :is="iconComponent" />
+  <div :class="{ 'loading': isLoading }" class="stat-card">
+    <div :class="[iconClass, { 'pulse': isLoading }]" class="stat-icon">
+      <component :is="iconComponent"/>
     </div>
     <div class="stat-content">
       <div class="stat-value-container">
-        <div class="stat-value" :class="{ 'animate-count': shouldAnimate }">
+        <div :class="{ 'animate-count': shouldAnimate }" class="stat-value">
           {{ formattedValue }}
         </div>
         <div v-if="subtitle" class="stat-subtitle">{{ subtitle }}</div>
       </div>
       <div class="stat-label">{{ label }}</div>
-      
+
       <!-- 趋势显示 -->
-      <div v-if="change !== undefined" class="stat-change" :class="changeClass">
+      <div v-if="change !== undefined" :class="changeClass" class="stat-change">
         <div class="change-icon">
-          <svg v-if="change > 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg v-if="change > 0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/>
             <polyline points="17,6 23,6 23,12"/>
           </svg>
-          <svg v-else-if="change < 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg v-else-if="change < 0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="23,18 13.5,8.5 8.5,13.5 1,6"/>
             <polyline points="17,18 23,18 23,12"/>
           </svg>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="5" y1="12" x2="19" y2="12"/>
+          <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="5" x2="19" y1="12" y2="12"/>
           </svg>
         </div>
         <span class="change-text">{{ Math.abs(change) }}%</span>
         <span v-if="changeLabel" class="change-label">{{ changeLabel }}</span>
       </div>
-      
+
       <!-- 迷你趋势图 -->
       <div v-if="trendData && trendData.length > 0" class="mini-trend">
         <svg class="trend-chart" viewBox="0 0 100 20">
           <polyline
-            :points="trendPoints"
-            fill="none"
-            :stroke="trendColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+              :points="trendPoints"
+              :stroke="trendColor"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
           />
           <circle
-            v-for="(point, index) in trendData"
-            :key="index"
-            :cx="(index / (trendData.length - 1)) * 100"
-            :cy="20 - ((point - minTrend) / (maxTrend - minTrend)) * 20"
-            r="1"
-            :fill="trendColor"
-            class="trend-point"
+              v-for="(point, index) in trendData"
+              :key="index"
+              :cx="(index / (trendData.length - 1)) * 100"
+              :cy="20 - ((point - minTrend) / (maxTrend - minTrend)) * 20"
+              :fill="trendColor"
+              class="trend-point"
+              r="1"
           />
         </svg>
       </div>
     </div>
-    
+
     <!-- 加载状态覆盖层 -->
     <div v-if="isLoading" class="loading-overlay">
       <div class="loading-spinner"></div>
@@ -114,30 +114,30 @@ const props = defineProps({
 
 const iconComponent = computed(() => {
   const icons = {
-    users: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-      h('path', { d: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' }),
-      h('circle', { cx: '12', cy: '7', r: '4' })
+    users: () => h('svg', {viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2'}, [
+      h('path', {d: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'}),
+      h('circle', {cx: '12', cy: '7', r: '4'})
     ]),
-    songs: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-      h('path', { d: 'M9 18V5l12-2v13' }),
-      h('circle', { cx: '6', cy: '18', r: '3' }),
-      h('circle', { cx: '18', cy: '16', r: '3' })
+    songs: () => h('svg', {viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2'}, [
+      h('path', {d: 'M9 18V5l12-2v13'}),
+      h('circle', {cx: '6', cy: '18', r: '3'}),
+      h('circle', {cx: '18', cy: '16', r: '3'})
     ]),
-    schedule: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-      h('rect', { x: '3', y: '4', width: '18', height: '18', rx: '2', ry: '2' }),
-      h('line', { x1: '16', y1: '2', x2: '16', y2: '6' }),
-      h('line', { x1: '8', y1: '2', x2: '8', y2: '6' }),
-      h('line', { x1: '3', y1: '10', x2: '21', y2: '10' })
+    schedule: () => h('svg', {viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2'}, [
+      h('rect', {x: '3', y: '4', width: '18', height: '18', rx: '2', ry: '2'}),
+      h('line', {x1: '16', y1: '2', x2: '16', y2: '6'}),
+      h('line', {x1: '8', y1: '2', x2: '8', y2: '6'}),
+      h('line', {x1: '3', y1: '10', x2: '21', y2: '10'})
     ]),
-    votes: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-      h('path', { d: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' })
+    votes: () => h('svg', {viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2'}, [
+      h('path', {d: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'})
     ]),
-    notifications: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-      h('path', { d: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9' }),
-      h('path', { d: 'M13.73 21a2 2 0 0 1-3.46 0' })
+    notifications: () => h('svg', {viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2'}, [
+      h('path', {d: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'}),
+      h('path', {d: 'M13.73 21a2 2 0 0 1-3.46 0'})
     ])
   }
-  
+
   return icons[props.icon] || icons.users
 })
 
@@ -151,10 +151,10 @@ const changeClass = computed(() => {
 // 格式化数值显示
 const formattedValue = computed(() => {
   if (typeof props.value === 'string') return props.value
-  
+
   const num = Number(props.value)
   if (isNaN(num)) return props.value
-  
+
   switch (props.format) {
     case 'currency':
       return new Intl.NumberFormat('zh-CN', {
@@ -187,22 +187,22 @@ const maxTrend = computed(() => {
 
 const trendPoints = computed(() => {
   if (!props.trendData || props.trendData.length === 0) return ''
-  
+
   return props.trendData
-    .map((point, index) => {
-      const x = (index / (props.trendData.length - 1)) * 100
-      const y = 20 - ((point - minTrend.value) / (maxTrend.value - minTrend.value)) * 20
-      return `${x},${y}`
-    })
-    .join(' ')
+      .map((point, index) => {
+        const x = (index / (props.trendData.length - 1)) * 100
+        const y = 20 - ((point - minTrend.value) / (maxTrend.value - minTrend.value)) * 20
+        return `${x},${y}`
+      })
+      .join(' ')
 })
 
 const trendColor = computed(() => {
   if (!props.trendData || props.trendData.length < 2) return '#6366f1'
-  
+
   const first = props.trendData[0]
   const last = props.trendData[props.trendData.length - 1]
-  
+
   if (last > first) return '#10b981' // 上升趋势 - 绿色
   if (last < first) return '#ef4444' // 下降趋势 - 红色
   return '#6366f1' // 平稳趋势 - 蓝色

@@ -7,26 +7,26 @@
         <!-- 添加移动端日期导航按钮 -->
         <div class="mobile-date-nav">
           <button
-            class="date-nav-btn prev"
-            @click="previousDate"
-            :disabled="currentDateIndex === 0"
+              :disabled="currentDateIndex === 0"
+              class="date-nav-btn prev"
+              @click="previousDate"
           >
-            <Icon name="chevron-left" :size="16" />
+            <Icon :size="16" name="chevron-left"/>
           </button>
           <div
-            class="current-date-mobile"
-            v-html="currentDateFormatted"
-            @click="toggleDatePicker"
+              class="current-date-mobile"
+              @click="toggleDatePicker"
+              v-html="currentDateFormatted"
           ></div>
           <button
-            class="date-nav-btn next"
-            @click="nextDate"
-            :disabled="currentDateIndex >= availableDates.length - 1"
+              :disabled="currentDateIndex >= availableDates.length - 1"
+              class="date-nav-btn next"
+              @click="nextDate"
           >
-            <Icon name="chevron-right" :size="16" />
+            <Icon :size="16" name="chevron-right"/>
           </button>
         </div>
-        
+
         <!-- 添加移动端日期选择弹窗 -->
         <Transition name="date-picker-fade">
           <div v-if="showDatePicker" class="date-picker-modal">
@@ -37,16 +37,16 @@
                 <button class="close-btn" @click="showDatePicker = false">×</button>
               </div>
               <div class="date-picker-list">
-                <div 
-                  v-for="(date, index) in availableDates" 
-                  :key="date"
-                  :class="['date-picker-item', { 'active': currentDateIndex === index }]"
-                  @click="selectDateAndClose(index)"
-                  v-html="formatDate(date, false)"
-                  v-ripple
+                <div
+                    v-for="(date, index) in availableDates"
+                    :key="date"
+                    v-ripple
+                    :class="['date-picker-item', { 'active': currentDateIndex === index }]"
+                    @click="selectDateAndClose(index)"
+                    v-html="formatDate(date, false)"
                 >
                 </div>
-                
+
                 <div v-if="availableDates.length === 0" class="empty-dates">
                   暂无排期日期
                 </div>
@@ -54,19 +54,19 @@
             </div>
           </div>
         </Transition>
-        
+
         <!-- 桌面端日期列表 -->
         <div class="date-list">
-          <div 
-            v-for="(date, index) in availableDates" 
-            :key="date"
-            :class="['date-item', { 'active': currentDateIndex === index }]"
-            @click="selectDate(index)"
-            v-html="formatDate(date)"
-            v-ripple
+          <div
+              v-for="(date, index) in availableDates"
+              :key="date"
+              v-ripple
+              :class="['date-item', { 'active': currentDateIndex === index }]"
+              @click="selectDate(index)"
+              v-html="formatDate(date)"
           >
           </div>
-          
+
           <div v-if="availableDates.length === 0" class="empty-dates">
             暂无排期日期
           </div>
@@ -76,47 +76,48 @@
           <div class="scroll-indicator"></div>
         </div>
       </div>
-      
+
       <!-- 分隔线 - 添加径向渐变效果 -->
       <div class="vertical-divider"></div>
-      
+
       <!-- 右侧排期内容 -->
       <div class="schedule-content">
         <div class="schedule-header">
           <h2 class="current-date" v-html="currentDateFormatted"></h2>
         </div>
-        
+
         <!-- 使用Transition组件包裹内容 -->
-        <Transition name="schedule-fade" mode="out-in">
-          <div v-if="loading" class="loading" key="loading">
+        <Transition mode="out-in" name="schedule-fade">
+          <div v-if="loading" key="loading" class="loading">
             加载中...
           </div>
 
-          <div v-else-if="error" class="error" key="error">
+          <div v-else-if="error" key="error" class="error">
             {{ error }}
           </div>
 
-          <div v-else-if="!schedules || schedules.length === 0" class="empty" key="empty-all">
+          <div v-else-if="!schedules || schedules.length === 0" key="empty-all" class="empty">
             <div class="icon mb-4">🎵</div>
             <p>暂无排期信息</p>
             <p class="text-sm text-gray">点歌后等待管理员安排播出时间</p>
           </div>
 
-          <div v-else-if="currentDateSchedules.length === 0" class="empty" key="empty-date">
+          <div v-else-if="currentDateSchedules.length === 0" key="empty-date" class="empty">
             <div class="icon mb-4">📅</div>
             <p>当前日期暂无排期</p>
             <p>请选择其他日期查看</p>
           </div>
 
-          <div v-else class="schedule-items" :key="currentDate">
+          <div v-else :key="currentDate" class="schedule-items">
             <!-- 按播出时段分组显示 -->
             <template v-if="schedulesByPlayTime && Object.keys(schedulesByPlayTime).length > 0">
               <div v-for="(schedules, playTimeId) in schedulesByPlayTime" :key="playTimeId" class="playtime-group">
-                <div class="playtime-header" v-if="shouldShowPlayTimeHeader(playTimeId)">
+                <div v-if="shouldShowPlayTimeHeader(playTimeId)" class="playtime-header">
                   <h4 v-if="playTimeId === 'null'">未指定时段</h4>
                   <h4 v-else-if="getPlayTimeById(playTimeId)">
                     {{ getPlayTimeById(playTimeId).name }}
-                    <span class="playtime-time" v-if="getPlayTimeById(playTimeId).startTime || getPlayTimeById(playTimeId).endTime">
+                    <span v-if="getPlayTimeById(playTimeId).startTime || getPlayTimeById(playTimeId).endTime"
+                          class="playtime-time">
                       ({{ formatPlayTimeRange(getPlayTimeById(playTimeId)) }})
                     </span>
                   </h4>
@@ -124,43 +125,44 @@
 
                 <div class="song-cards">
                   <div
-                    v-for="schedule in schedules"
-                    :key="schedule.id"
-                    class="song-card"
-                    :class="{ 'played': schedule.song.played }"
+                      v-for="schedule in schedules"
+                      :key="schedule.id"
+                      :class="{ 'played': schedule.song.played }"
+                      class="song-card"
                   >
                     <div class="song-card-main">
                       <!-- 添加歌曲封面 -->
                       <div class="song-cover">
                         <template v-if="schedule.song.cover">
                           <img
-                            :src="convertToHttps(schedule.song.cover)"
-                            :alt="schedule.song.title"
-                            class="cover-image"
-                            @error="handleImageError($event, schedule.song)"
+                              :alt="schedule.song.title"
+                              :src="convertToHttps(schedule.song.cover)"
+                              class="cover-image"
+                              @error="handleImageError($event, schedule.song)"
                           />
                         </template>
                         <div v-else class="text-cover">
                           {{ getFirstChar(schedule.song.title) }}
                         </div>
                         <!-- 添加播放按钮 - 在有播放信息时显示 -->
-                        <div v-if="(schedule.song.musicPlatform && schedule.song.musicId) || schedule.song.playUrl" class="play-button-overlay" @click="togglePlaySong(schedule.song)">
-                          <button class="play-button" :title="isCurrentPlaying(schedule.song.id) ? '暂停' : '播放'">
-                            <Icon v-if="isCurrentPlaying(schedule.song.id)" name="pause" :size="16" color="white" />
-                            <Icon v-else name="play" :size="16" color="white" />
+                        <div v-if="(schedule.song.musicPlatform && schedule.song.musicId) || schedule.song.playUrl"
+                             class="play-button-overlay" @click="togglePlaySong(schedule.song)">
+                          <button :title="isCurrentPlaying(schedule.song.id) ? '暂停' : '播放'" class="play-button">
+                            <Icon v-if="isCurrentPlaying(schedule.song.id)" :size="16" color="white" name="pause"/>
+                            <Icon v-else :size="16" color="white" name="play"/>
                           </button>
                         </div>
                       </div>
 
                       <div class="song-info">
-                        <h3 class="song-title" :title="schedule.song.title + ' - ' + schedule.song.artist">
+                        <h3 :title="schedule.song.title + ' - ' + schedule.song.artist" class="song-title">
                           {{ schedule.song.title }} - {{ schedule.song.artist }}
                         </h3>
                         <div class="song-meta">
                           <span class="requester">投稿人：{{ schedule.song.requester }}</span>
                         </div>
                       </div>
-                      
+
                       <!-- 热度展示 -->
                       <div class="action-area">
                         <div class="vote-count">
@@ -209,7 +211,7 @@ const props = defineProps({
 const audioPlayer = useAudioPlayer()
 
 // 获取播放时段启用状态
-const { playTimeEnabled } = useSongs()
+const {playTimeEnabled} = useSongs()
 
 // 确保schedules不为null
 const safeSchedules = computed(() => props.schedules || [])
@@ -233,10 +235,10 @@ const safeGroupedSchedules = computed(() => {
       const scheduleDate = new Date(schedule.playDate)
       const date = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, '0')}-${String(scheduleDate.getDate()).padStart(2, '0')}`
 
-    if (!groups[date]) {
-      groups[date] = []
-    }
-    groups[date].push(schedule)
+      if (!groups[date]) {
+        groups[date] = []
+      }
+      groups[date].push(schedule)
     } catch (err) {
       // 无需在此处记录错误
     }
@@ -269,28 +271,28 @@ watch(availableDates, (newDates) => {
   if (newDates.length > 0) {
     findAndSelectTodayOrClosestDate()
   }
-}, { immediate: false })
+}, {immediate: false})
 
 // 自动滚动到指定日期项的函数
 const scrollToDateItem = async (index) => {
   if (isMobile.value) return // 移动端不需要滚动日期列表
-  
+
   await nextTick() // 等待DOM更新
-  
+
   const dateList = document.querySelector('.date-list')
   const dateItems = document.querySelectorAll('.date-item')
-  
+
   if (!dateList || !dateItems || index >= dateItems.length) return
-  
+
   const targetItem = dateItems[index]
   const listRect = dateList.getBoundingClientRect()
   const itemRect = targetItem.getBoundingClientRect()
-  
+
   // 计算目标位置，使选中项居中显示
   const listCenter = listRect.height / 2
   const itemCenter = itemRect.height / 2
   const scrollTop = dateList.scrollTop + (itemRect.top - listRect.top) - listCenter + itemCenter
-  
+
   // 平滑滚动到目标位置
   dateList.scrollTo({
     top: Math.max(0, scrollTop),
@@ -304,32 +306,32 @@ const findAndSelectTodayOrClosestDate = async () => {
 
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  
+
   let selectedIndex = 0
-  
+
   // 在宽屏模式下，优先显示最近的日期（今天或之后最近的日期）
   if (!isMobile.value) {
     const todayTime = today.getTime()
     let closestFutureIndex = -1
     let minFutureDiff = Number.MAX_SAFE_INTEGER
-    
+
     // 查找今天或之后最近的日期
     availableDates.value.forEach((dateStr, index) => {
       const dateParts = dateStr.split('-')
       const date = new Date(
-        parseInt(dateParts[0]),
-        parseInt(dateParts[1]) - 1,
-        parseInt(dateParts[2])
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2])
       )
       const diff = date.getTime() - todayTime
-      
+
       // 优先选择今天或未来的日期
       if (diff >= 0 && diff < minFutureDiff) {
         minFutureDiff = diff
         closestFutureIndex = index
       }
     })
-    
+
     // 如果找到了今天或未来的日期，选择它
     if (closestFutureIndex >= 0) {
       selectedIndex = closestFutureIndex
@@ -337,22 +339,22 @@ const findAndSelectTodayOrClosestDate = async () => {
       // 如果没有今天或未来的日期，选择最近的过去日期
       let closestPastIndex = -1
       let minPastDiff = Number.MAX_SAFE_INTEGER
-      
+
       availableDates.value.forEach((dateStr, index) => {
         const dateParts = dateStr.split('-')
         const date = new Date(
-          parseInt(dateParts[0]),
-          parseInt(dateParts[1]) - 1,
-          parseInt(dateParts[2])
+            parseInt(dateParts[0]),
+            parseInt(dateParts[1]) - 1,
+            parseInt(dateParts[2])
         )
         const diff = todayTime - date.getTime()
-        
+
         if (diff > 0 && diff < minPastDiff) {
           minPastDiff = diff
           closestPastIndex = index
         }
       })
-      
+
       if (closestPastIndex >= 0) {
         selectedIndex = closestPastIndex
       }
@@ -360,7 +362,7 @@ const findAndSelectTodayOrClosestDate = async () => {
   } else {
     // 移动端保持原有逻辑：优先选择今天
     const todayIndex = availableDates.value.findIndex(date => date === todayStr)
-    
+
     if (todayIndex >= 0) {
       // 如果找到今天的日期，则选择它
       selectedIndex = todayIndex
@@ -369,31 +371,31 @@ const findAndSelectTodayOrClosestDate = async () => {
       const todayTime = today.getTime()
       let closestDate = -1
       let minDiff = Number.MAX_SAFE_INTEGER
-      
+
       availableDates.value.forEach((dateStr, index) => {
         const dateParts = dateStr.split('-')
         const date = new Date(
-          parseInt(dateParts[0]),
-          parseInt(dateParts[1]) - 1,
-          parseInt(dateParts[2])
+            parseInt(dateParts[0]),
+            parseInt(dateParts[1]) - 1,
+            parseInt(dateParts[2])
         )
         const diff = Math.abs(date.getTime() - todayTime)
-        
+
         if (diff < minDiff) {
           minDiff = diff
           closestDate = index
         }
       })
-      
+
       if (closestDate >= 0) {
         selectedIndex = closestDate
       }
     }
   }
-  
+
   // 设置选中的日期索引
   currentDateIndex.value = selectedIndex
-  
+
   // 自动滚动到选中的日期项
   await scrollToDateItem(selectedIndex)
 }
@@ -436,7 +438,7 @@ const nextDate = async () => {
 const selectDate = async (index) => {
   currentDateIndex.value = index
   showDatePicker.value = false
-  
+
   // 自动滚动到选中的日期项
   await scrollToDateItem(index)
 }
@@ -444,7 +446,7 @@ const selectDate = async (index) => {
 // 切换日期选择器显示状态
 const toggleDatePicker = async () => {
   showDatePicker.value = !showDatePicker.value
-  
+
   // 如果弹窗打开，自动滚动到当前选中的日期
   if (showDatePicker.value) {
     await nextTick() // 等待DOM渲染完成
@@ -456,23 +458,23 @@ const toggleDatePicker = async () => {
 const scrollToSelectedDateInModal = () => {
   const modalList = document.querySelector('.date-picker-list')
   const modalItems = document.querySelectorAll('.date-picker-item')
-  
+
   if (!modalList || !modalItems || currentDateIndex.value >= modalItems.length) return
-  
+
   const targetItem = modalItems[currentDateIndex.value]
   const listRect = modalList.getBoundingClientRect()
   const itemRect = targetItem.getBoundingClientRect()
-  
+
   // 计算目标位置，使选中项在可视区域内，并增加向下偏移
   const listCenter = listRect.height / 2
   const itemCenter = itemRect.height / 2
   const downwardOffset = 280
   const scrollTop = modalList.scrollTop + (itemRect.top - listRect.top) - listCenter + itemCenter + downwardOffset
-  
+
   // 确保滚动位置不会超出边界
   const maxScrollTop = modalList.scrollHeight - modalList.clientHeight
   const finalScrollTop = Math.max(0, Math.min(scrollTop, maxScrollTop))
-  
+
   // 平滑滚动到目标位置
   modalList.scrollTo({
     top: finalScrollTop,
@@ -536,7 +538,7 @@ const handleResize = () => {
   resizeTimer = setTimeout(async () => {
     const wasMobile = isMobile.value
     isMobile.value = window.innerWidth <= 768
-    
+
     // 如果从移动端切换到桌面端，需要重新滚动到当前选中的日期
     if (wasMobile && !isMobile.value && availableDates.value.length > 0) {
       await nextTick()
@@ -546,17 +548,12 @@ const handleResize = () => {
 }
 
 
-
-
-
-
-
 // 监听窗口大小变化
 onMounted(async () => {
   window.addEventListener('resize', handleResize)
   // 初始化移动状态
   isMobile.value = window.innerWidth <= 768
-  
+
   // 寻找今天的日期并自动选择 - 初始加载时也尝试一次
   findAndSelectTodayOrClosestDate()
 })
@@ -578,7 +575,6 @@ const getFirstChar = (title) => {
   if (!title) return '音'
   return title.trim().charAt(0)
 }
-
 
 
 // 切换歌曲播放/暂停
@@ -633,12 +629,12 @@ const togglePlaySong = async (song) => {
         const currentTimeSlot = getCurrentTimeSlot(song)
         let playlist = []
         let songIndex = 0
-        
+
         if (currentTimeSlot && currentTimeSlot.songs) {
           // 为播放列表中的每首歌曲获取音乐URL（如果需要的话）
           playlist = await Promise.all(currentTimeSlot.songs.map(async (s) => {
             let musicUrl = s.musicUrl
-            
+
             // 如果歌曲没有musicUrl但有平台信息或playUrl，尝试获取
             if (!musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
               try {
@@ -648,7 +644,7 @@ const togglePlaySong = async (song) => {
                 musicUrl = null
               }
             }
-            
+
             return {
               id: s.id,
               title: s.title,
@@ -659,22 +655,22 @@ const togglePlaySong = async (song) => {
               musicId: s.musicId
             }
           }))
-          
+
           // 找到当前歌曲在播放列表中的索引
           songIndex = playlist.findIndex((s) => s.id === song.id)
           if (songIndex === -1) songIndex = 0
         }
-        
+
         const playableSong = {
           ...song,
           musicUrl: url
         }
-        
+
         // 更新播放列表中当前歌曲的URL
         if (playlist.length > 0 && songIndex >= 0) {
           playlist[songIndex] = playableSong
         }
-        
+
         audioPlayer.playSong(playableSong, playlist, songIndex)
       } else {
         if (window.$showNotification) {
@@ -693,7 +689,7 @@ const togglePlaySong = async (song) => {
 // 获取歌曲所在的时段
 const getCurrentTimeSlot = (song) => {
   if (!schedulesByPlayTime.value) return null
-  
+
   for (const [playTimeId, schedules] of Object.entries(schedulesByPlayTime.value)) {
     if (schedules.some((schedule) => schedule.song.id === song.id)) {
       return {
@@ -712,14 +708,14 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
     console.log(`[ScheduleList] 使用自定义播放链接: ${playUrl}`)
     return playUrl.trim()
   }
-  
+
   // 如果没有playUrl，检查platform和musicId是否有效
   if (!platform || !musicId) {
     throw new Error('歌曲缺少音乐平台或音乐ID信息，无法获取播放链接')
   }
-  
-  const { getQuality } = useAudioQuality()
-  const { getSongUrl } = useMusicSources()
+
+  const {getQuality} = useAudioQuality()
+  const {getSongUrl} = useMusicSources()
 
   try {
     const quality = getQuality(platform)
@@ -759,14 +755,14 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
     throw new Error('vkeys API未返回有效的音乐URL')
   } catch (error) {
     console.error('vkeys API获取音乐URL失败:', error)
-    
+
     // 如果是网易云平台，尝试使用备用源
     if (platform === 'netease') {
       console.log('尝试使用网易云备用源获取音乐URL...')
       try {
         const quality = getQuality(platform)
         const backupResult = await getSongUrl(musicId, quality)
-        
+
         if (backupResult && backupResult.url) {
           console.log('网易云备用源获取音乐URL成功')
           return backupResult.url
@@ -777,7 +773,7 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
         console.error('网易云备用源获取音乐URL也失败:', backupError)
       }
     }
-    
+
     // vkeys和备用源都失败了
     throw new Error('所有音源都无法获取音乐播放链接')
   }
@@ -896,14 +892,14 @@ const vRipple = {
       const rect = el.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       const ripple = document.createElement('span');
       ripple.className = 'ripple-effect';
       ripple.style.left = `${x}px`;
       ripple.style.top = `${y}px`;
-      
+
       el.appendChild(ripple);
-      
+
       setTimeout(() => {
         ripple.remove();
       }, 600); // 与CSS动画时间一致
@@ -1061,10 +1057,10 @@ const vRipple = {
 .vertical-divider {
   width: 2px;
   background: linear-gradient(
-    180deg,
-    rgba(217, 217, 217, 0) 0%,
-    rgba(217, 217, 217, 0.5) 50%,
-    rgba(217, 217, 217, 0) 100%
+      180deg,
+      rgba(217, 217, 217, 0) 0%,
+      rgba(217, 217, 217, 0.5) 50%,
+      rgba(217, 217, 217, 0) 100%
   );
   margin: 0 1.5rem;
   position: relative;
@@ -1204,7 +1200,6 @@ const vRipple = {
 }
 
 
-
 .song-card-main {
   padding: 1rem;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
@@ -1214,7 +1209,6 @@ const vRipple = {
   align-items: center; /* 垂直居中 */
   gap: 15px; /* 元素之间的间隔 */
 }
-
 
 
 /* 歌曲封面样式 */
@@ -1350,12 +1344,12 @@ const vRipple = {
   font-weight: 600;
   font-size: 20px;
   color: #0B5AFE;
-  text-shadow: 0px 20px 30px rgba(0, 114, 248, 0.5), 
-               0px 8px 15px rgba(0, 114, 248, 0.5),
-               0px 4px 10px rgba(0, 179, 248, 0.3), 
-               0px 2px 10px rgba(0, 179, 248, 0.2), 
-               inset 3px 3px 10px rgba(255, 255, 255, 0.4), 
-               inset -1px -1px 15px rgba(255, 255, 255, 0.4);
+  text-shadow: 0px 20px 30px rgba(0, 114, 248, 0.5),
+  0px 8px 15px rgba(0, 114, 248, 0.5),
+  0px 4px 10px rgba(0, 179, 248, 0.3),
+  0px 2px 10px rgba(0, 179, 248, 0.2),
+  inset 3px 3px 10px rgba(255, 255, 255, 0.4),
+  inset -1px -1px 15px rgba(255, 255, 255, 0.4);
 }
 
 .vote-count .label {
@@ -1375,7 +1369,7 @@ const vRipple = {
     margin: 0 !important;
     overflow: hidden;
   }
-  
+
   .schedule-container {
     flex-direction: column;
     width: 100% !important;
@@ -1383,14 +1377,14 @@ const vRipple = {
     padding: 0 !important;
     margin: 0 !important;
   }
-  
+
   .date-selector {
     width: 100% !important;
     max-width: 100% !important;
     margin-bottom: 1rem;
     padding: 0 !important;
   }
-  
+
   /* 显示移动端日期导航 */
   .mobile-date-nav {
     display: flex !important;
@@ -1404,7 +1398,7 @@ const vRipple = {
     padding: 0.75rem 1rem !important;
     border-radius: 10px !important;
   }
-  
+
   /* 隐藏桌面端日期列表，但确保元素存在 */
   .date-list {
     height: 0;
@@ -1413,19 +1407,19 @@ const vRipple = {
     visibility: hidden;
     position: absolute;
   }
-  
+
   .scroll-indicator-container {
     display: none;
   }
-  
+
   .mobile-scroll-hint {
     display: none;
   }
-  
+
   .vertical-divider {
     display: none;
   }
-  
+
   .schedule-content {
     max-width: 100% !important;
     width: 100% !important;
@@ -1433,15 +1427,15 @@ const vRipple = {
     margin: 0 !important;
     box-sizing: border-box;
   }
-  
+
   .schedule-header {
     display: none; /* 隐藏桌面端日期标题 */
   }
-  
+
   .song-cards {
     gap: 0.75rem;
   }
-  
+
   /* 修复歌曲卡片布局 */
   .song-card-main {
     height: auto;
@@ -1468,12 +1462,12 @@ const vRipple = {
     justify-content: center;
     flex-shrink: 0;
   }
-  
+
   .playtime-header h4 {
     font-size: 15px;
     text-align: center;
   }
-  
+
   /* 确保加载状态在移动端正确显示 */
   .loading, .error, .empty {
     padding: 2rem 1rem;
@@ -1486,12 +1480,12 @@ const vRipple = {
   .current-date-mobile {
     font-size: 14px;
   }
-  
+
   .date-nav-btn {
     width: 32px;
     height: 32px;
   }
-  
+
   /* 移动端日期导航强化样式 */
   .mobile-date-nav {
     background: linear-gradient(135deg, #21242D 0%, #2C3039 100%);
@@ -1505,23 +1499,23 @@ const vRipple = {
     box-sizing: border-box;
     border-radius: 10px !important;
   }
-  
+
   .song-info {
     width: 70%;
   }
-  
+
   .song-title {
     font-size: 14px;
   }
-  
+
   .requester {
     font-size: 11px;
   }
-  
+
   .vote-count .count {
     font-size: 18px;
   }
-  
+
   .vote-count .label {
     font-size: 10px;
   }

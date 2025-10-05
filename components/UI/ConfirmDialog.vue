@@ -4,48 +4,48 @@
       <transition name="dialog">
         <div v-if="show" class="dialog" @click.stop>
           <div class="dialog-header">
-            <div class="dialog-icon" :class="type">
-              <Icon 
-                v-if="type === 'warning'" 
-                name="warning" 
-                :size="20" 
+            <div :class="type" class="dialog-icon">
+              <Icon
+                  v-if="type === 'warning'"
+                  :size="20"
+                  name="warning"
               />
-              <Icon 
-                v-else-if="type === 'danger'" 
-                name="warning" 
-                :size="20" 
+              <Icon
+                  v-else-if="type === 'danger'"
+                  :size="20"
+                  name="warning"
               />
-              <Icon 
-                v-else-if="type === 'info'" 
-                name="info" 
-                :size="20" 
+              <Icon
+                  v-else-if="type === 'info'"
+                  :size="20"
+                  name="info"
               />
-              <Icon 
-                v-else 
-                name="info" 
-                :size="20" 
+              <Icon
+                  v-else
+                  :size="20"
+                  name="info"
               />
             </div>
             <h3 class="dialog-title">{{ title }}</h3>
           </div>
-          
+
           <div class="dialog-content">
             <p>{{ message }}</p>
           </div>
-          
+
           <div class="dialog-actions">
-            <button 
-              class="dialog-btn dialog-btn-cancel" 
-              @click="handleCancel"
-              :disabled="loading"
+            <button
+                :disabled="loading"
+                class="dialog-btn dialog-btn-cancel"
+                @click="handleCancel"
             >
               {{ cancelText }}
             </button>
-            <button 
-              class="dialog-btn dialog-btn-confirm" 
-              :class="type"
-              @click="handleConfirm"
-              :disabled="loading"
+            <button
+                :class="type"
+                :disabled="loading"
+                class="dialog-btn dialog-btn-confirm"
+                @click="handleConfirm"
             >
               <span v-if="loading" class="loading-spinner"></span>
               {{ confirmText }}
@@ -274,8 +274,12 @@ const handleOverlayClick = () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 动画效果 */

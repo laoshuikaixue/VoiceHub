@@ -20,23 +20,23 @@
           <div class="form-group flex-1">
             <label>{{ newItem.type === 'SONG' ? '歌曲名称 - 艺术家' : '关键词' }}:</label>
             <input
-              v-model="newItem.value"
-              type="text"
-              :placeholder="newItem.type === 'SONG' ? '例如: 歌曲名 - 艺术家' : '例如: 敏感词'"
-              class="form-input"
+                v-model="newItem.value"
+                :placeholder="newItem.type === 'SONG' ? '例如: 歌曲名 - 艺术家' : '例如: 敏感词'"
+                class="form-input"
+                type="text"
             />
           </div>
         </div>
         <div class="form-group">
           <label>原因 (可选):</label>
           <input
-            v-model="newItem.reason"
-            type="text"
-            placeholder="加入黑名单的原因"
-            class="form-input"
+              v-model="newItem.reason"
+              class="form-input"
+              placeholder="加入黑名单的原因"
+              type="text"
           />
         </div>
-        <button @click="addBlacklistItem" :disabled="!newItem.value || loading" class="add-btn">
+        <button :disabled="!newItem.value || loading" class="add-btn" @click="addBlacklistItem">
           {{ loading ? '添加中...' : '添加到黑名单' }}
         </button>
       </div>
@@ -47,7 +47,7 @@
       <div class="filter-row">
         <div class="form-group">
           <label>类型筛选:</label>
-          <select v-model="filters.type" @change="loadBlacklist" class="form-select">
+          <select v-model="filters.type" class="form-select" @change="loadBlacklist">
             <option value="">全部</option>
             <option value="SONG">具体歌曲</option>
             <option value="KEYWORD">关键词</option>
@@ -56,11 +56,11 @@
         <div class="form-group flex-1">
           <label>搜索:</label>
           <input
-            v-model="filters.search"
-            @input="debounceSearch"
-            type="text"
-            placeholder="搜索黑名单项..."
-            class="form-input"
+              v-model="filters.search"
+              class="form-input"
+              placeholder="搜索黑名单项..."
+              type="text"
+              @input="debounceSearch"
           />
         </div>
       </div>
@@ -69,7 +69,7 @@
     <!-- 黑名单列表 -->
     <div class="blacklist-section">
       <h4>黑名单列表 ({{ pagination.total }} 项)</h4>
-      
+
       <div v-if="loading && blacklist.length === 0" class="loading">
         加载中...
       </div>
@@ -82,7 +82,7 @@
         <div v-for="item in blacklist" :key="item.id" class="blacklist-item">
           <div class="item-header">
             <div class="item-info">
-              <span class="item-type" :class="item.type.toLowerCase()">
+              <span :class="item.type.toLowerCase()" class="item-type">
                 {{ item.type === 'SONG' ? '歌曲' : '关键词' }}
               </span>
               <span class="item-value">{{ item.value }}</span>
@@ -90,13 +90,13 @@
             </div>
             <div class="item-actions">
               <button
-                @click="toggleItemStatus(item)"
-                :class="item.isActive ? 'disable-btn' : 'enable-btn'"
-                :disabled="loading"
+                  :class="item.isActive ? 'disable-btn' : 'enable-btn'"
+                  :disabled="loading"
+                  @click="toggleItemStatus(item)"
               >
                 {{ item.isActive ? '禁用' : '启用' }}
               </button>
-              <button @click="deleteItem(item)" class="delete-btn" :disabled="loading">
+              <button :disabled="loading" class="delete-btn" @click="deleteItem(item)">
                 删除
               </button>
             </div>
@@ -113,9 +113,9 @@
       <!-- 分页 -->
       <div v-if="pagination.pages > 1" class="pagination">
         <button
-          @click="changePage(pagination.page - 1)"
-          :disabled="pagination.page <= 1 || loading"
-          class="page-btn"
+            :disabled="pagination.page <= 1 || loading"
+            class="page-btn"
+            @click="changePage(pagination.page - 1)"
         >
           上一页
         </button>
@@ -123,9 +123,9 @@
           第 {{ pagination.page }} 页，共 {{ pagination.pages }} 页
         </span>
         <button
-          @click="changePage(pagination.page + 1)"
-          :disabled="pagination.page >= pagination.pages || loading"
-          class="page-btn"
+            :disabled="pagination.page >= pagination.pages || loading"
+            class="page-btn"
+            @click="changePage(pagination.page + 1)"
         >
           下一页
         </button>
@@ -145,15 +145,15 @@
 
   <!-- 确认删除对话框 -->
   <ConfirmDialog
-    :show="showDeleteDialog"
-    title="删除黑名单项"
-    :message="deleteDialogMessage"
-    type="danger"
-    confirm-text="删除"
-    cancel-text="取消"
-    :loading="loading"
-    @confirm="confirmDelete"
-    @close="showDeleteDialog = false"
+      :loading="loading"
+      :message="deleteDialogMessage"
+      :show="showDeleteDialog"
+      cancel-text="取消"
+      confirm-text="删除"
+      title="删除黑名单项"
+      type="danger"
+      @close="showDeleteDialog = false"
+      @confirm="confirmDelete"
   />
 </template>
 
@@ -200,8 +200,8 @@ const loadBlacklist = async () => {
     const params = new URLSearchParams({
       page: pagination.page.toString(),
       limit: pagination.limit.toString(),
-      ...(filters.type && { type: filters.type }),
-      ...(filters.search && { search: filters.search })
+      ...(filters.type && {type: filters.type}),
+      ...(filters.search && {search: filters.search})
     })
 
     const response = await $fetch(`/api/admin/blacklist?${params}`, {
@@ -238,11 +238,11 @@ const addBlacklistItem = async () => {
     })
 
     success.value = '黑名单项添加成功'
-    
+
     // 重置表单
     newItem.value = ''
     newItem.reason = ''
-    
+
     // 重新加载列表
     pagination.page = 1
     await loadBlacklist()

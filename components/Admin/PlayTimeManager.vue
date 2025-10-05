@@ -5,7 +5,7 @@
       <div class="settings-toggle">
         <span class="label">启用播出时段选择</span>
         <label class="toggle-switch">
-          <input type="checkbox" v-model="enablePlayTimeSelection" @change="updateSystemSettings">
+          <input v-model="enablePlayTimeSelection" type="checkbox" @change="updateSystemSettings">
           <span class="slider round"></span>
         </label>
       </div>
@@ -22,26 +22,26 @@
       <div class="loading-spinner"></div>
       <span>加载中...</span>
     </div>
-    
+
     <div v-else-if="error" class="error-message">
       {{ error }}
     </div>
-    
+
     <div v-else-if="playTimes.length === 0" class="empty-state">
       <div class="icon">🕒</div>
       <p>暂无播出时段</p>
       <p class="hint">点击"添加播出时段"按钮创建第一个播出时段</p>
     </div>
-    
+
     <div v-else class="play-times-list">
       <div v-for="playTime in playTimes" :key="playTime.id" class="play-time-card">
         <div class="card-header">
           <h3 class="time-name">{{ playTime.name }}</h3>
-          <div class="status-badge" :class="{ 'enabled': playTime.enabled, 'disabled': !playTime.enabled }">
+          <div :class="{ 'enabled': playTime.enabled, 'disabled': !playTime.enabled }" class="status-badge">
             {{ playTime.enabled ? '已启用' : '已禁用' }}
           </div>
         </div>
-        
+
         <div class="time-details">
           <div class="time-range">
             <span class="label">播出时间:</span>
@@ -60,21 +60,21 @@
               </template>
             </span>
           </div>
-          
+
           <div v-if="playTime.description" class="description">
             <span class="label">描述:</span>
             <span class="value">{{ playTime.description }}</span>
           </div>
         </div>
-        
+
         <div class="actions">
           <button class="btn btn-secondary" @click="editPlayTime(playTime)">
             编辑
           </button>
-          <button 
-            class="btn" 
-            :class="playTime.enabled ? 'btn-warning' : 'btn-success'"
-            @click="togglePlayTimeStatus(playTime)"
+          <button
+              :class="playTime.enabled ? 'btn-warning' : 'btn-success'"
+              class="btn"
+              @click="togglePlayTimeStatus(playTime)"
           >
             {{ playTime.enabled ? '禁用' : '启用' }}
           </button>
@@ -92,69 +92,69 @@
           <h3>{{ editingPlayTime ? '编辑播出时段' : '添加播出时段' }}</h3>
           <button class="close-button" @click="cancelForm">&times;</button>
         </div>
-        
+
         <div class="modal-body">
           <form @submit.prevent="savePlayTime">
             <div class="form-group">
               <label for="name">时段名称</label>
-              <input 
-                id="name" 
-                v-model="formData.name" 
-                type="text" 
-                required 
-                placeholder="例如：上午、下午"
-                class="form-control"
+              <input
+                  id="name"
+                  v-model="formData.name"
+                  class="form-control"
+                  placeholder="例如：上午、下午"
+                  required
+                  type="text"
               />
             </div>
-            
+
             <div class="form-group">
               <label for="startTime">开始时间 (可选)</label>
-              <input 
-                id="startTime" 
-                v-model="formData.startTime" 
-                type="time" 
-                class="form-control"
+              <input
+                  id="startTime"
+                  v-model="formData.startTime"
+                  class="form-control"
+                  type="time"
               />
               <div class="help-text">留空表示不限制开始时间</div>
             </div>
-            
+
             <div class="form-group">
               <label for="endTime">结束时间 (可选)</label>
-              <input 
-                id="endTime" 
-                v-model="formData.endTime" 
-                type="time" 
-                class="form-control"
+              <input
+                  id="endTime"
+                  v-model="formData.endTime"
+                  class="form-control"
+                  type="time"
               />
               <div class="help-text">留空表示不限制结束时间</div>
             </div>
-            
+
             <div class="form-group">
               <label for="description">描述 (可选)</label>
-              <textarea 
-                id="description" 
-                v-model="formData.description" 
-                placeholder="时段描述..."
-                class="form-control"
+              <textarea
+                  id="description"
+                  v-model="formData.description"
+                  class="form-control"
+                  placeholder="时段描述..."
               ></textarea>
             </div>
-            
+
             <div class="form-group checkbox-group">
               <label class="checkbox-label">
-                <input type="checkbox" v-model="formData.enabled">
+                <input v-model="formData.enabled" type="checkbox">
                 <span>启用此播出时段</span>
               </label>
             </div>
-            
+
             <div v-if="formError" class="form-error">
               {{ formError }}
             </div>
-            
+
             <div class="form-actions">
-              <button type="button" class="btn btn-secondary" @click="cancelForm">
+              <button class="btn btn-secondary" type="button" @click="cancelForm">
                 取消
               </button>
-              <button type="submit" class="btn btn-primary" :disabled="formSubmitting">
+              <button :disabled="formSubmitting" class="btn btn-primary" type="submit">
                 {{ formSubmitting ? '保存中...' : '保存' }}
               </button>
             </div>
@@ -162,7 +162,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 删除确认对话框 -->
     <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
       <div class="modal-content delete-confirm">
@@ -170,20 +170,20 @@
           <h3>确认删除</h3>
           <button class="close-button" @click="showDeleteConfirm = false">&times;</button>
         </div>
-        
+
         <div class="modal-body">
           <p>确定要删除播出时段 "{{ playTimeToDelete?.name }}" 吗？</p>
           <p class="warning">此操作不可恢复，相关歌曲和排期的时段设置将被清除。</p>
-          
+
           <div class="form-actions">
-            <button type="button" class="btn btn-secondary" @click="showDeleteConfirm = false">
+            <button class="btn btn-secondary" type="button" @click="showDeleteConfirm = false">
               取消
             </button>
-            <button 
-              type="button" 
-              class="btn btn-danger" 
-              :disabled="deleteInProgress"
-              @click="deletePlayTime"
+            <button
+                :disabled="deleteInProgress"
+                class="btn btn-danger"
+                type="button"
+                @click="deletePlayTime"
             >
               {{ deleteInProgress ? '删除中...' : '确认删除' }}
             </button>
@@ -194,12 +194,12 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import {onMounted, reactive, ref} from 'vue'
 import {useAuth} from '~/composables/useAuth'
 import type {PlayTime} from '~/types'
 
-const { getAuthConfig, isAdmin } = useAuth()
+const {getAuthConfig, isAdmin} = useAuth()
 
 const playTimes = ref<PlayTime[]>([])
 const loading = ref(false)
@@ -235,10 +235,10 @@ const fetchPlayTimes = async () => {
     error.value = '只有管理员才能管理播出时段'
     return
   }
-  
+
   loading.value = true
   error.value = ''
-  
+
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/play-times', {
@@ -247,29 +247,29 @@ const fetchPlayTimes = async () => {
       },
       ...authConfig
     })
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || `获取播出时段失败: ${response.status}`)
     }
-    
+
     const data = await response.json()
-    
+
     // 自定义排序：先按启用状态排序，然后有时间的排在前面，没有时间的排在后面
     playTimes.value = data.sort((a: PlayTime, b: PlayTime) => {
       // 首先按启用状态排序
       if (a.enabled !== b.enabled) {
         return a.enabled ? -1 : 1; // 启用的排在前面
       }
-      
+
       // 然后按是否有时间排序
       const aHasTime = !!(a.startTime || a.endTime);
       const bHasTime = !!(b.startTime || b.endTime);
-      
+
       if (aHasTime !== bHasTime) {
         return aHasTime ? -1 : 1; // 有时间的排在前面
       }
-      
+
       // 如果都有时间，按开始时间排序
       if (aHasTime && bHasTime) {
         if (a.startTime && b.startTime) {
@@ -280,7 +280,7 @@ const fetchPlayTimes = async () => {
           return 1;
         }
       }
-      
+
       // 最后按名称排序
       return a.name.localeCompare(b.name);
     });
@@ -294,7 +294,7 @@ const fetchPlayTimes = async () => {
 // 获取系统设置
 const fetchSystemSettings = async () => {
   if (!isAdmin.value) return
-  
+
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/system-settings', {
@@ -303,13 +303,13 @@ const fetchSystemSettings = async () => {
       },
       ...authConfig
     })
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       console.error(`获取系统设置失败: ${errorData.message || response.status}`)
       return
     }
-    
+
     const data = await response.json()
     enablePlayTimeSelection.value = data.enablePlayTimeSelection
   } catch (err: any) {
@@ -320,7 +320,7 @@ const fetchSystemSettings = async () => {
 // 更新系统设置
 const updateSystemSettings = async () => {
   if (!isAdmin.value) return
-  
+
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/system-settings', {
@@ -333,7 +333,7 @@ const updateSystemSettings = async () => {
       }),
       ...authConfig
     })
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || `更新系统设置失败: ${response.status}`)
@@ -359,7 +359,7 @@ const editPlayTime = (playTime: PlayTime) => {
 // 切换播出时段状态
 const togglePlayTimeStatus = async (playTime: PlayTime) => {
   if (!isAdmin.value) return
-  
+
   try {
     const authConfig = getAuthConfig()
     const response = await fetch(`/api/admin/play-times/${playTime.id}`, {
@@ -372,12 +372,12 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
       }),
       ...authConfig
     })
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || `更新播出时段状态失败: ${response.status}`)
     }
-    
+
     // 更新本地数据
     await fetchPlayTimes()
   } catch (err: any) {
@@ -394,21 +394,21 @@ const confirmDelete = (playTime: PlayTime) => {
 // 删除播出时段
 const deletePlayTime = async () => {
   if (!playTimeToDelete.value || !isAdmin.value) return
-  
+
   deleteInProgress.value = true
-  
+
   try {
     const authConfig = getAuthConfig()
     const response = await fetch(`/api/admin/play-times/${playTimeToDelete.value.id}`, {
       method: 'DELETE',
       ...authConfig
     })
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || `删除播出时段失败: ${response.status}`)
     }
-    
+
     // 更新本地数据
     await fetchPlayTimes()
     showDeleteConfirm.value = false
@@ -423,36 +423,36 @@ const deletePlayTime = async () => {
 // 保存播出时段
 const savePlayTime = async () => {
   formError.value = ''
-  
+
   // 时间验证（仅当两个时间都有填写时才进行比较）
   if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
     formError.value = '开始时间必须早于结束时间'
     return
   }
-  
+
   // 至少要有名称
   if (!formData.name.trim()) {
     formError.value = '时段名称不能为空'
     return
   }
-  
+
   // 检查名称是否重复
   const isUpdate = !!editingPlayTime.value
-  const nameExists = playTimes.value.some(pt => 
-    pt.name.toLowerCase() === formData.name.trim().toLowerCase() && 
-    (!isUpdate || pt.id !== formData.id)
+  const nameExists = playTimes.value.some(pt =>
+      pt.name.toLowerCase() === formData.name.trim().toLowerCase() &&
+      (!isUpdate || pt.id !== formData.id)
   )
-  
+
   if (nameExists) {
     formError.value = '播出时段名称已存在，请使用其他名称'
     return
   }
-  
+
   formSubmitting.value = true
-  
+
   try {
     const authConfig = getAuthConfig()
-    
+
     const response = await fetch(isUpdate ? `/api/admin/play-times/${formData.id}` : '/api/admin/play-times', {
       method: isUpdate ? 'PUT' : 'POST',
       headers: {
@@ -467,12 +467,12 @@ const savePlayTime = async () => {
       }),
       ...authConfig
     })
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || `${isUpdate ? '更新' : '创建'}播出时段失败: ${response.status}`)
     }
-    
+
     // 更新本地数据
     await fetchPlayTimes()
     cancelForm()
@@ -488,7 +488,7 @@ const cancelForm = () => {
   showAddForm.value = false
   editingPlayTime.value = null
   formError.value = ''
-  
+
   // 重置表单数据
   Object.assign(formData, {
     id: 0,
@@ -691,7 +691,9 @@ input:checked + .slider:before {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -841,7 +843,7 @@ input:checked + .slider:before {
   .modal-content {
     max-width: 650px;
   }
-  
+
   .modal-body {
     padding: 2rem;
   }

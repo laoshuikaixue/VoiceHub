@@ -4,29 +4,29 @@
       <div class="modal-header">
         <h3>歌曲已存在</h3>
         <button class="close-btn" @click="$emit('close')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="18" x2="6" y1="6" y2="18"></line>
+            <line x1="6" x2="18" y1="6" y2="18"></line>
           </svg>
         </button>
       </div>
-      
+
       <div class="modal-body">
         <p class="duplicate-message">
           这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！
         </p>
-        
+
         <!-- 歌曲卡片 -->
         <div class="song-card">
           <div class="song-cover">
-            <img 
-              v-if="song.cover" 
-              :src="convertToHttps(song.cover)" 
-              :alt="song.title"
-              @error="handleImageError"
+            <img
+                v-if="song.cover"
+                :alt="song.title"
+                :src="convertToHttps(song.cover)"
+                @error="handleImageError"
             />
             <div v-else class="default-cover">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="m9 12 1.5-1.5L16 16"/>
                 <path d="M21 15.5c.621 0 1-.504 1-1.125v-3.75c0-.621-.379-1.125-1-1.125h-1.5"/>
@@ -34,40 +34,42 @@
               </svg>
             </div>
           </div>
-          
+
           <div class="song-info">
             <h4 class="song-title">{{ song.title }}</h4>
             <p class="song-artist">{{ song.artist }}</p>
             <p class="song-requester">投稿者：{{ song.requester }}</p>
             <div class="song-stats">
               <span class="vote-count">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path
+                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
                 {{ song.voteCount || 0 }} 票
               </span>
-              <span class="play-status" :class="{ played: song.played }">
+              <span :class="{ played: song.played }" class="play-status">
                 {{ song.played ? '已播放' : '待播放' }}
               </span>
             </div>
           </div>
         </div>
       </div>
-      
+
       <div class="modal-footer">
-        <button 
-          class="btn btn-secondary" 
-          @click="$emit('close')"
+        <button
+            class="btn btn-secondary"
+            @click="$emit('close')"
         >
           取消
         </button>
-        <button 
-          class="btn btn-primary like-btn" 
-          @click="handleLike"
-          :disabled="liking || song.voted"
+        <button
+            :disabled="liking || song.voted"
+            class="btn btn-primary like-btn"
+            @click="handleLike"
         >
-          <svg v-if="!liking" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          <svg v-if="!liking" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
           <div v-else class="loading-spinner"></div>
           {{ song.voted ? '已点赞' : '立即点赞' }}
@@ -77,7 +79,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import {ref} from 'vue'
 import type {Song} from '~/types'
 import {convertToHttps} from '~/utils/url'
@@ -107,7 +109,7 @@ const handleImageError = (event: Event) => {
 
 const handleLike = async () => {
   if (liking.value || props.song.voted) return
-  
+
   liking.value = true
   try {
     emit('like', props.song.id)
@@ -351,22 +353,22 @@ const handleLike = async () => {
     margin: 10px;
     max-width: none;
   }
-  
+
   .song-card {
     flex-direction: column;
     align-items: center;
     text-align: center;
   }
-  
+
   .song-cover {
     width: 120px;
     height: 120px;
   }
-  
+
   .modal-footer {
     flex-direction: column;
   }
-  
+
   .btn {
     width: 100%;
     justify-content: center;

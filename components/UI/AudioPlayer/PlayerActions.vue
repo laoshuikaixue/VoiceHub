@@ -1,33 +1,33 @@
 <template>
   <div class="player-actions">
-    <button 
-      class="action-btn lyrics-btn" 
-      :class="{ active: showLyrics }" 
-      @click="$emit('toggleLyrics')" 
-      :title="showLyrics ? '隐藏歌词' : '显示歌词'"
+    <button
+        :class="{ active: showLyrics }"
+        :title="showLyrics ? '隐藏歌词' : '显示歌词'"
+        class="action-btn lyrics-btn"
+        @click="$emit('toggleLyrics')"
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg fill="none" height="16" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
         <path d="M3 5h18v2H3V5zm0 4h14v2H3V9zm0 4h18v2H3v-2zm0 4h10v2H3v-2z" fill="currentColor" opacity="0.9"/>
-        <circle cx="20" cy="11" r="2" fill="currentColor" opacity="0.7"/>
-        <circle cx="18" cy="15" r="1.5" fill="currentColor" opacity="0.7"/>
+        <circle cx="20" cy="11" fill="currentColor" opacity="0.7" r="2"/>
+        <circle cx="18" cy="15" fill="currentColor" opacity="0.7" r="1.5"/>
       </svg>
     </button>
 
-    <div class="quality-selector" :class="{ 'expanded': showQualitySettings }">
-      <button class="quality-btn" @click="toggleQualitySettings" title="音质设置">
+    <div :class="{ 'expanded': showQualitySettings }" class="quality-selector">
+      <button class="quality-btn" title="音质设置" @click="toggleQualitySettings">
         <span class="quality-icon">♪</span>
         <span class="quality-text">{{ currentQualityText }}</span>
-        <span class="quality-arrow" :class="{ 'rotated': showQualitySettings }">▼</span>
+        <span :class="{ 'rotated': showQualitySettings }" class="quality-arrow">▼</span>
       </button>
 
       <Transition name="quality-dropdown">
         <div v-if="showQualitySettings && currentPlatformOptions.length > 0" class="quality-dropdown">
           <div
-            v-for="option in currentPlatformOptions"
-            :key="option.value"
-            class="quality-option"
-            :class="{ 'active': isCurrentQuality(option.value) }"
-            @click="selectQuality(option.value)"
+              v-for="option in currentPlatformOptions"
+              :key="option.value"
+              :class="{ 'active': isCurrentQuality(option.value) }"
+              class="quality-option"
+              @click="selectQuality(option.value)"
           >
             <span class="option-label">{{ option.label }}</span>
           </div>
@@ -36,7 +36,7 @@
     </div>
 
     <button class="close-player" @click="$emit('close')">
-      <Icon name="x" :size="16" color="white" />
+      <Icon :size="16" color="white" name="x"/>
     </button>
   </div>
 </template>
@@ -257,19 +257,19 @@ onUnmounted(() => {
     min-width: 32px !important;
     min-height: 32px !important;
   }
-  
+
   .quality-btn {
     height: 32px !important;
     min-height: 32px !important;
     padding: 0 8px;
     min-width: 60px;
   }
-  
+
   .lyrics-btn svg {
     width: 16px !important;
     height: 16px !important;
   }
-  
+
   /* 确保所有图标大小一致 */
   .action-btn svg,
   .close-player svg {

@@ -4,7 +4,7 @@
       <div class="card-header">
         <h3>向用户发送通知</h3>
       </div>
-      
+
       <div class="card-body">
         <form @submit.prevent="sendNotification">
           <div class="notification-form-layout">
@@ -14,86 +14,86 @@
               <div class="form-group">
                 <label for="title">通知标题</label>
                 <input
-                  id="title"
-                  v-model="form.title"
-                  type="text"
-                  required
-                  placeholder="输入通知标题"
-                  maxlength="100"
-                  class="input"
+                    id="title"
+                    v-model="form.title"
+                    class="input"
+                    maxlength="100"
+                    placeholder="输入通知标题"
+                    required
+                    type="text"
                 />
               </div>
-              
+
               <div class="form-group">
                 <label for="content">通知内容</label>
                 <textarea
-                  id="content"
-                  v-model="form.content"
-                  required
-                  placeholder="输入通知内容"
-                  rows="6"
-                  maxlength="500"
-                  class="input"
+                    id="content"
+                    v-model="form.content"
+                    class="input"
+                    maxlength="500"
+                    placeholder="输入通知内容"
+                    required
+                    rows="6"
                 ></textarea>
               </div>
             </div>
-            
+
             <!-- 右侧设置部分 -->
             <div class="settings-section">
               <!-- 通知范围 -->
               <div class="form-group">
                 <label>通知范围</label>
                 <div class="scope-selector">
-                  <button 
-                    type="button" 
-                    :class="['scope-btn', { active: form.scope === 'ALL' }]"
-                    @click="form.scope = 'ALL'"
+                  <button
+                      :class="['scope-btn', { active: form.scope === 'ALL' }]"
+                      type="button"
+                      @click="form.scope = 'ALL'"
                   >
                     全体用户
                   </button>
-                  
-                  <button 
-                    type="button" 
-                    :class="['scope-btn', { active: form.scope === 'GRADE' }]"
-                    @click="form.scope = 'GRADE'"
+
+                  <button
+                      :class="['scope-btn', { active: form.scope === 'GRADE' }]"
+                      type="button"
+                      @click="form.scope = 'GRADE'"
                   >
                     按年级选择
                   </button>
-                  
-                  <button 
-                    type="button" 
-                    :class="['scope-btn', { active: form.scope === 'CLASS' }]"
-                    @click="form.scope = 'CLASS'"
+
+                  <button
+                      :class="['scope-btn', { active: form.scope === 'CLASS' }]"
+                      type="button"
+                      @click="form.scope = 'CLASS'"
                   >
                     按班级选择
                   </button>
-                  
-                  <button 
-                    type="button" 
-                    :class="['scope-btn', { active: form.scope === 'MULTI_CLASS' }]"
-                    @click="form.scope = 'MULTI_CLASS'"
+
+                  <button
+                      :class="['scope-btn', { active: form.scope === 'MULTI_CLASS' }]"
+                      type="button"
+                      @click="form.scope = 'MULTI_CLASS'"
                   >
                     多班级选择
                   </button>
-                  
-                  <button 
-                    type="button" 
-                    :class="['scope-btn', { active: form.scope === 'SPECIFIC_USERS' }]"
-                    @click="form.scope = 'SPECIFIC_USERS'"
+
+                  <button
+                      :class="['scope-btn', { active: form.scope === 'SPECIFIC_USERS' }]"
+                      type="button"
+                      @click="form.scope = 'SPECIFIC_USERS'"
                   >
                     指定用户
                   </button>
                 </div>
               </div>
-              
+
               <!-- 按年级选择 -->
               <div v-if="form.scope === 'GRADE'" class="form-group">
                 <label for="grade">选择年级</label>
-                <select 
-                  id="grade" 
-                  v-model="form.grade" 
-                  required
-                  class="input"
+                <select
+                    id="grade"
+                    v-model="form.grade"
+                    class="input"
+                    required
                 >
                   <option value="">请选择年级</option>
                   <option value="高一">高一</option>
@@ -102,16 +102,16 @@
                   <option value="教师">教师</option>
                 </select>
               </div>
-              
+
               <!-- 按单个班级选择 -->
               <div v-if="form.scope === 'CLASS'" class="form-group grid-2">
                 <div>
                   <label for="classGrade">年级</label>
-                  <select 
-                    id="classGrade" 
-                    v-model="form.classGrade" 
-                    required
-                    class="input"
+                  <select
+                      id="classGrade"
+                      v-model="form.classGrade"
+                      class="input"
+                      required
                   >
                     <option value="">请选择年级</option>
                     <option value="高一">高一</option>
@@ -120,29 +120,29 @@
                     <option value="教师">教师</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label for="className">班级</label>
-                  <input 
-                    id="className" 
-                    v-model="form.className" 
-                    type="text" 
-                    required
-                    placeholder="如: 1班、2班"
-                    class="input"
+                  <input
+                      id="className"
+                      v-model="form.className"
+                      class="input"
+                      placeholder="如: 1班、2班"
+                      required
+                      type="text"
                   />
                 </div>
               </div>
-              
+
               <!-- 按多班级选择 -->
               <div v-if="form.scope === 'MULTI_CLASS'" class="form-group">
                 <div class="multi-class-selector">
                   <div class="multi-class-controls">
                     <label>选择年级和班级</label>
                     <div class="flex gap-2 mb-2">
-                      <select 
-                        v-model="multiClassForm.grade" 
-                        class="input"
+                      <select
+                          v-model="multiClassForm.grade"
+                          class="input"
                       >
                         <option value="">请选择年级</option>
                         <option value="高一">高一</option>
@@ -150,51 +150,51 @@
                         <option value="高三">高三</option>
                         <option value="教师">教师</option>
                       </select>
-                      
-                      <input 
-                        v-model="multiClassForm.class" 
-                        type="text" 
-                        placeholder="输入班级名称" 
-                        class="input"
+
+                      <input
+                          v-model="multiClassForm.class"
+                          class="input"
+                          placeholder="输入班级名称"
+                          type="text"
                       />
-                      
-                      <button 
-                        type="button" 
-                        @click="addClassToSelection" 
-                        class="btn btn-primary"
-                        :disabled="!canAddClass"
+
+                      <button
+                          :disabled="!canAddClass"
+                          class="btn btn-primary"
+                          type="button"
+                          @click="addClassToSelection"
                       >
                         添加
                       </button>
                     </div>
                   </div>
-                  
+
                   <div v-if="form.selectedClasses.length > 0" class="selected-classes">
                     <label>已选择的班级</label>
                     <div class="class-tags">
-                      <div 
-                        v-for="(cls, index) in form.selectedClasses" 
-                        :key="index"
-                        class="class-tag"
+                      <div
+                          v-for="(cls, index) in form.selectedClasses"
+                          :key="index"
+                          class="class-tag"
                       >
                         <span>{{ cls.grade }} {{ cls.class }}</span>
-                        <button 
-                          type="button" 
-                          @click="removeClassFromSelection(index)" 
-                          class="remove-tag"
+                        <button
+                            class="remove-tag"
+                            type="button"
+                            @click="removeClassFromSelection(index)"
                         >
                           &times;
                         </button>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div v-else class="empty-selection">
                     未选择任何班级
                   </div>
                 </div>
               </div>
-              
+
               <!-- 指定用户选择 -->
               <div v-if="form.scope === 'SPECIFIC_USERS'" class="form-group">
                 <div class="user-selector">
@@ -202,90 +202,93 @@
                     <label>搜索并选择用户</label>
                     <div class="search-input-container">
                       <div class="search-box">
-                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                           <circle cx="11" cy="11" r="8"/>
                           <path d="m21 21-4.35-4.35"/>
                         </svg>
-                        <input 
-                          v-model="userSearchQuery" 
-                          type="text" 
-                          placeholder="按姓名、用户名或ID搜索用户" 
-                          class="input search-input"
-                          @input="onUserSearchInput"
+                        <input
+                            v-model="userSearchQuery"
+                            class="input search-input"
+                            placeholder="按姓名、用户名或ID搜索用户"
+                            type="text"
+                            @input="onUserSearchInput"
                         />
                       </div>
                     </div>
-                    
+
                     <!-- 搜索结果列表 -->
                     <div v-if="showUserSearchResults && userSearchResults.length > 0" class="search-results">
                       <div class="search-results-header">
                         <span>搜索结果 ({{ userSearchResults.length }})</span>
                       </div>
                       <div class="search-results-list">
-                        <div 
-                          v-for="user in userSearchResults" 
-                          :key="user.id"
-                          class="search-result-item"
-                          @click="addUserToSelection(user)"
+                        <div
+                            v-for="user in userSearchResults"
+                            :key="user.id"
+                            class="search-result-item"
+                            @click="addUserToSelection(user)"
                         >
                           <div class="user-info">
                             <div class="user-name">{{ user.name || user.username }}</div>
                             <div class="user-details">
                               <span class="user-username">@{{ user.username }}</span>
-                              <span v-if="user.grade && user.class" class="user-class">{{ user.grade }} {{ user.class }}</span>
+                              <span v-if="user.grade && user.class" class="user-class">{{ user.grade }} {{
+                                  user.class
+                                }}</span>
                               <span class="user-role">{{ getRoleText(user.role) }}</span>
                             </div>
                           </div>
-                          <button 
-                            type="button" 
-                            class="add-user-btn"
-                            :disabled="isUserSelected(user.id)"
+                          <button
+                              :disabled="isUserSelected(user.id)"
+                              class="add-user-btn"
+                              type="button"
                           >
                             {{ isUserSelected(user.id) ? '已选择' : '选择' }}
                           </button>
                         </div>
                       </div>
                     </div>
-                    
+
                     <!-- 无搜索结果 -->
-                    <div v-else-if="showUserSearchResults && userSearchQuery && userSearchResults.length === 0" class="no-search-results">
+                    <div v-else-if="showUserSearchResults && userSearchQuery && userSearchResults.length === 0"
+                         class="no-search-results">
                       未找到匹配的用户
                     </div>
                   </div>
-                  
+
                   <!-- 已选择的用户 -->
                   <div v-if="form.selectedUsers.length > 0" class="selected-users">
                     <div class="selected-users-header">
                       <label>已选择的用户 ({{ form.selectedUsers.length }})</label>
-                      <button 
-                        type="button" 
-                        @click="clearAllSelectedUsers" 
-                        class="clear-all-btn"
+                      <button
+                          class="clear-all-btn"
+                          type="button"
+                          @click="clearAllSelectedUsers"
                       >
                         清空全部
                       </button>
                     </div>
                     <div class="user-tags">
-                      <div 
-                        v-for="(user, index) in form.selectedUsers" 
-                        :key="user.id"
-                        class="user-tag"
+                      <div
+                          v-for="(user, index) in form.selectedUsers"
+                          :key="user.id"
+                          class="user-tag"
                       >
                         <div class="user-tag-info">
                           <span class="user-tag-name">{{ user.name || user.username }}</span>
                           <span class="user-tag-details">@{{ user.username }}</span>
                         </div>
-                        <button 
-                          type="button" 
-                          @click="removeUserFromSelection(index)" 
-                          class="remove-tag"
+                        <button
+                            class="remove-tag"
+                            type="button"
+                            @click="removeUserFromSelection(index)"
                         >
                           &times;
                         </button>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div v-else class="empty-selection">
                     未选择任何用户
                   </div>
@@ -294,20 +297,20 @@
 
               <!-- 操作按钮 -->
               <div class="form-actions">
-                <button 
-                  type="submit" 
-                  class="btn btn-primary" 
-                  :disabled="loading || !isFormValid"
+                <button
+                    :disabled="loading || !isFormValid"
+                    class="btn btn-primary"
+                    type="submit"
                 >
                   {{ loading ? '发送中...' : '发送通知' }}
                 </button>
               </div>
-              
+
               <div v-if="error" class="error-message">{{ error }}</div>
               <div v-if="success" class="success-message">{{ success }}</div>
             </div>
           </div>
-          
+
           <!-- 预览区域 -->
           <div class="notification-preview glass">
             <h4>通知预览</h4>
@@ -330,8 +333,8 @@ import {computed, ref} from 'vue'
 import {useAuth} from '~/composables/useAuth'
 import {useAdmin} from '~/composables/useAdmin'
 
-const { isAdmin } = useAuth()
-const { sendAdminNotification } = useAdmin()
+const {isAdmin} = useAuth()
+const {sendAdminNotification} = useAdmin()
 
 // 表单数据
 const form = ref({
@@ -370,19 +373,19 @@ const canAddClass = computed(() => {
 // 添加班级到选择列表
 const addClassToSelection = () => {
   if (!canAddClass.value) return
-  
+
   // 检查是否已经选择了这个班级
-  const isDuplicate = form.value.selectedClasses.some(cls => 
-    cls.grade === multiClassForm.value.grade && 
-    cls.class === multiClassForm.value.class
+  const isDuplicate = form.value.selectedClasses.some(cls =>
+      cls.grade === multiClassForm.value.grade &&
+      cls.class === multiClassForm.value.class
   )
-  
+
   if (!isDuplicate) {
     form.value.selectedClasses.push({
       grade: multiClassForm.value.grade,
       class: multiClassForm.value.class
     })
-    
+
     // 清空输入
     multiClassForm.value.class = ''
   }
@@ -396,13 +399,13 @@ const removeClassFromSelection = (index) => {
 // 用户搜索输入处理（防抖）
 const onUserSearchInput = () => {
   clearTimeout(userSearchTimeout)
-  
+
   if (!userSearchQuery.value.trim()) {
     userSearchResults.value = []
     showUserSearchResults.value = false
     return
   }
-  
+
   userSearchTimeout = setTimeout(async () => {
     await searchUsers(userSearchQuery.value.trim())
   }, 300)
@@ -411,7 +414,7 @@ const onUserSearchInput = () => {
 // 搜索用户API调用
 const searchUsers = async (query) => {
   if (!query) return
-  
+
   try {
     userSearchLoading.value = true
     const response = await $fetch('/api/admin/users', {
@@ -421,7 +424,7 @@ const searchUsers = async (query) => {
         limit: 20
       }
     })
-    
+
     if (response.success) {
       userSearchResults.value = response.users || []
       showUserSearchResults.value = true
@@ -443,7 +446,7 @@ const isUserSelected = (userId) => {
 // 添加用户到选择列表
 const addUserToSelection = (user) => {
   if (isUserSelected(user.id)) return
-  
+
   form.value.selectedUsers.push({
     id: user.id,
     name: user.name,
@@ -452,7 +455,7 @@ const addUserToSelection = (user) => {
     class: user.class,
     role: user.role
   })
-  
+
   // 清空搜索
   userSearchQuery.value = ''
   userSearchResults.value = []
@@ -484,23 +487,23 @@ const isFormValid = computed(() => {
   if (!form.value.title || !form.value.content) {
     return false
   }
-  
+
   if (form.value.scope === 'GRADE' && !form.value.grade) {
     return false
   }
-  
+
   if (form.value.scope === 'CLASS' && (!form.value.classGrade || !form.value.className)) {
     return false
   }
-  
+
   if (form.value.scope === 'MULTI_CLASS' && form.value.selectedClasses.length === 0) {
     return false
   }
-  
+
   if (form.value.scope === 'SPECIFIC_USERS' && form.value.selectedUsers.length === 0) {
     return false
   }
-  
+
   return true
 })
 
@@ -512,17 +515,17 @@ const scopeDescription = computed(() => {
     case 'GRADE':
       return form.value.grade ? `${form.value.grade}年级` : '请选择年级'
     case 'CLASS':
-      return (form.value.classGrade && form.value.className) 
-        ? `${form.value.classGrade}年级${form.value.className}班` 
-        : '请选择班级'
+      return (form.value.classGrade && form.value.className)
+          ? `${form.value.classGrade}年级${form.value.className}班`
+          : '请选择班级'
     case 'MULTI_CLASS':
-      return form.value.selectedClasses.length > 0 
-        ? `${form.value.selectedClasses.length}个班级` 
-        : '请选择班级'
+      return form.value.selectedClasses.length > 0
+          ? `${form.value.selectedClasses.length}个班级`
+          : '请选择班级'
     case 'SPECIFIC_USERS':
-      return form.value.selectedUsers.length > 0 
-        ? `已选择${form.value.selectedUsers.length}个用户` 
-        : '请选择用户'
+      return form.value.selectedUsers.length > 0
+          ? `已选择${form.value.selectedUsers.length}个用户`
+          : '请选择用户'
     default:
       return ''
   }
@@ -534,16 +537,16 @@ const sendNotification = async () => {
     error.value = '只有管理员可以发送系统通知'
     return
   }
-  
+
   if (!isFormValid.value) {
     error.value = '请填写完整信息'
     return
   }
-  
+
   loading.value = true
   error.value = ''
   success.value = ''
-  
+
   try {
     // 构建请求数据
     const notificationData = {
@@ -552,7 +555,7 @@ const sendNotification = async () => {
       scope: form.value.scope,
       filter: {}
     }
-    
+
     // 添加过滤条件
     if (form.value.scope === 'GRADE') {
       notificationData.filter.grade = form.value.grade
@@ -564,13 +567,13 @@ const sendNotification = async () => {
     } else if (form.value.scope === 'SPECIFIC_USERS') {
       notificationData.filter.userIds = form.value.selectedUsers.map(user => user.id)
     }
-    
+
     // 发送通知
     const result = await sendAdminNotification(notificationData)
-    
+
     if (result && result.success) {
       success.value = `成功发送通知给 ${result.sentCount} 名用户`
-      
+
       // 清空表单
       form.value = {
         title: '',
@@ -1116,19 +1119,19 @@ const sendNotification = async () => {
   .grid-2 {
     grid-template-columns: 1fr;
   }
-  
+
   .scope-selector {
     flex-direction: column;
   }
-  
+
   .scope-btn {
     width: 100%;
   }
-  
+
   .user-tags {
     flex-direction: column;
   }
-  
+
   .user-tag {
     width: 100%;
   }

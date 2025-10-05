@@ -3,10 +3,10 @@
     <div class="modal-content modal-lg" @click.stop>
       <div class="modal-header">
         <h3>批量更新学生信息</h3>
-        <button @click="$emit('close')" class="close-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+        <button class="close-btn" @click="$emit('close')">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
           </svg>
         </button>
       </div>
@@ -17,20 +17,20 @@
           <div class="radio-group">
             <label class="radio-option">
               <input
-                type="radio"
-                v-model="updateType"
-                value="grade-only"
-                class="radio-input"
+                  v-model="updateType"
+                  class="radio-input"
+                  type="radio"
+                  value="grade-only"
               />
               <span class="radio-label">仅更新年级</span>
               <span class="radio-description">批量更新选中学生的年级，保持班级不变</span>
             </label>
             <label class="radio-option">
               <input
-                type="radio"
-                v-model="updateType"
-                value="excel-batch"
-                class="radio-input"
+                  v-model="updateType"
+                  class="radio-input"
+                  type="radio"
+                  value="excel-batch"
               />
               <span class="radio-label">Excel批量更新</span>
               <span class="radio-description">通过Excel文件批量更新学生的年级和班级信息</span>
@@ -74,28 +74,30 @@
             <div class="list-header">
               <label class="select-all-checkbox">
                 <input
-                  type="checkbox"
-                  :checked="isAllSelected"
-                  @change="toggleSelectAll"
+                    :checked="isAllSelected"
+                    type="checkbox"
+                    @change="toggleSelectAll"
                 />
                 <span>全选 ({{ selectedUserIds.length }}/{{ filteredStudents.length }})</span>
               </label>
             </div>
             <div class="student-list">
               <div
-                v-for="student in filteredStudents"
-                :key="student.id"
-                class="student-item"
+                  v-for="student in filteredStudents"
+                  :key="student.id"
+                  class="student-item"
               >
                 <label class="student-checkbox">
                   <input
-                    type="checkbox"
-                    :value="student.id"
-                    v-model="selectedUserIds"
+                      v-model="selectedUserIds"
+                      :value="student.id"
+                      type="checkbox"
                   />
                   <div class="student-info">
                     <span class="student-name">{{ student.name }}</span>
-                    <span class="student-details">{{ student.username }} - {{ student.grade || '无' }}年级 {{ student.class || '无班级' }}</span>
+                    <span class="student-details">{{ student.username }} - {{
+                        student.grade || '无'
+                      }}年级 {{ student.class || '无班级' }}</span>
                   </div>
                 </label>
               </div>
@@ -107,17 +109,17 @@
             <div class="form-group">
               <label>目标年级</label>
               <input
-                v-model="targetGrade"
-                type="text"
-                placeholder="如: 2025"
-                class="form-input"
+                  v-model="targetGrade"
+                  class="form-input"
+                  placeholder="如: 2025"
+                  type="text"
               />
             </div>
             <div class="form-group">
               <label class="checkbox-label">
                 <input
-                  type="checkbox"
-                  v-model="keepClass"
+                    v-model="keepClass"
+                    type="checkbox"
                 />
                 <span>保持班级不变</span>
               </label>
@@ -134,24 +136,27 @@
 
           <!-- 文件上传 -->
           <div class="file-upload-section">
-            <div class="upload-area" :class="{ 'drag-over': isDragOver }" @drop="handleDrop" @dragover.prevent @dragenter.prevent="isDragOver = true" @dragleave.prevent="isDragOver = false">
+            <div :class="{ 'drag-over': isDragOver }" class="upload-area" @drop="handleDrop" @dragover.prevent
+                 @dragenter.prevent="isDragOver = true" @dragleave.prevent="isDragOver = false">
               <input
-                ref="fileInput"
-                type="file"
-                accept=".xlsx,.xls"
-                @change="handleFileSelect"
-                class="file-input"
+                  ref="fileInput"
+                  accept=".xlsx,.xls"
+                  class="file-input"
+                  type="file"
+                  @change="handleFileSelect"
               />
               <div class="upload-content">
-                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="upload-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                   <polyline points="14,2 14,8 20,8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <line x1="16" x2="8" y1="13" y2="13"/>
+                  <line x1="16" x2="8" y1="17" y2="17"/>
                   <polyline points="10,9 9,9 8,9"/>
                 </svg>
                 <div class="upload-text">
-                  <p>拖拽Excel文件到此处，或<button type="button" @click="$refs.fileInput.click()" class="upload-link">点击选择文件</button></p>
+                  <p>拖拽Excel文件到此处，或
+                    <button class="upload-link" type="button" @click="$refs.fileInput.click()">点击选择文件</button>
+                  </p>
                   <p class="upload-hint">支持 .xlsx 和 .xls 格式</p>
                 </div>
               </div>
@@ -168,11 +173,11 @@
               <li>如果某个字段为空，则不更新该字段</li>
               <li>新用户名列为可选，如果不填写则保持原用户名不变</li>
             </ul>
-            <button @click="downloadTemplate" class="btn-link">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="btn-link" @click="downloadTemplate">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7,10 12,15 17,10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
+                <line x1="12" x2="12" y1="15" y2="3"/>
               </svg>
               下载Excel模板
             </button>
@@ -184,31 +189,32 @@
             <div class="preview-table-container">
               <table class="preview-table">
                 <thead>
-                  <tr>
-                    <th>用户名</th>
-                    <th>姓名</th>
-                    <th>当前年级</th>
-                    <th>当前班级</th>
-                    <th>新年级</th>
-                    <th>新班级</th>
-                    <th>新用户名</th>
-                    <th>状态</th>
-                  </tr>
+                <tr>
+                  <th>用户名</th>
+                  <th>姓名</th>
+                  <th>当前年级</th>
+                  <th>当前班级</th>
+                  <th>新年级</th>
+                  <th>新班级</th>
+                  <th>新用户名</th>
+                  <th>状态</th>
+                </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(row, index) in excelPreviewData.slice(0, 10)" :key="index" :class="{ 'error-row': row.error }">
-                    <td>{{ row.username }}</td>
-                    <td>{{ row.name || '-' }}</td>
-                    <td>{{ row.currentGrade || '-' }}</td>
-                    <td>{{ row.currentClass || '-' }}</td>
-                    <td>{{ row.newGrade || '-' }}</td>
-                    <td>{{ row.newClass || '-' }}</td>
-                    <td>{{ row.newUsername || '-' }}</td>
-                    <td>
-                      <span v-if="row.error" class="status-error">{{ row.error }}</span>
-                      <span v-else class="status-success">准备更新</span>
-                    </td>
-                  </tr>
+                <tr v-for="(row, index) in excelPreviewData.slice(0, 10)" :key="index"
+                    :class="{ 'error-row': row.error }">
+                  <td>{{ row.username }}</td>
+                  <td>{{ row.name || '-' }}</td>
+                  <td>{{ row.currentGrade || '-' }}</td>
+                  <td>{{ row.currentClass || '-' }}</td>
+                  <td>{{ row.newGrade || '-' }}</td>
+                  <td>{{ row.newClass || '-' }}</td>
+                  <td>{{ row.newUsername || '-' }}</td>
+                  <td>
+                    <span v-if="row.error" class="status-error">{{ row.error }}</span>
+                    <span v-else class="status-success">准备更新</span>
+                  </td>
+                </tr>
                 </tbody>
               </table>
               <div v-if="excelPreviewData.length > 10" class="preview-more">
@@ -225,11 +231,11 @@
       </div>
 
       <div class="modal-footer">
-        <button @click="$emit('close')" class="btn-secondary">取消</button>
+        <button class="btn-secondary" @click="$emit('close')">取消</button>
         <button
-          @click="performUpdate"
-          class="btn-primary"
-          :disabled="loading || !canUpdate"
+            :disabled="loading || !canUpdate"
+            class="btn-primary"
+            @click="performUpdate"
         >
           {{ loading ? '更新中...' : '确认更新' }}
         </button>
@@ -352,7 +358,7 @@ const processExcelFile = async (file) => {
       // 等待一小段时间确保数据更新
       await new Promise(resolve => setTimeout(resolve, 100))
     }
-    
+
     console.log('当前学生数据数量:', students.value.length)
     console.log('前5个学生用户名:', students.value.slice(0, 5).map(s => s.username))
 
@@ -365,7 +371,7 @@ const processExcelFile = async (file) => {
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target.result)
-        const workbook = window.XLSX.read(data, { type: 'array' })
+        const workbook = window.XLSX.read(data, {type: 'array'})
         const sheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[sheetName]
         const jsonData = window.XLSX.utils.sheet_to_json(worksheet)
@@ -377,13 +383,13 @@ const processExcelFile = async (file) => {
         loading.value = false
       }
     }
-    
+
     reader.onerror = () => {
       console.error('读取文件失败')
       error.value = '读取文件失败，请重试'
       loading.value = false
     }
-    
+
     reader.readAsArrayBuffer(file)
   } catch (err) {
     console.error('处理Excel文件失败:', err)
@@ -395,10 +401,10 @@ const processExcelFile = async (file) => {
 
 const parseExcelData = (jsonData) => {
   console.log('开始解析Excel数据，当前学生数量:', students.value.length)
-  
+
   const previewData = []
   const userMap = new Map()
-  
+
   // 创建用户映射，同时处理用户名标准化
   students.value.forEach(user => {
     if (user.username) {
@@ -409,7 +415,7 @@ const parseExcelData = (jsonData) => {
       userMap.set(user.username, user)
     }
   })
-  
+
   console.log('用户映射创建完成，映射数量:', userMap.size)
   console.log('前10个用户名:', Array.from(userMap.keys()).slice(0, 10))
 
@@ -434,12 +440,12 @@ const parseExcelData = (jsonData) => {
     }
 
     // 尝试多种方式匹配用户名
-    let existingUser = userMap.get(username) || 
-                      userMap.get(username.toLowerCase()) || 
-                      userMap.get(username.toUpperCase())
-    
+    let existingUser = userMap.get(username) ||
+        userMap.get(username.toLowerCase()) ||
+        userMap.get(username.toUpperCase())
+
     console.log(`查找用户名: "${username}", 找到用户:`, existingUser ? existingUser.username : '未找到')
-    
+
     if (!existingUser) {
       previewData.push({
         username: username,
@@ -466,7 +472,7 @@ const parseExcelData = (jsonData) => {
 
   console.log('Excel数据解析完成，预览数据数量:', previewData.length)
   console.log('有错误的数据:', previewData.filter(d => d.error).length)
-  
+
   excelPreviewData.value = previewData
   loading.value = false
 }
@@ -491,8 +497,8 @@ const loadXLSX = async () => {
 
 const downloadTemplate = () => {
   const templateData = [
-    { '用户名': 'student001', '姓名': '张三', '年级': '2025', '班级': '1班', '新用户名': 'new_student001' },
-    { '用户名': 'student002', '姓名': '李四', '年级': '2025', '班级': '2班', '新用户名': '' }
+    {'用户名': 'student001', '姓名': '张三', '年级': '2025', '班级': '1班', '新用户名': 'new_student001'},
+    {'用户名': 'student002', '姓名': '李四', '年级': '2025', '班级': '2班', '新用户名': ''}
   ]
 
   const ws = window.XLSX.utils.json_to_sheet(templateData)
@@ -540,7 +546,7 @@ const performGradeUpdate = async () => {
 
 const performExcelUpdate = async () => {
   const validUpdates = excelPreviewData.value.filter(row => !row.error && row.userId)
-  
+
   if (validUpdates.length === 0) {
     throw new Error('没有有效的更新数据')
   }
@@ -558,7 +564,7 @@ const performExcelUpdate = async () => {
 
     await $fetch('/api/admin/users/batch-update', {
       method: 'POST',
-      body: { updates },
+      body: {updates},
       ...auth.getAuthConfig()
     })
   }
@@ -577,18 +583,18 @@ const fetchAllStudents = async () => {
       },
       ...auth.getAuthConfig()
     })
-    
+
     if (response.success && response.users) {
       const users = response.users
       allStudents.value = users
-      
+
       console.log('成功获取学生数据，数量:', users.length)
-      console.log('前5个学生:', users.slice(0, 5).map(u => ({ username: u.username, name: u.name })))
-      
+      console.log('前5个学生:', users.slice(0, 5).map(u => ({username: u.username, name: u.name})))
+
       // 同时更新年级班级信息
       const grades = [...new Set(users.map(u => u.grade).filter(Boolean))].sort()
       const classes = [...new Set(users.map(u => u.class).filter(Boolean))].sort()
-      
+
       allGrades.value = grades
       allClasses.value = classes
     } else {
@@ -616,7 +622,7 @@ watch(() => props.show, (newVal) => {
     if (fileInput.value) {
       fileInput.value.value = ''
     }
-    
+
     // 获取所有学生用户数据
     fetchAllStudents()
   }

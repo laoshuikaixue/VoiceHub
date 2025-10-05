@@ -8,7 +8,7 @@
     <!-- 权限检查 -->
     <div v-if="!canPrintSchedule" class="permission-denied">
       <div class="permission-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10"/>
           <path d="m15 9-6 6"/>
           <path d="m9 9 6 6"/>
@@ -23,7 +23,7 @@
       <div class="settings-panel">
         <div class="setting-group">
           <h3>打印设置</h3>
-          
+
           <!-- 纸张大小 -->
           <div class="setting-item">
             <label>纸张大小</label>
@@ -49,23 +49,23 @@
             <label>日期范围</label>
             <div class="date-range">
               <input
-                type="date"
-                v-model="settings.startDate"
-                class="date-input"
+                  v-model="settings.startDate"
+                  class="date-input"
+                  type="date"
               />
               <span>至</span>
               <input
-                type="date"
-                v-model="settings.endDate"
-                class="date-input"
+                  v-model="settings.endDate"
+                  class="date-input"
+                  type="date"
               />
             </div>
             <!-- 日期快捷选择 -->
             <div class="date-shortcuts">
-              <button @click="setDateRange('today')" class="shortcut-btn">今天</button>
-              <button @click="setDateRange('tomorrow')" class="shortcut-btn">明天</button>
-              <button @click="setDateRange('thisWeek')" class="shortcut-btn">本周</button>
-              <button @click="setDateRange('nextWeek')" class="shortcut-btn">下周</button>
+              <button class="shortcut-btn" @click="setDateRange('today')">今天</button>
+              <button class="shortcut-btn" @click="setDateRange('tomorrow')">明天</button>
+              <button class="shortcut-btn" @click="setDateRange('thisWeek')">本周</button>
+              <button class="shortcut-btn" @click="setDateRange('nextWeek')">下周</button>
             </div>
           </div>
 
@@ -74,32 +74,32 @@
             <label>显示内容</label>
             <div class="content-options">
               <label class="checkbox-item">
-                <input type="checkbox" v-model="settings.showCover" />
+                <input v-model="settings.showCover" type="checkbox"/>
                 <span>歌曲封面</span>
               </label>
               <label class="checkbox-item">
-                <input type="checkbox" v-model="settings.showTitle" />
+                <input v-model="settings.showTitle" type="checkbox"/>
                 <span>歌曲名</span>
               </label>
               <label class="checkbox-item">
-                <input type="checkbox" v-model="settings.showArtist" />
+                <input v-model="settings.showArtist" type="checkbox"/>
                 <span>歌手</span>
               </label>
               <label class="checkbox-item">
-                <input type="checkbox" v-model="settings.showRequester" />
+                <input v-model="settings.showRequester" type="checkbox"/>
                 <span>投稿人</span>
               </label>
               <label class="checkbox-item">
-                <input type="checkbox" v-model="settings.showVotes" />
+                <input v-model="settings.showVotes" type="checkbox"/>
                 <span>热度</span>
               </label>
 
               <label class="checkbox-item">
-                <input type="checkbox" v-model="settings.showSequence" />
+                <input v-model="settings.showSequence" type="checkbox"/>
                 <span>播放顺序</span>
               </label>
-              <label class="checkbox-item" v-if="schoolLogoPrintUrl">
-                <input type="checkbox" v-model="settings.showSchoolLogo" />
+              <label v-if="schoolLogoPrintUrl" class="checkbox-item">
+                <input v-model="settings.showSchoolLogo" type="checkbox"/>
                 <span>学校Logo</span>
               </label>
             </div>
@@ -108,11 +108,11 @@
           <!-- 备注设置 -->
           <div class="setting-group">
             <label class="setting-label">备注</label>
-            <textarea 
-              v-model="settings.remark" 
-              class="remark-input"
-              placeholder="请输入备注信息（可选）"
-              rows="3"
+            <textarea
+                v-model="settings.remark"
+                class="remark-input"
+                placeholder="请输入备注信息（可选）"
+                rows="3"
             ></textarea>
           </div>
 
@@ -120,33 +120,33 @@
 
         <!-- 操作按钮 -->
         <div class="action-buttons">
-          <button @click="refreshPreview" class="btn btn-secondary">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="btn btn-secondary" @click="refreshPreview">
+            <svg class="btn-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M23 4v6h-6"/>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
             </svg>
             刷新预览
           </button>
-          <button @click="printSchedule" class="btn btn-primary" :disabled="isPrinting">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button :disabled="isPrinting" class="btn btn-primary" @click="printSchedule">
+            <svg class="btn-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <polyline points="6,9 6,2 18,2 18,9"/>
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-              <rect x="6" y="14" width="12" height="8"/>
+              <rect height="8" width="12" x="6" y="14"/>
             </svg>
             {{ isPrinting ? '打印中...' : '打印' }}
           </button>
-          <button @click="exportPDF" class="btn btn-success" :disabled="isExporting">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button :disabled="isExporting" class="btn btn-success" @click="exportPDF">
+            <svg class="btn-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14,2 14,8 20,8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
+              <line x1="16" x2="8" y1="13" y2="13"/>
+              <line x1="16" x2="8" y1="17" y2="17"/>
             </svg>
             {{ isExporting ? '导出中...' : '导出PDF' }}
           </button>
-          <button @click="exportImage" class="btn btn-warning" :disabled="isExportingImage">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <button :disabled="isExportingImage" class="btn btn-warning" @click="exportImage">
+            <svg class="btn-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect height="18" rx="2" ry="2" width="18" x="3" y="3"/>
               <circle cx="9" cy="9" r="2"/>
               <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
             </svg>
@@ -158,36 +158,36 @@
       <!-- 右侧预览面板 -->
       <div class="preview-panel">
         <div class="preview-header">
-            <h3>打印预览</h3>
-            <div class="preview-info">
-              <span>{{ filteredSchedules.length }} 首歌曲</span>
-              <span v-if="schedules.length === 0" class="debug-info">无排期数据</span>
-              <span v-else-if="filteredSchedules.length === 0" class="debug-info">过滤后无数据</span>
-            </div>
+          <h3>打印预览</h3>
+          <div class="preview-info">
+            <span>{{ filteredSchedules.length }} 首歌曲</span>
+            <span v-if="schedules.length === 0" class="debug-info">无排期数据</span>
+            <span v-else-if="filteredSchedules.length === 0" class="debug-info">过滤后无数据</span>
           </div>
-        
-        <div 
-          class="preview-content" 
-          :class="[
+        </div>
+
+        <div
+            ref="previewContent"
+            :class="[
             `paper-${settings.paperSize.toLowerCase()}`,
             `orientation-${settings.orientation}`
           ]"
-          ref="previewContent"
+            class="preview-content"
         >
           <div class="print-page">
             <!-- 页面头部 -->
             <div class="page-header">
               <div class="logo-section">
-                <img :src="logoUrl" alt="VoiceHub Logo" class="logo" />
+                <img :src="logoUrl" alt="VoiceHub Logo" class="logo"/>
                 <!-- 竖线分割 -->
                 <div class="logo-divider"></div>
                 <!-- 学校logo -->
-                <img 
-              v-if="settings.showSchoolLogo && schoolLogoPrintUrl"
-              :src="schoolLogoPrintUrl"
-              alt="学校Logo" 
-              class="school-logo-print"
-            />
+                <img
+                    v-if="settings.showSchoolLogo && schoolLogoPrintUrl"
+                    :src="schoolLogoPrintUrl"
+                    alt="学校Logo"
+                    class="school-logo-print"
+                />
                 <div class="title-section">
                   <h1>{{ siteTitle }}</h1>
                   <h2>广播排期表</h2>
@@ -203,11 +203,11 @@
               <!-- 无数据提示 -->
               <div v-if="filteredSchedules.length === 0" class="no-data-message">
                 <div class="no-data-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
+                    <line x1="16" x2="16" y1="2" y2="6"/>
+                    <line x1="8" x2="8" y1="2" y2="6"/>
+                    <line x1="3" x2="21" y1="10" y2="10"/>
                   </svg>
                 </div>
                 <h3>暂无排期数据</h3>
@@ -221,9 +221,9 @@
 
               <div class="grouped-content">
                 <div
-                  v-for="(dateGroup, date) in groupedSchedules"
-                  :key="date"
-                  class="date-group"
+                    v-for="(dateGroup, date) in groupedSchedules"
+                    :key="date"
+                    class="date-group"
                 >
                   <h3 class="group-title">
                     {{ formatDate(date) }}
@@ -231,13 +231,12 @@
                   </h3>
 
 
-
                   <!-- 检查是否需要显示时段分组 -->
                   <div v-if="hasMultiplePlayTimes(dateGroup)" class="playtime-groups">
                     <div
-                      v-for="(playTimeData, playTime) in dateGroup.playTimes"
-                      :key="playTime"
-                      class="playtime-group"
+                        v-for="(playTimeData, playTime) in dateGroup.playTimes"
+                        :key="playTime"
+                        class="playtime-group"
                     >
                       <h4 class="playtime-title">
                         {{ playTime }}
@@ -245,11 +244,11 @@
                       </h4>
                       <div class="schedule-list">
                         <div
-                          v-for="schedule in playTimeData.schedules"
-                          :key="schedule.id"
-                          class="schedule-item"
+                            v-for="schedule in playTimeData.schedules"
+                            :key="schedule.id"
+                            class="schedule-item"
                         >
-                          <ScheduleItemPrint :schedule="schedule" :settings="settings" />
+                          <ScheduleItemPrint :schedule="schedule" :settings="settings"/>
                         </div>
                       </div>
                     </div>
@@ -258,11 +257,11 @@
                   <!-- 如果只有一个时段或没有时段，直接显示歌曲列表 -->
                   <div v-else class="schedule-list">
                     <div
-                      v-for="schedule in dateGroup.allSchedules"
-                      :key="schedule.id"
-                      class="schedule-item"
+                        v-for="schedule in dateGroup.allSchedules"
+                        :key="schedule.id"
+                        class="schedule-item"
                     >
-                      <ScheduleItemPrint :schedule="schedule" :settings="settings" />
+                      <ScheduleItemPrint :schedule="schedule" :settings="settings"/>
                     </div>
                   </div>
                 </div>
@@ -296,10 +295,10 @@ import html2canvas from 'html2canvas'
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
 
 // 权限检查
-const { canPrintSchedule } = usePermissions()
+const {canPrintSchedule} = usePermissions()
 
 // 站点配置
-const { siteTitle, schoolLogoPrintUrl, initSiteConfig } = useSiteConfig()
+const {siteTitle, schoolLogoPrintUrl, initSiteConfig} = useSiteConfig()
 
 // 配置
 const config = useRuntimeConfig()
@@ -517,13 +516,13 @@ const refreshPreview = async () => {
 
 const printSchedule = async () => {
   if (isPrinting.value) return // 防止重复点击
-  
+
   isPrinting.value = true
   try {
     if (window.$showNotification) {
       window.$showNotification('正在准备打印...', 'info')
     }
-    
+
     // 复用PDF导出逻辑，但用于打印
     await exportPDFForPrint()
   } catch (error) {
@@ -582,7 +581,7 @@ const exportPDFForPrint = async () => {
     if (el.style) {
       // 强制设置文字颜色为黑色
       el.style.color = 'black !important'
-      
+
       // 保持背景为白色
       el.style.background = 'white !important'
       el.style.backgroundColor = 'white !important'
@@ -614,16 +613,20 @@ const exportPDFForPrint = async () => {
     const options = {
       margin: 10,
       filename: `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg', quality: 0.9 },
-      html2canvas: { 
+      image: {type: 'jpeg', quality: 0.9},
+      html2canvas: {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false
       },
-      jsPDF: { unit: 'mm', format: settings.value.paperSize.toLowerCase(), orientation: settings.value.orientation === 'landscape' ? 'l' : 'p' },
-      pagebreak: { mode: ['css', 'legacy'] }
+      jsPDF: {
+        unit: 'mm',
+        format: settings.value.paperSize.toLowerCase(),
+        orientation: settings.value.orientation === 'landscape' ? 'l' : 'p'
+      },
+      pagebreak: {mode: ['css', 'legacy']}
     }
 
     // 生成PDF并打印
@@ -680,49 +683,49 @@ const downloadImageAsBase64 = async (url) => {
 }
 
 // 预处理所有图片
-  const preprocessImages = async (element) => {
-    const images = element.querySelectorAll('img')
-    const imagePromises = Array.from(images).map(async (img) => {
-      if (img.src && !img.src.startsWith('data:')) {
-        try {
-          const base64 = await downloadImageAsBase64(img.src)
-          if (base64) {
-            img.src = base64
-          }
-        } catch (error) {
-          console.warn('处理图片失败:', img.src, error)
+const preprocessImages = async (element) => {
+  const images = element.querySelectorAll('img')
+  const imagePromises = Array.from(images).map(async (img) => {
+    if (img.src && !img.src.startsWith('data:')) {
+      try {
+        const base64 = await downloadImageAsBase64(img.src)
+        if (base64) {
+          img.src = base64
         }
+      } catch (error) {
+        console.warn('处理图片失败:', img.src, error)
       }
-      
-      // 确保图片元素在打印时保持正确的样式
-      if (img.classList.contains('school-logo-print')) {
-        // 学校Logo保持原始比例，设置最大尺寸
-        img.style.maxWidth = '70px !important'
-        img.style.maxHeight = '60px !important'
-        img.style.width = 'auto !important'
-        img.style.height = 'auto !important'
-        img.style.objectFit = 'contain !important'
-        img.style.borderRadius = '4px !important'
-        img.style.flexShrink = '0 !important'
-      } else if (img.classList.contains('logo')) {
-        // 系统Logo按原尺寸显示
-        img.style.width = '70px !important'
-        img.style.height = 'auto !important'
-        img.style.objectFit = 'contain !important'
-        img.style.borderRadius = '4px !important'
-      } else if (img.classList.contains('song-cover')) {
-        // 歌曲封面保持固定尺寸
-        img.style.width = '40px !important'
-        img.style.height = '40px !important'
-        img.style.objectFit = 'cover !important'
-        img.style.borderRadius = '4px !important'
-      }
-    })
+    }
 
-    await Promise.all(imagePromises)
-    // 等待一下让图片加载完成
-    await new Promise(resolve => setTimeout(resolve, 500))
-  }
+    // 确保图片元素在打印时保持正确的样式
+    if (img.classList.contains('school-logo-print')) {
+      // 学校Logo保持原始比例，设置最大尺寸
+      img.style.maxWidth = '70px !important'
+      img.style.maxHeight = '60px !important'
+      img.style.width = 'auto !important'
+      img.style.height = 'auto !important'
+      img.style.objectFit = 'contain !important'
+      img.style.borderRadius = '4px !important'
+      img.style.flexShrink = '0 !important'
+    } else if (img.classList.contains('logo')) {
+      // 系统Logo按原尺寸显示
+      img.style.width = '70px !important'
+      img.style.height = 'auto !important'
+      img.style.objectFit = 'contain !important'
+      img.style.borderRadius = '4px !important'
+    } else if (img.classList.contains('song-cover')) {
+      // 歌曲封面保持固定尺寸
+      img.style.width = '40px !important'
+      img.style.height = '40px !important'
+      img.style.objectFit = 'cover !important'
+      img.style.borderRadius = '4px !important'
+    }
+  })
+
+  await Promise.all(imagePromises)
+  // 等待一下让图片加载完成
+  await new Promise(resolve => setTimeout(resolve, 500))
+}
 
 const exportPDF = async () => {
   isExporting.value = true
@@ -741,11 +744,11 @@ const exportPDF = async () => {
     }
 
     // 克隆预览内容，保持原有样式
-  const clonedPage = printPage.cloneNode(true)
+    const clonedPage = printPage.cloneNode(true)
 
-  // 创建PDF渲染容器
-  const pdfContainer = document.createElement('div')
-  pdfContainer.style.cssText = `
+    // 创建PDF渲染容器
+    const pdfContainer = document.createElement('div')
+    pdfContainer.style.cssText = `
     position: absolute;
     left: -9999px;
     top: 0;
@@ -755,35 +758,35 @@ const exportPDF = async () => {
     box-sizing: border-box;
   `
 
-  // 调整克隆页面的样式
-  clonedPage.style.cssText = `
+    // 调整克隆页面的样式
+    clonedPage.style.cssText = `
     background: white !important;
     color: black !important;
     box-sizing: border-box !important;
   `
 
-  // 确保所有子元素的颜色和样式正确
-  const allElements = clonedPage.querySelectorAll('*')
-  allElements.forEach(el => {
-    if (el.style) {
-      // 强制设置文字颜色为黑色
-      el.style.color = 'black !important'
-      
-      // 保持背景为白色
-      el.style.background = 'white !important'
-      el.style.backgroundColor = 'white !important'
-    }
+    // 确保所有子元素的颜色和样式正确
+    const allElements = clonedPage.querySelectorAll('*')
+    allElements.forEach(el => {
+      if (el.style) {
+        // 强制设置文字颜色为黑色
+        el.style.color = 'black !important'
 
-    // 特别处理页面元素的背景
-    if (el.classList && (
-        el.classList.contains('print-page') ||
-        el.classList.contains('page-header') ||
-        el.classList.contains('page-footer') ||
-        el.classList.contains('schedule-content'))) {
-      el.style.background = 'white !important'
-      el.style.backgroundColor = 'white !important'
-    }
-  })
+        // 保持背景为白色
+        el.style.background = 'white !important'
+        el.style.backgroundColor = 'white !important'
+      }
+
+      // 特别处理页面元素的背景
+      if (el.classList && (
+          el.classList.contains('print-page') ||
+          el.classList.contains('page-header') ||
+          el.classList.contains('page-footer') ||
+          el.classList.contains('schedule-content'))) {
+        el.style.background = 'white !important'
+        el.style.backgroundColor = 'white !important'
+      }
+    })
 
     pdfContainer.appendChild(clonedPage)
     document.body.appendChild(pdfContainer)
@@ -800,16 +803,20 @@ const exportPDF = async () => {
       const options = {
         margin: 10,
         filename: `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.9 },
-        html2canvas: { 
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false
-      },
-        jsPDF: { unit: 'mm', format: settings.value.paperSize.toLowerCase(), orientation: settings.value.orientation === 'landscape' ? 'l' : 'p' },
-        pagebreak: { mode: ['css', 'legacy'] }
+        image: {type: 'jpeg', quality: 0.9},
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          logging: false
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: settings.value.paperSize.toLowerCase(),
+          orientation: settings.value.orientation === 'landscape' ? 'l' : 'p'
+        },
+        pagebreak: {mode: ['css', 'legacy']}
       }
 
       // 生成并保存PDF
@@ -858,7 +865,7 @@ const exportImage = async () => {
     // 获取原始页面尺寸
     const originalWidth = printPage.offsetWidth
     const originalHeight = printPage.offsetHeight
-    
+
     // 创建长图渲染容器，保持原始比例
     const imageContainer = document.createElement('div')
     imageContainer.style.cssText = `
@@ -889,7 +896,7 @@ const exportImage = async () => {
       if (el.style) {
         // 强制设置文字颜色为黑色
         el.style.color = 'black !important'
-        
+
         // 保持背景为白色
         el.style.background = 'white !important'
         el.style.backgroundColor = 'white !important'
@@ -1005,7 +1012,7 @@ const generatePDFScheduleContent = () => {
               ">
                 ${playTimeData.playTime?.name || '未指定时段'}
                 ${playTimeData.playTime?.startTime && playTimeData.playTime?.endTime ?
-                  `(${playTimeData.playTime.startTime}-${playTimeData.playTime.endTime})` : ''}
+              `(${playTimeData.playTime.startTime}-${playTimeData.playTime.endTime})` : ''}
               </h4>
               ${generateScheduleItems(playTimeData.schedules)}
             </div>
@@ -1056,13 +1063,13 @@ const generateScheduleItems = (schedules) => {
           flex-shrink: 0;
         ">
           ${schedule.song?.cover ?
-            `<img src="${convertToHttps(schedule.song.cover)}" alt="${schedule.song?.title || '歌曲'}" style="
+      `<img src="${convertToHttps(schedule.song.cover)}" alt="${schedule.song?.title || '歌曲'}" style="
               width: 100%;
               height: 100%;
               object-fit: cover;
               border-radius: 4px;
             " />` :
-            `<div style="
+      `<div style="
               width: 100%;
               height: 100%;
               background: #f0f0f0;
@@ -1073,7 +1080,7 @@ const generateScheduleItems = (schedules) => {
               color: #999;
               font-size: 12px;
             ">♪</div>`
-          }
+  }
         </div>
       ` : ''}
 
@@ -1195,7 +1202,7 @@ const initializeDates = () => {
   const today = new Date()
   const nextWeek = new Date(today)
   nextWeek.setDate(today.getDate() + 7)
-  
+
   settings.value.startDate = today.toISOString().split('T')[0]
   settings.value.endDate = nextWeek.toISOString().split('T')[0]
 }
@@ -1204,10 +1211,10 @@ const initializeDates = () => {
 onMounted(async () => {
   initializeDates()
   loadSchedules()
-  
+
   // 初始化站点配置
   await initSiteConfig()
-  
+
   // 如果有学校logo，自动勾选显示学校logo选项
   if (schoolLogoPrintUrl.value) {
     settings.value.showSchoolLogo = true
@@ -1228,7 +1235,7 @@ const debugInfo = computed(() => {
 // 监听设置变化
 watch(() => settings.value, () => {
   // 可以在这里添加实时预览更新逻辑
-}, { deep: true })
+}, {deep: true})
 </script>
 
 <style scoped>
@@ -1565,14 +1572,14 @@ watch(() => settings.value, () => {
 }
 
 .school-logo-print {
-    max-width: 70px;
-    max-height: 60px;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    border-radius: 4px;
-    flex-shrink: 0;
-  }
+  max-width: 70px;
+  max-height: 60px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
 
 .title-section h1 {
   font-size: 24px;
@@ -1816,13 +1823,13 @@ watch(() => settings.value, () => {
 }
 
 .orientation-landscape .school-logo-print {
-      max-width: 70px;
-      max-height: 60px;
-      width: auto;
-      height: auto;
-      object-fit: contain;
-      flex-shrink: 0;
-    }
+  max-width: 70px;
+  max-height: 60px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 
 .orientation-landscape .schedule-content {
   columns: 2;

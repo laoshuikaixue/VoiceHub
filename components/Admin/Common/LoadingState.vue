@@ -1,20 +1,20 @@
 <template>
-  <div class="loading-state" :class="{ 'full-screen': fullScreen }">
+  <div :class="{ 'full-screen': fullScreen }" class="loading-state">
     <div class="loading-content">
       <!-- 加载动画 -->
-      <div class="loading-spinner" :class="spinnerType">
+      <div :class="spinnerType" class="loading-spinner">
         <div v-if="spinnerType === 'dots'" class="dots-spinner">
           <div class="dot"></div>
           <div class="dot"></div>
           <div class="dot"></div>
         </div>
-        
+
         <div v-else-if="spinnerType === 'pulse'" class="pulse-spinner">
           <div class="pulse-ring"></div>
           <div class="pulse-ring"></div>
           <div class="pulse-ring"></div>
         </div>
-        
+
         <div v-else-if="spinnerType === 'bars'" class="bars-spinner">
           <div class="bar"></div>
           <div class="bar"></div>
@@ -22,68 +22,69 @@
           <div class="bar"></div>
           <div class="bar"></div>
         </div>
-        
+
         <div v-else class="circle-spinner">
           <svg viewBox="0 0 50 50">
             <circle
-              cx="25"
-              cy="25"
-              r="20"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="3"
-              stroke-linecap="round"
-              stroke-dasharray="31.416"
-              stroke-dashoffset="31.416"
+                cx="25"
+                cy="25"
+                fill="none"
+                r="20"
+                stroke="currentColor"
+                stroke-dasharray="31.416"
+                stroke-dashoffset="31.416"
+                stroke-linecap="round"
+                stroke-width="3"
             >
               <animate
-                attributeName="stroke-dasharray"
-                dur="2s"
-                values="0 31.416;15.708 15.708;0 31.416"
-                repeatCount="indefinite"
+                  attributeName="stroke-dasharray"
+                  dur="2s"
+                  repeatCount="indefinite"
+                  values="0 31.416;15.708 15.708;0 31.416"
               />
               <animate
-                attributeName="stroke-dashoffset"
-                dur="2s"
-                values="0;-15.708;-31.416"
-                repeatCount="indefinite"
+                  attributeName="stroke-dashoffset"
+                  dur="2s"
+                  repeatCount="indefinite"
+                  values="0;-15.708;-31.416"
               />
             </circle>
           </svg>
         </div>
       </div>
-      
+
       <!-- 加载文本 -->
       <div class="loading-text">
         <h3 v-if="title" class="loading-title">{{ title }}</h3>
         <p class="loading-message">{{ message }}</p>
-        
+
         <!-- 进度条 -->
         <div v-if="showProgress" class="progress-container">
           <div class="progress-bar">
-            <div 
-              class="progress-fill" 
-              :style="{ width: `${progress}%` }"
+            <div
+                :style="{ width: `${progress}%` }"
+                class="progress-fill"
             ></div>
           </div>
           <span class="progress-text">{{ progress }}%</span>
         </div>
-        
+
         <!-- 加载步骤 -->
         <div v-if="steps && steps.length > 0" class="loading-steps">
-          <div 
-            v-for="(step, index) in steps" 
-            :key="index"
-            class="step-item"
-            :class="{
+          <div
+              v-for="(step, index) in steps"
+              :key="index"
+              :class="{
               'completed': index < currentStep,
               'active': index === currentStep,
               'pending': index > currentStep
             }"
+              class="step-item"
           >
             <div class="step-icon">
-              <svg v-if="index < currentStep" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg v-if="index < currentStep" fill="none" viewBox="0 0 24 24">
+                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                      stroke-width="2"/>
               </svg>
               <div v-else-if="index === currentStep" class="step-spinner"></div>
               <span v-else class="step-number">{{ index + 1 }}</span>
@@ -93,19 +94,19 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 取消按钮 -->
-    <button 
-      v-if="showCancel && onCancel"
-      class="cancel-btn"
-      @click="onCancel"
+    <button
+        v-if="showCancel && onCancel"
+        class="cancel-btn"
+        @click="onCancel"
     >
       取消
     </button>
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 interface Props {
   title?: string
   message?: string
@@ -196,9 +197,17 @@ withDefaults(defineProps<Props>(), {
   animation: dots-bounce 1.4s ease-in-out infinite both;
 }
 
-.dots-spinner .dot:nth-child(1) { animation-delay: -0.32s; }
-.dots-spinner .dot:nth-child(2) { animation-delay: -0.16s; }
-.dots-spinner .dot:nth-child(3) { animation-delay: 0s; }
+.dots-spinner .dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.dots-spinner .dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.dots-spinner .dot:nth-child(3) {
+  animation-delay: 0s;
+}
 
 /* 脉冲加载器 */
 .pulse-spinner {
@@ -219,8 +228,13 @@ withDefaults(defineProps<Props>(), {
   animation: pulse-ring 1.25s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
-.pulse-ring:nth-child(2) { animation-delay: 0.33s; }
-.pulse-ring:nth-child(3) { animation-delay: 0.66s; }
+.pulse-ring:nth-child(2) {
+  animation-delay: 0.33s;
+}
+
+.pulse-ring:nth-child(3) {
+  animation-delay: 0.66s;
+}
 
 /* 条状加载器 */
 .bars-spinner {
@@ -237,11 +251,25 @@ withDefaults(defineProps<Props>(), {
   animation: bars-scale 1.2s ease-in-out infinite;
 }
 
-.bars-spinner .bar:nth-child(1) { animation-delay: -1.1s; }
-.bars-spinner .bar:nth-child(2) { animation-delay: -1.0s; }
-.bars-spinner .bar:nth-child(3) { animation-delay: -0.9s; }
-.bars-spinner .bar:nth-child(4) { animation-delay: -0.8s; }
-.bars-spinner .bar:nth-child(5) { animation-delay: -0.7s; }
+.bars-spinner .bar:nth-child(1) {
+  animation-delay: -1.1s;
+}
+
+.bars-spinner .bar:nth-child(2) {
+  animation-delay: -1.0s;
+}
+
+.bars-spinner .bar:nth-child(3) {
+  animation-delay: -0.9s;
+}
+
+.bars-spinner .bar:nth-child(4) {
+  animation-delay: -0.8s;
+}
+
+.bars-spinner .bar:nth-child(5) {
+  animation-delay: -0.7s;
+}
 
 /* 文本样式 */
 .loading-text {
@@ -435,19 +463,19 @@ withDefaults(defineProps<Props>(), {
   .loading-state {
     padding: 24px 16px;
   }
-  
+
   .loading-title {
     font-size: 18px;
   }
-  
+
   .loading-message {
     font-size: 14px;
   }
-  
+
   .loading-steps {
     text-align: center;
   }
-  
+
   .step-item {
     justify-content: center;
   }

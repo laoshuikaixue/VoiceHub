@@ -10,15 +10,15 @@
       </div>
       <div class="toolbar-right">
         <div class="search-box">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8"/>
             <path d="m21 21-4.35-4.35"/>
           </svg>
           <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="搜索用户（姓名、用户名、IP地址）..."
-            class="search-input"
+              v-model="searchQuery"
+              class="search-input"
+              placeholder="搜索用户（姓名、用户名、IP地址）..."
+              type="text"
           />
         </div>
         <select v-model="roleFilter" class="filter-select">
@@ -33,25 +33,25 @@
           <option value="withdrawn">退学</option>
         </select>
         <div class="action-buttons">
-          <button @click="showAddModal = true" class="btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
+          <button class="btn-primary" @click="showAddModal = true">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="12" x2="12" y1="5" y2="19"/>
+              <line x1="5" x2="19" y1="12" y2="12"/>
             </svg>
             添加用户
           </button>
-          <button @click="showImportModal = true" class="btn-secondary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="btn-secondary" @click="showImportModal = true">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14,2 14,8 20,8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
+              <line x1="16" x2="8" y1="13" y2="13"/>
+              <line x1="16" x2="8" y1="17" y2="17"/>
               <polyline points="10,9 9,9 8,9"/>
             </svg>
             批量导入
           </button>
-          <button @click="showBatchUpdateModal = true" class="btn-secondary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="btn-secondary" @click="showBatchUpdateModal = true">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M12 20h9"/>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
             </svg>
@@ -69,7 +69,7 @@
       </div>
 
       <div v-else-if="filteredUsers.length === 0" class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
           <circle cx="12" cy="7" r="4"/>
         </svg>
@@ -82,79 +82,79 @@
       <div v-else class="table-container">
         <table class="user-table desktop-table">
           <thead>
-            <tr>
-              <th>ID</th>
-              <th>姓名</th>
-              <th>用户名</th>
-              <th>角色</th>
-              <th>状态</th>
-              <th>年级</th>
-              <th>班级</th>
-              <th>最后登录</th>
-              <th>登录IP</th>
-              <th>操作</th>
-            </tr>
+          <tr>
+            <th>ID</th>
+            <th>姓名</th>
+            <th>用户名</th>
+            <th>角色</th>
+            <th>状态</th>
+            <th>年级</th>
+            <th>班级</th>
+            <th>最后登录</th>
+            <th>登录IP</th>
+            <th>操作</th>
+          </tr>
           </thead>
           <tbody>
-            <tr v-for="user in paginatedUsers" :key="user.id" class="user-row" @click="showUserDetail(user, $event)">
-              <td>{{ user.id }}</td>
-              <td>{{ user.name }}</td>
-              <td>{{ user.username }}</td>
-              <td>
+          <tr v-for="user in paginatedUsers" :key="user.id" class="user-row" @click="showUserDetail(user, $event)">
+            <td>{{ user.id }}</td>
+            <td>{{ user.name }}</td>
+            <td>{{ user.username }}</td>
+            <td>
                 <span :class="['role-badge', getRoleClass(user.role)]">
                   {{ getRoleDisplayName(user.role) }}
                 </span>
-              </td>
-              <td>
+            </td>
+            <td>
                 <span :class="['status-badge', getStatusClass(user.status)]">
                   {{ getStatusDisplayName(user.status) }}
                 </span>
-              </td>
-              <td>{{ user.grade || '-' }}</td>
-              <td>{{ user.class || '-' }}</td>
-              <td>{{ formatDate(user.lastLogin) }}</td>
-              <td>{{ user.lastLoginIp || '-' }}</td>
-              <td>
-                <div class="action-buttons">
-                  <button
-                    @click="editUser(user)"
+            </td>
+            <td>{{ user.grade || '-' }}</td>
+            <td>{{ user.class || '-' }}</td>
+            <td>{{ formatDate(user.lastLogin) }}</td>
+            <td>{{ user.lastLoginIp || '-' }}</td>
+            <td>
+              <div class="action-buttons">
+                <button
                     class="action-btn edit-btn"
                     title="编辑用户"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                  </button>
-                  <button
-                    @click="viewUserSongs(user)"
+                    @click="editUser(user)"
+                >
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button
                     class="action-btn music-btn"
                     title="查看歌曲"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M9 18V5l12-2v13"/>
-                      <circle cx="6" cy="18" r="3"/>
-                      <circle cx="18" cy="16" r="3"/>
-                    </svg>
-                  </button>
-                  <button
-                    @click="resetPassword(user)"
+                    @click="viewUserSongs(user)"
+                >
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 18V5l12-2v13"/>
+                    <circle cx="6" cy="18" r="3"/>
+                    <circle cx="18" cy="16" r="3"/>
+                  </svg>
+                </button>
+                <button
                     class="action-btn warning-btn"
                     title="重置密码"
+                    @click="resetPassword(user)"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
                     <circle cx="12" cy="16" r="1"/>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                   </svg>
                 </button>
 
                 <button
-                  @click="confirmDeleteUser(user)"
-                  class="action-btn delete-btn"
-                  title="删除用户"
+                    class="action-btn delete-btn"
+                    title="删除用户"
+                    @click="confirmDeleteUser(user)"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <polyline points="3,6 5,6 21,6"/>
                     <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
                   </svg>
@@ -162,8 +162,8 @@
               </div>
             </td>
           </tr>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
       </div>
 
       <!-- 移动端卡片式布局 -->
@@ -184,43 +184,43 @@
             </div>
             <div class="card-actions">
               <button
-                @click="editUser(user)"
-                class="action-btn edit-btn"
-                title="编辑用户"
+                  class="action-btn edit-btn"
+                  title="编辑用户"
+                  @click="editUser(user)"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
               </button>
               <button
-                @click="viewUserSongs(user)"
-                class="action-btn music-btn"
-                title="查看歌曲"
+                  class="action-btn music-btn"
+                  title="查看歌曲"
+                  @click="viewUserSongs(user)"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M9 18V5l12-2v13"/>
                   <circle cx="6" cy="18" r="3"/>
                   <circle cx="18" cy="16" r="3"/>
                 </svg>
               </button>
               <button
-                @click="resetPassword(user)"
-                class="action-btn warning-btn"
-                title="重置密码"
+                  class="action-btn warning-btn"
+                  title="重置密码"
+                  @click="resetPassword(user)"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
               </button>
 
               <button
-                @click="confirmDeleteUser(user)"
-                class="action-btn delete-btn"
-                title="删除用户"
+                  class="action-btn delete-btn"
+                  title="删除用户"
+                  @click="confirmDeleteUser(user)"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="3,6 5,6 21,6"/>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>
@@ -252,16 +252,16 @@
     <!-- 分页 -->
     <div v-if="totalPages > 1" class="pagination">
       <button
-        @click="goToPage(1)"
-        :disabled="currentPage === 1"
-        class="page-btn"
+          :disabled="currentPage === 1"
+          class="page-btn"
+          @click="goToPage(1)"
       >
         首页
       </button>
       <button
-        @click="goToPage(currentPage - 1)"
-        :disabled="currentPage === 1"
-        class="page-btn"
+          :disabled="currentPage === 1"
+          class="page-btn"
+          @click="goToPage(currentPage - 1)"
       >
         上一页
       </button>
@@ -269,16 +269,16 @@
         第 {{ currentPage }} 页，共 {{ totalPages }} 页 (共 {{ totalUsers }} 个用户)
       </span>
       <button
-        @click="goToPage(currentPage + 1)"
-        :disabled="currentPage === totalPages"
-        class="page-btn"
+          :disabled="currentPage === totalPages"
+          class="page-btn"
+          @click="goToPage(currentPage + 1)"
       >
         下一页
       </button>
       <button
-        @click="goToPage(totalPages)"
-        :disabled="currentPage === totalPages"
-        class="page-btn"
+          :disabled="currentPage === totalPages"
+          class="page-btn"
+          @click="goToPage(totalPages)"
       >
         末页
       </button>
@@ -289,10 +289,10 @@
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h3>{{ editingUser ? '编辑用户' : '添加用户' }}</h3>
-          <button @click="closeModal" class="close-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+          <button class="close-btn" @click="closeModal">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
             </svg>
           </button>
         </div>
@@ -301,31 +301,31 @@
           <div class="form-group">
             <label>姓名</label>
             <input
-              v-model="userForm.name"
-              type="text"
-              placeholder="请输入姓名"
-              class="form-input"
+                v-model="userForm.name"
+                class="form-input"
+                placeholder="请输入姓名"
+                type="text"
             />
           </div>
 
           <div class="form-group">
             <label>用户名</label>
             <input
-              v-model="userForm.username"
-              type="text"
-              placeholder="请输入用户名"
-              class="form-input"
-              :disabled="!!editingUser"
+                v-model="userForm.username"
+                :disabled="!!editingUser"
+                class="form-input"
+                placeholder="请输入用户名"
+                type="text"
             />
           </div>
 
           <div class="form-group">
             <label>密码</label>
             <input
-              v-model="userForm.password"
-              type="password"
-              :placeholder="editingUser ? '留空则不修改密码' : '请输入密码'"
-              class="form-input"
+                v-model="userForm.password"
+                :placeholder="editingUser ? '留空则不修改密码' : '请输入密码'"
+                class="form-input"
+                type="password"
             />
           </div>
 
@@ -350,19 +350,19 @@
             <div class="form-group">
               <label>年级</label>
               <input
-                v-model="userForm.grade"
-                type="text"
-                placeholder="如: 2024"
-                class="form-input"
+                  v-model="userForm.grade"
+                  class="form-input"
+                  placeholder="如: 2024"
+                  type="text"
               />
             </div>
             <div class="form-group">
               <label>班级</label>
               <input
-                v-model="userForm.class"
-                type="text"
-                placeholder="如: 1班"
-                class="form-input"
+                  v-model="userForm.class"
+                  class="form-input"
+                  placeholder="如: 1班"
+                  type="text"
               />
             </div>
           </div>
@@ -373,8 +373,8 @@
         </div>
 
         <div class="modal-footer">
-          <button @click="closeModal" class="btn-secondary">取消</button>
-          <button @click="saveUser" class="btn-primary" :disabled="saving">
+          <button class="btn-secondary" @click="closeModal">取消</button>
+          <button :disabled="saving" class="btn-primary" @click="saveUser">
             {{ saving ? '保存中...' : '保存' }}
           </button>
         </div>
@@ -386,10 +386,10 @@
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h3>重置密码 - {{ resetPasswordUser.name }}</h3>
-          <button @click="closeResetPassword" class="close-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+          <button class="close-btn" @click="closeResetPassword">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
             </svg>
           </button>
         </div>
@@ -398,20 +398,20 @@
           <div class="form-group">
             <label>新密码</label>
             <input
-              v-model="passwordForm.password"
-              type="password"
-              placeholder="请输入新密码"
-              class="form-input"
+                v-model="passwordForm.password"
+                class="form-input"
+                placeholder="请输入新密码"
+                type="password"
             />
           </div>
 
           <div class="form-group">
             <label>确认密码</label>
             <input
-              v-model="passwordForm.confirmPassword"
-              type="password"
-              placeholder="请再次输入新密码"
-              class="form-input"
+                v-model="passwordForm.confirmPassword"
+                class="form-input"
+                placeholder="请再次输入新密码"
+                type="password"
             />
           </div>
 
@@ -421,8 +421,8 @@
         </div>
 
         <div class="modal-footer">
-          <button @click="closeResetPassword" class="btn-secondary">取消</button>
-          <button @click="confirmResetPassword" class="btn-primary" :disabled="resetting">
+          <button class="btn-secondary" @click="closeResetPassword">取消</button>
+          <button :disabled="resetting" class="btn-primary" @click="confirmResetPassword">
             {{ resetting ? '重置中...' : '重置密码' }}
           </button>
         </div>
@@ -435,10 +435,10 @@
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <h3>批量导入用户</h3>
-        <button @click="closeImportModal" class="close-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+        <button class="close-btn" @click="closeImportModal">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
           </svg>
         </button>
       </div>
@@ -449,40 +449,40 @@
           <div class="excel-format">
             <table>
               <thead>
-                <tr>
-                  <th>A列</th>
-                  <th>B列</th>
-                  <th>C列</th>
-                  <th>D列</th>
-                  <th>E列</th>
-                  <th>F列</th>
-                </tr>
+              <tr>
+                <th>A列</th>
+                <th>B列</th>
+                <th>C列</th>
+                <th>D列</th>
+                <th>E列</th>
+                <th>F列</th>
+              </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>姓名</td>
-                  <td>账号名</td>
-                  <td>密码</td>
-                  <td>角色</td>
-                  <td>年级</td>
-                  <td>班级</td>
-                </tr>
-                <tr>
-                  <td>张三</td>
-                  <td>zhangsan</td>
-                  <td>password123</td>
-                  <td>USER</td>
-                  <td>高一</td>
-                  <td>1班</td>
-                </tr>
-                <tr>
-                  <td>李四</td>
-                  <td>lisi</td>
-                  <td>password456</td>
-                  <td>ADMIN</td>
-                  <td>教师</td>
-                  <td>-</td>
-                </tr>
+              <tr>
+                <td>姓名</td>
+                <td>账号名</td>
+                <td>密码</td>
+                <td>角色</td>
+                <td>年级</td>
+                <td>班级</td>
+              </tr>
+              <tr>
+                <td>张三</td>
+                <td>zhangsan</td>
+                <td>password123</td>
+                <td>USER</td>
+                <td>高一</td>
+                <td>1班</td>
+              </tr>
+              <tr>
+                <td>李四</td>
+                <td>lisi</td>
+                <td>password456</td>
+                <td>ADMIN</td>
+                <td>教师</td>
+                <td>-</td>
+              </tr>
               </tbody>
             </table>
           </div>
@@ -497,13 +497,13 @@
           <label>选择文件</label>
           <div class="file-upload-container">
             <input
-              id="file-upload"
-              type="file"
-              accept=".xlsx"
-              @change="handleFileUpload"
-              class="file-input-hidden"
+                id="file-upload"
+                accept=".xlsx"
+                class="file-input-hidden"
+                type="file"
+                @change="handleFileUpload"
             />
-            <label for="file-upload" class="file-upload-btn">
+            <label class="file-upload-btn" for="file-upload">
               <div class="upload-text">
                 <div class="upload-title">点击选择Excel文件</div>
                 <div class="upload-subtitle">或拖拽文件到此处</div>
@@ -518,29 +518,29 @@
         <div v-if="importError" class="error-message">{{ importError }}</div>
         <div v-if="importSuccess" class="success-message">{{ importSuccess }}</div>
 
-        <div class="preview-section" v-if="previewData.length > 0">
+        <div v-if="previewData.length > 0" class="preview-section">
           <h4>预览数据 ({{ previewData.length }}条记录)</h4>
           <div class="preview-table-container">
             <table class="preview-table">
               <thead>
-                <tr>
-                  <th>姓名</th>
-                  <th>账号名</th>
-                  <th>密码</th>
-                  <th>角色</th>
-                  <th>年级</th>
-                  <th>班级</th>
-                </tr>
+              <tr>
+                <th>姓名</th>
+                <th>账号名</th>
+                <th>密码</th>
+                <th>角色</th>
+                <th>年级</th>
+                <th>班级</th>
+              </tr>
               </thead>
               <tbody>
-                <tr v-for="(row, index) in previewData.slice(0, 5)" :key="index">
-                  <td>{{ row.name }}</td>
-                  <td>{{ row.username }}</td>
-                  <td>******</td>
-                  <td>{{ row.role }}</td>
-                  <td>{{ row.grade || '-' }}</td>
-                  <td>{{ row.class || '-' }}</td>
-                </tr>
+              <tr v-for="(row, index) in previewData.slice(0, 5)" :key="index">
+                <td>{{ row.name }}</td>
+                <td>{{ row.username }}</td>
+                <td>******</td>
+                <td>{{ row.role }}</td>
+                <td>{{ row.grade || '-' }}</td>
+                <td>{{ row.class || '-' }}</td>
+              </tr>
               </tbody>
             </table>
             <div v-if="previewData.length > 5" class="preview-more">
@@ -551,11 +551,11 @@
       </div>
 
       <div class="modal-footer">
-        <button @click="closeImportModal" class="btn-secondary">取消</button>
+        <button class="btn-secondary" @click="closeImportModal">取消</button>
         <button
-          @click="importUsers"
-          class="btn-primary"
-          :disabled="importLoading || previewData.length === 0"
+            :disabled="importLoading || previewData.length === 0"
+            class="btn-primary"
+            @click="importUsers"
         >
           {{ importLoading ? '导入中...' : '确认导入' }}
         </button>
@@ -568,20 +568,20 @@
     <div class="modal-content modal-sm" @click.stop>
       <div class="modal-header">
         <h3>确认删除</h3>
-        <button @click="closeDeleteModal" class="close-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+        <button class="close-btn" @click="closeDeleteModal">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
           </svg>
         </button>
       </div>
 
       <div class="modal-body">
         <div class="delete-warning">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
+            <line x1="12" x2="12" y1="9" y2="13"/>
+            <line x1="12" x2="12.01" y1="17" y2="17"/>
           </svg>
           <div class="warning-text">
             <p>确定要删除用户 <strong>"{{ deletingUser?.name }}"</strong> 吗？</p>
@@ -591,8 +591,8 @@
       </div>
 
       <div class="modal-footer">
-        <button @click="closeDeleteModal" class="btn-secondary">取消</button>
-        <button @click="confirmDelete" class="btn-danger" :disabled="deleting">
+        <button class="btn-secondary" @click="closeDeleteModal">取消</button>
+        <button :disabled="deleting" class="btn-danger" @click="confirmDelete">
           {{ deleting ? '删除中...' : '确认删除' }}
         </button>
       </div>
@@ -601,17 +601,17 @@
 
   <!-- 批量更新模态框 -->
   <BatchUpdateModal
-    :show="showBatchUpdateModal"
-    :users="users"
-    @close="closeBatchUpdateModal"
-    @update-success="handleBatchUpdateSuccess"
+      :show="showBatchUpdateModal"
+      :users="users"
+      @close="closeBatchUpdateModal"
+      @update-success="handleBatchUpdateSuccess"
   />
 
   <!-- 用户歌曲模态框 -->
   <UserSongsModal
-    :show="showUserSongsModal"
-    :user-id="selectedUserId"
-    @close="closeUserSongsModal"
+      :show="showUserSongsModal"
+      :user-id="selectedUserId"
+      @close="closeUserSongsModal"
   />
 
   <!-- 用户详细信息模态框 -->
@@ -619,15 +619,15 @@
     <div class="modal-content user-detail-modal" @click.stop>
       <div class="modal-header">
         <h3>用户详细信息</h3>
-        <button @click="closeUserDetailModal" class="close-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+        <button class="close-btn" @click="closeUserDetailModal">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
           </svg>
         </button>
       </div>
 
-      <div class="modal-body" v-if="selectedUserDetail">
+      <div v-if="selectedUserDetail" class="modal-body">
         <!-- 基本信息 -->
         <div class="detail-section">
           <h4 class="section-title">基本信息</h4>
@@ -667,8 +667,11 @@
           <div class="detail-grid">
             <div class="detail-item">
               <span class="detail-label">密码状态:</span>
-              <span :class="['status-badge', (!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? 'status-success' : 'status-warning']">
-                {{ (!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? '密码已修改' : '需要修改密码' }}
+              <span
+                  :class="['status-badge', (!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? 'status-success' : 'status-warning']">
+                {{
+                  (!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? '密码已修改' : '需要修改密码'
+                }}
               </span>
             </div>
             <div class="detail-item">
@@ -741,14 +744,14 @@
               <div class="timeline-content">
                 <div class="log-header">
                   <div class="status-change">
-                    <span class="status-badge" :class="getStatusClass(log.oldStatus)">
+                    <span :class="getStatusClass(log.oldStatus)" class="status-badge">
                       {{ log.oldStatusDisplay || '初始状态' }}
                     </span>
-                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    <svg class="arrow-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <line x1="5" x2="19" y1="12" y2="12"/>
                       <polyline points="12,5 19,12 12,19"/>
                     </svg>
-                    <span class="status-badge" :class="getStatusClass(log.newStatus)">
+                    <span :class="getStatusClass(log.newStatus)" class="status-badge">
                       {{ log.newStatusDisplay }}
                     </span>
                   </div>
@@ -767,9 +770,9 @@
             <!-- 分页 -->
             <div v-if="statusLogsPagination.totalPages > 1" class="logs-pagination">
               <button
-                @click="loadStatusLogsPage(statusLogsPagination.page - 1)"
-                :disabled="!statusLogsPagination.hasPrevPage"
-                class="btn-secondary btn-sm"
+                  :disabled="!statusLogsPagination.hasPrevPage"
+                  class="btn-secondary btn-sm"
+                  @click="loadStatusLogsPage(statusLogsPagination.page - 1)"
               >
                 上一页
               </button>
@@ -777,9 +780,9 @@
                 第 {{ statusLogsPagination.page }} 页，共 {{ statusLogsPagination.totalPages }} 页
               </span>
               <button
-                @click="loadStatusLogsPage(statusLogsPagination.page + 1)"
-                :disabled="!statusLogsPagination.hasNextPage"
-                class="btn-secondary btn-sm"
+                  :disabled="!statusLogsPagination.hasNextPage"
+                  class="btn-secondary btn-sm"
+                  @click="loadStatusLogsPage(statusLogsPagination.page + 1)"
               >
                 下一页
               </button>
@@ -789,7 +792,7 @@
       </div>
 
       <div class="modal-footer">
-        <button @click="closeUserDetailModal" class="btn-secondary">关闭</button>
+        <button class="btn-secondary" @click="closeUserDetailModal">关闭</button>
       </div>
     </div>
   </div>
@@ -815,10 +818,10 @@ const totalPages = ref(1)
 
 // 硬编码角色定义
 const allRoles = [
-  { name: 'USER', displayName: '普通用户' },
-  { name: 'SONG_ADMIN', displayName: '歌曲管理员' },
-  { name: 'ADMIN', displayName: '管理员' },
-  { name: 'SUPER_ADMIN', displayName: '超级管理员' }
+  {name: 'USER', displayName: '普通用户'},
+  {name: 'SONG_ADMIN', displayName: '歌曲管理员'},
+  {name: 'ADMIN', displayName: '管理员'},
+  {name: 'SUPER_ADMIN', displayName: '超级管理员'}
 ]
 
 // 模态框状态
@@ -916,7 +919,7 @@ const paginatedUsers = computed(() => {
 watch([searchQuery, roleFilter, statusFilter], () => {
   currentPage.value = 1
   loadUsers(1, pageSize.value)
-}, { debounce: 300 })
+}, {debounce: 300})
 
 // 监听页码变化
 watch(currentPage, (newPage) => {
@@ -1021,10 +1024,10 @@ const showUserDetail = (user, event) => {
   if (event.target.closest('.action-btn') || event.target.closest('.action-buttons')) {
     return // 如果点击的是操作按钮，不触发详情弹窗
   }
-  
+
   selectedUserDetail.value = user
   showUserDetailModal.value = true
-  
+
   // 自动加载状态变更日志
   loadStatusLogsPage(1)
 }
@@ -1154,13 +1157,13 @@ const saveUser = async () => {
       try {
         const roleNames = {
           'USER': '普通用户',
-          'SONG_ADMIN': '歌曲管理员', 
+          'SONG_ADMIN': '歌曲管理员',
           'ADMIN': '管理员',
           'SUPER_ADMIN': '超级管理员'
         }
-        
+
         const notificationMessage = `您的账户权限已由超级管理员更新：${roleNames[oldRole]} → ${roleNames[newRole]}`
-        
+
         await $fetch('/api/admin/notifications/send', {
           method: 'POST',
           body: {
@@ -1182,8 +1185,8 @@ const saveUser = async () => {
 
     if (window.$showNotification) {
       window.$showNotification(
-        editingUser.value ? '用户更新成功' : '用户创建成功',
-        'success'
+          editingUser.value ? '用户更新成功' : '用户创建成功',
+          'success'
       )
     }
   } catch (error) {
@@ -1243,7 +1246,7 @@ const loadUsers = async (page = 1, limit = 100) => {
       },
       ...auth.getAuthConfig()
     })
-    
+
     // 处理分页响应数据
     if (response.users) {
       users.value = response.users
@@ -1317,7 +1320,7 @@ const loadXLSX = async () => {
           })
         } catch (e) {
           // 这个CDN失败，继续尝试下一个
-          continue
+
         }
       }
 
@@ -1356,11 +1359,11 @@ const handleFileUpload = async (event) => {
       try {
         const data = new Uint8Array(e.target.result)
         // 使用全局XLSX对象
-        const workbook = window.XLSX.read(data, { type: 'array' })
+        const workbook = window.XLSX.read(data, {type: 'array'})
 
         // 假设数据在第一个工作表中
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-        const jsonData = window.XLSX.utils.sheet_to_json(firstSheet, { header: 1 })
+        const jsonData = window.XLSX.utils.sheet_to_json(firstSheet, {header: 1})
 
         // 智能检测标题行
         let startRow = 0
@@ -1368,12 +1371,12 @@ const handleFileUpload = async (event) => {
           const firstRow = jsonData[0]
           // 检查第一行是否包含常见的标题关键词
           const titleKeywords = ['姓名', '用户名', '密码', '角色', '年级', '班级', 'name', 'username', 'password', 'role', 'grade', 'class']
-          const isHeaderRow = firstRow.some(cell => 
-            cell && titleKeywords.some(keyword => 
-              cell.toString().toLowerCase().includes(keyword.toLowerCase())
-            )
+          const isHeaderRow = firstRow.some(cell =>
+                  cell && titleKeywords.some(keyword =>
+                      cell.toString().toLowerCase().includes(keyword.toLowerCase())
+                  )
           )
-          
+
           if (isHeaderRow) {
             startRow = 1
             console.log('检测到标题行，从第二行开始解析')
@@ -1381,7 +1384,7 @@ const handleFileUpload = async (event) => {
             console.log('未检测到标题行，从第一行开始解析')
           }
         }
-        
+
         const userData = []
 
         for (let i = startRow; i < jsonData.length; i++) {
@@ -1389,7 +1392,7 @@ const handleFileUpload = async (event) => {
           if (!row || !row.length || !row[0]) continue // 跳过空行
 
           let role = (row[3]?.toString() || '').toUpperCase()
-          
+
           // 根据当前用户权限过滤角色
           if (!isSuperAdmin.value) {
             // 普通管理员只能导入 USER 和 SONG_ADMIN 角色
@@ -1397,7 +1400,7 @@ const handleFileUpload = async (event) => {
               role = 'USER' // 默认设为普通用户
             }
           }
-          
+
           // 确保角色有效
           const validRoles = ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN']
           if (!validRoles.includes(role)) {
@@ -1482,10 +1485,10 @@ const importUsers = async () => {
 
 const loadStatusLogsPage = async (page) => {
   if (!selectedUserDetail.value) return
-  
+
   statusLogsLoading.value = true
   statusLogsError.value = ''
-  
+
   try {
     const response = await $fetch(`/api/admin/users/${selectedUserDetail.value.id}/status-logs`, {
       query: {
@@ -1494,7 +1497,7 @@ const loadStatusLogsPage = async (page) => {
       },
       ...auth.getAuthConfig()
     })
-    
+
     statusLogs.value = response.logs || []
     statusLogsPagination.value = response.pagination || {
       page: 1,
@@ -1718,8 +1721,12 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state svg {
@@ -1999,8 +2006,12 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -2823,17 +2834,17 @@ onMounted(async () => {
     max-width: 95vw;
     margin: 1rem;
   }
-  
+
   .detail-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .detail-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .detail-value {
     text-align: left;
   }

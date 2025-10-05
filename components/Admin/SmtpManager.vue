@@ -8,10 +8,10 @@
     <div class="config-section">
       <div class="form-row">
         <label class="switch-label">
-          <input 
-            type="checkbox" 
-            v-model="config.smtpEnabled"
-            class="switch-input"
+          <input
+              v-model="config.smtpEnabled"
+              class="switch-input"
+              type="checkbox"
           >
           <span class="switch-slider"></span>
           启用SMTP邮件服务
@@ -21,38 +21,38 @@
       <div v-if="config.smtpEnabled" class="smtp-config">
         <div class="form-group">
           <label>SMTP服务器地址</label>
-          <input 
-            type="text" 
-            v-model="config.smtpHost"
-            placeholder="例如: smtp.gmail.com"
-            class="form-input"
+          <input
+              v-model="config.smtpHost"
+              class="form-input"
+              placeholder="例如: smtp.gmail.com"
+              type="text"
           >
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label>端口</label>
-            <input 
-              type="number" 
-              v-model.number="config.smtpPort"
-              placeholder="587"
-              class="form-input"
+            <input
+                v-model.number="config.smtpPort"
+                class="form-input"
+                placeholder="587"
+                type="number"
             >
           </div>
           <div class="form-group">
             <label>SSL/TLS设置</label>
             <div class="ssl-button-group">
-              <button 
-                type="button"
-                @click="config.smtpSecure = true"
-                :class="['ssl-button', { 'active': config.smtpSecure }]"
+              <button
+                  :class="['ssl-button', { 'active': config.smtpSecure }]"
+                  type="button"
+                  @click="config.smtpSecure = true"
               >
                 启用SSL/TLS
               </button>
-              <button 
-                type="button"
-                @click="config.smtpSecure = false"
-                :class="['ssl-button', { 'active': !config.smtpSecure }]"
+              <button
+                  :class="['ssl-button', { 'active': !config.smtpSecure }]"
+                  type="button"
+                  @click="config.smtpSecure = false"
               >
                 禁用SSL/TLS
               </button>
@@ -63,20 +63,20 @@
         <div class="form-row">
           <div class="form-group">
             <label>用户名</label>
-            <input 
-              type="text" 
-              v-model="config.smtpUsername"
-              placeholder="邮箱地址或用户名"
-              class="form-input"
+            <input
+                v-model="config.smtpUsername"
+                class="form-input"
+                placeholder="邮箱地址或用户名"
+                type="text"
             >
           </div>
           <div class="form-group">
             <label>密码</label>
-            <input 
-              type="password" 
-              v-model="config.smtpPassword"
-              placeholder="密码或应用专用密码"
-              class="form-input"
+            <input
+                v-model="config.smtpPassword"
+                class="form-input"
+                placeholder="密码或应用专用密码"
+                type="password"
             >
           </div>
         </div>
@@ -84,20 +84,20 @@
         <div class="form-row">
           <div class="form-group">
             <label>发件人邮箱</label>
-            <input 
-              type="email" 
-              v-model="config.smtpFromEmail"
-              placeholder="发件人邮箱地址"
-              class="form-input"
+            <input
+                v-model="config.smtpFromEmail"
+                class="form-input"
+                placeholder="发件人邮箱地址"
+                type="email"
             >
           </div>
           <div class="form-group">
             <label>发件人姓名</label>
-            <input 
-              type="text" 
-              v-model="config.smtpFromName"
-              placeholder="校园广播站"
-              class="form-input"
+            <input
+                v-model="config.smtpFromName"
+                class="form-input"
+                placeholder="校园广播站"
+                type="text"
             >
           </div>
         </div>
@@ -107,49 +107,49 @@
           <div class="test-form">
             <div class="form-group">
               <label>测试邮箱</label>
-              <input 
-                type="email" 
-                v-model="testEmail"
-                placeholder="输入测试邮箱地址"
-                class="form-input"
+              <input
+                  v-model="testEmail"
+                  class="form-input"
+                  placeholder="输入测试邮箱地址"
+                  type="email"
               >
             </div>
             <div class="test-buttons">
-              <button 
-                @click="testConnection" 
-                :disabled="testing || !config.smtpEnabled"
-                class="btn btn-secondary"
+              <button
+                  :disabled="testing || !config.smtpEnabled"
+                  class="btn btn-secondary"
+                  @click="testConnection"
               >
                 {{ testing ? '测试中...' : '测试连接' }}
               </button>
-              <button 
-                @click="sendTestEmail" 
-                :disabled="testing || !testEmail || !config.smtpEnabled"
-                class="btn btn-secondary"
+              <button
+                  :disabled="testing || !testEmail || !config.smtpEnabled"
+                  class="btn btn-secondary"
+                  @click="sendTestEmail"
               >
                 {{ testing ? '发送中...' : '发送测试邮件' }}
               </button>
             </div>
           </div>
-          
+
           <div v-if="testResult" :class="['test-result', testResult.success ? 'success' : 'error']">
-            <Icon :name="testResult.success ? 'check-circle' : 'x-circle'" />
+            <Icon :name="testResult.success ? 'check-circle' : 'x-circle'"/>
             {{ testResult.message }}
           </div>
         </div>
       </div>
 
       <div class="action-buttons">
-        <button 
-          @click="saveConfig" 
-          :disabled="saving"
-          class="btn btn-primary"
+        <button
+            :disabled="saving"
+            class="btn btn-primary"
+            @click="saveConfig"
         >
           {{ saving ? '保存中...' : '保存配置' }}
         </button>
-        <button 
-          @click="resetConfig"
-          class="btn btn-secondary"
+        <button
+            class="btn btn-secondary"
+            @click="resetConfig"
         >
           重置
         </button>
@@ -178,7 +178,7 @@
             <p>需要在邮箱设置中开启SMTP服务并设置授权密码</p>
           </div>
         </div>
-        
+
         <h4>安全提示：</h4>
         <ul>
           <li>建议使用专门的邮箱账号用于系统通知</li>
@@ -192,7 +192,7 @@
     <!-- 模板管理 -->
     <div class="templates-section" style="margin-top: 24px;">
       <h3 style="color:#fff; font-size:18px; margin:0 0 12px;">邮件模板</h3>
-      <EmailTemplateManager />
+      <EmailTemplateManager/>
     </div>
   </div>
 </template>
@@ -202,7 +202,7 @@ import {onMounted, ref} from 'vue'
 import {useToast} from '~/composables/useToast'
 import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
 
-const { showNotification } = useToast()
+const {showNotification} = useToast()
 
 // 响应式数据
 const config = ref({
@@ -226,7 +226,7 @@ const originalConfig = ref({})
 const loadConfig = async () => {
   try {
     const response = await $fetch('/api/admin/system-settings')
-    
+
     config.value = {
       smtpEnabled: response.smtpEnabled || false,
       smtpHost: response.smtpHost || '',
@@ -237,9 +237,9 @@ const loadConfig = async () => {
       smtpFromEmail: response.smtpFromEmail || '',
       smtpFromName: response.smtpFromName || '校园广播站'
     }
-    
+
     // 保存原始配置用于重置
-    originalConfig.value = { ...config.value }
+    originalConfig.value = {...config.value}
   } catch (error) {
     console.error('加载SMTP配置失败:', error)
     showNotification('加载配置失败', 'error')
@@ -262,8 +262,8 @@ const saveConfig = async () => {
       method: 'POST',
       body: config.value
     })
-    
-    originalConfig.value = { ...config.value }
+
+    originalConfig.value = {...config.value}
     showNotification('SMTP配置保存成功', 'success')
   } catch (error) {
     console.error('保存SMTP配置失败:', error)
@@ -275,7 +275,7 @@ const saveConfig = async () => {
 
 // 重置配置
 const resetConfig = () => {
-  config.value = { ...originalConfig.value }
+  config.value = {...originalConfig.value}
   testResult.value = null
   showNotification('配置已重置', 'info')
 }
@@ -295,7 +295,7 @@ const testConnection = async () => {
       method: 'POST',
       body: config.value
     })
-    
+
     testResult.value = response
   } catch (error) {
     console.error('测试连接失败:', error)
@@ -326,7 +326,7 @@ const sendTestEmail = async () => {
         testEmail: testEmail.value
       }
     })
-    
+
     testResult.value = response
   } catch (error) {
     console.error('发送测试邮件失败:', error)
@@ -656,20 +656,20 @@ onMounted(() => {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .test-form {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .test-buttons {
     flex-direction: column;
   }
-  
+
   .action-buttons {
     flex-direction: column;
   }
-  
+
   .provider-configs {
     grid-template-columns: 1fr;
   }
