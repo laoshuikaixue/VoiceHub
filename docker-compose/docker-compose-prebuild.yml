@@ -1,0 +1,29 @@
+services:
+  voicehub:
+    image: ghcr.io/laoshuikaixue/voicehub:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
+      - JWT_SECRET=your-jwt-secret-here
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=voicehub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
