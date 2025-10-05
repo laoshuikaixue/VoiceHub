@@ -167,7 +167,7 @@ docker run \
   -p 3000:3000 \
   -e JWT_SECRET=your-very-secure-jwt-secret-key \
   -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
-  ghcr.nju.edc.cn/laoshuikaixue/voicehub:latest
+  ghcr.nju.edu.cn/laoshuikaixue/voicehub:latest
 ```
 
 ### Docker-compose 部署
@@ -219,7 +219,7 @@ volumes:
 ```
 services:
   voicehub:
-    image: ghcr.nju.edc.cn/laoshuikaixue/voicehub:latest
+    image: ghcr.nju.edu.cn/laoshuikaixue/voicehub:latest
     ports:
       - "3000:3000"
     environment:
