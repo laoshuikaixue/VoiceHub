@@ -7,7 +7,13 @@ RUN npm config set registry https://registry.npmmirror.com/
 
 COPY package.json package-lock.json ./
 
-RUN npm install
+RUN if [ -f "package-lock.json" ]; then \
+      echo "package-lock.json found. Running npm ci..."; \
+      npm ci; \
+    else \
+      echo "package-lock.json not found. Running npm install..."; \
+      npm install; \
+    fi
 
 # --- 阶段 2: 构建应用 ---
 FROM node:20-alpine AS builder
