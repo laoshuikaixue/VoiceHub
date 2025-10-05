@@ -141,20 +141,29 @@ async function deploy() {
           logWarning('迁移文件生成失败，继续尝试同步...');
         }
         
-        // 使用专用的安全迁移脚本
-        if (safeExec('npm run safe-migrate', { env: nonInteractiveEnv })) {
+        // 使用安全迁移脚本，保护现有数据
+        logStep('🚀', '执行安全数据库迁移...');
+        if (safeExec('npm run force-migrate', { env: nonInteractiveEnv })) {
           logSuccess('数据库安全迁移成功');
           dbSyncSuccess = true;
         } else {
-          logWarning('安全迁移脚本失败，尝试直接同步...');
+          logWarning('安全迁移失败，尝试传统迁移方案...');
           
-          // 备用方案：直接使用drizzle-kit push
-          if (safeExec('npm run db:push', { env: nonInteractiveEnv })) {
-            logSuccess('数据库直接同步成功');
+          // 备用方案：使用传统的 db:migrate
+          if (safeExec('npm run db:migrate', { env: nonInteractiveEnv })) {
+            logSuccess('传统迁移成功');
             dbSyncSuccess = true;
           } else {
-            logError('所有数据库迁移方案都失败');
-            logWarning('请检查数据库连接和迁移文件');
+            logWarning('传统迁移失败，尝试最后方案...');
+            
+            // 最后方案：直接使用drizzle-kit push
+            if (safeExec('npm run db:push', { env: nonInteractiveEnv })) {
+              logSuccess('数据库直接同步成功');
+              dbSyncSuccess = true;
+            } else {
+              logError('所有数据库迁移方案都失败');
+              logWarning('请检查数据库连接和迁移文件');
+            }
           }
         }
       } catch (error) {

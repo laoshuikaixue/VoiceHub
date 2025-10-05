@@ -4,11 +4,10 @@
   "description": "VoiceHub管理脚本",
   "type": "module",
   "scripts": {
-    "create-admin": "npx tsx create-admin.js",
-    "clear-db": "npx tsx clear-database.js",
+    "db:generate": "npx drizzle-kit generate --config=../drizzle.config.ts",
+    "db:migrate": "npx drizzle-kit migrate --config=../drizzle.config.ts",
     "safe-migrate": "npx tsx safe-migrate.js",
-    "db:generate": "cd .. && npx drizzle-kit generate --config=drizzle.config.ts",
-    "db:migrate": "cd .. && npx drizzle-kit migrate --config=drizzle.config.ts"
+    "force-migrate": "npx tsx force-migrate.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

@@ -137,25 +137,30 @@ async function netlifyBuild() {
     if (process.env.DATABASE_URL) {
       logStep('🗄️', '执行数据库迁移...');
       
-      // 检查迁移文件是否存在
-      if (fileExists('drizzle/migrations')) {
-        logStep('📋', '使用迁移文件进行安全更新...');
-        if (safeExec('npm run db:migrate')) {
-          logSuccess('数据库迁移成功');
+      // 使用安全迁移保护现有数据
+      logStep('🚀', '执行安全数据库迁移...');
+      
+      // 设置非交互式环境变量
+      const nonInteractiveEnv = {
+        ...process.env,
+        DRIZZLE_KIT_FORCE: 'true',
+        CI: 'true',
+        NODE_ENV: 'production'
+      };
+      
+      if (safeExec('npm run force-migrate', { env: nonInteractiveEnv })) {
+        logSuccess('数据库安全迁移成功');
+      } else {
+        logWarning('安全迁移失败，尝试传统迁移...');
+        if (safeExec('npm run db:migrate', { env: nonInteractiveEnv })) {
+          logSuccess('传统迁移成功');
         } else {
-          logWarning('迁移失败，尝试使用 db:push 作为后备...');
-          if (safeExec('npm run db:push')) {
-            logSuccess('数据库同步成功（使用 push 方式）');
+          logWarning('传统迁移失败，尝试直接push...');
+          if (safeExec('npm run db:push', { env: nonInteractiveEnv })) {
+            logSuccess('数据库直接同步成功');
           } else {
             logWarning('数据库同步失败，继续构建...');
           }
-        }
-      } else {
-        logWarning('未找到迁移文件，使用 db:push 同步schema...');
-        if (safeExec('npm run db:push')) {
-          logSuccess('数据库schema同步成功');
-        } else {
-          logWarning('数据库schema同步失败，继续构建...');
         }
       }
     } else {

@@ -47,5 +47,5 @@ USER nextjs
 
 EXPOSE 3000
 
-# 启动命令
-CMD ["sh", "-c", "npm run db:migrate && node scripts/deploy.js && npm run start"]
+# 启动命令 - 使用强制迁移避免交互式提示
+CMD ["sh", "-c", "npm run force-migrate && npm run start"]
