@@ -5,9 +5,6 @@ FROM node:20-alpine
 # 创建应用目录并设置权限
 RUN mkdir -p /app && chown -R root:root /app
 
-# 安装必要的系统工具
-RUN apk add --no-cache bash shadow
-
 # 创建nextjs用户和组
 RUN addgroup -g 1001 -S nextjs && \
     adduser -S nextjs -u 1001 -G nextjs -h /app -s /bin/bash
