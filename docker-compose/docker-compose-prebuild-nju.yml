@@ -1,6 +1,6 @@
 services:
   voicehub:
-    image: ghcr.nju.edc.cn/laoshuikaixue/voicehub:latest
+    image: ghcr.nju.edu.cn/laoshuikaixue/voicehub:latest
     ports:
       - "3000:3000"
     environment:
