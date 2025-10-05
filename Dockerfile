@@ -7,7 +7,7 @@ RUN npm config set registry https://registry.npmmirror.com/
 
 COPY package.json package-lock.json ./
 
-RUN npm ci
+RUN npm install
 
 # --- 阶段 2: 构建应用 ---
 FROM node:20-alpine AS builder
