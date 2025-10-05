@@ -2,8 +2,8 @@ name: 自动更新依赖
 
 on:
   schedule:
-    # 每周一的北京时间上午9点（UTC时间凌晨1点）运行
-    - cron: '0 1 * * 1'
+    # 每天北京时间上午9点（UTC时间凌晨1点）运行
+    - cron: '0 1 * * *'
   workflow_dispatch:
     inputs:
       reason:
@@ -84,27 +84,27 @@ jobs:
             - 更新所有依赖包到最新稳定版本
             - 修复已知的安全漏洞
             - 更新 package-lock.json 文件
-          title: '🔄 自动依赖更新 - ${{ steps.update-info.outputs.date }}'
+          title: '自动依赖更新 - ${{ steps.update-info.outputs.date }}'
           body: |
-            ## 📦 自动依赖更新
+            ## 自动依赖更新
             
             此 PR 由 GitHub Actions 自动创建，包含以下更新：
             
-            - ✅ 所有依赖包已更新到最新稳定版本
-            - 🔒 已修复已知的安全漏洞
-            - 📄 package-lock.json 文件已同步更新
+            - 所有依赖包已更新到最新稳定版本
+            - 已修复已知的安全漏洞
+            - package-lock.json 文件已同步更新
             
-            ### 🔍 更新详情
+            ### 更新详情
             
             请查看文件变更以了解具体的依赖更新情况。
             
-            ### ⚠️ 注意事项
+            ### 注意事项
             
             - 请在合并前进行充分测试
             - 检查是否有破坏性变更
             - 确认应用程序正常运行
             
-            ### 🤖 自动化信息
+            ### 自动化信息
             
             - 触发时间: ${{ steps.update-info.outputs.date }}
             - 工作流: dependency-update.yml
@@ -119,7 +119,7 @@ jobs:
       - name: 输出结果
         run: |
           if [ "${{ steps.check-changes.outputs.has-changes }}" == "true" ]; then
-            echo "✅ 依赖更新完成，已创建 Pull Request"
+            echo "依赖更新完成，已创建 Pull Request"
           else
-            echo "ℹ️ 所有依赖都是最新版本，无需更新"
+            echo "所有依赖都是最新版本，无需更新"
           fi
