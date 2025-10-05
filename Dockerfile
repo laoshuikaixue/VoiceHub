@@ -19,7 +19,9 @@ FROM node:20-alpine
 # 创建非root用户和应用目录
 RUN addgroup -g 1001 -S nuxtjs && \
     adduser -S nuxtjs -u 1001 -G nuxtjs -h /app -s /sbin/nologin && \
-    mkdir -p /app && chown -R nuxtjs:nuxtjs /app
+    mkdir -p /app && \
+    chown -R nuxtjs:nuxtjs /app && \
+    chmod -R 755 /app
 
 # 切换到非root用户
 USER nuxtjs
