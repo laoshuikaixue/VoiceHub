@@ -4,11 +4,11 @@ WORKDIR /app
 
 # 复制依赖文件并安装所有依赖（含开发依赖）
 COPY package*.json ./
+COPY scripts ./scripts
 RUN npm ci
 
 # 复制源代码并构建应用
 COPY . .
-COPY scripts ./scripts
 RUN npm run build
 
 # 第二阶段：运行阶段
