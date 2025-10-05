@@ -1,4 +1,4 @@
-import type { NitroErrorHandler } from 'nitropack'
+import type {NitroErrorHandler} from 'nitropack'
 
 const errorHandler: NitroErrorHandler = async (error, event) => {
   // 记录错误详情

@@ -1,7 +1,7 @@
-import { createError, defineEventHandler, getQuery } from 'h3'
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq, and, or, ilike, count, asc } from 'drizzle-orm'
+import {createError, defineEventHandler, getQuery} from 'h3'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {and, asc, count, eq, ilike, or} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {

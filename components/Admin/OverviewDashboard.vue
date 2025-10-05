@@ -168,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {onMounted, ref} from 'vue'
 import StatCard from './Common/StatCard.vue'
 import packageJson from '~/package.json'
 

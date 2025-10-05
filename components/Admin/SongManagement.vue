@@ -678,15 +678,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import {computed, onMounted, ref, watch} from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
-import { useSongs } from '~/composables/useSongs'
-import { useAdmin } from '~/composables/useAdmin'
-import { useAuth } from '~/composables/useAuth'
-import { useSemesters } from '~/composables/useSemesters'
-import { validateUrl } from '~/utils/url'
+import {useSongs} from '~/composables/useSongs'
+import {useAdmin} from '~/composables/useAdmin'
+import {useAuth} from '~/composables/useAuth'
+import {useSemesters} from '~/composables/useSemesters'
+import {validateUrl} from '~/utils/url'
 
 // 响应式数据
 const loading = ref(false)

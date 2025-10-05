@@ -1,5 +1,5 @@
-import { pgTable, serial, text, timestamp, boolean, integer, pgEnum, uuid, varchar } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import {boolean, integer, pgEnum, pgTable, serial, text, timestamp, uuid, varchar} from 'drizzle-orm/pg-core';
+import {relations} from 'drizzle-orm';
 
 // 枚举定义
 export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);

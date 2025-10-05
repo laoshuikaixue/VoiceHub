@@ -1,5 +1,5 @@
-import { useState, navigateTo } from '#app'
-import type { User } from '~/types'
+import {navigateTo, useState} from '#app'
+import type {User} from '~/types'
 
 export const useAuth = () => {
   const user = useState<User | null>('user', () => null)

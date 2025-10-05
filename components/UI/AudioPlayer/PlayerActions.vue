@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import {onMounted, onUnmounted, ref} from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 
 const props = defineProps({

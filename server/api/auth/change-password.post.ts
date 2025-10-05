@@ -1,10 +1,10 @@
 import bcrypt from 'bcrypt'
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
-import { getBeijingTime } from '~/utils/timeUtils'
-import { getClientIP } from '~/server/utils/ip-utils'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import {recordLoginFailure, recordLoginSuccess} from '../../services/securityService'
+import {getBeijingTime} from '~/utils/timeUtils'
+import {getClientIP} from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份

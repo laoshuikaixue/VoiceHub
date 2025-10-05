@@ -270,16 +270,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useAuth } from '~/composables/useAuth'
-import { useAudioPlayer } from '~/composables/useAudioPlayer'
-import { useSemesters } from '~/composables/useSemesters'
-import { useMusicSources } from '~/composables/useMusicSources'
-import { useAudioQuality } from '~/composables/useAudioQuality'
-import { useSongs } from '~/composables/useSongs'
+import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
+import {useAuth} from '~/composables/useAuth'
+import {useAudioPlayer} from '~/composables/useAudioPlayer'
+import {useSemesters} from '~/composables/useSemesters'
+import {useMusicSources} from '~/composables/useMusicSources'
+import {useAudioQuality} from '~/composables/useAudioQuality'
+import {useSongs} from '~/composables/useSongs'
 import Icon from '~/components/UI/Icon.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
-import { convertToHttps } from '~/utils/url'
+import {convertToHttps} from '~/utils/url'
 
 const props = defineProps({
   songs: {

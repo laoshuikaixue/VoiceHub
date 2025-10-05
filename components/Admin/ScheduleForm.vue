@@ -60,8 +60,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useSongs } from '~/composables/useSongs'
+import {onMounted, ref} from 'vue'
+import {useSongs} from '~/composables/useSongs'
 
 const props = defineProps({
   song: {

@@ -1,8 +1,8 @@
 import bcrypt from 'bcrypt'
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { cacheService } from '../../../services/cacheService'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import {cacheService} from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限

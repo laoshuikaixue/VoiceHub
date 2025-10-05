@@ -1,9 +1,9 @@
-import { createError, defineEventHandler, getQuery } from 'h3'
-import { db } from '~/drizzle/db'
-import { songs, users, votes, schedules, playTimes } from '~/drizzle/schema'
-import { eq, and, count, sql, like, or, desc, asc } from 'drizzle-orm'
-import { cacheService } from '~/server/services/cacheService'
-import { formatBeijingTime } from '~/utils/timeUtils'
+import {createError, defineEventHandler, getQuery} from 'h3'
+import {db} from '~/drizzle/db'
+import {playTimes, schedules, songs, users, votes} from '~/drizzle/schema'
+import {and, asc, count, desc, eq, like, or} from 'drizzle-orm'
+import {cacheService} from '~/server/services/cacheService'
+import {formatBeijingTime} from '~/utils/timeUtils'
 import crypto from 'crypto'
 
 // 格式化日期时间为统一格式：YYYY/M/D H:mm:ss（北京时间）

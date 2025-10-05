@@ -1,9 +1,8 @@
-import { createError, defineEventHandler, readBody } from 'h3'
-import jwt from 'jsonwebtoken'
+import {createError, defineEventHandler, readBody} from 'h3'
 
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq, ne, and } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {and, eq, ne} from 'drizzle-orm'
 
 // 生成6位数字验证码
 function generateVerificationCode(): string {

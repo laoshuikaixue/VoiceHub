@@ -1,5 +1,5 @@
-import { db, client, testConnection } from '~/drizzle/db'
-import { sql } from 'drizzle-orm'
+import {db, testConnection} from '~/drizzle/db'
+import {sql} from 'drizzle-orm'
 
 // 数据库健康检查
 export async function checkDatabaseHealth() {

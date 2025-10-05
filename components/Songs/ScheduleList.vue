@@ -183,12 +183,12 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useSongs } from '~/composables/useSongs'
-import { useAudioPlayer } from '~/composables/useAudioPlayer'
-import { useMusicSources } from '~/composables/useMusicSources'
+import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import {useSongs} from '~/composables/useSongs'
+import {useAudioPlayer} from '~/composables/useAudioPlayer'
+import {useMusicSources} from '~/composables/useMusicSources'
 import Icon from '~/components/UI/Icon.vue'
-import { convertToHttps } from '~/utils/url'
+import {convertToHttps} from '~/utils/url'
 
 const props = defineProps({
   schedules: {

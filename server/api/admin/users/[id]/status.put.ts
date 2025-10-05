@@ -1,8 +1,8 @@
-import { createError, defineEventHandler, readBody, getRouterParam } from 'h3'
-import { db } from '~/drizzle/db'
-import { users, userStatusLogs } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
+import {createError, defineEventHandler, getRouterParam, readBody} from 'h3'
+import {db} from '~/drizzle/db'
+import {users, userStatusLogs} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import {getBeijingTime} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   try {

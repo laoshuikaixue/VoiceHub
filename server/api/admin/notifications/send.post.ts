@@ -1,8 +1,8 @@
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq, and, or } from 'drizzle-orm'
-import { createBatchSystemNotifications, createSystemNotification } from '../../../services/notificationService'
-import { getClientIP } from '~/server/utils/ip-utils'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {and, eq, or} from 'drizzle-orm'
+import {createBatchSystemNotifications, createSystemNotification} from '../../../services/notificationService'
+import {getClientIP} from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户是否为管理员

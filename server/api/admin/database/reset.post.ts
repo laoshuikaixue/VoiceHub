@@ -1,6 +1,6 @@
-import { createError, defineEventHandler } from 'h3'
-import { db } from '~/drizzle/db'
-import { CacheService } from '../../../services/cacheService'
+import {createError, defineEventHandler} from 'h3'
+import {db} from '~/drizzle/db'
+import {CacheService} from '../../../services/cacheService'
 
 // 重置所有表的自增序列
 async function resetAutoIncrementSequences() {

@@ -1,10 +1,21 @@
 /** 
  * 数据库清空脚本 
  * 这个脚本会清空所有表的数据，但保留表结构 
- */ 
-import { db, users, songs, votes, schedules, notifications, notificationSettings, playTimes, semesters, systemSettings, songBlacklists } from '../drizzle/db.ts'
+ */
+import {
+    db,
+    notifications,
+    notificationSettings,
+    playTimes,
+    schedules,
+    semesters,
+    songBlacklists,
+    songs,
+    systemSettings,
+    users,
+    votes
+} from '../drizzle/db.ts'
 import bcrypt from 'bcrypt'
-import { eq } from 'drizzle-orm'
 
 // 重置所有表的自增序列
 async function resetAutoIncrementSequences() {

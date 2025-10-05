@@ -1,5 +1,4 @@
-import { db, songs, systemSettings, semesters, playTimes, eq, and, gte, lt } from '~/drizzle/db'
-import { createSongVotedNotification } from '../../services/notificationService'
+import {and, db, eq, gte, lt, playTimes, semesters, songs, systemSettings} from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证

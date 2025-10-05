@@ -1,7 +1,7 @@
-import { db, apiKeys, apiKeyPermissions } from '~/drizzle/db'
+import {apiKeyPermissions, apiKeys, db} from '~/drizzle/db'
 import crypto from 'crypto'
-import { z } from 'zod'
-import { getBeijingTime } from '~/utils/timeUtils'
+import {z} from 'zod'
+import {getBeijingTime} from '~/utils/timeUtils'
 
 /**
  * 创建API Key

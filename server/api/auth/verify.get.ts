@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken'
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { isRedisReady, executeRedisCommand } from '../../utils/redis'
-import { eq } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {executeRedisCommand, isRedisReady} from '../../utils/redis'
+import {eq} from 'drizzle-orm'
 
 // 用户认证缓存（永久缓存，登出或权限变更时主动失效）
 

@@ -1,5 +1,5 @@
-import { useAudioQuality } from '~/composables/useAudioQuality'
-import { useMusicSources } from '~/composables/useMusicSources'
+import {useAudioQuality} from '~/composables/useAudioQuality'
+import {useMusicSources} from '~/composables/useMusicSources'
 
 /**
  * 动态获取音乐播放URL

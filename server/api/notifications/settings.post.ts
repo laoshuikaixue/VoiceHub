@@ -1,7 +1,7 @@
-import { db } from '~/drizzle/db'
-import { notificationSettings } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import type { NotificationSettings } from '~/types'
+import {db} from '~/drizzle/db'
+import {notificationSettings} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import type {NotificationSettings} from '~/types'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证

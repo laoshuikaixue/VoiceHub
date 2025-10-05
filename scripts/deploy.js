@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process';
+import {execSync} from 'child_process';
 import fs from 'fs';
-import path from 'path';
-import { config } from 'dotenv';
+import {config} from 'dotenv';
 
 // 加载环境变量
 config();

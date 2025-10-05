@@ -61,8 +61,8 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
-import { convertToHttps } from '~/utils/url'
+import {defineProps} from 'vue'
+import {convertToHttps} from '~/utils/url'
 
 // 定义props
 const props = defineProps({

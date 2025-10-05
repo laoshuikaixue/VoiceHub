@@ -1,5 +1,5 @@
-import { db, apiKeys, apiKeyPermissions, users } from '~/drizzle/db'
-import { eq } from 'drizzle-orm'
+import {apiKeyPermissions, apiKeys, db, users} from '~/drizzle/db'
+import {eq} from 'drizzle-orm'
 
 /**
  * 获取API Key详情

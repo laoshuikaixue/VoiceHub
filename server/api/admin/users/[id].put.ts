@@ -1,8 +1,7 @@
-import { createError, defineEventHandler, readBody, getRouterParam } from 'h3'
-import { db } from '~/drizzle/db'
-import { users, userStatusLogs } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { CacheService } from '../../../services/cacheService'
+import {createError, defineEventHandler, getRouterParam, readBody} from 'h3'
+import {db} from '~/drizzle/db'
+import {users, userStatusLogs} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
 import bcrypt from 'bcrypt'
 
 export default defineEventHandler(async (event) => {

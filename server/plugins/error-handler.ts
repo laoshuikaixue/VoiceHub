@@ -1,5 +1,5 @@
-import { db } from '~/drizzle/db'
-import { sql } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {sql} from 'drizzle-orm'
 
 export default defineNitroPlugin(async (nitroApp) => {
   // 全局未处理的Promise拒绝处理器

@@ -1,5 +1,5 @@
-import { db } from '~/drizzle/db'
-import { sql } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {sql} from 'drizzle-orm'
 
 // 修复单个表的序列
 async function fixTableSequence(table: string, dbTableName: string) {

@@ -1,7 +1,7 @@
-import { createError, defineEventHandler, readBody } from 'h3'
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq, ne, and } from 'drizzle-orm'
+import {createError, defineEventHandler, readBody} from 'h3'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {and, eq, ne} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {

@@ -1,9 +1,8 @@
-import { createError, defineEventHandler } from 'h3'
-import jwt from 'jsonwebtoken'
+import {createError, defineEventHandler} from 'h3'
 
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {

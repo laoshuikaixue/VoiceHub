@@ -387,14 +387,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onUnmounted, watch, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
+import {useRouter} from 'vue-router'
 
 import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
-import { useNotifications } from '~/composables/useNotifications'
-import { useSiteConfig } from '~/composables/useSiteConfig'
+import {useNotifications} from '~/composables/useNotifications'
+import {useSiteConfig} from '~/composables/useSiteConfig'
 import packageJson from '~/package.json'
 
 // 获取运行时配置

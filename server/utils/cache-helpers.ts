@@ -1,5 +1,5 @@
-import { isRedisReady, executeRedisCommand } from './redis'
-import { cacheService } from '../services/cacheService'
+import {executeRedisCommand, isRedisReady} from './redis'
+import {cacheService} from '../services/cacheService'
 
 // 缓存策略：永久缓存，数据修改时主动失效
 

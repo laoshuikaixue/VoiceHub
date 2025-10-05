@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import {computed, ref} from 'vue'
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）

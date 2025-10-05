@@ -1,7 +1,4 @@
-import { executeRedisCommand, isRedisReady } from '../utils/redis'
-import { db } from '~/drizzle/db'
-import { songs, schedules, systemSettings, users, playTimes } from '~/drizzle/schema'
-import { eq, and, gte, lte, sql } from 'drizzle-orm'
+import {executeRedisCommand, isRedisReady} from '../utils/redis'
 
 // 缓存键前缀
 const CACHE_PREFIXES = {

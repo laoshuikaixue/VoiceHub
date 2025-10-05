@@ -16,8 +16,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { convertToHttps } from '~/utils/url'
+import {ref} from 'vue'
+import {convertToHttps} from '~/utils/url'
 
 const props = defineProps({
   song: {

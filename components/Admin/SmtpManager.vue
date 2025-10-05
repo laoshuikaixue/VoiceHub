@@ -198,9 +198,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useToast } from '~/composables/useToast'
-  import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
+import {onMounted, ref} from 'vue'
+import {useToast} from '~/composables/useToast'
+import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
 
 const { showNotification } = useToast()
 

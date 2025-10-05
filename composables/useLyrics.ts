@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue'
+import {computed, ref} from 'vue'
 
 // 歌词行接口
 export interface LyricLine {

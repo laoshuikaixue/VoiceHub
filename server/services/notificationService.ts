@@ -1,9 +1,18 @@
-import { db } from '~/drizzle/db'
-import { schedules, playTimes, notificationSettings, notifications, songs, users, votes, systemSettings } from '~/drizzle/schema'
-import { eq, and, gte, inArray } from 'drizzle-orm'
-import { sendMeowNotificationToUser, sendBatchMeowNotifications } from './meowNotificationService'
-import { sendEmailNotificationToUser, sendBatchEmailNotifications } from './smtpService'
-import { formatBeijingTime, getBeijingTime } from '~/utils/timeUtils'
+import {db} from '~/drizzle/db'
+import {
+    notifications,
+    notificationSettings,
+    playTimes,
+    schedules,
+    songs,
+    systemSettings,
+    users,
+    votes
+} from '~/drizzle/schema'
+import {and, eq, gte, inArray} from 'drizzle-orm'
+import {sendBatchMeowNotifications, sendMeowNotificationToUser} from './meowNotificationService'
+import {sendBatchEmailNotifications, sendEmailNotificationToUser} from './smtpService'
+import {formatBeijingTime, getBeijingTime} from '~/utils/timeUtils'
 
 /**
  * 创建歌曲被选中的通知

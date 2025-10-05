@@ -195,9 +195,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useAuth } from '~/composables/useAuth'
-import type { PlayTime } from '~/types'
+import {onMounted, reactive, ref} from 'vue'
+import {useAuth} from '~/composables/useAuth'
+import type {PlayTime} from '~/types'
 
 const { getAuthConfig, isAdmin } = useAuth()
 

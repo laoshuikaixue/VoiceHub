@@ -796,9 +796,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useAuth } from '~/composables/useAuth'
-import { usePermissions } from '~/composables/usePermissions'
+import {computed, onMounted, ref} from 'vue'
+import {useAuth} from '~/composables/useAuth'
+import {usePermissions} from '~/composables/usePermissions'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 

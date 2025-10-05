@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, nextTick, computed } from 'vue'
+import {nextTick, onMounted, ref, watch} from 'vue'
 
 const props = defineProps({
   currentLyrics: { type: Array, default: () => [] },

@@ -1,8 +1,7 @@
-import { createError, defineEventHandler } from 'h3'
-import { db } from '~/drizzle/db'
-import { users, notificationSettings } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import type { NotificationSettings, DBNotificationSettings } from '~/types'
+import {createError, defineEventHandler} from 'h3'
+import {db} from '~/drizzle/db'
+import {notificationSettings, users} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证

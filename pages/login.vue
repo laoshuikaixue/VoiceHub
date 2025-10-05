@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {onMounted} from 'vue'
 import LoginForm from '~/components/Auth/LoginForm.vue'
 
 // 使用站点配置

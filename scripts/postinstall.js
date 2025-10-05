@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process';
 import fs from 'fs';
 
 // 检查是否在CI环境中

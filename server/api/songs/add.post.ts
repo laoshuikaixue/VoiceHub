@@ -1,8 +1,7 @@
-import { z } from 'zod'
-import { db } from '~/drizzle/db'
-import { users, songs } from '~/drizzle/schema'
-import { eq, or, and } from 'drizzle-orm'
-import { cacheService } from '~/server/services/cacheService'
+import {db} from '~/drizzle/db'
+import {songs, users} from '~/drizzle/schema'
+import {and, eq, or} from 'drizzle-orm'
+import {cacheService} from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   try {

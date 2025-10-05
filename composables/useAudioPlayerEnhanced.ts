@@ -1,5 +1,5 @@
-import { ref, computed } from 'vue'
-import { useAudioQuality } from './useAudioQuality'
+import {computed, ref} from 'vue'
+import {useAudioQuality} from './useAudioQuality'
 
 export const useAudioPlayerEnhanced = () => {
   const { getQuality, getQualityOptions, saveQuality } = useAudioQuality()

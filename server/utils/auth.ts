@@ -1,7 +1,6 @@
-import jwt from 'jsonwebtoken'
-import { getHeader, getCookie } from 'h3'
-import { JWTEnhanced } from './jwt-enhanced'
-import { db, users, eq } from '~/drizzle/db'
+import {getCookie, getHeader} from 'h3'
+import {JWTEnhanced} from './jwt-enhanced'
+import {db, eq, users} from '~/drizzle/db'
 
 interface AuthResult {
   success: boolean

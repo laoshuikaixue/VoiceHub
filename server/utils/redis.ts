@@ -1,5 +1,5 @@
-import { createClient, RedisClientType } from 'redis'
-import type { RedisClientOptions } from 'redis'
+import type {RedisClientOptions} from 'redis'
+import {createClient, RedisClientType} from 'redis'
 
 // Redis连接池管理类
 class RedisPool {

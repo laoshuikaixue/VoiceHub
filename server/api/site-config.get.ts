@@ -1,7 +1,7 @@
-import { db } from '~/drizzle/db'
-import { systemSettings } from '~/drizzle/schema'
-import { cacheService } from '../services/cacheService'
-import { isRedisReady } from '../utils/redis'
+import {db} from '~/drizzle/db'
+import {systemSettings} from '~/drizzle/schema'
+import {cacheService} from '../services/cacheService'
+import {isRedisReady} from '../utils/redis'
 
 export default defineEventHandler(async (event) => {
   try {

@@ -239,8 +239,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useAuth } from '~/composables/useAuth'
+import {computed, ref, watch} from 'vue'
+import {useAuth} from '~/composables/useAuth'
 
 const props = defineProps({
   show: Boolean,

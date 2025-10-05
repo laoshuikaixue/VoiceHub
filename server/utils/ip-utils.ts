@@ -1,5 +1,5 @@
-import type { H3Event } from 'h3'
-import { getHeaders } from 'h3'
+import type {H3Event} from 'h3'
+import {getHeaders} from 'h3'
 
 /**
  * 获取客户端IP地址

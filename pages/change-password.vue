@@ -72,7 +72,7 @@
 
 <script setup>
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
-import { ref } from 'vue'
+import {ref} from 'vue'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()

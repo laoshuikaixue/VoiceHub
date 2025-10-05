@@ -1,5 +1,3 @@
-import { navigateTo } from '#app'
-
 // 防抖机制
 let isHandling401 = false
 let lastHandle401Time = 0

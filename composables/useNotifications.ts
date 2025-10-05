@@ -1,6 +1,6 @@
-import { ref, computed } from 'vue'
-import { useAuth } from './useAuth'
-import type { Notification, NotificationSettings } from '~/types'
+import {computed, ref} from 'vue'
+import {useAuth} from './useAuth'
+import type {Notification, NotificationSettings} from '~/types'
 
 interface PaginationInfo {
   currentPage: number

@@ -1,4 +1,4 @@
-import { db, notifications, eq, and } from '~/drizzle/db'
+import {and, db, eq, notifications} from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证

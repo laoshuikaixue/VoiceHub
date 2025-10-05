@@ -1,5 +1,5 @@
-import { createError, defineEventHandler, getRouterParam, setHeader } from 'h3'
-import { promises as fs } from 'fs'
+import {createError, defineEventHandler, getRouterParam, setHeader} from 'h3'
+import {promises as fs} from 'fs'
 import path from 'path'
 
 export default defineEventHandler(async (event) => {

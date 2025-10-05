@@ -1,6 +1,6 @@
-import { ref, onUnmounted } from 'vue'
-import { useProgress } from './useProgress'
-import { useAuth } from './useAuth'
+import {onUnmounted, ref} from 'vue'
+import {useProgress} from './useProgress'
+import {useAuth} from './useAuth'
 
 export const useProgressEvents = () => {
   const { 

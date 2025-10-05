@@ -1,8 +1,8 @@
-import { db } from '~/drizzle/db'
-import { songs, votes, schedules, songBlacklists } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { cacheService } from '../../../services/cacheService'
-import { createSongRejectedNotification } from '../../../services/notificationService'
+import {db} from '~/drizzle/db'
+import {schedules, songBlacklists, songs, votes} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import {cacheService} from '../../../services/cacheService'
+import {createSongRejectedNotification} from '../../../services/notificationService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限

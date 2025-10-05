@@ -1,7 +1,7 @@
-import { db, apiKeys, apiKeyPermissions } from '~/drizzle/db'
-import { eq } from 'drizzle-orm'
-import { z } from 'zod'
-import { getBeijingTime } from '~/utils/timeUtils'
+import {apiKeyPermissions, apiKeys, db} from '~/drizzle/db'
+import {eq} from 'drizzle-orm'
+import {z} from 'zod'
+import {getBeijingTime} from '~/utils/timeUtils'
 
 /**
  * 更新API Key

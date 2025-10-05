@@ -1,6 +1,6 @@
-import { ref } from 'vue'
-import { useAuth } from './useAuth'
-import type { PlayTime, SystemSettings } from '~/types'
+import {ref} from 'vue'
+import {useAuth} from './useAuth'
+import type {PlayTime, SystemSettings} from '~/types'
 
 export const useAdmin = () => {
   const { getAuthConfig, isAdmin } = useAuth()

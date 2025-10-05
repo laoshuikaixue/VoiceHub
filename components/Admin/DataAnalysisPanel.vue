@@ -463,8 +463,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useSemesters } from '~/composables/useSemesters'
+import {onMounted, ref} from 'vue'
+import {useSemesters} from '~/composables/useSemesters'
 import StatCard from './Common/StatCard.vue'
 import LoadingState from './Common/LoadingState.vue'
 import ErrorBoundary from './Common/ErrorBoundary.vue'

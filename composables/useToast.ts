@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import {ref} from 'vue'
 
 interface ToastMessage {
   id: number

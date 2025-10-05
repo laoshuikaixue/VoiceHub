@@ -116,8 +116,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useNotifications } from '~/composables/useNotifications'
+import {computed, onMounted, ref, watch} from 'vue'
+import {useNotifications} from '~/composables/useNotifications'
 
 const notificationsService = useNotifications()
 const loading = computed(() => notificationsService.loading.value)

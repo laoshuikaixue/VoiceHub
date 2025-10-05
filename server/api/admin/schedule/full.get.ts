@@ -1,6 +1,6 @@
-import { db } from '~/drizzle/db'
-import { songs, schedules, users, playTimes, votes } from '~/drizzle/schema'
-import { eq, asc, count, and, or, gte, lt } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {playTimes, schedules, songs, users, votes} from '~/drizzle/schema'
+import {and, asc, count, eq, gte, lt} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户身份验证和权限

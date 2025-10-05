@@ -1,9 +1,8 @@
-import { db } from '~/drizzle/db'
-import { songs, schedules, users, playTimes, votes } from '~/drizzle/schema'
-import { eq, gte, lte, desc, asc, count, and } from 'drizzle-orm'
-import { cacheService } from '~/server/services/cacheService'
-import { createBeijingTime, getBeijingTimestamp } from '~/utils/timeUtils'
-import { getClientIP } from '~/server/utils/ip-utils'
+import {db} from '~/drizzle/db'
+import {playTimes, schedules, songs} from '~/drizzle/schema'
+import {and, desc, eq, gte, lte} from 'drizzle-orm'
+import {cacheService} from '~/server/services/cacheService'
+import {getClientIP} from '~/server/utils/ip-utils'
 
 // 输入验证函数
 function validateInput(body: any) {

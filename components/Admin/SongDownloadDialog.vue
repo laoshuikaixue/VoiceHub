@@ -119,9 +119,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useAudioQuality } from '~/composables/useAudioQuality'
-import { getMusicUrl } from '~/utils/musicUrl'
+import {computed, ref, watch} from 'vue'
+import {useAudioQuality} from '~/composables/useAudioQuality'
+import {getMusicUrl} from '~/utils/musicUrl'
 
 const props = defineProps({
   show: {

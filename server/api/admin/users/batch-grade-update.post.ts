@@ -1,8 +1,7 @@
-import { db } from '~/drizzle/db'
-import bcrypt from 'bcryptjs'
-import { CacheService } from '~/server/services/cacheService'
-import { users } from '~/drizzle/schema'
-import { inArray } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {CacheService} from '~/server/services/cacheService'
+import {users} from '~/drizzle/schema'
+import {inArray} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {

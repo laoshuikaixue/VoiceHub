@@ -1,11 +1,11 @@
-import { createError, defineEventHandler, getQuery, getCookie, getHeader } from 'h3'
+import {createError, defineEventHandler, getCookie, getHeader, getQuery} from 'h3'
 import jwt from 'jsonwebtoken'
-import { db } from '~/drizzle/db'
-import { schedules, songs, users, playTimes, systemSettings, votes } from '~/drizzle/schema'
-import { eq, and, count, sql } from 'drizzle-orm'
-import { cacheService } from '~/server/services/cacheService'
-import { isRedisReady, executeRedisCommand } from '../../utils/redis'
-import { formatBeijingTime } from '~/utils/timeUtils'
+import {db} from '~/drizzle/db'
+import {playTimes, schedules, songs, systemSettings, users, votes} from '~/drizzle/schema'
+import {count, eq} from 'drizzle-orm'
+import {cacheService} from '~/server/services/cacheService'
+import {executeRedisCommand, isRedisReady} from '../../utils/redis'
+import {formatBeijingTime} from '~/utils/timeUtils'
 
 // 格式化日期时间为统一格式：YYYY/M/D H:mm:ss（北京时间）
 function formatDateTime(date: Date): string {

@@ -1,10 +1,9 @@
 import nodemailer from 'nodemailer'
-import type { Transporter } from 'nodemailer'
-import { db } from '~/drizzle/db'
-import { systemSettings, users, emailTemplates } from '~/drizzle/schema'
-import { eq, and, isNotNull } from 'drizzle-orm'
-import { getSiteTitle } from '~/server/utils/siteUtils'
-import { formatIPForEmail } from '~/server/utils/ip-utils'
+import {db} from '~/drizzle/db'
+import {emailTemplates, systemSettings, users} from '~/drizzle/schema'
+import {and, eq, isNotNull} from 'drizzle-orm'
+import {getSiteTitle} from '~/server/utils/siteUtils'
+import {formatIPForEmail} from '~/server/utils/ip-utils'
 
 /**
  * SMTP邮件服务

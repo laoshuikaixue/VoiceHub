@@ -335,9 +335,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import {nextTick, onMounted, ref} from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import { useSiteConfig } from '~/composables/useSiteConfig'
+import {useSiteConfig} from '~/composables/useSiteConfig'
 
 const { siteTitle } = useSiteConfig()
 

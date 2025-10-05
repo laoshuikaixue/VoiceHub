@@ -1,4 +1,4 @@
-import { ref, readonly, computed } from 'vue'
+import {computed, readonly, ref} from 'vue'
 
 interface PlayableSong {
   id: number

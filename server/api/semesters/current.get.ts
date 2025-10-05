@@ -1,6 +1,6 @@
-import { db } from '~/drizzle/db'
-import { semesters } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {semesters} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {

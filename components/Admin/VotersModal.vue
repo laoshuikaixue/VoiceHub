@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import {ref, watch} from 'vue'
 
 // Props
 const props = defineProps({

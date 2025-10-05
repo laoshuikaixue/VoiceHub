@@ -1,7 +1,7 @@
-import { createError, defineEventHandler, getQuery } from 'h3'
-import { db } from '~/drizzle/db'
-import { notifications } from '~/drizzle/schema'
-import { eq, desc, and, count } from 'drizzle-orm'
+import {createError, defineEventHandler, getQuery} from 'h3'
+import {db} from '~/drizzle/db'
+import {notifications} from '~/drizzle/schema'
+import {and, count, desc, eq} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证

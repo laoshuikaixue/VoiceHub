@@ -1,4 +1,4 @@
-import { db, semesters, songs, eq } from '~/drizzle/db'
+import {db, eq, semesters, songs} from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限

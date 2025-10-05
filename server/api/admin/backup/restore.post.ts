@@ -1,9 +1,9 @@
-import { createError, defineEventHandler, readBody, readMultipartFormData } from 'h3'
-import { db } from '~/drizzle/db'
-import { userStatusLogs } from '~/drizzle/schema'
-import { promises as fs } from 'fs'
+import {createError, defineEventHandler, readBody, readMultipartFormData} from 'h3'
+import {db} from '~/drizzle/db'
+import {userStatusLogs} from '~/drizzle/schema'
+import {promises as fs} from 'fs'
 import path from 'path'
-import { CacheService } from '../../../services/cacheService'
+import {CacheService} from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   try {

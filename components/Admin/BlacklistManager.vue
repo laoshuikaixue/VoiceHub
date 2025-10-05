@@ -158,7 +158,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import {onMounted, reactive, ref} from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 const blacklist = ref([])

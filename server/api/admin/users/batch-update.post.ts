@@ -1,8 +1,8 @@
-import { z } from 'zod'
-import { db } from '~/drizzle/db'
-import { CacheService } from '~/server/services/cacheService'
-import { users } from '~/drizzle/schema'
-import { eq, inArray, and, ne } from 'drizzle-orm'
+import {z} from 'zod'
+import {db} from '~/drizzle/db'
+import {CacheService} from '~/server/services/cacheService'
+import {users} from '~/drizzle/schema'
+import {and, eq, inArray, ne} from 'drizzle-orm'
 
 // 请求体验证模式
 const batchUpdateSchema = z.object({

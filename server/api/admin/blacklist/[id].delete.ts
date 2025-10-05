@@ -1,8 +1,8 @@
-import { createError, defineEventHandler, getRouterParam } from 'h3'
-import { db } from '~/drizzle/db'
-import { songBlacklists } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { CacheService } from '../../../services/cacheService'
+import {createError, defineEventHandler, getRouterParam} from 'h3'
+import {db} from '~/drizzle/db'
+import {songBlacklists} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import {CacheService} from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限

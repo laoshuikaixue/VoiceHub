@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import {computed, ref} from 'vue'
 
 export const useProgress = () => {
   const progress = ref(0)

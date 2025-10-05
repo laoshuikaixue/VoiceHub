@@ -1,7 +1,7 @@
-import { db } from '~/drizzle/db'
-import { users, systemSettings, notificationSettings } from '~/drizzle/schema'
-import { eq, ne, inArray, isNotNull, and } from 'drizzle-orm'
-import { getSiteTitle } from '~/server/utils/siteUtils'
+import {db} from '~/drizzle/db'
+import {notificationSettings, users} from '~/drizzle/schema'
+import {and, eq, inArray, isNotNull, ne} from 'drizzle-orm'
+import {getSiteTitle} from '~/server/utils/siteUtils'
 
 /**
  * 发送 MeoW 通知

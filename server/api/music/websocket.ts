@@ -1,4 +1,4 @@
-import { defineEventHandler, getQuery } from 'h3'
+import {defineEventHandler, getQuery} from 'h3'
 import jwt from 'jsonwebtoken'
 
 // 存储WebSocket连接

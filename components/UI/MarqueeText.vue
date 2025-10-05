@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import {nextTick, onMounted, onUnmounted, ref, watch} from 'vue';
 
 const props = defineProps({
   text: {

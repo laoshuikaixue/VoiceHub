@@ -1,12 +1,12 @@
-import { createError, defineEventHandler, getQuery } from 'h3'
-import { db } from '~/drizzle/db'
-import { songs, users, votes, schedules, playTimes } from '~/drizzle/schema'
-import { eq, and, or, like, desc, asc, count, sql, inArray } from 'drizzle-orm'
-import { openApiCache } from '~/server/utils/open-api-cache'
-import { CACHE_CONSTANTS } from '~/server/config/constants'
-import { cache } from '~/server/utils/cache-helpers'
+import {createError, defineEventHandler, getQuery} from 'h3'
+import {db} from '~/drizzle/db'
+import {playTimes, schedules, songs, users, votes} from '~/drizzle/schema'
+import {and, asc, count, desc, eq, inArray, like, or} from 'drizzle-orm'
+import {openApiCache} from '~/server/utils/open-api-cache'
+import {CACHE_CONSTANTS} from '~/server/config/constants'
+import {cache} from '~/server/utils/cache-helpers'
 import crypto from 'crypto'
-import { formatBeijingTime } from '~/utils/timeUtils'
+import {formatBeijingTime} from '~/utils/timeUtils'
 
 // 格式化日期时间为统一格式：YYYY/M/D H:mm:ss（北京时间）
 function formatDateTime(date: Date): string {

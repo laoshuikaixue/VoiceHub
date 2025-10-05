@@ -1,5 +1,5 @@
-import { ref, computed } from 'vue'
-import { useAuth } from './useAuth'
+import {computed} from 'vue'
+import {useAuth} from './useAuth'
 
 export const usePermissions = () => {
   const auth = useAuth()

@@ -1,6 +1,6 @@
-import { db } from '~/drizzle/db'
-import { users, songs, votes, schedules } from '~/drizzle/schema'
-import { eq, desc, count, inArray, and } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {schedules, songs, users, votes} from '~/drizzle/schema'
+import {and, count, desc, eq, inArray} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {

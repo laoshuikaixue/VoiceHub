@@ -285,11 +285,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRuntimeConfig } from '#app'
-import { usePermissions } from '~/composables/usePermissions'
-import { useSiteConfig } from '~/composables/useSiteConfig'
-import { convertToHttps } from '~/utils/url'
+import {computed, onMounted, ref, watch} from 'vue'
+import {useRuntimeConfig} from '#app'
+import {usePermissions} from '~/composables/usePermissions'
+import {useSiteConfig} from '~/composables/useSiteConfig'
+import {convertToHttps} from '~/utils/url'
 import html2canvas from 'html2canvas'
 
 // 导入子组件

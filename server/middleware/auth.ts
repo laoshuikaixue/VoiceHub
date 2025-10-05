@@ -1,6 +1,6 @@
-import { JWTEnhanced } from '../utils/jwt-enhanced'
-import { db, users } from '~/drizzle/db'
-import { eq } from 'drizzle-orm'
+import {JWTEnhanced} from '../utils/jwt-enhanced'
+import {db, users} from '~/drizzle/db'
+import {eq} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 清除用户上下文

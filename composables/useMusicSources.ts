@@ -4,16 +4,16 @@
  */
 
 import {
-  MUSIC_SOURCE_CONFIG,
-  getEnabledSources,
-  getSourceById,
-  type MusicSource,
-  type MusicSourceConfig,
-  type SourceStatus,
-  type MusicSearchParams,
-  type MusicSearchResult,
-  type SongDetailParams,
-  type SongDetailResult
+    getEnabledSources,
+    getSourceById,
+    MUSIC_SOURCE_CONFIG,
+    type MusicSearchParams,
+    type MusicSearchResult,
+    type MusicSource,
+    type MusicSourceConfig,
+    type SongDetailParams,
+    type SongDetailResult,
+    type SourceStatus
 } from '~/utils/musicSources'
 
 /**

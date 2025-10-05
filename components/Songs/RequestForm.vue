@@ -389,17 +389,17 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue'
-import { useSongs } from '~/composables/useSongs'
-import { useAudioPlayer } from '~/composables/useAudioPlayer'
-import { useSiteConfig } from '~/composables/useSiteConfig'
-import { useAuth } from '~/composables/useAuth'
-import { useSemesters } from '~/composables/useSemesters'
-import { useMusicSources } from '~/composables/useMusicSources'
-import { getEnabledSources } from '~/utils/musicSources'
+import {computed, onMounted, ref, watch} from 'vue'
+import {useSongs} from '~/composables/useSongs'
+import {useAudioPlayer} from '~/composables/useAudioPlayer'
+import {useSiteConfig} from '~/composables/useSiteConfig'
+import {useAuth} from '~/composables/useAuth'
+import {useSemesters} from '~/composables/useSemesters'
+import {useMusicSources} from '~/composables/useMusicSources'
+import {getEnabledSources} from '~/utils/musicSources'
 import DuplicateSongModal from './DuplicateSongModal.vue'
 import Icon from '../UI/Icon.vue'
-import { convertToHttps, validateUrl } from '~/utils/url'
+import {convertToHttps, validateUrl} from '~/utils/url'
 
 const props = defineProps({
   loading: {

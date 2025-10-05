@@ -1,6 +1,6 @@
-import { db } from '~/drizzle/db'
-import { semesters } from '~/drizzle/schema'
-import { desc } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {semesters} from '~/drizzle/schema'
+import {desc} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限

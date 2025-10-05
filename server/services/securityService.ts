@@ -1,8 +1,8 @@
-import { createSystemNotification } from './notificationService'
-import { sendMeowNotificationToUser } from './meowNotificationService'
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import {createSystemNotification} from './notificationService'
+import {sendMeowNotificationToUser} from './meowNotificationService'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
 
 // 账户锁定信息接口
 interface AccountLockInfo {

@@ -1,7 +1,6 @@
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { SmtpService } from '~/server/services/smtpService'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法

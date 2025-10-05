@@ -1,6 +1,6 @@
-import { cache } from './cache-helpers'
+import {cache} from './cache-helpers'
 import crypto from 'crypto'
-import { CACHE_CONSTANTS } from '../config/constants'
+import {CACHE_CONSTANTS} from '../config/constants'
 
 /**
  * 开放API缓存管理器

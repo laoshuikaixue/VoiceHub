@@ -1,5 +1,5 @@
-import { db } from '~/drizzle/db'
-import { systemSettings } from '~/drizzle/schema'
+import {db} from '~/drizzle/db'
+import {systemSettings} from '~/drizzle/schema'
 
 /**
  * 获取站点标题

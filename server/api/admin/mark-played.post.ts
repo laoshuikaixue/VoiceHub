@@ -1,10 +1,10 @@
-import { db } from '~/drizzle/db'
-import { createSongPlayedNotification } from '../../services/notificationService'
-import { CacheService } from '~/server/services/cacheService'
-import { songs } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
-import { getClientIP } from '~/server/utils/ip-utils'
+import {db} from '~/drizzle/db'
+import {createSongPlayedNotification} from '../../services/notificationService'
+import {CacheService} from '~/server/services/cacheService'
+import {songs} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import {getBeijingTime} from '~/utils/timeUtils'
+import {getClientIP} from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证

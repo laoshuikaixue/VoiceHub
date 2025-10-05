@@ -1,4 +1,4 @@
-import { SmtpService } from '~/server/services/smtpService'
+import {SmtpService} from '~/server/services/smtpService'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法

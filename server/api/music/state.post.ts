@@ -1,5 +1,5 @@
-import { defineEventHandler, readBody } from 'h3'
-import { broadcastMusicState, broadcastSongChange } from './websocket'
+import {defineEventHandler, readBody} from 'h3'
+import {broadcastMusicState, broadcastSongChange} from './websocket'
 
 export default defineEventHandler(async (event) => {
   try {

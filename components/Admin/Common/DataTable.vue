@@ -275,7 +275,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import {computed, ref, watch} from 'vue'
 
 const props = defineProps({
   data: {

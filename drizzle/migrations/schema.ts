@@ -1,5 +1,16 @@
-import { pgTable, serial, timestamp, text, boolean, integer, uuid, varchar, unique, bigint, pgEnum } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
+import {
+    bigint,
+    boolean,
+    integer,
+    pgEnum,
+    pgTable,
+    serial,
+    text,
+    timestamp,
+    unique,
+    uuid,
+    varchar
+} from "drizzle-orm/pg-core"
 
 export const blacklistType = pgEnum("BlacklistType", ['SONG', 'KEYWORD'])
 export const userStatus = pgEnum("user_status", ['active', 'withdrawn'])

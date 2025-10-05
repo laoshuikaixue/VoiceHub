@@ -1,7 +1,7 @@
-import { createError, defineEventHandler, getRouterParam } from 'h3'
-import { db } from '~/drizzle/db'
-import { songs, votes, users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import {createError, defineEventHandler, getRouterParam} from 'h3'
+import {db} from '~/drizzle/db'
+import {songs, users, votes} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {

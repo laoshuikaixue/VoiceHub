@@ -1,7 +1,7 @@
-import { db } from '~/drizzle/db'
-import { songs, votes, schedules } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { cacheService } from '../../../services/cacheService'
+import {db} from '~/drizzle/db'
+import {schedules, songs, votes} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import {cacheService} from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限

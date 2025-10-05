@@ -1,8 +1,19 @@
-import { createError, defineEventHandler, readBody } from 'h3'
-import { db } from '~/drizzle/db'
-import { users, songs, votes, schedules, notifications, notificationSettings, playTimes, semesters, songBlacklists, systemSettings, userStatusLogs } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { promises as fs } from 'fs'
+import {createError, defineEventHandler, readBody} from 'h3'
+import {db} from '~/drizzle/db'
+import {
+    notifications,
+    notificationSettings,
+    playTimes,
+    schedules,
+    semesters,
+    songBlacklists,
+    songs,
+    systemSettings,
+    users,
+    userStatusLogs,
+    votes
+} from '~/drizzle/schema'
+import {promises as fs} from 'fs'
 import path from 'path'
 
 export default defineEventHandler(async (event) => {

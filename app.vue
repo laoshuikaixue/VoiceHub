@@ -19,11 +19,11 @@
 </template>
 
 <script setup>
-import { onMounted, computed, ref, watch, nextTick } from 'vue'
+import {computed, onMounted, ref, watch} from 'vue'
 // 导入通知容器组件和音频播放器
-import { useAudioPlayer } from '~/composables/useAudioPlayer'
-import { useAuth } from '~/composables/useAuth'
-import { useRoute } from 'vue-router'
+import {useAudioPlayer} from '~/composables/useAudioPlayer'
+import {useAuth} from '~/composables/useAuth'
+import {useRoute} from 'vue-router'
 
 // 获取运行时配置
 const config = useRuntimeConfig()

@@ -1,5 +1,5 @@
-import { createError, defineEventHandler } from 'h3'
-import { db, semesters, songs, schedules, votes, eq, count, and, exists } from '~/drizzle/db'
+import {createError, defineEventHandler} from 'h3'
+import {and, count, db, eq, exists, schedules, semesters, songs, votes} from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限

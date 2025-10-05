@@ -1,7 +1,7 @@
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { emailVerificationCodes } from './send-code.post'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import {emailVerificationCodes} from './send-code.post'
 
 export default defineEventHandler(async (event) => {
   if (getMethod(event) !== 'POST') {

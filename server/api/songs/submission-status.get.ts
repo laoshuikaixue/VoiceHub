@@ -1,6 +1,6 @@
-import { db } from '~/drizzle/db'
-import { systemSettings, songs } from '~/drizzle/schema'
-import { eq, and, gte, lt, count } from 'drizzle-orm'
+import {db} from '~/drizzle/db'
+import {songs, systemSettings} from '~/drizzle/schema'
+import {and, count, eq, gte, lt} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证

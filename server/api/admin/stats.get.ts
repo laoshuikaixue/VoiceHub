@@ -1,8 +1,8 @@
-import { createError, defineEventHandler, getQuery } from 'h3'
-import { db } from '~/drizzle/db'
-import { users, songs, schedules, semesters, songBlacklists } from '~/drizzle/schema'
-import { eq, gte, lt, and, count } from 'drizzle-orm'
-import { cacheService } from '../../services/cacheService'
+import {createError, defineEventHandler, getQuery} from 'h3'
+import {db} from '~/drizzle/db'
+import {schedules, semesters, songBlacklists, songs, users} from '~/drizzle/schema'
+import {and, count, eq, gte, lt} from 'drizzle-orm'
+import {cacheService} from '../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限

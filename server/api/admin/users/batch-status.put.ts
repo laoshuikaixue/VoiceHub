@@ -1,8 +1,8 @@
-import { createError, defineEventHandler, readBody } from 'h3'
-import { db } from '~/drizzle/db'
-import { users, userStatusLogs } from '~/drizzle/schema'
-import { eq, inArray, and } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
+import {createError, defineEventHandler, readBody} from 'h3'
+import {db} from '~/drizzle/db'
+import {users, userStatusLogs} from '~/drizzle/schema'
+import {and, eq, inArray} from 'drizzle-orm'
+import {getBeijingTime} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   try {

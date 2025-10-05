@@ -80,16 +80,16 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
 import LyricsDisplay from './LyricsDisplay.vue'
 import PlayerInfo from './AudioPlayer/PlayerInfo.vue'
 import PlayerControls from './AudioPlayer/PlayerControls.vue'
 import PlayerActions from './AudioPlayer/PlayerActions.vue'
 import AudioElement from './AudioPlayer/AudioElement.vue'
-import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
-import { useAudioPlayerSync } from '~/composables/useAudioPlayerSync'
-import { useAudioQuality } from '~/composables/useAudioQuality'
-import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
+import {useAudioPlayerControl} from '~/composables/useAudioPlayerControl'
+import {useAudioPlayerSync} from '~/composables/useAudioPlayerSync'
+import {useAudioQuality} from '~/composables/useAudioQuality'
+import {useAudioPlayerEnhanced} from '~/composables/useAudioPlayerEnhanced'
 
 const props = defineProps({
   song: {

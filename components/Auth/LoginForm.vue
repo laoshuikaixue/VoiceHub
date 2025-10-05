@@ -88,8 +88,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useAuth } from '~/composables/useAuth'
+import {ref} from 'vue'
+import {useAuth} from '~/composables/useAuth'
 
 const username = ref('')
 const password = ref('')

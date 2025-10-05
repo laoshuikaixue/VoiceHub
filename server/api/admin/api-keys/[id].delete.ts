@@ -1,5 +1,5 @@
-import { db, apiKeys, apiKeyPermissions, apiLogs } from '~/drizzle/db'
-import { eq } from 'drizzle-orm'
+import {apiKeyPermissions, apiKeys, db} from '~/drizzle/db'
+import {eq} from 'drizzle-orm'
 
 /**
  * 删除API Key

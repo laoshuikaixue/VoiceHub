@@ -159,7 +159,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import {computed, ref} from 'vue'
 
 // 组件属性
 const props = defineProps({

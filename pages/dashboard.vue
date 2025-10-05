@@ -368,10 +368,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
-import { useAuth } from '~/composables/useAuth'
-import { usePermissions } from '~/composables/usePermissions'
-import { useSiteConfig } from '~/composables/useSiteConfig'
+import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
+import {useAuth} from '~/composables/useAuth'
+import {usePermissions} from '~/composables/usePermissions'
+import {useSiteConfig} from '~/composables/useSiteConfig'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()

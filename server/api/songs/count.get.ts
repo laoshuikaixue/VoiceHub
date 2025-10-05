@@ -1,8 +1,8 @@
-import { defineEventHandler, getQuery, createError } from 'h3'
-import { db } from '~/drizzle/db'
-import { songs } from '~/drizzle/schema'
-import { count, eq } from 'drizzle-orm'
-import { cache } from '~/server/utils/cache-helpers'
+import {createError, defineEventHandler, getQuery} from 'h3'
+import {db} from '~/drizzle/db'
+import {songs} from '~/drizzle/schema'
+import {count, eq} from 'drizzle-orm'
+import {cache} from '~/server/utils/cache-helpers'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)

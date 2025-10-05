@@ -1,5 +1,5 @@
-import { db, users, songs, notifications, notificationSettings, schedules, votes, playTimes, semesters, songBlacklists, systemSettings, roles, eq, and, or, count, exists, desc, asc } from '~/drizzle/db'
-import { cacheService } from '~/server/services/cacheService'
+import {db, eq} from '~/drizzle/db'
+import {cacheService} from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 验证用户认证和权限

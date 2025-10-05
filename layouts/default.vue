@@ -6,8 +6,8 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useSiteConfig } from '~/composables/useSiteConfig'
+import {onMounted} from 'vue'
+import {useSiteConfig} from '~/composables/useSiteConfig'
 
 const { initSiteConfig } = useSiteConfig()
 

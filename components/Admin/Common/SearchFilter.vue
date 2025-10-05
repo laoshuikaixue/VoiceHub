@@ -126,7 +126,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import {computed, onMounted, onUnmounted, ref} from 'vue'
 
 const props = defineProps({
   searchQuery: {

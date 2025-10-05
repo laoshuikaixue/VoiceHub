@@ -1,8 +1,8 @@
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { SmtpService } from '~/server/services/smtpService'
-import { getClientIP } from '~/server/utils/ip-utils'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import {SmtpService} from '~/server/services/smtpService'
+import {getClientIP} from '~/server/utils/ip-utils'
 
 // 简易验证码存储（如需分布式/重启持久，建议迁移到Redis）
 const emailVerificationCodes = new Map<string, { code: string, userId: number, expiresAt: number }>()

@@ -1,7 +1,7 @@
-import { createError, defineEventHandler, readBody } from 'h3'
-import { db } from '~/drizzle/db'
-import { systemSettings, songBlacklists } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import {createError, defineEventHandler, readBody} from 'h3'
+import {db} from '~/drizzle/db'
+import {songBlacklists, systemSettings} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)

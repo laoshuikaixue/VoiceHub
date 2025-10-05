@@ -50,8 +50,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useToast } from '~/composables/useToast'
+import {computed, onMounted, ref} from 'vue'
+import {useToast} from '~/composables/useToast'
 
 type TemplateItem = { key: string; name: string; subject: string; html: string; isBuiltin: boolean; isOverridden?: boolean }
 

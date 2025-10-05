@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {onMounted, ref} from 'vue'
 import Icon from './Icon.vue'
 
 const notifications = ref([])

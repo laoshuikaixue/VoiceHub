@@ -1,5 +1,5 @@
-import { SmtpService } from '~/server/services/smtpService'
-import { getClientIP } from '~/server/utils/ip-utils'
+import {SmtpService} from '~/server/services/smtpService'
+import {getClientIP} from '~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法

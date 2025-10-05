@@ -420,7 +420,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
 

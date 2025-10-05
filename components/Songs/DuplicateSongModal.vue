@@ -78,9 +78,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { Song } from '~/types'
-import { convertToHttps } from '~/utils/url'
+import {ref} from 'vue'
+import type {Song} from '~/types'
+import {convertToHttps} from '~/utils/url'
 
 interface Props {
   show: boolean

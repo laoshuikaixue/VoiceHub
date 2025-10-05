@@ -326,9 +326,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useAuth } from '~/composables/useAuth'
-import { useAdmin } from '~/composables/useAdmin'
+import {computed, ref} from 'vue'
+import {useAuth} from '~/composables/useAuth'
+import {useAdmin} from '~/composables/useAdmin'
 
 const { isAdmin } = useAuth()
 const { sendAdminNotification } = useAdmin()

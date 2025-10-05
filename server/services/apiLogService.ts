@@ -1,7 +1,6 @@
-import { db } from '~/drizzle/db'
-import { apiLogs, apiKeys } from '~/drizzle/schema'
-import { eq, desc, and, count, sql, gte, lte, like, or } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
+import {db} from '~/drizzle/db'
+import {apiKeys, apiLogs} from '~/drizzle/schema'
+import {and, count, desc, eq, gte, like, lte, or, sql} from 'drizzle-orm'
 
 /**
  * API访问日志服务

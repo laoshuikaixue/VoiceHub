@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import {computed, ref} from 'vue'
 
 // 音质配置
 export const QUALITY_OPTIONS = {

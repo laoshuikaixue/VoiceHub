@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process';
+import {execSync} from 'child_process';
 import fs from 'fs';
-import path from 'path';
 
 // 颜色输出函数
 const colors = {

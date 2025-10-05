@@ -1,5 +1,5 @@
-import { db, systemSettings, playTimes, eq, asc } from '~/drizzle/db'
-import type { PlayTime } from '~/drizzle/schema'
+import {asc, db, eq, playTimes, systemSettings} from '~/drizzle/db'
+import type {PlayTime} from '~/drizzle/schema'
 
 export default defineEventHandler(async (event) => {
   try {

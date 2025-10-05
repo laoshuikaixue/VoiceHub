@@ -1,20 +1,17 @@
 #!/usr/bin/env node
 
-import { config } from 'dotenv';
+import {config} from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import {fileURLToPath} from 'url';
+import {db, notificationSettings, systemSettings, users} from '../drizzle/db.ts';
+import bcrypt from 'bcrypt';
+import {eq} from 'drizzle-orm';
 
 // ES模块中获取当前目录 - 避免使用 __filename 和 __dirname 变量
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 // 加载环境变量
 config({ path: path.resolve(currentDir, '../.env') });
-
-import { db, users, notificationSettings, systemSettings } from '../drizzle/db.ts';
-import bcrypt from 'bcrypt';
-import prompts from 'prompts';
-import chalk from 'chalk';
-import { eq } from 'drizzle-orm';
 
 // 检查环境变量
 if (!process.env.DATABASE_URL) {

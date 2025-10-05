@@ -229,8 +229,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useAuth } from '~/composables/useAuth'
+import {computed, onMounted, ref} from 'vue'
+import {useAuth} from '~/composables/useAuth'
 
 const { getAuthConfig } = useAuth()
 

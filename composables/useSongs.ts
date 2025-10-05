@@ -1,7 +1,7 @@
-import { ref, computed } from 'vue'
-import { useAuth } from './useAuth'
-import { getGlobalDedup } from './useRequestDedup'
-import type { Song, Schedule, PlayTime } from '~/types'
+import {computed, ref} from 'vue'
+import {useAuth} from './useAuth'
+import {getGlobalDedup} from './useRequestDedup'
+import type {PlayTime, Schedule, Song} from '~/types'
 
 export const useSongs = () => {
   const { isAuthenticated, user, getAuthConfig, isAdmin } = useAuth()

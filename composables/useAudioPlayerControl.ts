@@ -1,6 +1,6 @@
-import { ref, computed, nextTick } from 'vue'
-import { useAudioQuality } from '~/composables/useAudioQuality'
-import { useLyrics } from '~/composables/useLyrics'
+import {computed, nextTick, ref} from 'vue'
+import {useAudioQuality} from '~/composables/useAudioQuality'
+import {useLyrics} from '~/composables/useLyrics'
 
 export const useAudioPlayerControl = () => {
   const audioPlayer = ref<HTMLAudioElement | null>(null)

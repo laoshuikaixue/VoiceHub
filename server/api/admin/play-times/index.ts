@@ -1,5 +1,5 @@
-import { db, playTimes, desc, asc } from '~/drizzle/db'
-import { CacheService } from '../../../services/cacheService'
+import {asc, db, desc, playTimes} from '~/drizzle/db'
+import {CacheService} from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限

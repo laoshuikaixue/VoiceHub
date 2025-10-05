@@ -1,5 +1,5 @@
-import { ref, readonly } from 'vue'
-import type { Semester } from '~/types'
+import {readonly, ref} from 'vue'
+import type {Semester} from '~/types'
 
 // 全局事件总线用于学期更新通知
 const semesterUpdateEvent = ref(0)

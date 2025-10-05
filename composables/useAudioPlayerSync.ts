@@ -1,9 +1,8 @@
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { useAudioPlayer } from '~/composables/useAudioPlayer'
-import { useMusicWebSocket } from '~/composables/useMusicWebSocket'
-import { useAuth } from '~/composables/useAuth'
-import { useLyrics } from '~/composables/useLyrics'
-import { useAudioQuality } from '~/composables/useAudioQuality'
+import {ref} from 'vue'
+import {useAudioPlayer} from '~/composables/useAudioPlayer'
+import {useMusicWebSocket} from '~/composables/useMusicWebSocket'
+import {useAuth} from '~/composables/useAuth'
+import {useLyrics} from '~/composables/useLyrics'
 
 export const useAudioPlayerSync = () => {
   const globalAudioPlayer = useAudioPlayer()

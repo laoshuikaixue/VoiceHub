@@ -1,8 +1,8 @@
 import bcrypt from 'bcrypt'
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
+import {db} from '~/drizzle/db'
+import {users} from '~/drizzle/schema'
+import {eq} from 'drizzle-orm'
+import {getBeijingTime} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   try {
