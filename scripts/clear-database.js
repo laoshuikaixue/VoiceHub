@@ -13,7 +13,12 @@ import {
     songs,
     systemSettings,
     users,
-    votes
+    votes,
+    apiKeys,
+    apiKeyPermissions,
+    apiLogs,
+    userStatusLogs,
+    emailTemplates
 } from '../drizzle/db.ts'
 import bcrypt from 'bcrypt'
 
@@ -29,7 +34,9 @@ async function resetAutoIncrementSequences() {
     'PlayTime',
     'Semester',
     'SystemSettings',
-    'SongBlacklist'
+    'SongBlacklist',
+    'EmailTemplate',
+    'user_status_logs'
   ]
   
   console.log('重置自增序列...')
@@ -60,6 +67,11 @@ async function main() {
     await db.delete(semesters)
     await db.delete(systemSettings)
     await db.delete(songBlacklists)
+    await db.delete(apiLogs)
+    await db.delete(apiKeyPermissions)
+    await db.delete(apiKeys)
+    await db.delete(userStatusLogs)
+    await db.delete(emailTemplates)
     await db.delete(users)
     
     console.log('数据库已清空，开始重置自增序列...')
