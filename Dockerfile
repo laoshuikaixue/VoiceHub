@@ -28,7 +28,7 @@ WORKDIR /app
 # 从构建阶段复制运行所需文件
 COPY --from=builder --chown=nuxtjs:nuxtjs /app/package*.json ./
 COPY --from=builder --chown=nuxtjs:nuxtjs /app/node_modules ./node_modules
-COPY --from=builder --chown=nuxtjs:nuxtjs /app/.output ./.output  # Nuxt
+COPY --from=builder --chown=nuxtjs:nuxtjs /app/.output ./.output
 COPY --from=builder --chown=nuxtjs:nuxtjs /app/drizzle ./drizzle
 COPY --from=builder --chown=nuxtjs:nuxtjs /app/scripts ./scripts
 
