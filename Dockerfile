@@ -2,9 +2,6 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
-RUN npm config set registry https://registry.npmmirror.com/
-
 COPY package.json package-lock.json ./
 
 RUN if [ -f "package-lock.json" ]; then \
@@ -18,8 +15,6 @@ RUN if [ -f "package-lock.json" ]; then \
 # --- 阶段 2: 构建应用 ---
 FROM node:20-alpine AS builder
 WORKDIR /app
-
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 COPY --from=deps /app/node_modules ./node_modules
 
