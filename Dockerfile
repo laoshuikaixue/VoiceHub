@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# 复制依赖文件和 scripts 目录 (解决之前 postinstall 的问题)
+# 复制依赖文件和 scripts 目录
 COPY package*.json ./
 COPY scripts ./scripts
 
