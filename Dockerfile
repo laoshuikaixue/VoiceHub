@@ -1,25 +1,31 @@
-# 使用官方Node.js运行时作为基础镜像
-FROM node:20-alpine
+# 使用官方Node.js运行时作为基础镜像（锁定版本，避免兼容问题）
+FROM node:20.19.5-alpine
 
 # 设置工作目录
 WORKDIR /app
 
-# 复制package.json和package-lock.json（如果存在）
+# 复制package.json和package-lock.json（优先利用Docker缓存）
+# 关键：确保package-lock.json被复制到容器内
 COPY package*.json ./
 
-# 安装依赖，增加详细错误日志和更多重试机制
+# 安装依赖：优先用npm ci（依赖锁定文件），缺失时降级用npm install
 RUN echo "Node version:" && node --version && \
     echo "NPM version:" && npm --version && \
-    echo "Current directory contents:" && ls -la && \
+    echo "Current directory contents (check lock file):" && ls -la && \
     echo "Checking npm config:" && npm config list && \
-    echo "Installing dependencies with npm ci..." && \
-    (npm ci --only=production --prefer-offline --no-audit 2>&1 | tee npm-install.log) || \
-    (echo "npm ci failed, showing log:" && cat npm-install.log && \
-     echo "Trying npm install..." && \
-     npm install --only=production --prefer-offline --no-audit 2>&1 | tee npm-install.log) || \
-    (echo "npm install failed, showing log:" && cat npm-install.log && \
-     echo "Trying npm install with unsafe-perm..." && \
-     npm install --only=production --prefer-offline --no-audit --unsafe-perm 2>&1 | tee npm-install.log) || \
+    # 检查package-lock.json是否存在，存在则用npm ci，否则用npm install
+    if [ -f "package-lock.json" ]; then \
+        echo "Found package-lock.json, using npm ci..." && \
+        (npm ci --prefer-offline --no-audit --force 2>&1 | tee npm-install.log) || \
+        (echo "npm ci failed, falling back to npm install..." && \
+         npm install --prefer-offline --no-audit --force 2>&1 | tee npm-install.log); \
+    else \
+        echo "No package-lock.json found, using npm install..." && \
+        npm install --prefer-offline --no-audit --force 2>&1 | tee npm-install.log; \
+    fi || \
+    # 最终降级：用unsafe-perm解决权限问题
+    (echo "npm install failed, trying with unsafe-perm..." && \
+     npm install --prefer-offline --no-audit --unsafe-perm --force 2>&1 | tee npm-install.log) || \
     (echo "All npm install methods failed, showing detailed log:" && \
      echo "=== NPM DEBUG INFO ===" && \
      echo "Node version:" && node --version && \
@@ -29,13 +35,13 @@ RUN echo "Node version:" && node --version && \
      echo "=== NPM INSTALL LOG ===" && cat npm-install.log && \
      echo "=== END OF LOGS ===" && false)
 
-# 复制应用代码
+# 后续步骤与之前优化版一致（复制代码、环境变量、Drizzle检查、构建、权限、启动）
 COPY . .
 
-# 设置环境变量
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    ENABLE_IDLE_MODE=false \
+    NODE_OPTIONS="--experimental-specifier-resolution=node"
 
-# 检查Drizzle配置，增加详细错误日志
 RUN echo "Checking Drizzle configuration..." && \
     (ls -la drizzle/ 2>&1 | tee drizzle-check.log) || \
     (echo "Drizzle directory check failed, showing log:" && cat drizzle-check.log && \
@@ -46,9 +52,19 @@ RUN echo "Checking Drizzle configuration..." && \
      echo "Directory contents:" && ls -la && \
      echo "Drizzle config:" && cat drizzle.config.ts && \
      echo "=== DRIZZLE CHECK LOG ===" && cat drizzle-check.log && \
-     echo "=== END OF LOGS ===" && false)
+     echo "=== END OF LOGS ===" && false) && \
+    # 验证dotenv是否安装成功
+    echo "Verifying dotenv installation..." && \
+    if [ ! -d "node_modules/dotenv" ]; then \
+        echo "ERROR: dotenv not found in node_modules!" && \
+        ls -la node_modules/ | grep dotenv && \
+        npm list dotenv && \
+        false; \
+    else \
+        echo "dotenv installed successfully."; \
+        npm list dotenv; \
+    fi
 
-# 构建应用
 RUN echo "Building application..." && \
     (npm run build 2>&1 | tee build.log) || \
     (echo "Build failed, showing log:" && cat build.log && \
@@ -62,19 +78,14 @@ RUN echo "Building application..." && \
      echo "=== BUILD LOG ===" && cat build.log && \
      echo "=== END OF LOGS ===" && false)
 
-# 暴露端口
 EXPOSE 3000
 
-# 创建非root用户并设置目录权限
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001 && \
-    # 关键修复：将应用目录所有权赋予nextjs用户和nodejs组
     chown -R nextjs:nodejs /app && \
-    # 确保需要写入的目录有适当权限
-    chmod -R 755 /app
+    chmod -R 755 /app && \
+    chmod -R 775 /app/drizzle /app/.output
 
-# 切换到非root用户
 USER nextjs
 
-# 启动应用
-CMD ["sh", "-c", "npm run vercel-build && npm run dev"]
+CMD ["sh", "-c", "npm run db:migrate && node --experimental-specifier-resolution=node scripts/deploy.js && npm run start"]
