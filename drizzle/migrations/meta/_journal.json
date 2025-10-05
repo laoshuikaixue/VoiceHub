@@ -26,26 +26,19 @@
     {
       "idx": 3,
       "version": "7",
-      "when": 1757770519112,
-      "tag": "20250913133519_curious_gwen_stacy",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
       "when": 1757772919975,
       "tag": "20250913141519_clumsy_maria_hill",
       "breakpoints": true
     },
     {
-      "idx": 5,
+      "idx": 4,
       "version": "7",
       "when": 1757819341115,
       "tag": "20250914030901_majestic_black_widow",
       "breakpoints": true
     },
     {
-      "idx": 6,
+      "idx": 5,
       "version": "7",
       "when": 1759395147253,
       "tag": "20251002085227_deep_silver_sable",
