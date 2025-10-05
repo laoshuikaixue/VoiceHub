@@ -1,10 +1,9 @@
 # 使用官方Node.js运行时作为基础镜像（锁定版本，避免兼容问题）
-FROM node:20.19.5-alpine
+FROM node:20-alpine
 
 # 设置工作目录
 WORKDIR /app
 
-# 复制package.json和package-lock.json（优先利用Docker缓存）
 # 关键：确保package-lock.json被复制到容器内
 COPY package*.json ./
 
