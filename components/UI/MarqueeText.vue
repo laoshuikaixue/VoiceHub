@@ -1,6 +1,6 @@
 <template>
-  <div class="marquee-container" ref="containerEl">
-    <div class="marquee-content" :class="{ scrolling }" ref="contentEl">
+  <div ref="containerEl" class="marquee-container">
+    <div ref="contentEl" :class="{ scrolling }" class="marquee-content">
       <span class="text-item">{{ text }}</span>
       <span v-if="scrolling" class="text-item">{{ text }}</span>
     </div>
@@ -48,7 +48,7 @@ const checkOverflow = async () => {
   if (contentWidth > containerWidth) {
     scrolling.value = true;
     await nextTick(); // Wait for the second span to render.
-    
+
     // The animation scrolls by 50% of the total width.
     // This distance is equivalent to the width of the first span (including its padding).
     const scrollDistance = contentEl.value.firstElementChild.offsetWidth;
@@ -66,18 +66,18 @@ const handleScreenChange = () => {
 
 onMounted(() => {
   mql = window.matchMedia('(max-width: 768px)');
-  
+
   const observer = new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting) {
       handleScreenChange(); // Initial check once visible.
       observer.disconnect();
     }
-  }, { threshold: 0.01 });
+  }, {threshold: 0.01});
 
   if (containerEl.value) {
     observer.observe(containerEl.value);
   }
-  
+
   mql.addEventListener('change', handleScreenChange);
   window.addEventListener('resize', handleScreenChange);
 });

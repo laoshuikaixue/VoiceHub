@@ -1,48 +1,48 @@
 <template>
   <div class="notification-container">
-    <TransitionGroup name="notification-list" tag="div" class="notification-list">
+    <TransitionGroup class="notification-list" name="notification-list" tag="div">
       <div
-        v-for="notification in notifications"
-        :key="notification.id"
-        class="notification-item"
-        :class="{
+          v-for="notification in notifications"
+          :key="notification.id"
+          :class="{
           'success': notification.type === 'success',
           'error': notification.type === 'error',
           'info': notification.type === 'info'
         }"
+          class="notification-item"
       >
         <div class="notification-icon">
-          <Icon 
-            v-if="notification.type === 'success'" 
-            name="success" 
-            :size="16" 
+          <Icon
+              v-if="notification.type === 'success'"
+              :size="16"
+              name="success"
           />
-          <Icon 
-            v-else-if="notification.type === 'error'" 
-            name="error" 
-            :size="16" 
+          <Icon
+              v-else-if="notification.type === 'error'"
+              :size="16"
+              name="error"
           />
-          <Icon 
-            v-else 
-            name="info" 
-            :size="16" 
+          <Icon
+              v-else
+              :size="16"
+              name="info"
           />
         </div>
         <div class="notification-content">
           {{ notification.message }}
         </div>
         <button class="notification-close" @click="removeNotification(notification.id)">
-          <Icon name="close" :size="16" />
+          <Icon :size="16" name="close"/>
         </button>
-        
+
         <!-- 进度条 -->
         <div v-if="notification.autoClose" class="notification-progress">
-          <div 
-            class="notification-progress-bar" 
-            :style="{ 
+          <div
+              :style="{
               animationDuration: `${notification.duration}ms`,
               animationDelay: `${notification.delay || 0}ms`
             }"
+              class="notification-progress-bar"
           ></div>
         </div>
       </div>
@@ -67,15 +67,15 @@ const addNotification = (message, type = 'info', autoClose = true, duration = 30
     duration,
     delay: 0
   }
-  
+
   notifications.value.push(notification)
-  
+
   if (autoClose) {
     setTimeout(() => {
       removeNotification(id)
     }, duration)
   }
-  
+
   return id
 }
 
@@ -284,7 +284,7 @@ onMounted(() => {
     right: 10px;
     left: 10px;
   }
-  
+
   .notification-item {
     max-width: none;
     min-width: auto;

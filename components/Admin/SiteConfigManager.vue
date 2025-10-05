@@ -5,15 +5,15 @@
       <p class="description">管理站点标题、Logo、描述等基本信息</p>
     </div>
 
-    <div class="config-form" v-if="!loading">
+    <div v-if="!loading" class="config-form">
       <div class="form-group">
         <label for="siteTitle">站点标题</label>
         <input
-          id="siteTitle"
-          v-model="formData.siteTitle"
-          type="text"
-          placeholder="请输入站点标题"
-          maxlength="100"
+            id="siteTitle"
+            v-model="formData.siteTitle"
+            maxlength="100"
+            placeholder="请输入站点标题"
+            type="text"
         />
         <small class="help-text">显示在浏览器标题栏和页面顶部</small>
       </div>
@@ -21,23 +21,22 @@
       <div class="form-group">
         <label for="siteLogoUrl">站点Logo URL</label>
         <input
-          id="siteLogoUrl"
-          v-model="formData.siteLogoUrl"
-          type="url"
-          placeholder="请输入Logo图片URL"
+            id="siteLogoUrl"
+            v-model="formData.siteLogoUrl"
+            placeholder="请输入Logo图片URL"
+            type="url"
         />
         <small class="help-text">支持相对路径（如 /logo.png）或完整URL</small>
       </div>
 
 
-
       <div class="form-group">
         <label for="schoolLogoHomeUrl">首页学校Logo URL（可选）</label>
         <input
-          id="schoolLogoHomeUrl"
-          v-model="formData.schoolLogoHomeUrl"
-          type="url"
-          placeholder="请输入首页用的学校Logo图片URL"
+            id="schoolLogoHomeUrl"
+            v-model="formData.schoolLogoHomeUrl"
+            placeholder="请输入首页用的学校Logo图片URL"
+            type="url"
         />
         <small class="help-text">设置后将在首页VoiceHub Logo旁边显示学校Logo（大尺寸）</small>
       </div>
@@ -45,10 +44,10 @@
       <div class="form-group">
         <label for="schoolLogoPrintUrl">打印页学校Logo URL（可选）</label>
         <input
-          id="schoolLogoPrintUrl"
-          v-model="formData.schoolLogoPrintUrl"
-          type="url"
-          placeholder="请输入打印页用的学校Logo图片URL"
+            id="schoolLogoPrintUrl"
+            v-model="formData.schoolLogoPrintUrl"
+            placeholder="请输入打印页用的学校Logo图片URL"
+            type="url"
         />
         <small class="help-text">设置后将在排期打印页面显示学校Logo（小尺寸）</small>
       </div>
@@ -56,11 +55,11 @@
       <div class="form-group">
         <label for="siteDescription">站点描述</label>
         <textarea
-          id="siteDescription"
-          v-model="formData.siteDescription"
-          placeholder="请输入站点描述"
-          rows="3"
-          maxlength="200"
+            id="siteDescription"
+            v-model="formData.siteDescription"
+            maxlength="200"
+            placeholder="请输入站点描述"
+            rows="3"
         ></textarea>
         <small class="help-text">用于SEO和页面介绍，建议控制在200字以内</small>
       </div>
@@ -68,11 +67,11 @@
       <div class="form-group">
         <label for="submissionGuidelines">投稿须知</label>
         <textarea
-          id="submissionGuidelines"
-          v-model="formData.submissionGuidelines"
-          placeholder="请输入投稿须知内容"
-          rows="5"
-          maxlength="1000"
+            id="submissionGuidelines"
+            v-model="formData.submissionGuidelines"
+            maxlength="1000"
+            placeholder="请输入投稿须知内容"
+            rows="5"
         ></textarea>
         <small class="help-text">向用户说明投稿规则和注意事项</small>
       </div>
@@ -80,11 +79,11 @@
       <div class="form-group">
         <label for="icpNumber">备案号（可选）</label>
         <input
-          id="icpNumber"
-          v-model="formData.icpNumber"
-          type="text"
-          placeholder="请输入ICP备案号"
-          maxlength="50"
+            id="icpNumber"
+            v-model="formData.icpNumber"
+            maxlength="50"
+            placeholder="请输入ICP备案号"
+            type="text"
         />
         <small class="help-text">如有备案号，将显示在页面底部</small>
       </div>
@@ -92,12 +91,12 @@
       <!-- 投稿限额设置 -->
       <div class="form-section">
         <h4 class="section-title">投稿限额设置</h4>
-        
+
         <div class="form-group">
           <label class="checkbox-label">
             <input
-              type="checkbox"
-              v-model="formData.enableSubmissionLimit"
+                v-model="formData.enableSubmissionLimit"
+                type="checkbox"
             />
             <span class="checkbox-text">启用投稿限额</span>
           </label>
@@ -108,21 +107,21 @@
           <div class="limit-type-selection">
             <label class="radio-label">
               <input
-                type="radio"
-                name="limitType"
-                value="daily"
-                :checked="limitType === 'daily'"
-                @change="handleLimitTypeChange('daily')"
+                  :checked="limitType === 'daily'"
+                  name="limitType"
+                  type="radio"
+                  value="daily"
+                  @change="handleLimitTypeChange('daily')"
               />
               <span class="radio-text">每日限额</span>
             </label>
             <label class="radio-label">
               <input
-                type="radio"
-                name="limitType"
-                value="weekly"
-                :checked="limitType === 'weekly'"
-                @change="handleLimitTypeChange('weekly')"
+                  :checked="limitType === 'weekly'"
+                  name="limitType"
+                  type="radio"
+                  value="weekly"
+                  @change="handleLimitTypeChange('weekly')"
               />
               <span class="radio-text">每周限额</span>
             </label>
@@ -131,12 +130,12 @@
           <div v-if="limitType === 'daily'" class="form-group">
             <label for="dailySubmissionLimit">每日投稿限额</label>
             <input
-              id="dailySubmissionLimit"
-              v-model.number="formData.dailySubmissionLimit"
-              type="number"
-              min="0"
-              max="100"
-              placeholder="请输入每日最大投稿数量"
+                id="dailySubmissionLimit"
+                v-model.number="formData.dailySubmissionLimit"
+                max="100"
+                min="0"
+                placeholder="请输入每日最大投稿数量"
+                type="number"
             />
             <small class="help-text">每个用户每天最多可以投稿的歌曲数量，设置为0表示关闭投稿功能</small>
           </div>
@@ -144,12 +143,12 @@
           <div v-if="limitType === 'weekly'" class="form-group">
             <label for="weeklySubmissionLimit">每周投稿限额</label>
             <input
-              id="weeklySubmissionLimit"
-              v-model.number="formData.weeklySubmissionLimit"
-              type="number"
-              min="0"
-              max="500"
-              placeholder="请输入每周最大投稿数量"
+                id="weeklySubmissionLimit"
+                v-model.number="formData.weeklySubmissionLimit"
+                max="500"
+                min="0"
+                placeholder="请输入每周最大投稿数量"
+                type="number"
             />
             <small class="help-text">每个用户每周最多可以投稿的歌曲数量，设置为0表示关闭投稿功能</small>
           </div>
@@ -159,23 +158,23 @@
       <!-- 黑名单设置 -->
       <div class="form-section">
         <h4 class="section-title">黑名单设置</h4>
-        
+
         <div class="form-group">
           <label class="checkbox-label">
             <input
-              type="checkbox"
-              v-model="formData.enableBlacklist"
+                v-model="formData.enableBlacklist"
+                type="checkbox"
             />
             <span class="checkbox-text">启用黑名单功能</span>
           </label>
           <small class="help-text">开启后，系统将检查投稿内容是否包含黑名单关键词</small>
         </div>
-        
+
         <div class="form-group">
           <label class="checkbox-label">
             <input
-              type="checkbox"
-              v-model="formData.showBlacklistKeywords"
+                v-model="formData.showBlacklistKeywords"
+                type="checkbox"
             />
             <span class="checkbox-text">显示具体黑名单关键词</span>
           </label>
@@ -186,12 +185,12 @@
       <!-- 隐私设置 -->
       <div class="form-section">
         <h4 class="section-title">隐私设置</h4>
-        
+
         <div class="form-group">
           <label class="checkbox-label">
             <input
-              type="checkbox"
-              v-model="formData.hideStudentInfo"
+                v-model="formData.hideStudentInfo"
+                type="checkbox"
             />
             <span class="checkbox-text">隐藏学生信息</span>
           </label>
@@ -200,19 +199,19 @@
       </div>
 
       <div class="form-actions">
-        <button 
-          @click="saveConfig" 
-          :disabled="saving"
-          class="btn btn-primary"
+        <button
+            :disabled="saving"
+            class="btn btn-primary"
+            @click="saveConfig"
         >
           <span v-if="saving">保存中...</span>
           <span v-else>保存配置</span>
         </button>
-        
-        <button 
-          @click="resetForm" 
-          :disabled="saving"
-          class="btn btn-secondary"
+
+        <button
+            :disabled="saving"
+            class="btn btn-secondary"
+            @click="resetForm"
         >
           重置
         </button>
@@ -232,7 +231,7 @@
 import {computed, onMounted, ref} from 'vue'
 import {useAuth} from '~/composables/useAuth'
 
-const { getAuthConfig } = useAuth()
+const {getAuthConfig} = useAuth()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -284,13 +283,13 @@ const loadConfig = async () => {
     const response = await fetch('/api/admin/system-settings', {
       credentials: 'include'
     })
-    
+
     if (!response.ok) {
       throw new Error('获取配置失败')
     }
-    
+
     const data = await response.json()
-    
+
     formData.value = {
       siteTitle: data.siteTitle || '',
       siteLogoUrl: data.siteLogoUrl || '',
@@ -305,10 +304,10 @@ const loadConfig = async () => {
       showBlacklistKeywords: data.showBlacklistKeywords || false,
       hideStudentInfo: data.hideStudentInfo ?? true
     }
-    
+
     // 保存原始数据用于重置
-    originalData.value = { ...formData.value }
-    
+    originalData.value = {...formData.value}
+
   } catch (error) {
     console.error('加载配置失败:', error)
     // 使用默认值
@@ -325,7 +324,7 @@ const loadConfig = async () => {
       weeklySubmissionLimit: null,
       showBlacklistKeywords: false
     }
-    originalData.value = { ...formData.value }
+    originalData.value = {...formData.value}
   } finally {
     loading.value = false
   }
@@ -349,7 +348,7 @@ const saveConfig = async () => {
       weeklySubmissionLimit: formData.value.weeklySubmissionLimit,
       showBlacklistKeywords: formData.value.showBlacklistKeywords
     }
-    
+
     const response = await fetch('/api/admin/system-settings', {
       method: 'POST',
       headers: {
@@ -361,18 +360,18 @@ const saveConfig = async () => {
         hideStudentInfo: formData.value.hideStudentInfo
       })
     })
-    
+
     if (!response.ok) {
       throw new Error('保存配置失败')
     }
-    
+
     // 更新表单数据和原始数据
-    formData.value = { ...configToSave }
-    originalData.value = { ...configToSave }
-    
+    formData.value = {...configToSave}
+    originalData.value = {...configToSave}
+
     // 显示成功通知
     window.$showNotification('配置保存成功！', 'success')
-    
+
   } catch (error) {
     console.error('保存配置失败:', error)
     window.$showNotification('保存配置失败，请重试', 'error')
@@ -400,7 +399,7 @@ const handleLimitTypeChange = (type) => {
 
 // 重置表单
 const resetForm = () => {
-  formData.value = { ...originalData.value }
+  formData.value = {...originalData.value}
 }
 
 onMounted(() => {
@@ -621,8 +620,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 响应式设计 */
@@ -630,16 +633,16 @@ onMounted(() => {
   .site-config-manager {
     padding: 16px;
   }
-  
+
   .config-form,
   .preview-section {
     padding: 16px;
   }
-  
+
   .form-actions {
     flex-direction: column;
   }
-  
+
   .btn {
     width: 100%;
   }

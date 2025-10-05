@@ -7,72 +7,72 @@
     <Transition name="player-animation">
       <div v-if="song" class="global-audio-player">
         <!-- 播放器信息 -->
-        <PlayerInfo :song="song" />
+        <PlayerInfo :song="song"/>
 
         <!-- 播放器控制 -->
         <PlayerControls
-          ref="playerControlsRef"
-          :is-playing="control.isPlaying.value"
-          :has-error="control.hasError.value"
-          :has-previous="sync.globalAudioPlayer.hasPrevious.value"
-          :has-next="sync.globalAudioPlayer.hasNext.value"
-          :progress="control.progress.value"
-          :is-dragging="control.isDragging.value"
-          :current-time="control.currentTime.value"
-          :duration="control.duration.value"
-          :is-loading="control.isLoadingNewSong.value"
-          @toggle-play="handleTogglePlay"
-          @previous="handlePrevious"
-          @next="handleNext"
-          @start-drag="control.startDrag"
-          @start-touch-drag="control.startTouchDrag"
-          @seek-to-position="control.seekToPosition"
+            ref="playerControlsRef"
+            :current-time="control.currentTime.value"
+            :duration="control.duration.value"
+            :has-error="control.hasError.value"
+            :has-next="sync.globalAudioPlayer.hasNext.value"
+            :has-previous="sync.globalAudioPlayer.hasPrevious.value"
+            :is-dragging="control.isDragging.value"
+            :is-loading="control.isLoadingNewSong.value"
+            :is-playing="control.isPlaying.value"
+            :progress="control.progress.value"
+            @next="handleNext"
+            @previous="handlePrevious"
+            @toggle-play="handleTogglePlay"
+            @start-drag="control.startDrag"
+            @start-touch-drag="control.startTouchDrag"
+            @seek-to-position="control.seekToPosition"
         />
 
         <!-- 播放器操作 -->
         <PlayerActions
-          :show-lyrics="showLyrics"
-          :song="song"
-          :current-quality-text="currentQualityText"
-          :current-platform-options="currentPlatformOptions"
-          :is-current-quality="isCurrentQuality"
-          @toggle-lyrics="toggleLyrics"
-          @select-quality="selectQuality"
-          @close="stopPlaying"
+            :current-platform-options="currentPlatformOptions"
+            :current-quality-text="currentQualityText"
+            :is-current-quality="isCurrentQuality"
+            :show-lyrics="showLyrics"
+            :song="song"
+            @close="stopPlaying"
+            @toggle-lyrics="toggleLyrics"
+            @select-quality="selectQuality"
         />
 
         <!-- 歌词显示区域 -->
         <Transition name="lyrics-slide">
           <div v-if="showLyrics" class="lyrics-panel">
             <LyricsDisplay
-              :compact="true"
-              :show-controls="false"
-              :allow-seek="true"
-              height="120px"
-              :current-lyrics="control.lyrics.currentLyrics.value"
-              :translation-lyrics="control.lyrics.translationLyrics.value"
-              :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
-              :current-lyric-index="control.lyrics.currentLyricIndex.value"
-              :current-time="control.currentTime.value"
-              :is-loading="control.lyrics.isLoading.value"
-              :error="control.lyrics.error.value"
-              @seek="handleLyricSeek"
+                :allow-seek="true"
+                :compact="true"
+                :current-lyric-index="control.lyrics.currentLyricIndex.value"
+                :current-lyrics="control.lyrics.currentLyrics.value"
+                :current-time="control.currentTime.value"
+                :error="control.lyrics.error.value"
+                :is-loading="control.lyrics.isLoading.value"
+                :show-controls="false"
+                :translation-lyrics="control.lyrics.translationLyrics.value"
+                :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
+                height="120px"
+                @seek="handleLyricSeek"
             />
           </div>
         </Transition>
 
         <!-- 音频元素 -->
         <AudioElement
-          ref="audioElementRef"
-          :song="song"
-          @timeupdate="handleTimeUpdate"
-          @ended="handleEnded"
-          @loadedmetadata="handleLoaded"
-          @error="handleError"
-          @play="handlePlay"
-          @pause="handlePause"
-          @loadstart="handleLoadStart"
-          @canplay="handleCanPlay"
+            ref="audioElementRef"
+            :song="song"
+            @canplay="handleCanPlay"
+            @ended="handleEnded"
+            @error="handleError"
+            @loadedmetadata="handleLoaded"
+            @loadstart="handleLoadStart"
+            @pause="handlePause"
+            @play="handlePlay"
+            @timeupdate="handleTimeUpdate"
         />
       </div>
     </Transition>
@@ -111,7 +111,7 @@ const emit = defineEmits(['close', 'ended', 'error', 'songChange'])
 // 使用 composables
 const control = useAudioPlayerControl()
 const sync = useAudioPlayerSync()
-const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+const {getQualityLabel, getQuality, getQualityOptions, saveQuality} = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
 
 // 组件引用
@@ -133,13 +133,13 @@ const progressBar = computed(() => playerControlsRef.value?.progressBar)
 // 音频事件处理器
 const handleTimeUpdate = () => {
   if (!audioPlayer.value || isSyncingFromGlobal.value) return
-  
+
   const currentTime = audioPlayer.value.currentTime
   const duration = audioPlayer.value.duration
-  
+
   // 修复参数传递问题：onTimeUpdate只接受一个参数
   control.onTimeUpdate(currentTime)
-  
+
   // 只在播放状态下发送进度更新，避免暂停时发送位置为0的更新
   // 不传递song参数，避免覆盖已设置的元数据
   if (control.isPlaying.value) {
@@ -149,10 +149,10 @@ const handleTimeUpdate = () => {
 
 const handlePlay = () => {
   if (isSyncingFromGlobal.value) return
-  
+
   control.onPlay()
   sync.syncPlayStateToGlobal(true, props.song)
-  
+
   // 直接调用鸿蒙侧播放状态更新，不传递歌曲信息避免覆盖元数据
   if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
     window.voiceHubPlayer.onPlayStateChanged(true, {
@@ -160,7 +160,7 @@ const handlePlay = () => {
       duration: control.duration.value
     })
   }
-  
+
   sync.sendWebSocketUpdate({
     songId: props.song?.id,
     isPlaying: true,
@@ -173,10 +173,10 @@ const handlePlay = () => {
 
 const handlePause = () => {
   if (isSyncingFromGlobal.value) return
-  
+
   control.onPause()
   sync.syncPlayStateToGlobal(false, props.song)
-  
+
   // 直接调用鸿蒙侧播放状态更新，不传递歌曲信息避免覆盖元数据
   if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
     window.voiceHubPlayer.onPlayStateChanged(false, {
@@ -184,7 +184,7 @@ const handlePause = () => {
       duration: control.duration.value
     })
   }
-  
+
   sync.sendWebSocketUpdate({
     songId: props.song?.id,
     isPlaying: false,
@@ -197,9 +197,9 @@ const handlePause = () => {
 
 const handleLoaded = async () => {
   if (!audioPlayer.value) return
-  
+
   control.onLoaded(audioPlayer.value.duration)
-  
+
   // 先传递基本的歌曲元数据给鸿蒙侧（不包含歌词）
   sync.notifyHarmonyOS('metadata', {
     title: props.song?.title || '',
@@ -208,41 +208,41 @@ const handleLoaded = async () => {
     artwork: props.song?.cover || '',
     duration: audioPlayer.value.duration
   }, props.song)
-  
+
   // 如果歌曲有平台信息，主动获取并等待歌词加载完成后单独传递歌词
   if (props.song?.musicPlatform && props.song?.musicId) {
     // 主动触发歌词获取
     await control.lyrics.fetchLyrics(props.song.musicPlatform, props.song.musicId)
-    
+
     // 等待歌词数据实际加载完成，最多等待8秒
     const maxWaitTime = 8000
     const startTime = Date.now()
-    
+
     // 等待歌词加载状态变化：从未开始 -> 加载中 -> 完成/失败
     while ((Date.now() - startTime) < maxWaitTime) {
       // 检查是否有歌词数据
       if (control.lyrics.currentLyrics.value.length > 0) {
         break
       }
-      
+
       // 检查是否加载失败（不在加载中且有错误）
       if (!control.lyrics.isLoading.value && control.lyrics.error.value) {
         break
       }
-      
+
       // 检查是否加载完成但无歌词（不在加载中且无错误且无歌词）
       if (!control.lyrics.isLoading.value && !control.lyrics.error.value && control.lyrics.currentLyrics.value.length === 0) {
         break
       }
-      
+
       // 等待100ms后再次检查
       await new Promise(resolve => setTimeout(resolve, 100))
     }
-    
+
     // 检查歌词是否加载成功
     const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
     const hasValidLyrics = harmonyLyrics && harmonyLyrics !== '[00:00.00]暂无歌词' && control.lyrics.currentLyrics.value.length > 0
-    
+
     if (hasValidLyrics) {
       // 使用专门的歌词更新方法
       control.lyrics.notifyHarmonyOSLyricsUpdate(harmonyLyrics)
@@ -251,7 +251,7 @@ const handleLoaded = async () => {
       control.lyrics.notifyHarmonyOSLyricsUpdate('')
     }
   }
-  
+
   // 延迟同步播放列表状态
   setTimeout(() => {
     sync.notifyPlaylistState()
@@ -260,17 +260,17 @@ const handleLoaded = async () => {
 
 const handleError = async (error) => {
   control.onError(error)
-  
+
   // 使用增强的错误处理逻辑
   const result = await enhanced.handlePlaybackError(
-    error,
-    props.song,
-    (newSong) => emit('songChange', newSong),
-    handleNext,
-    () => emit('close'),
-    props.isPlaylistMode
+      error,
+      props.song,
+      (newSong) => emit('songChange', newSong),
+      handleNext,
+      () => emit('close'),
+      props.isPlaylistMode
   )
-  
+
   if (result.handled) {
     if (result.shouldRetry) {
       // 重试当前歌曲
@@ -365,36 +365,36 @@ const selectQuality = async (qualityValue) => {
 
   // 使用增强的音质切换功能
   const result = await enhanced.enhancedQualitySwitch(props.song, qualityValue)
-  
+
   if (result.success) {
     // 更新歌曲的音乐链接
     const updatedSong = {
       ...props.song,
       musicUrl: result.url
     }
-    
+
     // 通知父组件更新歌曲
     emit('songChange', updatedSong)
-    
+
     // 重新加载音频
     if (audioPlayer.value) {
       const wasPlaying = control.isPlaying.value
       const currentTime = control.currentTime.value
-      
+
       audioPlayer.value.load()
-      
+
       // 如果之前在播放，加载完成后继续播放
       if (wasPlaying) {
         audioPlayer.value.addEventListener('canplay', () => {
           audioPlayer.value.currentTime = currentTime
           control.play()
-        }, { once: true })
+        }, {once: true})
       }
     }
-    
+
     // 同步状态到全局
     sync.syncPlayStateToGlobal(control.isPlaying.value, updatedSong)
-    
+
     // 直接调用鸿蒙侧播放状态更新
     if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
       window.voiceHubPlayer.onPlayStateChanged(control.isPlaying.value, {
@@ -432,13 +432,13 @@ const stopPlaying = () => {
 // 监听器和生命周期钩子
 watch(() => props.song, async (newSong, oldSong) => {
   if (!newSong) return
-  
+
   // 避免双向触发
   if (isSyncingFromGlobal.value) return
-  
+
   // 确保组件已经挂载
   if (!isMounted.value) return
-  
+
   // 如果是新歌曲，加载并播放
   if (!oldSong || newSong.id !== oldSong.id) {
     const loadSuccess = await control.loadSong(newSong)
@@ -447,14 +447,14 @@ watch(() => props.song, async (newSong, oldSong) => {
       await control.play()
     }
   }
-}, { immediate: false })
+}, {immediate: false})
 
 // 监听全局播放状态变化，避免双向触发
 watch(() => sync.globalAudioPlayer.getPlayingStatus().value, (newPlayingStatus) => {
   if (isSyncingFromGlobal.value) return
-  
+
   isSyncingFromGlobal.value = true
-  
+
   if (!newPlayingStatus && control.isPlaying.value) {
     control.pause()
   } else if (newPlayingStatus && !control.isPlaying.value) {
@@ -463,18 +463,18 @@ watch(() => sync.globalAudioPlayer.getPlayingStatus().value, (newPlayingStatus) 
       control.play()
     }
   }
-  
+
   nextTick(() => {
     isSyncingFromGlobal.value = false
   })
-}, { immediate: true })
+}, {immediate: true})
 
 // 监听全局歌曲变化
 watch(() => sync.globalAudioPlayer.getCurrentSong().value, (newGlobalSong) => {
   if (newGlobalSong && (!props.song || newGlobalSong.id !== props.song.id)) {
     emit('songChange', newGlobalSong)
   }
-}, { immediate: false })
+}, {immediate: false})
 
 // 监听播放列表状态变化
 watch([
@@ -484,64 +484,64 @@ watch([
   () => sync.globalAudioPlayer.getCurrentPlaylist().value
 ], () => {
   sync.notifyPlaylistState()
-}, { immediate: true })
+}, {immediate: true})
 
 onMounted(async () => {
   // 处理热重载清理
   enhanced.handleHotReload()
-  
+
   // 设置挂载标记
   isMounted.value = true
-  
+
   // 等待子组件挂载完成
   await nextTick()
-  
+
   // 确保音频播放器引用已正确获取
   let retryCount = 0
   const maxRetries = 10
-  
+
   while (!audioPlayer.value && retryCount < maxRetries) {
     await new Promise(resolve => setTimeout(resolve, 100))
     retryCount++
   }
-  
+
   if (!audioPlayer.value) {
     console.error('[AudioPlayer] ❌ 无法获取音频播放器引用，自动播放将失败')
     return
   }
-  
+
   // 设置音频播放器和进度条引用
   control.setAudioPlayerRef(audioPlayer.value)
   control.setProgressBarRef(progressBar.value)
-  
+
   // 初始化 WebSocket 连接
   sync.initializeWebSocket()
-  
+
   // 重置重试状态
   enhanced.resetRetryState()
-  
+
   // 处理初始歌曲的播放
   if (props.song) {
     const loadSuccess = await control.loadSong(props.song)
     if (loadSuccess) {
       sync.setGlobalPlaylist(props.song, props.playlist)
-      
+
       // 传递加载状态到鸿蒙侧
       sync.notifyHarmonyOS('load', {
         position: 0,
         duration: control.duration.value
       }, props.song)
-      
+
       // 尝试播放，如果失败（由于浏览器自动播放策略），等待用户交互
       const playSuccess = await control.play()
-      
+
       if (!playSuccess) {
         // 通知鸿蒙侧播放失败（暂停状态）
         sync.notifyHarmonyOS('pause', {
           position: 0,
           duration: control.duration.value
         }, props.song)
-        
+
         // 监听用户交互，一旦用户交互就尝试播放
         const handleUserInteraction = async () => {
           if (!control.hasUserInteracted.value && props.song) {
@@ -554,14 +554,14 @@ onMounted(async () => {
             }
           }
         }
-        
-        document.addEventListener('click', handleUserInteraction, { once: true })
-        document.addEventListener('touchstart', handleUserInteraction, { once: true })
-        document.addEventListener('keydown', handleUserInteraction, { once: true })
+
+        document.addEventListener('click', handleUserInteraction, {once: true})
+        document.addEventListener('touchstart', handleUserInteraction, {once: true})
+        document.addEventListener('keydown', handleUserInteraction, {once: true})
       }
     }
   }
-  
+
   // 初始化鸿蒙系统控制事件
   sync.initializeHarmonyOSControls({
     onPlay: () => {
@@ -582,7 +582,7 @@ onMounted(async () => {
       isSyncingFromGlobal.value = true
       control.stop()
       sync.syncStopToGlobal()
-      
+
       // 通知鸿蒙侧清理元数据
       if (sync.isHarmonyOS()) {
         sync.notifyHarmonyOS('metadata', {}, {
@@ -594,7 +594,7 @@ onMounted(async () => {
           position: 0
         }, '')
       }
-      
+
       nextTick(() => {
         isSyncingFromGlobal.value = false
       })
@@ -611,7 +611,7 @@ onMounted(async () => {
       sync.updateGlobalPosition(time, control.duration.value)
     }
   })
-  
+
   // 暴露播放器实例到全局（鸿蒙环境）
   if (sync.isHarmonyOS()) {
     window.voiceHubPlayerInstance = {
@@ -629,25 +629,24 @@ onMounted(async () => {
 onUnmounted(() => {
   // 清理音频播放器
   control.cleanup()
-  
+
   // 清理鸿蒙系统控制事件
   sync.cleanupHarmonyOSControls()
-  
+
   // 清理全局实例
   if (sync.isHarmonyOS() && window.voiceHubPlayerInstance) {
     delete window.voiceHubPlayerInstance
   }
-  
+
   // 重置重试状态
   enhanced.resetRetryState()
 })
 
 
-
 // 格式化时间
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return '0:00'
-  
+
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
@@ -1020,7 +1019,6 @@ const formatTime = (seconds) => {
 }
 
 
-
 .time-display {
   display: flex;
   justify-content: space-between;
@@ -1244,7 +1242,6 @@ const formatTime = (seconds) => {
   }
 
 
-
   .player-animation-enter-active {
     animation-duration: 0.4s; /* 移动设备上稍微加快动画速度 */
   }
@@ -1333,14 +1330,20 @@ const formatTime = (seconds) => {
 .action-btn.active {
   background: rgba(59, 130, 246, 0.25);
   color: #fff;
-  box-shadow: 0 0 10px rgba(59,130,246,0.35);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
   transform: scale(1.06);
   animation: pulse 1.8s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 10px rgba(59,130,246,0.35); }
-  50% { box-shadow: 0 0 18px rgba(59,130,246,0.55); }
-  100% { box-shadow: 0 0 10px rgba(59,130,246,0.35); }
+  0% {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(59, 130, 246, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
+  }
 }
 </style>

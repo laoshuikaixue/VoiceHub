@@ -3,46 +3,46 @@
     <div class="progress-container">
       <div class="control-with-progress">
         <!-- 上一首按钮 -->
-        <button 
-          class="control-btn prev-btn" 
-          @click="$emit('previous')" 
-          :disabled="!hasPrevious"
-          :title="hasPrevious ? '上一首' : '没有上一首'"
+        <button
+            :disabled="!hasPrevious"
+            :title="hasPrevious ? '上一首' : '没有上一首'"
+            class="control-btn prev-btn"
+            @click="$emit('previous')"
         >
-          <Icon name="skip-back" :size="18" color="white" />
+          <Icon :size="18" color="white" name="skip-back"/>
         </button>
-        
+
         <!-- 播放/暂停按钮 -->
-        <button class="control-btn play-pause-btn" @click="$emit('togglePlay')" :disabled="hasError || isLoading">
+        <button :disabled="hasError || isLoading" class="control-btn play-pause-btn" @click="$emit('togglePlay')">
           <div v-if="isLoading" class="loading-spinner"></div>
-          <Icon v-else-if="isPlaying" name="pause" :size="18" color="white" />
-          <Icon v-else name="play" :size="18" color="white" />
+          <Icon v-else-if="isPlaying" :size="18" color="white" name="pause"/>
+          <Icon v-else :size="18" color="white" name="play"/>
         </button>
-        
+
         <!-- 下一首按钮 -->
-        <button 
-          class="control-btn next-btn" 
-          @click="$emit('next')" 
-          :disabled="!hasNext"
-          :title="hasNext ? '下一首' : '没有下一首'"
+        <button
+            :disabled="!hasNext"
+            :title="hasNext ? '下一首' : '没有下一首'"
+            class="control-btn next-btn"
+            @click="$emit('next')"
         >
-          <Icon name="skip-forward" :size="18" color="white" />
+          <Icon :size="18" color="white" name="skip-forward"/>
         </button>
 
         <div class="progress-container-wrapper">
           <div
-            class="progress-bar"
-            @mousedown="handleProgressMouseDown"
-            @touchstart="handleProgressTouchStart"
-            @click="handleProgressClick"
-            ref="progressBar"
+              ref="progressBar"
+              class="progress-bar"
+              @click="handleProgressClick"
+              @mousedown="handleProgressMouseDown"
+              @touchstart="handleProgressTouchStart"
           >
-            <div 
-              class="progress" 
-              :class="{ 'dragging': isDragging }"
-              :style="{ '--progress-width': `${progress}%` }"
+            <div
+                :class="{ 'dragging': isDragging }"
+                :style="{ '--progress-width': `${progress}%` }"
+                class="progress"
             >
-              <div class="progress-thumb" :class="{ 'dragging': isDragging }"></div>
+              <div :class="{ 'dragging': isDragging }" class="progress-thumb"></div>
             </div>
           </div>
         </div>
@@ -206,8 +206,12 @@ defineExpose({
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .progress-container-wrapper {
@@ -283,18 +287,18 @@ defineExpose({
   .progress-bar {
     height: 24px; /* 增加移动端触摸区域 */
   }
-  
+
   .progress {
     height: 6px; /* 移动端稍微增加高度 */
   }
-  
+
   .progress-thumb {
     width: 16px; /* 移动端增大拇指大小 */
     height: 16px;
     left: calc(var(--progress-width, 0%) - 8px);
     opacity: 1; /* 移动端始终显示 */
   }
-  
+
   .progress-bar:active .progress {
     height: 8px; /* 触摸时进一步增大 */
   }

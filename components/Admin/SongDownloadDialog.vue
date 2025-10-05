@@ -4,9 +4,9 @@
       <div class="dialog-header">
         <h3>下载歌曲</h3>
         <button class="close-btn" @click="closeDialog">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
           </svg>
         </button>
       </div>
@@ -17,11 +17,11 @@
           <h4>选择音质</h4>
           <div class="quality-options">
             <div
-              v-for="option in qualityOptions"
-              :key="option.value"
-              class="quality-option"
-              :class="{ 'active': selectedQuality === option.value }"
-              @click="selectedQuality = option.value"
+                v-for="option in qualityOptions"
+                :key="option.value"
+                :class="{ 'active': selectedQuality === option.value }"
+                class="quality-option"
+                @click="selectedQuality = option.value"
             >
               <div class="option-info">
                 <span class="option-label">{{ option.label }}</span>
@@ -39,22 +39,22 @@
           <div class="section-header">
             <h4>选择要下载的歌曲</h4>
             <div class="select-actions">
-              <button @click="selectAll" class="select-btn">全选</button>
-              <button @click="selectNone" class="select-btn">取消全选</button>
+              <button class="select-btn" @click="selectAll">全选</button>
+              <button class="select-btn" @click="selectNone">取消全选</button>
             </div>
           </div>
-          
+
           <div class="songs-list">
             <div
-              v-for="song in songs"
-              :key="song.id"
-              class="song-item"
-              :class="{ 'selected': selectedSongs.has(song.song.id) }"
-              @click="toggleSongSelection(song.song.id)"
+                v-for="song in songs"
+                :key="song.id"
+                :class="{ 'selected': selectedSongs.has(song.song.id) }"
+                class="song-item"
+                @click="toggleSongSelection(song.song.id)"
             >
               <div class="song-checkbox">
                 <div v-if="selectedSongs.has(song.song.id)" class="checkbox-checked">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <polyline points="20,6 9,17 4,12"/>
                   </svg>
                 </div>
@@ -77,11 +77,11 @@
           <span>已选择 {{ selectedSongs.size }} 首歌曲</span>
         </div>
         <div class="dialog-actions">
-          <button @click="closeDialog" class="cancel-btn">取消</button>
-          <button 
-            @click="startDownload" 
-            class="download-btn"
-            :disabled="selectedSongs.size === 0 || downloading"
+          <button class="cancel-btn" @click="closeDialog">取消</button>
+          <button
+              :disabled="selectedSongs.size === 0 || downloading"
+              class="download-btn"
+              @click="startDownload"
           >
             {{ downloading ? '下载中...' : '开始下载' }}
           </button>
@@ -95,9 +95,9 @@
           <span>{{ Math.round((downloadedCount / totalCount) * 100) }}%</span>
         </div>
         <div class="progress-bar">
-          <div 
-            class="progress-fill" 
-            :style="{ width: `${(downloadedCount / totalCount) * 100}%` }"
+          <div
+              :style="{ width: `${(downloadedCount / totalCount) * 100}%` }"
+              class="progress-fill"
           ></div>
         </div>
         <div v-if="currentDownloadSong" class="current-download">
@@ -137,7 +137,7 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 // 音质相关
-const { getQualityOptions, getQuality } = useAudioQuality()
+const {getQualityOptions, getQuality} = useAudioQuality()
 
 // 获取默认音质选项（使用网易云音乐的选项作为通用选项）
 const qualityOptions = computed(() => {
@@ -209,14 +209,14 @@ const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
     return url
   } catch (error) {
     console.error('获取音乐播放链接失败:', error)
-    
+
     // 如果是第一次失败且有音乐平台信息，则自动重试一次
     if (retryCount === 0 && song.musicPlatform && song.musicId) {
       console.log(`正在重试获取音乐链接: ${song.musicPlatform}, ${song.musicId}`)
       await new Promise(resolve => setTimeout(resolve, 1000)) // 等待1秒后重试
       return getMusicUrlForDownload(song, quality, 1)
     }
-    
+
     throw new Error('获取音乐播放链接失败: ' + error.message)
   }
 }
@@ -230,14 +230,14 @@ const downloadFile = async (url, filename) => {
 
   const blob = await response.blob()
   const downloadUrl = window.URL.createObjectURL(blob)
-  
+
   const link = document.createElement('a')
   link.href = downloadUrl
   link.download = filename
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  
+
   window.URL.revokeObjectURL(downloadUrl)
 }
 
@@ -248,7 +248,7 @@ const startDownload = async () => {
   downloading.value = true
   downloadedCount.value = 0
   downloadErrors.value = []
-  
+
   const selectedSongsList = props.songs.filter(song => selectedSongs.value.has(song.song.id))
   totalCount.value = selectedSongsList.length
 
@@ -259,14 +259,14 @@ const startDownload = async () => {
     try {
       // 获取音频URL
       const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
-      
+
       // 生成文件名：歌手名 - 歌曲名.mp3
       const filename = `${song.artist} - ${song.title}.mp3`
-        .replace(/[<>:"/\\|?*]/g, '_') // 替换不合法的文件名字符
-      
+          .replace(/[<>:"/\\|?*]/g, '_') // 替换不合法的文件名字符
+
       // 下载文件
       await downloadFile(audioUrl, filename)
-      
+
       downloadedCount.value++
     } catch (error) {
       console.error(`下载失败: ${song.title}`, error)
@@ -284,7 +284,7 @@ const startDownload = async () => {
   }
 
   currentDownloadSong.value = ''
-  
+
   // 显示完成通知
   if (window.$showNotification) {
     const successCount = downloadedCount.value - downloadErrors.value.length

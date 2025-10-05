@@ -1,15 +1,15 @@
 <template>
   <Transition
-    :name="transitionName"
-    :mode="transitionMode"
-    @before-enter="onBeforeEnter"
-    @enter="onEnter"
-    @after-enter="onAfterEnter"
-    @before-leave="onBeforeLeave"
-    @leave="onLeave"
-    @after-leave="onAfterLeave"
+      :mode="transitionMode"
+      :name="transitionName"
+      @enter="onEnter"
+      @leave="onLeave"
+      @before-enter="onBeforeEnter"
+      @after-enter="onAfterEnter"
+      @before-leave="onBeforeLeave"
+      @after-leave="onAfterLeave"
   >
-    <slot />
+    <slot/>
   </Transition>
 </template>
 
@@ -33,17 +33,17 @@ const transitionName = computed(() => {
   if (prevPath === '/' && currentPath === '/dashboard') {
     return 'slide-left'
   }
-  
+
   // 后台到首页的过渡
   if (prevPath === '/dashboard' && currentPath === '/') {
     return 'slide-right'
   }
-  
+
   // 登录相关页面使用淡入淡出
   if (currentPath.includes('/login') || currentPath.includes('/register')) {
     return 'fade'
   }
-  
+
   // 其他页面使用默认过渡
   return 'page'
 })
@@ -60,7 +60,7 @@ const transitionMode = computed(() => {
 const onBeforeEnter = (el) => {
   isTransitioning.value = true
   el.style.position = transitionName.value.includes('slide') ? 'absolute' : 'relative'
-  
+
   // 添加路由数据属性用于CSS选择器
   el.setAttribute('data-route', route.name || 'unknown')
 }
@@ -74,7 +74,7 @@ const onEnter = (el, done) => {
 const onAfterEnter = (el) => {
   isTransitioning.value = false
   el.style.position = 'relative'
-  
+
   // 清理数据属性
   el.removeAttribute('data-route')
 }
@@ -82,7 +82,7 @@ const onAfterEnter = (el) => {
 const onBeforeLeave = (el) => {
   isTransitioning.value = true
   el.style.position = transitionName.value.includes('slide') ? 'absolute' : 'relative'
-  
+
   // 添加路由数据属性
   el.setAttribute('data-route', route.name || 'unknown')
 }
@@ -94,7 +94,7 @@ const onLeave = (el, done) => {
 const onAfterLeave = (el) => {
   isTransitioning.value = false
   el.style.position = 'relative'
-  
+
   // 清理数据属性
   el.removeAttribute('data-route')
 }

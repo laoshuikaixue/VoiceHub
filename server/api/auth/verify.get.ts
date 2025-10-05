@@ -7,112 +7,112 @@ import {eq} from 'drizzle-orm'
 // 用户认证缓存（永久缓存，登出或权限变更时主动失效）
 
 export default defineEventHandler(async (event) => {
-  try {
-    const token = getCookie(event, 'auth-token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
-    
-    if (!token) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: '未提供认证令牌'
-      })
-    }
+    try {
+        const token = getCookie(event, 'auth-token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
 
-    // 验证JWT令牌
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number }
-    const userId = decoded.userId
-    
-    // 优先从Redis缓存获取用户认证状态
-    if (isRedisReady()) {
-      const cachedUser = await executeRedisCommand(async () => {
-        const client = (await import('../../utils/redis')).getRedisClient()
-        if (!client) return null
-        
-        const cacheKey = `auth:user:${userId}`
-        const userData = await client.get(cacheKey)
-        
-        if (userData) {
-          console.log(`[API] 用户认证缓存命中: ${userId}`)
-          return JSON.parse(userData)
+        if (!token) {
+            throw createError({
+                statusCode: 401,
+                statusMessage: '未提供认证令牌'
+            })
         }
-        
-        return null
-      })
-      
-      if (cachedUser) {
-        // 为缓存的用户数据添加requirePasswordChange字段
-        const userWithRequirePasswordChange = {
-          id: cachedUser.id,
-          username: cachedUser.username,
-          name: cachedUser.name,
-          grade: cachedUser.grade,
-          class: cachedUser.class,
-          role: cachedUser.role,
-          requirePasswordChange: cachedUser.forcePasswordChange || !cachedUser.passwordChangedAt
+
+        // 验证JWT令牌
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number }
+        const userId = decoded.userId
+
+        // 优先从Redis缓存获取用户认证状态
+        if (isRedisReady()) {
+            const cachedUser = await executeRedisCommand(async () => {
+                const client = (await import('../../utils/redis')).getRedisClient()
+                if (!client) return null
+
+                const cacheKey = `auth:user:${userId}`
+                const userData = await client.get(cacheKey)
+
+                if (userData) {
+                    console.log(`[API] 用户认证缓存命中: ${userId}`)
+                    return JSON.parse(userData)
+                }
+
+                return null
+            })
+
+            if (cachedUser) {
+                // 为缓存的用户数据添加requirePasswordChange字段
+                const userWithRequirePasswordChange = {
+                    id: cachedUser.id,
+                    username: cachedUser.username,
+                    name: cachedUser.name,
+                    grade: cachedUser.grade,
+                    class: cachedUser.class,
+                    role: cachedUser.role,
+                    requirePasswordChange: cachedUser.forcePasswordChange || !cachedUser.passwordChangedAt
+                }
+                return {
+                    user: userWithRequirePasswordChange,
+                    valid: true
+                }
+            }
         }
+
+        // 缓存未命中或Redis不可用，从数据库获取用户信息
+        const userResult = await db.select({
+            id: users.id,
+            username: users.username,
+            name: users.name,
+            grade: users.grade,
+            class: users.class,
+            role: users.role,
+            forcePasswordChange: users.forcePasswordChange,
+            passwordChangedAt: users.passwordChangedAt
+        }).from(users).where(eq(users.id, userId))
+
+        const dbUser = userResult[0] || null
+
+        if (!dbUser) {
+            throw createError({
+                statusCode: 401,
+                statusMessage: '用户不存在'
+            })
+        }
+
+        // 构建返回的用户对象，只包含需要的字段
+        const user = {
+            id: dbUser.id,
+            username: dbUser.username,
+            name: dbUser.name,
+            grade: dbUser.grade,
+            class: dbUser.class,
+            role: dbUser.role,
+            requirePasswordChange: dbUser.forcePasswordChange || !dbUser.passwordChangedAt
+        }
+
+        // 将用户认证状态缓存到Redis（如果可用）- 永久缓存
+        if (isRedisReady()) {
+            await executeRedisCommand(async () => {
+                const client = (await import('../../utils/redis')).getRedisClient()
+                if (!client) return
+
+                const cacheKey = `auth:user:${userId}`
+                // 缓存完整的数据库用户信息，用于后续验证
+                await client.set(cacheKey, JSON.stringify(dbUser))
+                console.log(`[API] 用户认证状态已缓存: ${userId}`)
+            })
+        }
+
         return {
-          user: userWithRequirePasswordChange,
-          valid: true
+            user,
+            valid: true
         }
-      }
-    }
-    
-    // 缓存未命中或Redis不可用，从数据库获取用户信息
-    const userResult = await db.select({
-      id: users.id,
-      username: users.username,
-      name: users.name,
-      grade: users.grade,
-      class: users.class,
-      role: users.role,
-      forcePasswordChange: users.forcePasswordChange,
-      passwordChangedAt: users.passwordChangedAt
-    }).from(users).where(eq(users.id, userId))
-    
-    const dbUser = userResult[0] || null
-    
-    if (!dbUser) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: '用户不存在'
-      })
-    }
-    
-    // 构建返回的用户对象，只包含需要的字段
-    const user = {
-      id: dbUser.id,
-      username: dbUser.username,
-      name: dbUser.name,
-      grade: dbUser.grade,
-      class: dbUser.class,
-      role: dbUser.role,
-      requirePasswordChange: dbUser.forcePasswordChange || !dbUser.passwordChangedAt
-    }
+    } catch (error) {
+        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+            throw createError({
+                statusCode: 401,
+                statusMessage: '令牌无效或已过期'
+            })
+        }
 
-    // 将用户认证状态缓存到Redis（如果可用）- 永久缓存
-    if (isRedisReady()) {
-      await executeRedisCommand(async () => {
-        const client = (await import('../../utils/redis')).getRedisClient()
-        if (!client) return
-        
-        const cacheKey = `auth:user:${userId}`
-        // 缓存完整的数据库用户信息，用于后续验证
-        await client.set(cacheKey, JSON.stringify(dbUser))
-        console.log(`[API] 用户认证状态已缓存: ${userId}`)
-      })
+        throw error
     }
-
-    return {
-      user,
-      valid: true
-    }
-  } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      throw createError({
-        statusCode: 401,
-        statusMessage: '令牌无效或已过期'
-      })
-    }
-    
-    throw error
-  }
 })

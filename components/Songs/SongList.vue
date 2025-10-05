@@ -1,72 +1,75 @@
 <template>
   <div class="song-list">
     <!-- 移除顶部径向渐变 -->
-    
+
     <div class="song-list-header">
       <div class="tab-controls">
-        <button 
-          class="tab-button" 
-          :class="{ 'active': activeTab === 'all' }"
-          @click="setActiveTab('all')"
-          v-ripple
+        <button
+            v-ripple
+            :class="{ 'active': activeTab === 'all' }"
+            class="tab-button"
+            @click="setActiveTab('all')"
         >
           全部投稿
         </button>
-        <button 
-          class="tab-button" 
-          :class="{ 'active': activeTab === 'mine' }"
-          @click="setActiveTab('mine')"
-          v-if="isAuthenticated"
-          v-ripple
+        <button
+            v-if="isAuthenticated"
+            v-ripple
+            :class="{ 'active': activeTab === 'mine' }"
+            class="tab-button"
+            @click="setActiveTab('mine')"
         >
           我的投稿
         </button>
       </div>
-      
+
       <div class="search-actions">
         <div class="search-box">
-          <input 
-            type="text" 
-            v-model="searchQuery" 
-            placeholder="输入想要搜索的歌曲" 
-            class="search-input"
+          <input
+              v-model="searchQuery"
+              class="search-input"
+              placeholder="输入想要搜索的歌曲"
+              type="text"
           />
           <span class="search-icon">🔍</span>
         </div>
-        
+
         <!-- 学期选择器 -->
         <div v-if="availableSemesters.length > 1" class="semester-selector-compact">
-          <button 
-            class="semester-toggle-btn"
-            @click="showSemesterDropdown = !showSemesterDropdown"
-            :title="'当前学期: ' + selectedSemester"
+          <button
+              :title="'当前学期: ' + selectedSemester"
+              class="semester-toggle-btn"
+              @click="showSemesterDropdown = !showSemesterDropdown"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/>
             </svg>
           </button>
-          
+
           <div v-if="showSemesterDropdown" class="semester-dropdown">
-            <div 
-              v-for="semester in availableSemesters" 
-              :key="semester"
-              class="semester-option"
-              :class="{ 'active': selectedSemester === semester }"
-              @click="onSemesterChange(semester)"
+            <div
+                v-for="semester in availableSemesters"
+                :key="semester"
+                :class="{ 'active': selectedSemester === semester }"
+                class="semester-option"
+                @click="onSemesterChange(semester)"
             >
               {{ semester }}
             </div>
           </div>
         </div>
-        
+
         <!-- 添加刷新按钮 - 使用SVG图标 -->
-        <button 
-          class="refresh-button"
-          @click="handleRefresh"
-          :disabled="loading"
-          :title="loading ? '正在刷新...' : '刷新歌曲列表'"
+        <button
+            :disabled="loading"
+            :title="loading ? '正在刷新...' : '刷新歌曲列表'"
+            class="refresh-button"
+            @click="handleRefresh"
         >
-          <svg class="refresh-icon" :class="{ 'rotating': loading }" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg :class="{ 'rotating': loading }" class="refresh-icon" fill="none" height="16"
+               stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16"
+               xmlns="http://www.w3.org/2000/svg">
             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
           </svg>
         </button>
@@ -74,31 +77,31 @@
     </div>
 
     <!-- 使用Transition组件包裹所有内容 -->
-    <Transition name="tab-switch" mode="out-in">
-      <div v-if="loading" class="loading" :key="'loading'">
+    <Transition mode="out-in" name="tab-switch">
+      <div v-if="loading" :key="'loading'" class="loading">
         加载中...
       </div>
-      
-      <div v-else-if="error" class="error" :key="'error'">
+
+      <div v-else-if="error" :key="'error'" class="error">
         {{ error }}
       </div>
-      
-      <div v-else-if="displayedSongs.length === 0" class="empty" :key="'empty-' + activeTab">
+
+      <div v-else-if="displayedSongs.length === 0" :key="'empty-' + activeTab" class="empty">
         {{ activeTab === 'mine' ? '您还没有投稿歌曲，马上去点歌吧！' : '暂无歌曲，马上去点歌吧！' }}
       </div>
-      
-      <div v-else class="songs-container" :key="'songs-' + activeTab">
-        <TransitionGroup 
-          name="page" 
-          tag="div" 
-          class="song-cards"
+
+      <div v-else :key="'songs-' + activeTab" class="songs-container">
+        <TransitionGroup
+            class="song-cards"
+            name="page"
+            tag="div"
         >
-          <div 
-            v-for="song in paginatedSongs" 
-            :key="song.id" 
-            class="song-card"
-            :class="{ 'played': song.played, 'scheduled': song.scheduled, 'focused': isSongFocused(song.id) }"
-            @click="handleSongCardClick(song)"
+          <div
+              v-for="song in paginatedSongs"
+              :key="song.id"
+              :class="{ 'played': song.played, 'scheduled': song.scheduled, 'focused': isSongFocused(song.id) }"
+              class="song-card"
+              @click="handleSongCardClick(song)"
           >
             <!-- 歌曲卡片主体 -->
             <div class="song-card-main">
@@ -106,27 +109,28 @@
               <div class="song-cover">
                 <template v-if="song.cover">
                   <img
-                    :src="convertToHttps(song.cover)"
-                    :alt="song.title"
-                    class="cover-image"
-                    @error="handleImageError($event, song)"
+                      :alt="song.title"
+                      :src="convertToHttps(song.cover)"
+                      class="cover-image"
+                      @error="handleImageError($event, song)"
                   />
                 </template>
                 <div v-else class="text-cover">
                   {{ getFirstChar(song.title) }}
                 </div>
                 <!-- 添加播放按钮 - 在有播放信息时显示 -->
-                <div v-if="(song.musicPlatform && song.musicId) || song.playUrl" class="play-button-overlay" @click.stop="togglePlaySong(song)">
-                  <button class="play-button" :title="isCurrentPlaying(song.id) ? '暂停' : '播放'">
-                    <Icon v-if="isCurrentPlaying(song.id)" name="pause" :size="16" color="white" />
-                    <Icon v-else name="play" :size="16" color="white" />
+                <div v-if="(song.musicPlatform && song.musicId) || song.playUrl" class="play-button-overlay"
+                     @click.stop="togglePlaySong(song)">
+                  <button :title="isCurrentPlaying(song.id) ? '暂停' : '播放'" class="play-button">
+                    <Icon v-if="isCurrentPlaying(song.id)" :size="16" color="white" name="pause"/>
+                    <Icon v-else :size="16" color="white" name="play"/>
                   </button>
                 </div>
               </div>
 
               <div class="song-info">
-                <h3 class="song-title" :title="song.title + ' - ' + song.artist">
-                  <marquee-text :text="`${song.title} - ${song.artist}`" :activated="isSongFocused(song.id)" />
+                <h3 :title="song.title + ' - ' + song.artist" class="song-title">
+                  <marquee-text :activated="isSongFocused(song.id)" :text="`${song.title} - ${song.artist}`"/>
                   <span v-if="song.played" class="played-tag">已播放</span>
                   <span v-else-if="song.scheduled" class="scheduled-tag">已排期</span>
                 </h3>
@@ -134,7 +138,7 @@
                   <span class="requester">投稿人：{{ song.requester }}</span>
                 </div>
               </div>
-              
+
               <!-- 热度和点赞按钮区域 -->
               <div class="action-area">
                 <!-- 热度展示 -->
@@ -142,101 +146,101 @@
                   <span class="count">{{ song.voteCount }}</span>
                   <span class="label">热度</span>
                 </div>
-                
+
                 <!-- 点赞按钮 -->
                 <div class="like-button-wrapper">
-                  <button 
-                    class="like-button"
-                    :class="{ 'liked': song.voted, 'disabled': song.played || song.scheduled || isMySong(song) || voteInProgress }"
-                    @click.stop="handleVote(song)"
-                    :disabled="song.played || song.scheduled || voteInProgress"
-                    :title="song.played ? '已播放的歌曲不能点赞' : song.scheduled ? '已排期的歌曲不能点赞' : isMySong(song) ? '不允许自己给自己点赞' : (song.voted ? '点击取消点赞' : '点赞')"
+                  <button
+                      :class="{ 'liked': song.voted, 'disabled': song.played || song.scheduled || isMySong(song) || voteInProgress }"
+                      :disabled="song.played || song.scheduled || voteInProgress"
+                      :title="song.played ? '已播放的歌曲不能点赞' : song.scheduled ? '已排期的歌曲不能点赞' : isMySong(song) ? '不允许自己给自己点赞' : (song.voted ? '点击取消点赞' : '点赞')"
+                      class="like-button"
+                      @click.stop="handleVote(song)"
                   >
-                    <img src="/images/thumbs-up.svg" alt="点赞" class="like-icon" />
+                    <img alt="点赞" class="like-icon" src="/images/thumbs-up.svg"/>
                   </button>
                 </div>
               </div>
-              
+
               <!-- 移除原来位置的已排期标签 -->
             </div>
-            
+
             <!-- 投稿时间和撤销按钮 -->
             <div class="submission-footer">
               <div class="submission-time">
                 投稿时间：{{ song.requestedAt }}
               </div>
-              
+
               <!-- 如果是自己的投稿，显示撤回按钮 -->
-              <button 
-                v-if="isMySong(song) && !song.played && !song.scheduled" 
-                class="withdraw-button"
-                @click.stop="handleWithdraw(song)"
-                :disabled="actionInProgress"
-                title="撤回投稿"
+              <button
+                  v-if="isMySong(song) && !song.played && !song.scheduled"
+                  :disabled="actionInProgress"
+                  class="withdraw-button"
+                  title="撤回投稿"
+                  @click.stop="handleWithdraw(song)"
               >
                 撤销
               </button>
             </div>
           </div>
         </TransitionGroup>
-        
+
         <!-- 分页控件 -->
         <div v-if="totalPages > 1" class="pagination">
-          <button 
-            @click="goToPage(currentPage - 1)" 
-            :disabled="currentPage === 1"
-            class="page-button"
+          <button
+              :disabled="currentPage === 1"
+              class="page-button"
+              @click="goToPage(currentPage - 1)"
           >
             上一页
           </button>
-          
+
           <div class="page-numbers">
-            <button 
-              v-for="page in displayedPageNumbers" 
-              :key="page"
-              @click="goToPage(page)"
-              :class="['page-number', { active: currentPage === page }]"
+            <button
+                v-for="page in displayedPageNumbers"
+                :key="page"
+                :class="['page-number', { active: currentPage === page }]"
+                @click="goToPage(page)"
             >
               {{ page }}
             </button>
           </div>
-          
-          <button 
-            @click="goToPage(currentPage + 1)" 
-            :disabled="currentPage === totalPages"
-            class="page-button"
+
+          <button
+              :disabled="currentPage === totalPages"
+              class="page-button"
+              @click="goToPage(currentPage + 1)"
           >
             下一页
           </button>
-          
+
           <div class="page-info">
             {{ currentPage }} / {{ totalPages }} 页
           </div>
-          
+
           <!-- 自定义跳转控件 -->
           <div class="page-jump">
             <span class="jump-label">跳转至</span>
-            <input 
-              type="number" 
-              v-model.number="jumpPageInput"
-              @keyup.enter="handleJumpToPage"
-              @input="validateJumpInput"
-              :placeholder="'1-' + totalPages"
-              class="jump-input"
-              :min="1"
-              :max="totalPages"
+            <input
+                v-model.number="jumpPageInput"
+                :max="totalPages"
+                :min="1"
+                :placeholder="'1-' + totalPages"
+                class="jump-input"
+                type="number"
+                @input="validateJumpInput"
+                @keyup.enter="handleJumpToPage"
             />
-            <button 
-              @click="handleJumpToPage"
-              :disabled="!isValidJumpPage"
-              class="jump-button"
-              title="跳转到指定页面"
+            <button
+                :disabled="!isValidJumpPage"
+                class="jump-button"
+                title="跳转到指定页面"
+                @click="handleJumpToPage"
             >
               跳转
             </button>
           </div>
         </div>
-        
+
         <!-- 确认对话框 -->
         <div v-if="confirmDialog.show" class="confirm-dialog-backdrop" @click.self="cancelConfirm">
           <div class="confirm-dialog">
@@ -247,15 +251,15 @@
               {{ confirmDialog.message }}
             </div>
             <div class="confirm-dialog-actions">
-              <button 
-                @click="cancelConfirm" 
-                class="confirm-dialog-btn confirm-dialog-cancel"
+              <button
+                  class="confirm-dialog-btn confirm-dialog-cancel"
+                  @click="cancelConfirm"
               >
                 取消
               </button>
-              <button 
-                @click="confirmAction" 
-                class="confirm-dialog-btn confirm-dialog-confirm"
+              <button
+                  class="confirm-dialog-btn confirm-dialog-confirm"
+                  @click="confirmAction"
               >
                 确认
               </button>
@@ -330,7 +334,7 @@ const isSongFocused = (songId) => {
 }
 
 // 学期相关
-const { fetchCurrentSemester, currentSemester, semesterUpdateEvent } = useSemesters()
+const {fetchCurrentSemester, currentSemester, semesterUpdateEvent} = useSemesters()
 const availableSemesters = ref([])
 const selectedSemester = ref('')
 const showSemesterDropdown = ref(false)
@@ -375,13 +379,13 @@ const checkMobile = () => {
 const handleSemesterFilterChange = (event) => {
   const newSemester = event.detail.semester
 
-  
+
   // 更新选中的学期
   selectedSemester.value = newSemester
-  
+
   // 重置到第一页
   currentPage.value = 1
-  
+
   // 保存到sessionStorage
   if (newSemester) {
     sessionStorage.setItem('voicehub_selected_semester', newSemester)
@@ -394,10 +398,10 @@ const handleSemesterFilterChange = (event) => {
 onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
-  
+
   // 添加学期过滤变化事件监听器
   window.addEventListener('semester-filter-change', handleSemesterFilterChange)
-  
+
   // 首先从sessionStorage恢复学期选择状态
   try {
     const savedSemester = sessionStorage.getItem('voicehub_selected_semester')
@@ -410,18 +414,18 @@ onMounted(async () => {
   } catch (error) {
     console.warn('恢复学期选择状态失败:', error)
   }
-  
+
   isDataLoading.value = true
   try {
     // 首先获取当前学期
     await fetchCurrentSemester()
-    
+
     // 然后获取可用学期（初始化期间只设置列表，不执行选择逻辑）
     await fetchAvailableSemesters()
-    
+
     // 标记组件初始化完成
     isComponentInitialized.value = true
-  
+
   } catch (error) {
     console.error('组件初始化失败:', error)
   } finally {
@@ -441,7 +445,7 @@ watch(() => props.songs, () => {
   if (isComponentInitialized.value && !isDataLoading.value && !isFetchingSemesters.value) {
     fetchAvailableSemesters()
   }
-}, { deep: true })
+}, {deep: true})
 
 // 监听学期更新事件
 watch(semesterUpdateEvent, async () => {
@@ -462,7 +466,7 @@ watch(allSongsData, (newData) => {
   if (isComponentInitialized.value && newData && newData.length > 0 && !isFetchingSemesters.value) {
     fetchAvailableSemesters()
   }
-}, { deep: true })
+}, {deep: true})
 
 // 确认对话框
 const confirmDialog = ref({
@@ -497,34 +501,34 @@ const isMySong = (song) => {
 // 应用过滤器和搜索
 const displayedSongs = computed(() => {
   if (!props.songs) return []
-  
+
   let result = [...props.songs]
-  
+
   // 应用学期过滤器
   if (selectedSemester.value) {
     result = result.filter(song => song.semester === selectedSemester.value)
   }
-  
+
   // 应用标签过滤器
   if (activeTab.value === 'mine') {
     result = result.filter(song => isMySong(song))
   }
-  
+
   // 应用搜索过滤器
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase().trim()
-    result = result.filter(song => 
-      song.title.toLowerCase().includes(query) || 
-      song.artist.toLowerCase().includes(query) ||
-      (song.requester && song.requester.toLowerCase().includes(query))
+    result = result.filter(song =>
+        song.title.toLowerCase().includes(query) ||
+        song.artist.toLowerCase().includes(query) ||
+        (song.requester && song.requester.toLowerCase().includes(query))
     )
   }
-  
+
   // 按状态分组：未排期、已排期、已播放
   const unscheduledSongs = result.filter(song => !song.played && !song.scheduled)
   const scheduledSongs = result.filter(song => !song.played && song.scheduled)
   const playedSongs = result.filter(song => song.played)
-  
+
   // 对每个分组内部进行排序
   const sortSongs = (songs) => {
     if (sortBy.value === 'popularity') {
@@ -545,7 +549,7 @@ const displayedSongs = computed(() => {
     }
     return songs
   }
-  
+
   // 返回按顺序排列的歌曲：未排期 → 已排期 → 已播放
   return [
     ...sortSongs(unscheduledSongs),
@@ -570,7 +574,7 @@ const paginatedSongs = computed(() => {
 const displayedPageNumbers = computed(() => {
   const result = []
   const totalPagesToShow = 5
-  
+
   if (totalPages.value <= totalPagesToShow) {
     // 如果总页数小于等于要显示的页数，则显示所有页码
     for (let i = 1; i <= totalPages.value; i++) {
@@ -580,26 +584,26 @@ const displayedPageNumbers = computed(() => {
     // 否则，显示当前页附近的页码
     const leftOffset = Math.floor(totalPagesToShow / 2)
     const rightOffset = totalPagesToShow - leftOffset - 1
-    
+
     let start = currentPage.value - leftOffset
     let end = currentPage.value + rightOffset
-    
+
     // 调整起始和结束页码，确保它们在有效范围内
     if (start < 1) {
       end = end + (1 - start)
       start = 1
     }
-    
+
     if (end > totalPages.value) {
       start = Math.max(1, start - (end - totalPages.value))
       end = totalPages.value
     }
-    
+
     for (let i = start; i <= end; i++) {
       result.push(i)
     }
   }
-  
+
   return result
 })
 
@@ -640,12 +644,12 @@ const handleVote = async (song) => {
     }
     return
   }
-  
+
   // 检查歌曲状态
   if (song.played || song.scheduled) {
     return // 已播放或已排期的歌曲不能点赞
   }
-  
+
   // 检查是否是自己的歌曲
   if (isMySong(song)) {
     if (window.$showNotification) {
@@ -653,12 +657,12 @@ const handleVote = async (song) => {
     }
     return
   }
-  
+
   voteInProgress.value = true
   try {
     if (song.voted) {
       // 如果已投票，则调用撤销投票
-      emit('vote', { ...song, unvote: true })
+      emit('vote', {...song, unvote: true})
     } else {
       // 正常投票
       emit('vote', song)
@@ -675,7 +679,7 @@ const handleWithdraw = (song) => {
   if (song.scheduled) {
     return // 已排期的歌曲不能撤回
   }
-  
+
   confirmDialog.value = {
     show: true,
     title: '撤回投稿',
@@ -692,8 +696,8 @@ const handleRefresh = () => {
 
 // 确认执行操作
 const confirmAction = async () => {
-  const { action, data } = confirmDialog.value
-  
+  const {action, data} = confirmDialog.value
+
   actionInProgress.value = true
   try {
     emit(action, data)
@@ -722,7 +726,6 @@ const getFirstChar = (title) => {
   if (!title) return '音'
   return title.trim().charAt(0)
 }
-
 
 
 // 切换歌曲播放/暂停
@@ -799,13 +802,13 @@ const togglePlaySong = async (song) => {
 // 构建可播放的播放列表
 const buildPlayablePlaylist = async (currentSong) => {
   // 获取当前显示的歌曲列表（已经过滤和排序）
-  const songsToProcess = paginatedSongs.value.filter(song => 
-    ((song.musicPlatform && song.musicId) || song.playUrl) && song.id !== currentSong.id
+  const songsToProcess = paginatedSongs.value.filter(song =>
+      ((song.musicPlatform && song.musicId) || song.playUrl) && song.id !== currentSong.id
   )
-  
+
   // 将当前歌曲添加到列表中正确的位置
   const allSongs = [...paginatedSongs.value]
-  
+
   // 只返回有播放信息的歌曲，保持原有顺序
   return allSongs.filter(song => (song.musicPlatform && song.musicId) || song.playUrl)
 }
@@ -817,14 +820,14 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
     console.log(`[SongList] 使用自定义播放链接: ${playUrl}`)
     return playUrl.trim()
   }
-  
+
   // 如果没有playUrl，检查platform和musicId是否有效
   if (!platform || !musicId) {
     throw new Error('歌曲缺少音乐平台或音乐ID信息，无法获取播放链接')
   }
-  
-  const { getQuality } = useAudioQuality()
-  const { getSongUrl } = useMusicSources()
+
+  const {getQuality} = useAudioQuality()
+  const {getSongUrl} = useMusicSources()
 
   try {
     let apiUrl
@@ -860,7 +863,7 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
     throw new Error('vkeys返回成功但未获取到音乐URL')
   } catch (error) {
     // vkeys获取音乐URL失败
-    
+
     // 如果是网易云平台，尝试使用备用源
     if (platform === 'netease') {
       try {
@@ -872,7 +875,7 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
         // 网易云备用源调用失败
       }
     }
-    
+
     throw error
   }
 }
@@ -892,80 +895,80 @@ const debouncedSemesterChange = debounce((semester) => {
   if (semesterLoading.value || isDataLoading.value || !isComponentInitialized.value) {
     return
   }
-  
+
   // 再次检查并清理学期数据
   if (containsCorruptedText(semester)) {
     console.warn('防抖函数检测到乱码学期数据，跳过切换')
     return
   }
-  
+
   const cleanSemester = cleanCorruptedText(semester)
   if (!cleanSemester) {
     console.warn('防抖函数检测到空学期数据，跳过切换')
     return
   }
-  
+
   // 检查学期是否仍在可用列表中
   if (!availableSemesters.value.includes(cleanSemester)) {
     console.warn('防抖函数检测到学期不在可用列表中，跳过切换:', cleanSemester)
     return
   }
-  
+
   // 执行学期切换
-  
+
   selectedSemester.value = cleanSemester
   showSemesterDropdown.value = false
   currentPage.value = 1 // 重置到第一页
-  
+
   // 保存到sessionStorage
   try {
     sessionStorage.setItem('voicehub_selected_semester', cleanSemester)
   } catch (error) {
     console.warn('防抖函数无法保存学期选择到sessionStorage:', error)
   }
-  
+
   emit('semester-change', cleanSemester)
 }, 300)
 
 // 乱码检测函数
 const containsCorruptedText = (text) => {
   if (!text || typeof text !== 'string') return true
-  
+
   // 检查Unicode替换字符
   if (text.includes('\uFFFD') || text.includes('�')) {
     return true
   }
-  
+
   // 检查控制字符（除了常见的空白字符）
   const controlCharRegex = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/
   if (controlCharRegex.test(text)) {
     return true
   }
-  
+
   // 检查孤立代理对字符
   const surrogatePairRegex = /[\uD800-\uDFFF]/
   if (surrogatePairRegex.test(text)) {
     return true
   }
-  
+
   return false
 }
 
 // 清理乱码字符串
 const cleanCorruptedText = (text) => {
   if (!text || typeof text !== 'string') return ''
-  
+
   return text
-    // 移除Unicode替换字符
-    .replace(/\uFFFD/g, '')
-    .replace(/�/g, '')
-    // 移除控制字符（保留常见空白字符）
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-    // 移除孤立代理对字符
-    .replace(/[\uD800-\uDFFF]/g, '')
-    // 规范化Unicode字符
-    .normalize('NFC')
-    .trim()
+      // 移除Unicode替换字符
+      .replace(/\uFFFD/g, '')
+      .replace(/�/g, '')
+      // 移除控制字符（保留常见空白字符）
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+      // 移除孤立代理对字符
+      .replace(/[\uD800-\uDFFF]/g, '')
+      // 规范化Unicode字符
+      .normalize('NFC')
+      .trim()
 }
 
 // 学期相关函数
@@ -974,45 +977,45 @@ const fetchAvailableSemesters = async () => {
   if (semesterLoading.value || isFetchingSemesters.value) {
     return
   }
-  
+
   // 检查是否有歌曲数据，如果没有则等待
   if (!props.songs || props.songs.length === 0) {
     return
   }
-  
+
   isFetchingSemesters.value = true
   semesterLoading.value = true
   semesterError.value = ''
-  
+
   // 如果组件正在初始化，设置数据加载状态
   if (!isComponentInitialized.value) {
     isDataLoading.value = true
   }
-  
+
   try {
     // 使用完整的歌曲数据源而不是过滤后的props.songs
     let completeSongs = allSongsData.value || []
-    
+
     // 检查数据源状态
-    
+
     // 如果allSongsData为空，但props.songs有数据，直接使用props.songs作为数据源
     if (completeSongs.length === 0 && props.songs && props.songs.length > 0) {
       completeSongs = props.songs
     }
-    
+
     // 如果完全没有数据，直接返回
     if (completeSongs.length === 0) {
       availableSemesters.value = []
       return
     }
-    
+
     // 从完整歌曲数据中提取学期信息，并过滤乱码
     const rawSemesters = [...new Set(completeSongs.map(song => song.semester).filter(Boolean))]
     const cleanSemesters = rawSemesters
-      .filter(semester => !containsCorruptedText(semester))
-      .map(semester => cleanCorruptedText(semester))
-      .filter(semester => semester.length > 0)
-    
+        .filter(semester => !containsCorruptedText(semester))
+        .map(semester => cleanCorruptedText(semester))
+        .filter(semester => semester.length > 0)
+
     // 统计每个学期的歌曲数量，只保留有数据的学期
     const semesterStats = {}
     completeSongs.forEach(song => {
@@ -1023,45 +1026,45 @@ const fetchAvailableSemesters = async () => {
         }
       }
     })
-    
+
     // 只保留有数据的学期，按时间倒序排列
     const semestersWithData = Object.keys(semesterStats)
-      .filter(semester => semesterStats[semester] > 0)
-      .sort().reverse()
-    
+        .filter(semester => semesterStats[semester] > 0)
+        .sort().reverse()
+
     // 统计有数据的学期
-    
+
     // 如果用户手动选择了学期，确保该学期保留在可用学期列表中
     let finalSemesters = [...semestersWithData]
-    if (isUserManuallySelected.value && selectedSemester.value && 
+    if (isUserManuallySelected.value && selectedSemester.value &&
         !finalSemesters.includes(selectedSemester.value)) {
       // 将用户选择的学期添加到列表中，保持时间倒序
       finalSemesters.push(selectedSemester.value)
       finalSemesters.sort().reverse()
     }
-    
+
     // 更新可用学期列表
     availableSemesters.value = [...finalSemesters]
-    
+
     // 缓存学期信息到sessionStorage
     try {
       sessionStorage.setItem('voicehub_available_semesters', JSON.stringify(availableSemesters.value))
     } catch (error) {
       console.warn('无法缓存学期信息:', error)
     }
-    
+
     // 如果组件未完全初始化，只设置availableSemesters，不执行学期选择逻辑
     if (!isComponentInitialized.value) {
       return
     }
-    
+
     // 执行学期选择逻辑
     await selectDefaultSemester()
-    
+
   } catch (error) {
     console.error('获取学期信息失败:', error)
     semesterError.value = '获取学期信息失败，请刷新页面重试'
-    
+
     // 错误恢复：使用缓存的学期信息
     try {
       const cachedSemesters = sessionStorage.getItem('voicehub_available_semesters')
@@ -1088,7 +1091,7 @@ const selectDefaultSemester = async () => {
     selectedSemester.value = ''
     return
   }
-  
+
   // 如果已经有选中的学期且该学期在可用列表中，保持选择（包括从sessionStorage恢复的选择）
   if (selectedSemester.value && availableSemesters.value.includes(selectedSemester.value)) {
     // 保存选择到sessionStorage以确保状态同步
@@ -1099,30 +1102,30 @@ const selectDefaultSemester = async () => {
     }
     return
   }
-  
+
   // 如果当前选中的学期不在可用列表中，清空选择
   if (selectedSemester.value && !availableSemesters.value.includes(selectedSemester.value)) {
     selectedSemester.value = ''
   }
-  
+
   // 如果用户已手动选择学期且该学期仍有数据，保持选择
-  if (isUserManuallySelected.value && selectedSemester.value && 
+  if (isUserManuallySelected.value && selectedSemester.value &&
       availableSemesters.value.includes(selectedSemester.value)) {
     return
   }
-  
+
   // 优先级1: 使用当前活跃学期（如果有数据且API已返回）
   // 注意：只有在currentSemester API已经返回数据时才使用，避免在API未响应时进行切换
   if (currentSemester.value && currentSemester.value.name) {
     const currentSemesterName = currentSemester.value.name
-    
+
     if (!containsCorruptedText(currentSemesterName)) {
       const cleanCurrentSemester = cleanCorruptedText(currentSemesterName)
-      
+
       // 检查当前学期是否在有数据的列表中
       if (cleanCurrentSemester && availableSemesters.value.includes(cleanCurrentSemester)) {
         selectedSemester.value = cleanCurrentSemester
-        
+
         // 保存选择到sessionStorage
         try {
           sessionStorage.setItem('voicehub_selected_semester', cleanCurrentSemester)
@@ -1133,14 +1136,14 @@ const selectDefaultSemester = async () => {
       }
     }
   }
-  
+
   // 优先级2: 尝试从sessionStorage恢复缓存的选择（如果有数据）
   if (!selectedSemester.value) {
     try {
       const savedSemester = sessionStorage.getItem('voicehub_selected_semester')
       if (savedSemester && !containsCorruptedText(savedSemester)) {
         const cleanSavedSemester = cleanCorruptedText(savedSemester)
-        
+
         // 只有缓存的学期在有数据的列表中才使用
         if (cleanSavedSemester && availableSemesters.value.includes(cleanSavedSemester)) {
           selectedSemester.value = cleanSavedSemester
@@ -1154,11 +1157,11 @@ const selectDefaultSemester = async () => {
       sessionStorage.removeItem('voicehub_selected_semester')
     }
   }
-  
+
   // 优先级3: 使用第一个有数据的学期作为默认
   if (!selectedSemester.value && availableSemesters.value.length > 0) {
     selectedSemester.value = availableSemesters.value[0]
-    
+
     // 保存选择到sessionStorage
     try {
       sessionStorage.setItem('voicehub_selected_semester', availableSemesters.value[0])
@@ -1173,38 +1176,37 @@ const onSemesterChange = (semester) => {
   if (semesterLoading.value || isDataLoading.value || !isComponentInitialized.value) {
     return // 防止在加载时或组件未初始化时切换
   }
-  
+
   // 检查并清理学期数据
   if (containsCorruptedText(semester)) {
     console.warn('学期数据包含乱码，忽略切换请求')
     return
   }
-  
+
   const cleanSemester = cleanCorruptedText(semester)
   if (!cleanSemester) {
     console.warn('清理后的学期数据为空，忽略切换请求')
     return
   }
-  
+
   // 检查学期是否在可用列表中
   if (!availableSemesters.value.includes(cleanSemester)) {
     console.warn('选择的学期不在可用列表中:', cleanSemester)
     return
   }
-  
 
-  
+
   // 标记为用户手动选择
   isUserManuallySelected.value = true
-  
+
   // 立即更新选中的学期，确保UI响应
   selectedSemester.value = cleanSemester
-  
+
   // 使用nextTick确保DOM更新后样式能正确应用
   nextTick(() => {
     // DOM已更新，学期选择样式应该已应用
   })
-  
+
   // 保存学期选择到sessionStorage
   try {
     sessionStorage.setItem('voicehub_selected_semester', cleanSemester)
@@ -1212,10 +1214,10 @@ const onSemesterChange = (semester) => {
   } catch (error) {
     console.warn('无法保存学期选择:', error)
   }
-  
+
   // 关闭下拉菜单
   showSemesterDropdown.value = false
-  
+
   // 使用防抖处理其他逻辑
   debouncedSemesterChange(cleanSemester)
 }
@@ -1226,7 +1228,7 @@ const retrySemesterFetch = () => {
   if (semesterLoading.value || isDataLoading.value) {
     return
   }
-  
+
   semesterError.value = ''
   fetchAvailableSemesters()
 }
@@ -1253,14 +1255,14 @@ const vRipple = {
       const rect = el.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       const ripple = document.createElement('span');
       ripple.className = 'ripple-effect';
       ripple.style.left = `${x}px`;
       ripple.style.top = `${y}px`;
-      
+
       el.appendChild(ripple);
-      
+
       setTimeout(() => {
         ripple.remove();
       }, 600); // 与CSS动画时间一致
@@ -1742,12 +1744,12 @@ const vRipple = {
   font-weight: 600;
   font-size: 20px;
   color: #0B5AFE;
-  text-shadow: 0px 20px 30px rgba(0, 114, 248, 0.5), 
-               0px 8px 15px rgba(0, 114, 248, 0.5),
-               0px 4px 10px rgba(0, 179, 248, 0.3), 
-               0px 2px 10px rgba(0, 179, 248, 0.2), 
-               inset 3px 3px 10px rgba(255, 255, 255, 0.4), 
-               inset -1px -1px 15px rgba(255, 255, 255, 0.4);
+  text-shadow: 0px 20px 30px rgba(0, 114, 248, 0.5),
+  0px 8px 15px rgba(0, 114, 248, 0.5),
+  0px 4px 10px rgba(0, 179, 248, 0.3),
+  0px 2px 10px rgba(0, 179, 248, 0.2),
+  inset 3px 3px 10px rgba(255, 255, 255, 0.4),
+  inset -1px -1px 15px rgba(255, 255, 255, 0.4);
 }
 
 .vote-count .label {
@@ -2050,43 +2052,43 @@ button:disabled {
     gap: 1rem;
     align-items: stretch;
   }
-  
+
   .tab-controls {
     justify-content: center;
   }
-  
+
   .tab-button {
     flex: 1;
     padding: 0.5rem;
   }
-  
+
   .search-actions {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .search-box {
     width: calc(100% - 50px);
   }
-  
+
   .song-card {
     width: 100%;
   }
-  
+
   .song-info {
     width: 60%;
   }
-  
+
   .action-area {
     gap: 0.5rem;
   }
-  
+
   .pagination {
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.25rem;
   }
-  
+
   .page-numbers {
     order: 3;
     width: 100%;
@@ -2094,29 +2096,29 @@ button:disabled {
     justify-content: center;
     margin-top: 0.5rem;
   }
-  
+
   .page-info {
     order: 4;
     margin: 0.5rem 0 0 0;
     text-align: center;
   }
-  
+
   .page-jump {
     order: 5;
     margin: 0.5rem 0 0 0;
     justify-content: center;
   }
-  
+
   .jump-label {
     font-size: 0.75rem;
   }
-  
+
   .jump-input {
     width: 50px;
     font-size: 0.75rem;
     padding: 0.2rem 0.4rem;
   }
-  
+
   .jump-button {
     font-size: 0.75rem;
     padding: 0.2rem 0.4rem;

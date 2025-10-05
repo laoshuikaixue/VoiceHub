@@ -5,10 +5,10 @@
         <div v-if="show" class="modal" @click.stop>
           <div class="modal-header">
             <h3>用户歌曲信息</h3>
-            <button @click="$emit('close')" class="close-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
+            <button class="close-btn" @click="$emit('close')">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <line x1="18" x2="6" y1="6" y2="18"/>
+                <line x1="6" x2="18" y1="6" y2="18"/>
               </svg>
             </button>
           </div>
@@ -24,7 +24,7 @@
             <div v-else-if="error" class="error-container">
               <div class="error-icon">⚠️</div>
               <p>{{ error }}</p>
-              <button @click="fetchUserSongs" class="retry-btn">重试</button>
+              <button class="retry-btn" @click="fetchUserSongs">重试</button>
             </div>
 
             <!-- 内容 -->
@@ -39,15 +39,15 @@
 
               <!-- 选项卡 -->
               <div class="tabs">
-                <button 
-                  :class="['tab-btn', { active: activeTab === 'submitted' }]"
-                  @click="activeTab = 'submitted'"
+                <button
+                    :class="['tab-btn', { active: activeTab === 'submitted' }]"
+                    @click="activeTab = 'submitted'"
                 >
                   投稿歌曲 ({{ userSongs.submittedSongs.length }})
                 </button>
-                <button 
-                  :class="['tab-btn', { active: activeTab === 'voted' }]"
-                  @click="activeTab = 'voted'"
+                <button
+                    :class="['tab-btn', { active: activeTab === 'voted' }]"
+                    @click="activeTab = 'voted'"
                 >
                   投票歌曲 ({{ userSongs.votedSongs.length }})
                 </button>
@@ -60,10 +60,10 @@
                   <p>该用户还没有投稿任何歌曲</p>
                 </div>
                 <div v-else class="songs">
-                  <div 
-                    v-for="song in userSongs.submittedSongs" 
-                    :key="song.id" 
-                    class="song-item"
+                  <div
+                      v-for="song in userSongs.submittedSongs"
+                      :key="song.id"
+                      class="song-item"
                   >
                     <div class="song-info">
                       <div class="song-title">{{ song.title }}</div>
@@ -87,10 +87,10 @@
                   <p>该用户还没有投票任何歌曲</p>
                 </div>
                 <div v-else class="songs">
-                  <div 
-                    v-for="song in userSongs.votedSongs" 
-                    :key="song.id" 
-                    class="song-item"
+                  <div
+                      v-for="song in userSongs.votedSongs"
+                      :key="song.id"
+                      class="song-item"
                   >
                     <div class="song-info">
                       <div class="song-title">{{ song.title }}</div>
@@ -191,7 +191,7 @@ const formatDate = (dateString) => {
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
   if (diff < 86400000 * 7) return `${Math.floor(diff / 86400000)}天前`
-  
+
   return date.toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'short',
@@ -309,8 +309,12 @@ const handleOverlayClick = () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-container .error-icon {
@@ -508,12 +512,12 @@ const handleOverlayClick = () => {
     width: 95%;
     max-height: 95vh;
   }
-  
+
   .modal-header, .user-info, .song-list {
     padding-left: 16px;
     padding-right: 16px;
   }
-  
+
   .song-meta {
     flex-wrap: wrap;
     gap: 8px;

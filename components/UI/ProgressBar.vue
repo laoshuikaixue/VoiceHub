@@ -1,14 +1,14 @@
 <template>
   <div class="progress-container">
-    <div class="progress-info" v-if="showPercentage || message">
+    <div v-if="showPercentage || message" class="progress-info">
       <span v-if="message" class="progress-message">{{ message }}</span>
       <span v-if="showPercentage" class="progress-percentage">{{ percentage }}%</span>
     </div>
     <div class="progress-bar">
-      <div 
-        class="progress-fill" 
-        :style="{ width: `${percentage}%` }"
-        :class="{ 'indeterminate': indeterminate }"
+      <div
+          :class="{ 'indeterminate': indeterminate }"
+          :style="{ width: `${percentage}%` }"
+          class="progress-fill"
       ></div>
     </div>
     <div v-if="subMessage" class="progress-sub-message">{{ subMessage }}</div>

@@ -1,23 +1,23 @@
 <template>
-  <div class="lyrics-display" :style="{ height }">
-    <div class="lyrics-container" ref="containerRef">
+  <div :style="{ height }" class="lyrics-display">
+    <div ref="containerRef" class="lyrics-container">
       <template v-if="!isLoading && !error && (currentLyrics?.length || translationLyrics?.length)">
         <div
-          v-for="(line, index) in currentLyrics"
-          :key="index"
-          :ref="el => setLineRef(el, index)"
-          class="lyric-line"
-          :class="{ active: index === currentLyricIndex, passed: index < currentLyricIndex, upcoming: index > currentLyricIndex }"
-          @click="allowSeek && handleSeek(line.time)"
+            v-for="(line, index) in currentLyrics"
+            :key="index"
+            :ref="el => setLineRef(el, index)"
+            :class="{ active: index === currentLyricIndex, passed: index < currentLyricIndex, upcoming: index > currentLyricIndex }"
+            class="lyric-line"
+            @click="allowSeek && handleSeek(line.time)"
         >
           <!-- 主歌词 -->
           <div class="line-primary">
             <template v-if="displayWords(line).length">
               <span
-                v-for="(w, wi) in displayWords(line)"
-                :key="wi"
-                class="lyric-word"
-                :class="{ 'word-active': isWordActive(line, w) }"
+                  v-for="(w, wi) in displayWords(line)"
+                  :key="wi"
+                  :class="{ 'word-active': isWordActive(line, w) }"
+                  class="lyric-word"
               >
                 {{ w.content }}
               </span>
@@ -26,14 +26,15 @@
               {{ line.content || '...' }}
             </template>
           </div>
-          
+
           <!-- 翻译歌词 -->
-          <div class="line-translation" v-if="translationLyrics && translationLyrics[index] && translationLyrics[index].content && translationLyrics[index].content.trim() && translationLyrics[index].content !== '//'">
+          <div v-if="translationLyrics && translationLyrics[index] && translationLyrics[index].content && translationLyrics[index].content.trim() && translationLyrics[index].content !== '//'"
+               class="line-translation">
             {{ translationLyrics[index].content }}
           </div>
         </div>
       </template>
-      
+
       <div v-else-if="isLoading" class="placeholder">歌词加载中...</div>
       <div v-else-if="error" class="placeholder error">{{ error }}</div>
       <div v-else class="placeholder">暂无歌词</div>
@@ -45,17 +46,17 @@
 import {nextTick, onMounted, ref, watch} from 'vue'
 
 const props = defineProps({
-  currentLyrics: { type: Array, default: () => [] },
-  translationLyrics: { type: Array, default: () => [] },
-  wordByWordLyrics: { type: Array, default: () => [] },
-  currentLyricIndex: { type: Number, default: -1 },
-  currentTime: { type: Number, default: 0 },
-  height: { type: String, default: '240px' },
-  compact: { type: Boolean, default: false },
-  showControls: { type: Boolean, default: true },
-  allowSeek: { type: Boolean, default: false },
-  isLoading: { type: Boolean, default: false },
-  error: { type: String, default: '' }
+  currentLyrics: {type: Array, default: () => []},
+  translationLyrics: {type: Array, default: () => []},
+  wordByWordLyrics: {type: Array, default: () => []},
+  currentLyricIndex: {type: Number, default: -1},
+  currentTime: {type: Number, default: 0},
+  height: {type: String, default: '240px'},
+  compact: {type: Boolean, default: false},
+  showControls: {type: Boolean, default: true},
+  allowSeek: {type: Boolean, default: false},
+  isLoading: {type: Boolean, default: false},
+  error: {type: String, default: ''}
 })
 
 const emit = defineEmits(['seek'])
@@ -79,7 +80,7 @@ const scrollToActive = () => {
   const half = container.clientHeight / 2
   const target = offsetTop - half + activeEl.clientHeight / 2
 
-  container.scrollTo({ top: target, behavior: 'smooth' })
+  container.scrollTo({top: target, behavior: 'smooth'})
 }
 
 const displayWords = (line) => {
@@ -103,20 +104,20 @@ const isWordActive = (line, word) => {
 const handleSeek = (timeMs) => emit('seek', Math.max(0, (timeMs || 0) / 1000))
 
 watch(
-  () => props.currentLyricIndex,
-  async () => {
-    await nextTick()
-    scrollToActive()
-  }
+    () => props.currentLyricIndex,
+    async () => {
+      await nextTick()
+      scrollToActive()
+    }
 )
 
 watch(
-  () => [props.currentLyrics, props.translationLyrics],
-  async () => {
-    await nextTick()
-    scrollToActive()
-  },
-  { deep: true }
+    () => [props.currentLyrics, props.translationLyrics],
+    async () => {
+      await nextTick()
+      scrollToActive()
+    },
+    {deep: true}
 )
 
 onMounted(async () => {
@@ -138,8 +139,8 @@ onMounted(async () => {
   scroll-behavior: smooth;
   padding: 8px 0;
   /* 顶/底部渐隐，仿 Apple Music */
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 8%, #000 18%, #000 82%, rgba(0,0,0,0.7) 92%, rgba(0,0,0,0) 100%);
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 8%, #000 18%, #000 82%, rgba(0,0,0,0.7) 92%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 8%, #000 18%, #000 82%, rgba(0, 0, 0, 0.7) 92%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 8%, #000 18%, #000 82%, rgba(0, 0, 0, 0.7) 92%, rgba(0, 0, 0, 0) 100%);
 }
 
 .lyric-line {
@@ -171,9 +172,20 @@ onMounted(async () => {
 }
 
 @keyframes popIn {
-  0%   { transform: translateY(8px) scale(0.98); opacity: 0.6; text-shadow: 0 0 0 rgba(59,130,246,0); }
-  55%  { transform: translateY(-2px) scale(1.07); opacity: 1; text-shadow: 0 0 14px rgba(99,179,237,0.5), 0 0 26px rgba(59,130,246,0.45); }
-  100% { transform: translateY(0) scale(1.03); text-shadow: 0 0 10px rgba(99,179,237,0.45), 0 0 22px rgba(59,130,246,0.4); }
+  0% {
+    transform: translateY(8px) scale(0.98);
+    opacity: 0.6;
+    text-shadow: 0 0 0 rgba(59, 130, 246, 0);
+  }
+  55% {
+    transform: translateY(-2px) scale(1.07);
+    opacity: 1;
+    text-shadow: 0 0 14px rgba(99, 179, 237, 0.5), 0 0 26px rgba(59, 130, 246, 0.45);
+  }
+  100% {
+    transform: translateY(0) scale(1.03);
+    text-shadow: 0 0 10px rgba(99, 179, 237, 0.45), 0 0 22px rgba(59, 130, 246, 0.4);
+  }
 }
 
 .line-primary {
@@ -202,7 +214,7 @@ onMounted(async () => {
 
 .word-active {
   color: #fff;
-  text-shadow: 0 0 6px rgba(255,255,255,0.55), 0 0 14px rgba(99,179,237,0.5);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.55), 0 0 14px rgba(99, 179, 237, 0.5);
   transform: translateY(-0.5px);
 }
 

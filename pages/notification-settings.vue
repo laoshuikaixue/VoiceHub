@@ -2,8 +2,9 @@
   <div class="notification-settings-page">
     <!-- 顶部导航栏 -->
     <div class="top-nav">
-      <button @click="goBack" class="back-button">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button class="back-button" @click="goBack">
+        <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+             stroke-width="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
           <path d="m12 19-7-7 7-7"/>
           <path d="M19 12H5"/>
         </svg>
@@ -11,7 +12,6 @@
       </button>
       <h1 class="page-title">通知设置</h1>
     </div>
-
 
 
     <div class="main-container">
@@ -37,9 +37,9 @@
               </div>
               <div class="setting-control">
                 <label class="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    v-model="localSettings.songSelectedNotify"
+                  <input
+                      v-model="localSettings.songSelectedNotify"
+                      type="checkbox"
                   >
                   <span class="switch"></span>
                 </label>
@@ -54,9 +54,9 @@
               </div>
               <div class="setting-control">
                 <label class="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    v-model="localSettings.songPlayedNotify"
+                  <input
+                      v-model="localSettings.songPlayedNotify"
+                      type="checkbox"
                   >
                   <span class="switch"></span>
                 </label>
@@ -71,9 +71,9 @@
               </div>
               <div class="setting-control">
                 <label class="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    v-model="localSettings.songVotedNotify"
+                  <input
+                      v-model="localSettings.songVotedNotify"
+                      type="checkbox"
                   >
                   <span class="switch"></span>
                 </label>
@@ -88,12 +88,12 @@
               </div>
               <div class="setting-control">
                 <div class="threshold-input">
-                  <input 
-                    type="number" 
-                    v-model.number="localSettings.songVotedThreshold"
-                    min="1"
-                    max="100"
-                    class="number-input"
+                  <input
+                      v-model.number="localSettings.songVotedThreshold"
+                      class="number-input"
+                      max="100"
+                      min="1"
+                      type="number"
                   >
                   <span class="unit">票</span>
                 </div>
@@ -108,9 +108,9 @@
               </div>
               <div class="setting-control">
                 <label class="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    v-model="localSettings.systemNotify"
+                  <input
+                      v-model="localSettings.systemNotify"
+                      type="checkbox"
                   >
                   <span class="switch"></span>
                 </label>
@@ -129,13 +129,13 @@
               </div>
               <div class="setting-control">
                 <div class="interval-input">
-                  <input 
-                    type="range" 
-                    v-model.number="localSettings.refreshInterval"
-                    min="30"
-                    max="300"
-                    step="30"
-                    class="range-input"
+                  <input
+                      v-model.number="localSettings.refreshInterval"
+                      class="range-input"
+                      max="300"
+                      min="30"
+                      step="30"
+                      type="range"
                   >
                   <span class="interval-display">{{ localSettings.refreshInterval }}秒</span>
                 </div>
@@ -157,30 +157,33 @@
               <div class="setting-info">
                 <h3>邮箱通知</h3>
                 <p v-if="!userEmail">绑定邮箱以接收邮件通知</p>
-                <p v-else-if="!emailVerified" class="pending-info">邮箱：<span class="email-address">{{ userEmail }}</span> <span class="status pending">待验证</span></p>
-                <p v-else class="bound-info">已绑定邮箱：<span class="email-address">{{ userEmail }}</span> <span class="status verified">已验证</span></p>
+                <p v-else-if="!emailVerified" class="pending-info">邮箱：<span class="email-address">{{
+                    userEmail
+                  }}</span> <span class="status pending">待验证</span></p>
+                <p v-else class="bound-info">已绑定邮箱：<span class="email-address">{{ userEmail }}</span> <span
+                    class="status verified">已验证</span></p>
               </div>
               <div class="setting-control">
                 <!-- 未绑定状态 -->
                 <div v-if="!userEmail" class="email-bind-section">
                   <div class="bind-step">
-                    <input 
-                      type="email" 
-                      v-model="newEmail" 
-                      placeholder="请输入邮箱地址"
-                      class="email-input"
-                      :disabled="bindingEmail"
+                    <input
+                        v-model="newEmail"
+                        :disabled="bindingEmail"
+                        class="email-input"
+                        placeholder="请输入邮箱地址"
+                        type="email"
                     >
-                    <button 
-                      @click="bindEmail" 
-                      class="btn btn-primary"
-                      :disabled="!newEmail || bindingEmail"
+                    <button
+                        :disabled="!newEmail || bindingEmail"
+                        class="btn btn-primary"
+                        @click="bindEmail"
                     >
                       {{ bindingEmail ? '绑定中...' : '绑定邮箱' }}
                     </button>
                   </div>
                 </div>
-                
+
                 <!-- 待验证状态：验证码方式 -->
                 <div v-else-if="!emailVerified" class="email-verify-section">
                   <div class="verify-info">
@@ -189,46 +192,47 @@
                   </div>
                   <div class="verify-input-group">
                     <input
-                      v-model="emailCode"
-                      type="text"
-                      placeholder="输入6位验证码"
-                      class="verify-input"
-                      :class="{ 'complete': emailCode.length === 6, 'error': emailCodeError }"
-                      maxlength="6"
-                      :disabled="bindingEmail"
-                      @input="handleEmailCodeInput"
-                      @keydown="handleEmailCodeKeydown"
-                      autocomplete="off"
-                      inputmode="numeric"
-                      pattern="[0-9]*"
+                        v-model="emailCode"
+                        :class="{ 'complete': emailCode.length === 6, 'error': emailCodeError }"
+                        :disabled="bindingEmail"
+                        autocomplete="off"
+                        class="verify-input"
+                        inputmode="numeric"
+                        maxlength="6"
+                        pattern="[0-9]*"
+                        placeholder="输入6位验证码"
+                        type="text"
+                        @input="handleEmailCodeInput"
+                        @keydown="handleEmailCodeKeydown"
                     >
                     <div class="verify-actions">
-                      <button @click="verifyEmailCode" class="btn btn-primary" :disabled="bindingEmail || emailCode.length !== 6">
+                      <button :disabled="bindingEmail || emailCode.length !== 6" class="btn btn-primary"
+                              @click="verifyEmailCode">
                         {{ bindingEmail ? '验证中...' : '确认验证' }}
                       </button>
-                      <button @click="resendVerificationEmail" class="btn btn-secondary" :disabled="resendingEmail">
+                      <button :disabled="resendingEmail" class="btn btn-secondary" @click="resendVerificationEmail">
                         {{ resendingEmail ? '发送中...' : '重新发送验证码' }}
                       </button>
-                      <button @click="changeEmail" class="btn btn-outline">
+                      <button class="btn btn-outline" @click="changeEmail">
                         更换邮箱
                       </button>
                     </div>
                   </div>
                 </div>
-                
+
                 <!-- 已验证状态 -->
                 <div v-else class="email-bound-section">
                   <div class="bound-actions">
-                    <button 
-                      @click="changeEmail" 
-                      class="btn btn-outline"
+                    <button
+                        class="btn btn-outline"
+                        @click="changeEmail"
                     >
                       更换邮箱
                     </button>
-                    <button 
-                      @click="unbindEmail" 
-                      class="btn btn-danger"
-                      :disabled="unbindingEmail"
+                    <button
+                        :disabled="unbindingEmail"
+                        class="btn btn-danger"
+                        @click="unbindEmail"
                     >
                       {{ unbindingEmail ? '解绑中...' : '解绑邮箱' }}
                     </button>
@@ -249,22 +253,22 @@
                 <div v-if="!localSettings.meowUserId" class="meow-bind-section">
                   <!-- 第一步：输入用户ID -->
                   <div v-if="!verificationSent" class="bind-step">
-                    <input 
-                      type="text" 
-                      v-model="meowUserId" 
-                      placeholder="请输入 MeoW 用户 ID"
-                      class="meow-input"
-                      :disabled="binding"
+                    <input
+                        v-model="meowUserId"
+                        :disabled="binding"
+                        class="meow-input"
+                        placeholder="请输入 MeoW 用户 ID"
+                        type="text"
                     >
-                    <button 
-                      @click="sendVerificationCode" 
-                      class="btn btn-primary"
-                      :disabled="!meowUserId || binding"
+                    <button
+                        :disabled="!meowUserId || binding"
+                        class="btn btn-primary"
+                        @click="sendVerificationCode"
                     >
                       {{ binding ? '发送中...' : '发送验证码' }}
                     </button>
                   </div>
-                  
+
                   <!-- 第二步：输入验证码 -->
                   <div v-else class="verify-step">
                     <div class="verify-info">
@@ -273,27 +277,28 @@
                     </div>
                     <div class="verify-input-group">
                       <input
-                        v-model="verificationCode"
-                        type="text"
-                        placeholder="输入6位验证码"
-                        class="verify-input"
-                        :class="{
+                          v-model="verificationCode"
+                          :class="{
                           'complete': verificationCode.length === 6,
                           'error': verificationCodeError
                         }"
-                        maxlength="6"
-                        :disabled="binding"
-                        @input="handleVerificationCodeInput"
-                        @keydown="handleVerificationCodeKeydown"
-                        autocomplete="off"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
+                          :disabled="binding"
+                          autocomplete="off"
+                          class="verify-input"
+                          inputmode="numeric"
+                          maxlength="6"
+                          pattern="[0-9]*"
+                          placeholder="输入6位验证码"
+                          type="text"
+                          @input="handleVerificationCodeInput"
+                          @keydown="handleVerificationCodeKeydown"
                       >
                       <div class="verify-actions">
-                        <button @click="verifyAndBind" class="btn btn-primary" :disabled="binding || verificationCode.length !== 6">
+                        <button :disabled="binding || verificationCode.length !== 6" class="btn btn-primary"
+                                @click="verifyAndBind">
                           {{ binding ? '验证中...' : '确认绑定' }}
                         </button>
-                        <button @click="cancelVerification" class="btn btn-secondary" :disabled="binding">
+                        <button :disabled="binding" class="btn btn-secondary" @click="cancelVerification">
                           取消
                         </button>
                       </div>
@@ -303,7 +308,7 @@
 
                 <!-- 已绑定状态 -->
                 <div v-else class="meow-bound-section">
-                  <button @click="showUnbindConfirm" class="btn btn-danger">
+                  <button class="btn btn-danger" @click="showUnbindConfirm">
                     解绑账号
                   </button>
                 </div>
@@ -314,7 +319,7 @@
 
         <!-- 保存按钮 -->
         <div class="save-section">
-          <button @click="saveSettings" class="btn btn-primary save-btn" :disabled="saving">
+          <button :disabled="saving" class="btn btn-primary save-btn" @click="saveSettings">
             {{ saving ? '保存中...' : '保存设置' }}
           </button>
         </div>
@@ -323,13 +328,13 @@
 
     <!-- 确认对话框 -->
     <ConfirmDialog
-      v-model:show="showConfirmDialog"
-      :title="confirmDialog.title"
-      :message="confirmDialog.message"
-      :type="confirmDialog.type"
-      :loading="confirmDialog.loading"
-      @confirm="confirmDialog.onConfirm"
-      @cancel="confirmDialog.onCancel"
+        v-model:show="showConfirmDialog"
+        :loading="confirmDialog.loading"
+        :message="confirmDialog.message"
+        :title="confirmDialog.title"
+        :type="confirmDialog.type"
+        @cancel="confirmDialog.onCancel"
+        @confirm="confirmDialog.onConfirm"
     />
   </div>
 </template>
@@ -339,7 +344,7 @@ import {nextTick, onMounted, ref} from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import {useSiteConfig} from '~/composables/useSiteConfig'
 
-const { siteTitle } = useSiteConfig()
+const {siteTitle} = useSiteConfig()
 
 // 页面状态
 const loading = ref(true)
@@ -382,10 +387,11 @@ const confirmDialog = ref({
   message: '',
   type: 'warning',
   loading: false,
-  onConfirm: () => {},
-  onCancel: () => {}
+  onConfirm: () => {
+  },
+  onCancel: () => {
+  }
 })
-
 
 
 // 通知显示函数
@@ -410,7 +416,7 @@ onMounted(async () => {
   if (typeof document !== 'undefined' && siteTitle.value) {
     document.title = `通知设置 | ${siteTitle.value}`
   }
-  
+
   await loadSettings()
 })
 
@@ -435,12 +441,12 @@ const handleVerificationCodeInput = (event) => {
   // 只允许数字输入
   const value = event.target.value.replace(/[^0-9]/g, '')
   verificationCode.value = value
-  
+
   // 清除错误状态
   if (verificationCodeError.value) {
     verificationCodeError.value = false
   }
-  
+
   // 如果输入了6位数字，自动聚焦到确认按钮
   if (value.length === 6) {
     nextTick(() => {
@@ -459,13 +465,13 @@ const handleVerificationCodeKeydown = (event) => {
     'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab',
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
   ]
-  
+
   // 如果不是允许的键，阻止输入
   if (!allowedKeys.includes(event.key)) {
     event.preventDefault()
     return
   }
-  
+
   // 如果按下回车键且验证码长度为6位，执行绑定
   if (event.key === 'Enter' && verificationCode.value.length === 6) {
     verifyAndBind()
@@ -477,7 +483,7 @@ const loadSettings = async () => {
   try {
     loading.value = true
     const response = await $fetch('/api/notifications/settings')
-    
+
     if (response.success) {
       localSettings.value = {
         songSelectedNotify: response.data.songSelectedNotify || false,
@@ -487,9 +493,9 @@ const loadSettings = async () => {
         systemNotify: response.data.systemNotify || true,
         refreshInterval: response.data.refreshInterval || 60,
         meowUserId: response.data.meowUserId || '',
-  // 邮件通知总开关移除
+        // 邮件通知总开关移除
       }
-      
+
       // 加载用户邮箱信息
       userEmail.value = response.data.userEmail || ''
       emailVerified.value = response.data.emailVerified || false
@@ -511,7 +517,7 @@ const sendVerificationCode = async () => {
 
   try {
     binding.value = true
-    
+
     const response = await $fetch('/api/meow/bind', {
       method: 'POST',
       body: {
@@ -519,7 +525,7 @@ const sendVerificationCode = async () => {
         meowId: meowUserId.value.trim()
       }
     })
-    
+
     if (response.success) {
       verificationSent.value = true
       showNotification('验证码已发送到您的 MeoW 账号', 'success')
@@ -544,7 +550,7 @@ const verifyAndBind = async () => {
 
   try {
     binding.value = true
-    
+
     const response = await $fetch('/api/meow/bind', {
       method: 'POST',
       body: {
@@ -553,15 +559,15 @@ const verifyAndBind = async () => {
         verificationCode: verificationCode.value
       }
     })
-    
+
     if (response.success) {
       localSettings.value.meowUserId = meowUserId.value.trim()
-      
+
       // 重置状态
       meowUserId.value = ''
       verificationCode.value = ''
       verificationSent.value = false
-      
+
       showNotification('MeoW 账号绑定成功！', 'success')
     } else {
       showNotification(response.message || '验证码错误或已过期，请重试', 'error')
@@ -609,11 +615,11 @@ const showUnbindConfirm = () => {
 const performUnbind = async () => {
   try {
     confirmDialog.value.loading = true
-    
+
     const response = await $fetch('/api/meow/unbind', {
       method: 'POST'
     })
-    
+
     if (response.success) {
       localSettings.value.meowUserId = ''
       showNotification('MeoW 账号已解绑', 'success')
@@ -647,9 +653,9 @@ const bindEmail = async () => {
   try {
     const response = await $fetch('/api/user/email/bind', {
       method: 'POST',
-      body: { email: newEmail.value }
+      body: {email: newEmail.value}
     })
-    
+
     if (response.success) {
       userEmail.value = newEmail.value
       emailVerified.value = false
@@ -667,7 +673,6 @@ const bindEmail = async () => {
 }
 
 
-
 const handleEmailCodeInput = (event) => {
   const value = event.target.value.replace(/[^0-9]/g, '')
   emailCode.value = value
@@ -675,8 +680,11 @@ const handleEmailCodeInput = (event) => {
 }
 
 const handleEmailCodeKeydown = (event) => {
-  const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','0','1','2','3','4','5','6','7','8','9']
-  if (!allowed.includes(event.key)) { event.preventDefault(); return }
+  const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+  if (!allowed.includes(event.key)) {
+    event.preventDefault();
+    return
+  }
   if (event.key === 'Enter' && emailCode.value.length === 6) verifyEmailCode()
 }
 
@@ -690,7 +698,7 @@ const verifyEmailCode = async () => {
     bindingEmail.value = true
     const response = await $fetch('/api/user/email/verify-code', {
       method: 'POST',
-      body: { email: userEmail.value, code: emailCode.value }
+      body: {email: userEmail.value, code: emailCode.value}
     })
     if (response.success) {
       emailVerified.value = true
@@ -742,11 +750,11 @@ const resendVerificationEmail = async () => {
 
   try {
     resendingEmail.value = true
-    
+
     const response = await $fetch('/api/user/email/resend-verification', {
       method: 'POST'
     })
-    
+
     if (response.success) {
       emailCode.value = ''
       emailCodeError.value = false
@@ -779,15 +787,15 @@ const unbindEmail = async () => {
 const performEmailUnbind = async () => {
   try {
     confirmDialog.value.loading = true
-    
+
     const response = await $fetch('/api/user/email/unbind', {
       method: 'POST'
     })
-    
+
     if (response.success) {
       userEmail.value = ''
       emailVerified.value = false
-  // 邮件通知总开关移除，无需重置
+      // 邮件通知总开关移除，无需重置
       showNotification('邮箱已解绑', 'success')
       showConfirmDialog.value = false
     } else {
@@ -805,12 +813,12 @@ const performEmailUnbind = async () => {
 const saveSettings = async () => {
   try {
     saving.value = true
-    
+
     const response = await $fetch('/api/notifications/settings', {
       method: 'POST',
       body: localSettings.value
     })
-    
+
     if (response.success) {
       showNotification('设置保存成功', 'success')
     } else {
@@ -873,7 +881,6 @@ const saveSettings = async () => {
 }
 
 
-
 /* 主容器 */
 .main-container {
   max-width: 1000px;
@@ -902,8 +909,12 @@ const saveSettings = async () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 设置内容 */
@@ -1371,9 +1382,15 @@ const saveSettings = async () => {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
 }
 
 /* 数字输入动画 */
@@ -1457,40 +1474,40 @@ const saveSettings = async () => {
   .top-nav {
     padding: 1rem;
   }
-  
+
   .page-title {
     font-size: var(--text-xl);
   }
-  
+
   .main-container {
     padding: 1rem;
   }
-  
+
   .settings-section {
     padding: 1.5rem;
   }
-  
+
   .setting-card {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
     padding: 1rem;
   }
-  
+
   .setting-control {
     margin-left: 0;
     width: 100%;
   }
-  
+
   .meow-bind-section {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .meow-input {
     min-width: auto;
   }
-  
+
   .interval-input {
     min-width: auto;
   }
@@ -1500,32 +1517,32 @@ const saveSettings = async () => {
   .top-nav {
     padding: 0.75rem;
   }
-  
+
   .back-button {
     padding: 0.375rem 0.75rem;
     font-size: var(--text-xs);
   }
-  
+
   .page-title {
     font-size: var(--text-lg);
   }
-  
+
   .main-container {
     padding: 0.75rem;
   }
-  
+
   .settings-section {
     padding: 1rem;
   }
-  
+
   .section-header h2 {
     font-size: var(--text-lg);
   }
-  
+
   .setting-info h3 {
     font-size: var(--text-sm);
   }
-  
+
   .setting-info p {
     font-size: var(--text-xs);
   }

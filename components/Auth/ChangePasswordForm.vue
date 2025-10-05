@@ -1,33 +1,34 @@
 <template>
   <div class="change-password-form">
-    <form @submit.prevent="handleChangePassword" class="password-form">
+    <form class="password-form" @submit.prevent="handleChangePassword">
       <div v-if="!isFirstLogin" class="form-group">
         <label for="current-password">当前密码</label>
         <div class="input-wrapper">
-          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
             <circle cx="12" cy="16" r="1"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
           <input
-            id="current-password"
-            v-model="currentPassword"
-            :type="showCurrentPassword ? 'text' : 'password'"
-            required
-            placeholder="请输入当前密码"
-            :class="{ 'input-error': error }"
-            @input="error = ''"
+              id="current-password"
+              v-model="currentPassword"
+              :class="{ 'input-error': error }"
+              :type="showCurrentPassword ? 'text' : 'password'"
+              placeholder="请输入当前密码"
+              required
+              @input="error = ''"
           />
           <button
-            type="button"
-            class="password-toggle"
-            @click="showCurrentPassword = !showCurrentPassword"
+              class="password-toggle"
+              type="button"
+              @click="showCurrentPassword = !showCurrentPassword"
           >
-            <svg v-if="showCurrentPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" y1="1" x2="23" y2="23"/>
+            <svg v-if="showCurrentPassword" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" x2="23" y1="1" y2="23"/>
             </svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
@@ -38,30 +39,31 @@
       <div class="form-group">
         <label for="new-password">新密码</label>
         <div class="input-wrapper">
-          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
             <circle cx="12" cy="16" r="1"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
           <input
-            id="new-password"
-            v-model="newPassword"
-            :type="showNewPassword ? 'text' : 'password'"
-            required
-            placeholder="请输入新密码"
-            :class="{ 'input-error': error }"
-            @input="error = ''; validatePassword()"
+              id="new-password"
+              v-model="newPassword"
+              :class="{ 'input-error': error }"
+              :type="showNewPassword ? 'text' : 'password'"
+              placeholder="请输入新密码"
+              required
+              @input="error = ''; validatePassword()"
           />
           <button
-            type="button"
-            class="password-toggle"
-            @click="showNewPassword = !showNewPassword"
+              class="password-toggle"
+              type="button"
+              @click="showNewPassword = !showNewPassword"
           >
-            <svg v-if="showNewPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" y1="1" x2="23" y2="23"/>
+            <svg v-if="showNewPassword" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" x2="23" y1="1" y2="23"/>
             </svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
@@ -71,9 +73,9 @@
         <!-- 密码强度指示器 -->
         <div v-if="newPassword" class="password-strength">
           <div class="strength-bar">
-            <div class="strength-fill" :class="passwordStrength.class" :style="{ width: passwordStrength.width }"></div>
+            <div :class="passwordStrength.class" :style="{ width: passwordStrength.width }" class="strength-fill"></div>
           </div>
-          <div class="strength-text" :class="passwordStrength.class">
+          <div :class="passwordStrength.class" class="strength-text">
             {{ passwordStrength.text }}
           </div>
         </div>
@@ -82,30 +84,31 @@
       <div class="form-group">
         <label for="confirm-password">确认新密码</label>
         <div class="input-wrapper">
-          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
             <circle cx="12" cy="16" r="1"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
           <input
-            id="confirm-password"
-            v-model="confirmPassword"
-            :type="showConfirmPassword ? 'text' : 'password'"
-            required
-            placeholder="请再次输入新密码"
-            :class="{ 'input-error': error || (confirmPassword && newPassword !== confirmPassword) }"
-            @input="error = ''"
+              id="confirm-password"
+              v-model="confirmPassword"
+              :class="{ 'input-error': error || (confirmPassword && newPassword !== confirmPassword) }"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              placeholder="请再次输入新密码"
+              required
+              @input="error = ''"
           />
           <button
-            type="button"
-            class="password-toggle"
-            @click="showConfirmPassword = !showConfirmPassword"
+              class="password-toggle"
+              type="button"
+              @click="showConfirmPassword = !showConfirmPassword"
           >
-            <svg v-if="showConfirmPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" y1="1" x2="23" y2="23"/>
+            <svg v-if="showConfirmPassword" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" x2="23" y1="1" y2="23"/>
             </svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
@@ -114,15 +117,15 @@
 
         <!-- 密码匹配提示 -->
         <div v-if="confirmPassword && newPassword !== confirmPassword" class="password-mismatch">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10"/>
-            <line x1="15" y1="9" x2="9" y2="15"/>
-            <line x1="9" y1="9" x2="15" y2="15"/>
+            <line x1="15" x2="9" y1="9" y2="15"/>
+            <line x1="9" x2="15" y1="9" y2="15"/>
           </svg>
           <span>密码不匹配</span>
         </div>
         <div v-else-if="confirmPassword && newPassword === confirmPassword" class="password-match">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="20,6 9,17 4,12"/>
           </svg>
           <span>密码匹配</span>
@@ -130,26 +133,28 @@
       </div>
 
       <div v-if="error" class="error-container">
-        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="error-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
+          <line x1="12" x2="12" y1="8" y2="12"/>
+          <line x1="12" x2="12.01" y1="16" y2="16"/>
         </svg>
         <span class="error-message">{{ error }}</span>
       </div>
 
       <div v-if="success" class="success-container">
-        <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="success-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <polyline points="20,6 9,17 4,12"/>
         </svg>
         <span class="success-message">{{ success }}</span>
       </div>
 
-      <button type="submit" :disabled="loading || !isFormValid" class="submit-btn">
+      <button :disabled="loading || !isFormValid" class="submit-btn" type="submit">
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="31.416" stroke-dashoffset="31.416">
-            <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-            <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+          <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416" stroke-dashoffset="31.416"
+                  stroke-linecap="round" stroke-width="2">
+            <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
+                     values="0 31.416;15.708 15.708;0 31.416"/>
+            <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite" values="0;-15.708;-31.416"/>
           </circle>
         </svg>
         <span>{{ loading ? '处理中...' : (isFirstLogin ? '设置密码' : '修改密码') }}</span>
@@ -187,7 +192,7 @@ const showConfirmPassword = ref(false)
 // 密码强度计算
 const passwordStrength = computed(() => {
   const password = newPassword.value
-  if (!password) return { width: '0%', class: '', text: '' }
+  if (!password) return {width: '0%', class: '', text: ''}
 
   let score = 0
   let feedback = []
@@ -221,13 +226,13 @@ const passwordStrength = computed(() => {
   }
 
   if (score < 50) {
-    return { width: `${score}%`, class: 'weak', text: '弱' }
+    return {width: `${score}%`, class: 'weak', text: '弱'}
   } else if (score < 75) {
-    return { width: `${score}%`, class: 'medium', text: '中等' }
+    return {width: `${score}%`, class: 'medium', text: '中等'}
   } else if (score < 100) {
-    return { width: `${score}%`, class: 'strong', text: '强' }
+    return {width: `${score}%`, class: 'strong', text: '强'}
   } else {
-    return { width: '100%', class: 'very-strong', text: '很强' }
+    return {width: '100%', class: 'very-strong', text: '很强'}
   }
 })
 
@@ -235,15 +240,15 @@ const passwordStrength = computed(() => {
 const isFormValid = computed(() => {
   if (props.isFirstLogin) {
     return newPassword.value &&
-           confirmPassword.value &&
-           newPassword.value === confirmPassword.value &&
-           newPassword.value.length >= 8
+        confirmPassword.value &&
+        newPassword.value === confirmPassword.value &&
+        newPassword.value.length >= 8
   } else {
     return currentPassword.value &&
-           newPassword.value &&
-           confirmPassword.value &&
-           newPassword.value === confirmPassword.value &&
-           newPassword.value.length >= 8
+        newPassword.value &&
+        confirmPassword.value &&
+        newPassword.value === confirmPassword.value &&
+        newPassword.value.length >= 8
   }
 })
 
@@ -274,17 +279,17 @@ const handleChangePassword = async () => {
     if (props.isFirstLogin) {
       await auth.setInitialPassword(newPassword.value)
       success.value = '密码设置成功！正在跳转...'
-      
+
       // 清空表单
       currentPassword.value = ''
       newPassword.value = ''
       confirmPassword.value = ''
-      
+
       // 密码设置完成后跳转
       setTimeout(async () => {
         // 更新用户状态
         await auth.refreshUser()
-        
+
         if (auth.isAdmin.value) {
           router.push('/dashboard')
         } else {
@@ -294,12 +299,12 @@ const handleChangePassword = async () => {
     } else {
       await auth.changePassword(currentPassword.value, newPassword.value)
       success.value = '密码修改成功！正在跳转...'
-      
+
       // 清空表单
       currentPassword.value = ''
       newPassword.value = ''
       confirmPassword.value = ''
-      
+
       // 密码修改后登出
       setTimeout(() => {
         auth.logout()

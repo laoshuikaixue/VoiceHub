@@ -11,16 +11,16 @@
       <!-- 创建备份 -->
       <div class="operation-card">
         <div class="card-icon backup-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7,10 12,15 17,10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
+            <line x1="12" x2="12" y1="15" y2="3"/>
           </svg>
         </div>
         <div class="card-content">
           <h4>创建备份</h4>
           <p>导出当前数据库数据</p>
-          <button @click="showCreateModal = true" class="action-btn primary" :disabled="createLoading">
+          <button :disabled="createLoading" class="action-btn primary" @click="showCreateModal = true">
             <span v-if="createLoading">创建中...</span>
             <span v-else>创建备份</span>
           </button>
@@ -30,16 +30,16 @@
       <!-- 恢复备份 -->
       <div class="operation-card">
         <div class="card-icon restore-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M3 9v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9"/>
             <polyline points="17,14 12,9 7,14"/>
-            <line x1="12" y1="9" x2="12" y2="21"/>
+            <line x1="12" x2="12" y1="9" y2="21"/>
           </svg>
         </div>
         <div class="card-content">
           <h4>恢复备份</h4>
           <p>从备份文件恢复数据</p>
-          <button @click="showUploadModal = true" class="action-btn secondary" :disabled="uploadLoading">
+          <button :disabled="uploadLoading" class="action-btn secondary" @click="showUploadModal = true">
             <span v-if="uploadLoading">恢复中...</span>
             <span v-else>选择文件</span>
           </button>
@@ -49,7 +49,7 @@
       <!-- 重置序列 -->
       <div class="operation-card">
         <div class="card-icon sequence-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M3 12h18m-9-9l9 9-9 9"/>
             <circle cx="12" cy="12" r="3"/>
           </svg>
@@ -57,7 +57,7 @@
         <div class="card-content">
           <h4>重置序列</h4>
           <p>修复数据表的自增序列</p>
-          <button @click="showSequenceModal = true" class="action-btn warning" :disabled="sequenceLoading">
+          <button :disabled="sequenceLoading" class="action-btn warning" @click="showSequenceModal = true">
             <span v-if="sequenceLoading">重置中...</span>
             <span v-else>重置序列</span>
           </button>
@@ -67,16 +67,16 @@
       <!-- 重置数据库 -->
       <div class="operation-card danger">
         <div class="card-icon reset-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
+            <line x1="12" x2="12" y1="9" y2="13"/>
+            <line x1="12" x2="12.01" y1="17" y2="17"/>
           </svg>
         </div>
         <div class="card-content">
           <h4>重置数据库</h4>
           <p>清空所有数据（危险操作）</p>
-          <button @click="showResetModal = true" class="action-btn danger" :disabled="resetLoading">
+          <button :disabled="resetLoading" class="action-btn danger" @click="showResetModal = true">
             <span v-if="resetLoading">重置中...</span>
             <span v-else>重置数据库</span>
           </button>
@@ -89,39 +89,39 @@
       <div class="modal" @click.stop>
         <div class="modal-header">
           <h3>创建数据库备份</h3>
-          <button @click="showCreateModal = false" class="close-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+          <button class="close-btn" @click="showCreateModal = false">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
             </svg>
           </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
             <label class="checkbox-option">
-              <input type="checkbox" v-model="createForm.includeSongs" />
+              <input v-model="createForm.includeSongs" type="checkbox"/>
               <span>包含歌曲数据</span>
               <small>包含所有歌曲和投稿记录</small>
             </label>
           </div>
           <div class="form-group">
             <label class="checkbox-option">
-              <input type="checkbox" v-model="createForm.includeUsers" />
+              <input v-model="createForm.includeUsers" type="checkbox"/>
               <span>包含用户数据</span>
               <small>包含用户账户和权限信息</small>
             </label>
           </div>
           <div class="form-group">
             <label class="checkbox-option">
-              <input type="checkbox" v-model="createForm.includeSystemData" />
+              <input v-model="createForm.includeSystemData" type="checkbox"/>
               <span>包含系统设置</span>
               <small>包含系统配置和设置数据</small>
             </label>
           </div>
         </div>
         <div class="modal-footer">
-          <button @click="showCreateModal = false" class="action-btn secondary">取消</button>
-          <button @click="createBackup" class="action-btn primary" :disabled="createLoading">
+          <button class="action-btn secondary" @click="showCreateModal = false">取消</button>
+          <button :disabled="createLoading" class="action-btn primary" @click="createBackup">
             <span v-if="createLoading">创建中...</span>
             <span v-else>创建备份</span>
           </button>
@@ -134,21 +134,21 @@
       <div class="modal" @click.stop>
         <div class="modal-header">
           <h3>恢复数据库备份</h3>
-          <button @click="showUploadModal = false" class="close-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+          <button class="close-btn" @click="showUploadModal = false">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
             </svg>
           </button>
         </div>
         <div class="modal-body">
           <div class="upload-area" @click="$refs.fileInput.click()" @dragover.prevent @drop.prevent="handleFileDrop">
             <div class="upload-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14,2 14,8 20,8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
+                <line x1="16" x2="8" y1="13" y2="13"/>
+                <line x1="16" x2="8" y1="17" y2="17"/>
                 <polyline points="10,9 9,9 8,9"/>
               </svg>
             </div>
@@ -156,9 +156,9 @@
               <p v-if="!selectedFile">点击选择备份文件或拖拽到此处</p>
               <p v-else class="selected-file">{{ selectedFile.name }}</p>
             </div>
-            <input ref="fileInput" type="file" accept=".json" @change="handleFileSelect" style="display: none;">
+            <input ref="fileInput" accept=".json" style="display: none;" type="file" @change="handleFileSelect">
           </div>
-          
+
           <div class="form-group">
             <label>恢复模式</label>
             <select v-model="restoreForm.mode" class="form-select">
@@ -168,10 +168,10 @@
           </div>
 
           <div class="warning-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
+              <line x1="12" x2="12" y1="9" y2="13"/>
+              <line x1="12" x2="12.01" y1="17" y2="17"/>
             </svg>
             <div>
               <h4>注意</h4>
@@ -180,8 +180,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button @click="showUploadModal = false" class="action-btn secondary">取消</button>
-          <button @click="restoreBackup" class="action-btn primary" :disabled="uploadLoading || !selectedFile">
+          <button class="action-btn secondary" @click="showUploadModal = false">取消</button>
+          <button :disabled="uploadLoading || !selectedFile" class="action-btn primary" @click="restoreBackup">
             <span v-if="uploadLoading">恢复中...</span>
             <span v-else>开始恢复</span>
           </button>
@@ -194,10 +194,10 @@
       <div class="modal" @click.stop>
         <div class="modal-header">
           <h3>重置数据表序列</h3>
-          <button @click="showSequenceModal = false" class="close-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+          <button class="close-btn" @click="showSequenceModal = false">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
             </svg>
           </button>
         </div>
@@ -221,7 +221,7 @@
           </div>
 
           <div class="info-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10"/>
               <path d="l 4,-6 2,0 0,-2 -2,0 z"/>
               <path d="l 4,2 2,0 0,6 -2,0 z"/>
@@ -234,8 +234,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button @click="showSequenceModal = false" class="action-btn secondary">取消</button>
-          <button @click="resetSequence" class="action-btn warning" :disabled="sequenceLoading || !sequenceForm.table">
+          <button class="action-btn secondary" @click="showSequenceModal = false">取消</button>
+          <button :disabled="sequenceLoading || !sequenceForm.table" class="action-btn warning" @click="resetSequence">
             <span v-if="sequenceLoading">重置中...</span>
             <span v-else>重置序列</span>
           </button>
@@ -248,19 +248,19 @@
       <div class="modal" @click.stop>
         <div class="modal-header">
           <h3>重置数据库</h3>
-          <button @click="showResetModal = false" class="close-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+          <button class="close-btn" @click="showResetModal = false">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
             </svg>
           </button>
         </div>
         <div class="modal-body">
           <div class="danger-warning">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
+              <line x1="12" x2="12" y1="9" y2="13"/>
+              <line x1="12" x2="12.01" y1="17" y2="17"/>
             </svg>
             <div>
               <h4>危险操作警告</h4>
@@ -274,24 +274,24 @@
               <p><strong style="color: #F44336;">此操作不可撤销！</strong></p>
             </div>
           </div>
-          
+
           <div class="form-group reset-confirm-group">
             <label>请输入 "CONFIRM-DATABASE-RESET-OPERATION" 确认操作</label>
-            <input 
-              v-model="resetConfirmText" 
-              type="text" 
-              class="form-input" 
-              placeholder="输入 CONFIRM-DATABASE-RESET-OPERATION 确认"
-              @input="resetConfirmText = $event.target.value.toUpperCase()"
+            <input
+                v-model="resetConfirmText"
+                class="form-input"
+                placeholder="输入 CONFIRM-DATABASE-RESET-OPERATION 确认"
+                type="text"
+                @input="resetConfirmText = $event.target.value.toUpperCase()"
             >
           </div>
         </div>
         <div class="modal-footer">
-          <button @click="showResetModal = false" class="action-btn secondary">取消</button>
-          <button 
-            @click="resetDatabase" 
-            class="action-btn danger" 
-            :disabled="resetLoading || resetConfirmText !== 'CONFIRM-DATABASE-RESET-OPERATION'"
+          <button class="action-btn secondary" @click="showResetModal = false">取消</button>
+          <button
+              :disabled="resetLoading || resetConfirmText !== 'CONFIRM-DATABASE-RESET-OPERATION'"
+              class="action-btn danger"
+              @click="resetDatabase"
           >
             <span v-if="resetLoading">重置中...</span>
             <span v-else>确认重置</span>
@@ -364,8 +364,8 @@ const createBackup = async () => {
     const response = await $fetch('/api/admin/backup/export', {
       method: 'POST',
       body: {
-        tables: createForm.value.includeUsers && createForm.value.includeSongs ? 'all' : 
-                createForm.value.includeUsers ? 'users' : 'all',
+        tables: createForm.value.includeUsers && createForm.value.includeSongs ? 'all' :
+            createForm.value.includeUsers ? 'users' : 'all',
         includeSystemData: createForm.value.includeSystemData
       }
     })
@@ -374,7 +374,7 @@ const createBackup = async () => {
       // 处理直接下载模式
       if (response.backup.downloadMode === 'direct' && response.backup.data) {
         // 创建下载链接
-        const blob = new Blob([JSON.stringify(response.backup.data, null, 2)], { type: 'application/json' })
+        const blob = new Blob([JSON.stringify(response.backup.data, null, 2)], {type: 'application/json'})
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -399,14 +399,14 @@ const createBackup = async () => {
               'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
             }
           })
-          
+
           if (!downloadResponse.ok) {
             throw new Error(`下载失败: ${downloadResponse.status}`)
           }
-          
+
           // 获取文件内容
           const blob = await downloadResponse.blob()
-          
+
           // 创建下载链接
           const url = URL.createObjectURL(blob)
           const a = document.createElement('a')
@@ -471,27 +471,27 @@ const restoreBackup = async () => {
       // 关闭模态框并重置表单
       showUploadModal.value = false
       selectedFile.value = null
-      
+
       // 显示成功通知
       if (window.$showNotification) {
         window.$showNotification('数据恢复成功！', 'success')
-        
+
         // 显示即将重定向的通知
         setTimeout(() => {
           window.$showNotification('数据库恢复完成，3秒后将返回首页重新登录', 'info')
         }, 1500)
       }
-      
+
       // 清除认证状态并重定向到首页
       setTimeout(() => {
-        const { logout } = useAuth()
+        const {logout} = useAuth()
         if (logout) {
           logout()
         }
         // 清除本地存储的认证信息
         localStorage.removeItem('auth-token')
         localStorage.removeItem('user-info')
-        
+
         // 重定向到首页
         window.location.href = '/'
       }, 4500)
@@ -527,27 +527,27 @@ const resetDatabase = async () => {
       // 关闭模态框并重置表单
       showResetModal.value = false
       resetConfirmText.value = ''
-      
+
       // 显示成功通知
       if (window.$showNotification) {
         window.$showNotification('数据库重置成功！', 'success')
-        
+
         // 显示即将重定向的通知
         setTimeout(() => {
           window.$showNotification('数据库重置完成，3秒后将返回首页重新登录', 'info')
         }, 1500)
       }
-      
+
       // 清除认证状态并重定向到首页
       setTimeout(() => {
-        const { logout } = useAuth()
+        const {logout} = useAuth()
         if (logout) {
           logout()
         }
         // 清除本地存储的认证信息
         localStorage.removeItem('auth-token')
         localStorage.removeItem('user-info')
-        
+
         // 重定向到首页
         window.location.href = '/'
       }, 4500)
@@ -575,7 +575,7 @@ const resetSequence = async () => {
 
   sequenceLoading.value = true
   const selectedTable = sequenceForm.value.table
-  
+
   try {
     const response = await $fetch('/api/admin/fix-sequence', {
       method: 'POST',
@@ -588,12 +588,12 @@ const resetSequence = async () => {
       // 关闭模态框并重置表单
       showSequenceModal.value = false
       sequenceForm.value.table = ''
-      
+
       // 显示成功通知
       if (window.$showNotification) {
-        const successMessage = selectedTable === 'all' 
-          ? '所有表的序列重置成功！' 
-          : `${selectedTable}表的序列重置成功！`
+        const successMessage = selectedTable === 'all'
+            ? '所有表的序列重置成功！'
+            : `${selectedTable}表的序列重置成功！`
         window.$showNotification(successMessage, 'success')
       }
     } else {
@@ -1121,16 +1121,16 @@ const resetSequence = async () => {
   .operations-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal {
     margin: 1rem;
     max-width: calc(100% - 2rem);
   }
-  
+
   .modal-footer {
     flex-direction: column;
   }
-  
+
   .action-btn {
     width: 100%;
   }

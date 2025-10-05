@@ -1,32 +1,32 @@
 <template>
   <div class="schedule-form">
     <h3>为歌曲 "{{ song?.title }}" 创建排期</h3>
-    
+
     <form @submit.prevent="handleSubmit">
       <div class="form-group">
         <label for="playDate">播放日期</label>
-        <input 
-          id="playDate" 
-          v-model="playDate" 
-          type="date" 
-          required 
-          class="date-input"
+        <input
+            id="playDate"
+            v-model="playDate"
+            class="date-input"
+            required
+            type="date"
         />
       </div>
-      
+
       <!-- 播出时段选择 -->
-      <div class="form-group" v-if="playTimeEnabled">
+      <div v-if="playTimeEnabled" class="form-group">
         <label for="playTime">播出时段</label>
-        <select 
-          id="playTime" 
-          v-model="playTimeId" 
-          class="time-input"
+        <select
+            id="playTime"
+            v-model="playTimeId"
+            class="time-input"
         >
           <option value="">未指定</option>
-          <option 
-            v-for="playTime in playTimes" 
-            :key="playTime.id" 
-            :value="playTime.id"
+          <option
+              v-for="playTime in playTimes"
+              :key="playTime.id"
+              :value="playTime.id"
           >
             {{ playTime.name }} ({{ playTime.startTime }} - {{ playTime.endTime }})
           </option>
@@ -34,7 +34,7 @@
         <div v-if="song?.preferredPlayTime" class="preferred-time-hint">
           <div class="hint-icon">💡</div>
           <div>
-            用户期望的播出时段: 
+            用户期望的播出时段:
             <span class="preferred-time">
               {{ song.preferredPlayTime.name }}
               <template v-if="song.preferredPlayTime.startTime || song.preferredPlayTime.endTime">
@@ -44,14 +44,14 @@
           </div>
         </div>
       </div>
-      
+
       <div v-if="error" class="error">{{ error }}</div>
-      
+
       <div class="form-actions">
-        <button type="button" class="cancel-btn" @click="$emit('cancel')">
+        <button class="cancel-btn" type="button" @click="$emit('cancel')">
           取消
         </button>
-        <button type="submit" class="submit-btn" :disabled="loading">
+        <button :disabled="loading" class="submit-btn" type="submit">
           {{ loading ? '创建中...' : '创建排期' }}
         </button>
       </div>
@@ -80,12 +80,12 @@ const playDate = ref('')
 const playTimeId = ref('')
 const error = ref('')
 const playTimes = ref([])
-const { playTimeEnabled } = useSongs()
+const {playTimeEnabled} = useSongs()
 
 // 初始化
 onMounted(async () => {
   await fetchPlayTimes()
-  
+
   // 如果歌曲有期望的播出时段，默认选择该时段
   if (props.song?.preferredPlayTimeId) {
     playTimeId.value = props.song.preferredPlayTimeId
@@ -111,7 +111,7 @@ const fetchPlayTimes = async () => {
 // 格式化播出时段时间范围
 const formatPlayTimeRange = (playTime) => {
   if (!playTime) return '';
-  
+
   if (playTime.startTime && playTime.endTime) {
     return `${playTime.startTime} - ${playTime.endTime}`;
   } else if (playTime.startTime) {
@@ -119,23 +119,23 @@ const formatPlayTimeRange = (playTime) => {
   } else if (playTime.endTime) {
     return `${playTime.endTime} 结束`;
   }
-  
+
   return '不限时间';
 };
 
 const handleSubmit = () => {
   error.value = ''
-  
+
   if (!playDate.value) {
     error.value = '请选择播放日期'
     return
   }
-  
+
   const selectedDate = new Date(playDate.value)
-  
+
   // 播出时段ID需要转换为数字或null
   const schedulePlayTimeId = playTimeId.value ? parseInt(playTimeId.value) : null
-  
+
   emit('schedule', {
     songId: props.song.id,
     playDate: selectedDate,

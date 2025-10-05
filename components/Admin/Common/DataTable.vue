@@ -12,12 +12,12 @@
       <div class="toolbar-right">
         <slot name="toolbar-right">
           <button
-            v-if="refreshable"
-            @click="$emit('refresh')"
-            class="btn-base btn-secondary btn-sm"
-            :disabled="loading"
+              v-if="refreshable"
+              :disabled="loading"
+              class="btn-base btn-secondary btn-sm"
+              @click="$emit('refresh')"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <polyline points="23,4 23,10 17,10"/>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
             </svg>
@@ -40,28 +40,28 @@
         <!-- 表格头部 -->
         <div class="table-header">
           <div
-            v-if="selectable"
-            class="header-cell checkbox-cell"
+              v-if="selectable"
+              class="header-cell checkbox-cell"
           >
             <input
-              type="checkbox"
-              :checked="isAllSelected"
-              @change="toggleSelectAll"
-              class="checkbox"
+                :checked="isAllSelected"
+                class="checkbox"
+                type="checkbox"
+                @change="toggleSelectAll"
             />
           </div>
           <div
-            v-for="column in columns"
-            :key="column.key"
-            class="header-cell"
-            :class="column.class"
-            :style="{ width: column.width }"
+              v-for="column in columns"
+              :key="column.key"
+              :class="column.class"
+              :style="{ width: column.width }"
+              class="header-cell"
           >
             {{ column.title }}
           </div>
           <div
-            v-if="hasActions"
-            class="header-cell actions-cell"
+              v-if="hasActions"
+              class="header-cell actions-cell"
           >
             操作
           </div>
@@ -74,7 +74,7 @@
           <!-- 空状态 -->
           <div v-if="!loading && data.length === 0" class="empty-state">
             <slot name="empty">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M8 12h8"/>
               </svg>
@@ -84,72 +84,72 @@
 
           <!-- 数据行 -->
           <div
-            v-for="(row, index) in data"
-            :key="getRowKey(row, index)"
-            :class="['table-row', {
+              v-for="(row, index) in data"
+              :key="getRowKey(row, index)"
+              :class="['table-row', {
               selected: selectedRows.includes(getRowKey(row, index)),
               clickable: rowClickable
             }]"
-            @click="handleRowClick(row, index)"
+              @click="handleRowClick(row, index)"
           >
             <div
-              v-if="selectable"
-              class="cell checkbox-cell"
-              @click.stop
+                v-if="selectable"
+                class="cell checkbox-cell"
+                @click.stop
             >
               <input
-                type="checkbox"
-                :checked="selectedRows.includes(getRowKey(row, index))"
-                @change="toggleSelectRow(getRowKey(row, index))"
-                class="checkbox"
+                  :checked="selectedRows.includes(getRowKey(row, index))"
+                  class="checkbox"
+                  type="checkbox"
+                  @change="toggleSelectRow(getRowKey(row, index))"
               />
             </div>
 
             <div
-              v-for="column in columns"
-              :key="column.key"
-              class="cell"
-              :class="column.class"
-              :style="{ width: column.width }"
+                v-for="column in columns"
+                :key="column.key"
+                :class="column.class"
+                :style="{ width: column.width }"
+                class="cell"
             >
               <slot
-                :name="`cell-${column.key}`"
-                :row="row"
-                :value="getNestedValue(row, column.key)"
-                :index="index"
+                  :index="index"
+                  :name="`cell-${column.key}`"
+                  :row="row"
+                  :value="getNestedValue(row, column.key)"
               >
                 {{ formatCellValue(getNestedValue(row, column.key), column) }}
               </slot>
             </div>
 
             <div
-              v-if="hasActions"
-              class="cell actions-cell"
-              @click.stop
+                v-if="hasActions"
+                class="cell actions-cell"
+                @click.stop
             >
               <slot
-                name="actions"
-                :row="row"
-                :index="index"
+                  :index="index"
+                  :row="row"
+                  name="actions"
               >
-              <div class="action-buttons">
-                <button class="action-btn edit-btn" title="编辑">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button class="action-btn delete-btn" title="删除">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3,6 5,6 21,6"/>
-                    <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
-                  </svg>
-                </button>
-              </div>
-            </slot>
+                <div class="action-buttons">
+                  <button class="action-btn edit-btn" title="编辑">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn delete-btn" title="删除">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <polyline points="3,6 5,6 21,6"/>
+                      <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </slot>
+            </div>
           </div>
         </div>
-      </div>
       </div>
 
       <!-- 移动端卡片布局 -->
@@ -157,7 +157,7 @@
         <!-- 空状态 -->
         <div v-if="!loading && data.length === 0" class="empty-state">
           <slot name="empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10"/>
               <path d="M8 12h8"/>
             </svg>
@@ -167,28 +167,28 @@
 
         <!-- 数据卡片 -->
         <div
-          v-for="(row, index) in data"
-          :key="getRowKey(row, index)"
-          :class="['data-card', {
+            v-for="(row, index) in data"
+            :key="getRowKey(row, index)"
+            :class="['data-card', {
             selected: selectedRows.includes(getRowKey(row, index)),
             clickable: rowClickable
           }]"
-          @click="handleRowClick(row, index)"
+            @click="handleRowClick(row, index)"
         >
           <div class="card-header">
-            <div class="card-selection" v-if="selectable" @click.stop>
+            <div v-if="selectable" class="card-selection" @click.stop>
               <input
-                type="checkbox"
-                :checked="selectedRows.includes(getRowKey(row, index))"
-                @change="toggleSelectRow(getRowKey(row, index))"
-                class="checkbox"
+                  :checked="selectedRows.includes(getRowKey(row, index))"
+                  class="checkbox"
+                  type="checkbox"
+                  @change="toggleSelectRow(getRowKey(row, index))"
               />
             </div>
             <div class="card-primary">
               <slot
-                name="mobile-primary"
-                :row="row"
-                :index="index"
+                  :index="index"
+                  :row="row"
+                  name="mobile-primary"
               >
                 <!-- 默认显示第一列 -->
                 <div class="primary-value">
@@ -196,34 +196,34 @@
                 </div>
               </slot>
             </div>
-            <div class="card-actions" v-if="hasActions" @click.stop>
+            <div v-if="hasActions" class="card-actions" @click.stop>
               <slot
-                name="actions"
-                :row="row"
-                :index="index"
+                  :index="index"
+                  :row="row"
+                  name="actions"
               ></slot>
             </div>
           </div>
           <div class="card-body">
             <slot
-              name="mobile-content"
-              :row="row"
-              :index="index"
-              :columns="columns"
+                :columns="columns"
+                :index="index"
+                :row="row"
+                name="mobile-content"
             >
               <!-- 默认显示所有列（除第一列外） -->
               <div
-                v-for="column in columns.slice(1)"
-                :key="column.key"
-                class="card-field"
+                  v-for="column in columns.slice(1)"
+                  :key="column.key"
+                  class="card-field"
               >
                 <span class="field-label">{{ column.title }}:</span>
                 <span class="field-value">
                   <slot
-                    :name="`cell-${column.key}`"
-                    :row="row"
-                    :value="getNestedValue(row, column.key)"
-                    :index="index"
+                      :index="index"
+                      :name="`cell-${column.key}`"
+                      :row="row"
+                      :value="getNestedValue(row, column.key)"
                   >
                     {{ formatCellValue(getNestedValue(row, column.key), column) }}
                   </slot>
@@ -238,35 +238,35 @@
     <!-- 分页 -->
     <div v-if="pagination && totalPages > 1" class="pagination">
       <button
-        @click="$emit('page-change', 1)"
-        :disabled="currentPage === 1"
-        class="pagination-btn"
+          :disabled="currentPage === 1"
+          class="pagination-btn"
+          @click="$emit('page-change', 1)"
       >
         首页
       </button>
       <button
-        @click="$emit('page-change', currentPage - 1)"
-        :disabled="currentPage === 1"
-        class="pagination-btn"
+          :disabled="currentPage === 1"
+          class="pagination-btn"
+          @click="$emit('page-change', currentPage - 1)"
       >
         上一页
       </button>
-      
+
       <div class="pagination-info">
         第 {{ currentPage }} 页，共 {{ totalPages }} 页
       </div>
-      
+
       <button
-        @click="$emit('page-change', currentPage + 1)"
-        :disabled="currentPage === totalPages"
-        class="pagination-btn"
+          :disabled="currentPage === totalPages"
+          class="pagination-btn"
+          @click="$emit('page-change', currentPage + 1)"
       >
         下一页
       </button>
       <button
-        @click="$emit('page-change', totalPages)"
-        :disabled="currentPage === totalPages"
-        class="pagination-btn"
+          :disabled="currentPage === totalPages"
+          class="pagination-btn"
+          @click="$emit('page-change', totalPages)"
       >
         末页
       </button>
@@ -338,13 +338,13 @@ const emit = defineEmits([
 const selectedRows = ref([])
 
 const hasActions = computed(() => {
-  return !!props.columns.find(col => col.key === 'actions') || 
-         !!Object.keys($slots).find(key => key === 'actions')
+  return !!props.columns.find(col => col.key === 'actions') ||
+      !!Object.keys($slots).find(key => key === 'actions')
 })
 
 const isAllSelected = computed(() => {
-  return props.data.length > 0 && 
-         props.data.every(row => selectedRows.value.includes(getRowKey(row)))
+  return props.data.length > 0 &&
+      props.data.every(row => selectedRows.value.includes(getRowKey(row)))
 })
 
 const getRowKey = (row, index) => {
@@ -362,11 +362,11 @@ const formatCellValue = (value, column) => {
   if (column.formatter && typeof column.formatter === 'function') {
     return column.formatter(value)
   }
-  
+
   if (value === null || value === undefined) {
     return '-'
   }
-  
+
   return value
 }
 
@@ -399,7 +399,7 @@ const handleRowClick = (row, index) => {
 watch(() => props.data, (newData) => {
   const validKeys = newData.map((row, index) => getRowKey(row, index))
   selectedRows.value = selectedRows.value.filter(key => validKeys.includes(key))
-}, { deep: true })
+}, {deep: true})
 </script>
 
 <style scoped>

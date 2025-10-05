@@ -5,7 +5,7 @@
       <div class="info-section">
         <div class="info-content">
           <div class="logo-section">
-            <img src="/images/logo.svg" alt="VoiceHub Logo" class="brand-logo" />
+            <img alt="VoiceHub Logo" class="brand-logo" src="/images/logo.svg"/>
             <h1 v-if="siteTitle" class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
           </div>
 
@@ -22,19 +22,19 @@
             <h3>密码安全建议</h3>
             <div class="tip-list">
               <div class="tip-item">
-                <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="tip-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="20,6 9,17 4,12"/>
                 </svg>
                 <span>至少8个字符</span>
               </div>
               <div class="tip-item">
-                <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="tip-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="20,6 9,17 4,12"/>
                 </svg>
                 <span>包含大小写字母</span>
               </div>
               <div class="tip-item">
-                <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="tip-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="20,6 9,17 4,12"/>
                 </svg>
                 <span>包含数字和特殊字符</span>
@@ -53,12 +53,12 @@
           </div>
 
           <ClientOnly>
-            <ChangePasswordForm :is-first-login="isFirstLogin" />
+            <ChangePasswordForm :is-first-login="isFirstLogin"/>
           </ClientOnly>
 
           <div class="form-footer">
-            <NuxtLink to="/" class="back-link">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <NuxtLink class="back-link" to="/">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <polyline points="15,18 9,12 15,6"/>
               </svg>
               返回主页
@@ -75,7 +75,7 @@ import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
 import {ref} from 'vue'
 
 // 使用站点配置
-const { siteTitle, initSiteConfig } = useSiteConfig()
+const {siteTitle, initSiteConfig} = useSiteConfig()
 
 const auth = useAuth()
 const router = useRouter()
@@ -85,12 +85,12 @@ const isFirstLogin = ref(false)
 onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
-  
+
   if (!auth.isAuthenticated.value && process.client) {
     router.push('/login')
     return
   }
-  
+
   // 检查是否需要修改密码（用于显示不同的UI提示）
   if (process.client) {
     const userJson = localStorage.getItem('user')

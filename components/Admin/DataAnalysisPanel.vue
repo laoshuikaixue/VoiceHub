@@ -1,25 +1,25 @@
 <template>
   <div class="data-analysis-panel">
     <!-- 全局加载状态 -->
-    <LoadingState 
-      v-if="isLoading && !hasInitialData"
-      title="加载数据分析"
-      message="正在获取最新的统计数据..."
-      spinner-type="pulse"
-      :steps="loadingSteps"
-      :current-step="currentLoadingStep"
+    <LoadingState
+        v-if="isLoading && !hasInitialData"
+        :current-step="currentLoadingStep"
+        :steps="loadingSteps"
+        message="正在获取最新的统计数据..."
+        spinner-type="pulse"
+        title="加载数据分析"
     />
-    
+
     <!-- 错误边界 -->
-    <ErrorBoundary 
-      v-else-if="error && !hasInitialData"
-      :error="error"
-      error-title="数据加载失败"
-      error-message="无法获取数据分析信息，请检查网络连接或稍后重试"
-      :show-details="true"
-      :on-retry="refreshAllData"
+    <ErrorBoundary
+        v-else-if="error && !hasInitialData"
+        :error="error"
+        :on-retry="refreshAllData"
+        :show-details="true"
+        error-message="无法获取数据分析信息，请检查网络连接或稍后重试"
+        error-title="数据加载失败"
     />
-    
+
     <!-- 主要内容 -->
     <div v-else class="panel-content">
       <!-- 面板标题和控制区域 -->
@@ -27,27 +27,27 @@
         <div class="header-left">
           <h2>数据分析</h2>
           <div v-if="error" class="error-message">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
+              <line x1="15" x2="9" y1="9" y2="15"/>
+              <line x1="9" x2="15" y1="9" y2="15"/>
             </svg>
             {{ error }}
           </div>
         </div>
         <div class="header-controls">
-          <button 
-            @click="refreshAllData" 
-            :disabled="isLoading"
-            class="refresh-btn"
-            title="刷新数据"
+          <button
+              :disabled="isLoading"
+              class="refresh-btn"
+              title="刷新数据"
+              @click="refreshAllData"
           >
-            <svg 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              stroke-width="2"
-              :class="{ 'spinning': isLoading }"
+            <svg
+                :class="{ 'spinning': isLoading }"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
             >
               <polyline points="23,4 23,10 17,10"/>
               <polyline points="1,20 1,14 7,14"/>
@@ -56,18 +56,18 @@
           </button>
           <div class="semester-selector">
             <label for="semester-select">选择学期:</label>
-            <select 
-              id="semester-select" 
-              v-model="selectedSemester" 
-              @change="handleSemesterChange"
-              class="semester-select"
-              :disabled="isLoading"
+            <select
+                id="semester-select"
+                v-model="selectedSemester"
+                :disabled="isLoading"
+                class="semester-select"
+                @change="handleSemesterChange"
             >
               <option value="all">全部学期</option>
-              <option 
-                v-for="semester in availableSemesters" 
-                :key="semester.id" 
-                :value="semester.name"
+              <option
+                  v-for="semester in availableSemesters"
+                  :key="semester.id"
+                  :value="semester.name"
               >
                 {{ semester.name }}
               </option>
@@ -75,355 +75,360 @@
           </div>
         </div>
       </div>
-    
-    <!-- 数据概览卡片 -->
-    <div class="stats-grid">
-      <StatCard
-        label="注册用户"
-        :value="analysisData.totalUsers"
-        subtitle="系统中的用户总数"
-        icon="users"
-        icon-class="success"
-        :is-loading="isLoading"
-        format="number"
-      />
-      
-      <StatCard
-        label="总歌曲数"
-        :value="analysisData.totalSongs"
-        :change="analysisData.songsChange"
-        change-label="较上周"
-        subtitle="活跃歌曲库"
-        icon="songs"
-        icon-class="primary"
-        :trend-data="analysisData.songsTrend"
-        :is-loading="isLoading"
-        format="number"
-      />
-      
-      <StatCard
-        label="排期总数"
-        :value="analysisData.totalSchedules"
-        :change="analysisData.schedulesChange"
-        change-label="较上周"
-        subtitle="本学期排期"
-        icon="schedule"
-        icon-class="info"
-        :trend-data="analysisData.schedulesTrend"
-        :is-loading="isLoading"
-        format="number"
-      />
-      
-      <StatCard
-        label="点歌总数"
-        :value="analysisData.totalRequests"
-        :change="analysisData.requestsChange"
-        change-label="较上周"
-        subtitle="累计点播"
-        icon="votes"
-        icon-class="warning"
-        :trend-data="analysisData.requestsTrend"
-        :is-loading="isLoading"
-        format="number"
-      />
-    </div>
-    
-    <!-- 实时数据卡片 -->
-    <div class="realtime-stats">
-      <div class="realtime-card">
-        <div class="realtime-header">
-          <h3>实时数据</h3>
-          <div class="live-indicator">
-            <div class="pulse-dot"></div>
-            <span>实时</span>
-          </div>
-        </div>
-        <div class="realtime-grid">
-          <div class="realtime-item online-users-item" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave" ref="onlineUsersRef">
-            <span class="realtime-label">活跃用户</span>
-            <span class="realtime-value">{{ realtimeStats.activeUsers }}</span>
-          </div>
-          <div class="realtime-item">
-            <span class="realtime-label">今日点播</span>
-            <span class="realtime-value">{{ realtimeStats.todayRequests }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- 图表区域 -->
-    <div class="charts-grid">
-      <div class="chart-card enhanced">
-        <div class="chart-header">
-          <h3>歌曲点播趋势</h3>
-          <div class="chart-actions">
-            <button class="chart-btn" title="查看详情">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-            </button>
+      <!-- 数据概览卡片 -->
+      <div class="stats-grid">
+        <StatCard
+            :is-loading="isLoading"
+            :value="analysisData.totalUsers"
+            format="number"
+            icon="users"
+            icon-class="success"
+            label="注册用户"
+            subtitle="系统中的用户总数"
+        />
+
+        <StatCard
+            :change="analysisData.songsChange"
+            :is-loading="isLoading"
+            :trend-data="analysisData.songsTrend"
+            :value="analysisData.totalSongs"
+            change-label="较上周"
+            format="number"
+            icon="songs"
+            icon-class="primary"
+            label="总歌曲数"
+            subtitle="活跃歌曲库"
+        />
+
+        <StatCard
+            :change="analysisData.schedulesChange"
+            :is-loading="isLoading"
+            :trend-data="analysisData.schedulesTrend"
+            :value="analysisData.totalSchedules"
+            change-label="较上周"
+            format="number"
+            icon="schedule"
+            icon-class="info"
+            label="排期总数"
+            subtitle="本学期排期"
+        />
+
+        <StatCard
+            :change="analysisData.requestsChange"
+            :is-loading="isLoading"
+            :trend-data="analysisData.requestsTrend"
+            :value="analysisData.totalRequests"
+            change-label="较上周"
+            format="number"
+            icon="votes"
+            icon-class="warning"
+            label="点歌总数"
+            subtitle="累计点播"
+        />
+      </div>
+
+      <!-- 实时数据卡片 -->
+      <div class="realtime-stats">
+        <div class="realtime-card">
+          <div class="realtime-header">
+            <h3>实时数据</h3>
+            <div class="live-indicator">
+              <div class="pulse-dot"></div>
+              <span>实时</span>
+            </div>
           </div>
-        </div>
-        <div class="chart-container">
-          <div v-if="trendData.length > 0" class="chart-content">
-            <div class="trend-chart-wrapper">
-              <svg class="trend-svg" viewBox="0 0 400 200">
-                <!-- 网格线 -->
-                <defs>
-                  <pattern id="grid" width="40" height="20" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid)" />
-                
-                <!-- 趋势线 -->
-                <polyline
-                  :points="getTrendPoints(trendData)"
-                  fill="none"
-                  stroke="#4f46e5"
-                  stroke-width="3"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="trend-line"
-                />
-                
-                <!-- 数据点 -->
-                <circle
-                  v-for="(item, index) in trendData.slice(0, 10)"
-                  :key="index"
-                  :cx="(index / 9) * 360 + 20"
-                  :cy="180 - (item.count / Math.max(...trendData.map(d => d.count))) * 160"
-                  r="4"
-                  fill="#4f46e5"
-                  class="trend-point"
-                />
-              </svg>
+          <div class="realtime-grid">
+            <div ref="onlineUsersRef" class="realtime-item online-users-item" @mouseenter="handleMouseEnter"
+                 @mouseleave="handleMouseLeave">
+              <span class="realtime-label">活跃用户</span>
+              <span class="realtime-value">{{ realtimeStats.activeUsers }}</span>
             </div>
-            <div class="trend-legend">
-              <div v-for="(item, index) in trendData.slice(0, 5)" :key="index" class="trend-item">
-                <span class="trend-date">{{ item.date }}</span>
-                <span class="trend-count">{{ item.count }} 首</span>
-              </div>
+            <div class="realtime-item">
+              <span class="realtime-label">今日点播</span>
+              <span class="realtime-value">{{ realtimeStats.todayRequests }}</span>
             </div>
-          </div>
-          <div v-else class="chart-placeholder">
-            <div class="placeholder-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 3v18h18"/>
-                <path d="M7 12l3-3 3 3 5-5"/>
-              </svg>
-            </div>
-            <p>暂无趋势数据</p>
-            <span class="placeholder-subtext">数据收集中...</span>
           </div>
         </div>
       </div>
-      
-      <div class="chart-card enhanced">
-        <div class="chart-header">
-          <h3>热门歌曲排行</h3>
-        </div>
-        <div class="chart-container">
-          <div v-if="topSongs.length > 0" class="chart-content">
-            <div class="songs-ranking">
-              <div v-for="(song, index) in topSongs" :key="song.id" class="song-item enhanced">
-                <div class="song-rank-badge" :class="getRankClass(index)">
-                  <span v-if="index < 3" class="rank-icon">{{ getRankIcon(index) }}</span>
-                  <span v-else class="rank-number">{{ index + 1 }}</span>
-                </div>
-                <div class="song-info">
-                  <div class="song-title">{{ song.title }}</div>
-                  <div class="song-artist">{{ song.artist }}</div>
-                </div>
-                <div class="song-stats">
-                  <div class="vote-count">{{ song.voteCount }}</div>
-                  <div class="vote-label">次点赞</div>
-                  <div class="vote-bar">
-                    <div 
-                      class="vote-fill" 
-                      :style="{ width: (song.voteCount / Math.max(...topSongs.map(s => s.voteCount))) * 100 + '%' }"
-                    ></div>
-                  </div>
+
+      <!-- 图表区域 -->
+      <div class="charts-grid">
+        <div class="chart-card enhanced">
+          <div class="chart-header">
+            <h3>歌曲点播趋势</h3>
+            <div class="chart-actions">
+              <button class="chart-btn" title="查看详情">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <div v-if="trendData.length > 0" class="chart-content">
+              <div class="trend-chart-wrapper">
+                <svg class="trend-svg" viewBox="0 0 400 200">
+                  <!-- 网格线 -->
+                  <defs>
+                    <pattern id="grid" height="20" patternUnits="userSpaceOnUse" width="40">
+                      <path d="M 40 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                    </pattern>
+                  </defs>
+                  <rect fill="url(#grid)" height="100%" width="100%"/>
+
+                  <!-- 趋势线 -->
+                  <polyline
+                      :points="getTrendPoints(trendData)"
+                      class="trend-line"
+                      fill="none"
+                      stroke="#4f46e5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="3"
+                  />
+
+                  <!-- 数据点 -->
+                  <circle
+                      v-for="(item, index) in trendData.slice(0, 10)"
+                      :key="index"
+                      :cx="(index / 9) * 360 + 20"
+                      :cy="180 - (item.count / Math.max(...trendData.map(d => d.count))) * 160"
+                      class="trend-point"
+                      fill="#4f46e5"
+                      r="4"
+                  />
+                </svg>
+              </div>
+              <div class="trend-legend">
+                <div v-for="(item, index) in trendData.slice(0, 5)" :key="index" class="trend-item">
+                  <span class="trend-date">{{ item.date }}</span>
+                  <span class="trend-count">{{ item.count }} 首</span>
                 </div>
               </div>
             </div>
-          </div>
-          <div v-else class="chart-placeholder">
-            <div class="placeholder-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 18V5l12-2v13"/>
-                <circle cx="6" cy="18" r="3"/>
-                <circle cx="18" cy="16" r="3"/>
-              </svg>
+            <div v-else class="chart-placeholder">
+              <div class="placeholder-icon">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M3 3v18h18"/>
+                  <path d="M7 12l3-3 3 3 5-5"/>
+                </svg>
+              </div>
+              <p>暂无趋势数据</p>
+              <span class="placeholder-subtext">数据收集中...</span>
             </div>
-            <p>暂无热门歌曲</p>
-            <span class="placeholder-subtext">等待用户点播...</span>
           </div>
         </div>
-      </div>
-      
-      <!-- 活跃用户排名 -->
-      <div class="chart-card enhanced">
-        <div class="chart-header">
-          <h3>活跃用户排名</h3>
-          <div v-if="panelStates.activeUsers.loading" class="panel-loading">
-            <svg class="loading-spinner" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
-                <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-                <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
-              </circle>
-            </svg>
+
+        <div class="chart-card enhanced">
+          <div class="chart-header">
+            <h3>热门歌曲排行</h3>
           </div>
-        </div>
-        <div class="chart-container">
-          <!-- 错误状态 -->
-          <div v-if="panelStates.activeUsers.error" class="chart-error">
-            <div class="error-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="15" y1="9" x2="9" y2="15"/>
-                <line x1="9" y1="9" x2="15" y2="15"/>
-              </svg>
-            </div>
-            <p>{{ panelStates.activeUsers.error }}</p>
-            <button @click="loadActiveUsers" class="retry-btn">重试</button>
-          </div>
-          <!-- 加载状态 -->
-          <div v-else-if="panelStates.activeUsers.loading" class="chart-loading">
-            <div class="loading-content">
-              <div class="loading-text">加载活跃用户数据...</div>
-            </div>
-          </div>
-          <!-- 正常内容 -->
-          <div v-else-if="activeUsers.length > 0" class="chart-content">
-            <div class="users-ranking">
-              <div v-for="(user, index) in activeUsers" :key="user.id" class="user-item">
-                <div class="user-rank">
-                  <div :class="['rank-badge', getRankClass(index)]">
+          <div class="chart-container">
+            <div v-if="topSongs.length > 0" class="chart-content">
+              <div class="songs-ranking">
+                <div v-for="(song, index) in topSongs" :key="song.id" class="song-item enhanced">
+                  <div :class="getRankClass(index)" class="song-rank-badge">
                     <span v-if="index < 3" class="rank-icon">{{ getRankIcon(index) }}</span>
                     <span v-else class="rank-number">{{ index + 1 }}</span>
                   </div>
-                </div>
-                <div class="user-info">
-                  <div class="user-name">{{ user.name }}</div>
-                  <div class="user-details">
-                    <span class="contribution-count">{{ user.contributions }}首投稿</span>
-                    <span class="like-count">{{ user.likes }}次点赞</span>
+                  <div class="song-info">
+                    <div class="song-title">{{ song.title }}</div>
+                    <div class="song-artist">{{ song.artist }}</div>
                   </div>
-                </div>
-                <div class="user-stats">
-                  <div class="activity-score">{{ user.activityScore }}</div>
-                  <div class="score-label">活跃度</div>
-                  <div class="activity-bar">
-                    <div 
-                      class="activity-fill" 
-                      :style="{ width: `${(user.activityScore / Math.max(...activeUsers.map(u => u.activityScore))) * 100}%` }"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- 空状态 -->
-          <div v-else class="chart-placeholder">
-            <div class="placeholder-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            </div>
-            <p>暂无活跃用户数据</p>
-            <span class="placeholder-subtext">等待用户活动...</span>
-          </div>
-        </div>
-      </div>
-      
-      <div class="chart-card enhanced">
-        <div class="chart-header">
-          <h3>学期对比分析</h3>
-        </div>
-        <div class="chart-container">
-          <div v-if="semesterComparison.length > 0" class="chart-content">
-            <div class="semester-comparison">
-              <div v-for="semester in semesterComparison" :key="semester.semester" class="semester-card">
-                <div class="semester-header">
-                  <div class="semester-title">
-                    <h4>{{ semester.semester }}</h4>
-                    <span v-if="semester.isActive" class="current-badge">当前学期</span>
-                  </div>
-                  <div class="semester-period">
-                    {{ formatSemesterPeriod(semester.semester) }}
-                  </div>
-                </div>
-                <div class="semester-metrics">
-                  <div class="metric-item">
-                    <div class="metric-icon songs">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18V5l12-2v13"/>
-                        <circle cx="6" cy="18" r="3"/>
-                        <circle cx="18" cy="16" r="3"/>
-                      </svg>
-                    </div>
-                    <div class="metric-content">
-                      <div class="metric-value">{{ semester.totalSongs }}</div>
-                      <div class="metric-label">歌曲总数</div>
-                    </div>
-                  </div>
-                  <div class="metric-item">
-                    <div class="metric-icon schedules">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
-                    </div>
-                    <div class="metric-content">
-                      <div class="metric-value">{{ semester.totalSchedules }}</div>
-                      <div class="metric-label">排期数量</div>
-                    </div>
-                  </div>
-                  <div class="metric-item">
-                    <div class="metric-icon requests">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 12l2 2 4-4"/>
-                        <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/>
-                        <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
-                        <path d="M12 3c0 1-1 3-3 3s-3-2-3-3 1-3 3-3 3 2 3 3"/>
-                        <path d="M12 21c0-1 1-3 3-3s3 2 3 3-1 3-3 3-3-2-3-3"/>
-                      </svg>
-                    </div>
-                    <div class="metric-content">
-                      <div class="metric-value">{{ semester.totalRequests }}</div>
-                      <div class="metric-label">点播次数</div>
+                  <div class="song-stats">
+                    <div class="vote-count">{{ song.voteCount }}</div>
+                    <div class="vote-label">次点赞</div>
+                    <div class="vote-bar">
+                      <div
+                          :style="{ width: (song.voteCount / Math.max(...topSongs.map(s => s.voteCount))) * 100 + '%' }"
+                          class="vote-fill"
+                      ></div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+            <div v-else class="chart-placeholder">
+              <div class="placeholder-icon">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M9 18V5l12-2v13"/>
+                  <circle cx="6" cy="18" r="3"/>
+                  <circle cx="18" cy="16" r="3"/>
+                </svg>
+              </div>
+              <p>暂无热门歌曲</p>
+              <span class="placeholder-subtext">等待用户点播...</span>
+            </div>
           </div>
-          <div v-else class="chart-placeholder">
-            <div class="placeholder-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 3v18h18"/>
-                <path d="M7 12l3-3 3 3 5-5"/>
+        </div>
+
+        <!-- 活跃用户排名 -->
+        <div class="chart-card enhanced">
+          <div class="chart-header">
+            <h3>活跃用户排名</h3>
+            <div v-if="panelStates.activeUsers.loading" class="panel-loading">
+              <svg class="loading-spinner" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
+                        stroke-dashoffset="31.416" stroke-width="2">
+                  <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
+                           values="0 31.416;15.708 15.708;0 31.416"/>
+                  <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite"
+                           values="0;-15.708;-31.416"/>
+                </circle>
               </svg>
             </div>
-            <p>暂无学期数据</p>
-            <span class="placeholder-subtext">等待学期设置...</span>
+          </div>
+          <div class="chart-container">
+            <!-- 错误状态 -->
+            <div v-if="panelStates.activeUsers.error" class="chart-error">
+              <div class="error-icon">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" x2="9" y1="9" y2="15"/>
+                  <line x1="9" x2="15" y1="9" y2="15"/>
+                </svg>
+              </div>
+              <p>{{ panelStates.activeUsers.error }}</p>
+              <button class="retry-btn" @click="loadActiveUsers">重试</button>
+            </div>
+            <!-- 加载状态 -->
+            <div v-else-if="panelStates.activeUsers.loading" class="chart-loading">
+              <div class="loading-content">
+                <div class="loading-text">加载活跃用户数据...</div>
+              </div>
+            </div>
+            <!-- 正常内容 -->
+            <div v-else-if="activeUsers.length > 0" class="chart-content">
+              <div class="users-ranking">
+                <div v-for="(user, index) in activeUsers" :key="user.id" class="user-item">
+                  <div class="user-rank">
+                    <div :class="['rank-badge', getRankClass(index)]">
+                      <span v-if="index < 3" class="rank-icon">{{ getRankIcon(index) }}</span>
+                      <span v-else class="rank-number">{{ index + 1 }}</span>
+                    </div>
+                  </div>
+                  <div class="user-info">
+                    <div class="user-name">{{ user.name }}</div>
+                    <div class="user-details">
+                      <span class="contribution-count">{{ user.contributions }}首投稿</span>
+                      <span class="like-count">{{ user.likes }}次点赞</span>
+                    </div>
+                  </div>
+                  <div class="user-stats">
+                    <div class="activity-score">{{ user.activityScore }}</div>
+                    <div class="score-label">活跃度</div>
+                    <div class="activity-bar">
+                      <div
+                          :style="{ width: `${(user.activityScore / Math.max(...activeUsers.map(u => u.activityScore))) * 100}%` }"
+                          class="activity-fill"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- 空状态 -->
+            <div v-else class="chart-placeholder">
+              <div class="placeholder-icon">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <p>暂无活跃用户数据</p>
+              <span class="placeholder-subtext">等待用户活动...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card enhanced">
+          <div class="chart-header">
+            <h3>学期对比分析</h3>
+          </div>
+          <div class="chart-container">
+            <div v-if="semesterComparison.length > 0" class="chart-content">
+              <div class="semester-comparison">
+                <div v-for="semester in semesterComparison" :key="semester.semester" class="semester-card">
+                  <div class="semester-header">
+                    <div class="semester-title">
+                      <h4>{{ semester.semester }}</h4>
+                      <span v-if="semester.isActive" class="current-badge">当前学期</span>
+                    </div>
+                    <div class="semester-period">
+                      {{ formatSemesterPeriod(semester.semester) }}
+                    </div>
+                  </div>
+                  <div class="semester-metrics">
+                    <div class="metric-item">
+                      <div class="metric-icon songs">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M9 18V5l12-2v13"/>
+                          <circle cx="6" cy="18" r="3"/>
+                          <circle cx="18" cy="16" r="3"/>
+                        </svg>
+                      </div>
+                      <div class="metric-content">
+                        <div class="metric-value">{{ semester.totalSongs }}</div>
+                        <div class="metric-label">歌曲总数</div>
+                      </div>
+                    </div>
+                    <div class="metric-item">
+                      <div class="metric-icon schedules">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
+                          <line x1="16" x2="16" y1="2" y2="6"/>
+                          <line x1="8" x2="8" y1="2" y2="6"/>
+                          <line x1="3" x2="21" y1="10" y2="10"/>
+                        </svg>
+                      </div>
+                      <div class="metric-content">
+                        <div class="metric-value">{{ semester.totalSchedules }}</div>
+                        <div class="metric-label">排期数量</div>
+                      </div>
+                    </div>
+                    <div class="metric-item">
+                      <div class="metric-icon requests">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M9 12l2 2 4-4"/>
+                          <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/>
+                          <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
+                          <path d="M12 3c0 1-1 3-3 3s-3-2-3-3 1-3 3-3 3 2 3 3"/>
+                          <path d="M12 21c0-1 1-3 3-3s3 2 3 3-1 3-3 3-3-2-3-3"/>
+                        </svg>
+                      </div>
+                      <div class="metric-content">
+                        <div class="metric-value">{{ semester.totalRequests }}</div>
+                        <div class="metric-label">点播次数</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="chart-placeholder">
+              <div class="placeholder-icon">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M3 3v18h18"/>
+                  <path d="M7 12l3-3 3 3 5-5"/>
+                </svg>
+              </div>
+              <p>暂无学期数据</p>
+              <span class="placeholder-subtext">等待学期设置...</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   </div>
-  
+
   <!-- 全局悬浮提示框 -->
   <Teleport to="body">
-    <div v-if="tooltip.show" class="users-tooltip-global" :style="tooltip.style" @mouseenter="handleTooltipMouseEnter" @mouseleave="handleTooltipMouseLeave">
+    <div v-if="tooltip.show" :style="tooltip.style" class="users-tooltip-global" @mouseenter="handleTooltipMouseEnter"
+         @mouseleave="handleTooltipMouseLeave">
       <!-- 有活跃用户时的提示 -->
       <div v-if="realtimeStats.activeUsersList && realtimeStats.activeUsersList.length > 0">
         <div class="tooltip-header">
@@ -444,14 +449,14 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 无活跃用户时的提示 -->
       <div v-else class="empty-tooltip">
         <div class="tooltip-header">
           <h4>活跃用户列表</h4>
         </div>
         <div class="empty-message">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
           </svg>
@@ -470,7 +475,7 @@ import LoadingState from './Common/LoadingState.vue'
 import ErrorBoundary from './Common/ErrorBoundary.vue'
 
 // 使用学期管理 composable
-const { fetchSemesters, semesters: availableSemesters, currentSemester } = useSemesters()
+const {fetchSemesters, semesters: availableSemesters, currentSemester} = useSemesters()
 
 // 响应式数据
 const selectedSemester = ref('all')
@@ -513,11 +518,11 @@ const semesterComparison = ref([])
 
 // 各个面板的loading和error状态
 const panelStates = ref({
-  trends: { loading: false, error: null },
-  topSongs: { loading: false, error: null },
-  activeUsers: { loading: false, error: null },
-  userEngagement: { loading: false, error: null },
-  semesterComparison: { loading: false, error: null }
+  trends: {loading: false, error: null},
+  topSongs: {loading: false, error: null},
+  activeUsers: {loading: false, error: null},
+  userEngagement: {loading: false, error: null},
+  semesterComparison: {loading: false, error: null}
 })
 const realtimeStats = ref({
   activeUsers: 0,
@@ -547,15 +552,15 @@ const handleMouseEnter = (event) => {
   const rect = event.target.getBoundingClientRect()
   const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
-  
+
   // 计算tooltip位置
   let left = rect.left + rect.width / 2
   let top = rect.top - 10
-  
+
   // 确保tooltip不超出视口边界
   const tooltipWidth = 320 // 预估tooltip宽度
   const tooltipHeight = 300 // 预估tooltip高度
-  
+
   if (left + tooltipWidth / 2 > viewportWidth) {
     left = viewportWidth - tooltipWidth / 2 - 10
   }
@@ -565,7 +570,7 @@ const handleMouseEnter = (event) => {
   if (top - tooltipHeight < 0) {
     top = rect.bottom + 10
   }
-  
+
   tooltip.value.style.left = `${left}px`
   tooltip.value.style.top = `${top}px`
   tooltip.value.style.transform = 'translateX(-50%)'
@@ -608,18 +613,18 @@ const loadAnalysisData = async () => {
     isLoading.value = true
     error.value = null
     currentLoadingStep.value = 1
-    
+
     // 构建API查询参数
     const params = new URLSearchParams()
     if (selectedSemester.value && selectedSemester.value !== 'all') {
       params.append('semester', selectedSemester.value)
     }
-    
+
     // 调用API获取统计数据
     const response = await $fetch(`/api/admin/stats?${params.toString()}`, {
       method: 'GET'
     })
-    
+
     // 更新分析数据
     analysisData.value = {
       totalSongs: response.totalSongs || 0,
@@ -652,7 +657,7 @@ const loadRealtimeStats = async () => {
     const response = await $fetch('/api/admin/stats/realtime', {
       method: 'GET'
     })
-    
+
     realtimeStats.value = {
       activeUsers: response.activeUsers || 0,
       activeUsersList: response.activeUsersList || [],
@@ -668,19 +673,19 @@ const loadRealtimeStats = async () => {
 // 加载图表数据
 const loadChartData = async () => {
   currentLoadingStep.value = 2
-  
+
   // 构建API查询参数
   const params = new URLSearchParams()
   if (selectedSemester.value && selectedSemester.value !== 'all') {
     params.append('semester', selectedSemester.value)
   }
-  
+
   // 重置所有面板状态
   Object.keys(panelStates.value).forEach(key => {
     panelStates.value[key].loading = true
     panelStates.value[key].error = null
   })
-  
+
   // 独立加载趋势数据
   const loadTrends = async () => {
     try {
@@ -697,7 +702,7 @@ const loadChartData = async () => {
       panelStates.value.trends.loading = false
     }
   }
-  
+
   // 独立加载热门歌曲数据
   const loadTopSongs = async () => {
     try {
@@ -714,7 +719,7 @@ const loadChartData = async () => {
       panelStates.value.topSongs.loading = false
     }
   }
-  
+
   // 独立加载活跃用户数据
   const loadActiveUsers = async () => {
     try {
@@ -733,7 +738,7 @@ const loadChartData = async () => {
       panelStates.value.activeUsers.loading = false
     }
   }
-  
+
   // 独立加载用户参与度数据
   const loadUserEngagement = async () => {
     try {
@@ -750,7 +755,7 @@ const loadChartData = async () => {
       panelStates.value.userEngagement.loading = false
     }
   }
-  
+
   // 独立加载学期对比数据
   const loadSemesterComparison = async () => {
     try {
@@ -767,7 +772,7 @@ const loadChartData = async () => {
       panelStates.value.semesterComparison.loading = false
     }
   }
-  
+
   // 并行执行所有加载任务，但每个都是独立的
   await Promise.allSettled([
     loadTrends(),
@@ -784,26 +789,26 @@ onMounted(async () => {
     currentLoadingStep.value = 0
     // 获取学期列表
     await fetchSemesters()
-    
+
     // 设置默认学期为当前学期
     if (currentSemester.value) {
       selectedSemester.value = currentSemester.value.name
     }
-    
+
     // 并行加载所有数据
     await Promise.all([
       loadAnalysisData(),
       loadChartData(),
       loadRealtimeStats()
     ])
-    
+
     hasInitialData.value = true
-    
+
     // 设置定时刷新实时数据（每30秒）
     setInterval(() => {
       loadRealtimeStats()
     }, 30000)
-    
+
   } catch (err) {
     console.error('初始化数据分析面板失败:', err)
     error.value = '初始化失败，请刷新页面重试'
@@ -825,10 +830,10 @@ const loadActiveUsers = async () => {
   if (selectedSemester.value && selectedSemester.value !== 'all') {
     params.append('semester', selectedSemester.value)
   }
-  
+
   panelStates.value.activeUsers.loading = true
   panelStates.value.activeUsers.error = null
-  
+
   try {
     const activeUsersData = await $fetch(`/api/admin/stats/active-users?limit=10&${params.toString()}`, {
       method: 'GET'
@@ -848,15 +853,15 @@ const loadActiveUsers = async () => {
 // 获取趋势图点坐标
 const getTrendPoints = (data) => {
   if (!data || data.length === 0) return ''
-  
+
   // 过滤并验证数据，确保 count 是有效数字
   const validData = data.filter(d => d && typeof d.count === 'number' && !isNaN(d.count))
   if (validData.length === 0) return ''
-  
+
   const maxCount = Math.max(...validData.map(d => d.count))
   // 防止除零错误
   if (maxCount === 0) return ''
-  
+
   return validData.slice(0, 10).map((item, index) => {
     const x = (index / Math.max(validData.slice(0, 10).length - 1, 1)) * 360 + 20
     const y = 180 - (item.count / maxCount) * 160
@@ -1709,12 +1714,12 @@ const formatSemesterPeriod = (semester) => {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
   }
-  
+
   .charts-grid {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  
+
   .realtime-grid {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
@@ -1724,54 +1729,54 @@ const formatSemesterPeriod = (semester) => {
   .data-analysis-panel {
     padding: 16px;
   }
-  
+
   .panel-header {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
   }
-  
+
   .header-controls {
     justify-content: space-between;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .realtime-card {
     padding: 16px;
   }
-  
+
   .realtime-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
-  
+
   .chart-card {
     padding: 16px;
   }
-  
+
   .trend-svg {
     height: 150px;
   }
-  
+
   .song-item {
     padding: 12px;
   }
-  
+
   .song-rank-badge {
     width: 32px;
     height: 32px;
     font-size: 14px;
     margin-right: 12px;
   }
-  
+
   .song-title {
     font-size: 14px;
   }
-  
+
   .song-artist {
     font-size: 12px;
   }
@@ -1781,24 +1786,24 @@ const formatSemesterPeriod = (semester) => {
   .data-analysis-panel {
     padding: 12px;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .realtime-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .trend-legend {
     font-size: 10px;
   }
-  
+
   .chart-btn {
     width: 28px;
     height: 28px;
   }
-  
+
   .chart-btn svg {
     width: 14px;
     height: 14px;
@@ -1947,31 +1952,31 @@ const formatSemesterPeriod = (semester) => {
     padding: 12px;
     gap: 12px;
   }
-  
+
   .rank-badge {
     width: 32px;
     height: 32px;
     font-size: 12px;
   }
-  
+
   .rank-icon {
     width: 16px;
     height: 16px;
   }
-  
+
   .user-name {
     font-size: 14px;
   }
-  
+
   .user-details {
     font-size: 12px;
     gap: 12px;
   }
-  
+
   .activity-score {
     font-size: 16px;
   }
-  
+
   .activity-bar {
     width: 60px;
   }
@@ -1983,25 +1988,25 @@ const formatSemesterPeriod = (semester) => {
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .user-rank {
     align-self: center;
   }
-  
+
   .user-info {
     text-align: center;
     width: 100%;
   }
-  
+
   .user-stats {
     text-align: center;
     width: 100%;
   }
-  
+
   .user-details {
     justify-content: center;
   }
-  
+
   .activity-bar {
     margin: 0 auto;
   }
@@ -2274,7 +2279,7 @@ const formatSemesterPeriod = (semester) => {
     transform: none;
     margin-left: 0;
   }
-  
+
   .users-tooltip::before {
     left: 24px;
     transform: rotate(45deg);
@@ -2287,24 +2292,24 @@ const formatSemesterPeriod = (semester) => {
     max-width: 240px;
     padding: 12px;
   }
-  
+
   .user-item-tooltip {
     gap: 8px;
   }
-  
+
   .user-avatar {
     width: 28px;
     height: 28px;
   }
-  
+
   .avatar-placeholder {
     font-size: 12px;
   }
-  
+
   .user-info-tooltip .user-name {
     font-size: 13px;
   }
-  
+
   .user-info-tooltip .user-username {
     font-size: 11px;
   }
@@ -2396,11 +2401,11 @@ const formatSemesterPeriod = (semester) => {
     padding: 12px;
     font-size: 13px;
   }
-  
+
   .users-tooltip-global .tooltip-header h4 {
     font-size: 13px;
   }
-  
+
   .users-tooltip-global .user-count {
     font-size: 11px;
   }

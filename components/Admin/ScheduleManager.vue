@@ -3,46 +3,46 @@
     <!-- 日期选择器 -->
     <div class="date-selector-container">
       <button
-        class="date-nav-btn prev-btn"
-        @click="scrollDates('left')"
-        :disabled="isFirstDateVisible"
+          :disabled="isFirstDateVisible"
+          class="date-nav-btn prev-btn"
+          @click="scrollDates('left')"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <polyline points="15,18 9,12 15,6"/>
         </svg>
       </button>
-      
+
       <div ref="dateSelector" class="date-selector">
         <button
-          v-for="date in availableDates"
-          :key="date.value"
-          :class="['date-btn', { active: selectedDate === date.value, today: date.isToday }]"
-          @click="selectedDate = date.value"
+            v-for="date in availableDates"
+            :key="date.value"
+            :class="['date-btn', { active: selectedDate === date.value, today: date.isToday }]"
+            @click="selectedDate = date.value"
         >
           <div class="date-day">{{ date.day }}</div>
           <div class="date-month">{{ date.month }}</div>
           <div class="date-weekday">{{ date.weekday }}</div>
         </button>
       </div>
-      
+
       <button
-        class="date-nav-btn next-btn"
-        @click="scrollDates('right')"
-        :disabled="isLastDateVisible"
+          :disabled="isLastDateVisible"
+          class="date-nav-btn next-btn"
+          @click="scrollDates('right')"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <polyline points="9,18 15,12 9,6"/>
         </svg>
       </button>
-      
+
       <!-- 手动日期选择器 -->
       <div class="manual-date-selector">
         <button class="manual-date-btn" @click="showManualDatePicker = true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
+            <line x1="16" x2="16" y1="2" y2="6"/>
+            <line x1="8" x2="8" y1="2" y2="6"/>
+            <line x1="3" x2="21" y1="10" y2="10"/>
           </svg>
           选择日期
         </button>
@@ -59,9 +59,9 @@
         </div>
         <div class="manual-date-body">
           <input
-            type="date"
-            v-model="manualSelectedDate"
-            class="manual-date-input"
+              v-model="manualSelectedDate"
+              class="manual-date-input"
+              type="date"
           />
           <div class="manual-date-actions">
             <button class="cancel-btn" @click="showManualDatePicker = false">取消</button>
@@ -78,9 +78,9 @@
         <select v-model="selectedPlayTime" class="playtime-select">
           <option value="">未选择时段</option>
           <option
-            v-for="playTime in playTimes"
-            :key="playTime.id"
-            :value="playTime.id"
+              v-for="playTime in playTimes"
+              :key="playTime.id"
+              :value="playTime.id"
           >
             {{ playTime.name }}
             <template v-if="playTime.startTime || playTime.endTime">
@@ -111,35 +111,35 @@
           <div class="header-controls">
             <div class="search-section">
               <div class="search-input-wrapper">
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8"/>
                   <path d="m21 21-4.35-4.35"/>
                 </svg>
                 <input
-                  v-model="searchQuery"
-                  type="text"
-                  placeholder="搜索歌曲标题、艺术家或投稿人..."
-                  class="search-input"
+                    v-model="searchQuery"
+                    class="search-input"
+                    placeholder="搜索歌曲标题、艺术家或投稿人..."
+                    type="text"
                 />
                 <button
-                  v-if="searchQuery"
-                  @click="searchQuery = ''"
-                  class="clear-search-btn"
+                    v-if="searchQuery"
+                    class="clear-search-btn"
+                    @click="searchQuery = ''"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <line x1="18" x2="6" y1="6" y2="18"/>
+                    <line x1="6" x2="18" y1="6" y2="18"/>
                   </svg>
                 </button>
               </div>
             </div>
             <div class="semester-selector">
               <label class="semester-label">学期：</label>
-              <select v-model="selectedSemester" @change="onSemesterChange" class="semester-select">
+              <select v-model="selectedSemester" class="semester-select" @change="onSemesterChange">
                 <option
-                  v-for="semester in availableSemesters"
-                  :key="semester.id"
-                  :value="semester.name"
+                    v-for="semester in availableSemesters"
+                    :key="semester.id"
+                    :value="semester.name"
                 >
                   {{ semester.name }}
                 </option>
@@ -158,22 +158,22 @@
         </div>
 
         <div
-          :class="['draggable-songs', { 'drag-over': isDraggableOver }]"
-          @dragover.prevent="handleDraggableDragOver"
-          @dragenter.prevent="isDraggableOver = true"
-          @dragleave="handleDraggableDragLeave"
-          @drop.stop.prevent="handleReturnToDraggable"
+            :class="['draggable-songs', { 'drag-over': isDraggableOver }]"
+            @dragleave="handleDraggableDragLeave"
+            @dragover.prevent="handleDraggableDragOver"
+            @dragenter.prevent="isDraggableOver = true"
+            @drop.stop.prevent="handleReturnToDraggable"
         >
           <div
-            v-for="song in filteredUnscheduledSongs"
-            :key="song.id"
-            class="draggable-song"
-            draggable="true"
-            @dragstart="dragStart($event, song)"
-            @dragend="dragEnd"
-            @touchstart="handleTouchStart($event, song, 'song')"
-            @touchmove="handleTouchMove"
-            @touchend="handleTouchEnd"
+              v-for="song in filteredUnscheduledSongs"
+              :key="song.id"
+              class="draggable-song"
+              draggable="true"
+              @dragend="dragEnd"
+              @dragstart="dragStart($event, song)"
+              @touchend="handleTouchEnd"
+              @touchmove="handleTouchMove"
+              @touchstart="handleTouchStart($event, song, 'song')"
           >
             <div class="song-info">
               <div class="song-main">
@@ -183,8 +183,9 @@
                 </div>
                 <div class="song-stats">
                   <span class="votes-count">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path
+                          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                     </svg>
                     {{ song.voteCount || 0 }}
                   </span>
@@ -194,15 +195,15 @@
               <div class="song-side">
                 <span class="song-submitter">投稿: {{ song.requester }}</span>
                 <span
-                  v-if="song.preferredPlayTimeId && getPlayTimeName(song.preferredPlayTimeId)"
-                  class="preferred-playtime"
+                    v-if="song.preferredPlayTimeId && getPlayTimeName(song.preferredPlayTimeId)"
+                    class="preferred-playtime"
                 >
                   期望时段: {{ getPlayTimeName(song.preferredPlayTimeId) }}
                 </span>
               </div>
             </div>
             <div class="drag-handle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <circle cx="8" cy="8" r="1.5"/>
                 <circle cx="16" cy="8" r="1.5"/>
                 <circle cx="8" cy="16" r="1.5"/>
@@ -210,7 +211,7 @@
               </svg>
             </div>
           </div>
-          
+
           <div v-if="filteredUnscheduledSongs.length === 0" class="empty-message">
             <div v-if="searchQuery" class="empty-content">
               <div class="empty-icon">🔍</div>
@@ -229,46 +230,46 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 分页控件 -->
         <div v-if="totalPages > 1" class="pagination-container">
           <div class="pagination-info">
             共 {{ allUnscheduledSongs.length }} 首歌曲，第 {{ currentPage }} / {{ totalPages }} 页
           </div>
           <div class="pagination-controls">
-            <button 
-              class="pagination-btn" 
-              :disabled="currentPage === 1"
-              @click="prevPage"
+            <button
+                :disabled="currentPage === 1"
+                class="pagination-btn"
+                @click="prevPage"
             >
               上一页
             </button>
-            
+
             <div class="page-numbers">
               <button
-                v-for="page in Math.min(5, totalPages)"
-                :key="page"
-                :class="['page-number', { active: page === currentPage }]"
-                @click="goToPage(page)"
+                  v-for="page in Math.min(5, totalPages)"
+                  :key="page"
+                  :class="['page-number', { active: page === currentPage }]"
+                  @click="goToPage(page)"
               >
                 {{ page }}
               </button>
-              
+
               <span v-if="totalPages > 5" class="page-ellipsis">...</span>
-              
+
               <button
-                v-if="totalPages > 5 && currentPage < totalPages - 2"
-                :class="['page-number', { active: totalPages === currentPage }]"
-                @click="goToPage(totalPages)"
+                  v-if="totalPages > 5 && currentPage < totalPages - 2"
+                  :class="['page-number', { active: totalPages === currentPage }]"
+                  @click="goToPage(totalPages)"
               >
                 {{ totalPages }}
               </button>
             </div>
-            
-            <button 
-              class="pagination-btn" 
-              :disabled="currentPage === totalPages"
-              @click="nextPage"
+
+            <button
+                :disabled="currentPage === totalPages"
+                class="pagination-btn"
+                @click="nextPage"
             >
               下一页
             </button>
@@ -282,40 +283,40 @@
           <h3>播放顺序</h3>
           <div class="sequence-actions">
             <!-- 草稿保存按钮 -->
-            <button 
-              @click="saveDraft" 
-              class="draft-btn" 
-              :disabled="!hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts"
+            <button
+                :disabled="!hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts"
+                class="draft-btn"
+                @click="saveDraft"
             >
               保存草稿
             </button>
             <!-- 发布按钮 -->
-            <button 
-              @click="publishSchedule" 
-              class="publish-btn" 
-              :disabled="!canPublish"
+            <button
+                :disabled="!canPublish"
+                class="publish-btn"
+                @click="publishSchedule"
             >
               发布排期
             </button>
             <!-- 保存并发布 -->
-            <button 
-              @click="saveSequence" 
-              class="save-btn" 
-              :disabled="!hasChanges && localScheduledSongs.length > 0"
+            <button
+                :disabled="!hasChanges && localScheduledSongs.length > 0"
+                class="save-btn"
+                @click="saveSequence"
             >
               保存并发布
             </button>
-            <button 
-              @click="openDownloadDialog" 
-              class="download-btn" 
-              :disabled="localScheduledSongs.length === 0"
+            <button
+                :disabled="localScheduledSongs.length === 0"
+                class="download-btn"
+                @click="openDownloadDialog"
             >
               下载歌曲
             </button>
-            <button 
-              @click="markAllAsPlayed" 
-              class="mark-played-btn" 
-              :disabled="localScheduledSongs.length === 0"
+            <button
+                :disabled="localScheduledSongs.length === 0"
+                class="mark-played-btn"
+                @click="markAllAsPlayed"
             >
               全部已播放
             </button>
@@ -323,12 +324,12 @@
         </div>
 
         <div
-          ref="sequenceList"
-          :class="['sequence-list', { 'drag-over': isSequenceOver }]"
-          @dragover.prevent="handleDragOver"
-          @dragenter.prevent="isSequenceOver = true"
-          @dragleave="handleSequenceDragLeave"
-          @drop.stop.prevent="dropToSequence"
+            ref="sequenceList"
+            :class="['sequence-list', { 'drag-over': isSequenceOver }]"
+            @dragleave="handleSequenceDragLeave"
+            @dragover.prevent="handleDragOver"
+            @dragenter.prevent="isSequenceOver = true"
+            @drop.stop.prevent="dropToSequence"
         >
           <div v-if="localScheduledSongs.length === 0" class="empty-message">
             <div class="empty-content">
@@ -339,58 +340,58 @@
           </div>
 
           <TransitionGroup
-            name="schedule-list"
-            tag="div"
-            class="schedule-transition-group"
+              class="schedule-transition-group"
+              name="schedule-list"
+              tag="div"
           >
             <div
-              v-for="(schedule, index) in localScheduledSongs"
-              :key="schedule.id"
-              :class="['scheduled-song', { 'drag-over': dragOverIndex === index, 'is-draft': schedule.isDraft }]"
-              :data-schedule-id="schedule.id"
-              draggable="true"
-              @dragstart="dragScheduleStart($event, schedule)"
-              @dragend="dragEnd"
-              @dragover.prevent
-              @dragenter.prevent="handleDragEnter($event, index)"
-              @dragleave="handleDragLeave"
-              @drop.stop.prevent="dropReorder($event, index)"
-              @touchstart="handleTouchStart($event, schedule, 'schedule')"
-              @touchmove="handleTouchMove"
-              @touchend="handleTouchEnd"
+                v-for="(schedule, index) in localScheduledSongs"
+                :key="schedule.id"
+                :class="['scheduled-song', { 'drag-over': dragOverIndex === index, 'is-draft': schedule.isDraft }]"
+                :data-schedule-id="schedule.id"
+                draggable="true"
+                @dragend="dragEnd"
+                @dragleave="handleDragLeave"
+                @dragstart="dragScheduleStart($event, schedule)"
+                @touchend="handleTouchEnd"
+                @touchmove="handleTouchMove"
+                @touchstart="handleTouchStart($event, schedule, 'schedule')"
+                @dragover.prevent
+                @dragenter.prevent="handleDragEnter($event, index)"
+                @drop.stop.prevent="dropReorder($event, index)"
             >
-            <div class="order-number">{{ index + 1 }}</div>
-            <div class="scheduled-song-info">
-              <div class="song-main">
-                <div class="song-title">
-                  {{ schedule.song.title }}
-                  <span v-if="schedule.isDraft" class="draft-badge">草稿</span>
+              <div class="order-number">{{ index + 1 }}</div>
+              <div class="scheduled-song-info">
+                <div class="song-main">
+                  <div class="song-title">
+                    {{ schedule.song.title }}
+                    <span v-if="schedule.isDraft" class="draft-badge">草稿</span>
+                  </div>
+                  <div class="song-artist">{{ schedule.song.artist }}</div>
+                  <div class="song-requester">投稿人: {{ schedule.song.requester }}</div>
                 </div>
-                <div class="song-artist">{{ schedule.song.artist }}</div>
-                <div class="song-requester">投稿人: {{ schedule.song.requester }}</div>
               </div>
-            </div>
-            <div class="song-actions">
-              <!-- 草稿状态显示发布按钮 -->
-              <button 
-                v-if="schedule.isDraft" 
-                @click="publishSingleDraft(schedule)" 
-                class="publish-single-btn"
-                title="发布此草稿"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="5,3 19,12 5,21 5,3"/>
-                </svg>
-              </button>
-              <div class="drag-handle">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="8" cy="8" r="1.5"/>
-                  <circle cx="16" cy="8" r="1.5"/>
-                  <circle cx="8" cy="16" r="1.5"/>
-                  <circle cx="16" cy="16" r="1.5"/>
-                </svg>
+              <div class="song-actions">
+                <!-- 草稿状态显示发布按钮 -->
+                <button
+                    v-if="schedule.isDraft"
+                    class="publish-single-btn"
+                    title="发布此草稿"
+                    @click="publishSingleDraft(schedule)"
+                >
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <polygon points="5,3 19,12 5,21 5,3"/>
+                  </svg>
+                </button>
+                <div class="drag-handle">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="8" cy="8" r="1.5"/>
+                    <circle cx="16" cy="8" r="1.5"/>
+                    <circle cx="8" cy="16" r="1.5"/>
+                    <circle cx="16" cy="16" r="1.5"/>
+                  </svg>
+                </div>
               </div>
-            </div>
             </div>
           </TransitionGroup>
         </div>
@@ -400,22 +401,22 @@
 
   <!-- 确认对话框 -->
   <ConfirmDialog
-    :show="showConfirmDialog"
-    :title="confirmDialogTitle"
-    :message="confirmDialogMessage"
-    :type="confirmDialogType"
-    :confirm-text="confirmDialogConfirmText"
-    cancel-text="取消"
-    :loading="loading"
-    @confirm="handleConfirm"
-    @close="showConfirmDialog = false"
+      :confirm-text="confirmDialogConfirmText"
+      :loading="loading"
+      :message="confirmDialogMessage"
+      :show="showConfirmDialog"
+      :title="confirmDialogTitle"
+      :type="confirmDialogType"
+      cancel-text="取消"
+      @close="showConfirmDialog = false"
+      @confirm="handleConfirm"
   />
 
   <!-- 下载对话框 -->
   <SongDownloadDialog
-    :show="showDownloadDialog"
-    :songs="localScheduledSongs"
-    @close="showDownloadDialog = false"
+      :show="showDownloadDialog"
+      :songs="localScheduledSongs"
+      @close="showDownloadDialog = false"
   />
 </template>
 
@@ -450,8 +451,8 @@ const draggedSchedule = ref(null)
 
 // 触摸拖拽状态
 const touchDragData = ref(null)
-const touchStartPos = ref({ x: 0, y: 0 })
-const touchCurrentPos = ref({ x: 0, y: 0 })
+const touchStartPos = ref({x: 0, y: 0})
+const touchCurrentPos = ref({x: 0, y: 0})
 const isDragging = ref(false)
 const isLongPressing = ref(false)
 const dragElement = ref(null)
@@ -552,11 +553,11 @@ const availableDates = computed(() => {
 // 过滤未排期歌曲（所有）
 const allUnscheduledSongs = computed(() => {
   if (!songs.value) return []
-  
+
   let unscheduledSongs = songs.value.filter(song =>
-    !song.played && !scheduledSongIds.value.has(song.id)
+      !song.played && !scheduledSongIds.value.has(song.id)
   )
-  
+
   // 搜索过滤
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
@@ -564,13 +565,13 @@ const allUnscheduledSongs = computed(() => {
       const title = (song.title || '').toLowerCase()
       const artist = (song.artist || '').toLowerCase()
       const requester = (song.requester || '').toLowerCase()
-      
-      return title.includes(query) || 
-             artist.includes(query) || 
-             requester.includes(query)
+
+      return title.includes(query) ||
+          artist.includes(query) ||
+          requester.includes(query)
     })
   }
-  
+
   return [...unscheduledSongs].sort((a, b) => {
     switch (songSortOption.value) {
       case 'time-desc':
@@ -604,7 +605,7 @@ const formatDate = (dateString) => {
   const date = new Date(dateString)
   const now = new Date()
   const diff = now - date
-  
+
   if (diff < 60000) return '刚刚'
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
@@ -651,7 +652,7 @@ onMounted(async () => {
   // 添加事件监听器
   nextTick(() => {
     if (dateSelector.value) {
-      dateSelector.value.addEventListener('wheel', handleDateSelectorWheel, { passive: false })
+      dateSelector.value.addEventListener('wheel', handleDateSelectorWheel, {passive: false})
     }
     updateScrollButtonState()
   })
@@ -712,7 +713,7 @@ const loadData = async () => {
   try {
     // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
     const semester = selectedSemester.value === '全部' ? undefined : selectedSemester.value
-    
+
     // 并行加载数据
     await Promise.all([
       songsService.fetchSongs(false, semester, false, true),
@@ -777,12 +778,12 @@ const loadSemesters = async () => {
   try {
     await semesterService.fetchSemesters()
     await semesterService.fetchCurrentSemester()
-    
+
     // 构建学期列表，包含"全部"选项和各个学期
     const semesterList = [
-      { id: 'all', name: '全部', isCurrent: false }
+      {id: 'all', name: '全部', isCurrent: false}
     ]
-    
+
     // 添加当前学期（如果存在）
     if (semesterService.currentSemester.value) {
       semesterList.push({
@@ -791,7 +792,7 @@ const loadSemesters = async () => {
         isCurrent: true
       })
     }
-    
+
     // 添加其他学期
     if (semesterService.semesters.value) {
       semesterService.semesters.value.forEach(semester => {
@@ -804,9 +805,9 @@ const loadSemesters = async () => {
         }
       })
     }
-    
+
     availableSemesters.value = semesterList
-    
+
     // 默认选择当前学期（如果存在），否则选择"全部"
     if (semesterService.currentSemester.value) {
       selectedSemester.value = semesterService.currentSemester.value.name
@@ -829,7 +830,7 @@ const updateLocalScheduledSongs = () => {
   console.log('更新本地排期数据 - 当前日期:', selectedDate.value)
   console.log('公开排期数量:', publicSchedules.value.length)
   console.log('草稿数量:', drafts.value.length)
-  
+
   // 获取已发布的排期
   let todaySchedules = publicSchedules.value.filter(s => {
     if (!s.playDate) return false
@@ -843,7 +844,7 @@ const updateLocalScheduledSongs = () => {
     const draftDateStr = new Date(draft.playDate).toISOString().split('T')[0]
     return draftDateStr === selectedDate.value
   })
-  
+
   console.log('当天已发布排期:', todaySchedules.length)
   console.log('当天草稿排期:', todayDrafts.length)
 
@@ -853,22 +854,22 @@ const updateLocalScheduledSongs = () => {
   // 如果选择了特定播出时段，进行过滤
   if (selectedPlayTime.value) {
     allSchedules = allSchedules.filter(s =>
-      s.playTimeId === parseInt(selectedPlayTime.value)
+        s.playTimeId === parseInt(selectedPlayTime.value)
     )
   }
 
   // 按 sequence 字段排序
   allSchedules.sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
 
-  localScheduledSongs.value = allSchedules.map(s => ({ ...s }))
-  
+  localScheduledSongs.value = allSchedules.map(s => ({...s}))
+
   console.log('最终显示排期数量:', localScheduledSongs.value.length)
 
   // 更新已排期歌曲ID集合（包括草稿）
   scheduledSongIds.value = new Set(
-    [...publicSchedules.value, ...drafts.value]
-      .filter(s => s.song && s.song.id)
-      .map(s => s.song.id)
+      [...publicSchedules.value, ...drafts.value]
+          .filter(s => s.song && s.song.id)
+          .map(s => s.song.id)
   )
 }
 
@@ -895,7 +896,7 @@ const dragScheduleStart = (event, schedule) => {
     scheduleId: schedule.id
   }))
 
-  draggedSchedule.value = { ...schedule }
+  draggedSchedule.value = {...schedule}
 
   setTimeout(() => {
     event.target.classList.add('dragging')
@@ -1051,7 +1052,7 @@ const loadDrafts = async () => {
         includeDrafts: 'only'  // 只获取草稿
       }
     })
-    
+
     drafts.value = response.data?.schedules || []
     console.log('加载草稿列表:', drafts.value.length)
   } catch (error) {
@@ -1068,16 +1069,16 @@ const loadFullScheduleData = async (date = null, playTimeId = null, includeDraft
     if (date) query.date = date
     if (playTimeId) query.playTimeId = playTimeId
     query.includeDrafts = includeDrafts
-    
+
     const response = await $fetch('/api/admin/schedule/full', {
       ...auth.getAuthConfig(),
       query
     })
-    
-    return response.data || { schedules: [], summary: {} }
+
+    return response.data || {schedules: [], summary: {}}
   } catch (error) {
     console.error('加载完整排期数据失败:', error)
-    return { schedules: [], summary: {} }
+    return {schedules: [], summary: {}}
   }
 }
 
@@ -1090,38 +1091,38 @@ const refreshDrafts = async () => {
 // 保存草稿（无需确认）
 const saveDraft = async () => {
   loading.value = true
-  
+
   try {
     // 删除当天指定播出时段的所有排期和草稿
     const existingSchedules = [...publicSchedules.value, ...drafts.value].filter(s => {
       if (!s.playDate) return false
       const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
       const isTargetDate = scheduleDateStr === selectedDate.value
-      
+
       if (selectedPlayTime.value) {
         return isTargetDate && s.playTimeId === parseInt(selectedPlayTime.value)
       }
       return isTargetDate
     })
-    
+
     // 删除现有的排期和草稿
     for (const schedule of existingSchedules) {
       try {
         await $fetch(`/api/admin/schedule/remove`, {
           method: 'POST',
-          body: { scheduleId: schedule.id },
+          body: {scheduleId: schedule.id},
           ...auth.getAuthConfig()
         })
       } catch (deleteError) {
         console.warn('删除排期失败:', deleteError)
       }
     }
-    
+
     // 如果有歌曲，创建草稿排期
     if (localScheduledSongs.value.length > 0) {
       for (let i = 0; i < localScheduledSongs.value.length; i++) {
         const song = localScheduledSongs.value[i]
-        
+
         try {
           await $fetch('/api/admin/schedule/draft', {
             method: 'POST',
@@ -1139,13 +1140,13 @@ const saveDraft = async () => {
         }
       }
     }
-    
+
     hasChanges.value = false
     await loadData() // 重新加载数据
-    
+
     // 确保草稿显示在播放顺序中
     updateLocalScheduledSongs()
-    
+
     if (window.$showNotification) {
       if (localScheduledSongs.value.length > 0) {
         window.$showNotification('排期草稿保存成功！', 'success')
@@ -1166,7 +1167,7 @@ const saveDraft = async () => {
 // 发布排期（需要确认）
 const publishSchedule = async () => {
   if (localScheduledSongs.value.length === 0) return
-  
+
   try {
     confirmDialogTitle.value = '发布排期'
     confirmDialogMessage.value = '确定要发布当前排期吗？发布后将立即公示并发送通知。'
@@ -1184,37 +1185,37 @@ const publishSchedule = async () => {
 // 确认发布排期
 const publishScheduleConfirmed = async () => {
   loading.value = true
-  
+
   try {
     // 删除当天指定播出时段的所有排期和草稿
     const existingSchedules = [...publicSchedules.value, ...drafts.value].filter(s => {
       if (!s.playDate) return false
       const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
       const isTargetDate = scheduleDateStr === selectedDate.value
-      
+
       if (selectedPlayTime.value) {
         return isTargetDate && s.playTimeId === parseInt(selectedPlayTime.value)
       }
       return isTargetDate
     })
-    
+
     // 删除现有的排期和草稿
     for (const schedule of existingSchedules) {
       try {
         await $fetch(`/api/admin/schedule/remove`, {
           method: 'POST',
-          body: { scheduleId: schedule.id },
+          body: {scheduleId: schedule.id},
           ...auth.getAuthConfig()
         })
       } catch (deleteError) {
         console.warn('删除排期失败:', deleteError)
       }
     }
-    
+
     // 直接发布排期（不是草稿）
     for (let i = 0; i < localScheduledSongs.value.length; i++) {
       const song = localScheduledSongs.value[i]
-      
+
       try {
         await $fetch('/api/admin/schedule', {
           method: 'POST',
@@ -1232,13 +1233,13 @@ const publishScheduleConfirmed = async () => {
         throw error
       }
     }
-    
+
     hasChanges.value = false
     await loadData() // 重新加载数据
-    
+
     // 确保界面更新
     updateLocalScheduledSongs()
-    
+
     if (window.$showNotification) {
       window.$showNotification('排期发布成功，通知已发送！', 'success')
     }
@@ -1271,19 +1272,19 @@ const publishSingleDraft = async (draft) => {
 // 确认发布单个草稿
 const publishSingleDraftConfirmed = async (draft) => {
   loading.value = true
-  
+
   try {
     await $fetch('/api/admin/schedule/publish', {
       method: 'POST',
-      body: { scheduleId: draft.id },
+      body: {scheduleId: draft.id},
       ...auth.getAuthConfig()
     })
-    
+
     await loadData() // 重新加载数据
-    
+
     // 确保界面更新
     updateLocalScheduledSongs()
-    
+
     if (window.$showNotification) {
       window.$showNotification(`草稿《${draft.song.title}》发布成功，通知已发送！`, 'success')
     }
@@ -1316,17 +1317,17 @@ const publishDraft = async (draft) => {
 // 确认发布草稿
 const publishDraftConfirmed = async (draft) => {
   loading.value = true
-  
+
   try {
     await $fetch('/api/admin/schedule/publish', {
       method: 'POST',
-      body: { scheduleId: draft.id },
+      body: {scheduleId: draft.id},
       ...auth.getAuthConfig()
     })
-    
+
     await loadData() // 重新加载数据
     await loadDrafts() // 刷新草稿列表
-    
+
     if (window.$showNotification) {
       window.$showNotification(`草稿《${draft.song.title}》发布成功，通知已发送！`, 'success')
     }
@@ -1359,21 +1360,21 @@ const deleteDraft = async (draft) => {
 // 确认删除草稿
 const deleteDraftConfirmed = async (draft) => {
   loading.value = true
-  
+
   try {
     await $fetch('/api/admin/schedule/remove', {
       method: 'POST',
-      body: { scheduleId: draft.id },
+      body: {scheduleId: draft.id},
       ...auth.getAuthConfig()
     })
-    
+
     await loadDrafts() // 刷新草稿列表
-    
+
     if (window.$showNotification) {
       window.$showNotification(`草稿《${draft.song.title}》已删除`, 'success')
     }
   } catch (error) {
-    console.error('删除草稿失败:', error) 
+    console.error('删除草稿失败:', error)
     if (window.$showNotification) {
       window.$showNotification('删除草稿失败: ' + (error.data?.message || error.message), 'error')
     }
@@ -1385,40 +1386,40 @@ const deleteDraftConfirmed = async (draft) => {
 // 触摸拖拽方法
 const handleTouchStart = (event, item, type) => {
   // 在所有设备上启用触摸拖拽，但桌面端优先使用原生拖拽
-  
+
   const touch = event.touches[0]
-  touchStartPos.value = { x: touch.clientX, y: touch.clientY }
-  touchCurrentPos.value = { x: touch.clientX, y: touch.clientY }
+  touchStartPos.value = {x: touch.clientX, y: touch.clientY}
+  touchCurrentPos.value = {x: touch.clientX, y: touch.clientY}
   touchStartTime.value = Date.now()
-  touchDragData.value = { item, type }
-  
+  touchDragData.value = {item, type}
+
   // 重置状态
   isDragging.value = false
   isLongPressing.value = false
-  
+
   // 清除之前的长按定时器
   if (longPressTimer.value) {
     clearTimeout(longPressTimer.value)
   }
-  
+
   // 在移动端使用较短的长按时间，桌面端使用较长时间
   const longPressDelay = window.innerWidth <= 768 ? 300 : TOUCH_CONFIG.LONG_PRESS_DURATION
-  
+
   // 设置长按识别定时器
   longPressTimer.value = setTimeout(() => {
     if (!isDragging.value && touchDragData.value) {
       isLongPressing.value = true
-      
+
       // 触发震动反馈（如果设备支持）
       if (navigator.vibrate) {
         navigator.vibrate(TOUCH_CONFIG.VIBRATION_DURATION)
       }
-      
+
       // 显示长按提示
       if (window.innerWidth <= 768) {
         showTouchDragHint('长按开始拖拽，拖到目标区域后松开', 2000)
       }
-      
+
       // 添加长按视觉反馈
       const target = event.target.closest('.draggable-song, .scheduled-song')
       if (target) {
@@ -1427,7 +1428,7 @@ const handleTouchStart = (event, item, type) => {
       }
     }
   }, longPressDelay)
-  
+
   // 只在必要时防止默认行为
   // event.preventDefault()
 }
@@ -1436,8 +1437,8 @@ const handleTouchMove = (event) => {
   if (!touchDragData.value) return
 
   const touch = event.touches[0]
-  touchCurrentPos.value = { x: touch.clientX, y: touch.clientY }
-  
+  touchCurrentPos.value = {x: touch.clientX, y: touch.clientY}
+
   const deltaX = Math.abs(touch.clientX - touchStartPos.value.x)
   const deltaY = Math.abs(touch.clientY - touchStartPos.value.y)
   const totalDelta = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
@@ -1446,16 +1447,16 @@ const handleTouchMove = (event) => {
   if (totalDelta < TOUCH_CONFIG.SCROLL_THRESHOLD) {
     return
   }
-  
+
   // 清除长按定时器（用户开始移动）
   if (longPressTimer.value) {
     clearTimeout(longPressTimer.value)
     longPressTimer.value = null
   }
-  
+
   // 在移动端使用较小的拖拽阈值，桌面端需要长按
   const dragThreshold = window.innerWidth <= 768 ? 10 : TOUCH_CONFIG.DRAG_THRESHOLD
-  
+
   // 只有在长按识别后或移动距离超过阈值时才开始拖拽
   if (!isDragging.value && (isLongPressing.value || totalDelta > dragThreshold)) {
     isDragging.value = true
@@ -1471,14 +1472,14 @@ const handleTouchMove = (event) => {
       target.classList.remove('long-pressing')
       target.classList.add('dragging', 'touch-dragging')
       dragElement.value = target
-      
+
       // 触发拖拽开始震动
       if (navigator.vibrate) {
         navigator.vibrate(TOUCH_CONFIG.VIBRATION_DURATION)
       }
     }
   }
-  
+
   // 更新拖拽位置指示
   if (isDragging.value) {
     updateDragPosition(touch.clientX, touch.clientY)
@@ -1490,18 +1491,18 @@ const handleTouchMove = (event) => {
 const updateDragPosition = (x, y) => {
   const elementBelow = document.elementFromPoint(x, y)
   if (!elementBelow) return
-  
+
   // 清除之前的高亮
   document.querySelectorAll('.drag-target-highlight').forEach(el => {
     el.classList.remove('drag-target-highlight')
   })
-  
+
   // 高亮当前目标区域
   const sequenceList = elementBelow.closest('.sequence-list')
   const scheduledSong = elementBelow.closest('.scheduled-song')
   const draggableSongs = elementBelow.closest('.draggable-songs')
   const songListPanel = elementBelow.closest('.song-list-panel')
-  
+
   // 根据拖拽类型高亮不同的目标区域
   if (touchDragData.value?.type === 'song') {
     // 拖拽待排歌曲时，高亮播放列表区域
@@ -1533,7 +1534,7 @@ const cleanupTouchDrag = () => {
     dragElement.value.classList.remove('dragging', 'touch-dragging', 'long-pressing')
     dragElement.value = null
   }
-  
+
   // 重置状态
   isDragging.value = false
   isLongPressing.value = false
@@ -1541,7 +1542,7 @@ const cleanupTouchDrag = () => {
   dragOverIndex.value = -1
   isSequenceOver.value = false
   isDraggableOver.value = false
-  
+
   // 清除位置指示
   clearDragPosition()
 }
@@ -1550,12 +1551,12 @@ const cleanupTouchDrag = () => {
 const showTouchDragHint = (message, duration = 3000) => {
   touchHintText.value = message
   showTouchHint.value = true
-  
+
   // 清除之前的定时器
   if (touchHintTimer.value) {
     clearTimeout(touchHintTimer.value)
   }
-  
+
   // 设置自动隐藏
   touchHintTimer.value = setTimeout(() => {
     showTouchHint.value = false
@@ -1656,12 +1657,12 @@ const handleTouchDropToSequence = async (targetElement) => {
 
   scheduledSongIds.value.add(song.id)
   localScheduledSongs.value.splice(insertIndex, 0, newSchedule)
-  
+
   // 更新序列号
   localScheduledSongs.value.forEach((item, idx) => {
     item.sequence = idx + 1
   })
-  
+
   hasChanges.value = true
 }
 
@@ -1700,7 +1701,7 @@ const handleTouchReturnToDraggable = async () => {
   })
 
   hasChanges.value = true
-  
+
   // 显示成功提示
   if (window.innerWidth <= 768) {
     showTouchDragHint('歌曲已移出播放列表', 1500)
@@ -1737,7 +1738,6 @@ const handleReturnToDraggable = async (event) => {
     console.error('处理返回失败:', err)
   }
 }
-
 
 
 const saveSequence = async () => {
@@ -1800,17 +1800,17 @@ const saveSequence = async () => {
 
 const markAllAsPlayed = async () => {
   // 检查是否有可标记的歌曲
-  const unplayedSongs = localScheduledSongs.value.filter(schedule => 
-    schedule.song && !schedule.song.played
+  const unplayedSongs = localScheduledSongs.value.filter(schedule =>
+      schedule.song && !schedule.song.played
   )
-  
+
   if (unplayedSongs.length === 0) {
     if (window.$showNotification) {
       window.$showNotification('没有需要标记的歌曲', 'info')
     }
     return
   }
-  
+
   confirmDialogTitle.value = '标记已播放'
   confirmDialogMessage.value = `确定要将 ${unplayedSongs.length} 首排期歌曲标记为已播放吗？`
   confirmDialogType.value = 'info'
@@ -1819,7 +1819,7 @@ const markAllAsPlayed = async () => {
     let successCount = 0
     let failedCount = 0
     const errors = []
-    
+
     try {
       loading.value = true
       console.log(`开始标记 ${unplayedSongs.length} 首歌曲为已播放`)
@@ -1907,7 +1907,7 @@ const scrollDates = (direction) => {
 const updateScrollButtonState = () => {
   if (!dateSelector.value) return
 
-  const { scrollLeft, scrollWidth, clientWidth } = dateSelector.value
+  const {scrollLeft, scrollWidth, clientWidth} = dateSelector.value
   isFirstDateVisible.value = scrollLeft <= 0
   isLastDateVisible.value = scrollLeft >= scrollWidth - clientWidth - 1
 }
@@ -2005,7 +2005,6 @@ onMounted(() => {
   border-color: #667eea;
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
-
 
 
 .date-nav-btn {
@@ -2140,10 +2139,10 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { 
+  0% {
     transform: rotate(0deg);
   }
-  100% { 
+  100% {
     transform: rotate(360deg);
   }
 }
@@ -2672,7 +2671,6 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
 }
-
 
 
 /* 手动日期选择器 */
@@ -3556,12 +3554,12 @@ onMounted(() => {
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .draft-actions {
     width: 100%;
     justify-content: flex-end;
   }
-  
+
   .draft-song .song-meta {
     gap: 8px;
   }

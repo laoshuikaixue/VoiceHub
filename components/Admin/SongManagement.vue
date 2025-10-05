@@ -4,29 +4,29 @@
     <div class="toolbar">
       <div class="search-section">
         <div class="search-input-wrapper">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8"/>
             <path d="m21 21-4.35-4.35"/>
           </svg>
           <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="搜索歌曲标题、艺术家或投稿人..."
-            class="search-input"
+              v-model="searchQuery"
+              class="search-input"
+              placeholder="搜索歌曲标题、艺术家或投稿人..."
+              type="text"
           />
           <button
-            v-if="searchQuery"
-            @click="searchQuery = ''"
-            class="clear-search-btn"
+              v-if="searchQuery"
+              class="clear-search-btn"
+              @click="searchQuery = ''"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" x2="6" y1="6" y2="18"/>
+              <line x1="6" x2="18" y1="6" y2="18"/>
             </svg>
           </button>
         </div>
       </div>
-      
+
       <div class="filter-section">
         <select v-model="selectedSemester" class="filter-select semester-select">
           <option value="all">全部学期</option>
@@ -34,14 +34,14 @@
             {{ semester.name }}
           </option>
         </select>
-        
+
         <select v-model="statusFilter" class="filter-select">
           <option value="all">全部状态</option>
           <option value="pending">待排期</option>
           <option value="scheduled">已排期</option>
           <option value="played">已播放</option>
         </select>
-        
+
         <select v-model="sortOption" class="filter-select">
           <option value="time-desc">最新投稿</option>
           <option value="time-asc">最早投稿</option>
@@ -51,50 +51,50 @@
           <option value="title-desc">标题Z-A</option>
         </select>
       </div>
-      
+
       <div class="action-section">
         <button
-          @click="showAddSongModal = true"
-          class="filter-select add-song-btn"
+            class="filter-select add-song-btn"
+            @click="showAddSongModal = true"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="12" x2="12" y1="5" y2="19"/>
+            <line x1="5" x2="19" y1="12" y2="12"/>
           </svg>
           手动添加
         </button>
-        
+
         <button
-          @click="refreshSongs"
-          class="refresh-btn"
-          :disabled="loading"
+            :disabled="loading"
+            class="refresh-btn"
+            @click="refreshSongs"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="23,4 23,10 17,10"/>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
           </svg>
           刷新
         </button>
-        
+
         <button
-          v-if="selectedSongs.length > 0"
-          @click="openDownloadDialog"
-          class="batch-download-btn"
+            v-if="selectedSongs.length > 0"
+            class="batch-download-btn"
+            @click="openDownloadDialog"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7,10 12,15 17,10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
+            <line x1="12" x2="12" y1="15" y2="3"/>
           </svg>
           下载选中 ({{ selectedSongs.length }})
         </button>
-        
+
         <button
-          v-if="selectedSongs.length > 0"
-          @click="batchDelete"
-          class="batch-delete-btn"
+            v-if="selectedSongs.length > 0"
+            class="batch-delete-btn"
+            @click="batchDelete"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="3,6 5,6 21,6"/>
             <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
           </svg>
@@ -128,7 +128,7 @@
     <!-- 歌曲列表 -->
     <div v-else class="song-list">
       <div v-if="filteredSongs.length === 0" class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10"/>
           <path d="M8 12h8"/>
         </svg>
@@ -136,16 +136,16 @@
           {{ searchQuery ? '没有找到匹配的歌曲' : '暂无歌曲数据' }}
         </div>
       </div>
-      
+
       <div v-else class="song-table">
         <!-- 表头 -->
         <div class="table-header">
           <div class="header-cell checkbox-cell">
             <input
-              type="checkbox"
-              :checked="isAllSelected"
-              @change="toggleSelectAll"
-              class="checkbox"
+                :checked="isAllSelected"
+                class="checkbox"
+                type="checkbox"
+                @change="toggleSelectAll"
             />
           </div>
           <div class="header-cell song-info-cell">歌曲信息</div>
@@ -154,22 +154,22 @@
           <div class="header-cell status-cell">状态</div>
           <div class="header-cell actions-cell">操作</div>
         </div>
-        
+
         <!-- 歌曲行 -->
         <div
-          v-for="song in paginatedSongs"
-          :key="song.id"
-          :class="['song-row', { selected: selectedSongs.includes(song.id) }]"
+            v-for="song in paginatedSongs"
+            :key="song.id"
+            :class="['song-row', { selected: selectedSongs.includes(song.id) }]"
         >
           <div class="cell checkbox-cell">
             <input
-              type="checkbox"
-              :checked="selectedSongs.includes(song.id)"
-              @change="toggleSelectSong(song.id)"
-              class="checkbox"
+                :checked="selectedSongs.includes(song.id)"
+                class="checkbox"
+                type="checkbox"
+                @change="toggleSelectSong(song.id)"
             />
           </div>
-          
+
           <div class="cell song-info-cell">
             <div class="song-info">
               <div class="song-title">{{ song.title }}</div>
@@ -180,128 +180,130 @@
               </div>
             </div>
           </div>
-          
+
           <div class="cell submitter-cell">
             <div class="submitter-info">
               <div class="submitter-name">{{ song.requester || '未知' }}</div>
               <div v-if="song.user" class="submitter-username">@{{ song.user.username }}</div>
             </div>
           </div>
-          
+
           <div class="cell stats-cell">
             <div class="song-stats">
-              <div class="stat-item clickable" @click="showVoters(song.id)" :title="song.voteCount > 0 ? '点击查看投票人员' : '暂无投票'">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              <div :title="song.voteCount > 0 ? '点击查看投票人员' : '暂无投票'" class="stat-item clickable"
+                   @click="showVoters(song.id)">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path
+                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
                 {{ song.voteCount || 0 }}
               </div>
             </div>
           </div>
-          
+
           <div class="cell status-cell">
             <span :class="['status-badge', getStatusClass(song)]">
               {{ getStatusText(song) }}
             </span>
           </div>
-          
+
           <div class="cell actions-cell">
             <div class="action-buttons">
               <button
-                @click="editSong(song)"
-                class="action-btn edit-btn"
-                title="编辑歌曲"
+                  class="action-btn edit-btn"
+                  title="编辑歌曲"
+                  @click="editSong(song)"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
               </button>
-              
+
               <button
-                v-if="!song.played"
-                @click="markAsPlayed(song.id)"
-                class="action-btn played-btn"
-                title="标记为已播放"
+                  v-if="!song.played"
+                  class="action-btn played-btn"
+                  title="标记为已播放"
+                  @click="markAsPlayed(song.id)"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="20,6 9,17 4,12"/>
                 </svg>
               </button>
-              
+
               <button
-                v-else
-                @click="markAsUnplayed(song.id)"
-                class="action-btn unplayed-btn"
-                title="标记为未播放"
+                  v-else
+                  class="action-btn unplayed-btn"
+                  title="标记为未播放"
+                  @click="markAsUnplayed(song.id)"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                   <path d="M3 3v5h5"/>
                 </svg>
               </button>
-              
+
               <button
-                @click="rejectSong(song.id)"
-                class="action-btn reject-btn"
-                title="驳回歌曲"
+                  class="action-btn reject-btn"
+                  title="驳回歌曲"
+                  @click="rejectSong(song.id)"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" y1="9" x2="9" y2="15"/>
-                  <line x1="9" y1="9" x2="15" y2="15"/>
+                  <line x1="15" x2="9" y1="9" y2="15"/>
+                  <line x1="9" x2="15" y1="9" y2="15"/>
                 </svg>
               </button>
-              
+
               <button
-                @click="deleteSong(song.id)"
-                class="action-btn delete-btn"
-                title="删除歌曲"
+                  class="action-btn delete-btn"
+                  title="删除歌曲"
+                  @click="deleteSong(song.id)"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="3,6 5,6 21,6"/>
                   <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
-                  <line x1="10" y1="11" x2="10" y2="17"/>
-                  <line x1="14" y1="11" x2="14" y2="17"/>
+                  <line x1="10" x2="10" y1="11" y2="17"/>
+                  <line x1="14" x2="14" y1="11" y2="17"/>
                 </svg>
               </button>
             </div>
           </div>
         </div>
       </div>
-      
+
       <!-- 分页 -->
       <div v-if="totalPages > 1" class="pagination">
         <button
-          @click="currentPage = 1"
-          :disabled="currentPage === 1"
-          class="page-btn"
+            :disabled="currentPage === 1"
+            class="page-btn"
+            @click="currentPage = 1"
         >
           首页
         </button>
         <button
-          @click="currentPage--"
-          :disabled="currentPage === 1"
-          class="page-btn"
+            :disabled="currentPage === 1"
+            class="page-btn"
+            @click="currentPage--"
         >
           上一页
         </button>
-        
+
         <div class="page-info">
           第 {{ currentPage }} 页，共 {{ totalPages }} 页
         </div>
-        
+
         <button
-          @click="currentPage++"
-          :disabled="currentPage === totalPages"
-          class="page-btn"
+            :disabled="currentPage === totalPages"
+            class="page-btn"
+            @click="currentPage++"
         >
           下一页
         </button>
         <button
-          @click="currentPage = totalPages"
-          :disabled="currentPage === totalPages"
-          class="page-btn"
+            :disabled="currentPage === totalPages"
+            class="page-btn"
+            @click="currentPage = totalPages"
         >
           末页
         </button>
@@ -311,15 +313,15 @@
 
   <!-- 确认删除对话框 -->
   <ConfirmDialog
-    :show="showDeleteDialog"
-    :title="deleteDialogTitle"
-    :message="deleteDialogMessage"
-    type="danger"
-    confirm-text="删除"
-    cancel-text="取消"
-    :loading="loading"
-    @confirm="confirmDelete"
-    @close="showDeleteDialog = false"
+      :loading="loading"
+      :message="deleteDialogMessage"
+      :show="showDeleteDialog"
+      :title="deleteDialogTitle"
+      cancel-text="取消"
+      confirm-text="删除"
+      type="danger"
+      @close="showDeleteDialog = false"
+      @confirm="confirmDelete"
   />
 
   <!-- 驳回歌曲对话框 -->
@@ -327,7 +329,7 @@
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <h3>驳回歌曲</h3>
-        <button @click="cancelReject" class="close-btn">×</button>
+        <button class="close-btn" @click="cancelReject">×</button>
       </div>
       <div class="modal-body">
         <div class="reject-song-info">
@@ -339,19 +341,19 @@
           <div class="form-group">
             <label>驳回原因</label>
             <textarea
-              v-model="rejectReason"
-              class="form-textarea"
-              placeholder="请输入驳回原因，将通过系统通知发送给投稿人..."
-              rows="4"
-              required
+                v-model="rejectReason"
+                class="form-textarea"
+                placeholder="请输入驳回原因，将通过系统通知发送给投稿人..."
+                required
+                rows="4"
             ></textarea>
           </div>
           <div class="form-group">
             <label class="checkbox-label">
               <input
-                v-model="addToBlacklist"
-                type="checkbox"
-                class="checkbox"
+                  v-model="addToBlacklist"
+                  class="checkbox"
+                  type="checkbox"
               />
               <span class="checkbox-text">同时将此歌曲加入黑名单</span>
             </label>
@@ -360,8 +362,8 @@
             </div>
           </div>
           <div class="form-actions">
-            <button type="button" @click="cancelReject" class="btn-cancel">取消</button>
-            <button type="submit" class="btn-danger" :disabled="rejectLoading">
+            <button class="btn-cancel" type="button" @click="cancelReject">取消</button>
+            <button :disabled="rejectLoading" class="btn-danger" type="submit">
               {{ rejectLoading ? '驳回中...' : '确认驳回' }}
             </button>
           </div>
@@ -372,16 +374,16 @@
 
   <!-- 投票人员弹窗 -->
   <VotersModal
-    :show="showVotersModal"
-    :song-id="selectedSongId"
-    @close="closeVotersModal"
+      :show="showVotersModal"
+      :song-id="selectedSongId"
+      @close="closeVotersModal"
   />
 
   <!-- 下载歌曲对话框 -->
   <SongDownloadDialog
-    :show="showDownloadDialog"
-    :songs="selectedSongsForDownload"
-    @close="closeDownloadDialog"
+      :show="showDownloadDialog"
+      :songs="selectedSongsForDownload"
+      @close="closeDownloadDialog"
   />
 
   <!-- 编辑歌曲模态框 -->
@@ -389,28 +391,28 @@
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <h3>编辑歌曲</h3>
-        <button @click="cancelEditSong" class="close-btn">×</button>
+        <button class="close-btn" @click="cancelEditSong">×</button>
       </div>
       <div class="modal-body">
         <form @submit.prevent="saveEditSong">
           <div class="form-group">
             <label>歌曲名称</label>
             <input
-              v-model="editForm.title"
-              type="text"
-              class="form-input"
-              placeholder="请输入歌曲名称"
-              required
+                v-model="editForm.title"
+                class="form-input"
+                placeholder="请输入歌曲名称"
+                required
+                type="text"
             />
           </div>
           <div class="form-group">
             <label>歌手</label>
             <input
-              v-model="editForm.artist"
-              type="text"
-              class="form-input"
-              placeholder="请输入歌手名称"
-              required
+                v-model="editForm.artist"
+                class="form-input"
+                placeholder="请输入歌手名称"
+                required
+                type="text"
             />
           </div>
           <div class="form-group">
@@ -418,28 +420,31 @@
             <div class="user-search-container">
               <div class="search-input-wrapper">
                 <input
-                  v-model="editUserSearchQuery"
-                  type="text"
-                  class="form-input"
-                  placeholder="搜索用户姓名或用户名"
-                  @input="searchEditUsers"
-                  @focus="showEditUserDropdown = true"
+                    v-model="editUserSearchQuery"
+                    class="form-input"
+                    placeholder="搜索用户姓名或用户名"
+                    type="text"
+                    @focus="showEditUserDropdown = true"
+                    @input="searchEditUsers"
                 />
                 <div v-if="editUserSearchLoading" class="search-loading">
                   <svg class="loading-spinner" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
-                      <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-                      <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                    <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
+                            stroke-dashoffset="31.416" stroke-width="2">
+                      <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
+                               values="0 31.416;15.708 15.708;0 31.416"/>
+                      <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite"
+                               values="0;-15.708;-31.416"/>
                     </circle>
                   </svg>
                 </div>
               </div>
               <div v-if="showEditUserDropdown && filteredEditUsers.length > 0" class="user-dropdown">
                 <div
-                  v-for="user in filteredEditUsers.slice(0, 10)"
-                  :key="user.id"
-                  class="user-option"
-                  @click="selectEditUser(user)"
+                    v-for="user in filteredEditUsers.slice(0, 10)"
+                    :key="user.id"
+                    class="user-option"
+                    @click="selectEditUser(user)"
                 >
                   <div class="user-info">
                     <span class="user-name">{{ user.name }}</span>
@@ -450,7 +455,7 @@
             </div>
             <div v-if="selectedEditUser" class="selected-user">
               <span>已选择: {{ selectedEditUser.name }} (@{{ selectedEditUser.username }})</span>
-              <button type="button" @click="clearSelectedEditUser" class="clear-user-btn">×</button>
+              <button class="clear-user-btn" type="button" @click="clearSelectedEditUser">×</button>
             </div>
           </div>
           <div class="form-group">
@@ -461,7 +466,7 @@
               </option>
             </select>
           </div>
-          
+
           <!-- 音乐平台和ID（可选） -->
           <div class="form-group">
             <label>音乐平台 <span class="optional-label">（可选）</span></label>
@@ -474,10 +479,10 @@
           <div class="form-group">
             <label>音乐ID <span class="optional-label">（可选）</span></label>
             <input
-              v-model="editForm.musicId"
-              type="text"
-              class="form-input"
-              placeholder="请输入音乐平台上的歌曲ID"
+                v-model="editForm.musicId"
+                class="form-input"
+                placeholder="请输入音乐平台上的歌曲ID"
+                type="text"
             />
             <div class="field-hint">
               音乐ID是歌曲在对应平台上的唯一标识符，用于播放功能
@@ -487,19 +492,21 @@
             <label>歌曲封面URL <span class="optional-label">（可选）</span></label>
             <div class="input-wrapper">
               <input
-                v-model="editForm.cover"
-                type="url"
-                class="form-input"
-                placeholder="请输入歌曲封面图片的URL地址"
-                :class="{ 'error': editForm.cover && !editCoverValidation.valid }"
+                  v-model="editForm.cover"
+                  :class="{ 'error': editForm.cover && !editCoverValidation.valid }"
+                  class="form-input"
+                  placeholder="请输入歌曲封面图片的URL地址"
+                  type="url"
               />
               <div v-if="editCoverValidation.validating" class="validation-loading">
                 验证中...
               </div>
-              <div v-if="editForm.cover && !editCoverValidation.valid && !editCoverValidation.validating" class="validation-error">
+              <div v-if="editForm.cover && !editCoverValidation.valid && !editCoverValidation.validating"
+                   class="validation-error">
                 {{ editCoverValidation.error }}
               </div>
-              <div v-if="editForm.cover && editCoverValidation.valid && !editCoverValidation.validating" class="validation-success">
+              <div v-if="editForm.cover && editCoverValidation.valid && !editCoverValidation.validating"
+                   class="validation-success">
                 ✓ URL有效
               </div>
               <div class="field-hint">
@@ -508,8 +515,8 @@
             </div>
           </div>
           <div class="form-actions">
-            <button type="button" @click="cancelEditSong" class="btn-cancel">取消</button>
-            <button type="submit" class="btn-primary" :disabled="editLoading">
+            <button class="btn-cancel" type="button" @click="cancelEditSong">取消</button>
+            <button :disabled="editLoading" class="btn-primary" type="submit">
               {{ editLoading ? '保存中...' : '保存' }}
             </button>
           </div>
@@ -523,28 +530,28 @@
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <h3>手动添加歌曲</h3>
-        <button @click="cancelAddSong" class="close-btn">×</button>
+        <button class="close-btn" @click="cancelAddSong">×</button>
       </div>
       <div class="modal-body">
         <form @submit.prevent="saveAddSong">
           <div class="form-group">
             <label>歌曲名称</label>
             <input
-              v-model="addForm.title"
-              type="text"
-              class="form-input"
-              placeholder="请输入歌曲名称"
-              required
+                v-model="addForm.title"
+                class="form-input"
+                placeholder="请输入歌曲名称"
+                required
+                type="text"
             />
           </div>
           <div class="form-group">
             <label>歌手</label>
             <input
-              v-model="addForm.artist"
-              type="text"
-              class="form-input"
-              placeholder="请输入歌手名称"
-              required
+                v-model="addForm.artist"
+                class="form-input"
+                placeholder="请输入歌手名称"
+                required
+                type="text"
             />
           </div>
           <div class="form-group">
@@ -552,28 +559,31 @@
             <div class="user-search-container">
               <div class="search-input-wrapper">
                 <input
-                  v-model="userSearchQuery"
-                  type="text"
-                  class="form-input"
-                  placeholder="搜索用户姓名或用户名"
-                  @input="searchUsers"
-                  @focus="showUserDropdown = true"
+                    v-model="userSearchQuery"
+                    class="form-input"
+                    placeholder="搜索用户姓名或用户名"
+                    type="text"
+                    @focus="showUserDropdown = true"
+                    @input="searchUsers"
                 />
                 <div v-if="userSearchLoading" class="search-loading">
                   <svg class="loading-spinner" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
-                      <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-                      <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                    <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
+                            stroke-dashoffset="31.416" stroke-width="2">
+                      <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
+                               values="0 31.416;15.708 15.708;0 31.416"/>
+                      <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite"
+                               values="0;-15.708;-31.416"/>
                     </circle>
                   </svg>
                 </div>
               </div>
               <div v-if="showUserDropdown && filteredUsers.length > 0" class="user-dropdown">
                 <div
-                  v-for="user in filteredUsers.slice(0, 10)"
-                  :key="user.id"
-                  class="user-option"
-                  @click="selectUser(user)"
+                    v-for="user in filteredUsers.slice(0, 10)"
+                    :key="user.id"
+                    class="user-option"
+                    @click="selectUser(user)"
                 >
                   <div class="user-info">
                     <span class="user-name">{{ user.name }}</span>
@@ -584,7 +594,7 @@
             </div>
             <div v-if="selectedUser" class="selected-user">
               <span>已选择: {{ selectedUser.name }} (@{{ selectedUser.username }})</span>
-              <button type="button" @click="clearSelectedUser" class="clear-user-btn">×</button>
+              <button class="clear-user-btn" type="button" @click="clearSelectedUser">×</button>
             </div>
           </div>
           <div class="form-group">
@@ -595,7 +605,7 @@
               </option>
             </select>
           </div>
-          
+
           <!-- 音乐平台和ID（可选） -->
           <div class="form-group">
             <label>音乐平台 <span class="optional-label">（可选）</span></label>
@@ -608,10 +618,10 @@
           <div class="form-group">
             <label>音乐ID <span class="optional-label">（可选）</span></label>
             <input
-              v-model="addForm.musicId"
-              type="text"
-              class="form-input"
-              placeholder="请输入音乐平台上的歌曲ID"
+                v-model="addForm.musicId"
+                class="form-input"
+                placeholder="请输入音乐平台上的歌曲ID"
+                type="text"
             />
             <div class="field-hint">
               音乐ID是歌曲在对应平台上的唯一标识符，用于播放功能
@@ -621,19 +631,21 @@
             <label>歌曲封面URL <span class="optional-label">（可选）</span></label>
             <div class="input-wrapper">
               <input
-                v-model="addForm.cover"
-                type="url"
-                class="form-input"
-                placeholder="请输入歌曲封面图片的URL地址"
-                :class="{ 'error': addForm.cover && !addCoverValidation.valid }"
+                  v-model="addForm.cover"
+                  :class="{ 'error': addForm.cover && !addCoverValidation.valid }"
+                  class="form-input"
+                  placeholder="请输入歌曲封面图片的URL地址"
+                  type="url"
               />
               <div v-if="addCoverValidation.validating" class="validation-loading">
                 验证中...
               </div>
-              <div v-if="addForm.cover && !addCoverValidation.valid && !addCoverValidation.validating" class="validation-error">
+              <div v-if="addForm.cover && !addCoverValidation.valid && !addCoverValidation.validating"
+                   class="validation-error">
                 {{ addCoverValidation.error }}
               </div>
-              <div v-if="addForm.cover && addCoverValidation.valid && !addCoverValidation.validating" class="validation-success">
+              <div v-if="addForm.cover && addCoverValidation.valid && !addCoverValidation.validating"
+                   class="validation-success">
                 ✓ URL有效
               </div>
               <div class="field-hint">
@@ -645,19 +657,21 @@
             <label>播放地址URL <span class="optional-label">（可选）</span></label>
             <div class="input-wrapper">
               <input
-                v-model="addForm.playUrl"
-                type="url"
-                class="form-input"
-                placeholder="请输入歌曲播放的URL地址"
-                :class="{ 'error': addForm.playUrl && !addPlayUrlValidation.valid }"
+                  v-model="addForm.playUrl"
+                  :class="{ 'error': addForm.playUrl && !addPlayUrlValidation.valid }"
+                  class="form-input"
+                  placeholder="请输入歌曲播放的URL地址"
+                  type="url"
               />
               <div v-if="addPlayUrlValidation.validating" class="validation-loading">
                 验证中...
               </div>
-              <div v-if="addForm.playUrl && !addPlayUrlValidation.valid && !addPlayUrlValidation.validating" class="validation-error">
+              <div v-if="addForm.playUrl && !addPlayUrlValidation.valid && !addPlayUrlValidation.validating"
+                   class="validation-error">
                 {{ addPlayUrlValidation.error }}
               </div>
-              <div v-if="addForm.playUrl && addPlayUrlValidation.valid && !addPlayUrlValidation.validating" class="validation-success">
+              <div v-if="addForm.playUrl && addPlayUrlValidation.valid && !addPlayUrlValidation.validating"
+                   class="validation-success">
                 ✓ URL有效
               </div>
               <div class="field-hint">
@@ -666,8 +680,8 @@
             </div>
           </div>
           <div class="form-actions">
-            <button type="button" @click="cancelAddSong" class="btn-cancel">取消</button>
-            <button type="submit" class="btn-primary" :disabled="!canSubmitAddForm || addLoading">
+            <button class="btn-cancel" type="button" @click="cancelAddSong">取消</button>
+            <button :disabled="!canSubmitAddForm || addLoading" class="btn-primary" type="submit">
               {{ addLoading ? '添加中...' : '添加歌曲' }}
             </button>
           </div>
@@ -757,9 +771,9 @@ const addForm = ref({
 })
 
 // URL验证状态
-const addCoverValidation = ref({ valid: true, error: '', validating: false })
-const addPlayUrlValidation = ref({ valid: true, error: '', validating: false })
-const editCoverValidation = ref({ valid: true, error: '', validating: false })
+const addCoverValidation = ref({valid: true, error: '', validating: false})
+const addPlayUrlValidation = ref({valid: true, error: '', validating: false})
+const editCoverValidation = ref({valid: true, error: '', validating: false})
 
 // 用户搜索相关
 const userSearchQuery = ref('')
@@ -787,24 +801,24 @@ let auth = null
 // 计算属性
 const filteredSongs = computed(() => {
   if (!songs.value) return []
-  
+
   let filtered = [...songs.value]
-  
+
   // 搜索过滤
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(song =>
-      song.title?.toLowerCase().includes(query) ||
-      song.artist?.toLowerCase().includes(query) ||
-      song.requester?.toLowerCase().includes(query)
+        song.title?.toLowerCase().includes(query) ||
+        song.artist?.toLowerCase().includes(query) ||
+        song.requester?.toLowerCase().includes(query)
     )
   }
-  
+
   // 学期过滤
   if (selectedSemester.value !== 'all') {
     filtered = filtered.filter(song => song.semester === selectedSemester.value)
   }
-  
+
   // 状态过滤
   if (statusFilter.value !== 'all') {
     filtered = filtered.filter(song => {
@@ -823,7 +837,7 @@ const filteredSongs = computed(() => {
       }
     })
   }
-  
+
   // 排序
   filtered.sort((a, b) => {
     switch (sortOption.value) {
@@ -843,7 +857,7 @@ const filteredSongs = computed(() => {
         return 0
     }
   })
-  
+
   return filtered
 })
 
@@ -867,30 +881,30 @@ const pendingCount = computed(() => {
 
 const isAllSelected = computed(() => {
   return paginatedSongs.value.length > 0 &&
-         paginatedSongs.value.every(song => selectedSongs.value.includes(song.id))
+      paginatedSongs.value.every(song => selectedSongs.value.includes(song.id))
 })
 
 // 计算属性：检查添加歌曲表单是否可以提交
 const canSubmitAddForm = computed(() => {
   // 必填字段检查
-  if (!addForm.value.title.trim() || 
-      !addForm.value.artist.trim() || 
-      !selectedUser.value || 
+  if (!addForm.value.title.trim() ||
+      !addForm.value.artist.trim() ||
+      !selectedUser.value ||
       !addForm.value.semester) {
     return false
   }
-  
+
   // 可选字段验证检查
   // 如果输入了封面URL，必须验证通过且不在验证中
   if (addForm.value.cover && (!addCoverValidation.value.valid || addCoverValidation.value.validating)) {
     return false
   }
-  
+
   // 如果输入了播放URL，必须验证通过且不在验证中
   if (addForm.value.playUrl && (!addPlayUrlValidation.value.valid || addPlayUrlValidation.value.validating)) {
     return false
   }
-  
+
   return true
 })
 
@@ -921,12 +935,12 @@ const getStatusText = (song) => {
 const toggleSelectAll = () => {
   if (isAllSelected.value) {
     selectedSongs.value = selectedSongs.value.filter(id =>
-      !paginatedSongs.value.some(song => song.id === id)
+        !paginatedSongs.value.some(song => song.id === id)
     )
   } else {
     const newSelections = paginatedSongs.value
-      .map(song => song.id)
-      .filter(id => !selectedSongs.value.includes(id))
+        .map(song => song.id)
+        .filter(id => !selectedSongs.value.includes(id))
     selectedSongs.value.push(...newSelections)
   }
 }
@@ -1097,7 +1111,7 @@ const rejectSong = (songId) => {
     artist: song.artist || '',
     requester: song.requester || song.requester_name || '未知'
   }
-  
+
   rejectReason.value = ''
   addToBlacklist.value = false
   showRejectDialog.value = true
@@ -1125,7 +1139,7 @@ const confirmReject = async () => {
 
     // 强制绕过缓存刷新歌曲列表
     await refreshSongs(true)
-    
+
     // 从选中列表中移除
     const index = selectedSongs.value.indexOf(rejectSongInfo.value.id)
     if (index > -1) {
@@ -1133,7 +1147,7 @@ const confirmReject = async () => {
     }
 
     showRejectDialog.value = false
-    
+
     if (window.$showNotification) {
       window.$showNotification('歌曲驳回成功，已通知投稿人', 'success')
     }
@@ -1172,7 +1186,7 @@ const editSong = (song) => {
     musicId: song.musicId || '',
     cover: song.cover || ''
   }
-  
+
   // 设置编辑时的用户信息
   if (song.requester_name) {
     selectedEditUser.value = {
@@ -1184,7 +1198,7 @@ const editSong = (song) => {
   } else {
     clearSelectedEditUser()
   }
-  
+
   showEditModal.value = true
 }
 
@@ -1214,7 +1228,7 @@ const saveEditSong = async () => {
 
   editLoading.value = true
   try {
-    const { updateSong } = adminService
+    const {updateSong} = adminService
     // 传递投稿人字段，支持修改投稿人
     await updateSong(editForm.value.id, {
       title: editForm.value.title,
@@ -1225,16 +1239,16 @@ const saveEditSong = async () => {
       musicId: editForm.value.musicId || null,
       cover: editForm.value.cover || null
     })
-    
+
     await refreshSongs()
     showEditModal.value = false
-    
+
     if (window.$showNotification) {
       window.$showNotification('歌曲信息更新成功', 'success')
     }
   } catch (error) {
     console.error('更新歌曲失败:', error)
-    
+
     // 提取具体的错误信息
     let errorMessage = '更新失败'
     if (error.data && error.data.message) {
@@ -1244,7 +1258,7 @@ const saveEditSong = async () => {
     } else if (error.statusMessage) {
       errorMessage = error.statusMessage
     }
-    
+
     if (window.$showNotification) {
       window.$showNotification(errorMessage, 'error')
     }
@@ -1266,7 +1280,7 @@ const cancelEditSong = () => {
     cover: ''
   }
   // 重置验证状态
-  editCoverValidation.value = { valid: true, error: '', validating: false }
+  editCoverValidation.value = {valid: true, error: '', validating: false}
   clearSelectedEditUser()
 }
 
@@ -1283,7 +1297,6 @@ const openAddSongModal = () => {
   }
   showAddSongModal.value = true
 }
-
 
 
 const saveAddSong = async () => {
@@ -1344,7 +1357,7 @@ const saveAddSong = async () => {
 
   addLoading.value = true
   try {
-    const { addSong } = adminService
+    const {addSong} = adminService
     await addSong({
       title: addForm.value.title,
       artist: addForm.value.artist,
@@ -1355,10 +1368,10 @@ const saveAddSong = async () => {
       cover: addForm.value.cover || null,
       playUrl: addForm.value.playUrl || null
     })
-    
+
     await refreshSongs()
     showAddSongModal.value = false
-    
+
     // 清空表单内容
     addForm.value = {
       title: '',
@@ -1371,13 +1384,13 @@ const saveAddSong = async () => {
       playUrl: ''
     }
     clearSelectedUser()
-    
+
     if (window.$showNotification) {
       window.$showNotification('歌曲添加成功', 'success')
     }
   } catch (error) {
     console.error('添加歌曲失败:', error)
-    
+
     // 提取具体的错误信息
     let errorMessage = '添加失败'
     if (error.data && error.data.message) {
@@ -1387,7 +1400,7 @@ const saveAddSong = async () => {
     } else if (error.statusMessage) {
       errorMessage = error.statusMessage
     }
-    
+
     if (window.$showNotification) {
       window.$showNotification(errorMessage, 'error')
     }
@@ -1409,8 +1422,8 @@ const cancelAddSong = () => {
     playUrl: ''
   }
   // 重置URL验证状态
-  addCoverValidation.value = { valid: true, error: '', validating: false }
-  addPlayUrlValidation.value = { valid: true, error: '', validating: false }
+  addCoverValidation.value = {valid: true, error: '', validating: false}
+  addPlayUrlValidation.value = {valid: true, error: '', validating: false}
   clearSelectedUser()
 }
 
@@ -1423,7 +1436,7 @@ const searchUsersFromAPI = async (query) => {
   if (!query.trim()) {
     return []
   }
-  
+
   try {
     const response = await $fetch('/api/admin/users', {
       method: 'GET',
@@ -1546,7 +1559,7 @@ watch([searchQuery, statusFilter, sortOption, selectedSemester], () => {
 
 // 生命周期
 // 监听学期更新事件
-const { semesters, fetchSemesters, semesterUpdateEvent } = useSemesters()
+const {semesters, fetchSemesters, semesterUpdateEvent} = useSemesters()
 
 watch(semesterUpdateEvent, async () => {
   // 当学期更新时，重新获取学期列表
@@ -1558,31 +1571,31 @@ onMounted(async () => {
   songsService = useSongs()
   adminService = useAdmin()
   auth = useAuth()
-  
+
   // 获取可用学期
-  const { fetchCurrentSemester, currentSemester } = useSemesters()
+  const {fetchCurrentSemester, currentSemester} = useSemesters()
   await fetchSemesters()
   await fetchCurrentSemester()
-  
+
   availableSemesters.value = semesters.value || []
-  
+
   // 设置默认学期为当前学期
   if (currentSemester.value) {
     selectedSemester.value = currentSemester.value.name
   }
-  
+
   // 用户搜索改为实时API搜索，不再预加载用户列表
-  
+
   // 添加点击外部关闭下拉框的事件监听
   document.addEventListener('click', handleClickOutside)
-  
+
   await refreshSongs()
 })
 
 // URL验证函数
 const validateAddCoverUrl = async (url) => {
   if (!url) {
-    addCoverValidation.value = { valid: true, error: '', validating: false }
+    addCoverValidation.value = {valid: true, error: '', validating: false}
     return
   }
 
@@ -1597,7 +1610,7 @@ const validateAddCoverUrl = async (url) => {
 
 const validateAddPlayUrl = async (url) => {
   if (!url) {
-    addPlayUrlValidation.value = { valid: true, error: '', validating: false }
+    addPlayUrlValidation.value = {valid: true, error: '', validating: false}
     return
   }
 
@@ -1612,7 +1625,7 @@ const validateAddPlayUrl = async (url) => {
 
 const validateEditCoverUrl = async (url) => {
   if (!url) {
-    editCoverValidation.value = { valid: true, error: '', validating: false }
+    editCoverValidation.value = {valid: true, error: '', validating: false}
     return
   }
 
@@ -1634,7 +1647,7 @@ watch(() => addForm.value.cover, (newUrl) => {
       validateAddCoverUrl(newUrl)
     }, 1000)
   } else {
-    addCoverValidation.value = { valid: true, error: '', validating: false }
+    addCoverValidation.value = {valid: true, error: '', validating: false}
   }
 })
 
@@ -1646,7 +1659,7 @@ watch(() => addForm.value.playUrl, (newUrl) => {
       validateAddPlayUrl(newUrl)
     }, 1000)
   } else {
-    addPlayUrlValidation.value = { valid: true, error: '', validating: false }
+    addPlayUrlValidation.value = {valid: true, error: '', validating: false}
   }
 })
 
@@ -1658,7 +1671,7 @@ watch(() => editForm.value.cover, (newUrl) => {
       validateEditCoverUrl(newUrl)
     }, 1000)
   } else {
-    editCoverValidation.value = { valid: true, error: '', validating: false }
+    editCoverValidation.value = {valid: true, error: '', validating: false}
   }
 })
 
@@ -1902,8 +1915,12 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text {

@@ -1,15 +1,15 @@
 <template>
   <audio
-    ref="audioPlayer"
-    :src="song?.musicUrl"
-    @timeupdate="$emit('timeupdate', $event)"
-    @ended="$emit('ended', $event)"
-    @loadedmetadata="$emit('loadedmetadata', $event)"
-    @error="$emit('error', $event)"
-    @play="$emit('play', $event)"
-    @pause="$emit('pause', $event)"
-    @loadstart="$emit('loadstart', $event)"
-    @canplay="$emit('canplay', $event)"
+      ref="audioPlayer"
+      :src="song?.musicUrl"
+      @canplay="$emit('canplay', $event)"
+      @ended="$emit('ended', $event)"
+      @error="$emit('error', $event)"
+      @loadedmetadata="$emit('loadedmetadata', $event)"
+      @loadstart="$emit('loadstart', $event)"
+      @pause="$emit('pause', $event)"
+      @play="$emit('play', $event)"
+      @timeupdate="$emit('timeupdate', $event)"
   ></audio>
 </template>
 

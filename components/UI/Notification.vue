@@ -1,43 +1,43 @@
 <template>
   <transition name="notification">
-    <div 
-      v-if="show" 
-      class="notification"
-      :class="{
+    <div
+        v-if="show"
+        :class="{
         'success': type === 'success',
         'error': type === 'error',
         'info': type === 'info'
       }"
+        class="notification"
     >
       <div class="notification-icon">
-        <Icon 
-          v-if="type === 'success'" 
-          name="success" 
-          :size="16" 
+        <Icon
+            v-if="type === 'success'"
+            :size="16"
+            name="success"
         />
-        <Icon 
-          v-else-if="type === 'error'" 
-          name="error" 
-          :size="16" 
+        <Icon
+            v-else-if="type === 'error'"
+            :size="16"
+            name="error"
         />
-        <Icon 
-          v-else 
-          name="info" 
-          :size="16" 
+        <Icon
+            v-else
+            :size="16"
+            name="info"
         />
       </div>
       <div class="notification-content">
         {{ message }}
       </div>
       <button class="notification-close" @click="$emit('close')">
-        <Icon name="close" :size="16" />
+        <Icon :size="16" name="close"/>
       </button>
-      
+
       <!-- 进度条 -->
       <div v-if="autoClose" class="notification-progress">
-        <div 
-          class="notification-progress-bar" 
-          :style="{ animationDuration: `${duration}ms` }"
+        <div
+            :style="{ animationDuration: `${duration}ms` }"
+            class="notification-progress-bar"
         ></div>
       </div>
     </div>

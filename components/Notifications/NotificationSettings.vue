@@ -1,72 +1,72 @@
 <template>
   <div class="notification-settings">
     <h2 class="settings-title">通知设置</h2>
-    
+
     <div v-if="loading" class="settings-loading">
       加载中...
     </div>
-    
+
     <div v-else-if="error" class="settings-error">
       {{ error }}
-      <button @click="fetchSettings" class="retry-button">重试</button>
+      <button class="retry-button" @click="fetchSettings">重试</button>
     </div>
-    
+
     <div v-else class="settings-form">
       <div class="form-group">
         <label class="toggle-label">
           <span class="label-text">歌曲被选中通知</span>
           <div class="toggle-switch">
-            <input 
-              type="checkbox" 
-              v-model="localSettings.songSelectedNotify"
-              @change="saveSettings"
+            <input
+                v-model="localSettings.songSelectedNotify"
+                type="checkbox"
+                @change="saveSettings"
             />
             <span class="toggle-slider"></span>
           </div>
         </label>
         <p class="setting-description">当您投稿的歌曲被选中安排播放时通知您</p>
       </div>
-      
+
       <div class="form-group">
         <label class="toggle-label">
           <span class="label-text">歌曲已播放通知</span>
           <div class="toggle-switch">
-            <input 
-              type="checkbox" 
-              v-model="localSettings.songPlayedNotify"
-              @change="saveSettings"
+            <input
+                v-model="localSettings.songPlayedNotify"
+                type="checkbox"
+                @change="saveSettings"
             />
             <span class="toggle-slider"></span>
           </div>
         </label>
         <p class="setting-description">当您投稿的歌曲被播放时通知您</p>
       </div>
-      
+
       <div class="form-group">
         <label class="toggle-label">
           <span class="label-text">歌曲获得投票通知</span>
           <div class="toggle-switch">
-            <input 
-              type="checkbox" 
-              v-model="localSettings.songVotedNotify"
-              @change="saveSettings"
+            <input
+                v-model="localSettings.songVotedNotify"
+                type="checkbox"
+                @change="saveSettings"
             />
             <span class="toggle-slider"></span>
           </div>
         </label>
         <p class="setting-description">当您投稿的歌曲获得新投票时通知您</p>
-        
+
         <div v-if="localSettings.songVotedNotify" class="sub-setting">
           <label class="range-label">
             <span>投票阈值：每获得 {{ localSettings.songVotedThreshold }} 票通知一次</span>
-            <input 
-              type="range" 
-              v-model="localSettings.songVotedThreshold" 
-              min="1" 
-              max="10" 
-              step="1"
-              @change="saveSettings"
-              class="range-slider"
+            <input
+                v-model="localSettings.songVotedThreshold"
+                class="range-slider"
+                max="10"
+                min="1"
+                step="1"
+                type="range"
+                @change="saveSettings"
             />
             <div class="range-values">
               <span>1</span>
@@ -75,35 +75,35 @@
           </label>
         </div>
       </div>
-      
+
       <div class="form-group">
         <label class="toggle-label">
           <span class="label-text">系统通知</span>
           <div class="toggle-switch">
-            <input 
-              type="checkbox" 
-              v-model="localSettings.systemNotify"
-              @change="saveSettings"
+            <input
+                v-model="localSettings.systemNotify"
+                type="checkbox"
+                @change="saveSettings"
             />
             <span class="toggle-slider"></span>
           </div>
         </label>
         <p class="setting-description">接收系统公告和其他重要通知</p>
       </div>
-      
+
       <div class="form-group">
         <label class="range-label">
           <span class="label-text">通知刷新间隔</span>
           <span class="range-value">{{ formatRefreshInterval(localSettings.refreshInterval) }}</span>
         </label>
-        <input 
-          type="range" 
-          v-model="localSettings.refreshInterval" 
-          min="10" 
-          max="300" 
-          step="10"
-          @change="saveSettings"
-          class="range-slider"
+        <input
+            v-model="localSettings.refreshInterval"
+            class="range-slider"
+            max="300"
+            min="10"
+            step="10"
+            type="range"
+            @change="saveSettings"
         />
         <div class="range-values">
           <span>10秒</span>
@@ -146,7 +146,7 @@ watch(settings, (newSettings) => {
       refreshInterval: newSettings.refreshInterval || 60
     }
   }
-}, { immediate: true })
+}, {immediate: true})
 
 // 初始化
 onMounted(async () => {
@@ -170,9 +170,9 @@ const formatRefreshInterval = (seconds) => {
   } else {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
-    return remainingSeconds > 0 
-      ? `${minutes}分${remainingSeconds}秒` 
-      : `${minutes}分钟`
+    return remainingSeconds > 0
+        ? `${minutes}分${remainingSeconds}秒`
+        : `${minutes}分钟`
   }
 }
 </script>
@@ -371,39 +371,39 @@ input:checked + .toggle-slider:before {
   .form-group {
     background-color: #2a2a2a;
   }
-  
+
   .form-group:hover {
     background-color: #333;
   }
-  
+
   .setting-description {
     color: #aaa;
   }
-  
+
   .toggle-slider {
     background-color: #555;
   }
-  
+
   .toggle-slider:before {
     background-color: #ddd;
   }
-  
+
   input:checked + .toggle-slider {
     background-color: #64b5f6;
   }
-  
+
   input:focus + .toggle-slider {
     box-shadow: 0 0 1px #64b5f6;
   }
-  
+
   .range-slider {
     background: #555;
   }
-  
+
   .range-slider::-webkit-slider-thumb {
     background: #64b5f6;
   }
-  
+
   .range-slider::-moz-range-thumb {
     background: #64b5f6;
   }

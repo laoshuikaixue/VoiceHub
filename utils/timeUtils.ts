@@ -8,13 +8,13 @@
  * @returns Date 北京时间的Date对象
  */
 export function getBeijingTime(): Date {
-  const now = new Date()
-  // 直接基于当前时间戳，加上北京时区与本地时区的差值
-  // 北京时间是UTC+8，所以需要加8小时，再减去本地时区偏移
-  const beijingOffset = 8 * 60 // 北京时区偏移（分钟）
-  const localOffset = now.getTimezoneOffset() // 本地时区偏移（分钟，UTC-本地时间）
-  const offsetDiff = (beijingOffset + localOffset) * 60000 // 转换为毫秒
-  return new Date(now.getTime() + offsetDiff)
+    const now = new Date()
+    // 直接基于当前时间戳，加上北京时区与本地时区的差值
+    // 北京时间是UTC+8，所以需要加8小时，再减去本地时区偏移
+    const beijingOffset = 8 * 60 // 北京时区偏移（分钟）
+    const localOffset = now.getTimezoneOffset() // 本地时区偏移（分钟，UTC-本地时间）
+    const offsetDiff = (beijingOffset + localOffset) * 60000 // 转换为毫秒
+    return new Date(now.getTime() + offsetDiff)
 }
 
 /**
@@ -23,12 +23,12 @@ export function getBeijingTime(): Date {
  * @returns Date 转换后的北京时间
  */
 export function toBeijingTime(date: Date): Date {
-  // 直接基于输入时间戳，加上北京时区与本地时区的差值
-  // 北京时间是UTC+8，所以需要加8小时，再减去本地时区偏移
-  const beijingOffset = 8 * 60 // 北京时区偏移（分钟）
-  const localOffset = date.getTimezoneOffset() // 本地时区偏移（分钟，UTC-本地时间）
-  const offsetDiff = (beijingOffset + localOffset) * 60000 // 转换为毫秒
-  return new Date(date.getTime() + offsetDiff)
+    // 直接基于输入时间戳，加上北京时区与本地时区的差值
+    // 北京时间是UTC+8，所以需要加8小时，再减去本地时区偏移
+    const beijingOffset = 8 * 60 // 北京时区偏移（分钟）
+    const localOffset = date.getTimezoneOffset() // 本地时区偏移（分钟，UTC-本地时间）
+    const offsetDiff = (beijingOffset + localOffset) * 60000 // 转换为毫秒
+    return new Date(date.getTime() + offsetDiff)
 }
 
 /**
@@ -42,16 +42,16 @@ export function toBeijingTime(date: Date): Date {
  * @returns Date 北京时间的Date对象
  */
 export function createBeijingTime(
-  year: number,
-  month: number,
-  day: number,
-  hour: number = 0,
-  minute: number = 0,
-  second: number = 0
+    year: number,
+    month: number,
+    day: number,
+    hour: number = 0,
+    minute: number = 0,
+    second: number = 0
 ): Date {
-  // 创建UTC时间，然后转换为北京时间
-  const utcTime = new Date(Date.UTC(year, month, day, hour, minute, second))
-  return toBeijingTime(utcTime)
+    // 创建UTC时间，然后转换为北京时间
+    const utcTime = new Date(Date.UTC(year, month, day, hour, minute, second))
+    return toBeijingTime(utcTime)
 }
 
 /**
@@ -61,27 +61,27 @@ export function createBeijingTime(
  * @returns string 格式化后的时间字符串
  */
 export function formatBeijingTime(date: Date, format: string = 'YYYY/M/D H:mm:ss'): string {
-  const beijingTime = toBeijingTime(date)
-  
-  const year = beijingTime.getFullYear()
-  const month = beijingTime.getMonth() + 1
-  const day = beijingTime.getDate()
-  const hours = beijingTime.getHours()
-  const minutes = beijingTime.getMinutes().toString().padStart(2, '0')
-  const seconds = beijingTime.getSeconds().toString().padStart(2, '0')
+    const beijingTime = toBeijingTime(date)
 
-  if (format === 'YYYY/M/D H:mm:ss') {
+    const year = beijingTime.getFullYear()
+    const month = beijingTime.getMonth() + 1
+    const day = beijingTime.getDate()
+    const hours = beijingTime.getHours()
+    const minutes = beijingTime.getMinutes().toString().padStart(2, '0')
+    const seconds = beijingTime.getSeconds().toString().padStart(2, '0')
+
+    if (format === 'YYYY/M/D H:mm:ss') {
+        return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
+    }
+
+    if (format === 'YYYY-MM-DD') {
+        const monthPadded = month.toString().padStart(2, '0')
+        const dayPadded = day.toString().padStart(2, '0')
+        return `${year}-${monthPadded}-${dayPadded}`
+    }
+
+    // 默认格式
     return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
-  }
-  
-  if (format === 'YYYY-MM-DD') {
-    const monthPadded = month.toString().padStart(2, '0')
-    const dayPadded = day.toString().padStart(2, '0')
-    return `${year}-${monthPadded}-${dayPadded}`
-  }
-  
-  // 默认格式
-  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
 }
 
 /**
@@ -89,7 +89,7 @@ export function formatBeijingTime(date: Date, format: string = 'YYYY/M/D H:mm:ss
  * @returns Date 当前北京时间的Date对象，可直接用于数据库存储
  */
 export function getBeijingTimestamp(): Date {
-  return getBeijingTime()
+    return getBeijingTime()
 }
 
 /**
@@ -98,6 +98,6 @@ export function getBeijingTimestamp(): Date {
  * @returns Date 北京时间的Date对象
  */
 export function parseToBeijingTime(dateString: string): Date {
-  const parsedDate = new Date(dateString)
-  return toBeijingTime(parsedDate)
+    const parsedDate = new Date(dateString)
+    return toBeijingTime(parsedDate)
 }
