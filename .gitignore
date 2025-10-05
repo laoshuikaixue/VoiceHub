@@ -34,3 +34,4 @@ backups/
 .env.*
 !.env.example
 .env.example
+scripts/package-lock.json
