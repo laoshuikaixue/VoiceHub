@@ -16,23 +16,16 @@ RUN npm run build
 # 第二阶段：运行阶段
 FROM node:20-alpine
 
-# 创建非root用户和应用目录
-RUN addgroup -g 1001 -S nuxtjs && \
-    adduser -S nuxtjs -u 1001 -G nuxtjs -h /app -s /sbin/nologin && \
-    mkdir -p /app && \
-    chown -R nuxtjs:nuxtjs /app && \
-    chmod -R 755 /app
-
 # 切换到非root用户
-USER nuxtjs
+USER root
 WORKDIR /app
 
 # 从构建阶段复制运行所需文件
-COPY --from=builder --chown=nuxtjs:nuxtjs /app/package*.json ./
-COPY --from=builder --chown=nuxtjs:nuxtjs /app/node_modules ./node_modules
-COPY --from=builder --chown=nuxtjs:nuxtjs /app/.output ./.output
-COPY --from=builder --chown=nuxtjs:nuxtjs /app/drizzle ./drizzle
-COPY --from=builder --chown=nuxtjs:nuxtjs /app/scripts ./scripts
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.output ./.output
+COPY --from=builder /app/drizzle ./drizzle
+COPY --from=builder /app/scripts ./scripts
 
 # 环境变量配置
 ENV NODE_ENV=production \
