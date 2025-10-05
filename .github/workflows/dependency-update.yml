@@ -1,0 +1,107 @@
+name: 自动更新依赖
+
+on:
+  schedule:
+    # 每天北京时间上午9点（UTC时间凌晨1点）运行
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: '手动触发原因'
+        required: false
+        default: '手动更新依赖'
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 更新依赖
+        run: |
+          # 更新所有依赖到最新版本
+          npm update
+          
+          # 尝试修复安全漏洞（非破坏性修复）
+          npm audit fix || true
+
+      - name: 检查是否有变更
+        id: check-changes
+        run: |
+          if git diff --quiet package-lock.json; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "没有依赖更新"
+          else
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "检测到依赖更新"
+          fi
+
+      - name: 获取更新信息
+        if: steps.check-changes.outputs.has-changes == 'true'
+        id: update-info
+        run: |
+          # 获取当前日期
+          CURRENT_DATE=$(date +'%Y-%m-%d')
+          echo "date=$CURRENT_DATE" >> $GITHUB_OUTPUT
+          
+          # 生成更新摘要
+          echo "## 依赖更新摘要 - $CURRENT_DATE" > update-summary.md
+          echo "" >> update-summary.md
+          echo "### 更新的包:" >> update-summary.md
+          
+          # 检查哪些包被更新了
+          git diff --name-only package-lock.json > /dev/null && echo "- package-lock.json 已更新" >> update-summary.md
+          
+          # 运行安全审计
+          echo "" >> update-summary.md
+          echo "### 安全审计结果:" >> update-summary.md
+          npm audit --audit-level=moderate >> update-summary.md || echo "发现一些安全问题，请查看详细信息" >> update-summary.md
+
+      - name: 创建 Pull Request
+        if: steps.check-changes.outputs.has-changes == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: |
+            chore: 自动更新依赖 (${{ steps.update-info.outputs.date }})
+            
+            - 更新所有依赖包到最新稳定版本
+            - 修复已知的安全漏洞
+            - 更新 package-lock.json 文件
+          title: '自动依赖更新 - ${{ steps.update-info.outputs.date }}'
+          body: |
+            ## 自动依赖更新
+            
+            - 触发时间: ${{ steps.update-info.outputs.date }}
+            - 工作流: dependency-update.yml
+            - Node.js 版本: 18
+          branch: auto-dependency-update-${{ steps.update-info.outputs.date }}
+          delete-branch: true
+          labels: |
+            dependencies
+            automated
+            chore
+
+      - name: 输出结果
+        run: |
+          if [ "${{ steps.check-changes.outputs.has-changes }}" == "true" ]; then
+            echo "依赖更新完成，已创建 Pull Request"
+          else
+            echo "所有依赖都是最新版本，无需更新"
+          fi

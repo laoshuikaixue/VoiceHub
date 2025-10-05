@@ -28,7 +28,7 @@ backups/
 .vscode
 .trae
 .qoder
-package-lock.json
+scripts/package-lock.json
 
 # Local env files
 .env
