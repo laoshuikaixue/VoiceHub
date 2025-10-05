@@ -8,6 +8,7 @@ RUN npm ci
 
 # 复制源代码并构建应用
 COPY . .
+COPY scripts ./scripts
 RUN npm run build
 
 # 第二阶段：运行阶段
