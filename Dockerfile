@@ -1,48 +1,49 @@
-# 使用官方Node.js运行时作为基础镜像
-FROM node:20-alpine
-
-# 以root用户执行初始设置
-# 创建应用目录并设置权限
-RUN mkdir -p /app && chown -R root:root /app
-
-# 创建nextjs用户和组
-RUN addgroup -g 1001 -S nextjs && \
-    adduser -S nextjs -u 1001 -G nextjs -h /app -s /bin/bash
-
-# 切换到nextjs用户
-USER nextjs
-
-# 设置工作目录
+# --- 阶段 1: 依赖安装 (专门用于缓存 node_modules) ---
+FROM node:20-alpine AS deps
 WORKDIR /app
 
-# 复制package文件并安装依赖
-COPY --chown=nextjs:nextjs package*.json ./
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+RUN npm config set registry https://registry.npmmirror.com/
 
-# 复制scripts目录
-COPY --chown=nextjs:nextjs scripts/ ./scripts/
+COPY package.json package-lock.json ./
 
-# 设置环境变量
-ENV NODE_ENV=production \
-    ENABLE_IDLE_MODE=false \
-    NODE_OPTIONS="--experimental-specifier-resolution=node"
+RUN npm ci
 
-# 安装依赖
-RUN npm ci --omit=dev --silent
+# --- 阶段 2: 构建应用 ---
+FROM node:20-alpine AS builder
+WORKDIR /app
 
-# 复制源代码
-COPY --chown=nextjs:nextjs . .
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
-# 检查drizzle目录
+COPY --from=deps /app/node_modules ./node_modules
+
+COPY . .
+
 RUN if [ ! -d "drizzle" ]; then \
       echo "Error: drizzle directory not found"; \
       exit 1; \
     fi
 
-# 构建应用
 RUN npm run build
 
-# 暴露端口
+# --- 阶段 3: 生产环境 ---
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup -h /app
+USER appuser
+
+ENV NODE_ENV=production \
+    ENABLE_IDLE_MODE=false \
+    NODE_OPTIONS="--experimental-specifier-resolution=node"
+
+COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
+COPY --from=builder --chown=appuser:appgroup /app/package.json ./package.json
+COPY --from=builder --chown=appuser:appgroup /app/.next ./.next
+COPY --from=builder --chown=appuser:appgroup /app/public ./public
+COPY --from=builder --chown=appuser:appgroup /app/drizzle ./drizzle
+COPY --from=builder --chown=appuser:appgroup /app/scripts ./scripts
+
 EXPOSE 3000
 
-# 启动命令
 CMD ["sh", "-c", "npm run db:migrate && node scripts/deploy.js && npm run start"]
