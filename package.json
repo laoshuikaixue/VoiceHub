@@ -11,7 +11,7 @@
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
     "db:migrate": "npx drizzle-kit migrate",
-    "db:generate": "npx drizzle-kit generate",
+    "db:generate": "npx drizzle-kit generate --name=auto-migration --message='Auto-generated migration'",
     "db:push": "npx drizzle-kit push --force",
     "db:studio": "npx drizzle-kit studio",
     "db:drop": "npx drizzle-kit drop",

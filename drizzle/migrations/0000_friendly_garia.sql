@@ -1,4 +1,8 @@
-CREATE TYPE "public"."BlacklistType" AS ENUM('SONG', 'KEYWORD');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."BlacklistType" AS ENUM('SONG', 'KEYWORD');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 CREATE TABLE "NotificationSettings" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
