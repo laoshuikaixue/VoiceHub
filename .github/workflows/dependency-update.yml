@@ -88,24 +88,6 @@ jobs:
           body: |
             ## 自动依赖更新
             
-            此 PR 由 GitHub Actions 自动创建，包含以下更新：
-            
-            - 所有依赖包已更新到最新稳定版本
-            - 已修复已知的安全漏洞
-            - package-lock.json 文件已同步更新
-            
-            ### 更新详情
-            
-            请查看文件变更以了解具体的依赖更新情况。
-            
-            ### 注意事项
-            
-            - 请在合并前进行充分测试
-            - 检查是否有破坏性变更
-            - 确认应用程序正常运行
-            
-            ### 自动化信息
-            
             - 触发时间: ${{ steps.update-info.outputs.date }}
             - 工作流: dependency-update.yml
             - Node.js 版本: 18
