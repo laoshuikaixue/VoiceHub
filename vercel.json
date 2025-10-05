@@ -1,6 +1,6 @@
 {
   "buildCommand": "node scripts/deploy.js",
-  "installCommand": "npm install",
+  "installCommand": "npm ci",
   "headers": [
     {
       "source": "/(.*)",
