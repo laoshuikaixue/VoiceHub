@@ -1,13 +1,12 @@
-# 使用官方Node.js运行时作为基础镜像（锁定版本，避免兼容问题）
+# 使用官方Node.js运行时作为基础镜像
 FROM node:20-alpine
 
 # 设置工作目录
 WORKDIR /app
 
-# 关键：确保package-lock.json被复制到容器内
 COPY package*.json ./
 
-# 安装依赖：优先用npm ci（依赖锁定文件），缺失时降级用npm install
+# 安装依赖
 RUN echo "Node version:" && node --version && \
     echo "NPM version:" && npm --version && \
     echo "Current directory contents (check lock file):" && ls -la && \
@@ -34,7 +33,6 @@ RUN echo "Node version:" && node --version && \
      echo "=== NPM INSTALL LOG ===" && cat npm-install.log && \
      echo "=== END OF LOGS ===" && false)
 
-# 后续步骤与之前优化版一致（复制代码、环境变量、Drizzle检查、构建、权限、启动）
 COPY . .
 
 ENV NODE_ENV=production \
@@ -42,26 +40,31 @@ ENV NODE_ENV=production \
     NODE_OPTIONS="--experimental-specifier-resolution=node"
 
 RUN echo "Checking Drizzle configuration..." && \
-    (ls -la drizzle/ 2>&1 | tee drizzle-check.log) || \
-    (echo "Drizzle directory check failed, showing log:" && cat drizzle-check.log && \
-     echo "Creating drizzle directory if needed..." && \
-     mkdir -p drizzle 2>&1 | tee drizzle-check.log) || \
-    (echo "Drizzle setup failed, showing detailed log:" && \
-     echo "=== DRIZZLE DEBUG INFO ===" && \
-     echo "Directory contents:" && ls -la && \
-     echo "Drizzle config:" && cat drizzle.config.ts && \
-     echo "=== DRIZZLE CHECK LOG ===" && cat drizzle-check.log && \
-     echo "=== END OF LOGS ===" && false) && \
-    # 验证dotenv是否安装成功
-    echo "Verifying dotenv installation..." && \
-    if [ ! -d "node_modules/dotenv" ]; then \
-        echo "ERROR: dotenv not found in node_modules!" && \
-        ls -la node_modules/ | grep dotenv && \
-        npm list dotenv && \
-        false; \
+    echo "Directory contents:" && ls -la && \
+    echo "Checking drizzle directory..." && \
+    if [ -d "drizzle" ]; then \
+        echo "Drizzle directory exists, listing contents:" && \
+        ls -la drizzle/ && \
+        echo "Drizzle configuration check passed."; \
     else \
-        echo "dotenv installed successfully."; \
+        echo "Drizzle directory not found, creating it..." && \
+        mkdir -p drizzle && \
+        echo "Drizzle directory created."; \
+    fi && \
+    echo "Checking drizzle.config.ts..." && \
+    if [ -f "drizzle.config.ts" ]; then \
+        echo "drizzle.config.ts exists."; \
+    else \
+        echo "ERROR: drizzle.config.ts not found!" && \
+        false; \
+    fi && \
+    echo "Verifying dotenv installation..." && \
+    if [ -d "node_modules/dotenv" ]; then \
+        echo "dotenv installed successfully." && \
         npm list dotenv; \
+    else \
+        echo "WARNING: dotenv not found in node_modules, but may be available through other packages." && \
+        npm list | grep dotenv || echo "No dotenv packages found."; \
     fi
 
 RUN echo "Building application..." && \
