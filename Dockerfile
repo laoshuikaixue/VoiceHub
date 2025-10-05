@@ -7,6 +7,9 @@ WORKDIR /app
 # 复制package文件并安装依赖
 COPY package*.json ./
 
+# 复制scripts目录
+COPY scripts/ ./scripts/
+
 # 安装依赖
 RUN npm ci --silent || npm install --silent
 
