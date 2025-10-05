@@ -1,16 +1,5 @@
-import {
-    bigint,
-    boolean,
-    integer,
-    pgEnum,
-    pgTable,
-    serial,
-    text,
-    timestamp,
-    unique,
-    uuid,
-    varchar
-} from "drizzle-orm/pg-core"
+import { pgTable, serial, timestamp, text, boolean, integer, uuid, varchar, unique, pgEnum } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 
 export const blacklistType = pgEnum("BlacklistType", ['SONG', 'KEYWORD'])
 export const userStatus = pgEnum("user_status", ['active', 'withdrawn'])
@@ -205,13 +194,6 @@ export const schedule = pgTable("Schedule", {
 	playTimeId: integer(),
 	isDraft: boolean().default(false).notNull(),
 	publishedAt: timestamp({ mode: 'string' }),
-});
-
-export const drizzleMigrations = pgTable("__drizzle_migrations__", {
-	id: serial().primaryKey().notNull(),
-	hash: text().notNull(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	createdAt: bigint("created_at", { mode: "number" }),
 });
 
 export const userStatusLogs = pgTable("user_status_logs", {
