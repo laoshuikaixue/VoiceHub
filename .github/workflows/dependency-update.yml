@@ -17,12 +17,18 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: read
+      checks: write
+      repository-projects: read
 
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # 使用 PAT token 以获得创建 PR 的权限
+          # 如果没有设置 PAT_TOKEN，则回退到 GITHUB_TOKEN
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: 设置 Node.js
         uses: actions/setup-node@v4
@@ -60,30 +66,92 @@ jobs:
           CURRENT_DATE=$(date +'%Y-%m-%d')
           echo "date=$CURRENT_DATE" >> $GITHUB_OUTPUT
           
-          # 生成更新摘要
-          echo "## 依赖更新摘要 - $CURRENT_DATE" > update-summary.md
-          echo "" >> update-summary.md
-          echo "### 更新的包:" >> update-summary.md
+          # 获取更新的包信息
+          echo "updated-packages<<EOF" >> $GITHUB_OUTPUT
+          if git diff --name-only | grep -q package-lock.json; then
+            echo "- package-lock.json 已更新" >> $GITHUB_OUTPUT
+          fi
+          if git diff --name-only | grep -q package.json; then
+            echo "- package.json 已更新" >> $GITHUB_OUTPUT
+          fi
+          echo "EOF" >> $GITHUB_OUTPUT
           
-          # 检查哪些包被更新了
-          git diff --name-only package-lock.json > /dev/null && echo "- package-lock.json 已更新" >> update-summary.md
+          # 获取详细的安全审计结果
+          {
+            echo "audit-result<<AUDIT_EOF"
+            echo "正在运行安全审计..."
+            echo ""
+            
+            # 运行npm audit并捕获输出
+            AUDIT_OUTPUT=$(npm audit --audit-level=moderate 2>&1 || true)
+            
+            if [ -n "$AUDIT_OUTPUT" ]; then
+              echo "$AUDIT_OUTPUT"
+            else
+              echo "npm audit 命令未返回任何输出"
+            fi
+            
+            # 获取JSON格式的审计摘要
+            echo ""
+            echo "--- 审计摘要 ---"
+            
+            # 尝试获取JSON格式的摘要
+            if command -v jq >/dev/null 2>&1; then
+              AUDIT_JSON=$(npm audit --audit-level=moderate --json 2>/dev/null || echo "{}")
+              if echo "$AUDIT_JSON" | jq -e '.metadata.vulnerabilities' >/dev/null 2>&1; then
+                echo "$AUDIT_JSON" | jq -r '.metadata.vulnerabilities | to_entries[] | "\(.key): \(.value)"'
+              fi
+            fi
+            
+            # 备用的文本解析方案
+            if echo "$AUDIT_OUTPUT" | grep -q "vulnerabilities"; then
+              TOTAL_VULNS=$(echo "$AUDIT_OUTPUT" | grep -o '[0-9]\+ vulnerabilities' | head -1)
+              echo "总计发现: $TOTAL_VULNS"
+              
+              # 解析严重程度
+              if echo "$AUDIT_OUTPUT" | grep -q "Severity:"; then
+                echo "漏洞详情:"
+                echo "$AUDIT_OUTPUT" | grep -A 2 -B 1 "Severity:" | head -10
+              fi
+            else
+              echo "未发现安全漏洞"
+            fi
+            
+            echo "AUDIT_EOF"
+          } >> $GITHUB_OUTPUT
           
-          # 运行安全审计
-          echo "" >> update-summary.md
-          echo "### 安全审计结果:" >> update-summary.md
-          npm audit --audit-level=moderate >> update-summary.md || echo "发现一些安全问题，请查看详细信息" >> update-summary.md
+          # 获取依赖变更详情
+          echo "dependency-changes<<EOF" >> $GITHUB_OUTPUT
+          if git diff --name-only | grep -q package-lock.json; then
+            echo "### 依赖变更详情"
+            echo ""
+            # 获取 package.json 中的变更
+            if git diff --name-only | grep -q package.json; then
+              echo "#### package.json 变更："
+              git diff package.json | grep -E '^[+-]' | grep -v '^[+-]{3}' | head -20 || echo "无法获取详细变更"
+              echo ""
+            fi
+            # 显示更新的包数量统计
+            ADDED=$(git diff package-lock.json | grep -c '^+.*"version":' || echo "0")
+            REMOVED=$(git diff package-lock.json | grep -c '^-.*"version":' || echo "0")
+            echo "#### 更新统计："
+            echo "- 新增/更新的包版本: $ADDED"
+            echo "- 移除的包版本: $REMOVED"
+          else
+            echo "无依赖文件变更"
+          fi
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: 创建 Pull Request
         if: steps.check-changes.outputs.has-changes == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # 使用 PAT token 以获得创建 PR 的权限
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           commit-message: |
             chore: 自动更新依赖 (${{ steps.update-info.outputs.date }})
             
-            - 更新所有依赖包到最新稳定版本
-            - 修复已知的安全漏洞
-            - 更新 package-lock.json 文件
+            ${{ steps.update-info.outputs.updated-packages }}
           title: '自动依赖更新 - ${{ steps.update-info.outputs.date }}'
           body: |
             ## 自动依赖更新
@@ -91,12 +159,28 @@ jobs:
             - 触发时间: ${{ steps.update-info.outputs.date }}
             - 工作流: dependency-update.yml
             - Node.js 版本: 18
+            
+            <details>
+            <summary>📋 详细更新信息（点击展开）</summary>
+            
+            #### 更新的文件
+            ${{ steps.update-info.outputs.updated-packages }}
+            
+            ${{ steps.update-info.outputs.dependency-changes }}
+            
+            #### 安全审计结果
+            ```
+            ${{ steps.update-info.outputs.audit-result }}
+            ```
+            
+            </details>
           branch: auto-dependency-update-${{ steps.update-info.outputs.date }}
           delete-branch: true
           labels: |
             dependencies
             automated
             chore
+          assignees: laoshuikaixue
 
       - name: 输出结果
         run: |
