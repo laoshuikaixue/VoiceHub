@@ -395,9 +395,7 @@ const createBackup = async () => {
           const downloadUrl = `/api/admin/backup/download/${response.backup.filename}`
           const downloadResponse = await fetch(downloadUrl, {
             method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
-            }
+            credentials: 'include'
           })
 
           if (!downloadResponse.ok) {
