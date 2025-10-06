@@ -164,12 +164,6 @@ jobs:
             - 工作流: dependency-update.yml
             - Node.js 版本: 18
             
-            ### 更新内容
-            此 PR 包含以下更新：
-            - 所有依赖包已更新到最新稳定版本
-            - 已修复已知的安全漏洞
-            - package-lock.json 文件已同步更新
-            
             <details>
             <summary>📋 详细更新信息（点击展开）</summary>
             
@@ -182,12 +176,6 @@ jobs:
             ```
             ${{ steps.update-info.outputs.audit-result }}
             ```
-            
-            > **说明：** 上述审计结果显示了项目中发现的安全漏洞。<mcreference link="https://github.com/advisories/GHSA-67mh-4wv8-2f99" index="0">0</mcreference> <mcreference link="https://github.com/advisories/GHSA-4r6h-8v6p-xvw6" index="1">1</mcreference> <mcreference link="https://github.com/advisories/GHSA-5pgg-2g8v-p4x9" index="2">2</mcreference>
-            > - **esbuild 漏洞**：允许恶意网站向开发服务器发送请求并读取响应
-            > - **xlsx 漏洞**：原型污染和正则表达式拒绝服务攻击
-            > - 建议运行 `npm audit fix --force` 修复可修复的漏洞
-            > - 某些漏洞可能需要手动更新依赖或选择替代方案
             
             </details>
           branch: auto-dependency-update-${{ steps.update-info.outputs.date }}
