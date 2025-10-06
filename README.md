@@ -1235,6 +1235,8 @@ VoiceHub是一个开源的校园广播站点歌管理系统，本项目：
 
 特别感谢 [过客是个铁憨憨](https://github.com/1811304592) 为本项目提供首页UI样式设计
 
+感谢 [Awesome Iwb](https://github.com/awesome-iwb) 项目提供的统一遮罩风格的图标
+
 ### 贡献者
 
 Thanks goes to these wonderful people:

@@ -306,9 +306,9 @@ const config = useRuntimeConfig()
 // Logo URL处理，避免开发模式路径问题
 const logoUrl = computed(() => {
   if (process.client) {
-    return new URL('/images/logo.jpg', window.location.origin).href
+    return new URL('/images/logo.png', window.location.origin).href
   }
-  return '/images/logo.jpg'
+  return '/images/logo.png'
 })
 
 // 响应式数据
