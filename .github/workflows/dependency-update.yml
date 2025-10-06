@@ -17,12 +17,18 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: read
+      checks: write
+      repository-projects: read
 
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # 使用 PAT token 以获得创建 PR 的权限
+          # 如果没有设置 PAT_TOKEN，则回退到 GITHUB_TOKEN
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: 设置 Node.js
         uses: actions/setup-node@v4
@@ -77,7 +83,8 @@ jobs:
         if: steps.check-changes.outputs.has-changes == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # 使用 PAT token 以获得创建 PR 的权限
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           commit-message: |
             chore: 自动更新依赖 (${{ steps.update-info.outputs.date }})
             
@@ -91,12 +98,24 @@ jobs:
             - 触发时间: ${{ steps.update-info.outputs.date }}
             - 工作流: dependency-update.yml
             - Node.js 版本: 18
+            
+            ### 更新内容
+            此 PR 包含以下更新：
+            - 所有依赖包已更新到最新稳定版本
+            - 已修复已知的安全漏洞
+            - package-lock.json 文件已同步更新
+            
+            ### 注意事项
+            - 请在合并前运行测试确保应用正常工作
+            - 如有任何问题，请检查更新日志
           branch: auto-dependency-update-${{ steps.update-info.outputs.date }}
           delete-branch: true
           labels: |
             dependencies
             automated
             chore
+          assignees: laoshuikaixue
+          reviewers: laoshuikaixue
 
       - name: 输出结果
         run: |
