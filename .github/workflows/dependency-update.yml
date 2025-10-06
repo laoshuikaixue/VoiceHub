@@ -77,27 +77,52 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
           
           # 获取详细的安全审计结果
-          echo "audit-result<<EOF" >> $GITHUB_OUTPUT
-          echo "正在运行安全审计..."
-          AUDIT_OUTPUT=$(npm audit --audit-level=moderate 2>&1 || true)
-          if [ -n "$AUDIT_OUTPUT" ]; then
-            echo "$AUDIT_OUTPUT"
-          else
-            echo "npm audit 命令未返回任何输出"
-          fi
-          
-          # 额外的安全信息
-          echo ""
-          echo "--- 审计摘要 ---"
-          AUDIT_SUMMARY=$(npm audit --audit-level=moderate --json 2>/dev/null | jq -r '.metadata.vulnerabilities | to_entries[] | "\(.key): \(.value)"' 2>/dev/null || echo "无法获取JSON格式的审计摘要")
-          if [ "$AUDIT_SUMMARY" != "无法获取JSON格式的审计摘要" ]; then
-            echo "$AUDIT_SUMMARY"
-          else
-            # 备用方案：使用简单的文本解析
-            VULN_COUNT=$(echo "$AUDIT_OUTPUT" | grep -o '[0-9]\+ vulnerabilities' | head -1 || echo "0 vulnerabilities")
-            echo "发现的漏洞: $VULN_COUNT"
-          fi
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "audit-result<<AUDIT_EOF"
+            echo "正在运行安全审计..."
+            echo ""
+            
+            # 运行npm audit并捕获输出
+            AUDIT_OUTPUT=$(npm audit --audit-level=moderate 2>&1 || true)
+            
+            if [ -n "$AUDIT_OUTPUT" ]; then
+              echo "$AUDIT_OUTPUT"
+            else
+              echo "npm audit 命令未返回任何输出"
+            fi
+            
+            # 获取JSON格式的审计摘要
+            echo ""
+            echo "--- 审计摘要 ---"
+            
+            # 尝试获取JSON格式的摘要
+            if command -v jq >/dev/null 2>&1; then
+              AUDIT_JSON=$(npm audit --audit-level=moderate --json 2>/dev/null || echo "{}")
+              if echo "$AUDIT_JSON" | jq -e '.metadata.vulnerabilities' >/dev/null 2>&1; then
+                echo "$AUDIT_JSON" | jq -r '.metadata.vulnerabilities | to_entries[] | "\(.key): \(.value)"'
+              else
+                echo "无法从JSON获取漏洞统计"
+              fi
+            else
+              echo "jq 命令不可用，使用文本解析"
+            fi
+            
+            # 备用的文本解析方案
+            if echo "$AUDIT_OUTPUT" | grep -q "vulnerabilities"; then
+              TOTAL_VULNS=$(echo "$AUDIT_OUTPUT" | grep -o '[0-9]\+ vulnerabilities' | head -1)
+              echo "总计发现: $TOTAL_VULNS"
+              
+              # 解析严重程度
+              if echo "$AUDIT_OUTPUT" | grep -q "Severity:"; then
+                echo "漏洞详情:"
+                echo "$AUDIT_OUTPUT" | grep -A 2 -B 1 "Severity:" | head -10
+              fi
+            else
+              echo "未发现安全漏洞"
+            fi
+            
+            echo "AUDIT_EOF"
+          } >> $GITHUB_OUTPUT
           
           # 获取依赖变更详情
           echo "dependency-changes<<EOF" >> $GITHUB_OUTPUT
@@ -154,13 +179,15 @@ jobs:
             ${{ steps.update-info.outputs.dependency-changes }}
             
             #### 安全审计结果
-            
+            ```
             ${{ steps.update-info.outputs.audit-result }}
+            ```
             
-            > 如果安全审计结果为空，可能是因为：
-            > - 所有依赖都是安全的，没有发现漏洞
-            > - npm audit 命令执行时遇到了问题
-            > - 依赖包的安全数据库暂时不可用
+            > **说明：** 上述审计结果显示了项目中发现的安全漏洞。<mcreference link="https://github.com/advisories/GHSA-67mh-4wv8-2f99" index="0">0</mcreference> <mcreference link="https://github.com/advisories/GHSA-4r6h-8v6p-xvw6" index="1">1</mcreference> <mcreference link="https://github.com/advisories/GHSA-5pgg-2g8v-p4x9" index="2">2</mcreference>
+            > - **esbuild 漏洞**：允许恶意网站向开发服务器发送请求并读取响应
+            > - **xlsx 漏洞**：原型污染和正则表达式拒绝服务攻击
+            > - 建议运行 `npm audit fix --force` 修复可修复的漏洞
+            > - 某些漏洞可能需要手动更新依赖或选择替代方案
             
             </details>
           branch: auto-dependency-update-${{ steps.update-info.outputs.date }}
