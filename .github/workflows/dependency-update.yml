@@ -66,18 +66,28 @@ jobs:
           CURRENT_DATE=$(date +'%Y-%m-%d')
           echo "date=$CURRENT_DATE" >> $GITHUB_OUTPUT
           
-          # 生成更新摘要
-          echo "## 依赖更新摘要 - $CURRENT_DATE" > update-summary.md
-          echo "" >> update-summary.md
-          echo "### 更新的包:" >> update-summary.md
+          # 获取更新的包信息用于commit message
+          echo "updated-packages<<EOF" >> $GITHUB_OUTPUT
+          if git diff --name-only | grep -q package-lock.json; then
+            echo "- package-lock.json 已更新" >> $GITHUB_OUTPUT
+          fi
+          if git diff --name-only | grep -q package.json; then
+            echo "- package.json 已更新" >> $GITHUB_OUTPUT
+          fi
+          echo "EOF" >> $GITHUB_OUTPUT
           
-          # 检查哪些包被更新了
-          git diff --name-only package-lock.json > /dev/null && echo "- package-lock.json 已更新" >> update-summary.md
-          
-          # 运行安全审计
-          echo "" >> update-summary.md
-          echo "### 安全审计结果:" >> update-summary.md
-          npm audit --audit-level=moderate >> update-summary.md || echo "发现一些安全问题，请查看详细信息" >> update-summary.md
+          # 获取安全审计结果用于commit message
+          echo "audit-summary<<EOF" >> $GITHUB_OUTPUT
+          AUDIT_OUTPUT=$(npm audit --audit-level=moderate 2>&1 || true)
+          if echo "$AUDIT_OUTPUT" | grep -q "found 0 vulnerabilities"; then
+            echo "- 无安全漏洞" >> $GITHUB_OUTPUT
+          elif echo "$AUDIT_OUTPUT" | grep -q "vulnerabilities"; then
+            VULN_COUNT=$(echo "$AUDIT_OUTPUT" | grep -o '[0-9]\+ vulnerabilities' | head -1)
+            echo "- 修复了安全漏洞: $VULN_COUNT" >> $GITHUB_OUTPUT
+          else
+            echo "- 已运行安全审计" >> $GITHUB_OUTPUT
+          fi
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: 创建 Pull Request
         if: steps.check-changes.outputs.has-changes == 'true'
@@ -88,9 +98,8 @@ jobs:
           commit-message: |
             chore: 自动更新依赖 (${{ steps.update-info.outputs.date }})
             
-            - 更新所有依赖包到最新稳定版本
-            - 修复已知的安全漏洞
-            - 更新 package-lock.json 文件
+            ${{ steps.update-info.outputs.updated-packages }}
+            ${{ steps.update-info.outputs.audit-summary }}
           title: '自动依赖更新 - ${{ steps.update-info.outputs.date }}'
           body: |
             ## 自动依赖更新
@@ -108,6 +117,9 @@ jobs:
             ### 注意事项
             - 请在合并前运行测试确保应用正常工作
             - 如有任何问题，请检查更新日志
+            - 建议在合并前检查是否有破坏性变更
+            
+            详细的更新信息请查看 commit message。
           branch: auto-dependency-update-${{ steps.update-info.outputs.date }}
           delete-branch: true
           labels: |
@@ -115,7 +127,6 @@ jobs:
             automated
             chore
           assignees: laoshuikaixue
-          reviewers: laoshuikaixue
 
       - name: 输出结果
         run: |
