@@ -100,11 +100,7 @@ jobs:
               AUDIT_JSON=$(npm audit --audit-level=moderate --json 2>/dev/null || echo "{}")
               if echo "$AUDIT_JSON" | jq -e '.metadata.vulnerabilities' >/dev/null 2>&1; then
                 echo "$AUDIT_JSON" | jq -r '.metadata.vulnerabilities | to_entries[] | "\(.key): \(.value)"'
-              else
-                echo "无法从JSON获取漏洞统计"
               fi
-            else
-              echo "jq 命令不可用，使用文本解析"
             fi
             
             # 备用的文本解析方案
