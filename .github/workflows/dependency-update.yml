@@ -66,7 +66,7 @@ jobs:
           CURRENT_DATE=$(date +'%Y-%m-%d')
           echo "date=$CURRENT_DATE" >> $GITHUB_OUTPUT
           
-          # 获取更新的包信息用于commit message
+          # 获取更新的包信息
           echo "updated-packages<<EOF" >> $GITHUB_OUTPUT
           if git diff --name-only | grep -q package-lock.json; then
             echo "- package-lock.json 已更新" >> $GITHUB_OUTPUT
@@ -76,16 +76,30 @@ jobs:
           fi
           echo "EOF" >> $GITHUB_OUTPUT
           
-          # 获取安全审计结果用于commit message
-          echo "audit-summary<<EOF" >> $GITHUB_OUTPUT
-          AUDIT_OUTPUT=$(npm audit --audit-level=moderate 2>&1 || true)
-          if echo "$AUDIT_OUTPUT" | grep -q "found 0 vulnerabilities"; then
-            echo "- 无安全漏洞" >> $GITHUB_OUTPUT
-          elif echo "$AUDIT_OUTPUT" | grep -q "vulnerabilities"; then
-            VULN_COUNT=$(echo "$AUDIT_OUTPUT" | grep -o '[0-9]\+ vulnerabilities' | head -1)
-            echo "- 修复了安全漏洞: $VULN_COUNT" >> $GITHUB_OUTPUT
+          # 获取详细的安全审计结果
+          echo "audit-result<<EOF" >> $GITHUB_OUTPUT
+          npm audit --audit-level=moderate 2>&1 || echo "安全审计完成，请查看上述输出"
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          # 获取依赖变更详情
+          echo "dependency-changes<<EOF" >> $GITHUB_OUTPUT
+          if git diff --name-only | grep -q package-lock.json; then
+            echo "### 依赖变更详情"
+            echo ""
+            # 获取 package.json 中的变更
+            if git diff --name-only | grep -q package.json; then
+              echo "#### package.json 变更："
+              git diff package.json | grep -E '^[+-]' | grep -v '^[+-]{3}' | head -20 || echo "无法获取详细变更"
+              echo ""
+            fi
+            # 显示更新的包数量统计
+            ADDED=$(git diff package-lock.json | grep -c '^+.*"version":' || echo "0")
+            REMOVED=$(git diff package-lock.json | grep -c '^-.*"version":' || echo "0")
+            echo "#### 更新统计："
+            echo "- 新增/更新的包版本: $ADDED"
+            echo "- 移除的包版本: $REMOVED"
           else
-            echo "- 已运行安全审计" >> $GITHUB_OUTPUT
+            echo "无依赖文件变更"
           fi
           echo "EOF" >> $GITHUB_OUTPUT
 
@@ -99,7 +113,6 @@ jobs:
             chore: 自动更新依赖 (${{ steps.update-info.outputs.date }})
             
             ${{ steps.update-info.outputs.updated-packages }}
-            ${{ steps.update-info.outputs.audit-summary }}
           title: '自动依赖更新 - ${{ steps.update-info.outputs.date }}'
           body: |
             ## 自动依赖更新
@@ -114,12 +127,20 @@ jobs:
             - 已修复已知的安全漏洞
             - package-lock.json 文件已同步更新
             
-            ### 注意事项
-            - 请在合并前运行测试确保应用正常工作
-            - 如有任何问题，请检查更新日志
-            - 建议在合并前检查是否有破坏性变更
+            <details>
+            <summary>📋 详细更新信息（点击展开）</summary>
             
-            详细的更新信息请查看 commit message。
+            #### 更新的文件
+            ${{ steps.update-info.outputs.updated-packages }}
+            
+            ${{ steps.update-info.outputs.dependency-changes }}
+            
+            #### 安全审计结果
+            ```
+            ${{ steps.update-info.outputs.audit-result }}
+            ```
+            
+            </details>
           branch: auto-dependency-update-${{ steps.update-info.outputs.date }}
           delete-branch: true
           labels: |
