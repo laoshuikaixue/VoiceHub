@@ -165,6 +165,26 @@ export default defineEventHandler(async (event) => {
             updateData.smtpFromName = body.smtpFromName
         }
 
+        if (body.enableRequestTimeLimitation !== undefined) {
+            if (typeof body.enableRequestTimeLimitation !== 'boolean') {
+                throw createError({
+                    statusCode: 400,
+                    message: 'enableRequestTimeLimitation 必须是布尔值'
+                })
+            }
+            updateData.enableRequestTimeLimitation = body.enableRequestTimeLimitation
+        }
+
+        if (body.forceBlockAllRequests !== undefined) {
+            if (typeof body.forceBlockAllRequests !== 'boolean') {
+                throw createError({
+                    statusCode: 400,
+                    message: 'forceBlockAllRequests 必须是布尔值'
+                })
+            }
+            updateData.forceBlockAllRequests = body.forceBlockAllRequests
+        }
+
         // 验证每日和每周限额二选一逻辑
         if (body.enableSubmissionLimit &&
             body.dailySubmissionLimit !== undefined &&
@@ -211,7 +231,8 @@ export default defineEventHandler(async (event) => {
                 smtpUsername: updateData.smtpUsername ?? null,
                 smtpPassword: updateData.smtpPassword ?? null,
                 smtpFromEmail: updateData.smtpFromEmail ?? null,
-                smtpFromName: updateData.smtpFromName ?? '校园广播站'
+                smtpFromName: updateData.smtpFromName ?? '校园广播站',
+                enableRequestTimeLimitation: updateData.enableRequestTimeLimitation ?? true,
             }).returning()
             settings = newSettingsResult[0]
         } else {

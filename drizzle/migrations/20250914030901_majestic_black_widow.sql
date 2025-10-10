@@ -1,4 +1,4 @@
-CREATE TABLE "EmailTemplate" (
+CREATE TABLE IF NOT EXISTS "EmailTemplate" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,

@@ -88,73 +88,6 @@
         <small class="help-text">如有备案号，将显示在页面底部</small>
       </div>
 
-      <!-- 投稿限额设置 -->
-      <div class="form-section">
-        <h4 class="section-title">投稿限额设置</h4>
-
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input
-                v-model="formData.enableSubmissionLimit"
-                type="checkbox"
-            />
-            <span class="checkbox-text">启用投稿限额</span>
-          </label>
-          <small class="help-text">开启后将限制用户的投稿频率</small>
-        </div>
-
-        <div v-if="formData.enableSubmissionLimit" class="submission-limits">
-          <div class="limit-type-selection">
-            <label class="radio-label">
-              <input
-                  :checked="limitType === 'daily'"
-                  name="limitType"
-                  type="radio"
-                  value="daily"
-                  @change="handleLimitTypeChange('daily')"
-              />
-              <span class="radio-text">每日限额</span>
-            </label>
-            <label class="radio-label">
-              <input
-                  :checked="limitType === 'weekly'"
-                  name="limitType"
-                  type="radio"
-                  value="weekly"
-                  @change="handleLimitTypeChange('weekly')"
-              />
-              <span class="radio-text">每周限额</span>
-            </label>
-          </div>
-
-          <div v-if="limitType === 'daily'" class="form-group">
-            <label for="dailySubmissionLimit">每日投稿限额</label>
-            <input
-                id="dailySubmissionLimit"
-                v-model.number="formData.dailySubmissionLimit"
-                max="100"
-                min="0"
-                placeholder="请输入每日最大投稿数量"
-                type="number"
-            />
-            <small class="help-text">每个用户每天最多可以投稿的歌曲数量，设置为0表示关闭投稿功能</small>
-          </div>
-
-          <div v-if="limitType === 'weekly'" class="form-group">
-            <label for="weeklySubmissionLimit">每周投稿限额</label>
-            <input
-                id="weeklySubmissionLimit"
-                v-model.number="formData.weeklySubmissionLimit"
-                max="500"
-                min="0"
-                placeholder="请输入每周最大投稿数量"
-                type="number"
-            />
-            <small class="help-text">每个用户每周最多可以投稿的歌曲数量，设置为0表示关闭投稿功能</small>
-          </div>
-        </div>
-      </div>
-
       <!-- 黑名单设置 -->
       <div class="form-section">
         <h4 class="section-title">黑名单设置</h4>
@@ -236,20 +169,6 @@ const {getAuthConfig} = useAuth()
 const loading = ref(true)
 const saving = ref(false)
 
-// 限额类型：daily 或 weekly（二选一逻辑）
-const limitType = computed(() => {
-  // 如果每日限额不为 null/undefined，则使用每日限额
-  if (formData.value.dailySubmissionLimit !== null && formData.value.dailySubmissionLimit !== undefined) {
-    return 'daily'
-  }
-  // 如果每周限额不为 null/undefined，则使用每周限额
-  if (formData.value.weeklySubmissionLimit !== null && formData.value.weeklySubmissionLimit !== undefined) {
-    return 'weekly'
-  }
-  // 默认为每日限额
-  return 'daily'
-})
-
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
 3. 禁止投递含有违规内容的歌曲
@@ -267,9 +186,6 @@ const formData = ref({
   siteDescription: '',
   submissionGuidelines: '',
   icpNumber: '',
-  enableSubmissionLimit: false,
-  dailySubmissionLimit: 0,
-  weeklySubmissionLimit: 0,
   showBlacklistKeywords: false,
   hideStudentInfo: true
 })
@@ -298,9 +214,6 @@ const loadConfig = async () => {
       siteDescription: data.siteDescription || '',
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
       icpNumber: data.icpNumber || '',
-      enableSubmissionLimit: data.enableSubmissionLimit || false,
-      dailySubmissionLimit: data.dailySubmissionLimit !== undefined ? data.dailySubmissionLimit : 5,
-      weeklySubmissionLimit: data.weeklySubmissionLimit !== undefined ? data.weeklySubmissionLimit : null,
       showBlacklistKeywords: data.showBlacklistKeywords || false,
       hideStudentInfo: data.hideStudentInfo ?? true
     }
@@ -319,9 +232,6 @@ const loadConfig = async () => {
       siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: defaultSubmissionGuidelines,
       icpNumber: '',
-      enableSubmissionLimit: false,
-      dailySubmissionLimit: 5,
-      weeklySubmissionLimit: null,
       showBlacklistKeywords: false
     }
     originalData.value = {...formData.value}
@@ -343,9 +253,6 @@ const saveConfig = async () => {
       siteDescription: formData.value.siteDescription.trim() || '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: formData.value.submissionGuidelines.trim() || defaultSubmissionGuidelines,
       icpNumber: formData.value.icpNumber.trim(),
-      enableSubmissionLimit: formData.value.enableSubmissionLimit,
-      dailySubmissionLimit: formData.value.dailySubmissionLimit,
-      weeklySubmissionLimit: formData.value.weeklySubmissionLimit,
       showBlacklistKeywords: formData.value.showBlacklistKeywords
     }
 
@@ -377,23 +284,6 @@ const saveConfig = async () => {
     window.$showNotification('保存配置失败，请重试', 'error')
   } finally {
     saving.value = false
-  }
-}
-
-// 处理限额类型变化
-const handleLimitTypeChange = (type) => {
-  if (type === 'daily') {
-    // 切换到每日限额，清空每周限额
-    formData.value.weeklySubmissionLimit = null
-    if (formData.value.dailySubmissionLimit === null || formData.value.dailySubmissionLimit === undefined) {
-      formData.value.dailySubmissionLimit = 5 // 默认值
-    }
-  } else if (type === 'weekly') {
-    // 切换到每周限额，清空每日限额
-    formData.value.dailySubmissionLimit = null
-    if (formData.value.weeklySubmissionLimit === null || formData.value.weeklySubmissionLimit === undefined) {
-      formData.value.weeklySubmissionLimit = 20 // 默认值
-    }
   }
 }
 

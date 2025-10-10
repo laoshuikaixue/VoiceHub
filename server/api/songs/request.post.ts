@@ -1,4 +1,5 @@
-import {and, db, eq, gte, lt, playTimes, semesters, songs, systemSettings} from '~/drizzle/db'
+import {and, db, eq, gte, lt, playTimes, semesters, songs, systemSettings, requestTimes} from '~/drizzle/db'
+import {gt, lte} from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
     // 检查用户认证
@@ -21,6 +22,42 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
+        const systemSettingsResult = await db.select().from(systemSettings).limit(1)
+        const systemSettingsData = systemSettingsResult[0]
+        const enableRequestTimeLimitation = systemSettingsData?.enableRequestTimeLimitation || false
+        const forceBlockAllRequests = systemSettingsData?.forceBlockAllRequests || false
+        let hit = false;
+        let accepted = 0;
+        let expected = 0;
+        let hitRequestTimeItem = null
+
+        if (enableRequestTimeLimitation && user.role !== 'SUPER_ADMIN') {
+            const now = new Date();
+
+            const hitRequestTimeResult = await db.select().from(requestTimes).where(and(and(lte(requestTimes.startTime, now), gt(requestTimes.endTime, now)), eq(requestTimes.enabled, true))).limit(1)
+            const hitRequestTime = hitRequestTimeResult[0]
+            hitRequestTimeItem = hitRequestTimeResult[0]
+
+            if (hitRequestTime) {
+                hit = true;
+                accepted = hitRequestTime?.accepted || 0;
+                expected = hitRequestTime?.expected || 0;
+            }
+        } else {
+            hit = true;
+        }
+        if (forceBlockAllRequests && user.role !== 'SUPER_ADMIN') {
+            throw createError({
+                statusCode: 403,
+                message: '投稿功能已关闭'
+            })
+        }
+        if (enableRequestTimeLimitation && user.role !== 'SUPER_ADMIN' && (!hit || (expected > 0 && accepted >= expected))) {
+            throw createError({
+                statusCode: 403,
+                message: '投稿功能已关闭'
+            })
+        }
         // 标准化字符串用于精确匹配
         const normalizeForMatch = (str: string): string => {
             return str
@@ -57,8 +94,6 @@ export default defineEventHandler(async (event) => {
         }
 
         // 检查投稿限额（管理员不受限制）
-        const systemSettingsResult = await db.select().from(systemSettings).limit(1)
-        const systemSettingsData = systemSettingsResult[0]
         const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
 
         if (systemSettingsData?.enableSubmissionLimit && !isAdmin) {
@@ -177,9 +212,16 @@ export default defineEventHandler(async (event) => {
             cover: body.cover || null,
             musicPlatform: body.musicPlatform || null,
             musicId: body.musicId ? String(body.musicId) : null,
-            playUrl: body.playUrl || null
+            playUrl: body.playUrl || null,
+            hitRequestId: hitRequestTimeItem?.id || null,
         }).returning()
         const song = songResult[0]
+
+        if(enableRequestTimeLimitation && user.role !== 'SUPER_ADMIN' && hitRequestTimeItem){
+            await db.update(requestTimes).set({
+                accepted: accepted + 1
+            }).where(eq(requestTimes.id, hitRequestTimeItem.id))
+        }
 
         // 移除了投稿者自动投票的逻辑
 

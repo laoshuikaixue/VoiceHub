@@ -1,4 +1,4 @@
-import {db} from '~/drizzle/db'
+import {db, requestTimes} from '~/drizzle/db'
 import {schedules, songBlacklists, songs, votes} from '~/drizzle/schema'
 import {eq} from 'drizzle-orm'
 import {cacheService} from '../../../services/cacheService'
@@ -85,7 +85,16 @@ export default defineEventHandler(async (event) => {
             // 删除歌曲的所有排期
             await tx.delete(schedules).where(eq(schedules.songId, body.songId))
             console.log(`删除了排期记录`)
-
+            if (song.hitRequestId) {
+                const hitRequestTimeResult = await db.select().from(requestTimes).where(eq(requestTimes.id, song.hitRequestId))
+                const hitRequestTime = hitRequestTimeResult[0]
+                if (hitRequestTime) {
+                    const accepted = hitRequestTime.accepted
+                    await db.update(requestTimes).set({
+                        accepted: accepted - 1,
+                    }).where(eq(requestTimes.id, song.hitRequestId))
+                }
+            }
             // 删除歌曲
             const deletedSong = await tx.delete(songs).where(eq(songs.id, body.songId)).returning()
             console.log(`歌曲删除完成`)

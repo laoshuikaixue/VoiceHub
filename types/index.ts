@@ -112,3 +112,15 @@ export interface SystemSettings {
     id: number
     enablePlayTimeSelection: boolean // 是否启用播出时段选择功能
 }
+
+export interface RequestTime {
+    id: number
+    name: string        // 时段名称，如"上午"、"下午"
+    startTime?: string  // 开始时间，格式为"HH:MM"，可选
+    endTime?: string    // 结束时间，格式为"HH:MM"，可选
+    enabled: boolean    // 是否启用
+    description?: string // 描述，可选
+    expected: number,
+    accepted: number,
+    past: boolean,
+}

@@ -104,78 +104,77 @@ async function safeMigrate() {
       fs.mkdirSync(migrationsPath, { recursive: true });
     }
     
-    // 4. 生成迁移文件（如果需要）
-    log('生成数据库迁移文件...', 'cyan');
-    
-    // 设置非交互式环境变量
-    const nonInteractiveEnv = {
-      ...process.env,
-      DRIZZLE_KIT_FORCE: 'true',
-      CI: 'true',
-      NODE_ENV: 'production'
-    };
-    
-    if (!safeExec('npm run db:generate', { env: nonInteractiveEnv })) {
-      logWarning('迁移文件生成失败，尝试直接同步...');
-    } else {
-      logSuccess('迁移文件生成完成');
-    }
-    
-    // 5. 预处理数据冲突
+    // 4. 预处理数据冲突
     log('🔍 检查并处理数据冲突...', 'cyan');
     await handleDataConflicts();
     
-    // 6. 检查是否为全新部署（数据库为空）
-    log('📋 检查数据库状态...', 'cyan');
-    
-    // 设置非交互式环境变量
+    // 5. 智能混合迁移策略
+    log('🚦 采用智能混合迁移策略', 'cyan');
+
     const env = {
       ...process.env,
-      DRIZZLE_KIT_FORCE: 'true',
       CI: 'true',
       NODE_ENV: 'production'
     };
+
+    // 步骤1: 生成新的迁移文件（如果有schema变更）
+    log('生成迁移文件...', 'cyan');
+    const generateResult = safeExec('cd .. && npx drizzle-kit generate --config=drizzle.config.ts', { env, stdio: 'pipe' });
     
-    // 检查数据库是否有任何表
-    let isEmptyDatabase = false;
-    try {
-      const checkResult = execSync('cd .. && npx drizzle-kit introspect --config=drizzle.config.ts', { 
-        stdio: 'pipe', 
-        env,
-        encoding: 'utf8'
-      });
-      // 如果introspect没有找到任何表，说明是空数据库
-      isEmptyDatabase = !checkResult.includes('CREATE TABLE');
-    } catch (error) {
-      // 如果introspect失败，可能是空数据库或连接问题
-      logWarning('数据库状态检查失败，假设为全新部署');
-      isEmptyDatabase = true;
-    }
-    
-    if (isEmptyDatabase) {
-      log('🆕 检测到全新部署，执行标准迁移...', 'cyan');
-      // 对于全新部署，直接使用migrate避免交互式提示
-      if (!safeExec('cd .. && npm run db:migrate', { env })) {
-        throw new Error('数据库迁移失败');
-      }
-      logSuccess('全新数据库迁移成功');
+    if (generateResult) {
+      logSuccess('迁移文件生成成功');
     } else {
-      log('🔄 检测到现有数据库，执行schema同步...', 'cyan');
-      // 对于现有数据库，使用push进行增量更新
-      if (safeExec('cd .. && npx drizzle-kit push --force --config=drizzle.config.ts', { env })) {
-        logSuccess('数据库schema同步成功');
+      logWarning('迁移文件生成完成（可能无新变更）');
+    }
+
+    // 步骤2: 尝试标准迁移
+    log('尝试标准迁移...', 'cyan');
+    const migrateResult = safeExec('cd .. && npx drizzle-kit migrate --config=drizzle.config.ts', { env, stdio: 'pipe' });
+    
+    if (migrateResult) {
+      logSuccess('标准迁移完成');
+      log('✅ 数据库迁移流程完成！', 'green');
+      return;
+    }
+
+    // 步骤3: 如果标准迁移失败，使用push同步schema
+    logWarning('标准迁移失败，使用schema同步...');
+    
+    // 使用环境变量和输入重定向来避免交互式提示
+    const pushEnv = { 
+      ...env, 
+      DRIZZLE_KIT_ACCEPT_ALL: 'true',
+      CI: 'true',
+      NODE_ENV: 'production',
+      FORCE_COLOR: '0'
+    };
+    
+    // 尝试使用echo来自动回答提示
+    const pushCommand = process.platform === 'win32' 
+      ? 'echo. | npx drizzle-kit push --force --config=drizzle.config.ts'
+      : 'echo "" | npx drizzle-kit push --force --config=drizzle.config.ts';
+    
+    const pushResult = safeExec(`cd .. && ${pushCommand}`, { 
+      env: pushEnv,
+      stdio: 'pipe'
+    });
+    
+    if (pushResult) {
+      logSuccess('Schema同步成功');
+      
+      // 步骤4: 同步后重新尝试迁移（处理剩余的迁移文件）
+      log('同步后重新尝试迁移...', 'cyan');
+      const retryMigrateResult = safeExec('cd .. && npx drizzle-kit migrate --config=drizzle.config.ts', { env, stdio: 'pipe' });
+      
+      if (retryMigrateResult) {
+        logSuccess('迁移在schema同步后完成');
       } else {
-        logWarning('schema同步失败，尝试标准迁移...');
-        
-        // 7. 执行迁移（作为后备）
-        if (!safeExec('cd .. && npm run db:migrate', { env })) {
-          throw new Error('数据库迁移完全失败');
-        }
-        logSuccess('数据库迁移成功');
+        logWarning('迁移部分完成 - schema已同步');
       }
+    } else {
+      throw new Error('Schema同步失败');
     }
     
-    // 8. 验证迁移结果
     log('✅ 数据库迁移流程完成！', 'green');
     
   } catch (error) {

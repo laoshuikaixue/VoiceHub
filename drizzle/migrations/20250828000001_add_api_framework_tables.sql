@@ -1,5 +1,5 @@
 -- 创建API Keys表
-CREATE TABLE "api_keys" (
+CREATE TABLE IF NOT EXISTS "api_keys" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"name" varchar(255) NOT NULL,
 	"description" text,
@@ -16,7 +16,7 @@ CREATE TABLE "api_keys" (
 );--> statement-breakpoint
 
 -- 创建API Key权限表
-CREATE TABLE "api_key_permissions" (
+CREATE TABLE IF NOT EXISTS "api_key_permissions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"api_key_id" uuid NOT NULL,
 	"permission" varchar(100) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE "api_key_permissions" (
 );--> statement-breakpoint
 
 -- 创建API访问日志表
-CREATE TABLE "api_logs" (
+CREATE TABLE IF NOT EXISTS "api_logs" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"api_key_id" uuid,
 	"endpoint" varchar(500) NOT NULL,

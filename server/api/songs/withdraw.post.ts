@@ -1,4 +1,4 @@
-import {db} from '~/drizzle/db'
+import {db, requestTimes} from '~/drizzle/db'
 import {cacheService} from '~/server/services/cacheService'
 import {schedules, songs, systemSettings, votes} from '~/drizzle/schema'
 import {and, eq} from 'drizzle-orm'
@@ -100,6 +100,16 @@ export default defineEventHandler(async (event) => {
     // 删除歌曲的所有投票
     await db.delete(votes).where(eq(votes.songId, body.songId))
 
+    if (song.hitRequestId) {
+        const hitRequestTimeResult = await db.select().from(requestTimes).where(eq(requestTimes.id, song.hitRequestId))
+        const hitRequestTime = hitRequestTimeResult[0]
+        if (hitRequestTime) {
+            const accepted = hitRequestTime.accepted
+            await db.update(requestTimes).set({
+                accepted: accepted - 1,
+            }).where(eq(requestTimes.id, song.hitRequestId))
+        }
+    }
     // 删除歌曲
     await db.delete(songs).where(eq(songs.id, body.songId))
 

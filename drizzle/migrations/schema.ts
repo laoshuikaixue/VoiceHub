@@ -1,4 +1,4 @@
-import { pgTable, serial, timestamp, text, boolean, integer, uuid, varchar, unique, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, timestamp, text, boolean, bigint, integer, uuid, varchar, unique, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blacklistType = pgEnum("BlacklistType", ['SONG', 'KEYWORD'])
@@ -11,6 +11,29 @@ export const semester = pgTable("Semester", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 	name: text().notNull(),
 	isActive: boolean().default(false).notNull(),
+});
+
+export const requestTime = pgTable("RequestTime", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ precision: 6, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ precision: 6, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	startTime: timestamp({ mode: 'string' }).notNull(),
+	endTime: timestamp({ mode: 'string' }).notNull(),
+	enabled: boolean().default(true).notNull(),
+	description: text(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	expected: bigint({ mode: "number" }).default(0).notNull(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	accepted: bigint({ mode: "number" }).default(0).notNull(),
+	past: boolean().default(false).notNull(),
+});
+
+export const drizzleMigrations = pgTable("__drizzle_migrations__", {
+	id: serial().primaryKey().notNull(),
+	hash: text().notNull(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	createdAt: bigint("created_at", { mode: "number" }),
 });
 
 export const user = pgTable("User", {
@@ -72,6 +95,8 @@ export const systemSettings = pgTable("SystemSettings", {
 	smtpPassword: text(),
 	smtpFromEmail: text(),
 	smtpFromName: text().default('校园广播站'),
+	enableRequestTimeLimitation: boolean().default(false).notNull(),
+	forceBlockAllRequests: boolean().default(false).notNull(),
 });
 
 export const playTime = pgTable("PlayTime", {
@@ -131,6 +156,7 @@ export const song = pgTable("Song", {
 	musicPlatform: text(),
 	musicId: text(),
 	playUrl: text(),
+	hitRequestId: integer(),
 });
 
 export const apiKeyPermissions = pgTable("api_key_permissions", {

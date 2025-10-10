@@ -3,7 +3,7 @@ DO $$ BEGIN
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;--> statement-breakpoint
-CREATE TABLE "NotificationSettings" (
+CREATE TABLE IF NOT EXISTS "NotificationSettings" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE "NotificationSettings" (
 	CONSTRAINT "NotificationSettings_userId_unique" UNIQUE("userId")
 );
 --> statement-breakpoint
-CREATE TABLE "Notification" (
+CREATE TABLE IF NOT EXISTS "Notification" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE "Notification" (
 	"songId" integer
 );
 --> statement-breakpoint
-CREATE TABLE "PlayTime" (
+CREATE TABLE IF NOT EXISTS "PlayTime" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE "PlayTime" (
 	"description" text
 );
 --> statement-breakpoint
-CREATE TABLE "Schedule" (
+CREATE TABLE IF NOT EXISTS "Schedule" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE "Schedule" (
 	"playTimeId" integer
 );
 --> statement-breakpoint
-CREATE TABLE "Semester" (
+CREATE TABLE IF NOT EXISTS "Semester" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE "Semester" (
 	CONSTRAINT "Semester_name_unique" UNIQUE("name")
 );
 --> statement-breakpoint
-CREATE TABLE "SongBlacklist" (
+CREATE TABLE IF NOT EXISTS "SongBlacklist" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE "SongBlacklist" (
 	"createdBy" integer
 );
 --> statement-breakpoint
-CREATE TABLE "Song" (
+CREATE TABLE IF NOT EXISTS "Song" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE "Song" (
 	"musicId" text
 );
 --> statement-breakpoint
-CREATE TABLE "SystemSettings" (
+CREATE TABLE IF NOT EXISTS "SystemSettings" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
@@ -105,7 +105,7 @@ CREATE TABLE "SystemSettings" (
 	"hideStudentInfo" boolean DEFAULT true NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "User" (
+CREATE TABLE IF NOT EXISTS "User" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
@@ -124,7 +124,7 @@ CREATE TABLE "User" (
 	CONSTRAINT "User_username_unique" UNIQUE("username")
 );
 --> statement-breakpoint
-CREATE TABLE "Vote" (
+CREATE TABLE IF NOT EXISTS "Vote" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"songId" integer NOT NULL,
