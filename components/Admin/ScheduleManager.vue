@@ -1744,8 +1744,8 @@ const saveSequence = async () => {
   try {
     loading.value = true
 
-    // 删除当天指定播出时段的所有排期
-    const existingSchedules = publicSchedules.value.filter(s => {
+    // 删除当天指定播出时段的所有排期和草稿
+    const existingSchedules = [...publicSchedules.value, ...drafts.value].filter(s => {
       if (!s.playDate) return false
       const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
       const matchesDate = scheduleDateStr === selectedDate.value
@@ -1760,7 +1760,15 @@ const saveSequence = async () => {
     })
 
     for (const schedule of existingSchedules) {
-      await adminService.removeSchedule(schedule.id)
+      try {
+        await $fetch(`/api/admin/schedule/remove`, {
+          method: 'POST',
+          body: {scheduleId: schedule.id},
+          ...auth.getAuthConfig()
+        })
+      } catch (deleteError) {
+        console.warn('删除排期失败:', deleteError)
+      }
     }
 
     // 创建新排期
