@@ -2,8 +2,8 @@ name: 自动更新依赖
 
 on:
   schedule:
-    # 每天北京时间上午9点（UTC时间凌晨1点）运行
-    - cron: '0 1 * * *'
+    # 每周六北京时间上午9点（UTC时间凌晨1点）运行
+    - cron: '0 1 * * 6'
   workflow_dispatch:
     inputs:
       reason:
