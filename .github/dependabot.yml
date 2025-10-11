@@ -20,7 +20,8 @@ updates:
       include: "scope"
     labels:
       - "dependencies"
-      - "npm"
+      - "automated"
+      - "chore"
     allow:
       - dependency-type: "direct"
       - dependency-type: "indirect"
