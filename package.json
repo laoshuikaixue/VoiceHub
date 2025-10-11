@@ -40,7 +40,7 @@
     "drizzle-orm": "^0.44.5",
     "formidable": "^3.5.4",
     "html2canvas": "^1.4.1",
-    "html2pdf.js": "^0.10.3",
+    "html2pdf.js": "^0.12.1",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.1",
     "multer": "^2.0.2",
