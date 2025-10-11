@@ -180,7 +180,6 @@ jobs:
             dependencies
             automated
             chore
-          assignees: laoshuikaixue
 
       - name: 输出结果
         run: |

@@ -14,10 +14,6 @@ updates:
       time: "09:00"
       timezone: "Asia/Shanghai"
     open-pull-requests-limit: 10
-    reviewers:
-      - "laoshuikaixue"
-    assignees:
-      - "laoshuikaixue"
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
@@ -63,10 +59,6 @@ updates:
       time: "09:00"
       timezone: "Asia/Shanghai"
     open-pull-requests-limit: 5
-    reviewers:
-      - "laoshuikaixue"
-    assignees:
-      - "laoshuikaixue"
     commit-message:
       prefix: "chore"
       include: "scope"
