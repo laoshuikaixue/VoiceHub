@@ -51,7 +51,8 @@ updates:
       include: "scope"
     labels:
       - "dependencies"
-      - "docker"
+      - "automated"
+      - "chore"
 
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"
@@ -71,4 +72,5 @@ updates:
       include: "scope"
     labels:
       - "dependencies"
-      - "github-actions"
+      - "automated"
+      - "chore"
