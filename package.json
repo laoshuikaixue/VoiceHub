@@ -27,6 +27,8 @@
     "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
+    "@applemusic-like-lyrics/lyric": "^0.2.4",
+    "@applemusic-like-lyrics/vue": "^0.1.5",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
@@ -55,6 +57,7 @@
     "zod": "^4.1.8"
   },
   "devDependencies": {
-    "tsx": "^4.20.5"
+    "tsx": "^4.20.5",
+    "vite-plugin-wasm": "^3.5.0"
   }
 }
