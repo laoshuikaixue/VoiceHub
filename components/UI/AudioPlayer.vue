@@ -44,7 +44,29 @@
         <!-- 歌词显示区域 -->
         <Transition name="lyrics-slide">
           <div v-if="showLyrics" class="lyrics-panel">
+            <!-- Apple Music 风格歌词 -->
+            <AppleMusicLyrics
+                v-if="useAppleMusicStyle"
+                :allow-seek="true"
+                :current-lyric-index="control.lyrics.currentLyricIndex.value"
+                :current-lyrics="control.lyrics.currentLyrics.value"
+                :current-time="control.currentTime.value"
+                :error="control.lyrics.error.value"
+                :is-loading="control.lyrics.isLoading.value"
+                :translation-lyrics="control.lyrics.translationLyrics.value"
+                :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
+                :show-translation="false"
+                height="120px"
+                :font-size="24"
+                :line-height="1.4"
+                active-line-color="#ffffff"
+                inactive-line-color="rgba(255, 255, 255, 0.6)"
+                @seek="handleLyricSeek"
+            />
+            
+            <!-- 传统歌词显示 -->
             <LyricsDisplay
+                v-else
                 :allow-seek="true"
                 :compact="true"
                 :current-lyric-index="control.lyrics.currentLyricIndex.value"
@@ -82,6 +104,7 @@
 <script setup>
 import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
 import LyricsDisplay from './LyricsDisplay.vue'
+import AppleMusicLyrics from './AppleMusicLyrics.vue'
 import PlayerInfo from './AudioPlayer/PlayerInfo.vue'
 import PlayerControls from './AudioPlayer/PlayerControls.vue'
 import PlayerActions from './AudioPlayer/PlayerActions.vue'
@@ -121,6 +144,7 @@ const playerControlsRef = ref(null)
 // UI 状态
 const isClosing = ref(false)
 const showLyrics = ref(false)
+const useAppleMusicStyle = ref(true) // 默认使用Apple Music风格
 
 // 同步标记，避免双向触发
 const isSyncingFromGlobal = ref(false)
