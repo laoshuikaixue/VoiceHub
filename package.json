@@ -27,6 +27,7 @@
     "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
+    "@applemusic-like-lyrics/core": "^0.2.0-alpha.5",
     "@applemusic-like-lyrics/lyric": "^0.2.4",
     "@applemusic-like-lyrics/vue": "^0.1.5",
     "@types/bcrypt": "^5.0.2",

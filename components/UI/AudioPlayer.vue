@@ -496,7 +496,13 @@ const toggleLyrics = () => {
   router.push('/lyrics-fullscreen')
 }
 
-const handleLyricSeek = (time) => {
+const handleLyricSeek = async (time) => {
+  // 如果当前处于暂停状态，先开始播放
+  if (!control.isPlaying.value) {
+    await control.play()
+  }
+  
+  // 跳转到指定时间
   control.seek(time)
   sync.updateGlobalPosition(time, control.duration.value)
 }

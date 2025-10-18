@@ -140,14 +140,29 @@ export function smartWordSegmentation(
   
   if (!text.trim()) return []
   
-  // 简单的分词逻辑：按空格、标点符号分割
-  const segments = text.split(/(\s+|[，。！？；：、])/g).filter(s => s.trim())
+  // 分词逻辑：
+  // 1. 对于英文，按空格分割单词
+  // 2. 对于中文，只在句末标点符号处分割，避免拆分歌名中的数字和符号
   
+  // 检测是否包含英文字母
+  const hasEnglish = /[a-zA-Z]/.test(text)
+  
+  let segments: string[]
+  
+  if (hasEnglish) {
+    // 英文内容：按空格和句末标点符号分割
+    segments = text.split(/(\s+|[.!?。！？])/g).filter(s => s.trim())
+  } else {
+    // 中文内容：只按句末标点符号分割，避免拆分歌名中的数字和符号
+    segments = text.split(/([。！？])/g).filter(s => s.trim() && !/^[。！？\s]+$/.test(s))
+  }
+  
+  // 如果没有明显的分割点，或者分割后只有一个片段，将整行作为一个词处理
   if (segments.length <= 1) {
     return [{
       startTime,
       endTime,
-      word: text,
+      word: text.trim(),
       romanWord: '',
       obscene: false
     }]
@@ -163,7 +178,7 @@ export function smartWordSegmentation(
     return {
       startTime: wordStartTime,
       endTime: wordEndTime,
-      word: segment,
+      word: segment.trim(),
       romanWord: '',
       obscene: false
     }

@@ -197,7 +197,7 @@ export default defineEventHandler(async (event) => {
                 played: songs.played,
                 playedAt: songs.playedAt,
                 createdAt: songs.createdAt,
-                semester: songs.semester  // 添加semester字段
+                semester: songs.semester
             },
             requester: {
                 id: users.id,

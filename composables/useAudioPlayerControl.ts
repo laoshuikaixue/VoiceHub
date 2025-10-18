@@ -179,10 +179,8 @@ export const useAudioPlayerControl = () => {
                     songUrl = songUrlOrSong.musicUrl
 
                     // 清理URL中的反引号和空格（特别是网易云备用源）
-                    if (typeof songUrl === 'string') {
-                        songUrl = songUrl.trim().replace(/`/g, '')
-                        console.log('使用已有的播放URL:', songUrl)
-                    }
+                    songUrl = songUrl.trim().replace(/`/g, '')
+                    console.log('使用已有的播放URL:', songUrl)
 
                     // 如果有音乐平台信息，加载歌词
                     if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
@@ -231,7 +229,7 @@ export const useAudioPlayerControl = () => {
             console.log('歌曲加载成功:', songInfo?.title || songUrl)
             isLoadingNewSong.value = false
 
-            // 自动开始播放 - 移除用户交互检查，直接尝试播放
+            // 自动开始播放
             console.log('尝试自动播放音乐')
             const playResult = await play()
             

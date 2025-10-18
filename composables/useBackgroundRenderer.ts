@@ -1,5 +1,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { BackgroundRender, EplorRenderer, PixiRenderer } from '@applemusic-like-lyrics/core'
+import '@applemusic-like-lyrics/core/style.css'
+import { BackgroundRender, MeshGradientRenderer, PixiRenderer } from '@applemusic-like-lyrics/core'
 
 export interface BackgroundConfig {
   type: 'gradient' | 'cover'
@@ -11,11 +12,15 @@ export interface BackgroundConfig {
 }
 
 export const useBackgroundRenderer = () => {
-  const backgroundRenderer = ref<BackgroundRender<PixiRenderer | EplorRenderer> | null>(null)
+  const backgroundRenderer = ref<BackgroundRender<PixiRenderer | MeshGradientRenderer> | null>(null)
   const containerElement = ref<HTMLElement | null>(null)
   const coverBlurElement = ref<HTMLElement | null>(null)
   const isInitialized = ref(false)
   const isRendering = ref(false)
+
+  // 当前渲染器类型与封面地址
+  const currentRenderer = ref<'gradient' | 'cover'>('gradient')
+  const currentCoverUrl = ref<string>('')
 
   // 默认配置
   const defaultConfig: BackgroundConfig = {
@@ -36,8 +41,9 @@ export const useBackgroundRenderer = () => {
     try {
       containerElement.value = container
       
-      // 创建 Eplor 渲染器（替代 MeshGradientRenderer）
-      backgroundRenderer.value = BackgroundRender.new(EplorRenderer)
+      // 创建 MeshGradient 渲染器（替代原 EplorRenderer）
+      backgroundRenderer.value = BackgroundRender.new(MeshGradientRenderer)
+      currentRenderer.value = 'gradient'
       
       // 将渲染器的 canvas 元素添加到容器中
       const canvas = backgroundRenderer.value.getElement()
@@ -61,34 +67,96 @@ export const useBackgroundRenderer = () => {
     }
   }
 
+  // 切换底层渲染器
+  const switchRenderer = (type: 'gradient' | 'cover') => {
+    if (!containerElement.value) return
+    const container = containerElement.value
+    const oldCanvas = backgroundRenderer.value?.getElement()
+
+    try {
+      if (oldCanvas) {
+        container.removeChild(oldCanvas)
+      }
+      // 释放旧实例
+      backgroundRenderer.value?.dispose()
+
+      // 创建对应渲染器
+      backgroundRenderer.value = type === 'gradient'
+        ? BackgroundRender.new(MeshGradientRenderer)
+        : BackgroundRender.new(PixiRenderer)
+
+      currentRenderer.value = type
+
+      // 挂载新 canvas
+      const canvas = backgroundRenderer.value.getElement()
+      container.appendChild(canvas)
+      canvas.style.position = 'absolute'
+      canvas.style.top = '0'
+      canvas.style.left = '0'
+      canvas.style.width = '100%'
+      canvas.style.height = '100%'
+      canvas.style.zIndex = '-1'
+
+    } catch (error) {
+      console.error('切换背景渲染器失败:', error)
+    }
+  }
+
   // 应用配置
   const applyConfig = async () => {
     if (!backgroundRenderer.value) return
 
     try {
       if (config.value.type === 'gradient') {
+        // 如有必要切换回 MeshGradientRenderer
+        if (currentRenderer.value !== 'gradient') {
+          switchRenderer('gradient')
+        }
+
         // 显示渐变背景
         backgroundRenderer.value.setVisible(true)
-        
-        // 设置动态模式
-        if (config.value.dynamic) {
-          backgroundRenderer.value.setStaticMode(false)
-          backgroundRenderer.value.setFlowSpeed(config.value.flowSpeed)
-        } else {
-          backgroundRenderer.value.setStaticMode(true)
+
+        // 根据配置设置动态/静态
+        backgroundRenderer.value.setStaticMode(!config.value.dynamic)
+        backgroundRenderer.value.setFlowSpeed(config.value.flowSpeed)
+
+        // 使用当前封面作为颜色来源
+        if (currentCoverUrl.value) {
+          await backgroundRenderer.value.setAlbum(currentCoverUrl.value)
         }
-        
-        // 隐藏封面背景
+
+        // 隐藏旧的封面模糊元素（改为统一使用 AMLL 背景）
         if (coverBlurElement.value) {
           coverBlurElement.value.style.display = 'none'
         }
+
+        // 清除可能存在的滤镜
+        backgroundRenderer.value.getElement().style.filter = ''
+        backgroundRenderer.value.getElement().style.transform = ''
+
       } else {
-        // 隐藏渐变背景
-        backgroundRenderer.value.setVisible(false)
-        
-        // 显示封面背景
+        // 封面动态模糊：使用 PixiRenderer 承载封面并应用模糊
+        if (currentRenderer.value !== 'cover') {
+          switchRenderer('cover')
+        }
+
+        backgroundRenderer.value.setVisible(true)
+
+        // 设置封面并根据需要动态流动
+        if (currentCoverUrl.value) {
+          await backgroundRenderer.value.setAlbum(currentCoverUrl.value)
+        }
+        backgroundRenderer.value.setStaticMode(!config.value.dynamic)
+        backgroundRenderer.value.setFlowSpeed(config.value.flowSpeed)
+
+        // 为画布应用模糊与轻微放大效果
+        const canvas = backgroundRenderer.value.getElement()
+        canvas.style.filter = 'blur(20px)'
+        canvas.style.transform = 'scale(1.1)'
+
+        // 不再使用独立的 CSS 封面模糊层
         if (coverBlurElement.value) {
-          coverBlurElement.value.style.display = 'block'
+          coverBlurElement.value.style.display = 'none'
         }
       }
 
@@ -111,28 +179,38 @@ export const useBackgroundRenderer = () => {
     await applyConfig()
   }
 
-  // 设置封面背景
-  const setCoverBackground = (coverUrl: string) => {
-    if (!coverBlurElement.value) return
+  // 设置封面背景（同时更新 AMLL 背景封面来源）
+  const setCoverBackground = async (coverUrl: string) => {
+    currentCoverUrl.value = coverUrl
 
-    try {
-      coverBlurElement.value.style.backgroundImage = `url(${coverUrl})`
-      coverBlurElement.value.style.backgroundSize = 'cover'
-      coverBlurElement.value.style.backgroundPosition = 'center'
-      coverBlurElement.value.style.filter = 'blur(20px)'
-      coverBlurElement.value.style.transform = 'scale(1.1)'
-      
-      // 添加遮罩层
-      const overlay = coverBlurElement.value.querySelector('.cover-blur-overlay') as HTMLElement
-      if (overlay) {
-        overlay.style.background = 'rgba(0, 0, 0, 0.5)'
+    // 兼容旧的独立封面模糊元素设置（作为备选，不再显示）
+    if (coverBlurElement.value) {
+      try {
+        coverBlurElement.value.style.backgroundImage = `url(${coverUrl})`
+        coverBlurElement.value.style.backgroundSize = 'cover'
+        coverBlurElement.value.style.backgroundPosition = 'center'
+        coverBlurElement.value.style.filter = 'blur(20px)'
+        coverBlurElement.value.style.transform = 'scale(1.1)'
+        const overlay = coverBlurElement.value.querySelector('.cover-blur-overlay') as HTMLElement
+        if (overlay) {
+          overlay.style.background = 'rgba(0, 0, 0, 0.5)'
+        }
+      } catch (error) {
+        console.error('设置封面背景失败:', error)
       }
-    } catch (error) {
-      console.error('设置封面背景失败:', error)
+    }
+
+    // 将封面应用到渲染器
+    if (backgroundRenderer.value) {
+      try {
+        await backgroundRenderer.value.setAlbum(coverUrl)
+      } catch (error) {
+        console.error('应用封面到背景失败:', error)
+      }
     }
   }
 
-  // 设置封面模糊元素
+  // 设置封面模糊元素（旧实现备用，不默认使用）
   const setCoverBlurElement = (element: HTMLElement) => {
     coverBlurElement.value = element
   }
@@ -140,9 +218,9 @@ export const useBackgroundRenderer = () => {
   // 设置渐变颜色（基于歌曲封面）
   const setGradientFromCover = async (coverUrl: string) => {
     if (!backgroundRenderer.value) return
+    currentCoverUrl.value = coverUrl
 
     try {
-      // 使用 setAlbum 方法设置背景图片
       await backgroundRenderer.value.setAlbum(coverUrl)
     } catch (error) {
       console.error('设置背景图片失败:', error)
@@ -213,6 +291,8 @@ export const useBackgroundRenderer = () => {
     isRendering.value = false
     containerElement.value = null
     coverBlurElement.value = null
+    currentCoverUrl.value = ''
+    currentRenderer.value = 'gradient'
   }
 
   // 组件卸载时清理

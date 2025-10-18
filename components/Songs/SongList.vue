@@ -834,9 +834,19 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
   const {getSongUrl} = useMusicSources()
 
   try {
-    let apiUrl
     const quality = getQuality(platform)
 
+    // 先使用统一组件的 NeteaseCloudMusicApi（仅网易云）
+    if (platform === 'netease') {
+      const result = await getSongUrl(musicId, quality)
+      if (result.success && result.url) {
+        return result.url
+      }
+      console.warn('[SongList] 备用源未返回有效链接，回退到 vkeys')
+    }
+
+    // 回退到 vkeys
+    let apiUrl
     if (platform === 'netease') {
       apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
     } else if (platform === 'tencent') {
@@ -866,20 +876,6 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
 
     throw new Error('vkeys返回成功但未获取到音乐URL')
   } catch (error) {
-    // vkeys获取音乐URL失败
-
-    // 如果是网易云平台，尝试使用备用源
-    if (platform === 'netease') {
-      try {
-        const result = await getSongUrl(musicId)
-        if (result.success && result.url) {
-          return result.url
-        }
-      } catch (backupError) {
-        // 网易云备用源调用失败
-      }
-    }
-
     throw error
   }
 }

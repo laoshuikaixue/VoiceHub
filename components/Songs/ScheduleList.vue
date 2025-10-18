@@ -724,7 +724,17 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
   try {
     const quality = getQuality(platform)
 
-    // 首先尝试vkeys API
+    // 先使用统一组件的 NeteaseCloudMusicApi（仅网易云）
+    if (platform === 'netease') {
+      const result = await getSongUrl(musicId, quality)
+      if (result?.success && result.url) {
+        console.log('[ScheduleList] NeteaseCloudMusicApi 获取音乐URL成功')
+        return result.url
+      }
+      console.warn('[ScheduleList] 备用源未返回有效链接，回退到 vkeys')
+    }
+
+    // 回退到 vkeys
     let apiUrl
     if (platform === 'netease') {
       apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
@@ -751,35 +761,13 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
       if (url.startsWith('http://')) {
         url = url.replace('http://', 'https://')
       }
-      console.log('vkeys API获取音乐URL成功')
+      console.log('[ScheduleList] vkeys API获取音乐URL成功')
       return url
     }
 
-    // vkeys API返回了响应但没有有效的URL，尝试备用源
-    throw new Error('vkeys API未返回有效的音乐URL')
-  } catch (error) {
-    console.error('vkeys API获取音乐URL失败:', error)
-
-    // 如果是网易云平台，尝试使用备用源
-    if (platform === 'netease') {
-      console.log('尝试使用网易云备用源获取音乐URL...')
-      try {
-        const quality = getQuality(platform)
-        const backupResult = await getSongUrl(musicId, quality)
-
-        if (backupResult && backupResult.url) {
-          console.log('网易云备用源获取音乐URL成功')
-          return backupResult.url
-        } else {
-          console.error('网易云备用源未返回有效的URL')
-        }
-      } catch (backupError) {
-        console.error('网易云备用源获取音乐URL也失败:', backupError)
-      }
-    }
-
-    // vkeys和备用源都失败了
     throw new Error('所有音源都无法获取音乐播放链接')
+  } catch (error) {
+    throw error
   }
 }
 

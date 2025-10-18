@@ -284,7 +284,12 @@ const nextSong = () => {
 }
 
 // 点击歌词行时跳转到对应进度
-const handleLyricLineSeek = (seconds: number) => {
+const handleLyricLineSeek = async (seconds: number) => {
+  // 如果当前处于暂停状态，先开始播放
+  if (!isPlaying.value) {
+    await togglePlayPause()
+  }
+  
   // 跳转音频元素进度
   const audioElements = document.querySelectorAll('audio')
   for (const audio of audioElements) {
