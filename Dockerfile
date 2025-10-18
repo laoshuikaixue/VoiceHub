@@ -1,5 +1,5 @@
 # 第一阶段：构建阶段
-FROM node:24-alpine AS builder
+FROM node:25-alpine AS builder
 WORKDIR /app
 
 # 复制依赖文件和 scripts 目录
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # 第二阶段：运行阶段
-FROM node:24-alpine
+FROM node:25-alpine
 
 # 切换到非root用户
 USER root
