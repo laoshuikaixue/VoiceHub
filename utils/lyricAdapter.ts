@@ -54,7 +54,7 @@ export function convertToAmllFormat(
     
     return {
       words,
-      translatedLyric: translation?.content || '',
+      translatedLyric: (translation && translation.content && translation.content.trim() && translation.content !== '//') ? translation.content : '',
       romanLyric: romanization ? generateRomanization(line.content) : '',
       startTime: line.time,
       endTime,

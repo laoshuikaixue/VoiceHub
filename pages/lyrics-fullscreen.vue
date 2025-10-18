@@ -555,18 +555,23 @@ watch(currentSong, async (newSong) => {
   }
 })
 
-// 监听歌词数据变化
-watch(() => lyrics.currentLyrics.value, async (newLyrics) => {
-  console.log('[lyrics-fullscreen] 歌词数据变化:', newLyrics?.length || 0, '行歌词')
+// 监听歌词与翻译数据变化（同时监听）
+watch([
+  () => lyrics.currentLyrics.value,
+  () => lyrics.translationLyrics.value
+], async ([newLyrics, newTranslations]) => {
+  const lyricsCount = newLyrics?.length || 0
+  const transCount = newTranslations?.length || 0
+  console.log('[lyrics-fullscreen] 歌词/翻译数据变化:', lyricsCount, '/', transCount)
   console.log('[lyrics-fullscreen] 歌词播放器状态:', lyricPlayer.isInitialized.value)
-  
+
   if (newLyrics && newLyrics.length > 0) {
-    console.log('[lyrics-fullscreen] 转换歌词为 AMLL 格式...')
-    // 转换歌词格式为 AMLL 格式
-    const amllLyrics = convertToAmllFormat(newLyrics)
+    console.log('[lyrics-fullscreen] 转换歌词为 AMLL 格式（包含翻译）...')
+    // 转换歌词为 AMLL 格式，同时传入翻译行
+    const amllLyrics = convertToAmllFormat(newLyrics, newTranslations)
     console.log('[lyrics-fullscreen] AMLL 歌词转换完成，行数:', amllLyrics.length)
     console.log('[lyrics-fullscreen] 第一行歌词示例:', amllLyrics[0])
-    
+
     if (lyricPlayer.isInitialized.value) {
       await lyricPlayer.setLyrics(amllLyrics)
       console.log('[lyrics-fullscreen] 歌词设置到播放器完成')
@@ -574,7 +579,7 @@ watch(() => lyrics.currentLyrics.value, async (newLyrics) => {
       console.warn('[lyrics-fullscreen] 歌词播放器未初始化，无法设置歌词')
     }
   } else {
-    console.log('[lyrics-fullscreen] 无歌词数据')
+    console.log('[lyrics-fullscreen] 无主歌词数据')
   }
 })
 
