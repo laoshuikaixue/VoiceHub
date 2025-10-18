@@ -24,9 +24,9 @@
             @next="handleNext"
             @previous="handlePrevious"
             @toggle-play="handleTogglePlay"
-            @start-drag="control.startDrag"
-            @start-touch-drag="control.startTouchDrag"
-            @seek-to-position="control.seekToPosition"
+            @start-drag="handleStartDrag"
+            @start-touch-drag="handleStartTouchDrag"
+            @seek-to-position="handleSeekToPosition"
         />
 
         <!-- 播放器操作 -->
@@ -334,8 +334,19 @@ const handleCanPlay = () => {
 }
 
 // UI 事件处理器
-const handleTogglePlay = () => {
-  control.togglePlay()
+const handleTogglePlay = async () => {
+  // 确保音频播放器引用存在
+  if (!audioPlayer.value) {
+    console.error('[AudioPlayer] 音频播放器引用不存在，无法切换播放状态')
+    return
+  }
+  
+  // 确保 control 有正确的音频播放器引用
+  if (!control.audioPlayer.value) {
+    control.setAudioPlayerRef(audioPlayer.value)
+  }
+  
+  await control.togglePlay()
 }
 
 const handlePrevious = async () => {
@@ -350,6 +361,52 @@ const handleNext = async () => {
   if (result.success && result.newSong) {
     emit('songChange', result.newSong)
   }
+}
+
+// 进度条拖拽事件处理器
+const handleStartDrag = (event, progressBar) => {
+  // 确保音频播放器引用存在
+  if (!audioPlayer.value) {
+    console.error('[AudioPlayer] 音频播放器引用不存在，无法开始拖拽')
+    return
+  }
+  
+  // 确保 control 有正确的音频播放器引用
+  if (!control.audioPlayer.value) {
+    control.setAudioPlayerRef(audioPlayer.value)
+  }
+  
+  control.startDrag(event, progressBar)
+}
+
+const handleStartTouchDrag = (event, progressBar) => {
+  // 确保音频播放器引用存在
+  if (!audioPlayer.value) {
+    console.error('[AudioPlayer] 音频播放器引用不存在，无法开始触摸拖拽')
+    return
+  }
+  
+  // 确保 control 有正确的音频播放器引用
+  if (!control.audioPlayer.value) {
+    control.setAudioPlayerRef(audioPlayer.value)
+  }
+  
+  control.startTouchDrag(event, progressBar)
+}
+
+const handleSeekToPosition = (event) => {
+  // 确保音频播放器引用存在
+  if (!audioPlayer.value) {
+    console.error('[AudioPlayer] 音频播放器引用不存在，无法跳转位置')
+    return
+  }
+  
+  // 确保 control 有正确的音频播放器引用
+  if (!control.audioPlayer.value) {
+    control.setAudioPlayerRef(audioPlayer.value)
+  }
+  
+  control.seekToPosition(event)
 }
 
 // 获取当前歌曲平台的音质文本

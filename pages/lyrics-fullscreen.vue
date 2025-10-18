@@ -98,6 +98,7 @@
           <div 
             class="progress-thumb"
             :style="{ left: `${progressPercentage}%` }"
+            @mousedown="handleProgressMouseDown"
           ></div>
         </div>
         <span class="time-display">{{ formatTime(duration) }}</span>
@@ -171,6 +172,11 @@ const backgroundContainer = ref<HTMLElement | null>(null)
 const coverBlurContainer = ref<HTMLElement | null>(null)
 const progressUpdateTimer = ref<NodeJS.Timeout | null>(null)
 
+// 拖拽状态管理
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartTime = ref(0)
+
 // 播放状态
 const currentSong = computed(() => audioPlayer.getCurrentSong().value)
 const isPlaying = computed(() => audioPlayer.getPlayingStatus().value)
@@ -238,13 +244,34 @@ const backgroundConfig = ref({
 
 // 播放控制方法
 const togglePlayPause = () => {
+  // 获取实际的音频元素
+  const audioElements = document.querySelectorAll('audio')
+  let audioElement: HTMLAudioElement | null = null
+  
+  // 找到正在播放或暂停的音频元素
+  for (const audio of audioElements) {
+    if (audio.src && (audio.currentTime > 0 || !audio.paused)) {
+      audioElement = audio as HTMLAudioElement
+      break
+    }
+  }
+  
+  if (!audioElement) {
+    console.warn('[lyrics-fullscreen] 未找到音频元素')
+    return
+  }
+  
   if (isPlaying.value) {
+    // 暂停播放
+    audioElement.pause()
     audioPlayer.pauseSong()
   } else {
-    // 如果有当前歌曲，恢复播放
-    if (currentSong.value) {
+    // 恢复播放
+    audioElement.play().then(() => {
       audioPlayer.playSong(currentSong.value)
-    }
+    }).catch(error => {
+      console.error('[lyrics-fullscreen] 播放失败:', error)
+    })
   }
 }
 
@@ -257,14 +284,97 @@ const nextSong = () => {
 }
 
 const handleProgressClick = (event: MouseEvent) => {
-  if (!progressBar.value) return
+  if (!progressBar.value || isDragging.value) return
   
   const rect = progressBar.value.getBoundingClientRect()
   const clickX = event.clientX - rect.left
   const percentage = clickX / rect.width
   const newTime = percentage * duration.value
   
+  // 获取实际的音频元素并设置播放位置
+  const audioElements = document.querySelectorAll('audio')
+  for (const audio of audioElements) {
+    if (audio.src && (audio.currentTime > 0 || !audio.paused)) {
+      const audioElement = audio as HTMLAudioElement
+      audioElement.currentTime = newTime
+      break
+    }
+  }
+  
+  // 同时更新播放器状态
   audioPlayer.setPosition(newTime)
+  
+  // 更新歌词时间
+  const timeInMs = Math.floor(newTime * 1000)
+  if (lyricPlayer.value) {
+    lyricPlayer.value.setCurrentTime(timeInMs)
+  }
+}
+
+// 拖拽事件处理
+const handleProgressMouseDown = (event: MouseEvent) => {
+  if (!progressBar.value) return
+  
+  isDragging.value = true
+  dragStartX.value = event.clientX
+  dragStartTime.value = currentTime.value
+  
+  // 添加全局鼠标事件监听
+  document.addEventListener('mousemove', handleProgressMouseMove)
+  document.addEventListener('mouseup', handleProgressMouseUp)
+  
+  // 阻止默认行为
+  event.preventDefault()
+}
+
+const handleProgressMouseMove = (event: MouseEvent) => {
+  if (!isDragging.value || !progressBar.value) return
+  
+  const rect = progressBar.value.getBoundingClientRect()
+  const clickX = event.clientX - rect.left
+  const percentage = Math.max(0, Math.min(1, clickX / rect.width))
+  const newTime = percentage * duration.value
+  
+  // 实时更新播放位置（仅更新UI显示，不实际跳转音频）
+  audioPlayer.updatePosition(newTime)
+  
+  // 更新歌词时间
+  const timeInMs = Math.floor(newTime * 1000)
+  if (lyricPlayer.value) {
+    lyricPlayer.value.setCurrentTime(timeInMs)
+  }
+  
+  // 阻止默认行为
+  event.preventDefault()
+}
+
+const handleProgressMouseUp = (event: MouseEvent) => {
+  if (!isDragging.value || !progressBar.value) return
+  
+  const rect = progressBar.value.getBoundingClientRect()
+  const clickX = event.clientX - rect.left
+  const percentage = Math.max(0, Math.min(1, clickX / rect.width))
+  const newTime = percentage * duration.value
+  
+  // 获取实际的音频元素并设置播放位置
+  const audioElements = document.querySelectorAll('audio')
+  for (const audio of audioElements) {
+    if (audio.src && (audio.currentTime > 0 || !audio.paused)) {
+      const audioElement = audio as HTMLAudioElement
+      audioElement.currentTime = newTime
+      break
+    }
+  }
+  
+  // 设置播放器的实际位置
+  audioPlayer.setPosition(newTime)
+  
+  // 清理拖拽状态
+  isDragging.value = false
+  
+  // 移除全局事件监听
+  document.removeEventListener('mousemove', handleProgressMouseMove)
+  document.removeEventListener('mouseup', handleProgressMouseUp)
 }
 
 const toggleQualitySettings = () => {
@@ -327,8 +437,8 @@ const startProgressTimer = () => {
   }
   
   progressUpdateTimer.value = setInterval(() => {
-    // 只有在播放状态下才更新进度
-    if (isPlaying.value && currentSong.value) {
+    // 只有在播放状态下且不在拖拽时才更新进度
+    if (isPlaying.value && currentSong.value && !isDragging.value) {
       // 获取实际的音频元素
       const audioElements = document.querySelectorAll('audio')
       let actualCurrentTime = 0
@@ -562,6 +672,10 @@ const startAnimationLoop = () => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
+  
+  // 清理拖拽事件监听
+  document.removeEventListener('mousemove', handleProgressMouseMove)
+  document.removeEventListener('mouseup', handleProgressMouseUp)
   
   // 停止进度定时器
   stopProgressTimer()

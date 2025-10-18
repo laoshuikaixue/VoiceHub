@@ -182,7 +182,6 @@ export const useLyricPlayer = () => {
       // 确保时间是整数毫秒，符合 AMLL 要求
       const timeInMs = Math.floor(time)
       lyricPlayer.value.setCurrentTime(timeInMs)
-      console.log('[useLyricPlayer] 更新播放时间:', timeInMs, 'ms')
     } catch (error) {
       console.error('[useLyricPlayer] 更新播放时间失败:', error)
     }
