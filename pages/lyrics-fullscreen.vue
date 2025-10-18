@@ -13,7 +13,6 @@
         ref="coverBlurContainer"
         :style="{ backgroundImage: `url(${currentSong.cover})` }"
       >
-        <div class="cover-blur-overlay"></div>
       </div>
     </div>
 
@@ -90,6 +89,8 @@
           class="progress-bar"
           ref="progressBar"
           @click="handleProgressClick"
+          @touchstart="handleProgressTouchStart"
+          @touchend="handleProgressTouchEnd"
         >
           <div 
             class="progress-fill"
@@ -107,7 +108,7 @@
       <!-- 音质切换 -->
       <div class="quality-section quality-selector" :class="{ expanded: showQualitySettings }">
         <button class="quality-btn" @click="toggleQualitySettings">
-          <span class="quality-icon">🎧</span>
+          <span class="quality-icon">♪</span>
           <span class="quality-text">{{ currentQualityText }}</span>
           <span class="quality-arrow" :class="{ rotated: showQualitySettings }">▾</span>
         </button>
@@ -224,15 +225,28 @@ const progressPercentage = computed(() => {
 // 歌词配置
 const lyricConfig = ref({
   fontSize: 24,
-  lineHeight: 1.6,
+  lineHeight: 1.5,
   activeColor: '#ffffff',
-  inactiveColor: 'rgba(255,255,255,0.6)',
-  passedColor: 'rgba(255,255,255,0.4)',
+  inactiveColor: 'rgba(255,255,255,0.7)',
+  passedColor: 'rgba(255,255,255,0.45)',
   enableBlur: true,
   enableScale: true,
   enableSpring: true,
   alignPosition: 0.5
 })
+
+// 响应式字体计算与监听
+const getResponsiveFontSize = () => {
+  const w = typeof window !== 'undefined' ? window.innerWidth : 375
+  // 依据视口宽度计算，限定范围 18–28px
+  return Math.round(Math.min(Math.max(w * 0.05, 18), 28))
+}
+const handleResize = () => {
+  const newSize = getResponsiveFontSize()
+  if (lyricConfig.value.fontSize !== newSize) {
+    lyricConfig.value.fontSize = newSize
+  }
+}
 
 // 背景配置
 const backgroundConfig = ref({
@@ -398,6 +412,63 @@ const handleProgressMouseUp = (event: MouseEvent) => {
   document.removeEventListener('mouseup', handleProgressMouseUp)
 }
 
+// 移动端触摸拖动支持
+const handleProgressTouchStart = (event: TouchEvent) => {
+  if (!progressBar.value) return
+  
+  isDragging.value = true
+  const touch = event.touches[0]
+  dragStartX.value = touch.clientX
+  dragStartTime.value = currentTime.value
+  
+  document.addEventListener('touchmove', handleProgressTouchMove, { passive: false })
+  document.addEventListener('touchend', handleProgressTouchEnd)
+  
+  if (event.cancelable) event.preventDefault()
+}
+
+const handleProgressTouchMove = (event: TouchEvent) => {
+  if (!isDragging.value || !progressBar.value) return
+  const touch = event.touches[0]
+  const rect = progressBar.value.getBoundingClientRect()
+  const touchX = touch.clientX - rect.left
+  const percentage = Math.max(0, Math.min(1, touchX / rect.width))
+  const newTime = percentage * duration.value
+  
+  audioPlayer.updatePosition(newTime)
+  const timeInMs = Math.floor(newTime * 1000)
+  if (lyricPlayer.value) {
+    lyricPlayer.value.setCurrentTime(timeInMs)
+  }
+  
+  if (event.cancelable) event.preventDefault()
+}
+
+const handleProgressTouchEnd = (event: TouchEvent) => {
+  if (!isDragging.value || !progressBar.value) return
+  const rect = progressBar.value.getBoundingClientRect()
+  const changedTouch = event.changedTouches[0]
+  const touchX = changedTouch.clientX - rect.left
+  const percentage = Math.max(0, Math.min(1, touchX / rect.width))
+  const newTime = percentage * duration.value
+  
+  const audioElements = document.querySelectorAll('audio')
+  for (const audio of audioElements) {
+    if (audio.src && (audio.currentTime > 0 || !audio.paused)) {
+      const audioElement = audio as HTMLAudioElement
+      audioElement.currentTime = newTime
+      break
+    }
+  }
+  audioPlayer.setPosition(newTime)
+  isDragging.value = false
+  
+  document.removeEventListener('touchmove', handleProgressTouchMove)
+  document.removeEventListener('touchend', handleProgressTouchEnd)
+  
+  if (event.cancelable) event.preventDefault()
+}
+
 const toggleQualitySettings = () => {
   showQualitySettings.value = !showQualitySettings.value
 }
@@ -518,7 +589,7 @@ const startProgressTimer = () => {
         lyricPlayer.updateTime(timeInMs)
       }
     }
-  }, 100) // 每100ms更新一次
+  }, 80) // 每80ms更新一次
 }
 
 // 停止进度更新定时器
@@ -654,6 +725,9 @@ watch(isPlaying, (playing) => {
 onMounted(async () => {
   // 等待 DOM 渲染完成
   await nextTick()
+  // 初始化响应式字体大小
+  lyricConfig.value.fontSize = getResponsiveFontSize()
+  window.addEventListener('resize', handleResize)
   
   console.log('[lyrics-fullscreen] 开始初始化组件...')
   
@@ -731,10 +805,13 @@ const startAnimationLoop = () => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('resize', handleResize)
   
   // 清理拖拽事件监听
   document.removeEventListener('mousemove', handleProgressMouseMove)
   document.removeEventListener('mouseup', handleProgressMouseUp)
+  document.removeEventListener('touchmove', handleProgressTouchMove)
+  document.removeEventListener('touchend', handleProgressTouchEnd)
   
   // 停止进度定时器
   stopProgressTimer()
@@ -817,22 +894,13 @@ onUnmounted(() => {
   height: 100%;
   background-size: cover;
   background-position: center;
-  filter: blur(20px);
+  /* 直接在背景上融合暗化与模糊，无需遮罩div */
+  filter: blur(36px) brightness(0.75) saturate(1.05);
   transform: scale(1.1);
   /* 添加封面切换过渡 */
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.cover-blur-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  /* 遮罩层过渡 */
-  transition: background-color 0.5s ease;
-}
 
 /* 歌曲信息 */
 .song-info {
@@ -1618,6 +1686,30 @@ onUnmounted(() => {
   }
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .quality-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+  }
+  .quality-option {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+  }
+  .progress-thumb {
+    width: 20px;
+    height: 20px;
+  }
+  .control-btn:active, .play-pause-btn:active, .quality-btn:active {
+    transform: scale(0.96);
+  }
+  /* 音质按钮靠右 */
+  .quality-section {
+    margin-left: auto;
+  }
+}
+
 /* 高对比度模式支持 */
 @media (prefers-contrast: high) {
   .lyrics-fullscreen-container {
@@ -1674,10 +1766,6 @@ onUnmounted(() => {
 @media (prefers-color-scheme: dark) {
   .lyrics-fullscreen-container {
     background: #000000;
-  }
-  
-  .cover-blur-overlay {
-    background: rgba(0, 0, 0, 0.6);
   }
   
   .playback-controls {
