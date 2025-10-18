@@ -1,5 +1,5 @@
 <template>
-  <div class="lyrics-fullscreen-container">
+  <div class="lyrics-fullscreen-container" ref="fullscreenContainer" :class="{ leaving: isExiting }">
     <!-- 动态背景 -->
     <div class="background-layer" ref="backgroundContainer">
       <div 
@@ -171,6 +171,8 @@ const progressBar = ref<HTMLElement | null>(null)
 const backgroundContainer = ref<HTMLElement | null>(null)
 const coverBlurContainer = ref<HTMLElement | null>(null)
 const progressUpdateTimer = ref<NodeJS.Timeout | null>(null)
+const fullscreenContainer = ref<HTMLElement | null>(null)
+const isExiting = ref(false)
 
 // 拖拽状态管理
 const isDragging = ref(false)
@@ -428,9 +430,39 @@ const handleCoverError = (event: Event) => {
 }
 
 const exitFullscreen = () => {
-  router.back()
+  if (isExiting.value) return
+  isExiting.value = true
+  const el = fullscreenContainer.value || document.querySelector('.lyrics-fullscreen-container') as HTMLElement | null
+  if (el) {
+    const onEnd = () => {
+      el.removeEventListener('animationend', onEnd)
+      router.back()
+    }
+    el.addEventListener('animationend', onEnd)
+    // Fallback：防止某些环境未触发 animationend
+    setTimeout(() => {
+      el.removeEventListener('animationend', onEnd)
+      router.back()
+    }, 700)
+  } else {
+    router.back()
+  }
 }
 
+// 自动退出：监听音频播放结束
+const audioElementsRef = ref<HTMLAudioElement[]>([])
+const handleAudioEnded = () => {
+  exitFullscreen()
+}
+const setupEndedListeners = () => {
+  const els = document.querySelectorAll('audio')
+  audioElementsRef.value = Array.from(els) as HTMLAudioElement[]
+  audioElementsRef.value.forEach(el => el.addEventListener('ended', handleAudioEnded))
+}
+const cleanupEndedListeners = () => {
+  audioElementsRef.value.forEach(el => el.removeEventListener('ended', handleAudioEnded))
+  audioElementsRef.value = []
+}
 const handleKeydown = (event: KeyboardEvent) => {
   switch (event.code) {
     case 'Space':
@@ -538,8 +570,8 @@ watch(currentSong, async (newSong) => {
       }, 500) // 延迟500ms确保音频元素已加载
     }
     
-    // 更新歌词播放器
-    lyricPlayer.loadSong(newSong.title, newSong.artist)
+    // 清空上一首的歌词，避免显示旧内容
+    lyrics.clearLyrics()
     
     // 使用正确的参数调用 fetchLyrics
     if (newSong.musicPlatform && newSong.musicId) {
@@ -673,6 +705,8 @@ onMounted(async () => {
   
   // 监听键盘事件
   document.addEventListener('keydown', handleKeydown)
+  // 自动退出全屏：绑定歌曲结束事件
+  setupEndedListeners()
   console.log('[lyrics-fullscreen] 组件初始化完成')
 })
 
@@ -725,19 +759,21 @@ onUnmounted(() => {
   flex-direction: column;
   font-family: "SF Pro Display", "PingFang SC", system-ui, sans-serif;
   /* 添加进入动画 */
-  animation: fadeInScale 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation: fadeInScale 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.lyrics-fullscreen-container.leaving {
+  animation: fadeOutScale 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+/* 页面退出动画 */
+@keyframes fadeOutScale {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.98); }
 }
 
 /* 页面进入动画 */
 @keyframes fadeInScale {
-  0% {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* 背景层 */
@@ -753,12 +789,8 @@ onUnmounted(() => {
 }
 
 @keyframes backgroundFadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 .gradient-background {
@@ -815,14 +847,8 @@ onUnmounted(() => {
 }
 
 @keyframes slideInFromTop {
-  0% {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(-30px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .song-cover {
@@ -889,14 +915,8 @@ onUnmounted(() => {
 }
 
 @keyframes slideInFromBottom {
-  0% {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .no-lyrics, .loading-lyrics {
