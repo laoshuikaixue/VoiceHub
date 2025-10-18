@@ -55,6 +55,10 @@ export const useAudioPlayerControl = () => {
                 await waitForCanPlay(audioPlayer.value)
             }
 
+            // 设置音频属性以支持自动播放
+            audioPlayer.value.autoplay = true
+            audioPlayer.value.preload = 'auto'
+
             const playPromise = audioPlayer.value.play()
 
             // 处理播放 Promise
@@ -65,6 +69,7 @@ export const useAudioPlayerControl = () => {
         } catch (error) {
             // 检查是否是自动播放被阻止的错误
             if (error.name === 'NotAllowedError') {
+                console.warn('[AudioPlayerControl] ⚠️ 自动播放被浏览器阻止，需要用户交互')
                 // 不设置 hasError，因为这不是真正的错误
                 return false
             } else {
@@ -226,12 +231,14 @@ export const useAudioPlayerControl = () => {
             console.log('歌曲加载成功:', songInfo?.title || songUrl)
             isLoadingNewSong.value = false
 
-            // 自动开始播放
-            if (hasUserInteracted.value) {
-                console.log('用户已交互，自动开始播放')
-                await play()
+            // 自动开始播放 - 移除用户交互检查，直接尝试播放
+            console.log('尝试自动播放音乐')
+            const playResult = await play()
+            
+            if (!playResult) {
+                console.log('自动播放失败，可能被浏览器阻止，等待用户交互')
             } else {
-                console.log('用户未交互，等待用户手动播放')
+                console.log('自动播放成功')
             }
 
             return true

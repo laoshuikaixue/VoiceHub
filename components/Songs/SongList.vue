@@ -716,9 +716,13 @@ const cancelConfirm = () => {
 
 // 处理图片加载错误
 const handleImageError = (event, song) => {
-  event.target.style.display = 'none'
-  event.target.parentNode.classList.add('text-cover')
-  event.target.parentNode.textContent = getFirstChar(song.title)
+  if (event?.target) {
+    event.target.style.display = 'none'
+    if (event.target.parentNode) {
+      event.target.parentNode.classList.add('text-cover')
+      event.target.parentNode.textContent = getFirstChar(song.title)
+    }
+  }
 }
 
 // 获取歌曲标题的第一个字符作为封面

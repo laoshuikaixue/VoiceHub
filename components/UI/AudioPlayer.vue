@@ -114,6 +114,9 @@ import {useAudioPlayerSync} from '~/composables/useAudioPlayerSync'
 import {useAudioQuality} from '~/composables/useAudioQuality'
 import {useAudioPlayerEnhanced} from '~/composables/useAudioPlayerEnhanced'
 
+// 添加 router 导入
+const router = useRouter()
+
 const props = defineProps({
   song: {
     type: Object,
@@ -432,7 +435,8 @@ const selectQuality = async (qualityValue) => {
 
 // 歌词相关方法
 const toggleLyrics = () => {
-  showLyrics.value = !showLyrics.value
+  // 跳转到全屏歌词页面
+  router.push('/lyrics-fullscreen')
 }
 
 const handleLyricSeek = (time) => {
@@ -556,10 +560,9 @@ onMounted(async () => {
         duration: control.duration.value
       }, props.song)
 
-      // 尝试播放，如果失败（由于浏览器自动播放策略），等待用户交互
-      const playSuccess = await control.play()
-
-      if (!playSuccess) {
+      // loadSong方法已经包含了自动播放逻辑，这里不需要重复调用
+      // 如果自动播放失败，设置用户交互监听器
+      if (!control.isPlaying.value) {
         // 通知鸿蒙侧播放失败（暂停状态）
         sync.notifyHarmonyOS('pause', {
           position: 0,
@@ -568,7 +571,7 @@ onMounted(async () => {
 
         // 监听用户交互，一旦用户交互就尝试播放
         const handleUserInteraction = async () => {
-          if (!control.hasUserInteracted.value && props.song) {
+          if (!control.isPlaying.value && props.song) {
             const retryPlaySuccess = await control.play()
             if (retryPlaySuccess) {
               // 移除事件监听器
