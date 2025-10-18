@@ -34,6 +34,7 @@ export const useLyricPlayer = () => {
   const currentLyrics = ref<LyricLine[]>([])
   const currentTime = ref(0)
   const isPlaying = ref(false)
+  const onLineClickCallback = ref<((seconds: number) => void) | null>(null)
 
   // 默认配置
   const defaultConfig: LyricRenderConfig = {
@@ -80,6 +81,23 @@ export const useLyricPlayer = () => {
       }
       console.log('[useLyricPlayer] 配置应用完成')
       
+      // 注册行点击事件，实现交互跳转
+      if (lyricPlayer.value && lyricPlayer.value.addEventListener) {
+        lyricPlayer.value.addEventListener('line-click', (evt: any) => {
+          try {
+            const startMs =
+              (evt?.line?.getLine ? evt.line.getLine().startTime : evt?.line?.startTime) ??
+              evt?.detail?.startTime ??
+              0
+            const seconds = (startMs || 0) / 1000
+            if (onLineClickCallback.value) {
+              onLineClickCallback.value(seconds)
+            }
+          } catch (e) {
+            console.warn('[useLyricPlayer] 处理 line-click 事件失败:', e)
+          }
+        })
+      }
       isInitialized.value = true
       console.log('[useLyricPlayer] 歌词播放器初始化成功')
     } catch (error) {
@@ -229,6 +247,11 @@ export const useLyricPlayer = () => {
     }
   }
 
+  // 对外暴露：注册歌词行点击回调
+  const onLineClick = (cb: (seconds: number) => void) => {
+    onLineClickCallback.value = cb
+  }
+
   // 清理资源
   const dispose = () => {
     if (lyricPlayer.value && lyricPlayer.value.dispose) {
@@ -271,6 +294,7 @@ export const useLyricPlayer = () => {
     setPlayingState,
     seekTo,
     dispose,
-    applyConfig
+    applyConfig,
+    onLineClick
   }
 }

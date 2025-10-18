@@ -283,6 +283,20 @@ const nextSong = () => {
   audioPlayer.playNext()
 }
 
+// 点击歌词行时跳转到对应进度
+const handleLyricLineSeek = (seconds: number) => {
+  // 跳转音频元素进度
+  const audioElements = document.querySelectorAll('audio')
+  for (const audio of audioElements) {
+    if (audio.src) {
+      (audio as HTMLAudioElement).currentTime = seconds
+      break
+    }
+  }
+  // 同步全局播放器状态与歌词
+  audioPlayer.setPosition(seconds)
+  lyricPlayer.seekTo(Math.floor(seconds * 1000))
+}
 const handleProgressClick = (event: MouseEvent) => {
   if (!progressBar.value || isDragging.value) return
   
@@ -606,7 +620,8 @@ onMounted(async () => {
     console.log('[lyrics-fullscreen] 初始化歌词播放器...')
     await lyricPlayer.initializeLyricPlayer(lyricsContainer.value)
     console.log('[lyrics-fullscreen] 歌词播放器初始化完成')
-    
+    // 注册歌词点击跳转
+    lyricPlayer.onLineClick(handleLyricLineSeek)
     // 启动动画循环（类似于 applemusic-like-lyrics-page-main）
     startAnimationLoop()
   } else {
