@@ -103,33 +103,30 @@
         <span class="time-display">{{ formatTime(duration) }}</span>
       </div>
 
-      <!-- 音量控制 -->
-      <div class="volume-section">
-        <button 
-          class="control-btn"
-          @click="toggleMute"
-        >
-          <Icon :name="isMuted ? 'volume-x' : 'volume-2'" size="18" />
+      <!-- 音质切换 -->
+      <div class="quality-section quality-selector" :class="{ expanded: showQualitySettings }">
+        <button class="quality-btn" @click="toggleQualitySettings">
+          <span class="quality-icon">🎧</span>
+          <span class="quality-text">{{ currentQualityText }}</span>
+          <span class="quality-arrow" :class="{ rotated: showQualitySettings }">▾</span>
         </button>
-        <div class="volume-slider">
-          <input 
-            type="range" 
-            min="0" 
-            max="100" 
-            v-model="volumeLevel"
-            @input="handleVolumeChange"
-          />
-        </div>
+        <Transition name="quality-dropdown">
+          <div v-if="showQualitySettings" class="quality-dropdown">
+            <div 
+              v-for="opt in currentPlatformOptions" 
+              :key="opt.value"
+              class="quality-option"
+              :class="{ active: isCurrentQuality(opt.value) }"
+              @click="selectQuality(opt.value)"
+            >
+              <span class="option-label">{{ opt.label.replace(/音质|音乐/, '') }}</span>
+            </div>
+          </div>
+        </Transition>
       </div>
     </div>
 
-    <!-- 设置按钮 -->
-    <button 
-      class="settings-btn"
-      @click="showSettings = !showSettings"
-    >
-      <Icon name="settings" size="20" />
-    </button>
+    <!-- 设置按钮已移除 -->
 
     <!-- 返回按钮 -->
     <button 
@@ -139,184 +136,7 @@
       <Icon name="x" size="20" />
     </button>
 
-    // 设置面板
-    <div 
-      v-if="showSettings" 
-      class="settings-panel"
-      @click.stop
-    >
-      <div class="settings-content">
-        <div class="settings-header">
-          <h3>设置</h3>
-          <button 
-            class="close-settings-btn"
-            @click="showSettings = false"
-          >
-            <Icon name="x" size="16" />
-          </button>
-        </div>
-        
-        <div class="settings-section">
-          <h4>歌词设置</h4>
-          
-          <div class="setting-group">
-            <label>字体大小</label>
-            <div class="range-input-group">
-              <input 
-                type="range" 
-                min="16" 
-                max="32" 
-                v-model="lyricConfig.fontSize"
-                class="range-input"
-              />
-              <span class="range-value">{{ lyricConfig.fontSize }}px</span>
-            </div>
-          </div>
-    
-          <div class="setting-group">
-            <label>行高</label>
-            <div class="range-input-group">
-              <input 
-                type="range" 
-                min="1.2" 
-                max="2.0" 
-                step="0.1"
-                v-model="lyricConfig.lineHeight"
-                class="range-input"
-              />
-              <span class="range-value">{{ lyricConfig.lineHeight }}</span>
-            </div>
-          </div>
-    
-          <div class="setting-group">
-            <label>对齐位置</label>
-            <div class="range-input-group">
-              <input 
-                type="range" 
-                min="0" 
-                max="1" 
-                step="0.1"
-                v-model="lyricConfig.alignPosition"
-                class="range-input"
-              />
-              <span class="range-value">{{ Math.round(lyricConfig.alignPosition * 100) }}%</span>
-            </div>
-          </div>
-    
-          <div class="setting-group checkbox-group">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                v-model="lyricConfig.enableBlur"
-              />
-              <span class="checkbox-text">启用模糊效果</span>
-            </label>
-          </div>
-    
-          <div class="setting-group checkbox-group">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                v-model="lyricConfig.enableScale"
-              />
-              <span class="checkbox-text">启用缩放效果</span>
-            </label>
-          </div>
-    
-          <div class="setting-group checkbox-group">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                v-model="lyricConfig.enableSpring"
-              />
-              <span class="checkbox-text">启用弹性动画</span>
-            </label>
-          </div>
-        </div>
-    
-        <div class="settings-section">
-          <h4>背景设置</h4>
-          
-          <div class="setting-group">
-            <label>背景类型</label>
-            <select v-model="backgroundConfig.type" class="select-input">
-              <option value="gradient">网格渐变</option>
-              <option value="cover">封面模糊</option>
-            </select>
-          </div>
-    
-          <div class="setting-group checkbox-group">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                v-model="backgroundConfig.dynamic"
-              />
-              <span class="checkbox-text">动态效果</span>
-            </label>
-          </div>
-    
-          <div v-if="backgroundConfig.dynamic" class="setting-group">
-            <label>流动速度</label>
-            <div class="range-input-group">
-              <input 
-                type="range" 
-                min="1" 
-                max="10" 
-                v-model="backgroundConfig.flowSpeed"
-                class="range-input"
-              />
-              <span class="range-value">{{ backgroundConfig.flowSpeed }}</span>
-            </div>
-          </div>
-    
-          <div class="setting-group checkbox-group">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                v-model="backgroundConfig.colorMask"
-              />
-              <span class="checkbox-text">颜色遮罩</span>
-            </label>
-          </div>
-    
-          <div v-if="backgroundConfig.colorMask" class="setting-group">
-            <label>遮罩透明度</label>
-            <div class="range-input-group">
-              <input 
-                type="range" 
-                min="0" 
-                max="80" 
-                v-model="backgroundConfig.maskOpacity"
-                class="range-input"
-              />
-              <span class="range-value">{{ backgroundConfig.maskOpacity }}%</span>
-            </div>
-          </div>
-        </div>
-    
-        <div class="settings-section">
-          <h4>快捷键</h4>
-          <div class="shortcut-list">
-            <div class="shortcut-item">
-              <span class="shortcut-key">空格</span>
-              <span class="shortcut-desc">播放/暂停</span>
-            </div>
-            <div class="shortcut-item">
-              <span class="shortcut-key">←</span>
-              <span class="shortcut-desc">上一首</span>
-            </div>
-            <div class="shortcut-item">
-              <span class="shortcut-key">→</span>
-              <span class="shortcut-desc">下一首</span>
-            </div>
-            <div class="shortcut-item">
-              <span class="shortcut-key">Esc</span>
-              <span class="shortcut-desc">退出全屏</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- 设置面板已移除 -->
   </div>
 </template>
 
@@ -329,6 +149,8 @@ import { useLyricPlayer } from '~/composables/useLyricPlayer'
 import { useBackgroundRenderer } from '~/composables/useBackgroundRenderer'
 import { convertToAmllFormat } from '~/utils/lyricAdapter'
 import Icon from '~/components/UI/Icon.vue'
+import { useAudioQuality } from '~/composables/useAudioQuality'
+import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 
 // 路由和导航
 const router = useRouter()
@@ -342,7 +164,7 @@ const lyricPlayer = useLyricPlayer()
 const backgroundRenderer = useBackgroundRenderer()
 
 // 响应式状态
-const showSettings = ref(false)
+const showQualitySettings = ref(false)
 const lyricsContainer = ref<HTMLElement | null>(null)
 const progressBar = ref<HTMLElement | null>(null)
 const backgroundContainer = ref<HTMLElement | null>(null)
@@ -354,8 +176,28 @@ const currentSong = computed(() => audioPlayer.getCurrentSong().value)
 const isPlaying = computed(() => audioPlayer.getPlayingStatus().value)
 const currentTime = computed(() => audioPlayer.getCurrentPosition().value)
 const duration = computed(() => audioPlayer.getDuration().value)
-const volumeLevel = ref(100)
-const isMuted = ref(false)
+const { getQuality, getQualityLabel, getQualityOptions, saveQuality } = useAudioQuality()
+const enhanced = useAudioPlayerEnhanced()
+
+const currentQualityText = computed(() => {
+  const platform = currentSong.value?.musicPlatform
+  if (!platform) return '音质'
+  const quality = getQuality(platform)
+  const label = getQualityLabel(platform, quality)
+  return label.replace(/音质|音乐/, '').trim() || '音质'
+})
+
+const currentPlatformOptions = computed(() => {
+  const platform = currentSong.value?.musicPlatform
+  if (!platform) return []
+  return getQualityOptions(platform)
+})
+
+const isCurrentQuality = (qualityValue: number) => {
+  const platform = currentSong.value?.musicPlatform
+  if (!platform) return false
+  return getQuality(platform) === qualityValue
+}
 
 // 歌词状态
 const hasLyrics = computed(() => lyrics.currentLyrics.value && lyrics.currentLyrics.value.length > 0)
@@ -386,7 +228,7 @@ const lyricConfig = ref({
 
 // 背景配置
 const backgroundConfig = ref({
-  type: 'gradient' as 'gradient' | 'cover',
+  type: 'cover' as 'gradient' | 'cover',
   dynamic: true,
   flowSpeed: 4,
   colorMask: false,
@@ -425,20 +267,23 @@ const handleProgressClick = (event: MouseEvent) => {
   audioPlayer.setPosition(newTime)
 }
 
-const handleVolumeChange = () => {
-  // 音量控制需要通过实际的音频元素来实现
-  // 这里只是更新UI状态，实际音量控制应该在音频播放组件中处理
-  isMuted.value = volumeLevel.value === 0
+const toggleQualitySettings = () => {
+  showQualitySettings.value = !showQualitySettings.value
 }
 
-const toggleMute = () => {
-  if (isMuted.value) {
-    volumeLevel.value = 50 // 恢复到中等音量
-    isMuted.value = false
-  } else {
-    volumeLevel.value = 0
-    isMuted.value = true
+const selectQuality = async (qualityValue: number) => {
+  const song = currentSong.value
+  if (!song?.musicPlatform) return
+  if (isCurrentQuality(qualityValue)) {
+    showQualitySettings.value = false
+    return
   }
+  const result = await enhanced.enhancedQualitySwitch(song, qualityValue)
+  if (result.success) {
+    const updatedSong = { ...song, musicUrl: result.url }
+    audioPlayer.playSong(updatedSong)
+  }
+  showQualitySettings.value = false
 }
 
 // 工具方法
@@ -1683,6 +1528,118 @@ onUnmounted(() => {
   .settings-panel {
     background: rgba(0, 0, 0, 0.97);
   }
+}
+
+/* 音质选择控件（苹果风格） */
+.quality-selector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.quality-section {
+  display: flex;
+  align-items: center;
+}
+
+.quality-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
+  min-width: 90px;
+  justify-content: space-between;
+}
+
+.quality-btn:hover,
+.quality-selector.expanded .quality-btn {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.quality-icon {
+  font-size: 0.95rem;
+}
+
+.quality-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+  flex: 1;
+  text-align: center;
+}
+
+.quality-arrow {
+  font-size: 0.7rem;
+  transition: transform 0.3s ease;
+}
+
+.quality-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.quality-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  z-index: 1000;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.quality-option {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.quality-option:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.quality-option.active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.option-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+}
+
+.quality-dropdown-enter-active,
+.quality-dropdown-leave-active {
+  transition: all 0.2s ease;
+  transform-origin: bottom;
+}
+
+.quality-dropdown-enter-from,
+.quality-dropdown-leave-to {
+  opacity: 0;
+  transform: scaleY(0.8) translateY(10px);
+}
+
+.quality-dropdown-enter-to,
+.quality-dropdown-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
 }
 
 /* 横屏模式优化 */
