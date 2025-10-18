@@ -29,6 +29,15 @@ updates:
       # 忽略主要版本更新，避免破坏性变更
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    groups:
+      # 将所有非重大（minor/patch）更新合并到一个 PR
+      npm-minor-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Enable version updates for Docker
   - package-ecosystem: "docker"
@@ -50,6 +59,11 @@ updates:
       - "dependencies"
       - "automated"
       - "chore"
+    groups:
+      docker-all:
+        applies-to: version-updates
+        patterns:
+          - "*"
 
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"
@@ -67,3 +81,8 @@ updates:
       - "dependencies"
       - "automated"
       - "chore"
+    groups:
+      gha-all:
+        applies-to: version-updates
+        patterns:
+          - "*"
