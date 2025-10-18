@@ -27,9 +27,9 @@ export const useBackgroundRenderer = () => {
     type: 'gradient',
     dynamic: true,
     flowSpeed: 4,
-    colorMask: false,
+    colorMask: true,
     maskColor: '#000000',
-    maskOpacity: 30
+    maskOpacity: 45
   }
 
   const config = ref<BackgroundConfig>({ ...defaultConfig })
@@ -41,7 +41,7 @@ export const useBackgroundRenderer = () => {
     try {
       containerElement.value = container
       
-      // 创建 MeshGradient 渲染器（替代原 EplorRenderer）
+      // 创建 MeshGradient 渲染器
       backgroundRenderer.value = BackgroundRender.new(MeshGradientRenderer)
       currentRenderer.value = 'gradient'
       
@@ -151,7 +151,7 @@ export const useBackgroundRenderer = () => {
 
         // 为画布应用模糊与轻微放大效果
         const canvas = backgroundRenderer.value.getElement()
-        canvas.style.filter = 'blur(20px)'
+        canvas.style.filter = 'blur(40px)'
         canvas.style.transform = 'scale(1.1)'
 
         // 不再使用独立的 CSS 封面模糊层

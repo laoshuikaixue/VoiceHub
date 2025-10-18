@@ -137,14 +137,12 @@
     >
       <Icon name="x" size="20" />
     </button>
-
-    <!-- 设置面板已移除 -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useLyrics } from '~/composables/useLyrics'
 import { useLyricPlayer } from '~/composables/useLyricPlayer'
@@ -156,6 +154,7 @@ import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 
 // 路由和导航
 const router = useRouter()
+const route = useRoute()
 
 // 音频播放器状态
 const audioPlayer = useAudioPlayer()
@@ -253,9 +252,9 @@ const backgroundConfig = ref({
   type: 'cover' as 'gradient' | 'cover',
   dynamic: true,
   flowSpeed: 4,
-  colorMask: false,
+  colorMask: true,
   maskColor: '#000000',
-  maskOpacity: 30
+  maskOpacity: 45
 })
 
 // 播放控制方法
@@ -503,20 +502,32 @@ const handleCoverError = (event: Event) => {
 const exitFullscreen = () => {
   if (isExiting.value) return
   isExiting.value = true
+  
+  const navigateBack = () => {
+    // 检查是否有来源页面，如果有则返回到来源页面，否则返回到dashboard
+    const fromPath = route.query.from as string
+    if (fromPath && fromPath !== '/lyrics-fullscreen' && fromPath !== route.path) {
+      router.push(fromPath)
+    } else {
+      // 如果没有有效的来源页面，返回到dashboard
+      router.push('/dashboard')
+    }
+  }
+  
   const el = fullscreenContainer.value || document.querySelector('.lyrics-fullscreen-container') as HTMLElement | null
   if (el) {
     const onEnd = () => {
       el.removeEventListener('animationend', onEnd)
-      router.back()
+      navigateBack()
     }
     el.addEventListener('animationend', onEnd)
     // Fallback：防止某些环境未触发 animationend
     setTimeout(() => {
       el.removeEventListener('animationend', onEnd)
-      router.back()
+      navigateBack()
     }, 700)
   } else {
-    router.back()
+    navigateBack()
   }
 }
 
@@ -598,6 +609,18 @@ const stopProgressTimer = () => {
     clearInterval(progressUpdateTimer.value)
     progressUpdateTimer.value = null
   }
+}
+
+// 禁用/恢复页面滚动（移动端全屏优化）
+const disablePageScroll = () => {
+  document.body.style.overflow = 'hidden'
+  document.documentElement.style.overflow = 'hidden'
+  document.documentElement.style.setProperty('overscroll-behavior', 'none')
+}
+const restorePageScroll = () => {
+  document.body.style.overflow = ''
+  document.documentElement.style.overflow = ''
+  document.documentElement.style.removeProperty('overscroll-behavior')
 }
 
 
@@ -729,6 +752,9 @@ onMounted(async () => {
   lyricConfig.value.fontSize = getResponsiveFontSize()
   window.addEventListener('resize', handleResize)
   
+  // 移动端禁用页面滚动，避免误触滚动
+  disablePageScroll()
+  
   console.log('[lyrics-fullscreen] 开始初始化组件...')
   
   // 初始化歌词播放器
@@ -819,6 +845,9 @@ onUnmounted(() => {
   // 清理资源
   lyricPlayer.dispose()
   backgroundRenderer.dispose()
+  
+  // 恢复页面滚动
+  restorePageScroll()
 })
 </script>
 
@@ -873,10 +902,8 @@ onUnmounted(() => {
 .gradient-background {
   width: 100%;
   height: 100%;
-  background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
-  background-size: 400% 400%;
-  /* 添加渐变过渡效果 */
-  transition: all 0.5s ease;
+  /* 隐藏渐变背景以减少干扰 */
+  display: none;
 }
 
 .gradient-background.dynamic {
@@ -895,7 +922,7 @@ onUnmounted(() => {
   background-size: cover;
   background-position: center;
   /* 直接在背景上融合暗化与模糊，无需遮罩div */
-  filter: blur(36px) brightness(0.75) saturate(1.05);
+  filter: blur(40px) brightness(0.6) saturate(1.05);
   transform: scale(1.1);
   /* 添加封面切换过渡 */
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1687,6 +1714,35 @@ onUnmounted(() => {
 }
 
 @media (hover: none) and (pointer: coarse) {
+  /* 禁用页面滚动，固定全屏容器 */
+  .lyrics-fullscreen-container {
+    position: fixed;
+    inset: 0;
+    height: 100vh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    --controls-height-mobile: 92px;
+  }
+  /* 歌词区域根据面板高度自适应，避免被遮挡 */
+  .lyrics-container {
+    height: calc(100vh - var(--controls-height-mobile));
+    overflow: hidden;
+    padding-bottom: 0;
+  }
+  /* 控制面板固定到底部，安全区适配 */
+  .playback-controls {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 0.5rem 1rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+
   .quality-btn {
     min-width: 44px;
     min-height: 44px;

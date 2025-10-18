@@ -492,8 +492,11 @@ const selectQuality = async (qualityValue) => {
 
 // 歌词相关方法
 const toggleLyrics = () => {
-  // 跳转到全屏歌词页面
-  router.push('/lyrics-fullscreen')
+  // 跳转到全屏歌词页面，传递当前页面作为来源
+  router.push({
+    path: '/lyrics-fullscreen',
+    query: { from: router.currentRoute.value.path }
+  })
 }
 
 const handleLyricSeek = async (time) => {
