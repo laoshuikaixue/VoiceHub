@@ -2,6 +2,8 @@
   <audio
       ref="audioPlayer"
       :src="song?.musicUrl"
+      autoplay
+      preload="auto"
       @canplay="$emit('canplay', $event)"
       @ended="$emit('ended', $event)"
       @error="$emit('error', $event)"

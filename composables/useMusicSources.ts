@@ -345,7 +345,7 @@ export const useMusicSources = () => {
 
     /**
      * 获取歌曲播放URL（网易云备用源）
-     * 优先使用meeting接口，失败后回退到/song/url/v1接口
+     * 先使用 NeteaseCloudMusicApi，失败后回退到 vkeys
      */
     const getSongUrl = async (id: number | string, quality?: number): Promise<{
         success: boolean;
@@ -356,195 +356,138 @@ export const useMusicSources = () => {
             // 获取所有启用的音源
             const enabledSources = getEnabledSources()
             const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
-            const meetingSources = enabledSources.filter(source => source.id.includes('meeting'))
 
-            if (!neteaseSource && meetingSources.length === 0) {
-                console.error('[getSongUrl] 未找到网易云备用源或meeting音源')
-                return {success: false, error: '未找到网易云备用源或meeting音源'}
-            }
-
-            // 优先尝试meeting接口获取播放链接
-            if (meetingSources.length > 0) {
-                console.log(`[getSongUrl] 尝试使用meeting接口获取播放链接: id=${id}`)
-
-                for (const meetingSource of meetingSources) {
-                    try {
-                        // meeting接口直接跳转到音乐地址，构建URL作为播放链接
-                        const playUrl = `${meetingSource.baseUrl}/?type=url&id=${id.toString()}`
-
-                        console.log(`[getSongUrl] Meeting接口构建播放链接: ${playUrl}`)
-
-                        // 验证URL格式
-                        if (playUrl && playUrl.startsWith('http')) {
-                            console.log(`[getSongUrl] Meeting接口成功构建播放链接: ${playUrl}`)
-                            return {
-                                success: true,
-                                url: playUrl,
-                                source: 'meeting',
-                                sourceId: meetingSource.id
-                            }
-                        }
-                    } catch (error: any) {
-                        console.warn(`[getSongUrl] Meeting音源 ${meetingSource.id} 构建URL失败:`, error.message)
-
-                    }
-                }
-
-                console.log('[getSongUrl] 所有meeting音源都失败，回退到网易云备用源')
-            }
-
-            // 回退到网易云备用源的/song/url/v1接口
             if (!neteaseSource) {
                 console.error('[getSongUrl] 未找到网易云备用源')
                 return {success: false, error: '未找到网易云备用源'}
             }
 
-            // 处理音质参数，如果未提供则使用默认音质设置
-            let level = 'exhigh' // 默认极高音质
-            if (quality !== undefined) {
-                level = mapQualityToLevel(quality)
-            } else {
-                // 尝试从音质设置中获取网易云的音质配置
-                try {
-                    const {getQuality} = await import('./useAudioQuality')
-                    const neteaseQuality = getQuality('netease')
-                    level = mapQualityToLevel(neteaseQuality)
-                } catch (error) {
-                    console.warn('[getSongUrl] 无法获取音质设置，使用默认音质')
-                }
+            // 计算网易云API的音质 level
+            let level = 'exhigh'
+            try {
+                const {getQuality} = await import('./useAudioQuality')
+                const neteaseQuality = getQuality('netease')
+                level = mapQualityToLevel(neteaseQuality)
+            } catch (error) {
+                console.warn('[getSongUrl] 无法获取音质设置，使用默认音质')
             }
 
             // 支持多个ID的批量查询（用逗号分隔）
             const idParam = Array.isArray(id) ? id.join(',') : id.toString()
 
-            console.log(`[getSongUrl] 开始获取歌曲播放链接: id=${idParam}, level=${level}`)
+            console.log(`[getSongUrl] 优先使用 NeteaseCloudMusicApi 获取播放链接: id=${idParam}, level=${level}`)
 
-            // 调用/song/url/v1接口获取播放链接
+            // 调用 /song/url/v1 接口获取播放链接
             const response = await $fetch(`${neteaseSource.baseUrl}/song/url/v1`, {
                 params: {
                     id: idParam,
                     level: level,
-                    // 添加unblock参数以提高成功率
                     unblock: true
                 },
                 timeout: neteaseSource.timeout || 8000
             })
 
-            console.log(`[getSongUrl] API响应:`, response)
-
-            // 检查响应状态
-            if (response.code !== 200) {
-                const errorMsg = `API响应错误: ${response.message || '未知错误'} (code: ${response.code})`
-                console.error(`[getSongUrl] ${errorMsg}`)
-                return {success: false, error: errorMsg}
+            if (response?.code === 200 && Array.isArray(response.data) && response.data[0]?.url) {
+                let url = response.data[0].url as string
+                if (url.startsWith('http://')) url = url.replace('http://', 'https://')
+                console.log(`[getSongUrl] 来自 NeteaseCloudMusicApi 的播放链接: ${url}`)
+                return {success: true, url}
             }
 
-            // 检查是否有播放链接数据
-            if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
-                console.error('[getSongUrl] 响应中没有播放链接数据')
-                return {success: false, error: '响应中没有播放链接数据'}
+            console.warn('[getSongUrl] NeteaseCloudMusicApi 未返回有效链接，回退到 vkeys')
+
+            // 回退到 vkeys
+            const vkeysSource = enabledSources.find(source => source.id === 'vkeys')
+            if (vkeysSource) {
+                const vkeysQuality = typeof quality === 'number' ? quality : 0
+                const vkeysUrl = `${vkeysSource.baseUrl}/netease?id=${idParam}&quality=${vkeysQuality}`
+                const vkeysResp = await $fetch(vkeysUrl, {timeout: vkeysSource.timeout || 8000})
+
+                if (vkeysResp?.code === 200 && vkeysResp?.data?.url) {
+                    let url = String(vkeysResp.data.url)
+                    if (url.startsWith('http://')) url = url.replace('http://', 'https://')
+                    console.log(`[getSongUrl] 来自 vkeys 的播放链接: ${url}`)
+                    return {success: true, url}
+                }
             }
 
-            const songData = response.data[0]
-            if (!songData.url) {
-                console.error('[getSongUrl] 歌曲播放链接为空，可能是VIP歌曲或地区限制')
-                return {success: false, error: '歌曲播放链接为空，可能是VIP歌曲或地区限制'}
-            }
-
-            // 清理URL字符串：去除前后空格和反引号
-            let playUrl = songData.url.toString().trim().replace(/`/g, '')
-            console.log(`[getSongUrl] 原始URL: "${songData.url}", 清理后URL: "${playUrl}"`)
-
-            // 验证URL有效性
-            if (!playUrl || playUrl === 'null' || playUrl === 'undefined') {
-                console.error('[getSongUrl] 清理后的URL无效:', playUrl)
-                return {success: false, error: '清理后的URL无效'}
-            }
-
-            // 将HTTP URL改为HTTPS
-            if (playUrl.startsWith('http://')) {
-                playUrl = playUrl.replace('http://', 'https://')
-            }
-
-            console.log(`[getSongUrl] 成功获取播放链接: ${playUrl} (level: ${level})`)
-            return {
-                success: true,
-                url: playUrl,
-                // 返回额外信息供调试使用
-                level: level,
-                size: songData.size,
-                br: songData.br,
-                type: songData.type
-            }
-
+            return {success: false, error: '无法获取播放链接'}
         } catch (error: any) {
             console.error('[getSongUrl] 获取播放链接失败:', error)
-            return {success: false, error: error.message || '获取播放链接失败'}
+            return {success: false, error: error?.message || '未知错误'}
         }
     }
 
     /**
-     * 通过Meeting接口获取LRC歌词
+     * 获取歌词（统一调度）
+     * NeteaseCloudMusicApi 优先，其次 vkeys；腾讯仅 vkeys
      */
-    const getLyricsByMeeting = async (id: number | string): Promise<{
+    const getLyrics = async (platform: 'netease' | 'tencent', id: number | string): Promise<{
         success: boolean;
-        lrc?: string;
+        data?: { lrc: string; trans?: string; yrc?: string };
         error?: string
     }> => {
         try {
-            // 获取启用的meeting音源
             const enabledSources = getEnabledSources()
-            const meetingSources = enabledSources.filter(source => source.id.includes('meeting'))
+            const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
+            const vkeysSource = enabledSources.find(source => source.id === 'vkeys')
 
-            if (meetingSources.length === 0) {
-                console.error('[getLyricsByMeeting] 未找到meeting音源')
-                return {success: false, error: '未找到meeting音源'}
-            }
-
-            console.log(`[getLyricsByMeeting] 尝试使用meeting接口获取歌词: id=${id}`)
-
-            // 尝试所有meeting音源
-            for (const meetingSource of meetingSources) {
+            if (platform === 'netease' && neteaseSource) {
                 try {
-                    const meetingResponse = await $fetch(`${meetingSource.baseUrl}/`, {
-                        params: {
-                            type: 'lrc',
-                            id: id.toString()
-                        },
-                        timeout: meetingSource.timeout || 8000
-                    })
+                    const [lrcResp, yrcResp] = await Promise.allSettled([
+                        $fetch(`${neteaseSource.baseUrl}/lyric`, { params: { id: id.toString() }, timeout: neteaseSource.timeout || 8000 }),
+                        $fetch(`${neteaseSource.baseUrl}/lyric/new`, { params: { id: id.toString() }, timeout: neteaseSource.timeout || 8000 })
+                    ])
 
-                    console.log(`[getLyricsByMeeting] Meeting接口响应:`, meetingResponse)
+                    const data: { lrc: string; trans?: string; yrc?: string } = { lrc: '', trans: '', yrc: '' }
 
-                    // meeting接口直接返回LRC字符串或包含lrc字段的对象
-                    let lrcContent: string | null = null
-                    if (typeof meetingResponse === 'string') {
-                        lrcContent = meetingResponse.trim()
-                    } else if (meetingResponse && typeof meetingResponse === 'object') {
-                        lrcContent = meetingResponse.lrc || meetingResponse.data || null
+                    if (lrcResp.status === 'fulfilled' && lrcResp.value?.code === 200) {
+                        const lr = lrcResp.value
+                        if (lr?.lrc?.lyric) data.lrc = lr.lrc.lyric
+                        if (lr?.tlyric?.lyric) data.trans = lr.tlyric.lyric
+                    }
+                    if (yrcResp.status === 'fulfilled' && yrcResp.value?.code === 200) {
+                        const yr = yrcResp.value
+                        if (yr?.yrc?.lyric) data.yrc = yr.yrc.lyric
                     }
 
-                    if (lrcContent && lrcContent !== 'null' && lrcContent !== 'undefined' && lrcContent.includes('[')) {
-                        console.log(`[getLyricsByMeeting] Meeting接口成功获取歌词`)
-                        return {
-                            success: true,
-                            lrc: lrcContent,
-                            source: 'meeting',
-                            sourceId: meetingSource.id
-                        }
+                    if (data.lrc || data.yrc) {
+                        return { success: true, data }
                     }
-                } catch (error: any) {
-                    console.warn(`[getLyricsByMeeting] Meeting音源 ${meetingSource.id} 获取歌词失败:`, error.message)
-
+                } catch (e: any) {
+                    console.warn('[getLyrics] NeteaseCloudMusicApi 获取失败:', e?.message || e)
                 }
             }
 
-            console.log('[getLyricsByMeeting] 所有meeting音源都失败')
-            return {success: false, error: '所有meeting音源都失败'}
+            // 回退到 vkeys
+            if (vkeysSource) {
+                let url: string
+                if (platform === 'netease') {
+                    url = `${vkeysSource.baseUrl}/netease/lyric?id=${id}`
+                } else if (platform === 'tencent') {
+                    url = `${vkeysSource.baseUrl}/tencent/lyric?id=${id}`
+                } else {
+                    throw new Error('不支持的音乐平台')
+                }
 
+                const resp = await $fetch(url, { timeout: vkeysSource.timeout || 8000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } })
+                if (resp?.code === 200 && resp?.data) {
+                    const d = resp.data
+                    const data: { lrc: string; trans?: string; yrc?: string } = {
+                        lrc: d.lrc || '',
+                        trans: d.trans || '',
+                        yrc: d.yrc || ''
+                    }
+                    if (data.lrc || data.yrc) {
+                        return { success: true, data }
+                    }
+                }
+            }
+
+            return { success: false, error: '未获取到歌词' }
         } catch (error: any) {
-            console.error('[getLyricsByMeeting] 获取歌词失败:', error)
-            return {success: false, error: error.message || '获取歌词失败'}
+            console.error('[getLyrics] 获取歌词失败:', error)
+            return { success: false, error: error?.message || '未知错误' }
         }
     }
 
@@ -846,7 +789,7 @@ export const useMusicSources = () => {
         searchSongs,
         getSongDetail,
         getSongUrl,
-        getLyricsByMeeting,
+        getLyrics,
         updateSourceStatus
     }
 }

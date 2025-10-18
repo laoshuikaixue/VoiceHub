@@ -5,7 +5,7 @@
     
     <!-- 全局音频播放器 - 使用isPlayerVisible控制显示/隐藏 -->
     <LazyUIAudioPlayer
-      v-if="isPlayerVisible"
+      v-show="isPlayerVisible"
       :song="currentSong"
       :is-playlist-mode="isPlaylistMode"
       @close="handlePlayerClose"
@@ -49,12 +49,27 @@ const isPlaylistMode = computed(() => {
   return true
 })
 
+// 监听路由变化，控制播放器显示/隐藏
+watch(() => route.path, (newPath) => {
+  // 如果在全屏歌词页面，隐藏底部播放器
+  if (newPath === '/lyrics-fullscreen') {
+    isPlayerVisible.value = false
+  } else {
+    // 其他页面，如果有当前歌曲则显示播放器
+    if (currentSong.value) {
+      isPlayerVisible.value = true
+    }
+  }
+}, { immediate: true })
 
 // 监听当前播放的歌曲
 watch(() => audioPlayer.getCurrentSong().value, (newSong) => {
   if (newSong) {
     currentSong.value = newSong
-    isPlayerVisible.value = true
+    // 只有不在全屏歌词页面时才显示播放器
+    if (route.path !== '/lyrics-fullscreen') {
+      isPlayerVisible.value = true
+    }
   } else {
     // 当没有歌曲时，不立即隐藏播放器，而是让动画完成
     currentSong.value = null
