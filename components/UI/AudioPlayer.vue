@@ -463,6 +463,9 @@ const selectQuality = async (qualityValue) => {
   const result = await enhanced.enhancedQualitySwitch(props.song, qualityValue)
 
   if (result.success) {
+    // 只有在切换成功后才保存音质设置
+    saveQuality(props.song.musicPlatform, qualityValue)
+
     // 更新歌曲的音乐链接
     const updatedSong = {
       ...props.song,
@@ -499,7 +502,7 @@ const selectQuality = async (qualityValue) => {
       })
     }
   }
-  // 如果失败，增强的composable已经显示了错误通知
+  // 如果失败，增强的composable已经显示了错误通知，不保存音质设置
 }
 
 // 歌词相关方法

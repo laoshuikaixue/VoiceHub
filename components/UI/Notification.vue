@@ -79,7 +79,7 @@ defineEmits(['close'])
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 9999;
+  z-index: 99999;
   display: flex;
   align-items: center;
   padding: 16px;

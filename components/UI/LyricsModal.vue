@@ -207,6 +207,15 @@ const currentQualityText = computed(() => {
   return label.replace(/音质|音乐/, '').trim() || '音质'
 })
 
+// 监听音质变化，强制更新显示
+watch(() => {
+  const platform = currentSong.value?.musicPlatform
+  return platform ? getQuality(platform) : null
+}, () => {
+  // 触发响应式更新
+  nextTick()
+}, { deep: true })
+
 const currentPlatformOptions = computed(() => {
   const platform = currentSong.value?.musicPlatform
   if (!platform) return []
@@ -392,11 +401,16 @@ const selectQuality = async (qualityValue) => {
     showQualitySettings.value = false
     return
   }
+  
   const result = await enhanced.enhancedQualitySwitch(song, qualityValue)
   if (result.success) {
+    // 只有在切换成功后才保存音质设置
+    saveQuality(song.musicPlatform, qualityValue)
+    
     const updatedSong = { ...song, musicUrl: result.url }
     audioPlayer.playSong(updatedSong)
   }
+  // 如果失败，不保存音质设置，保持原有状态
   showQualitySettings.value = false
 }
 

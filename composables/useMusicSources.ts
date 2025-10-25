@@ -382,7 +382,7 @@ export const useMusicSources = () => {
                 params: {
                     id: idParam,
                     level: level,
-                    unblock: true
+                    unblock: false
                 },
                 timeout: neteaseSource.timeout || 8000
             })

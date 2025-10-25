@@ -1,4 +1,4 @@
-import {computed, ref} from 'vue'
+import {computed, ref, readonly, watch} from 'vue'
 
 // 音质配置
 export const QUALITY_OPTIONS = {
@@ -24,6 +24,9 @@ const DEFAULT_QUALITY = {
     tencent: 8  // HQ高音质
 }
 
+// 全局音质状态，确保所有组件共享同一个状态
+let globalAudioQuality: any = null
+
 export function useAudioQuality() {
     // 从localStorage读取音质设置
     const getStoredQuality = () => {
@@ -35,16 +38,26 @@ export function useAudioQuality() {
         }
     }
 
-    const audioQuality = ref(getStoredQuality())
+    // 使用全局状态，确保所有组件共享
+    if (!globalAudioQuality) {
+        globalAudioQuality = ref(getStoredQuality())
+        
+        // 监听状态变化，自动保存到localStorage
+        watch(globalAudioQuality, (newValue) => {
+            try {
+                localStorage.setItem('audioQuality', JSON.stringify(newValue))
+            } catch (error) {
+                console.error('保存音质设置失败:', error)
+            }
+        }, { deep: true })
+    }
+
+    const audioQuality = globalAudioQuality
 
     // 保存音质设置到localStorage
     const saveQuality = (platform: string, quality: number) => {
         audioQuality.value[platform] = quality
-        try {
-            localStorage.setItem('audioQuality', JSON.stringify(audioQuality.value))
-        } catch (error) {
-            console.error('保存音质设置失败:', error)
-        }
+        // localStorage保存已经通过watch自动处理
     }
 
     // 获取指定平台的音质设置
