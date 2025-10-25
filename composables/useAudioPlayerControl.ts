@@ -55,6 +55,10 @@ export const useAudioPlayerControl = () => {
                 await waitForCanPlay(audioPlayer.value)
             }
 
+            // 设置音频属性以支持自动播放
+            audioPlayer.value.autoplay = true
+            audioPlayer.value.preload = 'auto'
+
             const playPromise = audioPlayer.value.play()
 
             // 处理播放 Promise
@@ -65,6 +69,7 @@ export const useAudioPlayerControl = () => {
         } catch (error) {
             // 检查是否是自动播放被阻止的错误
             if (error.name === 'NotAllowedError') {
+                console.warn('[AudioPlayerControl] ⚠️ 自动播放被浏览器阻止，需要用户交互')
                 // 不设置 hasError，因为这不是真正的错误
                 return false
             } else {
@@ -174,10 +179,8 @@ export const useAudioPlayerControl = () => {
                     songUrl = songUrlOrSong.musicUrl
 
                     // 清理URL中的反引号和空格（特别是网易云备用源）
-                    if (typeof songUrl === 'string') {
-                        songUrl = songUrl.trim().replace(/`/g, '')
-                        console.log('使用已有的播放URL:', songUrl)
-                    }
+                    songUrl = songUrl.trim().replace(/`/g, '')
+                    console.log('使用已有的播放URL:', songUrl)
 
                     // 如果有音乐平台信息，加载歌词
                     if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
@@ -227,11 +230,13 @@ export const useAudioPlayerControl = () => {
             isLoadingNewSong.value = false
 
             // 自动开始播放
-            if (hasUserInteracted.value) {
-                console.log('用户已交互，自动开始播放')
-                await play()
+            console.log('尝试自动播放音乐')
+            const playResult = await play()
+            
+            if (!playResult) {
+                console.log('自动播放失败，可能被浏览器阻止，等待用户交互')
             } else {
-                console.log('用户未交互，等待用户手动播放')
+                console.log('自动播放成功')
             }
 
             return true

@@ -112,29 +112,29 @@ export interface SongDetailResult {
  * 包含主音源 Vkeys 和两个网易云备用音源端点
  */
 export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
-    primarySource: 'vkeys',
+    primarySource: 'netease-backup-1',
     enableFailover: true,
     timeout: 10000,
     retryAttempts: 2,
     sources: [
         {
-            id: 'vkeys',
-            name: 'Vkeys音源',
-            baseUrl: 'https://api.vkeys.cn/v2/music',
-            priority: 1,
-            enabled: true,
-            timeout: 10000
-        },
-        {
             id: 'netease-backup-1',
-            name: '网易云备用源1',
+            name: 'NeteaseCloudMusicApi',
             baseUrl: 'https://api.voicehub.lao-shui.top:443',
-            priority: 2,
+            priority: 1,
             enabled: true,
             timeout: 8000,
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
+        },
+        {
+            id: 'vkeys',
+            name: 'Vkeys音源',
+            baseUrl: 'https://api.vkeys.cn/v2/music',
+            priority: 2,
+            enabled: true,
+            timeout: 10000
         },
         {
             id: 'netease-backup-2',

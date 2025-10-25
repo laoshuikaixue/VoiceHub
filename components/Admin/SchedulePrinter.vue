@@ -1352,7 +1352,6 @@ watch(() => settings.value, () => {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-/* 修复日期输入框的日历图标颜色 */
 .date-input::-webkit-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;

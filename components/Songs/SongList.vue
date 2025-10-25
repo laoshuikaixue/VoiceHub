@@ -716,9 +716,13 @@ const cancelConfirm = () => {
 
 // 处理图片加载错误
 const handleImageError = (event, song) => {
-  event.target.style.display = 'none'
-  event.target.parentNode.classList.add('text-cover')
-  event.target.parentNode.textContent = getFirstChar(song.title)
+  if (event?.target) {
+    event.target.style.display = 'none'
+    if (event.target.parentNode) {
+      event.target.parentNode.classList.add('text-cover')
+      event.target.parentNode.textContent = getFirstChar(song.title)
+    }
+  }
 }
 
 // 获取歌曲标题的第一个字符作为封面
@@ -758,6 +762,20 @@ const togglePlaySong = async (song) => {
             const playlist = await buildPlayablePlaylist(song)
             const currentIndex = playlist.findIndex(item => item.id === song.id)
             audioPlayer.playSong(playableSong, playlist, currentIndex)
+            // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+            ;(async () => {
+              for (let i = currentIndex + 1; i < playlist.length; i++) {
+                const s = playlist[i]
+                if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
+                  try {
+                    s.musicUrl = await getMusicUrl(s.musicPlatform, s.musicId, s.playUrl)
+                  } catch (error) {
+                    console.warn(`后台预取失败: ${s.title}`, error)
+                    s.musicUrl = null
+                  }
+                }
+              }
+            })()
           } else {
             if (window.$showNotification) {
               window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
@@ -786,6 +804,21 @@ const togglePlaySong = async (song) => {
         const playlist = await buildPlayablePlaylist(song)
         const currentIndex = playlist.findIndex(item => item.id === song.id)
         audioPlayer.playSong(playableSong, playlist, currentIndex)
+
+        // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+        ;(async () => {
+          for (let i = currentIndex + 1; i < playlist.length; i++) {
+            const s = playlist[i]
+            if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
+              try {
+                s.musicUrl = await getMusicUrl(s.musicPlatform, s.musicId, s.playUrl)
+              } catch (error) {
+                console.warn(`后台预取失败: ${s.title}`, error)
+                s.musicUrl = null
+              }
+            }
+          }
+        })()
       } else {
         if (window.$showNotification) {
           window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
@@ -830,9 +863,19 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
   const {getSongUrl} = useMusicSources()
 
   try {
-    let apiUrl
     const quality = getQuality(platform)
 
+    // 先使用统一组件的 NeteaseCloudMusicApi（仅网易云）
+    if (platform === 'netease') {
+      const result = await getSongUrl(musicId, quality)
+      if (result.success && result.url) {
+        return result.url
+      }
+      console.warn('[SongList] 备用源未返回有效链接，回退到 vkeys')
+    }
+
+    // 回退到 vkeys
+    let apiUrl
     if (platform === 'netease') {
       apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
     } else if (platform === 'tencent') {
@@ -862,20 +905,6 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
 
     throw new Error('vkeys返回成功但未获取到音乐URL')
   } catch (error) {
-    // vkeys获取音乐URL失败
-
-    // 如果是网易云平台，尝试使用备用源
-    if (platform === 'netease') {
-      try {
-        const result = await getSongUrl(musicId)
-        if (result.success && result.url) {
-          return result.url
-        }
-      } catch (backupError) {
-        // 网易云备用源调用失败
-      }
-    }
-
     throw error
   }
 }

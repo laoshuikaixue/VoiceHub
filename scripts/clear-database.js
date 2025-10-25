@@ -3,7 +3,11 @@
  * 这个脚本会清空所有表的数据，但保留表结构 
  */
 import {
+    apiKeyPermissions,
+    apiKeys,
+    apiLogs,
     db,
+    emailTemplates,
     notifications,
     notificationSettings,
     playTimes,
@@ -13,12 +17,8 @@ import {
     songs,
     systemSettings,
     users,
-    votes,
-    apiKeys,
-    apiKeyPermissions,
-    apiLogs,
     userStatusLogs,
-    emailTemplates
+    votes
 } from '../drizzle/db.ts'
 import bcrypt from 'bcrypt'
 

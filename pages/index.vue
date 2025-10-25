@@ -2182,7 +2182,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* 修改移动端通知样式 */
+/* 移动端通知样式 */
 @media (max-width: 768px) {
   .notification-items {
     padding-bottom: 20px;

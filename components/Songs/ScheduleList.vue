@@ -565,9 +565,13 @@ onBeforeUnmount(() => {
 
 // 处理图片加载错误
 const handleImageError = (event, song) => {
-  event.target.style.display = 'none'
-  event.target.parentNode.classList.add('text-cover')
-  event.target.parentNode.textContent = getFirstChar(song.title)
+  if (event?.target) {
+    event.target.style.display = 'none'
+    if (event.target.parentNode) {
+      event.target.parentNode.classList.add('text-cover')
+      event.target.parentNode.textContent = getFirstChar(song.title)
+    }
+  }
 }
 
 // 获取歌曲标题的第一个字符作为封面
@@ -631,34 +635,36 @@ const togglePlaySong = async (song) => {
         let songIndex = 0
 
         if (currentTimeSlot && currentTimeSlot.songs) {
-          // 为播放列表中的每首歌曲获取音乐URL（如果需要的话）
-          playlist = await Promise.all(currentTimeSlot.songs.map(async (s) => {
-            let musicUrl = s.musicUrl
-
-            // 如果歌曲没有musicUrl但有平台信息或playUrl，尝试获取
-            if (!musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
-              try {
-                musicUrl = await getMusicUrl(s.musicPlatform, s.musicId, s.playUrl)
-              } catch (error) {
-                console.warn(`无法获取歌曲 ${s.title} 的播放链接:`, error)
-                musicUrl = null
-              }
-            }
-
-            return {
-              id: s.id,
-              title: s.title,
-              artist: s.artist,
-              cover: s.cover,
-              musicUrl: musicUrl,
-              musicPlatform: s.musicPlatform,
-              musicId: s.musicId
-            }
+          // 构建播放列表但不阻塞当前播放，后续后台预取
+          playlist = currentTimeSlot.songs.map((s) => ({
+            id: s.id,
+            title: s.title,
+            artist: s.artist,
+            cover: s.cover,
+            musicUrl: s.musicUrl || null,
+            musicPlatform: s.musicPlatform,
+            musicId: s.musicId,
+            playUrl: s.playUrl || null
           }))
 
           // 找到当前歌曲在播放列表中的索引
           songIndex = playlist.findIndex((s) => s.id === song.id)
           if (songIndex === -1) songIndex = 0
+
+          // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+          ;(async () => {
+            for (let i = songIndex + 1; i < playlist.length; i++) {
+              const s = playlist[i]
+              if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
+                try {
+                  s.musicUrl = await getMusicUrl(s.musicPlatform, s.musicId, s.playUrl)
+                } catch (error) {
+                  console.warn(`后台预取失败: ${s.title}`, error)
+                  s.musicUrl = null
+                }
+              }
+            }
+          })()
         }
 
         const playableSong = {
@@ -720,7 +726,17 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
   try {
     const quality = getQuality(platform)
 
-    // 首先尝试vkeys API
+    // 先使用统一组件的 NeteaseCloudMusicApi（仅网易云）
+    if (platform === 'netease') {
+      const result = await getSongUrl(musicId, quality)
+      if (result?.success && result.url) {
+        console.log('[ScheduleList] NeteaseCloudMusicApi 获取音乐URL成功')
+        return result.url
+      }
+      console.warn('[ScheduleList] 备用源未返回有效链接，回退到 vkeys')
+    }
+
+    // 回退到 vkeys
     let apiUrl
     if (platform === 'netease') {
       apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
@@ -747,35 +763,13 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
       if (url.startsWith('http://')) {
         url = url.replace('http://', 'https://')
       }
-      console.log('vkeys API获取音乐URL成功')
+      console.log('[ScheduleList] vkeys API获取音乐URL成功')
       return url
     }
 
-    // vkeys API返回了响应但没有有效的URL，尝试备用源
-    throw new Error('vkeys API未返回有效的音乐URL')
-  } catch (error) {
-    console.error('vkeys API获取音乐URL失败:', error)
-
-    // 如果是网易云平台，尝试使用备用源
-    if (platform === 'netease') {
-      console.log('尝试使用网易云备用源获取音乐URL...')
-      try {
-        const quality = getQuality(platform)
-        const backupResult = await getSongUrl(musicId, quality)
-
-        if (backupResult && backupResult.url) {
-          console.log('网易云备用源获取音乐URL成功')
-          return backupResult.url
-        } else {
-          console.error('网易云备用源未返回有效的URL')
-        }
-      } catch (backupError) {
-        console.error('网易云备用源获取音乐URL也失败:', backupError)
-      }
-    }
-
-    // vkeys和备用源都失败了
     throw new Error('所有音源都无法获取音乐播放链接')
+  } catch (error) {
+    throw error
   }
 }
 
@@ -1436,7 +1430,7 @@ const vRipple = {
     gap: 0.75rem;
   }
 
-  /* 修复歌曲卡片布局 */
+  /* 歌曲卡片布局 */
   .song-card-main {
     height: auto;
     min-height: 70px;

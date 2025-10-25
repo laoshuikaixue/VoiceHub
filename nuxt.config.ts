@@ -165,9 +165,12 @@ export default defineNuxtConfig({
   // Vite 配置
   vite: {
     optimizeDeps: {
-      include: ['drizzle-orm']
+      include: ['drizzle-orm'],
+      exclude: ['@applemusic-like-lyrics/vue', '@applemusic-like-lyrics/lyric']
     },
-    // 根据部署环境调整 SSR 配置
+    // 添加 WASM 支持配置
+    assetsInclude: ['**/*.wasm'],
+    // SSR配置
     ssr: {
       noExternal: process.env.NETLIFY ? ['drizzle-orm', 'postgres'] : (process.env.VERCEL ? [] : ['drizzle-orm', 'postgres'])
     }

@@ -25,9 +25,21 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
     const {getSongUrl} = useMusicSources()
 
     try {
-        let apiUrl: string
         const quality = getQuality(platform)
 
+        // 先使用统一组件的 NeteaseCloudMusicApi（仅网易云）
+        if (platform === 'netease') {
+            console.log(`[getMusicUrl] 先使用 NeteaseCloudMusicApi 获取播放链接: ${musicId}`)
+            const backupResult = await getSongUrl(Number(musicId), quality)
+            if (backupResult.success && backupResult.url) {
+                console.log(`[getMusicUrl] NeteaseCloudMusicApi 成功获取播放链接`)
+                return backupResult.url
+            }
+            console.warn(`[getMusicUrl] 备用源未返回有效链接，回退到 vkeys`)
+        }
+
+        // 回退到 vkeys
+        let apiUrl: string
         if (platform === 'netease') {
             apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
         } else if (platform === 'tencent') {
@@ -36,7 +48,7 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
             throw new Error('不支持的音乐平台')
         }
 
-        console.log(`[getMusicUrl] 尝试使用vkeys API获取播放链接: ${platform}, ${musicId}`)
+        console.log(`[getMusicUrl] 使用 vkeys API 获取播放链接: ${platform}, ${musicId}`)
 
         const response = await fetch(apiUrl, {
             headers: {
@@ -64,28 +76,7 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
         throw new Error('vkeys API返回的播放链接无效')
 
     } catch (error) {
-        console.warn(`[getMusicUrl] vkeys API失败:`, error)
-
-        // 如果是网易云平台且vkeys API失败，尝试使用网易云备用源
-        if (platform === 'netease') {
-            try {
-                console.log(`[getMusicUrl] 尝试使用网易云备用源获取播放链接: ${musicId}`)
-                const qualityNum = getQuality(platform) // 获取数值类型的音质设置
-                const backupResult = await getSongUrl(Number(musicId), qualityNum)
-
-                if (backupResult.success && backupResult.url) {
-                    console.log(`[getMusicUrl] 网易云备用源成功获取播放链接`)
-                    return backupResult.url
-                } else {
-                    console.error(`[getMusicUrl] 网易云备用源获取失败:`, backupResult.error)
-                }
-            } catch (backupError) {
-                console.error(`[getMusicUrl] 网易云备用源异常:`, backupError)
-            }
-        }
-
-        // 所有方法都失败了
-        console.error(`[getMusicUrl] 所有音源都无法获取播放链接: ${platform}, ${musicId}`)
+        console.error(`[getMusicUrl] 获取播放链接失败:`, error)
         throw error
     }
 }

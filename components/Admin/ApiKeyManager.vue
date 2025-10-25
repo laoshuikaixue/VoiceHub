@@ -931,7 +931,7 @@ onMounted(() => {
   height: 16px;
 }
 
-/* 修复缺少背景色的按钮样式 */
+/* 按钮样式 */
 .action-btn {
   display: inline-flex;
   align-items: center;
@@ -1057,7 +1057,7 @@ onMounted(() => {
   transition: border-color 0.2s ease;
 }
 
-/* 修复select下拉箭头样式 */
+/* select下拉箭头样式 */
 .filter-select,
 .form-select {
   appearance: none;
@@ -1088,7 +1088,6 @@ onMounted(() => {
   transition: border-color 0.2s ease;
 }
 
-/* 修复可能的白色背景配白色文字问题 */
 .form-input:not([readonly]),
 .form-textarea:not([readonly]),
 .filter-input:not([readonly]) {

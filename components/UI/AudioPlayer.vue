@@ -24,9 +24,9 @@
             @next="handleNext"
             @previous="handlePrevious"
             @toggle-play="handleTogglePlay"
-            @start-drag="control.startDrag"
-            @start-touch-drag="control.startTouchDrag"
-            @seek-to-position="control.seekToPosition"
+            @start-drag="handleStartDrag"
+            @start-touch-drag="handleStartTouchDrag"
+            @seek-to-position="handleSeekToPosition"
         />
 
         <!-- 播放器操作 -->
@@ -44,18 +44,22 @@
         <!-- 歌词显示区域 -->
         <Transition name="lyrics-slide">
           <div v-if="showLyrics" class="lyrics-panel">
-            <LyricsDisplay
+            <!-- Apple Music 风格歌词 -->
+            <AppleMusicLyrics
                 :allow-seek="true"
-                :compact="true"
                 :current-lyric-index="control.lyrics.currentLyricIndex.value"
                 :current-lyrics="control.lyrics.currentLyrics.value"
                 :current-time="control.currentTime.value"
                 :error="control.lyrics.error.value"
                 :is-loading="control.lyrics.isLoading.value"
-                :show-controls="false"
                 :translation-lyrics="control.lyrics.translationLyrics.value"
                 :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
+                :show-translation="false"
                 height="120px"
+                :font-size="24"
+                :line-height="1.4"
+                active-line-color="#ffffff"
+                inactive-line-color="rgba(255, 255, 255, 0.6)"
                 @seek="handleLyricSeek"
             />
           </div>
@@ -76,12 +80,21 @@
         />
       </div>
     </Transition>
+
+    <!-- 全屏歌词模态（仅客户端渲染） -->
+    <ClientOnly>
+      <LyricsModal 
+        :is-visible="showFullscreenLyrics" 
+        @close="showFullscreenLyrics = false" 
+      />
+    </ClientOnly>
   </div>
 </template>
 
 <script setup>
 import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
-import LyricsDisplay from './LyricsDisplay.vue'
+import AppleMusicLyrics from './AppleMusicLyrics.vue'
+import LyricsModal from './LyricsModal.vue'
 import PlayerInfo from './AudioPlayer/PlayerInfo.vue'
 import PlayerControls from './AudioPlayer/PlayerControls.vue'
 import PlayerActions from './AudioPlayer/PlayerActions.vue'
@@ -90,6 +103,9 @@ import {useAudioPlayerControl} from '~/composables/useAudioPlayerControl'
 import {useAudioPlayerSync} from '~/composables/useAudioPlayerSync'
 import {useAudioQuality} from '~/composables/useAudioQuality'
 import {useAudioPlayerEnhanced} from '~/composables/useAudioPlayerEnhanced'
+
+// 添加 router 导入
+const router = useRouter()
 
 const props = defineProps({
   song: {
@@ -121,6 +137,8 @@ const playerControlsRef = ref(null)
 // UI 状态
 const isClosing = ref(false)
 const showLyrics = ref(false)
+const showFullscreenLyrics = ref(false)
+const useAppleMusicStyle = ref(true) // 默认使用Apple Music风格
 
 // 同步标记，避免双向触发
 const isSyncingFromGlobal = ref(false)
@@ -137,7 +155,6 @@ const handleTimeUpdate = () => {
   const currentTime = audioPlayer.value.currentTime
   const duration = audioPlayer.value.duration
 
-  // 修复参数传递问题：onTimeUpdate只接受一个参数
   control.onTimeUpdate(currentTime)
 
   // 只在播放状态下发送进度更新，避免暂停时发送位置为0的更新
@@ -286,6 +303,8 @@ const handleError = async (error) => {
     } else if (result.shouldClose) {
       // 已经关闭播放器，不需要额外处理
       console.log('播放器已关闭')
+      // 同步关闭全屏歌词模态
+      showFullscreenLyrics.value = false
     }
   } else {
     // 如果增强处理失败，使用原始错误处理
@@ -295,6 +314,8 @@ const handleError = async (error) => {
 
 const handleEnded = () => {
   control.onEnded()
+  // 歌曲播放完成时关闭全屏歌词模态
+  showFullscreenLyrics.value = false
   emit('ended')
 }
 
@@ -307,8 +328,19 @@ const handleCanPlay = () => {
 }
 
 // UI 事件处理器
-const handleTogglePlay = () => {
-  control.togglePlay()
+const handleTogglePlay = async () => {
+  // 确保音频播放器引用存在
+  if (!audioPlayer.value) {
+    console.error('[AudioPlayer] 音频播放器引用不存在，无法切换播放状态')
+    return
+  }
+  
+  // 确保 control 有正确的音频播放器引用
+  if (!control.audioPlayer.value) {
+    control.setAudioPlayerRef(audioPlayer.value)
+  }
+  
+  await control.togglePlay()
 }
 
 const handlePrevious = async () => {
@@ -323,6 +355,52 @@ const handleNext = async () => {
   if (result.success && result.newSong) {
     emit('songChange', result.newSong)
   }
+}
+
+// 进度条拖拽事件处理器
+const handleStartDrag = (event, progressBar) => {
+  // 确保音频播放器引用存在
+  if (!audioPlayer.value) {
+    console.error('[AudioPlayer] 音频播放器引用不存在，无法开始拖拽')
+    return
+  }
+  
+  // 确保 control 有正确的音频播放器引用
+  if (!control.audioPlayer.value) {
+    control.setAudioPlayerRef(audioPlayer.value)
+  }
+  
+  control.startDrag(event, progressBar)
+}
+
+const handleStartTouchDrag = (event, progressBar) => {
+  // 确保音频播放器引用存在
+  if (!audioPlayer.value) {
+    console.error('[AudioPlayer] 音频播放器引用不存在，无法开始触摸拖拽')
+    return
+  }
+  
+  // 确保 control 有正确的音频播放器引用
+  if (!control.audioPlayer.value) {
+    control.setAudioPlayerRef(audioPlayer.value)
+  }
+  
+  control.startTouchDrag(event, progressBar)
+}
+
+const handleSeekToPosition = (event) => {
+  // 确保音频播放器引用存在
+  if (!audioPlayer.value) {
+    console.error('[AudioPlayer] 音频播放器引用不存在，无法跳转位置')
+    return
+  }
+  
+  // 确保 control 有正确的音频播放器引用
+  if (!control.audioPlayer.value) {
+    control.setAudioPlayerRef(audioPlayer.value)
+  }
+  
+  control.seekToPosition(event)
 }
 
 // 获取当前歌曲平台的音质文本
@@ -367,6 +445,9 @@ const selectQuality = async (qualityValue) => {
   const result = await enhanced.enhancedQualitySwitch(props.song, qualityValue)
 
   if (result.success) {
+    // 只有在切换成功后才保存音质设置
+    saveQuality(props.song.musicPlatform, qualityValue)
+
     // 更新歌曲的音乐链接
     const updatedSong = {
       ...props.song,
@@ -403,15 +484,22 @@ const selectQuality = async (qualityValue) => {
       })
     }
   }
-  // 如果失败，增强的composable已经显示了错误通知
+  // 如果失败，增强的composable已经显示了错误通知，不保存音质设置
 }
 
 // 歌词相关方法
 const toggleLyrics = () => {
-  showLyrics.value = !showLyrics.value
+  // 显示全屏歌词模态而不是跳转页面
+  showFullscreenLyrics.value = true
 }
 
-const handleLyricSeek = (time) => {
+const handleLyricSeek = async (time) => {
+  // 如果当前处于暂停状态，先开始播放
+  if (!control.isPlaying.value) {
+    await control.play()
+  }
+  
+  // 跳转到指定时间 - seek 方法内部会处理歌词动画的中断
   control.seek(time)
   sync.updateGlobalPosition(time, control.duration.value)
 }
@@ -422,6 +510,8 @@ const stopPlaying = () => {
 
   isClosing.value = true
   control.stop()
+  // 同步关闭全屏歌词模态
+  showFullscreenLyrics.value = false
   sync.syncStopToGlobal()
 
   setTimeout(() => {
@@ -532,10 +622,9 @@ onMounted(async () => {
         duration: control.duration.value
       }, props.song)
 
-      // 尝试播放，如果失败（由于浏览器自动播放策略），等待用户交互
-      const playSuccess = await control.play()
-
-      if (!playSuccess) {
+      // loadSong方法已经包含了自动播放逻辑，这里不需要重复调用
+      // 如果自动播放失败，设置用户交互监听器
+      if (!control.isPlaying.value) {
         // 通知鸿蒙侧播放失败（暂停状态）
         sync.notifyHarmonyOS('pause', {
           position: 0,
@@ -544,7 +633,7 @@ onMounted(async () => {
 
         // 监听用户交互，一旦用户交互就尝试播放
         const handleUserInteraction = async () => {
-          if (!control.hasUserInteracted.value && props.song) {
+          if (!control.isPlaying.value && props.song) {
             const retryPlaySuccess = await control.play()
             if (retryPlaySuccess) {
               // 移除事件监听器
@@ -1184,7 +1273,7 @@ const formatTime = (seconds) => {
   transform: scaleY(1) translateY(0);
 }
 
-/* 修复关闭按钮动画 */
+/* 关闭按钮动画 */
 .close-player {
   background: rgba(255, 255, 255, 0.1);
   border: none;
