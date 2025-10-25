@@ -442,10 +442,12 @@ VoiceHub/
 │       │   ├── PlayerActions.vue  # 播放器操作组件
 │       │   ├── PlayerControls.vue # 播放器控制组件
 │       │   └── PlayerInfo.vue     # 播放器信息组件
+│       ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件
 │       ├── AudioPlayer.vue        # 主音频播放器组件
 │       ├── ConfirmDialog.vue      # 确认对话框
 │       ├── Icon.vue               # 图标组件
-│       ├── LyricsDisplay.vue      # 歌词显示组件
+│       ├── LyricsModal.vue        # 全屏歌词模态框组件
+│       ├── MarqueeText.vue        # 滚动文本显示组件
 │       ├── Notification.vue       # 单个通知组件
 │       ├── NotificationContainer.vue # 多通知容器组件
 │       ├── PageTransition.vue     # 页面过渡动画
@@ -459,6 +461,7 @@ VoiceHub/
 │   ├── useAudioQuality.ts  # 音质管理hooks
 │   ├── useAuth.ts          # 认证功能hooks
 │   ├── useErrorHandler.ts  # 错误处理hooks
+│   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
 │   ├── useLyrics.ts        # 歌词功能hooks
 │   ├── useMusicSources.ts  # 音乐源管理hooks
 │   ├── useMusicWebSocket.ts # 音乐WebSocket hooks

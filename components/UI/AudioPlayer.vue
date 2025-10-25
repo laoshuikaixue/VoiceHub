@@ -46,7 +46,6 @@
           <div v-if="showLyrics" class="lyrics-panel">
             <!-- Apple Music 风格歌词 -->
             <AppleMusicLyrics
-                v-if="useAppleMusicStyle"
                 :allow-seek="true"
                 :current-lyric-index="control.lyrics.currentLyricIndex.value"
                 :current-lyrics="control.lyrics.currentLyrics.value"
@@ -61,23 +60,6 @@
                 :line-height="1.4"
                 active-line-color="#ffffff"
                 inactive-line-color="rgba(255, 255, 255, 0.6)"
-                @seek="handleLyricSeek"
-            />
-            
-            <!-- 传统歌词显示 -->
-            <LyricsDisplay
-                v-else
-                :allow-seek="true"
-                :compact="true"
-                :current-lyric-index="control.lyrics.currentLyricIndex.value"
-                :current-lyrics="control.lyrics.currentLyrics.value"
-                :current-time="control.currentTime.value"
-                :error="control.lyrics.error.value"
-                :is-loading="control.lyrics.isLoading.value"
-                :show-controls="false"
-                :translation-lyrics="control.lyrics.translationLyrics.value"
-                :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
-                height="120px"
                 @seek="handleLyricSeek"
             />
           </div>
@@ -111,7 +93,6 @@
 
 <script setup>
 import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
-import LyricsDisplay from './LyricsDisplay.vue'
 import AppleMusicLyrics from './AppleMusicLyrics.vue'
 import LyricsModal from './LyricsModal.vue'
 import PlayerInfo from './AudioPlayer/PlayerInfo.vue'
