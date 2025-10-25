@@ -1178,7 +1178,7 @@ onUnmounted(() => {
     grid-template-rows: auto auto;
     grid-template-areas:
       "progress progress"
-      "controls controls";
+      "controls quality";
     align-items: center;
   }
   
@@ -1190,12 +1190,10 @@ onUnmounted(() => {
   .control-buttons {
     grid-area: controls;
     justify-content: center;
-    padding-right: clamp(56px, 8vw, 96px);
   }
   
   .quality-section {
-    grid-row: 2;
-    grid-column: 2;
+    grid-area: quality;
     justify-self: end;
   }
   
@@ -1239,7 +1237,7 @@ onUnmounted(() => {
     grid-template-rows: auto auto;
     grid-template-areas:
       "progress progress"
-      "controls controls";
+      "controls quality";
     align-items: center;
   }
   
