@@ -65,7 +65,7 @@
               <Icon name="lyrics" size="48" />
               <p>暂无歌词</p>
             </div>
-            <div v-else class="lyrics-container">
+            <div class="lyrics-container" v-show="hasLyrics">
               <!-- 这里将集成 @applemusic-like-lyrics/core -->
               <div id="lyric-player-modal" class="lyric-player" ref="lyricsContainer"></div>
             </div>
@@ -483,60 +483,72 @@ const restorePageScroll = () => {
 }
 
 // 监听可见性变化
-watch(() => props.isVisible, async (visible) => {
-  if (visible) {
-    // 显示模态框时的初始化
-    disablePageScroll()
-    
-    await nextTick()
-    lyricConfig.value.fontSize = getResponsiveFontSize()
-    
-    // 初始化歌词播放器
-    if (lyricsContainer.value) {
-      await lyricPlayer.initializeLyricPlayer(lyricsContainer.value)
-      lyricPlayer.onLineClick(handleLyricLineSeek)
-      startAnimationLoop()
-    }
-    
-    // 初始化背景渲染器
-    if (backgroundContainer.value) {
-      await backgroundRenderer.initializeBackground(backgroundContainer.value)
+watch(
+  () => props.isVisible,
+  async (visible) => {
+    if (visible) {
+      // 显示模态框时的初始化
+      disablePageScroll()
       
-      // 仅在需要封面模糊时设置元素
-      if (coverBlurContainer.value && backgroundConfig.value.type === 'cover') {
-        backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
+      await nextTick()
+      lyricConfig.value.fontSize = getResponsiveFontSize()
+      
+      // 初始化歌词播放器
+      if (lyricsContainer.value) {
+        await lyricPlayer.initializeLyricPlayer(lyricsContainer.value)
+        lyricPlayer.onLineClick(handleLyricLineSeek)
+        startAnimationLoop()
+        // 初始化后应用当前配置并立即设置已有歌词
+        await lyricPlayer.updateConfig(lyricConfig.value)
+        if (lyrics.currentLyrics.value && lyrics.currentLyrics.value.length > 0) {
+          const amllLyrics = convertToAmllFormat(
+            lyrics.currentLyrics.value,
+            lyrics.translationLyrics.value
+          )
+          await lyricPlayer.setLyrics(amllLyrics)
+        }
       }
       
-      backgroundRenderer.startRender()
-    }
-    
-    // 处理当前歌曲
-    if (currentSong.value) {
-      if (currentSong.value.musicPlatform && currentSong.value.musicId) {
-        await lyrics.fetchLyrics(currentSong.value.musicPlatform, currentSong.value.musicId)
+      // 初始化背景渲染器
+      if (backgroundContainer.value) {
+        await backgroundRenderer.initializeBackground(backgroundContainer.value)
+        
+        // 仅在需要封面模糊时设置元素
+        if (coverBlurContainer.value && backgroundConfig.value.type === 'cover') {
+          backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
+        }
+        
+        backgroundRenderer.startRender()
       }
       
-      if (currentSong.value.cover) {
-        backgroundRenderer.setCoverBackground(currentSong.value.cover)
+      // 处理当前歌曲
+      if (currentSong.value) {
+        if (currentSong.value.musicPlatform && currentSong.value.musicId) {
+          await lyrics.fetchLyrics(currentSong.value.musicPlatform, currentSong.value.musicId)
+        }
+        
+        if (currentSong.value.cover) {
+          backgroundRenderer.setCoverBackground(currentSong.value.cover)
+        }
       }
+      
+      if (isPlaying.value) {
+        startProgressTimer()
+      }
+      
+      document.addEventListener('keydown', handleKeydown)
+      window.addEventListener('resize', handleResize)
+    } else {
+      // 隐藏模态框时的清理
+      restorePageScroll()
+      stopProgressTimer()
+      lyricPlayer.dispose()
+      backgroundRenderer.dispose()
+      document.removeEventListener('keydown', handleKeydown)
+      window.removeEventListener('resize', handleResize)
     }
-    
-    if (isPlaying.value) {
-      startProgressTimer()
-    }
-    
-    document.addEventListener('keydown', handleKeydown)
-    window.addEventListener('resize', handleResize)
-  } else {
-    // 隐藏模态框时的清理
-    restorePageScroll()
-    stopProgressTimer()
-    lyricPlayer.dispose()
-    backgroundRenderer.dispose()
-    document.removeEventListener('keydown', handleKeydown)
-    window.removeEventListener('resize', handleResize)
   }
-})
+)
 
 // 监听歌词配置变化
 watch(lyricConfig, async (newConfig) => {
@@ -584,6 +596,23 @@ watch([
   }
 })
 
+// 当 hasLyrics 从 false 变为 true 时初始化并设置歌词
+watch(hasLyrics, async (has) => {
+  if (!props.isVisible) return
+  if (has) {
+    await nextTick()
+    if (lyricsContainer.value && !lyricPlayer.isInitialized.value) {
+      await lyricPlayer.initializeLyricPlayer(lyricsContainer.value)
+      lyricPlayer.onLineClick(handleLyricLineSeek)
+      await lyricPlayer.updateConfig(lyricConfig.value)
+    }
+    const amllLyrics = convertToAmllFormat(
+      lyrics.currentLyrics.value,
+      lyrics.translationLyrics.value
+    )
+    await lyricPlayer.setLyrics(amllLyrics)
+  }
+})
 // 监听播放时间变化
 watch(currentTime, (newTime) => {
   if (props.isVisible) {

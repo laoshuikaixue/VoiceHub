@@ -323,6 +323,8 @@ const handleError = async (error) => {
     } else if (result.shouldClose) {
       // 已经关闭播放器，不需要额外处理
       console.log('播放器已关闭')
+      // 同步关闭全屏歌词模态
+      showFullscreenLyrics.value = false
     }
   } else {
     // 如果增强处理失败，使用原始错误处理
@@ -523,6 +525,8 @@ const stopPlaying = () => {
 
   isClosing.value = true
   control.stop()
+  // 同步关闭全屏歌词模态
+  showFullscreenLyrics.value = false
   sync.syncStopToGlobal()
 
   setTimeout(() => {
