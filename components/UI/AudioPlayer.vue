@@ -99,11 +99,13 @@
       </div>
     </Transition>
 
-    <!-- 全屏歌词模态 -->
-    <LyricsModal 
-      :is-visible="showFullscreenLyrics" 
-      @close="showFullscreenLyrics = false" 
-    />
+    <!-- 全屏歌词模态（仅客户端渲染） -->
+    <ClientOnly>
+      <LyricsModal 
+        :is-visible="showFullscreenLyrics" 
+        @close="showFullscreenLyrics = false" 
+      />
+    </ClientOnly>
   </div>
 </template>
 

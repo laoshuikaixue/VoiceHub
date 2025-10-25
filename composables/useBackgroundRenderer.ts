@@ -1,6 +1,18 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import '@applemusic-like-lyrics/core/style.css'
-import { BackgroundRender, MeshGradientRenderer, PixiRenderer } from '@applemusic-like-lyrics/core'
+// 动态仅客户端加载 AMLL 核心与样式（类型导入不会影响 SSR）
+import type { BackgroundRender, MeshGradientRenderer, PixiRenderer } from '@applemusic-like-lyrics/core'
+
+// 在客户端按需加载核心与样式
+const isClient = typeof window !== 'undefined'
+let CoreModule: (typeof import('@applemusic-like-lyrics/core')) | null = null
+const ensureCoreModule = async () => {
+  if (!isClient) return null
+  if (!CoreModule) {
+    CoreModule = await import('@applemusic-like-lyrics/core')
+    await import('@applemusic-like-lyrics/core/style.css')
+  }
+  return CoreModule
+}
 
 export interface BackgroundConfig {
   type: 'gradient' | 'cover'
@@ -40,15 +52,19 @@ export const useBackgroundRenderer = () => {
 
     try {
       containerElement.value = container
-      
+
+      // 仅在客户端加载并创建渲染器
+      const Core = await ensureCoreModule()
+      if (!Core) return
+
       // 创建 MeshGradient 渲染器
-      backgroundRenderer.value = BackgroundRender.new(MeshGradientRenderer)
+      backgroundRenderer.value = Core.BackgroundRender.new(Core.MeshGradientRenderer)
       currentRenderer.value = 'gradient'
-      
+
       // 将渲染器的 canvas 元素添加到容器中
       const canvas = backgroundRenderer.value.getElement()
       container.appendChild(canvas)
-      
+
       // 设置 canvas 样式
       canvas.style.position = 'absolute'
       canvas.style.top = '0'
@@ -56,10 +72,10 @@ export const useBackgroundRenderer = () => {
       canvas.style.width = '100%'
       canvas.style.height = '100%'
       canvas.style.zIndex = '-1'
-      
+
       // 应用初始配置
       await applyConfig()
-      
+
       isInitialized.value = true
       console.log('背景渲染器初始化成功')
     } catch (error) {
@@ -70,6 +86,8 @@ export const useBackgroundRenderer = () => {
   // 切换底层渲染器
   const switchRenderer = (type: 'gradient' | 'cover') => {
     if (!containerElement.value) return
+    if (!CoreModule) return
+    const Core = CoreModule
     const container = containerElement.value
     const oldCanvas = backgroundRenderer.value?.getElement()
 
@@ -80,10 +98,10 @@ export const useBackgroundRenderer = () => {
       // 释放旧实例
       backgroundRenderer.value?.dispose()
 
-      // 创建对应渲染器
+      // 创建对应渲染器（客户端）
       backgroundRenderer.value = type === 'gradient'
-        ? BackgroundRender.new(MeshGradientRenderer)
-        : BackgroundRender.new(PixiRenderer)
+        ? Core.BackgroundRender.new(Core.MeshGradientRenderer)
+        : Core.BackgroundRender.new(Core.PixiRenderer)
 
       currentRenderer.value = type
 
@@ -113,9 +131,6 @@ export const useBackgroundRenderer = () => {
           switchRenderer('gradient')
         }
 
-        // 显示渐变背景
-        backgroundRenderer.value.setVisible(true)
-
         // 根据配置设置动态/静态
         backgroundRenderer.value.setStaticMode(!config.value.dynamic)
         backgroundRenderer.value.setFlowSpeed(config.value.flowSpeed)
@@ -125,7 +140,7 @@ export const useBackgroundRenderer = () => {
           await backgroundRenderer.value.setAlbum(currentCoverUrl.value)
         }
 
-        // 隐藏旧的封面模糊元素（改为统一使用 AMLL 背景）
+        // 隐藏旧的封面模糊元素
         if (coverBlurElement.value) {
           coverBlurElement.value.style.display = 'none'
         }
@@ -139,8 +154,6 @@ export const useBackgroundRenderer = () => {
         if (currentRenderer.value !== 'cover') {
           switchRenderer('cover')
         }
-
-        backgroundRenderer.value.setVisible(true)
 
         // 设置封面并根据需要动态流动
         if (currentCoverUrl.value) {
@@ -160,12 +173,17 @@ export const useBackgroundRenderer = () => {
         }
       }
 
-      // 应用颜色蒙版
+      // 应用颜色蒙版 - 注意：当前版本的 BackgroundRender 可能不支持颜色蒙版功能
+      // 如果需要颜色蒙版，可能需要通过 CSS 或其他方式实现
       if (config.value.colorMask) {
         const maskOpacity = config.value.maskOpacity / 100
-        backgroundRenderer.value.setColorMask(config.value.maskColor, maskOpacity)
+        const canvas = backgroundRenderer.value.getElement()
+        // 使用 CSS 滤镜实现颜色蒙版效果
+        canvas.style.filter = `${canvas.style.filter || ''} sepia(1) hue-rotate(${config.value.maskColor}) opacity(${1 - maskOpacity})`.trim()
       } else {
-        backgroundRenderer.value.clearColorMask()
+        const canvas = backgroundRenderer.value.getElement()
+        // 清除颜色蒙版滤镜，保留其他滤镜（如模糊）
+        canvas.style.filter = canvas.style.filter?.replace(/sepia\([^)]*\)\s*hue-rotate\([^)]*\)\s*opacity\([^)]*\)\s*/g, '').trim() || ''
       }
 
     } catch (error) {
@@ -232,7 +250,9 @@ export const useBackgroundRenderer = () => {
     if (!backgroundRenderer.value || isRendering.value) return
 
     try {
-      backgroundRenderer.value.start()
+      // BackgroundRender 类没有 start 方法，渲染是自动进行的
+      // 只需要设置为非静态模式即可开始动画
+      backgroundRenderer.value.setStaticMode(false)
       isRendering.value = true
       console.log('背景渲染已开始')
     } catch (error) {
@@ -245,7 +265,8 @@ export const useBackgroundRenderer = () => {
     if (!backgroundRenderer.value || !isRendering.value) return
 
     try {
-      backgroundRenderer.value.stop()
+      // BackgroundRender 类没有 stop 方法，使用静态模式来停止动画
+      backgroundRenderer.value.setStaticMode(true)
       isRendering.value = false
       console.log('背景渲染已停止')
     } catch (error) {
@@ -279,7 +300,7 @@ export const useBackgroundRenderer = () => {
     if (backgroundRenderer.value) {
       try {
         if (isRendering.value) {
-          backgroundRenderer.value.stop()
+          backgroundRenderer.value.setStaticMode(true)
         }
         backgroundRenderer.value.dispose()
         backgroundRenderer.value = null

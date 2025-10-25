@@ -63,6 +63,19 @@ const getFirstChar = (title) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* 添加辉光效果 */
+  box-shadow: 
+    0 0 10px rgba(255, 255, 255, 0.3),
+    0 0 20px rgba(255, 255, 255, 0.2),
+    0 0 30px rgba(255, 255, 255, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.player-cover:hover {
+  box-shadow: 
+    0 0 15px rgba(255, 255, 255, 0.4),
+    0 0 30px rgba(255, 255, 255, 0.3),
+    0 0 45px rgba(255, 255, 255, 0.2);
 }
 
 .text-cover {
