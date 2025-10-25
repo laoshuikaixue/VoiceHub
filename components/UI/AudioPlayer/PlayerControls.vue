@@ -13,8 +13,8 @@
         </button>
 
         <!-- 播放/暂停按钮 -->
-        <button :disabled="hasError || isLoading" class="control-btn play-pause-btn" @click="$emit('togglePlay')">
-          <div v-if="isLoading" class="loading-spinner"></div>
+        <button :disabled="hasError || isLoadingTrack" class="control-btn play-pause-btn" @click="$emit('togglePlay')">
+          <div v-if="isLoadingTrack" class="loading-spinner"></div>
           <Icon v-else-if="isPlaying" :size="18" color="white" name="pause"/>
           <Icon v-else :size="18" color="white" name="play"/>
         </button>
@@ -94,6 +94,10 @@ const props = defineProps({
     default: 0
   },
   isLoading: {
+    type: Boolean,
+    default: false
+  },
+  isLoadingTrack: {
     type: Boolean,
     default: false
   }

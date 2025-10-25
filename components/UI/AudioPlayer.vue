@@ -19,6 +19,7 @@
             :has-previous="sync.globalAudioPlayer.hasPrevious.value"
             :is-dragging="control.isDragging.value"
             :is-loading="control.isLoadingNewSong.value"
+            :is-loading-track="control.isLoadingTrack.value"
             :is-playing="control.isPlaying.value"
             :progress="control.progress.value"
             @next="handleNext"

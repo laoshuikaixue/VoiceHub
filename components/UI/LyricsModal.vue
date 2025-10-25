@@ -85,7 +85,8 @@
                 class="play-pause-btn"
                 @click="togglePlayPause"
               >
-                <Icon :name="isPlaying ? 'pause' : 'play'" size="24" />
+                <div v-if="isLoadingTrack" class="loading-spinner"></div>
+                <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="24" />
               </button>
               <button 
                 class="control-btn"
@@ -153,6 +154,7 @@
 <script setup>
 import {computed, nextTick, onUnmounted, ref, watch} from 'vue'
 import {useAudioPlayer} from '~/composables/useAudioPlayer'
+import {useAudioPlayerControl} from '~/composables/useAudioPlayerControl'
 import {useLyrics} from '~/composables/useLyrics'
 import {useLyricPlayer} from '~/composables/useLyricPlayer'
 import {useBackgroundRenderer} from '~/composables/useBackgroundRenderer'
@@ -172,6 +174,7 @@ const emit = defineEmits(['close'])
 
 // 音频播放器状态
 const audioPlayer = useAudioPlayer()
+const audioPlayerControl = useAudioPlayerControl()
 const lyrics = useLyrics()
 
 // 歌词播放器和背景渲染器
@@ -196,6 +199,7 @@ const dragStartTime = ref(0)
 // 播放状态
 const currentSong = computed(() => audioPlayer.getCurrentSong().value)
 const isPlaying = computed(() => audioPlayer.getPlayingStatus().value)
+const isLoadingTrack = computed(() => audioPlayerControl.isLoadingTrack.value)
 const currentTime = computed(() => audioPlayer.getCurrentPosition().value)
 const duration = computed(() => audioPlayer.getDuration().value)
 const { getQuality, getQualityLabel, getQualityOptions, saveQuality } = useAudioQuality()

@@ -21,6 +21,9 @@ export const useAudioPlayerControl = () => {
     // 状态同步标记，避免双向触发
     const isSyncingFromGlobal = ref(false)
     const isLoadingNewSong = ref(false)
+    
+    // 歌曲切换加载状态（用于显示加载图标）
+    const isLoadingTrack = ref(false)
 
     // 进度条引用
     const progressBarRef = ref<HTMLElement | null>(null)
@@ -160,6 +163,7 @@ export const useAudioPlayerControl = () => {
 
         stop()
         isLoadingNewSong.value = true
+        isLoadingTrack.value = true // 开始加载时设置加载状态
         hasError.value = false
 
         // 立即清空之前的歌词，避免显示上一首歌的歌词
@@ -607,6 +611,7 @@ export const useAudioPlayerControl = () => {
     const onPlay = () => {
         isPlaying.value = true
         hasError.value = false
+        isLoadingTrack.value = false // 音频开始播放时立即清除加载状态
     }
 
     const onPause = () => {
@@ -660,6 +665,7 @@ export const useAudioPlayerControl = () => {
         isDragging.value = false
         isSyncingFromGlobal.value = false
         isLoadingNewSong.value = false
+        isLoadingTrack.value = false
     }
 
     // 强制更新位置（用于鸿蒙侧同步）
@@ -723,6 +729,7 @@ export const useAudioPlayerControl = () => {
         isDragging,
         isSyncingFromGlobal,
         isLoadingNewSong,
+        isLoadingTrack,
         progressBarRef,
         hasUserInteracted,
 
