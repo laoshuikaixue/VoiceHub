@@ -62,10 +62,10 @@
               v-else-if="!hasLyrics" 
               class="no-lyrics"
             >
-              <Icon name="music-note" size="48" />
+              <Icon name="lyrics" size="48" />
               <p>暂无歌词</p>
             </div>
-            <div class="lyrics-container">
+            <div v-else class="lyrics-container">
               <!-- 这里将集成 @applemusic-like-lyrics/core -->
               <div id="lyric-player-modal" class="lyric-player" ref="lyricsContainer"></div>
             </div>
@@ -502,7 +502,8 @@ watch(() => props.isVisible, async (visible) => {
     if (backgroundContainer.value) {
       await backgroundRenderer.initializeBackground(backgroundContainer.value)
       
-      if (coverBlurContainer.value) {
+      // 仅在需要封面模糊时设置元素
+      if (coverBlurContainer.value && backgroundConfig.value.type === 'cover') {
         backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
       }
       
