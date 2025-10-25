@@ -97,13 +97,12 @@ export const useAudioPlayerControl = () => {
 
         try {
             audioPlayer.value.pause()
-            audioPlayer.value.currentTime = 0
-            currentTime.value = 0
-            progress.value = 0
-            isPlaying.value = false
+            audioPlayer.value.removeAttribute('src');
+            audioPlayer.value.load();
 
             // 清理歌词状态
             lyrics.clearLyrics()
+            resetState()
 
             return true
         } catch (error) {
@@ -159,6 +158,7 @@ export const useAudioPlayerControl = () => {
     const loadSong = async (songUrlOrSong: string | any, retryCount: number = 0): Promise<boolean> => {
         if (!audioPlayer.value) return false
 
+        stop()
         isLoadingNewSong.value = true
         hasError.value = false
 

@@ -1,7 +1,7 @@
 <template>
   <div>
     <Transition name="overlay-animation">
-      <div v-if="song" class="player-overlay" @click="stopPlaying"></div>
+      <div v-if="song" class="player-overlay"></div>
     </Transition>
 
     <Transition name="player-animation">
@@ -516,6 +516,7 @@ const stopPlaying = () => {
 
   setTimeout(() => {
     emit('close')
+    isClosing.value = false
   }, 300)
 }
 
@@ -1153,7 +1154,7 @@ const formatTime = (seconds) => {
   right: 0.5rem;
   display: flex;
   gap: 0.5rem;
-  z-index: 10;
+  z-index: 1001;
 }
 
 .quality-selector {

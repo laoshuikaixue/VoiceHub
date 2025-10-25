@@ -177,6 +177,7 @@ onUnmounted(() => {
   backdrop-filter: blur(10px);
   color: white;
   flex-shrink: 0;
+  pointer-events: auto;
 }
 
 .close-player:hover {
