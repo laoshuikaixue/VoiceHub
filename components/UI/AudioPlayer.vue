@@ -334,6 +334,8 @@ const handleError = async (error) => {
 
 const handleEnded = () => {
   control.onEnded()
+  // 歌曲播放完成时关闭全屏歌词模态
+  showFullscreenLyrics.value = false
   emit('ended')
 }
 
