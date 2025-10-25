@@ -103,7 +103,9 @@
                 class="progress-bar"
                 ref="progressBar"
                 @click="handleProgressClick"
+                @mousedown="handleProgressMouseDown"
                 @touchstart="handleProgressTouchStart"
+                @touchmove="handleProgressTouchMove"
                 @touchend="handleProgressTouchEnd"
               >
                 <div 
@@ -396,10 +398,62 @@ const handleProgressTouchStart = (event) => {
   isDragging.value = true
   dragStartX.value = event.touches[0].clientX
   dragStartTime.value = currentTime.value
+  document.addEventListener('touchmove', handleProgressTouchMove, { passive: false })
 }
 
 const handleProgressTouchEnd = () => {
   isDragging.value = false
+  document.removeEventListener('touchmove', handleProgressTouchMove)
+}
+
+const calculateTimeFromClientX = (clientX) => {
+  if (!progressBar.value || duration.value === 0) return 0
+  const rect = progressBar.value.getBoundingClientRect()
+  const x = Math.min(Math.max(clientX - rect.left, 0), rect.width)
+  const percentage = x / rect.width
+  return Math.max(0, Math.min(percentage * duration.value, duration.value))
+}
+
+const seekToTime = (newTime) => {
+  const audioElements = document.querySelectorAll('audio')
+  for (const audio of audioElements) {
+    if (audio.src && (audio.currentTime > 0 || !audio.paused)) {
+      audio.currentTime = newTime
+      audioPlayer.setPosition(newTime)
+      lyricPlayer.seekTo(Math.floor(newTime * 1000))
+      break
+    }
+  }
+}
+
+const handleProgressMouseDown = (event) => {
+  isDragging.value = true
+  const newTime = calculateTimeFromClientX(event.clientX)
+  seekToTime(newTime)
+  document.addEventListener('mousemove', handleProgressMouseMove)
+  document.addEventListener('mouseup', handleProgressMouseUp)
+}
+
+const handleProgressMouseMove = (event) => {
+  if (!isDragging.value) return
+  const newTime = calculateTimeFromClientX(event.clientX)
+  seekToTime(newTime)
+}
+
+const handleProgressMouseUp = () => {
+  if (!isDragging.value) return
+  isDragging.value = false
+  document.removeEventListener('mousemove', handleProgressMouseMove)
+  document.removeEventListener('mouseup', handleProgressMouseUp)
+}
+
+const handleProgressTouchMove = (event) => {
+  if (!isDragging.value) return
+  if (event.touches && event.touches[0]) {
+    event.preventDefault()
+    const newTime = calculateTimeFromClientX(event.touches[0].clientX)
+    seekToTime(newTime)
+  }
 }
 
 // 音质选择
@@ -699,6 +753,9 @@ watch(() => props.isVisible, (visible) => {
 onUnmounted(() => {
   stopProgressTimer()
   document.removeEventListener('keydown', handleKeydown)
+  document.removeEventListener('mousemove', handleProgressMouseMove)
+  document.removeEventListener('mouseup', handleProgressMouseUp)
+  document.removeEventListener('touchmove', handleProgressTouchMove)
   document.body.style.overflow = ''
 })
 </script>
@@ -897,13 +954,14 @@ onUnmounted(() => {
 .playback-controls {
   position: relative;
   z-index: 1;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(14px);
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 1rem 2rem;
+  background: rgba(28, 28, 30, 0.45);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+  padding: 0.75rem 1rem;
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.25rem;
 }
 
 .control-buttons {
@@ -913,12 +971,12 @@ onUnmounted(() => {
 }
 
 .control-btn, .play-pause-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   border: none;
   border-radius: 50%;
   color: white;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -935,8 +993,8 @@ onUnmounted(() => {
 }
 
 .control-btn:hover, .play-pause-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.18);
+  transform: none;
 }
 
 .control-btn:disabled {
@@ -983,6 +1041,7 @@ onUnmounted(() => {
   border-radius: 50%;
   transform: translate(-50%, -50%);
   transition: left 0.1s ease;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 .quality-section {
@@ -1113,7 +1172,31 @@ onUnmounted(() => {
   
   .playback-controls {
     padding: 0.5rem 1rem;
-    gap: 1rem;
+    gap: 0.75rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "progress progress"
+      "controls controls";
+    align-items: center;
+  }
+  
+  .progress-section {
+    grid-area: progress;
+    width: 100%;
+  }
+  
+  .control-buttons {
+    grid-area: controls;
+    justify-content: center;
+    padding-right: clamp(56px, 8vw, 96px);
+  }
+  
+  .quality-section {
+    grid-row: 2;
+    grid-column: 2;
+    justify-self: end;
   }
   
   .control-btn {
@@ -1144,11 +1227,35 @@ onUnmounted(() => {
     right: 0;
     bottom: 0;
     z-index: 10;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(14px);
-    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(28, 28, 30, 0.45);
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    border-top: 1px solid rgba(255, 255, 255, 0.10);
     padding: 0.5rem 1rem;
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    gap: 0.75rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "progress progress"
+      "controls controls";
+    align-items: center;
+  }
+  
+  .progress-section {
+    grid-area: progress;
+    width: 100%;
+  }
+  
+  .control-buttons {
+    grid-area: controls;
+    justify-content: center;
+  }
+  
+  .quality-section {
+    grid-area: quality;
+    justify-self: end;
   }
   
   .quality-btn {
@@ -1166,6 +1273,10 @@ onUnmounted(() => {
   .progress-thumb {
     width: 20px;
     height: 20px;
+  }
+  
+  .progress-bar {
+    height: 6px;
   }
   
   .control-btn:active, .play-pause-btn:active, .quality-btn:active {
