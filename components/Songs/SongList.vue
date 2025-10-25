@@ -762,6 +762,20 @@ const togglePlaySong = async (song) => {
             const playlist = await buildPlayablePlaylist(song)
             const currentIndex = playlist.findIndex(item => item.id === song.id)
             audioPlayer.playSong(playableSong, playlist, currentIndex)
+            // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+            ;(async () => {
+              for (let i = currentIndex + 1; i < playlist.length; i++) {
+                const s = playlist[i]
+                if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
+                  try {
+                    s.musicUrl = await getMusicUrl(s.musicPlatform, s.musicId, s.playUrl)
+                  } catch (error) {
+                    console.warn(`后台预取失败: ${s.title}`, error)
+                    s.musicUrl = null
+                  }
+                }
+              }
+            })()
           } else {
             if (window.$showNotification) {
               window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
@@ -790,6 +804,21 @@ const togglePlaySong = async (song) => {
         const playlist = await buildPlayablePlaylist(song)
         const currentIndex = playlist.findIndex(item => item.id === song.id)
         audioPlayer.playSong(playableSong, playlist, currentIndex)
+
+        // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+        ;(async () => {
+          for (let i = currentIndex + 1; i < playlist.length; i++) {
+            const s = playlist[i]
+            if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
+              try {
+                s.musicUrl = await getMusicUrl(s.musicPlatform, s.musicId, s.playUrl)
+              } catch (error) {
+                console.warn(`后台预取失败: ${s.title}`, error)
+                s.musicUrl = null
+              }
+            }
+          }
+        })()
       } else {
         if (window.$showNotification) {
           window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')

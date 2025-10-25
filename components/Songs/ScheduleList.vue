@@ -635,34 +635,36 @@ const togglePlaySong = async (song) => {
         let songIndex = 0
 
         if (currentTimeSlot && currentTimeSlot.songs) {
-          // 为播放列表中的每首歌曲获取音乐URL（如果需要的话）
-          playlist = await Promise.all(currentTimeSlot.songs.map(async (s) => {
-            let musicUrl = s.musicUrl
-
-            // 如果歌曲没有musicUrl但有平台信息或playUrl，尝试获取
-            if (!musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
-              try {
-                musicUrl = await getMusicUrl(s.musicPlatform, s.musicId, s.playUrl)
-              } catch (error) {
-                console.warn(`无法获取歌曲 ${s.title} 的播放链接:`, error)
-                musicUrl = null
-              }
-            }
-
-            return {
-              id: s.id,
-              title: s.title,
-              artist: s.artist,
-              cover: s.cover,
-              musicUrl: musicUrl,
-              musicPlatform: s.musicPlatform,
-              musicId: s.musicId
-            }
+          // 构建播放列表但不阻塞当前播放，后续后台预取
+          playlist = currentTimeSlot.songs.map((s) => ({
+            id: s.id,
+            title: s.title,
+            artist: s.artist,
+            cover: s.cover,
+            musicUrl: s.musicUrl || null,
+            musicPlatform: s.musicPlatform,
+            musicId: s.musicId,
+            playUrl: s.playUrl || null
           }))
 
           // 找到当前歌曲在播放列表中的索引
           songIndex = playlist.findIndex((s) => s.id === song.id)
           if (songIndex === -1) songIndex = 0
+
+          // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+          ;(async () => {
+            for (let i = songIndex + 1; i < playlist.length; i++) {
+              const s = playlist[i]
+              if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
+                try {
+                  s.musicUrl = await getMusicUrl(s.musicPlatform, s.musicId, s.playUrl)
+                } catch (error) {
+                  console.warn(`后台预取失败: ${s.title}`, error)
+                  s.musicUrl = null
+                }
+              }
+            }
+          })()
         }
 
         const playableSong = {
