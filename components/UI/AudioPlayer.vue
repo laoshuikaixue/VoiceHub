@@ -98,6 +98,12 @@
         />
       </div>
     </Transition>
+
+    <!-- 全屏歌词模态 -->
+    <LyricsModal 
+      :is-visible="showFullscreenLyrics" 
+      @close="showFullscreenLyrics = false" 
+    />
   </div>
 </template>
 
@@ -105,6 +111,7 @@
 import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
 import LyricsDisplay from './LyricsDisplay.vue'
 import AppleMusicLyrics from './AppleMusicLyrics.vue'
+import LyricsModal from './LyricsModal.vue'
 import PlayerInfo from './AudioPlayer/PlayerInfo.vue'
 import PlayerControls from './AudioPlayer/PlayerControls.vue'
 import PlayerActions from './AudioPlayer/PlayerActions.vue'
@@ -147,6 +154,7 @@ const playerControlsRef = ref(null)
 // UI 状态
 const isClosing = ref(false)
 const showLyrics = ref(false)
+const showFullscreenLyrics = ref(false)
 const useAppleMusicStyle = ref(true) // 默认使用Apple Music风格
 
 // 同步标记，避免双向触发
@@ -492,11 +500,8 @@ const selectQuality = async (qualityValue) => {
 
 // 歌词相关方法
 const toggleLyrics = () => {
-  // 跳转到全屏歌词页面，传递当前页面作为来源
-  router.push({
-    path: '/lyrics-fullscreen',
-    query: { from: router.currentRoute.value.path }
-  })
+  // 显示全屏歌词模态而不是跳转页面
+  showFullscreenLyrics.value = true
 }
 
 const handleLyricSeek = async (time) => {
