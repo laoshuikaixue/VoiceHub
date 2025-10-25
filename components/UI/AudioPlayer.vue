@@ -519,7 +519,7 @@ const handleLyricSeek = async (time) => {
     await control.play()
   }
   
-  // 跳转到指定时间
+  // 跳转到指定时间 - seek 方法内部会处理歌词动画的中断
   control.seek(time)
   sync.updateGlobalPosition(time, control.duration.value)
 }

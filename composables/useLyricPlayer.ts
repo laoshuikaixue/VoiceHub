@@ -239,7 +239,26 @@ export const useLyricPlayer = () => {
     try {
       // 确保时间是整数毫秒，符合 AMLL 要求，并标记为 seek 操作
       const timeInMs = Math.floor(time)
+      
+      // 强制中断当前动画 - 先暂停播放状态
+      const wasPlaying = isPlaying.value
+      if (lyricPlayer.value.pause) {
+        lyricPlayer.value.pause()
+      }
+      
+      // 立即跳转到目标时间，第二个参数 true 表示这是一个 seek 操作
       lyricPlayer.value.setCurrentTime(timeInMs, true)
+      
+      // 如果之前是播放状态，恢复播放状态
+      if (wasPlaying && lyricPlayer.value.resume) {
+        // 使用短暂延迟确保时间跳转完成后再恢复播放状态
+        setTimeout(() => {
+          if (lyricPlayer.value && lyricPlayer.value.resume) {
+            lyricPlayer.value.resume()
+          }
+        }, 50) // 50ms 延迟确保跳转完成
+      }
+      
       currentTime.value = time
       console.log('[useLyricPlayer] 跳转到时间:', timeInMs, 'ms')
     } catch (error) {

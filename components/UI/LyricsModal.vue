@@ -347,6 +347,11 @@ const nextSong = () => {
 
 // 点击歌词行时跳转到对应进度
 const handleLyricLineSeek = async (seconds) => {
+  // 先强制停止歌词播放器的动画状态
+  if (lyricPlayer.pause) {
+    lyricPlayer.pause()
+  }
+  
   if (!isPlaying.value) {
     await togglePlayPause()
   }
@@ -358,7 +363,11 @@ const handleLyricLineSeek = async (seconds) => {
       break
     }
   }
+  
+  // 更新音频播放器位置
   audioPlayer.setPosition(seconds)
+  
+  // 跳转歌词播放器时间（seekTo 方法内部已经处理了动画中断）
   lyricPlayer.seekTo(Math.floor(seconds * 1000))
 }
 
