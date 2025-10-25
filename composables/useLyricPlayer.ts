@@ -1,4 +1,4 @@
-import { ref, computed, onUnmounted, watch } from 'vue'
+import {computed, onUnmounted, ref, watch} from 'vue'
 
 export interface LyricRenderConfig {
   fontSize: number

@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, nextTick, onMounted } from 'vue'
+import {nextTick, ref, watch} from 'vue'
 
 const props = defineProps({
   // 歌词数据

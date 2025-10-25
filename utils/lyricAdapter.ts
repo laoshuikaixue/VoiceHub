@@ -3,7 +3,7 @@
  * 将现有的歌词数据格式转换为 WordByWordLyrics 组件所需的 AMLL 格式
  */
 
-import type { LyricLine as ExistingLyricLine } from '~/composables/useLyrics'
+import type {LyricLine as ExistingLyricLine} from '~/composables/useLyrics'
 
 // AMLL 格式的接口定义
 export interface LyricWord {

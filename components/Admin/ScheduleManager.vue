@@ -3508,7 +3508,7 @@ onMounted(() => {
   transform: translateY(-1px);
 }
 
-/* 新增的按钮样式 */
+/* 按钮样式 */
 .draft-btn {
   background: #fbbf24;
   color: #1a1a1a;

@@ -155,7 +155,6 @@ const handleTimeUpdate = () => {
   const currentTime = audioPlayer.value.currentTime
   const duration = audioPlayer.value.duration
 
-  // 修复参数传递问题：onTimeUpdate只接受一个参数
   control.onTimeUpdate(currentTime)
 
   // 只在播放状态下发送进度更新，避免暂停时发送位置为0的更新
@@ -1274,7 +1273,7 @@ const formatTime = (seconds) => {
   transform: scaleY(1) translateY(0);
 }
 
-/* 修复关闭按钮动画 */
+/* 关闭按钮动画 */
 .close-player {
   background: rgba(255, 255, 255, 0.1);
   border: none;

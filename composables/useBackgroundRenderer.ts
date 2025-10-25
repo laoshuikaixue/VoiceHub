@@ -1,6 +1,6 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import {computed, onUnmounted, ref} from 'vue'
 // 动态仅客户端加载 AMLL 核心与样式（类型导入不会影响 SSR）
-import type { BackgroundRender, MeshGradientRenderer, PixiRenderer } from '@applemusic-like-lyrics/core'
+import type {BackgroundRender, MeshGradientRenderer, PixiRenderer} from '@applemusic-like-lyrics/core'
 
 // 在客户端按需加载核心与样式
 const isClient = typeof window !== 'undefined'

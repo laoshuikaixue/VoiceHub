@@ -1430,7 +1430,7 @@ const vRipple = {
     gap: 0.75rem;
   }
 
-  /* 修复歌曲卡片布局 */
+  /* 歌曲卡片布局 */
   .song-card-main {
     height: auto;
     min-height: 70px;

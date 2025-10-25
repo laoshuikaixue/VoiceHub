@@ -151,15 +151,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useAudioPlayer } from '~/composables/useAudioPlayer'
-import { useLyrics } from '~/composables/useLyrics'
-import { useLyricPlayer } from '~/composables/useLyricPlayer'
-import { useBackgroundRenderer } from '~/composables/useBackgroundRenderer'
-import { convertToAmllFormat } from '~/utils/lyricAdapter'
+import {computed, nextTick, onUnmounted, ref, watch} from 'vue'
+import {useAudioPlayer} from '~/composables/useAudioPlayer'
+import {useLyrics} from '~/composables/useLyrics'
+import {useLyricPlayer} from '~/composables/useLyricPlayer'
+import {useBackgroundRenderer} from '~/composables/useBackgroundRenderer'
+import {convertToAmllFormat} from '~/utils/lyricAdapter'
 import Icon from '~/components/UI/Icon.vue'
-import { useAudioQuality } from '~/composables/useAudioQuality'
-import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
+import {useAudioQuality} from '~/composables/useAudioQuality'
+import {useAudioPlayerEnhanced} from '~/composables/useAudioPlayerEnhanced'
 
 const props = defineProps({
   isVisible: {
