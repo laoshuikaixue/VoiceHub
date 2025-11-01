@@ -71,22 +71,20 @@ watch(() => audioPlayer.getCurrentSong().value, (newSong) => {
 
 // 处理播放器关闭事件
 const handlePlayerClose = () => {
-  // 先停止播放
-  audioPlayer.stopSong()
-  // 延迟隐藏播放器，让动画有时间执行
+  // 延迟隐藏播放器，与AudioPlayer组件的动画时长同步
   setTimeout(() => {
     isPlayerVisible.value = false
-  }, 400) // 略大于动画持续时间
+  }, 500)
 }
 
 // 处理播放结束事件
 const handlePlayerEnded = () => {
   // 播放完成后直接停止播放器
   audioPlayer.stopSong()
-  // 延迟隐藏播放器，让动画有时间执行
+  // 延迟隐藏播放器
   setTimeout(() => {
     isPlayerVisible.value = false
-  }, 400) // 略大于动画持续时间
+  }, 500)
 }
 
 // 使用onMounted确保只在客户端初始化认证

@@ -1,27 +1,27 @@
 <template>
   <div>
     <Transition name="overlay-animation">
-      <div v-if="song" class="player-overlay"></div>
+      <div v-show="visible" class="player-overlay"></div>
     </Transition>
 
     <Transition name="player-animation">
-      <div v-if="song" class="music-widget">
+      <div v-show="visible" class="music-widget">
         <!-- 标题区域 -->
         <div class="title">
           <!-- 封面 -->
           <div class="cover-container">
-            <template v-if="song.cover && !coverError">
-              <img :src="convertToHttps(song.cover)" alt="封面" class="album-cover" @error="handleImageError"/>
+            <template v-if="activeSong && activeSong.cover && !coverError">
+              <img :src="convertToHttps(activeSong.cover)" alt="封面" class="album-cover" @error="handleImageError"/>
             </template>
             <div v-else class="text-cover">
-              {{ getFirstChar(song.title || '') }}
+              {{ getFirstChar(activeSong?.title || '') }}
             </div>
           </div>
 
           <!-- 歌曲信息 -->
           <div class="song-info">
-            <p class="song-title">{{ song.title || '未知歌曲' }}</p>
-            <p class="song-artist">{{ song.artist || '未知艺术家' }}</p>
+            <p class="song-title">{{ activeSong?.title || '未知歌曲' }}</p>
+            <p class="song-artist">{{ activeSong?.artist || '未知艺术家' }}</p>
           </div>
 
           <!-- 右上角关闭按钮 -->
@@ -54,7 +54,13 @@
               <div class="audio-quality" @click="toggleQualitySettings" title="音质设置">
                 <span>{{ currentQualityText }}</span>
               </div>
-              <span class="remaining-time">-{{ formatTime(control.duration.value - control.currentTime.value) }}</span>
+              <span 
+                class="remaining-time clickable-time" 
+                @click="toggleTimeDisplayMode" 
+                :title="timeDisplayMode === 'remaining' ? '点击显示总时长' : '点击显示剩余时长'"
+              >
+                {{ rightTimeText }}
+              </span>
             </div>
           </div>
 
@@ -212,11 +218,15 @@ const playerControlsRef = ref(null)
 
 // UI 状态
 const isClosing = ref(false)
+const isClosed = ref(false)
 const showLyrics = ref(false)
 const showFullscreenLyrics = ref(false)
 const showQualitySettings = ref(false)
 const coverError = ref(false)
 const useAppleMusicStyle = ref(true) // 默认使用Apple Music风格
+
+// 时长显示模式：'remaining' 显示剩余时长，'total' 显示总时长
+const timeDisplayMode = ref('remaining')
 
 // 同步标记，避免双向触发
 const isSyncingFromGlobal = ref(false)
@@ -225,6 +235,22 @@ const isMounted = ref(false)
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
 const progressBar = computed(() => playerControlsRef.value?.progressBar)
+
+// 记录最近一首歌曲，避免关闭过程中props.song为空导致渲染错误
+const lastSong = ref(null)
+watch(() => props.song, (newSong) => {
+  if (newSong) {
+    lastSong.value = newSong
+    // 新歌到来时视为重新打开，清除关闭标记
+    isClosed.value = false
+  }
+})
+
+// 渲染用的安全歌曲对象：优先使用当前歌曲，其次使用最后一首
+const activeSong = computed(() => props.song ?? lastSong.value)
+
+// 控制可见性：父级仍传入歌曲且未处于关闭或已关闭状态
+const visible = computed(() => !!props.song && !isClosing.value && !isClosed.value)
 
 // 音频事件处理器
 const handleTimeUpdate = () => {
@@ -522,9 +548,46 @@ const isCurrentQuality = (qualityValue) => {
   return getQuality(props.song.musicPlatform) === qualityValue
 }
 
+// 切换时长显示模式
+const toggleTimeDisplayMode = () => {
+  timeDisplayMode.value = timeDisplayMode.value === 'remaining' ? 'total' : 'remaining'
+}
+
+// 计算右侧时间显示文本
+const rightTimeText = computed(() => {
+  if (timeDisplayMode.value === 'total') {
+    return formatTime(control.duration.value)
+  } else {
+    return `-${formatTime(control.duration.value - control.currentTime.value)}`
+  }
+})
+
 // 切换音质设置显示
 const toggleQualitySettings = () => {
   showQualitySettings.value = !showQualitySettings.value
+}
+
+// 关闭音质设置
+const closeQualitySettings = () => {
+  showQualitySettings.value = false
+}
+
+// 处理点击外部区域关闭音质设置
+const handleClickOutside = (event) => {
+  if (!showQualitySettings.value) return
+  
+  // 检查点击是否在音质设置区域内
+  const qualityDropdown = document.querySelector('.quality-dropdown')
+  const qualityButton = document.querySelector('.audio-quality')
+  
+  if (qualityDropdown && qualityButton) {
+    const isClickInsideDropdown = qualityDropdown.contains(event.target)
+    const isClickOnButton = qualityButton.contains(event.target)
+    
+    if (!isClickInsideDropdown && !isClickOnButton) {
+      closeQualitySettings()
+    }
+  }
 }
 
 // 选择音质
@@ -603,16 +666,24 @@ const handleLyricSeek = async (time) => {
 const stopPlaying = () => {
   if (isClosing.value) return
 
-  isClosing.value = true
+  // 立即停止音频播放和同步状态，确保用户点击关闭时音乐立即停止
   control.stop()
-  // 同步关闭全屏歌词模态
-  showFullscreenLyrics.value = false
   sync.syncStopToGlobal()
-
+  
+  // 设置关闭状态
+  isClosing.value = true
+  
+  // 同步关闭全屏歌词模态和音质设置
+  showFullscreenLyrics.value = false
+  showQualitySettings.value = false
+  
+  // 等待关闭动画完成后再触发 close 事件
   setTimeout(() => {
+    // 标记已关闭，防止父级延迟隐藏期间闪回
+    isClosed.value = true
     emit('close')
     isClosing.value = false
-  }, 300)
+  }, 500) // 匹配 leave-active 动画时长
 }
 
 // 监听器和生命周期钩子
@@ -825,6 +896,9 @@ onMounted(async () => {
       isPlaying: () => control.isPlaying.value
     }
   }
+
+  // 添加点击外部区域关闭音质设置的事件监听器
+  document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
@@ -841,6 +915,9 @@ onUnmounted(() => {
 
   // 重置重试状态
   enhanced.resetRetryState()
+
+  // 移除点击外部区域的事件监听器
+  document.removeEventListener('click', handleClickOutside)
 })
 
 
@@ -929,11 +1006,11 @@ const getFirstChar = (text) => {
 
 /* 背景遮罩动画 */
 .overlay-animation-enter-active {
-  transition: opacity 0.4s ease;
+  transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .overlay-animation-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.5s cubic-bezier(0.4, 0.0, 0.6, 1);
 }
 
 .overlay-animation-enter-from,
@@ -941,40 +1018,33 @@ const getFirstChar = (text) => {
   opacity: 0;
 }
 
-/* iOS 风格播放器动画 */
-.player-animation-enter-active {
-  animation: ios-slide-up 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+/* 播放器进入/退出动画（基于 Transition 类） */
+.player-animation-enter-active,
+.player-animation-leave-active {
+  transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.6, 1),
+              opacity 0.5s cubic-bezier(0.4, 0.0, 0.6, 1);
+  will-change: transform, opacity;
   transform-origin: center bottom;
 }
 
-.player-animation-leave-active {
-  animation: ios-slide-down 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+.player-animation-enter-from {
+  transform: translateX(-50%) translateY(100%) scale(0.98);
+  opacity: 0;
 }
 
-@keyframes ios-slide-up {
-  0% {
-    transform: translate(-50%, 100%) scale(0.95);
-    opacity: 0;
-  }
-  60% {
-    transform: translate(-50%, -2%) scale(1.01);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(-50%, 0) scale(1);
-    opacity: 1;
-  }
+.player-animation-enter-to {
+  transform: translateX(-50%) translateY(0) scale(1);
+  opacity: 1;
 }
 
-@keyframes ios-slide-down {
-  0% {
-    transform: translate(-50%, 0) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, 100%) scale(0.95);
-    opacity: 0;
-  }
+.player-animation-leave-from {
+  transform: translateX(-50%) translateY(0) scale(1);
+  opacity: 1;
+}
+
+.player-animation-leave-to {
+  transform: translateX(-50%) translateY(100%) scale(0.98);
+  opacity: 0;
 }
 
 /* 时间区域 - 基于 Figma 设计 */
@@ -1261,6 +1331,22 @@ const getFirstChar = (text) => {
 
 .remaining-time {
   text-align: right;
+}
+
+/* 可点击时间样式 */
+.clickable-time {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.clickable-time:hover {
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.clickable-time:active {
+  transform: scale(0.95);
 }
 
 .audio-quality-badge {
@@ -1741,11 +1827,11 @@ const getFirstChar = (text) => {
 
 /* 音质下拉动画 - 向上弹出优化 */
 .quality-dropdown-enter-active {
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: all 0.5s cubic-bezier(0.4, 0.0, 0.6, 1);
 }
 
 .quality-dropdown-leave-active {
-  transition: all 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  transition: all 0.5s cubic-bezier(0.4, 0.0, 0.6, 1);
 }
 
 .quality-dropdown-enter-from,
