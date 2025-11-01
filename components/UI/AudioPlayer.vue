@@ -975,23 +975,21 @@ const getFirstChar = (text) => {
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  border: 1px solid #1a1a1a;
   border-radius: 7px;
-  background: #4a4a4a63;
+  background: rgba(74, 74, 74, 0.39);
   height: 7px;
   width: 100%;
   max-width: 376px;
   align-self: stretch;
   overflow: hidden;
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
   cursor: pointer;
   position: relative;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(30px) saturate(1.5) brightness(1.2);
+  -webkit-backdrop-filter: blur(30px) saturate(1.5) brightness(1.2);
 }
 
 .progress-fill {
-  background: linear-gradient(90deg, #ffffffb3 0%, #ffffff99 50%, #ffffffb3 100%);
+  background: rgba(255, 255, 255, 0.7);
   height: 100%;
   transition: width 0.1s linear;
   border-radius: 6px;
@@ -1424,6 +1422,10 @@ const getFirstChar = (text) => {
     width: calc(100% - 8px);
   }
   
+  .time {
+    width: calc(100% - 8px);
+  }
+  
   .control-buttons {
     min-width: auto;
     width: calc(100% - 8px);
@@ -1439,6 +1441,10 @@ const getFirstChar = (text) => {
   .music-widget {
     width: calc(100% - 2rem);
     padding: 8px 6px 8px 10px;
+  }
+  
+  .time {
+    width: calc(100% - 4px);
   }
   
   .song-title {
