@@ -96,9 +96,11 @@
 }
 
 .lyricMainLine {
-	transition: opacity 0.3s 0.1s;
-	margin: -1em;
-	padding: 1em;
+  transition: opacity 0.3s 0.1s;
+  margin: -1em;
+  padding: 1em;
+  /* 为主歌词行增加文字阴影，以提升亮色背景下的可读性 */
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 0, 0, 0.5);
 
 	& span {
 		display: inline-block;
@@ -134,10 +136,12 @@
 }
 
 .lyricSubLine {
-	font-size: max(0.5em, 10px);
-	line-height: 1.5em;
-	transition: opacity 0.2s 0.25s;
-	opacity: 0.3;
+  font-size: max(0.5em, 10px);
+  line-height: 1.5em;
+  transition: opacity 0.2s 0.25s;
+  opacity: 0.3;
+  /* 为副歌词行增加轻度文字阴影，避免白字贴白背景 */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .disableSpring>* {

@@ -23,6 +23,8 @@
               :style="{ backgroundImage: `url(${currentSong.cover})` }"
             >
             </div>
+            <!-- 叠加暗化层，提升白色背景下歌词对比度 -->
+            <div class="background-overlay"></div>
           </div>
 
           <!-- 关闭按钮 -->
@@ -848,9 +850,25 @@ onUnmounted(() => {
   height: 100%;
   background-size: cover;
   background-position: center;
-  filter: blur(40px) brightness(0.6) saturate(1.05);
+  filter: blur(40px) brightness(0.55) saturate(1.08);
   transform: scale(1.1);
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 背景暗化叠层，确保在亮色封面下歌词具有足够对比度 */
+.background-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* 双层叠加：径向渐变集中暗化 + 全局轻度暗化 */
+  background:
+    radial-gradient(ellipse at center,
+      rgba(0, 0, 0, 0.35) 0%,
+      rgba(0, 0, 0, 0.5) 60%,
+      rgba(0, 0, 0, 0.6) 100%
+    ),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.28));
+  z-index: 1;
 }
 
 .song-info {
