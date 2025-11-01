@@ -439,7 +439,6 @@ VoiceHub/
 │   └── UI/                # 通用UI组件
 │       ├── AudioPlayer/   # 音频播放器组件模块
 │       │   ├── AudioElement.vue   # 音频元素组件
-│       │   ├── PlayerActions.vue  # 播放器操作组件
 │       │   ├── PlayerControls.vue # 播放器控制组件
 │       │   └── PlayerInfo.vue     # 播放器信息组件
 │       ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件

@@ -11,6 +11,7 @@ export default defineNuxtConfig({
     '~/assets/css/transitions.css',
     '~/assets/css/mobile-admin.css',
     '~/assets/css/print-fix.css',
+    '~/assets/css/sf-pro-icons.css',
   ],
   
   // 配置运行时配置

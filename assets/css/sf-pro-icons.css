@@ -1,0 +1,25 @@
+/* SF Pro 字体导入 */
+@import url('https://cdn.jsdelivr.net/npm/sf-font@1.0.0/stylesheet.min.css');
+
+/* SF Symbols 图标类 */
+.sf-symbol {
+  font-family: 'SF Pro Icons', 'SF Symbols', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 500;
+  font-style: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.sf-symbol.semibold {
+  font-weight: 600;
+}
+
+/* SF Pro 文本类 */
+.sf-pro {
+  font-family: 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
