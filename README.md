@@ -462,6 +462,7 @@ VoiceHub/
 │   ├── useErrorHandler.ts  # 错误处理hooks
 │   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
 │   ├── useLyrics.ts        # 歌词功能hooks
+│   ├── useMediaSession.ts  # 媒体会话API hooks（浏览器SMTC支持）
 │   ├── useMusicSources.ts  # 音乐源管理hooks
 │   ├── useMusicWebSocket.ts # 音乐WebSocket hooks
 │   ├── useNotifications.ts # 通知功能hooks

@@ -185,6 +185,7 @@ import {useAudioPlayerControl} from '~/composables/useAudioPlayerControl'
 import {useAudioPlayerSync} from '~/composables/useAudioPlayerSync'
 import {useAudioQuality} from '~/composables/useAudioQuality'
 import {useAudioPlayerEnhanced} from '~/composables/useAudioPlayerEnhanced'
+import {useMediaSession} from '~/composables/useMediaSession'
 
 // 添加 router 导入
 const router = useRouter()
@@ -211,6 +212,7 @@ const control = useAudioPlayerControl()
 const sync = useAudioPlayerSync()
 const {getQualityLabel, getQuality, getQualityOptions, saveQuality} = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
+const mediaSession = useMediaSession()
 
 // 组件引用
 const audioElementRef = ref(null)
@@ -261,6 +263,11 @@ const handleTimeUpdate = () => {
 
   control.onTimeUpdate(currentTime)
 
+  // 更新 Media Session 位置状态
+  if (mediaSession.isSupported.value && duration > 0) {
+    mediaSession.updatePosition(currentTime, duration, control.isPlaying.value ? 1 : 0)
+  }
+
   // 只在播放状态下发送进度更新，避免暂停时发送位置为0的更新
   // 不传递song参数，避免覆盖已设置的元数据
   if (control.isPlaying.value) {
@@ -273,6 +280,11 @@ const handlePlay = () => {
 
   control.onPlay()
   sync.syncPlayStateToGlobal(true, props.song)
+
+  // 更新 Media Session 播放状态
+  if (mediaSession.isSupported.value) {
+    mediaSession.updatePlaybackState(true)
+  }
 
   // 直接调用鸿蒙侧播放状态更新，不传递歌曲信息避免覆盖元数据
   if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
@@ -298,6 +310,11 @@ const handlePause = () => {
   control.onPause()
   sync.syncPlayStateToGlobal(false, props.song)
 
+  // 更新 Media Session 播放状态
+  if (mediaSession.isSupported.value) {
+    mediaSession.updatePlaybackState(false)
+  }
+
   // 直接调用鸿蒙侧播放状态更新，不传递歌曲信息避免覆盖元数据
   if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
     window.voiceHubPlayer.onPlayStateChanged(false, {
@@ -320,6 +337,17 @@ const handleLoaded = async () => {
   if (!audioPlayer.value) return
 
   control.onLoaded(audioPlayer.value.duration)
+
+  // 更新 Media Session 元数据
+  if (mediaSession.isSupported.value && props.song) {
+    mediaSession.updateSong({
+      id: props.song.id,
+      title: props.song.title || '未知歌曲',
+      artist: props.song.artist || '未知艺术家',
+      cover: props.song.cover || null,
+      musicUrl: props.song.musicUrl || null
+    })
+  }
 
   // 先传递基本的歌曲元数据给鸿蒙侧（不包含歌词）
   sync.notifyHarmonyOS('metadata', {
@@ -884,6 +912,46 @@ onMounted(async () => {
     }
   })
 
+  // 初始化 Media Session API (SMTC支持)
+  if (mediaSession.isSupported.value) {
+    mediaSession.initialize(props.song, {
+      onPlay: async () => {
+        await control.play()
+      },
+      onPause: () => {
+        control.pause()
+      },
+      onStop: () => {
+        control.stop()
+        sync.syncStopToGlobal()
+      },
+      onPreviousTrack: () => {
+        handlePrevious()
+      },
+      onNextTrack: () => {
+        handleNext()
+      },
+      onSeekTo: (details) => {
+        if (details.seekTime !== undefined) {
+          control.seek(details.seekTime)
+          sync.updateGlobalPosition(details.seekTime, control.duration.value)
+        }
+      },
+      onSeekBackward: (details) => {
+        const seekOffset = details.seekOffset || 10 // 默认后退10秒
+        const newTime = Math.max(0, control.currentTime.value - seekOffset)
+        control.seek(newTime)
+        sync.updateGlobalPosition(newTime, control.duration.value)
+      },
+      onSeekForward: (details) => {
+        const seekOffset = details.seekOffset || 10 // 默认前进10秒
+        const newTime = Math.min(control.duration.value, control.currentTime.value + seekOffset)
+        control.seek(newTime)
+        sync.updateGlobalPosition(newTime, control.duration.value)
+      }
+    })
+  }
+
   // 暴露播放器实例到全局（鸿蒙环境）
   if (sync.isHarmonyOS()) {
     window.voiceHubPlayerInstance = {
@@ -904,6 +972,11 @@ onMounted(async () => {
 onUnmounted(() => {
   // 清理音频播放器
   control.cleanup()
+
+  // 清理 Media Session
+  if (mediaSession.isSupported.value) {
+    mediaSession.cleanup()
+  }
 
   // 清理鸿蒙系统控制事件
   sync.cleanupHarmonyOSControls()
