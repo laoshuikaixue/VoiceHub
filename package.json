@@ -60,5 +60,9 @@
   "devDependencies": {
     "tsx": "^4.20.5",
     "vite-plugin-wasm": "^3.5.0"
+  },
+  "engines": {
+    "node": ">=18.20.0",
+    "npm": ">=8.0.0"
   }
 }

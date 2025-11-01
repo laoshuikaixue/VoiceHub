@@ -33,7 +33,7 @@ jobs:
       - name: 设置 Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: 安装依赖
@@ -158,7 +158,7 @@ jobs:
             
             - 触发时间: ${{ steps.update-info.outputs.date }}
             - 工作流: dependency-update.yml
-            - Node.js 版本: 18
+            - Node.js 版本: 20
             
             <details>
             <summary>📋 详细更新信息（点击展开）</summary>
