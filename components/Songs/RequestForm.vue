@@ -903,7 +903,7 @@ const getAudioUrl = async (result) => {
             const quality = getQuality(platform.value)
             const songId = result.musicId || result.id
 
-            const urlResult = await musicSources.getSongUrl(songId, quality)
+            const urlResult = await musicSources.getSongUrl(songId, quality, platform.value)
             console.log('网易云备用源返回结果:', urlResult)
 
             if (urlResult && urlResult.success && urlResult.url) {
@@ -928,9 +928,9 @@ const getAudioUrl = async (result) => {
       const quality = getQuality(platform.value)
       const songId = result.musicId || result.id
 
-      console.log('调用getSongUrl，参数:', {songId, quality})
+      console.log('调用getSongUrl，参数:', {songId, quality, platform: platform.value})
       try {
-        const urlResult = await musicSources.getSongUrl(songId, quality)
+        const urlResult = await musicSources.getSongUrl(songId, quality, platform.value)
         console.log('getSongUrl返回结果:', urlResult)
 
         if (urlResult && urlResult.success && urlResult.url) {

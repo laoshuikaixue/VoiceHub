@@ -27,16 +27,14 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
     try {
         const quality = getQuality(platform)
 
-        // 先使用统一组件的 NeteaseCloudMusicApi（仅网易云）
-        if (platform === 'netease') {
-            console.log(`[getMusicUrl] 先使用 NeteaseCloudMusicApi 获取播放链接: ${musicId}`)
-            const backupResult = await getSongUrl(Number(musicId), quality)
-            if (backupResult.success && backupResult.url) {
-                console.log(`[getMusicUrl] NeteaseCloudMusicApi 成功获取播放链接`)
-                return backupResult.url
-            }
-            console.warn(`[getMusicUrl] 备用源未返回有效链接，回退到 vkeys`)
+        // 先使用统一组件的音源选择逻辑
+        console.log(`[getMusicUrl] 使用统一音源选择逻辑获取播放链接: platform=${platform}, musicId=${musicId}`)
+        const backupResult = await getSongUrl(Number(musicId), quality, platform)
+        if (backupResult.success && backupResult.url) {
+            console.log(`[getMusicUrl] 统一音源选择成功获取播放链接`)
+            return backupResult.url
         }
+        console.warn(`[getMusicUrl] 统一音源选择未返回有效链接，回退到直接调用 vkeys`)
 
         // 回退到 vkeys
         let apiUrl: string
