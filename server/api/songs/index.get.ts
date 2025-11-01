@@ -173,15 +173,21 @@ export default defineEventHandler(async (event) => {
             songVotes.get(vote.songId).push(vote.userId)
         })
 
-        // 获取每首歌的排期状态
+        // 获取每首歌的排期状态和日期
         // 只查询已发布的排期，草稿不算作已排期
         const schedulesQuery = await db.select({
-            songId: schedules.songId
+            songId: schedules.songId,
+            playDate: schedules.playDate,
+            played: schedules.played
         })
             .from(schedules)
             .where(eq(schedules.isDraft, false))
 
         const scheduledSongs = new Set(schedulesQuery.map(s => s.songId))
+        const scheduleInfo = new Map(schedulesQuery.map(s => [s.songId, {
+            playDate: s.playDate,
+            played: s.played
+        }]))
 
         // 获取期望播放时段信息
         const playTimesQuery = await db.select()
@@ -255,6 +261,13 @@ export default defineEventHandler(async (event) => {
                 musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
                 musicId: song.musicId || null, // 添加音乐ID字段
                 playUrl: song.playUrl || null // 添加播放地址字段
+            }
+
+            // 添加排期信息
+            const scheduleData = scheduleInfo.get(song.id)
+            if (scheduleData) {
+                songObject.scheduleDate = formatDateTime(scheduleData.playDate) // 排期日期
+                songObject.schedulePlayed = scheduleData.played // 排期中的播放状态
             }
 
             // 如果用户已登录，添加投票状态

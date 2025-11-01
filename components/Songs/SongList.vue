@@ -131,8 +131,20 @@
               <div class="song-info">
                 <h3 :title="song.title + ' - ' + song.artist" class="song-title">
                   <marquee-text :activated="isSongFocused(song.id)" :text="`${song.title} - ${song.artist}`"/>
-                  <span v-if="song.played" class="played-tag">已播放</span>
-                  <span v-else-if="song.scheduled" class="scheduled-tag">已排期</span>
+                  <span 
+                    v-if="song.played" 
+                    class="played-tag"
+                    :title="song.scheduleDate ? `播放日期：${formatScheduleDate(song.scheduleDate)}` : '已播放'"
+                  >
+                    已播放
+                  </span>
+                  <span 
+                    v-else-if="song.scheduled" 
+                    class="scheduled-tag"
+                    :title="song.scheduleDate ? `排期日期：${formatScheduleDate(song.scheduleDate)}` : '已排期'"
+                  >
+                    已排期
+                  </span>
                 </h3>
                 <div class="song-meta">
                   <span class="requester">投稿人：{{ song.requester }}</span>
@@ -341,6 +353,7 @@ const showSemesterDropdown = ref(false)
 
 // 获取完整歌曲数据源
 const songsComposable = useSongs()
+const { playTimeEnabled } = useSongs()
 const allSongsData = computed(() => songsComposable?.visibleSongs?.value || [])
 
 // 音频播放相关
@@ -491,6 +504,17 @@ const formatDateTime = (dateString) => {
   const hours = date.getHours().toString().padStart(2, '0')
   const minutes = date.getMinutes().toString().padStart(2, '0')
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${hours}:${minutes}`
+}
+
+// 根据播出时段功能开启状态格式化排期日期
+const formatScheduleDate = (dateString) => {
+  if (!dateString) return ''
+  // 如果播出时段功能开启，显示完整的日期时间
+  if (playTimeEnabled.value) {
+    return formatDateTime(dateString)
+  }
+  // 如果播出时段功能未开启，只显示日期
+  return formatDate(dateString)
 }
 
 // 判断是否是自己投稿的歌曲

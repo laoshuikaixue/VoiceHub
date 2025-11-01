@@ -29,6 +29,9 @@ export interface Song {
     playUrl?: string | null      // 播放地址URL
     createdAt: string
     voted?: boolean
+    scheduled?: boolean          // 是否已排期
+    scheduleDate?: string        // 排期日期
+    schedulePlayed?: boolean     // 排期中的播放状态
 }
 
 export interface Schedule {
