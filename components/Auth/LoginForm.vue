@@ -5,7 +5,7 @@
       <p>登录您的VoiceHub账户</p>
     </div>
 
-    <form class="auth-form" @submit.prevent="handleLogin">
+    <form :class="['auth-form', { 'has-error': !!error } ]" @submit.prevent="handleLogin">
       <div class="form-group">
         <label for="username">账号名</label>
         <div class="input-wrapper">
@@ -136,6 +136,12 @@ const handleLogin = async () => {
 .login-form {
   width: 100%;
   max-width: 400px;
+  animation: fadeInUp 0.4s ease both;
+}
+
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .form-header {
@@ -145,14 +151,14 @@ const handleLogin = async () => {
 
 .form-header h2 {
   font-size: 28px;
-  font-weight: 700;
-  color: #ffffff;
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
 .form-header p {
   font-size: 16px;
-  color: #888888;
+  color: var(--text-tertiary);
   margin: 0;
 }
 
@@ -170,8 +176,8 @@ const handleLogin = async () => {
 
 .form-group label {
   font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
 }
 
 .input-wrapper {
@@ -180,44 +186,67 @@ const handleLogin = async () => {
   align-items: center;
 }
 
+.input-wrapper::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 8px;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 2px;
+  opacity: 0;
+  transform: scaleX(0.2);
+  transition: transform var(--transition-normal), opacity var(--transition-normal);
+}
+
+.input-wrapper:focus-within::after {
+  opacity: 0.35;
+  transform: scaleX(1);
+}
+
 .input-icon {
   position: absolute;
   left: 16px;
   width: 20px;
   height: 20px;
-  color: #666666;
+  color: var(--text-quaternary);
   z-index: 1;
 }
 
 .input-wrapper input {
   width: 100%;
   padding: 16px 16px 16px 48px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  color: #ffffff;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-lg);
+  color: var(--input-text);
   font-size: 16px;
-  transition: all 0.2s ease;
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
 }
 
 .input-wrapper input::placeholder {
-  color: #666666;
+  color: var(--input-placeholder);
 }
 
 .input-wrapper input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
 }
 
 .input-wrapper input:focus + .input-icon,
 .input-wrapper input:not(:placeholder-shown) + .input-icon {
-  color: #667eea;
+  color: var(--primary);
+}
+
+.input-wrapper input:hover {
+  filter: brightness(1.03);
 }
 
 .input-wrapper input.input-error {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  border-color: var(--error);
+  box-shadow: 0 0 0 3px var(--error-light);
 }
 
 .password-toggle {
@@ -227,14 +256,18 @@ const handleLogin = async () => {
   height: 20px;
   background: none;
   border: none;
-  color: #666666;
+  color: var(--text-quaternary);
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, transform var(--transition-fast);
   z-index: 1;
 }
 
 .password-toggle:hover {
-  color: #ffffff;
+  color: var(--text-primary);
+}
+
+.password-toggle:active {
+  transform: scale(0.95);
 }
 
 .password-toggle svg {
@@ -247,10 +280,25 @@ const handleLogin = async () => {
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 12px;
-  color: #f87171;
+  background: var(--error-light);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-lg);
+  color: var(--error);
+}
+
+.auth-form.has-error {
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  15% { transform: translateX(-6px); }
+  30% { transform: translateX(6px); }
+  45% { transform: translateX(-4px); }
+  60% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+  90% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
 }
 
 .error-icon {
@@ -261,20 +309,20 @@ const handleLogin = async () => {
 
 .error-message {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: var(--font-medium);
 }
 
 .submit-btn {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: 1px solid var(--btn-primary-border);
+  border-radius: var(--radius-lg);
   font-size: 16px;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background var(--transition-normal), box-shadow var(--transition-normal), transform var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -284,29 +332,23 @@ const handleLogin = async () => {
 }
 
 .submit-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.submit-btn:hover:not(:disabled)::before {
-  left: 100%;
+  content: none;
 }
 
 .submit-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  background: var(--btn-primary-hover);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
 }
 
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .loading-spinner {
@@ -321,17 +363,17 @@ const handleLogin = async () => {
 
 .help-text {
   font-size: 12px;
-  color: #666666;
+  color: var(--text-quaternary);
   margin: 0;
   line-height: 1.5;
 }
 
 .help-text code {
-  background: #1a1a1a;
+  background: var(--input-bg);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  color: #667eea;
+  color: var(--primary);
   font-size: 11px;
 }
 

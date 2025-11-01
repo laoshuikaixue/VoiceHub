@@ -1,61 +1,60 @@
 <template>
   <div class="auth-layout">
     <div class="auth-container">
-      <!-- 左侧品牌区域 -->
-      <div class="brand-section">
-        <div class="brand-content">
-          <div class="logo-section">
-            <img alt="VoiceHub Logo" class="brand-logo" src="/images/logo.svg"/>
-            <h1 v-if="siteTitle" class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
-          </div>
-          <p class="brand-description">
-            校园广播站点歌管理系统
-          </p>
-          <div class="feature-list">
-            <div class="feature-item">
-              <svg class="feature-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v6m0 6v6"/>
-                <path d="m21 12-6-3-6 3-6-3"/>
-              </svg>
-              <span>智能点歌管理</span>
-            </div>
-            <div class="feature-item">
-              <svg class="feature-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
-                <line x1="16" x2="16" y1="2" y2="6"/>
-                <line x1="8" x2="8" y1="2" y2="6"/>
-                <line x1="3" x2="21" y1="10" y2="10"/>
-              </svg>
-              <span>可视化排期</span>
-            </div>
-            <div class="feature-item">
-              <svg class="feature-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-              <span>用户权限管理</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 右侧登录表单 -->
       <div class="form-section">
+        <div class="form-header">
+          <div class="logo-row">
+            <img :src="brandLogoSrc" alt="Brand Logo" class="brand-logo-center"/>
+            <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider"></div>
+            <img v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" :src="schoolLogoHomeUrl" alt="学校Logo" class="school-logo"/>
+          </div>
+          <h1 class="form-title">{{ siteTitle ? (siteTitle + ' | VoiceHub') : 'VoiceHub' }}</h1>
+          <div class="header-divider"></div>
+        </div>
         <ClientOnly>
           <LoginForm/>
         </ClientOnly>
+      </div>
+    </div>
+    <!-- 页脚信息显示（与首页一致） -->
+    <div class="site-footer">
+      <div class="footer-info">
+        <span v-if="icpNumber" class="footer-item">
+          <a :href="`https://beian.miit.gov.cn/`" class="icp-link" rel="noopener noreferrer" target="_blank">
+            {{ icpNumber }}
+          </a>
+        </span>
+        <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }}</span>
+        <span v-else class="footer-item">© {{ currentYear }} LaoShui</span>
+        <span class="footer-item">Worker in {{ responseTime }}ms</span>
+        <span class="footer-item">
+          <a class="voicehub-link" href="https://github.com/laoshuikaixue/VoiceHub" rel="noopener noreferrer" target="_blank">
+            VoiceHub v{{ systemVersion }}
+          </a>
+        </span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import {onMounted} from 'vue'
+import {onMounted, computed, ref} from 'vue'
 import LoginForm from '~/components/Auth/LoginForm.vue'
+import packageJson from '~/package.json'
 
 // 使用站点配置
-const {siteTitle, initSiteConfig} = useSiteConfig()
+const {siteTitle, initSiteConfig, logoUrl, schoolLogoHomeUrl, icp: icpNumber} = useSiteConfig()
+// 主品牌Logo优先使用SVG，其次使用站点配置中非ICO的地址
+const brandLogoSrc = computed(() => {
+  const url = logoUrl.value
+  if (url && !url.endsWith('.ico')) return url
+  return '/images/logo.svg'
+})
+
+// Footer相关变量
+const systemVersion = packageJson.version
+const currentYear = new Date().getFullYear()
+const responseTime = ref(0)
 
 // 在组件挂载后初始化站点配置
 onMounted(async () => {
@@ -66,39 +65,52 @@ onMounted(async () => {
   if (typeof document !== 'undefined' && siteTitle.value) {
     document.title = `登录 | ${siteTitle.value}`
   }
+
+  // 计算加载耗时（近似值）
+  if (typeof performance !== 'undefined') {
+    responseTime.value = Math.max(1, Math.round(performance.now()))
+  }
 })
 </script>
 
 <style scoped>
 .auth-layout {
   min-height: 100vh;
-  background: #0a0a0a;
+  background: var(--bg-primary);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 20px;
+  /* 响应式尺寸变量 */
+  --brand-logo-size: clamp(48px, 8vw, 96px);
+  --school-logo-size: clamp(96px, 16vw, 160px);
+  --logo-gap: clamp(12px, 2vw, 24px);
+  --divider-height: clamp(32px, 10vw, 96px);
+  --content-footer-gap: clamp(16px, 4vh, 40px);
 }
 
 .auth-container {
   width: 100%;
-  max-width: 1200px;
-  background: #111111;
-  border-radius: 24px;
-  border: 1px solid #1f1f1f;
+  max-width: 480px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 600px;
+  margin: auto 0; /* 在纵向布局中居中 */
+  margin-bottom: var(--content-footer-gap); /* 与底部footer保持最小距离 */
 }
 
 .brand-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg-secondary);
   padding: 60px 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
+  border-right: 1px solid var(--border-primary);
 }
 
 .brand-section::before {
@@ -116,7 +128,7 @@ onMounted(async () => {
   position: relative;
   z-index: 1;
   text-align: center;
-  color: white;
+  color: var(--text-primary);
 }
 
 .logo-section {
@@ -128,21 +140,25 @@ onMounted(async () => {
   height: auto;
   margin-bottom: 24px;
   object-fit: contain;
+  transition: transform var(--transition-slow), filter var(--transition-slow);
+}
+
+.brand-logo:hover {
+  transform: translateY(-3px) scale(1.02);
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.25));
 }
 
 .brand-title {
   font-size: 36px;
-  font-weight: 700;
+  font-weight: var(--font-bold);
   margin: 0;
-  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
 }
 
 .brand-description {
   font-size: 18px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-secondary);
   margin: 0 0 40px 0;
   line-height: 1.6;
 }
@@ -159,54 +175,119 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-lg);
+  backdrop-filter: none;
+  border: 1px solid var(--border-secondary);
+  transition: border-color var(--transition-normal), background var(--transition-normal), transform var(--transition-normal);
+}
+
+.feature-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--card-hover-border);
+  transform: translateY(-2px);
 }
 
 .feature-icon {
   width: 24px;
   height: 24px;
-  color: white;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
 .feature-item span {
   font-size: 16px;
-  font-weight: 500;
-  color: white;
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
 }
 
 .form-section {
-  padding: 60px 40px;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.logo-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #111111;
+  gap: var(--logo-gap);
+  margin-bottom: 12px;
+}
+
+.logo-divider {
+  width: 1px;
+  height: var(--divider-height);
+  background: var(--border-secondary);
+}
+
+.brand-logo-center {
+  width: var(--brand-logo-size);
+  height: var(--brand-logo-size);
+  margin: 0;
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
+}
+
+.school-logo {
+  width: var(--school-logo-size);
+  height: var(--school-logo-size);
+  margin: 0;
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
+}
+
+/* 页脚在纵向布局中置底 */
+.auth-layout .site-footer {
+  margin-top: auto;
+  width: 100%;
+}
+
+.form-title {
+  font-size: 24px;
+  font-weight: var(--font-bold);
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.header-divider {
+  height: 1px;
+  background: var(--border-secondary);
+  margin: 14px auto 0;
+  width: 100%;
+}
+
+/* 隐藏品牌区的纹理伪元素以保持简约视觉 */
+.brand-section::before {
+  background: none;
+  opacity: 0;
+  display: none;
 }
 
 /* 响应式设计 */
 @media (max-width: 1024px) {
   .auth-container {
-    grid-template-columns: 1fr;
     max-width: 500px;
   }
 
-  .brand-section {
-    padding: 40px 30px;
-  }
-
   .form-section {
-    padding: 40px 30px;
+    padding: 36px 26px;
   }
 
-  .brand-title {
-    font-size: 28px;
-  }
-
-  .brand-description {
-    font-size: 16px;
+  .form-title {
+    font-size: 22px;
   }
 }
 
@@ -219,8 +300,6 @@ onMounted(async () => {
     border-radius: 16px;
     min-height: auto;
   }
-
-  .brand-section,
   .form-section {
     padding: 30px 20px;
   }
@@ -231,6 +310,75 @@ onMounted(async () => {
 
   .feature-item {
     padding: 12px 16px;
+  }
+}
+
+/* 页脚样式（与首页一致） */
+.site-footer {
+  text-align: center;
+  padding: 20px 0;
+  margin-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.footer-item {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.footer-item:not(:last-child)::after {
+  content: " | ";
+  margin: 0 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.footer-item a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-item a:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.icp-link,
+.voicehub-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.icp-link:hover,
+.voicehub-link:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+@media (max-width: 768px) {
+  .site-footer {
+    padding: 15px 0;
+    margin-top: 20px;
+  }
+
+  .footer-info {
+    gap: 0;
+  }
+
+  .footer-item {
+    font-size: 11px;
+  }
+
+  .footer-item:not(:last-child)::after {
+    margin: 0 2px;
   }
 }
 </style>
