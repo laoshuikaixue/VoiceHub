@@ -148,8 +148,8 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
             }
         },
         {
-            id: 'meeting-1',
-            name: 'Meeting音源1',
+            id: 'meting-1',
+            name: 'Meting API 备用源1',
             baseUrl: 'https://api.qijieya.cn/meting',
             priority: 4,
             enabled: true,
@@ -159,8 +159,8 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
             }
         },
         {
-            id: 'meeting-2',
-            name: 'Meeting音源2',
+            id: 'meting-2',
+            name: 'Meting API 备用源2',
             baseUrl: 'https://api.obdo.cc/meting',
             priority: 5,
             enabled: true,

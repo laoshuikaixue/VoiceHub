@@ -30,6 +30,46 @@ export const useMusicSources = () => {
     const sourceStatus = ref<Record<string, SourceStatus>>({})
 
     /**
+     * 使用 Meting API 获取歌曲信息
+     * @param id 歌曲ID
+     * @param source Meting API 音源
+     * @returns Promise<{success: boolean, data?: any, error?: string}>
+     */
+    const getMetingSongInfo = async (id: string | number, source: MusicSource): Promise<{
+        success: boolean;
+        data?: any;
+        error?: string;
+    }> => {
+        try {
+            const metingUrl = `${source.baseUrl}/?server=netease&type=song&id=${id}`
+            
+            const response = await $fetch(metingUrl, {
+                timeout: source.timeout || 8000,
+                headers: source.headers
+            })
+            
+            // Meting API 返回歌曲信息数组
+            if (Array.isArray(response) && response.length > 0) {
+                const songInfo = response[0]
+                return {
+                    success: true,
+                    data: {
+                        name: songInfo.name,
+                        artist: songInfo.artist,
+                        url: songInfo.url,
+                        pic: songInfo.pic,
+                        lrc: songInfo.lrc
+                    }
+                }
+            }
+            
+            return { success: false, error: 'Meting API 未返回有效数据' }
+        } catch (error: any) {
+            return { success: false, error: error?.message || '未知错误' }
+        }
+    }
+
+    /**
      * 验证播放链接的有效性
      * @param url 播放链接
      * @returns Promise<{valid: boolean, duration?: number, error?: string}>
@@ -491,9 +531,17 @@ export const useMusicSources = () => {
                     sourcesToTry.push({source: vkeysSource, type: 'netease'})
                 }
                 
+                // 添加 Meting API 备用源
+                const metingSources = enabledSources.filter(source => source.id.startsWith('meting-'))
+                metingSources.forEach(source => {
+                    sourcesToTry.push({source, type: 'netease'})
+                })
+                
                 // 添加其他备用音源
                 const otherSources = enabledSources.filter(source => 
-                    source.id !== 'vkeys' && !source.id.includes('netease-backup')
+                    source.id !== 'vkeys' && 
+                    !source.id.includes('netease-backup') && 
+                    !source.id.startsWith('meting-')
                 )
                 otherSources.forEach(source => {
                     sourcesToTry.push({source, type: 'netease'})
@@ -517,6 +565,33 @@ export const useMusicSources = () => {
                         
                         if (vkeysResp?.code === 200 && vkeysResp?.data?.url) {
                             url = String(vkeysResp.data.url)
+                        }
+                    } else if (source.id.startsWith('meting-')) {
+                        // Meting API - 获取播放链接
+                        try {
+                            // 首先尝试获取歌曲信息，包含播放链接
+                            const songInfo = await getMetingSongInfo(idParam, source)
+                            
+                            if (songInfo.success && songInfo.data?.url) {
+                                // 从歌曲信息中提取播放链接
+                                url = songInfo.data.url
+                            } else {
+                                // 如果获取歌曲信息失败，直接使用 URL 类型的 API
+                                const metingUrl = `${source.baseUrl}/?server=netease&type=url&id=${idParam}`
+                                
+                                // 对于 Meting API，我们需要处理重定向
+                                const response = await fetch(metingUrl, {
+                                    method: 'GET',
+                                    headers: source.headers || {},
+                                    redirect: 'follow'
+                                })
+                                
+                                if (response.ok && response.url) {
+                                    url = response.url
+                                }
+                            }
+                        } catch (error: any) {
+                            console.warn(`[getSongUrl] Meting API ${source.name} 获取失败:`, error?.message)
                         }
                     } else {
                         // 网易云备用API
@@ -639,6 +714,34 @@ export const useMusicSources = () => {
                     }
                     if (data.lrc || data.yrc) {
                         return { success: true, data }
+                    }
+                }
+            }
+
+            // 最后尝试 Meting API（仅支持网易云）
+            if (platform === 'netease') {
+                const metingSources = enabledSources.filter(source => source.id.startsWith('meting-'))
+                
+                for (const metingSource of metingSources) {
+                    try {
+                        const metingUrl = `${metingSource.baseUrl}/?server=netease&type=lrc&id=${id}`
+                        const resp = await $fetch(metingUrl, { 
+                            timeout: metingSource.timeout || 8000, 
+                            headers: metingSource.headers 
+                        })
+                        
+                        // Meting API 直接返回歌词文本
+                        if (resp && typeof resp === 'string' && resp.trim()) {
+                            const data: { lrc: string; trans?: string; yrc?: string } = {
+                                lrc: resp,
+                                trans: '',
+                                yrc: ''
+                            }
+                            return { success: true, data }
+                        }
+                    } catch (error: any) {
+                        console.warn(`[getLyrics] Meting API ${metingSource.name} 获取失败:`, error?.message || error)
+                        // 继续尝试下一个 Meting 源
                     }
                 }
             }
@@ -949,6 +1052,7 @@ export const useMusicSources = () => {
         getSongDetail,
         getSongUrl,
         getLyrics,
+        getMetingSongInfo,
         updateSourceStatus,
         validatePlayUrl
     }
