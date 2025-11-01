@@ -1,18 +1,5 @@
 <template>
   <div class="player-actions">
-    <button
-        :class="{ active: showLyrics }"
-        :title="showLyrics ? '隐藏歌词' : '显示歌词'"
-        class="action-btn lyrics-btn"
-        @click="$emit('toggleLyrics')"
-    >
-      <svg fill="none" height="16" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 5h18v2H3V5zm0 4h14v2H3V9zm0 4h18v2H3v-2zm0 4h10v2H3v-2z" fill="currentColor" opacity="0.9"/>
-        <circle cx="20" cy="11" fill="currentColor" opacity="0.7" r="2"/>
-        <circle cx="18" cy="15" fill="currentColor" opacity="0.7" r="1.5"/>
-      </svg>
-    </button>
-
     <div :class="{ 'expanded': showQualitySettings }" class="quality-selector">
       <button class="quality-btn" title="音质设置" @click="toggleQualitySettings">
         <span class="quality-icon">♪</span>
@@ -46,14 +33,6 @@ import {onMounted, onUnmounted, ref} from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 
 const props = defineProps({
-  showLyrics: {
-    type: Boolean,
-    default: false
-  },
-  song: {
-    type: Object,
-    default: null
-  },
   currentQualityText: {
     type: String,
     default: '音质'
@@ -68,7 +47,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['toggleLyrics', 'selectQuality', 'close'])
+const emit = defineEmits(['selectQuality', 'close'])
 
 const showQualitySettings = ref(false)
 

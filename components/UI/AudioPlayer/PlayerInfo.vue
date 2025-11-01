@@ -1,11 +1,20 @@
 <template>
   <div class="player-info">
-    <div class="cover-container">
+    <div class="cover-container" @click="openLyrics" title="点击打开歌词">
       <template v-if="song.cover && !coverError">
         <img :src="convertToHttps(song.cover)" alt="封面" class="player-cover" @error="handleImageError"/>
       </template>
       <div v-else class="text-cover">
         {{ getFirstChar(song.title || '') }}
+      </div>
+      <!-- 悬浮提示层 -->
+      <div class="lyrics-overlay">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 5h18v2H3V5zm0 4h14v2H3V9zm0 4h18v2H3v-2zm0 4h10v2H3v-2z" fill="currentColor" opacity="0.9"/>
+          <circle cx="20" cy="11" fill="currentColor" opacity="0.7" r="2"/>
+          <circle cx="18" cy="15" fill="currentColor" opacity="0.7" r="1.5"/>
+        </svg>
+        <span class="lyrics-text">歌词</span>
       </div>
     </div>
     <div class="player-text">
@@ -26,6 +35,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['openLyrics'])
+
 const coverError = ref(false)
 
 const handleImageError = () => {
@@ -35,6 +46,10 @@ const handleImageError = () => {
 const getFirstChar = (title) => {
   if (!title) return '音'
   return title.trim().charAt(0)
+}
+
+const openLyrics = () => {
+  emit('openLyrics')
 }
 </script>
 
@@ -57,6 +72,40 @@ const getFirstChar = (title) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.cover-container:hover {
+  transform: scale(1.05);
+}
+
+.lyrics-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  color: white;
+  gap: 2px;
+}
+
+.cover-container:hover .lyrics-overlay {
+  opacity: 1;
+}
+
+.lyrics-text {
+  font-size: 10px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .player-cover {

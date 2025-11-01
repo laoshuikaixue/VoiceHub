@@ -7,7 +7,7 @@
     <Transition name="player-animation">
       <div v-if="song" class="global-audio-player">
         <!-- 播放器信息 -->
-        <PlayerInfo :song="song"/>
+        <PlayerInfo :song="song" @open-lyrics="toggleLyrics"/>
 
         <!-- 播放器控制 -->
         <PlayerControls
@@ -35,10 +35,7 @@
             :current-platform-options="currentPlatformOptions"
             :current-quality-text="currentQualityText"
             :is-current-quality="isCurrentQuality"
-            :show-lyrics="showLyrics"
-            :song="song"
             @close="stopPlaying"
-            @toggle-lyrics="toggleLyrics"
             @select-quality="selectQuality"
         />
 
