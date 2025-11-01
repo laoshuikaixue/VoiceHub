@@ -330,15 +330,9 @@ const handleCanPlay = () => {
 
 // UI 事件处理器
 const handleTogglePlay = async () => {
-  // 确保音频播放器引用存在
-  if (!audioPlayer.value) {
-    console.error('[AudioPlayer] 音频播放器引用不存在，无法切换播放状态')
+  if (!ensureAudioPlayerRef()) {
+    console.error('[AudioPlayer] 音频播放器引用验证失败，无法切换播放状态')
     return
-  }
-  
-  // 确保 control 有正确的音频播放器引用
-  if (!control.audioPlayer.value) {
-    control.setAudioPlayerRef(audioPlayer.value)
   }
   
   await control.togglePlay()
@@ -358,47 +352,52 @@ const handleNext = async () => {
   }
 }
 
-// 进度条拖拽事件处理器
-const handleStartDrag = (event, progressBar) => {
-  // 确保音频播放器引用存在
+// 确保音频播放器引用的辅助函数
+const ensureAudioPlayerRef = () => {
+  // 首先检查计算属性是否有值
   if (!audioPlayer.value) {
-    console.error('[AudioPlayer] 音频播放器引用不存在，无法开始拖拽')
-    return
+    console.warn('[AudioPlayer] 音频播放器引用不存在，尝试重新获取...')
+    return false
   }
   
   // 确保 control 有正确的音频播放器引用
-  if (!control.audioPlayer.value) {
+  if (!control.audioPlayer.value || control.audioPlayer.value !== audioPlayer.value) {
+    console.log('[AudioPlayer] 更新音频播放器引用到 control')
     control.setAudioPlayerRef(audioPlayer.value)
+  }
+  
+  // 双重验证：确保引用确实可用
+  if (!control.audioPlayer.value) {
+    console.error('[AudioPlayer] 无法设置音频播放器引用到 control')
+    return false
+  }
+  
+  return true
+}
+
+// 进度条拖拽事件处理器
+const handleStartDrag = (event, progressBar) => {
+  if (!ensureAudioPlayerRef()) {
+    console.error('[AudioPlayer] 音频播放器引用验证失败，无法开始拖拽')
+    return
   }
   
   control.startDrag(event, progressBar)
 }
 
 const handleStartTouchDrag = (event, progressBar) => {
-  // 确保音频播放器引用存在
-  if (!audioPlayer.value) {
-    console.error('[AudioPlayer] 音频播放器引用不存在，无法开始触摸拖拽')
+  if (!ensureAudioPlayerRef()) {
+    console.error('[AudioPlayer] 音频播放器引用验证失败，无法开始触摸拖拽')
     return
-  }
-  
-  // 确保 control 有正确的音频播放器引用
-  if (!control.audioPlayer.value) {
-    control.setAudioPlayerRef(audioPlayer.value)
   }
   
   control.startTouchDrag(event, progressBar)
 }
 
 const handleSeekToPosition = (event) => {
-  // 确保音频播放器引用存在
-  if (!audioPlayer.value) {
-    console.error('[AudioPlayer] 音频播放器引用不存在，无法跳转位置')
+  if (!ensureAudioPlayerRef()) {
+    console.error('[AudioPlayer] 音频播放器引用验证失败，无法跳转位置')
     return
-  }
-  
-  // 确保 control 有正确的音频播放器引用
-  if (!control.audioPlayer.value) {
-    control.setAudioPlayerRef(audioPlayer.value)
   }
   
   control.seekToPosition(event)
@@ -588,23 +587,39 @@ onMounted(async () => {
   // 等待子组件挂载完成
   await nextTick()
 
-  // 确保音频播放器引用已正确获取
+  // 增强的音频播放器引用获取逻辑
   let retryCount = 0
-  const maxRetries = 10
-
+  const maxRetries = 15 // 增加重试次数
+  const retryDelay = 50 // 减少重试间隔，提高响应速度
+  
   while (!audioPlayer.value && retryCount < maxRetries) {
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, retryDelay))
     retryCount++
+    
+    // 强制触发响应式更新
+    await nextTick()
   }
 
   if (!audioPlayer.value) {
-    console.error('[AudioPlayer] ❌ 无法获取音频播放器引用，自动播放将失败')
+    // 设置一个延迟重试机制，以防组件稍后才完全初始化
+    setTimeout(async () => {
+      if (audioPlayer.value && !control.audioPlayer.value) {
+        control.setAudioPlayerRef(audioPlayer.value)
+        control.setProgressBarRef(progressBar.value)
+      }
+    }, 1000)
+    
     return
   }
 
   // 设置音频播放器和进度条引用
   control.setAudioPlayerRef(audioPlayer.value)
   control.setProgressBarRef(progressBar.value)
+
+  // 验证引用是否正确设置
+  if (!control.audioPlayer.value) {
+    return
+  }
 
   // 初始化 WebSocket 连接
   sync.initializeWebSocket()

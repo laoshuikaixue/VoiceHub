@@ -414,6 +414,10 @@ export const useAudioPlayerControl = () => {
     const startDrag = (event: MouseEvent, progressBar: HTMLElement) => {
         if (event.button !== 0) return
 
+        if (!audioPlayer.value || !progressBar) {
+            return
+        }
+
         isDragging.value = true
         dragStartX.value = event.clientX
         dragStartProgress.value = progress.value
@@ -455,6 +459,10 @@ export const useAudioPlayerControl = () => {
     // 触摸拖拽
     const startTouchDrag = (event: TouchEvent, progressBar: HTMLElement) => {
         if (event.touches.length !== 1) return
+
+        if (!audioPlayer.value || !progressBar) {
+            return
+        }
 
         // 阻止默认行为，防止页面滚动
         event.preventDefault()
@@ -511,6 +519,10 @@ export const useAudioPlayerControl = () => {
         if (!audioPlayer.value || isDragging.value) return
 
         const progressBar = event.currentTarget as HTMLElement
+        if (!progressBar) {
+            return
+        }
+
         const clickPosition = event.offsetX
         const barWidth = progressBar.clientWidth
         const seekPercentage = clickPosition / barWidth
@@ -710,7 +722,6 @@ export const useAudioPlayerControl = () => {
 
             return true
         } catch (error) {
-            console.error('[AudioPlayerControl] 强制更新位置失败:', error)
             isSyncingFromGlobal.value = false
             return false
         }
