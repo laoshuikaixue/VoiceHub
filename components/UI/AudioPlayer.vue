@@ -453,22 +453,40 @@ const ensureAudioPlayerRef = () => {
 }
 
 // 进度条拖拽事件处理器
-const handleStartDrag = (event, progressBar) => {
+const handleStartDrag = (event) => {
   if (!ensureAudioPlayerRef()) {
     console.error('[AudioPlayer] 音频播放器引用验证失败，无法开始拖拽')
     return
   }
   
-  control.startDrag(event, progressBar)
+  // 获取进度条元素引用
+  const progressBarElement = event.currentTarget
+  if (!progressBarElement) {
+    console.error('[AudioPlayer] 无法获取进度条元素引用')
+    return
+  }
+  
+  control.startDrag(event, progressBarElement)
 }
 
-const handleStartTouchDrag = (event, progressBar) => {
+const handleStartTouchDrag = (event) => {
   if (!ensureAudioPlayerRef()) {
     console.error('[AudioPlayer] 音频播放器引用验证失败，无法开始触摸拖拽')
     return
   }
   
-  control.startTouchDrag(event, progressBar)
+  // 获取进度条元素引用
+  const progressBarElement = event.currentTarget
+  if (!progressBarElement) {
+    console.error('[AudioPlayer] 无法获取进度条元素引用')
+    return
+  }
+  
+  // 阻止默认行为，防止页面滚动
+  event.preventDefault()
+  event.stopPropagation()
+  
+  control.startTouchDrag(event, progressBarElement)
 }
 
 const handleSeekToPosition = (event) => {
