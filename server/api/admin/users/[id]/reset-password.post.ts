@@ -34,6 +34,13 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
+        // 禁止对自身进行密码重置（通过用户管理界面）
+        if (id === user.id) {
+            throw createError({
+                statusCode: 400,
+                message: '禁止在用户管理中重置自己的密码'
+            })
+        }
         // 查询用户是否存在
         const userExistsResult = await db.select()
             .from(users)

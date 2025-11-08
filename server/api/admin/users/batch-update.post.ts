@@ -80,6 +80,14 @@ export default defineEventHandler(async (event) => {
 
         for (const update of updates) {
             try {
+                // 禁止批量更新包含当前操作者自身
+                if (update.userId === currentUser.id) {
+                    errors.push({
+                        userId: update.userId,
+                        error: '禁止在用户管理中批量更新自己的账户'
+                    })
+                    continue
+                }
                 // 构建更新数据
                 const updateData: any = {}
 

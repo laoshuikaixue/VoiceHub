@@ -40,6 +40,14 @@ export default defineEventHandler(async (event) => {
             })
         }
 
+        // 禁止对自身进行任何用户管理操作（包括角色、资料、状态、密码等）
+        if (parseInt(userId) === user.id) {
+            throw createError({
+                statusCode: 400,
+                statusMessage: '禁止在用户管理中修改自己的账户'
+            })
+        }
+
         // 检查用户名是否被其他用户使用
         if (username !== existingUser[0].username) {
             const duplicateUser = await db.select()

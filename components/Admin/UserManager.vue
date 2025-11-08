@@ -119,6 +119,7 @@
                 <button
                     class="action-btn edit-btn"
                     title="编辑用户"
+                    :disabled="isSelf(user)"
                     @click="editUser(user)"
                 >
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -129,6 +130,7 @@
                 <button
                     class="action-btn music-btn"
                     title="查看歌曲"
+                    :disabled="isSelf(user)"
                     @click="viewUserSongs(user)"
                 >
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -140,6 +142,7 @@
                 <button
                     class="action-btn warning-btn"
                     title="重置密码"
+                    :disabled="isSelf(user)"
                     @click="resetPassword(user)"
                 >
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -152,6 +155,7 @@
                 <button
                     class="action-btn delete-btn"
                     title="删除用户"
+                    :disabled="isSelf(user)"
                     @click="confirmDeleteUser(user)"
                 >
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -186,6 +190,7 @@
               <button
                   class="action-btn edit-btn"
                   title="编辑用户"
+                  :disabled="isSelf(user)"
                   @click="editUser(user)"
               >
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -196,6 +201,7 @@
               <button
                   class="action-btn music-btn"
                   title="查看歌曲"
+                  :disabled="isSelf(user)"
                   @click="viewUserSongs(user)"
               >
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -207,6 +213,7 @@
               <button
                   class="action-btn warning-btn"
                   title="重置密码"
+                  :disabled="isSelf(user)"
                   @click="resetPassword(user)"
               >
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -218,6 +225,7 @@
               <button
                   class="action-btn delete-btn"
                   title="删除用户"
+                  :disabled="isSelf(user)"
                   @click="confirmDeleteUser(user)"
               >
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -799,7 +807,7 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref} from 'vue'
+import {computed, onMounted, ref, watch} from 'vue'
 import {useAuth} from '~/composables/useAuth'
 import {usePermissions} from '~/composables/usePermissions'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
@@ -890,6 +898,11 @@ const passwordForm = ref({
 // 服务
 const auth = useAuth()
 const permissions = usePermissions()
+
+// 判断是否为当前登录用户
+const isSelf = (user) => {
+  return auth.user.value?.id === user?.id
+}
 
 // 计算属性
 const isSuperAdmin = computed(() => {
@@ -984,6 +997,13 @@ const goToPage = (page) => {
 }
 
 const editUser = (user) => {
+  // 禁止编辑自身
+  if (isSelf(user)) {
+    if (window.$showNotification) {
+      window.$showNotification('禁止在用户管理中修改自己的账户', 'warning')
+    }
+    return
+  }
   editingUser.value = user
   userForm.value = {
     name: user.name,
@@ -997,6 +1017,13 @@ const editUser = (user) => {
 }
 
 const resetPassword = (user) => {
+  // 禁止重置自身密码
+  if (isSelf(user)) {
+    if (window.$showNotification) {
+      window.$showNotification('禁止在用户管理中重置自己的密码', 'warning')
+    }
+    return
+  }
   resetPasswordUser.value = user
   passwordForm.value = {
     password: '',
@@ -1005,6 +1032,13 @@ const resetPassword = (user) => {
 }
 
 const confirmDeleteUser = (user) => {
+  // 禁止删除自身
+  if (isSelf(user)) {
+    if (window.$showNotification) {
+      window.$showNotification('不能删除自己的账户', 'warning')
+    }
+    return
+  }
   deletingUser.value = user
   showDeleteModal.value = true
 }
@@ -1106,6 +1140,11 @@ const closeResetPassword = () => {
 }
 
 const saveUser = async () => {
+  // 保护：禁止保存针对自身的更改
+  if (editingUser.value && isSelf(editingUser.value)) {
+    formError.value = '禁止在用户管理中修改自己的账户'
+    return
+  }
   if (!userForm.value.name || !userForm.value.username) {
     formError.value = '请填写必要信息'
     return
@@ -1198,6 +1237,11 @@ const saveUser = async () => {
 }
 
 const confirmResetPassword = async () => {
+  // 保护：禁止重置自身密码
+  if (resetPasswordUser.value && isSelf(resetPasswordUser.value)) {
+    passwordError.value = '禁止在用户管理中重置自己的密码'
+    return
+  }
   if (!passwordForm.value.password) {
     passwordError.value = '请输入新密码'
     return
@@ -1576,6 +1620,13 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* 禁用状态样式 */
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* 搜索框样式 */
@@ -2870,3 +2921,7 @@ onMounted(async () => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 </style>
+// 判断是否为当前登录用户
+const isSelf = (user) => {
+  return auth.user.value?.id === user?.id
+}
