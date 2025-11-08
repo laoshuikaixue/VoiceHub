@@ -136,20 +136,26 @@ async function safeMigrate() {
       NODE_ENV: 'production'
     };
     
-    // 检查数据库是否有任何表
+    // 检查数据库是否有任何表（基于 introspect 输出更稳健的判断）
     let isEmptyDatabase = false;
     try {
-      const checkResult = execSync('cd .. && npx drizzle-kit introspect --config=drizzle.config.ts', { 
-        stdio: 'pipe', 
+      const checkResult = execSync('cd .. && npx drizzle-kit introspect --config=drizzle.config.ts', {
+        stdio: 'pipe',
         env,
         encoding: 'utf8'
       });
-      // 如果introspect没有找到任何表，说明是空数据库
-      isEmptyDatabase = !checkResult.includes('CREATE TABLE');
+
+      // 优先解析 "<n> tables" 提示，其次检查是否包含 columns 索引等摘要
+      const tablesMatch = checkResult.match(/(\d+)\s+tables/i);
+      const hasTablesCount = tablesMatch && Number(tablesMatch[1]) > 0;
+      const listsTables = /\bcolumns\b|\bindexes\b|\bfks\b/i.test(checkResult);
+
+      // 数据库为空当且仅当：统计为0且没有任何表摘要
+      isEmptyDatabase = !(hasTablesCount || listsTables);
     } catch (error) {
-      // 如果introspect失败，可能是空数据库或连接问题
-      logWarning('数据库状态检查失败，假设为全新部署');
-      isEmptyDatabase = true;
+      // introspect 失败时不轻易判定为空库，改为保守：视为非空库，走 push 路径
+      logWarning('数据库状态检查失败，按非空库处理以避免重复建表');
+      isEmptyDatabase = false;
     }
     
     if (isEmptyDatabase) {
