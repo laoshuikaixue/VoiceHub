@@ -818,64 +818,64 @@ const getAudioUrl = async (result) => {
   try {
     // 根据搜索结果的sourceInfo.source字段判断音源类型
     const sourceType = result.sourceInfo?.source || ''
-    console.log('获取音频URL，音源类型:', sourceType, '歌曲ID:', result.musicId || result.id)
-    console.log('完整的result对象:', result)
+
+    // 对于 vkeys v3（QQ音乐），调用统一的 getSongUrl 获取播放链接
+    if (sourceType === 'vkeys-v3') {
+      try {
+        const songId = result.musicId || result.id
+        if (!songId) throw new Error('缺少歌曲ID参数')
+
+        const { getQuality } = useAudioQuality()
+        const quality = getQuality(platform.value) || 8
+        const urlResult = await musicSources.getSongUrl(songId, quality, 'tencent')
+
+        if (urlResult && urlResult.success && urlResult.url) {
+          result.url = urlResult.url
+          result.hasUrl = true
+
+          // 更新搜索结果中的对应项
+          const index = searchResults.value.findIndex(
+            (item) => (item.musicId || item.id) === (result.musicId || result.id)
+          )
+          if (index !== -1) {
+            searchResults.value[index] = { ...result }
+          }
+          return result
+        } else {
+          // vkeys v3 未获取到有效链接，继续回退逻辑
+        }
+      } catch (qqV3Error) {
+        // vkeys v3 获取失败，继续回退其它逻辑
+      }
+    }
 
     // 对于vkeys音源的处理
     if (sourceType === 'vkeys') {
       if (result.url) {
         result.hasUrl = true
-        console.log('Vkeys音源直接使用URL:', result.url)
         return result
       } else {
-        console.warn('Vkeys音源结果中没有找到URL字段，根据平台尝试备用源')
-
         // 根据平台直接尝试对应的备用源
         if (platform.value === 'tencent') {
-          console.log('QQ音乐平台，直接使用vkeys的tencent/geturl接口获取播放链接')
           try {
             const songId = result.musicId || result.id
+            if (!songId) throw new Error('缺少歌曲ID参数')
 
-            // 构建QQ音乐geturl请求参数，使用id而不是mid
-            const params = new URLSearchParams()
-            if (songId) {
-              params.append('id', songId)
-            } else {
-              throw new Error('缺少歌曲ID参数')
-            }
-            params.append('quality', '8') // QQ音乐默认音质为8(HQ高音质)
+            const {getQuality} = useAudioQuality()
+            const quality = getQuality(platform.value) || 8
+            const urlResult = await musicSources.getSongUrl(songId, quality, platform.value)
 
-            // 获取vkeys音源配置
-            const enabledSources = getEnabledSources()
-            const vkeysSource = enabledSources.find(source => source.id === 'vkeys')
-
-            if (!vkeysSource) {
-              throw new Error('未找到vkeys音源配置')
-            }
-
-            const getUrlResponse = await $fetch(`${vkeysSource.baseUrl}/tencent/geturl?${params.toString()}`, {
-              timeout: vkeysSource.timeout || 8000
-            })
-
-            console.log('QQ音乐geturl返回结果:', getUrlResponse)
-
-            if (getUrlResponse && getUrlResponse.code === 200 && getUrlResponse.data && getUrlResponse.data.url) {
-              result.url = getUrlResponse.data.url
+            if (urlResult && urlResult.success && urlResult.url) {
+              result.url = urlResult.url
               result.hasUrl = true
-              // 更新其他信息
-              if (getUrlResponse.data.cover) result.cover = getUrlResponse.data.cover
-              if (getUrlResponse.data.song) result.title = getUrlResponse.data.song
-              if (getUrlResponse.data.singer) result.artist = getUrlResponse.data.singer
-              console.log('成功获取歌曲URL (QQ音乐geturl):', getUrlResponse.data.url)
               return result
             } else {
-              console.warn('QQ音乐geturl无法获取URL:', getUrlResponse)
+              // QQ音乐 vkeys 系无法获取URL，继续回退
             }
           } catch (qqError) {
-            console.error('QQ音乐geturl获取URL失败:', qqError)
+            // QQ音乐播放链接获取失败，继续回退
           }
         } else if (platform.value === 'netease') {
-          console.log('网易云平台，尝试使用getSongDetail获取')
           try {
             const {getQuality} = useAudioQuality()
             const quality = getQuality(platform.value)
@@ -889,33 +889,29 @@ const getAudioUrl = async (result) => {
               result.hasUrl = true
               if (songDetail.cover) result.cover = songDetail.cover
               if (songDetail.duration) result.duration = songDetail.duration
-              console.log('成功获取歌曲URL (vkeys getSongDetail):', songDetail.url)
               return result
             }
           } catch (error) {
-            console.error('vkeys getSongDetail失败:', error)
+            // vkeys getSongDetail 失败，继续回退
           }
 
           // 如果getSongDetail失败，尝试网易云备用源
-          console.log('vkeys失败，尝试使用网易云备用源获取播放链接')
           try {
             const {getQuality} = useAudioQuality()
             const quality = getQuality(platform.value)
             const songId = result.musicId || result.id
 
             const urlResult = await musicSources.getSongUrl(songId, quality, platform.value)
-            console.log('网易云备用源返回结果:', urlResult)
 
             if (urlResult && urlResult.success && urlResult.url) {
               result.url = urlResult.url
               result.hasUrl = true
-              console.log('成功获取歌曲URL (网易云备用源):', urlResult.url)
               return result
             } else {
-              console.warn('网易云备用源也无法获取URL:', urlResult)
+              // 备用源也无法获取URL
             }
           } catch (backupError) {
-            console.error('网易云备用源获取URL失败:', backupError)
+            // 备用源获取失败
           }
         }
       }
@@ -923,15 +919,11 @@ const getAudioUrl = async (result) => {
 
     // 对于网易云备用源，直接调用getSongUrl获取播放链接
     if (sourceType === 'netease-backup') {
-      console.log('检测到网易云备用源，开始获取播放链接')
       const {getQuality} = useAudioQuality()
       const quality = getQuality(platform.value)
       const songId = result.musicId || result.id
-
-      console.log('调用getSongUrl，参数:', {songId, quality, platform: platform.value})
       try {
         const urlResult = await musicSources.getSongUrl(songId, quality, platform.value)
-        console.log('getSongUrl返回结果:', urlResult)
 
         if (urlResult && urlResult.success && urlResult.url) {
           // 更新结果中的URL和其他信息
@@ -945,22 +937,16 @@ const getAudioUrl = async (result) => {
           if (index !== -1) {
             searchResults.value[index] = {...result}
           }
-
-          console.log('成功获取歌曲URL (网易云备用源):', urlResult.url)
         } else {
-          console.warn('未能获取到有效的歌曲URL，urlResult:', urlResult)
-          if (urlResult && urlResult.error) {
-            console.error('getSongUrl错误:', urlResult.error)
-          }
+          // 未能获取到有效的歌曲URL
         }
       } catch (urlError) {
-        console.error('调用getSongUrl失败:', urlError)
+        // 调用 getSongUrl 失败
       }
     }
 
     return result
   } catch (err) {
-    console.error('获取音乐URL错误:', err)
     error.value = '获取音乐URL失败，请稍后重试'
     if (window.$showNotification) {
       window.$showNotification('获取音乐URL失败，请稍后重试', 'error')

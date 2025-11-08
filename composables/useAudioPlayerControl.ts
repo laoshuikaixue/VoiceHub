@@ -348,64 +348,19 @@ export const useAudioPlayerControl = () => {
         }
     }
 
-    // 动态获取音乐URL
-    const getMusicUrl = async (platform: string, musicId: string, quality: string | null = null): Promise<string | null> => {
+    // 动态获取音乐URL（委托到统一逻辑）
+    const getMusicUrl = async (platform: string, musicId: string, playUrl: string | null = null): Promise<string | null> => {
         try {
-            const qualityParam = quality || getQuality(platform)
-            let apiUrl
-
-            if (platform === 'netease') {
-                apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${qualityParam}`
-            } else if (platform === 'tencent') {
-                apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${qualityParam}`
-            } else {
-                throw new Error('不支持的音乐平台')
-            }
-
-            console.log('正在请求音乐URL:', {platform, musicId, quality: qualityParam, apiUrl})
-
-            const response = await fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                timeout: 10000 // 10秒超时
-            })
-
-            if (!response.ok) {
-                const errorText = await response.text()
-                console.error('API响应错误:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    body: errorText
-                })
-                throw new Error(`获取音乐URL失败: ${response.status} ${response.statusText}`)
-            }
-
-            const data = await response.json()
-            console.log('API响应数据:', data)
-
-            if (data.code === 200 && data.data && data.data.url) {
-                console.log('成功获取音乐URL:', data.data.url)
-                return data.data.url
-            } else if (data.code !== 200) {
-                console.error('API返回错误代码:', data)
-                throw new Error(data.message || `API错误: ${data.code}`)
-            }
-
-            console.warn('API返回成功但没有URL:', data)
-            return null
+            const { getMusicUrl: coreGetMusicUrl } = await import('~/utils/musicUrl')
+            const url = await coreGetMusicUrl(platform, musicId, playUrl ?? undefined)
+            return url
         } catch (error) {
             console.error('获取音乐URL错误:', error)
-
-            // 提供更友好的错误信息
-            if (error instanceof TypeError && error.message.includes('fetch')) {
+            if (error instanceof TypeError && (error as any).message?.includes('fetch')) {
                 throw new Error('网络连接失败，请检查网络连接')
-            } else if (error.name === 'AbortError') {
+            } else if ((error as any).name === 'AbortError') {
                 throw new Error('请求超时，请稍后重试')
             }
-
             throw error
         }
     }

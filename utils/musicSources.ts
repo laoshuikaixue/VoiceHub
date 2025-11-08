@@ -129,10 +129,18 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
             }
         },
         {
+            id: 'vkeys-v3',
+            name: 'Vkeys音源 (v3)',
+            baseUrl: 'https://api.vkeys.cn/music',
+            priority: 2,
+            enabled: true,
+            timeout: 10000
+        },
+        {
             id: 'vkeys',
             name: 'Vkeys音源',
             baseUrl: 'https://api.vkeys.cn/v2/music',
-            priority: 2,
+            priority: 3,
             enabled: true,
             timeout: 10000
         },
@@ -140,7 +148,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
             id: 'netease-backup-2',
             name: '网易云备用源2',
             baseUrl: 'https://ncmapi.zcy.life:443',
-            priority: 3,
+            priority: 4,
             enabled: true,
             timeout: 8000,
             headers: {
@@ -151,7 +159,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
             id: 'meting-1',
             name: 'Meting API 备用源1',
             baseUrl: 'https://api.qijieya.cn/meting',
-            priority: 4,
+            priority: 5,
             enabled: true,
             timeout: 8000,
             headers: {
@@ -162,7 +170,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
             id: 'meting-2',
             name: 'Meting API 备用源2',
             baseUrl: 'https://api.obdo.cc/meting',
-            priority: 5,
+            priority: 6,
             enabled: true,
             timeout: 8000,
             headers: {

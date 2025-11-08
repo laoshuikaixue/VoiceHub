@@ -11,13 +11,11 @@ import {useMusicSources} from '~/composables/useMusicSources'
 export async function getMusicUrl(platform: string, musicId: string | number, playUrl?: string): Promise<string | null> {
     // 如果用户提供了播放链接，优先使用
     if (playUrl && playUrl.trim()) {
-        console.log(`[getMusicUrl] 使用用户提供的播放链接: ${playUrl}`)
         return playUrl.trim()
     }
 
     // 如果没有playUrl，但platform或musicId为空或无效，则无法获取播放链接
     if (!platform || !musicId || platform === 'unknown' || platform === '' || musicId === null || musicId === '') {
-        console.warn(`[getMusicUrl] 缺少必要参数: platform=${platform}, musicId=${musicId}`)
         throw new Error('缺少音乐平台或音乐ID信息')
     }
 
@@ -28,13 +26,10 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
         const quality = getQuality(platform)
 
         // 先使用统一组件的音源选择逻辑
-        console.log(`[getMusicUrl] 使用统一音源选择逻辑获取播放链接: platform=${platform}, musicId=${musicId}`)
         const backupResult = await getSongUrl(Number(musicId), quality, platform)
         if (backupResult.success && backupResult.url) {
-            console.log(`[getMusicUrl] 统一音源选择成功获取播放链接`)
             return backupResult.url
         }
-        console.warn(`[getMusicUrl] 统一音源选择未返回有效链接，回退到直接调用 vkeys`)
 
         // 回退到 vkeys
         let apiUrl: string
@@ -45,8 +40,6 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
         } else {
             throw new Error('不支持的音乐平台')
         }
-
-        console.log(`[getMusicUrl] 使用 vkeys API 获取播放链接: ${platform}, ${musicId}`)
 
         const response = await fetch(apiUrl, {
             headers: {
@@ -65,16 +58,13 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
             if (url.startsWith('http://')) {
                 url = url.replace('http://', 'https://')
             }
-            console.log(`[getMusicUrl] vkeys API成功获取播放链接`)
             return url
         }
 
         // vkeys API返回了响应但没有有效的播放链接
-        console.warn(`[getMusicUrl] vkeys API响应无效:`, data)
         throw new Error('vkeys API返回的播放链接无效')
 
     } catch (error) {
-        console.error(`[getMusicUrl] 获取播放链接失败:`, error)
         throw error
     }
 }

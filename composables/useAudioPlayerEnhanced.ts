@@ -29,42 +29,31 @@ export const useAudioPlayerEnhanced = () => {
         qualitySwitchAttempted.value = false
     }
 
-    // 获取音乐链接
-    const getMusicUrl = async (platform, musicId, quality) => {
+    // 获取音乐链接（统一委托 + 支持传入临时音质或直接播放链接）
+    const getMusicUrl = async (platform, musicId, qualityOrPlayUrl) => {
         try {
-            let apiUrl
-            if (platform === 'netease') {
-                apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
-            } else if (platform === 'tencent') {
-                apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
-            } else {
-                return {success: false, error: '不支持的音乐平台'}
+            let previousQuality
+            // 如果传入的是音质值，临时切换音质以用统一逻辑获取URL
+            if (typeof qualityOrPlayUrl === 'number') {
+                previousQuality = getQuality(platform)
+                saveQuality(platform, qualityOrPlayUrl)
             }
 
-            const response = await fetch(apiUrl, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                }
-            })
+            const { getMusicUrl: coreGetMusicUrl } = await import('~/utils/musicUrl')
+            const url = await coreGetMusicUrl(platform, musicId, typeof qualityOrPlayUrl === 'string' ? qualityOrPlayUrl : undefined)
 
-            if (!response.ok) {
-                return {success: false, error: `获取音乐URL失败: ${response.status}`}
+            // 如果失败且我们临时切换过音质，恢复原音质设置
+            if (!url && typeof qualityOrPlayUrl === 'number' && previousQuality !== undefined) {
+                saveQuality(platform, previousQuality)
             }
 
-            const data = await response.json()
-            if (data.code === 200 && data.data && data.data.url) {
-                // 将HTTP URL改为HTTPS
-                let url = data.data.url
-                if (url.startsWith('http://')) {
-                    url = url.replace('http://', 'https://')
-                }
-                return {success: true, url}
-            } else {
-                return {success: false, error: data.message || `API错误: ${data.code}`}
+            if (url) {
+                return { success: true, url }
             }
+            return { success: false, error: '未获取到播放链接' }
         } catch (error) {
             console.error('获取音乐链接失败:', error)
-            return {success: false, error: error.message || '网络错误'}
+            return {success: false, error: (error as any)?.message || '网络错误'}
         }
     }
 

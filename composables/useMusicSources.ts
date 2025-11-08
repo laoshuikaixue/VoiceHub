@@ -80,13 +80,10 @@ export const useMusicSources = () => {
         error?: string;
     }> => {
         try {
-            console.log(`[validatePlayUrl] 开始验证播放链接: ${url}`)
-            
             // 修复HTTP/HTTPS协议问题
             let validatedUrl = url
             if (url.startsWith('http://')) {
                 validatedUrl = url.replace('http://', 'https://')
-                console.log(`[validatePlayUrl] 将HTTP链接转换为HTTPS: ${validatedUrl}`)
             }
 
             // 使用HEAD请求检查链接可用性，避免下载整个文件
@@ -96,7 +93,6 @@ export const useMusicSources = () => {
             })
 
             if (!response.ok) {
-                console.warn(`[validatePlayUrl] 链接返回错误状态: ${response.status}`)
                 return {
                     valid: false,
                     error: `HTTP ${response.status}: ${response.statusText}`
@@ -106,7 +102,6 @@ export const useMusicSources = () => {
             // 检查Content-Type是否为音频文件
             const contentType = response.headers.get('content-type')
             if (contentType && !contentType.includes('audio') && !contentType.includes('video')) {
-                console.warn(`[validatePlayUrl] 链接不是音频文件: ${contentType}`)
                 return {
                     valid: false,
                     error: `不是音频文件: ${contentType}`
@@ -123,7 +118,6 @@ export const useMusicSources = () => {
                 estimatedDuration = (fileSizeBytes / 1024 / 1024) * 64
                 
                 if (estimatedDuration < 5) {
-                    console.warn(`[validatePlayUrl] 估算时长过短: ${estimatedDuration}秒`)
                     return {
                         valid: false,
                         duration: estimatedDuration,
@@ -132,14 +126,12 @@ export const useMusicSources = () => {
                 }
             }
 
-            console.log(`[validatePlayUrl] 链接验证成功，估算时长: ${estimatedDuration.toFixed(1)}秒`)
             return {
                 valid: true,
                 duration: estimatedDuration
             }
 
         } catch (error: any) {
-            console.error(`[validatePlayUrl] 验证失败:`, error)
             return {
                 valid: false,
                 error: error.message || '链接验证失败'
@@ -175,11 +167,16 @@ export const useMusicSources = () => {
             let sourcesToTry: MusicSource[]
             
             if (params.platform === 'tencent') {
-                // QQ音乐平台：优先使用vkeys，然后是其他音源
-                const vkeysSource = enabledSources.find(s => s.id === 'vkeys')
-                const otherSources = enabledSources.filter(s => s.id !== 'vkeys')
-                sourcesToTry = vkeysSource ? [vkeysSource, ...otherSources] : enabledSources
-                console.log('QQ音乐平台搜索，优先使用vkeys音源')
+                // QQ音乐平台：优先使用 vkeys v3，其次 vkeys v2；若全部失败，再尝试其他平台
+                const v3 = enabledSources.find(s => s.id === 'vkeys-v3')
+                const v2 = enabledSources.find(s => s.id === 'vkeys')
+                const tencentSources: MusicSource[] = []
+                if (v3) tencentSources.push(v3)
+                if (v2) tencentSources.push(v2)
+                console.log('QQ音乐平台搜索，优先使用 vkeys v3，失败回退到 v2')
+
+                // 第一阶段：仅尝试腾讯专用源
+                sourcesToTry = tencentSources
             } else {
                 // 网易云音乐平台（默认）：优先使用netease-backup系列，vkeys作为备用
                 const neteaseSources = enabledSources.filter(s => s.id.includes('netease-backup'))
@@ -227,6 +224,30 @@ export const useMusicSources = () => {
                 }
             }
 
+            // 若为QQ音乐平台，尝试完腾讯源后允许作为最后手段切换到其他平台
+            if (params.platform === 'tencent') {
+                const otherSources = enabledSources.filter(s => s.id !== 'vkeys-v3' && s.id !== 'vkeys')
+                if (otherSources.length) {
+                    console.log('QQ音乐平台所有专用源失败，作为最后手段尝试其他平台音源')
+                    for (const source of otherSources) {
+                        if (signal?.aborted) {
+                            throw new DOMException('搜索请求已被取消', 'AbortError')
+                        }
+                        try {
+                            console.log(`尝试使用音源: ${source.name} (${source.id})`)
+                            const result = await searchWithSource(source, params, signal)
+                            currentSource.value = source.id
+                            lastUsedSource.value = source.id
+                            updateSourceStatus(source.id, 'online')
+                            return { success: true, source: source.id, data: result, error: undefined }
+                        } catch (error: any) {
+                            console.warn(`音源 ${source.name} 搜索失败:`, error.message)
+                            updateSourceStatus(source.id, 'error', error.message)
+                        }
+                    }
+                }
+            }
+
             // 所有音源都失败了
             throw new Error('所有音源均不可用，请稍后重试')
 
@@ -244,7 +265,18 @@ export const useMusicSources = () => {
         let url: string
         let transformResponse: (data: any) => any[]
 
-        if (source.id === 'vkeys') {
+        if (source.id === 'vkeys-v3') {
+            // Vkeys v3 API（仅支持QQ音乐搜索）
+            const platform = params.platform || 'tencent'
+            if (platform !== 'tencent') {
+                throw new Error('vkeys v3 仅支持QQ音乐搜索')
+            }
+
+            const page = Math.floor((params.offset || 0) / (params.limit || 10)) + 1
+            const limit = params.limit || 10
+            url = `${source.baseUrl}/tencent/search/song?keyword=${encodeURIComponent(params.keywords)}&page=${page}&limit=${limit}`
+            transformResponse = (data: any) => transformVkeysV3TencentSearch(data)
+        } else if (source.id === 'vkeys') {
             // Vkeys API - 根据用户选择的平台使用对应的API
             const platform = params.platform || 'netease' // 使用用户选择的平台，默认网易云
 
@@ -269,13 +301,18 @@ export const useMusicSources = () => {
 
         try {
             console.log(`[${source.name}] 请求URL:`, finalUrl)
+            // v3 请求使用简单请求，不携带任何会触发预检的自定义头
+            const requestHeaders = (source.id === 'vkeys-v3')
+                ? undefined
+                : ({
+                    'Content-Type': 'application/json',
+                    ...source.headers
+                } as Record<string, string>)
+
             response = await $fetch(finalUrl, {
                 timeout: source.timeout || config.value.timeout,
                 signal,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...source.headers
-                }
+                headers: requestHeaders
             })
             console.log(`[${source.name}] API响应:`, response)
 
@@ -486,7 +523,7 @@ export const useMusicSources = () => {
 
     /**
      * 获取歌曲播放URL
-     * 根据平台选择合适的音源：网易云优先使用netease-backup，QQ音乐使用vkeys
+     * 根据平台选择合适的音源：网易云优先使用netease-backup；QQ音乐仅使用vkeys系（不跨平台）
      */
     const getSongUrl = async (id: number | string, quality?: number, platform?: string): Promise<{
         success: boolean;
@@ -504,22 +541,18 @@ export const useMusicSources = () => {
             let sourcesToTry: Array<{source: MusicSource, type: 'netease' | 'tencent'}> = []
 
             if (platform === 'tencent') {
-                // QQ音乐平台：优先使用vkeys，然后尝试其他音源
-                console.log(`[getSongUrl] QQ音乐平台，按优先级尝试音源: id=${idParam}`)
-                
-                const vkeysSource = enabledSources.find(source => source.id === 'vkeys')
-                if (vkeysSource) {
-                    sourcesToTry.push({source: vkeysSource, type: 'tencent'})
+                // QQ音乐平台：优先 vkeys v3（获取音质列表并选择可用项），然后回退到 vkeys v2
+
+                const v3 = enabledSources.find(source => source.id === 'vkeys-v3')
+                const v2 = enabledSources.find(source => source.id === 'vkeys')
+                if (v3) {
+                    sourcesToTry.push({source: v3, type: 'tencent'})
                 }
-                
-                // 添加其他音源作为备用
-                const otherSources = enabledSources.filter(source => source.id !== 'vkeys')
-                otherSources.forEach(source => {
-                    sourcesToTry.push({source, type: 'netease'}) // 其他音源通常是网易云备用
-                })
+                if (v2) {
+                    sourcesToTry.push({source: v2, type: 'tencent'})
+                }
             } else {
                 // 网易云音乐平台（默认）：优先使用netease-backup系列，然后vkeys，最后其他
-                console.log(`[getSongUrl] 网易云音乐平台，按优先级尝试音源: id=${idParam}`)
                 
                 const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
                 if (neteaseSource) {
@@ -550,7 +583,6 @@ export const useMusicSources = () => {
 
             // 逐个尝试音源
             for (const {source, type} of sourcesToTry) {
-                console.log(`[getSongUrl] 尝试音源: ${source.name} (${source.id})`)
                 
                 try {
                     let url: string | null = null
@@ -565,6 +597,83 @@ export const useMusicSources = () => {
                         
                         if (vkeysResp?.code === 200 && vkeysResp?.data?.url) {
                             url = String(vkeysResp.data.url)
+                        }
+                    } else if (source.id === 'vkeys-v3') {
+                        // Vkeys v3：先获取歌曲信息与音质列表，再按可用音质选择并调用 v2 获取可播放URL
+                        try {
+                            const infoUrl = `${source.baseUrl}/tencent/song/info?id=${encodeURIComponent(idParam)}`
+                            const infoResp = await $fetch(infoUrl, { timeout: source.timeout || 8000 })
+
+                            // v3 成功码为 0
+                            if (typeof infoResp?.code !== 'number' || infoResp.code !== 0 || !infoResp?.data) {
+                                throw new Error(`v3 歌曲信息接口错误: ${infoResp?.message || '未知错误'} (code: ${infoResp?.code})`)
+                            }
+
+                            const qualityInfo: Array<{ type: number; size: number; file: string; quality: string }> = infoResp.data.qualityInfo || []
+                            if (!Array.isArray(qualityInfo) || qualityInfo.length === 0) {
+                                throw new Error('v3 歌曲信息缺少音质列表')
+                            }
+
+                            // 目标音质：优先使用传入quality，否则读取设置
+                            let targetQuality: number
+                            if (typeof quality === 'number') {
+                                targetQuality = quality
+                            } else {
+                                try {
+                                    const { getQuality } = await import('./useAudioQuality')
+                                    targetQuality = getQuality('tencent')
+                                } catch {
+                                    targetQuality = 8 // 默认 HQ 高音质
+                                }
+                            }
+
+                            // 构造腾讯音质优先序列：以目标为首，其次按 QUALITY_OPTIONS.tencent 顺序降级，最后兜底常见音质
+                            let fallbackList: number[] = []
+                            try {
+                                const { QUALITY_OPTIONS } = await import('./useAudioQuality')
+                                const optionValues = (QUALITY_OPTIONS as any)?.tencent?.map((o: any) => o.value) || []
+                                fallbackList = optionValues.filter((v: number) => v !== targetQuality)
+                            } catch {
+                                // 兜底序列
+                                fallbackList = [8, 4, 10, 11, 14]
+                            }
+                            const tryQualities = [targetQuality, ...fallbackList]
+
+                            // 在 v3 音质列表中选择第一个 size>0 的可用音质
+                            const available = tryQualities.find(q => qualityInfo.some(qi => qi.type === q && Number(qi.size) > 0))
+                            const selectedQuality = available ?? targetQuality
+
+                            // 使用 vkeys v2 点歌接口获取可播放URL（v3 不直接返回 URL）
+                            const v2Source = getEnabledSources().find(s => s.id === 'vkeys')
+                            if (!v2Source) {
+                                throw new Error('未配置 vkeys v2 音源以获取播放链接')
+                            }
+
+                            const v2Url = `${v2Source.baseUrl}/tencent?id=${idParam}&quality=${selectedQuality}`
+                            const v2Resp = await $fetch(v2Url, { timeout: v2Source.timeout || 8000 })
+                            if (v2Resp?.code === 200 && v2Resp?.data?.url) {
+                                url = String(v2Resp.data.url)
+                            } else {
+                                // 如果首选失败，尝试在可用音质上继续降级（排除已尝试项）
+                                for (const q of tryQualities.filter(q => q !== selectedQuality)) {
+                                    const hasQuality = qualityInfo.some(qi => qi.type === q && Number(qi.size) > 0)
+                                    if (!hasQuality) continue
+
+                                    const altUrl = `${v2Source.baseUrl}/tencent?id=${idParam}&quality=${q}`
+                                    const altResp = await $fetch(altUrl, { timeout: v2Source.timeout || 8000 })
+                                    if (altResp?.code === 200 && altResp?.data?.url) {
+                                        url = String(altResp.data.url)
+                                        break
+                                    }
+                                }
+                            }
+
+                            // 若仍未拿到URL，抛出错误以便外层继续按源回退
+                            if (!url) {
+                                throw new Error('v3 信息+v2 点歌未获取到有效播放链接')
+                            }
+                        } catch (error: any) {
+                            // vkeys v3 路径失败，继续回退其它音源
                         }
                     } else if (source.id.startsWith('meting-')) {
                         // Meting API - 获取播放链接
@@ -591,7 +700,7 @@ export const useMusicSources = () => {
                                 }
                             }
                         } catch (error: any) {
-                            console.warn(`[getSongUrl] Meting API ${source.name} 获取失败:`, error?.message)
+                            // Meting API 获取失败，继续回退其它音源
                         }
                     } else {
                         // 网易云备用API
@@ -601,7 +710,7 @@ export const useMusicSources = () => {
                             const neteaseQuality = getQuality('netease')
                             level = mapQualityToLevel(neteaseQuality)
                         } catch (error) {
-                            console.warn('[getSongUrl] 无法获取音质设置，使用默认音质')
+                            // 无法获取音质设置，使用默认音质
                         }
 
                         const response = await $fetch(`${source.baseUrl}/song/url/v1`, {
@@ -623,31 +732,26 @@ export const useMusicSources = () => {
                         if (url.startsWith('http://')) {
                             url = url.replace('http://', 'https://')
                         }
-
-                        console.log(`[getSongUrl] 从 ${source.name} 获取到播放链接，开始验证: ${url}`)
                         
                         // 验证播放链接
                         const validation = await validatePlayUrl(url)
                         
                         if (validation.valid) {
-                            console.log(`[getSongUrl] 链接验证成功，来自 ${source.name}: ${url}`)
                             return {success: true, url}
                         } else {
-                            console.warn(`[getSongUrl] 链接验证失败，来自 ${source.name}: ${validation.error}`)
                             // 继续尝试下一个音源
                         }
                     } else {
-                        console.warn(`[getSongUrl] ${source.name} 未返回有效链接`)
+                        // 未返回有效链接，继续尝试下一个音源
                     }
                 } catch (error: any) {
-                    console.warn(`[getSongUrl] ${source.name} 获取失败: ${error.message}`)
+                    // 当前音源获取失败，继续尝试下一个音源
                     // 继续尝试下一个音源
                 }
             }
 
             return {success: false, error: '所有音源均无法获取有效的播放链接'}
         } catch (error: any) {
-            console.error('[getSongUrl] 获取播放链接失败:', error)
             return {success: false, error: error?.message || '未知错误'}
         }
     }
@@ -844,6 +948,59 @@ export const useMusicSources = () => {
                 return transformedSong
             })
         }
+    }
+
+    /**
+     * 转换 Vkeys v3 QQ音乐搜索响应
+     * 文档: https://doc.vkeys.cn/v3/音乐模块/QQ音乐/搜索相关接口/2-song.html
+     */
+    const transformVkeysV3TencentSearch = (response: any): any[] => {
+        if (!response) throw new Error('API响应为空')
+        if (typeof response.code !== 'number') throw new Error('响应缺少状态码')
+
+        // v3 成功码为 0
+        if (response.code !== 0) {
+            const msg = `vkeys v3 API错误: ${response.message || '未知错误'} (code: ${response.code})`
+            throw new Error(msg)
+        }
+
+        const data = response.data
+        if (!data || !Array.isArray(data.list)) {
+            throw new Error('v3 响应数据格式不正确')
+        }
+
+        return data.list.map((item: any) => {
+            const id = item.songID ?? item.songId ?? item.id
+            const duration = item.interval ?? item.duration
+            return {
+                id,
+                title: item.title,
+                artist: Array.isArray(item.singerList)
+                    ? item.singerList.map((s: any) => s.name).join('/')
+                    : (item.singer || ''),
+                cover: item.albumImage || item.cover || '',
+                album: item.album || '',
+                duration,
+                musicPlatform: 'tencent',
+                musicId: id?.toString(),
+                url: undefined,
+                hasUrl: false,
+                sourceInfo: {
+                    source: 'vkeys-v3',
+                    originalId: id?.toString(),
+                    fetchedAt: new Date(),
+                    mid: item.songMID || item.mid,
+                    vid: item.vid,
+                    quality: item.quality,
+                    pay: item.pay,
+                    subtitle: item.subtitle,
+                    time: item.time,
+                    type: item.type,
+                    bpm: item.bpm,
+                    grp: item.grp
+                }
+            }
+        })
     }
 
     /**
