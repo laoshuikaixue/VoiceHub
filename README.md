@@ -3,12 +3,11 @@
 这是一个使用Nuxt 3全栈框架开发的现代化校园广播站点歌管理系统。系统提供完整的点歌、投票、排期管理、通知推送、数据分析、权限控制和数据库管理功能，支持多角色权限管理和灵活的系统配置。
 
 ## 项目截图
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/db932613-6694-47ec-9f2e-5379c833591f" />
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/719006eb-ab53-4ad1-af4a-882ce8d481db" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/7cb0257f-523b-466f-ae39-e63a1bac17a2" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/3241ac39-3fa4-4220-b27f-df044b463319" />
 <img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/f721792e-e251-4914-8e15-e929fd424d07" />
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/71ef19fd-e380-4358-b44e-3b4229a2273b" />
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/4cef5807-a3ea-4096-94be-80acdc5d8a76" />
-<img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/ab7273a1-820b-4537-ad05-34bbbde9e572" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/804c12ba-2f40-4daa-b7ba-3a1882b67b3f" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e8f26207-2bfa-4f14-a9e4-e872198d2e21" />
 
 ## 主要功能
 
@@ -1248,7 +1247,7 @@ Thanks goes to these wonderful people:
 
 ### 参考项目
 
-本项目在开发过程中参考使用了以下优秀的开源项目和API服务：
+本项目在开发过程中参考和使用了以下优秀的开源项目和API服务：
 
 - [落月API](https://doc.vkeys.cn/api-doc/)
 - [NeteaseCloudMusicApiEnhanced](https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced)
