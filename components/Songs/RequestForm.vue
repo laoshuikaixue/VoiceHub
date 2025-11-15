@@ -132,8 +132,19 @@
                               class="similar-text status-scheduled">歌曲已排期</span>
                         <span v-else class="similar-text">歌曲已存在</span>
 
-                        <!-- 始终显示点赞按钮，但根据状态设置不同样式 -->
+                        <!-- 超级管理员对已播放的相似歌曲：显示继续投稿 -->
                         <button
+                            v-if="getSimilarSong(result)?.played && isSuperAdmin"
+                            :disabled="submitting"
+                            class="select-btn"
+                            @click.stop.prevent="submitSong(result, { forceResubmit: true })"
+                        >
+                          继续投稿
+                        </button>
+
+                        <!-- 其他用户：显示点赞按钮，根据状态设置不同样式 -->
+                        <button
+                            v-else
                             :class="{
                             'disabled': getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled || getSimilarSong(result)?.voted || submitting
                           }"
@@ -428,6 +439,7 @@ const {guidelines: submissionGuidelines, initSiteConfig} = useSiteConfig()
 // 用户认证
 const auth = useAuth()
 const user = computed(() => auth.user.value)
+const isSuperAdmin = computed(() => user.value?.role === 'SUPER_ADMIN')
 
 // 学期管理
 const {fetchCurrentSemester, currentSemester} = useSemesters()
@@ -1029,7 +1041,7 @@ const selectResult = async (result) => {
 }
 
 // 提交选中的歌曲
-const submitSong = async (result) => {
+const submitSong = async (result, options = {}) => {
   // 防止重复点击和重复提交
   if (submitting.value) return
   console.log('执行submitSong，提交歌曲:', result.title || result.song)
@@ -1055,10 +1067,12 @@ const submitSong = async (result) => {
         song.artist.toLowerCase() === songArtist.toLowerCase()
     )
     if (existingSong) {
-      // 显示重复歌曲弹窗
-      duplicateSong.value = existingSong
-      showDuplicateModal.value = true
-      return
+      const allowOverride = options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
+      if (!allowOverride) {
+        duplicateSong.value = existingSong
+        showDuplicateModal.value = true
+        return
+      }
     }
   }
 

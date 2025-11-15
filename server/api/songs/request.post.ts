@@ -40,20 +40,25 @@ export default defineEventHandler(async (event) => {
             id: songs.id,
             title: songs.title,
             artist: songs.artist,
-            semester: songs.semester
+            semester: songs.semester,
+            played: songs.played
         }).from(songs).where(eq(songs.semester, currentSemester))
 
-        const existingSong = allSongs.find(song => {
+        const matchingSongs = allSongs.filter(song => {
             const songTitle = normalizeForMatch(song.title)
             const songArtist = normalizeForMatch(song.artist)
             return songTitle === normalizedTitle && songArtist === normalizedArtist
         })
 
-        if (existingSong) {
-            throw createError({
-                statusCode: 400,
-                message: `《${body.title}》已经在列表中，不能重复投稿`
-            })
+        if (matchingSongs.length > 0) {
+            const isSuperAdmin = user.role === 'SUPER_ADMIN'
+            const hasUnplayedDuplicate = matchingSongs.some(s => !s.played)
+            if (!isSuperAdmin || hasUnplayedDuplicate) {
+                throw createError({
+                    statusCode: 400,
+                    message: `《${body.title}》已经在列表中，不能重复投稿`
+                })
+            }
         }
 
         // 检查投稿限额（管理员不受限制）

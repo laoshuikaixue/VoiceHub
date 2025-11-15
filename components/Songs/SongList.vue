@@ -131,13 +131,8 @@
               <div class="song-info">
                 <h3 :title="song.title + ' - ' + song.artist" class="song-title">
                   <marquee-text :activated="isSongFocused(song.id)" :text="`${song.title} - ${song.artist}`"/>
-                  <span 
-                    v-if="song.played" 
-                    class="played-tag"
-                    :title="song.scheduleDate ? `播放日期：${formatScheduleDate(song.scheduleDate)}` : '已播放'"
-                  >
-                    已播放
-                  </span>
+                  <button v-if="song.played && isSuperAdmin" class="played-tag" :title="'继续投稿'" @click.stop="handleContinueSubmit(song)">继续投稿</button>
+                  <span v-else-if="song.played" class="played-tag" :title="song.scheduleDate ? `播放日期：${formatScheduleDate(song.scheduleDate)}` : '已播放'">已播放</span>
                   <span 
                     v-else-if="song.scheduled" 
                     class="scheduled-tag"
@@ -325,6 +320,7 @@ const searchQuery = ref('') // 搜索查询
 const activeTab = ref('all') // 默认显示全部投稿
 const auth = useAuth()
 const isAuthenticated = computed(() => auth && auth.isAuthenticated && auth.isAuthenticated.value)
+const isSuperAdmin = computed(() => auth && auth.user && auth.user.value && auth.user.value.role === 'SUPER_ADMIN')
 
 // 焦点状态管理
 const focusedSongId = ref(null)
@@ -1302,6 +1298,18 @@ function debounce(func, wait) {
 // 当组件销毁时不需要特殊处理，音频播放由全局管理
 
 // 波纹效果指令
+const handleContinueSubmit = async (song) => {
+  if (!isSuperAdmin.value) return
+  await songsComposable.requestSong({
+    title: song.title,
+    artist: song.artist,
+    cover: song.cover || null,
+    musicPlatform: song.musicPlatform || null,
+    musicId: song.musicId ? String(song.musicId) : null,
+    playUrl: song.playUrl || null
+  })
+}
+
 const vRipple = {
   mounted(el) {
     el.addEventListener('click', e => {
