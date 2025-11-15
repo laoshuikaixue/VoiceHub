@@ -1259,7 +1259,8 @@ const getFirstChar = (text) => {
   flex-shrink: 0;
   align-self: stretch;
   overflow: hidden;
-  line-height: 20px;
+  line-height: 22px;
+  padding-bottom: 2px;
   letter-spacing: -0.4px;
   color: #ffffff;
   font-family: "SF Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
