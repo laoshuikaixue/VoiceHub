@@ -334,8 +334,8 @@
   .user-card,
   .data-card,
   .stat-card {
-    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.1);
-    tap-highlight-color: rgba(102, 126, 234, 0.1);
+    -webkit-tap-highlight-color: transparent;
+    tap-highlight-color: transparent;
   }
 
   /* 防止双击缩放 */

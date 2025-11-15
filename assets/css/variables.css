@@ -295,6 +295,24 @@ button {
   font-family: inherit;
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, input, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  *:focus {
+    outline: none !important;
+  }
+  button, a {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
 /* 全局输入框重置 */
 input, textarea, select {
   font-family: inherit;
