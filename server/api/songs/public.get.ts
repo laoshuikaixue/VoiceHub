@@ -74,10 +74,11 @@ export default defineEventHandler(async (event) => {
                 const data = await client.get(cacheKey)
                 if (data) {
                     const parsedData = JSON.parse(data)
-                    console.log(`[Cache] 公共排期Redis缓存命中: ${cacheKey}，数量: ${parsedData.length}`)
-                    // 深拷贝数据以避免修改缓存的原始数据
+                    const isValid = Array.isArray(parsedData) && parsedData.every((it: any) => it && typeof it.playDate === 'string' && it.song && it.song.id && it.song.title)
+                    if (!isValid) {
+                        return null
+                    }
                     const resultData = JSON.parse(JSON.stringify(parsedData))
-                    // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
                     if (shouldHideStudentInfo && !isLoggedIn) {
                         resultData.forEach((item: any) => {
                             if (item.song?.requester) {
@@ -154,6 +155,7 @@ export default defineEventHandler(async (event) => {
                 title: songs.title,
                 artist: songs.artist,
                 played: songs.played,
+                playedAt: songs.playedAt,
                 cover: songs.cover,
                 musicPlatform: songs.musicPlatform,
                 musicId: songs.musicId,
@@ -259,7 +261,8 @@ export default defineEventHandler(async (event) => {
 
             return {
                 id: schedule.id,
-                playDate: dateOnly.toISOString().split('T')[0], // 转换为YYYY-MM-DD格式字符串
+                playDate: dateOnly.toISOString().split('T')[0],
+                playDateFormatted: formatDateTime(dateOnly),
                 sequence: schedule.sequence || 1,
                 played: schedule.played || false,
                 playTimeId: schedule.playTimeId, // 添加播放时段ID
@@ -277,6 +280,7 @@ export default defineEventHandler(async (event) => {
                     requester: requesterName,
                     voteCount: voteCounts.get(schedule.song.id) || 0,
                     played: schedule.song.played || false,
+                    playedAt: schedule.song.playedAt ? formatDateTime(new Date(schedule.song.playedAt)) : null,
                     cover: schedule.song.cover || null,
                     musicPlatform: schedule.song.musicPlatform || null,
                     musicId: schedule.song.musicId || null,

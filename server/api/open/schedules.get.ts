@@ -99,7 +99,10 @@ export default defineEventHandler(async (event) => {
                 const data = await client.get(redisCacheKey)
                 if (data) {
                     const parsedData = JSON.parse(data)
-                    console.log(`[OpenAPI Cache] 使用Redis公共排期缓存: ${redisCacheKey}，数量: ${parsedData.length}`)
+                    const isValid = Array.isArray(parsedData) && parsedData.every((it: any) => it && typeof it.playDate === 'string' && it.song && it.song.id && it.song.title)
+                    if (!isValid) {
+                        return null
+                    }
                     return parsedData
                 }
                 return null

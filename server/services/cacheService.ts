@@ -917,9 +917,12 @@ class CacheService {
         const d = row.playDate instanceof Date ? row.playDate : (row.playDate ? new Date(row.playDate) : null)
         const dateStr = d ? new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0)).toISOString().split('T')[0] : row.playDate
         const requesterName = row.requester && row.requester.name ? row.requester.name : (row.song && row.song.requester ? row.song.requester : null)
+        const playedAtVal = row.song?.playedAt ?? row.playedAt ?? null
+        const playedAtStr = playedAtVal instanceof Date ? playedAtVal.toISOString() : (typeof playedAtVal === 'string' ? playedAtVal : null)
         return {
             id: row.id,
             playDate: dateStr,
+            playDateFormatted: dateStr,
             sequence: row.sequence ?? 1,
             played: !!row.played,
             playTimeId: row.playTimeId ?? (row.playTime && row.playTime.id) ?? null,
@@ -937,6 +940,7 @@ class CacheService {
                 requester: requesterName,
                 voteCount: row.song?.voteCount ?? row.voteCount ?? 0,
                 played: !!(row.song?.played ?? row.songPlayed),
+                playedAt: playedAtStr,
                 cover: row.song?.cover ?? row.cover ?? null,
                 musicPlatform: row.song?.musicPlatform ?? row.musicPlatform ?? null,
                 musicId: row.song?.musicId ?? row.musicId ?? null,
@@ -947,7 +951,7 @@ class CacheService {
         }
     }
 
-    private async clearPublicSchedulesCache(): Promise<void> {
+    async clearPublicSchedulesCache(): Promise<void> {
         if (!isRedisReady()) {
             console.log('[Cache] Redis未就绪，跳过public_schedules缓存清理')
             return
