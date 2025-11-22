@@ -130,12 +130,23 @@ class RedisPool {
 
     // 执行Redis命令（带错误处理）
     async executeCommand<T>(command: () => Promise<T>, fallback?: () => Promise<T>): Promise<T | null> {
-        if (!this.isReady()) {
+        if (!this.client || !this.isRedisEnabled()) {
             if (fallback) {
-                console.log('[Redis] Redis不可用，使用fallback')
+                console.log('[Redis] Redis未启用或客户端不可用，使用fallback')
                 return await fallback()
             }
             return null
+        }
+
+        if (!this.isReady()) {
+            await this.connect()
+            if (!this.isReady()) {
+                if (fallback) {
+                    console.log('[Redis] Redis未就绪，使用fallback')
+                    return await fallback()
+                }
+                return null
+            }
         }
 
         try {

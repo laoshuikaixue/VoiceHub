@@ -231,8 +231,12 @@ class CacheService {
         const cacheData = schedules.length === 0 ? [{__empty: true}] : schedules
         const ttl = schedules.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SCHEDULES
 
-        await this.setCache(key, cacheData, ttl)
-        console.log(`[Cache] 排期列表已缓存: ${key}, 数量: ${schedules.length}`)
+        const ok = await this.setCache(key, cacheData, ttl)
+        if (ok) {
+            console.log(`[Cache] 排期列表已缓存: ${key}, 数量: ${schedules.length}`)
+        } else {
+            console.warn(`[Cache] 排期列表缓存失败（Redis未就绪或写入失败）: ${key}`)
+        }
     }
 
     // 获取特定日期的排期缓存
@@ -260,8 +264,12 @@ class CacheService {
         const cacheData = schedules.length === 0 ? [{__empty: true}] : schedules
         const ttl = schedules.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SCHEDULES
 
-        await this.setCache(key, cacheData, ttl)
-        console.log(`[Cache] 日期排期已缓存: ${key}, 数量: ${schedules.length}`)
+        const ok = await this.setCache(key, cacheData, ttl)
+        if (ok) {
+            console.log(`[Cache] 日期排期已缓存: ${key}, 数量: ${schedules.length}`)
+        } else {
+            console.warn(`[Cache] 日期排期缓存失败（Redis未就绪或写入失败）: ${key}`)
+        }
     }
 
     // 清除排期相关缓存
@@ -299,8 +307,12 @@ class CacheService {
     // 设置系统设置缓存
     async setSystemSettings(settings: any): Promise<void> {
         const key = this.generateKey('system', 'settings')
-        await this.setCache(key, settings, CACHE_TTL.SYSTEM_SETTINGS)
-        console.log(`[Cache] 系统设置已缓存: ${key}`)
+        const ok = await this.setCache(key, settings, CACHE_TTL.SYSTEM_SETTINGS)
+        if (ok) {
+            console.log(`[Cache] 系统设置已缓存: ${key}`)
+        } else {
+            console.warn(`[Cache] 系统设置缓存失败（Redis未就绪或写入失败）: ${key}`)
+        }
     }
 
     // 清除系统设置缓存
@@ -335,8 +347,12 @@ class CacheService {
         const cacheData = playTimes.length === 0 ? [{__empty: true}] : playTimes
         const ttl = playTimes.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SYSTEM_SETTINGS
 
-        await this.setCache(key, cacheData, ttl)
-        console.log(`[Cache] 播放时间列表已缓存: ${key}, 数量: ${playTimes.length}`)
+        const ok = await this.setCache(key, cacheData, ttl)
+        if (ok) {
+            console.log(`[Cache] 播放时间列表已缓存: ${key}, 数量: ${playTimes.length}`)
+        } else {
+            console.warn(`[Cache] 播放时间列表缓存失败（Redis未就绪或写入失败）: ${key}`)
+        }
     }
 
     // 清除播放时间相关缓存
