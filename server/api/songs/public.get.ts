@@ -100,6 +100,12 @@ export default defineEventHandler(async (event) => {
         let cachedSchedules = null
         if (!bypassCache) {
             cachedSchedules = await cacheService.getSchedulesList()
+            if (cachedSchedules && cachedSchedules.length > 0) {
+                const valid = cachedSchedules.every((s: any) => typeof s.playDate === 'string' && s.song && s.song.id)
+                if (!valid) {
+                    cachedSchedules = null
+                }
+            }
         }
 
         if (cachedSchedules && cachedSchedules.length > 0) {

@@ -228,7 +228,8 @@ class CacheService {
         )
 
         // 如果是空结果，设置特殊标记防止缓存穿透
-        const cacheData = schedules.length === 0 ? [{__empty: true}] : schedules
+        const normalized = schedules.map((s: any) => this.normalizeSchedule(s))
+        const cacheData = normalized.length === 0 ? [{__empty: true}] : normalized
         const ttl = schedules.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SCHEDULES
 
         const ok = await this.setCache(key, cacheData, ttl)
@@ -261,7 +262,8 @@ class CacheService {
         const dateStr = date.toISOString().split('T')[0]
         const key = this.generateKey(CACHE_PREFIXES.SCHEDULE_BY_DATE, dateStr)
 
-        const cacheData = schedules.length === 0 ? [{__empty: true}] : schedules
+        const normalized = schedules.map((s: any) => this.normalizeSchedule(s))
+        const cacheData = normalized.length === 0 ? [{__empty: true}] : normalized
         const ttl = schedules.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SCHEDULES
 
         const ok = await this.setCache(key, cacheData, ttl)
@@ -952,3 +954,40 @@ if (process.env.NODE_ENV !== 'test') {
 
 export {cacheService, CacheService}
 export default cacheService
+    private normalizeSchedule(row: any): any {
+        if (!row) return row
+        const hasStringDate = typeof row.playDate === 'string'
+        const hasSong = row.song && typeof row.song === 'object'
+        if (hasStringDate && hasSong) return row
+        const d = row.playDate instanceof Date ? row.playDate : (row.playDate ? new Date(row.playDate) : null)
+        const dateStr = d ? new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0)).toISOString().split('T')[0] : row.playDate
+        const requesterName = row.requester && row.requester.name ? row.requester.name : (row.song && row.song.requester ? row.song.requester : null)
+        return {
+            id: row.id,
+            playDate: dateStr,
+            sequence: row.sequence ?? 1,
+            played: !!row.played,
+            playTimeId: row.playTimeId ?? (row.playTime && row.playTime.id) ?? null,
+            playTime: row.playTime ? {
+                id: row.playTime.id,
+                name: row.playTime.name,
+                startTime: row.playTime.startTime,
+                endTime: row.playTime.endTime,
+                enabled: row.playTime.enabled
+            } : null,
+            song: {
+                id: row.song?.id ?? row.songId,
+                title: row.song?.title ?? row.title,
+                artist: row.song?.artist ?? row.artist,
+                requester: requesterName,
+                voteCount: row.song?.voteCount ?? row.voteCount ?? 0,
+                played: !!(row.song?.played ?? row.songPlayed),
+                cover: row.song?.cover ?? row.cover ?? null,
+                musicPlatform: row.song?.musicPlatform ?? row.musicPlatform ?? null,
+                musicId: row.song?.musicId ?? row.musicId ?? null,
+                playUrl: row.song?.playUrl ?? row.playUrl ?? null,
+                semester: row.song?.semester ?? row.semester ?? null,
+                requestedAt: row.song?.requestedAt ?? null
+            }
+        }
+    }

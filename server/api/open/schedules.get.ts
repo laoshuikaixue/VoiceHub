@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
         // 尝试从CacheService获取排期数据
         let cachedSchedules = await cacheService.getSchedulesList()
-
+        
         if (cachedSchedules) {
             console.log(`[OpenAPI Cache] 使用普通API缓存数据，数量: ${cachedSchedules.length}`)
 
