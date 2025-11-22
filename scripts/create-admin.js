@@ -71,6 +71,9 @@ async function main() {
 }
 
 main()
+  .then(() => {
+    process.exit(0);
+  })
   .catch(async (error) => {
     console.error('管理员初始化失败:', error.message);
     process.exit(1);
