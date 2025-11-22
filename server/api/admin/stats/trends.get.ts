@@ -32,13 +32,17 @@ export default defineEventHandler(async (event) => {
         // 使用Drizzle ORM的正确语法进行分组查询
         const trendData = await db
             .select({
-                date: sql<string>`DATE(${songs.createdAt})`,
+                date: sql<string>`DATE
+                    (${songs.createdAt})`,
                 count: count(songs.id)
             })
             .from(songs)
             .where(whereCondition)
-            .groupBy(sql`DATE(${songs.createdAt})`)
-            .orderBy(sql`DATE(${songs.createdAt}) ASC`)
+            .groupBy(sql`DATE
+                (${songs.createdAt})`)
+            .orderBy(sql`DATE
+                (${songs.createdAt})
+                ASC`)
 
         // 格式化数据
         const formattedData = trendData.map(item => ({

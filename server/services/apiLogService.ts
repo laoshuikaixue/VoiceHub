@@ -212,11 +212,30 @@ export class ApiLogService {
         const basicStats = await db
             .select({
                 totalRequests: count(),
-                successRequests: count(sql`CASE WHEN ${apiLogs.statusCode} >= 200 AND ${apiLogs.statusCode} < 300 THEN 1 END`),
-                errorRequests: count(sql`CASE WHEN ${apiLogs.statusCode} >= 400 THEN 1 END`),
-                avgResponseTime: sql<number>`ROUND(AVG(${apiLogs.responseTimeMs}), 2)`,
-                maxResponseTime: sql<number>`MAX(${apiLogs.responseTimeMs})`,
-                minResponseTime: sql<number>`MIN(${apiLogs.responseTimeMs})`
+                successRequests: count(sql`CASE WHEN
+                ${apiLogs.statusCode}
+                >=
+                200
+                AND
+                ${apiLogs.statusCode}
+                <
+                300
+                THEN
+                1
+                END`),
+                errorRequests: count(sql`CASE WHEN
+                ${apiLogs.statusCode}
+                >=
+                400
+                THEN
+                1
+                END`),
+                avgResponseTime: sql<number>`ROUND
+                    (AVG(${apiLogs.responseTimeMs}), 2)`,
+                maxResponseTime: sql<number>`MAX
+                    (${apiLogs.responseTimeMs})`,
+                minResponseTime: sql<number>`MIN
+                    (${apiLogs.responseTimeMs})`
             })
             .from(apiLogs)
             .where(whereClause)
@@ -237,7 +256,8 @@ export class ApiLogService {
             .select({
                 endpoint: apiLogs.endpoint,
                 count: count(),
-                avgResponseTime: sql<number>`ROUND(AVG(${apiLogs.responseTimeMs}), 2)`
+                avgResponseTime: sql<number>`ROUND
+                    (AVG(${apiLogs.responseTimeMs}), 2)`
             })
             .from(apiLogs)
             .where(whereClause)
@@ -251,7 +271,8 @@ export class ApiLogService {
                 apiKeyId: apiLogs.apiKeyId,
                 apiKeyName: apiKeys.name,
                 count: count(),
-                avgResponseTime: sql<number>`ROUND(AVG(${apiLogs.responseTimeMs}), 2)`
+                avgResponseTime: sql<number>`ROUND
+                    (AVG(${apiLogs.responseTimeMs}), 2)`
             })
             .from(apiLogs)
             .leftJoin(apiKeys, eq(apiLogs.apiKeyId, apiKeys.id))
@@ -275,12 +296,15 @@ export class ApiLogService {
 
         const timeStats = await db
             .select({
-                time: sql<string>`TO_CHAR(${apiLogs.createdAt}, ${sql.raw(`'${timeGroupFormat}'`)})`
+                time: sql<string>`TO_CHAR
+                    (${apiLogs.createdAt}, ${sql.raw(`'${timeGroupFormat}'`)})`
             })
             .from(apiLogs)
             .where(whereClause)
-            .groupBy(sql`TO_CHAR(${apiLogs.createdAt}, ${sql.raw(`'${timeGroupFormat}'`)})`)
-            .orderBy(sql`TO_CHAR(${apiLogs.createdAt}, ${sql.raw(`'${timeGroupFormat}'`)})`)
+            .groupBy(sql`TO_CHAR
+                (${apiLogs.createdAt}, ${sql.raw(`'${timeGroupFormat}'`)})`)
+            .orderBy(sql`TO_CHAR
+                (${apiLogs.createdAt}, ${sql.raw(`'${timeGroupFormat}'`)})`)
 
         return {
             basic: basicStats[0] || {
@@ -330,10 +354,28 @@ export class ApiLogService {
                 endpoint: apiLogs.endpoint,
                 method: apiLogs.method,
                 totalRequests: count(),
-                successRequests: count(sql`CASE WHEN ${apiLogs.statusCode} >= 200 AND ${apiLogs.statusCode} < 300 THEN 1 END`),
-                errorRequests: count(sql`CASE WHEN ${apiLogs.statusCode} >= 400 THEN 1 END`),
-                avgResponseTime: sql<number>`ROUND(AVG(${apiLogs.responseTimeMs}), 2)`,
-                lastAccessed: sql<Date>`MAX(${apiLogs.createdAt})`
+                successRequests: count(sql`CASE WHEN
+                ${apiLogs.statusCode}
+                >=
+                200
+                AND
+                ${apiLogs.statusCode}
+                <
+                300
+                THEN
+                1
+                END`),
+                errorRequests: count(sql`CASE WHEN
+                ${apiLogs.statusCode}
+                >=
+                400
+                THEN
+                1
+                END`),
+                avgResponseTime: sql<number>`ROUND
+                    (AVG(${apiLogs.responseTimeMs}), 2)`,
+                lastAccessed: sql<Date>`MAX
+                    (${apiLogs.createdAt})`
             })
             .from(apiLogs)
             .where(whereClause)
@@ -371,7 +413,8 @@ export class ApiLogService {
                 statusCode: apiLogs.statusCode,
                 endpoint: apiLogs.endpoint,
                 count: count(),
-                lastOccurred: sql<Date>`MAX(${apiLogs.createdAt})`
+                lastOccurred: sql<Date>`MAX
+                    (${apiLogs.createdAt})`
             })
             .from(apiLogs)
             .where(whereClause)

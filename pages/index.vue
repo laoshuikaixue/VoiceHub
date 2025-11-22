@@ -1049,11 +1049,11 @@ const handleWithdraw = async (song) => {
   }
 }
 
-// 刷新歌曲列表（优化版本）
+// 刷新歌曲列表
 const refreshSongs = async () => {
   try {
     if (isClientAuthenticated.value) {
-      await songs.fetchSongs(false, undefined, true) // forceRefresh=true
+      await songs.fetchSongs(false, undefined, true, false, songs.currentPage.value, songs.pageSize.value)
     } else {
       await songs.fetchPublicSchedules(false, undefined, true) // forceRefresh=true
     }
@@ -1085,12 +1085,6 @@ const handleSemesterChange = async (semester) => {
     console.error('切换学期失败', err)
   }
 }
-
-// 更新通知数量 - 可以保留这个函数但不再调用
-const updateNotificationCount = async () => {
-  // 函数保留但不再使用
-}
-
 
 // 处理登出
 const handleLogout = () => {

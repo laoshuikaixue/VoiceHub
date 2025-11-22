@@ -138,6 +138,10 @@
                               :alt="schedule.song.title"
                               :src="convertToHttps(schedule.song.cover)"
                               class="cover-image"
+                              loading="lazy"
+                              decoding="async"
+                              width="55"
+                              height="55"
                               @error="handleImageError($event, schedule.song)"
                           />
                         </template>

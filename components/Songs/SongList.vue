@@ -361,7 +361,8 @@ const audioPlayer = useAudioPlayer()
 
 // 分页相关
 const currentPage = ref(1)
-const pageSize = ref(12) // 每页显示12首歌曲，适合横向布局
+const pageSize = ref(12)
+const totalCount = computed(() => songsComposable?.total?.value || 0)
 const isMobile = ref(false)
 
 // 自定义跳转相关
@@ -443,6 +444,18 @@ onMounted(async () => {
     console.error('组件初始化失败:', error)
   } finally {
     isDataLoading.value = false
+  }
+})
+
+watch(() => songsComposable?.currentPage?.value, (p) => {
+  if (typeof p === 'number' && p > 0) {
+    currentPage.value = p
+  }
+})
+
+watch(() => songsComposable?.pageSize?.value, (ps) => {
+  if (typeof ps === 'number' && ps > 0) {
+    pageSize.value = ps
   }
 })
 
@@ -584,14 +597,12 @@ const displayedSongs = computed(() => {
 
 // 计算总页数
 const totalPages = computed(() => {
-  return Math.max(1, Math.ceil(displayedSongs.value.length / pageSize.value))
+  return Math.max(1, Math.ceil((totalCount.value || 0) / pageSize.value))
 })
 
 // 获取当前页的歌曲
 const paginatedSongs = computed(() => {
-  const startIndex = (currentPage.value - 1) * pageSize.value
-  const endIndex = startIndex + pageSize.value
-  return displayedSongs.value.slice(startIndex, endIndex)
+  return displayedSongs.value
 })
 
 // 计算分页显示的页码
@@ -635,6 +646,7 @@ const displayedPageNumbers = computed(() => {
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
+    songsComposable.fetchSongs(false, selectedSemester.value || undefined, false, false, page, pageSize.value)
   }
 }
 
@@ -715,7 +727,7 @@ const handleWithdraw = (song) => {
 
 // 处理刷新按钮点击
 const handleRefresh = () => {
-  emit('refresh')
+  songsComposable.fetchSongs(false, selectedSemester.value || undefined, true, false, currentPage.value, pageSize.value)
 }
 
 // 确认执行操作

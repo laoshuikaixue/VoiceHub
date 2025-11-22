@@ -21,6 +21,8 @@ export default defineEventHandler(async (event) => {
         const sortBy = query.sortBy as string || 'createdAt'
         const sortOrder = query.sortOrder as string || 'desc'
         const bypassCache = query.bypass_cache === 'true'
+        const page = Math.max(1, parseInt((query.page as string) || '1'))
+        const pageSize = Math.max(1, Math.min(50, parseInt((query.pageSize as string) || '12')))
 
         // 获取用户身份
         const user = event.context.user || null
@@ -37,7 +39,9 @@ export default defineEventHandler(async (event) => {
             semester: semester || '',
             grade: grade || '',
             sortBy,
-            sortOrder
+            sortOrder,
+            page,
+            pageSize
         }
         const queryHash = crypto.createHash('md5').update(JSON.stringify(queryParams)).digest('hex')
         const cacheKey = `songs:list:${queryHash}`
@@ -109,14 +113,12 @@ export default defineEventHandler(async (event) => {
 
         const whereCondition = conditions.length > 0 ? and(...conditions) : undefined
 
-        // 查询歌曲总数
         const totalResult = await db.select({count: count()})
             .from(songs)
             .leftJoin(users, eq(songs.requesterId, users.id))
             .where(whereCondition)
         const total = totalResult[0].count
 
-        // 获取歌曲数据
         const songsData = await db.select({
             id: songs.id,
             title: songs.title,
@@ -147,6 +149,8 @@ export default defineEventHandler(async (event) => {
                         sortBy === 'artist' ? (sortOrder === 'desc' ? desc(songs.artist) : asc(songs.artist)) :
                             desc(songs.createdAt)
             )
+            .limit(pageSize)
+            .offset((page - 1) * pageSize)
 
         // 获取每首歌的投票数
         const voteCountsQuery = await db.select({
@@ -158,20 +162,16 @@ export default defineEventHandler(async (event) => {
 
         const voteCounts = new Map(voteCountsQuery.map(v => [v.songId, v.count]))
 
-        // 获取每首歌的投票详情（用于检查用户是否已投票）
-        const songVotesQuery = await db.select({
-            songId: votes.songId,
-            userId: votes.userId
-        })
-            .from(votes)
+        let userVotedSongs: Set<number> | null = null
+        if (user) {
+            const userVotesQuery = await db.select({
+                songId: votes.songId
+            })
+                .from(votes)
+                .where(eq(votes.userId, user.id))
 
-        const songVotes = new Map()
-        songVotesQuery.forEach(vote => {
-            if (!songVotes.has(vote.songId)) {
-                songVotes.set(vote.songId, [])
-            }
-            songVotes.get(vote.songId).push(vote.userId)
-        })
+            userVotedSongs = new Set(userVotesQuery.map(v => v.songId))
+        }
 
         // 获取每首歌的排期状态和日期
         // 只查询已发布的排期，草稿不算作已排期
@@ -195,22 +195,12 @@ export default defineEventHandler(async (event) => {
 
         const playTimesMap = new Map(playTimesQuery.map(pt => [pt.id, pt]))
 
-        // 获取所有用户的姓名列表，用于检测同名用户
-        const allUsers = await db.select({
-            id: users.id,
-            name: users.name,
-            grade: users.grade,
-            class: users.class
-        }).from(users)
-
-        // 创建姓名到用户数组的映射
-        const nameToUsers = new Map()
-        allUsers.forEach(u => {
-            if (u.name) {
-                if (!nameToUsers.has(u.name)) {
-                    nameToUsers.set(u.name, [])
-                }
-                nameToUsers.get(u.name).push(u)
+        const nameToUsers = new Map<string, any[]>()
+        songsData.forEach(song => {
+            const nm = song.requester?.name
+            if (nm) {
+                if (!nameToUsers.has(nm)) nameToUsers.set(nm, [])
+                nameToUsers.get(nm)!.push(song.requester)
             }
         })
 
@@ -270,10 +260,8 @@ export default defineEventHandler(async (event) => {
                 songObject.schedulePlayed = scheduleData.played // 排期中的播放状态
             }
 
-            // 如果用户已登录，添加投票状态
-            if (user) {
-                const userVotes = songVotes.get(song.id) || []
-                songObject.voted = userVotes.includes(user.id)
+            if (user && userVotedSongs) {
+                songObject.voted = userVotedSongs.has(song.id)
             }
 
             // 添加期望播放时段相关字段
@@ -316,7 +304,9 @@ export default defineEventHandler(async (event) => {
                     const {voted, ...baseSong} = song
                     return baseSong
                 }),
-                total
+                total,
+                page,
+                pageSize
             }
         }
 
@@ -330,8 +320,10 @@ export default defineEventHandler(async (event) => {
         const result = {
             success: true,
             data: {
-                songs: formattedSongs, // 包含用户投票状态的完整数据
-                total
+                songs: formattedSongs,
+                total,
+                page,
+                pageSize
             }
         }
 

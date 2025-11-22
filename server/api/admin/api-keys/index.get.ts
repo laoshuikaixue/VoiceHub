@@ -29,7 +29,12 @@ export default defineEventHandler(async (event) => {
 
         if (search) {
             whereConditions.push(
-                sql`${apiKeys.name} ILIKE ${`%${search}%`} OR ${apiKeys.description} ILIKE ${`%${search}%`}`
+                sql`${apiKeys.name} ILIKE
+                ${`%${search}%`}
+                OR
+                ${apiKeys.description}
+                ILIKE
+                ${`%${search}%`}`
             )
         }
 
@@ -46,7 +51,12 @@ export default defineEventHandler(async (event) => {
             whereConditions.push(
                 and(
                     eq(apiKeys.isActive, true),
-                    sql`${apiKeys.expiresAt} IS NOT NULL AND ${apiKeys.expiresAt} <= NOW()`
+                    sql`${apiKeys.expiresAt} IS NOT NULL AND
+                    ${apiKeys.expiresAt}
+                    <=
+                    NOW
+                    (
+                    )`
                 )
             )
         }

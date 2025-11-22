@@ -261,7 +261,7 @@ export function recordAccountIpLogin(username: string, ip: string): boolean {
     const now = Date.now()
     let monitor = accountIpSwitchMonitor.get(username)
     if (!monitor) {
-        monitor = { ipMap: new Map<string, number>(), windowStart: now }
+        monitor = {ipMap: new Map<string, number>(), windowStart: now}
         accountIpSwitchMonitor.set(username, monitor)
     }
     const cutoff = now - RISK_CONTROL.IP_SWITCH_WINDOW_MS
@@ -388,7 +388,7 @@ async function triggerAccountIpSwitchAlert(username: string, ips: string[]): Pro
         const alertTitle = '安全警报：账号短期内多IP登录'
         const alertContent = `检测时间：${now.toLocaleString('zh-CN')}
 账号：${username}
-时间窗口：${Math.floor(RISK_CONTROL.IP_SWITCH_WINDOW_MS/60000)}分钟内
+时间窗口：${Math.floor(RISK_CONTROL.IP_SWITCH_WINDOW_MS / 60000)}分钟内
 涉及IP数：${ips.length}
 
 建议立即检查该账号的登录活动并采取必要的安全措施。`
@@ -404,7 +404,8 @@ async function triggerAccountIpSwitchAlert(username: string, ips: string[]): Pro
                 if (admin.meowNickname) {
                     await sendMeowNotificationToUser(admin.id, alertTitle, meowAlertContent)
                 }
-            } catch {}
+            } catch {
+            }
         }
     } catch (error) {
         console.error('触发账号IP切换警报时发生错误:', error)
@@ -454,7 +455,7 @@ export function recordUserVoteActivity(userId: number): { anomaly: boolean } {
     const now = Date.now()
     let stats = userVoteStats.get(userId)
     if (!stats) {
-        stats = { emaPerMin: 0, lastUpdate: now, windowTimestamps: [] }
+        stats = {emaPerMin: 0, lastUpdate: now, windowTimestamps: []}
         userVoteStats.set(userId, stats)
     }
     const dtMin = Math.max(1e-6, (now - stats.lastUpdate) / 60000)
@@ -467,7 +468,7 @@ export function recordUserVoteActivity(userId: number): { anomaly: boolean } {
     const threshold = Math.max(RISK_CONTROL.USER_BASELINE_MIN_PER_MIN, stats.emaPerMin * RISK_CONTROL.USER_BASELINE_MULTIPLIER)
     const anomaly = currentRate > threshold
     if (anomaly) triggerVoteAnomalyAlert(userId, stats.emaPerMin, currentRate)
-    return { anomaly }
+    return {anomaly}
 }
 
 async function triggerSongVoteBurstAlert(songId: number, count: number, buckets: Map<string, number>): Promise<void> {
@@ -493,7 +494,8 @@ async function triggerSongVoteBurstAlert(songId: number, count: number, buckets:
                 if (admin.meowNickname) {
                     await sendMeowNotificationToUser(admin.id, alertTitle, meowAlertContent)
                 }
-            } catch {}
+            } catch {
+            }
         }
     } catch (error) {
         console.error('触发歌曲投票激增警报时发生错误:', error)
@@ -520,7 +522,8 @@ EMA基线：${ema.toFixed(2)} 次/分钟
                 if (admin.meowNickname) {
                     await sendMeowNotificationToUser(admin.id, alertTitle, meowAlertContent)
                 }
-            } catch {}
+            } catch {
+            }
         }
     } catch (error) {
         console.error('触发投票异常警报时发生错误:', error)

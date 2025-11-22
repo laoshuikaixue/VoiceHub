@@ -8,6 +8,9 @@ export const useSongs = () => {
     const dedup = getGlobalDedup()
 
     const songs = ref<Song[]>([])
+    const currentPage = ref(1)
+    const pageSize = ref(12)
+    const total = ref(0)
     const publicSchedules = ref<Schedule[]>([])
     const publicSongs = ref<Song[]>([])
     const loading = ref(false)
@@ -71,7 +74,7 @@ export const useSongs = () => {
     }
 
     // 获取歌曲列表
-    const fetchSongs = async (silent = false, semester?: string, forceRefresh = false, bypassCache = false) => {
+    const fetchSongs = async (silent = false, semester?: string, forceRefresh = false, bypassCache = false, pageArg?: number, pageSizeArg?: number) => {
         if (!silent) {
             loading.value = true
         }
@@ -92,6 +95,10 @@ export const useSongs = () => {
                     if (bypassCache) {
                         params.append('bypass_cache', 'true')
                     }
+                    const effectivePage = typeof pageArg === 'number' ? pageArg : currentPage.value
+                    const effectivePageSize = typeof pageSizeArg === 'number' ? pageSizeArg : pageSize.value
+                    params.append('page', String(effectivePage))
+                    params.append('pageSize', String(effectivePageSize))
                     const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
 
                     // API请求
@@ -103,6 +110,15 @@ export const useSongs = () => {
             // 正确解析API返回的数据结构
             if (response && response.success && response.data && Array.isArray(response.data.songs)) {
                 songs.value = response.data.songs as Song[]
+                if (typeof response.data.total === 'number') {
+                    total.value = response.data.total
+                }
+                if (typeof response.data.page === 'number') {
+                    currentPage.value = response.data.page
+                }
+                if (typeof response.data.pageSize === 'number') {
+                    pageSize.value = response.data.pageSize
+                }
             } else {
                 songs.value = []
                 console.warn('API返回的数据格式不正确:', response)
@@ -796,6 +812,9 @@ export const useSongs = () => {
 
     return {
         songs,
+        currentPage,
+        pageSize,
+        total,
         publicSongs,
         publicSchedules,
         visibleSongs,
