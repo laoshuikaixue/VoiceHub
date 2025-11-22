@@ -93,7 +93,10 @@ class CacheService {
                 console.log('[Cache] 开始清理损坏的缓存数据...')
 
                 // 获取所有缓存键
-                const keys = await client.keys('*')
+                const keys: string[] = []
+                for await (const key of client.scanIterator({ MATCH: '*', COUNT: 1000 })) {
+                    keys.push(key as string)
+                }
                 let corruptedCount = 0
                 let checkedCount = 0
                 let repairedCount = 0
@@ -435,9 +438,12 @@ class CacheService {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return
 
-            const keys = await client.keys('admin_stats:*')
-            const realtimeKeys = await client.keys('realtime_stats')
-            const activeUserKeys = await client.keys('active_users:*')
+            const keys: string[] = []
+            for await (const k of client.scanIterator({ MATCH: 'admin_stats:*', COUNT: 1000 })) keys.push(k as string)
+            const realtimeKeys: string[] = []
+            for await (const k of client.scanIterator({ MATCH: 'realtime_stats', COUNT: 1000 })) realtimeKeys.push(k as string)
+            const activeUserKeys: string[] = []
+            for await (const k of client.scanIterator({ MATCH: 'active_users:*', COUNT: 1000 })) activeUserKeys.push(k as string)
 
             const allKeys = [...keys, ...realtimeKeys, ...activeUserKeys]
             if (allKeys.length > 0) {
@@ -806,7 +812,10 @@ class CacheService {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return false
 
-            const keys = await client.keys(pattern)
+            const keys: string[] = []
+            for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 1000 })) {
+                keys.push(key as string)
+            }
             if (keys.length > 0) {
                 await client.del(...keys)
             }
@@ -907,7 +916,10 @@ class CacheService {
 
             try {
                 // 清除所有 public_schedules 相关的缓存键
-                const keys = await client.keys('public_schedules:*')
+                const keys: string[] = []
+                for await (const key of client.scanIterator({ MATCH: 'public_schedules:*', COUNT: 1000 })) {
+                    keys.push(key as string)
+                }
                 if (keys.length > 0) {
                     await client.del(keys)
                     console.log(`[Cache] 已清除 ${keys.length} 个 public_schedules 缓存键`)
