@@ -1,6 +1,7 @@
 import {JWTEnhanced} from '../utils/jwt-enhanced'
 import {db, users} from '~/drizzle/db'
 import {eq} from 'drizzle-orm'
+import {isUserBlocked, getUserBlockRemainingTime} from '../services/securityService'
 
 export default defineEventHandler(async (event) => {
     // 清除用户上下文
@@ -76,8 +77,16 @@ export default defineEventHandler(async (event) => {
             }))
         }
 
-        // 将用户信息附加到请求上下文
         event.context.user = user
+
+        if (isUserBlocked(user.id)) {
+            delete event.context.user
+            const remaining = getUserBlockRemainingTime(user.id)
+            return sendError(event, createError({
+                statusCode: 401,
+                message: `账户处于风险控制期，请在 ${remaining} 分钟后重试`
+            }))
+        }
 
         // 检查管理员专用路由
         if (pathname.startsWith('/api/admin') && !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {

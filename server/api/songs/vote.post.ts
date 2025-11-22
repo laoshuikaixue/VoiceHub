@@ -2,6 +2,7 @@ import {db} from '~/drizzle/db'
 import {schedules, songs, votes} from '~/drizzle/schema'
 import {and, count, eq} from 'drizzle-orm'
 import {createSongVotedNotification} from '../../services/notificationService'
+import {isSongProtected, getSongProtectRemainingSeconds, recordSongVote, recordUserVoteActivity} from '~/server/services/securityService'
 import {cacheService} from '~/server/services/cacheService'
 import {getClientIP} from '~/server/utils/ip-utils'
 
@@ -17,6 +18,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event)
+    const clientIP = getClientIP(event)
 
     if (!body.songId) {
         throw createError({
@@ -72,6 +74,14 @@ export default defineEventHandler(async (event) => {
             throw createError({
                 statusCode: 400,
                 message: '不允许自己给自己投票'
+            })
+        }
+
+        if (isSongProtected(body.songId)) {
+            const remain = getSongProtectRemainingSeconds(body.songId)
+            throw createError({
+                statusCode: 423,
+                message: `该歌曲处于临时保护期，剩余 ${Math.max(remain, 1)} 秒`
             })
         }
 
@@ -151,13 +161,13 @@ export default defineEventHandler(async (event) => {
 
             // 发送通知（异步，不阻塞响应）
             if (song.requesterId !== user.id) {
-                // 获取客户端IP地址
-                const clientIP = getClientIP(event)
-
                 createSongVotedNotification(body.songId, user.id, clientIP).catch(() => {
                     // 发送通知失败不影响主流程
                 })
             }
+
+            const protectedTriggered = recordSongVote(body.songId, clientIP, user.id)
+            recordUserVoteActivity(user.id)
 
             // 清除统计缓存和歌曲缓存
             try {

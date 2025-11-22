@@ -7,7 +7,10 @@ import {
     isAccountLocked,
     isIPBlocked,
     recordLoginFailure,
-    recordLoginSuccess
+    recordLoginSuccess,
+    recordAccountIpLogin,
+    blockUser,
+    getUserBlockRemainingTime
 } from '../../services/securityService'
 import {getBeijingTime} from '~/utils/timeUtils'
 import {getClientIP} from '~/server/utils/ip-utils'
@@ -108,8 +111,18 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 登录成功，清除失败记录
         recordLoginSuccess(body.username, clientIp)
+
+        const ipSwitchExceeded = recordAccountIpLogin(body.username, clientIp)
+        if (ipSwitchExceeded) {
+            blockUser(user.id)
+            const ipRemain = getIPBlockRemainingTime(clientIp)
+            const userRemain = getUserBlockRemainingTime(user.id)
+            throw createError({
+                statusCode: 423,
+                message: `检测到同一账号短期多IP登录，当前IP限制 ${ipRemain} 分钟，账户保护 ${userRemain} 分钟`
+            })
+        }
 
         // 更新登录信息
         await db.update(users)

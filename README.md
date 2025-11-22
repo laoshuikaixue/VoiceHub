@@ -689,6 +689,8 @@ VoiceHub/
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── securityService.ts # 安全服务
 │   │   └── smtpService.ts  # SMTP邮件服务
+│   ├── config/             # 服务端配置
+│   │   └── constants.ts    # 风控阈值与时间窗口常量
 │   ├── utils/              # 服务端工具函数
 │   │   ├── __tests__/      # 工具函数测试目录
 │   │   ├── auth.ts         # 认证工具函数
