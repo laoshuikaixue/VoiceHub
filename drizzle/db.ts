@@ -121,21 +121,23 @@ async function reconfigurePool(newMax: number) {
 }
 
 const adaptIntervalMs = 30000;
-setInterval(async () => {
-  try {
-    const rows = await client`select count(*)::int as total from pg_stat_activity where datname = current_database()`;
-    const total = rows && rows[0] && (rows[0] as any).total ? (rows[0] as any).total as number : 0;
-    const upThreshold = Math.max(1, Math.floor(currentMax * 0.7));
-    const downThreshold = Math.max(1, Math.floor(currentMax * 0.3));
-    if (total > upThreshold && currentMax < (Number.isFinite(envPoolMax) ? envPoolMax : defaultMax)) {
-      const step = Math.max(1, Math.floor(currentMax * 0.5));
-      await reconfigurePool(Math.min(Number.isFinite(envPoolMax) ? envPoolMax : defaultMax, currentMax + step));
-    } else if (total < downThreshold && currentMax > minMax) {
-      const step = Math.max(1, Math.floor(currentMax * 0.5));
-      await reconfigurePool(Math.max(minMax, currentMax - step));
-    }
-  } catch {}
-}, adaptIntervalMs);
+if (process.env.DB_POOL_ADAPTIVE === 'true') {
+  setInterval(async () => {
+    try {
+      const rows = await client`select count(*)::int as total from pg_stat_activity where datname = current_database()`;
+      const total = rows && rows[0] && (rows[0] as any).total ? (rows[0] as any).total as number : 0;
+      const upThreshold = Math.max(1, Math.floor(currentMax * 0.7));
+      const downThreshold = Math.max(1, Math.floor(currentMax * 0.3));
+      if (total > upThreshold && currentMax < (Number.isFinite(envPoolMax) ? envPoolMax : defaultMax)) {
+        const step = Math.max(1, Math.floor(currentMax * 0.5));
+        await reconfigurePool(Math.min(Number.isFinite(envPoolMax) ? envPoolMax : defaultMax, currentMax + step));
+      } else if (total < downThreshold && currentMax > minMax) {
+        const step = Math.max(1, Math.floor(currentMax * 0.5));
+        await reconfigurePool(Math.max(minMax, currentMax - step));
+      }
+    } catch {}
+  }, adaptIntervalMs);
+}
 
 export async function withStatementTimeout<R>(ms: number, operation: (tx: any) => Promise<R>): Promise<R> {
   return await db.transaction(async (tx) => {
