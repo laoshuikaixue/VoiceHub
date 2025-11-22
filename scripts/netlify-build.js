@@ -132,33 +132,17 @@ async function netlifyBuild() {
     
     logSuccess('Drizzle 配置验证成功');
     
-    // 6. 数据库迁移（平滑迁移，保护现有数据）
+    // 6. 数据库同步
     if (process.env.DATABASE_URL) {
-      logStep('🗄️', '执行数据库迁移...');
-      
-      // 检查迁移文件是否存在
-      if (fileExists('drizzle/migrations')) {
-        logStep('📋', '使用迁移文件进行安全更新...');
-        if (safeExec('npm run db:migrate')) {
-          logSuccess('数据库迁移成功');
-        } else {
-          logWarning('迁移失败，尝试使用 db:push 作为后备...');
-          if (safeExec('npm run db:push')) {
-            logSuccess('数据库同步成功（使用 push 方式）');
-          } else {
-            logWarning('数据库同步失败，继续构建...');
-          }
-        }
+      logStep('🗄️', '执行数据库同步...')
+      const env = { ...process.env, CI: 'true', DRIZZLE_KIT_FORCE: 'true', NODE_ENV: 'production' }
+      if (safeExec('node scripts/db-sync.js', { env })) {
+        logSuccess('数据库同步成功')
       } else {
-        logWarning('未找到迁移文件，使用 db:push 同步schema...');
-        if (safeExec('npm run db:push')) {
-          logSuccess('数据库schema同步成功');
-        } else {
-          logWarning('数据库schema同步失败，继续构建...');
-        }
+        logWarning('数据库同步失败，继续构建...')
       }
     } else {
-      logWarning('未设置 DATABASE_URL，跳过数据库迁移');
+      logWarning('未设置 DATABASE_URL，跳过数据库迁移')
     }
     
     // 7. 构建应用
