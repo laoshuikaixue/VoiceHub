@@ -464,7 +464,7 @@ class CacheService {
             const allKeys = [...keys, ...realtimeKeys, ...activeUserKeys]
             if (allKeys.length > 0) {
                 try {
-                    await client.del(allKeys)
+                    await client.del(...allKeys)
                     console.log(`[Cache] 已清除 ${allKeys.length} 个统计缓存键`)
                 } catch (delError) {
                     console.error(`[Cache] 删除统计缓存键失败:`, delError)
@@ -714,8 +714,6 @@ class CacheService {
 
     // 设置缓存（带编码验证）
     private async setCache(key: string, data: any, ttl: number): Promise<boolean> {
-        if (!isRedisReady()) return false
-
         return await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return false
@@ -758,8 +756,6 @@ class CacheService {
 
     // 获取缓存（带编码验证）
     private async getCache<T>(key: string): Promise<T | null> {
-        if (!isRedisReady()) return null
-
         return await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return null
@@ -807,8 +803,6 @@ class CacheService {
 
     // 删除缓存
     private async deleteCache(key: string): Promise<boolean> {
-        if (!isRedisReady()) return false
-
         return await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return false
@@ -822,8 +816,6 @@ class CacheService {
 
     // 批量删除缓存（按模式）
     private async deleteCachePattern(pattern: string): Promise<boolean> {
-        if (!isRedisReady()) return false
-
         return await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return false
@@ -841,8 +833,6 @@ class CacheService {
 
     // 获取分布式锁
     private async acquireLock(lockKey: string, timeout: number = CACHE_TTL.LOCK_TIMEOUT): Promise<boolean> {
-        if (!isRedisReady()) return false
-
         return await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return false
@@ -859,8 +849,6 @@ class CacheService {
 
     // 释放分布式锁
     private async releaseLock(lockKey: string): Promise<void> {
-        if (!isRedisReady()) return
-
         await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return
@@ -937,7 +925,7 @@ class CacheService {
                     keys.push(key as string)
                 }
                 if (keys.length > 0) {
-                    await client.del(keys)
+                    await client.del(...keys)
                     console.log(`[Cache] 已清除 ${keys.length} 个 public_schedules 缓存键`)
                 } else {
                     console.log('[Cache] 未找到 public_schedules 缓存键')
