@@ -1,0 +1,1 @@
+ALTER TABLE "RequestTime" ADD COLUMN "past" boolean DEFAULT false NOT NULL;

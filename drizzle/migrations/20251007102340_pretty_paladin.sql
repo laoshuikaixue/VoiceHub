@@ -1,0 +1,1 @@
+ALTER TABLE "SystemSettings" ADD COLUMN "forceBlockAllRequests" boolean DEFAULT false NOT NULL;

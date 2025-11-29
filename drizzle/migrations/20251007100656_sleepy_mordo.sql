@@ -1,0 +1,1 @@
+ALTER TABLE "Song" ADD COLUMN "hitRequestId" integer;
