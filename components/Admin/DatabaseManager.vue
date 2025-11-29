@@ -557,6 +557,29 @@ const restoreBackup = async () => {
       }
     }
 
+    // 6. 修复数据库序列
+    restoreProgress.value = '正在修复数据库序列...'
+    try {
+      const fixSequenceResult = await $fetch('/api/admin/fix-sequence', {
+        method: 'POST',
+        body: {
+          table: 'all'
+        }
+      })
+      
+      if (!fixSequenceResult.success) {
+        console.warn('序列修复部分失败:', fixSequenceResult.message)
+        if (window.$showNotification) {
+          window.$showNotification('数据恢复成功，但部分表序列修复失败，建议手动执行"重置序列"', 'warning')
+        }
+      }
+    } catch (seqError) {
+      console.error('序列修复失败:', seqError)
+      if (window.$showNotification) {
+        window.$showNotification('数据恢复成功，但自动修复序列失败，请务必手动执行"重置序列"', 'warning')
+      }
+    }
+
     restoreProgress.value = '恢复完成'
 
     // 显示成功通知

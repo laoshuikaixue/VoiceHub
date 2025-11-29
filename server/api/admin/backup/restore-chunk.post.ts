@@ -408,7 +408,8 @@ export default defineEventHandler(async (event) => {
                         const fields = [
                             'enablePlayTimeSelection', 'siteTitle', 'siteLogoUrl', 'schoolLogoHomeUrl',
                             'schoolLogoPrintUrl', 'siteDescription', 'submissionGuidelines', 'icpNumber',
-                            'enableSubmissionLimit', 'dailySubmissionLimit', 'weeklySubmissionLimit', 'showBlacklistKeywords'
+                            'enableSubmissionLimit', 'dailySubmissionLimit', 'weeklySubmissionLimit', 'showBlacklistKeywords',
+                            'hideStudentInfo'
                         ]
                         fields.forEach(field => {
                             if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]
