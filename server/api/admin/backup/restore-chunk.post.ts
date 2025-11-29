@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
 
     for (const record of records) {
         try {
-            await db.$transaction(async (tx) => {
+            await db.transaction(async (tx) => {
                 switch (tableName) {
                     case 'users': {
                         const buildUserData = (includePassword = false) => {
