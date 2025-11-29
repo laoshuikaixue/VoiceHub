@@ -78,13 +78,14 @@
         </div>
 
         <div class="actions">
-          <button class="btn btn-secondary" @click="editRequestTime(RequestTime)">
+          <button class="btn btn-secondary" @click="editRequestTime(RequestTime)" v-show="!RequestTime.past">
             编辑
           </button>
           <button
               :class="RequestTime.enabled ? 'btn-warning' : 'btn-success'"
               class="btn"
               @click="toggleRequestTimeStatus(RequestTime)"
+              v-show="!RequestTime.past"
           >
             {{ RequestTime.enabled ? '禁用' : '启用' }}
           </button>

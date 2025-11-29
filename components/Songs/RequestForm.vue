@@ -34,7 +34,7 @@
                 type="text"
                 @input="checkSimilarSongs"
             />
-            <button :disabled="loading || searching || !title.trim()" class="search-button" type="submit">
+            <button :disabled="loading || searching || !title.trim() || (requestTimeStatus && !requestTimeStatus.hit)" class="search-button" type="submit">
               {{ loading || searching ? '处理中...' : '搜索' }}
             </button>
           </div>
@@ -93,7 +93,7 @@
           </div>
 
           <!-- 音乐平台选择按钮 -->
-          <div class="platform-selection">
+          <div v-if="requestTimeStatus && requestTimeStatus.hit" class="platform-selection">
             <button
                 :class="['platform-btn', { active: platform === 'netease' }]"
                 type="button"
@@ -110,7 +110,7 @@
             </button>
           </div>
 
-          <div class="results-content">
+          <div v-if="requestTimeStatus && requestTimeStatus.hit" class="results-content">
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
               <div class="loading-spinner"></div>
