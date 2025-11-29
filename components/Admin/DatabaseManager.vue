@@ -182,7 +182,7 @@
         <div class="modal-footer">
           <button class="action-btn secondary" @click="showUploadModal = false">取消</button>
           <button :disabled="uploadLoading || !selectedFile" class="action-btn primary" @click="restoreBackup">
-            <span v-if="uploadLoading">恢复中...</span>
+            <span v-if="uploadLoading">{{ restoreProgress || '恢复中...' }}</span>
             <span v-else>开始恢复</span>
           </button>
         </div>
@@ -317,6 +317,7 @@ const resetLoading = ref(false)
 const sequenceLoading = ref(false)
 const selectedFile = ref(null)
 const resetConfirmText = ref('')
+const restoreProgress = ref('')
 
 // 表单数据
 const createForm = ref({
@@ -454,48 +455,161 @@ const restoreBackup = async () => {
   }
 
   uploadLoading.value = true
+  restoreProgress.value = '正在读取文件...'
+  
   try {
-    const formData = new FormData()
-    formData.append('file', selectedFile.value)
-    formData.append('mode', restoreForm.value.mode)
-    formData.append('clearExisting', restoreForm.value.mode === 'replace')
+    // 1. 读取并解析文件
+    const fileContent = await selectedFile.value.text()
+    let backupData
+    try {
+      backupData = JSON.parse(fileContent)
+    } catch (e) {
+      throw new Error('无法解析备份文件，文件格式不正确')
+    }
 
-    const response = await $fetch('/api/admin/backup/restore', {
-      method: 'POST',
-      body: formData
-    })
+    if (!backupData.data) {
+      throw new Error('备份文件缺少数据部分')
+    }
 
-    if (response.success) {
-      // 关闭模态框并重置表单
-      showUploadModal.value = false
-      selectedFile.value = null
+    // 2. 如果是替换模式，先清空现有数据
+    if (restoreForm.value.mode === 'replace') {
+      restoreProgress.value = '正在清空现有数据...'
+      const clearResult = await $fetch('/api/admin/backup/clear', {
+        method: 'POST'
+      })
+      if (!clearResult.success) {
+        throw new Error(clearResult.message || '清空数据失败')
+      }
+    }
 
-      // 显示成功通知
-      if (window.$showNotification) {
-        window.$showNotification('数据恢复成功！', 'success')
+    // 3. 定义恢复顺序
+    const tableOrder = [
+      'users',
+      'systemSettings',
+      'semesters',
+      'playTimes',
+      'songs',
+      'votes',
+      'schedules',
+      'notificationSettings',
+      'notifications',
+      'songBlacklist',
+      'userStatusLogs'
+    ]
 
-        // 显示即将重定向的通知
-        setTimeout(() => {
-          window.$showNotification('数据库恢复完成，3秒后将返回首页重新登录', 'info')
-        }, 1500)
+    // 4. 初始化映射对象
+    const mappings = {
+      users: {},
+      songs: {}
+    }
+
+    // 5. 按顺序恢复表数据
+    const CHUNK_SIZE = 50
+    let totalProcessed = 0
+    
+    // 计算总记录数用于进度显示
+    let totalRecords = 0
+    for (const tableName of tableOrder) {
+      if (backupData.data[tableName] && Array.isArray(backupData.data[tableName])) {
+        totalRecords += backupData.data[tableName].length
+      }
+    }
+
+    for (const tableName of tableOrder) {
+      const records = backupData.data[tableName]
+      if (!records || !Array.isArray(records) || records.length === 0) {
+        continue
       }
 
-      // 清除认证状态并重定向到首页
-      setTimeout(() => {
-        const {logout} = useAuth()
-        if (logout) {
-          logout()
-        }
-        // 清除本地存储的认证信息
-        localStorage.removeItem('auth-token')
-        localStorage.removeItem('user-info')
+      console.log(`开始恢复表 ${tableName}, 共 ${records.length} 条记录`)
+      
+      // 分块处理
+      for (let i = 0; i < records.length; i += CHUNK_SIZE) {
+        const chunk = records.slice(i, i + CHUNK_SIZE)
+        const progressPercent = Math.round((totalProcessed / totalRecords) * 100)
+        restoreProgress.value = `正在恢复 ${tableName} (${i + 1}-${Math.min(i + CHUNK_SIZE, records.length)}/${records.length}) ${progressPercent}%`
 
-        // 重定向到首页
-        window.location.href = '/'
-      }, 4500)
-    } else {
-      throw new Error(response.message || '数据恢复失败')
+        const response = await $fetch('/api/admin/backup/restore-chunk', {
+          method: 'POST',
+          body: {
+            tableName,
+            records: chunk,
+            mappings,
+            mode: restoreForm.value.mode
+          }
+        })
+
+        if (response.success) {
+          // 更新ID映射
+          if (response.newMappings) {
+            if (response.newMappings.users) {
+              Object.assign(mappings.users, response.newMappings.users)
+            }
+            if (response.newMappings.songs) {
+              Object.assign(mappings.songs, response.newMappings.songs)
+            }
+          }
+          totalProcessed += chunk.length
+        } else {
+          console.error(`恢复块失败 (${tableName}):`, response)
+          throw new Error(response.message || `恢复表 ${tableName} 失败`)
+        }
+      }
     }
+
+    // 6. 修复数据库序列
+    restoreProgress.value = '正在修复数据库序列...'
+    try {
+      const fixSequenceResult = await $fetch('/api/admin/fix-sequence', {
+        method: 'POST',
+        body: {
+          table: 'all'
+        }
+      })
+      
+      if (!fixSequenceResult.success) {
+        console.warn('序列修复部分失败:', fixSequenceResult.message)
+        if (window.$showNotification) {
+          window.$showNotification('数据恢复成功，但部分表序列修复失败，建议手动执行"重置序列"', 'warning')
+        }
+      }
+    } catch (seqError) {
+      console.error('序列修复失败:', seqError)
+      if (window.$showNotification) {
+        window.$showNotification('数据恢复成功，但自动修复序列失败，请务必手动执行"重置序列"', 'warning')
+      }
+    }
+
+    restoreProgress.value = '恢复完成'
+
+    // 显示成功通知
+    if (window.$showNotification) {
+      window.$showNotification('数据恢复成功！', 'success')
+
+      // 显示即将重定向的通知
+      setTimeout(() => {
+        window.$showNotification('数据库恢复完成，3秒后将返回首页重新登录', 'info')
+      }, 1500)
+    }
+
+    // 清除认证状态并重定向到首页
+    setTimeout(() => {
+      const {logout} = useAuth()
+      if (logout) {
+        logout()
+      }
+      // 清除本地存储的认证信息
+      localStorage.removeItem('auth-token')
+      localStorage.removeItem('user-info')
+
+      // 重定向到首页
+      window.location.href = '/'
+    }, 4500)
+
+    // 关闭模态框并重置表单
+    showUploadModal.value = false
+    selectedFile.value = null
+    
   } catch (error) {
     console.error('恢复备份失败:', error)
     if (window.$showNotification) {
@@ -503,6 +617,7 @@ const restoreBackup = async () => {
     }
   } finally {
     uploadLoading.value = false
+    restoreProgress.value = ''
   }
 }
 
