@@ -954,7 +954,7 @@ const proxiedSchoolLogoUrl = computed(() => {
 const handleRequest = async (songData) => {
   if (!auth || !isClientAuthenticated.value) {
     if (window.$showNotification) {
-      window.$showNotification('请先登录', 'error')
+      window.$showNotification('需要登录才能投稿歌曲', 'error')
     }
     showRequestModal.value = false
     return false
@@ -1170,8 +1170,7 @@ const navigateToLogin = () => {
 // 显示登录提示
 const showLoginNotice = () => {
   if (window.$showNotification) {
-    const message = activeTab.value === 'request' ? '需要登录才能投稿歌曲' : '需要登录才能查看通知'
-    window.$showNotification(message, 'info')
+    window.$showNotification('需要登录才能查看通知', 'info')
   }
 }
 
