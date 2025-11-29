@@ -1,4 +1,4 @@
-import {boolean, integer, pgEnum, pgTable, serial, text, timestamp, uuid, varchar} from 'drizzle-orm/pg-core';
+import {bigint, boolean, integer, pgEnum, pgTable, serial, text, timestamp, uuid, varchar} from 'drizzle-orm/pg-core';
 import {relations} from 'drizzle-orm';
 
 // 枚举定义
@@ -57,6 +57,7 @@ export const songs = pgTable('Song', {
   playUrl: text('playUrl'),
   musicPlatform: text('musicPlatform'),
   musicId: text('musicId'),
+  hitRequestId: integer(),
 });
 
 // 投票表
@@ -144,6 +145,8 @@ export const systemSettings = pgTable('SystemSettings', {
   smtpPassword: text('smtpPassword'),
   smtpFromEmail: text('smtpFromEmail'),
   smtpFromName: text('smtpFromName').default('校园广播站'),
+  enableRequestTimeLimitation: boolean('enableRequestTimeLimitation').default(false).notNull(),
+  forceBlockAllRequests: boolean().default(false).notNull(),
 });
 
 // 歌曲黑名单表
@@ -208,6 +211,22 @@ export const userStatusLogs = pgTable('user_status_logs', {
   reason: text('reason'),
   operatorId: integer('operator_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const requestTimes = pgTable("RequestTime", {
+  id: serial().primaryKey().notNull(),
+  createdAt: timestamp({ precision: 6, mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp({ precision: 6, mode: 'string' }).defaultNow().notNull(),
+  name: text().notNull(),
+  startTime: timestamp({ mode: 'string' }).notNull(),
+  endTime: timestamp({ mode: 'string' }).notNull(),
+  enabled: boolean().default(true).notNull(),
+  description: text(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  expected: bigint({ mode: "number" }).default(0).notNull(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  accepted: bigint({ mode: "number" }).default(0).notNull(),
+  past: boolean().default(false).notNull(),
 });
 
 // 关系定义
@@ -364,3 +383,5 @@ export type UserStatusLog = typeof userStatusLogs.$inferSelect;
 export type NewUserStatusLog = typeof userStatusLogs.$inferInsert;
 export type EmailTemplate = typeof emailTemplates.$inferSelect;
 export type NewEmailTemplate = typeof emailTemplates.$inferInsert;
+export type RequestTime = typeof requestTimes.$inferSelect;
+export type NewRequestTime = typeof requestTimes.$inferInsert;

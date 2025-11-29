@@ -191,6 +191,17 @@
                 播出时段
               </button>
               <button
+                  v-if="permissions.canAccessPage('requesttimes')"
+                  :class="['nav-item', { active: activeTab === 'requesttimes' }]"
+                  @click="activeTab = 'requesttimes'"
+              >
+                <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12,6 12,12 16,14"/>
+                </svg>
+                投稿管理
+              </button>
+              <button
                   v-if="permissions.canAccessPage('semesters')"
                   :class="['nav-item', { active: activeTab === 'semesters' }]"
                   @click="activeTab = 'semesters'"
@@ -338,6 +349,11 @@
             <!-- 播出时段 -->
             <div v-if="activeTab === 'playtimes' && permissions.canAccessPage('playtimes')" class="content-section">
               <LazyAdminPlayTimeManager/>
+            </div>
+
+            <!-- 开放时段 -->
+            <div v-if="activeTab === 'requesttimes' && permissions.canAccessPage('requesttimes')" class="content-section">
+              <LazyAdminRequestTimeManager/>
             </div>
 
             <!-- 学期管理 -->
