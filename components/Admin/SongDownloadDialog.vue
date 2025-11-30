@@ -163,6 +163,8 @@ const getPlatformName = (platform) => {
       return '网易云音乐'
     case 'tencent':
       return 'QQ音乐'
+    case 'bilibili':
+      return '哔哩哔哩'
     case null:
     case undefined:
     case '':
@@ -223,22 +225,28 @@ const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
 
 // 下载单个文件
 const downloadFile = async (url, filename) => {
-  const response = await fetch(url)
+  // 针对 Bilibili 等可能存在 CORS 问题或防盗链的链接，使用代理下载
+  let downloadUrl = url
+  if (url.includes('bilivideo.com') || url.includes('hdslb.com') || url.includes('bilibili.com') || url.includes('googlevideo.com')) {
+    downloadUrl = `/api/proxy/download?url=${encodeURIComponent(url)}`
+  }
+
+  const response = await fetch(downloadUrl)
   if (!response.ok) {
     throw new Error('下载失败')
   }
 
   const blob = await response.blob()
-  const downloadUrl = window.URL.createObjectURL(blob)
+  const objectUrl = window.URL.createObjectURL(blob)
 
   const link = document.createElement('a')
-  link.href = downloadUrl
+  link.href = objectUrl
   link.download = filename
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
 
-  window.URL.revokeObjectURL(downloadUrl)
+  window.URL.revokeObjectURL(objectUrl)
 }
 
 // 开始下载
@@ -260,8 +268,14 @@ const startDownload = async () => {
       // 获取音频URL
       const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
 
-      // 生成文件名：歌手名 - 歌曲名.mp3
-      const filename = `${song.artist} - ${song.title}.mp3`
+      // 生成文件名：歌手名 - 歌曲名.ext
+      let extension = 'mp3'
+      if (audioUrl.includes('.m4a')) extension = 'm4a'
+      else if (audioUrl.includes('.flac')) extension = 'flac'
+      else if (audioUrl.includes('.wav')) extension = 'wav'
+      else if (audioUrl.includes('.ogg')) extension = 'ogg'
+
+      const filename = `${song.artist} - ${song.title}.${extension}`
           .replace(/[<>:"/\\|?*]/g, '_') // 替换不合法的文件名字符
 
       // 下载文件

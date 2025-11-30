@@ -26,9 +26,14 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
         const quality = getQuality(platform)
 
         // 先使用统一组件的音源选择逻辑
-        const backupResult = await getSongUrl(Number(musicId), quality, platform)
+        const backupResult = await getSongUrl(musicId, quality, platform)
         if (backupResult.success && backupResult.url) {
             return backupResult.url
+        }
+
+        // 如果是 Bilibili 平台，且 getSongUrl 失败，则直接抛出错误
+        if (platform === 'bilibili') {
+            throw new Error(backupResult.error || '获取哔哩哔哩播放链接失败')
         }
 
         // 回退到 vkeys
