@@ -474,6 +474,7 @@
               <option value="">请选择平台</option>
               <option value="netease">网易云音乐</option>
               <option value="tencent">QQ音乐</option>
+              <option value="bilibili">哔哩哔哩</option>
             </select>
           </div>
           <div class="form-group">
@@ -613,6 +614,7 @@
               <option value="">请选择平台</option>
               <option value="netease">网易云音乐</option>
               <option value="tencent">QQ音乐</option>
+              <option value="bilibili">哔哩哔哩</option>
             </select>
           </div>
           <div class="form-group">

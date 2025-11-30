@@ -92,6 +92,13 @@
             >
               QQ音乐
             </button>
+            <button
+                :class="['platform-btn', { active: platform === 'bilibili' }]"
+                type="button"
+                @click="switchPlatform('bilibili')"
+            >
+              哔哩哔哩
+            </button>
           </div>
 
           <div class="results-content">
@@ -111,7 +118,7 @@
                       class="result-item"
                   >
                     <div class="result-cover">
-                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img"/>
+                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img" referrerpolicy="no-referrer"/>
                       <div class="play-overlay" @click.stop="playSong(result)">
                         <div class="play-button-bg">
                           <Icon :size="24" color="white" name="play"/>
@@ -829,7 +836,25 @@ const getAudioUrl = async (result) => {
 
   try {
     // 根据搜索结果的sourceInfo.source字段判断音源类型
-    const sourceType = result.sourceInfo?.source || ''
+    const sourceType = result.sourceInfo?.source || result.actualSource || ''
+
+    // 哔哩哔哩
+    if (sourceType === 'bilibili') {
+      try {
+        const songId = result.musicId || result.id
+        if (!songId) throw new Error('缺少歌曲ID参数')
+
+        const urlResult = await musicSources.getSongUrl(songId, 0, 'bilibili')
+
+        if (urlResult && urlResult.success && urlResult.url) {
+          result.url = urlResult.url
+          result.hasUrl = true
+          return result
+        }
+      } catch (error) {
+        console.error('Bilibili获取播放链接失败:', error)
+      }
+    }
 
     // 对于 vkeys v3（QQ音乐），调用统一的 getSongUrl 获取播放链接
     if (sourceType === 'vkeys-v3') {

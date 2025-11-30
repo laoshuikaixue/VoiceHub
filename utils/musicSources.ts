@@ -176,6 +176,14 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
+        },
+        {
+            id: 'bilibili',
+            name: '哔哩哔哩',
+            baseUrl: 'https://api.bilibili.com',
+            priority: 7,
+            enabled: true,
+            timeout: 10000
         }
     ]
 }

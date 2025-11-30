@@ -2,7 +2,7 @@
   <div class="player-info">
     <div class="cover-container" @click="openLyrics" title="点击打开歌词">
       <template v-if="song.cover && !coverError">
-        <img :src="convertToHttps(song.cover)" alt="封面" class="player-cover" @error="handleImageError"/>
+        <img :src="convertToHttps(song.cover)" alt="封面" class="player-cover" referrerpolicy="no-referrer" @error="handleImageError"/>
       </template>
       <div v-else class="text-cover">
         {{ getFirstChar(song.title || '') }}

@@ -15,6 +15,7 @@ import {
     type SongDetailResult,
     type SourceStatus
 } from '~/utils/musicSources'
+import { searchBilibili, getBilibiliTrackUrl } from '~/utils/bilibiliSource'
 
 /**
  * 音源管理器 Composable
@@ -166,7 +167,14 @@ export const useMusicSources = () => {
             // 根据平台选择合适的音源顺序
             let sourcesToTry: MusicSource[]
             
-            if (params.platform === 'tencent') {
+            if (params.platform === 'bilibili') {
+                const bilibiliSource = enabledSources.find(s => s.id === 'bilibili')
+                if (bilibiliSource) {
+                    sourcesToTry = [bilibiliSource]
+                } else {
+                    throw new Error('未启用哔哩哔哩音源')
+                }
+            } else if (params.platform === 'tencent') {
                 // QQ音乐平台：优先使用 vkeys v3，其次 vkeys v2；若全部失败，再尝试其他平台
                 const v3 = enabledSources.find(s => s.id === 'vkeys-v3')
                 const v2 = enabledSources.find(s => s.id === 'vkeys')
@@ -265,7 +273,16 @@ export const useMusicSources = () => {
         let url: string
         let transformResponse: (data: any) => any[]
 
-        if (source.id === 'vkeys-v3') {
+        if (source.id === 'bilibili') {
+            try {
+                const result = await searchBilibili(params.keywords)
+                updateSourceStatus(source.id, 'online', undefined, Date.now() - startTime)
+                return result
+            } catch (error: any) {
+                updateSourceStatus(source.id, 'error', error.message, Date.now() - startTime)
+                throw error
+            }
+        } else if (source.id === 'vkeys-v3') {
             // Vkeys v3 API（仅支持QQ音乐搜索）
             const platform = params.platform || 'tencent'
             if (platform !== 'tencent') {
@@ -538,9 +555,14 @@ export const useMusicSources = () => {
             const idParam = Array.isArray(id) ? id.join(',') : id.toString()
 
             // 定义音源尝试顺序
-            let sourcesToTry: Array<{source: MusicSource, type: 'netease' | 'tencent'}> = []
+            let sourcesToTry: Array<{source: MusicSource, type: 'netease' | 'tencent' | 'bilibili'}> = []
 
-            if (platform === 'tencent') {
+            if (platform === 'bilibili') {
+                const bilibiliSource = enabledSources.find(source => source.id === 'bilibili')
+                if (bilibiliSource) {
+                    sourcesToTry.push({source: bilibiliSource, type: 'bilibili'})
+                }
+            } else if (platform === 'tencent') {
                 // QQ音乐平台：优先 vkeys v3（获取音质列表并选择可用项），然后回退到 vkeys v2
 
                 const v3 = enabledSources.find(source => source.id === 'vkeys-v3')
@@ -587,7 +609,10 @@ export const useMusicSources = () => {
                 try {
                     let url: string | null = null
                     
-                    if (source.id === 'vkeys') {
+                    if (source.id === 'bilibili') {
+                        const result = await getBilibiliTrackUrl(idParam)
+                        url = result.url
+                    } else if (source.id === 'vkeys') {
                         // Vkeys API
                         const vkeysQuality = type === 'tencent' ? (typeof quality === 'number' ? quality : 8) : (typeof quality === 'number' ? quality : 0)
                         const endpoint = type === 'tencent' ? 'tencent' : 'netease'
