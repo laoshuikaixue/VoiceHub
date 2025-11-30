@@ -13,6 +13,7 @@
             :alt="schedule.song.title"
             :src="convertToHttps(schedule.song.cover)"
             class="song-cover"
+            referrerpolicy="no-referrer"
             @error="handleImageError"
         />
         <div v-else class="cover-placeholder">

@@ -58,6 +58,13 @@ export default defineEventHandler(async (event) => {
             throw new Error('Invalid protocol')
         }
 
+        // 确定 Referer
+        let referer = url.origin
+        // 针对 Bilibili 图片的特殊处理
+        if (url.hostname.includes('hdslb.com') || url.hostname.includes('bilibili.com')) {
+            referer = 'https://www.bilibili.com/'
+        }
+
         // 优化的请求头
         const headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -69,7 +76,7 @@ export default defineEventHandler(async (event) => {
             'Sec-Fetch-Dest': 'image',
             'Sec-Fetch-Mode': 'no-cors',
             'Sec-Fetch-Site': 'cross-site',
-            'Referer': url.origin
+            'Referer': referer
         }
 
         // 使用重试机制获取图片

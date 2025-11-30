@@ -11,7 +11,7 @@
           <!-- 封面 -->
           <div class="cover-container">
             <template v-if="activeSong && activeSong.cover && !coverError">
-              <img :src="convertToHttps(activeSong.cover)" alt="封面" class="album-cover" @error="handleImageError"/>
+              <img :src="convertToHttps(activeSong.cover)" alt="封面" class="album-cover" referrerpolicy="no-referrer" @error="handleImageError"/>
             </template>
             <div v-else class="text-cover">
               {{ getFirstChar(activeSong?.title || '') }}

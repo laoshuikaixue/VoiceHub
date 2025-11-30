@@ -118,7 +118,7 @@
                       class="result-item"
                   >
                     <div class="result-cover">
-                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img"/>
+                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img" referrerpolicy="no-referrer"/>
                       <div class="play-overlay" @click.stop="playSong(result)">
                         <div class="play-button-bg">
                           <Icon :size="24" color="white" name="play"/>

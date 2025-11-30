@@ -112,6 +112,7 @@
                       :alt="song.title"
                       :src="convertToHttps(song.cover)"
                       class="cover-image"
+                      referrerpolicy="no-referrer"
                       @error="handleImageError($event, song)"
                   />
                 </template>
