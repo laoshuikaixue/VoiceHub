@@ -43,6 +43,13 @@
       "when": 1759395147253,
       "tag": "20251002085227_deep_silver_sable",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1765027656397,
+      "tag": "20251206132736_auto-migration",
+      "breakpoints": true
     }
   ]
 }
