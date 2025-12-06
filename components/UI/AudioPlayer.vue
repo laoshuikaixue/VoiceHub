@@ -11,7 +11,7 @@
           <!-- 封面 -->
           <div class="cover-container">
             <template v-if="activeSong && activeSong.cover && !coverError">
-              <img :src="convertToHttps(activeSong.cover)" alt="封面" class="album-cover" referrerpolicy="no-referrer" @error="handleImageError"/>
+              <img :src="convertToHttps(activeSong.cover)" alt="封面" class="player-cover" referrerpolicy="no-referrer" @error="handleImageError"/>
             </template>
             <div v-else class="text-cover">
               {{ getFirstChar(activeSong?.title || '') }}
@@ -717,6 +717,9 @@ const stopPlaying = () => {
 // 监听器和生命周期钩子
 watch(() => props.song, async (newSong, oldSong) => {
   if (!newSong) return
+
+  // 重置封面错误状态
+  coverError.value = false
 
   // 避免双向触发
   if (isSyncingFromGlobal.value) return

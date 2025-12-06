@@ -15,13 +15,17 @@ export const QUALITY_OPTIONS = {
         {value: 10, label: 'SQ无损音质', description: '无损音质，文件较大'},
         {value: 11, label: 'Hi-Res音质', description: '高解析度音质'},
         {value: 14, label: '臻品母带2.0', description: '最高音质'}
+    ],
+    bilibili: [
+        {value: 1, label: '普通', description: '默认音质'}
     ]
 }
 
 // 默认音质设置
 const DEFAULT_QUALITY = {
     netease: 4, // HQ极高 (320k)
-    tencent: 8  // HQ高音质
+    tencent: 8,  // HQ高音质
+    bilibili: 1
 }
 
 // 全局音质状态，确保所有组件共享同一个状态
