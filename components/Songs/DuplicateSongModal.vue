@@ -23,6 +23,7 @@
                 v-if="song.cover"
                 :alt="song.title"
                 :src="convertToHttps(song.cover)"
+                referrerpolicy="no-referrer"
                 @error="handleImageError"
             />
             <div v-else class="default-cover">

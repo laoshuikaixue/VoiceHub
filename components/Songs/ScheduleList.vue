@@ -131,20 +131,21 @@
                       class="song-card"
                   >
                     <div class="song-card-main">
-                      <!-- 添加歌曲封面 -->
+                      <!-- 歌曲封面 -->
                       <div class="song-cover">
                         <template v-if="schedule.song.cover">
                           <img
                               :alt="schedule.song.title"
                               :src="convertToHttps(schedule.song.cover)"
                               class="cover-image"
+                              referrerpolicy="no-referrer"
                               @error="handleImageError($event, schedule.song)"
                           />
                         </template>
                         <div v-else class="text-cover">
                           {{ getFirstChar(schedule.song.title) }}
                         </div>
-                        <!-- 添加播放按钮 - 在有播放信息时显示 -->
+                        <!-- 播放按钮 -->
                         <div v-if="(schedule.song.musicPlatform && schedule.song.musicId) || schedule.song.playUrl"
                              class="play-button-overlay" @click="togglePlaySong(schedule.song)">
                           <button :title="isCurrentPlaying(schedule.song.id) ? '暂停' : '播放'" class="play-button">
@@ -179,8 +180,6 @@
         </Transition>
       </div>
     </div>
-
-    <!-- 使用全局音频播放器，此处不需要audio元素 -->
   </div>
 </template>
 

@@ -20,7 +20,7 @@
               v-else-if="backgroundConfig.type === 'cover' && currentSong?.cover" 
               class="cover-background"
               ref="coverBlurContainer"
-              :style="{ backgroundImage: `url(${currentSong.cover})` }"
+              :style="{ backgroundImage: `url(${convertToHttps(currentSong.cover)})` }"
             >
             </div>
             <!-- 叠加暗化层，提升白色背景下歌词对比度 -->
@@ -37,8 +37,9 @@
             <div class="song-cover">
               <img 
                 v-if="currentSong?.cover" 
-                :src="currentSong.cover" 
+                :src="convertToHttps(currentSong.cover)" 
                 :alt="currentSong.title"
+                referrerpolicy="no-referrer"
                 @error="handleCoverError"
               />
               <div v-else class="default-cover">
@@ -164,6 +165,7 @@ import {convertToAmllFormat} from '~/utils/lyricAdapter'
 import Icon from '~/components/UI/Icon.vue'
 import {useAudioQuality} from '~/composables/useAudioQuality'
 import {useAudioPlayerEnhanced} from '~/composables/useAudioPlayerEnhanced'
+import {convertToHttps} from '~/utils/url'
 
 const props = defineProps({
   isVisible: {
