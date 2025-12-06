@@ -4,6 +4,7 @@
       :src="song?.musicUrl"
       autoplay
       preload="auto"
+      referrerpolicy="no-referrer"
       @canplay="$emit('canplay', $event)"
       @ended="$emit('ended', $event)"
       @error="$emit('error', $event)"

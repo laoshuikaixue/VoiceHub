@@ -57,6 +57,7 @@ export default defineEventHandler(async (event) => {
       params: {
         fnval: 1,
         platform: "html5",
+        high_quality: 1,
         bvid,
         cid,
       },
