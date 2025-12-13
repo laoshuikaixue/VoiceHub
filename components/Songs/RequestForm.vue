@@ -2154,6 +2154,7 @@ defineExpose({
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .action-btn:hover {
@@ -3232,8 +3233,18 @@ defineExpose({
   }
 
   .user-actions-grid {
-    grid-template-columns: 1fr; /* Stack buttons on mobile */
+    display: flex;
+    flex-direction: row;
     gap: 0.5rem;
+    width: 100%;
+  }
+
+  /* 移动端下让按钮平分宽度 */
+  .user-actions-grid .action-btn {
+    flex: 1;
+    width: auto;
+    justify-content: center;
+    padding: 0.6rem 0.4rem;
   }
 
   .request-form {
