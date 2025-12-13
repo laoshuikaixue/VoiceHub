@@ -2,9 +2,9 @@
   <div class="schedule-list">
     <!-- 两列布局：左侧日期选择，右侧排期展示 -->
     <div class="schedule-container">
-      <!-- 左侧日期选择列表 - 移除标题和框 -->
+      <!-- 左侧日期选择列表 -->
       <div class="date-selector">
-        <!-- 添加移动端日期导航按钮 -->
+        <!-- 移动端日期导航按钮 -->
         <div class="mobile-date-nav">
           <button
               :disabled="currentDateIndex === 0"
@@ -35,7 +35,7 @@
           </button>
         </div>
 
-        <!-- 添加移动端日期选择弹窗 -->
+        <!-- 移动端日期选择弹窗 -->
         <Transition name="date-picker-fade">
           <div v-if="showDatePicker" class="date-picker-modal">
             <div class="date-picker-overlay" @click="showDatePicker = false"></div>
@@ -1497,7 +1497,7 @@ const vRipple = {
   min-height: 45vh; /* 确保容器有足够的高度 */
 }
 
-/* 左侧日期选择器 - 移除背景和边框 */
+/* 左侧日期选择器 */
 .date-selector {
   width: 200px;
   flex-shrink: 0;
@@ -1562,7 +1562,7 @@ const vRipple = {
   margin-top: 2px;
 }
 
-/* 垂直分隔线 - 添加径向渐变效果 */
+/* 垂直分隔线 */
 .vertical-divider {
   width: 2px;
   background: linear-gradient(
@@ -1671,7 +1671,7 @@ const vRipple = {
   margin-left: 0.5rem;
 }
 
-/* 歌曲卡片样式 - 固定宽度布局 */
+/* 歌曲卡片样式 */
 .song-cards {
   display: flex;
   flex-wrap: wrap;
@@ -1688,7 +1688,7 @@ const vRipple = {
 }
 
 /* ----------------------------------
-   添加歌单按钮 - 优化版
+   添加歌单按钮
    ---------------------------------- */
 .add-playlist-btn {
   display: inline-flex;
@@ -1696,21 +1696,21 @@ const vRipple = {
   gap: 0.5rem;
   padding: 0.6rem 1.2rem;
   border-radius: 999px;
-  border: none;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .add-playlist-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .add-playlist-btn:active {
@@ -1721,11 +1721,10 @@ const vRipple = {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
 /* ----------------------------------
-   歌单模态框 - 全新设计
+   歌单模态框
    ---------------------------------- */
 .playlist-modal-overlay {
   position: fixed;
@@ -2127,6 +2126,7 @@ const vRipple = {
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  margin-top: 0.5rem;
 }
 
 .panel-header {
@@ -2134,6 +2134,7 @@ const vRipple = {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.75rem;
+  padding: 0 0.25rem;
 }
 
 .highlight-count {
@@ -2160,10 +2161,10 @@ const vRipple = {
 }
 
 .songs-list {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  max-height: 240px;
+  max-height: 300px;
   overflow-y: auto;
   padding: 0.5rem;
 }
@@ -2180,12 +2181,17 @@ const vRipple = {
 .song-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;
+  margin-bottom: 4px;
+}
+
+.song-item:last-child {
+  margin-bottom: 0;
 }
 
 .song-item:hover {
@@ -2193,8 +2199,8 @@ const vRipple = {
 }
 
 .song-item.selected {
-  background: rgba(102, 126, 234, 0.1);
-  border-color: rgba(102, 126, 234, 0.2);
+  background: rgba(11, 90, 254, 0.1);
+  border-color: rgba(11, 90, 254, 0.2);
 }
 
 .song-checkbox {
@@ -2217,20 +2223,29 @@ const vRipple = {
 .song-details {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .song-name {
   font-size: 14px;
   color: #ffffff;
-  margin-bottom: 2px;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.4;
+  margin-bottom: 0;
 }
 
 .song-artist {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
 /* 底部按钮栏 */
@@ -2327,17 +2342,18 @@ const vRipple = {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
   cursor: pointer;
   margin-right: 0.5rem;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  backdrop-filter: blur(10px);
   transition: all 0.2s ease;
 }
 
 .mobile-add-playlist-btn:active {
   transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* 响应式调整 */
