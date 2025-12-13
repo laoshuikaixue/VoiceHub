@@ -39,7 +39,7 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
 
         // 回退到 vkeys
         let apiUrl: string
-        if (platform === 'netease') {
+        if (platform === 'netease' || platform === 'netease-podcast') {
             apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
         } else if (platform === 'tencent') {
             apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`

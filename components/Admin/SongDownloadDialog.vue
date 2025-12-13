@@ -161,6 +161,8 @@ const getPlatformName = (platform) => {
   switch (platform) {
     case 'netease':
       return '网易云音乐'
+    case 'netease-podcast':
+      return '网易云音乐-播客'
     case 'tencent':
       return 'QQ音乐'
     case 'bilibili':
