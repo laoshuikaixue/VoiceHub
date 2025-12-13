@@ -1,9 +1,6 @@
 {
   "buildCommand": "node scripts/deploy.js",
   "installCommand": "npm ci",
-  "env": {
-    "TZ": "Asia/Shanghai"
-  },
   "headers": [
     {
       "source": "/(.*)",
