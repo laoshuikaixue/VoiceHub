@@ -21,7 +21,7 @@ export const useAudioPlayerControl = () => {
     // 状态同步标记，避免双向触发
     const isSyncingFromGlobal = ref(false)
     const isLoadingNewSong = ref(false)
-    
+
     // 歌曲切换加载状态（用于显示加载图标）
     const isLoadingTrack = ref(false)
 
@@ -197,10 +197,10 @@ export const useAudioPlayerControl = () => {
                     }
 
                     console.log('正在获取歌曲URL:', songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
-                    
+
                     // 检查是否为播客内容
                     const isPodcast = songUrlOrSong.musicPlatform === 'netease-podcast' || songUrlOrSong.sourceInfo?.type === 'voice' || (songUrlOrSong.sourceInfo?.source === 'netease-backup' && songUrlOrSong.sourceInfo?.type === 'voice')
-                    const options = isPodcast ? { unblock: false } : {}
+                    const options = isPodcast ? {unblock: false} : {}
 
                     songUrl = await getMusicUrl(songUrlOrSong.musicPlatform, songUrlOrSong.musicId, songUrlOrSong.playUrl, options)
                     if (!songUrl) {
@@ -241,7 +241,7 @@ export const useAudioPlayerControl = () => {
             // 自动开始播放
             console.log('尝试自动播放音乐')
             const playResult = await play()
-            
+
             if (!playResult) {
                 console.log('自动播放失败，可能被浏览器阻止，等待用户交互')
             } else {
@@ -354,9 +354,11 @@ export const useAudioPlayerControl = () => {
     }
 
     // 动态获取音乐URL（委托到统一逻辑）
-    const getMusicUrl = async (platform: string, musicId: string, playUrl: string | null = null, options?: { unblock?: boolean }): Promise<string | null> => {
+    const getMusicUrl = async (platform: string, musicId: string, playUrl: string | null = null, options?: {
+        unblock?: boolean
+    }): Promise<string | null> => {
         try {
-            const { getMusicUrl: coreGetMusicUrl } = await import('~/utils/musicUrl')
+            const {getMusicUrl: coreGetMusicUrl} = await import('~/utils/musicUrl')
             const url = await coreGetMusicUrl(platform, musicId, playUrl ?? undefined, options)
             return url
         } catch (error) {

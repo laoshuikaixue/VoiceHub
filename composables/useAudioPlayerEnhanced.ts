@@ -39,7 +39,7 @@ export const useAudioPlayerEnhanced = () => {
                 saveQuality(platform, qualityOrPlayUrl)
             }
 
-            const { getMusicUrl: coreGetMusicUrl } = await import('~/utils/musicUrl')
+            const {getMusicUrl: coreGetMusicUrl} = await import('~/utils/musicUrl')
             const url = await coreGetMusicUrl(platform, musicId, typeof qualityOrPlayUrl === 'string' ? qualityOrPlayUrl : undefined, options)
 
             // 如果失败且我们临时切换过音质，恢复原音质设置
@@ -48,9 +48,9 @@ export const useAudioPlayerEnhanced = () => {
             }
 
             if (url) {
-                return { success: true, url }
+                return {success: true, url}
             }
-            return { success: false, error: '未获取到播放链接' }
+            return {success: false, error: '未获取到播放链接'}
         } catch (error) {
             console.error('获取音乐链接失败:', error)
             return {success: false, error: (error as any)?.message || '网络错误'}
@@ -77,7 +77,7 @@ export const useAudioPlayerEnhanced = () => {
 
             // 检查是否为播客内容
             const isPodcast = song.musicPlatform === 'netease-podcast' || song.sourceInfo?.type === 'voice' || (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
-            const options = isPodcast ? { unblock: false } : {}
+            const options = isPodcast ? {unblock: false} : {}
 
             const result = await getMusicUrl(platform, song.musicId, newQuality, options)
             if (result.success) {
@@ -107,7 +107,7 @@ export const useAudioPlayerEnhanced = () => {
 
             // 检查是否为播客内容
             const isPodcast = song.musicPlatform === 'netease-podcast' || song.sourceInfo?.type === 'voice' || (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
-            const options = isPodcast ? { unblock: false } : {}
+            const options = isPodcast ? {unblock: false} : {}
 
             const result = await getMusicUrl(platform, song.musicId, newQuality, options)
             if (result.success) {

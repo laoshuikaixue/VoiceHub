@@ -58,11 +58,11 @@
 
     <!-- 箭头图标 -->
     <g v-else-if="name === 'arrow-left' || name === 'back'">
-      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <line x1="19" x2="5" y1="12" y2="12"></line>
       <polyline points="12 19 5 12 12 5"></polyline>
     </g>
     <g v-else-if="name === 'arrow-right'">
-      <line x1="5" y1="12" x2="19" y2="12"></line>
+      <line x1="5" x2="19" y1="12" y2="12"></line>
       <polyline points="12 5 19 12 12 19"></polyline>
     </g>
 
@@ -209,26 +209,26 @@
     <g v-else-if="name === 'trash' || name === 'delete'">
       <polyline points="3 6 5 6 21 6"></polyline>
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-      <line x1="10" y1="11" x2="10" y2="17"></line>
-      <line x1="14" y1="11" x2="14" y2="17"></line>
+      <line x1="10" x2="10" y1="11" y2="17"></line>
+      <line x1="14" x2="14" y1="11" y2="17"></line>
     </g>
 
     <!-- 加载中图标 -->
     <g v-else-if="name === 'loader' || name === 'spinner'">
-      <line x1="12" y1="2" x2="12" y2="6"></line>
-      <line x1="12" y1="18" x2="12" y2="22"></line>
-      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-      <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-      <line x1="2" y1="12" x2="6" y2="12"></line>
-      <line x1="18" y1="12" x2="22" y2="12"></line>
-      <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-      <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+      <line x1="12" x2="12" y1="2" y2="6"></line>
+      <line x1="12" x2="12" y1="18" y2="22"></line>
+      <line x1="4.93" x2="7.76" y1="4.93" y2="7.76"></line>
+      <line x1="16.24" x2="19.07" y1="16.24" y2="19.07"></line>
+      <line x1="2" x2="6" y1="12" y2="12"></line>
+      <line x1="18" x2="22" y1="12" y2="12"></line>
+      <line x1="4.93" x2="7.76" y1="19.07" y2="16.24"></line>
+      <line x1="16.24" x2="19.07" y1="7.76" y2="4.93"></line>
     </g>
 
     <!-- 加号/添加图标 -->
     <g v-else-if="name === 'plus' || name === 'add'">
-      <line x1="12" y1="5" x2="12" y2="19"></line>
-      <line x1="5" y1="12" x2="19" y2="12"></line>
+      <line x1="12" x2="12" y1="5" y2="19"></line>
+      <line x1="5" x2="19" y1="12" y2="12"></line>
     </g>
 
     <!-- 历史记录图标 -->
@@ -239,19 +239,19 @@
 
     <!-- 歌单/列表图标 -->
     <g v-else-if="name === 'playlist' || name === 'list'">
-      <line x1="8" y1="6" x2="21" y2="6"></line>
-      <line x1="8" y1="12" x2="21" y2="12"></line>
-      <line x1="8" y1="18" x2="21" y2="18"></line>
-      <line x1="3" y1="6" x2="3.01" y2="6"></line>
-      <line x1="3" y1="12" x2="3.01" y2="12"></line>
-      <line x1="3" y1="18" x2="3.01" y2="18"></line>
+      <line x1="8" x2="21" y1="6" y2="6"></line>
+      <line x1="8" x2="21" y1="12" y2="12"></line>
+      <line x1="8" x2="21" y1="18" y2="18"></line>
+      <line x1="3" x2="3.01" y1="6" y2="6"></line>
+      <line x1="3" x2="3.01" y1="12" y2="12"></line>
+      <line x1="3" x2="3.01" y1="18" y2="18"></line>
     </g>
 
     <!-- 登出/退出图标 -->
     <g v-else-if="name === 'logout' || name === 'log-out'">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
       <polyline points="16 17 21 12 16 7"></polyline>
-      <line x1="21" y1="12" x2="9" y2="12"></line>
+      <line x1="21" x2="9" y1="12" y2="12"></line>
     </g>
 
     <!-- 默认图标（如果没有匹配的图标） -->

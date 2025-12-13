@@ -117,9 +117,9 @@
             <td>
               <div class="action-buttons">
                 <button
+                    :disabled="isSelf(user)"
                     class="action-btn edit-btn"
                     title="编辑用户"
-                    :disabled="isSelf(user)"
                     @click="editUser(user)"
                 >
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -128,9 +128,9 @@
                   </svg>
                 </button>
                 <button
+                    :disabled="isSelf(user)"
                     class="action-btn music-btn"
                     title="查看歌曲"
-                    :disabled="isSelf(user)"
                     @click="viewUserSongs(user)"
                 >
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -140,9 +140,9 @@
                   </svg>
                 </button>
                 <button
+                    :disabled="isSelf(user)"
                     class="action-btn warning-btn"
                     title="重置密码"
-                    :disabled="isSelf(user)"
                     @click="resetPassword(user)"
                 >
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -153,9 +153,9 @@
                 </button>
 
                 <button
+                    :disabled="isSelf(user)"
                     class="action-btn delete-btn"
                     title="删除用户"
-                    :disabled="isSelf(user)"
                     @click="confirmDeleteUser(user)"
                 >
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -188,9 +188,9 @@
             </div>
             <div class="card-actions">
               <button
+                  :disabled="isSelf(user)"
                   class="action-btn edit-btn"
                   title="编辑用户"
-                  :disabled="isSelf(user)"
                   @click="editUser(user)"
               >
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -199,9 +199,9 @@
                 </svg>
               </button>
               <button
+                  :disabled="isSelf(user)"
                   class="action-btn music-btn"
                   title="查看歌曲"
-                  :disabled="isSelf(user)"
                   @click="viewUserSongs(user)"
               >
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -211,9 +211,9 @@
                 </svg>
               </button>
               <button
+                  :disabled="isSelf(user)"
                   class="action-btn warning-btn"
                   title="重置密码"
-                  :disabled="isSelf(user)"
                   @click="resetPassword(user)"
               >
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -223,9 +223,9 @@
               </button>
 
               <button
+                  :disabled="isSelf(user)"
                   class="action-btn delete-btn"
                   title="删除用户"
-                  :disabled="isSelf(user)"
                   @click="confirmDeleteUser(user)"
               >
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2923,5 +2923,5 @@ onMounted(async () => {
 </style>
 // 判断是否为当前登录用户
 const isSelf = (user) => {
-  return auth.user.value?.id === user?.id
+return auth.user.value?.id === user?.id
 }

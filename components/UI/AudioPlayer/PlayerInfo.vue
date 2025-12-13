@@ -1,15 +1,16 @@
 <template>
   <div class="player-info">
-    <div class="cover-container" @click="openLyrics" title="点击打开歌词">
+    <div class="cover-container" title="点击打开歌词" @click="openLyrics">
       <template v-if="song.cover && !coverError">
-        <img :src="convertToHttps(song.cover)" alt="封面" class="player-cover" referrerpolicy="no-referrer" @error="handleImageError"/>
+        <img :src="convertToHttps(song.cover)" alt="封面" class="player-cover" referrerpolicy="no-referrer"
+             @error="handleImageError"/>
       </template>
       <div v-else class="text-cover">
         {{ getFirstChar(song.title || '') }}
       </div>
       <!-- 悬浮提示层 -->
       <div class="lyrics-overlay">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg fill="none" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
           <path d="M3 5h18v2H3V5zm0 4h14v2H3V9zm0 4h18v2H3v-2zm0 4h10v2H3v-2z" fill="currentColor" opacity="0.9"/>
           <circle cx="20" cy="11" fill="currentColor" opacity="0.7" r="2"/>
           <circle cx="18" cy="15" fill="currentColor" opacity="0.7" r="1.5"/>
@@ -113,18 +114,16 @@ const openLyrics = () => {
   height: 100%;
   object-fit: cover;
   /* 添加辉光效果 */
-  box-shadow: 
-    0 0 10px rgba(255, 255, 255, 0.3),
-    0 0 20px rgba(255, 255, 255, 0.2),
-    0 0 30px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3),
+  0 0 20px rgba(255, 255, 255, 0.2),
+  0 0 30px rgba(255, 255, 255, 0.1);
   transition: box-shadow 0.3s ease;
 }
 
 .player-cover:hover {
-  box-shadow: 
-    0 0 15px rgba(255, 255, 255, 0.4),
-    0 0 30px rgba(255, 255, 255, 0.3),
-    0 0 45px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4),
+  0 0 30px rgba(255, 255, 255, 0.3),
+  0 0 45px rgba(255, 255, 255, 0.2);
 }
 
 .text-cover {

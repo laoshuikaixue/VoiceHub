@@ -110,11 +110,11 @@
                   <span class="netease-title">网易云音乐账号</span>
                 </div>
                 <button v-if="isNeteaseLoggedIn" class="logout-btn" type="button" @click="handleLogoutNetease">
-                  <Icon name="logout" :size="14" />
+                  <Icon :size="14" name="logout"/>
                   退出
                 </button>
               </div>
-              
+
               <div v-if="!isNeteaseLoggedIn" class="login-entry">
                 <div class="login-desc">
                   <p class="login-title">登录网易云音乐</p>
@@ -124,30 +124,31 @@
                   立即登录
                 </button>
               </div>
-              
+
               <div v-else class="user-status">
                 <div class="user-info-row">
                   <div class="user-profile">
-                    <img v-if="neteaseUser?.avatarUrl" :src="convertToHttps(neteaseUser.avatarUrl)" class="user-avatar" alt="avatar"/>
+                    <img v-if="neteaseUser?.avatarUrl" :src="convertToHttps(neteaseUser.avatarUrl)" alt="avatar"
+                         class="user-avatar"/>
                     <span class="user-name">{{ neteaseUser?.nickname || '已登录' }}</span>
                   </div>
                   <div class="search-type-switch">
                     <label :class="['radio-label', { active: searchType === 1 }]">
-                      <input type="radio" :value="1" v-model="searchType"> 单曲
+                      <input v-model="searchType" :value="1" type="radio"> 单曲
                     </label>
                     <label :class="['radio-label', { active: searchType === 1009 }]">
-                      <input type="radio" :value="1009" v-model="searchType"> 播客
+                      <input v-model="searchType" :value="1009" type="radio"> 播客
                     </label>
                   </div>
                 </div>
-                
+
                 <div class="user-actions-grid">
                   <button class="action-btn" type="button" @click="showRecentSongsModal = true">
-                    <Icon name="history" :size="16" />
+                    <Icon :size="16" name="history"/>
                     <span>最近播放</span>
                   </button>
                   <button class="action-btn" type="button" @click="showPlaylistModal = true">
-                    <Icon name="playlist" :size="16" />
+                    <Icon :size="16" name="playlist"/>
                     <span>从歌单投稿</span>
                   </button>
                 </div>
@@ -172,7 +173,8 @@
                       class="result-item"
                   >
                     <div class="result-cover">
-                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img" referrerpolicy="no-referrer"/>
+                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img"
+                           referrerpolicy="no-referrer"/>
                       <div class="play-overlay" @click.stop="playSong(result)">
                         <div class="play-button-bg">
                           <Icon :size="24" color="white" name="play"/>
@@ -235,7 +237,9 @@
                           class="select-btn"
                           @click.stop.prevent="submitSong(result)"
                       >
-                        {{ submitting ? '处理中...' : (platform === 'netease' && searchType === 1009 ? '选择节目' : '选择投稿') }}
+                        {{
+                          submitting ? '处理中...' : (platform === 'netease' && searchType === 1009 ? '选择节目' : '选择投稿')
+                        }}
                       </button>
                     </div>
                   </div>
@@ -362,34 +366,34 @@
     <!-- 播客节目列表弹窗 -->
     <PodcastEpisodesModal
         ref="podcastModalRef"
-        :show="showPodcastModal"
+        :cookie="podcastCookie"
         :radio-id="selectedPodcastId"
         :radio-name="selectedPodcastName"
-        :cookie="podcastCookie"
+        :show="showPodcastModal"
         @close="showPodcastModal = false"
-        @submit="handlePodcastSubmit"
         @play="handlePodcastPlay"
+        @submit="handlePodcastSubmit"
     />
 
     <!-- 最近播放歌曲弹窗 -->
     <RecentSongsModal
         ref="recentSongsModalRef"
-        :show="showRecentSongsModal"
         :cookie="neteaseCookie"
+        :show="showRecentSongsModal"
         @close="showRecentSongsModal = false"
-        @submit="handleRecentSongSubmit"
         @play="handleRecentSongPlay"
+        @submit="handleRecentSongSubmit"
     />
 
     <!-- 歌单选择弹窗 -->
     <PlaylistSelectionModal
         ref="playlistModalRef"
-        :show="showPlaylistModal"
         :cookie="neteaseCookie"
+        :show="showPlaylistModal"
         :uid="neteaseUser?.userId || neteaseUser?.id"
         @close="showPlaylistModal = false"
-        @submit="handlePlaylistSubmit"
         @play="handlePlaylistPlay"
+        @submit="handlePlaylistSubmit"
     />
 
     <!-- 手动输入弹窗 -->
@@ -512,7 +516,6 @@ import {useSiteConfig} from '~/composables/useSiteConfig'
 import {useAuth} from '~/composables/useAuth'
 import {useSemesters} from '~/composables/useSemesters'
 import {useMusicSources} from '~/composables/useMusicSources'
-import {getEnabledSources} from '~/utils/musicSources'
 import Icon from '../UI/Icon.vue'
 import {convertToHttps, validateUrl} from '~/utils/url'
 
@@ -644,7 +647,7 @@ const handleLoginSuccess = (data) => {
   neteaseCookie.value = data.cookie
   neteaseUser.value = data.user
   isNeteaseLoggedIn.value = true
-  
+
   if (process.client) {
     localStorage.setItem('netease_cookie', data.cookie)
     localStorage.setItem('netease_user', JSON.stringify(data.user))
@@ -656,7 +659,7 @@ const handleLogoutNetease = () => {
   neteaseUser.value = null
   isNeteaseLoggedIn.value = false
   searchType.value = 1
-  
+
   if (process.client) {
     localStorage.removeItem('netease_cookie')
     localStorage.removeItem('netease_user')
@@ -1000,7 +1003,7 @@ const getAudioUrl = async (result) => {
         const songId = result.musicId || result.id
         if (!songId) throw new Error('缺少歌曲ID参数')
 
-        const { getQuality } = useAudioQuality()
+        const {getQuality} = useAudioQuality()
         const quality = getQuality(platform.value) || 8
         const urlResult = await musicSources.getSongUrl(songId, quality, 'tencent')
 
@@ -1010,10 +1013,10 @@ const getAudioUrl = async (result) => {
 
           // 更新搜索结果中的对应项
           const index = searchResults.value.findIndex(
-            (item) => (item.musicId || item.id) === (result.musicId || result.id)
+              (item) => (item.musicId || item.id) === (result.musicId || result.id)
           )
           if (index !== -1) {
-            searchResults.value[index] = { ...result }
+            searchResults.value[index] = {...result}
           }
           return result
         } else {
@@ -1098,17 +1101,17 @@ const getAudioUrl = async (result) => {
       const {getQuality} = useAudioQuality()
       const quality = getQuality(targetPlatform)
       const songId = result.musicId || result.id
-      
+
       // 检查是否为播客内容
       const isPodcast = result.sourceInfo?.type === 'voice' || searchType.value === 1009
-      
+
       try {
         const urlResult = await musicSources.getSongUrl(
-            songId, 
-            quality, 
-            targetPlatform, 
+            songId,
+            quality,
+            targetPlatform,
             neteaseCookie.value,
-            { unblock: !isPodcast } // 播客内容 unblock=false，普通歌曲 unblock=true
+            {unblock: !isPodcast} // 播客内容 unblock=false，普通歌曲 unblock=true
         )
 
         if (urlResult && urlResult.success && urlResult.url) {
@@ -1218,16 +1221,16 @@ const selectResult = async (result) => {
 const submitSong = async (result, options = {}) => {
   // 防止重复点击和重复提交
   if (submitting.value) return
-  
+
   // 如果是播客/电台模式，且是在网易云平台下，且不是具体的单集提交
   if (platform.value === 'netease' && searchType.value === 1009 && !options.isPodcastEpisode && !options.isDirectSubmit) {
-      console.log('打开播客节目列表:', result)
-      // 打开播客节目列表弹窗
-      selectedPodcastId.value = result.id || result.musicId
-      selectedPodcastName.value = result.title || result.song || result.name
-      podcastCookie.value = neteaseCookie.value
-      showPodcastModal.value = true
-      return
+    console.log('打开播客节目列表:', result)
+    // 打开播客节目列表弹窗
+    selectedPodcastId.value = result.id || result.musicId
+    selectedPodcastName.value = result.title || result.song || result.name
+    podcastCookie.value = neteaseCookie.value
+    showPodcastModal.value = true
+    return
   }
 
   console.log('执行submitSong，提交歌曲:', result.title || result.song)
@@ -1383,7 +1386,7 @@ const playlistModalRef = ref(null)
 
 // 处理播客单集提交
 const handlePodcastSubmit = async (song) => {
-  const success = await submitSong(song, { isPodcastEpisode: true })
+  const success = await submitSong(song, {isPodcastEpisode: true})
   if (success) {
     showPodcastModal.value = false
   } else {
@@ -1402,7 +1405,7 @@ const handlePodcastPlay = async (song) => {
 
 // 处理最近播放歌曲提交
 const handleRecentSongSubmit = async (song) => {
-  const success = await submitSong(song, { isPodcastEpisode: false, isDirectSubmit: true })
+  const success = await submitSong(song, {isPodcastEpisode: false, isDirectSubmit: true})
   if (success) {
     showRecentSongsModal.value = false
   } else {
@@ -1420,7 +1423,7 @@ const handleRecentSongPlay = async (song) => {
 
 // 处理歌单歌曲提交
 const handlePlaylistSubmit = async (song) => {
-  const success = await submitSong(song, { isPodcastEpisode: false, isDirectSubmit: true })
+  const success = await submitSong(song, {isPodcastEpisode: false, isDirectSubmit: true})
   if (success) {
     showPlaylistModal.value = false
   } else {
@@ -3216,17 +3219,17 @@ defineExpose({
     align-items: stretch;
     gap: 0.75rem;
   }
-  
+
   .user-profile {
     width: 100%;
     justify-content: flex-start;
   }
-  
+
   .search-type-switch {
     width: 100%;
     display: flex;
   }
-  
+
   .radio-label {
     flex: 1;
     text-align: center;

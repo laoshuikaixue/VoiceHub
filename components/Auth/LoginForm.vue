@@ -71,7 +71,8 @@
 
       <button :disabled="loading" class="submit-btn" type="submit">
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416" stroke-dashoffset="31.416"
+          <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
+                  stroke-dashoffset="31.416"
                   stroke-linecap="round" stroke-width="2">
             <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
                      values="0 31.416;15.708 15.708;0 31.416"/>
@@ -140,8 +141,14 @@ const handleLogin = async () => {
 }
 
 @keyframes fadeInUp {
-  0% { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .form-header {
@@ -291,14 +298,30 @@ const handleLogin = async () => {
 }
 
 @keyframes shake {
-  0% { transform: translateX(0); }
-  15% { transform: translateX(-6px); }
-  30% { transform: translateX(6px); }
-  45% { transform: translateX(-4px); }
-  60% { transform: translateX(4px); }
-  75% { transform: translateX(-2px); }
-  90% { transform: translateX(2px); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-6px);
+  }
+  30% {
+    transform: translateX(6px);
+  }
+  45% {
+    transform: translateX(-4px);
+  }
+  60% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+  90% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .error-icon {

@@ -45,7 +45,7 @@ export function useAudioQuality() {
     // 使用全局状态，确保所有组件共享
     if (!globalAudioQuality) {
         globalAudioQuality = ref(getStoredQuality())
-        
+
         // 监听状态变化，自动保存到localStorage
         watch(globalAudioQuality, (newValue) => {
             try {
@@ -53,7 +53,7 @@ export function useAudioQuality() {
             } catch (error) {
                 console.error('保存音质设置失败:', error)
             }
-        }, { deep: true })
+        }, {deep: true})
     }
 
     const audioQuality = globalAudioQuality

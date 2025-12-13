@@ -6,42 +6,43 @@
           <div class="modal-header">
             <div class="header-left">
               <button v-if="view === 'songs'" class="back-btn" @click="backToPlaylists">
-                <Icon name="arrow-left" :size="20" />
+                <Icon :size="20" name="arrow-left"/>
               </button>
               <h3>{{ view === 'playlists' ? '选择歌单' : selectedPlaylist?.name || '歌单详情' }}</h3>
             </div>
             <button class="close-btn" @click="close">&times;</button>
           </div>
-          
+
           <div class="modal-body">
             <div v-if="loading" class="loading-state">
               <div class="loading-spinner"></div>
               <p>处理中...</p>
             </div>
-            
+
             <div v-else-if="error" class="error-state">
               <p>{{ error }}</p>
               <button class="retry-btn" @click="retry">重试</button>
             </div>
-            
+
             <!-- 歌单列表视图 -->
             <div v-else-if="view === 'playlists'" class="programs-list">
               <div v-if="playlists.length === 0" class="empty-state">
                 <p>暂无歌单</p>
               </div>
-              <div v-else v-for="playlist in playlists" :key="playlist.id" class="program-item playlist-item" @click="selectPlaylist(playlist)">
+              <div v-for="playlist in playlists" v-else :key="playlist.id" class="program-item playlist-item"
+                   @click="selectPlaylist(playlist)">
                 <div class="program-cover">
-                  <img :src="convertToHttps(playlist.coverImgUrl)" alt="cover" loading="lazy" />
+                  <img :src="convertToHttps(playlist.coverImgUrl)" alt="cover" loading="lazy"/>
                 </div>
                 <div class="program-info">
-                  <h4 class="program-title" :title="playlist.name">{{ playlist.name }}</h4>
+                  <h4 :title="playlist.name" class="program-title">{{ playlist.name }}</h4>
                   <div class="program-meta">
                     <span class="program-count">{{ playlist.trackCount }}首</span>
                     <span class="program-creator">by {{ playlist.creator?.nickname }}</span>
                   </div>
                 </div>
                 <div class="program-action">
-                  <Icon name="chevron-right" :size="20" color="#6b7280" />
+                  <Icon :size="20" color="#6b7280" name="chevron-right"/>
                 </div>
               </div>
             </div>
@@ -51,9 +52,9 @@
               <div v-if="songs.length === 0" class="empty-state">
                 <p>歌单为空</p>
               </div>
-              <div v-else v-for="song in songs" :key="song.id" class="program-item">
+              <div v-for="song in songs" v-else :key="song.id" class="program-item">
                 <div class="program-cover">
-                  <img :src="convertToHttps(song.al?.picUrl)" alt="cover" loading="lazy" />
+                  <img :src="convertToHttps(song.al?.picUrl)" alt="cover" loading="lazy"/>
                   <div class="play-overlay" @click.stop="playSong(song)">
                     <div class="play-button-bg">
                       <Icon :size="16" color="white" name="play"/>
@@ -61,38 +62,39 @@
                   </div>
                 </div>
                 <div class="program-info">
-                  <h4 class="program-title" :title="song.name">{{ song.name }}</h4>
+                  <h4 :title="song.name" class="program-title">{{ song.name }}</h4>
                   <div class="program-meta">
                     <span class="program-artist">{{ song.ar?.map(a => a.name).join('/') }}</span>
                     <span v-if="song.al?.name" class="program-album"> - {{ song.al.name }}</span>
                   </div>
                 </div>
                 <div class="program-action">
-                   <div v-if="songsLoadingForSimilar" class="similar-song-info">
-                     <span class="similar-text">处理中...</span>
-                   </div>
-                   <div v-else-if="getSimilarSong(song)" class="similar-song-info">
+                  <div v-if="songsLoadingForSimilar" class="similar-song-info">
+                    <span class="similar-text">处理中...</span>
+                  </div>
+                  <div v-else-if="getSimilarSong(song)" class="similar-song-info">
                     <span v-if="getSimilarSong(song)?.played" class="similar-text status-played">歌曲已播放</span>
-                    <span v-else-if="getSimilarSong(song)?.scheduled" class="similar-text status-scheduled">歌曲已排期</span>
+                    <span v-else-if="getSimilarSong(song)?.scheduled"
+                          class="similar-text status-scheduled">歌曲已排期</span>
                     <span v-else class="similar-text">歌曲已存在</span>
 
                     <div class="similar-actions">
                       <button
-                        v-if="getSimilarSong(song)?.played && isSuperAdmin"
-                        :disabled="submitting"
-                        class="select-btn"
-                        @click.stop="selectSong(song)"
+                          v-if="getSimilarSong(song)?.played && isSuperAdmin"
+                          :disabled="submitting"
+                          class="select-btn"
+                          @click.stop="selectSong(song)"
                       >
                         {{ submitting && selectedSongId === song.id ? '处理中...' : '继续投稿' }}
                       </button>
                       <button
-                        v-else
-                        :class="{
+                          v-else
+                          :class="{
                           'like-btn': true,
                           'disabled': getSimilarSong(song)?.played || getSimilarSong(song)?.scheduled || getSimilarSong(song)?.voted || submitting
                         }"
-                        :disabled="getSimilarSong(song)?.played || getSimilarSong(song)?.scheduled || getSimilarSong(song)?.voted || submitting"
-                        :title="
+                          :disabled="getSimilarSong(song)?.played || getSimilarSong(song)?.scheduled || getSimilarSong(song)?.voted || submitting"
+                          :title="
                           getSimilarSong(song)?.played
                             ? '已播放的歌曲不能点赞'
                             : getSimilarSong(song)?.scheduled
@@ -101,34 +103,34 @@
                                 ? '已点赞'
                                 : '点赞'
                         "
-                        @click.stop="getSimilarSong(song)?.played || getSimilarSong(song)?.scheduled ? null : handleLike(getSimilarSong(song))"
+                          @click.stop="getSimilarSong(song)?.played || getSimilarSong(song)?.scheduled ? null : handleLike(getSimilarSong(song))"
                       >
                         {{
                           getSimilarSong(song)?.played
-                            ? '已播放'
-                            : getSimilarSong(song)?.scheduled
-                              ? '已排期'
-                              : getSimilarSong(song)?.voted
-                                ? '已点赞'
-                                : '点赞'
+                              ? '已播放'
+                              : getSimilarSong(song)?.scheduled
+                                  ? '已排期'
+                                  : getSimilarSong(song)?.voted
+                                      ? '已点赞'
+                                      : '点赞'
                         }}
                       </button>
                     </div>
                   </div>
                   <button
-                    v-else
-                    class="select-btn"
-                    :disabled="submitting || songsLoadingForSimilar"
-                    @click.stop="selectSong(song)"
+                      v-else
+                      :disabled="submitting || songsLoadingForSimilar"
+                      class="select-btn"
+                      @click.stop="selectSong(song)"
                   >
                     {{ submitting && selectedSongId === song.id ? '处理中...' : '选择投稿' }}
                   </button>
                 </div>
               </div>
-              
+
               <!-- Load More Button -->
               <div v-if="hasMore" class="load-more-container">
-                <button class="load-more-btn" :disabled="moreLoading" @click="loadMore">
+                <button :disabled="moreLoading" class="load-more-btn" @click="loadMore">
                   {{ moreLoading ? '加载中...' : '加载更多' }}
                 </button>
               </div>
@@ -141,13 +143,13 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
-import { getUserPlaylists, getPlaylistTracks } from '~/utils/neteaseApi'
-import { convertToHttps } from '~/utils/url'
+import {computed, ref, watch} from 'vue'
+import {getPlaylistTracks, getUserPlaylists} from '~/utils/neteaseApi'
+import {convertToHttps} from '~/utils/url'
 import Icon from '../UI/Icon.vue'
-import { useSongs } from '~/composables/useSongs'
-import { useAuth } from '~/composables/useAuth'
-import { useSemesters } from '~/composables/useSemesters'
+import {useSongs} from '~/composables/useSongs'
+import {useAuth} from '~/composables/useAuth'
+import {useSemesters} from '~/composables/useSemesters'
 
 const props = defineProps({
   show: Boolean,
@@ -175,7 +177,7 @@ const moreLoading = ref(false)
 
 const songService = useSongs()
 const auth = useAuth()
-const { currentSemester } = useSemesters()
+const {currentSemester} = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
 
 // 标准化字符串
@@ -192,7 +194,7 @@ const normalizeString = (str) => {
 // 检查是否已存在相似歌曲
 const getSimilarSong = (songData) => {
   if (!songData) return null
-  
+
   const title = songData.name
   const artist = songData.ar?.map(a => a.name).join('/')
 
@@ -216,12 +218,12 @@ const getSimilarSong = (songData) => {
 
 const fetchUserPlaylists = async () => {
   if (!props.cookie || !props.uid) return
-  
+
   loading.value = true
   error.value = ''
-  
+
   try {
-    const { code, body, message } = await getUserPlaylists(props.uid, props.cookie)
+    const {code, body, message} = await getUserPlaylists(props.uid, props.cookie)
     if (code === 200 && body && body.playlist) {
       playlists.value = body.playlist
     } else {
@@ -237,7 +239,7 @@ const fetchUserPlaylists = async () => {
 
 const fetchPlaylistSongs = async (playlistId, isLoadMore = false) => {
   if (!props.cookie) return
-  
+
   if (isLoadMore) {
     moreLoading.value = true
   } else {
@@ -246,27 +248,27 @@ const fetchPlaylistSongs = async (playlistId, isLoadMore = false) => {
     offset.value = 0
     hasMore.value = true
   }
-  
+
   error.value = ''
-  
+
   try {
     // Current offset logic:
     // First load: offset=0, limit=100. Next load: offset=100, limit=100
     // Note: The API offset parameter works as page offset if we follow the documentation logic?
     // "You pass limit=50&offset=0 you get 1-50. You pass limit=50&offset=50 you get 51-100"
     // So my offset variable should track the number of songs loaded so far.
-    
-    const { code, body, message } = await getPlaylistTracks(playlistId, limit.value, offset.value, props.cookie)
+
+    const {code, body, message} = await getPlaylistTracks(playlistId, limit.value, offset.value, props.cookie)
     if (code === 200 && body && body.songs) {
       if (isLoadMore) {
         songs.value = [...songs.value, ...body.songs]
       } else {
         songs.value = body.songs
       }
-      
+
       // Update offset for next call
       offset.value += body.songs.length
-      
+
       // Check if we have more songs
       if (body.songs.length < limit.value) {
         hasMore.value = false
@@ -322,18 +324,18 @@ watch(() => props.show, (newVal) => {
     offset.value = 0
     hasMore.value = true
     fetchUserPlaylists()
-    
+
     // 加载歌曲列表以便检查相似歌曲
     if (auth.isAuthenticated.value && (!songService.songs.value || songService.songs.value.length === 0)) {
       songsLoadingForSimilar.value = true
       const currentSemesterName = currentSemester.value?.name
       songService.fetchSongs(true, currentSemesterName)
-        .catch(err => {
-          console.error('加载歌曲列表失败:', err)
-        })
-        .finally(() => {
-          songsLoadingForSimilar.value = false
-        })
+          .catch(err => {
+            console.error('加载歌曲列表失败:', err)
+          })
+          .finally(() => {
+            songsLoadingForSimilar.value = false
+          })
     }
   } else {
     // 重置状态
@@ -384,7 +386,7 @@ const playSong = (songData) => {
 const selectSong = (songData) => {
   selectedSongId.value = songData.id
   submitting.value = true
-  
+
   const song = {
     id: songData.id,
     title: songData.name,
@@ -399,7 +401,7 @@ const selectSong = (songData) => {
       type: 'song'
     }
   }
-  
+
   emit('submit', song)
 }
 
@@ -646,8 +648,12 @@ defineExpose({
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .similar-song-info {

@@ -7,26 +7,26 @@
             <h3>最近播放 - 歌曲</h3>
             <button class="close-btn" @click="close">&times;</button>
           </div>
-          
+
           <div class="modal-body">
             <div v-if="loading" class="loading-state">
               <div class="loading-spinner"></div>
               <p>处理中...</p>
             </div>
-            
+
             <div v-else-if="error" class="error-state">
               <p>{{ error }}</p>
               <button class="retry-btn" @click="fetchRecentSongs">重试</button>
             </div>
-            
+
             <div v-else-if="songs.length === 0" class="empty-state">
               <p>暂无最近播放记录</p>
             </div>
-            
+
             <div v-else class="programs-list">
               <div v-for="item in songs" :key="item.resourceId" class="program-item">
                 <div class="program-cover">
-                  <img :src="convertToHttps(item.data?.al?.picUrl)" alt="cover" loading="lazy" />
+                  <img :src="convertToHttps(item.data?.al?.picUrl)" alt="cover" loading="lazy"/>
                   <div class="play-overlay" @click.stop="playSong(item.data)">
                     <div class="play-button-bg">
                       <Icon :size="16" color="white" name="play"/>
@@ -34,38 +34,39 @@
                   </div>
                 </div>
                 <div class="program-info">
-                  <h4 class="program-title" :title="item.data?.name">{{ item.data?.name }}</h4>
+                  <h4 :title="item.data?.name" class="program-title">{{ item.data?.name }}</h4>
                   <div class="program-meta">
                     <span class="program-date">{{ formatTime(item.playTime) }}</span>
                     <span class="program-artist">{{ item.data?.ar?.map(a => a.name).join('/') }}</span>
                   </div>
                 </div>
                 <div class="program-action">
-                   <div v-if="songsLoadingForSimilar" class="similar-song-info">
-                     <span class="similar-text">处理中...</span>
-                   </div>
-                   <div v-else-if="getSimilarSong(item.data)" class="similar-song-info">
+                  <div v-if="songsLoadingForSimilar" class="similar-song-info">
+                    <span class="similar-text">处理中...</span>
+                  </div>
+                  <div v-else-if="getSimilarSong(item.data)" class="similar-song-info">
                     <span v-if="getSimilarSong(item.data)?.played" class="similar-text status-played">歌曲已播放</span>
-                    <span v-else-if="getSimilarSong(item.data)?.scheduled" class="similar-text status-scheduled">歌曲已排期</span>
+                    <span v-else-if="getSimilarSong(item.data)?.scheduled"
+                          class="similar-text status-scheduled">歌曲已排期</span>
                     <span v-else class="similar-text">歌曲已存在</span>
 
                     <div class="similar-actions">
                       <button
-                        v-if="getSimilarSong(item.data)?.played && isSuperAdmin"
-                        :disabled="submitting"
-                        class="select-btn"
-                        @click="selectSong(item.data)"
+                          v-if="getSimilarSong(item.data)?.played && isSuperAdmin"
+                          :disabled="submitting"
+                          class="select-btn"
+                          @click="selectSong(item.data)"
                       >
                         {{ submitting && selectedSongId === item.data?.id ? '处理中...' : '继续投稿' }}
                       </button>
                       <button
-                        v-else
-                        :class="{
+                          v-else
+                          :class="{
                           'like-btn': true,
                           'disabled': getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled || getSimilarSong(item.data)?.voted || submitting
                         }"
-                        :disabled="getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled || getSimilarSong(item.data)?.voted || submitting"
-                        :title="
+                          :disabled="getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled || getSimilarSong(item.data)?.voted || submitting"
+                          :title="
                           getSimilarSong(item.data)?.played
                             ? '已播放的歌曲不能点赞'
                             : getSimilarSong(item.data)?.scheduled
@@ -74,25 +75,25 @@
                                 ? '已点赞'
                                 : '点赞'
                         "
-                        @click="getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled ? null : handleLike(getSimilarSong(item.data))"
+                          @click="getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled ? null : handleLike(getSimilarSong(item.data))"
                       >
                         {{
                           getSimilarSong(item.data)?.played
-                            ? '已播放'
-                            : getSimilarSong(item.data)?.scheduled
-                              ? '已排期'
-                              : getSimilarSong(item.data)?.voted
-                                ? '已点赞'
-                                : '点赞'
+                              ? '已播放'
+                              : getSimilarSong(item.data)?.scheduled
+                                  ? '已排期'
+                                  : getSimilarSong(item.data)?.voted
+                                      ? '已点赞'
+                                      : '点赞'
                         }}
                       </button>
                     </div>
                   </div>
                   <button
-                    v-else
-                    class="select-btn"
-                    :disabled="submitting || songsLoadingForSimilar"
-                    @click="selectSong(item.data)"
+                      v-else
+                      :disabled="submitting || songsLoadingForSimilar"
+                      class="select-btn"
+                      @click="selectSong(item.data)"
                   >
                     {{ submitting && selectedSongId === item.data?.id ? '处理中...' : '选择投稿' }}
                   </button>
@@ -107,13 +108,13 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue'
-import { getRecentSongs } from '~/utils/neteaseApi'
-import { convertToHttps } from '~/utils/url'
+import {computed, ref, watch} from 'vue'
+import {getRecentSongs} from '~/utils/neteaseApi'
+import {convertToHttps} from '~/utils/url'
 import Icon from '../UI/Icon.vue'
-import { useSongs } from '~/composables/useSongs'
-import { useAuth } from '~/composables/useAuth'
-import { useSemesters } from '~/composables/useSemesters'
+import {useSongs} from '~/composables/useSongs'
+import {useAuth} from '~/composables/useAuth'
+import {useSemesters} from '~/composables/useSemesters'
 
 const props = defineProps({
   show: Boolean,
@@ -131,7 +132,7 @@ const selectedSongId = ref(null)
 
 const songService = useSongs()
 const auth = useAuth()
-const { currentSemester } = useSemesters()
+const {currentSemester} = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
 
 // 标准化字符串
@@ -148,7 +149,7 @@ const normalizeString = (str) => {
 // 检查是否已存在相似歌曲
 const getSimilarSong = (songData) => {
   if (!songData) return null
-  
+
   const title = songData.name
   const artist = songData.ar?.map(a => a.name).join('/')
 
@@ -175,22 +176,22 @@ const formatTime = (timestamp) => {
   const date = new Date(timestamp)
   const now = new Date()
   const diff = now - date
-  
+
   if (diff < 60000) return '刚刚'
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
-  
+
   return `${date.getMonth() + 1}月${date.getDate()}日`
 }
 
 const fetchRecentSongs = async () => {
   if (!props.cookie) return
-  
+
   loading.value = true
   error.value = ''
-  
+
   try {
-    const { code, body, message } = await getRecentSongs(100, props.cookie)
+    const {code, body, message} = await getRecentSongs(100, props.cookie)
     if (code === 200 && body && body.list) {
       songs.value = body.list.filter(item => item.resourceType === 'SONG' && item.data)
     } else {
@@ -212,12 +213,12 @@ watch(() => props.show, (newVal) => {
       songsLoadingForSimilar.value = true
       const currentSemesterName = currentSemester.value?.name
       songService.fetchSongs(true, currentSemesterName)
-        .catch(err => {
-          console.error('加载歌曲列表失败:', err)
-        })
-        .finally(() => {
-          songsLoadingForSimilar.value = false
-        })
+          .catch(err => {
+            console.error('加载歌曲列表失败:', err)
+          })
+          .finally(() => {
+            songsLoadingForSimilar.value = false
+          })
     }
   } else {
     songs.value = []
@@ -268,7 +269,7 @@ const playSong = (songData) => {
 const selectSong = (songData) => {
   selectedSongId.value = songData.id
   submitting.value = true
-  
+
   const song = {
     id: songData.id,
     title: songData.name,
@@ -283,7 +284,7 @@ const selectSong = (songData) => {
       type: 'song'
     }
   }
-  
+
   emit('submit', song)
   // 不立即关闭，由父组件控制
 }
@@ -501,8 +502,12 @@ defineExpose({
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes modal-in {

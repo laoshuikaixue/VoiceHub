@@ -1,26 +1,26 @@
 <template>
   <Teleport to="body">
     <Transition name="modal-animation">
-      <div 
-        v-if="isVisible" 
-        class="lyrics-modal-overlay" 
-        @click="handleOverlayClick"
-        @keydown="handleKeydown"
-        tabindex="-1"
+      <div
+          v-if="isVisible"
+          class="lyrics-modal-overlay"
+          tabindex="-1"
+          @click="handleOverlayClick"
+          @keydown="handleKeydown"
       >
-        <div class="lyrics-fullscreen-container" ref="fullscreenContainer" :class="{ leaving: isExiting }">
+        <div ref="fullscreenContainer" :class="{ leaving: isExiting }" class="lyrics-fullscreen-container">
           <!-- 动态背景 -->
-          <div class="background-layer" ref="backgroundContainer">
-            <div 
-              v-if="backgroundConfig.type === 'gradient'" 
-              class="gradient-background"
-              :class="{ 'dynamic': backgroundConfig.dynamic }"
+          <div ref="backgroundContainer" class="background-layer">
+            <div
+                v-if="backgroundConfig.type === 'gradient'"
+                :class="{ 'dynamic': backgroundConfig.dynamic }"
+                class="gradient-background"
             ></div>
-            <div 
-              v-else-if="backgroundConfig.type === 'cover' && currentSong?.cover" 
-              class="cover-background"
-              ref="coverBlurContainer"
-              :style="{ backgroundImage: `url(${convertToHttps(currentSong.cover)})` }"
+            <div
+                v-else-if="backgroundConfig.type === 'cover' && currentSong?.cover"
+                ref="coverBlurContainer"
+                :style="{ backgroundImage: `url(${convertToHttps(currentSong.cover)})` }"
+                class="cover-background"
             >
             </div>
             <!-- 叠加暗化层，提升白色背景下歌词对比度 -->
@@ -29,21 +29,21 @@
 
           <!-- 关闭按钮 -->
           <button class="close-button" @click="closeModal">
-            <Icon name="x" size="24" />
+            <Icon name="x" size="24"/>
           </button>
 
           <!-- 歌曲信息 -->
           <div class="song-info">
             <div class="song-cover">
-              <img 
-                v-if="currentSong?.cover" 
-                :src="convertToHttps(currentSong.cover)" 
-                :alt="currentSong.title"
-                referrerpolicy="no-referrer"
-                @error="handleCoverError"
+              <img
+                  v-if="currentSong?.cover"
+                  :alt="currentSong.title"
+                  :src="convertToHttps(currentSong.cover)"
+                  referrerpolicy="no-referrer"
+                  @error="handleCoverError"
               />
               <div v-else class="default-cover">
-                <Icon name="music" size="24" />
+                <Icon name="music" size="24"/>
               </div>
             </div>
             <div class="song-details">
@@ -54,71 +54,71 @@
 
           <!-- 歌词显示区域 -->
           <div class="lyrics-display-area">
-            <div 
-              v-if="isLoadingLyrics" 
-              class="loading-lyrics"
+            <div
+                v-if="isLoadingLyrics"
+                class="loading-lyrics"
             >
               <div class="loading-spinner"></div>
               <p>加载歌词中...</p>
             </div>
-            <div 
-              v-else-if="!hasLyrics" 
-              class="no-lyrics"
+            <div
+                v-else-if="!hasLyrics"
+                class="no-lyrics"
             >
-              <Icon name="lyrics" size="48" />
+              <Icon name="lyrics" size="48"/>
               <p>暂无歌词</p>
             </div>
-            <div class="lyrics-container" v-show="hasLyrics">
+            <div v-show="hasLyrics" class="lyrics-container">
               <!-- 这里将集成 @applemusic-like-lyrics/core -->
-              <div id="lyric-player-modal" class="lyric-player" ref="lyricsContainer"></div>
+              <div id="lyric-player-modal" ref="lyricsContainer" class="lyric-player"></div>
             </div>
           </div>
 
           <!-- 播放控制栏 -->
           <div class="playback-controls">
             <div class="control-buttons">
-              <button 
-                class="control-btn"
-                @click="previousSong"
-                :disabled="!hasPrevious"
+              <button
+                  :disabled="!hasPrevious"
+                  class="control-btn"
+                  @click="previousSong"
               >
-                <Icon name="skip-back" size="20" />
+                <Icon name="skip-back" size="20"/>
               </button>
-              <button 
-                class="play-pause-btn"
-                @click="togglePlayPause"
+              <button
+                  class="play-pause-btn"
+                  @click="togglePlayPause"
               >
                 <div v-if="isLoadingTrack" class="loading-spinner"></div>
-                <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="24" />
+                <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="24"/>
               </button>
-              <button 
-                class="control-btn"
-                @click="nextSong"
-                :disabled="!hasNext"
+              <button
+                  :disabled="!hasNext"
+                  class="control-btn"
+                  @click="nextSong"
               >
-                <Icon name="skip-forward" size="20" />
+                <Icon name="skip-forward" size="20"/>
               </button>
             </div>
 
             <!-- 进度条 -->
             <div class="progress-section">
               <span class="time-display">{{ formatTime(currentTime) }}</span>
-              <div 
-                class="progress-bar"
-                ref="progressBar"
-                @click="handleProgressClick"
-                @mousedown="handleProgressMouseDown"
-                @touchstart="handleProgressTouchStart"
-                @touchmove="handleProgressTouchMove"
-                @touchend="handleProgressTouchEnd"
+              <div
+                  ref="progressBar"
+                  class="progress-bar"
+                  @click="handleProgressClick"
+                  @mousedown="handleProgressMouseDown"
+                  @touchend="handleProgressTouchEnd"
+                  @touchmove="handleProgressTouchMove"
+                  @touchstart="handleProgressTouchStart"
               >
-                <div 
-                  class="progress-fill"
-                  :style="{ width: `${progressPercentage}%` }"
+                <div
+                    :style="{ width: `${progressPercentage}%` }"
+                    class="progress-fill"
                 ></div>
-                <div 
-                  class="progress-thumb"
-                  :style="{ left: `${progressPercentage}%` }"
+                <div
+                    :style="{ left: `${progressPercentage}%` }"
+                    class="progress-thumb"
                 ></div>
               </div>
               <span class="time-display">{{ formatTime(duration) }}</span>
@@ -126,21 +126,21 @@
 
             <!-- 音质设置 -->
             <div class="quality-section">
-              <div class="quality-dropdown" :class="{ active: showQualitySettings }">
-                <button 
-                  class="quality-btn"
-                  @click="showQualitySettings = !showQualitySettings"
+              <div :class="{ active: showQualitySettings }" class="quality-dropdown">
+                <button
+                    class="quality-btn"
+                    @click="showQualitySettings = !showQualitySettings"
                 >
                   {{ currentQualityText }}
-                  <Icon name="chevron-up" size="16" />
+                  <Icon name="chevron-up" size="16"/>
                 </button>
                 <div v-if="showQualitySettings" class="quality-options">
                   <button
-                    v-for="option in currentPlatformOptions"
-                    :key="option.value"
-                    class="quality-option"
-                    :class="{ active: isCurrentQuality(option.value) }"
-                    @click="selectQuality(option.value)"
+                      v-for="option in currentPlatformOptions"
+                      :key="option.value"
+                      :class="{ active: isCurrentQuality(option.value) }"
+                      class="quality-option"
+                      @click="selectQuality(option.value)"
                   >
                     {{ option.label }}
                   </button>
@@ -206,7 +206,7 @@ const isPlaying = computed(() => audioPlayer.getPlayingStatus().value)
 const isLoadingTrack = computed(() => audioPlayerControl.isLoadingTrack.value)
 const currentTime = computed(() => audioPlayer.getCurrentPosition().value)
 const duration = computed(() => audioPlayer.getDuration().value)
-const { getQuality, getQualityLabel, getQualityOptions, saveQuality } = useAudioQuality()
+const {getQuality, getQualityLabel, getQualityOptions, saveQuality} = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
 
 const currentQualityText = computed(() => {
@@ -224,7 +224,7 @@ watch(() => {
 }, () => {
   // 触发响应式更新
   nextTick()
-}, { deep: true })
+}, {deep: true})
 
 const currentPlatformOptions = computed(() => {
   const platform = currentSong.value?.musicPlatform
@@ -289,7 +289,7 @@ const handleResize = () => {
 // 键盘事件处理
 const handleKeydown = (event) => {
   if (!props.isVisible) return
-  
+
   switch (event.key) {
     case 'Escape':
       event.preventDefault()
@@ -322,19 +322,19 @@ const handleKeydown = (event) => {
 const togglePlayPause = async () => {
   const audioElements = document.querySelectorAll('audio')
   let audioElement = null
-  
+
   for (const audio of audioElements) {
     if (audio.src && (audio.currentTime > 0 || !audio.paused)) {
       audioElement = audio
       break
     }
   }
-  
+
   if (!audioElement) {
     console.warn('[lyrics-modal] 未找到音频元素')
     return
   }
-  
+
   if (isPlaying.value) {
     audioElement.pause()
     audioPlayer.pauseSong()
@@ -361,11 +361,11 @@ const handleLyricLineSeek = async (seconds) => {
   if (lyricPlayer.pause) {
     lyricPlayer.pause()
   }
-  
+
   if (!isPlaying.value) {
     await togglePlayPause()
   }
-  
+
   const audioElements = document.querySelectorAll('audio')
   for (const audio of audioElements) {
     if (audio.src) {
@@ -373,22 +373,22 @@ const handleLyricLineSeek = async (seconds) => {
       break
     }
   }
-  
+
   // 更新音频播放器位置
   audioPlayer.setPosition(seconds)
-  
+
   // 跳转歌词播放器时间（seekTo 方法内部已经处理了动画中断）
   lyricPlayer.seekTo(Math.floor(seconds * 1000))
 }
 
 const handleProgressClick = (event) => {
   if (!progressBar.value || isDragging.value) return
-  
+
   const rect = progressBar.value.getBoundingClientRect()
   const clickX = event.clientX - rect.left
   const percentage = clickX / rect.width
   const newTime = percentage * duration.value
-  
+
   const audioElements = document.querySelectorAll('audio')
   for (const audio of audioElements) {
     if (audio.src && (audio.currentTime > 0 || !audio.paused)) {
@@ -406,7 +406,7 @@ const handleProgressTouchStart = (event) => {
   isDragging.value = true
   dragStartX.value = event.touches[0].clientX
   dragStartTime.value = currentTime.value
-  document.addEventListener('touchmove', handleProgressTouchMove, { passive: false })
+  document.addEventListener('touchmove', handleProgressTouchMove, {passive: false})
 }
 
 const handleProgressTouchEnd = () => {
@@ -472,13 +472,13 @@ const selectQuality = async (qualityValue) => {
     showQualitySettings.value = false
     return
   }
-  
+
   const result = await enhanced.enhancedQualitySwitch(song, qualityValue)
   if (result.success) {
     // 只有在切换成功后才保存音质设置
     saveQuality(song.musicPlatform, qualityValue)
-    
-    const updatedSong = { ...song, musicUrl: result.url }
+
+    const updatedSong = {...song, musicUrl: result.url}
     audioPlayer.playSong(updatedSong)
   }
   // 如果失败，不保存音质设置，保持原有状态
@@ -501,7 +501,7 @@ const handleCoverError = (event) => {
 const closeModal = () => {
   if (isExiting.value) return
   isExiting.value = true
-  
+
   setTimeout(() => {
     emit('close')
     isExiting.value = false
@@ -518,14 +518,14 @@ const handleOverlayClick = (event) => {
 // 进度更新定时器
 const startProgressTimer = () => {
   if (progressUpdateTimer.value) return
-  
+
   progressUpdateTimer.value = setInterval(() => {
     if (!props.isVisible) return
-    
+
     const audioElements = document.querySelectorAll('audio')
     let actualCurrentTime = 0
     let actualDuration = 0
-    
+
     for (const audio of audioElements) {
       if (audio.src && (audio.currentTime > 0 || !audio.paused)) {
         actualCurrentTime = audio.currentTime
@@ -533,14 +533,14 @@ const startProgressTimer = () => {
         break
       }
     }
-    
+
     if (actualCurrentTime > 0) {
       audioPlayer.updatePosition(actualCurrentTime)
-      
+
       if (duration.value === 0 && actualDuration > 0) {
         audioPlayer.setDuration(actualDuration)
       }
-      
+
       const timeInMs = Math.floor(actualCurrentTime * 1000)
       lyricPlayer.updateTime(timeInMs)
     }
@@ -569,70 +569,70 @@ const restorePageScroll = () => {
 
 // 监听可见性变化
 watch(
-  () => props.isVisible,
-  async (visible) => {
-    if (visible) {
-      // 显示模态框时的初始化
-      disablePageScroll()
-      
-      await nextTick()
-      lyricConfig.value.fontSize = getResponsiveFontSize()
-      
-      // 初始化歌词播放器
-      if (lyricsContainer.value) {
-        await lyricPlayer.initializeLyricPlayer(lyricsContainer.value)
-        lyricPlayer.onLineClick(handleLyricLineSeek)
-        startAnimationLoop()
-        // 初始化后应用当前配置并立即设置已有歌词
-        await lyricPlayer.updateConfig(lyricConfig.value)
-        if (lyrics.currentLyrics.value && lyrics.currentLyrics.value.length > 0) {
-          const amllLyrics = convertToAmllFormat(
-            lyrics.currentLyrics.value,
-            lyrics.translationLyrics.value
-          )
-          await lyricPlayer.setLyrics(amllLyrics)
+    () => props.isVisible,
+    async (visible) => {
+      if (visible) {
+        // 显示模态框时的初始化
+        disablePageScroll()
+
+        await nextTick()
+        lyricConfig.value.fontSize = getResponsiveFontSize()
+
+        // 初始化歌词播放器
+        if (lyricsContainer.value) {
+          await lyricPlayer.initializeLyricPlayer(lyricsContainer.value)
+          lyricPlayer.onLineClick(handleLyricLineSeek)
+          startAnimationLoop()
+          // 初始化后应用当前配置并立即设置已有歌词
+          await lyricPlayer.updateConfig(lyricConfig.value)
+          if (lyrics.currentLyrics.value && lyrics.currentLyrics.value.length > 0) {
+            const amllLyrics = convertToAmllFormat(
+                lyrics.currentLyrics.value,
+                lyrics.translationLyrics.value
+            )
+            await lyricPlayer.setLyrics(amllLyrics)
+          }
         }
-      }
-      
-      // 初始化背景渲染器
-      if (backgroundContainer.value) {
-        await backgroundRenderer.initializeBackground(backgroundContainer.value)
-        
-        // 仅在需要封面模糊时设置元素
-        if (coverBlurContainer.value && backgroundConfig.value.type === 'cover') {
-          backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
+
+        // 初始化背景渲染器
+        if (backgroundContainer.value) {
+          await backgroundRenderer.initializeBackground(backgroundContainer.value)
+
+          // 仅在需要封面模糊时设置元素
+          if (coverBlurContainer.value && backgroundConfig.value.type === 'cover') {
+            backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
+          }
+
+          backgroundRenderer.startRender()
         }
-        
-        backgroundRenderer.startRender()
-      }
-      
-      // 处理当前歌曲
-      if (currentSong.value) {
-        if (currentSong.value.musicPlatform && currentSong.value.musicId) {
-          await lyrics.fetchLyrics(currentSong.value.musicPlatform, currentSong.value.musicId)
+
+        // 处理当前歌曲
+        if (currentSong.value) {
+          if (currentSong.value.musicPlatform && currentSong.value.musicId) {
+            await lyrics.fetchLyrics(currentSong.value.musicPlatform, currentSong.value.musicId)
+          }
+
+          if (currentSong.value.cover) {
+            backgroundRenderer.setCoverBackground(currentSong.value.cover)
+          }
         }
-        
-        if (currentSong.value.cover) {
-          backgroundRenderer.setCoverBackground(currentSong.value.cover)
+
+        if (isPlaying.value) {
+          startProgressTimer()
         }
+
+        document.addEventListener('keydown', handleKeydown)
+        window.addEventListener('resize', handleResize)
+      } else {
+        // 隐藏模态框时的清理
+        restorePageScroll()
+        stopProgressTimer()
+        lyricPlayer.dispose()
+        backgroundRenderer.dispose()
+        document.removeEventListener('keydown', handleKeydown)
+        window.removeEventListener('resize', handleResize)
       }
-      
-      if (isPlaying.value) {
-        startProgressTimer()
-      }
-      
-      document.addEventListener('keydown', handleKeydown)
-      window.addEventListener('resize', handleResize)
-    } else {
-      // 隐藏模态框时的清理
-      restorePageScroll()
-      stopProgressTimer()
-      lyricPlayer.dispose()
-      backgroundRenderer.dispose()
-      document.removeEventListener('keydown', handleKeydown)
-      window.removeEventListener('resize', handleResize)
     }
-  }
 )
 
 // 监听歌词配置变化
@@ -640,25 +640,25 @@ watch(lyricConfig, async (newConfig) => {
   if (props.isVisible) {
     await lyricPlayer.updateConfig(newConfig)
   }
-}, { deep: true })
+}, {deep: true})
 
 // 监听背景配置变化
 watch(backgroundConfig, async (newConfig) => {
   if (props.isVisible) {
     await backgroundRenderer.updateConfig(newConfig)
   }
-}, { deep: true })
+}, {deep: true})
 
 // 监听当前歌曲变化
 watch(currentSong, async (newSong) => {
   if (!props.isVisible || !newSong) return
-  
+
   lyrics.clearLyrics()
-  
+
   if (newSong.musicPlatform && newSong.musicId) {
     await lyrics.fetchLyrics(newSong.musicPlatform, newSong.musicId)
   }
-  
+
   if (newSong.cover) {
     backgroundRenderer.setCoverBackground(newSong.cover)
     await backgroundRenderer.setGradientFromCover(newSong.cover)
@@ -671,10 +671,10 @@ watch([
   () => lyrics.translationLyrics.value
 ], async ([newLyrics, newTranslations]) => {
   if (!props.isVisible) return
-  
+
   if (newLyrics && newLyrics.length > 0) {
     const amllLyrics = convertToAmllFormat(newLyrics, newTranslations)
-    
+
     if (lyricPlayer.isInitialized.value) {
       await lyricPlayer.setLyrics(amllLyrics)
     }
@@ -692,8 +692,8 @@ watch(hasLyrics, async (has) => {
       await lyricPlayer.updateConfig(lyricConfig.value)
     }
     const amllLyrics = convertToAmllFormat(
-      lyrics.currentLyrics.value,
-      lyrics.translationLyrics.value
+        lyrics.currentLyrics.value,
+        lyrics.translationLyrics.value
     )
     await lyricPlayer.setLyrics(amllLyrics)
   }
@@ -709,9 +709,9 @@ watch(currentTime, (newTime) => {
 // 监听播放状态变化
 watch(isPlaying, (playing) => {
   if (!props.isVisible) return
-  
+
   lyricPlayer.setPlayingState(playing)
-  
+
   if (playing) {
     startProgressTimer()
   } else {
@@ -722,20 +722,20 @@ watch(isPlaying, (playing) => {
 // 启动动画循环
 const startAnimationLoop = () => {
   let lastTime = -1
-  
+
   const frame = (time) => {
     if (!props.isVisible) return
-    
+
     if (lastTime === -1) {
       lastTime = time
     }
-    
+
     lyricPlayer.update(time - lastTime)
     lastTime = time
-    
+
     requestAnimationFrame(frame)
   }
-  
+
   requestAnimationFrame(frame)
 }
 
@@ -842,9 +842,15 @@ onUnmounted(() => {
 }
 
 @keyframes gradientFlow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .cover-background {
@@ -863,13 +869,12 @@ onUnmounted(() => {
   inset: 0;
   pointer-events: none;
   /* 双层叠加：径向渐变集中暗化 + 全局轻度暗化 */
-  background:
-    radial-gradient(ellipse at center,
-      rgba(0, 0, 0, 0.35) 0%,
-      rgba(0, 0, 0, 0.5) 60%,
-      rgba(0, 0, 0, 0.6) 100%
-    ),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.28));
+  background: radial-gradient(ellipse at center,
+  rgba(0, 0, 0, 0.35) 0%,
+  rgba(0, 0, 0, 0.5) 60%,
+  rgba(0, 0, 0, 0.6) 100%
+  ),
+  linear-gradient(0deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.28));
   z-index: 1;
 }
 
@@ -958,8 +963,12 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .lyrics-container {
@@ -1167,13 +1176,13 @@ onUnmounted(() => {
 }
 
 @keyframes fadeOutScale {
-  0% { 
-    opacity: 1; 
-    transform: scale(1); 
+  0% {
+    opacity: 1;
+    transform: scale(1);
   }
-  100% { 
-    opacity: 0; 
-    transform: scale(0.95) translateY(-10px); 
+  100% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
   }
 }
 
@@ -1185,15 +1194,15 @@ onUnmounted(() => {
     width: 36px;
     height: 36px;
   }
-  
+
   .song-info {
     padding: 1rem;
   }
-  
+
   .lyrics-display-area {
     padding: 1rem;
   }
-  
+
   .playback-controls {
     padding: 0.5rem 1rem;
     gap: 0.75rem;
@@ -1205,27 +1214,27 @@ onUnmounted(() => {
       "controls quality";
     align-items: center;
   }
-  
+
   .progress-section {
     grid-area: progress;
     width: 100%;
   }
-  
+
   .control-buttons {
     grid-area: controls;
     justify-content: center;
   }
-  
+
   .quality-section {
     grid-area: quality;
     justify-self: end;
   }
-  
+
   .control-btn {
     width: 36px;
     height: 36px;
   }
-  
+
   .play-pause-btn {
     width: 44px;
     height: 44px;
@@ -1236,13 +1245,13 @@ onUnmounted(() => {
   .lyrics-fullscreen-container {
     --controls-height-mobile: 92px;
   }
-  
+
   .lyrics-container {
     height: calc(100vh - var(--controls-height-mobile));
     overflow: hidden;
     padding-bottom: 0;
   }
-  
+
   .playback-controls {
     position: fixed;
     left: 0;
@@ -1264,43 +1273,43 @@ onUnmounted(() => {
       "controls quality";
     align-items: center;
   }
-  
+
   .progress-section {
     grid-area: progress;
     width: 100%;
   }
-  
+
   .control-buttons {
     grid-area: controls;
     justify-content: center;
   }
-  
+
   .quality-section {
     grid-area: quality;
     justify-self: end;
   }
-  
+
   .quality-btn {
     min-width: 44px;
     min-height: 44px;
     padding: 0.5rem 0.75rem;
     -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .quality-option {
     min-height: 44px;
     padding: 0.5rem 0.75rem;
   }
-  
+
   .progress-thumb {
     width: 20px;
     height: 20px;
   }
-  
+
   .progress-bar {
     height: 6px;
   }
-  
+
   .control-btn:active, .play-pause-btn:active, .quality-btn:active {
     transform: scale(0.96);
   }

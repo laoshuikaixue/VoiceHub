@@ -456,7 +456,7 @@ const restoreBackup = async () => {
 
   uploadLoading.value = true
   restoreProgress.value = '正在读取文件...'
-  
+
   try {
     // 1. 读取并解析文件
     const fileContent = await selectedFile.value.text()
@@ -506,7 +506,7 @@ const restoreBackup = async () => {
     // 5. 按顺序恢复表数据
     const CHUNK_SIZE = 50
     let totalProcessed = 0
-    
+
     // 计算总记录数用于进度显示
     let totalRecords = 0
     for (const tableName of tableOrder) {
@@ -522,7 +522,7 @@ const restoreBackup = async () => {
       }
 
       console.log(`开始恢复表 ${tableName}, 共 ${records.length} 条记录`)
-      
+
       // 分块处理
       for (let i = 0; i < records.length; i += CHUNK_SIZE) {
         const chunk = records.slice(i, i + CHUNK_SIZE)
@@ -566,7 +566,7 @@ const restoreBackup = async () => {
           table: 'all'
         }
       })
-      
+
       if (!fixSequenceResult.success) {
         console.warn('序列修复部分失败:', fixSequenceResult.message)
         if (window.$showNotification) {
@@ -609,7 +609,7 @@ const restoreBackup = async () => {
     // 关闭模态框并重置表单
     showUploadModal.value = false
     selectedFile.value = null
-    
+
   } catch (error) {
     console.error('恢复备份失败:', error)
     if (window.$showNotification) {

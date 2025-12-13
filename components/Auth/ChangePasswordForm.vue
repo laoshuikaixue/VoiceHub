@@ -150,7 +150,8 @@
 
       <button :disabled="loading || !isFormValid" class="submit-btn" type="submit">
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416" stroke-dashoffset="31.416"
+          <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
+                  stroke-dashoffset="31.416"
                   stroke-linecap="round" stroke-width="2">
             <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
                      values="0 31.416;15.708 15.708;0 31.416"/>

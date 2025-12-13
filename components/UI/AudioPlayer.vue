@@ -11,7 +11,8 @@
           <!-- 封面 -->
           <div class="cover-container">
             <template v-if="activeSong && activeSong.cover && !coverError">
-              <img :src="convertToHttps(activeSong.cover)" alt="封面" class="player-cover" referrerpolicy="no-referrer" @error="handleImageError"/>
+              <img :src="convertToHttps(activeSong.cover)" alt="封面" class="player-cover" referrerpolicy="no-referrer"
+                   @error="handleImageError"/>
             </template>
             <div v-else class="text-cover">
               {{ getFirstChar(activeSong?.title || '') }}
@@ -25,7 +26,7 @@
           </div>
 
           <!-- 右上角关闭按钮 -->
-          <div class="close-button" @click="stopPlaying" title="关闭播放器">
+          <div class="close-button" title="关闭播放器" @click="stopPlaying">
             <span class="music-icon">×</span>
           </div>
         </div>
@@ -35,29 +36,29 @@
           <!-- 进度条区域 -->
           <div class="time">
             <!-- 进度条 -->
-            <div 
-              ref="progressBar"
-              class="progress-bar"
-              @click="handleSeekToPosition"
-              @mousedown="handleStartDrag"
-              @touchstart="handleStartTouchDrag"
+            <div
+                ref="progressBar"
+                class="progress-bar"
+                @click="handleSeekToPosition"
+                @mousedown="handleStartDrag"
+                @touchstart="handleStartTouchDrag"
             >
-              <div 
-                class="progress-fill" 
-                :style="{ width: `${control.progress.value}%` }"
+              <div
+                  :style="{ width: `${control.progress.value}%` }"
+                  class="progress-fill"
               ></div>
             </div>
 
             <!-- 时间和音质显示 -->
             <div class="time-details-and-audio-q">
               <span class="current-time">{{ formatTime(control.currentTime.value) }}</span>
-              <div class="audio-quality" @click="toggleQualitySettings" title="音质设置">
+              <div class="audio-quality" title="音质设置" @click="toggleQualitySettings">
                 <span>{{ currentQualityText }}</span>
               </div>
-              <span 
-                class="remaining-time clickable-time" 
-                @click="toggleTimeDisplayMode" 
-                :title="timeDisplayMode === 'remaining' ? '点击显示总时长' : '点击显示剩余时长'"
+              <span
+                  :title="timeDisplayMode === 'remaining' ? '点击显示总时长' : '点击显示剩余时长'"
+                  class="remaining-time clickable-time"
+                  @click="toggleTimeDisplayMode"
               >
                 {{ rightTimeText }}
               </span>
@@ -67,42 +68,42 @@
           <!-- 控制按钮区域 -->
           <div class="controls-frame">
             <!-- 左侧歌词按钮 -->
-            <span class="lyrics-btn music-icon" @click="toggleLyrics" title="歌词">
-              <Icon name="music" size="20" />
+            <span class="lyrics-btn music-icon" title="歌词" @click="toggleLyrics">
+              <Icon name="music" size="20"/>
             </span>
 
             <!-- 中央播放控制 -->
             <div class="center-controls">
               <!-- 上一首 -->
-              <span 
-                class="control-btn music-icon"
-                :class="{ disabled: !sync.globalAudioPlayer.hasPrevious.value }"
-                @click="handlePrevious"
-                title="上一首"
+              <span
+                  :class="{ disabled: !sync.globalAudioPlayer.hasPrevious.value }"
+                  class="control-btn music-icon"
+                  title="上一首"
+                  @click="handlePrevious"
               >
-                <Icon name="skip-back" size="20" />
+                <Icon name="skip-back" size="20"/>
               </span>
 
               <!-- 播放/暂停 -->
-              <span 
-                class="play-pause-btn music-icon"
-                :class="{ disabled: control.hasError.value || control.isLoadingTrack.value }"
-                @click="handleTogglePlay"
-                title="播放/暂停"
+              <span
+                  :class="{ disabled: control.hasError.value || control.isLoadingTrack.value }"
+                  class="play-pause-btn music-icon"
+                  title="播放/暂停"
+                  @click="handleTogglePlay"
               >
                 <div v-if="control.isLoadingTrack.value" class="loading-spinner"></div>
-                <Icon v-else-if="control.isPlaying.value" name="pause" size="24" />
-                <Icon v-else name="play" size="24" />
+                <Icon v-else-if="control.isPlaying.value" name="pause" size="24"/>
+                <Icon v-else name="play" size="24"/>
               </span>
 
               <!-- 下一首 -->
-              <span 
-                class="control-btn music-icon"
-                :class="{ disabled: !sync.globalAudioPlayer.hasNext.value }"
-                @click="handleNext"
-                title="下一首"
+              <span
+                  :class="{ disabled: !sync.globalAudioPlayer.hasNext.value }"
+                  class="control-btn music-icon"
+                  title="下一首"
+                  @click="handleNext"
               >
-                <Icon name="skip-forward" size="20" />
+                <Icon name="skip-forward" size="20"/>
               </span>
             </div>
 
@@ -114,12 +115,12 @@
         <!-- 音质选择下拉菜单 -->
         <Transition name="quality-dropdown">
           <div v-if="showQualitySettings" class="quality-dropdown">
-            <div 
-              v-for="option in currentPlatformOptions" 
-              :key="option.value"
-              class="quality-option"
-              :class="{ active: isCurrentQuality(option.value) }"
-              @click="selectQuality(option.value)"
+            <div
+                v-for="option in currentPlatformOptions"
+                :key="option.value"
+                :class="{ active: isCurrentQuality(option.value) }"
+                class="quality-option"
+                @click="selectQuality(option.value)"
             >
               <span class="sf-pro">{{ option.label }}</span>
             </div>
@@ -135,14 +136,14 @@
                 :current-lyrics="control.lyrics.currentLyrics.value"
                 :current-time="control.currentTime.value"
                 :error="control.lyrics.error.value"
+                :font-size="24"
                 :is-loading="control.lyrics.isLoading.value"
+                :line-height="1.4"
+                :show-translation="false"
                 :translation-lyrics="control.lyrics.translationLyrics.value"
                 :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
-                :show-translation="false"
-                height="120px"
-                :font-size="24"
-                :line-height="1.4"
                 active-line-color="#ffffff"
+                height="120px"
                 inactive-line-color="rgba(255, 255, 255, 0.6)"
                 @seek="handleLyricSeek"
             />
@@ -167,9 +168,9 @@
 
     <!-- 全屏歌词模态（仅客户端渲染） -->
     <ClientOnly>
-      <LyricsModal 
-        :is-visible="showFullscreenLyrics" 
-        @close="showFullscreenLyrics = false" 
+      <LyricsModal
+          :is-visible="showFullscreenLyrics"
+          @close="showFullscreenLyrics = false"
       />
     </ClientOnly>
   </div>
@@ -465,7 +466,7 @@ const handleTogglePlay = async () => {
     console.error('[AudioPlayer] 音频播放器引用验证失败，无法切换播放状态')
     return
   }
-  
+
   await control.togglePlay()
 }
 
@@ -490,19 +491,19 @@ const ensureAudioPlayerRef = () => {
     console.warn('[AudioPlayer] 音频播放器引用不存在，尝试重新获取...')
     return false
   }
-  
+
   // 确保 control 有正确的音频播放器引用
   if (!control.audioPlayer.value || control.audioPlayer.value !== audioPlayer.value) {
     console.log('[AudioPlayer] 更新音频播放器引用到 control')
     control.setAudioPlayerRef(audioPlayer.value)
   }
-  
+
   // 双重验证：确保引用确实可用
   if (!control.audioPlayer.value) {
     console.error('[AudioPlayer] 无法设置音频播放器引用到 control')
     return false
   }
-  
+
   return true
 }
 
@@ -512,14 +513,14 @@ const handleStartDrag = (event) => {
     console.error('[AudioPlayer] 音频播放器引用验证失败，无法开始拖拽')
     return
   }
-  
+
   // 获取进度条元素引用
   const progressBarElement = event.currentTarget
   if (!progressBarElement) {
     console.error('[AudioPlayer] 无法获取进度条元素引用')
     return
   }
-  
+
   control.startDrag(event, progressBarElement)
 }
 
@@ -528,18 +529,18 @@ const handleStartTouchDrag = (event) => {
     console.error('[AudioPlayer] 音频播放器引用验证失败，无法开始触摸拖拽')
     return
   }
-  
+
   // 获取进度条元素引用
   const progressBarElement = event.currentTarget
   if (!progressBarElement) {
     console.error('[AudioPlayer] 无法获取进度条元素引用')
     return
   }
-  
+
   // 阻止默认行为，防止页面滚动
   event.preventDefault()
   event.stopPropagation()
-  
+
   control.startTouchDrag(event, progressBarElement)
 }
 
@@ -548,7 +549,7 @@ const handleSeekToPosition = (event) => {
     console.error('[AudioPlayer] 音频播放器引用验证失败，无法跳转位置')
     return
   }
-  
+
   control.seekToPosition(event)
 }
 
@@ -603,15 +604,15 @@ const closeQualitySettings = () => {
 // 处理点击外部区域关闭音质设置
 const handleClickOutside = (event) => {
   if (!showQualitySettings.value) return
-  
+
   // 检查点击是否在音质设置区域内
   const qualityDropdown = document.querySelector('.quality-dropdown')
   const qualityButton = document.querySelector('.audio-quality')
-  
+
   if (qualityDropdown && qualityButton) {
     const isClickInsideDropdown = qualityDropdown.contains(event.target)
     const isClickOnButton = qualityButton.contains(event.target)
-    
+
     if (!isClickInsideDropdown && !isClickOnButton) {
       closeQualitySettings()
     }
@@ -684,7 +685,7 @@ const handleLyricSeek = async (time) => {
   if (!control.isPlaying.value) {
     await control.play()
   }
-  
+
   // 跳转到指定时间 - seek 方法内部会处理歌词动画的中断
   control.seek(time)
   sync.updateGlobalPosition(time, control.duration.value)
@@ -697,14 +698,14 @@ const stopPlaying = () => {
   // 立即停止音频播放和同步状态，确保用户点击关闭时音乐立即停止
   control.stop()
   sync.syncStopToGlobal()
-  
+
   // 设置关闭状态
   isClosing.value = true
-  
+
   // 同步关闭全屏歌词模态和音质设置
   showFullscreenLyrics.value = false
   showQualitySettings.value = false
-  
+
   // 等待关闭动画完成后再触发 close 事件
   setTimeout(() => {
     // 标记已关闭，防止父级延迟隐藏期间闪回
@@ -788,11 +789,11 @@ onMounted(async () => {
   let retryCount = 0
   const maxRetries = 15 // 增加重试次数
   const retryDelay = 50 // 减少重试间隔，提高响应速度
-  
+
   while (!audioPlayer.value && retryCount < maxRetries) {
     await new Promise(resolve => setTimeout(resolve, retryDelay))
     retryCount++
-    
+
     // 强制触发响应式更新
     await nextTick()
   }
@@ -805,7 +806,7 @@ onMounted(async () => {
         control.setProgressBarRef(progressBar.value)
       }
     }, 1000)
-    
+
     return
   }
 
@@ -1039,21 +1040,19 @@ const getFirstChar = (text) => {
 /* 呼吸光效动画 */
 @keyframes breathing-glow {
   0%, 100% {
-    box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      0 4px 16px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-      0 0 0 1px rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
   }
   50% {
-    box-shadow: 
-      0 12px 48px rgba(0, 0, 0, 0.4),
-      0 6px 24px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.15),
-      0 0 0 1px rgba(255, 255, 255, 0.15),
-      0 0 40px rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4),
+    0 6px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 40px rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -1098,7 +1097,7 @@ const getFirstChar = (text) => {
 .player-animation-enter-active,
 .player-animation-leave-active {
   transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.6, 1),
-              opacity 0.5s cubic-bezier(0.4, 0.0, 0.6, 1);
+  opacity 0.5s cubic-bezier(0.4, 0.0, 0.6, 1);
   will-change: transform, opacity;
   transform-origin: center bottom;
 }
@@ -1170,22 +1169,20 @@ const getFirstChar = (text) => {
   flex-direction: column;
   align-items: flex-start;
   border-radius: 22px;
-  background: 
-    linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)),
-    rgba(128, 128, 128, 0.25);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)),
+  rgba(128, 128, 128, 0.25);
   padding: 10px 7px 10px 13px;
   width: 400px;
   height: 165px;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   -webkit-backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 16px 48px rgba(0, 0, 0, 0.3),
-    0 8px 24px rgba(0, 0, 0, 0.2),
-    0 4px 12px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3),
+  0 8px 24px rgba(0, 0, 0, 0.2),
+  0 4px 12px rgba(0, 0, 0, 0.1),
+  inset 0 1px 0 rgba(255, 255, 255, 0.3),
+  inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+  0 0 0 1px rgba(255, 255, 255, 0.05);
   z-index: 1000;
   will-change: transform, opacity;
   font-family: "SF Pro Display", "SF Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
@@ -1195,17 +1192,15 @@ const getFirstChar = (text) => {
 
 .music-widget:hover {
   transform: translateX(-50%) translateY(-2px);
-  box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    0 12px 32px rgba(0, 0, 0, 0.25),
-    0 6px 16px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 0 40px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
+  0 12px 32px rgba(0, 0, 0, 0.25),
+  0 6px 16px rgba(0, 0, 0, 0.15),
+  inset 0 1px 0 rgba(255, 255, 255, 0.4),
+  inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+  0 0 0 1px rgba(255, 255, 255, 0.1),
+  0 0 40px rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.25);
 }
-
 
 
 /* 标题区域 */
@@ -1369,9 +1364,8 @@ const getFirstChar = (text) => {
 
 .ios-progress-bar:hover {
   border-color: #333;
-  box-shadow: 
-    0 0 20px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1),
+  inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .progress-fill {
@@ -1499,9 +1493,8 @@ const getFirstChar = (text) => {
 .ios-control-btn:hover {
   color: #ffffff;
   transform: scale(1.1);
-  box-shadow: 
-    0 0 20px rgba(255, 255, 255, 0.2),
-    0 0 40px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2),
+  0 0 40px rgba(255, 255, 255, 0.1);
 }
 
 .ios-control-btn:hover::before {
@@ -1510,9 +1503,8 @@ const getFirstChar = (text) => {
 
 .ios-control-btn:active {
   transform: scale(0.95);
-  box-shadow: 
-    0 0 15px rgba(255, 255, 255, 0.3),
-    inset 0 0 10px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3),
+  inset 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 .ios-control-btn:disabled {
@@ -1598,20 +1590,20 @@ const getFirstChar = (text) => {
     max-width: 400px;
     margin: 0 auto;
   }
-  
+
   .title {
     width: calc(100% - 8px);
   }
-  
+
   .time {
     width: calc(100% - 8px);
   }
-  
+
   .control-buttons {
     min-width: auto;
     width: calc(100% - 8px);
   }
-  
+
   .controls-frame {
     min-width: auto;
     width: calc(100% - 8px);
@@ -1623,19 +1615,19 @@ const getFirstChar = (text) => {
     width: calc(100% - 2rem);
     padding: 8px 6px 8px 10px;
   }
-  
+
   .time {
     width: calc(100% - 4px);
   }
-  
+
   .song-title {
     font-size: 18px;
   }
-  
+
   .song-artist {
     font-size: 14px;
   }
-  
+
   .center-controls {
     column-gap: 30px;
   }
@@ -1652,8 +1644,12 @@ const getFirstChar = (text) => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 内部元素淡入动画 */
@@ -1675,7 +1671,6 @@ const getFirstChar = (text) => {
     transform: translateY(0);
   }
 }
-
 
 
 /* 时间和音质显示区域 */
@@ -1827,9 +1822,8 @@ const getFirstChar = (text) => {
   bottom: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
-  background: 
-    linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15)),
-    rgba(128, 128, 128, 0.85);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15)),
+  rgba(128, 128, 128, 0.85);
   border-radius: 12px;
   padding: 8px 0;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
@@ -1837,14 +1831,13 @@ const getFirstChar = (text) => {
   border: 1px solid rgba(255, 255, 255, 0.4);
   z-index: 9999;
   min-width: 120px;
-  box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    0 12px 32px rgba(0, 0, 0, 0.3),
-    0 6px 16px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 0 30px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
+  0 12px 32px rgba(0, 0, 0, 0.3),
+  0 6px 16px rgba(0, 0, 0, 0.2),
+  inset 0 1px 0 rgba(255, 255, 255, 0.4),
+  inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+  0 0 0 1px rgba(255, 255, 255, 0.1),
+  0 0 30px rgba(255, 255, 255, 0.1);
 }
 
 .quality-option {
@@ -1878,9 +1871,8 @@ const getFirstChar = (text) => {
   color: rgba(255, 255, 255, 0.95);
   transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.08);
-  box-shadow: 
-    0 4px 16px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1),
+  inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .quality-option:hover::before {
@@ -1889,17 +1881,15 @@ const getFirstChar = (text) => {
 
 .quality-option.active {
   color: #007AFF;
-  background: 
-    linear-gradient(135deg, rgba(0, 122, 255, 0.25), rgba(0, 122, 255, 0.15)),
-    rgba(0, 122, 255, 0.1);
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.25), rgba(0, 122, 255, 0.15)),
+  rgba(0, 122, 255, 0.1);
   border: 1px solid rgba(0, 122, 255, 0.6);
   font-weight: 600;
   transform: translateY(-2px);
-  box-shadow: 
-    0 6px 20px rgba(0, 122, 255, 0.4),
-    0 2px 8px rgba(0, 122, 255, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 0 0 1px rgba(0, 122, 255, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4),
+  0 2px 8px rgba(0, 122, 255, 0.3),
+  inset 0 1px 0 rgba(255, 255, 255, 0.3),
+  0 0 0 1px rgba(0, 122, 255, 0.2);
 }
 
 /* 音质下拉动画 - 向上弹出优化 */

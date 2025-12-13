@@ -88,6 +88,7 @@
       <!-- 分隔线 - 添加径向渐变效果 -->
       <div class="vertical-divider"></div>
 
+      <!-- 右侧排期内容 -->
       <div class="schedule-content">
         <div class="schedule-header">
           <h2 class="current-date" v-html="currentDateFormatted"></h2>
@@ -204,7 +205,7 @@
         <div class="playlist-modal">
           <div class="playlist-modal-header">
             <div class="header-title">
-              <Icon :size="20" name="music" class="header-icon"/>
+              <Icon :size="20" class="header-icon" name="music"/>
               <h3>添加到歌单</h3>
             </div>
             <button class="playlist-modal-close" type="button" @click="closePlaylistModal">
@@ -215,17 +216,17 @@
           <div class="playlist-modal-body custom-scrollbar">
             <div v-if="!isNeteaseLoggedIn" class="login-prompt-container">
               <div class="login-icon-wrapper">
-                <Icon :size="48" name="music" class="login-icon"/>
+                <Icon :size="48" class="login-icon" name="music"/>
               </div>
               <p class="login-hint">需要登录网易云音乐账号才能管理歌单</p>
               <button class="btn-primary full-width" type="button" @click="openLoginFromPlaylist">
                 立即登录
               </button>
             </div>
-            
+
             <div v-else class="playlist-form">
               <!-- 用户信息栏 -->
-              <div class="user-profile-bar" v-if="neteaseUser">
+              <div v-if="neteaseUser" class="user-profile-bar">
                 <div class="user-avatar">
                   <img v-if="neteaseUser.avatarUrl" :src="neteaseUser.avatarUrl" alt="avatar">
                   <Icon v-else :size="20" name="user"/>
@@ -251,27 +252,28 @@
                           {{ pl.name }} ({{ pl.trackCount }}首)
                         </option>
                       </select>
-                      <Icon name="chevron-down" :size="14" class="select-arrow"/>
+                      <Icon :size="14" class="select-arrow" name="chevron-down"/>
                     </div>
                     <button
                         :disabled="playlistsLoading"
                         class="btn-icon"
+                        title="刷新歌单列表"
                         type="button"
                         @click="reloadPlaylists"
-                        title="刷新歌单列表"
                     >
-                      <Icon :size="18" name="refresh" :class="{ 'spin': playlistsLoading }"/>
+                      <Icon :class="{ 'spin': playlistsLoading }" :size="18" name="refresh"/>
                     </button>
                   </div>
-                  
-                  <div class="playlist-actions-row" v-if="selectedPlaylistId">
-                     <button
+
+                  <div v-if="selectedPlaylistId" class="playlist-actions-row">
+                    <button
                         :disabled="playlistActionLoading"
                         class="btn-text-danger"
                         type="button"
                         @click="handleDeletePlaylist"
                     >
-                      <Icon :size="14" name="trash"/> 删除当前歌单
+                      <Icon :size="14" name="trash"/>
+                      删除当前歌单
                     </button>
                   </div>
                 </div>
@@ -313,7 +315,7 @@
               <div class="songs-selection-panel">
                 <div class="panel-header">
                   <label class="section-label">
-                    选择歌曲 
+                    选择歌曲
                     <span class="highlight-count">{{ selectedSongIds.length }}</span> / {{ neteaseSongs.length }}
                   </label>
                   <div class="panel-actions">
@@ -321,21 +323,21 @@
                     <button class="btn-text" type="button" @click="clearSelectedSongs">清空</button>
                   </div>
                 </div>
-                
+
                 <div v-if="neteaseSongs.length === 0" class="empty-state">
                   当前日期没有来自网易云的歌曲
                 </div>
-                
+
                 <div v-else class="songs-list custom-scrollbar">
                   <div
                       v-for="song in neteaseSongs"
                       :key="song.id"
-                      class="song-item"
                       :class="{ 'selected': isSongSelected(song.id) }"
+                      class="song-item"
                       @click="toggleSongSelection(song.id)"
                   >
                     <div class="song-checkbox">
-                      <Icon v-if="isSongSelected(song.id)" name="check" :size="12" color="#fff"/>
+                      <Icon v-if="isSongSelected(song.id)" :size="12" color="#fff" name="check"/>
                     </div>
                     <div class="song-details">
                       <div class="song-name">{{ song.title }}</div>
@@ -357,8 +359,8 @@
                 type="button"
                 @click="handleAddSongsToPlaylist"
             >
-              <Icon v-if="playlistActionLoading" name="loader" :class="{ 'spin': true }" :size="16"/>
-              <Icon v-else name="plus" :size="16"/>
+              <Icon v-if="playlistActionLoading" :class="{ 'spin': true }" :size="16" name="loader"/>
+              <Icon v-else :size="16" name="plus"/>
               <span>{{ playlistActionLoading ? '处理中...' : '添加到歌单' }}</span>
             </button>
           </div>
@@ -399,12 +401,7 @@ import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import {convertToHttps} from '~/utils/url'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
-import {
-  getUserPlaylists,
-  createPlaylist,
-  deletePlaylist,
-  addSongsToPlaylist
-} from '~/utils/neteaseApi'
+import {addSongsToPlaylist, createPlaylist, deletePlaylist, getUserPlaylists} from '~/utils/neteaseApi'
 
 const props = defineProps({
   schedules: {
@@ -642,7 +639,7 @@ const findAndSelectTodayOrClosestDate = async () => {
 
   // 设置选中的日期索引
   currentDateIndex.value = selectedIndex
-  
+
   // 标记为已初始化并保存选中日期
   isInitialized.value = true
   lastSelectedDate.value = availableDates.value[selectedIndex]
@@ -1159,7 +1156,8 @@ const togglePlaySong = async (song) => {
           if (songIndex === -1) songIndex = 0
 
           // 后台预取后续歌曲的播放链接（不阻塞当前播放）
-          ;(async () => {
+          ;
+          (async () => {
             for (let i = songIndex + 1; i < playlist.length; i++) {
               const s = playlist[i]
               if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
@@ -1216,7 +1214,7 @@ const getCurrentTimeSlot = (song) => {
 
 // 动态获取音乐URL
 const getMusicUrl = async (song) => {
-  const { musicPlatform: platform, musicId, playUrl, sourceInfo } = song
+  const {musicPlatform: platform, musicId, playUrl, sourceInfo} = song
 
   // 如果有自定义播放链接，优先使用
   if (playUrl && playUrl.trim()) {
@@ -1237,13 +1235,13 @@ const getMusicUrl = async (song) => {
 
     // 使用统一组件的音源选择逻辑
     console.log(`[ScheduleList] 使用统一音源选择逻辑获取播放链接: platform=${platform}, musicId=${musicId}`)
-    
+
     // 检查是否为播客内容
     const isPodcast = platform === 'netease-podcast' || sourceInfo?.type === 'voice' || sourceInfo?.source === 'netease-backup' && sourceInfo?.type === 'voice'
-    
+
     // 如果是播客内容，强制 unblock=false
-    const options = isPodcast ? { unblock: false } : {}
-    
+    const options = isPodcast ? {unblock: false} : {}
+
     const result = await getSongUrl(musicId, quality, platform, undefined, options)
     if (result?.success && result.url) {
       console.log('[ScheduleList] 统一音源选择获取音乐URL成功')
@@ -2361,7 +2359,7 @@ const vRipple = {
   .mobile-add-playlist-btn {
     display: flex;
   }
-  
+
   .playlist-modal {
     max-width: 100%;
     width: 100%;
@@ -2369,20 +2367,20 @@ const vRipple = {
     max-height: 90vh;
     border-radius: 16px;
   }
-  
+
   .playlist-modal-body {
     padding: 1rem;
   }
-  
+
   .control-panel {
     padding: 1rem;
   }
-  
+
   .playlist-modal-footer {
     padding: 1rem;
     flex-direction: column-reverse;
   }
-  
+
   .playlist-modal-footer button {
     width: 100%;
   }

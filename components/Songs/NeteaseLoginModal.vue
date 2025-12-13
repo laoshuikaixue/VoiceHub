@@ -17,9 +17,9 @@
             <div class="spinner"></div>
             <p>正在获取二维码...</p>
           </div>
-          
+
           <div v-else-if="qrImg" class="qr-wrapper">
-            <img :src="qrImg" alt="Login QR Code" class="qr-code" />
+            <img :src="qrImg" alt="Login QR Code" class="qr-code"/>
             <div v-if="isExpired" class="qr-overlay" @click="initLogin">
               <div class="refresh-btn">
                 <span>二维码已失效</span>
@@ -36,9 +36,9 @@
             <p v-else>正在加载...</p>
           </div>
         </div>
-        
+
         <div class="tips">
-           <p>说明：登录状态将保存到您的浏览器中，用于搜索播客等功能。</p>
+          <p>说明：登录状态将保存到您的浏览器中，用于搜索播客等功能。</p>
         </div>
       </div>
     </div>
@@ -46,7 +46,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import {onUnmounted, ref, watch} from 'vue'
 
 interface Props {
   show: boolean
@@ -85,7 +85,7 @@ const initLogin = async () => {
   loading.value = true
   isExpired.value = false
   status.value = 0
-  
+
   try {
     // 1. Get Key
     const keyRes = await fetch(`${BASE_URL}/login/qr/key?timestamp=${Date.now()}`)
@@ -97,7 +97,7 @@ const initLogin = async () => {
     const qrData = await qrRes.json()
     qrImg.value = qrData.data.qrimg
     status.value = 801
-    
+
     // 3. Start Polling
     timer = setInterval(checkStatus, 3000)
   } catch (err) {
@@ -141,18 +141,18 @@ const handleLoginSuccess = async (cookie: string) => {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ cookie })
+      body: JSON.stringify({cookie})
     })
     const userData = await userRes.json()
     const user = userData.data?.profile || userData.data?.account || {}
-    
-    emit('login-success', { cookie, user })
+
+    emit('login-success', {cookie, user})
     handleClose()
   } catch (err) {
     console.error('Get user info error:', err)
     // Even if getting user info fails, we have the cookie, so we can consider it a partial success or retry
     // For now, let's emit what we have
-    emit('login-success', { cookie, user: {} })
+    emit('login-success', {cookie, user: {}})
     handleClose()
   }
 }
@@ -328,7 +328,9 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes modal-in {
