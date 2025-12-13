@@ -80,10 +80,18 @@
       <!-- 分隔线 - 添加径向渐变效果 -->
       <div class="vertical-divider"></div>
 
-      <!-- 右侧排期内容 -->
       <div class="schedule-content">
         <div class="schedule-header">
           <h2 class="current-date" v-html="currentDateFormatted"></h2>
+          <button
+              v-if="isNeteaseLoggedIn"
+              class="add-playlist-btn"
+              type="button"
+              @click="handleAddToPlaylistClick"
+          >
+            <Icon :size="18" color="#ffffff" name="music"/>
+            <span>添加到歌单</span>
+          </button>
         </div>
 
         <!-- 使用Transition组件包裹内容 -->
@@ -181,6 +189,197 @@
       </div>
     </div>
   </div>
+
+  <Teleport to="body">
+    <Transition name="modal-fade">
+      <div v-if="showPlaylistModal" class="playlist-modal-overlay" @click.self="closePlaylistModal">
+        <div class="playlist-modal">
+          <div class="playlist-modal-header">
+            <div class="header-title">
+              <Icon :size="20" name="music" class="header-icon"/>
+              <h3>添加到歌单</h3>
+            </div>
+            <button class="playlist-modal-close" type="button" @click="closePlaylistModal">
+              <Icon :size="20" name="close"/>
+            </button>
+          </div>
+
+          <div class="playlist-modal-body custom-scrollbar">
+            <div v-if="!isNeteaseLoggedIn" class="login-prompt-container">
+              <div class="login-icon-wrapper">
+                <Icon :size="48" name="music" class="login-icon"/>
+              </div>
+              <p class="login-hint">需要登录网易云音乐账号才能管理歌单</p>
+              <button class="btn-primary full-width" type="button" @click="openLoginFromPlaylist">
+                立即登录
+              </button>
+            </div>
+            
+            <div v-else class="playlist-form">
+              <!-- 用户信息栏 -->
+              <div class="user-profile-bar" v-if="neteaseUser">
+                <div class="user-avatar">
+                  <img v-if="neteaseUser.avatarUrl" :src="neteaseUser.avatarUrl" alt="avatar">
+                  <Icon v-else :size="20" name="user"/>
+                </div>
+                <div class="user-info">
+                  <span class="user-name">{{ neteaseUser.nickname || neteaseUser.userName || '网易云用户' }}</span>
+                </div>
+              </div>
+
+              <!-- 歌单操作区域 -->
+              <div class="control-panel">
+                <div class="panel-section">
+                  <label class="section-label">选择目标歌单</label>
+                  <div class="input-group">
+                    <div class="select-wrapper">
+                      <select v-model="selectedPlaylistId" class="custom-select">
+                        <option disabled value="">请选择歌单</option>
+                        <option
+                            v-for="pl in playlists"
+                            :key="pl.id"
+                            :value="pl.id"
+                        >
+                          {{ pl.name }} ({{ pl.trackCount }}首)
+                        </option>
+                      </select>
+                      <Icon name="chevron-down" :size="14" class="select-arrow"/>
+                    </div>
+                    <button
+                        :disabled="playlistsLoading"
+                        class="btn-icon"
+                        type="button"
+                        @click="reloadPlaylists"
+                        title="刷新歌单列表"
+                    >
+                      <Icon :size="18" name="refresh" :class="{ 'spin': playlistsLoading }"/>
+                    </button>
+                  </div>
+                  
+                  <div class="playlist-actions-row" v-if="selectedPlaylistId">
+                     <button
+                        :disabled="playlistActionLoading"
+                        class="btn-text-danger"
+                        type="button"
+                        @click="handleDeletePlaylist"
+                    >
+                      <Icon :size="14" name="trash"/> 删除当前歌单
+                    </button>
+                  </div>
+                </div>
+
+                <div class="divider">
+                  <span>或</span>
+                </div>
+
+                <div class="panel-section">
+                  <label class="section-label">创建新歌单</label>
+                  <div class="input-group">
+                    <input
+                        v-model="newPlaylistName"
+                        class="custom-input"
+                        placeholder="输入新歌单名称"
+                        type="text"
+                    />
+                    <button
+                        :disabled="!newPlaylistName.trim() || playlistActionLoading"
+                        class="btn-secondary"
+                        type="button"
+                        @click="handleCreatePlaylist"
+                    >
+                      {{ playlistActionLoading ? '创建中' : '新建' }}
+                    </button>
+                  </div>
+                  <label class="checkbox-wrapper">
+                    <input
+                        v-model="newPlaylistPrivacy"
+                        type="checkbox"
+                    >
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">设为隐私歌单</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 歌曲选择区域 -->
+              <div class="songs-selection-panel">
+                <div class="panel-header">
+                  <label class="section-label">
+                    选择歌曲 
+                    <span class="highlight-count">{{ selectedSongIds.length }}</span> / {{ neteaseSongs.length }}
+                  </label>
+                  <div class="panel-actions">
+                    <button class="btn-text" type="button" @click="selectAllNeteaseSongs">全选</button>
+                    <button class="btn-text" type="button" @click="clearSelectedSongs">清空</button>
+                  </div>
+                </div>
+                
+                <div v-if="neteaseSongs.length === 0" class="empty-state">
+                  当前日期没有来自网易云的歌曲
+                </div>
+                
+                <div v-else class="songs-list custom-scrollbar">
+                  <div
+                      v-for="song in neteaseSongs"
+                      :key="song.id"
+                      class="song-item"
+                      :class="{ 'selected': isSongSelected(song.id) }"
+                      @click="toggleSongSelection(song.id)"
+                  >
+                    <div class="song-checkbox">
+                      <Icon v-if="isSongSelected(song.id)" name="check" :size="12" color="#fff"/>
+                    </div>
+                    <div class="song-details">
+                      <div class="song-name">{{ song.title }}</div>
+                      <div class="song-artist">{{ song.artist }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="isNeteaseLoggedIn" class="playlist-modal-footer">
+            <button class="btn-ghost" type="button" @click="closePlaylistModal">
+              取消
+            </button>
+            <button
+                :disabled="!selectedPlaylistId || selectedSongIds.length === 0 || playlistActionLoading"
+                class="btn-primary"
+                type="button"
+                @click="handleAddSongsToPlaylist"
+            >
+              <Icon v-if="playlistActionLoading" name="loader" :class="{ 'spin': true }" :size="16"/>
+              <Icon v-else name="plus" :size="16"/>
+              <span>{{ playlistActionLoading ? '处理中...' : '添加到歌单' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <Teleport to="body">
+    <ConfirmDialog
+        :loading="playlistActionLoading"
+        :message="confirmDialog.message"
+        :show="confirmDialog.show"
+        :title="confirmDialog.title"
+        :type="confirmDialog.type"
+        @cancel="closeConfirmDialog"
+        @close="closeConfirmDialog"
+        @confirm="handleConfirmAction"
+    />
+  </Teleport>
+
+  <Teleport to="body">
+    <NeteaseLoginModal
+        v-if="showLoginModal"
+        :show="showLoginModal"
+        @close="showLoginModal = false"
+        @login-success="handleLoginSuccess"
+    />
+  </Teleport>
 </template>
 
 <script setup>
@@ -189,7 +388,31 @@ import {useSongs} from '~/composables/useSongs'
 import {useAudioPlayer} from '~/composables/useAudioPlayer'
 import {useMusicSources} from '~/composables/useMusicSources'
 import Icon from '~/components/UI/Icon.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import {convertToHttps} from '~/utils/url'
+import NeteaseLoginModal from './NeteaseLoginModal.vue'
+
+const BASE_URL = 'https://api.voicehub.lao-shui.top'
+
+const normalizeNeteaseResponse = (data) => {
+  if (!data || typeof data !== 'object') {
+    return {
+      code: undefined,
+      message: '',
+      body: undefined
+    }
+  }
+  const body = Object.prototype.hasOwnProperty.call(data, 'body') && data.body && typeof data.body === 'object'
+      ? data.body
+      : data
+  const code = typeof body.code === 'number' ? body.code : undefined
+  const message = typeof body.message === 'string' ? body.message : ''
+  return {
+    code,
+    message,
+    body
+  }
+}
 
 const props = defineProps({
   schedules: {
@@ -217,6 +440,30 @@ const safeSchedules = computed(() => props.schedules || [])
 
 // 日期选择器状态
 const showDatePicker = ref(false)
+
+const showPlaylistModal = ref(false)
+const isNeteaseLoggedIn = ref(false)
+const neteaseUser = ref(null)
+const neteaseCookie = ref('')
+const playlists = ref([])
+const playlistsLoading = ref(false)
+const selectedPlaylistId = ref('')
+const playlistActionLoading = ref(false)
+const selectedSongIds = ref([])
+const newPlaylistName = ref('')
+const newPlaylistPrivacy = ref(false)
+const showLoginModal = ref(false)
+
+const confirmDialog = ref({
+  show: false,
+  title: '',
+  message: '',
+  type: 'warning',
+  onConfirm: null
+})
+
+const isInitialized = ref(false)
+const lastSelectedDate = ref('')
 
 // 按日期分组排期
 const safeGroupedSchedules = computed(() => {
@@ -268,6 +515,15 @@ const currentDate = computed(() => {
 // 当日期列表变化时切换到今天日期
 watch(availableDates, (newDates) => {
   if (newDates.length > 0) {
+    // 如果已经初始化过且有上次选中的日期，尝试保持
+    if (isInitialized.value && lastSelectedDate.value) {
+      const index = newDates.indexOf(lastSelectedDate.value)
+      if (index !== -1) {
+        currentDateIndex.value = index
+        return
+      }
+    }
+    // 否则（首次加载或选中日期不存在），执行自动跳转逻辑
     findAndSelectTodayOrClosestDate()
   }
 }, {immediate: false})
@@ -394,6 +650,10 @@ const findAndSelectTodayOrClosestDate = async () => {
 
   // 设置选中的日期索引
   currentDateIndex.value = selectedIndex
+  
+  // 标记为已初始化并保存选中日期
+  isInitialized.value = true
+  lastSelectedDate.value = availableDates.value[selectedIndex]
 
   // 自动滚动到选中的日期项
   await scrollToDateItem(selectedIndex)
@@ -409,6 +669,25 @@ const currentDateFormatted = computed(() => {
 const currentDateSchedules = computed(() => {
   if (!currentDate.value) return []
   return safeGroupedSchedules.value[currentDate.value] || []
+})
+
+const neteaseSongs = computed(() => {
+  if (!currentDateSchedules.value || currentDateSchedules.value.length === 0) return []
+  const map = new Map()
+  for (const schedule of currentDateSchedules.value) {
+    const song = schedule.song
+    if (!song) continue
+    const platform = song.musicPlatform
+    const source = song.sourceInfo && song.sourceInfo.source
+    const musicId = song.musicId
+    if (!musicId) continue
+    const isNetease = platform === 'netease' || source === 'netease-backup'
+    if (!isNetease) continue
+    if (!map.has(song.id)) {
+      map.set(song.id, song)
+    }
+  }
+  return Array.from(map.values())
 })
 
 // 上一个日期
@@ -436,6 +715,7 @@ const nextDate = async () => {
 // 选择特定日期
 const selectDate = async (index) => {
   currentDateIndex.value = index
+  lastSelectedDate.value = availableDates.value[index]
   showDatePicker.value = false
 
   // 自动滚动到选中的日期项
@@ -484,6 +764,7 @@ const scrollToSelectedDateInModal = () => {
 // 选择日期并关闭弹窗
 const selectDateAndClose = (index) => {
   currentDateIndex.value = index
+  lastSelectedDate.value = availableDates.value[index]
   showDatePicker.value = false
 }
 
@@ -555,6 +836,8 @@ onMounted(async () => {
 
   // 寻找今天的日期并自动选择 - 初始加载时也尝试一次
   findAndSelectTodayOrClosestDate()
+
+  checkNeteaseLoginStatus()
 })
 
 // 组件销毁前移除事件监听器
@@ -577,6 +860,251 @@ const handleImageError = (event, song) => {
 const getFirstChar = (title) => {
   if (!title) return '音'
   return title.trim().charAt(0)
+}
+
+const checkNeteaseLoginStatus = () => {
+  if (typeof window === 'undefined') return
+  const cookie = localStorage.getItem('netease_cookie')
+  const userStr = localStorage.getItem('netease_user')
+  if (cookie) {
+    neteaseCookie.value = cookie
+    isNeteaseLoggedIn.value = true
+    if (userStr) {
+      try {
+        neteaseUser.value = JSON.parse(userStr)
+      } catch (e) {
+        neteaseUser.value = null
+      }
+    }
+  } else {
+    neteaseCookie.value = ''
+    neteaseUser.value = null
+    isNeteaseLoggedIn.value = false
+  }
+}
+
+const handleLoginSuccess = (data) => {
+  neteaseCookie.value = data.cookie
+  neteaseUser.value = data.user
+  isNeteaseLoggedIn.value = true
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('netease_cookie', data.cookie)
+    localStorage.setItem('netease_user', JSON.stringify(data.user))
+  }
+  showLoginModal.value = false
+  if (showPlaylistModal.value) {
+    reloadPlaylists()
+  }
+}
+
+const handleAddToPlaylistClick = () => {
+  if (!isNeteaseLoggedIn.value) {
+    showLoginModal.value = true
+    return
+  }
+  if (!neteaseSongs.value.length) {
+    if (window.$showNotification) {
+      window.$showNotification('当前日期排期中没有来自网易云音乐的歌曲', 'warning')
+    }
+    return
+  }
+  selectedSongIds.value = neteaseSongs.value.map((song) => song.id)
+  showPlaylistModal.value = true
+  reloadPlaylists()
+}
+
+const closePlaylistModal = () => {
+  showPlaylistModal.value = false
+}
+
+const openLoginFromPlaylist = () => {
+  showLoginModal.value = true
+}
+
+const reloadPlaylists = async () => {
+  if (!isNeteaseLoggedIn.value || !neteaseCookie.value || !neteaseUser.value) return
+  const uid = neteaseUser.value.userId || neteaseUser.value.id
+  if (!uid) return
+  playlistsLoading.value = true
+  try {
+    const url = `${BASE_URL}/user/playlist?uid=${uid}&limit=100&timestamp=${Date.now()}&cookie=${encodeURIComponent(neteaseCookie.value)}`
+    const response = await fetch(url)
+    const raw = await response.json()
+    const {code, message, body} = normalizeNeteaseResponse(raw)
+    const list = body && Array.isArray(body.playlist) ? body.playlist : []
+    if (code === 200 && Array.isArray(list)) {
+      playlists.value = list
+      if (!selectedPlaylistId.value && playlists.value.length > 0) {
+        selectedPlaylistId.value = playlists.value[0].id
+      }
+    } else {
+      if (window.$showNotification) {
+        const text = message ? `获取歌单列表失败：${message}` : '获取歌单列表失败'
+        window.$showNotification(text, 'error')
+      }
+    }
+  } catch (error) {
+    if (window.$showNotification) {
+      window.$showNotification('获取歌单列表失败', 'error')
+    }
+  } finally {
+    playlistsLoading.value = false
+  }
+}
+
+const handleCreatePlaylist = async () => {
+  const name = newPlaylistName.value.trim()
+  if (!name) return
+  if (!isNeteaseLoggedIn.value || !neteaseCookie.value) return
+  playlistActionLoading.value = true
+  try {
+    const privacyParam = newPlaylistPrivacy.value ? '&privacy=10' : ''
+    const url = `${BASE_URL}/playlist/create?name=${encodeURIComponent(name)}${privacyParam}&timestamp=${Date.now()}&cookie=${encodeURIComponent(neteaseCookie.value)}`
+    const response = await fetch(url)
+    const raw = await response.json()
+    const {code, message, body} = normalizeNeteaseResponse(raw)
+    if (code === 200) {
+      const createdId = body && (body.id || (body.playlist && body.playlist.id))
+      if (window.$showNotification) {
+        window.$showNotification('歌单创建成功', 'success')
+      }
+      newPlaylistName.value = ''
+      await reloadPlaylists()
+      if (createdId) {
+        selectedPlaylistId.value = createdId
+      }
+    } else {
+      if (window.$showNotification) {
+        const text = message ? `歌单创建失败：${message}` : '歌单创建失败'
+        window.$showNotification(text, 'error')
+      }
+    }
+  } catch (error) {
+    if (window.$showNotification) {
+      window.$showNotification('歌单创建失败', 'error')
+    }
+  } finally {
+    playlistActionLoading.value = false
+  }
+}
+
+const handleDeletePlaylist = async () => {
+  if (!selectedPlaylistId.value) return
+  if (!isNeteaseLoggedIn.value || !neteaseCookie.value) return
+
+  confirmDialog.value = {
+    show: true,
+    title: '删除歌单',
+    message: '确定要删除当前歌单吗？此操作无法撤销。',
+    type: 'danger',
+    onConfirm: async () => {
+      playlistActionLoading.value = true
+      try {
+        const url = `${BASE_URL}/playlist/delete?id=${selectedPlaylistId.value}&timestamp=${Date.now()}&cookie=${encodeURIComponent(neteaseCookie.value)}`
+        const response = await fetch(url)
+        const raw = await response.json()
+        const {code, message} = normalizeNeteaseResponse(raw)
+        if (code === 200) {
+          if (window.$showNotification) {
+            window.$showNotification('歌单删除成功', 'success')
+          }
+          await reloadPlaylists()
+          if (!playlists.value.find((pl) => pl.id === selectedPlaylistId.value) && playlists.value.length > 0) {
+            selectedPlaylistId.value = playlists.value[0].id
+          }
+          closeConfirmDialog()
+        } else {
+          if (window.$showNotification) {
+            const text = message ? `歌单删除失败：${message}` : '歌单删除失败'
+            window.$showNotification(text, 'error')
+          }
+          // 失败也关闭弹窗，或者保留让用户重试？通常关闭比较好，避免死循环
+          closeConfirmDialog()
+        }
+      } catch (error) {
+        if (window.$showNotification) {
+          window.$showNotification('歌单删除失败', 'error')
+        }
+        closeConfirmDialog()
+      } finally {
+        playlistActionLoading.value = false
+      }
+    }
+  }
+}
+
+const closeConfirmDialog = () => {
+  confirmDialog.value.show = false
+  // 延迟清除回调，防止动画期间触发
+  setTimeout(() => {
+    confirmDialog.value.onConfirm = null
+  }, 300)
+}
+
+const handleConfirmAction = () => {
+  if (confirmDialog.value.onConfirm) {
+    confirmDialog.value.onConfirm()
+  }
+}
+
+const isSongSelected = (songId) => {
+  return selectedSongIds.value.includes(songId)
+}
+
+const toggleSongSelection = (songId) => {
+  const index = selectedSongIds.value.indexOf(songId)
+  if (index === -1) {
+    selectedSongIds.value.push(songId)
+  } else {
+    selectedSongIds.value.splice(index, 1)
+  }
+}
+
+const selectAllNeteaseSongs = () => {
+  selectedSongIds.value = neteaseSongs.value.map((song) => song.id)
+}
+
+const clearSelectedSongs = () => {
+  selectedSongIds.value = []
+}
+
+const handleAddSongsToPlaylist = async () => {
+  if (!selectedPlaylistId.value) return
+  if (!isNeteaseLoggedIn.value || !neteaseCookie.value) return
+  const tracks = neteaseSongs.value
+      .filter((song) => selectedSongIds.value.includes(song.id))
+      .map((song) => song.musicId)
+      .filter((id) => !!id)
+  if (!tracks.length) {
+    if (window.$showNotification) {
+      window.$showNotification('请先选择要添加的歌曲', 'warning')
+    }
+    return
+  }
+  playlistActionLoading.value = true
+  try {
+    const url = `${BASE_URL}/playlist/tracks?op=add&pid=${selectedPlaylistId.value}&tracks=${tracks.join(',')}&timestamp=${Date.now()}&cookie=${encodeURIComponent(neteaseCookie.value)}`
+    const response = await fetch(url)
+    const raw = await response.json()
+    const {code, message} = normalizeNeteaseResponse(raw)
+    if (code === 200) {
+      if (window.$showNotification) {
+        window.$showNotification(`成功添加 ${tracks.length} 首歌曲到歌单`, 'success')
+      }
+      showPlaylistModal.value = false
+    } else {
+      if (window.$showNotification) {
+        const text = message ? `添加到歌单失败：${message}` : '添加到歌单失败'
+        window.$showNotification(text, 'error')
+      }
+    }
+  } catch (error) {
+    if (window.$showNotification) {
+      window.$showNotification('添加到歌单失败', 'error')
+    }
+  } finally {
+    playlistActionLoading.value = false
+  }
 }
 
 
@@ -1078,6 +1606,10 @@ const vRipple = {
 
 .schedule-header {
   margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .current-date {
@@ -1174,6 +1706,648 @@ const vRipple = {
   border-radius: 10px;
   overflow: hidden;
   position: relative;
+}
+
+/* ----------------------------------
+   添加歌单按钮 - 优化版
+   ---------------------------------- */
+.add-playlist-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.add-playlist-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
+}
+
+.add-playlist-btn:active {
+  transform: translateY(0);
+}
+
+.add-playlist-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ----------------------------------
+   歌单模态框 - 全新设计
+   ---------------------------------- */
+.playlist-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.playlist-modal {
+  width: 100%;
+  max-width: 580px;
+  max-height: 85vh;
+  background: #1e1e24;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 头部样式 */
+.playlist-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(30, 30, 36, 0.95);
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-icon {
+  color: var(--primary);
+}
+
+.playlist-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.playlist-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.playlist-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  transform: rotate(90deg);
+}
+
+/* 内容区域 */
+.playlist-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: #1e1e24;
+}
+
+/* 滚动条美化 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 登录提示 */
+.login-prompt-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.login-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  color: var(--primary);
+}
+
+.login-hint {
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 2rem;
+  font-size: 15px;
+}
+
+.full-width {
+  width: 100%;
+  justify-content: center;
+  padding: 0.8rem;
+  font-size: 15px;
+}
+
+/* 用户信息栏 */
+.user-profile-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #2a2a32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.user-status {
+  font-size: 12px;
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.user-status::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--success);
+}
+
+/* 控制面板（歌单选择与创建） */
+.control-panel {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.section-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-group {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.select-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.custom-select, .custom-input {
+  width: 100%;
+  background: #141418;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  appearance: none;
+}
+
+.custom-select {
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.custom-select:focus, .custom-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: #1a1a20;
+}
+
+.btn-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.playlist-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.25rem;
+}
+
+.btn-text-danger {
+  background: none;
+  border: none;
+  color: rgba(239, 68, 68, 0.8);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-text-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.25rem 0;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.divider span {
+  padding: 0 1rem;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  width: fit-content;
+}
+
+.checkbox-wrapper input {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.checkbox-wrapper input:checked + .checkbox-custom {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.checkbox-wrapper input:checked + .checkbox-custom::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 4px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 歌曲选择面板 */
+.songs-selection-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.highlight-count {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-text:hover {
+  text-decoration: underline;
+}
+
+.songs-list {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+}
+
+.song-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.song-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.song-item.selected {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: rgba(102, 126, 234, 0.2);
+}
+
+.song-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.song-item.selected .song-checkbox {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.song-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-name {
+  font-size: 14px;
+  color: #ffffff;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-artist {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 底部按钮栏 */
+.playlist-modal-footer {
+  padding: 1.25rem 1.5rem;
+  background: rgba(30, 30, 36, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.btn-primary, .btn-secondary, .btn-ghost {
+  padding: 0.6rem 1.25rem;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+/* 动画定义 */
+@keyframes modal-slide-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .playlist-modal {
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    max-height: 90vh;
+    border-radius: 16px;
+  }
+  
+  .playlist-modal-body {
+    padding: 1rem;
+  }
+  
+  .control-panel {
+    padding: 1rem;
+  }
+  
+  .playlist-modal-footer {
+    padding: 1rem;
+    flex-direction: column-reverse;
+  }
+  
+  .playlist-modal-footer button {
+    width: 100%;
+  }
 }
 
 /* 针对不同屏幕尺寸的响应式调整 */
