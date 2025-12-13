@@ -42,47 +42,52 @@
                   </div>
                 </div>
                 <div class="program-action">
-                  <div v-if="getSimilarSong(program)" class="similar-song-info">
+                  <div v-if="songsLoadingForSimilar" class="similar-song-info">
+                    <span class="similar-text">处理中...</span>
+                  </div>
+                  <div v-else-if="getSimilarSong(program)" class="similar-song-info">
                     <span v-if="getSimilarSong(program)?.played" class="similar-text status-played">歌曲已播放</span>
                     <span v-else-if="getSimilarSong(program)?.scheduled" class="similar-text status-scheduled">歌曲已排期</span>
                     <span v-else class="similar-text">歌曲已存在</span>
 
-                    <button
-                      v-if="getSimilarSong(program)?.played && isSuperAdmin"
-                      :disabled="submitting"
-                      class="select-btn"
-                      @click.stop="selectProgram(program)"
-                    >
-                      {{ submitting && selectedProgramId === program.id ? '提交中...' : '继续投稿' }}
-                    </button>
-                    <button
-                      v-else
-                      :class="{
-                        'like-btn': true,
-                        'disabled': getSimilarSong(program)?.played || getSimilarSong(program)?.scheduled || getSimilarSong(program)?.voted || submitting
-                      }"
-                      :disabled="getSimilarSong(program)?.played || getSimilarSong(program)?.scheduled || getSimilarSong(program)?.voted || submitting"
-                      :title="
-                        getSimilarSong(program)?.played
-                          ? '已播放的歌曲不能点赞'
-                          : getSimilarSong(program)?.scheduled
-                            ? '已排期的歌曲不能点赞'
-                            : getSimilarSong(program)?.voted
-                              ? '已点赞'
-                              : '点赞'
-                      "
-                      @click.stop="getSimilarSong(program)?.played || getSimilarSong(program)?.scheduled ? null : handleLikeFromProgram(getSimilarSong(program))"
-                    >
-                      {{
-                        getSimilarSong(program)?.played
-                          ? '已播放'
-                          : getSimilarSong(program)?.scheduled
-                            ? '已排期'
-                            : getSimilarSong(program)?.voted
-                              ? '已点赞'
-                              : '点赞'
-                      }}
-                    </button>
+                    <div class="similar-actions">
+                      <button
+                        v-if="getSimilarSong(program)?.played && isSuperAdmin"
+                        :disabled="submitting"
+                        class="select-btn"
+                        @click.stop="selectProgram(program)"
+                      >
+                        {{ submitting && selectedProgramId === program.id ? '提交中...' : '继续投稿' }}
+                      </button>
+                      <button
+                        v-else
+                        :class="{
+                          'like-btn': true,
+                          'disabled': getSimilarSong(program)?.played || getSimilarSong(program)?.scheduled || getSimilarSong(program)?.voted || submitting
+                        }"
+                        :disabled="getSimilarSong(program)?.played || getSimilarSong(program)?.scheduled || getSimilarSong(program)?.voted || submitting"
+                        :title="
+                          getSimilarSong(program)?.played
+                            ? '已播放的歌曲不能点赞'
+                            : getSimilarSong(program)?.scheduled
+                              ? '已排期的歌曲不能点赞'
+                              : getSimilarSong(program)?.voted
+                                ? '已点赞'
+                                : '点赞'
+                        "
+                        @click.stop="getSimilarSong(program)?.played || getSimilarSong(program)?.scheduled ? null : handleLikeFromProgram(getSimilarSong(program))"
+                      >
+                        {{
+                          getSimilarSong(program)?.played
+                            ? '已播放'
+                            : getSimilarSong(program)?.scheduled
+                              ? '已排期'
+                              : getSimilarSong(program)?.voted
+                                ? '已点赞'
+                                : '点赞'
+                        }}
+                      </button>
+                    </div>
                   </div>
                   <button
                     v-else
@@ -140,6 +145,7 @@ const offset = ref(0)
 const loadingMore = ref(false)
 const submitting = ref(false)
 const selectedProgramId = ref(null)
+const songsLoadingForSimilar = ref(false)
 
 // 标准化字符串
 const normalizeString = (str) => {
@@ -294,9 +300,16 @@ watch(() => props.show, (val) => {
     selectedProgramId.value = null
     if (auth.isAuthenticated.value && (!songService.songs.value || songService.songs.value.length === 0)) {
       const currentSemesterName = currentSemester.value?.name
-      songService.fetchSongs(true, currentSemesterName).catch(err => {
-        console.error('加载歌曲列表失败:', err)
-      })
+      songsLoadingForSimilar.value = true
+      songService.fetchSongs(true, currentSemesterName)
+        .catch(err => {
+          console.error('加载歌曲列表失败:', err)
+        })
+        .finally(() => {
+          songsLoadingForSimilar.value = false
+        })
+    } else {
+      songsLoadingForSimilar.value = false
     }
     fetchPrograms()
   } else {
@@ -304,6 +317,7 @@ watch(() => props.show, (val) => {
     offset.value = 0
     submitting.value = false
     selectedProgramId.value = null
+    songsLoadingForSimilar.value = false
   }
 })
 
@@ -479,6 +493,7 @@ defineExpose({
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  min-width: 120px;
 }
 
 .select-btn {
@@ -555,33 +570,55 @@ defineExpose({
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
+  text-align: right;
 }
 
 .similar-text {
   font-size: 12px;
   color: var(--text-secondary, #6b7280);
+  font-weight: 500;
 }
 
 .similar-text.status-played {
   color: #ef4444;
+  font-weight: 600;
 }
 
 .similar-text.status-scheduled {
-  color: #3b82f6;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.similar-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .like-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border-color, #e5e7eb);
-  background: transparent;
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
   font-size: 12px;
   cursor: pointer;
-  color: #ef4444;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+  white-space: nowrap;
 }
 
 .like-btn.disabled {
-  opacity: 0.6;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: none;
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
