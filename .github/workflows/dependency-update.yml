@@ -145,7 +145,7 @@ jobs:
 
       - name: 创建 Pull Request
         if: steps.check-changes.outputs.has-changes == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           # 使用 PAT token 以获得创建 PR 的权限
           token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
