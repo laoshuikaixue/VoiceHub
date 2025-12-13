@@ -66,16 +66,28 @@ export function useAudioQuality() {
 
     // 获取指定平台的音质设置
     const getQuality = (platform: string) => {
+        // 处理 netease-podcast 别名
+        if (platform === 'netease-podcast') {
+            platform = 'netease'
+        }
         return audioQuality.value[platform] || DEFAULT_QUALITY[platform]
     }
 
     // 获取指定平台的音质选项
     const getQualityOptions = (platform: string) => {
+        // 处理 netease-podcast 别名
+        if (platform === 'netease-podcast') {
+            platform = 'netease'
+        }
         return QUALITY_OPTIONS[platform] || []
     }
 
     // 获取音质标签
     const getQualityLabel = (platform: string, quality: number) => {
+        // 处理 netease-podcast 别名
+        if (platform === 'netease-podcast') {
+            platform = 'netease'
+        }
         const options = getQualityOptions(platform)
         const option = options.find(opt => opt.value === quality)
         return option ? option.label : '未知音质'
@@ -83,6 +95,10 @@ export function useAudioQuality() {
 
     // 获取音质描述
     const getQualityDescription = (platform: string, quality: number) => {
+        // 处理 netease-podcast 别名
+        if (platform === 'netease-podcast') {
+            platform = 'netease'
+        }
         const options = getQualityOptions(platform)
         const option = options.find(opt => opt.value === quality)
         return option ? option.description : ''

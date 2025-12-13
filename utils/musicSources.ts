@@ -65,8 +65,10 @@ export interface MusicSearchParams {
     limit?: number
     /** 偏移量 */
     offset?: number
-    /** 搜索类型：1=单曲, 10=专辑, 100=歌手, 1000=歌单 */
+    /** 搜索类型：1=单曲, 10=专辑, 100=歌手, 1000=歌单, 1009=播客/电台, 2000=声音 */
     type?: number
+    /** 网易云音乐Cookie */
+    cookie?: string
 }
 
 /**

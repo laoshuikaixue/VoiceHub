@@ -77,28 +77,63 @@
           </div>
 
           <!-- 音乐平台选择按钮 -->
-          <div class="platform-selection">
-            <button
-                :class="['platform-btn', { active: platform === 'netease' }]"
-                type="button"
-                @click="switchPlatform('netease')"
-            >
-              网易云音乐
-            </button>
-            <button
-                :class="['platform-btn', { active: platform === 'tencent' }]"
-                type="button"
-                @click="switchPlatform('tencent')"
-            >
-              QQ音乐
-            </button>
-            <button
-                :class="['platform-btn', { active: platform === 'bilibili' }]"
-                type="button"
-                @click="switchPlatform('bilibili')"
-            >
-              哔哩哔哩
-            </button>
+          <div class="platform-selection-container">
+            <div class="platform-selection">
+              <button
+                  :class="['platform-btn', { active: platform === 'netease' }]"
+                  type="button"
+                  @click="switchPlatform('netease')"
+              >
+                网易云音乐
+              </button>
+              <button
+                  :class="['platform-btn', { active: platform === 'tencent' }]"
+                  type="button"
+                  @click="switchPlatform('tencent')"
+              >
+                QQ音乐
+              </button>
+              <button
+                  :class="['platform-btn', { active: platform === 'bilibili' }]"
+                  type="button"
+                  @click="switchPlatform('bilibili')"
+              >
+                哔哩哔哩
+              </button>
+            </div>
+
+            <!-- 网易云音乐登录状态和选项 -->
+            <div v-if="platform === 'netease'" class="netease-options">
+              <div class="netease-header">
+                <div class="netease-badge">
+                  <span class="netease-dot"></span>
+                  <span class="netease-title">网易云音乐账号</span>
+                </div>
+              </div>
+              <div v-if="!isNeteaseLoggedIn" class="login-entry">
+                <button class="login-btn" type="button" @click="showLoginModal = true">
+                  立即登录网易云音乐
+                </button>
+                <span class="login-hint">使用网易云账号一键登录，支持博客/声音内容搜索</span>
+              </div>
+              <div v-else class="user-status">
+                <div class="user-info">
+                  <img v-if="neteaseUser?.avatarUrl" :src="convertToHttps(neteaseUser.avatarUrl)" class="user-avatar" alt="avatar"/>
+                  <span class="user-name">{{ neteaseUser?.nickname || '已登录' }}</span>
+                </div>
+                <div class="search-type-switch">
+                  <label :class="['radio-label', { active: searchType === 1 }]">
+                    <input type="radio" :value="1" v-model="searchType"> 单曲
+                  </label>
+                  <label :class="['radio-label', { active: searchType === 1009 }]">
+                    <input type="radio" :value="1009" v-model="searchType"> 播客/电台
+                  </label>
+                </div>
+                <button class="logout-btn" type="button" @click="handleLogoutNetease">
+                  退出
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="results-content">
@@ -181,7 +216,7 @@
                           class="select-btn"
                           @click.stop.prevent="submitSong(result)"
                       >
-                        {{ submitting ? '投稿中...' : '选择投稿' }}
+                        {{ submitting ? '处理中...' : (platform === 'netease' && searchType === 1009 ? '选择节目' : '选择投稿') }}
                       </button>
                     </div>
                   </div>
@@ -298,12 +333,22 @@
 
     </div>
 
-    <!-- 重复歌曲弹窗 -->
-    <DuplicateSongModal
-        :show="showDuplicateModal"
-        :song="duplicateSong"
-        @close="closeDuplicateModal"
-        @like="handleLikeDuplicate"
+    <!-- 网易云音乐登录弹窗 -->
+    <NeteaseLoginModal
+        :show="showLoginModal"
+        @close="showLoginModal = false"
+        @login-success="handleLoginSuccess"
+    />
+
+    <!-- 播客节目列表弹窗 -->
+    <PodcastEpisodesModal
+        :show="showPodcastModal"
+        :radio-id="selectedPodcastId"
+        :radio-name="selectedPodcastName"
+        :cookie="podcastCookie"
+        @close="showPodcastModal = false"
+        @submit="handlePodcastSubmit"
+        @play="handlePodcastPlay"
     />
 
     <!-- 手动输入弹窗 -->
@@ -427,9 +472,11 @@ import {useAuth} from '~/composables/useAuth'
 import {useSemesters} from '~/composables/useSemesters'
 import {useMusicSources} from '~/composables/useMusicSources'
 import {getEnabledSources} from '~/utils/musicSources'
-import DuplicateSongModal from './DuplicateSongModal.vue'
 import Icon from '../UI/Icon.vue'
 import {convertToHttps, validateUrl} from '~/utils/url'
+
+import NeteaseLoginModal from './NeteaseLoginModal.vue'
+import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
 
 const props = defineProps({
   loading: {
@@ -460,6 +507,18 @@ const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
 const similarSongs = ref([])
+const showLoginModal = ref(false)
+const isNeteaseLoggedIn = ref(false)
+const neteaseUser = ref(null)
+const neteaseCookie = ref('')
+const searchType = ref(1) // 1: 单曲, 1009: 播客/电台
+
+// 播客弹窗相关
+const showPodcastModal = ref(false)
+const selectedPodcastId = ref('')
+const selectedPodcastName = ref('')
+const podcastCookie = ref('')
+
 const songService = useSongs()
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
@@ -468,10 +527,6 @@ const loadingPlayTimes = ref(false)
 // 投稿状态
 const submissionStatus = ref(null)
 const loadingSubmissionStatus = ref(false)
-
-// 重复歌曲弹窗相关
-const showDuplicateModal = ref(false)
-const duplicateSong = ref(null)
 
 // 搜索相关
 const searching = ref(false)
@@ -521,7 +576,66 @@ const fetchPlayTimes = async () => {
   }
 }
 
+const checkNeteaseLoginStatus = () => {
+  if (process.client) {
+    const cookie = localStorage.getItem('netease_cookie')
+    const userStr = localStorage.getItem('netease_user')
+    if (cookie) {
+      neteaseCookie.value = cookie
+      isNeteaseLoggedIn.value = true
+      if (userStr) {
+        try {
+          neteaseUser.value = JSON.parse(userStr)
+        } catch (e) {
+          console.error('Failed to parse netease user info', e)
+        }
+      }
+    }
+  }
+}
+
+const handleLoginSuccess = (data) => {
+  neteaseCookie.value = data.cookie
+  neteaseUser.value = data.user
+  isNeteaseLoggedIn.value = true
+  
+  if (process.client) {
+    localStorage.setItem('netease_cookie', data.cookie)
+    localStorage.setItem('netease_user', JSON.stringify(data.user))
+  }
+}
+
+const handleLogoutNetease = () => {
+  neteaseCookie.value = ''
+  neteaseUser.value = null
+  isNeteaseLoggedIn.value = false
+  searchType.value = 1
+  
+  if (process.client) {
+    localStorage.removeItem('netease_cookie')
+    localStorage.removeItem('netease_user')
+  }
+}
+
+watch(
+    () => searchType.value,
+    () => {
+      if (platform.value !== 'netease') return
+      if (!isNeteaseLoggedIn.value) return
+      if (!title.value.trim()) return
+
+      if (searchAbortController.value) {
+        searchAbortController.value.abort()
+        searchAbortController.value = null
+        searching.value = false
+      }
+
+      handleSearch()
+    }
+)
+
 onMounted(async () => {
+  checkNeteaseLoginStatus()
   fetchPlayTimes()
   initSiteConfig()
   fetchSubmissionStatus()
@@ -684,7 +798,6 @@ const handleLikeFromSearch = async (song) => {
     return
   }
 
-  // 检查歌曲状态
   if (song.played || song.scheduled) {
     if (window.$showNotification) {
       const message = song.played ? '已播放的歌曲不能点赞' : '已排期的歌曲不能点赞'
@@ -695,31 +808,8 @@ const handleLikeFromSearch = async (song) => {
 
   try {
     await songService.voteSong(song.id)
-    // songService.voteSong 已经包含了成功提示，这里不需要重复显示
   } catch (error) {
-    // 错误提示由 songService.voteSong 处理，这里不需要重复显示
     console.error('点赞失败:', error)
-  }
-}
-
-// 关闭重复歌曲弹窗
-const closeDuplicateModal = () => {
-  showDuplicateModal.value = false
-  duplicateSong.value = null
-}
-
-// 处理重复歌曲弹窗中的点赞
-const handleLikeDuplicate = async (songId) => {
-  try {
-    await songService.voteSong(songId)
-    if (window.$showNotification) {
-      window.$showNotification(`点赞成功！`, 'success')
-    }
-    closeDuplicateModal()
-  } catch (error) {
-    if (window.$showNotification) {
-      window.$showNotification('点赞失败，请稍后重试', 'error')
-    }
   }
 }
 
@@ -776,7 +866,9 @@ const handleSearch = async () => {
       keywords: title.value.trim(),
       platform: platform.value,
       limit: 20,
-      signal: signal // 传递AbortSignal
+      signal: signal, // 传递AbortSignal
+      type: platform.value === 'netease' ? searchType.value : 1,
+      cookie: platform.value === 'netease' ? neteaseCookie.value : undefined
     }
 
     console.log('开始多音源搜索:', searchParams)
@@ -956,11 +1048,22 @@ const getAudioUrl = async (result) => {
 
     // 对于网易云备用源，直接调用getSongUrl获取播放链接
     if (sourceType === 'netease-backup') {
+      const targetPlatform = 'netease'
       const {getQuality} = useAudioQuality()
-      const quality = getQuality(platform.value)
+      const quality = getQuality(targetPlatform)
       const songId = result.musicId || result.id
+      
+      // 检查是否为播客内容
+      const isPodcast = result.sourceInfo?.type === 'voice' || searchType.value === 1009
+      
       try {
-        const urlResult = await musicSources.getSongUrl(songId, quality, platform.value)
+        const urlResult = await musicSources.getSongUrl(
+            songId, 
+            quality, 
+            targetPlatform, 
+            neteaseCookie.value,
+            { unblock: !isPodcast } // 播客内容 unblock=false，普通歌曲 unblock=true
+        )
 
         if (urlResult && urlResult.success && urlResult.url) {
           // 更新结果中的URL和其他信息
@@ -1015,7 +1118,7 @@ const playSong = async (result) => {
     artist: result.singer || result.artist,
     cover: result.cover || null,
     musicUrl: result.url,
-    musicPlatform: platform.value,
+    musicPlatform: result.musicPlatform || platform.value,
     musicId: result.musicId ? String(result.musicId) : null,
   }
 
@@ -1069,6 +1172,18 @@ const selectResult = async (result) => {
 const submitSong = async (result, options = {}) => {
   // 防止重复点击和重复提交
   if (submitting.value) return
+  
+  // 如果是播客/电台模式，且是在网易云平台下，且不是具体的单集提交
+  if (platform.value === 'netease' && searchType.value === 1009 && !options.isPodcastEpisode) {
+      console.log('打开播客节目列表:', result)
+      // 打开播客节目列表弹窗
+      selectedPodcastId.value = result.id || result.musicId
+      selectedPodcastName.value = result.title || result.song || result.name
+      podcastCookie.value = neteaseCookie.value
+      showPodcastModal.value = true
+      return
+  }
+
   console.log('执行submitSong，提交歌曲:', result.title || result.song)
 
   // 检查投稿限额
@@ -1094,8 +1209,9 @@ const submitSong = async (result, options = {}) => {
     if (existingSong) {
       const allowOverride = options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
       if (!allowOverride) {
-        duplicateSong.value = existingSong
-        showDuplicateModal.value = true
+        if (window.$showNotification) {
+          window.$showNotification('这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！', 'warning')
+        }
         return
       }
     }
@@ -1210,6 +1326,20 @@ const handleSubmit = async () => {
   } finally {
     submitting.value = false
   }
+}
+
+// 处理播客单集提交
+const handlePodcastSubmit = async (song) => {
+  // 关闭弹窗
+  showPodcastModal.value = false
+  // 提交歌曲
+  await submitSong(song, { isPodcastEpisode: true })
+}
+
+// 处理播客单集播放
+const handlePodcastPlay = async (song) => {
+  console.log('播放播客单集:', song.title)
+  await playSong(song)
 }
 
 // 手动输入相关方法
@@ -1733,12 +1863,180 @@ defineExpose({
 }
 
 /* 平台选择按钮样式 */
+.platform-selection-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
 .platform-selection {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1rem;
   align-items: flex-start;
-  flex-shrink: 0;
+}
+
+/* 网易云音乐登录选项 */
+.netease-options {
+  position: relative;
+  background: radial-gradient(circle at top left, rgba(194, 12, 12, 0.18), rgba(0, 0, 0, 0.95));
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(194, 12, 12, 0.45);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.netease-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.netease-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.netease-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #ff6b6b, #c20c0c);
+}
+
+.netease-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+
+.netease-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.login-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.login-btn {
+  background: linear-gradient(135deg, #ff4b4b 0%, #c20c0c 50%, #7f0b0b 100%);
+  color: white;
+  border: none;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  box-shadow: 0 10px 22px rgba(194, 12, 12, 0.5);
+}
+
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(194, 12, 12, 0.55);
+}
+
+.login-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 260px;
+  line-height: 1.5;
+}
+
+.user-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.user-name {
+  font-size: 14px;
+  color: white;
+  font-weight: 500;
+}
+
+.search-type-switch {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.18rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.68);
+  cursor: pointer;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+.radio-label.active {
+  color: #ffffff;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.radio-label input {
+  display: none;
+}
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .platform-btn {
