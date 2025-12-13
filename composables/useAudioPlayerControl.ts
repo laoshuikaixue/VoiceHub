@@ -197,7 +197,12 @@ export const useAudioPlayerControl = () => {
                     }
 
                     console.log('正在获取歌曲URL:', songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
-                    songUrl = await getMusicUrl(songUrlOrSong.musicPlatform, songUrlOrSong.musicId, songUrlOrSong.playUrl)
+                    
+                    // 检查是否为播客内容
+                    const isPodcast = songUrlOrSong.musicPlatform === 'netease-podcast' || songUrlOrSong.sourceInfo?.type === 'voice' || (songUrlOrSong.sourceInfo?.source === 'netease-backup' && songUrlOrSong.sourceInfo?.type === 'voice')
+                    const options = isPodcast ? { unblock: false } : {}
+
+                    songUrl = await getMusicUrl(songUrlOrSong.musicPlatform, songUrlOrSong.musicId, songUrlOrSong.playUrl, options)
                     if (!songUrl) {
                         throw new Error('无法获取歌曲URL')
                     }
@@ -349,10 +354,10 @@ export const useAudioPlayerControl = () => {
     }
 
     // 动态获取音乐URL（委托到统一逻辑）
-    const getMusicUrl = async (platform: string, musicId: string, playUrl: string | null = null): Promise<string | null> => {
+    const getMusicUrl = async (platform: string, musicId: string, playUrl: string | null = null, options?: { unblock?: boolean }): Promise<string | null> => {
         try {
             const { getMusicUrl: coreGetMusicUrl } = await import('~/utils/musicUrl')
-            const url = await coreGetMusicUrl(platform, musicId, playUrl ?? undefined)
+            const url = await coreGetMusicUrl(platform, musicId, playUrl ?? undefined, options)
             return url
         } catch (error) {
             console.error('获取音乐URL错误:', error)

@@ -6,9 +6,10 @@ import {useMusicSources} from '~/composables/useMusicSources'
  * @param platform 音乐平台 ('netease' | 'tencent')
  * @param musicId 音乐ID
  * @param playUrl 用户提供的播放链接（可选）
+ * @param options 额外选项，例如 { unblock: boolean }
  * @returns Promise<string | null> 返回播放URL或null
  */
-export async function getMusicUrl(platform: string, musicId: string | number, playUrl?: string): Promise<string | null> {
+export async function getMusicUrl(platform: string, musicId: string | number, playUrl?: string, options?: { unblock?: boolean }): Promise<string | null> {
     // 如果用户提供了播放链接，优先使用
     if (playUrl && playUrl.trim()) {
         return playUrl.trim()
@@ -26,7 +27,7 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
         const quality = getQuality(platform)
 
         // 先使用统一组件的音源选择逻辑
-        const backupResult = await getSongUrl(musicId, quality, platform)
+        const backupResult = await getSongUrl(musicId, quality, platform, undefined, options)
         if (backupResult.success && backupResult.url) {
             return backupResult.url
         }
@@ -38,7 +39,7 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
 
         // 回退到 vkeys
         let apiUrl: string
-        if (platform === 'netease') {
+        if (platform === 'netease' || platform === 'netease-podcast') {
             apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
         } else if (platform === 'tencent') {
             apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`

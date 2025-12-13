@@ -105,7 +105,12 @@ export function useAudioPlayer() {
             if (nextSong.musicPlatform && nextSong.musicId) {
                 try {
                     const {getMusicUrl} = await import('~/utils/musicUrl')
-                    const url = await getMusicUrl(nextSong.musicPlatform, nextSong.musicId, nextSong.playUrl)
+                    
+                    // 检查是否为播客内容
+                    const isPodcast = nextSong.musicPlatform === 'netease-podcast' || nextSong.sourceInfo?.type === 'voice' || (nextSong.sourceInfo?.source === 'netease-backup' && nextSong.sourceInfo?.type === 'voice')
+                    const options = isPodcast ? { unblock: false } : {}
+                    
+                    const url = await getMusicUrl(nextSong.musicPlatform, nextSong.musicId, nextSong.playUrl, options)
                     if (url) {
                         nextSong.musicUrl = url
                         currentPlaylistIndex.value = nextIndex
@@ -160,7 +165,12 @@ export function useAudioPlayer() {
             if (prevSong.musicPlatform && prevSong.musicId) {
                 try {
                     const {getMusicUrl} = await import('~/utils/musicUrl')
-                    const url = await getMusicUrl(prevSong.musicPlatform, prevSong.musicId, prevSong.playUrl)
+                    
+                    // 检查是否为播客内容
+                    const isPodcast = prevSong.musicPlatform === 'netease-podcast' || prevSong.sourceInfo?.type === 'voice' || (prevSong.sourceInfo?.source === 'netease-backup' && prevSong.sourceInfo?.type === 'voice')
+                    const options = isPodcast ? { unblock: false } : {}
+                    
+                    const url = await getMusicUrl(prevSong.musicPlatform, prevSong.musicId, prevSong.playUrl, options)
                     if (url) {
                         prevSong.musicUrl = url
                         currentPlaylistIndex.value = prevIndex

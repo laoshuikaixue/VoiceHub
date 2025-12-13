@@ -30,7 +30,7 @@ export const useAudioPlayerEnhanced = () => {
     }
 
     // 获取音乐链接（统一委托 + 支持传入临时音质或直接播放链接）
-    const getMusicUrl = async (platform, musicId, qualityOrPlayUrl) => {
+    const getMusicUrl = async (platform, musicId, qualityOrPlayUrl, options?: { unblock?: boolean }) => {
         try {
             let previousQuality
             // 如果传入的是音质值，临时切换音质以用统一逻辑获取URL
@@ -40,7 +40,7 @@ export const useAudioPlayerEnhanced = () => {
             }
 
             const { getMusicUrl: coreGetMusicUrl } = await import('~/utils/musicUrl')
-            const url = await coreGetMusicUrl(platform, musicId, typeof qualityOrPlayUrl === 'string' ? qualityOrPlayUrl : undefined)
+            const url = await coreGetMusicUrl(platform, musicId, typeof qualityOrPlayUrl === 'string' ? qualityOrPlayUrl : undefined, options)
 
             // 如果失败且我们临时切换过音质，恢复原音质设置
             if (!url && typeof qualityOrPlayUrl === 'number' && previousQuality !== undefined) {
@@ -75,7 +75,11 @@ export const useAudioPlayerEnhanced = () => {
             const newQuality = qualityOptions[i].value
             console.log(`尝试切换到音质: ${qualityOptions[i].label}`)
 
-            const result = await getMusicUrl(platform, song.musicId, newQuality)
+            // 检查是否为播客内容
+            const isPodcast = song.musicPlatform === 'netease-podcast' || song.sourceInfo?.type === 'voice' || (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
+            const options = isPodcast ? { unblock: false } : {}
+
+            const result = await getMusicUrl(platform, song.musicId, newQuality, options)
             if (result.success) {
                 // 保存新音质设置
                 saveQuality(platform, newQuality)
@@ -101,7 +105,11 @@ export const useAudioPlayerEnhanced = () => {
             const newQuality = qualityOptions[i].value
             console.log(`尝试切换到音质: ${qualityOptions[i].label}`)
 
-            const result = await getMusicUrl(platform, song.musicId, newQuality)
+            // 检查是否为播客内容
+            const isPodcast = song.musicPlatform === 'netease-podcast' || song.sourceInfo?.type === 'voice' || (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
+            const options = isPodcast ? { unblock: false } : {}
+
+            const result = await getMusicUrl(platform, song.musicId, newQuality, options)
             if (result.success) {
                 // 保存新音质设置
                 saveQuality(platform, newQuality)
