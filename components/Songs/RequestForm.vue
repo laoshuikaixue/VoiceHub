@@ -109,35 +109,48 @@
                   <span class="netease-dot"></span>
                   <span class="netease-title">网易云音乐账号</span>
                 </div>
-              </div>
-              <div v-if="!isNeteaseLoggedIn" class="login-entry">
-                <button class="login-btn" type="button" @click="showLoginModal = true">
-                  立即登录网易云音乐
-                </button>
-                <span class="login-hint">使用网易云账号一键登录，支持博客/声音内容搜索</span>
-              </div>
-              <div v-else class="user-status">
-                <div class="user-info">
-                  <img v-if="neteaseUser?.avatarUrl" :src="convertToHttps(neteaseUser.avatarUrl)" class="user-avatar" alt="avatar"/>
-                  <span class="user-name">{{ neteaseUser?.nickname || '已登录' }}</span>
-                </div>
-                <div class="search-type-switch">
-                  <label :class="['radio-label', { active: searchType === 1 }]">
-                    <input type="radio" :value="1" v-model="searchType"> 单曲
-                  </label>
-                  <label :class="['radio-label', { active: searchType === 1009 }]">
-                    <input type="radio" :value="1009" v-model="searchType"> 播客/电台
-                  </label>
-                </div>
-                <button class="recent-songs-btn" type="button" @click="showRecentSongsModal = true">
-                  最近播放
-                </button>
-                <button class="recent-songs-btn" type="button" @click="showPlaylistModal = true">
-                  从歌单投稿
-                </button>
-                <button class="logout-btn" type="button" @click="handleLogoutNetease">
+                <button v-if="isNeteaseLoggedIn" class="logout-btn" type="button" @click="handleLogoutNetease">
+                  <Icon name="logout" :size="14" />
                   退出
                 </button>
+              </div>
+              
+              <div v-if="!isNeteaseLoggedIn" class="login-entry">
+                <div class="login-desc">
+                  <p class="login-title">登录网易云音乐</p>
+                  <p class="login-hint">支持搜索您的个人歌单、收藏及播客内容</p>
+                </div>
+                <button class="login-btn" type="button" @click="showLoginModal = true">
+                  立即登录
+                </button>
+              </div>
+              
+              <div v-else class="user-status">
+                <div class="user-info-row">
+                  <div class="user-profile">
+                    <img v-if="neteaseUser?.avatarUrl" :src="convertToHttps(neteaseUser.avatarUrl)" class="user-avatar" alt="avatar"/>
+                    <span class="user-name">{{ neteaseUser?.nickname || '已登录' }}</span>
+                  </div>
+                  <div class="search-type-switch">
+                    <label :class="['radio-label', { active: searchType === 1 }]">
+                      <input type="radio" :value="1" v-model="searchType"> 单曲
+                    </label>
+                    <label :class="['radio-label', { active: searchType === 1009 }]">
+                      <input type="radio" :value="1009" v-model="searchType"> 播客
+                    </label>
+                  </div>
+                </div>
+                
+                <div class="user-actions-grid">
+                  <button class="action-btn" type="button" @click="showRecentSongsModal = true">
+                    <Icon name="history" :size="16" />
+                    <span>最近播放</span>
+                  </button>
+                  <button class="action-btn" type="button" @click="showPlaylistModal = true">
+                    <Icon name="playlist" :size="16" />
+                    <span>从歌单投稿</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1962,14 +1975,26 @@ defineExpose({
 /* 网易云音乐登录选项 */
 .netease-options {
   position: relative;
-  background: radial-gradient(circle at top left, rgba(194, 12, 12, 0.18), rgba(0, 0, 0, 0.95));
-  border-radius: 10px;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(194, 12, 12, 0.45);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(145deg, rgba(30, 30, 35, 0.95), rgba(20, 20, 25, 0.98));
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.netease-options::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #c20c0c, #ff4b4b, #c20c0c);
+  opacity: 0.8;
 }
 
 .netease-header {
@@ -1982,159 +2007,179 @@ defineExpose({
 .netease-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  gap: 0.5rem;
 }
 
 .netease-dot {
   width: 8px;
   height: 8px;
-  border-radius: 999px;
-  background: radial-gradient(circle, #ff6b6b, #c20c0c);
+  border-radius: 50%;
+  background: #c20c0c;
+  box-shadow: 0 0 8px rgba(194, 12, 12, 0.6);
 }
 
 .netease-title {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.04em;
+  font-size: 14px;
   color: #ffffff;
-}
-
-.netease-subtitle {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.75);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
 }
 
 .login-entry {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.login-desc {
+  flex: 1;
+}
+
+.login-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 0.25rem 0;
+}
+
+.login-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #ff4b4b 0%, #c20c0c 50%, #7f0b0b 100%);
+  background: linear-gradient(135deg, #e11d1d 0%, #c20c0c 100%);
   color: white;
   border: none;
-  padding: 0.45rem 1.1rem;
-  border-radius: 999px;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  box-shadow: 0 10px 22px rgba(194, 12, 12, 0.5);
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(194, 12, 12, 0.3);
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(194, 12, 12, 0.55);
-}
-
-.login-hint {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.82);
-  max-width: 260px;
-  line-height: 1.5;
+  box-shadow: 0 6px 16px rgba(194, 12, 12, 0.4);
 }
 
 .user-status {
   display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.user-info-row {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
-.user-info {
+.user-profile {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .user-avatar {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-name {
   font-size: 14px;
   color: white;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .search-type-switch {
   display: flex;
-  gap: 0.35rem;
-  align-items: center;
-  padding: 0.18rem;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .radio-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  padding: 0.2rem 0.75rem;
-  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
   transition: all 0.2s ease;
 }
 
 .radio-label.active {
   color: #ffffff;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .radio-label input {
   display: none;
 }
 
-.recent-songs-btn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.7);
-  padding: 0.2rem 0.7rem;
-  border-radius: 999px;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.user-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
 }
 
-.recent-songs-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.9);
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0.6rem;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.7);
-  padding: 0.2rem 0.7rem;
-  border-radius: 999px;
-  font-size: 11px;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .platform-btn {
@@ -2734,29 +2779,33 @@ defineExpose({
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  transition: all 0.3s ease;
 }
 
 .modal-content {
-  background: rgba(30, 41, 59, 0.95);
-  border-radius: 0.75rem;
+  background: rgba(20, 20, 25, 0.95);
+  border-radius: 16px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transform-origin: center;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .modal-header h3 {
@@ -2765,17 +2814,18 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 18px;
+  letter-spacing: 0.02em;
 }
 
 .close-btn {
-  background: none;
+  background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.4);
   font-size: 24px;
   cursor: pointer;
   padding: 0;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2786,6 +2836,7 @@ defineExpose({
 .close-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #FFFFFF;
+  transform: rotate(90deg);
 }
 
 .modal-body {
@@ -2796,62 +2847,79 @@ defineExpose({
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
 }
 
 .btn {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 8px;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn:active {
+  transform: scale(0.96);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, #0043F8 0%, #0075F8 100%);
+  border-color: rgba(255, 255, 255, 0.1);
   color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 67, 248, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 67, 248, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 67, 248, 0.4);
 }
 
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .readonly {
-  background: rgba(255, 255, 255, 0.05) !important;
-  color: rgba(255, 255, 255, 0.6) !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
   cursor: not-allowed;
+  border-color: transparent !important;
 }
 
 /* 弹窗动画 */
 .modal-animation-enter-active,
 .modal-animation-leave-active {
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-animation-enter-from,
 .modal-animation-leave-to {
   opacity: 0;
-  transform: scale(0.9);
+}
+
+.modal-animation-enter-from .modal-content,
+.modal-animation-leave-to .modal-content {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
 }
 
 .result-item {
@@ -3137,6 +3205,37 @@ defineExpose({
 
 /* 响应式调整 */
 @media (max-width: 768px) {
+  /* Netease Options Mobile Optimization */
+  .netease-options {
+    padding: 0.75rem;
+  }
+
+  .user-info-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .user-profile {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .search-type-switch {
+    width: 100%;
+    display: flex;
+  }
+  
+  .radio-label {
+    flex: 1;
+    text-align: center;
+  }
+
+  .user-actions-grid {
+    grid-template-columns: 1fr; /* Stack buttons on mobile */
+    gap: 0.5rem;
+  }
+
   .request-form {
     flex-direction: column;
     height: auto;

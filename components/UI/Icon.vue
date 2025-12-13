@@ -231,6 +231,29 @@
       <line x1="5" y1="12" x2="19" y2="12"></line>
     </g>
 
+    <!-- 历史记录图标 -->
+    <g v-else-if="name === 'history'">
+      <path d="M12 2a10 10 0 1 0 10 10 10 10 0 0 0-10-10z"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </g>
+
+    <!-- 歌单/列表图标 -->
+    <g v-else-if="name === 'playlist' || name === 'list'">
+      <line x1="8" y1="6" x2="21" y2="6"></line>
+      <line x1="8" y1="12" x2="21" y2="12"></line>
+      <line x1="8" y1="18" x2="21" y2="18"></line>
+      <line x1="3" y1="6" x2="3.01" y2="6"></line>
+      <line x1="3" y1="12" x2="3.01" y2="12"></line>
+      <line x1="3" y1="18" x2="3.01" y2="18"></line>
+    </g>
+
+    <!-- 登出/退出图标 -->
+    <g v-else-if="name === 'logout' || name === 'log-out'">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+      <polyline points="16 17 21 12 16 7"></polyline>
+      <line x1="21" y1="12" x2="9" y2="12"></line>
+    </g>
+
     <!-- 默认图标（如果没有匹配的图标） -->
     <circle v-else cx="12" cy="12" r="10"/>
   </svg>

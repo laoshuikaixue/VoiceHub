@@ -644,34 +644,55 @@ defineExpose({
   opacity: 0;
 }
 
-/* Dark mode overrides (assuming class 'dark' on html/body) */
+/* Dark mode overrides (assuming class 'dark' on html/body) - updated to match new style */
 :root[class~="dark"] .modal-content {
-  background: #1f2937;
-  border-color: #374151;
-  color: #f9fafb;
+  background: rgba(20, 20, 25, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-:root[class~="dark"] .modal-header,
+:root[class~="dark"] .modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
 :root[class~="dark"] .program-item {
-  border-color: #374151;
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
 :root[class~="dark"] .program-item:hover {
-  background-color: #374151;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 :root[class~="dark"] .modal-header h3,
 :root[class~="dark"] .program-title {
-  color: #f9fafb;
+  color: #ffffff;
 }
 
-:root[class~="dark"] .close-btn,
-:root[class~="dark"] .program-meta,
-:root[class~="dark"] .load-more-btn {
-  color: #9ca3af;
+:root[class~="dark"] .close-btn {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+:root[class~="dark"] .close-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:root[class~="dark"] .program-meta {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 :root[class~="dark"] .load-more-btn {
-  border-color: #4b5563;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+:root[class~="dark"] .load-more-btn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 </style>

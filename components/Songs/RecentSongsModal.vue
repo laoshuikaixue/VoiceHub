@@ -573,29 +573,43 @@ defineExpose({
   cursor: not-allowed;
 }
 
-/* Dark mode overrides */
+/* Dark mode overrides - updated to match new style */
 :root[class~="dark"] .modal-content {
-  background: #1f2937;
-  border-color: #374151;
-  color: #f9fafb;
+  background: rgba(20, 20, 25, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-:root[class~="dark"] .modal-header,
+:root[class~="dark"] .modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
 :root[class~="dark"] .program-item {
-  border-color: #374151;
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
 :root[class~="dark"] .program-item:hover {
-  background-color: #374151;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 :root[class~="dark"] .modal-header h3,
 :root[class~="dark"] .program-title {
-  color: #f9fafb;
+  color: #ffffff;
 }
 
-:root[class~="dark"] .close-btn,
+:root[class~="dark"] .close-btn {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+:root[class~="dark"] .close-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
 :root[class~="dark"] .program-meta {
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.5);
 }
 </style>

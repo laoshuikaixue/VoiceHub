@@ -349,6 +349,72 @@ const handleLike = async () => {
   }
 }
 
+/* Dark mode support */
+:root[class~="dark"] .modal-content {
+  background: rgba(20, 20, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+:root[class~="dark"] .modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+:root[class~="dark"] .modal-header h3 {
+  color: #ffffff;
+}
+
+:root[class~="dark"] .close-btn {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+:root[class~="dark"] .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+:root[class~="dark"] .duplicate-message {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:root[class~="dark"] .song-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+:root[class~="dark"] .song-title {
+  color: #ffffff;
+}
+
+:root[class~="dark"] .song-artist {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+:root[class~="dark"] .song-requester {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+:root[class~="dark"] .song-cover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:root[class~="dark"] .modal-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+:root[class~="dark"] .btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+:root[class~="dark"] .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
 @media (max-width: 640px) {
   .modal-content {
     margin: 10px;

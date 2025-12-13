@@ -342,25 +342,47 @@ onUnmounted(() => {
   }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #1f2937;
-    --bg-secondary: #374151;
-    --bg-input: #111827;
-    --bg-hover: #374151;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --border-color: #4b5563;
-  }
-  
-  .qr-overlay {
-    background: rgba(31, 41, 55, 0.9);
-  }
-  
-  .spinner {
-    border-color: #4b5563;
-    border-top-color: #e60026;
-  }
+/* Dark mode support - updated to match new style */
+:root[class~="dark"] .modal-content {
+  background: rgba(20, 20, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+:root[class~="dark"] .modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+:root[class~="dark"] .modal-header h3 {
+  color: #ffffff;
+}
+
+:root[class~="dark"] .close-btn {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+:root[class~="dark"] .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+:root[class~="dark"] .status-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+:root[class~="dark"] .tips {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+:root[class~="dark"] .qr-overlay {
+  background: rgba(20, 20, 25, 0.95);
+}
+
+:root[class~="dark"] .spinner {
+  border-color: rgba(255, 255, 255, 0.1);
+  border-top-color: #e60026;
 }
 </style>
