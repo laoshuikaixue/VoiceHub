@@ -129,6 +129,9 @@
                     <input type="radio" :value="1009" v-model="searchType"> 播客/电台
                   </label>
                 </div>
+                <button class="recent-songs-btn" type="button" @click="showRecentSongsModal = true">
+                  最近播放
+                </button>
                 <button class="logout-btn" type="button" @click="handleLogoutNetease">
                   退出
                 </button>
@@ -342,6 +345,7 @@
 
     <!-- 播客节目列表弹窗 -->
     <PodcastEpisodesModal
+        ref="podcastModalRef"
         :show="showPodcastModal"
         :radio-id="selectedPodcastId"
         :radio-name="selectedPodcastName"
@@ -349,6 +353,16 @@
         @close="showPodcastModal = false"
         @submit="handlePodcastSubmit"
         @play="handlePodcastPlay"
+    />
+
+    <!-- 最近播放歌曲弹窗 -->
+    <RecentSongsModal
+        ref="recentSongsModalRef"
+        :show="showRecentSongsModal"
+        :cookie="neteaseCookie"
+        @close="showRecentSongsModal = false"
+        @submit="handleRecentSongSubmit"
+        @play="handleRecentSongPlay"
     />
 
     <!-- 手动输入弹窗 -->
@@ -477,6 +491,7 @@ import {convertToHttps, validateUrl} from '~/utils/url'
 
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
+import RecentSongsModal from './RecentSongsModal.vue'
 
 const props = defineProps({
   loading: {
@@ -500,7 +515,7 @@ const {fetchCurrentSemester, currentSemester} = useSemesters()
 
 const title = ref('')
 const artist = ref('')
-const platform = ref('tencent') // 默认使用QQ音乐
+const platform = ref('netease') // 默认使用网易云音乐
 const preferredPlayTimeId = ref('')
 const error = ref('')
 const success = ref('')
@@ -518,6 +533,8 @@ const showPodcastModal = ref(false)
 const selectedPodcastId = ref('')
 const selectedPodcastName = ref('')
 const podcastCookie = ref('')
+
+const showRecentSongsModal = ref(false)
 
 const songService = useSongs()
 const playTimes = ref([])
@@ -1174,7 +1191,7 @@ const submitSong = async (result, options = {}) => {
   if (submitting.value) return
   
   // 如果是播客/电台模式，且是在网易云平台下，且不是具体的单集提交
-  if (platform.value === 'netease' && searchType.value === 1009 && !options.isPodcastEpisode) {
+  if (platform.value === 'netease' && searchType.value === 1009 && !options.isPodcastEpisode && !options.isDirectSubmit) {
       console.log('打开播客节目列表:', result)
       // 打开播客节目列表弹窗
       selectedPodcastId.value = result.id || result.musicId
@@ -1273,11 +1290,13 @@ const submitSong = async (result, options = {}) => {
 
     // 成功提示由父组件处理，这里只重置表单
     resetForm()
+    return true
   } catch (err) {
     error.value = err.message || '投稿失败，请稍后重试'
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
+    return false
   } finally {
     submitting.value = false
   }
@@ -1328,17 +1347,44 @@ const handleSubmit = async () => {
   }
 }
 
+// 引用模态框组件
+const podcastModalRef = ref(null)
+const recentSongsModalRef = ref(null)
+
 // 处理播客单集提交
 const handlePodcastSubmit = async (song) => {
-  // 关闭弹窗
-  showPodcastModal.value = false
-  // 提交歌曲
-  await submitSong(song, { isPodcastEpisode: true })
+  const success = await submitSong(song, { isPodcastEpisode: true })
+  if (success) {
+    showPodcastModal.value = false
+  } else {
+    // 如果失败，重置模态框内的提交状态
+    if (podcastModalRef.value && podcastModalRef.value.resetSubmissionState) {
+      podcastModalRef.value.resetSubmissionState()
+    }
+  }
 }
 
 // 处理播客单集播放
 const handlePodcastPlay = async (song) => {
   console.log('播放播客单集:', song.title)
+  await playSong(song)
+}
+
+// 处理最近播放歌曲提交
+const handleRecentSongSubmit = async (song) => {
+  const success = await submitSong(song, { isPodcastEpisode: false, isDirectSubmit: true })
+  if (success) {
+    showRecentSongsModal.value = false
+  } else {
+    // 如果失败，重置模态框内的提交状态
+    if (recentSongsModalRef.value && recentSongsModalRef.value.resetSubmissionState) {
+      recentSongsModalRef.value.resetSubmissionState()
+    }
+  }
+}
+
+// 处理最近播放歌曲播放
+const handleRecentSongPlay = async (song) => {
   await playSong(song)
 }
 
@@ -2021,6 +2067,22 @@ defineExpose({
 
 .radio-label input {
   display: none;
+}
+
+.recent-songs-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recent-songs-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .logout-btn {

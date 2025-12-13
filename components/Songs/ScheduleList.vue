@@ -399,28 +399,12 @@ import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import {convertToHttps} from '~/utils/url'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
-
-const BASE_URL = 'https://api.voicehub.lao-shui.top'
-
-const normalizeNeteaseResponse = (data) => {
-  if (!data || typeof data !== 'object') {
-    return {
-      code: undefined,
-      message: '',
-      body: undefined
-    }
-  }
-  const body = Object.prototype.hasOwnProperty.call(data, 'body') && data.body && typeof data.body === 'object'
-      ? data.body
-      : data
-  const code = typeof body.code === 'number' ? body.code : undefined
-  const message = typeof body.message === 'string' ? body.message : ''
-  return {
-    code,
-    message,
-    body
-  }
-}
+import {
+  getUserPlaylists,
+  createPlaylist,
+  deletePlaylist,
+  addSongsToPlaylist
+} from '~/utils/neteaseApi'
 
 const props = defineProps({
   schedules: {
@@ -935,10 +919,7 @@ const reloadPlaylists = async () => {
   if (!uid) return
   playlistsLoading.value = true
   try {
-    const url = `${BASE_URL}/user/playlist?uid=${uid}&limit=100&timestamp=${Date.now()}&cookie=${encodeURIComponent(neteaseCookie.value)}`
-    const response = await fetch(url)
-    const raw = await response.json()
-    const {code, message, body} = normalizeNeteaseResponse(raw)
+    const {code, message, body} = await getUserPlaylists(uid, neteaseCookie.value)
     const list = body && Array.isArray(body.playlist) ? body.playlist : []
     if (code === 200 && Array.isArray(list)) {
       playlists.value = list
@@ -966,11 +947,7 @@ const handleCreatePlaylist = async () => {
   if (!isNeteaseLoggedIn.value || !neteaseCookie.value) return
   playlistActionLoading.value = true
   try {
-    const privacyParam = newPlaylistPrivacy.value ? '&privacy=10' : ''
-    const url = `${BASE_URL}/playlist/create?name=${encodeURIComponent(name)}${privacyParam}&timestamp=${Date.now()}&cookie=${encodeURIComponent(neteaseCookie.value)}`
-    const response = await fetch(url)
-    const raw = await response.json()
-    const {code, message, body} = normalizeNeteaseResponse(raw)
+    const {code, message, body} = await createPlaylist(name, newPlaylistPrivacy.value, neteaseCookie.value)
     if (code === 200) {
       const createdId = body && (body.id || (body.playlist && body.playlist.id))
       if (window.$showNotification) {
@@ -1008,10 +985,7 @@ const handleDeletePlaylist = async () => {
     onConfirm: async () => {
       playlistActionLoading.value = true
       try {
-        const url = `${BASE_URL}/playlist/delete?id=${selectedPlaylistId.value}&timestamp=${Date.now()}&cookie=${encodeURIComponent(neteaseCookie.value)}`
-        const response = await fetch(url)
-        const raw = await response.json()
-        const {code, message} = normalizeNeteaseResponse(raw)
+        const {code, message} = await deletePlaylist(selectedPlaylistId.value, neteaseCookie.value)
         if (code === 200) {
           if (window.$showNotification) {
             window.$showNotification('歌单删除成功', 'success')
@@ -1091,10 +1065,7 @@ const handleAddSongsToPlaylist = async () => {
   }
   playlistActionLoading.value = true
   try {
-    const url = `${BASE_URL}/playlist/tracks?op=add&pid=${selectedPlaylistId.value}&tracks=${tracks.join(',')}&timestamp=${Date.now()}&cookie=${encodeURIComponent(neteaseCookie.value)}`
-    const response = await fetch(url)
-    const raw = await response.json()
-    const {code, message} = normalizeNeteaseResponse(raw)
+    const {code, message} = await addSongsToPlaylist(selectedPlaylistId.value, tracks, neteaseCookie.value)
     if (code === 200) {
       if (window.$showNotification) {
         window.$showNotification(`成功添加 ${tracks.length} 首歌曲到歌单`, 'success')
