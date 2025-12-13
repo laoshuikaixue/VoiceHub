@@ -1299,7 +1299,7 @@ export const useMusicSources = () => {
                     cover,
                     album,
                     duration,
-                    musicPlatform: 'netease',
+                    musicPlatform: isSongType ? 'netease' : 'netease-podcast',
                     musicId: musicId,
                     sourceInfo: {
                         source: 'netease-backup',

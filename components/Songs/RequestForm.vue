@@ -1264,7 +1264,7 @@ const submitSong = async (result, options = {}) => {
           ? parseInt(preferredPlayTimeId.value)
           : null,
       cover: selectedCover.value,
-      musicPlatform: result.actualMusicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
+      musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
     }
 

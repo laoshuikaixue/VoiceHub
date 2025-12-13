@@ -203,8 +203,12 @@ const closeDialog = () => {
 // 获取音乐播放URL（直接使用utils中的统一方法）
 const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
   try {
+    // 检查是否为播客内容
+    const isPodcast = song.musicPlatform === 'netease-podcast' || song.sourceInfo?.type === 'voice' || (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
+    const options = isPodcast ? { unblock: false } : {}
+
     // 直接调用统一的getMusicUrl方法，它会自动处理playUrl优先级
-    const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
+    const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl, options)
     if (!url) {
       throw new Error('无法获取音乐播放链接')
     }

@@ -600,7 +600,7 @@ const togglePlaySong = async (song) => {
       // 如果没有URL，重新获取
       if ((song.musicPlatform && song.musicId) || song.playUrl) {
         try {
-          const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
+          const url = await getMusicUrl(song)
           if (url) {
             const playableSong = {
               ...song,
@@ -626,7 +626,7 @@ const togglePlaySong = async (song) => {
   // 如果有平台和ID信息或playUrl，动态获取URL
   if ((song.musicPlatform && song.musicId) || song.playUrl) {
     try {
-      const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
+      const url = await getMusicUrl(song)
       if (url) {
         // 构建当前时段的播放列表
         const currentTimeSlot = getCurrentTimeSlot(song)
@@ -643,7 +643,8 @@ const togglePlaySong = async (song) => {
             musicUrl: s.musicUrl || null,
             musicPlatform: s.musicPlatform,
             musicId: s.musicId,
-            playUrl: s.playUrl || null
+            playUrl: s.playUrl || null,
+            sourceInfo: s.sourceInfo
           }))
 
           // 找到当前歌曲在播放列表中的索引
@@ -656,7 +657,7 @@ const togglePlaySong = async (song) => {
               const s = playlist[i]
               if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
                 try {
-                  s.musicUrl = await getMusicUrl(s.musicPlatform, s.musicId, s.playUrl)
+                  s.musicUrl = await getMusicUrl(s)
                 } catch (error) {
                   console.warn(`后台预取失败: ${s.title}`, error)
                   s.musicUrl = null
@@ -707,7 +708,9 @@ const getCurrentTimeSlot = (song) => {
 }
 
 // 动态获取音乐URL
-const getMusicUrl = async (platform, musicId, playUrl) => {
+const getMusicUrl = async (song) => {
+  const { musicPlatform: platform, musicId, playUrl, sourceInfo } = song
+
   // 如果有自定义播放链接，优先使用
   if (playUrl && playUrl.trim()) {
     console.log(`[ScheduleList] 使用自定义播放链接: ${playUrl}`)
@@ -727,7 +730,14 @@ const getMusicUrl = async (platform, musicId, playUrl) => {
 
     // 使用统一组件的音源选择逻辑
     console.log(`[ScheduleList] 使用统一音源选择逻辑获取播放链接: platform=${platform}, musicId=${musicId}`)
-    const result = await getSongUrl(musicId, quality, platform)
+    
+    // 检查是否为播客内容
+    const isPodcast = platform === 'netease-podcast' || sourceInfo?.type === 'voice' || sourceInfo?.source === 'netease-backup' && sourceInfo?.type === 'voice'
+    
+    // 如果是播客内容，强制 unblock=false
+    const options = isPodcast ? { unblock: false } : {}
+    
+    const result = await getSongUrl(musicId, quality, platform, undefined, options)
     if (result?.success && result.url) {
       console.log('[ScheduleList] 统一音源选择获取音乐URL成功')
       return result.url
