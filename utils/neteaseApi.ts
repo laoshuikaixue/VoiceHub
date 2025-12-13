@@ -68,6 +68,10 @@ export const addSongsToPlaylist = async (pid, tracks, cookie) => {
   return fetchNetease('/playlist/tracks', { op: 'add', pid, tracks: tracks.join(',') }, cookie)
 }
 
+export const getPlaylistTracks = async (id, limit = 1000, offset = 0, cookie) => {
+  return fetchNetease('/playlist/track/all', { id, limit, offset }, cookie)
+}
+
 export const getRecentSongs = async (limit = 100, cookie) => {
   return fetchNetease('/record/recent/song', { limit }, cookie)
 }

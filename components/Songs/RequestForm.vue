@@ -132,6 +132,9 @@
                 <button class="recent-songs-btn" type="button" @click="showRecentSongsModal = true">
                   最近播放
                 </button>
+                <button class="recent-songs-btn" type="button" @click="showPlaylistModal = true">
+                  从歌单投稿
+                </button>
                 <button class="logout-btn" type="button" @click="handleLogoutNetease">
                   退出
                 </button>
@@ -365,6 +368,17 @@
         @play="handleRecentSongPlay"
     />
 
+    <!-- 歌单选择弹窗 -->
+    <PlaylistSelectionModal
+        ref="playlistModalRef"
+        :show="showPlaylistModal"
+        :cookie="neteaseCookie"
+        :uid="neteaseUser?.userId || neteaseUser?.id"
+        @close="showPlaylistModal = false"
+        @submit="handlePlaylistSubmit"
+        @play="handlePlaylistPlay"
+    />
+
     <!-- 手动输入弹窗 -->
     <Teleport to="body">
       <Transition name="modal-animation">
@@ -492,6 +506,7 @@ import {convertToHttps, validateUrl} from '~/utils/url'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
 import RecentSongsModal from './RecentSongsModal.vue'
+import PlaylistSelectionModal from './PlaylistSelectionModal.vue'
 
 const props = defineProps({
   loading: {
@@ -535,6 +550,7 @@ const selectedPodcastName = ref('')
 const podcastCookie = ref('')
 
 const showRecentSongsModal = ref(false)
+const showPlaylistModal = ref(false)
 
 const songService = useSongs()
 const playTimes = ref([])
@@ -1350,6 +1366,7 @@ const handleSubmit = async () => {
 // 引用模态框组件
 const podcastModalRef = ref(null)
 const recentSongsModalRef = ref(null)
+const playlistModalRef = ref(null)
 
 // 处理播客单集提交
 const handlePodcastSubmit = async (song) => {
@@ -1387,6 +1404,25 @@ const handleRecentSongSubmit = async (song) => {
 const handleRecentSongPlay = async (song) => {
   await playSong(song)
 }
+
+// 处理歌单歌曲提交
+const handlePlaylistSubmit = async (song) => {
+  const success = await submitSong(song, { isPodcastEpisode: false, isDirectSubmit: true })
+  if (success) {
+    showPlaylistModal.value = false
+  } else {
+    // 如果失败，重置模态框内的提交状态
+    if (playlistModalRef.value && playlistModalRef.value.resetSubmissionState) {
+      playlistModalRef.value.resetSubmissionState()
+    }
+  }
+}
+
+// 处理歌单歌曲播放
+const handlePlaylistPlay = async (song) => {
+  await playSong(song)
+}
+
 
 // 手动输入相关方法
 const handleManualSubmit = async () => {
