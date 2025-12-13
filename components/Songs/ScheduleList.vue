@@ -19,6 +19,14 @@
               v-html="currentDateFormatted"
           ></div>
           <button
+              v-if="isNeteaseLoggedIn"
+              class="mobile-add-playlist-btn"
+              type="button"
+              @click="handleAddToPlaylistClick"
+          >
+            <Icon :size="16" color="#ffffff" name="plus"/>
+          </button>
+          <button
               :disabled="currentDateIndex >= availableDates.length - 1"
               class="date-nav-btn next"
               @click="nextDate"
@@ -274,7 +282,7 @@
 
                 <div class="panel-section">
                   <label class="section-label">创建新歌单</label>
-                  <div class="input-group">
+                  <div class="input-group create-playlist-group">
                     <input
                         v-model="newPlaylistName"
                         class="custom-input"
@@ -1965,10 +1973,26 @@ const vRipple = {
   letter-spacing: 0.5px;
 }
 
+/* 创建新歌单的输入组样式优化 */
 .input-group {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  position: relative; /* 确保定位上下文 */
+  width: 100%; /* 占满父容器宽度 */
+}
+
+.input-group .custom-input {
+  flex: 1;
+  width: 0; /* 允许flex缩小 */
+  min-width: 0; /* 防止内容溢出 */
+}
+
+/* 确保按钮不被挤压，且不溢出 */
+.input-group .btn-secondary {
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-left: auto; /* 在必要时推向右侧 */
 }
 
 .select-wrapper {
@@ -2260,6 +2284,8 @@ const vRipple = {
   justify-content: center;
   gap: 0.5rem;
   border: none;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-primary {
@@ -2322,8 +2348,33 @@ const vRipple = {
   opacity: 0;
 }
 
+/* 移动端添加歌单按钮 */
+.mobile-add-playlist-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #ffffff;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
+}
+
+.mobile-add-playlist-btn:active {
+  transform: scale(0.95);
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
+  .mobile-add-playlist-btn {
+    display: flex;
+  }
+  
   .playlist-modal {
     max-width: 100%;
     width: 100%;
@@ -2347,6 +2398,24 @@ const vRipple = {
   
   .playlist-modal-footer button {
     width: 100%;
+  }
+
+  /* 移动端创建歌单输入组改为垂直排列 */
+  .input-group.create-playlist-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .input-group.create-playlist-group .custom-input {
+    width: 100%;
+    flex: none;
+  }
+
+  .input-group.create-playlist-group .btn-secondary {
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
   }
 }
 
@@ -2604,8 +2673,9 @@ const vRipple = {
     box-sizing: border-box;
   }
 
+  /* 隐藏桌面端日期标题和添加按钮 */
   .schedule-header {
-    display: none; /* 隐藏桌面端日期标题 */
+    display: none;
   }
 
   .song-cards {
