@@ -109,10 +109,16 @@
                   <span class="netease-dot"></span>
                   <span class="netease-title">网易云音乐账号</span>
                 </div>
-                <button v-if="isNeteaseLoggedIn" class="logout-btn" type="button" @click="handleLogoutNetease">
-                  <Icon :size="14" name="logout"/>
-                  退出
-                </button>
+                <div class="header-actions">
+                  <button v-if="isNeteaseLoggedIn" class="header-btn" type="button" @click="handleExportData" title="导出Cookie数据">
+                    <Icon :size="14" name="download"/>
+                    导出
+                  </button>
+                  <button v-if="isNeteaseLoggedIn" class="logout-btn" type="button" @click="handleLogoutNetease">
+                    <Icon :size="14" name="logout"/>
+                    退出
+                  </button>
+                </div>
               </div>
 
               <div v-if="!isNeteaseLoggedIn" class="login-entry">
@@ -120,9 +126,15 @@
                   <p class="login-title">登录网易云音乐</p>
                   <p class="login-hint">支持搜索您的个人歌单、收藏及播客内容</p>
                 </div>
-                <button class="login-btn" type="button" @click="showLoginModal = true">
-                  立即登录
-                </button>
+                <div class="login-actions">
+                  <button class="login-btn" type="button" @click="showLoginModal = true">
+                    立即登录
+                  </button>
+                  <button class="import-btn" type="button" @click="handleImportClick">
+                    <Icon :size="14" name="upload"/>
+                    导入数据
+                  </button>
+                </div>
               </div>
 
               <div v-else class="user-status">
@@ -505,6 +517,14 @@
         </div>
       </Transition>
     </Teleport>
+    <!-- 隐藏的文件输入框 -->
+    <input
+        ref="fileInput"
+        accept=".json"
+        style="display: none"
+        type="file"
+        @change="handleImportData"
+    />
   </div>
 </template>
 
@@ -518,6 +538,7 @@ import {useSemesters} from '~/composables/useSemesters'
 import {useMusicSources} from '~/composables/useMusicSources'
 import Icon from '../UI/Icon.vue'
 import {convertToHttps, validateUrl} from '~/utils/url'
+import {getLoginStatus} from '~/utils/neteaseApi'
 
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
@@ -625,22 +646,101 @@ const fetchPlayTimes = async () => {
   }
 }
 
-const checkNeteaseLoginStatus = () => {
+const fileInput = ref(null)
+
+const checkNeteaseLoginStatus = async () => {
   if (process.client) {
     const cookie = localStorage.getItem('netease_cookie')
-    const userStr = localStorage.getItem('netease_user')
+    // const userStr = localStorage.getItem('netease_user')
     if (cookie) {
-      neteaseCookie.value = cookie
-      isNeteaseLoggedIn.value = true
-      if (userStr) {
-        try {
-          neteaseUser.value = JSON.parse(userStr)
-        } catch (e) {
-          console.error('Failed to parse netease user info', e)
+      try {
+        const res = await getLoginStatus(cookie)
+        const dataObj = res.body?.data || res.body
+        if (dataObj && dataObj.account) {
+          neteaseCookie.value = cookie
+          isNeteaseLoggedIn.value = true
+          neteaseUser.value = dataObj.profile || dataObj.account
+          localStorage.setItem('netease_user', JSON.stringify(neteaseUser.value))
+        } else {
+          // 登录失效
+          handleLogoutNetease()
         }
+      } catch (e) {
+        console.error('检查登录状态失败', e)
+        // 如果网络请求失败，暂时保留本地状态，或者根据需求清除
+        // 这里选择保守策略，只有明确失效才清除，除非是401等错误
+        // 但鉴于用户要求“失效了就清除”，如果API通了但返回无效则清除。
+        // 如果API不通，可能不清除。这里假设getLoginStatus返回正常结构。
       }
     }
   }
+}
+
+const handleExportData = () => {
+  if (!neteaseCookie.value) return
+  const data = {
+    cookie: neteaseCookie.value,
+    user: neteaseUser.value,
+    timestamp: Date.now()
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'})
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `netease_cookie_${Date.now()}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  if (window.$showNotification) {
+    window.$showNotification('导出成功', 'success')
+  }
+}
+
+const handleImportClick = () => {
+  fileInput.value.click()
+}
+
+const handleImportData = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  try {
+    const text = await file.text()
+    const data = JSON.parse(text)
+    if (data.cookie) {
+      if (window.$showNotification) {
+        window.$showNotification('正在验证Cookie有效性...', 'info')
+      }
+      
+      const res = await getLoginStatus(data.cookie)
+      const dataObj = res.body?.data || res.body
+      if (dataObj && dataObj.account) {
+        handleLoginSuccess({
+          cookie: data.cookie, 
+          user: dataObj.profile || dataObj.account
+        })
+        if (window.$showNotification) {
+          window.$showNotification('导入成功', 'success')
+        }
+      } else {
+        if (window.$showNotification) {
+          window.$showNotification('导入的Cookie无效或已过期', 'error')
+        }
+      }
+    } else {
+      if (window.$showNotification) {
+        window.$showNotification('文件格式错误', 'error')
+      }
+    }
+  } catch (e) {
+    console.error('导入失败', e)
+    if (window.$showNotification) {
+      window.$showNotification('导入失败: ' + e.message, 'error')
+    }
+  }
+  // 重置input
+  event.target.value = ''
 }
 
 const handleLoginSuccess = (data) => {
@@ -2073,6 +2173,59 @@ defineExpose({
 .login-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(194, 12, 12, 0.4);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.login-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.import-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.import-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .user-status {
