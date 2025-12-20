@@ -121,7 +121,16 @@
                 </div>
               </div>
 
-              <div v-if="!isNeteaseLoggedIn" class="login-entry">
+              <!-- 加载中状态 -->
+              <div v-if="checkingNeteaseLogin" class="netease-loading-state">
+                <div class="loading-content">
+                  <div class="loading-spinner"></div>
+                  <span class="loading-text">刷新中</span>
+                </div>
+              </div>
+              
+              <!-- 未登录状态 -->
+              <div v-else-if="!isNeteaseLoggedIn" class="login-entry">
                 <div class="login-desc">
                   <p class="login-title">登录网易云音乐</p>
                   <p class="login-hint">支持搜索您的个人歌单、收藏及播客内容</p>
@@ -137,6 +146,7 @@
                 </div>
               </div>
 
+              <!-- 已登录状态 -->
               <div v-else class="user-status">
                 <div class="user-info-row">
                   <div class="user-profile">
@@ -629,6 +639,9 @@ const hasSearched = ref(false)
 const coverValidation = ref({valid: true, error: '', validating: false})
 const playUrlValidation = ref({valid: true, error: '', validating: false})
 
+// 网易云音乐登录检查状态
+const checkingNeteaseLogin = ref(false)
+
 // 获取播出时段
 const fetchPlayTimes = async () => {
   loadingPlayTimes.value = true
@@ -653,6 +666,7 @@ const checkNeteaseLoginStatus = async () => {
     const cookie = localStorage.getItem('netease_cookie')
     // const userStr = localStorage.getItem('netease_user')
     if (cookie) {
+      checkingNeteaseLogin.value = true
       try {
         const res = await getLoginStatus(cookie)
         const dataObj = res.body?.data || res.body
@@ -671,6 +685,8 @@ const checkNeteaseLoginStatus = async () => {
         // 这里选择保守策略，只有明确失效才清除，除非是401等错误
         // 但鉴于用户要求“失效了就清除”，如果API通了但返回无效则清除。
         // 如果API不通，可能不清除。这里假设getLoginStatus返回正常结构。
+      } finally {
+        checkingNeteaseLogin.value = false
       }
     }
   }
@@ -3696,6 +3712,40 @@ defineExpose({
     z-index: 20;
     position: relative;
   }
+}
+
+/* 网易云音乐账号加载状态样式 */
+.netease-loading-state {
+  padding: 20px;
+  background-color: transparent;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0;
+  border: none;
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.netease-loading-state .loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(239, 68, 68, 0.2);
+  border-top-color: #ef4444;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.netease-loading-state .loading-text {
+  color: #ef4444;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
 }
 
 /* URL验证状态样式 */
