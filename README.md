@@ -12,7 +12,13 @@
 ## 主要功能
 
 ### 🎵 核心功能
-- **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐和QQ音乐搜索，可选择期望播出时段
+- **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐、QQ音乐和哔哩哔哩搜索，可选择期望播出时段
+- **多平台登录支持**：
+  - **网易云音乐登录**：支持扫码登录，登录后可搜索个人歌单、收藏及播客电台内容
+    - **一键添加到歌单**：登录后支持将排期中的网易云音乐歌曲一键添加到个人歌单
+    - **从歌单投稿**：支持从个人歌单中直接投稿歌曲到系统
+    - **从最近播放投稿**：支持从最近播放记录中投稿歌曲
+    - **播客电台投稿**：支持搜索和投稿播客电台内容
 - **投稿限额管理**：灵活配置用户投稿限制，支持按时间段、用户角色设置不同的投稿额度，有效控制系统负载
 - **歌曲去重功能**：智能识别重复歌曲，优化歌曲库管理，避免重复播放
 - **歌曲管理**：按热度排序，避免重复播放，动态URL防止链接过期，支持黑名单管理
@@ -389,9 +395,11 @@ VoiceHub/
 ├── assets/                # 静态资源目录
 │   └── css/               # CSS样式文件
 │       ├── components.css      # 组件样式
+│       ├── lyric-player.module.css  # 歌词播放器样式
 │       ├── main.css           # 主样式文件
 │       ├── mobile-admin.css   # 移动端管理样式
 │       ├── print-fix.css      # 打印样式修复
+│       ├── sf-pro-icons.css   # SF Pro图标字体
 │       ├── theme-protection.css # 主题保护样式
 │       ├── transitions.css    # 过渡动画样式
 │       └── variables.css      # CSS变量定义
@@ -434,7 +442,11 @@ VoiceHub/
 │   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
 │   │   ├── RequestForm.vue        # 点歌表单
 │   │   ├── ScheduleList.vue       # 排期列表展示
-│   │   └── SongList.vue           # 歌曲列表
+│   │   ├── SongList.vue           # 歌曲列表
+│   │   ├── NeteaseLoginModal.vue  # 网易云音乐登录弹窗
+│   │   ├── PlaylistSelectionModal.vue # 歌单选择弹窗
+│   │   ├── RecentSongsModal.vue   # 最近播放弹窗
+│   │   └── PodcastEpisodesModal.vue # 播客节目弹窗
 │   └── UI/                # 通用UI组件
 │       ├── AudioPlayer/   # 音频播放器组件模块
 │       │   ├── AudioElement.vue   # 音频元素组件
@@ -444,10 +456,10 @@ VoiceHub/
 │       ├── AudioPlayer.vue        # 主音频播放器组件
 │       ├── ConfirmDialog.vue      # 确认对话框
 │       ├── Icon.vue               # 图标组件
+│       ├── LiquidGlass/           # 玻璃态设计组件
 │       ├── LyricsModal.vue        # 全屏歌词模态框组件
 │       ├── MarqueeText.vue        # 滚动文本显示组件
 │       ├── Notification.vue       # 单个通知组件
-│       ├── NotificationContainer.vue # 多通知容器组件
 │       ├── PageTransition.vue     # 页面过渡动画
 │       └── ProgressBar.vue        # 进度条组件
 ├── composables/           # Vue 3 组合式API
@@ -462,8 +474,8 @@ VoiceHub/
 │   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
 │   ├── useLyrics.ts        # 歌词功能hooks
 │   ├── useMediaSession.ts  # 媒体会话API hooks（浏览器SMTC支持）
-│   ├── useMusicSources.ts  # 音乐源管理hooks
-│   ├── useMusicWebSocket.ts # 音乐WebSocket hooks
+│   ├── useMusicSources.ts    # 音乐源管理hooks
+│   ├── useMusicWebSocket.ts  # 音乐WebSocket hooks
 │   ├── useNotifications.ts # 通知功能hooks
 │   ├── usePermissions.ts   # 权限管理hooks
 │   ├── useProgress.ts      # 进度条功能hooks
@@ -471,7 +483,8 @@ VoiceHub/
 │   ├── useRequestDedup.ts  # 请求去重hooks
 │   ├── useSemesters.ts     # 学期管理hooks
 │   ├── useSiteConfig.js    # 站点配置hooks
-│   └── useSongs.ts         # 歌曲功能hooks
+│   ├── useSongs.ts         # 歌曲功能hooks
+│   └── useToast.ts         # Toast提示hooks
 ├── layouts/               # 布局组件
 │   └── default.vue         # 默认布局模板
 ├── middleware/            # 中间件
@@ -485,33 +498,40 @@ VoiceHub/
 ├── plugins/               # Nuxt插件
 │   ├── auth.client.ts      # 客户端认证插件
 │   └── auth.server.ts      # 服务端认证插件
-├── drizzle/               # Drizzle ORM配置
-│   ├── db.ts              # 数据库连接配置
-│   ├── migrations/        # 数据库迁移文件
-│   │   ├── meta/          # 迁移元数据
-│   │   ├── relations.ts   # 数据库关系定义
-│   │   └── schema.ts      # 迁移模式定义
-│   └── schema.ts          # 数据库模型定义
-├── public/                # 公共静态资源
-│   ├── favicon.ico         # 网站图标
-│   ├── images/             # 图片资源
-│   │   ├── logo.jpg        # 站点Logo（JPG格式）
-│   │   ├── logo.svg        # 站点Logo（SVG格式）
-│   │   ├── search.svg      # 搜索图标
-│   │   └── thumbs-up.svg   # 点赞图标
-│   └── robots.txt          # 搜索引擎爬虫规则
-├── scripts/               # 工具脚本目录
-│   ├── check-deploy.js            # 部署检查脚本
-│   ├── clear-database.js          # 数据库清空脚本
-│   ├── create-admin.js            # 创建管理员账户脚本
-│   ├── deploy.js                  # 部署脚本
-│   ├── netlify-build.js           # Netlify构建脚本
-│   ├── package.json               # 脚本依赖配置
-│   └── postinstall.js             # 安装后脚本
-├── drizzle.config.ts      # Drizzle ORM配置文件
-├── server/                # 服务端代码（Nuxt 3 Server API）
-│   ├── api/                # API端点目录
+├── server/                # 服务端代码
+│   ├── api/                # API路由
 │   │   ├── admin/          # 管理员API
+│   │   ├── auth/           # 认证API
+│   │   ├── bilibili/       # 哔哩哔哩API
+│   │   │   ├── playurl.get.ts     # 获取播放地址
+│   │   │   └── search.get.ts      # 搜索内容
+│   │   ├── music/          # 音乐播放API
+│   │   │   ├── state.post.ts      # 音乐状态管理
+│   │   │   └── websocket.ts       # 音乐WebSocket连接
+│   │   ├── notifications/  # 通知API
+│   │   ├── open/           # 公开API
+│   │   ├── songs/          # 歌曲管理API
+│   │   └── user/           # 用户API
+│   ├── middleware/         # 服务端中间件
+│   ├── services/           # 服务层
+│   └── utils/              # 服务端工具函数
+├── utils/                 # 客户端工具函数
+│   ├── bilibiliSource.ts   # 哔哩哔哩音源处理
+│   ├── lyricAdapter.ts     # 歌词适配器
+│   ├── musicSources.ts     # 音乐源配置
+│   ├── musicUrl.ts         # 音乐URL处理
+│   ├── neteaseApi.ts       # 网易云音乐API封装
+│   ├── timeUtils.ts        # 时间工具函数
+│   └── url.ts              # URL工具函数
+├── types/                 # TypeScript类型定义
+│   ├── global.d.ts         # 全局类型定义
+│   └── index.ts            # 通用类型定义
+├── drizzle/               # 数据库相关
+│   ├── db.ts               # 数据库连接
+│   ├── schema.ts           # 数据库模型
+│   └── migrations/         # 数据库迁移文件
+├── scripts/               # 构建和部署脚本
+└── docker-compose.yml     # Docker编排文件
 │   │   │   ├── activities.get.ts    # 活动管理API
 │   │   │   ├── analytics/           # 数据分析API
 │   │   │   │   ├── prediction/      # 预测分析子目录
@@ -750,9 +770,15 @@ VoiceHub/
 1. 访问主页，查看当前排期
 2. 注册/登录账号
 3. 在仪表盘中点歌或给喜欢的歌曲投票
-   - 支持搜索网易云音乐和QQ音乐
+   - 支持搜索网易云音乐、QQ音乐和哔哩哔哩平台
    - 可以试听歌曲并选择音质
    - 支持给已有歌曲投票
+   - **网易云音乐登录功能**：
+     - 扫码登录网易云音乐账号
+     - 登录后可一键添加当前排期歌曲到个人歌单
+     - 支持从个人歌单中直接投稿歌曲
+     - 支持从最近播放记录中投稿歌曲
+     - 可搜索并投稿播客和电台内容
 4. 使用内置播放器播放歌曲
    - 支持多种音质切换（标准、HQ、无损、Hi-Res等）
    - 实时切换音质并保持播放进度
