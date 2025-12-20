@@ -36,6 +36,10 @@ const songProtectUntil = new Map<number, Date>()
 const songVoteIpBuckets = new Map<number, Map<string, number>>()
 const userVoteStats = new Map<number, { emaPerMin: number; lastUpdate: number; windowTimestamps: number[] }>()
 
+// 通知限流存储，记录最近发送的通知，避免重复发送
+const notificationRateLimit = new Map<string, Date>()
+const NOTIFICATION_RATE_LIMIT_MINUTES = 5 // 同一类型通知5分钟内只发送一次
+
 // 配置常量
 const SECURITY_CONFIG = {
     MAX_FAILED_ATTEMPTS: 5,
@@ -457,15 +461,29 @@ export function recordUserVoteActivity(userId: number): { anomaly: boolean } {
         stats = { emaPerMin: 0, lastUpdate: now, windowTimestamps: [] }
         userVoteStats.set(userId, stats)
     }
-    const dtMin = Math.max(1e-6, (now - stats.lastUpdate) / 60000)
-    const currentRate = 1 / dtMin
-    stats.emaPerMin = RISK_CONTROL.EMA_ALPHA * currentRate + (1 - RISK_CONTROL.EMA_ALPHA) * stats.emaPerMin
-    stats.lastUpdate = now
+    
+    // 更新时间窗口，保留最近10分钟的投票记录
     const cutoff = now - 10 * 60 * 1000
     stats.windowTimestamps = stats.windowTimestamps.filter(t => t >= cutoff)
     stats.windowTimestamps.push(now)
-    const threshold = Math.max(RISK_CONTROL.USER_BASELINE_MIN_PER_MIN, stats.emaPerMin * RISK_CONTROL.USER_BASELINE_MULTIPLIER)
-    const anomaly = currentRate > threshold
+    
+    // 计算当前10分钟窗口内的平均速率，而不仅仅是两次投票的间隔
+    const windowDurationMin = Math.max(1e-6, (now - Math.min(...stats.windowTimestamps)) / 60000)
+    const currentRate = stats.windowTimestamps.length / windowDurationMin
+    
+    // 调整EMA_ALPHA值为0.1，使EMA更平滑，减少短期波动影响
+    const smoothedEmaAlpha = 0.1
+    stats.emaPerMin = smoothedEmaAlpha * currentRate + (1 - smoothedEmaAlpha) * stats.emaPerMin
+    stats.lastUpdate = now
+    
+    // 动态调整阈值：基础阈值 + EMA的动态倍数
+    // 当EMA较低时，使用较高倍数；当EMA较高时，使用较低倍数，避免误报
+    const baseThreshold = 5 // 基础阈值：每分钟5票
+    const dynamicMultiplier = Math.max(2, 5 - Math.min(3, stats.emaPerMin / 100)) // 动态倍数：2-5倍
+    const threshold = Math.max(baseThreshold, stats.emaPerMin * dynamicMultiplier)
+    
+    // 只有当当前速率显著超过阈值（1.5倍）时，才触发异常
+    const anomaly = currentRate > threshold * 1.5
     if (anomaly) triggerVoteAnomalyAlert(userId, stats.emaPerMin, currentRate)
     return { anomaly }
 }
@@ -500,14 +518,28 @@ async function triggerSongVoteBurstAlert(songId: number, count: number, buckets:
     }
 }
 
+// 检查通知是否可以发送（限流控制）
+function canSendNotification(key: string): boolean {
+    const now = new Date()
+    const lastSent = notificationRateLimit.get(key)
+    if (lastSent && now.getTime() - lastSent.getTime() < NOTIFICATION_RATE_LIMIT_MINUTES * 60 * 1000) {
+        return false
+    }
+    notificationRateLimit.set(key, now)
+    return true
+}
+
 async function triggerVoteAnomalyAlert(userId: number, ema: number, rate: number): Promise<void> {
     try {
+        // 通知限流，同一用户的投票异常通知5分钟内只发送一次
+        const notificationKey = `vote_anomaly_${userId}`
+        if (!canSendNotification(notificationKey)) {
+            return
+        }
+        
         const now = new Date()
         const alertTitle = '风险告警：检测到异常投票速率'
-        const alertContent = `检测时间：${now.toLocaleString('zh-CN')}
-用户ID：${userId}
-EMA基线：${ema.toFixed(2)} 次/分钟
-当前速率：${rate.toFixed(2)} 次/分钟`
+        const alertContent = `检测时间：${now.toLocaleString('zh-CN')}\n用户ID：${userId}\nEMA基线：${ema.toFixed(2)} 次/分钟\n当前速率：${rate.toFixed(2)} 次/分钟\n\n提示：该用户的投票行为异常，已触发限流机制。`
         const meowAlertContent = alertContent
         const superAdmins = await db.select({
             id: users.id,
