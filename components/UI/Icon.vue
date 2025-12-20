@@ -254,6 +254,20 @@
       <line x1="21" x2="9" y1="12" y2="12"></line>
     </g>
 
+    <!-- 下载图标 -->
+    <g v-else-if="name === 'download'">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <polyline points="7 10 12 15 17 10"></polyline>
+      <line x1="12" x2="12" y1="15" y2="3"></line>
+    </g>
+
+    <!-- 上传图标 -->
+    <g v-else-if="name === 'upload'">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <polyline points="17 8 12 3 7 8"></polyline>
+      <line x1="12" x2="12" y1="3" y2="15"></line>
+    </g>
+
     <!-- 默认图标（如果没有匹配的图标） -->
     <circle v-else cx="12" cy="12" r="10"/>
   </svg>
