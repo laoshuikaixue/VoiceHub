@@ -515,6 +515,32 @@
               </div>
             </div>
           </div>
+          <div class="form-group">
+            <label>播放地址URL <span class="optional-label">（可选）</span></label>
+            <div class="input-wrapper">
+              <input
+                  v-model="editForm.playUrl"
+                  :class="{ 'error': editForm.playUrl && !editPlayUrlValidation.valid }"
+                  class="form-input"
+                  placeholder="请输入歌曲播放的URL地址"
+                  type="url"
+              />
+              <div v-if="editPlayUrlValidation.validating" class="validation-loading">
+                验证中...
+              </div>
+              <div v-if="editForm.playUrl && !editPlayUrlValidation.valid && !editPlayUrlValidation.validating"
+                   class="validation-error">
+                {{ editPlayUrlValidation.error }}
+              </div>
+              <div v-if="editForm.playUrl && editPlayUrlValidation.valid && !editPlayUrlValidation.validating"
+                   class="validation-success">
+                ✓ URL有效
+              </div>
+              <div class="field-hint">
+                播放地址是音乐播放器直接播放的链接，如果提供将优先使用此地址播放
+              </div>
+            </div>
+          </div>
           <div class="form-actions">
             <button class="btn-cancel" type="button" @click="cancelEditSong">取消</button>
             <button :disabled="editLoading" class="btn-primary" type="submit">
@@ -754,7 +780,8 @@ const editForm = ref({
   semester: '',
   musicPlatform: '',
   musicId: '',
-  cover: ''
+  cover: '',
+  playUrl: ''
 })
 
 // 添加歌曲相关
@@ -776,6 +803,7 @@ const addForm = ref({
 const addCoverValidation = ref({valid: true, error: '', validating: false})
 const addPlayUrlValidation = ref({valid: true, error: '', validating: false})
 const editCoverValidation = ref({valid: true, error: '', validating: false})
+const editPlayUrlValidation = ref({valid: true, error: '', validating: false})
 
 // 用户搜索相关
 const userSearchQuery = ref('')
@@ -1186,7 +1214,8 @@ const editSong = (song) => {
     semester: song.semester || '',
     musicPlatform: song.musicPlatform || '',
     musicId: song.musicId || '',
-    cover: song.cover || ''
+    cover: song.cover || '',
+    playUrl: song.playUrl || ''
   }
 
   // 设置编辑时的用户信息
@@ -1220,8 +1249,16 @@ const saveEditSong = async () => {
     return
   }
 
+  // 检查播放URL验证状态
+  if (editForm.value.playUrl && !editPlayUrlValidation.value.valid) {
+    if (window.$showNotification) {
+      window.$showNotification('请等待播放URL验证完成或修正无效的URL', 'error')
+    }
+    return
+  }
+
   // 检查是否正在验证中
-  if (editCoverValidation.value.validating) {
+  if (editCoverValidation.value.validating || editPlayUrlValidation.value.validating) {
     if (window.$showNotification) {
       window.$showNotification('正在验证URL，请稍候...', 'warning')
     }
@@ -1239,7 +1276,8 @@ const saveEditSong = async () => {
       semester: editForm.value.semester,
       musicPlatform: editForm.value.musicPlatform || null,
       musicId: editForm.value.musicId || null,
-      cover: editForm.value.cover || null
+      cover: editForm.value.cover || null,
+      playUrl: editForm.value.playUrl || null
     })
 
     await refreshSongs()
@@ -1279,10 +1317,12 @@ const cancelEditSong = () => {
     semester: '',
     musicPlatform: '',
     musicId: '',
-    cover: ''
+    cover: '',
+    playUrl: ''
   }
   // 重置验证状态
   editCoverValidation.value = {valid: true, error: '', validating: false}
+  editPlayUrlValidation.value = {valid: true, error: '', validating: false}
   clearSelectedEditUser()
 }
 
@@ -1640,6 +1680,21 @@ const validateEditCoverUrl = async (url) => {
   }
 }
 
+const validateEditPlayUrl = async (url) => {
+  if (!url) {
+    editPlayUrlValidation.value = {valid: true, error: '', validating: false}
+    return
+  }
+
+  editPlayUrlValidation.value.validating = true
+  const result = validateUrl(url)
+  editPlayUrlValidation.value = {
+    valid: result.valid,
+    error: result.error || '',
+    validating: false
+  }
+}
+
 // 监听URL变化并验证
 watch(() => addForm.value.cover, (newUrl) => {
   if (newUrl) {
@@ -1674,6 +1729,18 @@ watch(() => editForm.value.cover, (newUrl) => {
     }, 1000)
   } else {
     editCoverValidation.value = {valid: true, error: '', validating: false}
+  }
+})
+
+watch(() => editForm.value.playUrl, (newUrl) => {
+  if (newUrl) {
+    // 防抖处理，避免频繁验证
+    clearTimeout(editPlayUrlValidation.value.debounceTimer)
+    editPlayUrlValidation.value.debounceTimer = setTimeout(() => {
+      validateEditPlayUrl(newUrl)
+    }, 1000)
+  } else {
+    editPlayUrlValidation.value = {valid: true, error: '', validating: false}
   }
 })
 

@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
 
         // 获取请求体
         const body = await readBody(event)
-        const {title, artist, requester, semester, musicPlatform, musicId, cover} = body
+        const {title, artist, requester, semester, musicPlatform, musicId, cover, playUrl} = body
 
         // 验证必填字段
         if (!title || !artist) {
@@ -58,7 +58,8 @@ export default defineEventHandler(async (event) => {
             semester: semester || null,
             musicPlatform: musicPlatform || null,
             musicId: musicId || null,
-            cover: cover || null
+            cover: cover || null,
+            playUrl: playUrl || null
         }
 
         // 处理投稿人
@@ -117,6 +118,7 @@ export default defineEventHandler(async (event) => {
             musicPlatform: songs.musicPlatform,
             musicId: songs.musicId,
             cover: songs.cover,
+            playUrl: songs.playUrl,
             requesterId: songs.requesterId,
             createdAt: songs.createdAt,
             updatedAt: songs.updatedAt,

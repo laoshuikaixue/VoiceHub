@@ -75,3 +75,7 @@ export const getPlaylistTracks = async (id, limit = 1000, offset = 0, cookie) =>
 export const getRecentSongs = async (limit = 100, cookie) => {
   return fetchNetease('/record/recent/song', { limit }, cookie)
 }
+
+export const getLoginStatus = async (cookie) => {
+  return fetchNetease('/login/status', {}, cookie)
+}
