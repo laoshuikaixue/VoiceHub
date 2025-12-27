@@ -1,0 +1,143 @@
+/* Year Review Global Styles */
+
+/* Animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes reverse-spin {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+  50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-spin-slow {
+  animation: spin 12s linear infinite;
+}
+
+.animate-reverse-spin-slow {
+  animation: reverse-spin 15s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Utilities */
+.text-transparent {
+  color: transparent;
+}
+
+.bg-clip-text {
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Gradients */
+.bg-gradient-intro {
+  background: linear-gradient(135deg, #111827 0%, #000000 50%, #111827 100%);
+}
+
+.bg-gradient-text-intro {
+  background-image: linear-gradient(to right, #ffffff, #e5e7eb, #6b7280);
+}
+
+.bg-gradient-artist {
+  background: linear-gradient(to bottom right, #e9d5ff, #f472b6, #fb923c);
+}
+
+.bg-gradient-numbers {
+  background-image: linear-gradient(to bottom, #60a5fa, #1d4ed8);
+}
+
+/* Slide Transitions */
+.slide-up-enter-active,
+.slide-up-leave-active,
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.5s ease-in-out;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.slide-up-enter-from {
+  transform: translateY(100%);
+  z-index: 10;
+}
+
+.slide-up-leave-to {
+  transform: translateY(-20%); /* Parallax effect */
+  opacity: 0.5;
+  z-index: 0;
+}
+
+.slide-down-enter-from {
+  transform: translateY(-100%);
+  z-index: 10;
+}
+
+.slide-down-leave-to {
+  transform: translateY(20%); /* Parallax effect */
+  opacity: 0.5;
+  z-index: 0;
+}
+
+/* Content Entry Animations */
+.entry-enter-active {
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.entry-enter-from {
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+.entry-enter-to {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.delay-100 { transition-delay: 100ms; }
+.delay-200 { transition-delay: 200ms; }
+.delay-300 { transition-delay: 300ms; }
+.delay-400 { transition-delay: 400ms; }
+.delay-500 { transition-delay: 500ms; }
+
