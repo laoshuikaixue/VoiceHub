@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
             AND table_name = ${tableName}
           )
         `)
-                status.tables[tableName] = result.rows[0]?.exists || false
+                status.tables[tableName] = result[0]?.exists || false
             } catch (error) {
                 console.error(`检查表 ${tableName} 失败:`, error)
                 status.tables[tableName] = false
