@@ -4,7 +4,7 @@ import { songs, votes } from '~/drizzle/schema'
 import { and, eq, count, desc, sql, gte, lt, asc } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
-    // Check if user is logged in
+    // 检查用户是否登录
     const user = event.context.user
     if (!user) {
         throw createError({
@@ -14,15 +14,14 @@ export default defineEventHandler(async (event) => {
     }
 
     const userId = user.id
-    console.log('[YearReview] Request for user:', userId)
 
-    // Filter for current year
+    // 筛选当前年份
     const currentYear = new Date().getFullYear()
     const startOfYear = new Date(currentYear, 0, 1)
     const endOfYear = new Date(currentYear + 1, 0, 1)
 
     try {
-        // 1. Total Requests
+        // 1. 总投稿数
         const totalRequestsResult = await db.select({ count: count() })
             .from(songs)
             .where(and(
@@ -31,9 +30,8 @@ export default defineEventHandler(async (event) => {
                 lt(songs.createdAt, endOfYear)
             ))
         const totalRequests = Number(totalRequestsResult[0].count)
-        console.log('[YearReview] Total requests:', totalRequests)
 
-        // 2. Played Requests
+        // 2. 已播放投稿数
         const playedRequestsResult = await db.select({ count: count() })
             .from(songs)
             .where(and(
@@ -44,7 +42,7 @@ export default defineEventHandler(async (event) => {
             ))
         const playedRequests = Number(playedRequestsResult[0].count)
 
-        // 3. Top Artist
+        // 3. 最喜欢的歌手
         const topArtistResult = await db.select({
             artist: songs.artist,
             count: count(songs.id)
@@ -60,7 +58,7 @@ export default defineEventHandler(async (event) => {
             .limit(1)
         const topArtist = topArtistResult.length > 0 ? topArtistResult[0].artist : null
 
-        // 4. Top Platform
+        // 4. 最常用的音乐平台
         const topPlatformResult = await db.select({
             platform: songs.musicPlatform,
             count: count(songs.id)
@@ -76,7 +74,7 @@ export default defineEventHandler(async (event) => {
             .limit(1)
         const topPlatform = topPlatformResult.length > 0 ? topPlatformResult[0].platform : null
 
-        // 5. Total Votes
+        // 5. 总投票数
         const totalVotesResult = await db.select({ count: count() })
             .from(votes)
             .where(and(
@@ -86,7 +84,7 @@ export default defineEventHandler(async (event) => {
             ))
         const totalVotes = Number(totalVotesResult[0].count)
 
-        // 6. Active Month
+        // 6. 最活跃月份
         let activeMonth = null
         try {
             const activeMonthResult = await db.execute(sql`
@@ -107,7 +105,7 @@ export default defineEventHandler(async (event) => {
             console.error('[YearReview] Failed to get active month:', e)
         }
 
-        // 7. First Song of the Year
+        // 7. 年度第一首歌
         const firstSongResult = await db.select()
              .from(songs)
              .where(and(
@@ -134,8 +132,6 @@ export default defineEventHandler(async (event) => {
             activeMonth,
             firstSong
         }
-        
-        console.log('[YearReview] Result data:', resultData)
         
         return {
             success: true,

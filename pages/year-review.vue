@@ -58,7 +58,6 @@
           :key="currentIndex"
           :data="data"
           :active="!isAnimating" 
-          @share="handleShare"
           class="slide-wrapper"
         />
       </Transition>
@@ -81,9 +80,8 @@ import StatsSlide from '~/components/year-review/StatsSlide.vue'
 import ArtistSlide from '~/components/year-review/ArtistSlide.vue'
 import MiscSlide from '~/components/year-review/MiscSlide.vue'
 import OutroSlide from '~/components/year-review/OutroSlide.vue'
-import ShareCard from '~/components/year-review/ShareCard.vue'
 
-// Import global styles
+// 导入全局样式
 import '~/assets/css/year-review.css'
 
 const { data: responseData, pending, error, refresh } = await useFetch('/api/user/year-review')
@@ -98,7 +96,7 @@ const isEmpty = computed(() => {
   return data.value.totalRequests === 0 && data.value.totalVotes === 0
 })
 
-// --- Slides Configuration ---
+// --- 幻灯片配置 ---
 const slides = computed(() => {
   if (!data.value) return []
   
@@ -122,7 +120,7 @@ const currentSlideComponent = computed(() => {
   return slides.value[currentIndex.value]?.component
 })
 
-// --- Navigation Logic ---
+// --- 导航逻辑 ---
 const goToSlide = (index) => {
   if (isAnimating.value || index === currentIndex.value) return
   if (index < 0 || index >= slides.value.length) return
@@ -142,9 +140,9 @@ const goToSlide = (index) => {
 const nextSlide = () => goToSlide(currentIndex.value + 1)
 const prevSlide = () => goToSlide(currentIndex.value - 1)
 
-// --- Event Listeners ---
+// --- 事件监听 ---
 
-// Keyboard
+// 键盘
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
 })
@@ -163,7 +161,7 @@ const handleKeyDown = (e) => {
   }
 }
 
-// Wheel (Debounced)
+// 滚轮（防抖）
 let wheelTimeout = null
 const handleWheel = (e) => {
   if (Math.abs(e.deltaY) > 20 && !isAnimating.value) {
@@ -175,7 +173,7 @@ const handleWheel = (e) => {
   }
 }
 
-// Touch
+// 触摸
 let touchStartY = 0
 const handleTouchStart = (e) => {
   touchStartY = e.touches[0].clientY
@@ -190,44 +188,6 @@ const handleTouchEnd = (e) => {
     else prevSlide() // Swipe Down -> Prev
   }
 }
-
-import html2canvas from 'html2canvas'
-
-const showShareModal = ref(false)
-const shareCardRef = ref(null)
-
-const handleShare = async () => {
-  showShareModal.value = true
-  
-  await nextTick()
-  
-  const card = shareCardRef.value?.shareCardRef
-  if (!card) {
-    showShareModal.value = false
-    alert('生成图片失败')
-    return
-  }
-
-  try {
-    const canvas = await html2canvas(card, {
-      useCORS: true,
-      scale: 2,
-      backgroundColor: '#0f0f23',
-      logging: false
-    })
-
-    const link = document.createElement('a')
-    link.download = `VoiceHub-年度听歌报告-${data.value.year}.png`
-    link.href = canvas.toDataURL('image/png')
-    link.click()
-
-  } catch (err) {
-    console.error('截图生成失败:', err)
-    alert('生成图片失败，请尝试手动截图')
-  }
-  
-  showShareModal.value = false
-}
 </script>
 
 <style scoped>
@@ -241,7 +201,7 @@ const handleShare = async () => {
   overflow: hidden;
 }
 
-/* State Screens */
+/* 状态屏幕 */
 .state-screen {
   width: 100%;
   height: 100%;
@@ -340,7 +300,7 @@ const handleShare = async () => {
   background: #7c3aed;
 }
 
-/* Slides Container */
+/* 幻灯片容器 */
 .slides-container {
   width: 100%;
   height: 100%;
@@ -357,7 +317,7 @@ const handleShare = async () => {
   will-change: transform;
 }
 
-/* Indicators */
+/* 指示器 */
 .indicators {
   position: absolute;
   right: 1rem;
@@ -386,7 +346,7 @@ const handleShare = async () => {
   background: #fff;
 }
 
-/* Scroll Hint */
+/* 滚动提示 */
 .scroll-hint {
   position: absolute;
   bottom: 2rem;

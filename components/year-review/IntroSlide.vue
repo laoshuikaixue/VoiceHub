@@ -7,7 +7,7 @@
     <Transition name="entry" appear>
       <div class="content" v-show="active">
         <div class="year-bg">{{ data.year }}</div>
-        <div class="sub-title">年度听歌报告</div>
+        <div class="sub-title">年度点歌报告</div>
         <h1 class="main-title">VoiceHub</h1>
       </div>
     </Transition>
