@@ -165,7 +165,8 @@ export class DatabaseManager {
         WHERE expires_at < NOW()
       `);
 
-            return result.rowCount || 0;
+            // postgres-js returns count in the result array object properties
+            return (result as any).count || 0;
         } catch (error) {
             console.error('Failed to cleanup expired sessions:', error);
             throw new Error('Failed to cleanup expired sessions');

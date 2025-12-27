@@ -42,6 +42,9 @@
                 <NuxtLink v-else class="action-button password-button" to="/change-password">
                   修改密码
                 </NuxtLink>
+                <NuxtLink class="action-button review-button" to="/year-review">
+                  年度回顾
+                </NuxtLink>
               </div>
             </div>
 
@@ -1354,6 +1357,19 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .dashboard-button {
   background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
   text-decoration: none;
+}
+
+.review-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #FFFFFF;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+  border: none;
+}
+
+.review-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(118, 75, 162, 0.6);
 }
 
 .notification-badge {
