@@ -398,6 +398,52 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- 年度报告提示弹窗 -->
+    <Teleport to="body">
+      <Transition name="modal-animation">
+        <div v-if="showYearReviewHint" class="modal-overlay year-review-overlay" @click.self="showYearReviewHint = false">
+          <div class="year-review-card">
+            <!-- 装饰性背景元素 -->
+            <div class="card-glow"></div>
+            <div class="card-pattern"></div>
+            
+            <button class="card-close" @click="showYearReviewHint = false" aria-label="关闭">
+              <Icon name="close" :size="20" />
+            </button>
+
+            <div class="card-content">
+              <div class="brand-badge">2025 REVIEW</div>
+              
+              <div class="visual-container">
+                <div class="music-bars">
+                  <div v-for="i in 5" :key="i" class="bar"></div>
+                </div>
+                <div class="main-icon">
+                  <Icon name="music" :size="48" />
+                </div>
+              </div>
+
+              <h2 class="card-title">开启您的年度音乐回忆</h2>
+              <p class="card-description">
+                这一年，有哪些旋律曾让你心动？<br>
+                属于你的年度点歌报告已生成。
+              </p>
+
+              <div class="card-actions">
+                <button class="btn-primary" @click="goToYearReview">
+                  <span>立即开启之旅</span>
+                  <Icon name="arrow-right" :size="18" />
+                </button>
+                <button class="btn-secondary" @click="showYearReviewHint = false">
+                  稍后再说
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -444,6 +490,26 @@ const isRequestOpen = ref(true)
 // 弹窗状态
 const showRequestModal = ref(false)
 const showRules = ref(false)
+const showYearReviewHint = ref(false)
+
+const YEAR_REVIEW_HINT_KEY = 'voicehub_year_review_hint_shown'
+
+const checkYearReviewHint = () => {
+  if (typeof window !== 'undefined') {
+    const hasShown = localStorage.getItem(YEAR_REVIEW_HINT_KEY)
+    if (!hasShown) {
+      showYearReviewHint.value = true
+    }
+  }
+}
+
+const goToYearReview = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(YEAR_REVIEW_HINT_KEY, 'true')
+  }
+  showYearReviewHint.value = false
+  navigateTo('/year-review')
+}
 
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
@@ -452,7 +518,7 @@ const activeTab = ref('schedule') // 默认显示播出排期
 const notificationTabRef = ref(null)
 const notificationTabKey = ref(0)
 
-// Footer相关变量
+// 页脚相关变量
 const systemVersion = packageJson.version
 const currentYear = new Date().getFullYear()
 const responseTime = ref(0)
@@ -772,6 +838,9 @@ onMounted(async () => {
 
   // 初始化认证状态并获取用户信息
   const currentUser = await auth.initAuth()
+
+  // 检查是否需要显示年度报告提示
+  checkYearReviewHint()
 
   // 监听登录状态变化，确保UI立即响应
   watch(() => auth?.isAuthenticated?.value, async (newAuthState, oldAuthState) => {
@@ -1360,16 +1429,17 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 .review-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(255, 255, 255, 0.1);
   color: #FFFFFF;
   text-decoration: none;
-  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
 }
 
 .review-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(118, 75, 162, 0.6);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .notification-badge {
@@ -2329,16 +2399,323 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 }
 
-/* 动画 */
+/* 弹窗遮罩层 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: overlay-fade-in 0.4s ease-out;
+}
+
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 弹窗内容 */
+.modal-content {
+  background: linear-gradient(135deg, #1a1b24 0%, #121318 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  max-width: 420px;
+  width: 90%;
+  overflow: hidden;
+  animation: modal-slide-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 弹窗头部 */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-header h2 {
+  font-family: 'MiSans', system-ui, -apple-system, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+/* 关闭按钮 */
+.close-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  transform: rotate(90deg);
+}
+
+/* 弹窗主体 */
+.modal-body {
+  padding: 24px 28px 28px;
+}
+
+/* 年度报告弹窗现代化重写 */
+.year-review-overlay {
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.year-review-card {
+  position: relative;
+  width: 90%;
+  max-width: 400px;
+  background: #12121a;
+  border-radius: 32px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: card-appear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.card-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.5;
+}
+
+.card-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.card-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transform: translateY(2px);
+}
+
+.card-content {
+  position: relative;
+  padding: 40px 32px;
+  text-align: center;
+  z-index: 5;
+}
+
+.brand-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 99px;
+  color: #a78bfa;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 32px;
+}
+
+.visual-container {
+  position: relative;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.main-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5);
+  z-index: 2;
+  transform: rotate(-5deg);
+}
+
+.music-bars {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 40px;
+  opacity: 0.3;
+}
+
+.bar {
+  width: 4px;
+  background: #8b5cf6;
+  border-radius: 2px;
+  animation: bar-dance 1.2s ease-in-out infinite;
+}
+
+.bar:nth-child(1) { height: 20px; animation-delay: 0.1s; }
+.bar:nth-child(2) { height: 35px; animation-delay: 0.3s; }
+.bar:nth-child(3) { height: 25px; animation-delay: 0.2s; }
+.bar:nth-child(4) { height: 40px; animation-delay: 0.4s; }
+.bar:nth-child(5) { height: 30px; animation-delay: 0.2s; }
+
+@keyframes bar-dance {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.6); }
+}
+
+.card-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+
+.card-description {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  background: #fff;
+  border: none;
+  border-radius: 16px;
+  color: #000;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
+  background: #f4f4f4;
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 覆盖旧动画 */
 .modal-animation-enter-active,
 .modal-animation-leave-active {
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-animation-enter-from,
 .modal-animation-leave-to {
   opacity: 0;
-  transform: scale(0.9);
+  backdrop-filter: blur(0);
+}
+
+.modal-animation-enter-from .year-review-card,
+.modal-animation-leave-to .year-review-card {
+  transform: translateY(40px) scale(0.9);
 }
 
 /* 旧的通知样式已移除，使用全局通知系统 */
