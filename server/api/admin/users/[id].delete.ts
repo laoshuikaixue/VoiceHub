@@ -27,11 +27,29 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 防止删除自己
-        if (existingUser.id === user.id) {
+        // 1. 绝对禁止删除 ID 为 1 的用户 (系统初始超级管理员)
+        if (existingUser.id === 1) {
+            throw createError({
+                statusCode: 403,
+                statusMessage: '无法删除系统初始超级管理员'
+            })
+        }
+
+        // 2. 禁止删除自己 (增强类型安全)
+        // 使用 String 转换确保 ID 比较的准确性
+        if (String(existingUser.id) === String(user.id)) {
             throw createError({
                 statusCode: 400,
                 statusMessage: '不能删除自己的账户'
+            })
+        }
+
+        // 3. 越级删除保护
+        // 如果目标用户是 SUPER_ADMIN，操作者必须是 SUPER_ADMIN
+        if (existingUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
+            throw createError({
+                statusCode: 403,
+                statusMessage: '权限不足：普通管理员无法删除超级管理员'
             })
         }
 

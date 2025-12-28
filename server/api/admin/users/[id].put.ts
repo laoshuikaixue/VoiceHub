@@ -40,16 +40,36 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 禁止对自身进行任何用户管理操作（包括角色、资料、状态、密码等）
-        if (parseInt(userId) === user.id) {
+        const targetUser = existingUser[0]
+
+        // 1. 禁止修改系统初始超级管理员 (ID: 1)
+        if (targetUser.id === 1) {
+            throw createError({
+                statusCode: 403,
+                statusMessage: '无法修改系统初始超级管理员'
+            })
+        }
+
+        // 2. 禁止对自身进行任何用户管理操作（包括角色、资料、状态、密码等）
+        // 使用 String 转换确保 ID 比较的准确性
+        if (String(userId) === String(user.id)) {
             throw createError({
                 statusCode: 400,
                 statusMessage: '禁止在用户管理中修改自己的账户'
             })
         }
 
+        // 3. 越级修改保护
+        // 如果目标用户是 SUPER_ADMIN，操作者必须是 SUPER_ADMIN
+        if (targetUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
+            throw createError({
+                statusCode: 403,
+                statusMessage: '权限不足：普通管理员无法修改超级管理员信息'
+            })
+        }
+
         // 检查用户名是否被其他用户使用
-        if (username !== existingUser[0].username) {
+        if (username !== targetUser.username) {
             const duplicateUser = await db.select()
                 .from(users)
                 .where(eq(users.username, username))

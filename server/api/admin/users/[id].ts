@@ -69,11 +69,36 @@ export default defineEventHandler(async (event) => {
     // 处理DELETE请求 - 删除用户
     if (event.method === 'DELETE') {
         try {
-            // 确保不能删除自己
-            if (id === user.userId) {
+            const existingUserResult = await db.select().from(users).where(eq(users.id, id)).limit(1)
+            if (existingUserResult.length === 0) {
+                throw createError({
+                    statusCode: 404,
+                    message: '用户不存在'
+                })
+            }
+            const existingUser = existingUserResult[0]
+
+            // 1. 禁止删除 ID 为 1 的用户 (系统初始超级管理员)
+            if (existingUser.id === 1) {
+                throw createError({
+                    statusCode: 403,
+                    message: '无法删除系统初始超级管理员'
+                })
+            }
+
+            // 2. 确保不能删除自己
+            if (String(existingUser.id) === String(user.id)) {
                 throw createError({
                     statusCode: 400,
                     message: '不能删除当前登录的用户'
+                })
+            }
+
+            // 3. 越级删除保护
+            if (existingUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
+                throw createError({
+                    statusCode: 403,
+                    message: '权限不足：普通管理员无法删除超级管理员'
                 })
             }
 
