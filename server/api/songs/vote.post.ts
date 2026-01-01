@@ -167,7 +167,7 @@ export default defineEventHandler(async (event) => {
             }
 
             const protectedTriggered = recordSongVote(body.songId, clientIP, user.id)
-            recordUserVoteActivity(user.id)
+            recordUserVoteActivity(user.id, song.title)
 
             // 清除统计缓存和歌曲缓存
             try {

@@ -454,7 +454,7 @@ export function recordSongVote(songId: number, ip: string, userId: number): bool
     return false
 }
 
-export function recordUserVoteActivity(userId: number): { anomaly: boolean } {
+export function recordUserVoteActivity(userId: number, songTitle?: string): { anomaly: boolean } {
     const now = Date.now()
     let stats = userVoteStats.get(userId)
     if (!stats) {
@@ -484,7 +484,7 @@ export function recordUserVoteActivity(userId: number): { anomaly: boolean } {
     
     // 只有当当前速率显著超过阈值（1.5倍）时，才触发异常
     const anomaly = currentRate > threshold * 1.5
-    if (anomaly) triggerVoteAnomalyAlert(userId, stats.emaPerMin, currentRate)
+    if (anomaly) triggerVoteAnomalyAlert(userId, stats.emaPerMin, currentRate, songTitle)
     return { anomaly }
 }
 
@@ -529,7 +529,73 @@ function canSendNotification(key: string): boolean {
     return true
 }
 
-async function triggerVoteAnomalyAlert(userId: number, ema: number, rate: number): Promise<void> {
+interface AnomalyEvent {
+    userId: number
+    ema: number
+    rate: number
+    songTitle?: string
+    time: Date
+}
+
+const pendingAnomalies: AnomalyEvent[] = []
+let anomalyAggregationTimer: NodeJS.Timeout | null = null
+const ANOMALY_AGGREGATION_WINDOW_MS = 60 * 1000 // 1分钟聚合窗口
+
+async function flushAnomalyAggregation() {
+    if (pendingAnomalies.length === 0) {
+        anomalyAggregationTimer = null
+        return
+    }
+
+    try {
+        const count = pendingAnomalies.length
+        // 统计涉及的歌曲
+        const songStats = new Map<string, number>()
+        pendingAnomalies.forEach(e => {
+            const title = e.songTitle || '未知歌曲'
+            songStats.set(title, (songStats.get(title) || 0) + 1)
+        })
+
+        // 按次数排序，取前5
+        const topSongs = Array.from(songStats.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([title, c]) => `- ${title} (${c}人)`)
+            .join('\n')
+
+        const alertTitle = '风险告警：检测到多名用户异常投票（汇总）'
+        const alertContent = `在过去 1 分钟内，除已通知的用户外，还检测到 ${count} 名用户存在异常投票行为。
+        
+涉及主要歌曲：
+${topSongs}
+
+请关注后台日志或进行相关处理。`
+        
+        const meowAlertContent = alertContent
+        const superAdmins = await db.select({
+            id: users.id,
+            name: users.name,
+            meowNickname: users.meowNickname
+        }).from(users).where(eq(users.role, 'SUPER_ADMIN'))
+
+        for (const admin of superAdmins) {
+            try {
+                await createSystemNotification(admin.id, alertTitle, alertContent)
+                if (admin.meowNickname) {
+                    await sendMeowNotificationToUser(admin.id, alertTitle, meowAlertContent)
+                }
+            } catch {}
+        }
+    } catch (error) {
+        console.error('发送异常投票汇总通知失败:', error)
+    } finally {
+        // 清空队列和定时器
+        pendingAnomalies.length = 0
+        anomalyAggregationTimer = null
+    }
+}
+
+async function triggerVoteAnomalyAlert(userId: number, ema: number, rate: number, songTitle?: string): Promise<void> {
     try {
         // 通知限流，同一用户的投票异常通知5分钟内只发送一次
         const notificationKey = `vote_anomaly_${userId}`
@@ -537,9 +603,22 @@ async function triggerVoteAnomalyAlert(userId: number, ema: number, rate: number
             return
         }
         
+        // 如果正在聚合窗口期，则加入缓冲区
+        if (anomalyAggregationTimer) {
+            pendingAnomalies.push({
+                userId,
+                ema,
+                rate,
+                songTitle,
+                time: new Date()
+            })
+            return
+        }
+
+        // 否则，立即发送第一条，并开启聚合窗口
         const now = new Date()
         const alertTitle = '风险告警：检测到异常投票速率'
-        const alertContent = `检测时间：${now.toLocaleString('zh-CN')}\n用户ID：${userId}\nEMA基线：${ema.toFixed(2)} 次/分钟\n当前速率：${rate.toFixed(2)} 次/分钟\n\n提示：该用户的投票行为异常，已触发限流机制。`
+        const alertContent = `检测时间：${now.toLocaleString('zh-CN')}\n用户ID：${userId}\nEMA基线：${ema.toFixed(2)} 次/分钟\n当前速率：${rate.toFixed(2)} 次/分钟\n${songTitle ? `涉及歌曲：${songTitle}\n` : ''}\n提示：该用户的投票行为异常，已触发限流机制。`
         const meowAlertContent = alertContent
         const superAdmins = await db.select({
             id: users.id,
@@ -554,6 +633,10 @@ async function triggerVoteAnomalyAlert(userId: number, ema: number, rate: number
                 }
             } catch {}
         }
+
+        // 启动聚合定时器
+        anomalyAggregationTimer = setTimeout(flushAnomalyAggregation, ANOMALY_AGGREGATION_WINDOW_MS)
+
     } catch (error) {
         console.error('触发投票异常警报时发生错误:', error)
     }
