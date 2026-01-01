@@ -224,6 +224,7 @@
                     v-for="(dateGroup, date) in groupedSchedules"
                     :key="date"
                     class="date-group"
+                    :data-date="date"
                 >
                   <h3 class="group-title">
                     {{ formatDate(date) }}
@@ -848,27 +849,112 @@ const exportPDF = async () => {
 const exportImage = async () => {
   isExportingImage.value = true
   try {
-
     if (!previewContent.value) {
       throw new Error('预览内容未找到')
     }
 
-    // 获取预览页面元素
     const printPage = previewContent.value.querySelector('.print-page')
     if (!printPage) {
       throw new Error('打印页面元素未找到')
     }
 
-    // 克隆预览内容，保持原有样式
-    const clonedPage = printPage.cloneNode(true)
+    // 获取实际内容高度
+    // 使用 scrollHeight 获取完整高度，因为 overflow 可能隐藏了部分内容
+    const fullHeight = printPage.scrollHeight
+    const MAX_HEIGHT = 15000 // 设置最大高度阈值，通常浏览器 canvas 限制在 32767px 或更小，留有余地
 
-    // 获取原始页面尺寸
-    const originalWidth = printPage.offsetWidth
-    const originalHeight = printPage.offsetHeight
+    if (fullHeight > MAX_HEIGHT) {
+      if (window.$showNotification) {
+        window.$showNotification('排期内容过长，将按月份分段导出', 'info')
+      }
+      await exportSplitImages(printPage)
+    } else {
+      await exportSingleImage(printPage)
+    }
 
-    // 创建长图渲染容器，保持原始比例
-    const imageContainer = document.createElement('div')
-    imageContainer.style.cssText = `
+  } catch (error) {
+    console.error('导出长图失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('导出长图失败: ' + error.message, 'error')
+    }
+  } finally {
+    isExportingImage.value = false
+  }
+}
+
+// 导出单张长图
+const exportSingleImage = async (printPage) => {
+  await generateAndDownloadImage(
+      printPage,
+      `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.png`
+  )
+}
+
+// 分段导出图片（按月份）
+const exportSplitImages = async (printPage) => {
+  // 1. 获取所有日期分组并提取月份
+  const dateGroups = printPage.querySelectorAll('.date-group')
+  const months = new Set()
+  
+  dateGroups.forEach(group => {
+    const date = group.getAttribute('data-date')
+    if (date) {
+      // 提取 YYYY-MM
+      months.add(date.substring(0, 7))
+    }
+  })
+
+  // 排序月份
+  const sortedMonths = Array.from(months).sort()
+
+  if (sortedMonths.length === 0) {
+    // 如果没有找到日期分组，回退到单图导出
+    await exportSingleImage(printPage)
+    return
+  }
+
+  // 2. 逐月导出
+  for (const month of sortedMonths) {
+    await generateAndDownloadImage(
+        printPage,
+        `广播排期表_${month}.png`,
+        (clonedPage) => {
+          // 筛选当前月份的内容
+          const groups = clonedPage.querySelectorAll('.date-group')
+          let hasContent = false
+          
+          groups.forEach(group => {
+            const date = group.getAttribute('data-date')
+            if (!date || !date.startsWith(month)) {
+              group.remove()
+            } else {
+              hasContent = true
+            }
+          })
+          
+          // 如果筛选后没有内容（理论上不应该发生），返回 false 跳过导出
+          return hasContent
+        }
+    )
+    
+    // 稍微延迟，避免浏览器卡顿
+    await new Promise(resolve => setTimeout(resolve, 300))
+  }
+  
+  if (window.$showNotification) {
+    window.$showNotification(`已完成分段导出，共 ${sortedMonths.length} 张图片`, 'success')
+  }
+}
+
+// 通用图片生成和下载函数
+const generateAndDownloadImage = async (sourceElement, filename, preProcessCallback = null) => {
+  // 获取原始页面尺寸
+  const originalWidth = sourceElement.offsetWidth
+
+  // 创建长图渲染容器
+  // 注意：高度设置为 auto 以适应内容，避免多余空白
+  const imageContainer = document.createElement('div')
+  imageContainer.style.cssText = `
       position: absolute;
       left: -9999px;
       top: 0;
@@ -878,93 +964,101 @@ const exportImage = async () => {
       width: ${originalWidth}px;
       padding: 40px;
       box-sizing: border-box;
+      height: auto; 
     `
 
-    // 调整克隆页面的样式，保持原始尺寸
-    clonedPage.style.cssText = `
+  // 克隆预览内容
+  const clonedPage = sourceElement.cloneNode(true)
+
+  // 调整克隆页面的样式
+  // 强制高度自动，移除可能存在的固定高度
+  clonedPage.style.cssText = `
       background: white !important;
       color: black !important;
       box-sizing: border-box !important;
       width: ${originalWidth - 80}px !important;
       margin: 0 auto !important;
       padding: 0 !important;
+      height: auto !important;
+      min-height: auto !important;
+      box-shadow: none !important;
     `
 
-    // 确保所有子元素的颜色和样式正确
-    const allElements = clonedPage.querySelectorAll('*')
-    allElements.forEach(el => {
-      if (el.style) {
-        // 强制设置文字颜色为黑色
-        el.style.color = 'black !important'
+  // 执行预处理回调（用于筛选内容等）
+  if (preProcessCallback) {
+    const shouldProceed = preProcessCallback(clonedPage)
+    if (shouldProceed === false) {
+      return // 如果回调返回 false，则中止
+    }
+  }
 
-        // 保持背景为白色
-        el.style.background = 'white !important'
-        el.style.backgroundColor = 'white !important'
-      }
+  // 确保所有子元素的颜色和样式正确
+  const allElements = clonedPage.querySelectorAll('*')
+  allElements.forEach(el => {
+    if (el.style) {
+      // 强制设置文字颜色为黑色
+      el.style.color = 'black !important'
 
-      // 特别处理页面元素的背景
-      if (el.classList && (
-          el.classList.contains('print-page') ||
-          el.classList.contains('page-header') ||
-          el.classList.contains('page-footer') ||
-          el.classList.contains('schedule-content'))) {
-        el.style.background = 'white !important'
-        el.style.backgroundColor = 'white !important'
-      }
+      // 保持背景为白色
+      el.style.background = 'white !important'
+      el.style.backgroundColor = 'white !important'
+    }
+
+    // 特别处理页面元素的背景
+    if (el.classList && (
+        el.classList.contains('print-page') ||
+        el.classList.contains('page-header') ||
+        el.classList.contains('page-footer') ||
+        el.classList.contains('schedule-content'))) {
+      el.style.background = 'white !important'
+      el.style.backgroundColor = 'white !important'
+    }
+  })
+
+  imageContainer.appendChild(clonedPage)
+  document.body.appendChild(imageContainer)
+
+  // 预处理图片
+  await preprocessImages(clonedPage)
+
+  try {
+    // 等待渲染完成
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // 获取容器的实际高度，用于精确设置 canvas 高度，消除底部空白
+    const contentHeight = imageContainer.offsetHeight
+
+    // 使用html2canvas生成图片
+    const canvas = await html2canvas(imageContainer, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      width: originalWidth,
+      height: contentHeight, // 显式设置高度
+      windowHeight: contentHeight, // 显式设置窗口高度
+      scrollX: 0,
+      scrollY: 0
     })
 
-    imageContainer.appendChild(clonedPage)
-    document.body.appendChild(imageContainer)
+    // 创建下载链接
+    const link = document.createElement('a')
+    link.download = filename
+    link.href = canvas.toDataURL('image/png', 1.0)
 
-    // 预处理图片
-    await preprocessImages(clonedPage)
+    // 触发下载
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
 
-    try {
-      // 等待渲染完成
-      await new Promise(resolve => setTimeout(resolve, 500))
-
-      // 使用html2canvas生成图片
-      const canvas = await html2canvas(imageContainer, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: imageContainer.offsetWidth,
-        height: imageContainer.offsetHeight,
-        scrollX: 0,
-        scrollY: 0
-      })
-
-      // 创建下载链接
-      const link = document.createElement('a')
-      link.download = `广播排期表_${formatDateRange()}_${new Date().toISOString().split('T')[0]}.png`
-      link.href = canvas.toDataURL('image/png', 1.0)
-
-      // 触发下载
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-
-      // 移除临时容器
-      document.body.removeChild(imageContainer)
-
-      if (window.$showNotification) {
-        window.$showNotification('长图导出成功', 'success')
-      }
-    } catch (error) {
-      // 移除临时容器
-      if (document.body.contains(imageContainer)) {
-        document.body.removeChild(imageContainer)
-      }
-      throw error
-    }
   } catch (error) {
-    console.error('导出长图失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('导出长图失败: ' + error.message, 'error')
-    }
+    console.error(`生成图片失败 (${filename}):`, error)
+    throw error
   } finally {
-    isExportingImage.value = false
+    // 移除临时容器
+    if (document.body.contains(imageContainer)) {
+      document.body.removeChild(imageContainer)
+    }
   }
 }
 
