@@ -52,12 +52,17 @@
                   v-model="settings.startDate"
                   class="date-input"
                   type="date"
+                  :max="settings.endDate || '9999-12-31'"
+                  @change="validateDates"
               />
               <span>至</span>
               <input
                   v-model="settings.endDate"
                   class="date-input"
                   type="date"
+                  :min="settings.startDate"
+                  max="9999-12-31"
+                  @change="validateDates"
               />
             </div>
             <!-- 日期快捷选择 -->
@@ -1288,6 +1293,22 @@ const setDateRange = (type) => {
       settings.value.startDate = nextWeekStart.toISOString().split('T')[0]
       settings.value.endDate = nextWeekEnd.toISOString().split('T')[0]
       break
+  }
+}
+
+// 验证日期范围
+const validateDates = () => {
+  if (settings.value.startDate && settings.value.endDate) {
+    if (settings.value.startDate > settings.value.endDate) {
+      // 如果开始日期晚于结束日期，交换它们
+      const temp = settings.value.startDate
+      settings.value.startDate = settings.value.endDate
+      settings.value.endDate = temp
+      
+      if (window.$showNotification) {
+        window.$showNotification('开始日期不能晚于结束日期，已自动调整', 'warning')
+      }
+    }
   }
 }
 
