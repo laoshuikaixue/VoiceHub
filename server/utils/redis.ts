@@ -11,6 +11,8 @@ class RedisPool {
     private reconnectDelay = 1000 // 1秒
     private healthCheckInterval: NodeJS.Timeout | null = null
     private lastHealthCheck = 0
+    private lastCommandAt = 0
+    private idleCheckInterval: NodeJS.Timeout | null = null
     private connectionStats = {
         totalConnections: 0,
         failedConnections: 0,
@@ -48,6 +50,7 @@ class RedisPool {
         }
 
         this.initializeClient()
+        this.startIdleCheck()
     }
 
     // 连接到Redis
@@ -127,16 +130,31 @@ class RedisPool {
 
     // 执行Redis命令（带错误处理）
     async executeCommand<T>(command: () => Promise<T>, fallback?: () => Promise<T>): Promise<T | null> {
-        if (!this.isReady()) {
+        if (!this.client || !this.isRedisEnabled()) {
             if (fallback) {
-                console.log('[Redis] Redis不可用，使用fallback')
+                console.log('[Redis] Redis未启用或客户端不可用，使用fallback')
                 return await fallback()
             }
             return null
         }
 
+        if (!this.isReady()) {
+            await this.connect()
+            if (!this.isReady()) {
+                if (fallback) {
+                    console.log('[Redis] Redis未就绪，使用fallback')
+                    return await fallback()
+                }
+                return null
+            }
+        }
+
         try {
-            return await command()
+            this.lastCommandAt = Date.now()
+            const timeoutMs = (process.env.REDIS_CMD_TIMEOUT_MS ? parseInt(process.env.REDIS_CMD_TIMEOUT_MS, 10) : 2000)
+            const timeout = new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Redis command timeout')), timeoutMs))
+            const result = await Promise.race([command(), timeout]) as T
+            return result
         } catch (error) {
             console.error('[Redis] 命令执行失败:', error)
             this.isConnected = false
@@ -244,6 +262,22 @@ class RedisPool {
             return false
         }
     }
+
+    private startIdleCheck() {
+        const idleMs = process.env.REDIS_IDLE_MS ? parseInt(process.env.REDIS_IDLE_MS, 10) : 60000
+        if (this.idleCheckInterval) {
+            clearInterval(this.idleCheckInterval)
+        }
+        this.idleCheckInterval = setInterval(async () => {
+            if (!this.client || !this.isConnected) return
+            const last = this.lastCommandAt
+            if (last > 0 && Date.now() - last > idleMs) {
+                try {
+                    await this.disconnect()
+                } catch {}
+            }
+        }, Math.max(10000, Math.floor(idleMs / 2)))
+    }
 }
 
 // 创建全局Redis池实例
@@ -261,15 +295,9 @@ export const getRedisStats = () => redisPool.getStats()
 export const executeRedisCommand = <T>(command: () => Promise<T>, fallback?: () => Promise<T>) =>
     redisPool.executeCommand(command, fallback)
 
-// 在应用启动时自动连接
-if (process.env.REDIS_URL) {
-    redisPool.connect().then((connected) => {
-        if (connected) {
-            console.log('[Redis] 自动连接成功')
-        } else {
-            console.log('[Redis] 自动连接失败，将使用数据库直接查询')
-        }
-    })
+const shouldAutoConnect = process.env.REDIS_AUTO_CONNECT === 'true'
+if (shouldAutoConnect && process.env.REDIS_URL) {
+    redisPool.connect().then(() => {})
 }
 
 // 优雅关闭处理
