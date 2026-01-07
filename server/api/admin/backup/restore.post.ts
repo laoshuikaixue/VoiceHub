@@ -1,9 +1,27 @@
 import {createError, defineEventHandler, readBody, readMultipartFormData} from 'h3'
 import {db} from '~/drizzle/db'
-import {userStatusLogs} from '~/drizzle/schema'
+import {
+    apiKeyPermissions,
+    apiKeys,
+    apiLogs,
+    emailTemplates,
+    notificationSettings,
+    notifications,
+    playTimes,
+    requestTimes,
+    schedules,
+    semesters,
+    songBlacklists,
+    songs,
+    systemSettings,
+    users,
+    userStatusLogs,
+    votes
+} from '~/drizzle/schema'
 import {promises as fs} from 'fs'
 import path from 'path'
 import {CacheService} from '../../../services/cacheService'
+import {eq, ne} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -124,21 +142,15 @@ export default defineEventHandler(async (event) => {
             console.log('清空现有数据...')
             try {
                 // 按照外键依赖顺序删除数据
-                await db.notification.deleteMany()
-                await db.notificationSettings.deleteMany()
-                await db.schedule.deleteMany()
-                await db.vote.deleteMany()
-                await db.song.deleteMany()
-                await db.user.deleteMany({
-                    where: {
-                        role: {
-                            not: 'SUPER_ADMIN'
-                        }
-                    }
-                })
-                await db.playTime.deleteMany()
-                await db.semester.deleteMany()
-                await db.systemSettings.deleteMany()
+                await db.delete(notifications)
+                await db.delete(notificationSettings)
+                await db.delete(schedules)
+                await db.delete(votes)
+                await db.delete(songs)
+                await db.delete(users).where(ne(users.role, 'SUPER_ADMIN'))
+                await db.delete(playTimes)
+                await db.delete(semesters)
+                await db.delete(systemSettings)
                 console.log('✅ 现有数据已清空')
             } catch (error) {
                 console.error('清空数据失败:', error)
@@ -244,67 +256,67 @@ export default defineEventHandler(async (event) => {
                                             let createdUser
                                             if (mode === 'merge') {
                                                 // 在merge模式下，先检查用户名是否存在
-                                                const existingUser = await tx.user.findUnique({
-                                                    where: {username: record.username}
-                                                })
+                                                const existingUser = await tx.select().from(users).where(eq(users.username, record.username)).limit(1)
 
-                                                if (existingUser) {
+                                                if (existingUser.length > 0) {
                                                     // 如果用户名已存在，更新现有用户
-                                                    createdUser = await tx.user.update({
-                                                        where: {username: record.username},
-                                                        data: buildUserData(false)
-                                                    })
+                                                    const result = await tx.update(users)
+                                                        .set(buildUserData(false))
+                                                        .where(eq(users.username, record.username))
+                                                        .returning({id: users.id})
+                                                    createdUser = result[0]
                                                 } else {
                                                     // 如果用户名不存在，尝试使用原始ID创建
                                                     try {
                                                         // 先检查原始ID是否已被占用
-                                                        const existingUserWithId = await tx.user.findUnique({
-                                                            where: {id: record.id}
-                                                        })
+                                                        const existingUserWithId = await tx.select().from(users).where(eq(users.id, record.id)).limit(1)
 
-                                                        if (existingUserWithId) {
+                                                        if (existingUserWithId.length > 0) {
                                                             // ID已被占用，让数据库自动生成新ID
-                                                            createdUser = await tx.user.create({
-                                                                data: buildUserData(true)
-                                                            })
+                                                            const result = await tx.insert(users)
+                                                                .values(buildUserData(true))
+                                                                .returning({id: users.id})
+                                                            createdUser = result[0]
                                                         } else {
                                                             // ID未被占用，使用原始ID
-                                                            createdUser = await tx.user.create({
-                                                                data: {
+                                                            const result = await tx.insert(users)
+                                                                .values({
                                                                     ...buildUserData(true),
                                                                     id: record.id
-                                                                }
-                                                            })
+                                                                })
+                                                                .returning({id: users.id})
+                                                            createdUser = result[0]
                                                         }
                                                     } catch (error) {
                                                         // 如果创建失败（可能是ID冲突），让数据库自动生成ID
                                                         console.warn(`用户 ${record.username} 使用原始ID创建失败，使用自动生成ID: ${error.message}`)
-                                                        createdUser = await tx.user.create({
-                                                            data: buildUserData(true)
-                                                        })
+                                                        const result = await tx.insert(users)
+                                                            .values(buildUserData(true))
+                                                            .returning({id: users.id})
+                                                        createdUser = result[0]
                                                     }
                                                 }
                                             } else {
                                                 // 完全恢复模式，检查ID是否已存在
-                                                const existingUserWithId = await tx.user.findUnique({
-                                                    where: {id: record.id}
-                                                })
+                                                const existingUserWithId = await tx.select().from(users).where(eq(users.id, record.id)).limit(1)
 
-                                                if (existingUserWithId) {
+                                                if (existingUserWithId.length > 0) {
                                                     // ID已存在，使用upsert策略更新现有用户
                                                     console.warn(`用户ID ${record.id} (${record.username}) 已存在，将更新现有用户`)
-                                                    createdUser = await tx.user.update({
-                                                        where: {id: record.id},
-                                                        data: buildUserData(false) // 不包含密码，避免覆盖现有密码
-                                                    })
+                                                    const result = await tx.update(users)
+                                                        .set(buildUserData(false)) // 不包含密码，避免覆盖现有密码
+                                                        .where(eq(users.id, record.id))
+                                                        .returning({id: users.id})
+                                                    createdUser = result[0]
                                                 } else {
                                                     // ID不存在，使用原始ID创建
-                                                    createdUser = await tx.user.create({
-                                                        data: {
+                                                    const result = await tx.insert(users)
+                                                        .values({
                                                             ...buildUserData(true),
                                                             id: record.id
-                                                        }
-                                                    })
+                                                        })
+                                                        .returning({id: users.id})
+                                                    createdUser = result[0]
                                                 }
                                             }
                                             // 建立ID映射
@@ -324,10 +336,8 @@ export default defineEventHandler(async (event) => {
                                                     validUserStatusLogUserId = mappedUserId
                                                 } else {
                                                     // 尝试直接查找用户ID
-                                                    const userExists = await tx.user.findUnique({
-                                                        where: {id: record.userId}
-                                                    })
-                                                    if (!userExists) {
+                                                    const userExists = await tx.select().from(users).where(eq(users.id, record.userId)).limit(1)
+                                                    if (userExists.length === 0) {
                                                         console.warn(`用户状态日志的用户ID ${record.userId} 不存在，跳过此记录`)
                                                         return // 跳过此记录，因为userId是必需的
                                                     }
@@ -340,42 +350,37 @@ export default defineEventHandler(async (event) => {
                                             // 构建用户状态日志数据
                                             const userStatusLogData = {
                                                 userId: validUserStatusLogUserId,
-                                                previousStatus: record.previousStatus || null,
+                                                oldStatus: record.oldStatus || record.previousStatus || null,
                                                 newStatus: record.newStatus,
                                                 reason: record.reason || null,
-                                                changedBy: record.changedBy || null,
+                                                operatorId: record.operatorId || record.changedBy || null,
                                                 createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
                                             }
 
                                             if (mode === 'merge') {
                                                 // 对于状态日志，通常不需要检查重复，直接创建新记录
-                                                await tx.userStatusLog.create({data: userStatusLogData})
+                                                await tx.insert(userStatusLogs).values(userStatusLogData)
                                             } else {
                                                 // 完全恢复模式，检查ID是否已存在
                                                 if (record.id) {
-                                                    const existingLogWithId = await tx.userStatusLog.findUnique({
-                                                        where: {id: record.id}
-                                                    })
+                                                    const existingLogWithId = await tx.select().from(userStatusLogs).where(eq(userStatusLogs.id, record.id)).limit(1)
 
-                                                    if (existingLogWithId) {
+                                                    if (existingLogWithId.length > 0) {
                                                         // ID已存在，更新现有记录
                                                         console.warn(`用户状态日志ID ${record.id} 已存在，将更新现有记录`)
-                                                        await tx.userStatusLog.update({
-                                                            where: {id: record.id},
-                                                            data: userStatusLogData
-                                                        })
+                                                        await tx.update(userStatusLogs)
+                                                            .set(userStatusLogData)
+                                                            .where(eq(userStatusLogs.id, record.id))
                                                     } else {
                                                         // ID不存在，使用原始ID创建
-                                                        await tx.userStatusLog.create({
-                                                            data: {
-                                                                ...userStatusLogData,
-                                                                id: record.id
-                                                            }
+                                                        await tx.insert(userStatusLogs).values({
+                                                            ...userStatusLogData,
+                                                            id: record.id
                                                         })
                                                     }
                                                 } else {
                                                     // 没有ID，让数据库自动生成
-                                                    await tx.userStatusLog.create({data: userStatusLogData})
+                                                    await tx.insert(userStatusLogs).values(userStatusLogData)
                                                 }
                                             }
                                             break
@@ -392,10 +397,8 @@ export default defineEventHandler(async (event) => {
                                                     validRequesterId = mappedUserId
                                                 } else {
                                                     // 尝试直接查找用户ID
-                                                    const userExists = await tx.user.findUnique({
-                                                        where: {id: record.requesterId}
-                                                    })
-                                                    if (!userExists) {
+                                                    const userExists = await tx.select().from(users).where(eq(users.id, record.requesterId)).limit(1)
+                                                    if (userExists.length === 0) {
                                                         console.warn(`歌曲 ${record.title} 的请求者ID ${record.requesterId} 不存在，跳过此记录`)
                                                         return // 跳过此记录，因为requesterId是必需的
                                                     }
@@ -407,10 +410,8 @@ export default defineEventHandler(async (event) => {
 
                                             // 检查preferredPlayTimeId是否存在（可选字段）
                                             if (record.preferredPlayTimeId) {
-                                                const playTimeExists = await tx.playTime.findUnique({
-                                                    where: {id: record.preferredPlayTimeId}
-                                                })
-                                                if (!playTimeExists) {
+                                                const playTimeExists = await tx.select().from(playTimes).where(eq(playTimes.id, record.preferredPlayTimeId)).limit(1)
+                                                if (playTimeExists.length === 0) {
                                                     console.warn(`歌曲 ${record.title} 的播放时间ID ${record.preferredPlayTimeId} 不存在，将设为null`)
                                                     validPreferredPlayTimeId = null
                                                 }
@@ -455,70 +456,72 @@ export default defineEventHandler(async (event) => {
                                             let createdSong
                                             if (mode === 'merge') {
                                                 // 检查是否存在相同的歌曲（按标题和艺术家）
-                                                const existingSong = await tx.song.findFirst({
-                                                    where: {
-                                                        title: {equals: record.title, mode: 'insensitive'},
-                                                        artist: {equals: record.artist, mode: 'insensitive'}
-                                                    }
-                                                })
+                                                const existingSong = await tx.select().from(songs).where(
+                                                    and(
+                                                        eq(songs.title, record.title),
+                                                        eq(songs.artist, record.artist)
+                                                    )
+                                                ).limit(1)
 
-                                                if (existingSong) {
+                                                if (existingSong.length > 0) {
                                                     // 如果存在相同歌曲，更新它
-                                                    createdSong = await tx.song.update({
-                                                        where: {id: existingSong.id},
-                                                        data: songData
-                                                    })
+                                                    const result = await tx.update(songs)
+                                                        .set(songData)
+                                                        .where(eq(songs.id, existingSong[0].id))
+                                                        .returning({id: songs.id})
+                                                    createdSong = result[0]
                                                 } else {
                                                     // 如果不存在，尝试使用原始ID创建
                                                     try {
                                                         // 先检查原始ID是否已被占用
-                                                        const existingSongWithId = await tx.song.findUnique({
-                                                            where: {id: record.id}
-                                                        })
+                                                        const existingSongWithId = await tx.select().from(songs).where(eq(songs.id, record.id)).limit(1)
 
-                                                        if (existingSongWithId) {
+                                                        if (existingSongWithId.length > 0) {
                                                             // ID已被占用，让数据库自动生成新ID
-                                                            createdSong = await tx.song.create({
-                                                                data: songData
-                                                            })
+                                                            const result = await tx.insert(songs)
+                                                                .values(songData)
+                                                                .returning({id: songs.id})
+                                                            createdSong = result[0]
                                                         } else {
                                                             // ID未被占用，使用原始ID
-                                                            createdSong = await tx.song.create({
-                                                                data: {
+                                                            const result = await tx.insert(songs)
+                                                                .values({
                                                                     ...songData,
                                                                     id: record.id
-                                                                }
-                                                            })
+                                                                })
+                                                                .returning({id: songs.id})
+                                                            createdSong = result[0]
                                                         }
                                                     } catch (error) {
                                                         // 如果创建失败（可能是ID冲突），让数据库自动生成ID
                                                         console.warn(`歌曲 ${record.title} 使用原始ID创建失败，使用自动生成ID: ${error.message}`)
-                                                        createdSong = await tx.song.create({
-                                                            data: songData
-                                                        })
+                                                        const result = await tx.insert(songs)
+                                                            .values(songData)
+                                                            .returning({id: songs.id})
+                                                        createdSong = result[0]
                                                     }
                                                 }
                                             } else {
                                                 // 完全恢复模式，检查ID是否已存在
-                                                const existingSongWithId = await tx.song.findUnique({
-                                                    where: {id: record.id}
-                                                })
+                                                const existingSongWithId = await tx.select().from(songs).where(eq(songs.id, record.id)).limit(1)
 
-                                                if (existingSongWithId) {
+                                                if (existingSongWithId.length > 0) {
                                                     // ID已存在，使用upsert策略更新现有歌曲
                                                     console.warn(`歌曲ID ${record.id} (${record.title} - ${record.artist}) 已存在，将更新现有歌曲`)
-                                                    createdSong = await tx.song.update({
-                                                        where: {id: record.id},
-                                                        data: songData
-                                                    })
+                                                    const result = await tx.update(songs)
+                                                        .set(songData)
+                                                        .where(eq(songs.id, record.id))
+                                                        .returning({id: songs.id})
+                                                    createdSong = result[0]
                                                 } else {
                                                     // ID不存在，使用原始ID创建
-                                                    createdSong = await tx.song.create({
-                                                        data: {
+                                                    const result = await tx.insert(songs)
+                                                        .values({
                                                             ...songData,
                                                             id: record.id
-                                                        }
-                                                    })
+                                                        })
+                                                        .returning({id: songs.id})
+                                                    createdSong = result[0]
                                                 }
                                             }
                                             // 建立歌曲ID映射
@@ -543,40 +546,32 @@ export default defineEventHandler(async (event) => {
 
                                             if (mode === 'merge') {
                                                 // 检查是否存在相同名称的播放时段
-                                                const existingPlayTime = await tx.playTime.findFirst({
-                                                    where: {name: record.name}
-                                                })
+                                                const existingPlayTime = await tx.select().from(playTimes).where(eq(playTimes.name, record.name)).limit(1)
 
-                                                if (existingPlayTime) {
+                                                if (existingPlayTime.length > 0) {
                                                     // 如果存在相同播放时段，更新它
-                                                    await tx.playTime.update({
-                                                        where: {id: existingPlayTime.id},
-                                                        data: playTimeData
-                                                    })
+                                                    await tx.update(playTimes)
+                                                        .set(playTimeData)
+                                                        .where(eq(playTimes.id, existingPlayTime[0].id))
                                                 } else {
                                                     // 如果不存在，创建新播放时段（不指定ID，让数据库自动生成）
-                                                    await tx.playTime.create({data: playTimeData})
+                                                    await tx.insert(playTimes).values(playTimeData)
                                                 }
                                             } else {
                                                 // 完全恢复模式，检查ID是否已存在
-                                                const existingPlayTimeWithId = await tx.playTime.findUnique({
-                                                    where: {id: record.id}
-                                                })
+                                                const existingPlayTimeWithId = await tx.select().from(playTimes).where(eq(playTimes.id, record.id)).limit(1)
 
-                                                if (existingPlayTimeWithId) {
+                                                if (existingPlayTimeWithId.length > 0) {
                                                     // ID已存在，使用upsert策略更新现有播放时段
                                                     console.warn(`播放时段ID ${record.id} (${record.name}) 已存在，将更新现有播放时段`)
-                                                    await tx.playTime.update({
-                                                        where: {id: record.id},
-                                                        data: playTimeData
-                                                    })
+                                                    await tx.update(playTimes)
+                                                        .set(playTimeData)
+                                                        .where(eq(playTimes.id, record.id))
                                                 } else {
                                                     // ID不存在，使用原始ID创建
-                                                    await tx.playTime.create({
-                                                        data: {
-                                                            ...playTimeData,
-                                                            id: record.id
-                                                        }
+                                                    await tx.insert(playTimes).values({
+                                                        ...playTimeData,
+                                                        id: record.id
                                                     })
                                                 }
                                             }
@@ -597,31 +592,29 @@ export default defineEventHandler(async (event) => {
                                             semesterData.isActive = record.hasOwnProperty('isActive') ? record.isActive : false
 
                                             if (mode === 'merge') {
-                                                await tx.semester.upsert({
-                                                    where: {name: semesterData.name},
-                                                    update: semesterData,
-                                                    create: semesterData
-                                                })
+                                                const existingSemester = await tx.select().from(semesters).where(eq(semesters.name, semesterData.name)).limit(1)
+                                                if (existingSemester.length > 0) {
+                                                    await tx.update(semesters)
+                                                        .set(semesterData)
+                                                        .where(eq(semesters.name, semesterData.name))
+                                                } else {
+                                                    await tx.insert(semesters).values(semesterData)
+                                                }
                                             } else {
                                                 // 完全恢复模式，检查ID是否已存在
-                                                const existingSemesterWithId = await tx.semester.findUnique({
-                                                    where: {id: record.id}
-                                                })
+                                                const existingSemesterWithId = await tx.select().from(semesters).where(eq(semesters.id, record.id)).limit(1)
 
-                                                if (existingSemesterWithId) {
+                                                if (existingSemesterWithId.length > 0) {
                                                     // ID已存在，使用upsert策略更新现有学期
                                                     console.warn(`学期ID ${record.id} (${record.name}) 已存在，将更新现有学期`)
-                                                    await tx.semester.update({
-                                                        where: {id: record.id},
-                                                        data: semesterData
-                                                    })
+                                                    await tx.update(semesters)
+                                                        .set(semesterData)
+                                                        .where(eq(semesters.id, record.id))
                                                 } else {
                                                     // ID不存在，使用原始ID创建
-                                                    await tx.semester.create({
-                                                        data: {
-                                                            ...semesterData,
-                                                            id: record.id
-                                                        }
+                                                    await tx.insert(semesters).values({
+                                                        ...semesterData,
+                                                        id: record.id
                                                     })
                                                 }
                                             }
@@ -654,38 +647,32 @@ export default defineEventHandler(async (event) => {
 
                                             if (mode === 'merge') {
                                                 // 检查是否存在系统设置记录（通常只有一条记录）
-                                                const existingSystemSettings = await tx.systemSettings.findFirst({})
+                                                const existingSystemSettings = await tx.select().from(systemSettings).limit(1)
 
-                                                if (existingSystemSettings) {
+                                                if (existingSystemSettings.length > 0) {
                                                     // 如果存在系统设置，更新它
-                                                    await tx.systemSettings.update({
-                                                        where: {id: existingSystemSettings.id},
-                                                        data: systemSettingsData
-                                                    })
+                                                    await tx.update(systemSettings)
+                                                        .set(systemSettingsData)
+                                                        .where(eq(systemSettings.id, existingSystemSettings[0].id))
                                                 } else {
                                                     // 如果不存在，创建新系统设置（不指定ID，让数据库自动生成）
-                                                    await tx.systemSettings.create({data: systemSettingsData})
+                                                    await tx.insert(systemSettings).values(systemSettingsData)
                                                 }
                                             } else {
                                                 // 完全恢复模式，检查ID是否已存在
-                                                const existingSystemSettingsWithId = await tx.systemSettings.findUnique({
-                                                    where: {id: record.id}
-                                                })
+                                                const existingSystemSettingsWithId = await tx.select().from(systemSettings).where(eq(systemSettings.id, record.id)).limit(1)
 
-                                                if (existingSystemSettingsWithId) {
+                                                if (existingSystemSettingsWithId.length > 0) {
                                                     // ID已存在，使用upsert策略更新现有系统设置
                                                     console.warn(`系统设置ID ${record.id} 已存在，将更新现有系统设置`)
-                                                    await tx.systemSettings.update({
-                                                        where: {id: record.id},
-                                                        data: systemSettingsData
-                                                    })
+                                                    await tx.update(systemSettings)
+                                                        .set(systemSettingsData)
+                                                        .where(eq(systemSettings.id, record.id))
                                                 } else {
                                                     // ID不存在，使用原始ID创建
-                                                    await tx.systemSettings.create({
-                                                        data: {
-                                                            ...systemSettingsData,
-                                                            id: record.id
-                                                        }
+                                                    await tx.insert(systemSettings).values({
+                                                        ...systemSettingsData,
+                                                        id: record.id
                                                     })
                                                 }
                                             }
@@ -710,10 +697,8 @@ export default defineEventHandler(async (event) => {
                                                 validSongId = mappedSongId
                                             } else {
                                                 // 尝试直接查找歌曲ID
-                                                const songExists = await tx.song.findUnique({
-                                                    where: {id: record.songId}
-                                                })
-                                                if (!songExists) {
+                                                const songExists = await tx.select().from(songs).where(eq(songs.id, record.songId)).limit(1)
+                                                if (songExists.length === 0) {
                                                     console.warn(`排期记录的歌曲ID ${record.songId} 不存在，跳过此记录`)
                                                     return
                                                 }
@@ -722,10 +707,8 @@ export default defineEventHandler(async (event) => {
                                             // 验证playTimeId是否存在（可选字段）
                                             let validPlayTimeId = record.playTimeId
                                             if (record.playTimeId) {
-                                                const playTimeExists = await tx.playTime.findUnique({
-                                                    where: {id: record.playTimeId}
-                                                })
-                                                if (!playTimeExists) {
+                                                const playTimeExists = await tx.select().from(playTimes).where(eq(playTimes.id, record.playTimeId)).limit(1)
+                                                if (playTimeExists.length === 0) {
                                                     console.warn(`排期记录的播放时间ID ${record.playTimeId} 不存在，将设为null`)
                                                     validPlayTimeId = null
                                                 }
@@ -746,43 +729,37 @@ export default defineEventHandler(async (event) => {
 
                                             if (mode === 'merge') {
                                                 // 检查是否存在相同的排期（按歌曲ID和播放日期）
-                                                const existingSchedule = await tx.schedule.findFirst({
-                                                    where: {
-                                                        songId: validSongId,
-                                                        playDate: new Date(record.playDate)
-                                                    }
-                                                })
+                                                const existingSchedule = await tx.select().from(schedules).where(
+                                                    and(
+                                                        eq(schedules.songId, validSongId),
+                                                        eq(schedules.playDate, new Date(record.playDate))
+                                                    )
+                                                ).limit(1)
 
-                                                if (existingSchedule) {
+                                                if (existingSchedule.length > 0) {
                                                     // 如果存在相同排期，更新它
-                                                    await tx.schedule.update({
-                                                        where: {id: existingSchedule.id},
-                                                        data: scheduleData
-                                                    })
+                                                    await tx.update(schedules)
+                                                        .set(scheduleData)
+                                                        .where(eq(schedules.id, existingSchedule[0].id))
                                                 } else {
                                                     // 如果不存在，创建新排期（不指定ID，让数据库自动生成）
-                                                    await tx.schedule.create({data: scheduleData})
+                                                    await tx.insert(schedules).values(scheduleData)
                                                 }
                                             } else {
                                                 // 完全恢复模式，检查ID是否已存在
-                                                const existingScheduleWithId = await tx.schedule.findUnique({
-                                                    where: {id: record.id}
-                                                })
+                                                const existingScheduleWithId = await tx.select().from(schedules).where(eq(schedules.id, record.id)).limit(1)
 
-                                                if (existingScheduleWithId) {
+                                                if (existingScheduleWithId.length > 0) {
                                                     // ID已存在，使用upsert策略更新现有排期
                                                     console.warn(`排期ID ${record.id} 已存在，将更新现有排期`)
-                                                    await tx.schedule.update({
-                                                        where: {id: record.id},
-                                                        data: scheduleData
-                                                    })
+                                                    await tx.update(schedules)
+                                                        .set(scheduleData)
+                                                        .where(eq(schedules.id, record.id))
                                                 } else {
                                                     // ID不存在，使用原始ID创建
-                                                    await tx.schedule.create({
-                                                        data: {
-                                                            ...scheduleData,
-                                                            id: record.id
-                                                        }
+                                                    await tx.insert(schedules).values({
+                                                        ...scheduleData,
+                                                        id: record.id
                                                     })
                                                 }
                                             }
@@ -797,10 +774,8 @@ export default defineEventHandler(async (event) => {
                                                     validUserId = mappedUserId
                                                 } else {
                                                     // 尝试直接查找用户ID
-                                                    const userExists = await tx.user.findUnique({
-                                                        where: {id: record.userId}
-                                                    })
-                                                    if (!userExists) {
+                                                    const userExists = await tx.select().from(users).where(eq(users.id, record.userId)).limit(1)
+                                                    if (userExists.length === 0) {
                                                         console.warn(`通知设置的用户ID ${record.userId} 不存在，跳过此记录`)
                                                         return
                                                     }
@@ -837,31 +812,27 @@ export default defineEventHandler(async (event) => {
 
                                             if (mode === 'merge') {
                                                 // 使用userId作为唯一标识进行upsert，因为数据库中userId有唯一约束
-                                                await tx.notificationSettings.upsert({
-                                                    where: {userId: validUserId},
-                                                    update: notificationSettingsData,
-                                                    create: notificationSettingsData
-                                                })
+                                                await tx.insert(notificationSettings)
+                                                    .values(notificationSettingsData)
+                                                    .onConflictDoUpdate({
+                                                        target: notificationSettings.userId,
+                                                        set: notificationSettingsData
+                                                    })
                                             } else {
                                                 // 完全恢复模式，检查ID是否已存在
-                                                const existingNotificationSettingsWithId = await tx.notificationSettings.findUnique({
-                                                    where: {id: record.id}
-                                                })
+                                                const existingNotificationSettingsWithId = await tx.select().from(notificationSettings).where(eq(notificationSettings.id, record.id)).limit(1)
 
-                                                if (existingNotificationSettingsWithId) {
+                                                if (existingNotificationSettingsWithId.length > 0) {
                                                     // ID已存在，使用upsert策略更新现有通知设置
                                                     console.warn(`通知设置ID ${record.id} 已存在，将更新现有通知设置`)
-                                                    await tx.notificationSettings.update({
-                                                        where: {id: record.id},
-                                                        data: notificationSettingsData
-                                                    })
+                                                    await tx.update(notificationSettings)
+                                                        .set(notificationSettingsData)
+                                                        .where(eq(notificationSettings.id, record.id))
                                                 } else {
                                                     // ID不存在，使用原始ID创建
-                                                    await tx.notificationSettings.create({
-                                                        data: {
-                                                            ...notificationSettingsData,
-                                                            id: record.id
-                                                        }
+                                                    await tx.insert(notificationSettings).values({
+                                                        ...notificationSettingsData,
+                                                        id: record.id
                                                     })
                                                 }
                                             }
@@ -876,10 +847,8 @@ export default defineEventHandler(async (event) => {
                                                     validNotificationUserId = mappedUserId
                                                 } else {
                                                     // 尝试直接查找用户ID
-                                                    const userExists = await tx.user.findUnique({
-                                                        where: {id: record.userId}
-                                                    })
-                                                    if (!userExists) {
+                                                    const userExists = await tx.select().from(users).where(eq(users.id, record.userId)).limit(1)
+                                                    if (userExists.length === 0) {
                                                         console.warn(`通知的用户ID ${record.userId} 不存在，跳过此记录`)
                                                         break
                                                     }
@@ -905,44 +874,38 @@ export default defineEventHandler(async (event) => {
 
                                             if (mode === 'merge') {
                                                 // 检查是否存在相同的通知（按用户ID、类型和消息）
-                                                const existingNotification = await tx.notification.findFirst({
-                                                    where: {
-                                                        userId: validNotificationUserId,
-                                                        type: record.type,
-                                                        message: record.message
-                                                    }
-                                                })
+                                                const existingNotification = await tx.select().from(notifications).where(
+                                                    and(
+                                                        eq(notifications.userId, validNotificationUserId),
+                                                        eq(notifications.type, record.type),
+                                                        eq(notifications.message, record.message)
+                                                    )
+                                                ).limit(1)
 
-                                                if (existingNotification) {
+                                                if (existingNotification.length > 0) {
                                                     // 如果存在相同通知，更新它
-                                                    await tx.notification.update({
-                                                        where: {id: existingNotification.id},
-                                                        data: notificationData
-                                                    })
+                                                    await tx.update(notifications)
+                                                        .set(notificationData)
+                                                        .where(eq(notifications.id, existingNotification[0].id))
                                                 } else {
                                                     // 如果不存在，创建新通知（不指定ID，让数据库自动生成）
-                                                    await tx.notification.create({data: notificationData})
+                                                    await tx.insert(notifications).values(notificationData)
                                                 }
                                             } else {
                                                 // 完全恢复模式，检查ID是否已存在
-                                                const existingNotificationWithId = await tx.notification.findUnique({
-                                                    where: {id: record.id}
-                                                })
+                                                const existingNotificationWithId = await tx.select().from(notifications).where(eq(notifications.id, record.id)).limit(1)
 
-                                                if (existingNotificationWithId) {
+                                                if (existingNotificationWithId.length > 0) {
                                                     // ID已存在，使用upsert策略更新现有通知
                                                     console.warn(`通知ID ${record.id} 已存在，将更新现有通知`)
-                                                    await tx.notification.update({
-                                                        where: {id: record.id},
-                                                        data: notificationData
-                                                    })
+                                                    await tx.update(notifications)
+                                                        .set(notificationData)
+                                                        .where(eq(notifications.id, record.id))
                                                 } else {
                                                     // ID不存在，使用原始ID创建
-                                                    await tx.notification.create({
-                                                        data: {
-                                                            ...notificationData,
-                                                            id: record.id
-                                                        }
+                                                    await tx.insert(notifications).values({
+                                                        ...notificationData,
+                                                        id: record.id
                                                     })
                                                 }
                                             }
@@ -959,10 +922,8 @@ export default defineEventHandler(async (event) => {
                                                     validCreatedBy = mappedUserId
                                                 } else {
                                                     // 尝试直接查找用户ID
-                                                    const userExists = await tx.user.findUnique({
-                                                        where: {id: record.createdBy}
-                                                    })
-                                                    if (!userExists) {
+                                                    const userExists = await tx.select().from(users).where(eq(users.id, record.createdBy)).limit(1)
+                                                    if (userExists.length === 0) {
                                                         console.warn(`黑名单记录的创建者ID ${record.createdBy} 不存在，将设为null`)
                                                         validCreatedBy = null
                                                     }
@@ -982,43 +943,37 @@ export default defineEventHandler(async (event) => {
 
                                             if (mode === 'merge') {
                                                 // 检查是否存在相同的黑名单记录（相同类型和值）
-                                                const existingBlacklist = await tx.songBlacklist.findFirst({
-                                                    where: {
-                                                        type: blacklistData.type,
-                                                        value: blacklistData.value
-                                                    }
-                                                })
+                                                const existingBlacklist = await tx.select().from(songBlacklists).where(
+                                                    and(
+                                                        eq(songBlacklists.type, blacklistData.type),
+                                                        eq(songBlacklists.value, blacklistData.value)
+                                                    )
+                                                ).limit(1)
 
-                                                if (existingBlacklist) {
+                                                if (existingBlacklist.length > 0) {
                                                     // 如果存在相同记录，更新它
-                                                    await tx.songBlacklist.update({
-                                                        where: {id: existingBlacklist.id},
-                                                        data: blacklistData
-                                                    })
+                                                    await tx.update(songBlacklists)
+                                                        .set(blacklistData)
+                                                        .where(eq(songBlacklists.id, existingBlacklist[0].id))
                                                 } else {
                                                     // 如果不存在，创建新记录（不指定ID，让数据库自动生成）
-                                                    await tx.songBlacklist.create({data: blacklistData})
+                                                    await tx.insert(songBlacklists).values(blacklistData)
                                                 }
                                             } else {
                                                 // 完全恢复模式，检查ID是否已存在
-                                                const existingBlacklistWithId = await tx.songBlacklist.findUnique({
-                                                    where: {id: record.id}
-                                                })
+                                                const existingBlacklistWithId = await tx.select().from(songBlacklists).where(eq(songBlacklists.id, record.id)).limit(1)
 
-                                                if (existingBlacklistWithId) {
+                                                if (existingBlacklistWithId.length > 0) {
                                                     // ID已存在，使用upsert策略更新现有记录
                                                     console.warn(`黑名单ID ${record.id} 已存在，将更新现有记录`)
-                                                    await tx.songBlacklist.update({
-                                                        where: {id: record.id},
-                                                        data: blacklistData
-                                                    })
+                                                    await tx.update(songBlacklists)
+                                                        .set(blacklistData)
+                                                        .where(eq(songBlacklists.id, record.id))
                                                 } else {
                                                     // ID不存在，使用原始ID创建
-                                                    await tx.songBlacklist.create({
-                                                        data: {
-                                                            ...blacklistData,
-                                                            id: record.id
-                                                        }
+                                                    await tx.insert(songBlacklists).values({
+                                                        ...blacklistData,
+                                                        id: record.id
                                                     })
                                                 }
                                             }
@@ -1036,10 +991,8 @@ export default defineEventHandler(async (event) => {
                                                     validVoteUserId = mappedUserId
                                                 } else {
                                                     // 尝试直接查找用户ID
-                                                    const userExists = await tx.user.findUnique({
-                                                        where: {id: record.userId}
-                                                    })
-                                                    if (!userExists) {
+                                                    const userExists = await tx.select().from(users).where(eq(users.id, record.userId)).limit(1)
+                                                    if (userExists.length === 0) {
                                                         console.warn(`投票记录的用户ID ${record.userId} 不存在，跳过此记录`)
                                                         return // 跳过此记录，因为userId是必需的
                                                     }
@@ -1056,10 +1009,8 @@ export default defineEventHandler(async (event) => {
                                                     validVoteSongId = mappedSongId
                                                 } else {
                                                     // 尝试直接查找歌曲ID
-                                                    const songExists = await tx.song.findUnique({
-                                                        where: {id: record.songId}
-                                                    })
-                                                    if (!songExists) {
+                                                    const songExists = await tx.select().from(songs).where(eq(songs.id, record.songId)).limit(1)
+                                                    if (songExists.length === 0) {
                                                         console.warn(`投票记录的歌曲ID ${record.songId} 不存在，跳过此记录`)
                                                         return // 跳过此记录，因为songId是必需的
                                                     }
@@ -1078,41 +1029,39 @@ export default defineEventHandler(async (event) => {
 
                                             if (mode === 'merge') {
                                                 // 检查是否存在相同的投票（同一用户对同一歌曲的投票）
-                                                const existingVote = await tx.vote.findFirst({
-                                                    where: {
-                                                        userId: validVoteUserId,
-                                                        songId: validVoteSongId
-                                                    }
-                                                })
+                                                const existingVote = await tx.select().from(votes).where(
+                                                    and(
+                                                        eq(votes.userId, validVoteUserId),
+                                                        eq(votes.songId, validVoteSongId)
+                                                    )
+                                                ).limit(1)
 
-                                                if (existingVote) {
+                                                if (existingVote.length > 0) {
                                                     // 如果存在相同投票，更新它
-                                                    await tx.vote.update({
-                                                        where: {id: existingVote.id},
-                                                        data: voteData
-                                                    })
+                                                    await tx.update(votes)
+                                                        .set(voteData)
+                                                        .where(eq(votes.id, existingVote[0].id))
                                                 } else {
                                                     // 如果不存在，创建新投票（不指定ID，让数据库自动生成）
-                                                    await tx.vote.create({data: voteData})
+                                                    await tx.insert(votes).values(voteData)
                                                 }
                                             } else {
                                                 // 完全恢复模式，检查是否存在相同的投票（同一用户对同一歌曲的投票）
-                                                const existingVote = await tx.vote.findFirst({
-                                                    where: {
-                                                        userId: validVoteUserId,
-                                                        songId: validVoteSongId
-                                                    }
-                                                })
+                                                const existingVote = await tx.select().from(votes).where(
+                                                    and(
+                                                        eq(votes.userId, validVoteUserId),
+                                                        eq(votes.songId, validVoteSongId)
+                                                    )
+                                                ).limit(1)
 
-                                                if (existingVote) {
+                                                if (existingVote.length > 0) {
                                                     // 如果存在相同投票，更新它
-                                                    await tx.vote.update({
-                                                        where: {id: existingVote.id},
-                                                        data: voteData
-                                                    })
+                                                    await tx.update(votes)
+                                                        .set(voteData)
+                                                        .where(eq(votes.id, existingVote[0].id))
                                                 } else {
                                                     // 如果不存在，创建新投票（不指定ID，让数据库自动生成）
-                                                    await tx.vote.create({data: voteData})
+                                                    await tx.insert(votes).values(voteData)
                                                 }
                                             }
                                             break
@@ -1136,10 +1085,16 @@ export default defineEventHandler(async (event) => {
                                 retryCount++
 
                                 // 检查是否是可重试的错误
+                                // Postgres 错误代码:
+                                // 23505: unique_violation (唯一约束冲突)
+                                // 23503: foreign_key_violation (外键约束冲突)
+                                // 40001: serialization_failure (序列化失败)
+                                // 40P01: deadlock_detected (死锁检测)
                                 const isRetryableError = (
-                                    recordError.code === 'P2002' || // 唯一约束冲突
-                                    recordError.code === 'P2003' || // 外键约束冲突
-                                    recordError.code === 'P2025' || // 记录不存在
+                                    recordError.code === '23505' || // 唯一约束冲突
+                                    recordError.code === '23503' || // 外键约束冲突
+                                    recordError.code === '40001' || // 序列化失败
+                                    recordError.code === '40P01' || // 死锁
                                     recordError.message.includes('timeout') ||
                                     recordError.message.includes('connection') ||
                                     recordError.message.includes('SQLITE_BUSY') ||
@@ -1150,7 +1105,7 @@ export default defineEventHandler(async (event) => {
                                     console.warn(`恢复记录失败，第 ${retryCount}/${maxRetries} 次重试 (${tableName}):`, recordError.message)
 
                                     // 根据错误类型调整重试策略
-                                    if (recordError.code === 'P2002') {
+                                    if (recordError.code === '23505') {
                                         // 唯一约束冲突，等待更长时间
                                         await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
                                     } else {

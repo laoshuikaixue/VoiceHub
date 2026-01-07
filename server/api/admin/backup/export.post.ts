@@ -241,6 +241,24 @@ export default defineEventHandler(async (event) => {
                 totalRecords += tableData.length
                 console.log(`✅ ${tableName}: ${tableData.length} 条记录`)
             } catch (error) {
+                // 检查是否为表不存在错误
+                // Postgres error 42P01: undefined_table
+                const isTableMissing = error.code === '42P01' || 
+                                      (error.message && error.message.includes('does not exist')) ||
+                                      (error.statusMessage && error.statusMessage.includes('does not exist'));
+
+                if (isTableMissing) {
+                    console.warn(`⚠️ 表 ${tableName} 不存在，跳过备份`)
+                    // 记录一个空的条目，以便知道跳过了
+                    backupData.metadata.tables.push({
+                        name: tableName,
+                        description: `${tablesToBackup[tableName].description} (表不存在，已跳过)`,
+                        recordCount: 0,
+                        skipped: true
+                    })
+                    continue
+                }
+
                 console.error(`备份表 ${tableName} 失败:`, error)
                 throw createError({
                     statusCode: 500,
