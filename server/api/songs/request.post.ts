@@ -201,12 +201,27 @@ export default defineEventHandler(async (event) => {
 
         // 处理联合投稿人
         if (body.collaborators && Array.isArray(body.collaborators) && body.collaborators.length > 0) {
-            for (const rawCollaboratorId of body.collaborators) {
-                const collaboratorId = Number(rawCollaboratorId)
+            // 去重
+            const uniqueCollaboratorIds = [...new Set(body.collaborators.map((id: any) => Number(id)))]
+            
+            for (const collaboratorId of uniqueCollaboratorIds) {
                 // 跳过自己或无效ID
                 if (isNaN(collaboratorId) || collaboratorId === user.id) continue
 
                 try {
+                    // 检查用户是否存在 (通过尝试插入，如果有外键约束会失败，但更安全的做法是先查一下)
+                    // 这里我们假设前端传来的ID是有效的，如果数据库有外键约束会捕获错误
+                    
+                    // 检查是否已经是联合投稿人
+                    const existingCollab = await db.select().from(songCollaborators)
+                        .where(and(
+                            eq(songCollaborators.songId, song.id),
+                            eq(songCollaborators.userId, collaboratorId)
+                        ))
+                        .limit(1)
+                    
+                    if (existingCollab.length > 0) continue
+
                     // 创建联合投稿记录
                     const collabResult = await db.insert(songCollaborators).values({
                         songId: song.id,

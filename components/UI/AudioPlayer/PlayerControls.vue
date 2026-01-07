@@ -289,22 +289,22 @@ defineExpose({
 /* 移动端优化 */
 @media (hover: none) and (pointer: coarse) {
   .progress-bar {
-    height: 24px; /* 增加移动端触摸区域 */
+    height: 24px;
   }
 
   .progress {
-    height: 6px; /* 移动端稍微增加高度 */
+    height: 6px;
   }
 
   .progress-thumb {
-    width: 16px; /* 移动端增大拇指大小 */
+    width: 16px;
     height: 16px;
     left: calc(var(--progress-width, 0%) - 8px);
-    opacity: 1; /* 移动端始终显示 */
+    opacity: 1;
   }
 
   .progress-bar:active .progress {
-    height: 8px; /* 触摸时进一步增大 */
+    height: 8px;
   }
 }
 

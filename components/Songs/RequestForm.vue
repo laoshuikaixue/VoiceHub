@@ -3568,17 +3568,17 @@ defineExpose({
   .search-results-container {
     flex: 1;
     height: auto;
-    max-height: 85vh; /* 增加高度 */
+    max-height: 85vh;
     padding: 1rem;
     overflow: visible;
     display: flex;
     flex-direction: column;
-    margin-bottom: 2rem; /* 增加底部边距防止重叠 */
+    margin-bottom: 2rem;
   }
 
   .results-content {
     height: auto;
-    max-height: 80vh; /* 增加高度 */
+    max-height: 80vh;
     overflow: visible;
     flex: 1;
   }
@@ -3799,15 +3799,15 @@ defineExpose({
   .results-list {
     flex: 1;
     height: auto;
-    max-height: 75vh; /* 增加高度 */
+    max-height: 75vh;
     overflow: visible;
   }
 
   .results-grid {
-    max-height: 75vh; /* 增加高度 */
+    max-height: 75vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 8rem; /* 显著增加底部内边距，确保内容不被底部Footer遮挡 */
+    padding-bottom: 8rem;
   }
 
   /* 移动端期望排期选择 */
