@@ -1210,7 +1210,11 @@ const generateScheduleItems = (schedules) => {
 
       <div style="display: flex; gap: 12px; flex-shrink: 0; font-size: 12px; color: #666;">
         ${settings.value.showRequester ? `
-          <span>投稿人: ${schedule.song?.requester || '未知'}</span>
+          <span>投稿人: ${schedule.song?.requester || '未知'}${
+      schedule.song?.collaborators && schedule.song.collaborators.length > 0
+          ? ' & ' + schedule.song.collaborators.map(c => c.displayName || c.name).join(' & ')
+          : ''
+  }</span>
         ` : ''}
 
         ${settings.value.showVotes ? `

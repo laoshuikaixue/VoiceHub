@@ -1,12 +1,14 @@
 import {createError, defineEventHandler, readBody} from 'h3'
 import {db} from '~/drizzle/db'
 import {
+    collaborationLogs,
     notifications,
     notificationSettings,
     playTimes,
     schedules,
     semesters,
     songBlacklists,
+    songCollaborators,
     songs,
     systemSettings,
     users,
@@ -195,6 +197,20 @@ export default defineEventHandler(async (event) => {
                     }))
                 },
                 description: '用户状态变更日志'
+            },
+            songCollaborators: {
+                query: async () => {
+                    const collaboratorsData = await db.select().from(songCollaborators)
+                    return collaboratorsData
+                },
+                description: '联合投稿人'
+            },
+            collaborationLogs: {
+                query: async () => {
+                    const logsData = await db.select().from(collaborationLogs)
+                    return logsData
+                },
+                description: '联合投稿审计日志'
             }
         }
 

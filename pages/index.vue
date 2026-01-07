@@ -205,6 +205,10 @@
                                   name="music"/>
                             <Icon v-else-if="notification.type === 'SONG_VOTED'" :size="20" color="#f59e0b"
                                   name="thumbs-up"/>
+                            <Icon v-else-if="notification.type === 'COLLABORATION_INVITE'" :size="20" color="#0B5AFE"
+                                  name="users"/>
+                            <Icon v-else-if="notification.type === 'COLLABORATION_RESPONSE'" :size="20" color="#8b5cf6"
+                                  name="info"/>
                             <Icon v-else :size="20" color="#6b7280" name="speaker"/>
                           </div>
                           <div class="notification-title-row">
@@ -212,6 +216,16 @@
                               <span v-if="notification.type === 'SONG_SELECTED'">歌曲已选中</span>
                               <span v-else-if="notification.type === 'SONG_PLAYED'">歌曲已播放</span>
                               <span v-else-if="notification.type === 'SONG_VOTED'">收到新投票</span>
+                              <span v-else-if="notification.type === 'COLLABORATION_INVITE'">
+                                联合投稿邀请
+                                <span v-if="notification.handled"
+                                      :class="['status-tag', notification.status === 'ACCEPTED' ? 'accepted' : (notification.status === 'INVALID' ? 'invalid' : 'rejected')]">
+                                  {{
+                                    notification.status === 'ACCEPTED' ? '- 已接受' : (notification.status === 'INVALID' ? '- 已失效' : '- 已拒绝')
+                                  }}
+                                </span>
+                              </span>
+                              <span v-else-if="notification.type === 'COLLABORATION_RESPONSE'">联合投稿回复</span>
                               <span v-else>系统通知</span>
                               <span v-if="!notification.read" class="unread-indicator"></span>
                             </div>
@@ -220,6 +234,34 @@
                         </div>
                         <div class="notification-card-body">
                           <div class="notification-text">{{ notification.message }}</div>
+
+                          <!-- 联合投稿邀请操作按钮 -->
+                          <div v-if="notification.type === 'COLLABORATION_INVITE' && !notification.handled"
+                               class="invite-actions">
+                            <button
+                                :disabled="notification.processing"
+                                class="action-button accept-btn"
+                                @click.stop="handleCollaborationReply(notification, true)"
+                            >
+                              {{ notification.processing ? '处理中...' : '接受邀请' }}
+                            </button>
+                            <button
+                                :disabled="notification.processing"
+                                class="action-button reject-btn"
+                                @click.stop="handleCollaborationReply(notification, false)"
+                            >
+                              拒绝
+                            </button>
+                          </div>
+                          <!-- 已处理状态显示 - 已移动到标题栏 -->
+                          <!-- <div v-if="notification.type === 'COLLABORATION_INVITE' && notification.handled" class="invite-status">
+                             <span :class="['status-badge', notification.status === 'ACCEPTED' ? 'accepted' : (notification.status === 'INVALID' ? 'invalid' : 'rejected')]">
+                               {{ notification.status === 'ACCEPTED' ? '已接受' : (notification.status === 'INVALID' ? '已失效' : '已拒绝') }}
+                             </span>
+                             <span class="status-time" v-if="notification.repliedAt">
+                               {{ formatNotificationTime(notification.repliedAt) }}
+                             </span>
+                          </div> -->
                         </div>
                         <div class="notification-card-actions">
                           <button
@@ -1194,6 +1236,48 @@ const viewNotification = async (notification) => {
   }
 }
 
+// 处理联合投稿回复
+const handleCollaborationReply = async (notification, accept) => {
+  if (notification.processing) return
+  notification.processing = true
+
+  try {
+    await $fetch('/api/songs/collaborators/reply', {
+      method: 'POST',
+      body: {
+        songId: notification.songId,
+        accept
+      }
+    })
+
+    // 标记为已处理
+    notification.handled = true
+    notification.status = accept ? 'ACCEPTED' : 'REJECTED'
+    notification.repliedAt = new Date()
+    // notification.message += accept ? ' (已接受)' : ' (已拒绝)'
+
+    if (window.$showNotification) {
+      window.$showNotification(accept ? '已接受联合投稿邀请' : '已拒绝联合投稿邀请', 'success')
+    }
+
+    // 标记通知为已读
+    await markNotificationAsRead(notification.id)
+
+    // 刷新歌曲列表
+    refreshSongs()
+
+    // 刷新通知列表
+    await loadNotifications()
+  } catch (error) {
+    console.error('处理联合投稿邀请失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification(error.statusMessage || '操作失败', 'error')
+    }
+  } finally {
+    notification.processing = false
+  }
+}
+
 // 格式化刷新间隔
 const formatRefreshInterval = (seconds) => {
   if (seconds < 60) {
@@ -1917,6 +2001,95 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   font-size: 0.95rem;
   line-height: 1.5;
   word-break: break-word;
+}
+
+.invite-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.invite-actions .action-button {
+  flex: 1;
+  border: none;
+}
+
+.accept-btn {
+  background: var(--primary);
+  color: white;
+}
+
+.accept-btn:hover {
+  background: #0043F8;
+}
+
+.reject-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.reject-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.invite-actions .action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.invite-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.status-tag {
+  font-size: 0.9em;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+.status-tag.accepted {
+  color: #10b981;
+}
+
+.status-tag.rejected {
+  color: #ef4444;
+}
+
+.status-tag.invalid {
+  color: #9ca3af;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-badge.accepted {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-badge.rejected {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.status-badge.invalid {
+  background: rgba(107, 114, 128, 0.1);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+.status-time {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
 }
 
 .notification-time {

@@ -558,10 +558,25 @@ export const useSongs = () => {
             // 更新歌曲列表
             await fetchSongs()
 
-            // 显示成功通知，包含配额返还信息
-            const message = data.quotaReturned
-                ? `已成功撤回《${songTitle}》的投稿，投稿配额已返还`
-                : `已成功撤回《${songTitle}》的投稿`
+            // 显示成功通知
+            let message = ''
+            if (data.action === 'leave') {
+                message = `已成功退出歌曲《${songTitle}》的联合投稿`
+            } else if (data.message) {
+                // 如果后端返回了特定消息，优先使用（除了撤回投稿的情况，我们要保留带标题的格式）
+                message = data.message
+            } else {
+                message = data.quotaReturned
+                    ? `已成功撤回《${songTitle}》的投稿，投稿配额已返还`
+                    : `已成功撤回《${songTitle}》的投稿`
+            }
+
+            if (data.action !== 'leave') {
+                message = data.quotaReturned
+                    ? `已成功撤回《${songTitle}》的投稿，投稿配额已返还`
+                    : `已成功撤回《${songTitle}》的投稿`
+            }
+
             showNotification(message, 'success')
             return data
         } catch (err: any) {

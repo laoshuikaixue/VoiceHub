@@ -1,6 +1,6 @@
 import {db} from '~/drizzle/db'
 import {cacheService} from '~/server/services/cacheService'
-import {schedules, songs, systemSettings, votes} from '~/drizzle/schema'
+import {schedules, songs, systemSettings, votes, songCollaborators, collaborationLogs} from '~/drizzle/schema'
 import {and, eq} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
@@ -34,11 +34,29 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    // 检查是否是用户自己的投稿
-    if (song.requesterId !== user.id && !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    // 检查是否是用户自己的投稿或联合投稿
+    const isRequester = song.requesterId === user.id
+    let isCollaborator = false
+    let collaboratorRecord = null
+
+    if (!isRequester) {
+        const collabResult = await db.select().from(songCollaborators)
+            .where(and(
+                eq(songCollaborators.songId, song.id),
+                eq(songCollaborators.userId, user.id)
+            ))
+            .limit(1)
+
+        if (collabResult.length > 0) {
+            isCollaborator = true
+            collaboratorRecord = collabResult[0]
+        }
+    }
+
+    if (!isRequester && !isCollaborator && !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
         throw createError({
             statusCode: 403,
-            message: '只能撤回自己的投稿'
+            message: '只能撤回自己的投稿或退出联合投稿'
         })
     }
 
@@ -64,6 +82,31 @@ export default defineEventHandler(async (event) => {
         })
     }
 
+    // 如果是联合投稿人撤回（退出）
+    if (isCollaborator && !isRequester && !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+        await db.delete(songCollaborators)
+            .where(eq(songCollaborators.id, collaboratorRecord.id))
+
+        // 记录日志
+        await db.insert(collaborationLogs).values({
+            collaboratorId: collaboratorRecord.id,
+            action: 'LEAVE',
+            operatorId: user.id,
+            ipAddress: event.node.req.headers['x-forwarded-for'] as string || event.node.req.socket.remoteAddress
+        })
+
+        // 清除歌曲列表缓存
+        await cacheService.clearSongsCache()
+
+        return {
+            message: '已成功退出联合投稿',
+            songId: body.songId,
+            action: 'leave'
+        }
+    }
+
+    // 如果是主投稿人撤回（删除歌曲）
+    
     // 获取系统设置以检查限制类型
     const settingsResult = await db.select().from(systemSettings).limit(1)
     const settings = settingsResult[0]
@@ -96,6 +139,9 @@ export default defineEventHandler(async (event) => {
             canReturnQuota = true
         }
     }
+
+    // 删除关联的联合投稿记录
+    await db.delete(songCollaborators).where(eq(songCollaborators.songId, body.songId))
 
     // 删除歌曲的所有投票
     await db.delete(votes).where(eq(votes.songId, body.songId))

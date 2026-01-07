@@ -1,7 +1,7 @@
 import {createError, defineEventHandler, getQuery} from 'h3'
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songs, users, votes} from '~/drizzle/schema'
-import {and, asc, count, desc, eq, like, or} from 'drizzle-orm'
+import {playTimes, schedules, songs, users, votes, songCollaborators} from '~/drizzle/schema'
+import {and, asc, count, desc, eq, like, or, inArray} from 'drizzle-orm'
 import {cacheService} from '~/server/services/cacheService'
 import {formatBeijingTime} from '~/utils/timeUtils'
 import crypto from 'crypto'
@@ -214,33 +214,71 @@ export default defineEventHandler(async (event) => {
             }
         })
 
-        // 转换数据格式
-        const formattedSongs = songsData.map(song => {
-            // 处理投稿人姓名，如果是同名用户则添加后缀
-            let requesterName = song.requester?.name || '未知用户'
+        // 获取联合投稿人信息
+        const songIds = songsData.map(s => s.id)
+        const collaboratorsMap = new Map()
 
-            // 检查是否有同名用户
-            const sameNameUsers = nameToUsers.get(requesterName)
+        if (songIds.length > 0) {
+            const collaboratorsData = await db.select({
+                songId: songCollaborators.songId,
+                status: songCollaborators.status,
+                user: {
+                    id: users.id,
+                    name: users.name,
+                    grade: users.grade,
+                    class: users.class
+                }
+            })
+                .from(songCollaborators)
+                .leftJoin(users, eq(songCollaborators.userId, users.id))
+                .where(and(
+                    inArray(songCollaborators.songId, songIds),
+                    eq(songCollaborators.status, 'ACCEPTED') // 只展示已接受的
+                ))
+
+            collaboratorsData.forEach(c => {
+                if (!collaboratorsMap.has(c.songId)) {
+                    collaboratorsMap.set(c.songId, [])
+                }
+                if (c.user) {
+                    collaboratorsMap.get(c.songId).push(c.user)
+                }
+            })
+        }
+
+        // 辅助函数：格式化显示名称
+        const formatDisplayName = (userObj: any) => {
+            if (!userObj || !userObj.name) return '未知用户'
+            let displayName = userObj.name
+
+            const sameNameUsers = nameToUsers.get(displayName)
             if (sameNameUsers && sameNameUsers.length > 1) {
-                const requesterWithGradeClass = song.requester
-
-                // 如果有年级信息，则添加年级后缀
-                if (requesterWithGradeClass?.grade) {
-                    // 检查同一个年级是否有同名
-                    const sameGradeUsers = sameNameUsers.filter((u: {
-                        grade?: string,
-                        class?: string
-                    }) => u.grade === requesterWithGradeClass.grade)
-
-                    if (sameGradeUsers.length > 1 && requesterWithGradeClass.class) {
-                        // 同一个年级有同名，添加班级后缀
-                        requesterName = `${requesterName}（${requesterWithGradeClass.grade} ${requesterWithGradeClass.class}）`
+                if (userObj.grade) {
+                    const sameGradeUsers = sameNameUsers.filter((u: any) => u.grade === userObj.grade)
+                    if (sameGradeUsers.length > 1 && userObj.class) {
+                        displayName = `${displayName}（${userObj.grade} ${userObj.class}）`
                     } else {
-                        // 只添加年级后缀
-                        requesterName = `${requesterName}（${requesterWithGradeClass.grade}）`
+                        displayName = `${displayName}（${userObj.grade}）`
                     }
                 }
             }
+            return displayName
+        }
+
+        // 转换数据格式
+        const formattedSongs = songsData.map(song => {
+            // 处理投稿人姓名
+            const requesterName = formatDisplayName(song.requester)
+
+            // 处理联合投稿人
+            const collaborators = collaboratorsMap.get(song.id) || []
+            const formattedCollaborators = collaborators.map((c: any) => ({
+                id: c.id,
+                name: c.name,
+                displayName: formatDisplayName(c),
+                grade: c.grade,
+                class: c.class
+            }))
 
             // 创建基本歌曲对象
             const songObject: any = {
@@ -249,6 +287,7 @@ export default defineEventHandler(async (event) => {
                 artist: song.artist,
                 requester: requesterName,
                 requesterId: song.requester?.id,
+                collaborators: formattedCollaborators, // 添加联合投稿人列表
                 voteCount: voteCounts.get(song.id) || 0,
                 played: song.played,
                 playedAt: song.playedAt,

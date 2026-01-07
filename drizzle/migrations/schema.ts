@@ -1,137 +1,21 @@
-import { pgTable, serial, timestamp, text, boolean, integer, uuid, varchar, unique, pgEnum } from "drizzle-orm/pg-core"
+import {
+    pgTable,
+    uuid,
+    varchar,
+    timestamp,
+    unique,
+    text,
+    boolean,
+    integer,
+    serial,
+    bigint,
+    pgEnum
+} from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blacklistType = pgEnum("BlacklistType", ['SONG', 'KEYWORD'])
 export const userStatus = pgEnum("user_status", ['active', 'withdrawn'])
 
-
-export const semester = pgTable("Semester", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	isActive: boolean().default(false).notNull(),
-});
-
-export const user = pgTable("User", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	username: text().notNull(),
-	name: text(),
-	grade: text(),
-	class: text(),
-	role: text().default('USER').notNull(),
-	password: text().notNull(),
-	lastLogin: timestamp({ mode: 'string' }),
-	lastLoginIp: text(),
-	passwordChangedAt: timestamp({ mode: 'string' }),
-	forcePasswordChange: boolean().default(true).notNull(),
-	meowNickname: text(),
-	meowBoundAt: timestamp({ mode: 'string' }),
-	status: userStatus().default('active').notNull(),
-	statusChangedAt: timestamp({ mode: 'string' }).defaultNow(),
-	statusChangedBy: integer(),
-	email: text(),
-	emailVerified: boolean().default(false),
-});
-
-export const songBlacklist = pgTable("SongBlacklist", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	type: blacklistType().notNull(),
-	value: text().notNull(),
-	reason: text(),
-	isActive: boolean().default(true).notNull(),
-	createdBy: integer(),
-});
-
-export const systemSettings = pgTable("SystemSettings", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	enablePlayTimeSelection: boolean().default(false).notNull(),
-	siteTitle: text(),
-	siteLogoUrl: text(),
-	schoolLogoHomeUrl: text(),
-	schoolLogoPrintUrl: text(),
-	siteDescription: text(),
-	submissionGuidelines: text(),
-	icpNumber: text(),
-	enableSubmissionLimit: boolean().default(false).notNull(),
-	dailySubmissionLimit: integer(),
-	weeklySubmissionLimit: integer(),
-	showBlacklistKeywords: boolean().default(false).notNull(),
-	hideStudentInfo: boolean().default(true).notNull(),
-	smtpEnabled: boolean().default(false).notNull(),
-	smtpHost: text(),
-	smtpPort: integer().default(587),
-	smtpSecure: boolean().default(false),
-	smtpUsername: text(),
-	smtpPassword: text(),
-	smtpFromEmail: text(),
-	smtpFromName: text().default('校园广播站'),
-});
-
-export const playTime = pgTable("PlayTime", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	startTime: text(),
-	endTime: text(),
-	enabled: boolean().default(true).notNull(),
-	description: text(),
-});
-
-export const vote = pgTable("Vote", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	songId: integer().notNull(),
-	userId: integer().notNull(),
-});
-
-export const notification = pgTable("Notification", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	type: text().notNull(),
-	message: text().notNull(),
-	read: boolean().default(false).notNull(),
-	userId: integer().notNull(),
-	songId: integer(),
-});
-
-export const notificationSettings = pgTable("NotificationSettings", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	userId: integer().notNull(),
-	enabled: boolean().default(true).notNull(),
-	songRequestEnabled: boolean().default(true).notNull(),
-	songVotedEnabled: boolean().default(true).notNull(),
-	songPlayedEnabled: boolean().default(true).notNull(),
-	refreshInterval: integer().default(60).notNull(),
-	songVotedThreshold: integer().default(1).notNull(),
-});
-
-export const song = pgTable("Song", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	title: text().notNull(),
-	artist: text().notNull(),
-	requesterId: integer().notNull(),
-	played: boolean().default(false).notNull(),
-	playedAt: timestamp({ mode: 'string' }).defaultNow(),
-	semester: text(),
-	preferredPlayTimeId: integer(),
-	cover: text(),
-	musicPlatform: text(),
-	musicId: text(),
-	playUrl: text(),
-});
 
 export const apiKeyPermissions = pgTable("api_key_permissions", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -183,6 +67,41 @@ export const emailTemplate = pgTable("EmailTemplate", {
 	updatedByUserId: integer(),
 });
 
+export const notificationSettings = pgTable("NotificationSettings", {
+    id: serial().primaryKey().notNull(),
+    createdAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    updatedAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    userId: integer().notNull(),
+    enabled: boolean().default(true).notNull(),
+    songRequestEnabled: boolean().default(true).notNull(),
+    songVotedEnabled: boolean().default(true).notNull(),
+    songPlayedEnabled: boolean().default(true).notNull(),
+    refreshInterval: integer().default(60).notNull(),
+    songVotedThreshold: integer().default(1).notNull(),
+});
+
+export const notification = pgTable("Notification", {
+    id: serial().primaryKey().notNull(),
+    createdAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    updatedAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    type: text().notNull(),
+    message: text().notNull(),
+    read: boolean().default(false).notNull(),
+    userId: integer().notNull(),
+    songId: integer(),
+});
+
+export const playTime = pgTable("PlayTime", {
+    id: serial().primaryKey().notNull(),
+    createdAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    updatedAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    name: text().notNull(),
+    startTime: text(),
+    endTime: text(),
+    enabled: boolean().default(true).notNull(),
+    description: text(),
+});
+
 export const schedule = pgTable("Schedule", {
 	id: serial().primaryKey().notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
@@ -196,6 +115,25 @@ export const schedule = pgTable("Schedule", {
 	publishedAt: timestamp({ mode: 'string' }),
 });
 
+export const semester = pgTable("Semester", {
+    id: serial().primaryKey().notNull(),
+    createdAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    updatedAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    name: text().notNull(),
+    isActive: boolean().default(false).notNull(),
+});
+
+export const songBlacklist = pgTable("SongBlacklist", {
+    id: serial().primaryKey().notNull(),
+    createdAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    updatedAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    type: blacklistType().notNull(),
+    value: text().notNull(),
+    reason: text(),
+    isActive: boolean().default(true).notNull(),
+    createdBy: integer(),
+});
+
 export const userStatusLogs = pgTable("user_status_logs", {
 	id: serial().primaryKey().notNull(),
 	userId: integer("user_id").notNull(),
@@ -204,4 +142,104 @@ export const userStatusLogs = pgTable("user_status_logs", {
 	reason: text(),
 	operatorId: integer("operator_id"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+});
+
+export const user = pgTable("User", {
+    id: serial().primaryKey().notNull(),
+    createdAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    updatedAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    username: text().notNull(),
+    name: text(),
+    grade: text(),
+    class: text(),
+    role: text().default('USER').notNull(),
+    password: text().notNull(),
+    email: text(),
+    emailVerified: boolean().default(false),
+    lastLogin: timestamp({mode: 'string'}),
+    lastLoginIp: text(),
+    passwordChangedAt: timestamp({mode: 'string'}),
+    forcePasswordChange: boolean().default(true).notNull(),
+    meowNickname: text(),
+    meowBoundAt: timestamp({mode: 'string'}),
+    status: userStatus().default('active').notNull(),
+    statusChangedAt: timestamp({mode: 'string'}).defaultNow(),
+    statusChangedBy: integer(),
+});
+
+export const vote = pgTable("Vote", {
+    id: serial().primaryKey().notNull(),
+    createdAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    songId: integer().notNull(),
+    userId: integer().notNull(),
+});
+
+export const requestTime = pgTable("RequestTime", {
+    id: serial().primaryKey().notNull(),
+    createdAt: timestamp({precision: 6, mode: 'string'}).defaultNow().notNull(),
+    updatedAt: timestamp({precision: 6, mode: 'string'}).defaultNow().notNull(),
+    name: text().notNull(),
+    startTime: timestamp({mode: 'string'}).notNull(),
+    endTime: timestamp({mode: 'string'}).notNull(),
+    enabled: boolean().default(true).notNull(),
+    description: text(),
+    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+    expected: bigint({mode: "number"}).default(0).notNull(),
+    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+    accepted: bigint({mode: "number"}).default(0).notNull(),
+    past: boolean().default(false).notNull(),
+});
+
+export const song = pgTable("Song", {
+    id: serial().primaryKey().notNull(),
+    createdAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    updatedAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    title: text().notNull(),
+    artist: text().notNull(),
+    requesterId: integer().notNull(),
+    played: boolean().default(false).notNull(),
+    playedAt: timestamp({mode: 'string'}).defaultNow(),
+    semester: text(),
+    preferredPlayTimeId: integer(),
+    cover: text(),
+    playUrl: text(),
+    musicPlatform: text(),
+    musicId: text(),
+    hitRequestId: integer(),
+});
+
+export const systemSettings = pgTable("SystemSettings", {
+    id: serial().primaryKey().notNull(),
+    createdAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    updatedAt: timestamp({mode: 'string'}).defaultNow().notNull(),
+    enablePlayTimeSelection: boolean().default(false).notNull(),
+    siteTitle: text(),
+    siteLogoUrl: text(),
+    schoolLogoHomeUrl: text(),
+    schoolLogoPrintUrl: text(),
+    siteDescription: text(),
+    submissionGuidelines: text(),
+    icpNumber: text(),
+    enableSubmissionLimit: boolean().default(false).notNull(),
+    dailySubmissionLimit: integer(),
+    weeklySubmissionLimit: integer(),
+    showBlacklistKeywords: boolean().default(false).notNull(),
+    hideStudentInfo: boolean().default(true).notNull(),
+    smtpEnabled: boolean().default(false).notNull(),
+    smtpHost: text(),
+    smtpPort: integer().default(587),
+    smtpSecure: boolean().default(false),
+    smtpUsername: text(),
+    smtpPassword: text(),
+    smtpFromEmail: text(),
+    smtpFromName: text().default('校园广播站'),
+    enableRequestTimeLimitation: boolean().default(false).notNull(),
+    forceBlockAllRequests: boolean().default(false).notNull(),
+});
+
+export const drizzleMigrations = pgTable("__drizzle_migrations__", {
+    id: serial().primaryKey().notNull(),
+    hash: text().notNull(),
+    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+    createdAt: bigint("created_at", {mode: "number"}),
 });

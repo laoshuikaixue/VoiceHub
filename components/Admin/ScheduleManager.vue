@@ -205,7 +205,13 @@
                 </div>
               </div>
               <div class="song-side">
-                <span class="song-submitter">投稿: {{ song.requester }}</span>
+                <span :title="(song.collaborators && song.collaborators.length > 0 ? '主投稿人: ' : '投稿人: ') + song.requester + (song.collaborators && song.collaborators.length ? '\n联合投稿: ' + song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
+                      class="song-submitter">
+                  投稿: {{ song.requester }}
+                  <span v-if="song.collaborators && song.collaborators.length > 0">
+                     & {{ song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
+                  </span>
+                </span>
                 <span v-if="song.requesterGrade" class="song-grade-class">
                   {{ song.requesterGrade }}{{ song.requesterClass ? ` ${song.requesterClass}` : '' }}
                 </span>
@@ -383,7 +389,13 @@
                     <span v-if="schedule.isDraft" class="draft-badge">草稿</span>
                   </div>
                   <div class="song-artist">{{ schedule.song.artist }}</div>
-                  <div class="song-requester">投稿人: {{ schedule.song.requester }}</div>
+                  <div :title="(schedule.song.collaborators && schedule.song.collaborators.length > 0 ? '主投稿人: ' : '投稿人: ') + schedule.song.requester + (schedule.song.collaborators && schedule.song.collaborators.length ? '\n联合投稿: ' + schedule.song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
+                       class="song-requester">
+                    投稿人: {{ schedule.song.requester }}
+                    <span v-if="schedule.song.collaborators && schedule.song.collaborators.length > 0">
+                       & {{ schedule.song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div class="song-actions">
