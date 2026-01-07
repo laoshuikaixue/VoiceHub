@@ -260,7 +260,9 @@ export default defineEventHandler(async (event) => {
                 cover: song.cover || null, // 添加封面字段
                 musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
                 musicId: song.musicId || null, // 添加音乐ID字段
-                playUrl: song.playUrl || null // 添加播放地址字段
+                playUrl: song.playUrl || null, // 添加播放地址字段
+                requesterGrade: song.requester?.grade || null, // 添加投稿人年级
+                requesterClass: song.requester?.class || null // 添加投稿人班级
             }
 
             // 添加排期信息

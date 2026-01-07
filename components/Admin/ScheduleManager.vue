@@ -145,6 +145,18 @@
                 </option>
               </select>
             </div>
+            <div class="grade-selector">
+              <label class="grade-label">年级：</label>
+              <select v-model="selectedGrade" class="grade-select">
+                <option
+                    v-for="grade in availableGrades"
+                    :key="grade"
+                    :value="grade"
+                >
+                  {{ grade }}
+                </option>
+              </select>
+            </div>
             <div class="sort-options">
               <label>排序:</label>
               <select v-model="songSortOption" class="sort-select">
@@ -194,6 +206,9 @@
               </div>
               <div class="song-side">
                 <span class="song-submitter">投稿: {{ song.requester }}</span>
+                <span v-if="song.requesterGrade" class="song-grade-class">
+                  {{ song.requesterGrade }}{{ song.requesterClass ? ` ${song.requesterClass}` : '' }}
+                </span>
                 <span
                     v-if="song.preferredPlayTimeId && getPlayTimeName(song.preferredPlayTimeId)"
                     class="preferred-playtime"
@@ -431,6 +446,7 @@ const loading = ref(false)
 const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
 const searchQuery = ref('')
+const selectedGrade = ref('全部')
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
@@ -550,6 +566,22 @@ const availableDates = computed(() => {
   return dates
 })
 
+// 获取所有可选年级
+const availableGrades = computed(() => {
+  if (!songs.value) return ['全部']
+  
+  const grades = new Set()
+  songs.value.forEach(song => {
+    if (song.requesterGrade) {
+      grades.add(song.requesterGrade)
+    }
+  })
+  
+  // 对年级进行简单排序
+  const sortedGrades = Array.from(grades).sort()
+  return ['全部', ...sortedGrades]
+})
+
 // 过滤未排期歌曲（所有）
 const allUnscheduledSongs = computed(() => {
   if (!songs.value) return []
@@ -570,6 +602,13 @@ const allUnscheduledSongs = computed(() => {
           artist.includes(query) ||
           requester.includes(query)
     })
+  }
+
+  // 年级过滤
+  if (selectedGrade.value !== '全部') {
+    unscheduledSongs = unscheduledSongs.filter(song => 
+      song.requesterGrade === selectedGrade.value
+    )
   }
 
   return [...unscheduledSongs].sort((a, b) => {
@@ -704,6 +743,11 @@ watch(songSortOption, () => {
 
 // 监听搜索查询变化，重置分页
 watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
+// 监听年级筛选变化，重置分页
+watch(selectedGrade, () => {
   currentPage.value = 1
 })
 
@@ -2229,11 +2273,11 @@ onMounted(() => {
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   flex-wrap: wrap;
   background: rgba(255, 255, 255, 0.03);
-  padding: 12px 16px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -2260,13 +2304,14 @@ onMounted(() => {
 }
 
 .search-input {
-  padding: 10px 40px 10px 36px;
+  height: 40px;
+  padding: 0 40px 0 36px;
   background: rgba(30, 30, 30, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 10px;
   color: #ffffff;
   font-size: 14px;
-  width: 320px;
+  width: 280px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
 }
@@ -2274,7 +2319,7 @@ onMounted(() => {
 .search-input:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
   background: rgba(30, 30, 30, 0.9);
 }
 
@@ -2307,60 +2352,80 @@ onMounted(() => {
   height: 14px;
 }
 
-.semester-selector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.semester-label {
-  font-size: 14px;
-  color: #888888;
-  white-space: nowrap;
-}
-
-.semester-select {
-  padding: 8px 14px;
-  background: rgba(30, 30, 30, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 14px;
-  min-width: 160px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-}
-
-.semester-select:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(30, 30, 30, 0.9);
-}
-
-.semester-select:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-}
-
+.semester-selector,
+.grade-selector,
 .sort-options {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
+.semester-label,
+.grade-label,
 .sort-options label {
-  font-size: 14px;
+  font-size: 13px;
   color: #888888;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.semester-select,
+.grade-select,
+.sort-select {
+  height: 40px;
+  padding: 0 32px 0 14px;
+  background-color: rgba(30, 30, 30, 0.7);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  appearance: none;
+}
+
+.semester-select {
+  min-width: 160px;
+}
+
+.grade-select {
+  min-width: 100px;
 }
 
 .sort-select {
-  padding: 6px 12px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
-  color: #ffffff;
-  font-size: 14px;
+  min-width: 120px;
+}
+
+.semester-select:hover,
+.grade-select:hover,
+.sort-select:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(40, 40, 40, 0.9);
+}
+
+.semester-select:focus,
+.grade-select:focus,
+.sort-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.song-grade-class {
+  font-size: 11px;
+  color: #888888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  margin-top: 2px;
+  text-align: center;
+  width: 100%;
 }
 
 .sequence-actions {
@@ -2531,7 +2596,7 @@ onMounted(() => {
   overflow: hidden;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 16px;
 }
 
@@ -2693,7 +2758,7 @@ onMounted(() => {
   padding: 8px 16px;
   background: #3a3a3a;
   border: 1px solid #4a4a4a;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #ffffff;
   font-size: 14px;
   cursor: pointer;
