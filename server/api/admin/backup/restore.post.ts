@@ -4,6 +4,7 @@ import {
     apiKeyPermissions,
     apiKeys,
     apiLogs,
+    collaborationLogs,
     emailTemplates,
     notificationSettings,
     notifications,
@@ -12,6 +13,7 @@ import {
     schedules,
     semesters,
     songBlacklists,
+    songCollaborators,
     songs,
     systemSettings,
     users,
@@ -144,6 +146,8 @@ export default defineEventHandler(async (event) => {
                 // 按照外键依赖顺序删除数据
                 await db.delete(notifications)
                 await db.delete(notificationSettings)
+                await db.delete(collaborationLogs)
+                await db.delete(songCollaborators)
                 await db.delete(schedules)
                 await db.delete(votes)
                 await db.delete(songs)
@@ -171,6 +175,8 @@ export default defineEventHandler(async (event) => {
             'userStatusLogs',
             'songBlacklist',
             'songs',
+            'songCollaborators',
+            'collaborationLogs',
             'votes',
             'schedules',
             'notificationSettings',
@@ -977,6 +983,65 @@ export default defineEventHandler(async (event) => {
                                                     })
                                                 }
                                             }
+                                            break
+
+                                        case 'songCollaborators':
+                                            // 验证外键
+                                            let validCollabUserId = record.userId
+                                            let validCollabSongId = record.songId
+
+                                            if (record.userId) {
+                                                const mappedUserId = userIdMapping.get(record.userId)
+                                                if (mappedUserId) validCollabUserId = mappedUserId
+                                            }
+
+                                            if (record.songId) {
+                                                const mappedSongId = songIdMapping.get(record.songId)
+                                                if (mappedSongId) validCollabSongId = mappedSongId
+                                            }
+
+                                            const collabData = {
+                                                id: record.id, // UUID
+                                                songId: validCollabSongId,
+                                                userId: validCollabUserId,
+                                                status: record.status || 'PENDING',
+                                                createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                                                updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+                                            }
+
+                                            // UUID 表直接插入，如果冲突则更新
+                                            await tx.insert(songCollaborators)
+                                                .values(collabData)
+                                                .onConflictDoUpdate({
+                                                    target: songCollaborators.id,
+                                                    set: collabData
+                                                })
+                                            break
+
+                                        case 'collaborationLogs':
+                                            // 验证外键 (collaboratorId 是 UUID，通常不变，但如果是重新生成的...)
+                                            // 这里假设 UUID 在 restore songCollaborators 时保持一致
+                                            const logData = {
+                                                id: record.id,
+                                                collaboratorId: record.collaboratorId,
+                                                action: record.action,
+                                                operatorId: record.operatorId, // 可能需要映射，但 operatorId 是 integer
+                                                ipAddress: record.ipAddress,
+                                                createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+                                            }
+
+                                            // 映射 operatorId
+                                            if (record.operatorId) {
+                                                const mappedOpId = userIdMapping.get(record.operatorId)
+                                                if (mappedOpId) logData.operatorId = mappedOpId
+                                            }
+
+                                            await tx.insert(collaborationLogs)
+                                                .values(logData)
+                                                .onConflictDoUpdate({
+                                                    target: collaborationLogs.id,
+                                                    set: logData
+                                                })
                                             break
 
                                         case 'votes':

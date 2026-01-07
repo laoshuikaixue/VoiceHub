@@ -38,7 +38,12 @@
       <!-- 投稿人信息 -->
       <div v-if="settings.showRequester" class="requester-info">
         <span class="label">投稿人：</span>
-        <span class="value">{{ schedule.song.requester }}</span>
+        <span class="value">
+          {{ schedule.song.requester }}
+          <span v-if="schedule.song.collaborators && schedule.song.collaborators.length > 0">
+             & {{ schedule.song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
+          </span>
+        </span>
       </div>
 
       <!-- 热度信息 -->

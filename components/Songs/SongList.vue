@@ -149,7 +149,13 @@
                   </span>
                 </h3>
                 <div class="song-meta">
-                  <span class="requester">投稿人：{{ song.requester }}</span>
+                  <span :title="(song.collaborators && song.collaborators.length ? '主投稿人: ' : '投稿人: ') + song.requester + (song.collaborators && song.collaborators.length ? '\n联合投稿: ' + song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
+                        class="requester">
+                    投稿人：{{ song.requester }}
+                    <span v-if="song.collaborators && song.collaborators.length > 0">
+                       & {{ song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
+                    </span>
+                  </span>
                 </div>
               </div>
 
@@ -184,12 +190,12 @@
                 投稿时间：{{ song.requestedAt }}
               </div>
 
-              <!-- 如果是自己的投稿，显示撤回按钮 -->
+              <!-- 如果是自己的投稿或联合投稿，显示撤回/退出按钮 -->
               <button
-                  v-if="isMySong(song) && !song.played && !song.scheduled"
+                  v-if="(isMySong(song) || isCollaborator(song)) && !song.played && !song.scheduled"
                   :disabled="actionInProgress"
                   class="withdraw-button"
-                  title="撤回投稿"
+                  :title="isMySong(song) ? '撤回投稿' : '退出联合投稿'"
                   @click.stop="handleWithdraw(song)"
               >
                 撤销
@@ -524,6 +530,13 @@ const isMySong = (song) => {
   return auth && auth.user && auth.user.value && song.requesterId === auth.user.value.id
 }
 
+// 判断是否是联合投稿人
+const isCollaborator = (song) => {
+  if (!auth || !auth.user || !auth.user.value) return false
+  if (!song.collaborators || !Array.isArray(song.collaborators)) return false
+  return song.collaborators.some(c => c.id === auth.user.value.id)
+}
+
 // 应用过滤器和搜索
 const displayedSongs = computed(() => {
   if (!props.songs) return []
@@ -706,12 +719,22 @@ const handleWithdraw = (song) => {
     return // 已排期的歌曲不能撤回
   }
 
-  confirmDialog.value = {
-    show: true,
-    title: '撤回投稿',
-    message: `确认撤回歌曲《${song.title}》的投稿吗？`,
-    action: 'withdraw',
-    data: song
+  if (isMySong(song)) {
+    confirmDialog.value = {
+      show: true,
+      title: '撤回投稿',
+      message: `确认撤回歌曲《${song.title}》的投稿吗？这将同时取消所有联合投稿关联。`,
+      action: 'withdraw',
+      data: song
+    }
+  } else if (isCollaborator(song)) {
+    confirmDialog.value = {
+      show: true,
+      title: '退出联合投稿',
+      message: `确认退出歌曲《${song.title}》的联合投稿吗？`,
+      action: 'withdraw', // 后端使用相同的接口，根据用户身份处理
+      data: song
+    }
   }
 }
 

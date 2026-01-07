@@ -1,8 +1,8 @@
 import {createError, defineEventHandler, getCookie, getHeader, getQuery} from 'h3'
 import jwt from 'jsonwebtoken'
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songs, systemSettings, users, votes} from '~/drizzle/schema'
-import {count, eq} from 'drizzle-orm'
+import {playTimes, schedules, songs, systemSettings, users, votes, songCollaborators} from '~/drizzle/schema'
+import {count, eq, inArray, and} from 'drizzle-orm'
 import {cacheService} from '~/server/services/cacheService'
 import {executeRedisCommand, isRedisReady} from '../../utils/redis'
 import {formatBeijingTime} from '~/utils/timeUtils'
@@ -205,6 +205,57 @@ export default defineEventHandler(async (event) => {
             }
         })
 
+        // 获取联合投稿人信息
+        const songIds = schedulesData.map(s => s.song.id)
+        const collaboratorsMap = new Map()
+
+        if (songIds.length > 0) {
+            const collaboratorsData = await db.select({
+                songId: songCollaborators.songId,
+                status: songCollaborators.status,
+                user: {
+                    id: users.id,
+                    name: users.name,
+                    grade: users.grade,
+                    class: users.class
+                }
+            })
+                .from(songCollaborators)
+                .leftJoin(users, eq(songCollaborators.userId, users.id))
+                .where(and(
+                    inArray(songCollaborators.songId, songIds),
+                    eq(songCollaborators.status, 'ACCEPTED') // 只展示已接受的
+                ))
+
+            collaboratorsData.forEach(c => {
+                if (!collaboratorsMap.has(c.songId)) {
+                    collaboratorsMap.set(c.songId, [])
+                }
+                if (c.user) {
+                    collaboratorsMap.get(c.songId).push(c.user)
+                }
+            })
+        }
+
+        // 辅助函数：格式化显示名称
+        const formatDisplayName = (userObj: any) => {
+            if (!userObj || !userObj.name) return '未知用户'
+            let displayName = userObj.name
+
+            const sameNameUsers = nameToUsers.get(displayName)
+            if (sameNameUsers && sameNameUsers.length > 1) {
+                if (userObj.grade) {
+                    const sameGradeUsers = sameNameUsers.filter((u: any) => u.grade === userObj.grade)
+                    if (sameGradeUsers.length > 1 && userObj.class) {
+                        displayName = `${displayName}（${userObj.grade} ${userObj.class}）`
+                    } else {
+                        displayName = `${displayName}（${userObj.grade}）`
+                    }
+                }
+            }
+            return displayName
+        }
+
         // 转换数据格式
         const formattedSchedules = schedulesData.map(schedule => {
             // 获取原始日期，并确保使用UTC时间
@@ -218,35 +269,18 @@ export default defineEventHandler(async (event) => {
                 0, 0, 0, 0
             ))
 
-            // 处理投稿人姓名，如果是同名用户则添加后缀
-            let requesterName = schedule.requester.name || '未知用户'
+            // 处理投稿人姓名
+            const requesterName = formatDisplayName(schedule.requester)
 
-            // 检查是否有同名用户
-            const sameNameUsers = nameToUsers.get(requesterName)
-            if (sameNameUsers && sameNameUsers.length > 1) {
-                const requesterWithGradeClass = schedule.requester
-
-                // 如果有年级信息，则添加年级后缀
-                if (requesterWithGradeClass.grade) {
-                    // 检查同一个年级是否有同名
-                    const sameGradeUsers = sameNameUsers.filter((u: {
-                            id: number,
-                            name: string | null,
-                            grade: string | null,
-                            class: string | null
-                        }) =>
-                            u.grade === requesterWithGradeClass.grade
-                    )
-
-                    if (sameGradeUsers.length > 1 && requesterWithGradeClass.class) {
-                        // 同一个年级有同名，添加班级后缀
-                        requesterName = `${requesterName}（${requesterWithGradeClass.grade} ${requesterWithGradeClass.class}）`
-                    } else {
-                        // 只添加年级后缀
-                        requesterName = `${requesterName}（${requesterWithGradeClass.grade}）`
-                    }
-                }
-            }
+            // 处理联合投稿人
+            const collaborators = collaboratorsMap.get(schedule.song.id) || []
+            const formattedCollaborators = collaborators.map((c: any) => ({
+                id: c.id,
+                name: c.name,
+                displayName: formatDisplayName(c),
+                grade: c.grade,
+                class: c.class
+            }))
 
             // 注意：这里不进行模糊化处理，保持完整数据用于缓存
             // 模糊化处理将在最终返回时进行
@@ -269,6 +303,7 @@ export default defineEventHandler(async (event) => {
                     title: schedule.song.title,
                     artist: schedule.song.artist,
                     requester: requesterName,
+                    collaborators: formattedCollaborators, // 添加联合投稿人
                     voteCount: voteCounts.get(schedule.song.id) || 0,
                     played: schedule.song.played || false,
                     cover: schedule.song.cover || null,

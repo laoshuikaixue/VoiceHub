@@ -1,4 +1,17 @@
-import {and, db, eq, gte, lt, playTimes, semesters, songs, systemSettings} from '~/drizzle/db'
+import {
+    and,
+    db,
+    eq,
+    gte,
+    lt,
+    playTimes,
+    semesters,
+    songs,
+    systemSettings,
+    songCollaborators,
+    collaborationLogs
+} from '~/drizzle/db'
+import {createCollaborationInvitationNotification} from '~/server/services/notificationService'
 
 export default defineEventHandler(async (event) => {
     // 检查用户认证
@@ -185,6 +198,39 @@ export default defineEventHandler(async (event) => {
             playUrl: body.playUrl || null
         }).returning()
         const song = songResult[0]
+
+        // 处理联合投稿人
+        if (body.collaborators && Array.isArray(body.collaborators) && body.collaborators.length > 0) {
+            for (const rawCollaboratorId of body.collaborators) {
+                const collaboratorId = Number(rawCollaboratorId)
+                // 跳过自己或无效ID
+                if (isNaN(collaboratorId) || collaboratorId === user.id) continue
+
+                try {
+                    // 创建联合投稿记录
+                    const collabResult = await db.insert(songCollaborators).values({
+                        songId: song.id,
+                        userId: collaboratorId,
+                        status: 'PENDING'
+                    }).returning()
+
+                    const collab = collabResult[0]
+
+                    // 记录审计日志
+                    await db.insert(collaborationLogs).values({
+                        collaboratorId: collab.id,
+                        action: 'INVITE',
+                        operatorId: user.id,
+                        ipAddress: event.node.req.headers['x-forwarded-for'] as string || event.node.req.socket.remoteAddress
+                    })
+
+                    // 发送邀请通知
+                    await createCollaborationInvitationNotification(user.id, collaboratorId, song.id, song.title)
+                } catch (err) {
+                    console.error(`邀请用户 ${collaboratorId} 失败:`, err)
+                }
+            }
+        }
 
         // 移除了投稿者自动投票的逻辑
 

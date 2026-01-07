@@ -4,6 +4,7 @@ import {relations} from 'drizzle-orm';
 // 枚举定义
 export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'withdrawn']);
+export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
 
 // 用户表
 export const users = pgTable('User', {
@@ -229,6 +230,26 @@ export const requestTimes = pgTable("RequestTime", {
   past: boolean().default(false).notNull(),
 });
 
+// 联合投稿人表
+export const songCollaborators = pgTable('song_collaborators', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    songId: integer('song_id').notNull(),
+    userId: integer('user_id').notNull(),
+    status: collaboratorStatusEnum('status').default('PENDING').notNull(),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).defaultNow().notNull(),
+});
+
+// 联合投稿审计日志表
+export const collaborationLogs = pgTable('collaboration_logs', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    collaboratorId: uuid('collaborator_id').notNull(),
+    action: varchar('action', {length: 50}).notNull(), // INVITE, ACCEPT, REJECT, REMOVE
+    operatorId: integer('operator_id').notNull(),
+    ipAddress: text('ip_address'),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
+});
+
 // 关系定义
 export const usersRelations = relations(users, ({ many, one }) => ({
   songs: many(songs),
@@ -240,6 +261,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   }),
   apiKeys: many(apiKeys),
   statusLogs: many(userStatusLogs),
+    collaborations: many(songCollaborators),
   statusChangedByUser: one(users, {
     fields: [users.statusChangedBy],
     references: [users.id],
@@ -258,6 +280,7 @@ export const songsRelations = relations(songs, ({ one, many }) => ({
   votes: many(votes),
   schedules: many(schedules),
   notifications: many(notifications),
+    collaborators: many(songCollaborators),
 }));
 
 export const votesRelations = relations(votes, ({ one }) => ({
@@ -340,6 +363,29 @@ export const userStatusLogsRelations = relations(userStatusLogs, ({ one }) => ({
   }),
 }));
 
+export const songCollaboratorsRelations = relations(songCollaborators, ({one, many}) => ({
+    song: one(songs, {
+        fields: [songCollaborators.songId],
+        references: [songs.id],
+    }),
+    user: one(users, {
+        fields: [songCollaborators.userId],
+        references: [users.id],
+    }),
+    logs: many(collaborationLogs),
+}));
+
+export const collaborationLogsRelations = relations(collaborationLogs, ({one}) => ({
+    collaborator: one(songCollaborators, {
+        fields: [collaborationLogs.collaboratorId],
+        references: [songCollaborators.id],
+    }),
+    operator: one(users, {
+        fields: [collaborationLogs.operatorId],
+        references: [users.id],
+    }),
+}));
+
 // 邮件模板表（仅存储自定义覆盖，内置模板在代码中定义）
 export const emailTemplates = pgTable('EmailTemplate', {
   id: serial('id').primaryKey(),
@@ -381,6 +427,10 @@ export type ApiLog = typeof apiLogs.$inferSelect;
 export type NewApiLog = typeof apiLogs.$inferInsert;
 export type UserStatusLog = typeof userStatusLogs.$inferSelect;
 export type NewUserStatusLog = typeof userStatusLogs.$inferInsert;
+export type SongCollaborator = typeof songCollaborators.$inferSelect;
+export type NewSongCollaborator = typeof songCollaborators.$inferInsert;
+export type CollaborationLog = typeof collaborationLogs.$inferSelect;
+export type NewCollaborationLog = typeof collaborationLogs.$inferInsert;
 export type EmailTemplate = typeof emailTemplates.$inferSelect;
 export type NewEmailTemplate = typeof emailTemplates.$inferInsert;export type RequestTime = typeof requestTimes.$inferSelect;
 export type NewRequestTime = typeof requestTimes.$inferInsert;

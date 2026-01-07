@@ -99,6 +99,70 @@ async function safeMigrate() {
     }
     
     // 3. 创建迁移目录（如果不存在）
+      if (!fileExists(migrationsPath)) {
+          log('创建迁移目录...', 'cyan');
+          fs.mkdirSync(migrationsPath, {recursive: true});
+      }
+
+      // 自动执行 generate 命令并处理交互
+      async function runGenerateWithAutoConfirm(env) {
+          return new Promise((resolve) => {
+              const {spawn} = require('child_process');
+              const child = spawn('npm', ['run', 'db:generate'], {
+                  env,
+                  shell: true
+              });
+
+              // 监听输出，透传给用户，并自动响应提示
+              child.stdout.on('data', (data) => {
+                  process.stdout.write(data);
+                  const str = data.toString();
+                  // 如果检测到交互提示（通常包含问号或选项），自动发送回车
+                  if (str.includes('?') || str.includes('renamed') || str.includes('created')) {
+                      try {
+                          // 发送回车以选择默认选项（通常是 Created）
+                          child.stdin.write('\n');
+                      } catch (e) {
+                          // 忽略写入错误
+                      }
+                  }
+              });
+
+              child.stderr.on('data', (data) => {
+                  process.stderr.write(data);
+              });
+
+              child.on('close', (code) => {
+                  resolve(code === 0);
+              });
+
+              child.on('error', () => {
+                  resolve(false);
+              });
+          });
+      }
+
+      async function safeMigrate() {
+          log('🔄 开始安全数据库迁移流程...', 'bright');
+
+          try {
+              // 获取项目根目录路径
+              const projectRoot = path.resolve(process.cwd(), '..');
+              const drizzleConfigPath = path.join(projectRoot, 'drizzle.config.ts');
+              const schemaPath = path.join(projectRoot, 'drizzle/schema.ts');
+              const migrationsPath = path.join(projectRoot, 'drizzle/migrations');
+
+              // 1. 确保drizzle配置存在
+              if (!fileExists(drizzleConfigPath)) {
+                  throw new Error(`drizzle.config.ts 配置文件不存在: ${drizzleConfigPath}`);
+              }
+
+              // 2. 检查schema文件
+              if (!fileExists(schemaPath)) {
+                  throw new Error(`drizzle/schema.ts 文件不存在: ${schemaPath}`);
+              }
+
+              // 3. 创建迁移目录（如果不存在）
     if (!fileExists(migrationsPath)) {
       log('创建迁移目录...', 'cyan');
       fs.mkdirSync(migrationsPath, { recursive: true });
@@ -114,9 +178,12 @@ async function safeMigrate() {
       CI: 'true',
       NODE_ENV: 'production'
     };
-    
-    if (!safeExec('npm run db:generate', { env: nonInteractiveEnv })) {
-      logWarning('迁移文件生成失败，尝试直接同步...');
+
+              // 使用新的自动确认函数
+              const generateSuccess = await runGenerateWithAutoConfirm(nonInteractiveEnv);
+
+              if (!generateSuccess) {
+                  logWarning('迁移文件生成可能遇到问题，尝试继续...');
     } else {
       logSuccess('迁移文件生成完成');
     }

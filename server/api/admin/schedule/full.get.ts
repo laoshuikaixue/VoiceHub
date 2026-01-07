@@ -1,6 +1,6 @@
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songs, users, votes} from '~/drizzle/schema'
-import {and, asc, count, eq, gte, lt} from 'drizzle-orm'
+import {playTimes, schedules, songs, users, votes, songCollaborators} from '~/drizzle/schema'
+import {and, asc, count, eq, gte, lt, inArray} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
     // 检查用户身份验证和权限
@@ -129,6 +129,36 @@ export default defineEventHandler(async (event) => {
 
         const voteCountMap = new Map(voteCounts.map(v => [v.songId, v.count]))
 
+        // 获取联合投稿人信息
+        const collaboratorsMap = new Map()
+
+        if (songIds.length > 0) {
+            const collaboratorsData = await db.select({
+                songId: songCollaborators.songId,
+                user: {
+                    id: users.id,
+                    name: users.name,
+                    grade: users.grade,
+                    class: users.class
+                }
+            })
+                .from(songCollaborators)
+                .leftJoin(users, eq(songCollaborators.userId, users.id))
+                .where(and(
+                    inArray(songCollaborators.songId, songIds),
+                    eq(songCollaborators.status, 'ACCEPTED')
+                ))
+
+            collaboratorsData.forEach(c => {
+                if (!collaboratorsMap.has(c.songId)) {
+                    collaboratorsMap.set(c.songId, [])
+                }
+                if (c.user) {
+                    collaboratorsMap.get(c.songId).push(c.user)
+                }
+            })
+        }
+
         // 格式化响应数据
         const formattedSchedules = schedulesData.map(schedule => {
             const dateOnly = schedule.playDate
@@ -156,6 +186,34 @@ export default defineEventHandler(async (event) => {
                 }
             }
 
+            // 辅助函数：格式化显示名称 (用于联合投稿人)
+            const formatDisplayName = (userObj: any) => {
+                if (!userObj || !userObj.name) return '未知用户'
+                let displayName = userObj.name
+
+                const sameNameUsers = nameToUsers.get(displayName)
+                if (sameNameUsers && sameNameUsers.length > 1) {
+                    if (userObj.grade) {
+                        const sameGradeUsers = sameNameUsers.filter((u: any) => u.grade === userObj.grade)
+                        if (sameGradeUsers.length > 1 && userObj.class) {
+                            displayName = `${displayName}（${userObj.grade} ${userObj.class}）`
+                        } else {
+                            displayName = `${displayName}（${userObj.grade}）`
+                        }
+                    }
+                }
+                return displayName
+            }
+
+            const collaborators = collaboratorsMap.get(schedule.songId) || []
+            const formattedCollaborators = collaborators.map((c: any) => ({
+                id: c.id,
+                name: c.name,
+                displayName: formatDisplayName(c),
+                grade: c.grade,
+                class: c.class
+            }))
+
             return {
                 id: schedule.id,
                 createdAt: schedule.createdAt,
@@ -181,6 +239,7 @@ export default defineEventHandler(async (event) => {
                     artist: schedule.songArtist,
                     requester: requesterName,
                     requesterId: schedule.songRequesterId,
+                    collaborators: formattedCollaborators,
                     voteCount: voteCountMap.get(schedule.songId) || 0,
                     played: schedule.songPlayed || false,
                     cover: schedule.songCover || null,

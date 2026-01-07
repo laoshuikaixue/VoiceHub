@@ -40,6 +40,23 @@
           </div>
         </div>
 
+        <!-- 联合投稿人区域 -->
+        <div class="collaborators-section">
+          <div class="section-label">联合投稿</div>
+          <div class="collaborators-list">
+            <div v-for="user in collaborators" :key="user.id" class="collaborator-tag">
+              <span class="collaborator-name">{{ user.name }}</span>
+              <button class="remove-collaborator" type="button" @click="removeCollaborator(user.id)">
+                <Icon :size="12" name="close"/>
+              </button>
+            </div>
+            <button class="add-collaborator-btn" type="button" @click="showUserSearchModal = true">
+              <Icon :size="14" name="plus"/>
+              添加
+            </button>
+          </div>
+        </div>
+
         <!-- 搜索结果容器 -->
         <div class="search-results-container">
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
@@ -418,6 +435,15 @@
         @submit="handlePlaylistSubmit"
     />
 
+    <!-- 用户搜索弹窗 -->
+    <UserSearchModal
+        v-model:show="showUserSearchModal"
+        :exclude-ids="[user?.id, ...collaborators.map(u => u.id)]"
+        :multiple="true"
+        title="添加联合投稿人"
+        @select="handleUserSelect"
+    />
+
     <!-- 手动输入弹窗 -->
     <Teleport to="body">
       <Transition name="modal-animation">
@@ -554,6 +580,7 @@ import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
 import RecentSongsModal from './RecentSongsModal.vue'
 import PlaylistSelectionModal from './PlaylistSelectionModal.vue'
+import UserSearchModal from '../Common/UserSearchModal.vue'
 
 const props = defineProps({
   loading: {
@@ -598,6 +625,8 @@ const podcastCookie = ref('')
 
 const showRecentSongsModal = ref(false)
 const showPlaylistModal = ref(false)
+const showUserSearchModal = ref(false)
+const collaborators = ref([])
 
 const songService = useSongs()
 const playTimes = ref([])
@@ -641,6 +670,22 @@ const playUrlValidation = ref({valid: true, error: '', validating: false})
 
 // 网易云音乐登录检查状态
 const checkingNeteaseLogin = ref(false)
+
+const handleUserSelect = (users) => {
+  if (Array.isArray(users)) {
+    // 过滤掉已存在的
+    const newUsers = users.filter(u => !collaborators.value.some(c => c.id === u.id))
+    collaborators.value.push(...newUsers)
+  } else if (users) {
+    if (!collaborators.value.some(c => c.id === users.id)) {
+      collaborators.value.push(users)
+    }
+  }
+}
+
+const removeCollaborator = (userId) => {
+  collaborators.value = collaborators.value.filter(c => c.id !== userId)
+}
 
 // 获取播出时段
 const fetchPlayTimes = async () => {
@@ -1431,6 +1476,7 @@ const submitSong = async (result, options = {}) => {
       cover: selectedCover.value,
       musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
+      collaborators: collaborators.value.map(u => u.id)
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -1478,6 +1524,7 @@ const handleSubmit = async () => {
       cover: selectedCover.value,
       musicPlatform: platform.value,
       musicId: null, // 手动输入时没有musicId
+      collaborators: collaborators.value.map(u => u.id)
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -1658,6 +1705,7 @@ const resetForm = () => {
   manualCover.value = ''
   manualPlayUrl.value = ''
   hasSearched.value = false
+  collaborators.value = []
   // 重置URL验证状态
   coverValidation.value = {valid: true, error: '', validating: false}
   playUrlValidation.value = {valid: true, error: '', validating: false}
@@ -1917,6 +1965,74 @@ defineExpose({
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.6);
   margin-bottom: 1rem;
+}
+
+/* 联合投稿人区域 */
+.collaborators-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.section-label {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #FFFFFF;
+  white-space: nowrap;
+}
+
+.collaborators-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.collaborator-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(11, 90, 254, 0.1);
+  border: 1px solid rgba(11, 90, 254, 0.2);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 14px;
+  color: #fff;
+}
+
+.remove-collaborator {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.remove-collaborator:hover {
+  color: #fff;
+}
+
+.add-collaborator-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.25rem 0.75rem;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-collaborator-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 .rules-content {
@@ -3452,16 +3568,17 @@ defineExpose({
   .search-results-container {
     flex: 1;
     height: auto;
-    max-height: 70vh;
+    max-height: 85vh; /* 增加高度 */
     padding: 1rem;
     overflow: visible;
     display: flex;
     flex-direction: column;
+    margin-bottom: 2rem; /* 增加底部边距防止重叠 */
   }
 
   .results-content {
     height: auto;
-    max-height: 60vh;
+    max-height: 80vh; /* 增加高度 */
     overflow: visible;
     flex: 1;
   }
@@ -3682,15 +3799,15 @@ defineExpose({
   .results-list {
     flex: 1;
     height: auto;
-    max-height: 50vh;
+    max-height: 75vh; /* 增加高度 */
     overflow: visible;
   }
 
   .results-grid {
-    max-height: 50vh;
+    max-height: 75vh; /* 增加高度 */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 2rem; /* 确保底部内容可见 */
+    padding-bottom: 8rem; /* 显著增加底部内边距，确保内容不被底部Footer遮挡 */
   }
 
   /* 移动端期望排期选择 */
