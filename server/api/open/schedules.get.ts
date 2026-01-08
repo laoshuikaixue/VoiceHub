@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
         // 尝试从CacheService获取排期数据
         let cachedSchedules = await cacheService.getSchedulesList()
-
+        
         if (cachedSchedules) {
             console.log(`[OpenAPI Cache] 使用普通API缓存数据，数量: ${cachedSchedules.length}`)
 
@@ -99,7 +99,10 @@ export default defineEventHandler(async (event) => {
                 const data = await client.get(redisCacheKey)
                 if (data) {
                     const parsedData = JSON.parse(data)
-                    console.log(`[OpenAPI Cache] 使用Redis公共排期缓存: ${redisCacheKey}，数量: ${parsedData.length}`)
+                    const isValid = Array.isArray(parsedData) && parsedData.every((it: any) => it && typeof it.playDate === 'string' && it.song && it.song.id && it.song.title)
+                    if (!isValid) {
+                        return null
+                    }
                     return parsedData
                 }
                 return null

@@ -93,7 +93,10 @@ class CacheService {
                 console.log('[Cache] 开始清理损坏的缓存数据...')
 
                 // 获取所有缓存键
-                const keys = await client.keys('*')
+                const keys: string[] = []
+                for await (const key of client.scanIterator({ MATCH: '*', COUNT: 1000 })) {
+                    keys.push(key as string)
+                }
                 let corruptedCount = 0
                 let checkedCount = 0
                 let repairedCount = 0
@@ -225,11 +228,16 @@ class CacheService {
         )
 
         // 如果是空结果，设置特殊标记防止缓存穿透
-        const cacheData = schedules.length === 0 ? [{__empty: true}] : schedules
+        const normalized = schedules.map((s: any) => this.normalizeSchedule(s))
+        const cacheData = normalized.length === 0 ? [{__empty: true}] : normalized
         const ttl = schedules.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SCHEDULES
 
-        await this.setCache(key, cacheData, ttl)
-        console.log(`[Cache] 排期列表已缓存: ${key}, 数量: ${schedules.length}`)
+        const ok = await this.setCache(key, cacheData, ttl)
+        if (ok) {
+            console.log(`[Cache] 排期列表已缓存: ${key}, 数量: ${schedules.length}`)
+        } else {
+            console.warn(`[Cache] 排期列表缓存失败（Redis未就绪或写入失败）: ${key}`)
+        }
     }
 
     // 获取特定日期的排期缓存
@@ -254,11 +262,16 @@ class CacheService {
         const dateStr = date.toISOString().split('T')[0]
         const key = this.generateKey(CACHE_PREFIXES.SCHEDULE_BY_DATE, dateStr)
 
-        const cacheData = schedules.length === 0 ? [{__empty: true}] : schedules
+        const normalized = schedules.map((s: any) => this.normalizeSchedule(s))
+        const cacheData = normalized.length === 0 ? [{__empty: true}] : normalized
         const ttl = schedules.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SCHEDULES
 
-        await this.setCache(key, cacheData, ttl)
-        console.log(`[Cache] 日期排期已缓存: ${key}, 数量: ${schedules.length}`)
+        const ok = await this.setCache(key, cacheData, ttl)
+        if (ok) {
+            console.log(`[Cache] 日期排期已缓存: ${key}, 数量: ${schedules.length}`)
+        } else {
+            console.warn(`[Cache] 日期排期缓存失败（Redis未就绪或写入失败）: ${key}`)
+        }
     }
 
     // 清除排期相关缓存
@@ -296,8 +309,12 @@ class CacheService {
     // 设置系统设置缓存
     async setSystemSettings(settings: any): Promise<void> {
         const key = this.generateKey('system', 'settings')
-        await this.setCache(key, settings, CACHE_TTL.SYSTEM_SETTINGS)
-        console.log(`[Cache] 系统设置已缓存: ${key}`)
+        const ok = await this.setCache(key, settings, CACHE_TTL.SYSTEM_SETTINGS)
+        if (ok) {
+            console.log(`[Cache] 系统设置已缓存: ${key}`)
+        } else {
+            console.warn(`[Cache] 系统设置缓存失败（Redis未就绪或写入失败）: ${key}`)
+        }
     }
 
     // 清除系统设置缓存
@@ -332,8 +349,12 @@ class CacheService {
         const cacheData = playTimes.length === 0 ? [{__empty: true}] : playTimes
         const ttl = playTimes.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SYSTEM_SETTINGS
 
-        await this.setCache(key, cacheData, ttl)
-        console.log(`[Cache] 播放时间列表已缓存: ${key}, 数量: ${playTimes.length}`)
+        const ok = await this.setCache(key, cacheData, ttl)
+        if (ok) {
+            console.log(`[Cache] 播放时间列表已缓存: ${key}, 数量: ${playTimes.length}`)
+        } else {
+            console.warn(`[Cache] 播放时间列表缓存失败（Redis未就绪或写入失败）: ${key}`)
+        }
     }
 
     // 清除播放时间相关缓存
@@ -435,14 +456,17 @@ class CacheService {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return
 
-            const keys = await client.keys('admin_stats:*')
-            const realtimeKeys = await client.keys('realtime_stats')
-            const activeUserKeys = await client.keys('active_users:*')
+            const keys: string[] = []
+            for await (const k of client.scanIterator({ MATCH: 'admin_stats:*', COUNT: 1000 })) keys.push(k as string)
+            const realtimeKeys: string[] = []
+            for await (const k of client.scanIterator({ MATCH: 'realtime_stats', COUNT: 1000 })) realtimeKeys.push(k as string)
+            const activeUserKeys: string[] = []
+            for await (const k of client.scanIterator({ MATCH: 'active_users:*', COUNT: 1000 })) activeUserKeys.push(k as string)
 
             const allKeys = [...keys, ...realtimeKeys, ...activeUserKeys]
             if (allKeys.length > 0) {
                 try {
-                    await client.del(allKeys)
+                    await client.del(...allKeys)
                     console.log(`[Cache] 已清除 ${allKeys.length} 个统计缓存键`)
                 } catch (delError) {
                     console.error(`[Cache] 删除统计缓存键失败:`, delError)
@@ -692,8 +716,6 @@ class CacheService {
 
     // 设置缓存（带编码验证）
     private async setCache(key: string, data: any, ttl: number): Promise<boolean> {
-        if (!isRedisReady()) return false
-
         return await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return false
@@ -736,8 +758,6 @@ class CacheService {
 
     // 获取缓存（带编码验证）
     private async getCache<T>(key: string): Promise<T | null> {
-        if (!isRedisReady()) return null
-
         return await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return null
@@ -785,8 +805,6 @@ class CacheService {
 
     // 删除缓存
     private async deleteCache(key: string): Promise<boolean> {
-        if (!isRedisReady()) return false
-
         return await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return false
@@ -800,13 +818,14 @@ class CacheService {
 
     // 批量删除缓存（按模式）
     private async deleteCachePattern(pattern: string): Promise<boolean> {
-        if (!isRedisReady()) return false
-
         return await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return false
 
-            const keys = await client.keys(pattern)
+            const keys: string[] = []
+            for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 1000 })) {
+                keys.push(key as string)
+            }
             if (keys.length > 0) {
                 await client.del(...keys)
             }
@@ -816,8 +835,6 @@ class CacheService {
 
     // 获取分布式锁
     private async acquireLock(lockKey: string, timeout: number = CACHE_TTL.LOCK_TIMEOUT): Promise<boolean> {
-        if (!isRedisReady()) return false
-
         return await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return false
@@ -834,8 +851,6 @@ class CacheService {
 
     // 释放分布式锁
     private async releaseLock(lockKey: string): Promise<void> {
-        if (!isRedisReady()) return
-
         await executeRedisCommand(async () => {
             const client = (await import('../utils/redis')).getRedisClient()
             if (!client) return
@@ -894,8 +909,49 @@ class CacheService {
         return await refreshPromise
     }
 
-    // 清除 Redis 中的 public_schedules 相关缓存
-    private async clearPublicSchedulesCache(): Promise<void> {
+    private normalizeSchedule(row: any): any {
+        if (!row) return row
+        const hasStringDate = typeof row.playDate === 'string'
+        const hasSong = row.song && typeof row.song === 'object'
+        if (hasStringDate && hasSong) return row
+        const d = row.playDate instanceof Date ? row.playDate : (row.playDate ? new Date(row.playDate) : null)
+        const dateStr = d ? new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0)).toISOString().split('T')[0] : row.playDate
+        const requesterName = row.requester && row.requester.name ? row.requester.name : (row.song && row.song.requester ? row.song.requester : null)
+        const playedAtVal = row.song?.playedAt ?? row.playedAt ?? null
+        const playedAtStr = playedAtVal instanceof Date ? playedAtVal.toISOString() : (typeof playedAtVal === 'string' ? playedAtVal : null)
+        return {
+            id: row.id,
+            playDate: dateStr,
+            playDateFormatted: dateStr,
+            sequence: row.sequence ?? 1,
+            played: !!row.played,
+            playTimeId: row.playTimeId ?? (row.playTime && row.playTime.id) ?? null,
+            playTime: row.playTime ? {
+                id: row.playTime.id,
+                name: row.playTime.name,
+                startTime: row.playTime.startTime,
+                endTime: row.playTime.endTime,
+                enabled: row.playTime.enabled
+            } : null,
+            song: {
+                id: row.song?.id ?? row.songId,
+                title: row.song?.title ?? row.title,
+                artist: row.song?.artist ?? row.artist,
+                requester: requesterName,
+                voteCount: row.song?.voteCount ?? row.voteCount ?? 0,
+                played: !!(row.song?.played ?? row.songPlayed),
+                playedAt: playedAtStr,
+                cover: row.song?.cover ?? row.cover ?? null,
+                musicPlatform: row.song?.musicPlatform ?? row.musicPlatform ?? null,
+                musicId: row.song?.musicId ?? row.musicId ?? null,
+                playUrl: row.song?.playUrl ?? row.playUrl ?? null,
+                semester: row.song?.semester ?? row.semester ?? null,
+                requestedAt: row.song?.requestedAt ?? null
+            }
+        }
+    }
+
+    async clearPublicSchedulesCache(): Promise<void> {
         if (!isRedisReady()) {
             console.log('[Cache] Redis未就绪，跳过public_schedules缓存清理')
             return
@@ -907,9 +963,12 @@ class CacheService {
 
             try {
                 // 清除所有 public_schedules 相关的缓存键
-                const keys = await client.keys('public_schedules:*')
+                const keys: string[] = []
+                for await (const key of client.scanIterator({ MATCH: 'public_schedules:*', COUNT: 1000 })) {
+                    keys.push(key as string)
+                }
                 if (keys.length > 0) {
-                    await client.del(keys)
+                    await client.del(...keys)
                     console.log(`[Cache] 已清除 ${keys.length} 个 public_schedules 缓存键`)
                 } else {
                     console.log('[Cache] 未找到 public_schedules 缓存键')
@@ -935,4 +994,3 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 export {cacheService, CacheService}
-export default cacheService
