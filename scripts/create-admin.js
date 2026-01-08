@@ -71,7 +71,13 @@ async function main() {
 }
 
 main()
+  .then(async () => {
+    // 显式关闭数据库连接，防止脚本挂起
+    await client.end();
+    process.exit(0);
+  })
   .catch(async (error) => {
     console.error('管理员初始化失败:', error.message);
+    await client.end();
     process.exit(1);
   });
