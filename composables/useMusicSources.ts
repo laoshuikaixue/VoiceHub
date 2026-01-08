@@ -280,6 +280,7 @@ export const useMusicSources = () => {
                 } catch (error: any) {
                     console.warn(`音源 ${source.name} 搜索失败:`, error.message)
                     updateSourceStatus(source.id, 'error', error.message)
+                    errors.push(error) // 收集错误
 
                     // 如果不是最后一个音源，继续尝试下一个
                     if (source !== sourcesToTry[sourcesToTry.length - 1]) {
@@ -307,12 +308,17 @@ export const useMusicSources = () => {
                         } catch (error: any) {
                             console.warn(`音源 ${source.name} 搜索失败:`, error.message)
                             updateSourceStatus(source.id, 'error', error.message)
+                            errors.push(error) // 收集错误
                         }
                     }
                 }
             }
 
             // 所有音源都失败了
+            if (errors.length > 0) {
+                const errorDetails = errors.map(e => e.message || '未知错误').join('; ')
+                throw new Error(`所有音源均不可用: ${errorDetails}`)
+            }
             throw new Error('所有音源均不可用，请稍后重试')
 
         } finally {
