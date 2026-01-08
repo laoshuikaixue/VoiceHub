@@ -26,8 +26,8 @@ const getDatabaseConfig = () => {
   if (isNeonDatabase) {
     // Neon Database Serverless 优化配置
     return {
-      max: process.env.NODE_ENV === 'production' ? 3 : 5, // Neon 推荐较少连接数
-      idle_timeout: 10, // 快速释放空闲连接，支持自动启停
+      max: 1, // Serverless 环境下每个实例保持最小连接数，利用 Neon 自身的连接池
+      idle_timeout: 0, // 立即释放空闲连接，适应 Serverless 的快速冻结特性
       connect_timeout: 10, // Neon 连接速度快，减少超时时间
       max_lifetime: 3600, // 连接最大生命周期（1小时）
       ssl: 'require', // Neon 默认需要 SSL
