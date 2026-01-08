@@ -402,7 +402,8 @@ VoiceHub/
 │       ├── sf-pro-icons.css   # SF Pro图标字体
 │       ├── theme-protection.css # 主题保护样式
 │       ├── transitions.css    # 过渡动画样式
-│       └── variables.css      # CSS变量定义
+│       ├── variables.css      # CSS变量定义
+│       └── year-review.css    # 年度回顾样式
 ├── components/            # Vue组件目录
 │   ├── Admin/             # 管理员功能组件
 │   │   ├── Common/        # 通用管理组件
@@ -436,6 +437,8 @@ VoiceHub/
 │   ├── Auth/              # 认证相关组件
 │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   └── LoginForm.vue         # 登录表单
+│   ├── Common/            # 通用组件
+│   │   └── UserSearchModal.vue   # 用户搜索弹窗
 │   ├── Notifications/     # 通知系统组件
 │   │   └── NotificationSettings.vue # 通知设置
 │   ├── Songs/             # 歌曲相关组件
@@ -447,21 +450,22 @@ VoiceHub/
 │   │   ├── PlaylistSelectionModal.vue # 歌单选择弹窗
 │   │   ├── RecentSongsModal.vue   # 最近播放弹窗
 │   │   └── PodcastEpisodesModal.vue # 播客节目弹窗
-│   └── UI/                # 通用UI组件
-│       ├── AudioPlayer/   # 音频播放器组件模块
-│       │   ├── AudioElement.vue   # 音频元素组件
-│       │   ├── PlayerControls.vue # 播放器控制组件
-│       │   └── PlayerInfo.vue     # 播放器信息组件
-│       ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件
-│       ├── AudioPlayer.vue        # 主音频播放器组件
-│       ├── ConfirmDialog.vue      # 确认对话框
-│       ├── Icon.vue               # 图标组件
-│       ├── LiquidGlass/           # 玻璃态设计组件
-│       ├── LyricsModal.vue        # 全屏歌词模态框组件
-│       ├── MarqueeText.vue        # 滚动文本显示组件
-│       ├── Notification.vue       # 单个通知组件
-│       ├── PageTransition.vue     # 页面过渡动画
-│       └── ProgressBar.vue        # 进度条组件
+│   ├── UI/                # 通用UI组件
+│   │   ├── AudioPlayer/   # 音频播放器组件模块
+│   │   │   ├── AudioElement.vue   # 音频元素组件
+│   │   │   ├── PlayerControls.vue # 播放器控制组件
+│   │   │   └── PlayerInfo.vue     # 播放器信息组件
+│   │   ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件
+│   │   ├── AudioPlayer.vue        # 主音频播放器组件
+│   │   ├── ConfirmDialog.vue      # 确认对话框
+│   │   ├── Icon.vue               # 图标组件
+│   │   ├── LyricsModal.vue        # 全屏歌词模态框组件
+│   │   ├── MarqueeText.vue        # 滚动文本显示组件
+│   │   ├── Notification.vue       # 单个通知组件
+│   │   ├── NotificationContainer.vue # 通知容器组件
+│   │   ├── PageTransition.vue     # 页面过渡动画
+│   │   └── ProgressBar.vue        # 进度条组件
+│   └── year-review/       # 年度回顾组件
 ├── composables/           # Vue 3 组合式API
 │   ├── useAdmin.ts         # 管理员功能hooks
 │   ├── useAudioPlayer.ts   # 音频播放器hooks
@@ -470,6 +474,7 @@ VoiceHub/
 │   ├── useAudioPlayerSync.ts # 音频播放器同步hooks
 │   ├── useAudioQuality.ts  # 音质管理hooks
 │   ├── useAuth.ts          # 认证功能hooks
+│   ├── useBackgroundRenderer.ts # 背景渲染hooks
 │   ├── useErrorHandler.ts  # 错误处理hooks
 │   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
 │   ├── useLyrics.ts        # 歌词功能hooks
@@ -485,6 +490,11 @@ VoiceHub/
 │   ├── useSiteConfig.js    # 站点配置hooks
 │   ├── useSongs.ts         # 歌曲功能hooks
 │   └── useToast.ts         # Toast提示hooks
+├── docker-compose/        # Docker Compose配置目录
+├── drizzle/               # 数据库相关
+│   ├── db.ts               # 数据库连接
+│   ├── schema.ts           # 数据库模型
+│   └── migrations/         # 数据库迁移文件
 ├── layouts/               # 布局组件
 │   └── default.vue         # 默认布局模板
 ├── middleware/            # 中间件
@@ -494,44 +504,16 @@ VoiceHub/
 │   ├── dashboard.vue       # 用户仪表盘
 │   ├── index.vue           # 首页
 │   ├── login.vue           # 登录页面
-│   └── notification-settings.vue # 通知设置页面
+│   ├── notification-settings.vue # 通知设置页面
+│   └── year-review.vue     # 年度回顾页面
 ├── plugins/               # Nuxt插件
 │   ├── auth.client.ts      # 客户端认证插件
 │   └── auth.server.ts      # 服务端认证插件
+├── public/                # 静态文件目录
+│   └── images/            # 图片资源
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
 │   │   ├── admin/          # 管理员API
-│   │   ├── auth/           # 认证API
-│   │   ├── bilibili/       # 哔哩哔哩API
-│   │   │   ├── playurl.get.ts     # 获取播放地址
-│   │   │   └── search.get.ts      # 搜索内容
-│   │   ├── music/          # 音乐播放API
-│   │   │   ├── state.post.ts      # 音乐状态管理
-│   │   │   └── websocket.ts       # 音乐WebSocket连接
-│   │   ├── notifications/  # 通知API
-│   │   ├── open/           # 公开API
-│   │   ├── songs/          # 歌曲管理API
-│   │   └── user/           # 用户API
-│   ├── middleware/         # 服务端中间件
-│   ├── services/           # 服务层
-│   └── utils/              # 服务端工具函数
-├── utils/                 # 客户端工具函数
-│   ├── bilibiliSource.ts   # 哔哩哔哩音源处理
-│   ├── lyricAdapter.ts     # 歌词适配器
-│   ├── musicSources.ts     # 音乐源配置
-│   ├── musicUrl.ts         # 音乐URL处理
-│   ├── neteaseApi.ts       # 网易云音乐API封装
-│   ├── timeUtils.ts        # 时间工具函数
-│   └── url.ts              # URL工具函数
-├── types/                 # TypeScript类型定义
-│   ├── global.d.ts         # 全局类型定义
-│   └── index.ts            # 通用类型定义
-├── drizzle/               # 数据库相关
-│   ├── db.ts               # 数据库连接
-│   ├── schema.ts           # 数据库模型
-│   └── migrations/         # 数据库迁移文件
-├── scripts/               # 构建和部署脚本
-└── docker-compose.yml     # Docker编排文件
 │   │   │   ├── activities.get.ts    # 活动管理API
 │   │   │   ├── analytics/           # 数据分析API
 │   │   │   │   ├── prediction/      # 预测分析子目录
@@ -626,7 +608,7 @@ VoiceHub/
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       ├── index.ts         # 用户管理
 │   │   │       └── status-logs.get.ts # 用户状态日志
-│   │   ├── auth/           # 认证相关API
+│   │   ├── auth/           # 认证API
 │   │   │   ├── change-password.post.ts # 修改密码
 │   │   │   ├── login.post.ts        # 用户登录
 │   │   │   ├── logout.post.ts       # 用户登出
@@ -723,7 +705,7 @@ VoiceHub/
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
-│   └── index.ts            # 项目类型定义
+│   └── index.ts            # 通用类型定义
 ├── utils/                 # 客户端工具函数
 │   ├── __tests__/          # 工具函数测试目录
 │   ├── musicSources.ts     # 音乐源配置和管理工具
@@ -732,6 +714,9 @@ VoiceHub/
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
 ├── .vercelignore          # Vercel部署忽略文件
+├── docker-compose.yml     # Docker编排文件
+├── Dockerfile             # Docker构建文件
+├── drizzle.config.ts      # Drizzle配置文件
 ├── LICENSE                # 开源许可证文件
 ├── netlify.toml           # Netlify部署配置
 ├── nuxt.config.ts         # Nuxt 3主配置文件
@@ -844,19 +829,13 @@ VoiceHub/
 
 ### Drizzle ORM + Neon Database
 
-项目使用 Drizzle ORM 作为数据库 ORM，配合 Neon Database 提供现代化的数据库解决方案：
+项目使用 Drizzle ORM 作为数据库 ORM，配合 Neon Database 提供现代化的数据库解决方案。
 
 #### 核心文件结构
 - **`drizzle.config.ts`** - Drizzle ORM 主配置文件
 - **`drizzle/db.ts`** - 数据库连接和客户端配置，针对 Neon Database 优化
 - **`drizzle/schema.ts`** - 数据库表结构定义，使用 TypeScript 类型安全
 - **`drizzle/migrations/`** - 数据库迁移脚本目录
-
-#### 技术优势
-- **类型安全**：完整的 TypeScript 支持，编译时类型检查
-- **高性能**：针对 Serverless 环境优化的查询性能
-- **自动启停**：Neon Database 支持自动启停，降低成本
-- **无缝扩展**：根据负载自动扩展数据库资源
 
 ### 数据库备份与恢复
 ```bash
@@ -1295,4 +1274,4 @@ Thanks goes to these wonderful people:
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date" />
  </picture>
 
-Powered By LaoShui @ 2025
+Powered By LaoShui @ 2025-2026
