@@ -277,7 +277,7 @@
                 <span>生成时间：{{ new Date().toLocaleString() }}</span>
                 <span v-if="settings.remark" class="remark-text">备注：{{ settings.remark }}</span>
               </div>
-              <span class="footer-right">Powered By LaoShui @ 2025 | VoiceHub 广播管理系统</span>
+              <span class="footer-right">Powered By LaoShui @ 2025-2026 | VoiceHub 广播管理系统</span>
             </div>
           </div>
         </div>
