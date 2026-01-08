@@ -1,10 +1,8 @@
 <template>
   <div class="home">
-    <!-- 添加顶部Ellipse 1效果 -->
     <div class="ellipse-effect"></div>
 
     <div class="main-content">
-      <!-- 顶部区域：Logo和用户信息 -->
       <div class="top-bar">
         <div class="logo-section">
           <NuxtLink class="logo-link" to="/">
@@ -61,7 +59,7 @@
 
       <!-- 中间主体内容区域 -->
       <div class="content-area">
-        <!-- 选项卡区域 - 添加ripple指令 -->
+        <!-- 选项卡区域 -->
         <div class="tabs-row">
           <div v-ripple
                :class="{ 'active': activeTab === 'schedule' }"
@@ -171,7 +169,6 @@
                   </button>
                 </div>
 
-
                 <!-- 通知列表 -->
                 <div class="notification-list">
                   <div v-if="notificationsLoading" class="loading-indicator">
@@ -253,15 +250,6 @@
                               拒绝
                             </button>
                           </div>
-                          <!-- 已处理状态显示 - 已移动到标题栏 -->
-                          <!-- <div v-if="notification.type === 'COLLABORATION_INVITE' && notification.handled" class="invite-status">
-                             <span :class="['status-badge', notification.status === 'ACCEPTED' ? 'accepted' : (notification.status === 'INVALID' ? 'invalid' : 'rejected')]">
-                               {{ notification.status === 'ACCEPTED' ? '已接受' : (notification.status === 'INVALID' ? '已失效' : '已拒绝') }}
-                             </span>
-                             <span class="status-time" v-if="notification.repliedAt">
-                               {{ formatNotificationTime(notification.repliedAt) }}
-                             </span>
-                          </div> -->
                         </div>
                         <div class="notification-card-actions">
                           <button
@@ -440,52 +428,6 @@
         </div>
       </Transition>
     </Teleport>
-
-    <!-- 年度报告提示弹窗 -->
-    <Teleport to="body">
-      <Transition name="modal-animation">
-        <div v-if="showYearReviewHint" class="modal-overlay year-review-overlay" @click.self="showYearReviewHint = false">
-          <div class="year-review-card">
-            <!-- 装饰性背景元素 -->
-            <div class="card-glow"></div>
-            <div class="card-pattern"></div>
-            
-            <button class="card-close" @click="showYearReviewHint = false" aria-label="关闭">
-              <Icon name="close" :size="20" />
-            </button>
-
-            <div class="card-content">
-              <div class="brand-badge">2025 REVIEW</div>
-              
-              <div class="visual-container">
-                <div class="music-bars">
-                  <div v-for="i in 5" :key="i" class="bar"></div>
-                </div>
-                <div class="main-icon">
-                  <Icon name="music" :size="48" />
-                </div>
-              </div>
-
-              <h2 class="card-title">开启您的年度音乐回忆</h2>
-              <p class="card-description">
-                这一年，有哪些旋律曾让你心动？<br>
-                属于你的年度点歌报告已生成。
-              </p>
-
-              <div class="card-actions">
-                <button class="btn-primary" @click="goToYearReview">
-                  <span>立即开启之旅</span>
-                  <Icon name="arrow-right" :size="18" />
-                </button>
-                <button class="btn-secondary" @click="showYearReviewHint = false">
-                  稍后再说
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
@@ -532,26 +474,6 @@ const isRequestOpen = ref(true)
 // 弹窗状态
 const showRequestModal = ref(false)
 const showRules = ref(false)
-const showYearReviewHint = ref(false)
-
-const YEAR_REVIEW_HINT_KEY = 'voicehub_year_review_hint_shown'
-
-const checkYearReviewHint = () => {
-  if (typeof window !== 'undefined') {
-    const hasShown = localStorage.getItem(YEAR_REVIEW_HINT_KEY)
-    if (!hasShown) {
-      showYearReviewHint.value = true
-    }
-  }
-}
-
-const goToYearReview = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(YEAR_REVIEW_HINT_KEY, 'true')
-  }
-  showYearReviewHint.value = false
-  navigateTo('/year-review')
-}
 
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
@@ -880,9 +802,6 @@ onMounted(async () => {
 
   // 初始化认证状态并获取用户信息
   const currentUser = await auth.initAuth()
-
-  // 检查是否需要显示年度报告提示
-  checkYearReviewHint()
 
   // 监听登录状态变化，确保UI立即响应
   watch(() => auth?.isAuthenticated?.value, async (newAuthState, oldAuthState) => {
@@ -1688,7 +1607,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   width: 100%;
 }
 
-/* 移除上浮效果，改用其他视觉反馈 */
+/* 移除上浮效果 */
 .section-tab:hover {
   transform: none; /* 移除上浮效果 */
   background-color: transparent; /* 移除背景色 */
@@ -1769,15 +1688,6 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .song-list-container {
   width: 100%;
   padding: 1rem 0;
-}
-
-/* 移除不再需要的样式 */
-.date-info {
-  background: #21242D;
-  border-radius: 10px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
 }
 
 .date-info p {
@@ -2890,8 +2800,6 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .modal-animation-leave-to .year-review-card {
   transform: translateY(40px) scale(0.9);
 }
-
-/* 旧的通知样式已移除，使用全局通知系统 */
 
 /* 波纹效果 */
 .section-tab {

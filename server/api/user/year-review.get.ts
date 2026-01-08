@@ -1,7 +1,7 @@
-import { defineEventHandler, createError } from 'h3'
-import { db } from '~/drizzle/db'
-import { songs, votes } from '~/drizzle/schema'
-import { and, eq, count, desc, sql, gte, lt, asc } from 'drizzle-orm'
+import {createError, defineEventHandler} from 'h3'
+import {db} from '~/drizzle/db'
+import {songs, votes} from '~/drizzle/schema'
+import {and, asc, count, desc, eq, gte, lt, sql} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
     // 检查用户是否登录
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     const userId = user.id
 
     // 筛选当前年份
-    const currentYear = new Date().getFullYear()
+    const currentYear = 2025
     const startOfYear = new Date(currentYear, 0, 1)
     const endOfYear = new Date(currentYear + 1, 0, 1)
 
