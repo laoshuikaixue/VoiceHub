@@ -41,7 +41,7 @@
         </div>
 
         <!-- 联合投稿人区域 -->
-        <div class="collaborators-section">
+        <div v-if="user" class="collaborators-section">
           <div class="section-label">联合投稿</div>
           <div class="collaborators-list">
             <div v-for="user in collaborators" :key="user.id" class="collaborator-tag">
