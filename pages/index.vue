@@ -2382,6 +2382,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     flex-direction: column;
     gap: 1.5rem;
     align-items: center;
+    margin-top: 0.1rem;
   }
 
   .logo-section {
