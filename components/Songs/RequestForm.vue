@@ -770,6 +770,7 @@ const handleImportData = async (event) => {
     const text = await file.text()
     const data = JSON.parse(text)
     if (data.cookie) {
+      checkingNeteaseLogin.value = true
       if (window.$showNotification) {
         window.$showNotification('正在验证Cookie有效性...', 'info')
       }
@@ -799,6 +800,8 @@ const handleImportData = async (event) => {
     if (window.$showNotification) {
       window.$showNotification('导入失败: ' + e.message, 'error')
     }
+  } finally {
+    checkingNeteaseLogin.value = false
   }
   // 重置input
   event.target.value = ''
