@@ -468,8 +468,12 @@ export function recordUserVoteActivity(userId: number, songTitle?: string): { an
     stats.windowTimestamps.push(now)
     
     // 计算当前10分钟窗口内的平均速率，而不仅仅是两次投票的间隔
-    const windowDurationMin = Math.max(1e-6, (now - Math.min(...stats.windowTimestamps)) / 60000)
-    const currentRate = stats.windowTimestamps.length / windowDurationMin
+    // 如果只有一个投票记录，无法计算速率（时间跨度为0），且单个投票不构成"速率"，直接视为0
+    let currentRate = 0
+    if (stats.windowTimestamps.length > 1) {
+        const windowDurationMin = Math.max(1e-6, (now - Math.min(...stats.windowTimestamps)) / 60000)
+        currentRate = stats.windowTimestamps.length / windowDurationMin
+    }
     
     // 调整EMA_ALPHA值为0.1，使EMA更平滑，减少短期波动影响
     const smoothedEmaAlpha = 0.1
