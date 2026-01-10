@@ -1,5 +1,5 @@
 <template>
-  <div class="blacklist-manager">
+<div class="blacklist-manager">
     <div class="header">
       <h3>歌曲黑名单管理</h3>
       <p class="description">管理禁止点歌的歌曲和关键词</p>

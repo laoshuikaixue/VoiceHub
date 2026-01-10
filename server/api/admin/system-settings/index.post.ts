@@ -124,6 +124,26 @@ export default defineEventHandler(async (event) => {
             updateData.enableReplayRequests = body.enableReplayRequests
         }
 
+        if (body.enableRequestTimeLimitation !== undefined) {
+            if (typeof body.enableRequestTimeLimitation !== 'boolean') {
+                throw createError({
+                    statusCode: 400,
+                    message: 'enableRequestTimeLimitation 必须是布尔值'
+                })
+            }
+            updateData.enableRequestTimeLimitation = body.enableRequestTimeLimitation
+        }
+
+        if (body.forceBlockAllRequests !== undefined) {
+            if (typeof body.forceBlockAllRequests !== 'boolean') {
+                throw createError({
+                    statusCode: 400,
+                    message: 'forceBlockAllRequests 必须是布尔值'
+                })
+            }
+            updateData.forceBlockAllRequests = body.forceBlockAllRequests
+        }
+
         // SMTP配置字段
         if (body.smtpEnabled !== undefined) {
             if (typeof body.smtpEnabled !== 'boolean') {
@@ -215,6 +235,9 @@ export default defineEventHandler(async (event) => {
                 weeklySubmissionLimit: updateData.weeklySubmissionLimit ?? null,
                 showBlacklistKeywords: updateData.showBlacklistKeywords ?? false,
                 enableReplayRequests: updateData.enableReplayRequests ?? false,
+                enableRequestTimeLimitation: updateData.enableRequestTimeLimitation ?? false,
+                requestTimeLimitation: updateData.requestTimeLimitation ?? null,
+                forceBlockAllRequests: updateData.forceBlockAllRequests ?? false,
                 smtpEnabled: updateData.smtpEnabled ?? false,
                 smtpHost: updateData.smtpHost ?? null,
                 smtpPort: updateData.smtpPort ?? 587,

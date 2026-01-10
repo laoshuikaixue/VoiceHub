@@ -113,5 +113,22 @@ export interface Semester {
 // 系统设置接口
 export interface SystemSettings {
     id: number
-    enablePlayTimeSelection: boolean // 是否启用播出时段选择功能
+    enablePlayTimeSelection: boolean
+    enableRequestTimeLimitation?: boolean
+    forceBlockAllRequests?: boolean
+    enableReplayRequests?: boolean
+}
+
+export interface RequestTime {
+    id: number
+    createdAt: string
+    updatedAt: string
+    name: string
+    startTime: string
+    endTime: string
+    enabled: boolean
+    description?: string | null
+    expected: number
+    accepted: number
+    past: boolean
 }

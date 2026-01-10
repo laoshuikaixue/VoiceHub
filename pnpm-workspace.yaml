@@ -1,0 +1,8 @@
+onlyBuiltDependencies:
+  - '@applemusic-like-lyrics/core'
+  - '@applemusic-like-lyrics/lyric'
+  - '@applemusic-like-lyrics/vue'
+  - '@parcel/watcher'
+  - bcrypt
+  - core-js
+  - esbuild
