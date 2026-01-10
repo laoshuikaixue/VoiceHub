@@ -1890,7 +1890,7 @@ defineExpose({
 .song-request-form {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
   min-height: 0;
   gap: 1rem;
   position: relative;
@@ -2633,7 +2633,7 @@ defineExpose({
   border-radius: 13px;
   display: flex;
   flex-direction: column;
-  min-height: 400px;
+  min-height: 0;
   padding: 1rem 1.5rem 1.5rem 1.5rem; /* 上边距小一点 */
   position: relative;
   z-index: 1;
@@ -2643,7 +2643,7 @@ defineExpose({
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 300px;
+  min-height: 0;
 }
 
 /* 加载状态 */
@@ -2686,7 +2686,7 @@ defineExpose({
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 200px;
+  min-height: 0;
 }
 
 .results-grid {
@@ -2696,8 +2696,7 @@ defineExpose({
   flex-direction: column;
   gap: 1rem;
   padding-right: 0.5rem;
-  min-height: 200px;
-  max-height: 400px;
+  min-height: 0;
 }
 
 /* 滚动条样式 */
@@ -2842,9 +2841,11 @@ defineExpose({
 .similar-song-alert {
   background: #21242d;
   border-radius: 10px;
-  padding: 1rem;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+  margin-top: 0.75rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .alert-header {
@@ -2852,7 +2853,7 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .alert-header-left {
@@ -2878,17 +2879,17 @@ defineExpose({
 }
 
 .similar-songs-list {
-  margin-bottom: 1rem;
-  max-height: 80px; /* 减小高度，防止与搜索结果重叠 */
+  margin-bottom: 0.5rem;
+  max-height: 120px;
   overflow-y: auto;
 }
 
 .similar-song-item {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .similar-song-item:last-child {
