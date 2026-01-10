@@ -101,7 +101,7 @@ export default defineEventHandler(async (event) => {
         const {table} = body
 
         // 支持的表列表和表名映射
-        const supportedTables = ['Song', 'User', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist']
+        const supportedTables = ['Song', 'User', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist', 'SongReplayRequest']
 
         // Prisma模型名到数据库表名的映射
         const tableNameMap: Record<string, string> = {
@@ -114,7 +114,8 @@ export default defineEventHandler(async (event) => {
             'PlayTime': 'PlayTime',
             'Semester': 'Semester',
             'SystemSettings': 'SystemSettings',
-            'SongBlacklist': 'SongBlacklist'
+            'SongBlacklist': 'SongBlacklist',
+            'SongReplayRequest': 'song_replay_requests'
         }
 
         // 如果没有指定表名或指定为'all'，则修复所有表

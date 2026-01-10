@@ -1,6 +1,6 @@
 import {createError, defineEventHandler, getQuery} from 'h3'
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songs, users, votes, songCollaborators} from '~/drizzle/schema'
+import {playTimes, schedules, songs, users, votes, songCollaborators, songReplayRequests} from '~/drizzle/schema'
 import {and, asc, count, desc, eq, like, or, inArray} from 'drizzle-orm'
 import {cacheService} from '~/server/services/cacheService'
 import {formatBeijingTime} from '~/utils/timeUtils'
@@ -68,18 +68,28 @@ export default defineEventHandler(async (event) => {
             // 如果用户已登录，需要添加用户特定的投票状态
             if (user) {
                 // 获取用户的投票状态
-                const userVotesQuery = await db.select({
-                    songId: votes.songId
-                })
-                    .from(votes)
-                    .where(eq(votes.userId, user.id))
+            const userVotesQuery = await db.select({
+                songId: votes.songId
+            })
+                .from(votes)
+                .where(eq(votes.userId, user.id))
 
-                const userVotedSongs = new Set(userVotesQuery.map(v => v.songId))
+            const userVotedSongs = new Set(userVotesQuery.map(v => v.songId))
 
-                // 为每首歌添加用户投票状态
-                cachedData.data.songs.forEach((song: any) => {
-                    song.voted = userVotedSongs.has(song.id)
-                })
+            // 获取用户的重播申请状态
+            const userReplayRequestsQuery = await db.select({
+                songId: songReplayRequests.songId
+            })
+                .from(songReplayRequests)
+                .where(eq(songReplayRequests.userId, user.id))
+
+            const userReplayRequestedSongs = new Set(userReplayRequestsQuery.map(r => r.songId))
+
+            // 为每首歌添加用户特定的状态
+            cachedData.data.songs.forEach((song: any) => {
+                song.voted = userVotedSongs.has(song.id)
+                song.replayRequested = userReplayRequestedSongs.has(song.id)
+            })
             }
 
             return cachedData
@@ -188,6 +198,16 @@ export default defineEventHandler(async (event) => {
             playDate: s.playDate,
             played: s.played
         }]))
+
+        // 获取每首歌的重播申请状态（全局，不分用户）
+        const allReplayRequestsQuery = await db.select({
+            songId: songReplayRequests.songId,
+            count: count(songReplayRequests.id)
+        })
+            .from(songReplayRequests)
+            .groupBy(songReplayRequests.songId)
+        
+        const replayRequestCounts = new Map(allReplayRequestsQuery.map(r => [r.songId, r.count]))
 
         // 获取期望播放时段信息
         const playTimesQuery = await db.select()
@@ -301,7 +321,8 @@ export default defineEventHandler(async (event) => {
                 musicId: song.musicId || null, // 添加音乐ID字段
                 playUrl: song.playUrl || null, // 添加播放地址字段
                 requesterGrade: song.requester?.grade || null, // 添加投稿人年级
-                requesterClass: song.requester?.class || null // 添加投稿人班级
+                requesterClass: song.requester?.class || null, // 添加投稿人班级
+                replayRequested: (replayRequestCounts.get(song.id) || 0) > 0 // 添加是否已被申请重播的标志
             }
 
             // 添加排期信息

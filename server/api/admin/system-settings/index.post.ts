@@ -114,6 +114,16 @@ export default defineEventHandler(async (event) => {
             updateData.showBlacklistKeywords = body.showBlacklistKeywords
         }
 
+        if (body.enableReplayRequests !== undefined) {
+            if (typeof body.enableReplayRequests !== 'boolean') {
+                throw createError({
+                    statusCode: 400,
+                    message: 'enableReplayRequests 必须是布尔值'
+                })
+            }
+            updateData.enableReplayRequests = body.enableReplayRequests
+        }
+
         // SMTP配置字段
         if (body.smtpEnabled !== undefined) {
             if (typeof body.smtpEnabled !== 'boolean') {
@@ -204,6 +214,7 @@ export default defineEventHandler(async (event) => {
                 dailySubmissionLimit: updateData.dailySubmissionLimit ?? null,
                 weeklySubmissionLimit: updateData.weeklySubmissionLimit ?? null,
                 showBlacklistKeywords: updateData.showBlacklistKeywords ?? false,
+                enableReplayRequests: updateData.enableReplayRequests ?? false,
                 smtpEnabled: updateData.smtpEnabled ?? false,
                 smtpHost: updateData.smtpHost ?? null,
                 smtpPort: updateData.smtpPort ?? 587,

@@ -14,6 +14,7 @@ import {
     semesters,
     songBlacklists,
     songCollaborators,
+    songReplayRequests,
     songs,
     systemSettings,
     users,
@@ -148,6 +149,7 @@ export default defineEventHandler(async (event) => {
                 await db.delete(notificationSettings)
                 await db.delete(collaborationLogs)
                 await db.delete(songCollaborators)
+                await db.delete(songReplayRequests)
                 await db.delete(schedules)
                 await db.delete(votes)
                 await db.delete(songs)
@@ -177,6 +179,7 @@ export default defineEventHandler(async (event) => {
             'songs',
             'songCollaborators',
             'collaborationLogs',
+            'songReplayRequests',
             'votes',
             'schedules',
             'notificationSettings',
@@ -1044,6 +1047,50 @@ export default defineEventHandler(async (event) => {
                                                 })
                                             break
 
+                                        case 'songReplayRequests':
+                                            // 验证外键
+                                            let validReplayUserId = record.userId
+                                            let validReplaySongId = record.songId
+
+                                            if (record.userId) {
+                                                const mappedUserId = userIdMapping.get(record.userId)
+                                                if (mappedUserId) validReplayUserId = mappedUserId
+                                            }
+
+                                            if (record.songId) {
+                                                const mappedSongId = songIdMapping.get(record.songId)
+                                                if (mappedSongId) validReplaySongId = mappedSongId
+                                            }
+
+                                            const replayData = {
+                                                songId: validReplaySongId,
+                                                userId: validReplayUserId,
+                                                createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                                                updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+                                            }
+
+                                            if (mode === 'merge') {
+                                                await tx.insert(songReplayRequests)
+                                                    .values(replayData)
+                                                    .onConflictDoNothing()
+                                            } else {
+                                                // 完全恢复模式
+                                                if (record.id) {
+                                                     const existing = await tx.select().from(songReplayRequests).where(eq(songReplayRequests.id, record.id)).limit(1)
+                                                     if (existing.length > 0) {
+                                                         await tx.update(songReplayRequests).set(replayData).where(eq(songReplayRequests.id, record.id))
+                                                     } else {
+                                                         await tx.insert(songReplayRequests).values({
+                                                             ...replayData,
+                                                             id: record.id
+                                                         })
+                                                     }
+                                                } else {
+                                                    await tx.insert(songReplayRequests).values(replayData)
+                                                }
+                                            }
+                                            break
+
                                         case 'votes':
                                             // 验证外键约束
                                             let validVoteUserId = record.userId
@@ -1223,7 +1270,7 @@ export default defineEventHandler(async (event) => {
         // 重置所有自增序列
         console.log(`🔄 开始重置自增序列...`)
         const sequenceResetResults = []
-        const tablesToReset = ['Song', 'User', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist']
+        const tablesToReset = ['Song', 'User', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist', 'SongReplayRequest']
 
         for (const tableName of tablesToReset) {
             try {

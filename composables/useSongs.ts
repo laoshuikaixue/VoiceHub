@@ -694,6 +694,39 @@ export const useSongs = () => {
         }
     }
 
+    // 申请重播
+    const requestReplay = async (songId: number) => {
+        if (!isAuthenticated.value) {
+            showNotification('需要登录才能申请重播', 'error')
+            return null
+        }
+
+        loading.value = true
+        error.value = ''
+
+        try {
+            const authConfig = getAuthConfig()
+            const data = await $fetch('/api/songs/replay', {
+                method: 'POST',
+                body: { songId },
+                ...authConfig
+            })
+            
+            showNotification('重播申请已提交！', 'success')
+            return data
+        } catch (err: any) {
+            const errorMsg = err.data?.message || err.message || '申请重播失败'
+            if (errorMsg.includes('已经申请')) {
+                showNotification('您已经申请过重播这首歌了', 'info')
+            } else {
+                showNotification(errorMsg, 'error')
+            }
+            return null
+        } finally {
+            loading.value = false
+        }
+    }
+
     // 按热度排序的歌曲
     const songsByPopularity = computed(() => {
         return [...songs.value].sort((a, b) => b.voteCount - a.voteCount)
@@ -835,6 +868,7 @@ export const useSongs = () => {
         deleteSong,
         markPlayed,
         unmarkPlayed,
+        requestReplay,
         filterSchedulesByPlayTime,
         getPlayTimeName,
         formatPlayTimeDisplay,

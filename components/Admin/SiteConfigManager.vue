@@ -90,7 +90,18 @@
 
       <!-- 投稿限额设置 -->
       <div class="form-section">
-        <h4 class="section-title">投稿限额设置</h4>
+        <h4 class="section-title">投稿功能设置</h4>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+                v-model="formData.enableReplayRequests"
+                type="checkbox"
+            />
+            <span class="checkbox-text">启用重播申请功能</span>
+          </label>
+          <small class="help-text">开启后，允许用户对本学期已播放的歌曲申请重播</small>
+        </div>
 
         <div class="form-group">
           <label class="checkbox-label">
@@ -267,6 +278,7 @@ const formData = ref({
   siteDescription: '',
   submissionGuidelines: '',
   icpNumber: '',
+  enableReplayRequests: false,
   enableSubmissionLimit: false,
   dailySubmissionLimit: 0,
   weeklySubmissionLimit: 0,
@@ -298,6 +310,7 @@ const loadConfig = async () => {
       siteDescription: data.siteDescription || '',
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
       icpNumber: data.icpNumber || '',
+      enableReplayRequests: data.enableReplayRequests || false,
       enableSubmissionLimit: data.enableSubmissionLimit || false,
       dailySubmissionLimit: data.dailySubmissionLimit !== undefined ? data.dailySubmissionLimit : 5,
       weeklySubmissionLimit: data.weeklySubmissionLimit !== undefined ? data.weeklySubmissionLimit : null,
@@ -319,6 +332,7 @@ const loadConfig = async () => {
       siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: defaultSubmissionGuidelines,
       icpNumber: '',
+      enableReplayRequests: false,
       enableSubmissionLimit: false,
       dailySubmissionLimit: 5,
       weeklySubmissionLimit: null,
@@ -343,6 +357,7 @@ const saveConfig = async () => {
       siteDescription: formData.value.siteDescription.trim() || '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: formData.value.submissionGuidelines.trim() || defaultSubmissionGuidelines,
       icpNumber: formData.value.icpNumber.trim(),
+      enableReplayRequests: formData.value.enableReplayRequests,
       enableSubmissionLimit: formData.value.enableSubmissionLimit,
       dailySubmissionLimit: formData.value.dailySubmissionLimit,
       weeklySubmissionLimit: formData.value.weeklySubmissionLimit,
