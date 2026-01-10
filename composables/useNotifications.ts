@@ -296,6 +296,15 @@ export const useNotifications = () => {
                 notifications.value.splice(index, 1)
             }
 
+            // 删除后重新获取当前页数据，以补充后续通知
+            if (notifications.value.length === 0 && currentPage.value > 1) {
+                // 如果当前页数据已被清空且不是第一页，则跳转到上一页
+                await goToPage(currentPage.value - 1)
+            } else {
+                // 否则重新加载当前页（如果有下一页数据会自动补充上来）
+                await fetchNotifications(currentPage.value, pageSize.value)
+            }
+
             return true
         } catch (err: any) {
             // 检查是否为401错误
@@ -333,6 +342,7 @@ export const useNotifications = () => {
             // 清空本地通知列表
             notifications.value = []
             unreadCount.value = 0
+            resetPagination()
 
             return true
         } catch (err: any) {
