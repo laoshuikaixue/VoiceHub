@@ -110,7 +110,7 @@
 
 1. **点击部署按钮**：选择上方的 Claw 部署按钮
 
-2. **打开应用程序启动板**：打开  App Lauchpad （应用程序启动板）
+2. **打开应用程序启动板**：打开  App Launchpad （应用程序启动板）
 
 3. **创建应用**：选 Create App （创建应用）
 
@@ -939,10 +939,10 @@ psql -h localhost -U username -d database_name < backup.sql
 
 ### 添加新功能
 
-1. 在`server/api`中添加新的API端点
-2. 在`composables`中添加相应的组合式函数
-3. 在`components`中创建UI组件
-4. 在`pages`中整合组件和功能
+1. 在 `server/api` 中添加新的API端点
+2. 在 `composables` 中添加相应的组合式函数
+3. 在 `components` 中创建UI组件
+4. 在 `pages` 中整合组件和功能
 
 ### 数据库模型修改
 
@@ -951,7 +951,7 @@ psql -h localhost -U username -d database_name < backup.sql
 1. 编辑`drizzle/schema.ts`文件中的表结构定义
 2. 生成新的迁移文件：`npm run db:generate`
 3. 应用迁移到数据库：`npm run db:migrate`
-4. 确保同时更新`types/index.ts`中的TypeScript类型定义
+4. 确保同时更新 `types/index.ts` 中的TypeScript类型定义
 5. 使用Drizzle Studio查看数据库：`npm run db:studio`
 
 
@@ -997,7 +997,7 @@ export interface MusicSource {
 
 编辑 `utils/musicSources.ts` 文件，在 `MUSIC_SOURCE_CONFIG.sources` 数组中添加新音源：
 
-```typescript
+```
 {
   id: 'my-new-source',
   name: '我的新音源',
@@ -1073,7 +1073,7 @@ const transformMyNewSourceResponse = (response: any): any[] => {
 
 所有音源的搜索结果都应转换为以下统一格式：
 
-```typescript
+```
 {
   id: string | number,           // 歌曲ID
   title: string,                 // 歌曲标题
@@ -1156,7 +1156,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
 
 ##### 1. 添加音源配置
 
-```typescript
+```
 // utils/musicSources.ts
 {
   id: 'music-api',
@@ -1234,7 +1234,7 @@ VoiceHub是一个开源的校园广播站点歌管理系统，本项目：
 - 所有音乐内容均来自第三方音乐平台
 
 **第三方API使用**：
-- 本系统仅使用第三方公开API进行音乐搜索和获取播放链接
+- 本系统仅使用第三方API实现音乐搜索和获取播放链接等功能
 - 音乐内容的版权归原音乐平台和版权方所有
 - 用户播放的音乐内容受相应音乐平台的服务条款约束
 
@@ -1283,7 +1283,7 @@ Thanks goes to these wonderful people:
 
 本项目有对应的原生鸿蒙版本：https://github.com/laoshuikaixue/VoiceHub-hmos
 
-VoiceHub HarmonyOS 是 VoiceHub 校园广播站点歌系统的鸿蒙原生版本。该项目通过创新的混合架构设计，实现了Web端Vue音频播放器与鸿蒙原生端的跨平台音频控制同步
+该项目通过创新的混合架构设计，实现了Web端Vue音频播放器与鸿蒙原生端的跨平台音频控制同步
 
 ---
 
