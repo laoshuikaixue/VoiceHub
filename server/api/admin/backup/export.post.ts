@@ -1,10 +1,15 @@
 import {createError, defineEventHandler, readBody} from 'h3'
 import {db} from '~/drizzle/db'
 import {
+    apiKeys,
+    apiKeyPermissions,
+    apiLogs,
     collaborationLogs,
+    emailTemplates,
     notifications,
     notificationSettings,
     playTimes,
+    requestTimes,
     schedules,
     semesters,
     songBlacklists,
@@ -234,6 +239,63 @@ export default defineEventHandler(async (event) => {
                     }))
                 },
                 description: '歌曲重播申请'
+            },
+            apiKeys: {
+                query: async () => {
+                    const apiKeysData = await db.select().from(apiKeys)
+                    const usersData = await db.select({
+                        id: users.id,
+                        username: users.username,
+                        name: users.name
+                    }).from(users)
+                    const permissionsData = await db.select().from(apiKeyPermissions)
+
+                    return apiKeysData.map(key => ({
+                        ...key,
+                        createdByUser: usersData.find(user => user.id === key.createdByUserId),
+                        permissions: permissionsData.filter(perm => perm.apiKeyId === key.id)
+                    }))
+                },
+                description: 'API密钥'
+            },
+            apiKeyPermissions: {
+                query: () => db.select().from(apiKeyPermissions),
+                description: 'API密钥权限'
+            },
+            apiLogs: {
+                query: async () => {
+                    const logsData = await db.select().from(apiLogs)
+                    const apiKeysData = await db.select({
+                        id: apiKeys.id,
+                        name: apiKeys.name
+                    }).from(apiKeys)
+
+                    return logsData.map(log => ({
+                        ...log,
+                        apiKey: log.apiKeyId ? apiKeysData.find(key => key.id === log.apiKeyId) : null
+                    }))
+                },
+                description: 'API访问日志'
+            },
+            emailTemplates: {
+                query: async () => {
+                    const templatesData = await db.select().from(emailTemplates)
+                    const usersData = await db.select({
+                        id: users.id,
+                        username: users.username,
+                        name: users.name
+                    }).from(users)
+
+                    return templatesData.map(template => ({
+                        ...template,
+                        updatedByUser: template.updatedByUserId ? usersData.find(user => user.id === template.updatedByUserId) : null
+                    }))
+                },
+                description: '邮件模板'
+            },
+            requestTimes: {
+                query: () => db.select().from(requestTimes),
+                description: '请求时段'
             }
         }
 

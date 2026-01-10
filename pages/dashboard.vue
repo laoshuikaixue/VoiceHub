@@ -191,6 +191,18 @@
                 播出时段
               </button>
               <button
+                  v-if="permissions.canAccessPage('request-times')"
+                  :class="['nav-item', { active: activeTab === 'request-times' }]"
+                  @click="activeTab = 'request-times'"
+              >
+                <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M12 2v6m0 6v6"/>
+                  <path d="m21 12-6-3-6 3-6-3"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                投稿管理
+              </button>
+              <button
                   v-if="permissions.canAccessPage('semesters')"
                   :class="['nav-item', { active: activeTab === 'semesters' }]"
                   @click="activeTab = 'semesters'"
@@ -340,6 +352,11 @@
               <LazyAdminPlayTimeManager/>
             </div>
 
+            <!-- 投稿管理 -->
+            <div v-if="activeTab === 'request-times' && permissions.canAccessPage('request-times')" class="content-section">
+              <LazyAdminRequestTimeManager/>
+            </div>
+
             <!-- 学期管理 -->
             <div v-if="activeTab === 'semesters' && permissions.canAccessPage('semesters')" class="content-section">
               <LazyAdminSemesterManager/>
@@ -411,6 +428,7 @@ const getPageTitle = () => {
     notifications: '通知管理',
     'smtp-config': '邮件配置',
     playtimes: '播出时段',
+    'request-times': '投稿管理',
     semesters: '学期管理',
     blacklist: '黑名单管理',
     'site-config': '站点配置',
