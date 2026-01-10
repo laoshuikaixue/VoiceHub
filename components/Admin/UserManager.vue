@@ -128,7 +128,6 @@
                   </svg>
                 </button>
                 <button
-                    :disabled="isSelf(user)"
                     class="action-btn music-btn"
                     title="查看歌曲"
                     @click="viewUserSongs(user)"
@@ -199,7 +198,6 @@
                 </svg>
               </button>
               <button
-                  :disabled="isSelf(user)"
                   class="action-btn music-btn"
                   title="查看歌曲"
                   @click="viewUserSongs(user)"
