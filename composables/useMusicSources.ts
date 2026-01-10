@@ -209,6 +209,7 @@ export const useMusicSources = () => {
 
         try {
             const enabledSources = getEnabledSources()
+            const errors: any[] = []
 
             if (enabledSources.length === 0) {
                 throw new Error('没有可用的音源')
