@@ -2288,10 +2288,10 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 2fr 3fr;
   gap: 24px;
-  min-height: 700px;
+  min-height: 800px;
   width: 100%;
   box-sizing: border-box;
-  align-items: start;
+  align-items: stretch;
 }
 
 /* 响应式设计 */
@@ -2331,6 +2331,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 24px;
+  flex-shrink: 0;
 }
 
 .header-tabs-row {
@@ -2399,6 +2400,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
   background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(10px);
   position: sticky;
@@ -2406,11 +2408,18 @@ onMounted(() => {
   z-index: 10;
 }
 
+.song-list-panel .panel-header {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
 .panel-header h3 {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
   color: #f8fafc;
+  white-space: nowrap;
 }
 
 .header-controls-container {
@@ -2686,7 +2695,7 @@ onMounted(() => {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  min-height: 450px;
+  min-height: 600px;
   position: relative;
 }
 
