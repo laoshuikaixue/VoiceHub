@@ -839,6 +839,10 @@ watch(
     () => {
       if (platform.value !== 'netease') return
       
+      // 记录当前状态，判断是否需要重新搜索
+      // 如果已经有搜索结果(hasSearched)或正在搜索中(searching)，且有关键词，则应该重新搜索
+      const shouldResearch = title.value.trim() && (hasSearched.value || searching.value)
+      
       // 如果有正在进行的搜索请求，立即取消
       if (searchAbortController.value) {
         searchAbortController.value.abort()
@@ -849,8 +853,8 @@ watch(
       // 清空之前的搜索结果，避免显示错误的类型结果
       searchResults.value = []
 
-      // 如果已经有搜索结果或正在搜索，且有关键词，自动重新搜索
-      if (title.value.trim() && hasSearched.value) {
+      // 自动重新搜索
+      if (shouldResearch) {
         handleSearch()
       }
     }
@@ -1081,20 +1085,37 @@ const handleSearch = async () => {
   searchAbortController.value = new AbortController()
   const signal = searchAbortController.value.signal
 
+  // 记录请求时的上下文，用于结果校验
+  const requestPlatform = platform.value
+  const requestSearchType = searchType.value
+
   searching.value = true
   try {
     // 使用多音源搜索
     const searchParams = {
       keywords: title.value.trim(),
-      platform: platform.value,
+      platform: requestPlatform,
       limit: 20,
       signal: signal, // 传递AbortSignal
-      type: platform.value === 'netease' ? searchType.value : 1,
-      cookie: platform.value === 'netease' ? neteaseCookie.value : undefined
+      type: requestPlatform === 'netease' ? requestSearchType : 1,
+      cookie: requestPlatform === 'netease' ? neteaseCookie.value : undefined
     }
 
     console.log('开始多音源搜索:', searchParams)
     const results = await musicSources.searchSongs(searchParams)
+
+    // 再次检查是否被中断，防止竞态条件
+    if (signal.aborted) return
+
+    // 额外的安全检查：如果用户已经切换了平台或类型，丢弃结果
+    if (platform.value !== requestPlatform) {
+      console.log('平台已切换，丢弃旧结果', requestPlatform, '->', platform.value)
+      return
+    }
+    if (requestPlatform === 'netease' && searchType.value !== requestSearchType) {
+      console.log('搜索类型已切换，丢弃旧结果', requestSearchType, '->', searchType.value)
+      return
+    }
 
     if (results && results.success && results.data && results.data.length > 0) {
       // 转换搜索结果格式以兼容现有UI
