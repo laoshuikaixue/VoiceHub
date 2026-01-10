@@ -838,16 +838,21 @@ watch(
     () => searchType.value,
     () => {
       if (platform.value !== 'netease') return
-      if (!isNeteaseLoggedIn.value) return
-      if (!title.value.trim()) return
-
+      
+      // 如果有正在进行的搜索请求，立即取消
       if (searchAbortController.value) {
         searchAbortController.value.abort()
         searchAbortController.value = null
         searching.value = false
       }
 
-      handleSearch()
+      // 清空之前的搜索结果，避免显示错误的类型结果
+      searchResults.value = []
+
+      // 如果已经有搜索结果或正在搜索，且有关键词，自动重新搜索
+      if (title.value.trim() && hasSearched.value) {
+        handleSearch()
+      }
     }
 )
 
