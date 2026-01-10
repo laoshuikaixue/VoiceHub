@@ -1279,4 +1279,12 @@ Thanks goes to these wonderful people:
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date" />
  </picture>
 
+## 其他
+
+本项目有对应的原生鸿蒙版本：https://github.com/laoshuikaixue/VoiceHub-hmos
+
+VoiceHub HarmonyOS 是 VoiceHub 校园广播站点歌系统的鸿蒙原生版本。该项目通过创新的混合架构设计，实现了Web端Vue音频播放器与鸿蒙原生端的跨平台音频控制同步
+
+---
+
 Powered By LaoShui @ 2025-2026
