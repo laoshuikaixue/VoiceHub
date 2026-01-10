@@ -1,5 +1,5 @@
 import {db} from '~/drizzle/db'
-import {songs, users} from '~/drizzle/schema'
+import {songs, users, songCollaborators, collaborationLogs} from '~/drizzle/schema'
 import {eq, or} from 'drizzle-orm'
 import {cacheService} from '~/server/services/cacheService'
 
@@ -107,6 +107,56 @@ export default defineEventHandler(async (event) => {
                 statusCode: 404,
                 statusMessage: '歌曲不存在'
             })
+        }
+
+        // 处理联合投稿人
+        if (body.collaborators && Array.isArray(body.collaborators)) {
+            // 获取现有联合投稿人
+            const existingCollaborators = await db.select()
+                .from(songCollaborators)
+                .where(eq(songCollaborators.songId, songId))
+
+            const existingCollaboratorUserIds = existingCollaborators.map(c => c.userId)
+            const newCollaboratorIds = body.collaborators
+
+            // 需要添加的
+            const toAdd = newCollaboratorIds.filter((id: number) => !existingCollaboratorUserIds.includes(id))
+            // 需要删除的
+            const toDelete = existingCollaborators.filter(c => !newCollaboratorIds.includes(c.userId))
+
+            // 执行添加
+            for (const userId of toAdd) {
+                // 检查用户是否存在
+                const userExists = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+                if (userExists.length > 0) {
+                    const [newCollab] = await db.insert(songCollaborators).values({
+                        songId: songId,
+                        userId: userId,
+                        status: 'ACCEPTED'
+                    }).returning()
+
+                    // 记录日志
+                    await db.insert(collaborationLogs).values({
+                        collaboratorId: newCollab.id,
+                        action: 'ADMIN_ADD',
+                        operatorId: user.id,
+                        ipAddress: (event.node.req.headers['x-forwarded-for'] as string) || event.node.req.socket.remoteAddress
+                    })
+                }
+            }
+
+            // 执行删除
+            for (const collab of toDelete) {
+                await db.delete(songCollaborators).where(eq(songCollaborators.id, collab.id))
+
+                // 记录日志
+                await db.insert(collaborationLogs).values({
+                    collaboratorId: collab.id,
+                    action: 'ADMIN_REMOVE',
+                    operatorId: user.id,
+                    ipAddress: (event.node.req.headers['x-forwarded-for'] as string) || event.node.req.socket.remoteAddress
+                })
+            }
         }
 
         // 获取完整的歌曲信息（包含投稿人）

@@ -454,10 +454,58 @@
               </div>
             </div>
             <div v-if="selectedEditUser" class="selected-user">
-              <span>已选择: {{ selectedEditUser.name }} (@{{ selectedEditUser.username }})</span>
+              <span>已选择: {{ selectedEditUser.name }}{{ selectedEditUser.username ? ` (@${selectedEditUser.username})` : '' }}</span>
               <button class="clear-user-btn" type="button" @click="clearSelectedEditUser">×</button>
             </div>
           </div>
+
+          <div class="form-group">
+            <label>联合投稿人</label>
+            <div class="collaborator-search-container user-search-container">
+              <div class="search-input-wrapper">
+                <input
+                    v-model="editCollaboratorSearchQuery"
+                    class="form-input"
+                    placeholder="搜索并添加联合投稿人"
+                    type="text"
+                    @focus="showEditCollaboratorDropdown = true"
+                    @input="searchEditCollaborators"
+                />
+                <div v-if="editCollaboratorSearchLoading" class="search-loading">
+                  <svg class="loading-spinner" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
+                            stroke-dashoffset="31.416" stroke-width="2">
+                      <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
+                               values="0 31.416;15.708 15.708;0 31.416"/>
+                      <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite"
+                               values="0;-15.708;-31.416"/>
+                    </circle>
+                  </svg>
+                </div>
+              </div>
+              <div v-if="showEditCollaboratorDropdown && filteredEditCollaborators.length > 0" class="user-dropdown">
+                <div
+                    v-for="user in filteredEditCollaborators.slice(0, 10)"
+                    :key="user.id"
+                    class="user-option"
+                    @click="selectEditCollaborator(user)"
+                >
+                  <div class="user-info">
+                    <span class="user-name">{{ user.name }}</span>
+                    <span v-if="user.username" class="user-username">@{{ user.username }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div v-if="selectedEditCollaborators.length > 0" class="selected-users-list">
+              <div v-for="user in selectedEditCollaborators" :key="user.id" class="selected-user-tag">
+                <span>{{ user.name }}{{ user.username ? ` (@${user.username})` : '' }}</span>
+                <button class="remove-user-btn" type="button" @click="removeEditCollaborator(user.id)">×</button>
+              </div>
+            </div>
+          </div>
+
           <div class="form-group">
             <label>学期</label>
             <select v-model="editForm.semester" class="form-select">
@@ -614,13 +662,13 @@
                 >
                   <div class="user-info">
                     <span class="user-name">{{ user.name }}</span>
-                    <span class="user-username">@{{ user.username }}</span>
+                    <span v-if="user.username" class="user-username">@{{ user.username }}</span>
                   </div>
                 </div>
               </div>
             </div>
             <div v-if="selectedUser" class="selected-user">
-              <span>已选择: {{ selectedUser.name }} (@{{ selectedUser.username }})</span>
+              <span>已选择: {{ selectedUser.name }}{{ selectedUser.username ? ` (@${selectedUser.username})` : '' }}</span>
               <button class="clear-user-btn" type="button" @click="clearSelectedUser">×</button>
             </div>
           </div>
@@ -1230,6 +1278,13 @@ const editSong = (song) => {
     clearSelectedEditUser()
   }
 
+  // 设置联合投稿人
+  if (song.collaborators && Array.isArray(song.collaborators)) {
+    selectedEditCollaborators.value = [...song.collaborators]
+  } else {
+    selectedEditCollaborators.value = []
+  }
+
   showEditModal.value = true
 }
 
@@ -1273,6 +1328,7 @@ const saveEditSong = async () => {
       title: editForm.value.title,
       artist: editForm.value.artist,
       requester: editForm.value.requester,
+      collaborators: selectedEditCollaborators.value.map(u => u.id),
       semester: editForm.value.semester,
       musicPlatform: editForm.value.musicPlatform || null,
       musicId: editForm.value.musicId || null,
@@ -1324,6 +1380,8 @@ const cancelEditSong = () => {
   editCoverValidation.value = {valid: true, error: '', validating: false}
   editPlayUrlValidation.value = {valid: true, error: '', validating: false}
   clearSelectedEditUser()
+  selectedEditCollaborators.value = []
+  editCollaboratorSearchQuery.value = ''
 }
 
 // 添加歌曲
@@ -1586,11 +1644,67 @@ const clearSelectedEditUser = () => {
   showEditUserDropdown.value = false
 }
 
+// 联合投稿人搜索相关
+const selectedEditCollaborators = ref([])
+const editCollaboratorSearchQuery = ref('')
+const filteredEditCollaborators = ref([])
+const showEditCollaboratorDropdown = ref(false)
+const editCollaboratorSearchLoading = ref(false)
+let editCollaboratorSearchTimeout = null
+
+const searchEditCollaborators = async () => {
+  if (!editCollaboratorSearchQuery.value.trim()) {
+    filteredEditCollaborators.value = []
+    showEditCollaboratorDropdown.value = false
+    editCollaboratorSearchLoading.value = false
+    return
+  }
+
+  if (editCollaboratorSearchTimeout) {
+    clearTimeout(editCollaboratorSearchTimeout)
+  }
+
+  editCollaboratorSearchTimeout = setTimeout(async () => {
+    editCollaboratorSearchLoading.value = true
+    try {
+      const users = await searchUsersFromAPI(editCollaboratorSearchQuery.value)
+      // 过滤掉已经是主投稿人或已在联合投稿人列表中的用户
+      filteredEditCollaborators.value = users.filter(u => 
+        (!selectedEditUser.value || u.id !== selectedEditUser.value.id) &&
+        !selectedEditCollaborators.value.some(c => c.id === u.id)
+      )
+      showEditCollaboratorDropdown.value = filteredEditCollaborators.value.length > 0
+    } catch (error) {
+      console.error('搜索联合投稿人失败:', error)
+      filteredEditCollaborators.value = []
+      showEditCollaboratorDropdown.value = false
+    } finally {
+      editCollaboratorSearchLoading.value = false
+    }
+  }, 300)
+}
+
+const selectEditCollaborator = (user) => {
+  selectedEditCollaborators.value.push(user)
+  editCollaboratorSearchQuery.value = ''
+  showEditCollaboratorDropdown.value = false
+}
+
+const removeEditCollaborator = (userId) => {
+  const index = selectedEditCollaborators.value.findIndex(u => u.id === userId)
+  if (index > -1) {
+    selectedEditCollaborators.value.splice(index, 1)
+  }
+}
+
 // 点击外部关闭下拉框
 const handleClickOutside = (event) => {
   if (!event.target.closest('.user-search-container')) {
     showUserDropdown.value = false
     showEditUserDropdown.value = false
+  }
+  if (!event.target.closest('.collaborator-search-container')) {
+    showEditCollaboratorDropdown.value = false
   }
 }
 
@@ -2859,6 +2973,54 @@ onUnmounted(() => {
 .clear-user-btn:hover {
   background: #3a3a3a;
   color: #ffffff;
+}
+
+/* 联合投稿人列表样式 */
+.selected-users-list {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selected-user-tag {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid #667eea;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #667eea;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.selected-user-tag:hover {
+  background: rgba(102, 126, 234, 0.15);
+  transform: translateY(-1px);
+}
+
+.remove-user-btn {
+  background: none;
+  border: none;
+  color: #888888;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.remove-user-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 /* 可选字段样式 */
