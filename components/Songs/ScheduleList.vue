@@ -177,8 +177,9 @@
                           {{ schedule.song.title }} - {{ schedule.song.artist }}
                         </h3>
                         <div class="song-meta">
-                          <span :title="(schedule.song.collaborators && schedule.song.collaborators.length > 0 ? '主投稿人: ' : '投稿人: ') + schedule.song.requester + (schedule.song.collaborators && schedule.song.collaborators.length ? '\n联合投稿: ' + schedule.song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
-                                class="requester">
+                          <span
+                              :title="(schedule.song.collaborators && schedule.song.collaborators.length > 0 ? '主投稿人: ' : '投稿人: ') + schedule.song.requester + (schedule.song.collaborators && schedule.song.collaborators.length ? '\n联合投稿: ' + schedule.song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
+                              class="requester">
                             投稿人：{{ schedule.song.requester }}
                             <span v-if="schedule.song.collaborators && schedule.song.collaborators.length > 0">
                                & {{ schedule.song.collaborators.map(c => c.displayName || c.name).join(' & ') }}

@@ -130,7 +130,8 @@
                   <span class="netease-title">网易云音乐账号</span>
                 </div>
                 <div class="header-actions">
-                  <button v-if="isNeteaseLoggedIn" class="header-btn" type="button" @click="handleExportData" title="导出Cookie数据">
+                  <button v-if="isNeteaseLoggedIn" class="header-btn" title="导出Cookie数据" type="button"
+                          @click="handleExportData">
                     <Icon :size="14" name="download"/>
                     导出
                   </button>
@@ -148,7 +149,7 @@
                   <span class="loading-text">刷新中</span>
                 </div>
               </div>
-              
+
               <!-- 未登录状态 -->
               <div v-else-if="!isNeteaseLoggedIn" class="login-entry">
                 <div class="login-desc">
@@ -185,11 +186,13 @@
                   </div>
 
                   <div class="user-actions-row">
-                    <button class="action-btn-compact" type="button" @click="showRecentSongsModal = true" title="最近播放">
+                    <button class="action-btn-compact" title="最近播放" type="button"
+                            @click="showRecentSongsModal = true">
                       <Icon :size="14" name="history"/>
                       <span>最近播放</span>
                     </button>
-                    <button class="action-btn-compact" type="button" @click="showPlaylistModal = true" title="从歌单投稿">
+                    <button class="action-btn-compact" title="从歌单投稿" type="button"
+                            @click="showPlaylistModal = true">
                       <Icon :size="14" name="playlist"/>
                       <span>从歌单投稿</span>
                     </button>
@@ -254,11 +257,13 @@
                         <button
                             v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
                             :disabled="requestingReplay || getSimilarSong(result)?.replayRequested"
-                            class="replay-btn"
                             :title="getSimilarSong(result)?.replayRequested ? '该歌曲已申请过重播' : '申请重播'"
+                            class="replay-btn"
                             @click.stop.prevent="handleRequestReplay(getSimilarSong(result))"
                         >
-                          {{ requestingReplay ? '申请中...' : (getSimilarSong(result)?.replayRequested ? '已申请重播' : '申请重播') }}
+                          {{
+                            requestingReplay ? '申请中...' : (getSimilarSong(result)?.replayRequested ? '已申请重播' : '申请重播')
+                          }}
                         </button>
 
                         <!-- 其他用户：显示点赞按钮，根据状态设置不同样式 -->
@@ -382,7 +387,9 @@
               </p>
               <!-- 根据歌曲状态显示不同的提示 -->
               <p v-if="song.played" class="alert-hint">
-                {{ isSuperAdmin ? '该歌曲已播放，您可以继续投稿' : (enableReplayRequests ? '该歌曲已播放' : '该歌曲已播放，无法进行投票操作') }}
+                {{
+                  isSuperAdmin ? '该歌曲已播放，您可以继续投稿' : (enableReplayRequests ? '该歌曲已播放' : '该歌曲已播放，无法进行投票操作')
+                }}
               </p>
               <p v-else-if="song.scheduled" class="alert-hint">该歌曲已排期，无法进行投票操作</p>
               <p v-else-if="!song.voted" class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
@@ -406,8 +413,8 @@
             <div v-if="song.played && enableReplayRequests && !isSuperAdmin" class="song-actions">
               <button
                   :disabled="requestingReplay || song.replayRequested"
-                  class="replay-btn small"
                   :title="song.replayRequested ? '该歌曲已申请过重播' : '申请重播'"
+                  class="replay-btn small"
                   type="button"
                   @click="handleRequestReplay(song)"
               >
@@ -806,12 +813,12 @@ const handleImportData = async (event) => {
       if (window.$showNotification) {
         window.$showNotification('正在验证Cookie有效性...', 'info')
       }
-      
+
       const res = await getLoginStatus(data.cookie)
       const dataObj = res.body?.data || res.body
       if (dataObj && dataObj.account) {
         handleLoginSuccess({
-          cookie: data.cookie, 
+          cookie: data.cookie,
           user: dataObj.profile || dataObj.account
         })
         if (window.$showNotification) {
@@ -866,11 +873,11 @@ watch(
     () => searchType.value,
     () => {
       if (platform.value !== 'netease') return
-      
+
       // 记录当前状态，判断是否需要重新搜索
       // 如果已经有搜索结果(hasSearched)或正在搜索中(searching)，且有关键词，则应该重新搜索
       const shouldResearch = title.value.trim() && (hasSearched.value || searching.value)
-      
+
       // 如果有正在进行的搜索请求，立即取消
       if (searchAbortController.value) {
         searchAbortController.value.abort()
@@ -1755,7 +1762,7 @@ const handleManualSubmit = async () => {
 // 申请重播
 const handleRequestReplay = async (song) => {
   if (requestingReplay.value || !song) return
-  
+
   // 如果已经申请过，不执行
   if (song.replayRequested) {
     if (window.$showNotification) {
@@ -1763,7 +1770,7 @@ const handleRequestReplay = async (song) => {
     }
     return
   }
-  
+
   requestingReplay.value = true
   try {
     await songService.requestReplay(song.id)

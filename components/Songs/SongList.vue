@@ -21,6 +21,15 @@
         >
           我的投稿
         </button>
+        <button
+            v-if="isAuthenticated"
+            v-ripple
+            :class="{ 'active': activeTab === 'replays' }"
+            class="tab-button"
+            @click="setActiveTab('replays')"
+        >
+          我的重播
+        </button>
       </div>
 
       <div class="search-actions">
@@ -88,7 +97,11 @@
       </div>
 
       <div v-else-if="displayedSongs.length === 0" :key="'empty-' + activeTab" class="empty">
-        {{ activeTab === 'mine' ? '您还没有投稿歌曲，马上去点歌吧！' : '暂无歌曲，马上去点歌吧！' }}
+        {{
+          activeTab === 'mine' ? '您还没有投稿歌曲，马上去点歌吧！' :
+              activeTab === 'replays' ? '您还没有申请重播的歌曲，去看看已经播放过的歌吧！' :
+                  '暂无歌曲，马上去点歌吧！'
+        }}
       </div>
 
       <div v-else :key="'songs-' + activeTab" class="songs-container">
@@ -149,8 +162,9 @@
                   </span>
                 </h3>
                 <div class="song-meta">
-                  <span :title="(song.collaborators && song.collaborators.length ? '主投稿人: ' : '投稿人: ') + song.requester + (song.collaborators && song.collaborators.length ? '\n联合投稿: ' + song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
-                        class="requester">
+                  <span
+                      :title="(song.collaborators && song.collaborators.length ? '主投稿人: ' : '投稿人: ') + song.requester + (song.collaborators && song.collaborators.length ? '\n联合投稿: ' + song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
+                      class="requester">
                     投稿人：{{ song.requester }}
                     <span v-if="song.collaborators && song.collaborators.length > 0">
                        & {{ song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
@@ -194,12 +208,34 @@
               <button
                   v-if="(isMySong(song) || isCollaborator(song)) && !song.played && !song.scheduled"
                   :disabled="actionInProgress"
-                  class="withdraw-button"
                   :title="isMySong(song) ? '撤回投稿' : '退出联合投稿'"
+                  class="withdraw-button"
                   @click.stop="handleWithdraw(song)"
               >
                 撤销
               </button>
+
+              <!-- 申请/取消重播按钮 -->
+              <template v-if="song.played && isAuthenticated">
+                <button
+                    v-if="song.replayRequested"
+                    :disabled="actionInProgress"
+                    class="withdraw-button replay-cancel-btn"
+                    title="撤回重播申请"
+                    @click.stop="handleCancelReplay(song)"
+                >
+                  撤回申请
+                </button>
+                <button
+                    v-else-if="enableReplayRequests"
+                    :disabled="actionInProgress"
+                    class="withdraw-button replay-request-btn"
+                    title="申请重播"
+                    @click.stop="handleRequestReplay(song)"
+                >
+                  申请重播
+                </button>
+              </template>
             </div>
           </div>
         </TransitionGroup>
@@ -301,6 +337,7 @@ import {useSemesters} from '~/composables/useSemesters'
 import {useMusicSources} from '~/composables/useMusicSources'
 import {useAudioQuality} from '~/composables/useAudioQuality'
 import {useSongs} from '~/composables/useSongs'
+import {useSiteConfig} from '~/composables/useSiteConfig'
 import Icon from '~/components/UI/Icon.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
 import {convertToHttps} from '~/utils/url'
@@ -324,7 +361,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['vote', 'withdraw', 'refresh', 'semester-change'])
+const emit = defineEmits(['vote', 'withdraw', 'cancelReplay', 'requestReplay', 'refresh', 'semester-change'])
 const voteInProgress = ref(false)
 const actionInProgress = ref(false)
 const sortBy = ref('popularity')
@@ -332,6 +369,7 @@ const sortOrder = ref('desc') // 'desc' for newest first, 'asc' for oldest first
 const searchQuery = ref('') // 搜索查询
 const activeTab = ref('all') // 默认显示全部投稿
 const auth = useAuth()
+const {enableReplayRequests} = useSiteConfig()
 const isAuthenticated = computed(() => auth && auth.isAuthenticated && auth.isAuthenticated.value)
 
 // 焦点状态管理
@@ -551,6 +589,8 @@ const displayedSongs = computed(() => {
   // 应用标签过滤器
   if (activeTab.value === 'mine') {
     result = result.filter(song => isMySong(song))
+  } else if (activeTab.value === 'replays') {
+    result = result.filter(song => song.replayRequested)
   }
 
   // 应用搜索过滤器
@@ -735,6 +775,26 @@ const handleWithdraw = (song) => {
       action: 'withdraw', // 后端使用相同的接口，根据用户身份处理
       data: song
     }
+  }
+}
+
+const handleCancelReplay = (song) => {
+  confirmDialog.value = {
+    show: true,
+    title: '取消重播申请',
+    message: `确认取消歌曲《${song.title}》的重播申请吗？`,
+    action: 'cancelReplay',
+    data: song
+  }
+}
+
+const handleRequestReplay = (song) => {
+  confirmDialog.value = {
+    show: true,
+    title: '申请重播',
+    message: `确认申请重播歌曲《${song.title}》吗？`,
+    action: 'requestReplay',
+    data: song
   }
 }
 
@@ -1677,6 +1737,12 @@ const vRipple = {
 /* 移除左侧状态条 */
 
 .song-card.played {
+  /* opacity: 0.6;  移除透明度设置，防止影响按钮颜色 */
+}
+
+/* 已播放歌曲的封面和文字可以保持半透明，以示区别 */
+.song-card.played .song-cover,
+.song-card.played .song-info {
   opacity: 0.6;
 }
 
@@ -1960,6 +2026,16 @@ const vRipple = {
   align-items: center;
   justify-content: center;
   margin-left: auto;
+}
+
+.replay-cancel-btn {
+  background: linear-gradient(180deg, #0B5AFE 0%, #3D7FFF 100%);
+  min-width: 75px;
+}
+
+.replay-request-btn {
+  background: linear-gradient(180deg, #0B5AFE 0%, #3D7FFF 100%);
+  min-width: 75px;
 }
 
 .withdraw-button:hover {

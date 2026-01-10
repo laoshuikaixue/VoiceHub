@@ -712,6 +712,13 @@ export const useSongs = () => {
                 ...authConfig
             })
 
+            // 更新本地数据状态
+            const songIndex = songs.value.findIndex(s => s.id === songId)
+            if (songIndex !== -1) {
+                songs.value[songIndex].replayRequested = true
+            }
+
+            showNotification('申请重播成功', 'success')
             return data
         } catch (err: any) {
             const errorMsg = err.data?.message || err.message || '申请重播失败'
@@ -720,6 +727,45 @@ export const useSongs = () => {
             } else {
                 showNotification(errorMsg, 'error')
             }
+            return null
+        } finally {
+            loading.value = false
+        }
+    }
+
+    /**
+     * 撤回重播申请
+     * @param songId 歌曲ID
+     */
+    const withdrawReplay = async (songId: number) => {
+        const { user } = useAuth()
+        if (!user.value) {
+            showNotification('需要登录才能取消重播申请', 'error')
+            return null
+        }
+
+        loading.value = true
+        error.value = ''
+
+        try {
+            const authConfig = getAuthConfig()
+            const data = await $fetch('/api/songs/replay', {
+                method: 'DELETE',
+                body: { songId },
+                ...authConfig
+            })
+
+            // 更新本地数据状态
+            const songIndex = songs.value.findIndex(s => s.id === songId)
+            if (songIndex !== -1) {
+                songs.value[songIndex].replayRequested = false
+            }
+
+            showNotification('已取消重播申请', 'success')
+            return data
+        } catch (err: any) {
+            const errorMsg = err.data?.message || err.message || '取消重播申请失败'
+            showNotification(errorMsg, 'error')
             return null
         } finally {
             loading.value = false
@@ -752,6 +798,12 @@ export const useSongs = () => {
     const mySongs = computed(() => {
         if (!user.value) return []
         return songs.value.filter(song => song.requesterId === user.value?.id)
+    })
+
+    // 我的重播申请歌曲
+    const myReplaySongs = computed(() => {
+        if (!user.value) return []
+        return songs.value.filter(song => song.replayRequested)
     })
 
     // 所有可见的歌曲（登录用户看到的 + 公共歌曲）
@@ -868,6 +920,7 @@ export const useSongs = () => {
         markPlayed,
         unmarkPlayed,
         requestReplay,
+        withdrawReplay,
         filterSchedulesByPlayTime,
         getPlayTimeName,
         formatPlayTimeDisplay,
@@ -877,6 +930,7 @@ export const useSongs = () => {
         songsByDate,
         playedSongs,
         unplayedSongs,
-        mySongs
+        mySongs,
+        myReplaySongs
     }
 }
