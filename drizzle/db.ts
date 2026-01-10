@@ -74,7 +74,7 @@ export { client };
 export * from './schema.ts';
 
 // 导出drizzle-orm函数
-export { eq, and, gte, lt, count, exists, desc, asc, or };
+export { eq, and, gte, lt, count, exists, desc, asc, or, sql };
 
 // 数据库连接测试函数
 export async function testConnection() {

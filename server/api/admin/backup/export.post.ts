@@ -9,6 +9,7 @@ import {
     semesters,
     songBlacklists,
     songCollaborators,
+    songReplayRequests,
     songs,
     systemSettings,
     users,
@@ -211,6 +212,28 @@ export default defineEventHandler(async (event) => {
                     return logsData
                 },
                 description: '联合投稿审计日志'
+            },
+            songReplayRequests: {
+                query: async () => {
+                    const requestsData = await db.select().from(songReplayRequests)
+                    const usersData = await db.select({
+                        id: users.id,
+                        username: users.username,
+                        name: users.name
+                    }).from(users)
+                    const songsData = await db.select({
+                        id: songs.id,
+                        title: songs.title,
+                        artist: songs.artist
+                    }).from(songs)
+
+                    return requestsData.map(req => ({
+                        ...req,
+                        user: usersData.find(user => user.id === req.userId),
+                        song: songsData.find(song => song.id === req.songId)
+                    }))
+                },
+                description: '歌曲重播申请'
             }
         }
 

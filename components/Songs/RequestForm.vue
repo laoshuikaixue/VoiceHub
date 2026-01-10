@@ -233,7 +233,9 @@
                       <!-- 检查是否已存在相似歌曲 -->
                       <div v-if="getSimilarSong(result)" class="similar-song-info">
                         <!-- 根据歌曲状态显示不同的文本 -->
-                        <span v-if="getSimilarSong(result)?.played" class="similar-text status-played">歌曲已播放</span>
+                        <span v-if="getSimilarSong(result)?.played" class="similar-text status-played">
+                          {{ isSuperAdmin ? '歌曲已播放' : (enableReplayRequests ? '歌曲已播放' : '歌曲已播放') }}
+                        </span>
                         <span v-else-if="getSimilarSong(result)?.scheduled"
                               class="similar-text status-scheduled">歌曲已排期</span>
                         <span v-else class="similar-text">歌曲已存在</span>
@@ -246,6 +248,17 @@
                             @click.stop.prevent="submitSong(result, { forceResubmit: true })"
                         >
                           继续投稿
+                        </button>
+
+                        <!-- 开启重播申请且非管理员对已播放的相似歌曲：显示申请重播 -->
+                        <button
+                            v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
+                            :disabled="requestingReplay || getSimilarSong(result)?.replayRequested"
+                            class="replay-btn"
+                            :title="getSimilarSong(result)?.replayRequested ? '该歌曲已申请过重播' : '申请重播'"
+                            @click.stop.prevent="handleRequestReplay(getSimilarSong(result))"
+                        >
+                          {{ requestingReplay ? '申请中...' : (getSimilarSong(result)?.replayRequested ? '已申请重播' : '申请重播') }}
                         </button>
 
                         <!-- 其他用户：显示点赞按钮，根据状态设置不同样式 -->
@@ -368,7 +381,9 @@
                 <span v-else-if="song.scheduled" class="song-status status-scheduled">已排期</span>
               </p>
               <!-- 根据歌曲状态显示不同的提示 -->
-              <p v-if="song.played" class="alert-hint">该歌曲已播放，无法进行投票操作</p>
+              <p v-if="song.played" class="alert-hint">
+                {{ isSuperAdmin ? '该歌曲已播放，您可以继续投稿' : (enableReplayRequests ? '该歌曲已播放' : '该歌曲已播放，无法进行投票操作') }}
+              </p>
               <p v-else-if="song.scheduled" class="alert-hint">该歌曲已排期，无法进行投票操作</p>
               <p v-else-if="!song.voted" class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
               <p v-else-if="song.voted" class="voted-status">
@@ -385,6 +400,18 @@
                   @click="voteForSimilar(song)"
               >
                 {{ voting ? '投票中...' : '投票支持' }}
+              </button>
+            </div>
+            <!-- 如果歌曲已播放且开启了重播申请（超级管理员不显示） -->
+            <div v-if="song.played && enableReplayRequests && !isSuperAdmin" class="song-actions">
+              <button
+                  :disabled="requestingReplay || song.replayRequested"
+                  class="replay-btn small"
+                  :title="song.replayRequested ? '该歌曲已申请过重播' : '申请重播'"
+                  type="button"
+                  @click="handleRequestReplay(song)"
+              >
+                {{ requestingReplay ? '申请中...' : (song.replayRequested ? '已申请重播' : '申请重播') }}
               </button>
             </div>
           </div>
@@ -596,7 +623,7 @@ const props = defineProps({
 const emit = defineEmits(['request', 'vote'])
 
 // 站点配置
-const {guidelines: submissionGuidelines, initSiteConfig} = useSiteConfig()
+const {guidelines: submissionGuidelines, initSiteConfig, enableReplayRequests} = useSiteConfig()
 
 // 用户认证
 const auth = useAuth()
@@ -614,6 +641,7 @@ const error = ref('')
 const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
+const requestingReplay = ref(false)
 const similarSongs = ref([])
 const showLoginModal = ref(false)
 const isNeteaseLoggedIn = ref(false)
@@ -1721,6 +1749,38 @@ const handleManualSubmit = async () => {
     }
   } finally {
     submitting.value = false
+  }
+}
+
+// 申请重播
+const handleRequestReplay = async (song) => {
+  if (requestingReplay.value || !song) return
+  
+  // 如果已经申请过，不执行
+  if (song.replayRequested) {
+    if (window.$showNotification) {
+      window.$showNotification('该歌曲已申请过重播', 'info')
+    }
+    return
+  }
+  
+  requestingReplay.value = true
+  try {
+    await songService.requestReplay(song.id)
+    // 刷新歌曲状态
+    setTimeout(() => {
+      songService.refreshSongsSilent().catch(console.error)
+    }, 500)
+    if (window.$showNotification) {
+      window.$showNotification('申请重播成功', 'success')
+    }
+  } catch (err) {
+    console.error('申请重播失败:', err)
+    if (window.$showNotification) {
+      window.$showNotification('申请重播失败: ' + err.message, 'error')
+    }
+  } finally {
+    requestingReplay.value = false
   }
 }
 
@@ -2970,7 +3030,7 @@ defineExpose({
   flex-shrink: 0;
 }
 
-.vote-btn.small {
+.vote-btn.small, .replay-btn.small {
   padding: 0.3rem 0.6rem;
   font-size: 12px;
 }
@@ -3455,6 +3515,38 @@ defineExpose({
   font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.replay-btn {
+  background: rgba(0, 117, 248, 0.1);
+  border: 1px solid rgba(0, 117, 248, 0.3);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  color: #3b82f6;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.replay-btn:hover:not(:disabled) {
+  background: rgba(0, 117, 248, 0.2);
+  border-color: rgba(0, 117, 248, 0.5);
+  color: #60a5fa;
+  transform: translateY(-1px);
+}
+
+.replay-btn:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* 音频播放器现在使用全局组件 */

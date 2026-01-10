@@ -1,5 +1,5 @@
 import {db} from '~/drizzle/db'
-import {schedules, songs, users, votes} from '~/drizzle/schema'
+import {schedules, songReplayRequests, songs, users, votes} from '~/drizzle/schema'
 import {and, count, desc, eq, inArray} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
@@ -141,6 +141,55 @@ export default defineEventHandler(async (event) => {
             })
         }
 
+        // 获取用户申请重播的歌曲
+        const replayRequestedSongs = await db.select({
+            id: songReplayRequests.id,
+            createdAt: songReplayRequests.createdAt,
+            songId: songReplayRequests.songId,
+            songTitle: songs.title,
+            songArtist: songs.artist,
+            songPlayed: songs.played,
+            requesterName: users.name,
+            requesterGrade: users.grade,
+            requesterClass: users.class
+        }).from(songReplayRequests)
+            .leftJoin(songs, eq(songReplayRequests.songId, songs.id))
+            .leftJoin(users, eq(songs.requesterId, users.id))
+            .where(eq(songReplayRequests.userId, userId))
+            .orderBy(desc(songReplayRequests.createdAt))
+
+        // 获取重播申请歌曲的总申请数
+        const replaySongIds = replayRequestedSongs.map(req => req.songId).filter(id => id !== null)
+        let replayRequestCountsMap = new Map()
+        if (replaySongIds.length > 0) {
+            const replayRequestCountsResult = await db.select({
+                songId: songReplayRequests.songId,
+                requestCount: count(songReplayRequests.id)
+            }).from(songReplayRequests)
+                .where(inArray(songReplayRequests.songId, replaySongIds))
+                .groupBy(songReplayRequests.songId)
+
+            replayRequestCountsResult.forEach(item => {
+                replayRequestCountsMap.set(item.songId, item.requestCount)
+            })
+        }
+
+        // 获取重播申请歌曲的排期状态
+        let replayScheduleMap = new Map()
+        if (replaySongIds.length > 0) {
+            const replayScheduleResult = await db.select({
+                songId: schedules.songId
+            }).from(schedules)
+                .where(and(
+                    inArray(schedules.songId, replaySongIds),
+                    eq(schedules.isDraft, false)
+                ))
+
+            replayScheduleResult.forEach(item => {
+                replayScheduleMap.set(item.songId, true)
+            })
+        }
+
         return {
             user: {
                 id: user.id,
@@ -170,6 +219,20 @@ export default defineEventHandler(async (event) => {
                     name: vote.requesterName,
                     grade: vote.requesterGrade,
                     class: vote.requesterClass
+                }
+            })),
+            replayRequestedSongs: replayRequestedSongs.map(req => ({
+                id: req.songId,
+                title: req.songTitle,
+                artist: req.songArtist,
+                played: req.songPlayed,
+                scheduled: replayScheduleMap.has(req.songId),
+                requestCount: replayRequestCountsMap.get(req.songId) || 0,
+                requestedAt: req.createdAt,
+                requester: {
+                    name: req.requesterName,
+                    grade: req.requesterGrade,
+                    class: req.requesterClass
                 }
             }))
         }

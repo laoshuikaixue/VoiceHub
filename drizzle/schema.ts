@@ -1,4 +1,4 @@
-import {bigint, boolean, integer, pgEnum, pgTable, serial, text, timestamp, uuid, varchar} from 'drizzle-orm/pg-core';
+import {bigint, boolean, integer, pgEnum, pgTable, serial, text, timestamp, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations} from 'drizzle-orm';
 
 // 枚举定义
@@ -148,6 +148,7 @@ export const systemSettings = pgTable('SystemSettings', {
   smtpFromName: text('smtpFromName').default('校园广播站'),
   enableRequestTimeLimitation: boolean('enableRequestTimeLimitation').default(false).notNull(),
   forceBlockAllRequests: boolean().default(false).notNull(),
+  enableReplayRequests: boolean('enableReplayRequests').default(false).notNull(),
 });
 
 // 歌曲黑名单表
@@ -250,6 +251,17 @@ export const collaborationLogs = pgTable('collaboration_logs', {
     createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
 });
 
+// 歌曲重播申请表
+export const songReplayRequests = pgTable('song_replay_requests', {
+  id: serial('id').primaryKey(),
+  songId: integer('song_id').notNull(),
+  userId: integer('user_id').notNull(),
+  createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', {withTimezone: true}).defaultNow().notNull(),
+}, (t) => ({
+  unq: unique().on(t.songId, t.userId),
+}));
+
 // 关系定义
 export const usersRelations = relations(users, ({ many, one }) => ({
   songs: many(songs),
@@ -262,6 +274,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   apiKeys: many(apiKeys),
   statusLogs: many(userStatusLogs),
     collaborations: many(songCollaborators),
+  replayRequests: many(songReplayRequests),
   statusChangedByUser: one(users, {
     fields: [users.statusChangedBy],
     references: [users.id],
@@ -281,6 +294,7 @@ export const songsRelations = relations(songs, ({ one, many }) => ({
   schedules: many(schedules),
   notifications: many(notifications),
     collaborators: many(songCollaborators),
+    replayRequests: many(songReplayRequests),
 }));
 
 export const votesRelations = relations(votes, ({ one }) => ({
@@ -386,6 +400,17 @@ export const collaborationLogsRelations = relations(collaborationLogs, ({one}) =
     }),
 }));
 
+export const songReplayRequestsRelations = relations(songReplayRequests, ({one}) => ({
+    song: one(songs, {
+        fields: [songReplayRequests.songId],
+        references: [songs.id],
+    }),
+    user: one(users, {
+        fields: [songReplayRequests.userId],
+        references: [users.id],
+    }),
+}));
+
 // 邮件模板表（仅存储自定义覆盖，内置模板在代码中定义）
 export const emailTemplates = pgTable('EmailTemplate', {
   id: serial('id').primaryKey(),
@@ -431,6 +456,8 @@ export type SongCollaborator = typeof songCollaborators.$inferSelect;
 export type NewSongCollaborator = typeof songCollaborators.$inferInsert;
 export type CollaborationLog = typeof collaborationLogs.$inferSelect;
 export type NewCollaborationLog = typeof collaborationLogs.$inferInsert;
+export type SongReplayRequest = typeof songReplayRequests.$inferSelect;
+export type NewSongReplayRequest = typeof songReplayRequests.$inferInsert;
 export type EmailTemplate = typeof emailTemplates.$inferSelect;
 export type NewEmailTemplate = typeof emailTemplates.$inferInsert;export type RequestTime = typeof requestTimes.$inferSelect;
 export type NewRequestTime = typeof requestTimes.$inferInsert;

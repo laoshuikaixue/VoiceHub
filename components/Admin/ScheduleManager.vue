@@ -107,64 +107,84 @@
       <!-- 待排歌曲列表 -->
       <div class="song-list-panel">
         <div class="panel-header">
-          <h3>待排歌曲</h3>
-          <div class="header-controls">
-            <div class="search-section">
-              <div class="search-input-wrapper">
-                <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.35-4.35"/>
-                </svg>
-                <input
-                    v-model="searchQuery"
-                    class="search-input"
-                    placeholder="搜索歌曲标题、艺术家或投稿人..."
-                    type="text"
-                />
-                <button
-                    v-if="searchQuery"
-                    class="clear-search-btn"
-                    @click="searchQuery = ''"
-                >
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <line x1="18" x2="6" y1="6" y2="18"/>
-                    <line x1="6" x2="18" y1="6" y2="18"/>
+          <div class="header-title-row">
+            <h3>待排歌曲</h3>
+          </div>
+          <div class="header-controls-container">
+            <div class="header-controls">
+              <div class="search-section">
+                <div class="search-input-wrapper">
+                  <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
                   </svg>
-                </button>
+                  <input
+                      v-model="searchQuery"
+                      class="search-input"
+                      placeholder="搜索歌曲标题、艺术家或投稿人..."
+                      type="text"
+                  />
+                  <button
+                      v-if="searchQuery"
+                      class="clear-search-btn"
+                      @click="searchQuery = ''"
+                  >
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <line x1="18" x2="6" y1="6" r1="6" r2="18"/>
+                      <line x1="6" x2="18" y1="6" r1="6" r2="18"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="semester-selector">
+                <label class="semester-label">学期：</label>
+                <select v-model="selectedSemester" class="semester-select" @change="onSemesterChange">
+                  <option
+                      v-for="semester in availableSemesters"
+                      :key="semester.id"
+                      :value="semester.name"
+                  >
+                    {{ semester.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="grade-selector">
+                <label class="grade-label">年级：</label>
+                <select v-model="selectedGrade" class="grade-select">
+                  <option
+                      v-for="grade in availableGrades"
+                      :key="grade"
+                      :value="grade"
+                  >
+                    {{ grade }}
+                  </option>
+                </select>
+              </div>
+              <div class="sort-options">
+                <label>排序:</label>
+                <select v-model="songSortOption" class="sort-select">
+                  <option value="time-desc">最新投稿</option>
+                  <option value="time-asc">最早投稿</option>
+                  <option value="votes-desc">热度最高</option>
+                  <option value="votes-asc">热度最低</option>
+                </select>
               </div>
             </div>
-            <div class="semester-selector">
-              <label class="semester-label">学期：</label>
-              <select v-model="selectedSemester" class="semester-select" @change="onSemesterChange">
-                <option
-                    v-for="semester in availableSemesters"
-                    :key="semester.id"
-                    :value="semester.name"
+            <div class="header-tabs-row">
+              <div class="header-tabs">
+                <button 
+                  :class="['tab-btn', { active: activeTab === 'normal' }]" 
+                  @click="activeTab = 'normal'"
                 >
-                  {{ semester.name }}
-                </option>
-              </select>
-            </div>
-            <div class="grade-selector">
-              <label class="grade-label">年级：</label>
-              <select v-model="selectedGrade" class="grade-select">
-                <option
-                    v-for="grade in availableGrades"
-                    :key="grade"
-                    :value="grade"
+                  普通投稿
+                </button>
+                <button 
+                  :class="['tab-btn', { active: activeTab === 'replay' }]" 
+                  @click="activeTab = 'replay'"
                 >
-                  {{ grade }}
-                </option>
-              </select>
-            </div>
-            <div class="sort-options">
-              <label>排序:</label>
-              <select v-model="songSortOption" class="sort-select">
-                <option value="time-desc">最新投稿</option>
-                <option value="time-asc">最早投稿</option>
-                <option value="votes-desc">热度最高</option>
-                <option value="votes-asc">热度最低</option>
-              </select>
+                  重播申请
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -459,6 +479,7 @@ const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
 const searchQuery = ref('')
 const selectedGrade = ref('全部')
+const activeTab = ref('normal')
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
@@ -512,6 +533,7 @@ const isLastDateVisible = ref(true)
 const songs = ref([])
 const publicSchedules = ref([])
 const localScheduledSongs = ref([])
+const replayRequests = ref([])
 const scheduledSongIds = ref(new Set())
 
 // 计算是否有未发布的草稿
@@ -596,11 +618,25 @@ const availableGrades = computed(() => {
 
 // 过滤未排期歌曲（所有）
 const allUnscheduledSongs = computed(() => {
-  if (!songs.value) return []
+  const sourceData = activeTab.value === 'replay' ? replayRequests.value : songs.value
+  if (!sourceData) return []
 
-  let unscheduledSongs = songs.value.filter(song =>
-      !song.played && !scheduledSongIds.value.has(song.id)
-  )
+  let unscheduledSongs = sourceData.filter(song => {
+    // 检查是否已在当前显示的排期列表中（当前日期、当前时段）
+    const isScheduledInCurrentView = localScheduledSongs.value.some(s => 
+      (s.song && s.song.id === song.id) || s.songId === song.id
+    )
+    
+    if (isScheduledInCurrentView) return false
+
+    if (activeTab.value === 'replay') {
+      // 重播申请不需要检查 played 状态，只要当前视图没排上就行
+      return true
+    } else {
+      // 普通投稿需未播放，且未在任何日期的排期中
+      return !song.played && !scheduledSongIds.value.has(song.id)
+    }
+  })
 
   // 搜索过滤
   if (searchQuery.value) {
@@ -616,14 +652,21 @@ const allUnscheduledSongs = computed(() => {
     })
   }
 
-  // 年级过滤
-  if (selectedGrade.value !== '全部') {
+  // 年级过滤 (仅针对普通投稿)
+  if (activeTab.value === 'normal' && selectedGrade.value !== '全部') {
     unscheduledSongs = unscheduledSongs.filter(song => 
       song.requesterGrade === selectedGrade.value
     )
   }
 
   return [...unscheduledSongs].sort((a, b) => {
+    // 重播申请默认按申请数量降序排列，如果数量相同则按时间
+    if (activeTab.value === 'replay') {
+      if ((b.requestCount || 0) !== (a.requestCount || 0)) {
+        return (b.requestCount || 0) - (a.requestCount || 0)
+      }
+    }
+
     switch (songSortOption.value) {
       case 'time-desc':
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
@@ -763,6 +806,17 @@ watch(selectedGrade, () => {
   currentPage.value = 1
 })
 
+// 加载重播申请
+const fetchReplayRequests = async () => {
+  try {
+    const data = await $fetch('/api/admin/schedule/replay-requests', auth.getAuthConfig())
+    replayRequests.value = data || []
+  } catch (err) {
+    console.error('Failed to fetch replay requests', err)
+    replayRequests.value = []
+  }
+}
+
 // 加载数据
 const loadData = async () => {
   loading.value = true
@@ -775,7 +829,8 @@ const loadData = async () => {
       songsService.fetchSongs(false, semester, false, true),
       songsService.fetchPublicSchedules(false, semester, false, true),
       loadPlayTimes(),
-      loadDrafts() // 加载草稿列表
+      loadDrafts(), // 加载草稿列表
+      fetchReplayRequests() // 加载重播申请
     ])
 
     songs.value = songsService.songs.value
@@ -1011,7 +1066,12 @@ const dropToSequence = async (event) => {
 
     if (dragData.type === 'add-to-schedule') {
       const songId = parseInt(dragData.songId)
-      const song = songs.value.find(s => s.id === songId)
+      // 尝试在普通歌曲列表和重播申请列表中查找
+      let song = songs.value.find(s => s.id === songId)
+      if (!song) {
+        song = replayRequests.value.find(s => s.id === songId)
+      }
+      
       if (!song) return
 
       const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
@@ -1064,7 +1124,12 @@ const dropReorder = async (event, dropIndex) => {
     } else if (dragData.type === 'add-to-schedule') {
       // 处理从左侧拖到特定位置
       const songId = parseInt(dragData.songId)
-      const song = songs.value.find(s => s.id === songId)
+      // 尝试在普通歌曲列表和重播申请列表中查找
+      let song = songs.value.find(s => s.id === songId)
+      if (!song) {
+        song = replayRequests.value.find(s => s.id === songId)
+      }
+      
       if (!song) return
 
       const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
@@ -2223,10 +2288,10 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 2fr 3fr;
   gap: 24px;
-  min-height: 700px;
+  min-height: 800px;
   width: 100%;
   box-sizing: border-box;
-  align-items: start;
+  align-items: stretch;
 }
 
 /* 响应式设计 */
@@ -2262,12 +2327,80 @@ onMounted(() => {
   border-color: #3a3a3a;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.header-tabs-row {
+  display: flex;
+  justify-content: flex-start;
+  padding-left: 4px;
+}
+
+.header-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  border-radius: 8px;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #888888;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  background: #667eea;
+  color: #ffffff;
+}
+
+
+
+.request-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.request-count svg {
+  width: 16px;
+  height: 16px;
+}
+
+.replay-item {
+  border-left: 4px solid #fbbf24;
+}
+
 .panel-header {
   padding: 24px 28px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
   background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(10px);
   position: sticky;
@@ -2275,11 +2408,25 @@ onMounted(() => {
   z-index: 10;
 }
 
+.song-list-panel .panel-header {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
 .panel-header h3 {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
   color: #f8fafc;
+  white-space: nowrap;
+}
+
+.header-controls-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
 }
 
 .header-controls {
@@ -2288,8 +2435,8 @@ onMounted(() => {
   gap: 16px;
   flex-wrap: wrap;
   background: rgba(255, 255, 255, 0.03);
-  padding: 16px;
-  border-radius: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -2548,7 +2695,7 @@ onMounted(() => {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  min-height: 450px;
+  min-height: 600px;
   position: relative;
 }
 

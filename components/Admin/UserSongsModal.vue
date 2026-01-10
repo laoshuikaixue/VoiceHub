@@ -51,6 +51,12 @@
                 >
                   投票歌曲 ({{ userSongs.votedSongs.length }})
                 </button>
+                <button
+                    :class="['tab-btn', { active: activeTab === 'replay' }]"
+                    @click="activeTab = 'replay'"
+                >
+                  重播申请 ({{ userSongs.replayRequestedSongs?.length || 0 }})
+                </button>
               </div>
 
               <!-- 投稿歌曲列表 -->
@@ -98,6 +104,39 @@
                       <div class="song-meta">
                         <span class="vote-time">{{ formatDate(song.votedAt) }} 投票</span>
                         <span class="vote-count">{{ song.voteCount }} 票</span>
+                        <span :class="['status', getStatusClass(song)]">
+                          {{ getStatusText(song) }}
+                        </span>
+                      </div>
+                      <div v-if="song.requester" class="submitter-info">
+                        投稿人: {{ song.requester.name }}
+                        <span v-if="song.requester.grade || song.requester.class">
+                          ({{ song.requester.grade || '' }} {{ song.requester.class || '' }})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 重播申请列表 -->
+              <div v-if="activeTab === 'replay'" class="song-list">
+                <div v-if="!userSongs.replayRequestedSongs || userSongs.replayRequestedSongs.length === 0" class="empty-state">
+                  <div class="empty-icon">🔁</div>
+                  <p>该用户还没有申请重播任何歌曲</p>
+                </div>
+                <div v-else class="songs">
+                  <div
+                      v-for="song in userSongs.replayRequestedSongs"
+                      :key="song.id"
+                      class="song-item"
+                  >
+                    <div class="song-info">
+                      <div class="song-title">{{ song.title }}</div>
+                      <div class="song-artist">{{ song.artist }}</div>
+                      <div class="song-meta">
+                        <span class="vote-time">{{ formatDate(song.requestedAt) }} 申请</span>
+                        <span class="vote-count">{{ song.requestCount }} 人申请</span>
                         <span :class="['status', getStatusClass(song)]">
                           {{ getStatusText(song) }}
                         </span>

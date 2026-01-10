@@ -51,7 +51,8 @@ export const useSiteConfig = () => {
                 schoolLogoPrintUrl: '',
                 siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
                 submissionGuidelines: defaultSubmissionGuidelines,
-                icpNumber: ''
+                icpNumber: '',
+                enableReplayRequests: false
             }
             isLoaded.value = true
         } finally {
@@ -67,6 +68,7 @@ export const useSiteConfig = () => {
     const description = computed(() => siteConfig.value.siteDescription || '校园广播站点歌系统 - 让你的声音被听见')
     const guidelines = computed(() => siteConfig.value.submissionGuidelines || defaultSubmissionGuidelines)
     const icp = computed(() => siteConfig.value.icpNumber || '')
+    const enableReplayRequests = computed(() => siteConfig.value.enableReplayRequests || false)
 
     // 初始化配置（仅在客户端执行）
     const initSiteConfig = async () => {
@@ -92,6 +94,7 @@ export const useSiteConfig = () => {
         description,
         guidelines,
         icp,
+        enableReplayRequests,
         fetchSiteConfig,
         initSiteConfig,
         refreshSiteConfig
