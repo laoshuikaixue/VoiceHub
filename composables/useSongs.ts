@@ -708,11 +708,10 @@ export const useSongs = () => {
             const authConfig = getAuthConfig()
             const data = await $fetch('/api/songs/replay', {
                 method: 'POST',
-                body: { songId },
+                body: {songId},
                 ...authConfig
             })
-            
-            showNotification('重播申请已提交！', 'success')
+
             return data
         } catch (err: any) {
             const errorMsg = err.data?.message || err.message || '申请重播失败'
