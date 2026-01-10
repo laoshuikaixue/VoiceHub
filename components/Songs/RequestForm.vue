@@ -165,12 +165,13 @@
 
               <!-- 已登录状态 -->
               <div v-else class="user-status">
-                <div class="user-info-row">
+                <div class="user-compact-row">
                   <div class="user-profile">
                     <img v-if="neteaseUser?.avatarUrl" :src="convertToHttps(neteaseUser.avatarUrl)" alt="avatar"
                          class="user-avatar"/>
                     <span class="user-name">{{ neteaseUser?.nickname || '已登录' }}</span>
                   </div>
+
                   <div class="search-type-switch">
                     <label :class="['radio-label', { active: searchType === 1 }]">
                       <input v-model="searchType" :value="1" type="radio"> 单曲
@@ -179,17 +180,17 @@
                       <input v-model="searchType" :value="1009" type="radio"> 播客
                     </label>
                   </div>
-                </div>
 
-                <div class="user-actions-grid">
-                  <button class="action-btn" type="button" @click="showRecentSongsModal = true">
-                    <Icon :size="16" name="history"/>
-                    <span>最近播放</span>
-                  </button>
-                  <button class="action-btn" type="button" @click="showPlaylistModal = true">
-                    <Icon :size="16" name="playlist"/>
-                    <span>从歌单投稿</span>
-                  </button>
+                  <div class="user-actions-row">
+                    <button class="action-btn-compact" type="button" @click="showRecentSongsModal = true" title="最近播放">
+                      <Icon :size="14" name="history"/>
+                      <span>最近播放</span>
+                    </button>
+                    <button class="action-btn-compact" type="button" @click="showPlaylistModal = true" title="从歌单投稿">
+                      <Icon :size="14" name="playlist"/>
+                      <span>从歌单投稿</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2213,15 +2214,20 @@ defineExpose({
 /* 网易云音乐登录选项 */
 .netease-options {
   position: relative;
-  background: linear-gradient(145deg, rgba(30, 30, 35, 0.95), rgba(20, 20, 25, 0.98));
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.netease-options:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .netease-options::before {
@@ -2231,8 +2237,8 @@ defineExpose({
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #c20c0c, #ff4b4b, #c20c0c);
-  opacity: 0.8;
+  background: linear-gradient(90deg, #ef4444, #f87171, #ef4444);
+  opacity: 0.6;
 }
 
 .netease-header {
@@ -2268,46 +2274,51 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.6rem 1rem;
   border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .login-desc {
   flex: 1;
+  min-width: 0;
 }
 
 .login-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #ffffff;
-  margin: 0 0 0.25rem 0;
-}
-
-.login-hint {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
   margin: 0;
 }
 
+.login-hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 2px 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .login-btn {
-  background: linear-gradient(135deg, #e11d1d 0%, #c20c0c 100%);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
   border: none;
-  padding: 0.5rem 1.25rem;
+  padding: 0.4rem 1rem;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(194, 12, 12, 0.3);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(194, 12, 12, 0.4);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
 }
 
 .header-actions {
@@ -2342,34 +2353,33 @@ defineExpose({
 }
 
 .import-btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.75rem;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'MiSans', sans-serif;
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .import-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
 }
 
 .user-status {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
-.user-info-row {
+.user-compact-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2379,25 +2389,56 @@ defineExpose({
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-name {
-  font-size: 14px;
-  color: white;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-actions-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.action-btn-compact:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .search-type-switch {
   display: flex;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 6px;
   padding: 2px;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -2408,9 +2449,9 @@ defineExpose({
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  padding: 0.25rem 0.75rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 4px;
   transition: all 0.2s ease;
 }
@@ -2419,40 +2460,11 @@ defineExpose({
   color: #ffffff;
   font-weight: 600;
   background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .radio-label input {
   display: none;
-}
-
-.user-actions-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.8);
-  padding: 0.6rem;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
 }
 
 .logout-btn {
@@ -3503,7 +3515,7 @@ defineExpose({
     padding: 0.75rem;
   }
 
-  .user-info-row {
+  .user-compact-row {
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
@@ -3524,7 +3536,7 @@ defineExpose({
     text-align: center;
   }
 
-  .user-actions-grid {
+  .user-actions-row {
     display: flex;
     flex-direction: row;
     gap: 0.5rem;
@@ -3532,7 +3544,7 @@ defineExpose({
   }
 
   /* 移动端下让按钮平分宽度 */
-  .user-actions-grid .action-btn {
+  .user-actions-row .action-btn-compact {
     flex: 1;
     width: auto;
     justify-content: center;
