@@ -2292,9 +2292,15 @@ defineExpose({
   justify-content: space-between;
   gap: 1rem;
   background: rgba(255, 255, 255, 0.02);
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.3s ease;
+}
+
+.login-entry:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .login-desc {
@@ -2303,39 +2309,39 @@ defineExpose({
 }
 
 .login-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #ffffff;
   margin: 0;
+  letter-spacing: 0.02em;
 }
 
 .login-hint {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
-  margin: 2px 0 0 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 4px 0 0 0;
+  line-height: 1.4;
 }
 
 .login-btn {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
   border: none;
-  padding: 0.4rem 1rem;
-  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.25);
+  filter: brightness(1.1);
 }
 
 .header-actions {
@@ -2373,8 +2379,8 @@ defineExpose({
   background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.4rem 0.75rem;
-  border-radius: 6px;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -2389,6 +2395,7 @@ defineExpose({
 .import-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 .user-status {
@@ -3622,6 +3629,39 @@ defineExpose({
     align-items: flex-start;
     gap: 0;
     margin-bottom: 0;
+  }
+
+  .login-entry {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.85rem;
+    gap: 0.6rem;
+  }
+
+  .login-desc {
+    width: 100%;
+  }
+
+  .login-title {
+    /* 不缩小字号 */
+  }
+
+  .login-hint {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.3;
+  }
+
+  .login-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .login-btn, .import-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 0.4rem;
   }
 
   .search-section {
