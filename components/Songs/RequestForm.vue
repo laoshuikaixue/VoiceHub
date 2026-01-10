@@ -21,39 +21,42 @@
 
     <div class="form-container">
       <form class="song-request-form" @submit.prevent="handleSearch">
-        <!-- 歌曲搜索区域 -->
-        <div class="search-section">
-          <div class="search-label">歌曲搜索</div>
-          <div class="search-input-group">
-            <input
-                id="title"
-                v-model="title"
-                class="search-input"
-                placeholder="请输入歌曲名称"
-                required
-                type="text"
-                @input="checkSimilarSongs"
-            />
-            <button :disabled="loading || searching || !title.trim()" class="search-button" type="submit">
-              {{ loading || searching ? '处理中...' : '搜索' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- 联合投稿人区域 -->
-        <div v-if="user" class="collaborators-section">
-          <div class="section-label">联合投稿</div>
-          <div class="collaborators-list">
-            <div v-for="user in collaborators" :key="user.id" class="collaborator-tag">
-              <span class="collaborator-name">{{ user.name }}</span>
-              <button class="remove-collaborator" type="button" @click="removeCollaborator(user.id)">
-                <Icon :size="12" name="close"/>
+        <!-- 顶部行：搜索和联合投稿 -->
+        <div class="form-header-row">
+          <!-- 歌曲搜索区域 -->
+          <div class="search-section">
+            <div class="search-label">歌曲搜索</div>
+            <div class="search-input-group">
+              <input
+                  id="title"
+                  v-model="title"
+                  class="search-input"
+                  placeholder="请输入歌曲名称"
+                  required
+                  type="text"
+                  @input="checkSimilarSongs"
+              />
+              <button :disabled="loading || searching || !title.trim()" class="search-button" type="submit">
+                {{ loading || searching ? '处理中...' : '搜索' }}
               </button>
             </div>
-            <button class="add-collaborator-btn" type="button" @click="showUserSearchModal = true">
-              <Icon :size="14" name="plus"/>
-              添加
-            </button>
+          </div>
+
+          <!-- 联合投稿人区域 -->
+          <div v-if="user" class="collaborators-section">
+            <div class="section-label">联合投稿</div>
+            <div class="collaborators-list">
+              <div v-for="user in collaborators" :key="user.id" class="collaborator-tag">
+                <span class="collaborator-name">{{ user.name }}</span>
+                <button class="remove-collaborator" type="button" @click="removeCollaborator(user.id)">
+                  <Icon :size="12" name="close"/>
+                </button>
+              </div>
+              <button class="add-collaborator-btn" type="button" @click="showUserSearchModal = true">
+                <Icon :size="14" name="plus"/>
+                添加
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1898,11 +1901,18 @@ defineExpose({
 }
 
 /* 搜索区域样式 */
+.form-header-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
 .search-section {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 1rem;
+  flex: 1.2;
 }
 
 .search-label {
@@ -1929,6 +1939,7 @@ defineExpose({
   font-size: 16px;
   color: rgba(255, 255, 255, 0.6);
   flex: 1;
+  min-width: 0;
 }
 
 .search-input:focus {
@@ -1976,7 +1987,8 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 1rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .section-label {
@@ -3600,11 +3612,30 @@ defineExpose({
   }
 
   /* 移动端搜索区域 */
+  .form-header-row {
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 0;
+  }
+
   .search-section {
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
     margin-bottom: 1rem;
+    flex: none;
+  }
+
+  .collaborators-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex: none;
+  }
+
+  .section-label {
+    font-size: 14px;
   }
 
   .search-label {
