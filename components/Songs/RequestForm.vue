@@ -3619,6 +3619,7 @@ defineExpose({
   /* 移动端搜索区域 */
   .form-header-row {
     flex-direction: column;
+    align-items: flex-start;
     gap: 0;
     margin-bottom: 0;
   }
@@ -3629,14 +3630,17 @@ defineExpose({
     gap: 0.5rem;
     margin-bottom: 1rem;
     flex: none;
+    width: 100%;
   }
 
   .collaborators-section {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
     margin-bottom: 1rem;
     flex: none;
+    width: 100%;
+    flex-wrap: wrap;
   }
 
   .section-label {
