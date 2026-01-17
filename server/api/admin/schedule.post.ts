@@ -1,5 +1,5 @@
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songs, users, votes} from '~/drizzle/schema'
+import {playTimes, schedules, songs, users, votes, songReplayRequests} from '~/drizzle/schema'
 import {and, asc, count, desc, eq, gte, lte} from 'drizzle-orm'
 import {createSongSelectedNotification} from '../../services/notificationService'
 import {cacheService} from '~/server/services/cacheService'

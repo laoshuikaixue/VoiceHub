@@ -1,4 +1,5 @@
 import {db, eq} from '~/drizzle/db'
+import {schedules} from '~/drizzle/schema'
 import {cacheService} from '~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
