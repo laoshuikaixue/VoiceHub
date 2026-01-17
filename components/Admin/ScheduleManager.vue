@@ -1397,52 +1397,22 @@ const publishScheduleConfirmed = async () => {
   loading.value = true
 
   try {
-    // 删除当天指定播出时段的所有排期和草稿
-    const existingSchedules = [...publicSchedules.value, ...drafts.value].filter(s => {
-      if (!s.playDate) return false
-      const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
-      const isTargetDate = scheduleDateStr === selectedDate.value
+    // 构建发布数据
+    const songsToPublish = localScheduledSongs.value.map((item, index) => ({
+      songId: item.song.id,
+      sequence: index + 1
+    }))
 
-      if (selectedPlayTime.value) {
-        return isTargetDate && s.playTimeId === parseInt(selectedPlayTime.value)
-      }
-      return isTargetDate
+    // 调用批量发布API
+    await $fetch('/api/admin/schedule/bulk-publish', {
+      method: 'POST',
+      body: {
+        playDate: selectedDate.value,
+        playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null,
+        songs: songsToPublish
+      },
+      ...auth.getAuthConfig()
     })
-
-    // 删除现有的排期和草稿
-    for (const schedule of existingSchedules) {
-      try {
-        await $fetch(`/api/admin/schedule/remove`, {
-          method: 'POST',
-          body: {scheduleId: schedule.id},
-          ...auth.getAuthConfig()
-        })
-      } catch (deleteError) {
-        console.warn('删除排期失败:', deleteError)
-      }
-    }
-
-    // 直接发布排期（不是草稿）
-    for (let i = 0; i < localScheduledSongs.value.length; i++) {
-      const song = localScheduledSongs.value[i]
-
-      try {
-        await $fetch('/api/admin/schedule', {
-          method: 'POST',
-          body: {
-            songId: song.song.id,
-            playDate: selectedDate.value, // 直接传递日期字符串
-            sequence: i + 1,
-            playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null,
-            isDraft: false // 直接发布
-          },
-          ...auth.getAuthConfig()
-        })
-      } catch (error) {
-        console.error(`发布排期失败 (歌曲: ${song.song.title}):`, error)
-        throw error
-      }
-    }
 
     hasChanges.value = false
     await loadData() // 重新加载数据
