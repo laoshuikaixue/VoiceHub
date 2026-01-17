@@ -224,6 +224,17 @@
         <div class="chart-card enhanced">
           <div class="chart-header">
             <h3>热门歌曲排行</h3>
+            <div v-if="panelStates.topSongs.loading" class="panel-loading">
+              <svg class="loading-spinner" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
+                        stroke-dashoffset="31.416" stroke-width="2">
+                  <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
+                           values="0 31.416;15.708 15.708;0 31.416"/>
+                  <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite"
+                           values="0;-15.708;-31.416"/>
+                </circle>
+              </svg>
+            </div>
             <div class="sort-controls">
               <button 
                 :class="['sort-btn', { active: selectedSortBy === 'vote' }]"
@@ -240,7 +251,25 @@
             </div>
           </div>
           <div class="chart-container">
-            <div v-if="topSongs.length > 0" class="chart-content">
+            <!-- 错误状态 -->
+            <div v-if="panelStates.topSongs.error" class="chart-error">
+              <div class="error-icon">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" x2="9" y1="9" y2="15"/>
+                  <line x1="9" x2="15" y1="9" y2="15"/>
+                </svg>
+              </div>
+              <p>{{ panelStates.topSongs.error }}</p>
+              <button class="retry-btn" @click="handleSortChange(selectedSortBy)">重试</button>
+            </div>
+            <!-- 加载状态 -->
+            <div v-else-if="panelStates.topSongs.loading" class="chart-loading">
+              <div class="loading-content">
+                <div class="loading-text">加载热门歌曲数据...</div>
+              </div>
+            </div>
+            <div v-else-if="topSongs.length > 0" class="chart-content">
               <div class="songs-ranking">
                 <div v-for="(song, index) in topSongs" :key="song.id" class="song-item enhanced">
                   <div :class="getRankClass(index)" class="song-rank-badge">
@@ -624,7 +653,7 @@ const handleSemesterChange = async () => {
 
 // 处理排行方式切换
 const handleSortChange = async (sortBy) => {
-  if (selectedSortBy.value === sortBy) return
+  if (selectedSortBy.value === sortBy && !panelStates.value.topSongs.error) return
   selectedSortBy.value = sortBy
   
   // 重新加载热门歌曲数据
