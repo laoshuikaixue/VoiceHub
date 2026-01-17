@@ -353,46 +353,45 @@ const mobileCoverStyle = computed(() => {
   const w = windowWidth.value
   const h = windowHeight.value
   
-  // 起始状态 (Page 1 Center)
+  // 起始状态 (第一页中心)
   const startSize = 280
-  // 垂直位置：与 CSS 中的 padding-top: 15vh 保持一致
+  // 垂直位置：与 CSS 中的 padding-top: 15vh 一致
   const startTop = h * 0.15
+  const realStartLeft = (w - startSize) / 2
   
-  // 结束状态 (Page 2 Top Left)
+  // 结束状态 (第二页左上角)
   const endSize = 48
-  // 顶部偏移量：状态栏高度(safe-area) + Header高度/2 - 封面高度/2
-  // 假设 Header 高度 48px，top 50px
+  // 顶部偏移量计算
   const endTop = 50 
   const endLeft = 24
   
-  // 插值计算
-  const currentSize = startSize - (startSize - endSize) * p
-  const currentTop = startTop - (startTop - endTop) * p
+  // 计算 Transform 参数
+  // 缩放比例
+  const targetScale = endSize / startSize
+  const currentScale = 1 + (targetScale - 1) * p
   
-  // Transform 插值 (-50% -> 0%)
-  // Start: translate(-50%, -50%) (因为 startTop/Left 是中心点吗？不，上面代码是 top/left 定位)
-  // 修正：上面的 startTop/startLeft 应该是基于左上角的坐标，而不是中心点
-  // startLeft = windowWidth * 0.5 - startSize / 2
+  // 位移距离
+  const totalTranslateX = endLeft - realStartLeft
+  const totalTranslateY = endTop - startTop
   
-  const realStartLeft = (w - startSize) / 2
-  
-  // 修正插值
-  const realCurrentLeft = realStartLeft - (realStartLeft - endLeft) * p
-  
-  // 之前的逻辑中 transform 也在变，这会很复杂。建议直接操作 top/left/width/height，移除 transform
-  
+  const currentTranslateX = totalTranslateX * p
+  const currentTranslateY = totalTranslateY * p
+
   return {
-    width: `${currentSize}px`,
-    height: `${currentSize}px`,
-    top: `${currentTop}px`,
-    left: `${realCurrentLeft}px`,
+    width: `${startSize}px`,
+    height: `${startSize}px`,
+    top: `${startTop}px`,
+    left: `${realStartLeft}px`,
+    transformOrigin: '0 0',
+    transform: `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale})`,
     position: 'absolute',
     zIndex: 100,
-    borderRadius: `${12 - 4*p}px`,
-    boxShadow: `0 ${16 - 12*p}px ${36 - 28*p}px rgba(0,0,0,${0.4 - 0.2*p})`,
+    borderRadius: `${(12 - 4*p) / currentScale}px`, // 修正圆角随缩放变形
+    boxShadow: `0 ${(16 - 12*p) / currentScale}px ${(36 - 28*p) / currentScale}px rgba(0,0,0,${0.4 - 0.2*p})`,
     opacity: 1,
-    // 确保点击穿透（如果在第二页需要操作下方的 Header）
-    pointerEvents: p > 0.8 ? 'none' : 'auto' 
+    // 确保点击穿透
+    pointerEvents: p > 0.8 ? 'none' : 'auto',
+    willChange: 'transform' // 提示浏览器优化
   }
 })
 
@@ -406,7 +405,7 @@ const pageOneInfoStyle = computed(() => {
 
 const pageTwoInfoStyle = computed(() => {
   if (!isMobile.value) return {}
-  // 在后半段才显示
+  // 后半段显示
   const p = scrollProgress.value
   const opacity = Math.max(0, (p - 0.6) * 2.5)
   return {
@@ -467,7 +466,7 @@ const lyricConfig = ref({
 
 // 背景配置
 const backgroundConfig = ref({
-  type: 'cover', // 'gradient' | 'cover'
+  type: 'cover', // 'gradient' (渐变) | 'cover' (封面)
   dynamic: true,
   blur: 40,
   brightness: 0.6,
@@ -1669,7 +1668,7 @@ onUnmounted(() => {
   /* 音质菜单动画 */
   .badge-quality-menu {
     position: absolute;
-    top: 100%; /* 改为向下弹出 */
+    top: 100%; /* 向下弹出 */
     bottom: auto;
     left: 50%;
     transform: translateX(-50%) scale(0.9);
@@ -1683,12 +1682,12 @@ onUnmounted(() => {
     min-width: 100px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     border: 1px solid rgba(255, 255, 255, 0.4);
-    z-index: 99999; /* 继续大幅提高层级 */
+    z-index: 99999; /* 提高层级 */
     display: flex;
     flex-direction: column;
     gap: 2px;
     opacity: 0;
-    transform-origin: top center; /* 动画原点改为顶部 */
+    transform-origin: top center; /* 动画原点设为顶部 */
     animation: menu-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     max-height: 240px;
     overflow-y: auto;
@@ -1698,6 +1697,17 @@ onUnmounted(() => {
     0% {
       opacity: 0;
       transform: translateX(-50%) scale(0.9) translateY(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1) translateY(0);
+    }
+  }
+
+  @keyframes menu-pop-up {
+    0% {
+      opacity: 0;
+      transform: translateX(-50%) scale(0.9) translateY(10px);
     }
     100% {
       opacity: 1;
@@ -1735,7 +1745,7 @@ onUnmounted(() => {
   .mobile-pagination-dots {
   display: none;
   position: absolute;
-  bottom: 150px; /* Adjust based on controls height */
+  bottom: 150px; /* 根据控制栏高度调整 */
   left: 50%;
   transform: translateX(-50%);
   gap: 8px;
@@ -1760,12 +1770,12 @@ onUnmounted(() => {
 }
 
 /* Responsive */
-/* 统一使用 1024px 作为移动端/平板布局的分界线 */
+/* 1024px 以下为移动端/平板布局 */
 @media (max-width: 1024px) {
-  /* Mobile Pagination Layout */
+  /* 移动端分页布局 */
   .main-content {
     flex-direction: row;
-    justify-content: flex-start; /* 关键修复：覆盖桌面端的 center，防止分页错位 */
+    justify-content: flex-start; /* 覆盖桌面端的 center，防止分页错位 */
     align-items: flex-start;
     padding: 0;
     gap: 0;
@@ -1780,7 +1790,7 @@ onUnmounted(() => {
     left: 0;
   }
   
-  /* Hide scrollbar */
+  /* 隐藏滚动条 */
   .main-content::-webkit-scrollbar {
     display: none;
   }
@@ -1792,11 +1802,11 @@ onUnmounted(() => {
     height: 100%;
     scroll-snap-align: start;
     flex-direction: column;
-    justify-content: flex-start; /* 改为从上部开始，配合 padding 控制位置 */
+    justify-content: flex-start; /* 从上部开始，配合 padding 控制位置 */
     align-items: center;
     text-align: center;
     gap: 2.5rem;
-    padding: 15vh 2rem 160px; /* Top padding 15vh (match JS startTop) */
+    padding: 15vh 2rem 160px; /* 顶部内边距 15vh (与 JS startTop 匹配) */
     box-sizing: border-box;
     max-width: none;
     overflow: hidden; /* 防止内容溢出 */
@@ -1808,7 +1818,7 @@ onUnmounted(() => {
     width: 100vw;
     height: 100%;
     scroll-snap-align: start;
-    padding: 100px 1.5rem 180px; /* Increased top padding for header */
+    padding: 100px 1.5rem 180px; /* 增加顶部内边距以适应头部 */
     overflow-y: hidden; /* 内部歌词区域滚动，外部不滚动 */
     box-sizing: border-box;
     mask-image: none;
@@ -1829,7 +1839,7 @@ onUnmounted(() => {
   .album-cover-wrapper {
     width: 280px;
     height: 280px;
-    /* Box shadow is now handled by floating cover in JS */
+    /* 阴影由 JS 中的浮动封面处理 */
   }
 
   .song-info-container {
@@ -1841,7 +1851,7 @@ onUnmounted(() => {
     flex: initial;
     opacity: 1;
     transform: none;
-    /* transition由JS控制 */
+    /* 过渡效果由 JS 控制 */
   }
 
   .song-title {
@@ -1861,12 +1871,16 @@ onUnmounted(() => {
     display: flex;
   }
 
+  .close-button {
+    top: 54px; /* 下移以与顶部封面对齐 */
+  }
+
   .playback-controls {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: 1rem 1.5rem calc(1rem + env(safe-area-inset-bottom));
+    padding: 1rem 1.5rem calc(0.5rem + env(safe-area-inset-bottom));
     gap: 1rem;
     background: rgba(0,0,0,0.4);
     backdrop-filter: blur(30px);
@@ -1885,13 +1899,22 @@ onUnmounted(() => {
     padding: 0 1rem;
   }
   
-  /* Hide original quality section on mobile */
+  /* 移动端隐藏原音质区域 */
   .quality-section {
     display: none;
   }
 
-  /* 隐藏左侧栏的非必要元素（如果有的话，目前左侧主要是封面和信息） */
-  /* 隐藏右侧栏可能存在的其他干扰 */
+  .badge-quality-menu {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 12px;
+    transform-origin: bottom center;
+    animation: menu-pop-up 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* 隐藏左侧栏非必要元素 */
+  /* 隐藏右侧栏干扰元素 */
 }
 
 @media (max-width: 768px) {
