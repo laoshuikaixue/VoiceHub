@@ -272,6 +272,8 @@ const mainContent = ref(null)
 const currentMobilePage = ref(0)
 const scrollProgress = ref(0)
 const isMobile = ref(false)
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 375)
+const windowHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 812)
 
 // 拖拽状态管理
 const isDragging = ref(false)
@@ -328,14 +330,13 @@ const mobileCoverStyle = computed(() => {
   if (!isMobile.value) return {}
   
   const p = scrollProgress.value
-  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 375
-  const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 812
+  const w = windowWidth.value
+  const h = windowHeight.value
   
   // 起始状态 (Page 1 Center)
   const startSize = 280
   // 垂直位置：与 CSS 中的 padding-top: 15vh 保持一致
-  const startTop = windowHeight * 0.15
-  const startLeft = windowWidth * 0.5
+  const startTop = h * 0.15
   
   // 结束状态 (Page 2 Top Left)
   const endSize = 48
@@ -347,14 +348,13 @@ const mobileCoverStyle = computed(() => {
   // 插值计算
   const currentSize = startSize - (startSize - endSize) * p
   const currentTop = startTop - (startTop - endTop) * p
-  const currentLeft = startLeft - (startLeft - endLeft) * p
   
   // Transform 插值 (-50% -> 0%)
   // Start: translate(-50%, -50%) (因为 startTop/Left 是中心点吗？不，上面代码是 top/left 定位)
   // 修正：上面的 startTop/startLeft 应该是基于左上角的坐标，而不是中心点
   // startLeft = windowWidth * 0.5 - startSize / 2
   
-  const realStartLeft = (windowWidth - startSize) / 2
+  const realStartLeft = (w - startSize) / 2
   
   // 修正插值
   const realCurrentLeft = realStartLeft - (realStartLeft - endLeft) * p
@@ -466,6 +466,10 @@ const getResponsiveFontSize = () => {
 
 const handleResize = () => {
   lyricConfig.value.fontSize = getResponsiveFontSize()
+  if (typeof window !== 'undefined') {
+    windowWidth.value = window.innerWidth
+    windowHeight.value = window.innerHeight
+  }
   updateMobileState()
 }
 
