@@ -57,6 +57,13 @@ export default defineEventHandler(async (event) => {
         
         const songMap = new Map(songDetails.map((s: any) => [s.id, s]))
 
+        // 需要发送通知的列表
+        const notificationsToSend: Array<{
+            requesterId: number,
+            songId: number,
+            songInfo: { title: string, artist: string, playDate: Date }
+        }> = []
+
         // 开始事务
         await db.transaction(async (tx) => {
             // 1. 构建查询条件：指定日期 + (可选)指定时段
@@ -108,12 +115,16 @@ export default defineEventHandler(async (event) => {
 
                 // 如果该歌曲之前未在此时间段发布过，则发送通知并更新重播状态
                 if (!existingPublishedSongIds.has(item.songId)) {
-                    // 发送通知
-                    await createSongSelectedNotification(song.requesterId, song.id, {
-                        title: song.title,
-                        artist: song.artist,
-                        playDate: playDate
-                    }, clientIP)
+                    // 添加到通知列表，稍后发送
+                    notificationsToSend.push({
+                        requesterId: song.requesterId,
+                        songId: song.id,
+                        songInfo: {
+                            title: song.title,
+                            artist: song.artist,
+                            playDate: playDate
+                        }
+                    })
 
                     // 更新重播申请状态
                     await tx.update(songReplayRequests)
@@ -134,6 +145,16 @@ export default defineEventHandler(async (event) => {
         } catch (cacheError) {
             console.error('[Cache] 清除缓存失败:', cacheError)
         }
+
+        // 异步发送通知（不阻塞响应）
+        Promise.allSettled(notificationsToSend.map(n => 
+            createSongSelectedNotification(n.requesterId, n.songId, n.songInfo, clientIP)
+        )).then((results) => {
+            const successCount = results.filter(r => r.status === 'fulfilled').length
+            console.log(`[Notification] 批量发布通知发送完成: ${successCount}/${notificationsToSend.length} 成功`)
+        }).catch(err => {
+            console.error('[Notification] 批量发送通知时发生未捕获错误:', err)
+        })
 
         console.log(`[Performance] 批量发布排期耗时: ${Date.now() - startTime}ms`)
 
