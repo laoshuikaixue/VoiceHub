@@ -54,17 +54,29 @@ export const useAudioVisualizer = () => {
                 // Assuming we are the only one doing visualization for now.
                 
                 // Check if crossOrigin is set, needed for some CDN audio
+                // Note: Changing crossOrigin on an element that is already loading/playing 
+                // might cause it to reload or fail if not handled correctly before src is set.
+                // Ideally, <audio> should have crossOrigin="anonymous" set in the template.
                 if (!audioElement.crossOrigin) {
                     audioElement.crossOrigin = 'anonymous'
                 }
                 
-                const src = ctx.createMediaElementSource(audioElement)
-                sourceCache.set(audioElement, src)
-                source.value = src
-                
-                // Connect chain: Source -> Analyser -> Destination
-                src.connect(analyser.value)
-                analyser.value.connect(ctx.destination)
+                try {
+                    const src = ctx.createMediaElementSource(audioElement)
+                    sourceCache.set(audioElement, src)
+                    source.value = src
+                    
+                    // Connect chain: Source -> Analyser -> Destination
+                    src.connect(analyser.value)
+                    analyser.value.connect(ctx.destination)
+                } catch (e) {
+                    console.error('Failed to create MediaElementSource, likely CORS issue:', e)
+                    // If CORS fails, we can't visualize, but we MUST ensure audio keeps playing.
+                    // Since createMediaElementSource failed, the default connection shouldn't be broken,
+                    // but just in case, we do nothing more here.
+                    isInitialized.value = false
+                    return
+                }
             }
             
             // If source was cached, we might need to reconnect if the graph was broken
