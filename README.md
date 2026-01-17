@@ -7,7 +7,7 @@
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/3241ac39-3fa4-4220-b27f-df044b463319" />
 <img width="3200" height="1998" alt="image" src="https://github.com/user-attachments/assets/f721792e-e251-4914-8e15-e929fd424d07" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/804c12ba-2f40-4daa-b7ba-3a1882b67b3f" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e8f26207-2bfa-4f14-a9e4-e872198d2e21" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c30f2e5a-4cc8-48cb-aca2-4d41daeaaaf8" />
 
 ## 主要功能
 
