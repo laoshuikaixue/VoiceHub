@@ -4,7 +4,7 @@ import {
     songReplayRequests,
     users
 } from '~/drizzle/db'
-import { desc, eq, sql } from 'drizzle-orm'
+import { desc, eq, sql, and } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
     // 1. 检查权限
@@ -30,6 +30,7 @@ export default defineEventHandler(async (event) => {
         .from(songs)
         .innerJoin(songReplayRequests, eq(songs.id, songReplayRequests.songId))
         .leftJoin(users, eq(songs.requesterId, users.id))
+        .where(eq(songReplayRequests.status, 'PENDING'))
         .groupBy(songs.id, users.id)
         .orderBy(desc(sql`request_count`))
 
@@ -62,6 +63,30 @@ export default defineEventHandler(async (event) => {
         return displayName
     }
 
+    // 获取详细的重播申请人信息
+    const requestDetails = await db.select({
+        songId: songReplayRequests.songId,
+        user: {
+            name: users.name,
+            grade: users.grade,
+            class: users.class
+        },
+        createdAt: songReplayRequests.createdAt
+    })
+    .from(songReplayRequests)
+    .innerJoin(users, eq(songReplayRequests.userId, users.id))
+    .where(eq(songReplayRequests.status, 'PENDING'))
+    .orderBy(desc(songReplayRequests.createdAt))
+
+    const detailsMap = new Map()
+    requestDetails.forEach(d => {
+        if (!detailsMap.has(d.songId)) detailsMap.set(d.songId, [])
+        detailsMap.get(d.songId).push({
+            name: formatDisplayName(d.user),
+            createdAt: d.createdAt
+        })
+    })
+
     return requests.map(item => ({
         ...item.song,
         requester: formatDisplayName(item.requester),
@@ -69,6 +94,7 @@ export default defineEventHandler(async (event) => {
         requesterClass: item.requester?.class,
         voteCount: item.requestCount, // 将申请人数映射为 voteCount，方便前端统一显示
         requestCount: item.requestCount,
-        lastRequestedAt: item.lastRequestedAt
+        lastRequestedAt: item.lastRequestedAt,
+        requestDetails: detailsMap.get(item.song.id) || []
     }))
 })

@@ -229,6 +229,18 @@ export default defineEventHandler(async (event) => {
             }
         })
 
+        // 获取当前用户的重播申请
+        let userReplayRequestedSongs = new Set()
+        if (user) {
+            const userReplayRequestsQuery = await db.select({
+                songId: songReplayRequests.songId
+            })
+                .from(songReplayRequests)
+                .where(eq(songReplayRequests.userId, user.id))
+
+            userReplayRequestedSongs = new Set(userReplayRequestsQuery.map(r => r.songId))
+        }
+
         // 获取联合投稿人信息
         const songIds = songsData.map(s => s.id)
         const collaboratorsMap = new Map()
@@ -317,7 +329,7 @@ export default defineEventHandler(async (event) => {
                 playUrl: song.playUrl || null, // 添加播放地址字段
                 requesterGrade: song.requester?.grade || null, // 添加投稿人年级
                 requesterClass: song.requester?.class || null, // 添加投稿人班级
-                replayRequested: (replayRequestCounts.get(song.id) || 0) > 0 // 添加是否已被申请重播的标志
+                replayRequested: userReplayRequestedSongs.has(song.id) // 添加是否已被申请重播的标志
             }
 
             // 添加排期信息
@@ -370,7 +382,7 @@ export default defineEventHandler(async (event) => {
             success: true,
             data: {
                 songs: formattedSongs.map(song => {
-                    const {voted, ...baseSong} = song
+                    const {voted, replayRequested, ...baseSong} = song
                     return baseSong
                 }),
                 total

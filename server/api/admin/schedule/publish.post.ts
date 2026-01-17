@@ -98,6 +98,22 @@ export default defineEventHandler(async (event) => {
             playDate: draft.playDate
         }, clientIP)
 
+        // 如果是重播歌曲，将相关的重播申请标记为已完成
+        await db.update(songReplayRequests)
+            .set({ status: 'FULFILLED' })
+            .where(and(
+                eq(songReplayRequests.songId, draft.song.id),
+                eq(songReplayRequests.status, 'PENDING')
+            ))
+
+        // 标记该歌曲的所有待处理重播申请为已完成
+        await db.update(songReplayRequests)
+            .set({ status: 'FULFILLED' })
+            .where(and(
+                eq(songReplayRequests.songId, draft.song.id),
+                eq(songReplayRequests.status, 'PENDING')
+            ))
+
         // 清除相关缓存
         try {
             await cacheService.clearSchedulesCache()

@@ -5,6 +5,7 @@ import {relations} from 'drizzle-orm';
 export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'withdrawn']);
 export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
+export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);
 
 // 用户表
 export const users = pgTable('User', {
@@ -258,6 +259,7 @@ export const songReplayRequests = pgTable('song_replay_requests', {
   userId: integer('user_id').notNull(),
   createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', {withTimezone: true}).defaultNow().notNull(),
+  status: replayRequestStatusEnum('status').default('PENDING').notNull(),
 }, (t) => ({
   unq: unique().on(t.songId, t.userId),
 }));

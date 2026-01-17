@@ -224,6 +224,20 @@
         <div class="chart-card enhanced">
           <div class="chart-header">
             <h3>热门歌曲排行</h3>
+            <div class="sort-controls">
+              <button 
+                :class="['sort-btn', { active: selectedSortBy === 'vote' }]"
+                @click="handleSortChange('vote')"
+              >
+                点赞
+              </button>
+              <button 
+                :class="['sort-btn', { active: selectedSortBy === 'replay' }]"
+                @click="handleSortChange('replay')"
+              >
+                重播
+              </button>
+            </div>
           </div>
           <div class="chart-container">
             <div v-if="topSongs.length > 0" class="chart-content">
@@ -238,11 +252,11 @@
                     <div class="song-artist">{{ song.artist }}</div>
                   </div>
                   <div class="song-stats">
-                    <div class="vote-count">{{ song.voteCount }}</div>
-                    <div class="vote-label">次点赞</div>
+                    <div class="vote-count">{{ song.count }}</div>
+                    <div class="vote-label">{{ selectedSortBy === 'replay' ? '次重播' : '次点赞' }}</div>
                     <div class="vote-bar">
                       <div
-                          :style="{ width: (song.voteCount / Math.max(...topSongs.map(s => s.voteCount))) * 100 + '%' }"
+                          :style="{ width: (song.count / Math.max(...topSongs.map(s => s.count))) * 100 + '%' }"
                           class="vote-fill"
                       ></div>
                     </div>
@@ -479,6 +493,7 @@ const {fetchSemesters, semesters: availableSemesters, currentSemester} = useSeme
 
 // 响应式数据
 const selectedSemester = ref('all')
+const selectedSortBy = ref('vote')
 const isLoading = ref(false)
 const error = ref(null)
 const hasInitialData = ref(false)
@@ -607,6 +622,33 @@ const handleSemesterChange = async () => {
   ])
 }
 
+// 处理排行方式切换
+const handleSortChange = async (sortBy) => {
+  if (selectedSortBy.value === sortBy) return
+  selectedSortBy.value = sortBy
+  
+  // 重新加载热门歌曲数据
+  const params = new URLSearchParams()
+  if (selectedSemester.value && selectedSemester.value !== 'all') {
+    params.append('semester', selectedSemester.value)
+  }
+  
+  try {
+    panelStates.value.topSongs.loading = true
+    const topSongsData = await $fetch(`/api/admin/stats/top-songs?limit=10&${params.toString()}&sortBy=${selectedSortBy.value}`, {
+      method: 'GET'
+    })
+    topSongs.value = topSongsData || []
+    panelStates.value.topSongs.error = null
+  } catch (err) {
+    console.warn('获取热门歌曲数据失败:', err)
+    panelStates.value.topSongs.error = '加载热门歌曲失败'
+    topSongs.value = []
+  } finally {
+    panelStates.value.topSongs.loading = false
+  }
+}
+
 // 加载分析数据
 const loadAnalysisData = async () => {
   try {
@@ -706,7 +748,7 @@ const loadChartData = async () => {
   // 独立加载热门歌曲数据
   const loadTopSongs = async () => {
     try {
-      const topSongsData = await $fetch(`/api/admin/stats/top-songs?limit=10&${params.toString()}`, {
+      const topSongsData = await $fetch(`/api/admin/stats/top-songs?limit=10&${params.toString()}&sortBy=${selectedSortBy.value}`, {
         method: 'GET'
       })
       topSongs.value = topSongsData || []
@@ -1195,6 +1237,37 @@ const formatSemesterPeriod = (semester) => {
   font-size: 18px;
   font-weight: 600;
   color: #f1f5f9;
+}
+
+/* 排序控制样式 */
+.sort-controls {
+  display: flex;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.sort-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sort-btn:hover {
+  color: #e2e8f0;
+}
+
+.sort-btn.active {
+  background: #4f46e5;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
 }
 
 .chart-actions {

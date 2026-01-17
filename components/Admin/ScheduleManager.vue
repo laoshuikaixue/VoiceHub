@@ -184,6 +184,12 @@
                 >
                   重播申请
                 </button>
+                <button 
+                  :class="['tab-btn', { active: activeTab === 'all' }]" 
+                  @click="activeTab = 'all'"
+                >
+                  所有歌曲
+                </button>
               </div>
             </div>
           </div>
@@ -241,7 +247,28 @@
                 >
                   期望时段: {{ getPlayTimeName(song.preferredPlayTimeId) }}
                 </span>
+                
+                <div v-if="activeTab === 'replay' && song.requestDetails && song.requestDetails.length > 0" class="replay-requests-summary">
+                    <span class="replay-count">
+                      {{ song.requestDetails.length }} 人申请
+                    </span>
+                    <button class="view-requests-btn" @click.stop="openReplayModal(song)">
+                      查看详情
+                    </button>
+                </div>
               </div>
+              
+              <button 
+                  v-if="activeTab === 'replay'" 
+                  class="reject-btn"
+                  @click.stop="rejectReplayRequest(song.id)"
+                  title="拒绝申请"
+              >
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+              </button>
             </div>
             <div class="drag-handle">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -465,6 +492,27 @@
       :songs="localScheduledSongs"
       @close="showDownloadDialog = false"
   />
+
+  <!-- 重播申请详情弹窗 -->
+  <div v-if="showReplayModal" class="replay-modal-overlay" @click="closeReplayModal">
+    <div class="replay-modal-content" @click.stop>
+      <div class="replay-modal-header">
+        <h3>{{ replayModalTitle }} - 重播申请详情</h3>
+        <button class="close-btn" @click="closeReplayModal">×</button>
+      </div>
+      <div class="replay-modal-body">
+        <div class="replay-requests-list">
+          <div v-for="(req, idx) in replayModalRequests" :key="idx" class="replay-request-detail-item">
+            <div class="requester-info">
+              <span class="requester-name">{{ req.name }}</span>
+              <span class="requester-grade" v-if="req.grade">{{ req.grade }}{{ req.class ? ` ${req.class}` : '' }}</span>
+            </div>
+            <span class="request-time">{{ formatDate(req.createdAt) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -491,6 +539,23 @@ const confirmAction = ref(null)
 
 // 下载相关
 const showDownloadDialog = ref(false)
+
+// 重播申请弹窗相关
+const showReplayModal = ref(false)
+const replayModalTitle = ref('')
+const replayModalRequests = ref([])
+
+const openReplayModal = (song) => {
+  replayModalTitle.value = song.title
+  replayModalRequests.value = song.requestDetails || []
+  showReplayModal.value = true
+}
+
+const closeReplayModal = () => {
+  showReplayModal.value = false
+  replayModalTitle.value = ''
+  replayModalRequests.value = []
+}
 
 // 拖拽状态
 const isDraggableOver = ref(false)
@@ -629,8 +694,8 @@ const allUnscheduledSongs = computed(() => {
     
     if (isScheduledInCurrentView) return false
 
-    if (activeTab.value === 'replay') {
-      // 重播申请不需要检查 played 状态，只要当前视图没排上就行
+    if (activeTab.value === 'replay' || activeTab.value === 'all') {
+      // 重播申请和所有歌曲模式不需要检查 played 状态，只要当前视图没排上就行
       return true
     } else {
       // 普通投稿需未播放，且未在任何日期的排期中
@@ -652,8 +717,8 @@ const allUnscheduledSongs = computed(() => {
     })
   }
 
-  // 年级过滤 (仅针对普通投稿)
-  if (activeTab.value === 'normal' && selectedGrade.value !== '全部') {
+  // 年级过滤 (针对普通投稿和所有歌曲)
+  if ((activeTab.value === 'normal' || activeTab.value === 'all') && selectedGrade.value !== '全部') {
     unscheduledSongs = unscheduledSongs.filter(song => 
       song.requesterGrade === selectedGrade.value
     )
@@ -814,6 +879,30 @@ const fetchReplayRequests = async () => {
   } catch (err) {
     console.error('Failed to fetch replay requests', err)
     replayRequests.value = []
+  }
+}
+
+// 拒绝重播申请
+const rejectReplayRequest = async (songId) => {
+  if (!confirm('确定要拒绝该重播申请吗？')) return
+
+  try {
+    await $fetch('/api/admin/schedule/reject-replay', {
+      method: 'POST',
+      body: { songId },
+      ...auth.getAuthConfig()
+    })
+    
+    // 刷新申请列表
+    await fetchReplayRequests()
+    if (window.$showNotification) {
+      window.$showNotification('重播申请已拒绝', 'success')
+    }
+  } catch (err) {
+    console.error('拒绝申请失败', err)
+    if (window.$showNotification) {
+      window.$showNotification('拒绝申请失败: ' + (err.data?.message || err.message), 'error')
+    }
   }
 }
 
@@ -2063,6 +2152,28 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 状态标签样式 */
+.status-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.status-badge.played {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.scheduled {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
 .schedule-manager {
   display: flex;
   flex-direction: column;
@@ -2583,8 +2694,8 @@ onMounted(() => {
   text-overflow: ellipsis;
   flex-shrink: 0;
   margin-top: 2px;
-  text-align: center;
-  width: 100%;
+  text-align: right;
+  width: auto;
 }
 
 .sequence-actions {
@@ -3971,5 +4082,141 @@ onMounted(() => {
   .touch-drag-hint.show {
     opacity: 1;
   }
+}
+
+/* 重播申请详情弹窗样式 */
+.replay-requests-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.replay-count {
+  font-size: 13px;
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+.view-requests-btn {
+  padding: 4px 10px;
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-requests-btn:hover {
+  background: rgba(251, 191, 36, 0.25);
+  border-color: rgba(251, 191, 36, 0.5);
+}
+
+.replay-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.replay-modal-content {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  animation: modal-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.replay-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #3a3a3a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.replay-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.replay-modal-body {
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.replay-requests-list {
+  padding: 8px 0;
+}
+
+.replay-request-detail-item {
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease;
+}
+
+.replay-request-detail-item:last-child {
+  border-bottom: none;
+}
+
+.replay-request-detail-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.requester-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.requester-name {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.requester-grade {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.request-time {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
 }
 </style>
