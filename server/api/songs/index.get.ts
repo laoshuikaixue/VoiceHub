@@ -1,15 +1,10 @@
 import {createError, defineEventHandler, getQuery} from 'h3'
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songs, users, votes, songCollaborators, songReplayRequests} from '~/drizzle/schema'
-import {and, asc, count, desc, eq, like, or, inArray} from 'drizzle-orm'
+import {playTimes, schedules, songCollaborators, songReplayRequests, songs, users, votes} from '~/drizzle/schema'
+import {and, asc, count, desc, eq, inArray, like, or} from 'drizzle-orm'
 import {cacheService} from '~/server/services/cacheService'
-import {formatBeijingTime} from '~/utils/timeUtils'
+import {formatDateTime} from '~/utils/timeUtils'
 import crypto from 'crypto'
-
-// 格式化日期时间为统一格式：YYYY/M/D H:mm:ss（北京时间）
-function formatDateTime(date: Date): string {
-    return formatBeijingTime(date, 'YYYY/M/D H:mm:ss')
-}
 
 export default defineEventHandler(async (event) => {
     try {

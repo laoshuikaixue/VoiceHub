@@ -1,6 +1,7 @@
 import {db} from '~/drizzle/db'
-import {songs, systemSettings, requestTimes} from '~/drizzle/schema'
-import {and, count, eq, gte, lt, lte, gt} from 'drizzle-orm'
+import {requestTimes, songs, systemSettings} from '~/drizzle/schema'
+import {and, count, eq, gt, gte, lt, lte} from 'drizzle-orm'
+import {getBeijingTimeISOString} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
     // 检查用户认证
@@ -37,8 +38,7 @@ export default defineEventHandler(async (event) => {
 
         // 检查投稿时段限制
         if (status.timeLimitationEnabled) {
-            const now = new Date()
-            const currentTime = now.toLocaleString()
+            const currentTime = getBeijingTimeISOString()
 
             const activeTimePeriod = await db.select().from(requestTimes).where(
                 and(

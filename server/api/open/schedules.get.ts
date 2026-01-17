@@ -1,17 +1,12 @@
 import {createError, defineEventHandler, getQuery} from 'h3'
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songs, users, songCollaborators} from '~/drizzle/schema'
-import {and, asc, desc, eq, gte, like, lt, or, sql, inArray} from 'drizzle-orm'
-import {formatBeijingTime} from '~/utils/timeUtils'
+import {playTimes, schedules, songCollaborators, songs, users} from '~/drizzle/schema'
+import {and, asc, desc, eq, gte, inArray, like, lt, or, sql} from 'drizzle-orm'
+import {formatDateTime} from '~/utils/timeUtils'
 import {openApiCache} from '~/server/utils/open-api-cache'
 import {CACHE_CONSTANTS} from '~/server/config/constants'
 import {cacheService} from '~/server/services/cacheService'
 import {executeRedisCommand, isRedisReady} from '~/server/utils/redis'
-
-// 格式化日期时间为统一格式：YYYY/M/D H:mm:ss（北京时间）
-function formatDateTime(date: Date): string {
-    return formatBeijingTime(date, 'YYYY/M/D H:mm:ss')
-}
 
 export default defineEventHandler(async (event) => {
     try {

@@ -4,16 +4,16 @@ import {
     notificationSettings,
     playTimes,
     schedules,
+    songCollaborators,
     songs,
     systemSettings,
     users,
-    votes,
-    songCollaborators
+    votes
 } from '~/drizzle/schema'
 import {and, eq, gte, inArray} from 'drizzle-orm'
 import {sendBatchMeowNotifications, sendMeowNotificationToUser} from './meowNotificationService'
 import {sendBatchEmailNotifications, sendEmailNotificationToUser} from './smtpService'
-import {formatBeijingTime, getBeijingTime} from '~/utils/timeUtils'
+import {formatDateTime, getBeijingTime} from '~/utils/timeUtils'
 
 /**
  * 创建联合投稿邀请通知
@@ -213,7 +213,7 @@ export async function createSongSelectedNotification(userId: number, songId: num
 
 // 格式化日期为 yyyy-MM-dd 格式（北京时间）
 function formatDate(date: Date): string {
-    return formatBeijingTime(date, 'YYYY-MM-DD')
+    return formatDateTime(date, 'YYYY-MM-DD')
 }
 
 /**

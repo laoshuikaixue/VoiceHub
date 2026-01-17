@@ -1,18 +1,20 @@
 import {
     and,
+    collaborationLogs,
     db,
     eq,
     gte,
     lt,
+    lte,
     playTimes,
+    requestTimes,
     semesters,
-    songs,
-    systemSettings,
     songCollaborators,
-    collaborationLogs,
-    requestTimes
+    songs,
+    systemSettings
 } from '~/drizzle/db'
 import {createCollaborationInvitationNotification} from '~/server/services/notificationService'
+import {toBeijingTime} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
     // 检查用户认证
@@ -92,7 +94,7 @@ export default defineEventHandler(async (event) => {
     let hitRequestTime: any = null
     if (systemSettingsData?.enableRequestTimeLimitation && !isAdmin) {
         const now = new Date()
-        const currentTime = now.toLocaleString()
+        const currentTime = toBeijingTime(now)
 
         const hitRequestTimeResult = await db.select().from(requestTimes).where(
             and(

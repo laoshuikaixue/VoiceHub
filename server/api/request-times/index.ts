@@ -1,5 +1,6 @@
-import {asc, db, eq, requestTimes, systemSettings} from '~/drizzle/db'
-import {gte, lt, lte, gt, or, and} from "drizzle-orm";
+import {db, eq, requestTimes, systemSettings} from '~/drizzle/db'
+import {and, gt, lte} from "drizzle-orm";
+import {getBeijingTimeISOString} from "~/utils/timeUtils";
 
 export default defineEventHandler(async (event) => {
     try {
@@ -12,9 +13,9 @@ export default defineEventHandler(async (event) => {
         let expected = 0;
 
         if (enabled) {
-            const now = new Date();
+            const currentTime = getBeijingTimeISOString();
 
-            const hitRequestTimeResult = await db.select().from(requestTimes).where(and(and(lte(requestTimes.startTime, now.toLocaleString()), gt(requestTimes.endTime, now.toLocaleString())), eq(requestTimes.enabled, true))).limit(1)
+            const hitRequestTimeResult = await db.select().from(requestTimes).where(and(and(lte(requestTimes.startTime, currentTime), gt(requestTimes.endTime, currentTime)), eq(requestTimes.enabled, true))).limit(1)
             const hitRequestTime = hitRequestTimeResult[0]
 
             if (hitRequestTime) {

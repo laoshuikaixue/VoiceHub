@@ -60,7 +60,7 @@ export function createBeijingTime(
  * @param format 格式类型，默认为'YYYY/M/D H:mm:ss'
  * @returns string 格式化后的时间字符串
  */
-export function formatBeijingTime(date: Date, format: string = 'YYYY/M/D H:mm:ss'): string {
+export function formatDateTime(date: Date, format: string = 'YYYY/M/D H:mm:ss'): string {
     const beijingTime = toBeijingTime(date)
 
     const year = beijingTime.getFullYear()
@@ -100,4 +100,20 @@ export function getBeijingTimestamp(): Date {
 export function parseToBeijingTime(dateString: string): Date {
     const parsedDate = new Date(dateString)
     return toBeijingTime(parsedDate)
+}
+
+/**
+ * 获取当前北京时间的ISO字符串格式（用于数据库比较）
+ * 格式：YYYY-MM-DDTHH:mm:ss
+ * @returns string ISO格式的北京时间字符串
+ */
+export function getBeijingTimeISOString(): string {
+    const beijingTime = getBeijingTime()
+    const year = beijingTime.getFullYear()
+    const month = (beijingTime.getMonth() + 1).toString().padStart(2, '0')
+    const day = beijingTime.getDate().toString().padStart(2, '0')
+    const hours = beijingTime.getHours().toString().padStart(2, '0')
+    const minutes = beijingTime.getMinutes().toString().padStart(2, '0')
+    const seconds = beijingTime.getSeconds().toString().padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
 }
