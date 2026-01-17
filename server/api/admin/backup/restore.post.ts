@@ -649,7 +649,9 @@ export default defineEventHandler(async (event) => {
                                                 'enableSubmissionLimit',
                                                 'dailySubmissionLimit',
                                                 'weeklySubmissionLimit',
-                                                'showBlacklistKeywords'
+                                                'showBlacklistKeywords',
+                                                'enableRequestTimeLimitation',
+                                                'forceBlockAllRequests'
                                             ]
 
                                             // 只添加备份数据中存在的字段
@@ -1567,7 +1569,7 @@ export default defineEventHandler(async (event) => {
         // 重置所有自增序列
         console.log(`🔄 开始重置自增序列...`)
         const sequenceResetResults = []
-        const tablesToReset = ['Song', 'User', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist', 'SongReplayRequest']
+        const tablesToReset = ['Song', 'User', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist', 'SongReplayRequest', 'RequestTime']
 
         for (const tableName of tablesToReset) {
             try {
