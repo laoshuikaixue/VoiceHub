@@ -12,7 +12,7 @@ export interface LyricRenderConfig {
     alignPosition: number
 }
 
-export interface LyricLine {
+export interface PlayerLyricLine {
     startTime: number
     endTime: number
     words: Array<{
@@ -31,7 +31,7 @@ export const useLyricPlayer = () => {
     const lyricPlayer = ref<any | null>(null)
     const containerElement = ref<HTMLElement | null>(null)
     const isInitialized = ref(false)
-    const currentLyrics = ref<LyricLine[]>([])
+    const currentLyrics = ref<PlayerLyricLine[]>([])
     const currentTime = ref(0)
     const isPlaying = ref(false)
     const onLineClickCallback = ref<((seconds: number) => void) | null>(null)
@@ -168,7 +168,7 @@ export const useLyricPlayer = () => {
     }
 
     // 设置歌词数据
-    const setLyrics = async (lyrics: LyricLine[]) => {
+    const setLyrics = async (lyrics: PlayerLyricLine[]) => {
         if (!lyricPlayer.value) {
             console.error('[useLyricPlayer] 歌词播放器未初始化')
             return

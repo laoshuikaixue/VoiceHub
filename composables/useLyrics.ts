@@ -1,7 +1,7 @@
 import {computed, ref} from 'vue'
 
 // 歌词行接口
-export interface LyricLine {
+export interface ParsedLyricLine {
     time: number // 时间戳（毫秒）
     content: string // 歌词内容
     words?: Array<{ // 逐字歌词（可选）
@@ -20,9 +20,9 @@ export interface LyricData {
 
 export const useLyrics = () => {
     // 响应式状态
-    const currentLyrics = ref<LyricLine[]>([])
-    const translationLyrics = ref<LyricLine[]>([])
-    const wordByWordLyrics = ref<LyricLine[]>([])
+    const currentLyrics = ref<ParsedLyricLine[]>([])
+    const translationLyrics = ref<ParsedLyricLine[]>([])
+    const wordByWordLyrics = ref<ParsedLyricLine[]>([])
     const currentLyricIndex = ref(0)
     const currentTime = ref(0)
     const isLoading = ref(false)
@@ -33,11 +33,11 @@ export const useLyrics = () => {
     const showWordByWord = ref(false)
 
     // 解析LRC格式歌词
-    const parseLrcLyrics = (lrcText: string): LyricLine[] => {
+    const parseLrcLyrics = (lrcText: string): ParsedLyricLine[] => {
         if (!lrcText) return []
 
         const lines = lrcText.split('\n')
-        const lyrics: LyricLine[] = []
+        const lyrics: ParsedLyricLine[] = []
 
         for (const line of lines) {
             // 匹配时间标签 [mm:ss.xx] 或 [mm:ss:xx]
@@ -60,11 +60,11 @@ export const useLyrics = () => {
     }
 
     // 解析网易云逐字歌词
-    const parseYrcLyrics = (yrcText: string): LyricLine[] => {
+    const parseYrcLyrics = (yrcText: string): ParsedLyricLine[] => {
         if (!yrcText) return []
 
         const lines = yrcText.split('\n')
-        const lyrics: LyricLine[] = []
+        const lyrics: ParsedLyricLine[] = []
 
         for (const line of lines) {
             try {

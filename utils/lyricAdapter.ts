@@ -3,7 +3,7 @@
  * 将现有的歌词数据格式转换为 WordByWordLyrics 组件所需的 AMLL 格式
  */
 
-import type {LyricLine as ExistingLyricLine} from '~/composables/useLyrics'
+import type {ParsedLyricLine as ExistingLyricLine} from '~/composables/useLyrics'
 
 // AMLL 格式的接口定义
 export interface LyricWord {
@@ -14,7 +14,7 @@ export interface LyricWord {
   obscene: boolean
 }
 
-export interface LyricLine {
+export interface AdapterLyricLine {
   words: LyricWord[]
   translatedLyric: string
   romanLyric: string
@@ -38,7 +38,7 @@ export function convertToAmllFormat(
     defaultDuration?: number
     romanization?: boolean
   } = {}
-): LyricLine[] {
+): AdapterLyricLine[] {
   const { enableWordByWord = true, defaultDuration = 1000, romanization = false } = options
   
   return existingLyrics.map((line, index) => {
@@ -188,7 +188,7 @@ export function smartWordSegmentation(
 /**
  * 检测和标记背景歌词
  */
-export function detectBackgroundLyrics(lyrics: LyricLine[]): LyricLine[] {
+export function detectBackgroundLyrics(lyrics: AdapterLyricLine[]): AdapterLyricLine[] {
   return lyrics.map(line => {
     // 简单的背景歌词检测逻辑
     const isBG = line.words.length === 0 || 
@@ -205,7 +205,7 @@ export function detectBackgroundLyrics(lyrics: LyricLine[]): LyricLine[] {
 /**
  * 检测和标记对唱歌词
  */
-export function detectDuetLyrics(lyrics: LyricLine[]): LyricLine[] {
+export function detectDuetLyrics(lyrics: AdapterLyricLine[]): AdapterLyricLine[] {
   return lyrics.map(line => {
     // 简单的对唱检测逻辑
     const isDuet = line.translatedLyric.includes('(对唱)') ||
@@ -232,7 +232,7 @@ export function fullLyricConversion(
     enableDuetDetection?: boolean
     romanization?: boolean
   } = {}
-): LyricLine[] {
+): AdapterLyricLine[] {
   const {
     enableWordByWord = true,
     enableSmartSegmentation = true,

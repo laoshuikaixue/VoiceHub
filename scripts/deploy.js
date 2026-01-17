@@ -89,18 +89,12 @@ async function deploy() {
     // 0. 检查环境
     checkEnvironment();
     
-    // 1. 安装依赖（如果需要）
-    if (!fileExists('node_modules')) {
-      logStep('📦', '安装依赖...');
-      // 优先使用 npm ci（基于锁文件），失败则回退到 npm install（防止锁文件未更新导致构建中断）
-      if (!safeExec('npm ci')) {
-        logWarning('npm ci 失败，尝试使用 npm install 回退安装...');
-        if (!safeExec('npm install')) {
-          throw new Error('依赖安装失败');
-        }
-      }
-      logSuccess('依赖安装完成');
+    // 1. 安装依赖
+    logStep('📦', '检查并安装依赖...');
+    if (!safeExec('npm install')) {
+      throw new Error('依赖安装失败');
     }
+    logSuccess('依赖安装完成');
     
     // 2. 检查 Drizzle 配置
     logStep('🔧', '检查 Drizzle 配置...');
