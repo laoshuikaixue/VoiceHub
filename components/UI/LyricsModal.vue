@@ -38,8 +38,8 @@
           <!-- 移动端浮动封面 (跨页动画) -->
           <div 
             v-if="isMobile && currentSong?.cover" 
+            ref="mobileFloatingCoverRef"
             class="mobile-floating-cover"
-            :style="mobileCoverStyle"
           >
             <img 
               :src="convertToHttps(currentSong.cover)" 
@@ -52,7 +52,7 @@
           <div 
             class="main-content" 
             ref="mainContent"
-            @scroll="handleMobileScroll"
+            @scroll="onMainContentScroll"
             @click="handleOverlayClick" 
           >
             <!-- 左侧区域：封面和歌曲信息 -->
@@ -76,7 +76,7 @@
                 </div>
               </div>
 
-              <div class="song-info-container" :style="pageOneInfoStyle">
+              <div ref="pageOneInfoRef" class="song-info-container">
                 <div class="song-details">
                   <h1 class="song-title">
                     {{ currentSong?.title || '未知歌曲' }}
@@ -113,7 +113,7 @@
               <!-- 移动端顶部迷你信息栏 -->
               <div v-if="isMobile" class="mobile-lyric-header">
                 <div class="header-spacer"></div> <!-- 为缩小后的封面留白 -->
-                <div class="mini-song-info" :style="pageTwoInfoStyle">
+                <div ref="pageTwoInfoRef" class="mini-song-info">
                    <div class="mini-text-col">
                       <span class="mini-title">{{ currentSong?.title }}</span>
                       <span class="mini-artist">{{ currentSong?.artist }}</span>
@@ -340,19 +340,28 @@ const selectQuality = async (qualityValue) => {
 }
 
 // 移动端状态与动画
-const updateMobileState = () => {
-  if (typeof window !== 'undefined') {
-    // 统一将 1024px 以下视为移动端/平板模式（左右滑动分页）
-    isMobile.value = window.innerWidth <= 1024
-  }
+const mobileFloatingCoverRef = ref(null)
+const pageOneInfoRef = ref(null)
+const pageTwoInfoRef = ref(null)
+let animationFrameId = null
+
+// 缓存布局参数
+let cachedLayout = {
+  width: 0,
+  height: 0,
+  contentWidth: 0,
+  startTop: 0,
+  realStartLeft: 0,
+  totalTranslateX: 0,
+  totalTranslateY: 0,
+  targetScale: 1,
+  startSize: 280
 }
 
-const mobileCoverStyle = computed(() => {
-  if (!isMobile.value) return {}
-  
-  const p = scrollProgress.value
-  const w = windowWidth.value
-  const h = windowHeight.value
+const updateLayoutCache = () => {
+  if (typeof window === 'undefined') return
+  const w = window.innerWidth
+  const h = window.innerHeight
   
   // 起始状态 (第一页中心)
   const startSize = 280
@@ -362,72 +371,150 @@ const mobileCoverStyle = computed(() => {
   
   // 结束状态 (第二页左上角)
   const endSize = 48
-  // 顶部偏移量计算
   const endTop = 50 
   const endLeft = 24
   
-  // 计算 Transform 参数
-  // 缩放比例
-  const targetScale = endSize / startSize
-  const currentScale = 1 + (targetScale - 1) * p
+  cachedLayout = {
+    width: w,
+    height: h,
+    contentWidth: mainContent.value ? mainContent.value.clientWidth : w,
+    startTop,
+    realStartLeft,
+    totalTranslateX: endLeft - realStartLeft,
+    totalTranslateY: endTop - startTop,
+    targetScale: endSize / startSize,
+    startSize
+  }
+
+  // 立即触发一次更新以修正位置
+  if (isMobile.value) {
+     requestAnimationFrame(() => {
+        // 如果当前还没滚动，p=0
+        const p = scrollProgress.value || 0
+        // 重新调用 updateMobileAnimations 需要 width
+        // 这里简单模拟一下
+        updateMobileAnimations(p * cachedLayout.contentWidth, cachedLayout.contentWidth)
+     })
+  }
+}
+
+const updateMobileState = () => {
+  if (typeof window !== 'undefined') {
+    // 统一将 1024px 以下视为移动端/平板模式（左右滑动分页）
+    const newIsMobile = window.innerWidth <= 1024
+    if (newIsMobile !== isMobile.value) {
+      isMobile.value = newIsMobile
+      if (newIsMobile) {
+        nextTick(updateLayoutCache)
+      }
+    } else if (newIsMobile) {
+        updateLayoutCache()
+    }
+  }
+}
+
+const updateMobileAnimations = (scrollLeft, width) => {
+  let p = scrollLeft / width
+  if (p < 0) p = 0
+  if (p > 1) p = 1
   
-  // 位移距离
-  const totalTranslateX = endLeft - realStartLeft
-  const totalTranslateY = endTop - startTop
-  
-  const currentTranslateX = totalTranslateX * p
-  const currentTranslateY = totalTranslateY * p
+  // 1. 更新封面动画
+  if (mobileFloatingCoverRef.value) {
+    const { 
+      startTop, realStartLeft, 
+      totalTranslateX, totalTranslateY, 
+      targetScale, startSize 
+    } = cachedLayout
 
-  return {
-    width: `${startSize}px`,
-    height: `${startSize}px`,
-    top: `${startTop}px`,
-    left: `${realStartLeft}px`,
-    transformOrigin: '0 0',
-    transform: `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale})`,
-    position: 'absolute',
-    zIndex: 100,
-    borderRadius: `${(12 - 4*p) / currentScale}px`, // 修正圆角随缩放变形
-    boxShadow: `0 ${(16 - 12*p) / currentScale}px ${(36 - 28*p) / currentScale}px rgba(0,0,0,${0.4 - 0.2*p})`,
-    opacity: 1,
-    // 确保点击穿透
-    pointerEvents: p > 0.8 ? 'none' : 'auto',
-    willChange: 'transform' // 提示浏览器优化
-  }
-})
+    const currentScale = 1 + (targetScale - 1) * p
+    const currentTranslateX = totalTranslateX * p
+    const currentTranslateY = totalTranslateY * p
 
-const pageOneInfoStyle = computed(() => {
-  if (!isMobile.value) return {}
-  return {
-    opacity: Math.max(0, 1 - scrollProgress.value * 2.5),
-    transform: `translateY(${scrollProgress.value * -20}px)`
+    const el = mobileFloatingCoverRef.value
+    
+    // 设置初始布局属性 (如果尚未设置)
+    // 注意：尽量减少 style 属性的读写。
+    // 这里我们可以假设 updateLayoutCache 已经设置好了基础值，或者在这里设置
+    // 为了性能，我们直接设置 inline style string，但这会覆盖其他 style。
+    // 既然我们控制这个元素，可以直接操作。
+    
+    const radius = (12 - 4*p) / currentScale
+    const shadowY = (16 - 12*p) / currentScale
+    const shadowBlur = (36 - 28*p) / currentScale
+    const shadowAlpha = 0.4 - 0.2*p
+    
+    // 使用 cssText 一次性设置，减少重排
+    // 注意：这将覆盖所有内联样式，确保没有其他动态绑定的 style
+    el.style.cssText = `
+      width: ${startSize}px;
+      height: ${startSize}px;
+      top: ${startTop}px;
+      left: ${realStartLeft}px;
+      transform-origin: 0 0;
+      transform: translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale});
+      position: absolute;
+      z-index: 100;
+      border-radius: ${radius}px;
+      box-shadow: 0 ${shadowY}px ${shadowBlur}px rgba(0,0,0,${shadowAlpha});
+      opacity: 1;
+      pointer-events: ${p > 0.8 ? 'none' : 'auto'};
+      will-change: transform;
+    `
   }
-})
 
-const pageTwoInfoStyle = computed(() => {
-  if (!isMobile.value) return {}
-  // 后半段显示
-  const p = scrollProgress.value
-  const opacity = Math.max(0, (p - 0.6) * 2.5)
-  return {
-    opacity: opacity,
-    transform: `translateY(${(1 - p) * 10}px)`,
-    pointerEvents: opacity > 0.5 ? 'auto' : 'none'
+  // 2. 更新 Page One Info (Opacity & Translate)
+  if (pageOneInfoRef.value) {
+    const el = pageOneInfoRef.value
+    const opacity = Math.max(0, 1 - p * 2.5)
+    const translateY = p * -20
+    
+    el.style.opacity = opacity
+    el.style.transform = `translateY(${translateY}px)`
   }
-})
+
+  // 3. 更新 Page Two Info (Opacity & Translate)
+  if (pageTwoInfoRef.value) {
+    const el = pageTwoInfoRef.value
+    const opacity = Math.max(0, (p - 0.6) * 2.5)
+    const translateY = (1 - p) * 10
+    
+    el.style.opacity = opacity
+    el.style.transform = `translateY(${translateY}px)`
+    el.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none'
+  }
+}
 
 // 移动端分页处理
-const handleMobileScroll = (event) => {
-  const el = event.target
-  const width = el.clientWidth
-  const scrollLeft = el.scrollLeft
-  currentMobilePage.value = Math.round(scrollLeft / width)
+const onMainContentScroll = (event) => {
+  if (!isMobile.value) return
   
-  // 计算进度 0 -> 1
+  const el = event.target
+  const scrollLeft = el.scrollLeft
+  // 如果缓存没有初始化，尝试初始化
+  if (!cachedLayout.contentWidth) {
+    updateLayoutCache()
+  }
+  const width = cachedLayout.contentWidth || el.clientWidth
+  
+  // 更新状态用于分页指示器
+  const newPage = Math.round(scrollLeft / width)
+  if (currentMobilePage.value !== newPage) {
+    currentMobilePage.value = newPage
+  }
+  
+  // 计算进度 0 -> 1 (仅用于逻辑，不用于驱动动画)
   let progress = scrollLeft / width
   if (progress < 0) progress = 0
   if (progress > 1) progress = 1
   scrollProgress.value = progress
+
+  // 动画更新
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
+  }
+  animationFrameId = requestAnimationFrame(() => {
+    updateMobileAnimations(scrollLeft, width)
+  })
 }
 
 const scrollToPage = (pageIndex) => {
