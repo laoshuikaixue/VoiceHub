@@ -7,7 +7,7 @@ COPY package*.json ./
 COPY scripts ./scripts
 
 # 安装所有依赖（含开发依赖）
-RUN npm ci
+RUN npm install
 
 # 复制源代码并构建应用
 COPY . .
@@ -35,4 +35,4 @@ ENV NODE_ENV=production \
 
 # 暴露端口并设置启动命令
 EXPOSE $PORT
-CMD ["sh", "-c", "npm run deploy && npm run dev"]
+CMD ["sh", "-c", "npm run setup && npm start"]
