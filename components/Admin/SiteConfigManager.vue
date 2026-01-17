@@ -173,17 +173,6 @@
         <div class="form-group">
           <label class="checkbox-label">
             <input
-                v-model="formData.enableBlacklist"
-                type="checkbox"
-            />
-            <span class="checkbox-text">启用黑名单功能</span>
-          </label>
-          <small class="help-text">开启后，系统将检查投稿内容是否包含黑名单关键词</small>
-        </div>
-
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input
                 v-model="formData.showBlacklistKeywords"
                 type="checkbox"
             />
@@ -350,18 +339,19 @@ const saveConfig = async () => {
     saving.value = true
     // 处理空值，使用默认值，确保二选一逻辑
     const configToSave = {
-      siteTitle: formData.value.siteTitle.trim() || '校园广播站点歌系统',
-      siteLogoUrl: formData.value.siteLogoUrl.trim() || '/favicon.ico',
-      schoolLogoHomeUrl: formData.value.schoolLogoHomeUrl.trim(),
-      schoolLogoPrintUrl: formData.value.schoolLogoPrintUrl.trim(),
-      siteDescription: formData.value.siteDescription.trim() || '校园广播站点歌系统 - 让你的声音被听见',
-      submissionGuidelines: formData.value.submissionGuidelines.trim() || defaultSubmissionGuidelines,
-      icpNumber: formData.value.icpNumber.trim(),
-      enableReplayRequests: formData.value.enableReplayRequests,
-      enableSubmissionLimit: formData.value.enableSubmissionLimit,
-      dailySubmissionLimit: formData.value.dailySubmissionLimit,
-      weeklySubmissionLimit: formData.value.weeklySubmissionLimit,
-      showBlacklistKeywords: formData.value.showBlacklistKeywords
+      siteTitle: (formData.value.siteTitle || '').trim() || '校园广播站点歌系统',
+      siteLogoUrl: (formData.value.siteLogoUrl || '').trim() || '/favicon.ico',
+      schoolLogoHomeUrl: (formData.value.schoolLogoHomeUrl || '').trim(),
+      schoolLogoPrintUrl: (formData.value.schoolLogoPrintUrl || '').trim(),
+      siteDescription: (formData.value.siteDescription || '').trim() || '校园广播站点歌系统 - 让你的声音被听见',
+      submissionGuidelines: (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines,
+      icpNumber: (formData.value.icpNumber || '').trim(),
+      enableReplayRequests: !!formData.value.enableReplayRequests,
+      enableSubmissionLimit: !!formData.value.enableSubmissionLimit,
+      dailySubmissionLimit: formData.value.dailySubmissionLimit === '' ? null : formData.value.dailySubmissionLimit,
+      weeklySubmissionLimit: formData.value.weeklySubmissionLimit === '' ? null : formData.value.weeklySubmissionLimit,
+      showBlacklistKeywords: !!formData.value.showBlacklistKeywords,
+      hideStudentInfo: !!formData.value.hideStudentInfo
     }
 
     const response = await fetch('/api/admin/system-settings', {
@@ -370,10 +360,7 @@ const saveConfig = async () => {
         'Content-Type': 'application/json'
       },
       credentials: 'include',
-      body: JSON.stringify({
-        ...configToSave,
-        hideStudentInfo: formData.value.hideStudentInfo
-      })
+      body: JSON.stringify(configToSave)
     })
 
     if (!response.ok) {
