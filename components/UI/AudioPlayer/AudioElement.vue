@@ -2,6 +2,7 @@
   <audio
       ref="audioPlayer"
       :src="song?.musicUrl"
+      crossorigin="anonymous"
       autoplay
       preload="auto"
       referrerpolicy="no-referrer"

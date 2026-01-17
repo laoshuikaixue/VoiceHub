@@ -164,7 +164,8 @@ export const useBackgroundRenderer = () => {
 
                 // 为画布应用模糊与轻微放大效果
                 const canvas = backgroundRenderer.value.getElement()
-                canvas.style.filter = 'blur(40px)'
+                const blurAmount = config.value.blur || 40
+                canvas.style.filter = `blur(${blurAmount}px)`
                 canvas.style.transform = 'scale(1.1)'
 
                 // 不再使用独立的 CSS 封面模糊层

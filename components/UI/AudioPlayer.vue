@@ -241,8 +241,29 @@ const progressBar = computed(() => playerControlsRef.value?.progressBar)
 
 // 记录最近一首歌曲，避免关闭过程中props.song为空导致渲染错误
 const lastSong = ref(null)
-watch(() => props.song, (newSong) => {
+watch(() => props.song, (newSong, oldSong) => {
   if (newSong) {
+    // 检测是否为音质切换（同一首歌但URL不同）
+    if (oldSong && newSong.id === oldSong.id && newSong.musicUrl !== oldSong.musicUrl) {
+      // 保存当前播放状态和进度
+      const wasPlaying = control.isPlaying.value
+      const currentTime = control.currentTime.value
+      
+      // 在音频加载完成后恢复状态
+      nextTick(() => {
+        if (audioPlayer.value) {
+          const restoreState = () => {
+            audioPlayer.value.currentTime = currentTime
+            if (wasPlaying) {
+              control.play()
+            }
+          }
+          // 监听元数据加载完成事件（此时duration已知，可以seek）
+          audioPlayer.value.addEventListener('loadedmetadata', restoreState, { once: true })
+        }
+      })
+    }
+
     lastSong.value = newSong
     // 新歌到来时视为重新打开，清除关闭标记
     isClosed.value = false

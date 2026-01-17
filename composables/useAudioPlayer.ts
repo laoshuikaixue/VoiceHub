@@ -271,12 +271,26 @@ export function useAudioPlayer() {
         return (currentPosition.value / duration.value) * 100
     })
 
+    // 更新当前歌曲信息（用于音质切换等场景）
+    const updateCurrentSong = (updatedSong: PlayableSong) => {
+        if (currentSong.value && currentSong.value.id === updatedSong.id) {
+            currentSong.value = updatedSong
+            // 同时更新播放列表中的对应项
+            if (currentPlaylistIndex.value !== -1 && currentPlaylist.value[currentPlaylistIndex.value]) {
+                currentPlaylist.value[currentPlaylistIndex.value].song = updatedSong
+            }
+            return true
+        }
+        return false
+    }
+
     return {
         playSong,
         pauseSong,
         stopSong,
         playNext,
         playPrevious,
+        updateCurrentSong,
         setPosition,
         setDuration,
         updatePosition,
