@@ -516,7 +516,7 @@
 </template>
 
 <script setup>
-import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
+import {computed, nextTick, onMounted, onUnmounted, reactive, ref, watch} from 'vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
 
@@ -629,7 +629,19 @@ const showManualDatePicker = ref(false)
 const manualSelectedDate = ref('')
 
 // 分页相关
-const currentPage = ref(1)
+const pageStates = reactive({
+  normal: 1,
+  replay: 1,
+  all: 1
+})
+const currentPage = computed({
+  get: () => pageStates[activeTab.value] || 1,
+  set: (val) => {
+    if (pageStates[activeTab.value] !== undefined) {
+      pageStates[activeTab.value] = val
+    }
+  }
+})
 const pageSize = ref(10)
 
 // 服务
@@ -856,19 +868,26 @@ watch(selectedDate, async () => {
   await loadData()
 })
 
+// 重置所有分页状态
+const resetAllPages = () => {
+  pageStates.normal = 1
+  pageStates.replay = 1
+  pageStates.all = 1
+}
+
 // 监听排序选项变化，重置分页
 watch(songSortOption, () => {
-  currentPage.value = 1
+  resetAllPages()
 })
 
 // 监听搜索查询变化，重置分页
 watch(searchQuery, () => {
-  currentPage.value = 1
+  resetAllPages()
 })
 
 // 监听年级筛选变化，重置分页
 watch(selectedGrade, () => {
-  currentPage.value = 1
+  resetAllPages()
 })
 
 // 加载重播申请
