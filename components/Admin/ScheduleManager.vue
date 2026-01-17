@@ -315,7 +315,16 @@
 
             <div class="page-numbers">
               <button
-                  v-for="page in Math.min(5, totalPages)"
+                  v-if="displayedPageNumbers[0] > 1"
+                  class="page-number"
+                  @click="goToPage(1)"
+              >
+                1
+              </button>
+              <span v-if="displayedPageNumbers[0] > 2" class="page-ellipsis">...</span>
+
+              <button
+                  v-for="page in displayedPageNumbers"
                   :key="page"
                   :class="['page-number', { active: page === currentPage }]"
                   @click="goToPage(page)"
@@ -323,11 +332,10 @@
                 {{ page }}
               </button>
 
-              <span v-if="totalPages > 5" class="page-ellipsis">...</span>
-
+              <span v-if="displayedPageNumbers[displayedPageNumbers.length - 1] < totalPages - 1" class="page-ellipsis">...</span>
               <button
-                  v-if="totalPages > 5 && currentPage < totalPages - 2"
-                  :class="['page-number', { active: totalPages === currentPage }]"
+                  v-if="displayedPageNumbers[displayedPageNumbers.length - 1] < totalPages"
+                  class="page-number"
                   @click="goToPage(totalPages)"
               >
                 {{ totalPages }}
@@ -769,6 +777,32 @@ const filteredUnscheduledSongs = computed(() => {
 // 总页数
 const totalPages = computed(() => {
   return Math.ceil(allUnscheduledSongs.value.length / pageSize.value)
+})
+
+// 计算显示的页码数组
+const displayedPageNumbers = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const count = 5
+
+  if (total <= count) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  let start = current - 2
+  let end = current + 2
+
+  if (start < 1) {
+    start = 1
+    end = count
+  }
+
+  if (end > total) {
+    end = total
+    start = total - count + 1
+  }
+
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
 })
 
 // 方法
