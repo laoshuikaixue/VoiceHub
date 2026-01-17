@@ -1,12 +1,6 @@
 import {
-    and,
     collaborationLogs,
     db,
-    eq,
-    gt,
-    gte,
-    lt,
-    lte,
     playTimes,
     requestTimes,
     semesters,
@@ -14,8 +8,15 @@ import {
     songs,
     systemSettings
 } from '~/drizzle/db'
+import {and, eq, gt, gte, lt, lte} from 'drizzle-orm'
 import {createCollaborationInvitationNotification} from '~/server/services/notificationService'
-import {getBeijingTimeISOString} from '~/utils/timeUtils'
+import {
+    getBeijingEndOfDay,
+    getBeijingEndOfWeek,
+    getBeijingStartOfDay,
+    getBeijingStartOfWeek,
+    getBeijingTimeISOString
+} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
     // 检查用户认证
@@ -148,19 +149,18 @@ export default defineEventHandler(async (event) => {
 
             // 如果有生效的限额且大于0，检查使用量
             if (effectiveLimit && effectiveLimit > 0) {
-                const now = new Date()
                 let currentCount = 0
 
                 if (limitType === 'daily') {
-                    // 检查每日限额
-                    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-                    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+                    // 检查每日限额（按北京时间计算）
+                    const startOfDay = getBeijingStartOfDay()
+                    const endOfDay = getBeijingEndOfDay()
 
                     const dailySongs = await db.select().from(songs).where(
                         and(
                             eq(songs.requesterId, user.id),
                             gte(songs.createdAt, startOfDay),
-                            lt(songs.createdAt, endOfDay)
+                            lte(songs.createdAt, endOfDay)
                         )
                     )
                     currentCount = dailySongs.length
@@ -172,20 +172,15 @@ export default defineEventHandler(async (event) => {
                         })
                     }
                 } else if (limitType === 'weekly') {
-                    // 检查每周限额
-                    const startOfWeek = new Date(now)
-                    const dayOfWeek = now.getDay()
-                    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 周一为一周开始
-                    startOfWeek.setDate(now.getDate() - daysToSubtract)
-                    startOfWeek.setHours(0, 0, 0, 0)
-
-                    const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
+                    // 检查每周限额（按北京时间计算）
+                    const startOfWeek = getBeijingStartOfWeek()
+                    const endOfWeek = getBeijingEndOfWeek()
 
                     const weeklySongs = await db.select().from(songs).where(
                         and(
                             eq(songs.requesterId, user.id),
                             gte(songs.createdAt, startOfWeek),
-                            lt(songs.createdAt, endOfWeek)
+                            lte(songs.createdAt, endOfWeek)
                         )
                     )
                     currentCount = weeklySongs.length

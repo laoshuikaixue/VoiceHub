@@ -1,5 +1,6 @@
 import {asc, db, desc, requestTimes} from '~/drizzle/db'
 import {lt} from "drizzle-orm";
+import {getBeijingTimeISOString} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
     const user = event.context.user
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
     try {
         await db.update(requestTimes)
             .set({past: true})
-            .where(lt(requestTimes.endTime, new Date().toLocaleString()))
+            .where(lt(requestTimes.endTime, getBeijingTimeISOString()))
         const requestTimesResult = await db.select().from(requestTimes)
             .orderBy(desc(requestTimes.enabled), asc(requestTimes.startTime))
 
