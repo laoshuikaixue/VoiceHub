@@ -1,10 +1,10 @@
 import { ref, onUnmounted } from 'vue'
 
-// WeakMap to store MediaElementAudioSourceNode for each HTMLMediaElement
-// This prevents creating multiple sources for the same element which throws an error
+// WeakMap 用于存储每个 HTMLMediaElement 的 MediaElementAudioSourceNode
+// 防止为同一元素创建多个源导致报错
 const sourceCache = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>()
 
-// Global AudioContext (lazy initialized) to avoid "too many AudioContexts" error
+// 全局 AudioContext（懒加载）以避免"AudioContext 过多"错误
 let globalAudioContext: AudioContext | null = null
 
 export const useAudioVisualizer = () => {
@@ -29,34 +29,31 @@ export const useAudioVisualizer = () => {
         try {
             const ctx = getAudioContext()
             if (!ctx) {
-                console.warn('AudioContext not supported')
+                console.warn('不支持 AudioContext')
                 return
             }
             audioContext.value = ctx
 
-            // Create Analyser
+            // 创建分析器
             if (!analyser.value) {
                 analyser.value = ctx.createAnalyser()
-                analyser.value.fftSize = 256 // Adjust resolution as needed
+                analyser.value.fftSize = 256 // 根据需要调整分辨率
                 analyser.value.smoothingTimeConstant = 0.8
             }
 
-            // Get or create source
+            // 获取或创建源
             if (sourceCache.has(audioElement)) {
                 source.value = sourceCache.get(audioElement)!
             } else {
-                // Connect source to analyser and destination (to hear sound)
-                // Note: If the audio element is already connected to another destination (default),
-                // creating a MediaElementSource will disconnect it from the default output.
-                // So we must connect it back to ctx.destination.
+                // 连接源到分析器和目标（以听到声音）
+                // 注意：如果音频元素已连接到其他目标（默认），
+                // 创建 MediaElementSource 会断开其与默认输出的连接。
+                // 所以必须将其连回 ctx.destination。
                 
-                // However, be careful if other parts of the app also do this.
-                // Assuming we are the only one doing visualization for now.
+                // 假设目前只有我们在做可视化。
                 
-                // Check if crossOrigin is set, needed for some CDN audio
-                // Note: Changing crossOrigin on an element that is already loading/playing 
-                // might cause it to reload or fail if not handled correctly before src is set.
-                // Ideally, <audio> should have crossOrigin="anonymous" set in the template.
+                // 检查是否设置了 crossOrigin，CDN 音频需要
+                // 注意：在 src 设置之前应设置 crossOrigin="anonymous"。
                 if (!audioElement.crossOrigin) {
                     audioElement.crossOrigin = 'anonymous'
                 }
@@ -66,43 +63,39 @@ export const useAudioVisualizer = () => {
                     sourceCache.set(audioElement, src)
                     source.value = src
                     
-                    // Connect chain: Source -> Analyser -> Destination
+                    // 连接链：源 -> 分析器 -> 目标
                     src.connect(analyser.value)
                     analyser.value.connect(ctx.destination)
                 } catch (e) {
-                    console.error('Failed to create MediaElementSource, likely CORS issue:', e)
-                    // If CORS fails, we can't visualize, but we MUST ensure audio keeps playing.
-                    // Since createMediaElementSource failed, the default connection shouldn't be broken,
-                    // but just in case, we do nothing more here.
+                    console.error('创建 MediaElementSource 失败，可能是 CORS 问题:', e)
+                    // 如果 CORS 失败，无法可视化，但必须确保音频继续播放。
+                    // 因为 createMediaElementSource 失败，默认连接应该没断，
+                    // 所以这里不做额外处理。
                     isInitialized.value = false
                     return
                 }
             }
             
-            // If source was cached, we might need to reconnect if the graph was broken
-            // But usually the graph persists. 
-            // If we are in a new component instance using the same cached source, 
-            // we just need to ensure the analyser is connected.
-            
-            // Connect source -> analyser -> destination
+            // 如果源是缓存的，可能需要重新连接
+            // 连接源 -> 分析器 -> 目标
             if (source.value && analyser.value) {
                  try {
                      source.value.connect(analyser.value)
                      analyser.value.connect(ctx.destination)
                  } catch (e) {
-                     // Already connected or other error
+                     // 已连接或其他错误
                  }
             }
 
             isInitialized.value = true
             
-            // Resume context if suspended (browser policy)
+            // 如果上下文被挂起（浏览器策略），恢复它
             if (ctx.state === 'suspended') {
                 ctx.resume()
             }
 
         } catch (error) {
-            console.error('Failed to initialize audio visualizer:', error)
+            console.error('初始化音频可视化失败:', error)
         }
     }
 
@@ -128,7 +121,7 @@ export const useAudioVisualizer = () => {
                     source.value.connect(globalAudioContext.destination)
                 }
             } catch (e) {
-                console.error('Error during dispose cleanup:', e)
+                console.error('清理过程出错:', e)
             }
         }
         isInitialized.value = false

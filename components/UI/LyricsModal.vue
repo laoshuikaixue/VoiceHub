@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <Transition name="modal-animation">
+    <Transition :name="isMobile ? 'slide-up' : 'modal-animation'">
       <div
           v-if="isVisible"
           class="lyrics-modal-overlay"
@@ -29,7 +29,7 @@
 
           <!-- 关闭按钮 -->
           <button class="close-button" @click="closeModal">
-            <Icon name="x" size="24"/>
+            <Icon :name="isMobile ? 'chevron-down' : 'x'" size="24"/>
           </button>
 
           <!-- 频谱可视化 (左侧边缘) -->
@@ -262,6 +262,7 @@ const mainContent = ref(null)
 const currentMobilePage = ref(0)
 const scrollProgress = ref(0)
 const isMobile = ref(false)
+const hasPushedHistory = ref(false)
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 375)
 const windowHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 812)
 
@@ -698,8 +699,21 @@ const handleCoverError = (event) => {
 }
 
 // 模态框控制
+const handlePopState = () => {
+  if (props.isVisible) {
+    hasPushedHistory.value = false
+    emit('close')
+  }
+}
+
 const closeModal = () => {
   if (isExiting.value) return
+
+  if (isMobile.value && hasPushedHistory.value) {
+    history.back()
+    return
+  }
+
   isExiting.value = true
 
   setTimeout(() => {
@@ -836,7 +850,7 @@ watch(
         window.addEventListener('resize', handleResize)
         window.addEventListener('resize', updateMobileState)
         
-        // Initial check
+        // 初始检查
         updateMobileState()
 
         // 重置移动端滚动状态，防止从第二页关闭后再打开显示异常
@@ -1027,6 +1041,12 @@ watch(() => props.isVisible, async (visible) => {
     document.addEventListener('keydown', handleKeydown)
     // 禁用页面滚动
     document.body.style.overflow = 'hidden'
+
+    if (isMobile.value) {
+      history.pushState({ modal: 'lyrics' }, '')
+      hasPushedHistory.value = true
+      window.addEventListener('popstate', handlePopState)
+    }
     
     // 初始化音频可视化
     // 尝试从 DOM 中查找音频元素
@@ -1048,6 +1068,12 @@ watch(() => props.isVisible, async (visible) => {
     document.body.style.overflow = ''
     // 停止进度更新
     stopProgressTimer()
+
+    if (hasPushedHistory.value) {
+      history.back()
+      hasPushedHistory.value = false
+    }
+    window.removeEventListener('popstate', handlePopState)
   }
 })
 
@@ -1087,7 +1113,7 @@ onUnmounted(() => {
   font-family: "SF Pro Display", "PingFang SC", system-ui, sans-serif;
 }
 
-/* Background */
+/* 背景 */
 .background-layer {
   position: absolute;
   top: 0;
@@ -1131,7 +1157,7 @@ onUnmounted(() => {
   z-index: 1;
 }
 
-/* Close Button */
+/* 关闭按钮 */
 .close-button {
   position: absolute;
   top: 2rem;
@@ -1179,7 +1205,7 @@ onUnmounted(() => {
   color: white;
 }
 
-/* Main Content Layout */
+/* 主内容布局 */
 .main-content {
   position: relative;
   z-index: 50; /* 提高层级以确保子元素（如音质菜单）在播放控制条之上 */
@@ -1195,7 +1221,7 @@ onUnmounted(() => {
   pointer-events: none; /* 让点击事件穿透到下层的播放控制条（如果有重叠） */
 }
 
-/* Left Column */
+/* 左侧栏 */
 .left-column {
   flex: 0 0 45%;
   max-width: 500px;
@@ -1295,7 +1321,7 @@ onUnmounted(() => {
   letter-spacing: -0.01em;
 }
 
-/* Right Column */
+/* 右侧栏 */
 .right-column {
   flex: 1;
   height: 100%;
@@ -1304,7 +1330,7 @@ onUnmounted(() => {
   flex-direction: column;
   justify-content: center;
   position: relative;
-  /* Mask for fade out effect at top/bottom */
+  /* 遮罩层顶部/底部渐隐效果 */
   mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
 }
@@ -1350,7 +1376,7 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* Playback Controls */
+/* 播放控制 */
 .playback-controls {
   position: relative;
   z-index: 20;
@@ -1465,7 +1491,7 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 
-/* Quality Section */
+/* 音质区域 */
 .quality-section {
   position: absolute;
   right: 0;
@@ -1531,7 +1557,7 @@ onUnmounted(() => {
   background: rgba(250, 45, 72, 0.1);
 }
 
-/* Transitions */
+/* 过渡动画 */
 .modal-animation-enter-active,
 .modal-animation-leave-active {
   transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
@@ -1543,13 +1569,28 @@ onUnmounted(() => {
   transform: translateY(40px) scale(0.98);
 }
 
-/* Mobile specific elements */
+/* 移动端滑入动画 */
+.slide-up-enter-active {
+  transition: transform 0.4s ease-in;
+}
+
+.slide-up-leave-active {
+  transition: transform 0.6s ease-in;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(100%);
+  opacity: 1;
+}
+
+/* 移动端特定元素 */
 .mobile-floating-cover {
   position: absolute;
   overflow: hidden;
   pointer-events: none;
   will-change: transform, width, height, top, left, border-radius, box-shadow;
-  /* Ensure image fits */
+  /* 确保图片适应 */
 }
 
 .mobile-floating-cover img {
@@ -1561,7 +1602,7 @@ onUnmounted(() => {
 .quality-tag-text {
   display: inline-block;
   vertical-align: middle;
-  font-size: 0.4em; /* Relative to h1 */
+  font-size: 0.4em; /* 相对于 h1 */
   padding: 3px 6px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
@@ -1577,10 +1618,10 @@ onUnmounted(() => {
 
 .mobile-lyric-header {
     position: absolute;
-    top: 50px; /* Match endTop logic roughly */
+    top: 50px; /* 大致匹配 endTop 逻辑 */
     left: 0;
     width: 100%;
-    padding: 0 24px 0 84px; /* Left padding: 24px + 48px(cover) + 12px(gap) */
+    padding: 0 24px 0 84px; /* 左内边距: 24px + 48px(封面) + 12px(间隙) */
     pointer-events: none;
     z-index: 50;
     box-sizing: border-box;
@@ -1590,7 +1631,7 @@ onUnmounted(() => {
   }
 
   .header-spacer {
-    /* Spacer is handled by padding, but keep it for DOM structure if needed or remove it */
+    /* 占位符由 padding 处理，但保留它以备 DOM 结构需要，或者移除它 */
     display: none;
   }
 
@@ -1769,7 +1810,7 @@ onUnmounted(() => {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-/* Responsive */
+/* 响应式 */
 /* 1024px 以下为移动端/平板布局 */
 @media (max-width: 1024px) {
   /* 移动端分页布局 */
@@ -1873,6 +1914,13 @@ onUnmounted(() => {
 
   .close-button {
     top: 54px; /* 下移以与顶部封面对齐 */
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    width: auto;
+    height: auto;
+    padding: 8px;
+    z-index: 200; /* 确保在最上层，避免被 main-content 遮挡 */
   }
 
   .playback-controls {
