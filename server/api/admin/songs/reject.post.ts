@@ -31,6 +31,8 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
+        let songForNotification = null;
+
         // 使用事务确保驳回操作的原子性
         const result = await db.transaction(async (tx) => {
             // 在事务中重新检查歌曲是否存在
@@ -43,6 +45,9 @@ export default defineEventHandler(async (event) => {
                     message: '歌曲不存在或已被删除'
                 })
             }
+
+            // 保存歌曲信息用于后续发送通知
+            songForNotification = song;
 
             console.log(`开始驳回歌曲: ${song.title} (ID: ${body.songId})`)
 
@@ -59,22 +64,6 @@ export default defineEventHandler(async (event) => {
                 } catch (error) {
                     // 如果黑名单中已存在相同歌曲，忽略错误继续执行
                     console.log(`黑名单添加失败，可能已存在: ${error.message}`)
-                }
-            }
-
-            // 创建通知给投稿人
-            if (song.requesterId) {
-                try {
-                    await createSongRejectedNotification(
-                        song.requesterId,
-                        {title: song.title, artist: song.artist},
-                        body.reason.trim(),
-                        getClientIP(event)
-                    )
-                    console.log(`已发送驳回通知给用户: ${song.requesterId}`)
-                } catch (error) {
-                    console.error(`发送通知失败: ${error.message}`)
-                    // 通知发送失败不应该阻止驳回操作
                 }
             }
 
@@ -107,10 +96,28 @@ export default defineEventHandler(async (event) => {
             return {
                 success: true,
                 deletedSong: deletedSong[0],
-                addedToBlacklist: body.addToBlacklist,
-                notificationSent: !!song.requesterId
+                addedToBlacklist: body.addToBlacklist
             }
         })
+
+        // 事务提交后，发送通知
+        // 这样避免邮件发送等耗时操作阻塞数据库事务连接
+        let notificationSent = false;
+        if (songForNotification && songForNotification.requesterId) {
+            // 异步发送通知，不阻塞响应
+            createSongRejectedNotification(
+                songForNotification.requesterId,
+                {title: songForNotification.title, artist: songForNotification.artist},
+                body.reason.trim(),
+                getClientIP(event)
+            ).then(() => {
+                console.log(`已发送驳回通知给用户: ${songForNotification.requesterId}`)
+            }).catch(error => {
+                console.error(`发送通知失败: ${error.message}`)
+            })
+            
+            notificationSent = true;
+        }
 
         // 清除相关缓存
         await cacheService.clearSongsCache()
@@ -121,7 +128,10 @@ export default defineEventHandler(async (event) => {
         return {
             success: true,
             message: '歌曲驳回成功',
-            data: result
+            data: {
+                ...result,
+                notificationSent
+            }
         }
 
     } catch (error) {
