@@ -89,7 +89,7 @@ export default defineEventHandler(async (event) => {
                     endTime: body.endTime || null,
                     description: body.description ?? null,
                     enabled: body.enabled !== undefined ? body.enabled : true,
-                    expected: body.expected ?? null,
+                    expected: body.expected ?? 0,
                 })
                 .where(eq(requestTimes.id, id))
                 .returning()
