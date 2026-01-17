@@ -334,28 +334,6 @@ const selectQuality = async (qualityValue) => {
         audioPlayer.updateCurrentSong(updatedSong)
     }
 
-    // 重新加载音频
-    await nextTick() 
-    
-    const audioElements = document.querySelectorAll('audio')
-    for (const audio of audioElements) {
-        if (audio.src) {
-            const wasPlaying = !audio.paused
-            const currentTime = audio.currentTime
-            
-            const restoreState = () => {
-                audio.currentTime = currentTime
-                if (wasPlaying) {
-                    audio.play().catch(e => console.error(e))
-                }
-            }
-            
-            audio.addEventListener('loadedmetadata', restoreState, {once: true})
-            audio.load()
-            break
-        }
-    }
-
     showQualitySettings.value = false
   }
 }
@@ -1204,7 +1182,7 @@ onUnmounted(() => {
 /* Main Content Layout */
 .main-content {
   position: relative;
-  z-index: 10;
+  z-index: 50; /* 提高层级以确保子元素（如音质菜单）在播放控制条之上 */
   flex: 1;
   display: flex;
   flex-direction: row;
@@ -1214,6 +1192,7 @@ onUnmounted(() => {
   gap: 6rem;
   height: calc(100% - 120px);
   box-sizing: border-box;
+  pointer-events: none; /* 让点击事件穿透到下层的播放控制条（如果有重叠） */
 }
 
 /* Left Column */
@@ -1226,6 +1205,7 @@ onUnmounted(() => {
   align-items: center; /* 居中对齐 */
   gap: 2.5rem;
   padding-left: 3rem; /* 向右偏移 */
+  pointer-events: auto; /* 恢复子元素交互 */
 }
 
 .album-cover-wrapper {
@@ -1319,6 +1299,7 @@ onUnmounted(() => {
 .right-column {
   flex: 1;
   height: 100%;
+  pointer-events: auto; /* 恢复子元素交互 */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1687,25 +1668,29 @@ onUnmounted(() => {
   /* 音质菜单动画 */
   .badge-quality-menu {
     position: absolute;
-    top: 100%;
+    top: 100%; /* 改为向下弹出 */
+    bottom: auto;
     left: 50%;
     transform: translateX(-50%) scale(0.9);
-    margin-top: 8px;
-    background: rgba(245, 245, 245, 0.9); /* 更不透明一点，提升可读性 */
+    margin-top: 12px; /* 顶部间距 */
+    margin-bottom: 0;
+    background: rgba(245, 245, 245, 0.9);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 12px;
-    padding: 4px; /* 减小内边距 */
-    min-width: 100px; /* 减小最小宽度 */
+    padding: 4px;
+    min-width: 100px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     border: 1px solid rgba(255, 255, 255, 0.4);
-    z-index: 100;
+    z-index: 99999; /* 继续大幅提高层级 */
     display: flex;
     flex-direction: column;
-    gap: 2px; /* 减小间距 */
+    gap: 2px;
     opacity: 0;
-    transform-origin: top center;
+    transform-origin: top center; /* 动画原点改为顶部 */
     animation: menu-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    max-height: 240px;
+    overflow-y: auto;
   }
 
   @keyframes menu-pop-in {
@@ -1740,7 +1725,7 @@ onUnmounted(() => {
   }
 
   .badge-quality-option.active {
-    color: #fa2d48; /* 主题色 */
+    color: #007AFF; /* 蓝色字 */
     background: #ffffff;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
