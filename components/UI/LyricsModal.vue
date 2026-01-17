@@ -789,6 +789,23 @@ watch(
         await nextTick()
         lyricConfig.value.fontSize = getResponsiveFontSize()
 
+        // 初始化背景渲染器
+        if (backgroundContainer.value) {
+          await backgroundRenderer.initializeBackground(backgroundContainer.value)
+
+          // 仅在需要封面模糊时设置元素
+          if (coverBlurContainer.value && backgroundConfig.value.type === 'cover') {
+            backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
+          }
+
+          backgroundRenderer.startRender()
+        }
+
+        // 优先设置封面背景，避免等待歌词加载
+        if (currentSong.value && currentSong.value.cover) {
+          backgroundRenderer.setCoverBackground(currentSong.value.cover)
+        }
+
         // 初始化歌词播放器
         if (lyricsContainer.value) {
           await lyricPlayer.initializeLyricPlayer(lyricsContainer.value)
@@ -805,26 +822,10 @@ watch(
           }
         }
 
-        // 初始化背景渲染器
-        if (backgroundContainer.value) {
-          await backgroundRenderer.initializeBackground(backgroundContainer.value)
-
-          // 仅在需要封面模糊时设置元素
-          if (coverBlurContainer.value && backgroundConfig.value.type === 'cover') {
-            backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
-          }
-
-          backgroundRenderer.startRender()
-        }
-
-        // 处理当前歌曲
+        // 处理当前歌曲 - 异步获取歌词，不阻塞其他初始化
         if (currentSong.value) {
           if (currentSong.value.musicPlatform && currentSong.value.musicId) {
-            await lyrics.fetchLyrics(currentSong.value.musicPlatform, currentSong.value.musicId)
-          }
-
-          if (currentSong.value.cover) {
-            backgroundRenderer.setCoverBackground(currentSong.value.cover)
+            lyrics.fetchLyrics(currentSong.value.musicPlatform, currentSong.value.musicId)
           }
         }
 
@@ -877,13 +878,13 @@ watch(currentSong, async (newSong) => {
 
   lyrics.clearLyrics()
 
-  if (newSong.musicPlatform && newSong.musicId) {
-    await lyrics.fetchLyrics(newSong.musicPlatform, newSong.musicId)
-  }
-
   if (newSong.cover) {
     backgroundRenderer.setCoverBackground(newSong.cover)
     await backgroundRenderer.setGradientFromCover(newSong.cover)
+  }
+
+  if (newSong.musicPlatform && newSong.musicId) {
+    lyrics.fetchLyrics(newSong.musicPlatform, newSong.musicId)
   }
 })
 
