@@ -8,7 +8,7 @@ import {
     songs,
     systemSettings
 } from '~/drizzle/db'
-import {and, eq, gt, gte, lt, lte} from 'drizzle-orm'
+import {and, eq, gt, gte, lt, lte, sql} from 'drizzle-orm'
 import {createCollaborationInvitationNotification} from '~/server/services/notificationService'
 import {
     getBeijingEndOfDay,
@@ -239,14 +239,21 @@ export default defineEventHandler(async (event) => {
                     throw createError({ statusCode: 403, message: '投稿时段已失效' })
                 }
 
-                if (latestRequestTime.expected > 0 && latestRequestTime.accepted >= latestRequestTime.expected) {
+                // 使用原子更新确保并发安全
+                const updateResult = await tx.update(requestTimes)
+                    .set({
+                        accepted: sql`${requestTimes.accepted} + 1`
+                    })
+                    .where(and(
+                        eq(requestTimes.id, hitRequestTime.id),
+                        // 如果有限额，确保更新时未超限（针对 expected > 0 的情况）
+                        latestRequestTime.expected > 0 ? lt(requestTimes.accepted, latestRequestTime.expected) : undefined
+                    ))
+                    .returning()
+
+                if (updateResult.length === 0) {
                     throw createError({ statusCode: 403, message: '当前时段投稿名额已满' })
                 }
-
-                // 更新已接纳数量
-                await tx.update(requestTimes)
-                    .set({accepted: latestRequestTime.accepted + 1})
-                    .where(eq(requestTimes.id, hitRequestTime.id))
             }
 
             // 创建歌曲
