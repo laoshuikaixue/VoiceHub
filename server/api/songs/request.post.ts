@@ -1,17 +1,22 @@
 import {
-    and,
+    collaborationLogs,
     db,
-    eq,
-    gte,
-    lt,
     playTimes,
+    requestTimes,
     semesters,
-    songs,
-    systemSettings,
     songCollaborators,
-    collaborationLogs
+    songs,
+    systemSettings
 } from '~/drizzle/db'
+import {and, eq, gt, gte, lt, lte, sql} from 'drizzle-orm'
 import {createCollaborationInvitationNotification} from '~/server/services/notificationService'
+import {
+    getBeijingEndOfDay,
+    getBeijingEndOfWeek,
+    getBeijingStartOfDay,
+    getBeijingStartOfWeek,
+    getBeijingTimeISOString
+} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
     // 检查用户认证
@@ -64,22 +69,61 @@ export default defineEventHandler(async (event) => {
         })
 
         if (matchingSongs.length > 0) {
-            const isSuperAdmin = user.role === 'SUPER_ADMIN'
-            const hasUnplayedDuplicate = matchingSongs.some(s => !s.played)
-            if (!isSuperAdmin || hasUnplayedDuplicate) {
-                throw createError({
-                    statusCode: 400,
-                    message: `《${body.title}》已经在列表中，不能重复投稿`
-                })
-            }
+        const isSuperAdmin = user.role === 'SUPER_ADMIN'
+        const hasUnplayedDuplicate = matchingSongs.some(s => !s.played)
+        if (!isSuperAdmin || hasUnplayedDuplicate) {
+            throw createError({
+                statusCode: 400,
+                message: `《${body.title}》已经在列表中，不能重复投稿`
+            })
+        }
+    }
+
+    // 检查投稿限额（管理员不受限制）
+    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
+    const systemSettingsData = systemSettingsResult[0]
+    const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+
+    // 1. 检查强制关闭
+    if (systemSettingsData?.forceBlockAllRequests && !isAdmin) {
+        throw createError({
+            statusCode: 403,
+            message: '投稿功能已关闭'
+        })
+    }
+
+    // 2. 检查投稿时段限制
+    let hitRequestTime: any = null
+    if (systemSettingsData?.enableRequestTimeLimitation && !isAdmin) {
+        // 使用 ISO 字符串格式进行比较，确保数据库能够正确处理
+        const currentTime = getBeijingTimeISOString()
+
+        const hitRequestTimeResult = await db.select().from(requestTimes).where(
+            and(
+                lte(requestTimes.startTime, currentTime),
+                gt(requestTimes.endTime, currentTime),
+                eq(requestTimes.enabled, true)
+            )
+        ).limit(1)
+
+        hitRequestTime = hitRequestTimeResult[0]
+
+        if (!hitRequestTime) {
+            throw createError({
+                statusCode: 403,
+                message: '当前不在投稿开放时段'
+            })
         }
 
-        // 检查投稿限额（管理员不受限制）
-        const systemSettingsResult = await db.select().from(systemSettings).limit(1)
-        const systemSettingsData = systemSettingsResult[0]
-        const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+        if (hitRequestTime.expected > 0 && hitRequestTime.accepted >= hitRequestTime.expected) {
+            throw createError({
+                statusCode: 403,
+                message: `当前时段投稿名额已满（${hitRequestTime.accepted}/${hitRequestTime.expected}）`
+            })
+        }
+    }
 
-        if (systemSettingsData?.enableSubmissionLimit && !isAdmin) {
+    if (systemSettingsData?.enableSubmissionLimit && !isAdmin) {
             const dailyLimit = systemSettingsData.dailySubmissionLimit
             const weeklyLimit = systemSettingsData.weeklySubmissionLimit
 
@@ -105,19 +149,18 @@ export default defineEventHandler(async (event) => {
 
             // 如果有生效的限额且大于0，检查使用量
             if (effectiveLimit && effectiveLimit > 0) {
-                const now = new Date()
                 let currentCount = 0
 
                 if (limitType === 'daily') {
-                    // 检查每日限额
-                    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-                    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+                    // 检查每日限额（按北京时间计算）
+                    const startOfDay = getBeijingStartOfDay()
+                    const endOfDay = getBeijingEndOfDay()
 
                     const dailySongs = await db.select().from(songs).where(
                         and(
                             eq(songs.requesterId, user.id),
                             gte(songs.createdAt, startOfDay),
-                            lt(songs.createdAt, endOfDay)
+                            lte(songs.createdAt, endOfDay)
                         )
                     )
                     currentCount = dailySongs.length
@@ -129,20 +172,15 @@ export default defineEventHandler(async (event) => {
                         })
                     }
                 } else if (limitType === 'weekly') {
-                    // 检查每周限额
-                    const startOfWeek = new Date(now)
-                    const dayOfWeek = now.getDay()
-                    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 周一为一周开始
-                    startOfWeek.setDate(now.getDate() - daysToSubtract)
-                    startOfWeek.setHours(0, 0, 0, 0)
-
-                    const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
+                    // 检查每周限额（按北京时间计算）
+                    const startOfWeek = getBeijingStartOfWeek()
+                    const endOfWeek = getBeijingEndOfWeek()
 
                     const weeklySongs = await db.select().from(songs).where(
                         and(
                             eq(songs.requesterId, user.id),
                             gte(songs.createdAt, startOfWeek),
-                            lt(songs.createdAt, endOfWeek)
+                            lte(songs.createdAt, endOfWeek)
                         )
                     )
                     currentCount = weeklySongs.length
@@ -185,69 +223,120 @@ export default defineEventHandler(async (event) => {
             }
         }
 
-        // 创建歌曲
-        const songResult = await db.insert(songs).values({
-            title: body.title,
-            artist: body.artist,
-            requesterId: user.id,
-            preferredPlayTimeId: preferredPlayTime?.id || null,
-            semester: await getCurrentSemesterName(),
-            cover: body.cover || null,
-            musicPlatform: body.musicPlatform || null,
-            musicId: body.musicId ? String(body.musicId) : null,
-            playUrl: body.playUrl || null
-        }).returning()
-        const song = songResult[0]
+        // 准备发送通知的列表
+        const notificationsToSend: { userId: number, songId: number, songTitle: string }[] = []
 
-        // 处理联合投稿人
-        if (body.collaborators && Array.isArray(body.collaborators) && body.collaborators.length > 0) {
-            // 去重
-            const uniqueCollaboratorIds = [...new Set(body.collaborators.map((id: any) => Number(id)))]
-            
-            for (const collaboratorId of uniqueCollaboratorIds) {
-                // 跳过自己或无效ID
-                if (isNaN(collaboratorId) || collaboratorId === user.id) continue
+        // 创建歌曲和更新状态（使用事务）
+        const song = await db.transaction(async (tx) => {
+            // 如果有时段限制，再次检查并更新已接纳数量
+            if (hitRequestTime) {
+                const latestRequestTimeResult = await tx.select().from(requestTimes)
+                    .where(eq(requestTimes.id, hitRequestTime.id))
+                    .limit(1)
+                const latestRequestTime = latestRequestTimeResult[0]
 
-                try {
-                    // 检查用户是否存在 (通过尝试插入，如果有外键约束会失败，但更安全的做法是先查一下)
-                    // 这里我们假设前端传来的ID是有效的，如果数据库有外键约束会捕获错误
-                    
-                    // 检查是否已经是联合投稿人
-                    const existingCollab = await db.select().from(songCollaborators)
-                        .where(and(
-                            eq(songCollaborators.songId, song.id),
-                            eq(songCollaborators.userId, collaboratorId)
-                        ))
-                        .limit(1)
-                    
-                    if (existingCollab.length > 0) continue
+                if (!latestRequestTime || !latestRequestTime.enabled) {
+                    throw createError({ statusCode: 403, message: '投稿时段已失效' })
+                }
 
-                    // 创建联合投稿记录
-                    const collabResult = await db.insert(songCollaborators).values({
-                        songId: song.id,
-                        userId: collaboratorId,
-                        status: 'PENDING'
-                    }).returning()
-
-                    const collab = collabResult[0]
-
-                    // 记录审计日志
-                    await db.insert(collaborationLogs).values({
-                        collaboratorId: collab.id,
-                        action: 'INVITE',
-                        operatorId: user.id,
-                        ipAddress: event.node.req.headers['x-forwarded-for'] as string || event.node.req.socket.remoteAddress
+                // 使用原子更新确保并发安全
+                const updateResult = await tx.update(requestTimes)
+                    .set({
+                        accepted: sql`${requestTimes.accepted} + 1`
                     })
+                    .where(and(
+                        eq(requestTimes.id, hitRequestTime.id),
+                        // 如果有限额，确保更新时未超限（针对 expected > 0 的情况）
+                        latestRequestTime.expected > 0 ? lt(requestTimes.accepted, latestRequestTime.expected) : undefined
+                    ))
+                    .returning()
 
-                    // 发送邀请通知
-                    await createCollaborationInvitationNotification(user.id, collaboratorId, song.id, song.title)
-                } catch (err) {
-                    console.error(`邀请用户 ${collaboratorId} 失败:`, err)
+                if (updateResult.length === 0) {
+                    throw createError({ statusCode: 403, message: '当前时段投稿名额已满' })
                 }
             }
-        }
 
-        // 移除了投稿者自动投票的逻辑
+            // 创建歌曲
+            const songResult = await tx.insert(songs).values({
+                title: body.title,
+                artist: body.artist,
+                requesterId: user.id,
+                preferredPlayTimeId: preferredPlayTime?.id || null,
+                semester: currentSemester, // 使用外部获取的学期名称
+                cover: body.cover || null,
+                musicPlatform: body.musicPlatform || null,
+                musicId: body.musicId ? String(body.musicId) : null,
+                playUrl: body.playUrl || null,
+                hitRequestId: hitRequestTime?.id || null
+            }).returning()
+            const newSong = songResult[0]
+
+            // 处理联合投稿人
+            if (body.collaborators && Array.isArray(body.collaborators) && body.collaborators.length > 0) {
+                // 去重
+                const uniqueCollaboratorIds = [...new Set(body.collaborators.map((id: any) => Number(id)))]
+                
+                for (const collaboratorId of uniqueCollaboratorIds) {
+                    // 跳过自己或无效ID
+                    if (isNaN(collaboratorId) || collaboratorId === user.id) continue
+
+                    try {
+                        // 检查是否已经是联合投稿人
+                        const existingCollab = await tx.select().from(songCollaborators)
+                            .where(and(
+                                eq(songCollaborators.songId, newSong.id),
+                                eq(songCollaborators.userId, collaboratorId)
+                            ))
+                            .limit(1)
+                        
+                        if (existingCollab.length > 0) continue
+
+                        // 创建联合投稿记录
+                        const collabResult = await tx.insert(songCollaborators).values({
+                            songId: newSong.id,
+                            userId: collaboratorId,
+                            status: 'PENDING'
+                        }).returning()
+
+                        const collab = collabResult[0]
+
+                        // 记录审计日志
+                        await tx.insert(collaborationLogs).values({
+                            collaboratorId: collab.id,
+                            action: 'INVITE',
+                            operatorId: user.id,
+                            ipAddress: event.node.req.headers['x-forwarded-for'] as string || event.node.req.socket.remoteAddress
+                        })
+
+                        // 添加到通知列表，事务结束后发送
+                        notificationsToSend.push({
+                            userId: collaboratorId,
+                            songId: newSong.id,
+                            songTitle: newSong.title
+                        })
+                    } catch (err) {
+                        console.error(`邀请用户 ${collaboratorId} 失败:`, err)
+                    }
+                }
+            }
+
+            return newSong
+        })
+
+        // 事务提交成功后，发送通知
+        // 即使通知发送失败，也不影响点歌结果
+        for (const notification of notificationsToSend) {
+            try {
+                await createCollaborationInvitationNotification(
+                    user.id,
+                    notification.userId,
+                    notification.songId,
+                    notification.songTitle
+                )
+            } catch (error) {
+                console.error(`发送邀请通知给用户 ${notification.userId} 失败:`, error)
+            }
+        }
 
         return song
     } catch (error: any) {

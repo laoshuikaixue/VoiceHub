@@ -1,6 +1,7 @@
 import {db} from '~/drizzle/db'
-import {songs, systemSettings} from '~/drizzle/schema'
-import {and, count, eq, gte, lt} from 'drizzle-orm'
+import {requestTimes, songs, systemSettings} from '~/drizzle/schema'
+import {and, count, eq, gt, gte, lt, lte} from 'drizzle-orm'
+import {getBeijingTimeISOString} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
     // 检查用户认证
@@ -21,17 +22,42 @@ export default defineEventHandler(async (event) => {
         // 超级管理员和管理员不受投稿限制
         const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
 
-        if (!systemSettingsData?.enableSubmissionLimit) {
-            return {
-                limitEnabled: false,
-                dailyLimit: null,
-                weeklyLimit: null,
-                dailyUsed: 0,
-                weeklyUsed: 0,
-                dailyRemaining: null,
-                weeklyRemaining: null,
-                submissionClosed: false
+        // 基础返回结构
+        const status: any = {
+            limitEnabled: systemSettingsData?.enableSubmissionLimit || false,
+            dailyLimit: null,
+            weeklyLimit: null,
+            dailyUsed: 0,
+            weeklyUsed: 0,
+            dailyRemaining: null,
+            weeklyRemaining: null,
+            submissionClosed: false,
+            timeLimitationEnabled: systemSettingsData?.enableRequestTimeLimitation || false,
+            currentTimePeriod: null
+        }
+
+        // 检查投稿时段限制
+        if (status.timeLimitationEnabled) {
+            const currentTime = getBeijingTimeISOString()
+
+            const activeTimePeriod = await db.select().from(requestTimes).where(
+                and(
+                    lte(requestTimes.startTime, currentTime),
+                    gt(requestTimes.endTime, currentTime),
+                    eq(requestTimes.enabled, true)
+                )
+            ).limit(1)
+
+            if (activeTimePeriod.length > 0) {
+                status.currentTimePeriod = activeTimePeriod[0]
+            } else if (!isAdmin) {
+                // 如果没有活跃时段且不是管理员，则视为投稿已关闭
+                status.submissionClosed = true
             }
+        }
+
+        if (!status.limitEnabled) {
+            return status
         }
 
         // 确定生效的限额类型（二选一逻辑）
@@ -51,16 +77,12 @@ export default defineEventHandler(async (event) => {
 
         // 检查是否设置了限额为0（关闭投稿）
         if (effectiveLimit === 0) {
-            return {
-                limitEnabled: true,
-                dailyLimit: limitType === 'daily' ? effectiveLimit : null,
-                weeklyLimit: limitType === 'weekly' ? effectiveLimit : null,
-                dailyUsed: 0,
-                weeklyUsed: 0,
-                dailyRemaining: 0,
-                weeklyRemaining: 0,
-                submissionClosed: !isAdmin // 管理员不受投稿关闭限制
-            }
+            status.dailyLimit = limitType === 'daily' ? effectiveLimit : null
+            status.weeklyLimit = limitType === 'weekly' ? effectiveLimit : null
+            status.dailyRemaining = 0
+            status.weeklyRemaining = 0
+            status.submissionClosed = !isAdmin // 管理员不受投稿关闭限制
+            return status
         }
 
         const now = new Date()
@@ -100,16 +122,14 @@ export default defineEventHandler(async (event) => {
             weeklyUsed = weeklyUsedResult[0]?.count || 0
         }
 
-        return {
-            limitEnabled: true,
-            dailyLimit: limitType === 'daily' ? effectiveLimit : null,
-            weeklyLimit: limitType === 'weekly' ? effectiveLimit : null,
-            dailyUsed,
-            weeklyUsed,
-            dailyRemaining: limitType === 'daily' && effectiveLimit ? Math.max(0, effectiveLimit - dailyUsed) : null,
-            weeklyRemaining: limitType === 'weekly' && effectiveLimit ? Math.max(0, effectiveLimit - weeklyUsed) : null,
-            submissionClosed: false
-        }
+        status.dailyLimit = limitType === 'daily' ? effectiveLimit : null
+        status.weeklyLimit = limitType === 'weekly' ? effectiveLimit : null
+        status.dailyUsed = dailyUsed
+        status.weeklyUsed = weeklyUsed
+        status.dailyRemaining = limitType === 'daily' && effectiveLimit ? Math.max(0, effectiveLimit - dailyUsed) : null
+        status.weeklyRemaining = limitType === 'weekly' && effectiveLimit ? Math.max(0, effectiveLimit - weeklyUsed) : null
+
+        return status
     } catch (error) {
         console.error('获取投稿状态失败:', error)
         throw createError({

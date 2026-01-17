@@ -527,6 +527,15 @@ watch(allSongsData, (newData) => {
   }
 }, {deep: true})
 
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
+const BEIJING_TIMEZONE = 'Asia/Shanghai'
+
 // 确认对话框
 const confirmDialog = ref({
   show: false,
@@ -539,17 +548,13 @@ const confirmDialog = ref({
 // 格式化日期为 X年X月X日
 const formatDate = (dateString) => {
   if (!dateString) return '未知时间'
-  const date = new Date(dateString)
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
+  return dayjs(dateString).tz(BEIJING_TIMEZONE).format('YYYY年M月D日')
 }
 
 // 格式化日期为 X年X月X日 HH:MM
 const formatDateTime = (dateString) => {
   if (!dateString) return '未知时间'
-  const date = new Date(dateString)
-  const hours = date.getHours().toString().padStart(2, '0')
-  const minutes = date.getMinutes().toString().padStart(2, '0')
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${hours}:${minutes}`
+  return dayjs(dateString).tz(BEIJING_TIMEZONE).format('YYYY年M月D日 HH:mm')
 }
 
 // 根据播出时段功能开启状态格式化排期日期

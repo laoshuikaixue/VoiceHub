@@ -73,11 +73,22 @@
             <!-- 投稿关闭提示 -->
             <div v-else-if="submissionStatus.submissionClosed" class="submission-closed-notice">
               <span class="closed-icon">🚫</span>
-              <span class="closed-text">投稿功能已关闭</span>
+              <span class="closed-text">
+                {{ submissionStatus.timeLimitationEnabled && !submissionStatus.currentTimePeriod ? '当前不在投稿开放时段' : '投稿功能已关闭' }}
+              </span>
             </div>
 
             <!-- 投稿状态内容 -->
             <div v-else class="status-content-horizontal">
+              <!-- 当前时段信息 -->
+              <div v-if="submissionStatus.timeLimitationEnabled && submissionStatus.currentTimePeriod" class="status-item-horizontal">
+                <span class="status-label">当前时段：</span>
+                <span class="status-value">{{ submissionStatus.currentTimePeriod.name }}</span>
+                <span v-if="submissionStatus.currentTimePeriod.expected > 0" class="status-remaining">
+                  (已接纳 {{ submissionStatus.currentTimePeriod.accepted }} / {{ submissionStatus.currentTimePeriod.expected }})
+                </span>
+              </div>
+
               <div v-if="submissionStatus.dailyLimit" class="status-item-horizontal">
                 <span class="status-label">今日投稿：</span>
                 <span class="status-value">{{ submissionStatus.dailyUsed }} / {{ submissionStatus.dailyLimit }}</span>
@@ -1846,9 +1857,24 @@ const checkSubmissionLimit = () => {
 
   // 检查投稿是否已关闭
   if (submissionStatus.value.submissionClosed) {
+    let message = '投稿功能已关闭'
+    if (submissionStatus.value.timeLimitationEnabled && !submissionStatus.value.currentTimePeriod) {
+      message = '当前不在投稿开放时段'
+    }
     return {
       canSubmit: false,
-      message: '投稿功能已关闭'
+      message: message
+    }
+  }
+
+  // 检查投稿时段名额限制
+  if (submissionStatus.value.timeLimitationEnabled && submissionStatus.value.currentTimePeriod) {
+    const {expected, accepted} = submissionStatus.value.currentTimePeriod
+    if (expected > 0 && accepted >= expected) {
+      return {
+        canSubmit: false,
+        message: `当前时段投稿名额已满 (${accepted}/${expected})`
+      }
     }
   }
 

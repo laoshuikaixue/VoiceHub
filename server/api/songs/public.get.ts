@@ -1,16 +1,11 @@
 import {createError, defineEventHandler, getCookie, getHeader, getQuery} from 'h3'
 import jwt from 'jsonwebtoken'
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songs, systemSettings, users, votes, songCollaborators} from '~/drizzle/schema'
-import {count, eq, inArray, and} from 'drizzle-orm'
+import {playTimes, schedules, songCollaborators, songs, systemSettings, users, votes} from '~/drizzle/schema'
+import {and, count, eq, inArray} from 'drizzle-orm'
 import {cacheService} from '~/server/services/cacheService'
 import {executeRedisCommand, isRedisReady} from '../../utils/redis'
-import {formatBeijingTime} from '~/utils/timeUtils'
-
-// 格式化日期时间为统一格式：YYYY/M/D H:mm:ss（北京时间）
-function formatDateTime(date: Date): string {
-    return formatBeijingTime(date, 'YYYY/M/D H:mm:ss')
-}
+import {formatDateTime} from '~/utils/timeUtils'
 
 // 姓名模糊化函数
 function maskStudentName(name: string): string {

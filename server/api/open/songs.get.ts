@@ -6,12 +6,7 @@ import {openApiCache} from '~/server/utils/open-api-cache'
 import {CACHE_CONSTANTS} from '~/server/config/constants'
 import {cache} from '~/server/utils/cache-helpers'
 import crypto from 'crypto'
-import {formatBeijingTime} from '~/utils/timeUtils'
-
-// 格式化日期时间为统一格式：YYYY/M/D H:mm:ss（北京时间）
-function formatDateTime(date: Date): string {
-    return formatBeijingTime(date, 'YYYY/M/D H:mm:ss')
-}
+import {formatDateTime} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
     try {

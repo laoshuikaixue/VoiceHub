@@ -146,6 +146,24 @@ export default defineEventHandler(async (event) => {
     // 删除歌曲的所有投票
     await db.delete(votes).where(eq(votes.songId, body.songId))
 
+    // 如果有 hitRequestId，减少对应时段的已接纳数量
+    if (song.hitRequestId) {
+        try {
+            // 需要引入 requestTimes 和 sql
+            const { requestTimes } = await import('~/drizzle/schema')
+            const { sql } = await import('drizzle-orm')
+            
+            await db.update(requestTimes)
+                .set({
+                    accepted: sql`GREATEST(0, accepted - 1)`
+                })
+                .where(eq(requestTimes.id, song.hitRequestId))
+            console.log(`已减少投稿时段 ${song.hitRequestId} 的接纳数量`)
+        } catch (error) {
+            console.error(`减少投稿时段接纳数量失败: ${error.message}`)
+        }
+    }
+
     // 删除歌曲
     await db.delete(songs).where(eq(songs.id, body.songId))
 

@@ -1,6 +1,6 @@
 import {db} from '~/drizzle/db'
-import {schedules, songBlacklists, songs, votes} from '~/drizzle/schema'
-import {eq} from 'drizzle-orm'
+import {schedules, songBlacklists, songs, votes, requestTimes} from '~/drizzle/schema'
+import {eq, sql} from 'drizzle-orm'
 import {cacheService} from '../../../services/cacheService'
 import {createSongRejectedNotification} from '../../../services/notificationService'
 
@@ -85,6 +85,20 @@ export default defineEventHandler(async (event) => {
             // 删除歌曲的所有排期
             await tx.delete(schedules).where(eq(schedules.songId, body.songId))
             console.log(`删除了排期记录`)
+
+            // 如果有 hitRequestId，减少对应时段的已接纳数量
+            if (song.hitRequestId) {
+                try {
+                    await tx.update(requestTimes)
+                        .set({
+                            accepted: sql`GREATEST(0, accepted - 1)`
+                        })
+                        .where(eq(requestTimes.id, song.hitRequestId))
+                    console.log(`已减少投稿时段 ${song.hitRequestId} 的接纳数量`)
+                } catch (error) {
+                    console.error(`减少投稿时段接纳数量失败: ${error.message}`)
+                }
+            }
 
             // 删除歌曲
             const deletedSong = await tx.delete(songs).where(eq(songs.id, body.songId)).returning()

@@ -24,7 +24,7 @@ import {
 import {promises as fs} from 'fs'
 import path from 'path'
 import {CacheService} from '../../../services/cacheService'
-import {eq, ne} from 'drizzle-orm'
+import {and, eq, ne} from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -173,6 +173,8 @@ export default defineEventHandler(async (event) => {
             'systemSettings',
             'playTimes',
             'semesters',
+            'requestTimes',
+            'emailTemplates',
             'users',
             'userStatusLogs',
             'songBlacklist',
@@ -183,7 +185,10 @@ export default defineEventHandler(async (event) => {
             'votes',
             'schedules',
             'notificationSettings',
-            'notifications'
+            'notifications',
+            'apiKeys',
+            'apiKeyPermissions',
+            'apiLogs'
         ]
 
         // 按预定义顺序恢复数据，每个表使用独立事务
@@ -644,7 +649,9 @@ export default defineEventHandler(async (event) => {
                                                 'enableSubmissionLimit',
                                                 'dailySubmissionLimit',
                                                 'weeklySubmissionLimit',
-                                                'showBlacklistKeywords'
+                                                'showBlacklistKeywords',
+                                                'enableRequestTimeLimitation',
+                                                'forceBlockAllRequests'
                                             ]
 
                                             // 只添加备份数据中存在的字段
@@ -1178,6 +1185,298 @@ export default defineEventHandler(async (event) => {
                                             }
                                             break
 
+                                        case 'requestTimes':
+                                            // requestTimes表没有外键依赖
+                                            const requestTimeData = {
+                                                name: record.name,
+                                                startTime: record.startTime ? new Date(record.startTime) : null,
+                                                endTime: record.endTime ? new Date(record.endTime) : null,
+                                                enabled: record.enabled !== undefined ? record.enabled : true,
+                                                description: record.description || null,
+                                                expected: record.expected || 0,
+                                                accepted: record.accepted || 0,
+                                                past: record.past !== undefined ? record.past : false,
+                                                createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                                                updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+                                            }
+
+                                            if (mode === 'merge') {
+                                                // 检查是否存在相同名称的请求时段
+                                                const existingRequestTime = await tx.select().from(requestTimes).where(eq(requestTimes.name, record.name)).limit(1)
+
+                                                if (existingRequestTime.length > 0) {
+                                                    // 如果存在，更新它
+                                                    await tx.update(requestTimes)
+                                                        .set(requestTimeData)
+                                                        .where(eq(requestTimes.id, existingRequestTime[0].id))
+                                                } else {
+                                                    // 如果不存在，创建新记录
+                                                    await tx.insert(requestTimes).values(requestTimeData)
+                                                }
+                                            } else {
+                                                // 完全恢复模式，检查ID是否已存在
+                                                if (record.id) {
+                                                    const existingRequestTimeWithId = await tx.select().from(requestTimes).where(eq(requestTimes.id, record.id)).limit(1)
+
+                                                    if (existingRequestTimeWithId.length > 0) {
+                                                        // ID已存在，更新现有记录
+                                                        await tx.update(requestTimes)
+                                                            .set(requestTimeData)
+                                                            .where(eq(requestTimes.id, record.id))
+                                                    } else {
+                                                        // ID不存在，使用原始ID创建
+                                                        await tx.insert(requestTimes)
+                                                            .values({
+                                                                ...requestTimeData,
+                                                                id: record.id
+                                                            })
+                                                    }
+                                                } else {
+                                                    // 没有ID，创建新记录
+                                                    await tx.insert(requestTimes).values(requestTimeData)
+                                                }
+                                            }
+                                            break
+
+                                        case 'emailTemplates':
+                                            // 验证外键约束 - updatedByUserId
+                                            let validEmailTemplateUpdatedByUserId = record.updatedByUserId
+
+                                            if (record.updatedByUserId) {
+                                                const mappedUserId = userIdMapping.get(record.updatedByUserId)
+                                                if (mappedUserId) {
+                                                    validEmailTemplateUpdatedByUserId = mappedUserId
+                                                } else {
+                                                    // 尝试直接查找用户ID
+                                                    const userExists = await tx.select().from(users).where(eq(users.id, record.updatedByUserId)).limit(1)
+                                                    if (userExists.length === 0) {
+                                                        console.warn(`邮件模板的更新者ID ${record.updatedByUserId} 不存在，将设置为null`)
+                                                        validEmailTemplateUpdatedByUserId = null
+                                                    }
+                                                }
+                                            }
+
+                                            // 构建邮件模板数据
+                                            const emailTemplateData = {
+                                                key: record.key,
+                                                name: record.name,
+                                                subject: record.subject,
+                                                html: record.html,
+                                                updatedByUserId: validEmailTemplateUpdatedByUserId,
+                                                createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                                                updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+                                            }
+
+                                            if (mode === 'merge') {
+                                                // 检查是否存在相同key的邮件模板
+                                                const existingEmailTemplate = await tx.select().from(emailTemplates).where(eq(emailTemplates.key, record.key)).limit(1)
+
+                                                if (existingEmailTemplate.length > 0) {
+                                                    // 如果存在，更新它
+                                                    await tx.update(emailTemplates)
+                                                        .set(emailTemplateData)
+                                                        .where(eq(emailTemplates.id, existingEmailTemplate[0].id))
+                                                } else {
+                                                    // 如果不存在，创建新记录
+                                                    await tx.insert(emailTemplates).values(emailTemplateData)
+                                                }
+                                            } else {
+                                                // 完全恢复模式，检查ID是否已存在
+                                                if (record.id) {
+                                                    const existingEmailTemplateWithId = await tx.select().from(emailTemplates).where(eq(emailTemplates.id, record.id)).limit(1)
+
+                                                    if (existingEmailTemplateWithId.length > 0) {
+                                                        // ID已存在，更新现有记录
+                                                        await tx.update(emailTemplates)
+                                                            .set(emailTemplateData)
+                                                            .where(eq(emailTemplates.id, record.id))
+                                                    } else {
+                                                        // ID不存在，使用原始ID创建
+                                                        await tx.insert(emailTemplates)
+                                                            .values({
+                                                                ...emailTemplateData,
+                                                                id: record.id
+                                                            })
+                                                    }
+                                                } else {
+                                                    // 没有ID，创建新记录
+                                                    await tx.insert(emailTemplates).values(emailTemplateData)
+                                                }
+                                            }
+                                            break
+
+                                        case 'apiKeys':
+                                            // 验证外键约束 - createdByUserId
+                                            let validApiKeyCreatedByUserId = record.createdByUserId
+
+                                            if (record.createdByUserId) {
+                                                const mappedUserId = userIdMapping.get(record.createdByUserId)
+                                                if (mappedUserId) {
+                                                    validApiKeyCreatedByUserId = mappedUserId
+                                                } else {
+                                                    // 尝试直接查找用户ID
+                                                    const userExists = await tx.select().from(users).where(eq(users.id, record.createdByUserId)).limit(1)
+                                                    if (userExists.length === 0) {
+                                                        console.warn(`API密钥的创建者ID ${record.createdByUserId} 不存在，跳过此记录`)
+                                                        return // 跳过此记录，因为createdByUserId是必需的
+                                                    }
+                                                }
+                                            } else {
+                                                console.warn(`API密钥缺少createdByUserId，跳过此记录`)
+                                                return // 跳过此记录，因为createdByUserId是必需的
+                                            }
+
+                                            // 构建API密钥数据
+                                            const apiKeyData = {
+                                                name: record.name,
+                                                description: record.description || null,
+                                                keyHash: record.keyHash,
+                                                keyPrefix: record.keyPrefix,
+                                                isActive: record.isActive !== undefined ? record.isActive : true,
+                                                expiresAt: record.expiresAt ? new Date(record.expiresAt) : null,
+                                                createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                                                updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date(),
+                                                lastUsedAt: record.lastUsedAt ? new Date(record.lastUsedAt) : null,
+                                                createdByUserId: validApiKeyCreatedByUserId,
+                                                usageCount: record.usageCount || 0
+                                            }
+
+                                            if (mode === 'merge') {
+                                                // 检查是否存在相同keyHash的API密钥
+                                                const existingApiKey = await tx.select().from(apiKeys).where(eq(apiKeys.keyHash, record.keyHash)).limit(1)
+
+                                                if (existingApiKey.length > 0) {
+                                                    // 如果存在，更新它
+                                                    await tx.update(apiKeys)
+                                                        .set(apiKeyData)
+                                                        .where(eq(apiKeys.id, existingApiKey[0].id))
+                                                } else {
+                                                    // 如果不存在，创建新记录
+                                                    await tx.insert(apiKeys).values(apiKeyData)
+                                                }
+                                            } else {
+                                                // 完全恢复模式，检查ID是否已存在
+                                                if (record.id) {
+                                                    const existingApiKeyWithId = await tx.select().from(apiKeys).where(eq(apiKeys.id, record.id)).limit(1)
+
+                                                    if (existingApiKeyWithId.length > 0) {
+                                                        // ID已存在，更新现有记录
+                                                        await tx.update(apiKeys)
+                                                            .set(apiKeyData)
+                                                            .where(eq(apiKeys.id, record.id))
+                                                    } else {
+                                                        // ID不存在，使用原始ID创建
+                                                        await tx.insert(apiKeys)
+                                                            .values({
+                                                                ...apiKeyData,
+                                                                id: record.id
+                                                            })
+                                                    }
+                                                } else {
+                                                    // 没有ID，创建新记录
+                                                    await tx.insert(apiKeys).values(apiKeyData)
+                                                }
+                                            }
+                                            break
+
+                                        case 'apiKeyPermissions':
+                                            // 验证外键约束 - apiKeyId
+                                            let validApiKeyPermissionApiKeyId = record.apiKeyId
+
+                                            if (record.apiKeyId) {
+                                                // 尝试直接查找API密钥ID
+                                                const apiKeyExists = await tx.select().from(apiKeys).where(eq(apiKeys.id, record.apiKeyId)).limit(1)
+                                                if (apiKeyExists.length === 0) {
+                                                    console.warn(`API密钥权限的API密钥ID ${record.apiKeyId} 不存在，跳过此记录`)
+                                                    return // 跳过此记录，因为apiKeyId是必需的
+                                                }
+                                            } else {
+                                                console.warn(`API密钥权限缺少apiKeyId，跳过此记录`)
+                                                return // 跳过此记录，因为apiKeyId是必需的
+                                            }
+
+                                            // 构建API密钥权限数据
+                                            const apiKeyPermissionData = {
+                                                apiKeyId: validApiKeyPermissionApiKeyId,
+                                                permission: record.permission,
+                                                createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+                                            }
+
+                                            if (mode === 'merge') {
+                                                // 检查是否存在相同的API密钥权限
+                                                const existingApiKeyPermission = await tx.select().from(apiKeyPermissions).where(
+                                                    and(
+                                                        eq(apiKeyPermissions.apiKeyId, validApiKeyPermissionApiKeyId),
+                                                        eq(apiKeyPermissions.permission, record.permission)
+                                                    )
+                                                ).limit(1)
+
+                                                if (existingApiKeyPermission.length > 0) {
+                                                    // 如果存在，更新它
+                                                    await tx.update(apiKeyPermissions)
+                                                        .set(apiKeyPermissionData)
+                                                        .where(eq(apiKeyPermissions.id, existingApiKeyPermission[0].id))
+                                                } else {
+                                                    // 如果不存在，创建新记录
+                                                    await tx.insert(apiKeyPermissions).values(apiKeyPermissionData)
+                                                }
+                                            } else {
+                                                // 完全恢复模式，检查ID是否已存在
+                                                if (record.id) {
+                                                    const existingApiKeyPermissionWithId = await tx.select().from(apiKeyPermissions).where(eq(apiKeyPermissions.id, record.id)).limit(1)
+
+                                                    if (existingApiKeyPermissionWithId.length > 0) {
+                                                        // ID已存在，更新现有记录
+                                                        await tx.update(apiKeyPermissions)
+                                                            .set(apiKeyPermissionData)
+                                                            .where(eq(apiKeyPermissions.id, record.id))
+                                                    } else {
+                                                        // ID不存在，使用原始ID创建
+                                                        await tx.insert(apiKeyPermissions)
+                                                            .values({
+                                                                ...apiKeyPermissionData,
+                                                                id: record.id
+                                                            })
+                                                    }
+                                                } else {
+                                                    // 没有ID，创建新记录
+                                                    await tx.insert(apiKeyPermissions).values(apiKeyPermissionData)
+                                                }
+                                            }
+                                            break
+
+                                        case 'apiLogs':
+                                            // 验证外键约束 - apiKeyId（可选）
+                                            let validApiLogApiKeyId = record.apiKeyId
+
+                                            if (record.apiKeyId) {
+                                                // 尝试直接查找API密钥ID
+                                                const apiKeyExists = await tx.select().from(apiKeys).where(eq(apiKeys.id, record.apiKeyId)).limit(1)
+                                                if (apiKeyExists.length === 0) {
+                                                    console.warn(`API日志的API密钥ID ${record.apiKeyId} 不存在，将设置为null`)
+                                                    validApiLogApiKeyId = null
+                                                }
+                                            }
+
+                                            // 构建API日志数据
+                                            const apiLogData = {
+                                                apiKeyId: validApiLogApiKeyId,
+                                                endpoint: record.endpoint,
+                                                method: record.method,
+                                                ipAddress: record.ipAddress,
+                                                userAgent: record.userAgent || null,
+                                                statusCode: record.statusCode,
+                                                responseTimeMs: record.responseTimeMs,
+                                                requestBody: record.requestBody || null,
+                                                responseBody: record.responseBody || null,
+                                                createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                                                errorMessage: record.errorMessage || null
+                                            }
+
+                                            // API日志通常不需要检查重复，直接创建新记录
+                                            await tx.insert(apiLogs).values(apiLogData)
+                                            break
+
                                         // 其他表的处理逻辑...
                                         default:
                                             console.warn(`暂不支持恢复表: ${tableName}`)
@@ -1270,7 +1569,7 @@ export default defineEventHandler(async (event) => {
         // 重置所有自增序列
         console.log(`🔄 开始重置自增序列...`)
         const sequenceResetResults = []
-        const tablesToReset = ['Song', 'User', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist', 'SongReplayRequest']
+        const tablesToReset = ['Song', 'User', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist', 'SongReplayRequest', 'RequestTime']
 
         for (const tableName of tablesToReset) {
             try {
