@@ -3,17 +3,17 @@ import {computed, readonly, ref, watch} from 'vue'
 // 音质配置
 export const QUALITY_OPTIONS = {
     netease: [
-        {value: 2, label: '标准 (128k)', description: '适合流量有限的情况'},
-        {value: 4, label: 'HQ极高 (320k)', description: '高品质音乐体验'},
+        {value: 2, label: '标准', description: '适合流量有限的情况'},
+        {value: 4, label: 'HQ极高', description: '高品质音乐体验'},
         {value: 5, label: 'SQ无损', description: '无损音质，文件较大'},
         {value: 6, label: 'Hi-Res', description: '高解析度无损'},
         {value: 9, label: '超清母带', description: '最高音质'}
     ],
     tencent: [
-        {value: 4, label: '标准音质', description: '适合流量有限的情况'},
+        {value: 4, label: '标准', description: '适合流量有限的情况'},
         {value: 8, label: 'HQ高音质', description: '高品质音乐体验'},
-        {value: 10, label: 'SQ无损音质', description: '无损音质，文件较大'},
-        {value: 11, label: 'Hi-Res音质', description: '高解析度音质'},
+        {value: 10, label: 'SQ无损', description: '无损音质，文件较大'},
+        {value: 11, label: 'Hi-Res', description: '高解析度音质'},
         {value: 14, label: '臻品母带2.0', description: '最高音质'}
     ],
     bilibili: [

@@ -195,29 +195,8 @@
               <span class="time-display">{{ formatTime(duration) }}</span>
             </div>
 
-            <!-- 音质设置 -->
-            <div class="quality-section">
-              <div :class="{ active: showQualitySettings }" class="quality-dropdown">
-                <button
-                    class="quality-btn"
-                    @click="showQualitySettings = !showQualitySettings"
-                >
-                  {{ currentQualityText }}
-                  <Icon name="chevron-up" size="16"/>
-                </button>
-                <div v-if="showQualitySettings" class="quality-options">
-                  <button
-                      v-for="option in currentPlatformOptions"
-                      :key="option.value"
-                      :class="{ active: isCurrentQuality(option.value) }"
-                      class="quality-option"
-                      @click="selectQuality(option.value)"
-                  >
-                    {{ option.label }}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <!-- 音质设置 (已移动到歌手名下方) -->
+            <!-- <div class="quality-section">...</div> -->
           </div>
         </div>
       </div>
@@ -1255,7 +1234,7 @@ onUnmounted(() => {
 
 .song-info-container {
   width: 100%;
-  text-align: left;
+  text-align: center;
 }
 
 .song-title {
@@ -1618,6 +1597,7 @@ onUnmounted(() => {
   }
 
   .mobile-quality-badge {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1638,6 +1618,51 @@ onUnmounted(() => {
   .mobile-quality-badge:active {
     background: rgba(255, 255, 255, 0.25);
     transform: scale(0.96);
+  }
+
+  .badge-quality-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    background: rgba(40, 40, 40, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 140px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .badge-quality-option {
+    width: 100%;
+    text-align: center;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .badge-quality-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  .badge-quality-option.active {
+    color: #fa2d48;
+    background: rgba(250, 45, 72, 0.15);
+    font-weight: 600;
   }
 
   .mobile-pagination-dots {
