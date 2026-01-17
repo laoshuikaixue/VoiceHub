@@ -92,6 +92,13 @@ export function getBeijingTimeISOString(): string {
 }
 
 /**
+ * 获取北京时间的小时 (0-23)
+ */
+export function getBeijingHour(date: Date): number {
+    return dayjs(date).tz(BEIJING_TIMEZONE).hour()
+}
+
+/**
  * 获取“北京时间某天开始”对应的真实 UTC 时间
  * 例如：北京时间 2023-01-02 00:00:00 -> 返回 UTC 2023-01-01 16:00:00
  * @param date 参考日期 (真实 UTC)，默认为当前时间

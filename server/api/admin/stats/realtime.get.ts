@@ -3,6 +3,7 @@ import {db} from '~/drizzle/db'
 import {CacheService} from '../../../services/cacheService'
 import {songs, users, votes} from '~/drizzle/schema'
 import {count, eq, gte} from 'drizzle-orm'
+import {getBeijingHour, getBeijingStartOfDay} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
     // 检查认证和权限
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
         }
         // 获取当前时间相关的日期
         const now = new Date()
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        const today = getBeijingStartOfDay() // 使用北京时间的一天开始
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
         const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
@@ -144,7 +145,7 @@ export default defineEventHandler(async (event) => {
 
                     // 按小时统计
                     const hourCount = songsData.reduce((acc, song) => {
-                        const hour = song.createdAt.getHours()
+                        const hour = getBeijingHour(song.createdAt)
                         acc[hour] = (acc[hour] || 0) + 1
                         return acc
                     }, {} as Record<number, number>)

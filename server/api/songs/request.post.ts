@@ -223,6 +223,9 @@ export default defineEventHandler(async (event) => {
             }
         }
 
+        // 准备发送通知的列表
+        const notificationsToSend: { userId: number, songId: number, songTitle: string }[] = []
+
         // 创建歌曲和更新状态（使用事务）
         const song = await db.transaction(async (tx) => {
             // 如果有时段限制，再次检查并更新已接纳数量
@@ -252,7 +255,7 @@ export default defineEventHandler(async (event) => {
                 artist: body.artist,
                 requesterId: user.id,
                 preferredPlayTimeId: preferredPlayTime?.id || null,
-                semester: await getCurrentSemesterName(),
+                semester: currentSemester, // 使用外部获取的学期名称
                 cover: body.cover || null,
                 musicPlatform: body.musicPlatform || null,
                 musicId: body.musicId ? String(body.musicId) : null,
@@ -298,8 +301,12 @@ export default defineEventHandler(async (event) => {
                             ipAddress: event.node.req.headers['x-forwarded-for'] as string || event.node.req.socket.remoteAddress
                         })
 
-                        // 发送邀请通知
-                        await createCollaborationInvitationNotification(user.id, collaboratorId, newSong.id, newSong.title)
+                        // 添加到通知列表，事务结束后发送
+                        notificationsToSend.push({
+                            userId: collaboratorId,
+                            songId: newSong.id,
+                            songTitle: newSong.title
+                        })
                     } catch (err) {
                         console.error(`邀请用户 ${collaboratorId} 失败:`, err)
                     }
@@ -308,6 +315,21 @@ export default defineEventHandler(async (event) => {
 
             return newSong
         })
+
+        // 事务提交成功后，发送通知
+        // 即使通知发送失败，也不影响点歌结果
+        for (const notification of notificationsToSend) {
+            try {
+                await createCollaborationInvitationNotification(
+                    user.id,
+                    notification.userId,
+                    notification.songId,
+                    notification.songTitle
+                )
+            } catch (error) {
+                console.error(`发送邀请通知给用户 ${notification.userId} 失败:`, error)
+            }
+        }
 
         return song
     } catch (error: any) {
