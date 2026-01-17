@@ -3,6 +3,7 @@ import {
     collaborationLogs,
     db,
     eq,
+    gt,
     gte,
     lt,
     lte,
@@ -14,7 +15,7 @@ import {
     systemSettings
 } from '~/drizzle/db'
 import {createCollaborationInvitationNotification} from '~/server/services/notificationService'
-import {toBeijingTime} from '~/utils/timeUtils'
+import {getBeijingTimeISOString} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
     // 检查用户认证
@@ -93,8 +94,8 @@ export default defineEventHandler(async (event) => {
     // 2. 检查投稿时段限制
     let hitRequestTime: any = null
     if (systemSettingsData?.enableRequestTimeLimitation && !isAdmin) {
-        const now = new Date()
-        const currentTime = toBeijingTime(now)
+        // 使用 ISO 字符串格式进行比较，确保数据库能够正确处理
+        const currentTime = getBeijingTimeISOString()
 
         const hitRequestTimeResult = await db.select().from(requestTimes).where(
             and(
