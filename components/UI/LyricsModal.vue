@@ -53,6 +53,7 @@
             class="main-content" 
             ref="mainContent"
             @scroll="handleMobileScroll"
+            @click="handleOverlayClick" 
           >
             <!-- 左侧区域：封面和歌曲信息 -->
             <div class="left-column">
@@ -82,14 +83,26 @@
                   </h1>
                   <p class="song-artist">{{ currentSong?.artist || '未知艺术家' }}</p>
                   
-                  <!-- 移动端音质标识 (新设计：歌手名下方) -->
+                  <!-- 音质标识 (歌手名下方) -->
                   <div 
-                    v-if="isMobile && currentSong?.musicPlatform" 
+                    v-if="currentSong?.musicPlatform" 
                     class="mobile-quality-badge"
                     @click.stop="showQualitySettings = !showQualitySettings"
                   >
-                    <Icon name="music" size="12" style="margin-right: 4px; opacity: 0.8"/>
                     {{ currentQualityText }}
+
+                    <!-- 音质切换菜单 -->
+                    <div v-if="showQualitySettings" class="badge-quality-menu" @click.stop>
+                      <div 
+                        v-for="option in currentPlatformOptions"
+                        :key="option.value"
+                        class="badge-quality-option"
+                        :class="{ active: isCurrentQuality(option.value) }"
+                        @click="selectQuality(option.value)"
+                      >
+                        {{ option.label }}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -195,8 +208,6 @@
               <span class="time-display">{{ formatTime(duration) }}</span>
             </div>
 
-            <!-- 音质设置 (已移动到歌手名下方) -->
-            <!-- <div class="quality-section">...</div> -->
           </div>
         </div>
       </div>
@@ -295,6 +306,58 @@ const isCurrentQuality = (qualityValue) => {
   const platform = currentSong.value?.musicPlatform
   if (!platform) return false
   return getQuality(platform) === qualityValue
+}
+
+const selectQuality = async (qualityValue) => {
+  if (!currentSong.value || !currentSong.value.musicPlatform) return
+  // 如果选择的是当前音质，直接返回
+  if (isCurrentQuality(qualityValue)) {
+    showQualitySettings.value = false
+    return
+  }
+
+  // 使用增强的音质切换功能
+  const result = await enhanced.enhancedQualitySwitch(currentSong.value, qualityValue)
+
+  if (result.success) {
+    // 保存音质设置
+    saveQuality(currentSong.value.musicPlatform, qualityValue)
+
+    // 更新歌曲的音乐链接
+    const updatedSong = {
+      ...currentSong.value,
+      musicUrl: result.url
+    }
+
+    // 更新全局状态
+    if (audioPlayer.updateCurrentSong) {
+        audioPlayer.updateCurrentSong(updatedSong)
+    }
+
+    // 重新加载音频
+    await nextTick() 
+    
+    const audioElements = document.querySelectorAll('audio')
+    for (const audio of audioElements) {
+        if (audio.src) {
+            const wasPlaying = !audio.paused
+            const currentTime = audio.currentTime
+            
+            const restoreState = () => {
+                audio.currentTime = currentTime
+                if (wasPlaying) {
+                    audio.play().catch(e => console.error(e))
+                }
+            }
+            
+            audio.addEventListener('loadedmetadata', restoreState, {once: true})
+            audio.load()
+            break
+        }
+    }
+
+    showQualitySettings.value = false
+  }
 }
 
 // 移动端状态与动画
@@ -643,26 +706,7 @@ const handleProgressTouchMove = (event) => {
   }
 }
 
-// 音质选择
-const selectQuality = async (qualityValue) => {
-  const song = currentSong.value
-  if (!song?.musicPlatform) return
-  if (isCurrentQuality(qualityValue)) {
-    showQualitySettings.value = false
-    return
-  }
 
-  const result = await enhanced.enhancedQualitySwitch(song, qualityValue)
-  if (result.success) {
-    // 只有在切换成功后才保存音质设置
-    saveQuality(song.musicPlatform, qualityValue)
-
-    const updatedSong = {...song, musicUrl: result.url}
-    audioPlayer.playSong(updatedSong)
-  }
-  // 如果失败，不保存音质设置，保持原有状态
-  showQualitySettings.value = false
-}
 
 // 工具方法
 const formatTime = (seconds) => {
@@ -688,6 +732,16 @@ const closeModal = () => {
 }
 
 const handleOverlayClick = (event) => {
+  // 如果音质菜单是打开的，点击任意地方（除了菜单本身，菜单本身的点击事件在模板中已用 @click.stop 处理）都应该关闭
+  if (showQualitySettings.value) {
+    showQualitySettings.value = false
+    // 如果是点击背景遮罩层，同时也执行关闭模态框逻辑
+    if (event.target.classList.contains('lyrics-modal-overlay')) {
+      closeModal()
+    }
+    return
+  }
+
   // 只有点击背景遮罩层时才关闭模态框
   if (event.target.classList.contains('lyrics-modal-overlay')) {
     closeModal()
@@ -1169,11 +1223,14 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center; /* 居中对齐 */
   gap: 2.5rem;
+  padding-left: 3rem; /* 向右偏移 */
 }
 
 .album-cover-wrapper {
   width: 100%;
+  max-width: 380px;
   aspect-ratio: 1;
   display: flex;
   justify-content: center;
@@ -1244,6 +1301,10 @@ onUnmounted(() => {
   color: #ffffff;
   line-height: 1.2;
   letter-spacing: -0.02em;
+  white-space: nowrap; /* 防止不必要换行 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%; /* 确保不超过容器宽度 */
 }
 
 .song-artist {
@@ -1613,6 +1674,9 @@ onUnmounted(() => {
     cursor: pointer;
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.2s ease;
+    user-select: none; /* 禁止选择 */
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
   }
   
   .mobile-quality-badge:active {
@@ -1620,49 +1684,66 @@ onUnmounted(() => {
     transform: scale(0.96);
   }
 
+  /* 音质菜单动画 */
   .badge-quality-menu {
     position: absolute;
     top: 100%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) scale(0.9);
     margin-top: 8px;
-    background: rgba(40, 40, 40, 0.95);
+    background: rgba(245, 245, 245, 0.9); /* 更不透明一点，提升可读性 */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-radius: 10px;
-    padding: 6px;
-    min-width: 140px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 4px; /* 减小内边距 */
+    min-width: 100px; /* 减小最小宽度 */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     z-index: 100;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px; /* 减小间距 */
+    opacity: 0;
+    transform-origin: top center;
+    animation: menu-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes menu-pop-in {
+    0% {
+      opacity: 0;
+      transform: translateX(-50%) scale(0.9) translateY(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1) translateY(0);
+    }
   }
 
   .badge-quality-option {
     width: 100%;
     text-align: center;
     background: transparent;
-    color: rgba(255, 255, 255, 0.7);
-    padding: 10px 12px;
+    color: #333; /* 深色文字 */
+    padding: 8px 12px; /* 减小内边距 */
     border-radius: 8px;
-    font-size: 0.9rem;
+    font-size: 0.85rem; /* 稍微减小字体 */
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
     font-weight: 500;
+    user-select: none; /* 禁止选择 */
+    -webkit-user-select: none;
   }
 
   .badge-quality-option:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: rgba(0, 0, 0, 0.05);
   }
 
   .badge-quality-option.active {
-    color: #fa2d48;
-    background: rgba(250, 45, 72, 0.15);
+    color: #fa2d48; /* 主题色 */
+    background: #ffffff;
     font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
 
   .mobile-pagination-dots {
@@ -1780,8 +1861,10 @@ onUnmounted(() => {
   .song-title {
     font-size: 2rem;
     margin-bottom: 0.5rem;
-    display: inline-block;
-    max-width: 90%;
+    display: block; /* 覆盖 inline-block */
+    max-width: 100%; /* 放宽宽度限制 */
+    padding: 0 1rem; /* 增加内边距防止贴边 */
+    box-sizing: border-box;
   }
   
   .song-artist {
