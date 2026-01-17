@@ -386,11 +386,25 @@ const updateLayoutCache = () => {
     startSize
   }
 
+  // 初始化静态样式，避免在滚动时计算
+  if (mobileFloatingCoverRef.value) {
+      const el = mobileFloatingCoverRef.value
+      el.style.width = `${startSize}px`
+      el.style.height = `${startSize}px`
+      el.style.top = `${startTop}px`
+      el.style.left = `${realStartLeft}px`
+      el.style.transformOrigin = '0 0'
+      el.style.zIndex = '100'
+      el.style.borderRadius = '12px'
+      // 固定阴影，避免重绘
+      el.style.boxShadow = '0 16px 36px rgba(0,0,0,0.4)'
+  }
+
   // 立即触发一次更新以修正位置
   if (isMobile.value) {
      requestAnimationFrame(() => {
         // 如果当前还没滚动，p=0
-        const p = scrollProgress.value || 0
+        const p = currentScrollProgress || 0
         // 重新调用 updateMobileAnimations 需要 width
         // 这里简单模拟一下
         updateMobileAnimations(p * cachedLayout.contentWidth, cachedLayout.contentWidth)
@@ -413,10 +427,14 @@ const updateMobileState = () => {
   }
 }
 
+// 使用非响应式变量存储滚动进度
+let currentScrollProgress = 0
+
 const updateMobileAnimations = (scrollLeft, width) => {
   let p = scrollLeft / width
   if (p < 0) p = 0
   if (p > 1) p = 1
+  currentScrollProgress = p
   
   // 1. 更新封面动画
   if (mobileFloatingCoverRef.value) {
@@ -432,34 +450,27 @@ const updateMobileAnimations = (scrollLeft, width) => {
 
     const el = mobileFloatingCoverRef.value
     
-    // 设置初始布局属性 (如果尚未设置)
-    // 注意：尽量减少 style 属性的读写。
-    // 这里我们可以假设 updateLayoutCache 已经设置好了基础值，或者在这里设置
-    // 为了性能，我们直接设置 inline style string，但这会覆盖其他 style。
-    // 既然我们控制这个元素，可以直接操作。
+    // 恢复圆角变化，但通过 scale 反向补偿以保持视觉平滑
+    // 起始圆角 12px, 结束圆角 (缩小后) 看起来像 4px -> 实际上如果是 scale 缩放，圆角也会缩放
+    // startSize 280 -> endSize 48 (ratio ~0.17)
+    // 如果 border-radius 固定 12px，缩放后视觉上变成 12 * 0.17 = 2px，太小了
+    // 我们希望结束时视觉圆角大约是 4px-8px
+    // 所以我们需要动态计算 border-radius，除以 scale 来抵消缩放影响
     
-    const radius = (12 - 4*p) / currentScale
-    const shadowY = (16 - 12*p) / currentScale
-    const shadowBlur = (36 - 28*p) / currentScale
-    const shadowAlpha = 0.4 - 0.2*p
+    // 目标视觉圆角：开始 12px -> 结束 6px
+    // 实际设置值 = 目标视觉圆角 / currentScale
+    const targetVisualRadius = 12 - (6 * p) 
+    const radius = targetVisualRadius / currentScale
     
     // 使用 cssText 一次性设置，减少重排
-    // 注意：这将覆盖所有内联样式，确保没有其他动态绑定的 style
-    el.style.cssText = `
-      width: ${startSize}px;
-      height: ${startSize}px;
-      top: ${startTop}px;
-      left: ${realStartLeft}px;
-      transform-origin: 0 0;
-      transform: translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale});
-      position: absolute;
-      z-index: 100;
-      border-radius: ${radius}px;
-      box-shadow: 0 ${shadowY}px ${shadowBlur}px rgba(0,0,0,${shadowAlpha});
-      opacity: 1;
-      pointer-events: ${p > 0.8 ? 'none' : 'auto'};
-      will-change: transform;
-    `
+    // 注意：这里我们只更新变化的属性，其他静态属性在 updateLayoutCache 中已设置
+    // 但为了确保覆盖，还是需要设置
+    // 优化：只设置变化的 transform 和 borderRadius
+    el.style.transform = `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale})`
+    el.style.borderRadius = `${radius}px`
+    el.style.opacity = 1
+    // 确保点击穿透逻辑依然生效
+    el.style.pointerEvents = p > 0.8 ? 'none' : 'auto'
   }
 
   // 2. 更新 Page One Info (Opacity & Translate)
@@ -496,18 +507,12 @@ const onMainContentScroll = (event) => {
   }
   const width = cachedLayout.contentWidth || el.clientWidth
   
-  // 更新状态用于分页指示器
+  // 仅在页面索引变化时更新响应式状态
   const newPage = Math.round(scrollLeft / width)
   if (currentMobilePage.value !== newPage) {
     currentMobilePage.value = newPage
   }
   
-  // 计算进度 0 -> 1 (仅用于逻辑，不用于驱动动画)
-  let progress = scrollLeft / width
-  if (progress < 0) progress = 0
-  if (progress > 1) progress = 1
-  scrollProgress.value = progress
-
   // 动画更新
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId)
