@@ -16,31 +16,14 @@
         </ClientOnly>
       </div>
     </div>
-    <!-- 页脚信息显示（与首页一致） -->
-    <div class="site-footer">
-      <div class="footer-info">
-        <span v-if="icpNumber" class="footer-item">
-          <a :href="`https://beian.miit.gov.cn/`" class="icp-link" rel="noopener noreferrer" target="_blank">
-            {{ icpNumber }}
-          </a>
-        </span>
-        <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }}</span>
-        <span v-else class="footer-item">© {{ currentYear }} LaoShui</span>
-        <span class="footer-item">Worker in {{ responseTime }}ms</span>
-        <span class="footer-item">
-          <a class="voicehub-link" href="https://github.com/laoshuikaixue/VoiceHub" rel="noopener noreferrer" target="_blank">
-            VoiceHub v{{ systemVersion }}
-          </a>
-        </span>
-      </div>
-    </div>
+    <!-- 页脚信息显示 -->
+    <SiteFooter />
   </div>
 </template>
 
 <script setup>
 import {onMounted, computed, ref} from 'vue'
 import LoginForm from '~/components/Auth/LoginForm.vue'
-import packageJson from '~/package.json'
 
 // 使用站点配置
 const {siteTitle, initSiteConfig, logoUrl, schoolLogoHomeUrl, icp: icpNumber} = useSiteConfig()
@@ -51,10 +34,6 @@ const brandLogoSrc = computed(() => {
   return '/images/logo.svg'
 })
 
-// Footer相关变量
-const systemVersion = packageJson.version
-const currentYear = new Date().getFullYear()
-const responseTime = ref(0)
 
 // 在组件挂载后初始化站点配置
 onMounted(async () => {
@@ -66,10 +45,6 @@ onMounted(async () => {
     document.title = `登录 | ${siteTitle.value}`
   }
 
-  // 计算加载耗时（近似值）
-  if (typeof performance !== 'undefined') {
-    responseTime.value = Math.max(1, Math.round(performance.now()))
-  }
 })
 </script>
 
@@ -249,11 +224,6 @@ onMounted(async () => {
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
 }
 
-/* 页脚在纵向布局中置底 */
-.auth-layout .site-footer {
-  margin-top: auto;
-  width: 100%;
-}
 
 .form-title {
   font-size: 24px;
@@ -313,43 +283,6 @@ onMounted(async () => {
   }
 }
 
-/* 页脚样式（与首页一致） */
-.site-footer {
-  text-align: center;
-  padding: 20px 0;
-  margin-top: 30px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.footer-info {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0;
-}
-
-.footer-item {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.footer-item:not(:last-child)::after {
-  content: " | ";
-  margin: 0 10px;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.footer-item a {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.footer-item a:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
 
 .icp-link,
 .voicehub-link {

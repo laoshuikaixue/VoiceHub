@@ -386,24 +386,7 @@
       </div>
 
       <!-- 页脚信息显示 -->
-      <div class="site-footer">
-        <div class="footer-info">
-          <span v-if="icpNumber" class="footer-item">
-            <a :href="`https://beian.miit.gov.cn/`" class="icp-link" rel="noopener noreferrer" target="_blank">
-              {{ icpNumber }}
-            </a>
-          </span>
-          <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }}</span>
-          <span v-else class="footer-item">© {{ currentYear }} LaoShui</span>
-          <span class="footer-item">Worker in {{ responseTime }}ms</span>
-          <span class="footer-item">
-            <a class="voicehub-link" href="https://github.com/laoshuikaixue/VoiceHub" rel="noopener noreferrer"
-               target="_blank">
-              VoiceHub v{{ systemVersion }}
-            </a>
-          </span>
-        </div>
-      </div>
+      <SiteFooter />
     </div>
 
     <!-- 规则弹窗 -->
@@ -442,7 +425,6 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 import {useNotifications} from '~/composables/useNotifications'
 import {useSiteConfig} from '~/composables/useSiteConfig'
-import packageJson from '~/package.json'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
@@ -484,18 +466,6 @@ const activeTab = ref('schedule') // 默认显示播出排期
 const notificationTabRef = ref(null)
 const notificationTabKey = ref(0)
 
-// 页脚相关变量
-const systemVersion = packageJson.version
-const currentYear = new Date().getFullYear()
-const responseTime = ref(0)
-
-// 计算页面加载时间
-const calculateLoadTime = () => {
-  if (typeof window !== 'undefined' && window.performance) {
-    const loadTime = Math.round(window.performance.now())
-    responseTime.value = loadTime
-  }
-}
 
 let refreshInterval = null
 
@@ -937,8 +907,6 @@ onMounted(async () => {
     })
   }
 
-  // 计算页面加载时间
-  calculateLoadTime()
 })
 
 // 组件卸载时清除定时器
@@ -2959,72 +2927,4 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   box-shadow: 0 5px 15px rgba(0, 67, 248, 0.3);
 }
 
-/* 页脚样式 */
-.site-footer {
-  text-align: center;
-  padding: 20px 0;
-  margin-top: 30px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.footer-info {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0;
-}
-
-.footer-item {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.footer-item:not(:last-child)::after {
-  content: " | ";
-  margin: 0 10px;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.footer-item a {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.footer-item a:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.icp-link,
-.voicehub-link {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.icp-link:hover,
-.voicehub-link:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-@media (max-width: 768px) {
-  .site-footer {
-    padding: 15px 0;
-    margin-top: 20px;
-  }
-
-  .footer-info {
-    gap: 0;
-  }
-
-  .footer-item {
-    font-size: 11px;
-  }
-
-  .footer-item:not(:last-child)::after {
-    margin: 0 2px;
-  }
-}
 </style>

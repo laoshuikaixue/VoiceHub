@@ -173,19 +173,18 @@
 <script setup>
 import {onMounted, ref} from 'vue'
 import StatCard from './Common/StatCard.vue'
-import packageJson from '~/package.json'
 
 // 定义事件
 const emit = defineEmits(['navigate'])
 
-// 系统版本号
-const systemVersion = ref(packageJson.version)
 
 // 导航方法
 const navigateTo = (tab) => {
   emit('navigate', tab)
 }
 
+import packageJson from '~/package.json'
+const systemVersion = ref(packageJson.version)
 // 响应式数据
 const stats = ref({
   totalSongs: 0,
