@@ -262,6 +262,25 @@ export const useMusicSources = () => {
         }
     }
 
+    // 服务器是否在中国
+    const isServerInChina = ref<boolean | null>(null)
+
+    // 检测服务器位置
+    const checkServerLocation = async () => {
+        if (isServerInChina.value !== null) return
+
+        try {
+            const { data } = await useFetch('/api/system/location')
+            if (data.value && data.value.success) {
+                isServerInChina.value = data.value.data.isInChina
+                console.log(`[useMusicSources] 服务器位置检测: ${isServerInChina.value ? '中国' : '海外'}`)
+            }
+        } catch (e) {
+            console.warn('[useMusicSources] 服务器位置检测失败，默认为海外:', e)
+            isServerInChina.value = false
+        }
+    }
+
     /**
      * 搜索歌曲（带故障转移）
      */
@@ -273,13 +292,21 @@ export const useMusicSources = () => {
 
         isSearching.value = true
 
+        // 确保已检测服务器位置
+        if (isServerInChina.value === null) {
+            await checkServerLocation()
+        }
+
         try {
             // 优先尝试 Native Music 本地集成搜索 (仅支持网易云和QQ音乐)
             // 只有当不是播客搜索时才使用
+            // 策略调整：如果服务器在中国，优先使用 Native Music；如果在海外，跳过 Native Music 直接使用第三方 API (除非第三方都失败)
             const platform = params.platform || 'netease'
-            if ((platform === 'netease' || platform === 'tencent') && params.type !== 1009) {
+            const shouldUseNativeFirst = isServerInChina.value === true
+            
+            if (shouldUseNativeFirst && (platform === 'netease' || platform === 'tencent') && params.type !== 1009) {
                 try {
-                    console.log(`[searchSongs] 优先尝试 Native Music 搜索...`)
+                    console.log(`[searchSongs] 服务器位于国内，优先尝试 Native Music 搜索...`)
                     const result = await searchNativeMusic(params)
                     if (result && result.length > 0) {
                         currentSource.value = 'native-music'
@@ -297,6 +324,8 @@ export const useMusicSources = () => {
                 } catch (e) {
                     console.warn('[searchSongs] Native Music 搜索失败，回退到其他音源:', e)
                 }
+            } else if (!shouldUseNativeFirst) {
+                console.log(`[searchSongs] 服务器位于海外，跳过 Native Music 优先使用第三方音源`)
             }
 
             const enabledSources = getEnabledSources()
