@@ -197,6 +197,91 @@ export const useMusicSources = () => {
     const lastUsedSource = ref<string>('')
 
     /**
+     * 使用 Native Music API 搜索
+     */
+    const searchNativeMusic = async (params: MusicSearchParams): Promise<any[]> => {
+        const platform = params.platform || 'netease'
+        if (platform !== 'netease' && platform !== 'tencent') {
+            return []
+        }
+
+        const endpoint = platform === 'netease' ? 'wy' : 'tx'
+        const url = `/api/native-api/search/${endpoint}`
+        
+        try {
+            console.log(`[searchNativeMusic] Requesting ${platform} search: ${params.keywords}`)
+            const response: any = await $fetch(url, {
+                params: {
+                    str: params.keywords,
+                    page: Math.floor((params.offset || 0) / (params.limit || 30)) + 1,
+                    limit: params.limit || 30
+                }
+            })
+
+            if (!response || !response.list) {
+                return []
+            }
+
+            return response.list.map((item: any) => {
+                const isNetease = platform === 'netease'
+                // 统一使用 songmid 作为 ID
+                // 网易云: songmid 为数字 ID (e.g. 123456)
+                // QQ音乐: songmid 为字符串 MID (e.g. 004MmF3024567)，这对 vkeys 接口更友好
+                const mid = item.songmid 
+                // VoiceHub 内部 ID: 网易云使用数字ID，QQ音乐优先使用数字ID(songId)以便vkeys使用
+                const id = isNetease ? item.songmid : (item.songId || item.songmid)
+
+                return {
+                    id: id?.toString(),
+                    title: item.name,
+                    artist: item.singer?.replace(/、/g, '/') || '未知艺术家',
+                    cover: item.img,
+                    album: item.albumName,
+                    duration: isNetease ? (item.duration * 1000) : item.duration, // Netease uses ms, Tencent uses s
+                    musicPlatform: platform,
+                    musicId: id?.toString(),
+                    url: undefined,
+                    hasUrl: false,
+                    sourceInfo: {
+                        // 伪装源名称，以便兼容后续的播放逻辑
+                        // 网易云使用 netease-backup，QQ音乐使用 vkeys
+                        source: isNetease ? 'netease-backup' : 'vkeys',
+                        originalId: id?.toString(),
+                        fetchedAt: new Date(),
+                        mid: mid,
+                        strMediaMid: item.strMediaMid, // Add strMediaMid
+                        quality: item._types, // Store quality info from LX
+                        types: item.types
+                    }
+                }
+            })
+
+        } catch (error: any) {
+            console.warn(`[searchNativeMusic] Failed:`, error)
+            throw error
+        }
+    }
+
+    // 服务器是否在中国
+    const isServerInChina = ref<boolean | null>(null)
+
+    // 检测服务器位置
+    const checkServerLocation = async () => {
+        if (isServerInChina.value !== null) return
+
+        try {
+            const { data } = await useFetch('/api/system/location')
+            if (data.value && data.value.success) {
+                isServerInChina.value = data.value.data.isInChina
+                console.log(`[useMusicSources] 服务器位置检测: ${isServerInChina.value ? '中国' : '海外'}`)
+            }
+        } catch (e) {
+            console.warn('[useMusicSources] 服务器位置检测失败，默认为海外:', e)
+            isServerInChina.value = false
+        }
+    }
+
+    /**
      * 搜索歌曲（带故障转移）
      */
     const searchSongs = async (params: MusicSearchParams, signal?: AbortSignal): Promise<MusicSearchResult> => {
@@ -207,7 +292,42 @@ export const useMusicSources = () => {
 
         isSearching.value = true
 
+        // 确保已检测服务器位置
+        if (isServerInChina.value === null) {
+            await checkServerLocation()
+        }
+
         try {
+            // 优先尝试 Native Music 本地集成搜索 (仅支持网易云和QQ音乐)
+            // 只有当不是播客搜索时才使用
+            // 策略调整：如果服务器在中国，优先使用 Native Music；如果在海外，跳过 Native Music 直接使用第三方 API (除非第三方都失败)
+            const platform = params.platform || 'netease'
+            const shouldUseNativeFirst = isServerInChina.value === true
+            
+            if (shouldUseNativeFirst && (platform === 'netease' || platform === 'tencent') && params.type !== 1009) {
+                try {
+                    console.log(`[searchSongs] 服务器位于国内，优先尝试 Native Music 搜索...`)
+                    const result = await searchNativeMusic(params)
+                    if (result && result.length > 0) {
+                        currentSource.value = 'native-music'
+                        // 这里不再将 lastUsedSource 设置为 'native-music'，
+                        // 而是根据平台回退到能提供播放链接的音源ID（如 netease-backup 或 vkeys）。
+                        // 这样 getSongUrl 等后续方法就会使用该音源进行播放链接获取。
+                        lastUsedSource.value = platform === 'netease' ? 'netease-backup' : 'vkeys'
+                        return {
+                            success: true,
+                            source: 'native-music',
+                            data: result,
+                            error: undefined
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[searchSongs] Native Music 搜索失败，回退到其他音源:', e)
+                }
+            } else if (!shouldUseNativeFirst) {
+                console.log(`[searchSongs] 服务器位于海外，跳过 Native Music 优先使用第三方音源`)
+            }
+
             const enabledSources = getEnabledSources()
             const errors: any[] = []
 
@@ -609,8 +729,10 @@ export const useMusicSources = () => {
         switch (quality) {
             case 2:
                 return 'standard'    // 标准 (128k)
+            case 3:
+                return 'higher'      // 较高 (192k)
             case 4:
-                return 'higher'      // HQ极高 (320k)
+                return 'exhigh'      // HQ极高 (320k)
             case 5:
                 return 'lossless'    // SQ无损
             case 6:
