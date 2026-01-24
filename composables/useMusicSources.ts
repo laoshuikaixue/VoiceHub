@@ -729,8 +729,10 @@ export const useMusicSources = () => {
         switch (quality) {
             case 2:
                 return 'standard'    // 标准 (128k)
+            case 3:
+                return 'higher'      // 较高 (192k)
             case 4:
-                return 'higher'      // HQ极高 (320k)
+                return 'exhigh'      // HQ极高 (320k)
             case 5:
                 return 'lossless'    // SQ无损
             case 6:
