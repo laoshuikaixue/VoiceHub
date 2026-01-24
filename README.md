@@ -1264,6 +1264,7 @@ Thanks goes to these wonderful people:
 - [落月API](https://doc.vkeys.cn/api-doc/)
 - [NeteaseCloudMusicApiEnhanced](https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced)
 - [meting-api](https://github.com/injahow/meting-api)
+- [lx-music-desktop](https://github.com/lyswhut/lx-music-desktop) (搜索功能参考)
 - [the1068fm - 深中风华子衿广播站点歌系统](https://github.com/SMS-COSMO/the1068fm)
 - [official-website - Sparkinit](https://github.com/Sparkinit/official-website)
 

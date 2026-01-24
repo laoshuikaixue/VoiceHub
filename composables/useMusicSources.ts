@@ -197,6 +197,72 @@ export const useMusicSources = () => {
     const lastUsedSource = ref<string>('')
 
     /**
+     * 使用 Native Music API 搜索
+     */
+    const searchNativeMusic = async (params: MusicSearchParams): Promise<any[]> => {
+        const platform = params.platform || 'netease'
+        if (platform !== 'netease' && platform !== 'tencent') {
+            return []
+        }
+
+        const endpoint = platform === 'netease' ? 'wy' : 'tx'
+        const url = `/api/native-api/search/${endpoint}`
+        
+        try {
+            console.log(`[searchNativeMusic] Requesting ${platform} search: ${params.keywords}`)
+            const response: any = await $fetch(url, {
+                params: {
+                    str: params.keywords,
+                    page: Math.floor((params.offset || 0) / (params.limit || 30)) + 1,
+                    limit: params.limit || 30
+                }
+            })
+
+            if (!response || !response.list) {
+                return []
+            }
+
+            return response.list.map((item: any) => {
+                const isNetease = platform === 'netease'
+                // 统一使用 songmid 作为 ID
+                // 网易云: songmid 为数字 ID (e.g. 123456)
+                // QQ音乐: songmid 为字符串 MID (e.g. 004MmF3024567)，这对 vkeys 接口更友好
+                const mid = item.songmid 
+                // VoiceHub 内部 ID: 网易云使用数字ID，QQ音乐优先使用数字ID(songId)以便vkeys使用
+                const id = isNetease ? item.songmid : (item.songId || item.songmid)
+
+                return {
+                    id: id?.toString(),
+                    title: item.name,
+                    artist: item.singer?.replace(/、/g, '/') || '未知艺术家',
+                    cover: item.img,
+                    album: item.albumName,
+                    duration: isNetease ? (item.duration * 1000) : item.duration, // Netease uses ms, Tencent uses s
+                    musicPlatform: platform,
+                    musicId: id?.toString(),
+                    url: undefined,
+                    hasUrl: false,
+                    sourceInfo: {
+                        // 伪装源名称，以便兼容后续的播放逻辑
+                        // 网易云使用 netease-backup，QQ音乐使用 vkeys
+                        source: isNetease ? 'netease-backup' : 'vkeys',
+                        originalId: id?.toString(),
+                        fetchedAt: new Date(),
+                        mid: mid,
+                        strMediaMid: item.strMediaMid, // Add strMediaMid
+                        quality: item._types, // Store quality info from LX
+                        types: item.types
+                    }
+                }
+            })
+
+        } catch (error: any) {
+            console.warn(`[searchNativeMusic] Failed:`, error)
+            throw error
+        }
+    }
+
+    /**
      * 搜索歌曲（带故障转移）
      */
     const searchSongs = async (params: MusicSearchParams, signal?: AbortSignal): Promise<MusicSearchResult> => {
@@ -208,6 +274,31 @@ export const useMusicSources = () => {
         isSearching.value = true
 
         try {
+            // 优先尝试 Native Music 本地集成搜索 (仅支持网易云和QQ音乐)
+            // 只有当不是播客搜索时才使用
+            const platform = params.platform || 'netease'
+            if ((platform === 'netease' || platform === 'tencent') && params.type !== 1009) {
+                try {
+                    console.log(`[searchSongs] 优先尝试 Native Music 搜索...`)
+                    const result = await searchNativeMusic(params)
+                    if (result && result.length > 0) {
+                        currentSource.value = 'native-music'
+                        // 这里不再将 lastUsedSource 设置为 'native-music'，
+                        // 而是根据平台回退到能提供播放链接的音源ID（如 netease-backup 或 vkeys）。
+                        // 这样 getSongUrl 等后续方法就会使用该音源进行播放链接获取。
+                        lastUsedSource.value = platform === 'netease' ? 'netease-backup' : 'vkeys'
+                        return {
+                            success: true,
+                            source: 'native-music',
+                            data: result,
+                            error: undefined
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[searchSongs] Native Music 搜索失败，回退到其他音源:', e)
+                }
+            }
+
             const enabledSources = getEnabledSources()
             const errors: any[] = []
 
