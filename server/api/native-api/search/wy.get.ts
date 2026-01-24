@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
 
         const songs = result.result?.songs || []
 
-        // Process songs similar to LX Music handleResult
+        // 处理歌曲列表，参考 LX Music 的 handleResult 逻辑
         const list = songs.map((item: any) => {
             const types: any[] = []
             const _types: any = {}
@@ -41,18 +41,18 @@ export default defineEventHandler(async (event) => {
                 types.push({type: 'flac24bit', size})
                 _types.flac24bit = {size}
             }
-
+            
             switch (item.privilege.maxbr) {
                 case 999000:
                     size = item.sq ? sizeFormate(item.sq.size) : null
                     types.push({type: 'flac', size})
                     _types.flac = {size}
-                // fallthrough intended in LX code
+                    // LX 代码中有意为之的 switch 贯穿 (fallthrough)
                 case 320000:
                     size = item.h ? sizeFormate(item.h.size) : null
                     types.push({type: '320k', size})
                     _types['320k'] = {size}
-                // fallthrough intended
+                    // 贯穿
                 case 192000:
                 case 128000:
                     size = item.l ? sizeFormate(item.l.size) : null

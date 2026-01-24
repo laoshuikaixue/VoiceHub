@@ -423,6 +423,7 @@ VoiceHub/
 │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   ├── PlayTimeManager.vue    # 播放时间管理
+│   │   ├── RequestTimeManager.vue # 点歌时间管理
 │   │   ├── ScheduleForm.vue       # 排期表单
 │   │   ├── ScheduleItemPrint.vue  # 排期项目打印
 │   │   ├── ScheduleManager.vue    # 排期管理
@@ -474,6 +475,7 @@ VoiceHub/
 │   ├── useAudioPlayerEnhanced.ts # 增强音频播放器hooks
 │   ├── useAudioPlayerSync.ts # 音频播放器同步hooks
 │   ├── useAudioQuality.ts  # 音质管理hooks
+│   ├── useAudioVisualizer.ts # 音频可视化hooks
 │   ├── useAuth.ts          # 认证功能hooks
 │   ├── useBackgroundRenderer.ts # 背景渲染hooks
 │   ├── useErrorHandler.ts  # 错误处理hooks
@@ -564,6 +566,10 @@ VoiceHub/
 │   │   │   │   ├── [id].ts          # 播放时间操作
 │   │   │   │   ├── index.post.ts    # 创建播放时间
 │   │   │   │   └── index.ts         # 播放时间列表
+│   │   │   ├── request-times/       # 点歌时间管理API
+│   │   │   │   ├── [id].ts          # 点歌时间操作
+│   │   │   │   ├── index.post.ts    # 创建点歌时间
+│   │   │   │   └── index.ts         # 点歌时间列表
 │   │   │   ├── roles/               # 角色管理API
 │   │   │   │   └── [id]/            # 角色详情操作子目录
 │   │   │   ├── schedule/            # 排期管理API
@@ -615,6 +621,9 @@ VoiceHub/
 │   │   │   ├── logout.post.ts       # 用户登出
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
 │   │   │   └── verify.get.ts        # 验证Token并获取用户信息
+│   │   ├── bilibili/       # Bilibili相关API
+│   │   │   ├── playurl.get.ts       # 获取播放链接
+│   │   │   └── search.get.ts        # Bilibili视频搜索
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
 │   │   ├── debug/          # 调试API目录
@@ -624,6 +633,10 @@ VoiceHub/
 │   │   ├── music/          # 音乐相关API
 │   │   │   ├── state.post.ts        # 音乐状态管理
 │   │   │   └── websocket.ts         # 音乐WebSocket连接
+│   │   ├── native-api/     # 原生音乐API
+│   │   │   └── search/              # 搜索API
+│   │   │       ├── tx.get.ts        # 腾讯音乐搜索
+│   │   │       └── wy.get.ts        # 网易云音乐搜索
 │   │   ├── notifications/  # 通知系统API
 │   │   │   ├── [id]/                # 通知操作子目录
 │   │   │   │   └── read.post.ts     # 标记通知已读
@@ -644,8 +657,8 @@ VoiceHub/
 │   │   ├── progress/       # 进度条API
 │   │   │   ├── events.ts            # 进度事件
 │   │   │   └── id.ts                # 进度ID管理
-│   │   ├── proxy.ts        # 代理服务主文件
 │   │   ├── proxy/          # 代理服务API
+│   │   │   ├── download.get.ts      # 音乐下载代理
 │   │   │   └── image.get.ts         # 图片代理（解决HTTP/HTTPS混合内容及跨域问题）
 │   │   ├── semesters/      # 学期API
 │   │   │   └── current.get.ts       # 获取当前学期

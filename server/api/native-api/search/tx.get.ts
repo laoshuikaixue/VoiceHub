@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event)
     const str = query.str as string
     const page = parseInt(query.page as string || '1')
-    const limit = parseInt(query.limit as string || '50') // TX default 50
+    const limit = parseInt(query.limit as string || '50') // 腾讯接口默认每页 50 条
 
     if (!str) {
         throw createError({statusCode: 400, message: 'Missing search query'})

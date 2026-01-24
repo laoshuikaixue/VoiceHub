@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, publicEncrypt, randomBytes, createHash, constants } from 'node:crypto'
 
-// --- Crypto Logic ---
+// --- 加密逻辑 ---
 const eapiKey = 'e82ckenh8dichen8'
 
 const aesEncrypt = (buffer: Buffer, mode: string, key: string | Buffer, iv: string | Buffer) => {
@@ -19,7 +19,7 @@ export const eapi = (url: string, object: any) => {
   }
 }
 
-// --- Request Logic ---
+// --- 请求逻辑 ---
 
 export const wyEapiRequest = async (url: string, data: any) => {
   const form = eapi(url, data)
