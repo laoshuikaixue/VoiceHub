@@ -186,7 +186,7 @@ cd VoiceHub
 docker-compose up
 ```
 
-其他请移步 [docker-compose目录](/tree/main/docker-compose)
+其他请移步 [docker-compose目录](/docker-compose)
 
 ## 安装与运行
 
