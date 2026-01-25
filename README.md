@@ -295,7 +295,7 @@ npm run db:migrate
 
 或者使用一键设置命令：
 ```bash
-npm run setup
+npm run deploy
 ```
 
 6. 创建管理员账户（如果需要）

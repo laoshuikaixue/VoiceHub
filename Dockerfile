@@ -7,7 +7,7 @@ COPY package*.json ./
 COPY scripts ./scripts
 
 # 安装所有依赖（含开发依赖）
-RUN npm install
+RUN npm ci --only=production || npm install --only=production
 
 # 复制源代码并构建应用
 COPY . .
@@ -16,7 +16,7 @@ RUN npm run build
 # 第二阶段：运行阶段
 FROM node:25-alpine
 
-# 切换到非root用户
+# 切换到root用户
 USER root
 WORKDIR /app
 
@@ -31,8 +31,9 @@ COPY --from=builder /app/scripts ./scripts
 ENV NODE_ENV=production \
     ENABLE_IDLE_MODE=false \
     NODE_OPTIONS="--experimental-specifier-resolution=node" \
-    PORT=3000
+    PORT=3000\
+    NPM_CONFIG_UPDATE_NOTIFIER=false
 
 # 暴露端口并设置启动命令
 EXPOSE $PORT
-CMD ["sh", "-c", "npm run setup && npm start"]
+CMD ["sh", "-c", "npm run deploy && npm start"]
