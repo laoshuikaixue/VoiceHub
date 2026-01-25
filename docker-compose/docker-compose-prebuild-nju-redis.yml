@@ -1,6 +1,6 @@
 services:
   voicehub:
-    build: .
+    image: ghcr.nju.edu.cn/laoshuikaixue/voicehub:latest
     ports:
       - "3000:3000"
     environment:
@@ -8,6 +8,7 @@ services:
       - JWT_SECRET=your-jwt-secret-here
       - NODE_ENV=production
       - ENABLE_IDLE_MODE=false
+      - REDIS_URL=redis://default:your-redis-password-here@redis:6379
     depends_on:
       - postgres
     volumes:
@@ -27,5 +28,18 @@ services:
       - "5432:5432"
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server 
+      --requirepass your-redis-password-here 
+      --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  redis_data:

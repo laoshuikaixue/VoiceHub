@@ -178,7 +178,7 @@ docker run \
 
 ### Docker-compose 部署
 
-本地构建
+本地构建（不含 redis 数据库）
 
 ```
 git clone https://github.com/laoshuikaixue/VoiceHub.git
@@ -186,73 +186,7 @@ cd VoiceHub
 docker-compose up
 ```
 
-或使用 Github 的镜像源
-
-```
-services:
-  voicehub:
-    image: ghcr.io/laoshuikaixue/voicehub:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
-      - JWT_SECRET=your-jwt-secret-here
-    depends_on:
-      - postgres
-    volumes:
-      - .:/app
-      - /app/node_modules
-    restart: unless-stopped
-
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=voicehub
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    restart: unless-stopped
-
-volumes:
-  postgres_data:
-```
-
-或使用 南京大学 的镜像
-
-```
-services:
-  voicehub:
-    image: ghcr.nju.edu.cn/laoshuikaixue/voicehub:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
-      - JWT_SECRET=your-jwt-secret-here
-    depends_on:
-      - postgres
-    volumes:
-      - .:/app
-      - /app/node_modules
-    restart: unless-stopped
-
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=voicehub
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    restart: unless-stopped
-
-volumes:
-  postgres_data:
-```
+其他请移步 [docker-compose目录](/tree/main/docker-compose)
 
 ## 安装与运行
 
