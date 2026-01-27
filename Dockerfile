@@ -2,6 +2,10 @@
 FROM node:25-alpine AS builder
 WORKDIR /app
 
+# 配置淘宝npm镜像源（加速npm依赖安装）
+# RUN npm config set registry https://registry.npmmirror.com/
+
+
 # 复制依赖文件和 scripts 目录
 COPY package*.json ./
 COPY scripts ./scripts
@@ -15,6 +19,9 @@ RUN npm run build
 
 # 第二阶段：运行阶段
 FROM node:25-alpine
+
+# 配置淘宝npm镜像源（加速npm依赖安装）
+# RUN npm config set registry https://registry.npmmirror.com/
 
 # 切换到root用户
 USER root
