@@ -1,13 +1,11 @@
 [build]
   command = "npm run netlify-build"
-  publish = "dist"
+  publish = ".output/public"
 
 [build.environment]
   NODE_VERSION = "20"
-  NITRO_PRESET = "netlify"
 
 [functions]
-  directory = ".netlify/functions-internal"
   node_bundler = "esbuild"
   # 增加内存限制和超时时间
   [functions."server"]
@@ -15,10 +13,7 @@
     external_node_modules = []
     node_bundler = "esbuild"
 
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/server"
-  status = 200
+# 移除手写的 [[redirects]]，因为 Nuxt 会在 .output/public/_redirects 中自动生成更准确的规则
 
 [[headers]]
   for = "/_nuxt/*"
