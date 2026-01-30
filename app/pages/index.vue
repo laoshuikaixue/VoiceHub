@@ -2593,7 +2593,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
+    padding: 10px 12px;
     margin: 0;
     background: linear-gradient(180deg, rgba(11, 90, 254, 0.08) 0%, transparent 100%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -2601,32 +2601,32 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
   .logo-section {
     min-height: auto;
-    gap: 12px;
+    gap: 8px;
   }
 
   .logo-image {
-    width: 80px;
+    width: 76px;
     height: auto;
   }
 
   .logo-divider-container {
-    gap: 12px;
+    gap: 8px;
   }
 
   .logo-divider {
-    height: 32px;
+    height: 28px;
     width: 1px;
     background: rgba(255, 255, 255, 0.15);
   }
 
   /* 移动端标题优化 */
   .site-title {
-    margin: 1.5rem 0;
+    margin: 1.25rem 0;
     padding: 0 1rem;
   }
 
   .main-title {
-    font-size: 28px;
+    font-size: 26px;
     background: linear-gradient(135deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -2634,38 +2634,43 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .sub-title {
-    font-size: 11px;
-    letter-spacing: 0.15em;
+    font-size: 10px;
+    letter-spacing: 0.12em;
   }
 
   .title-divider {
-    width: 30px;
+    width: 24px;
     height: 3px;
     background: #0B5AFE;
     box-shadow: 0 0 15px rgba(11, 90, 254, 0.6);
   }
 
   .school-logo {
-    max-width: 60px;
-    max-height: 32px;
+    max-width: 50px;
+    max-height: 28px;
   }
 
   /* 用户区域简化 */
   .user-section {
     align-items: center;
     width: auto;
+    max-width: 50%;
   }
 
   .user-details-mobile {
     display: block;
     background: rgba(255, 255, 255, 0.05);
-    padding: 6px 12px;
+    padding: 4px 10px;
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100px;
   }
 
   .user-name-text {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: #FFFFFF;
   }
@@ -2673,7 +2678,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   .user-info {
     flex-direction: row;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
   }
 
   .user-details {
@@ -2682,13 +2687,13 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
   .user-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
   }
 
   .action-button {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     padding: 0;
     display: flex;
     align-items: center;
@@ -2882,7 +2887,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     background: transparent;
     border: none;
     border-radius: 0;
-    padding: 0 16px calc(80px + env(safe-area-inset-bottom, 0px));
+    padding: 0 10px calc(80px + env(safe-area-inset-bottom, 0px));
     margin: 0;
     min-height: calc(100vh - 120px);
   }
@@ -2921,7 +2926,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 /* 小屏幕设备额外优化 */
 @media (max-width: 480px) {
   .top-bar {
-    padding: 10px 12px;
+    padding: 8px 10px;
   }
 
   .logo-image {
@@ -2962,7 +2967,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .tab-content-container {
-    padding: 0 12px 90px;
+    padding: 0 8px 90px;
   }
 }
 
