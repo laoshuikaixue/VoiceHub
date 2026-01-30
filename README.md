@@ -326,128 +326,129 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 ```
 VoiceHub/
-├── app.vue                # 应用入口文件
-├── assets/                # 静态资源目录
-│   └── css/               # CSS样式文件
-│       ├── components.css      # 组件样式
-│       ├── lyric-player.module.css  # 歌词播放器样式
-│       ├── main.css           # 主样式文件
-│       ├── mobile-admin.css   # 移动端管理样式
-│       ├── print-fix.css      # 打印样式修复
-│       ├── sf-pro-icons.css   # SF Pro图标字体
-│       ├── theme-protection.css # 主题保护样式
-│       ├── transitions.css    # 过渡动画样式
-│       ├── variables.css      # CSS变量定义
-│       └── year-review.css    # 年度回顾样式
-├── components/            # Vue组件目录
-│   ├── Admin/             # 管理员功能组件
-│   │   ├── Common/        # 通用管理组件
-│   │   │   ├── DataTable.vue      # 通用数据表格组件
-│   │   │   ├── ErrorBoundary.vue  # 错误边界组件
-│   │   │   ├── LoadingState.vue   # 加载状态组件
-│   │   │   ├── SearchFilter.vue   # 搜索过滤组件
-│   │   │   └── StatCard.vue       # 统计卡片组件
-│   │   ├── ApiKeyManager.vue      # API密钥管理
-│   │   ├── BackupManager.vue      # 数据库备份管理
-│   │   ├── BatchUpdateModal.vue   # 批量更新模态框
-│   │   ├── BlacklistManager.vue   # 黑名单管理
-│   │   ├── DataAnalysisPanel.vue  # 数据分析面板
-│   │   ├── DatabaseManager.vue    # 数据库管理
-│   │   ├── EmailTemplateManager.vue # 邮件模板管理
-│   │   ├── NotificationSender.vue # 通知发送管理
-│   │   ├── OverviewDashboard.vue  # 管理概览仪表板
-│   │   ├── PlayTimeManager.vue    # 播放时间管理
-│   │   ├── RequestTimeManager.vue # 点歌时间管理
-│   │   ├── ScheduleForm.vue       # 排期表单
-│   │   ├── ScheduleItemPrint.vue  # 排期项目打印
-│   │   ├── ScheduleManager.vue    # 排期管理
-│   │   ├── SchedulePrinter.vue    # 排期打印功能
-│   │   ├── SemesterManager.vue    # 学期管理
-│   │   ├── SiteConfigManager.vue  # 站点配置管理
-│   │   ├── SmtpManager.vue        # SMTP邮件服务管理
-│   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
-│   │   ├── SongManagement.vue     # 歌曲管理
-│   │   ├── UserManager.vue        # 用户管理
-│   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
-│   │   └── VotersModal.vue        # 投票人员查看弹窗
-│   ├── Auth/              # 认证相关组件
-│   │   ├── ChangePasswordForm.vue # 修改密码表单
-│   │   └── LoginForm.vue         # 登录表单
-│   ├── Common/            # 通用组件
-│   │   └── UserSearchModal.vue   # 用户搜索弹窗
-│   ├── Notifications/     # 通知系统组件
-│   │   └── NotificationSettings.vue # 通知设置
-│   ├── Songs/             # 歌曲相关组件
-│   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
-│   │   ├── RequestForm.vue        # 点歌表单
-│   │   ├── ScheduleList.vue       # 排期列表展示
-│   │   ├── SongList.vue           # 歌曲列表
-│   │   ├── NeteaseLoginModal.vue  # 网易云音乐登录弹窗
-│   │   ├── PlaylistSelectionModal.vue # 歌单选择弹窗
-│   │   ├── RecentSongsModal.vue   # 最近播放弹窗
-│   │   └── PodcastEpisodesModal.vue # 播客节目弹窗
-│   ├── UI/                # 通用UI组件
-│   │   ├── AudioPlayer/   # 音频播放器组件模块
-│   │   │   ├── AudioElement.vue   # 音频元素组件
-│   │   │   ├── PlayerControls.vue # 播放器控制组件
-│   │   │   └── PlayerInfo.vue     # 播放器信息组件
-│   │   ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件
-│   │   ├── AudioPlayer.vue        # 主音频播放器组件
-│   │   ├── ConfirmDialog.vue      # 确认对话框
-│   │   ├── Icon.vue               # 图标组件
-│   │   ├── LyricsModal.vue        # 全屏歌词模态框组件
-│   │   ├── MarqueeText.vue        # 滚动文本显示组件
-│   │   ├── Notification.vue       # 单个通知组件
-│   │   ├── NotificationContainer.vue # 通知容器组件
-│   │   ├── PageTransition.vue     # 页面过渡动画
-│   │   └── ProgressBar.vue        # 进度条组件
-│   └── year-review/       # 年度回顾组件
-├── composables/           # Vue 3 组合式API
-│   ├── useAdmin.ts         # 管理员功能hooks
-│   ├── useAudioPlayer.ts   # 音频播放器hooks
-│   ├── useAudioPlayerControl.ts # 音频播放器控制hooks
-│   ├── useAudioPlayerEnhanced.ts # 增强音频播放器hooks
-│   ├── useAudioPlayerSync.ts # 音频播放器同步hooks
-│   ├── useAudioQuality.ts  # 音质管理hooks
-│   ├── useAudioVisualizer.ts # 音频可视化hooks
-│   ├── useAuth.ts          # 认证功能hooks
-│   ├── useBackgroundRenderer.ts # 背景渲染hooks
-│   ├── useErrorHandler.ts  # 错误处理hooks
-│   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
-│   ├── useLyrics.ts        # 歌词功能hooks
-│   ├── useMediaSession.ts  # 媒体会话API hooks（浏览器SMTC支持）
-│   ├── useMusicSources.ts    # 音乐源管理hooks
-│   ├── useMusicWebSocket.ts  # 音乐WebSocket hooks
-│   ├── useNotifications.ts # 通知功能hooks
-│   ├── usePermissions.ts   # 权限管理hooks
-│   ├── useProgress.ts      # 进度条功能hooks
-│   ├── useProgressEvents.ts # 进度事件hooks
-│   ├── useRequestDedup.ts  # 请求去重hooks
-│   ├── useSemesters.ts     # 学期管理hooks
-│   ├── useSiteConfig.js    # 站点配置hooks
-│   ├── useSongs.ts         # 歌曲功能hooks
-│   └── useToast.ts         # Toast提示hooks
-├── docker-compose/        # Docker Compose配置目录
-├── drizzle/               # 数据库相关
-│   ├── db.ts               # 数据库连接
-│   ├── schema.ts           # 数据库模型
-│   └── migrations/         # 数据库迁移文件
-├── layouts/               # 布局组件
-│   └── default.vue         # 默认布局模板
-├── middleware/            # 中间件
-│   └── auth.global.ts      # 全局认证中间件
-├── pages/                 # 页面组件（Nuxt 3路由）
-│   ├── change-password.vue # 修改密码页面
-│   ├── dashboard.vue       # 用户仪表盘
-│   ├── index.vue           # 首页
-│   ├── login.vue           # 登录页面
-│   ├── notification-settings.vue # 通知设置页面
-│   └── year-review.vue     # 年度回顾页面
-├── plugins/               # Nuxt插件
-│   ├── auth.client.ts      # 客户端认证插件
-│   └── auth.server.ts      # 服务端认证插件
-├── public/                # 静态文件目录
-│   └── images/            # 图片资源
+├── app/                       # Nuxt 4 应用主目录
+│   ├── app.vue                # 应用入口文件
+│   ├── assets/                # 静态资源目录
+│   │   └── css/               # CSS样式文件
+│   │       ├── components.css      # 组件样式
+│   │       ├── lyric-player.module.css  # 歌词播放器样式
+│   │       ├── main.css           # 主样式文件
+│   │       ├── mobile-admin.css   # 移动端管理样式
+│   │       ├── print-fix.css      # 打印样式修复
+│   │       ├── sf-pro-icons.css   # SF Pro图标字体
+│   │       ├── theme-protection.css # 主题保护样式
+│   │       ├── transitions.css    # 过渡动画样式
+│   │       ├── variables.css      # CSS变量定义
+│   │       └── year-review.css    # 年度回顾样式
+│   ├── components/            # Vue组件目录
+│   │   ├── Admin/             # 管理员功能组件
+│   │   │   ├── Common/        # 通用管理组件
+│   │   │   │   ├── DataTable.vue      # 通用数据表格组件
+│   │   │   │   ├── ErrorBoundary.vue  # 错误边界组件
+│   │   │   │   ├── LoadingState.vue   # 加载状态组件
+│   │   │   │   ├── SearchFilter.vue   # 搜索过滤组件
+│   │   │   │   └── StatCard.vue       # 统计卡片组件
+│   │   │   ├── ApiKeyManager.vue      # API密钥管理
+│   │   │   ├── BackupManager.vue      # 数据库备份管理
+│   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
+│   │   │   ├── BlacklistManager.vue   # 黑名单管理
+│   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
+│   │   │   ├── DatabaseManager.vue    # 数据库管理
+│   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
+│   │   │   ├── NotificationSender.vue # 通知发送管理
+│   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
+│   │   │   ├── PlayTimeManager.vue    # 播放时间管理
+│   │   │   ├── RequestTimeManager.vue # 点歌时间管理
+│   │   │   ├── ScheduleForm.vue       # 排期表单
+│   │   │   ├── ScheduleItemPrint.vue  # 排期项目打印
+│   │   │   ├── ScheduleManager.vue    # 排期管理
+│   │   │   ├── SchedulePrinter.vue    # 排期打印功能
+│   │   │   ├── SemesterManager.vue    # 学期管理
+│   │   │   ├── SiteConfigManager.vue  # 站点配置管理
+│   │   │   ├── SmtpManager.vue        # SMTP邮件服务管理
+│   │   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
+│   │   │   ├── SongManagement.vue     # 歌曲管理
+│   │   │   ├── UserManager.vue        # 用户管理
+│   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
+│   │   │   └── VotersModal.vue        # 投票人员查看弹窗
+│   │   ├── Auth/              # 认证相关组件
+│   │   │   ├── ChangePasswordForm.vue # 修改密码表单
+│   │   │   └── LoginForm.vue         # 登录表单
+│   │   ├── Common/            # 通用组件
+│   │   │   └── UserSearchModal.vue   # 用户搜索弹窗
+│   │   ├── Notifications/     # 通知系统组件
+│   │   │   └── NotificationSettings.vue # 通知设置
+│   │   ├── Songs/             # 歌曲相关组件
+│   │   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
+│   │   │   ├── RequestForm.vue        # 点歌表单
+│   │   │   ├── ScheduleList.vue       # 排期列表展示
+│   │   │   ├── SongList.vue           # 歌曲列表
+│   │   │   ├── NeteaseLoginModal.vue  # 网易云音乐登录弹窗
+│   │   │   ├── PlaylistSelectionModal.vue # 歌单选择弹窗
+│   │   │   ├── RecentSongsModal.vue   # 最近播放弹窗
+│   │   │   └── PodcastEpisodesModal.vue # 播客节目弹窗
+│   │   ├── UI/                # 通用UI组件
+│   │   │   ├── AudioPlayer/   # 音频播放器组件模块
+│   │   │   │   ├── AudioElement.vue   # 音频元素组件
+│   │   │   │   ├── PlayerControls.vue # 播放器控制组件
+│   │   │   │   └── PlayerInfo.vue     # 播放器信息组件
+│   │   │   ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件
+│   │   │   ├── AudioPlayer.vue        # 主音频播放器组件
+│   │   │   ├── ConfirmDialog.vue      # 确认对话框
+│   │   │   ├── Icon.vue               # 图标组件
+│   │   │   ├── LyricsModal.vue        # 全屏歌词模态框组件
+│   │   │   ├── MarqueeText.vue        # 滚动文本显示组件
+│   │   │   ├── Notification.vue       # 单个通知组件
+│   │   │   ├── NotificationContainer.vue # 通知容器组件
+│   │   │   ├── PageTransition.vue     # 页面过渡动画
+│   │   │   └── ProgressBar.vue        # 进度条组件
+│   │   └── year-review/       # 年度回顾组件
+│   ├── composables/           # Vue 3 组合式API
+│   │   ├── useAdmin.ts         # 管理员功能hooks
+│   │   ├── useAudioPlayer.ts   # 音频播放器hooks
+│   │   ├── useAudioPlayerControl.ts # 音频播放器控制hooks
+│   │   ├── useAudioPlayerEnhanced.ts # 增强音频播放器hooks
+│   │   ├── useAudioPlayerSync.ts # 音频播放器同步hooks
+│   │   ├── useAudioQuality.ts  # 音质管理hooks
+│   │   ├── useAudioVisualizer.ts # 音频可视化hooks
+│   │   ├── useAuth.ts          # 认证功能hooks
+│   │   ├── useBackgroundRenderer.ts # 背景渲染hooks
+│   │   ├── useErrorHandler.ts  # 错误处理hooks
+│   │   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
+│   │   ├── useLyrics.ts        # 歌词功能hooks
+│   │   ├── useMediaSession.ts  # 媒体会话API hooks（浏览器SMTC支持）
+│   │   ├── useMusicSources.ts    # 音乐源管理hooks
+│   │   ├── useMusicWebSocket.ts  # 音乐WebSocket hooks
+│   │   ├── useNotifications.ts # 通知功能hooks
+│   │   ├── usePermissions.ts   # 权限管理hooks
+│   │   ├── useProgress.ts      # 进度条功能hooks
+│   │   ├── useProgressEvents.ts # 进度事件hooks
+│   │   ├── useRequestDedup.ts  # 请求去重hooks
+│   │   ├── useSemesters.ts     # 学期管理hooks
+│   │   ├── useSiteConfig.js    # 站点配置hooks
+│   │   ├── useSongs.ts         # 歌曲功能hooks
+│   │   └── useToast.ts         # Toast提示hooks
+│   ├── drizzle/               # 数据库相关
+│   │   ├── db.ts               # 数据库连接
+│   │   ├── schema.ts           # 数据库模型
+│   │   └── migrations/         # 数据库迁移文件
+│   ├── layouts/               # 布局组件
+│   │   └── default.vue         # 默认布局模板
+│   ├── middleware/            # 中间件
+│   │   └── auth.global.ts      # 全局认证中间件
+│   ├── pages/                 # 页面组件（Nuxt 3路由）
+│   │   ├── change-password.vue # 修改密码页面
+│   │   ├── dashboard.vue       # 用户仪表盘
+│   │   ├── index.vue           # 首页
+│   │   ├── login.vue           # 登录页面
+│   │   ├── notification-settings.vue # 通知设置页面
+│   │   └── year-review.vue     # 年度回顾页面
+│   ├── plugins/               # Nuxt插件
+│   │   ├── auth.client.ts      # 客户端认证插件
+│   │   └── auth.server.ts      # 服务端认证插件
+│   ├── public/                # 静态文件目录
+│   │   └── images/            # 图片资源
+│   └── utils/                 # 工具函数
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
 │   │   ├── admin/          # 管理员API
@@ -507,10 +508,13 @@ VoiceHub/
 │   │   │   ├── roles/               # 角色管理API
 │   │   │   │   └── [id]/            # 角色详情操作子目录
 │   │   │   ├── schedule/            # 排期管理API
+│   │   │   │   ├── bulk-publish.post.ts # 批量发布排期
 │   │   │   │   ├── draft.post.ts    # 保存排期草稿
 │   │   │   │   ├── full.get.ts      # 获取完整排期数据（包含草稿）
 │   │   │   │   ├── publish.post.ts  # 发布排期草稿
+│   │   │   │   ├── reject-replay.post.ts # 拒绝重播申请
 │   │   │   │   ├── remove.post.ts   # 移除排期
+│   │   │   │   ├── replay-requests.get.ts # 获取重播申请列表
 │   │   │   │   └── sequence.post.ts # 更新排期顺序
 │   │   │   ├── schedule.post.ts     # 创建排期
 │   │   │   ├── semesters/           # 学期管理API
@@ -537,6 +541,8 @@ VoiceHub/
 │   │   │   │   └── index.ts         # 获取系统设置
 │   │   │   └── users/               # 用户管理API
 │   │   │       ├── [id]/            # 用户详情操作子目录
+│   │   │       │   ├── songs.get.ts     # 获取用户点歌记录
+│   │   │       │   └── status-logs.get.ts # 获取用户状态变更日志
 │   │   │       ├── [id].delete.ts   # 删除用户
 │   │   │       ├── [id].put.ts      # 更新用户
 │   │   │       ├── [id].ts          # 用户详情
@@ -560,7 +566,6 @@ VoiceHub/
 │   │   │   └── search.get.ts        # Bilibili视频搜索
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
-│   │   ├── debug/          # 调试API目录
 │   │   ├── meow/           # MeoW账号绑定API
 │   │   │   ├── bind.post.ts         # 绑定MeoW账号
 │   │   │   └── unbind.post.ts       # 解绑MeoW账号
@@ -588,6 +593,8 @@ VoiceHub/
 │   │   │   └── songs.get.ts         # 获取公开歌曲列表
 │   │   ├── play-times/     # 播放时间API
 │   │   │   └── index.ts             # 播放时间管理
+│   │   ├── request-times/  # 点歌时间API
+│   │   │   └── index.ts             # 点歌时间管理
 │   │   ├── progress/       # 进度条API
 │   │   │   ├── events.ts            # 进度事件
 │   │   │   └── id.ts                # 进度ID管理
@@ -614,6 +621,7 @@ VoiceHub/
 │   │   │   ├── vote.post.ts         # 投票
 │   │   │   └── withdraw.post.ts     # 撤回歌曲
 │   │   ├── system/         # 系统API
+│   │   │   ├── location.get.ts      # 获取系统位置信息
 │   │   │   ├── reconnect.post.ts    # 重连数据库
 │   │   │   └── status.get.ts        # 系统状态
 │   │   ├── user/           # 用户相关API
@@ -623,11 +631,13 @@ VoiceHub/
 │   │   │       ├── send-code.post.ts # 发送验证码
 │   │   │       ├── unbind.post.ts   # 解绑邮箱
 │   │   │       └── verify-code.post.ts # 验证邮箱验证码
+│   │   │   └── year-review.get.ts   # 获取年度回顾数据
 │   │   └── users/          # 用户API
 │   │       ├── meow/                # 用户MeoW相关子目录
 │   │       ├── social-accounts/     # 社交账号管理
 │   │       │   ├── meow.delete.ts   # 删除MeoW绑定
 │   │       │   └── meow.post.ts     # MeoW账号操作
+│   │       ├── search.get.ts        # 搜索用户
 │   │       └── social-accounts.get.ts # 获取社交账号
 │   ├── error.ts            # 全局错误处理
 │   ├── middleware/         # 服务端中间件
@@ -666,6 +676,7 @@ VoiceHub/
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
 ├── .vercelignore          # Vercel部署忽略文件
+├── docker-compose/        # Docker Compose配置目录
 ├── docker-compose.yml     # Docker编排文件
 ├── Dockerfile             # Docker构建文件
 ├── drizzle.config.ts      # Drizzle配置文件
@@ -680,26 +691,32 @@ VoiceHub/
 
 ### 目录说明
 
-#### 核心目录
-- **`components/`**: Vue组件库，按功能模块组织
-- **`pages/`**: 页面组件，Nuxt 3自动路由
-- **`server/api/`**: 服务端API，RESTful接口设计
-- **`composables/`**: Vue 3组合式API，业务逻辑复用
-- **`drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
+#### 核心目录 (app/)
+- **`app/components/`**: Vue组件库，按功能模块组织
+- **`app/pages/`**: 页面组件，Nuxt 4 自动路由
+- **`app/composables/`**: Vue 3组合式API，业务逻辑复用
+- **`app/drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
 
-#### 配置目录
-- **`assets/css/`**: 样式文件，支持CSS变量和主题
-- **`plugins/`**: Nuxt插件，扩展框架功能
-- **`middleware/`**: 中间件，处理路由和认证
-- **`types/`**: TypeScript类型定义
+#### 配置目录 (app/)
+- **`app/assets/css/`**: 样式文件，支持CSS变量和主题
+- **`app/plugins/`**: Nuxt插件，扩展框架功能
+- **`app/middleware/`**: 中间件，处理路由和认证
+
+#### 服务端目录 (server/)
+- **`server/api/`**: 服务端API，RESTful接口设计
+- **`server/config/`**: 服务端配置（常量、环境配置等）
+- **`server/middleware/`**: 服务端中间件（认证、日志等）
+- **`server/plugins/`**: 服务端插件（错误处理等）
+- **`server/services/`**: 业务逻辑服务层
+- **`server/utils/`**: 服务端工具函数
 
 #### 工具目录
 - **`scripts/`**: 数据库管理和部署脚本
-- **`utils/`**: 工具函数库
+- **`app/utils/`**: 客户端工具函数
 
 #### 静态资源
-- **`public/`**: 静态文件，直接访问
-- **`public/images/`**: 图片资源，包含Logo和图标文件
+- **`app/public/`**: 静态文件
+- **`app/public/images/`**: 图片资源，包含Logo和图标文件
 
 ## 使用说明
 
@@ -785,9 +802,9 @@ VoiceHub/
 
 #### 核心文件结构
 - **`drizzle.config.ts`** - Drizzle ORM 主配置文件
-- **`drizzle/db.ts`** - 数据库连接和客户端配置，针对 Neon Database 优化
-- **`drizzle/schema.ts`** - 数据库表结构定义，使用 TypeScript 类型安全
-- **`drizzle/migrations/`** - 数据库迁移脚本目录
+- **`app/drizzle/db.ts`** - 数据库连接和客户端配置，针对 Neon Database 优化
+- **`app/drizzle/schema.ts`** - 数据库表结构定义，使用 TypeScript 类型安全
+- **`app/drizzle/migrations/`** - 数据库迁移脚本目录
 
 ### 数据库备份与恢复
 ```bash
@@ -887,15 +904,15 @@ psql -h localhost -U username -d database_name < backup.sql
 ### 添加新功能
 
 1. 在 `server/api` 中添加新的API端点
-2. 在 `composables` 中添加相应的组合式函数
-3. 在 `components` 中创建UI组件
-4. 在 `pages` 中整合组件和功能
+2. 在 `app/composables` 中添加相应的组合式函数
+3. 在 `app/components` 中创建UI组件
+4. 在 `app/pages` 中整合组件和功能
 
 ### 数据库模型修改
 
 如需修改数据库模型：
 
-1. 编辑`drizzle/schema.ts`文件中的表结构定义
+1. 编辑`app/drizzle/schema.ts`文件中的表结构定义
 2. 生成新的迁移文件：`npm run db:generate`
 3. 应用迁移到数据库：`npm run db:migrate`
 4. 确保同时更新 `types/index.ts` 中的TypeScript类型定义
@@ -910,8 +927,8 @@ VoiceHub 采用了模块化的音源架构，支持多音源故障转移和动�
 
 音源系统由以下核心组件构成：
 
-- **音源配置文件** (`utils/musicSources.ts`)：定义音源接口、配置和默认设置
-- **音源管理器** (`composables/useMusicSources.ts`)：提供多音源搜索、故障转移和状态监控
+- **音源配置文件** (`app/utils/musicSources.ts`)：定义音源接口、配置和默认设置
+- **音源管理器** (`app/composables/useMusicSources.ts`)：提供多音源搜索、故障转移和状态监控
 - **数据转换层**：统一不同API的响应格式
 - **故障转移机制**：自动切换到可用的备用音源
 
@@ -942,7 +959,7 @@ export interface MusicSource {
 
 ##### 1. 在配置文件中添加音源
 
-编辑 `utils/musicSources.ts` 文件，在 `MUSIC_SOURCE_CONFIG.sources` 数组中添加新音源：
+编辑 `app/utils/musicSources.ts` 文件，在 `MUSIC_SOURCE_CONFIG.sources` 数组中添加新音源：
 
 ```
 {
@@ -960,7 +977,7 @@ export interface MusicSource {
 
 ##### 2. 实现数据转换函数
 
-在 `composables/useMusicSources.ts` 中的 `searchWithSource` 函数里添加新音源的处理逻辑：
+在 `app/composables/useMusicSources.ts` 中的 `searchWithSource` 函数里添加新音源的处理逻辑：
 
 ```typescript
 if (source.id === 'my-new-source') {
@@ -1104,7 +1121,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
 ##### 1. 添加音源配置
 
 ```
-// utils/musicSources.ts
+// app/utils/musicSources.ts
 {
   id: 'music-api',
   name: 'MusicAPI音源',
@@ -1122,7 +1139,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
 ##### 2. 实现搜索逻辑
 
 ```typescript
-// composables/useMusicSources.ts
+// app/composables/useMusicSources.ts
 if (source.id === 'music-api') {
   url = `${source.baseUrl}/search?query=${encodeURIComponent(params.keywords)}&limit=${params.limit || 30}&type=song`
   transformResponse = (data: any) => transformMusicApiResponse(data)
