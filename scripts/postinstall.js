@@ -10,7 +10,7 @@ if (isCI) {
   
   try {
     // 检查 Drizzle 配置文件是否存在
-    if (fs.existsSync('drizzle.config.ts') && fs.existsSync('drizzle/schema.ts')) {
+    if (fs.existsSync('drizzle.config.ts') && fs.existsSync('app/drizzle/schema.ts')) {
       console.log('✅ Drizzle 配置检查完成');
     } else {
       console.warn('⚠️ Drizzle 配置文件不完整');

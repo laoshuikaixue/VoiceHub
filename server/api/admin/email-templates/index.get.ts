@@ -1,6 +1,6 @@
 import {db} from '~/drizzle/db'
 import {emailTemplates} from '~/drizzle/schema'
-import {SmtpService} from '~/server/services/smtpService'
+import {SmtpService} from '~~/server/services/smtpService'
 
 export default defineEventHandler(async (event) => {
     const user = event.context.user
@@ -47,3 +47,4 @@ export default defineEventHandler(async (event) => {
 
     return {templates: [...merged, ...extra]}
 })
+

@@ -58,8 +58,8 @@ export default defineEventHandler(async (event) => {
 
         // 发送邮箱验证码
         try {
-            const {sendEmailVerificationCode} = await import('~/server/api/user/email/send-code.post')
-            const {getClientIP} = await import('~/server/utils/ip-utils')
+            const {sendEmailVerificationCode} = await import('~~/server/api/user/email/send-code.post')
+            const {getClientIP} = await import('~~/server/utils/ip-utils')
             const clientIP = getClientIP(event)
 
             await sendEmailVerificationCode(user.id, email, user.name, clientIP)
@@ -84,3 +84,4 @@ export default defineEventHandler(async (event) => {
         })
     }
 })
+

@@ -346,7 +346,7 @@
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img alt="搜索歌曲" class="search-svg" src="/public/images/search.svg"/>
+                  <img alt="搜索歌曲" class="search-svg" :src="searchIcon"/>
                 </div>
               </div>
             </Transition>
@@ -615,6 +615,7 @@
 
 <script setup>
 import {computed, onMounted, ref, watch} from 'vue'
+import searchIcon from '~/public/images/search.svg'
 import {useSongs} from '~/composables/useSongs'
 import {useAudioPlayer} from '~/composables/useAudioPlayer'
 import {useSiteConfig} from '~/composables/useSiteConfig'

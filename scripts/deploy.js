@@ -101,18 +101,18 @@ async function deploy() {
     if (!fileExists('drizzle.config.ts')) {
       throw new Error('Drizzle 配置文件不存在');
     }
-    if (!fileExists('drizzle/schema.ts')) {
+    if (!fileExists('app/drizzle/schema.ts')) {
       throw new Error('Drizzle schema 文件不存在');
     }
-    if (!fileExists('drizzle/db.ts')) {
+    if (!fileExists('app/drizzle/db.ts')) {
       throw new Error('Drizzle 数据库连接文件不存在');
     }
     logSuccess('Drizzle 配置检查完成');
     
     // 2.1. 确保迁移目录存在
-    if (!fileExists('drizzle/migrations')) {
+    if (!fileExists('app/drizzle/migrations')) {
       logStep('📁', '创建迁移目录...');
-      fs.mkdirSync('drizzle/migrations', { recursive: true });
+      fs.mkdirSync('app/drizzle/migrations', { recursive: true });
       logSuccess('迁移目录创建完成');
     }
     

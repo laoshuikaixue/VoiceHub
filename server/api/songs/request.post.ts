@@ -9,7 +9,7 @@ import {
     systemSettings
 } from '~/drizzle/db'
 import {and, eq, gt, gte, lt, lte, sql} from 'drizzle-orm'
-import {createCollaborationInvitationNotification} from '~/server/services/notificationService'
+import {createCollaborationInvitationNotification} from '~~/server/services/notificationService'
 import {
     getBeijingEndOfDay,
     getBeijingEndOfWeek,

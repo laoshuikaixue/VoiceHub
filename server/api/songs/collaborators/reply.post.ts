@@ -2,7 +2,7 @@ import {createError, defineEventHandler, readBody} from 'h3'
 import {db} from '~/drizzle/db'
 import {songCollaborators, collaborationLogs, songs} from '~/drizzle/schema'
 import {and, eq} from 'drizzle-orm'
-import {createCollaborationResponseNotification} from '~/server/services/notificationService'
+import {createCollaborationResponseNotification} from '~~/server/services/notificationService'
 
 export default defineEventHandler(async (event) => {
     const user = event.context.user
@@ -75,3 +75,4 @@ export default defineEventHandler(async (event) => {
         })
     }
 })
+

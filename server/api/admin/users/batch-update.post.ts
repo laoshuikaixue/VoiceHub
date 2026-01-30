@@ -1,6 +1,6 @@
 import {z} from 'zod'
 import {db} from '~/drizzle/db'
-import {CacheService} from '~/server/services/cacheService'
+import {CacheService} from '~~/server/services/cacheService'
 import {users} from '~/drizzle/schema'
 import {and, eq, inArray, ne} from 'drizzle-orm'
 

@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getCopyrightOwner, getSystemName, getRepoUrl } from '@/utils/core/security'
-import packageJson from '@/package.json'
+import packageJson from '~~/package.json'
 
 // 使用 useSiteConfig composable 获取配置
 const { siteTitle, icp: icpNumber } = useSiteConfig()

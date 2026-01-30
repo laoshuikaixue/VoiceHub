@@ -190,7 +190,7 @@
                       class="like-button"
                       @click.stop="handleVote(song)"
                   >
-                    <img alt="点赞" class="like-icon" src="/images/thumbs-up.svg"/>
+                    <img alt="点赞" class="like-icon" :src="thumbsUp"/>
                   </button>
                 </div>
               </div>
@@ -341,6 +341,7 @@ import {useSiteConfig} from '~/composables/useSiteConfig'
 import Icon from '~/components/UI/Icon.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
 import {convertToHttps} from '~/utils/url'
+import thumbsUp from '~/public/images/thumbs-up.svg'
 
 const props = defineProps({
   songs: {

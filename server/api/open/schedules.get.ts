@@ -3,10 +3,10 @@ import {db} from '~/drizzle/db'
 import {playTimes, schedules, songCollaborators, songs, users} from '~/drizzle/schema'
 import {and, asc, desc, eq, gte, inArray, like, lt, or, sql} from 'drizzle-orm'
 import {formatDateTime} from '~/utils/timeUtils'
-import {openApiCache} from '~/server/utils/open-api-cache'
-import {CACHE_CONSTANTS} from '~/server/config/constants'
-import {cacheService} from '~/server/services/cacheService'
-import {executeRedisCommand, isRedisReady} from '~/server/utils/redis'
+import {openApiCache} from '~~/server/utils/open-api-cache'
+import {CACHE_CONSTANTS} from '~~/server/config/constants'
+import {cacheService} from '~~/server/services/cacheService'
+import {executeRedisCommand, isRedisReady} from '~~/server/utils/redis'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -88,7 +88,7 @@ export default defineEventHandler(async (event) => {
         if (isRedisReady()) {
             const redisCacheKey = semester ? `public_schedules:${semester}` : 'public_schedules:all'
             const redisData = await executeRedisCommand(async () => {
-                const client = (await import('~/server/utils/redis')).getRedisClient()
+                const client = (await import('~~/server/utils/redis')).getRedisClient()
                 if (!client) return null
 
                 const data = await client.get(redisCacheKey)

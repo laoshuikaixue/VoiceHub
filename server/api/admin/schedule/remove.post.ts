@@ -1,5 +1,5 @@
 import {db, eq, schedules, songs} from '~/drizzle/db'
-import {cacheService} from '~/server/services/cacheService'
+import {cacheService} from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
     // 验证管理员权限

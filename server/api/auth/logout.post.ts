@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
         // 清除用户认证缓存
         if (user) {
             try {
-                const {cache} = await import('~/server/utils/cache-helpers')
+                const {cache} = await import('~~/server/utils/cache-helpers')
                 await cache.delete(`auth:user:${user.id}`)
                 console.log(`[Cache] 用户认证缓存已清除（用户登出）: ${user.id}`)
             } catch (cacheError) {

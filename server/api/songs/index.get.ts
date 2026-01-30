@@ -2,7 +2,7 @@ import {createError, defineEventHandler, getQuery} from 'h3'
 import {db} from '~/drizzle/db'
 import {playTimes, schedules, songCollaborators, songReplayRequests, songs, users, votes} from '~/drizzle/schema'
 import {and, asc, count, desc, eq, inArray, like, or} from 'drizzle-orm'
-import {cacheService} from '~/server/services/cacheService'
+import {cacheService} from '~~/server/services/cacheService'
 import {formatDateTime} from '~/utils/timeUtils'
 import crypto from 'crypto'
 

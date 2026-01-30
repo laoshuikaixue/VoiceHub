@@ -1,7 +1,7 @@
 import {db} from '~/drizzle/db'
 import {songs, users} from '~/drizzle/schema'
 import {and, eq, or} from 'drizzle-orm'
-import {cacheService} from '~/server/services/cacheService'
+import {cacheService} from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
     try {

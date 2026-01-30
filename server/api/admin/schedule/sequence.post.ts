@@ -1,6 +1,6 @@
 import {db, eq} from '~/drizzle/db'
 import {schedules} from '~/drizzle/schema'
-import {cacheService} from '~/server/services/cacheService'
+import {cacheService} from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
     // 验证用户认证和权限

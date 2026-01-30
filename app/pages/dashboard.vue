@@ -38,7 +38,7 @@
         <aside :class="['sidebar', { 'sidebar-open': sidebarOpen }]">
           <div class="sidebar-header">
             <NuxtLink class="logo-link" to="/">
-              <img alt="VoiceHub Logo" class="logo-image" src="/images/logo.svg"/>
+              <img alt="VoiceHub Logo" class="logo-image" :src="logo"/>
               <div class="logo-content">
                 <span v-if="$config.public.siteTitle" class="logo-text">{{ $config.public.siteTitle }}</span>
                 <span v-else class="logo-text">VoiceHub</span>
@@ -394,6 +394,7 @@
 <script setup>
 import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
 import {useAuth} from '~/composables/useAuth'
+import logo from '~/public/images/logo.svg'
 import {usePermissions} from '~/composables/usePermissions'
 import {useSiteConfig} from '~/composables/useSiteConfig'
 

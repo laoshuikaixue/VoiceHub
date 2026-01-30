@@ -1,10 +1,10 @@
 import {db} from '~/drizzle/db'
 import {playTimes, schedules, songs, users, votes} from '~/drizzle/schema'
 import {and, asc, count, eq} from 'drizzle-orm'
-import {createSongSelectedNotification} from '~/server/services/notificationService'
-import {cacheService} from '~/server/services/cacheService'
+import {createSongSelectedNotification} from '~~/server/services/notificationService'
+import {cacheService} from '~~/server/services/cacheService'
 import {getBeijingTimestamp} from '~/utils/timeUtils'
-import {getClientIP} from '~/server/utils/ip-utils'
+import {getClientIP} from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
     // 检查用户认证和权限

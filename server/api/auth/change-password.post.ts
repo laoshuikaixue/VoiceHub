@@ -4,7 +4,7 @@ import {users} from '~/drizzle/schema'
 import {eq} from 'drizzle-orm'
 import {recordLoginFailure, recordLoginSuccess} from '../../services/securityService'
 import {getBeijingTime} from '~/utils/timeUtils'
-import {getClientIP} from '~/server/utils/ip-utils'
+import {getClientIP} from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
     // 验证用户身份
@@ -83,7 +83,7 @@ export default defineEventHandler(async (event) => {
 
         // 清除用户认证缓存（密码已变更）
         try {
-            const {cache} = await import('~/server/utils/cache-helpers')
+            const {cache} = await import('~~/server/utils/cache-helpers')
             await cache.delete(`auth:user:${user.id}`)
             console.log(`[Cache] 用户认证缓存已清除（密码修改）: ${user.id}`)
         } catch (cacheError) {

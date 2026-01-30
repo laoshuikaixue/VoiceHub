@@ -85,8 +85,8 @@ async function safeMigrate() {
     // 获取项目根目录路径
     const projectRoot = path.resolve(process.cwd(), '..');
     const drizzleConfigPath = path.join(projectRoot, 'drizzle.config.ts');
-    const schemaPath = path.join(projectRoot, 'drizzle/schema.ts');
-    const migrationsPath = path.join(projectRoot, 'drizzle/migrations');
+    const schemaPath = path.join(projectRoot, 'app/drizzle/schema.ts');
+    const migrationsPath = path.join(projectRoot, 'app/drizzle/migrations');
     
     // 1. 确保drizzle配置存在
     if (!fileExists(drizzleConfigPath)) {
@@ -95,7 +95,7 @@ async function safeMigrate() {
     
     // 2. 检查schema文件
     if (!fileExists(schemaPath)) {
-      throw new Error(`drizzle/schema.ts 文件不存在: ${schemaPath}`);
+      throw new Error(`app/drizzle/schema.ts 文件不存在: ${schemaPath}`);
     }
     
     // 3. 创建迁移目录（如果不存在）

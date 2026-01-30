@@ -1,5 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  compatibilityDate: '2026-01-30',
+  future: {
+    compatibilityVersion: 4,
+  },
   devtools: { enabled: true },
   modules: [],
   
@@ -69,17 +73,13 @@ export default defineNuxtConfig({
     strict: true
   },
   
-  // 自动导入
-  imports: {
-    dirs: ['composables']
-  },
-  
   // 服务器端配置
   nitro: {
     preset: process.env.VERCEL ? 'vercel' : (process.env.NITRO_PRESET || 'node-server'),
     // 增强错误处理和稳定性
     experimental: {
-      wasm: true
+      wasm: true,
+      asyncContext: true
     },
     timing: true,
     // 增加请求超时时间

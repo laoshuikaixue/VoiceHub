@@ -1,5 +1,5 @@
-import {verifyAdminAuth} from '~/server/utils/auth';
-import {databaseManager} from '~/server/utils/database-manager';
+import {verifyAdminAuth} from '~~/server/utils/auth';
+import {databaseManager} from '~~/server/utils/database-manager';
 
 export default defineEventHandler(async (event) => {
     try {

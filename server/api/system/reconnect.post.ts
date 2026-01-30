@@ -1,5 +1,5 @@
 import {defineEventHandler} from 'h3'
-import {databaseManager} from '~/server/utils/database-manager'
+import {databaseManager} from '~~/server/utils/database-manager'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -38,3 +38,4 @@ export default defineEventHandler(async (event) => {
         }
     }
 })
+
