@@ -1,6 +1,6 @@
 # VoiceHub - 校园广播站点歌系统
 
-这是一个使用Nuxt 3全栈框架开发的现代化校园广播站点歌管理系统。系统提供完整的点歌、投票、排期管理、通知推送、数据分析、权限控制和数据库管理功能，支持多角色权限管理和灵活的系统配置。
+这是一个使用Nuxt 4全栈框架开发的现代化校园广播站点歌管理系统。系统提供完整的点歌、投票、排期管理、通知推送、数据分析、权限控制和数据库管理功能，支持多角色权限管理和灵活的系统配置。
 
 ## 项目截图
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/7cb0257f-523b-466f-ae39-e63a1bac17a2" />
@@ -64,7 +64,7 @@
 ## 技术栈
 
 ### 前端技术
-- **Nuxt 3**：Vue.js全栈框架，提供SSR和SPA支持
+- **Nuxt 4**：Vue.js全栈框架，提供SSR和SPA支持
 - **Vue 3**：响应式前端框架，使用Composition API
 - **TypeScript**：类型安全的JavaScript，提供完整的类型定义
 - **Tailwind CSS**：实用优先的CSS框架，响应式设计
@@ -83,7 +83,7 @@
 ## 系统架构
 
 系统采用了现代化的 Serverless 全栈架构：
-- **前端**：使用 Nuxt 3 + Vue 3 组合式API构建响应式用户界面
+- **前端**：使用 Nuxt 4 + Vue 3 组合式API构建响应式用户界面
 - **后端**：使用 Nuxt Server API 构建 RESTful API 服务
 - **数据库**：使用 Drizzle ORM + Neon Database，提供类型安全和高性能的数据库操作
 - **认证**：标准 JWT 认证系统
@@ -436,7 +436,7 @@ VoiceHub/
 │   │   └── default.vue         # 默认布局模板
 │   ├── middleware/            # 中间件
 │   │   └── auth.global.ts      # 全局认证中间件
-│   ├── pages/                 # 页面组件（Nuxt 3路由）
+│   ├── pages/                 # 页面组件（Nuxt 4路由）
 │   │   ├── change-password.vue # 修改密码页面
 │   │   ├── dashboard.vue       # 用户仪表盘
 │   │   ├── index.vue           # 首页
@@ -682,7 +682,7 @@ VoiceHub/
 ├── drizzle.config.ts      # Drizzle配置文件
 ├── LICENSE                # 开源许可证文件
 ├── netlify.toml           # Netlify部署配置
-├── nuxt.config.ts         # Nuxt 3主配置文件
+├── nuxt.config.ts         # Nuxt 4主配置文件
 ├── package.json           # Node.js项目配置和依赖
 ├── README.md              # 项目说明文档
 ├── tsconfig.json          # TypeScript配置文件
