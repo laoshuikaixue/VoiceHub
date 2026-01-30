@@ -110,14 +110,20 @@ export default defineNuxtConfig({
         }
       },
       // 图片、CSS、JS等静态资源缓存
-      '/**/*.{png,jpg,jpeg,gif,webp,svg,ico}': {
+      '/_nuxt/**': {
         headers: {
           'Cache-Control': 'public, max-age=31536000, immutable'
         }
       },
-      '/**/*.{css,js}': {
+      // 常规静态资源（不带哈希的文件不应使用 immutable）
+      '/images/**': {
         headers: {
-          'Cache-Control': 'public, max-age=31536000, immutable'
+          'Cache-Control': 'public, max-age=86400'
+        }
+      },
+      '/favicon.ico': {
+        headers: {
+          'Cache-Control': 'public, max-age=86400'
         }
       },
       // 认证相关页面不缓存
