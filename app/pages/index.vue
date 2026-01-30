@@ -100,7 +100,10 @@
                 <Icon class="tab-icon" name="bell" :size="20" />
                 <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
               </div>
-              <span class="tab-text">通知</span>
+              <span class="tab-text">
+                通知
+                <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-desktop"></span>
+              </span>
             </div>
             <template #fallback>
               <div class="section-tab disabled"
@@ -1647,8 +1650,25 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   display: none; /* PC端默认隐藏图标 */
 }
 
+.section-tab .icon-wrapper {
+  display: none; /* PC端默认隐藏图标容器，避免间距问题 */
+}
+
 .section-tab .tab-text {
   display: inline;
+  position: relative;
+}
+
+/* PC端通知小圆点 */
+.notification-badge-desktop {
+  position: absolute;
+  top: -2px;
+  right: -8px;
+  width: 6px;
+  height: 6px;
+  background: #0B5AFE;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(11, 90, 254, 0.5);
 }
 
 .section-tab::after {
@@ -2821,26 +2841,35 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin: 0 auto;
   }
 
-  /* 通知徽章 - 现代化 */
+  .section-tab .icon-wrapper {
+    display: flex; /* 移动端显示图标容器 */
+  }
+
+  /* 通知徽章 - 回归蓝色风格 */
   .notification-badge-tab {
     position: absolute;
-    top: -2px;
-    right: -4px;
+    top: 0;
+    right: 0;
     width: 8px;
     height: 8px;
-    background: #ff4d4f;
+    background: #0B5AFE;
     border-radius: 50%;
     border: 1.5px solid #0a0a0f;
-    box-shadow: 0 0 0 1px rgba(255, 77, 79, 0.2);
-    animation: badge-pulse 2s infinite;
+    box-shadow: 0 0 5px rgba(11, 90, 254, 0.4);
+    z-index: 2;
+  }
+
+  .notification-badge-desktop {
+    display: none; /* 移动端隐藏桌面版徽章 */
   }
 
   @keyframes badge-pulse {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.4); }
-    70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(255, 77, 79, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 77, 79, 0); }
+    /* 移除导致位移的动画 */
   }
 
   .section-tab.disabled {
