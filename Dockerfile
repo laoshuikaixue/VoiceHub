@@ -36,7 +36,6 @@ COPY --from=builder /app/scripts ./scripts
 
 # 环境变量配置
 ENV NODE_ENV=production \
-    ENABLE_IDLE_MODE=false \
     NODE_OPTIONS="--experimental-specifier-resolution=node" \
     PORT=3000\
     NPM_CONFIG_UPDATE_NOTIFIER=false
