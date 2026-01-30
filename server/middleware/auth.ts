@@ -59,8 +59,26 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        // 验证token并获取用户信息
-        const decoded = JWTEnhanced.verifyToken(token)
+        // 验证token并自动续期
+        const {valid, payload, newToken} = JWTEnhanced.verifyAndRefresh(token)
+
+        if (!valid || !payload) {
+            throw new Error('Token无效')
+        }
+
+        // 如果生成了新token，更新cookie
+        if (newToken) {
+            const isSecure = getRequestURL(event).protocol === 'https:' || getRequestHeader(event, 'x-forwarded-proto') === 'https'
+            setCookie(event, 'auth-token', newToken, {
+                httpOnly: true,
+                secure: isSecure,
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24 * 7, // 7天
+                path: '/'
+            })
+        }
+
+        const decoded = payload
         const userResult = await db.select({
             id: users.id,
             username: users.username,

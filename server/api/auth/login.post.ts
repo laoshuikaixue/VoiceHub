@@ -136,12 +136,15 @@ export default defineEventHandler(async (event) => {
         // 生成JWT
         const token = JWTEnhanced.generateToken(user.id, user.role)
 
+        // 自动判断是否需要secure
+        const isSecure = getRequestURL(event).protocol === 'https:' || getRequestHeader(event, 'x-forwarded-proto') === 'https'
+
         // 设置cookie
         setCookie(event, 'auth-token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: isSecure,
             sameSite: 'lax',
-            maxAge: 60 * 60 * 24,
+            maxAge: 60 * 60 * 24 * 7, // 7天
             path: '/'
         })
 
