@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
             const updatedRequestTime = updatedRequestTimeResult[0]
 
             try {
-                const {cache} = await import('~/server/utils/cache-helpers')
+                const {cache} = await import('~~/server/utils/cache-helpers')
                 await cache.deletePattern('schedules:*')
                 console.log('[Cache] 排期缓存已清除（播放时间更新）')
             } catch (cacheError) {
@@ -151,7 +151,7 @@ export default defineEventHandler(async (event) => {
             const updatedRequestTime = updatedRequestTimeResult[0]
 
             try {
-                const {cache} = await import('~/server/utils/cache-helpers')
+                const {cache} = await import('~~/server/utils/cache-helpers')
                 await cache.deletePattern('schedules:*')
                 console.log('[Cache] 排期缓存已清除（播放时间部分更新）')
             } catch (cacheError) {
@@ -179,7 +179,7 @@ export default defineEventHandler(async (event) => {
             const deletedRequestTime = deletedRequestTimeResult[0]
 
             try {
-                const {cache} = await import('~/server/utils/cache-helpers')
+                const {cache} = await import('~~/server/utils/cache-helpers')
                 await cache.deletePattern('schedules:*')
                 console.log('[Cache] 缓存已清除（播放时间删除）')
             } catch (cacheError) {
@@ -203,3 +203,4 @@ export default defineEventHandler(async (event) => {
         })
     }
 })
+

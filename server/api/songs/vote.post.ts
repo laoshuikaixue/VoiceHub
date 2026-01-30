@@ -2,9 +2,9 @@ import {db} from '~/drizzle/db'
 import {schedules, songs, votes} from '~/drizzle/schema'
 import {and, count, eq} from 'drizzle-orm'
 import {createSongVotedNotification} from '../../services/notificationService'
-import {isSongProtected, getSongProtectRemainingSeconds, recordSongVote, recordUserVoteActivity} from '~/server/services/securityService'
-import {cacheService} from '~/server/services/cacheService'
-import {getClientIP} from '~/server/utils/ip-utils'
+import {isSongProtected, getSongProtectRemainingSeconds, recordSongVote, recordUserVoteActivity} from '~~/server/services/securityService'
+import {cacheService} from '~~/server/services/cacheService'
+import {getClientIP} from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
     // 检查用户认证

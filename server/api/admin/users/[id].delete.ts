@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
 
         // 清除相关缓存
         try {
-            const {cache} = await import('~/server/utils/cache-helpers')
+            const {cache} = await import('~~/server/utils/cache-helpers')
             await cache.deletePattern('songs:*')
             await cache.deletePattern('schedules:*')
             await cache.deletePattern('stats:*')
@@ -86,3 +86,4 @@ export default defineEventHandler(async (event) => {
         })
     }
 })
+

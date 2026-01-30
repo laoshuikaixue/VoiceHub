@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
         const newRequestTime = newRequestTimeResult[0]
 
         try {
-            const {cache} = await import('~/server/utils/cache-helpers')
+            const {cache} = await import('~~/server/utils/cache-helpers')
             await cache.deletePattern('schedules:*')
             await cache.deletePattern('requestTimes:*')
             console.log('[Cache] 排期和播放时间缓存已清除（创建播放时间）')
@@ -90,3 +90,4 @@ export default defineEventHandler(async (event) => {
         })
     }
 })
+

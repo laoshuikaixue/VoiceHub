@@ -173,7 +173,7 @@ export default defineEventHandler(async (event) => {
 
         // 清除相关缓存
         try {
-            const {cache} = await import('~/server/utils/cache-helpers')
+            const {cache} = await import('~~/server/utils/cache-helpers')
             await cache.deletePattern('songs:*')
             // 清除该用户的认证缓存（角色或权限可能已变更）
             await cache.delete(`auth:user:${parseInt(userId)}`)
@@ -200,3 +200,4 @@ export default defineEventHandler(async (event) => {
         })
     }
 })
+

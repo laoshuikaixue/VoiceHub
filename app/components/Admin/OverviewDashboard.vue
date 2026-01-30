@@ -183,7 +183,7 @@ const navigateTo = (tab) => {
   emit('navigate', tab)
 }
 
-import packageJson from '~/package.json'
+import packageJson from '~~/package.json'
 const systemVersion = ref(packageJson.version)
 // 响应式数据
 const stats = ref({

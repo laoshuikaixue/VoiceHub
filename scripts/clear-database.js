@@ -19,7 +19,7 @@ import {
     users,
     userStatusLogs,
     votes
-} from '../drizzle/db.ts'
+} from '../app/drizzle/db.ts'
 import bcrypt from 'bcrypt'
 
 // 重置所有表的自增序列

@@ -1,7 +1,7 @@
 import {db} from '~/drizzle/db'
 import {users} from '~/drizzle/schema'
 import {eq} from 'drizzle-orm'
-import {getClientIP} from '~/server/utils/ip-utils'
+import {getClientIP} from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
     // 检查请求方法
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
 
         // 发送邮箱验证码
         try {
-            const {sendEmailVerificationCode} = await import('~/server/api/user/email/send-code.post')
+            const {sendEmailVerificationCode} = await import('~~/server/api/user/email/send-code.post')
             const clientIP = getClientIP(event)
 
             await sendEmailVerificationCode(currentUser.id, currentUser.email, currentUser.name, clientIP)
@@ -70,3 +70,4 @@ export default defineEventHandler(async (event) => {
         })
     }
 })
+

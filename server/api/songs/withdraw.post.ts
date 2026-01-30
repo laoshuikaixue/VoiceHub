@@ -1,5 +1,5 @@
 import {db} from '~/drizzle/db'
-import {cacheService} from '~/server/services/cacheService'
+import {cacheService} from '~~/server/services/cacheService'
 import {schedules, songs, systemSettings, votes, songCollaborators, collaborationLogs} from '~/drizzle/schema'
 import {and, eq} from 'drizzle-orm'
 

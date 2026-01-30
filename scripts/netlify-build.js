@@ -111,7 +111,7 @@ async function netlifyBuild() {
       throw new Error('Drizzle 配置文件不存在');
     }
     
-    if (!fileExists('drizzle/schema.ts')) {
+    if (!fileExists('app/drizzle/schema.ts')) {
       throw new Error('Drizzle schema 文件不存在');
     }
     
@@ -120,7 +120,7 @@ async function netlifyBuild() {
     // 5. 验证 Drizzle 配置是否正确
     logStep('🔍', '验证 Drizzle 配置...');
     const drizzleConfigPath = 'drizzle.config.ts';
-    const drizzleSchemaPath = 'drizzle/schema.ts';
+    const drizzleSchemaPath = 'app/drizzle/schema.ts';
     
     if (!fileExists(drizzleConfigPath)) {
       throw new Error('Drizzle 配置文件未找到');

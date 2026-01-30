@@ -78,7 +78,7 @@ function checkDrizzleConfig() {
   log('🔍 检查 Drizzle 配置...', 'cyan');
   
   const drizzleConfigPath = 'drizzle.config.ts';
-  const drizzleSchemaPath = 'drizzle/schema.ts';
+  const drizzleSchemaPath = 'app/drizzle/schema.ts';
   
   if (!fileExists(drizzleConfigPath)) {
     logError('Drizzle 配置文件不存在');
@@ -158,7 +158,7 @@ function checkCriticalFiles() {
   const criticalFiles = [
     'nuxt.config.ts',
     'drizzle.config.ts',
-    'drizzle/schema.ts',
+    'app/drizzle/schema.ts',
     'package.json'
   ];
   

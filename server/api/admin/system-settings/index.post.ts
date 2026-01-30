@@ -259,7 +259,7 @@ export default defineEventHandler(async (event) => {
 
         // 清除系统设置缓存
         try {
-            const {cache} = await import('~/server/utils/cache-helpers')
+            const {cache} = await import('~~/server/utils/cache-helpers')
             await cache.delete('system:config')
             console.log('[Cache] 系统设置缓存已清除（更新系统设置）')
         } catch (cacheError) {

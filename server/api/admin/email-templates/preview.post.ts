@@ -1,4 +1,4 @@
-import {SmtpService} from '~/server/services/smtpService'
+import {SmtpService} from '~~/server/services/smtpService'
 
 export default defineEventHandler(async (event) => {
     if (getMethod(event) !== 'POST') {
@@ -20,3 +20,4 @@ export default defineEventHandler(async (event) => {
 
     return {success: true, ...rendered}
 })
+

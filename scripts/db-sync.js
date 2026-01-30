@@ -36,7 +36,7 @@ function fileExists(p) {
 
 function ensureDrizzleFiles() {
   if (!fileExists('drizzle.config.ts')) throw new Error('Drizzle 配置文件不存在: drizzle.config.ts')
-  if (!fileExists('drizzle/schema.ts')) throw new Error('Drizzle schema 文件不存在: drizzle/schema.ts')
+  if (!fileExists('app/drizzle/schema.ts')) throw new Error('Drizzle schema 文件不存在: app/drizzle/schema.ts')
 }
 
 function isEmptyDatabase() {

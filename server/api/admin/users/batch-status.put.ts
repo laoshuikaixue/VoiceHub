@@ -121,7 +121,7 @@ export default defineEventHandler(async (event) => {
 
         // 清除相关缓存
         try {
-            const {cache} = await import('~/server/utils/cache-helpers')
+            const {cache} = await import('~~/server/utils/cache-helpers')
             for (const userId of usersToUpdate.map(u => u.id)) {
                 await cache.delete(`auth:user:${userId}`)
             }

@@ -13,7 +13,7 @@ import {
     getUserBlockRemainingTime
 } from '../../services/securityService'
 import {getBeijingTime} from '~/utils/timeUtils'
-import {getClientIP} from '~/server/utils/ip-utils'
+import {getClientIP} from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
     const startTime = Date.now()

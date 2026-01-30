@@ -2,8 +2,8 @@ import nodemailer from 'nodemailer'
 import {db} from '~/drizzle/db'
 import {emailTemplates, systemSettings, users} from '~/drizzle/schema'
 import {and, eq, isNotNull} from 'drizzle-orm'
-import {getSiteTitle} from '~/server/utils/siteUtils'
-import {formatIPForEmail} from '~/server/utils/ip-utils'
+import {getSiteTitle} from '~~/server/utils/siteUtils'
+import {formatIPForEmail} from '~~/server/utils/ip-utils'
 
 /**
  * SMTP邮件服务
@@ -575,3 +575,4 @@ export async function sendBatchEmailNotifications(
 
     return {success, failed}
 }
+

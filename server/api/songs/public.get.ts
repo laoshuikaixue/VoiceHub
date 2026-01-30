@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import {db} from '~/drizzle/db'
 import {playTimes, schedules, songCollaborators, songs, systemSettings, users, votes} from '~/drizzle/schema'
 import {and, count, eq, inArray} from 'drizzle-orm'
-import {cacheService} from '~/server/services/cacheService'
+import {cacheService} from '~~/server/services/cacheService'
 import {executeRedisCommand, isRedisReady} from '../../utils/redis'
 import {formatDateTime} from '~/utils/timeUtils'
 
