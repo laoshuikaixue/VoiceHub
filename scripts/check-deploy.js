@@ -137,7 +137,7 @@ async function checkDatabaseConnection() {
   
   try {
     // 检查数据库连接文件是否存在
-    const dbPath = 'drizzle/db.ts';
+    const dbPath = 'app/drizzle/db.ts';
     if (!fileExists(dbPath)) {
       logError('数据库连接文件不存在');
       return false;
