@@ -17,9 +17,10 @@ export default defineEventHandler(async (event) => {
         }
 
         // 清除cookie
+        const isSecure = getRequestURL(event).protocol === 'https:' || getRequestHeader(event, 'x-forwarded-proto') === 'https'
         setCookie(event, 'auth-token', '', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: isSecure,
             sameSite: 'lax',
             maxAge: 0,
             path: '/'
@@ -36,7 +37,7 @@ export default defineEventHandler(async (event) => {
         try {
             setCookie(event, 'auth-token', '', {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
+                secure: false,
                 sameSite: 'lax',
                 maxAge: 0,
                 path: '/'
