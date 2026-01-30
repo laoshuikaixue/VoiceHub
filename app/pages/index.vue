@@ -2626,7 +2626,9 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .main-title {
-    font-size: 26px;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
     background: linear-gradient(135deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -2634,13 +2636,14 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .sub-title {
-    font-size: 10px;
-    letter-spacing: 0.12em;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    opacity: 0.6;
   }
 
   .title-divider {
-    width: 24px;
-    height: 3px;
+    width: 32px;
+    height: 4px;
     background: #0B5AFE;
     box-shadow: 0 0 15px rgba(11, 90, 254, 0.6);
   }
