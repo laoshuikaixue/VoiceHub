@@ -6,6 +6,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
       - JWT_SECRET=your-jwt-secret-here
+      - NODE_ENV=production
     depends_on:
       - postgres
     volumes:

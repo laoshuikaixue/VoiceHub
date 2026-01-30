@@ -6,6 +6,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
       - JWT_SECRET=your-jwt-secret-here
+      - NODE_ENV=production
+      - REDIS_URL=redis://default:your-redis-password-here@redis:6379
     depends_on:
       - postgres
     volumes:
@@ -25,5 +27,18 @@ services:
       - "5432:5432"
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server 
+      --requirepass your-redis-password-here 
+      --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  redis_data:
