@@ -190,7 +190,7 @@
                       class="like-button"
                       @click.stop="handleVote(song)"
                   >
-                    <img alt="点赞" class="like-icon" src="/images/thumbs-up.svg"/>
+                    <img alt="点赞" class="like-icon" :src="thumbsUp"/>
                   </button>
                 </div>
               </div>

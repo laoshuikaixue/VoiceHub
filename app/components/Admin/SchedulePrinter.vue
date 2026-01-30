@@ -302,17 +302,13 @@ const {canPrintSchedule} = usePermissions()
 
 // 站点配置
 const {siteTitle, schoolLogoPrintUrl, initSiteConfig} = useSiteConfig()
+import logoPng from '~/public/images/logo.png'
 
 // 配置
 const config = useRuntimeConfig()
 
 // Logo URL处理，避免开发模式路径问题
-const logoUrl = computed(() => {
-  if (process.client) {
-    return new URL('/images/logo.png', window.location.origin).href
-  }
-  return '/images/logo.png'
-})
+const logoUrl = computed(() => logoPng)
 
 // 响应式数据
 const schedules = ref([])

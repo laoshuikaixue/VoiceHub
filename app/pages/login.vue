@@ -24,6 +24,7 @@
 <script setup>
 import {onMounted, computed, ref} from 'vue'
 import LoginForm from '~/components/Auth/LoginForm.vue'
+import logo from '~/public/images/logo.svg'
 
 // 使用站点配置
 const {siteTitle, initSiteConfig, logoUrl, schoolLogoHomeUrl, icp: icpNumber} = useSiteConfig()
@@ -31,7 +32,7 @@ const {siteTitle, initSiteConfig, logoUrl, schoolLogoHomeUrl, icp: icpNumber} = 
 const brandLogoSrc = computed(() => {
   const url = logoUrl.value
   if (url && !url.endsWith('.ico')) return url
-  return '/images/logo.svg'
+  return logo
 })
 
 

@@ -6,7 +6,7 @@
       <div class="top-bar">
         <div class="logo-section">
           <NuxtLink class="logo-link" to="/">
-            <img alt="VoiceHub Logo" class="logo-image" src="/images/logo.svg"/>
+            <img alt="VoiceHub Logo" class="logo-image" :src="logo"/>
           </NuxtLink>
           <!-- 横线和学校logo -->
           <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider-container">
@@ -420,6 +420,7 @@
 import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
 import {useRouter} from 'vue-router'
 
+import logo from '~/public/images/logo.svg'
 import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
