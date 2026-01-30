@@ -2695,6 +2695,7 @@ const vRipple = {
     font-weight: 600;
     color: #FFFFFF;
     white-space: nowrap;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2), 0 0 20px rgba(11, 90, 254, 0.15);
   }
 
   .dropdown-icon {
