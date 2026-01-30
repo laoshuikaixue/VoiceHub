@@ -3760,7 +3760,7 @@ defineExpose({
     flex: 1;
     height: auto;
     max-height: 85vh;
-    padding: 1.25rem;
+    padding: 0.75rem;
     overflow: visible;
     display: flex;
     flex-direction: column;
@@ -3993,10 +3993,10 @@ defineExpose({
     background: rgba(255, 255, 255, 0.03);
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.06);
-    margin-bottom: 0.75rem;
-    padding: 12px;
+    margin-bottom: 0.5rem;
+    padding: 10px;
     flex-direction: row;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
   }
 
@@ -4075,6 +4075,7 @@ defineExpose({
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 8rem;
+    padding-right: 0;
   }
 
   /* 移动端期望排期选择 */

@@ -2887,7 +2887,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     background: transparent;
     border: none;
     border-radius: 0;
-    padding: 0 10px calc(80px + env(safe-area-inset-bottom, 0px));
+    padding: 0 6px calc(80px + env(safe-area-inset-bottom, 0px));
     margin: 0;
     min-height: calc(100vh - 120px);
   }
@@ -2967,7 +2967,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .tab-content-container {
-    padding: 0 8px 90px;
+    padding: 0 4px 90px;
   }
 }
 
