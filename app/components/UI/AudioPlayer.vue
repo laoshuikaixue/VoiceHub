@@ -1252,6 +1252,7 @@ const getFirstChar = (text) => {
 .music-widget.mobile-player-bar .song-title {
   font-size: 15px;
   font-weight: 600;
+  margin-top: 2px;
   margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
