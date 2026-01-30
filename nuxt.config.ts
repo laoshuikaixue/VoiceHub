@@ -5,14 +5,7 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
   devtools: { enabled: true },
-  modules: ['@nuxt/icon'],
-  
-  icon: {
-    clientBundle: {
-      scan: true,
-      includeCustomCollections: true,
-    },
-  },
+  modules: [],
   
   // 引入全局CSS
   css: [
