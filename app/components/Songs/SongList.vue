@@ -120,7 +120,7 @@
             <!-- 歌曲卡片主体 -->
             <div class="song-card-main">
               <!-- 添加歌曲封面 -->
-              <div class="song-cover">
+              <div class="song-cover" @click.stop="togglePlaySong(song)">
                 <template v-if="song.cover">
                   <img
                       :alt="song.title"
@@ -133,9 +133,8 @@
                 <div v-else class="text-cover">
                   {{ getFirstChar(song.title) }}
                 </div>
-                <!-- 添加播放按钮 - 在有播放信息时显示 -->
-                <div v-if="(song.musicPlatform && song.musicId) || song.playUrl" class="play-button-overlay"
-                     @click.stop="togglePlaySong(song)">
+                <!-- 添加播放按钮 (仅桌面端显示) -->
+                <div v-if="(song.musicPlatform && song.musicId) || song.playUrl" class="play-button-overlay">
                   <button :title="isCurrentPlaying(song.id) ? '暂停' : '播放'" class="play-button">
                     <Icon v-if="isCurrentPlaying(song.id)" :size="16" color="white" name="pause"/>
                     <Icon v-else :size="16" color="white" name="play"/>
@@ -2208,7 +2207,8 @@ button:disabled {
   color: #FFFFFF;
 }
 
-/* 响应式适配 */
+/* ==================== 移动端现代化设计 ==================== */
+
 @media (max-width: 1200px) {
   .song-card {
     width: calc(50% - 0.5rem);
@@ -2216,81 +2216,459 @@ button:disabled {
 }
 
 @media (max-width: 768px) {
-  .song-list-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
+  .song-list {
+    padding: 0;
   }
 
+  /* 头部区域 - 紧凑设计 */
+  .song-list-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    margin-bottom: 16px;
+  }
+
+  /* 标签按钮 - 现代化设计 */
   .tab-controls {
-    justify-content: center;
+    justify-content: flex-start;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 4px;
+  }
+
+  .tab-controls::-webkit-scrollbar {
+    display: none;
   }
 
   .tab-button {
-    flex: 1;
-    padding: 0.5rem;
+    flex: 0 0 auto;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+    white-space: nowrap;
   }
 
+  .tab-button:hover {
+    transform: none;
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .tab-button.active {
+    background: rgba(11, 90, 254, 0.15);
+    color: #0B5AFE;
+    border-bottom: none;
+    box-shadow: none;
+  }
+
+  /* 搜索和操作区域 */
   .search-actions {
     width: 100%;
     justify-content: space-between;
+    gap: 8px;
   }
 
   .search-box {
-    width: calc(100% - 50px);
+    width: 100%;
+    flex: 1;
+  }
+
+  .search-input {
+    background: rgba(255, 255, 255, 0.04);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 16px;
+    padding-right: 40px;
+    font-size: 14px;
+  }
+
+  .search-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+  }
+
+  .search-icon {
+    right: 12px;
+    font-size: 14px;
+  }
+
+  /* 学期选择器 - 现代化 */
+  .semester-selector-compact {
+    flex-shrink: 0;
+  }
+
+  .semester-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: none;
+  }
+
+  .semester-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: none;
+    box-shadow: none;
+  }
+
+  .semester-dropdown {
+    background: #1a1a1f;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    top: calc(100% + 8px);
+  }
+
+  .semester-option {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  /* 刷新按钮 */
+  .refresh-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: none;
+    flex-shrink: 0;
+  }
+
+  .refresh-button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* 歌曲卡片 - 无边框卡片设计 */
+  .song-cards {
+    gap: 8px;
+    display: flex;
+    flex-direction: column;
   }
 
   .song-card {
     width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .song-card:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .song-card.played {
+    opacity: 0.5;
+    filter: grayscale(0.5);
+  }
+
+  .song-card-main {
+    height: auto;
+    min-height: 72px;
+    padding: 14px;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* 歌曲封面 */
+  .song-cover {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 播放按钮 */
+  .play-button-overlay {
+    display: none !important;
+  }
+
+  .song-cover {
+    cursor: pointer;
+  }
+
+  .song-cover:active {
+    transform: scale(0.95);
   }
 
   .song-info {
-    width: 60%;
+    flex: 1;
+    min-width: 0;
+    padding-right: 4px;
   }
 
+  .song-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    line-height: 1.4;
+    color: #FFFFFF;
+    letter-spacing: 0.01em;
+  }
+
+  .requester {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 400;
+  }
+
+  /* 操作区域 */
   .action-area {
-    gap: 0.5rem;
+    gap: 12px;
+    margin-left: 0;
+    min-width: auto;
+    padding-right: 0;
   }
 
+  .vote-count .count {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0B5AFE;
+    font-family: 'MiSans-Bold', sans-serif;
+    line-height: 1;
+  }
+
+  .vote-count .label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 2px;
+  }
+
+  .like-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(11, 90, 254, 0.1);
+    border: 1px solid rgba(11, 90, 254, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .like-button.liked {
+    background: rgba(11, 90, 254, 0.2);
+    border-color: #0B5AFE;
+  }
+
+  .like-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* 投稿时间和操作 */
+  .submission-footer {
+    background: transparent;
+    padding: 8px 12px;
+    height: auto;
+    width: 100%;
+  }
+
+  .submission-time {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    max-width: 60%;
+  }
+
+  .withdraw-button {
+    height: 24px;
+    min-width: auto;
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+  }
+
+  .withdraw-button.replay-cancel-btn,
+  .withdraw-button.replay-request-btn {
+    background: rgba(11, 90, 254, 0.12);
+    min-width: auto;
+  }
+
+  /* 加载和空状态 */
+  .loading, .error, .empty {
+    padding: 40px 20px;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  .loading::before {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+  }
+
+  /* 分页 - 简化设计 */
   .pagination {
     flex-wrap: wrap;
     justify-content: center;
-    gap: 0.25rem;
+    gap: 6px;
+    margin-top: 24px;
+    padding-bottom: 16px;
   }
 
-  .page-numbers {
-    order: 3;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-top: 0.5rem;
+  .page-button, .page-number {
+    background: rgba(255, 255, 255, 0.04);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .page-number.active {
+    background: rgba(11, 90, 254, 0.15);
+    color: #0B5AFE;
   }
 
   .page-info {
-    order: 4;
-    margin: 0.5rem 0 0 0;
-    text-align: center;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.4);
   }
 
   .page-jump {
-    order: 5;
-    margin: 0.5rem 0 0 0;
-    justify-content: center;
-  }
-
-  .jump-label {
-    font-size: 0.75rem;
+    margin-top: 12px;
+    gap: 8px;
   }
 
   .jump-input {
+    background: rgba(255, 255, 255, 0.04);
+    border: none;
+    border-radius: 8px;
     width: 50px;
-    font-size: 0.75rem;
-    padding: 0.2rem 0.4rem;
+    padding: 8px;
   }
 
   .jump-button {
-    font-size: 0.75rem;
-    padding: 0.2rem 0.4rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+
+  /* 确认对话框 */
+  .confirm-dialog-backdrop {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .confirm-dialog {
+    background: #1a1a1f;
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .confirm-dialog-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 20px;
+  }
+
+  .confirm-dialog-header h3 {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .confirm-dialog-content {
+    padding: 20px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .confirm-dialog-actions {
+    padding: 16px 20px;
+    gap: 12px;
+  }
+
+  .confirm-dialog-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    border: none;
+  }
+
+  .confirm-dialog-cancel {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .confirm-dialog-confirm {
+    background: rgba(11, 90, 254, 0.9);
+  }
+}
+
+@media (max-width: 480px) {
+  .song-list-header {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .tab-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .song-card-main {
+    padding: 10px;
+    min-height: 60px;
+    gap: 10px;
+  }
+
+  .song-cover {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+  }
+
+  .song-title {
+    font-size: 13px;
+  }
+
+  .requester {
+    font-size: 11px;
+  }
+
+  .vote-count .count {
+    font-size: 14px;
+  }
+
+  .like-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .like-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .submission-footer {
+    padding: 6px 10px;
+  }
+
+  .submission-time {
+    font-size: 10px;
   }
 }
 

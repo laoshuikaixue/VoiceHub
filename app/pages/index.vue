@@ -19,42 +19,48 @@
         <div class="user-section">
           <ClientOnly>
             <div v-if="isClientAuthenticated" class="user-info">
-              <div class="user-details">
-                <h3 class="user-name">你好，{{ auth?.user?.value?.name || '游客' }}</h3>
-                <p v-if="auth?.user?.value?.grade || auth?.user?.value?.class" class="user-class">
-                  {{ auth?.user?.value?.grade }} {{ auth?.user?.value?.class }}
-                </p>
-                <p v-else-if="isAdmin" class="user-class">
-                  管理员
-                </p>
+              <div class="user-details-mobile">
+                <span class="user-name-text">{{ auth?.user?.value?.name || '用户' }}</span>
               </div>
 
               <div class="user-actions">
-                <!-- 删除通知铃铛按钮 -->
-                <button class="action-button logout-button" @click="handleLogout">
+                <button class="action-button logout-button" @click="handleLogout" title="退出登录">
+                  <Icon name="logout" :size="16" class="mobile-only-icon" />
                   <span class="logout-text">退出登录</span>
                 </button>
-                <NuxtLink v-if="isAdmin" class="action-button dashboard-button" to="/dashboard">
-                  管理后台
+                <NuxtLink v-if="isAdmin" class="action-button dashboard-button" to="/dashboard" title="管理后台">
+                  <Icon name="settings" :size="16" class="mobile-only-icon" />
+                  <span class="btn-text">管理后台</span>
                 </NuxtLink>
-                <NuxtLink v-else class="action-button password-button" to="/change-password">
-                  修改密码
+                <NuxtLink v-else class="action-button password-button" to="/change-password" title="修改密码">
+                  <Icon name="settings" :size="16" class="mobile-only-icon" />
+                  <span class="btn-text">修改密码</span>
                 </NuxtLink>
+                <!-- 年度回顾暂时隐藏
                 <NuxtLink class="action-button review-button" to="/year-review">
-                  年度回顾
+                  <Icon name="target" :size="16" class="mobile-only-icon" />
+                  <span class="btn-text">年度回顾</span>
                 </NuxtLink>
+                -->
               </div>
             </div>
 
             <div v-else class="login-options">
-              <NuxtLink class="btn btn-outline no-underline" to="/login">登录</NuxtLink>
+              <NuxtLink class="btn btn-primary login-btn" to="/login">
+                <Icon name="user" :size="16" />
+                <span>登录</span>
+              </NuxtLink>
             </div>
           </ClientOnly>
         </div>
       </div>
 
       <div v-if="siteTitle" class="site-title">
-        <h2>{{ siteTitle }} | VoiceHub</h2>
+        <div class="title-container">
+          <h2 class="main-title">{{ siteTitle }}</h2>
+          <div class="title-divider"></div>
+          <span class="sub-title">VoiceHub 校园广播系统</span>
+        </div>
       </div>
 
       <!-- 中间主体内容区域 -->
@@ -65,19 +71,22 @@
                :class="{ 'active': activeTab === 'schedule' }"
                class="section-tab"
                @click="handleTabClick('schedule')">
-            播出排期
+            <Icon class="tab-icon" name="calendar" :size="20" />
+            <span class="tab-text">播出排期</span>
           </div>
           <div v-ripple
                :class="{ 'active': activeTab === 'songs' }"
                class="section-tab"
                @click="handleTabClick('songs')">
-            歌曲列表
+            <Icon class="tab-icon" name="music" :size="20" />
+            <span class="tab-text">歌曲列表</span>
           </div>
           <div v-ripple
                :class="{ 'active': activeTab === 'request' }"
                class="section-tab"
                @click="handleTabClick('request')">
-            投稿歌曲
+            <Icon class="tab-icon" name="plus" :size="20" />
+            <span class="tab-text">投稿歌曲</span>
           </div>
           <ClientOnly>
             <div :key="notificationTabKey"
@@ -87,13 +96,17 @@
                  class="section-tab"
                  data-tab="notification"
                  @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()">
-              通知
-              <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
+              <div class="icon-wrapper">
+                <Icon class="tab-icon" name="bell" :size="20" />
+                <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
+              </div>
+              <span class="tab-text">通知</span>
             </div>
             <template #fallback>
               <div class="section-tab disabled"
                    data-tab="notification">
-                通知
+                <Icon class="tab-icon" name="bell" :size="20" />
+                <span class="tab-text">通知</span>
               </div>
             </template>
           </ClientOnly>
@@ -1287,7 +1300,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 <style scoped>
 .home {
   width: 100%;
-  flex: 1; /* 使用flex: 1 替代 min-height: 100vh */
+  flex: 1;
   background-color: #121318;
   padding: 1.5rem;
   color: #FFFFFF;
@@ -1308,8 +1321,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   width: 1110px;
   height: 309px;
   background: radial-gradient(ellipse at center, rgba(11, 90, 254, 0.3) 0%, rgba(11, 90, 254, 0.15) 30%, rgba(11, 90, 254, 0) 70%);
-  z-index: 0; /* 确保在内容下方但在背景上方 */
-  pointer-events: none; /* 允许点击穿透 */
+  z-index: 0;
+  pointer-events: none;
 }
 
 /* 顶部区域样式 */
@@ -1324,8 +1337,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 20px; /* 添加间距 */
-  min-height: 160px; /* 确保与学校logo高度一致 */
+  gap: 20px;
+  min-height: 160px;
 }
 
 .logo-link {
@@ -1363,12 +1376,19 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   object-fit: contain;
 }
 
-/* 移除不需要的title-group样式 */
-
 .user-section {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 1rem;
+}
+
+.user-avatar-mobile {
+  display: none;
+}
+
+.mobile-only-icon {
+  display: none;
 }
 
 .user-info {
@@ -1466,38 +1486,69 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 /* 站点标题 */
 .site-title {
   text-align: center;
-  margin: 2rem 0;
+  margin: 3rem 0;
+  padding: 0 1rem;
 }
 
-.site-title h2 {
+.title-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.main-title {
   font-family: 'MiSans', sans-serif;
-  font-weight: 600;
-  font-size: 36px;
-  letter-spacing: 2%;
+  font-weight: 800;
+  font-size: 42px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.title-divider {
+  width: 40px;
+  height: 4px;
+  background: #0B5AFE;
+  border-radius: 2px;
+  box-shadow: 0 0 15px rgba(11, 90, 254, 0.6);
+}
+
+.sub-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 /* 内容区域结构 */
 .content-area {
   display: flex;
   flex-direction: column;
-  gap: 0; /* 移除间隙 */
-  min-height: 60vh; /* 确保内容区域有足够的高度 */
+  gap: 0;
+  min-height: 60vh;
 }
 
-/* 选项卡样式 */
+/* 选项卡样式 - 桌面端 */
 .tabs-row {
   display: flex;
   gap: 5px;
   margin-bottom: 0;
-  overflow-x: auto; /* 允许在小屏幕上水平滚动 */
+  overflow-x: auto;
   white-space: nowrap;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  padding-bottom: 2px; /* 为滚动条留出空间 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
 }
 
 .tabs-row::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
 
 .section-tab {
@@ -1511,14 +1562,14 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   border: 2px solid #282830;
   border-bottom: none;
   cursor: pointer;
-  flex: 0 0 auto; /* 防止标签被压缩 */
+  flex: 0 0 auto;
 }
 
 .section-tab.active {
   background: #21242D;
   color: #FFFFFF;
   position: relative;
-  z-index: 1; /* 确保活动标签在前面 */
+  z-index: 1;
 }
 
 /* Tab切换动画 */
@@ -1586,6 +1637,18 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   overflow: hidden;
   padding: 0.75rem 1.5rem;
   z-index: 10; /* 确保在内容之上 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.section-tab .tab-icon {
+  display: none; /* PC端默认隐藏图标 */
+}
+
+.section-tab .tab-text {
+  display: inline;
 }
 
 .section-tab::after {
@@ -1861,7 +1924,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
 .notification-card-header {
   display: flex;
-  padding: 15px 15px 10px 15px;
+  padding: 12px 12px 8px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1869,13 +1932,13 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  margin-right: 15px;
+  border-radius: 10px;
+  margin-right: 12px;
   flex-shrink: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .notification-title-row {
@@ -2351,136 +2414,546 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* 移动端通知样式 */
-@media (max-width: 768px) {
-  .notification-items {
-    padding-bottom: 20px;
+/* 移动端通知样式重新设计 */
+  .notification-container {
+    padding: 0;
   }
-}
 
-@media (max-width: 480px) {
+  .notification-header {
+    padding: 16px 4px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
   .notification-title {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
   }
 
-  .settings-form .form-group {
-    padding: 8px;
+  .notification-items {
+    gap: 10px;
+    padding-bottom: 24px;
   }
 
-  .notification-actions-bar {
-    flex-direction: column;
+  .notification-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  .notification-card.unread {
+    background: rgba(11, 90, 254, 0.06);
+    border-color: rgba(11, 90, 254, 0.2);
+    box-shadow: 0 4px 20px rgba(11, 90, 254, 0.1);
+  }
+
+  .notification-card.unread::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #0B5AFE;
+    box-shadow: 0 0 10px rgba(11, 90, 254, 0.6);
+    z-index: 1;
+  }
+
+  .notification-card-header {
+    padding: 14px 16px 8px;
+    border-bottom: none;
+  }
+
+  .notification-icon-type {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    margin-right: 12px;
+  }
+
+  .notification-title {
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+  }
+
+  .notification-card-body {
+    padding: 0 16px 14px 64px; /* 图标对齐 */
+  }
+
+  .notification-text {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
+  }
+
+  .notification-time {
+    font-size: 0.75rem;
+    opacity: 0.5;
+  }
+
+  .notification-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .action-button.delete {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    width: auto;
+  }
+
+  .unread-indicator {
+    display: none; /* 使用左侧指示条代替 */
+  }
+
+  .invite-actions {
+    margin-top: 12px;
     gap: 8px;
   }
 
-  .action-button-large {
-    width: 100%;
+  .invite-actions .action-button {
+    height: 34px;
+    font-size: 0.85rem;
+    border-radius: 10px;
   }
-}
 
-/* 响应式样式 */
+  /* 分页和底部栏适配 */
+  .notification-pagination {
+    padding: 16px 0;
+    margin-bottom: 8px;
+  }
+
+  .notification-actions-bar {
+    padding: 12px 0;
+    gap: 12px;
+  }
+
+  .action-button-large {
+    height: 44px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+/* ==================== 移动端现代化设计 ==================== */
+
+/* 基础移动端适配 */
 @media (max-width: 768px) {
+  .home {
+    padding: 0;
+    background-color: #0a0a0f;
+  }
+
+  .main-content {
+    padding: 0;
+  }
+
+  /* 隐藏原有的ellipse效果，使用更微妙的背景 */
+  .ellipse-effect {
+    display: none;
+  }
+
+  /* 现代化顶部区域 - 紧凑设计 */
   .top-bar {
-    flex-direction: column;
-    gap: 1.5rem;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    margin-top: 0.1rem;
+    padding: 12px 16px;
+    margin: 0;
+    background: linear-gradient(180deg, rgba(11, 90, 254, 0.08) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   .logo-section {
-    justify-content: center;
+    min-height: auto;
+    gap: 12px;
   }
 
   .logo-image {
-    width: 120px;
+    width: 80px;
+    height: auto;
   }
 
+  .logo-divider-container {
+    gap: 12px;
+  }
+
+  .logo-divider {
+    height: 32px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* 移动端标题优化 */
+  .site-title {
+    margin: 1.5rem 0;
+    padding: 0 1rem;
+  }
+
+  .main-title {
+    font-size: 28px;
+    background: linear-gradient(135deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .sub-title {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+  }
+
+  .title-divider {
+    width: 30px;
+    height: 3px;
+    background: #0B5AFE;
+    box-shadow: 0 0 15px rgba(11, 90, 254, 0.6);
+  }
+
+  .school-logo {
+    max-width: 60px;
+    max-height: 32px;
+  }
+
+  /* 用户区域简化 */
   .user-section {
     align-items: center;
-    width: 100%;
+    width: auto;
+  }
+
+  .user-details-mobile {
+    display: block;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .user-name-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFFFFF;
   }
 
   .user-info {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 1rem;
+    gap: 12px;
   }
 
   .user-details {
-    text-align: center;
+    display: none; /* 移动端完全隐藏详细信息 */
   }
 
   .user-actions {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .tabs-row {
-    flex-wrap: nowrap; /* 保持水平排列 */
-    justify-content: flex-start; /* 左对齐 */
-    overflow-x: auto; /* 允许水平滚动 */
-    padding-bottom: 5px;
-  }
-
-  .section-tab {
-    flex: 0 0 auto; /* 不要拉伸或压缩 */
-    padding: 12px 20px;
-    font-size: 14px;
-    white-space: nowrap;
-  }
-
-  .tab-content-container {
-    padding: 0.5rem;
-    border-radius: 0 0 15px 15px; /* 修改圆角，只保留底部圆角 */
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-
-  .request-pane {
-    flex-direction: column;
-  }
-
-  .site-title h2 {
-    font-size: 28px;
-  }
-
-  .ellipse-effect {
-    top: -100px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    height: 200px;
-  }
-}
-
-@media (max-width: 480px) {
-  .section-tab {
-    padding: 10px 15px;
-    font-size: 13px;
-  }
-
-  .logo-image {
-    width: 100px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
   }
 
   .action-button {
-    padding: 0.4rem 0.8rem;
-    font-size: 12px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+  }
+
+  .action-button:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .action-button .logout-text,
+  .action-button .btn-text {
+    display: none; /* 移动端按钮仅显示图标 */
+  }
+
+  .mobile-only-icon {
+    display: block;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .review-button {
+    display: none; /* 移动端彻底隐藏年度回顾 */
+  }
+
+  .login-options .login-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* Footer 间距优化 */
+  :deep(.site-footer) {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* 站点标题 - 更紧凑 */
+  .site-title {
+    margin: 8px 0 12px;
+    padding: 0 16px;
   }
 
   .site-title h2 {
-    font-size: 24px;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* 内容区域 - 全宽无边框 */
+  .content-area {
+    min-height: auto;
+  }
+
+  /* 现代化选项卡 - 底部固定导航风格 */
+  .tabs-row {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 0;
+    padding: 6px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+    background: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 1000;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .section-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 6px 4px;
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .section-tab .tab-icon {
+    display: block;
+    margin-bottom: 2px;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+    color: currentColor;
+  }
+
+  .section-tab .tab-text {
+    font-size: 10px;
+    letter-spacing: 0.02em;
+    transition: all 0.3s ease;
+  }
+
+  .section-tab.active {
+    color: #0B5AFE;
+    background: transparent;
+  }
+
+  .section-tab.active .tab-icon {
+    opacity: 1;
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 8px rgba(11, 90, 254, 0.4));
+  }
+
+  .section-tab.active .tab-text {
+    font-weight: 600;
+    transform: scale(1.05);
+  }
+
+  /* 移除原有的伪元素图标 */
+  .section-tab::before {
+    display: none;
+  }
+
+  .section-tab.active::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 3px;
+    background: #0B5AFE;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 0 10px rgba(11, 90, 254, 0.6);
+  }
+
+  .icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 通知徽章 - 现代化 */
+  .notification-badge-tab {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    width: 8px;
+    height: 8px;
+    background: #ff4d4f;
+    border-radius: 50%;
+    border: 1.5px solid #0a0a0f;
+    box-shadow: 0 0 0 1px rgba(255, 77, 79, 0.2);
+    animation: badge-pulse 2s infinite;
+  }
+
+  @keyframes badge-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.4); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(255, 77, 79, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 77, 79, 0); }
+  }
+
+  .section-tab.disabled {
+    opacity: 0.3;
+    filter: grayscale(1);
+  }
+
+  /* 内容容器 - 优化间距 */
+  .tab-content-container {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0 16px calc(80px + env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    min-height: calc(100vh - 120px);
+  }
+
+  .tab-pane {
+    padding: 0;
+  }
+
+  /* 排期标签页优化 */
+  .schedule-tab-pane {
+    padding: 0;
+    min-height: auto;
+  }
+
+  /* 请求表单区域 */
+  .request-pane {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 登录选项 */
+  .login-options {
+    display: flex;
+    align-items: center;
+  }
+
+  .login-options .btn-outline {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 6px;
+    background: rgba(11, 90, 254, 0.15);
+    border: 1px solid rgba(11, 90, 254, 0.3);
+  }
+}
+
+/* 小屏幕设备额外优化 */
+@media (max-width: 480px) {
+  .top-bar {
+    padding: 10px 12px;
+  }
+
+  .logo-image {
+    width: 70px;
+  }
+
+  .school-logo {
+    max-width: 50px;
+  }
+
+  .action-button {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .site-title {
+    margin: 6px 0 10px;
+    padding: 0 12px;
+  }
+
+  .site-title h2 {
+    font-size: 16px;
+  }
+
+  .tabs-row {
+    padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .section-tab {
+    padding: 6px 2px;
+    font-size: 10px;
+  }
+
+  .section-tab::before {
+    width: 20px;
+    height: 20px;
+    font-size: 16px !important;
   }
 
   .tab-content-container {
-    padding: 0.5rem;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+    padding: 0 12px 90px;
+  }
+}
+
+/* 超小屏幕设备 */
+@media (max-width: 360px) {
+  .logo-image {
+    width: 60px;
   }
 
-  .schedule-tab-pane {
-    padding: 0;
+  .school-logo {
+    max-width: 40px;
+  }
+
+  .action-button {
+    padding: 4px 6px;
+    font-size: 9px;
+  }
+
+  .section-tab {
+    font-size: 9px;
   }
 }
 

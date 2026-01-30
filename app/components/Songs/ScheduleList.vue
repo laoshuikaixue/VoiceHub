@@ -6,32 +6,37 @@
       <div class="date-selector">
         <!-- 移动端日期导航按钮 -->
         <div class="mobile-date-nav">
-          <button
-              :disabled="currentDateIndex === 0"
-              class="date-nav-btn prev"
-              @click="previousDate"
-          >
-            <Icon :size="16" name="chevron-left"/>
-          </button>
-          <div
-              class="current-date-mobile"
-              @click="toggleDatePicker"
-              v-html="currentDateFormatted"
-          ></div>
+          <div class="nav-capsule">
+            <button
+                :disabled="currentDateIndex === 0"
+                class="nav-btn prev"
+                @click="previousDate"
+            >
+              <Icon :size="18" name="chevron-left"/>
+            </button>
+            <div
+                class="current-date-display"
+                @click="toggleDatePicker"
+            >
+              <span class="date-text" v-html="currentDateFormatted"></span>
+              <Icon :size="12" class="dropdown-icon" name="chevron-down"/>
+            </div>
+            <button
+                :disabled="currentDateIndex >= availableDates.length - 1"
+                class="nav-btn next"
+                @click="nextDate"
+            >
+              <Icon :size="18" name="chevron-right"/>
+            </button>
+          </div>
           <button
               v-if="isNeteaseLoggedIn"
-              class="mobile-add-playlist-btn"
+              class="mobile-action-btn"
               type="button"
               @click="handleAddToPlaylistClick"
+              title="添加到歌单"
           >
-            <Icon :size="16" color="#ffffff" name="plus"/>
-          </button>
-          <button
-              :disabled="currentDateIndex >= availableDates.length - 1"
-              class="date-nav-btn next"
-              @click="nextDate"
-          >
-            <Icon :size="16" name="chevron-right"/>
+            <Icon :size="20" color="#ffffff" name="music"/>
           </button>
         </div>
 
@@ -149,7 +154,7 @@
                   >
                     <div class="song-card-main">
                       <!-- 歌曲封面 -->
-                      <div class="song-cover">
+                      <div class="song-cover" @click="togglePlaySong(schedule.song)">
                         <template v-if="schedule.song.cover">
                           <img
                               :alt="schedule.song.title"
@@ -162,9 +167,9 @@
                         <div v-else class="text-cover">
                           {{ getFirstChar(schedule.song.title) }}
                         </div>
-                        <!-- 播放按钮 -->
+                        <!-- 播放按钮 (仅桌面端显示) -->
                         <div v-if="(schedule.song.musicPlatform && schedule.song.musicId) || schedule.song.playUrl"
-                             class="play-button-overlay" @click="togglePlaySong(schedule.song)">
+                             class="play-button-overlay">
                           <button :title="isCurrentPlaying(schedule.song.id) ? '暂停' : '播放'" class="play-button">
                             <Icon v-if="isCurrentPlaying(schedule.song.id)" :size="16" color="white" name="pause"/>
                             <Icon v-else :size="16" color="white" name="play"/>
@@ -2597,7 +2602,8 @@ const vRipple = {
   opacity: 0.4;
 }
 
-/* 响应式适配 */
+/* ==================== 移动端现代化设计 ==================== */
+
 @media (max-width: 768px) {
   .schedule-list {
     width: 100% !important;
@@ -2605,6 +2611,7 @@ const vRipple = {
     padding: 0 !important;
     margin: 0 !important;
     overflow: hidden;
+    min-height: auto;
   }
 
   .schedule-container {
@@ -2613,30 +2620,113 @@ const vRipple = {
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
+    gap: 12px;
+    min-height: auto;
   }
 
   .date-selector {
     width: 100% !important;
     max-width: 100% !important;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
     padding: 0 !important;
   }
 
-  /* 显示移动端日期导航 */
+  /* 现代化移动端日期导航 - 胶囊式设计 */
   .mobile-date-nav {
     display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     width: 100% !important;
-    position: relative;
-    z-index: 10;
+    padding: 16px 12px !important;
+    background: transparent !important;
     box-sizing: border-box;
-    max-width: 100% !important;
-    min-width: auto !important;
-    margin: 0 !important;
-    padding: 0.75rem 1rem !important;
-    border-radius: 10px !important;
   }
 
-  /* 隐藏桌面端日期列表，但确保元素存在 */
+  .nav-capsule {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4px;
+    flex: 1;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 16px;
+    transition: all 0.2s ease;
+  }
+
+  .nav-btn:active:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    color: #0B5AFE;
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.2;
+  }
+
+  .current-date-display {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 8px;
+    height: 36px;
+    cursor: pointer;
+  }
+
+  .date-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: #FFFFFF;
+    white-space: nowrap;
+  }
+
+  .dropdown-icon {
+    opacity: 0.5;
+    color: #FFFFFF;
+  }
+
+  .mobile-action-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0B5AFE 0%, #0043F8 100%);
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(11, 90, 254, 0.4);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .mobile-action-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 8px rgba(11, 90, 254, 0.4);
+  }
+
+  /* 移除旧样式 */
+  .date-nav-btn, .current-date-mobile, .mobile-add-playlist-btn {
+    display: none;
+  }
+
+  /* 隐藏桌面端日期列表 */
   .date-list {
     height: 0;
     overflow: hidden;
@@ -2663,60 +2753,224 @@ const vRipple = {
     padding: 0 !important;
     margin: 0 !important;
     box-sizing: border-box;
+    min-height: auto;
   }
 
-  /* 隐藏桌面端日期标题和添加按钮 */
+  /* 隐藏桌面端日期标题 */
   .schedule-header {
     display: none;
   }
 
-  .song-cards {
-    gap: 0.75rem;
+  /* 时段标题 - 现代化设计 */
+  .playtime-group {
+    margin-bottom: 20px;
   }
 
-  /* 歌曲卡片布局 */
+  .playtime-header {
+    padding: 0 4px;
+    margin-bottom: 12px;
+  }
+
+  .playtime-header h4 {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .playtime-time {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  /* 歌曲卡片 - 无边框卡片设计 */
+  .song-cards {
+    gap: 8px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .song-card {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .song-card:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .song-card.played {
+    opacity: 0.5;
+    filter: grayscale(0.5);
+  }
+
   .song-card-main {
     height: auto;
-    min-height: 70px;
-    padding: 0.75rem;
+    min-height: 72px;
+    padding: 14px;
     position: relative;
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 0.75rem;
+    gap: 14px;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* 歌曲封面 - 更大的圆角 */
+  .song-cover {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .text-cover {
+    font-size: 20px;
+  }
+
+  /* 播放按钮 */
+  .play-button-overlay {
+    display: none !important;
+  }
+
+  .song-cover {
+    cursor: pointer;
+  }
+
+  .song-cover:active {
+    transform: scale(0.95);
   }
 
   .song-info {
     flex: 1;
     min-width: 0;
+    padding-right: 4px;
   }
 
-  .action-area {
-    position: static;
-    transform: none;
+  .song-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    line-height: 1.4;
+    color: #FFFFFF;
+    letter-spacing: 0.01em;
+  }
+
+  .requester {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 400;
+  }
+
+  /* 热度区域 */
+  .vote-count .count {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0B5AFE;
+    font-family: 'MiSans-Bold', sans-serif;
+    line-height: 1;
+  }
+
+  .vote-count .label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 2px;
+  }
+
+  /* 加载和空状态 - 无边框 */
+  .loading, .error, .empty {
+    padding: 40px 20px;
+    width: 100%;
+    background: transparent;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .loading::before {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+  }
+
+  .empty .icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+  }
+
+  /* 日期选择弹窗 - 现代化设计 */
+  .date-picker-content {
+    background: #1a1a1f;
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 70vh;
+    border: none;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .date-picker-header {
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .date-picker-header h3 {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
   }
 
-  .playtime-header h4 {
-    font-size: 15px;
-    text-align: center;
+  .date-picker-list {
+    padding: 12px;
   }
 
-  /* 确保加载状态在移动端正确显示 */
-  .loading, .error, .empty {
-    padding: 2rem 1rem;
-    width: 100%;
+  .date-picker-item {
+    padding: 14px 16px;
+    border-radius: 12px;
+    margin-bottom: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: none;
+    font-size: 14px;
+  }
+
+  .date-picker-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: none;
+  }
+
+  .date-picker-item.active {
+    background: rgba(11, 90, 254, 0.15);
+    border-left: none;
+    color: #0B5AFE;
   }
 }
 
 /* 小屏幕设备额外优化 */
 @media (max-width: 480px) {
-  .current-date-mobile {
-    font-size: 14px;
+  .mobile-date-nav {
+    padding: 10px 0 !important;
   }
 
   .date-nav-btn {
@@ -2724,26 +2978,26 @@ const vRipple = {
     height: 32px;
   }
 
-  /* 移动端日期导航强化样式 */
-  .mobile-date-nav {
-    background: linear-gradient(135deg, #21242D 0%, #2C3039 100%);
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    box-sizing: border-box;
-    border-radius: 10px !important;
+  .current-date-mobile {
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 10px;
   }
 
-  .song-info {
-    width: 70%;
+  .song-card-main {
+    min-height: 60px;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .song-cover {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
   }
 
   .song-title {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .requester {
@@ -2751,11 +3005,12 @@ const vRipple = {
   }
 
   .vote-count .count {
-    font-size: 18px;
+    font-size: 14px;
   }
 
-  .vote-count .label {
-    font-size: 10px;
+  .play-button {
+    width: 24px;
+    height: 24px;
   }
 }
 

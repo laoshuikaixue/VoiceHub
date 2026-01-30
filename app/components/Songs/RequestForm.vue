@@ -3732,8 +3732,12 @@ defineExpose({
   .rules-section {
     width: 100%;
     height: auto;
-    margin-bottom: 1rem;
-    padding: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
   }
 
   .form-container {
@@ -3749,18 +3753,22 @@ defineExpose({
     display: flex;
     flex-direction: column;
     height: auto;
-    gap: 1rem;
+    gap: 1.25rem;
   }
 
   .search-results-container {
     flex: 1;
     height: auto;
     max-height: 85vh;
-    padding: 1rem;
+    padding: 1.25rem;
     overflow: visible;
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
   }
 
   .results-content {
@@ -3814,8 +3822,8 @@ defineExpose({
   .search-section {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
     flex: none;
     width: 100%;
   }
@@ -3839,34 +3847,49 @@ defineExpose({
   }
 
   .search-input-group {
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .search-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 15px;
+    flex: 1;
   }
 
   .search-button {
-    padding: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
   }
 
   /* 移动端平台选择按钮 */
   .platform-selection {
-    flex-direction: row;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
-
-  .platform-selection::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    display: flex;
+    overflow: visible;
   }
 
   .platform-btn {
-    padding: 0.6rem 0.8rem;
+    flex: 1;
+    padding: 0.5rem;
     font-size: 13px;
-    flex-shrink: 0;
-    min-width: fit-content;
+    border-radius: 10px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    min-width: auto;
+  }
+
+  .platform-btn.active {
+    background: #0B5AFE;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(11, 90, 254, 0.3);
   }
 
   /* 移动端音源状态显示 */
@@ -3967,47 +3990,48 @@ defineExpose({
 
   /* 移动端搜索结果优化 */
   .result-item {
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 0.75rem;
+    padding: 12px;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
   }
 
   .result-cover {
-    width: 60px;
-    height: 60px;
-    align-self: center;
+    width: 64px;
+    height: 64px;
+    align-self: flex-start;
   }
 
   .result-info {
-    text-align: center;
+    text-align: left;
+    flex: 1;
   }
 
   .result-title {
     font-size: 15px;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
-    line-height: 1.3;
-    margin-bottom: 0.5rem;
+    font-weight: 600;
   }
 
   .result-artist {
-    font-size: 13px;
-    margin: 0.3rem 0;
-  }
-
-  .result-album {
-    font-size: 11px;
-    margin: 0.2rem 0;
+    font-size: 12px;
+    opacity: 0.6;
+    margin: 4px 0;
   }
 
   .result-actions {
-    justify-content: center;
+    flex-direction: row;
+    width: auto;
   }
 
   .select-btn {
-    width: 100%;
-    padding: 0.6rem 1rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 12px;
+    border-radius: 10px;
+    width: auto;
   }
 
   /* 移动端弹窗优化 */
