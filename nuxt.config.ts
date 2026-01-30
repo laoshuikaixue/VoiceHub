@@ -52,7 +52,7 @@ export default defineNuxtConfig({
         { name: 'format-detection', content: 'telephone=no' }
       ],
       link: [
-          { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+          { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico?v=2' },
           // 优先加载常规字体，确保页面快速显示
           { rel: 'preload', as: 'style', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css' },
           { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css' },
