@@ -91,17 +91,6 @@ const handlePlayerEnded = () => {
 let auth = null
 let isAuthenticated = false
 
-// 在组件挂载后初始化认证（只会在客户端执行）
-onMounted(async () => {
-  auth = useAuth()
-  isAuthenticated = auth.isAuthenticated.value
-  
-  // 初始化鸿蒙系统控制事件监听
-  setupHarmonyOSListeners()
-  
-
-})
-
 // 设置鸿蒙系统控制事件监听
 const setupHarmonyOSListeners = () => {
   if (typeof window === 'undefined') return
@@ -168,6 +157,16 @@ const setupHarmonyOSListeners = () => {
   window.addEventListener('harmonyos-next', handleHarmonyOSNext)
   window.addEventListener('harmonyos-previous', handleHarmonyOSPrevious)
 }
+
+// 在组件挂载后初始化认证（只会在客户端执行）
+onMounted(async () => {
+  auth = useAuth()
+  isAuthenticated = auth.isAuthenticated.value
+  
+  // 初始化鸿蒙系统控制事件监听
+  setupHarmonyOSListeners()
+  
+})
 
 // 使用计算属性确保安全地访问auth对象
 const safeIsAuthenticated = computed(() => auth?.isAuthenticated?.value || false)

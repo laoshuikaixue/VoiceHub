@@ -78,7 +78,8 @@ export default defineNuxtConfig({
     preset: process.env.VERCEL ? 'vercel' : (process.env.NITRO_PRESET || 'node-server'),
     // 增强错误处理和稳定性
     experimental: {
-      wasm: true
+      wasm: true,
+      asyncContext: true
     },
     timing: true,
     // 增加请求超时时间
