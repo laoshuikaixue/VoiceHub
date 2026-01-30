@@ -24,23 +24,10 @@ import {computed, onMounted, ref, watch} from 'vue'
 import {useAudioPlayer} from '~/composables/useAudioPlayer'
 import {useAuth} from '~/composables/useAuth'
 import {useRoute} from 'vue-router'
-import {useSiteConfig} from '~/composables/useSiteConfig'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
 const route = useRoute()
-const { siteTitle, logoUrl, description, initSiteConfig } = useSiteConfig()
-
-// 设置动态 Head
-useHead({
-  title: siteTitle,
-  meta: [
-    { name: 'description', content: description }
-  ],
-  link: [
-    { rel: 'icon', type: 'image/x-icon', href: logoUrl }
-  ]
-})
 
 // 通知容器引用
 const notificationContainer = ref(null)
@@ -173,9 +160,6 @@ const setupHarmonyOSListeners = () => {
 
 // 在组件挂载后初始化认证（只会在客户端执行）
 onMounted(async () => {
-  // 初始化站点配置
-  await initSiteConfig()
-  
   auth = useAuth()
   isAuthenticated = auth.isAuthenticated.value
   
