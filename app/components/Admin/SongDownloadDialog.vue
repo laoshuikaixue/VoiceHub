@@ -241,25 +241,9 @@ const downloadFile = async (url, filename) => {
 
   let blob
 
-  // 针对 Bilibili 等已知必须使用代理的链接
-  const forceProxy = url.includes('bilivideo.com') ||
-      url.includes('hdslb.com') ||
-      url.includes('bilibili.com') ||
-      url.includes('googlevideo.com')
-
   try {
-    if (forceProxy) {
-      blob = await tryDownload(`/api/proxy/download?url=${encodeURIComponent(url)}`)
-    } else {
-      try {
-        // 尝试直接下载
-        blob = await tryDownload(url)
-      } catch (e) {
-        console.warn(`直接下载失败 (${e.message})，尝试使用代理下载: ${url}`)
-        // 直接下载失败（如CORS错误），尝试代理
-        blob = await tryDownload(`/api/proxy/download?url=${encodeURIComponent(url)}`)
-      }
-    }
+    // 尝试直接下载
+    blob = await tryDownload(url)
   } catch (error) {
     throw new Error('下载失败: ' + error.message)
   }

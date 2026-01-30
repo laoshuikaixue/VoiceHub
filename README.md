@@ -599,7 +599,6 @@ VoiceHub/
 │   │   │   ├── events.ts            # 进度事件
 │   │   │   └── id.ts                # 进度ID管理
 │   │   ├── proxy/          # 代理服务API
-│   │   │   ├── download.get.ts      # 音乐下载代理
 │   │   │   └── image.get.ts         # 图片代理（解决HTTP/HTTPS混合内容及跨域问题）
 │   │   ├── semesters/      # 学期API
 │   │   │   └── current.get.ts       # 获取当前学期
