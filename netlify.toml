@@ -1,6 +1,6 @@
 [build]
   command = "npm run netlify-build"
-  publish = ".output/public"
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
@@ -13,7 +13,7 @@
     external_node_modules = []
     node_bundler = "esbuild"
 
-# 移除手写的 [[redirects]]，因为 Nuxt 会在 .output/public/_redirects 中自动生成更准确的规则
+# Nuxt 会在 dist/_redirects 中自动生成重定向规则，将请求转发到 Netlify Functions
 
 [[headers]]
   for = "/_nuxt/*"

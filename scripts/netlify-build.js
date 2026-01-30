@@ -63,6 +63,7 @@ async function netlifyBuild() {
   try {
     // 1. 设置环境变量
     process.env.NETLIFY = 'true';
+    process.env.NITRO_PRESET = 'netlify';
     
     logStep('🔧', '设置 Netlify 环境变量...');
     logSuccess('环境变量设置完成');
@@ -153,22 +154,22 @@ async function netlifyBuild() {
     
     // 8. 验证构建输出
     logStep('🔍', '验证构建输出...');
-    
-    // Nuxt 3/4 标准输出目录是 .output
-    const hasOutput = fileExists('.output');
-    const hasPublic = fileExists('.output/public');
-    const hasServer = fileExists('.output/server');
-    
-    if (!hasOutput) {
-      throw new Error('构建输出目录 (.output) 不存在');
+
+    // Netlify preset 输出到 .netlify/functions-internal/server/
+    const hasNetlifyFunctions = fileExists('.netlify/functions-internal/server');
+    const hasOutputPublic = fileExists('.output/public');
+
+    if (hasNetlifyFunctions) {
+      logSuccess('Netlify Functions 目录 (.netlify/functions-internal/server) 生成成功');
+
     }
-    
-    if (hasPublic) {
+
+    if (hasOutputPublic) {
       logSuccess('静态资源目录 (.output/public) 生成成功');
     }
-    
-    if (hasServer) {
-      logSuccess('服务器端代码 (.output/server) 生成成功');
+
+    if (!hasNetlifyFunctions && !hasOutputPublic) {
+      throw new Error('构建输出目录不存在，请检查构建配置');
     }
     
     log('🎉 Netlify 构建完成！', 'green');
