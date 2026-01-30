@@ -3429,9 +3429,22 @@ defineExpose({
   transition: transform 0.2s ease;
 }
 
-.play-button-bg:hover {
-  transform: scale(1.1);
-}
+.play-button-bg {
+    display: none !important;
+  }
+
+  .play-overlay {
+    background: transparent !important;
+    opacity: 1 !important;
+  }
+
+  .result-cover {
+    cursor: pointer;
+  }
+
+  .result-cover:active {
+    transform: scale(0.95);
+  }
 
 .result-info {
   flex: 1;
