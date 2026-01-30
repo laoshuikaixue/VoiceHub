@@ -7,7 +7,6 @@ services:
       - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
       - JWT_SECRET=your-jwt-secret-here
       - NODE_ENV=production
-      - ENABLE_IDLE_MODE=false
       - REDIS_URL=redis://default:your-redis-password-here@redis:6379
     depends_on:
       - postgres
