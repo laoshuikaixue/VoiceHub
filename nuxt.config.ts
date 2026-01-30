@@ -73,11 +73,6 @@ export default defineNuxtConfig({
     strict: true
   },
   
-  // 自动导入
-  imports: {
-    dirs: ['composables']
-  },
-  
   // 服务器端配置
   nitro: {
     preset: process.env.VERCEL ? 'vercel' : (process.env.NITRO_PRESET || 'node-server'),

@@ -29,9 +29,10 @@ WORKDIR /app
 
 # 从构建阶段复制运行所需文件
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.output ./.output
-COPY --from=builder /app/drizzle ./drizzle
+COPY --from=builder /app/app/drizzle ./app/drizzle
 COPY --from=builder /app/scripts ./scripts
 
 # 环境变量配置
