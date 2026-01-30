@@ -2485,16 +2485,16 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .notification-card-header {
-    padding: 14px 16px 8px;
+    padding: 12px 12px 6px;
     border-bottom: none;
   }
 
   .notification-icon-type {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    margin-right: 12px;
+    border-radius: 10px;
+    margin-right: 10px;
   }
 
   .notification-title {
@@ -2503,7 +2503,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .notification-card-body {
-    padding: 0 16px 14px 64px; /* 图标对齐 */
+    padding: 0 12px 12px 54px; /* 图标对齐 */
   }
 
   .notification-text {
@@ -2520,7 +2520,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   .notification-card-actions {
     display: flex;
     justify-content: flex-end;
-    padding: 8px 16px;
+    padding: 8px 12px;
     background: rgba(255, 255, 255, 0.02);
     border-top: 1px solid rgba(255, 255, 255, 0.04);
   }
