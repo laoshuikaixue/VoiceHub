@@ -154,14 +154,22 @@ async function netlifyBuild() {
     
     // 8. 验证构建输出
     logStep('🔍', '验证构建输出...');
-    if (!fileExists('.output')) {
-      throw new Error('构建输出目录不存在');
+    
+    // Netlify 预设会将静态文件输出到 dist，函数输出到 .netlify
+    const hasDist = fileExists('dist');
+    const hasOutput = fileExists('.output');
+    const hasNetlify = fileExists('.netlify');
+    
+    if (!hasDist && !hasOutput) {
+      throw new Error('构建输出目录 (dist 或 .output) 不存在');
     }
     
-    if (!fileExists('.output/server/index.mjs')) {
-      logWarning('服务器入口文件不存在，检查构建配置');
-    } else {
-      logSuccess('服务器入口文件生成成功');
+    if (hasDist) {
+      logSuccess('静态资源目录 (dist) 生成成功');
+    }
+    
+    if (hasNetlify || hasOutput) {
+      logSuccess('服务器端代码生成成功');
     }
     
     log('🎉 Netlify 构建完成！', 'green');
