@@ -110,8 +110,8 @@
             format="number"
             icon="schedule"
             icon-class="info"
-            label="排期总数"
-            subtitle="本学期排期"
+            label="总排期天数"
+            subtitle="本学期排期天数"
         />
 
         <StatCard
@@ -123,8 +123,8 @@
             format="number"
             icon="votes"
             icon-class="warning"
-            label="点歌总数"
-            subtitle="累计点播"
+            label="本周点歌数"
+            subtitle="累计点播歌曲"
         />
       </div>
 
@@ -430,7 +430,7 @@
                       </div>
                       <div class="metric-content">
                         <div class="metric-value">{{ semester.totalSchedules }}</div>
-                        <div class="metric-label">排期数量</div>
+                        <div class="metric-label">排期歌曲数</div>
                       </div>
                     </div>
                     <div class="metric-item">
@@ -445,7 +445,7 @@
                       </div>
                       <div class="metric-content">
                         <div class="metric-value">{{ semester.totalRequests }}</div>
-                        <div class="metric-label">点播次数</div>
+                        <div class="metric-label">获赞歌曲数</div>
                       </div>
                     </div>
                   </div>
