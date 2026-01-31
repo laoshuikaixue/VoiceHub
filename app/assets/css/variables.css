@@ -1,6 +1,6 @@
 /* 全局CSS变量 - 统一配色方案 */
 :root {
-  /* 主色调 - 采用更纯净的蓝色 */
+  /* 主色调 */
   --primary: #3b82f6;
   --primary-hover: #2563eb;
   --primary-light: rgba(59, 130, 246, 0.1);

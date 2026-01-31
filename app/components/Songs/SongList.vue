@@ -3,7 +3,7 @@
     <!-- 移除顶部径向渐变 -->
 
     <div class="song-list-header">
-      <!-- 移动端搜索栏 (参考参考项目设计) -->
+      <!-- 移动端搜索栏 -->
       <div class="mobile-search-container mobile-only">
         <div class="search-bar-wrapper">
           <div class="search-icon-box">
@@ -133,7 +133,9 @@
           </svg>
         </button>
       </div>
+    </div> <!-- desktop-header-content -->
     </div>
+
 
     <!-- 使用Transition组件包裹所有内容 -->
     <Transition mode="out-in" name="tab-switch">

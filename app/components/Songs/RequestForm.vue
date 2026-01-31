@@ -1,6 +1,26 @@
 <template>
   <div class="request-form">
-    <div class="rules-section">
+    <!-- Desktop Rules Section (Restored from requestformold.vue) -->
+    <div class="rules-section desktop-only-rules">
+      <h2 class="section-title">投稿须知</h2>
+      <div class="rules-content-desktop">
+        <div v-if="submissionGuidelines" class="guidelines-content"
+             v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+        <div v-else class="default-guidelines">
+          <p>1. 投稿时无需加入书名号</p>
+          <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
+          <p>3. 禁止投递含有违规内容的歌曲</p>
+          <p>4. 点播的歌曲将由管理员进行审核</p>
+          <p>5. 审核通过后将安排在播放时段播出</p>
+          <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
+          <p>7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
+          <p>8. 最终解释权归广播站所有</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Rules Section (Original RequestForm.vue style) -->
+    <div class="rules-section mobile-only-rules">
       <h3 class="rules-title">
         <Icon :size="16" class="rules-icon" name="bell" />
         投稿须知
@@ -1996,16 +2016,47 @@ defineExpose({
   overflow: hidden;
 }
 
+/* Desktop Rules Styles */
+.desktop-only-rules {
+  display: block;
+}
+
+.mobile-only-rules {
+  display: none;
+}
+
 .rules-section {
-  background: #1A1D24;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 13px;
   padding: 1.5rem;
   width: 40%;
   height: 100%;
   overflow-y: auto;
 }
 
+.section-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 1rem;
+}
+
+.rules-content-desktop {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.8;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+
+.rules-content-desktop p {
+  margin-bottom: 0.8rem;
+}
+
+/* Mobile Rules Styles (Hidden on desktop) */
 .rules-title {
   display: flex;
   align-items: center;
@@ -3745,6 +3796,15 @@ defineExpose({
     padding: 0.6rem 0.4rem;
   }
 
+  /* 移动端显示/隐藏控制 */
+  .desktop-only-rules {
+    display: none;
+  }
+
+  .mobile-only-rules {
+    display: block;
+  }
+
   .request-form {
     flex-direction: column;
     height: auto;
@@ -3761,6 +3821,19 @@ defineExpose({
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px;
+  }
+
+  .rules-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 1.25rem;
+    letter-spacing: normal;
+  }
+
+  .rules-icon {
+    display: block;
+    color: #f59e0b;
   }
 
   .form-container {
