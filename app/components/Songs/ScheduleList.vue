@@ -2830,6 +2830,14 @@ const vRipple = {
     margin: 0;
   }
 
+  .action-area {
+    position: static;
+    transform: none;
+    margin-left: auto;
+    padding-left: 8px;
+    flex-shrink: 0;
+  }
+
   /* 歌曲封面 - 更大的圆角 */
   .song-cover {
     width: 48px;
