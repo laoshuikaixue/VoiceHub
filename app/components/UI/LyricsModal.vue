@@ -781,6 +781,7 @@ const handleProgressTouchMove = (event) => {
 
 // 工具方法
 const formatTime = (seconds) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
@@ -1496,10 +1497,12 @@ onUnmounted(() => {
   min-width: 45px;
   text-align: center;
   font-weight: 500;
+  flex-shrink: 0; /* 防止时间显示被压缩 */
 }
 
 .progress-bar {
   flex: 1;
+  min-width: 0; /* 防止在 flex 容器中溢出 */
   height: 5px;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 3px;
