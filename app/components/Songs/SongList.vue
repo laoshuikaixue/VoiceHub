@@ -359,8 +359,16 @@
               <Icon name="chevron-left" :size="20" />
             </button>
 
-            <div class="page-indicator">
-              <span class="current">{{ currentPage }}</span>
+            <div class="page-selector">
+              <input
+                  v-model.number="jumpPageInput"
+                  type="number"
+                  class="mobile-page-input"
+                  :placeholder="currentPage"
+                  @focus="jumpPageInput = currentPage"
+                  @blur="handleJumpToPage"
+                  @keyup.enter="handleJumpToPage"
+              />
               <span class="divider">/</span>
               <span class="total">{{ totalPages }}</span>
             </div>
@@ -2867,27 +2875,79 @@ button:disabled {
 }
 
 /* 移动端分页重新设计 */
-.pagination-mobile {
-  display: none;
-  justify-content: center;
-  align-items: center;
-  gap: 1.5rem;
-  margin-top: 2rem;
-  padding-bottom: 1rem;
-}
+@media (max-width: 768px) {
+  .pagination-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 0 10px 20px;
+  }
 
-.page-nav-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  .page-nav-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .page-nav-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .page-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .page-selector {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-page-input {
+    width: 40px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0;
+    font-family: 'MiSans', sans-serif;
+  }
+
+  .mobile-page-input:focus {
+    outline: none;
+    color: #0B5AFE;
+  }
+
+  .page-selector .divider {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 14px;
+  }
+
+  .page-selector .total {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    font-weight: 500;
+  }
 }
 
 .page-nav-btn:hover:not(:disabled) {

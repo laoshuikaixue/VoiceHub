@@ -2559,13 +2559,13 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
   .section-tab.active .tab-icon {
     opacity: 1;
-    transform: translateY(-2px);
+    color: #0B5AFE;
+    transform: scale(1.1);
     filter: drop-shadow(0 0 8px rgba(11, 90, 254, 0.4));
   }
 
   .section-tab.active .tab-text {
     font-weight: 600;
-    transform: scale(1.05);
   }
 
   /* 移除原有的伪元素图标 */
@@ -2573,17 +2573,28 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     display: none;
   }
 
+  /* 底部圆点指示器 */
   .section-tab.active::after {
     content: '';
-    position: absolute;
-    top: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 32px;
-    height: 3px;
+    display: block;
+    width: 4px;
+    height: 4px;
     background: #0B5AFE;
-    border-radius: 0 0 4px 4px;
-    box-shadow: 0 0 10px rgba(11, 90, 254, 0.6);
+    border-radius: 50%;
+    margin-top: 4px;
+    box-shadow: 0 0 5px rgba(11, 90, 254, 0.6);
+    animation: dot-pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes dot-pop-in {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 
   .icon-wrapper {
@@ -2675,11 +2686,11 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .logo-image {
-    width: 70px;
+    width: 90px;
   }
 
   .school-logo {
-    max-width: 50px;
+    max-width: 70px;
   }
 
   .action-button {
