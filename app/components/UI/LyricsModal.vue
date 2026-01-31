@@ -1400,10 +1400,10 @@ onUnmounted(() => {
   color: #ffffff;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  white-space: nowrap; /* 防止不必要换行 */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%; /* 确保不超过容器宽度 */
+  white-space: normal; /* 允许换行 */
+  overflow: visible; /* 允许内容展示 */
+  text-align: center;
+  width: 100%;
 }
 
 .song-artist {
@@ -1714,7 +1714,7 @@ onUnmounted(() => {
     top: 50px; /* 大致匹配 endTop 逻辑 */
     left: 0;
     width: 100%;
-    padding: 0 24px 0 84px; /* 左内边距: 24px + 48px(封面) + 12px(间隙) */
+    padding: 0 70px 0 84px; /* 右侧增加 padding 以避开关闭按钮 */
     pointer-events: none;
     z-index: 50;
     box-sizing: border-box;
@@ -1991,10 +1991,17 @@ onUnmounted(() => {
   .song-title {
     font-size: 2rem;
     margin-bottom: 0.5rem;
-    display: block; /* 覆盖 inline-block */
-    max-width: 100%; /* 放宽宽度限制 */
-    padding: 0 1rem; /* 增加内边距防止贴边 */
+    display: block;
+    max-width: 100%;
+    padding: 0 1rem;
     box-sizing: border-box;
+    /* 允许换行，限制最大行数防止撑破布局 */
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
   }
   
   .song-artist {
