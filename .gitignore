@@ -28,10 +28,14 @@ backups/
 .vscode
 .trae
 .qoder
+.figma
 scripts/package-lock.json
 
 # Local env files
 .env
 .env.*
 !.env.example
-.env.example
+
+# Tencent Cloud EdgeOne
+.edgeone/*
+.tef_dist/*

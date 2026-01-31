@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, unique, text, boolean, integer, serial, bigint, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, timestamp, varchar, text, integer, boolean, bigint, uuid, unique, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blacklistType = pgEnum("BlacklistType", ['SONG', 'KEYWORD'])
@@ -6,54 +6,6 @@ export const collaboratorStatus = pgEnum("collaborator_status", ['PENDING', 'ACC
 export const replayRequestStatus = pgEnum("replay_request_status", ['PENDING', 'FULFILLED', 'REJECTED'])
 export const userStatus = pgEnum("user_status", ['active', 'withdrawn'])
 
-
-export const apiKeyPermissions = pgTable("api_key_permissions", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	apiKeyId: uuid("api_key_id").notNull(),
-	permission: varchar({ length: 100 }).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-});
-
-export const apiKeys = pgTable("api_keys", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	name: varchar({ length: 255 }).notNull(),
-	description: text(),
-	keyHash: varchar("key_hash", { length: 255 }).notNull(),
-	keyPrefix: varchar("key_prefix", { length: 10 }).notNull(),
-	isActive: boolean("is_active").default(true).notNull(),
-	expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	lastUsedAt: timestamp("last_used_at", { withTimezone: true, mode: 'string' }),
-	createdByUserId: integer("created_by_user_id").notNull(),
-	usageCount: integer("usage_count").default(0).notNull(),
-}, (table) => [
-	unique("api_keys_key_hash_unique").on(table.keyHash),
-]);
-
-export const apiLogs = pgTable("api_logs", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	apiKeyId: uuid("api_key_id"),
-	endpoint: varchar({ length: 500 }).notNull(),
-	method: varchar({ length: 10 }).notNull(),
-	ipAddress: text("ip_address").notNull(),
-	userAgent: text("user_agent"),
-	statusCode: integer("status_code").notNull(),
-	responseTimeMs: integer("response_time_ms").notNull(),
-	requestBody: text("request_body"),
-	responseBody: text("response_body"),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	errorMessage: text("error_message"),
-});
-
-export const collaborationLogs = pgTable("collaboration_logs", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	collaboratorId: uuid("collaborator_id").notNull(),
-	action: varchar({ length: 50 }).notNull(),
-	operatorId: integer("operator_id").notNull(),
-	ipAddress: text("ip_address"),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-});
 
 export const emailTemplate = pgTable("EmailTemplate", {
 	id: serial().primaryKey().notNull(),
@@ -64,6 +16,17 @@ export const emailTemplate = pgTable("EmailTemplate", {
 	subject: varchar({ length: 300 }).notNull(),
 	html: text().notNull(),
 	updatedByUserId: integer(),
+});
+
+export const notification = pgTable("Notification", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	type: text().notNull(),
+	message: text().notNull(),
+	read: boolean().default(false).notNull(),
+	userId: integer().notNull(),
+	songId: integer(),
 });
 
 export const notificationSettings = pgTable("NotificationSettings", {
@@ -77,17 +40,6 @@ export const notificationSettings = pgTable("NotificationSettings", {
 	songPlayedEnabled: boolean().default(true).notNull(),
 	refreshInterval: integer().default(60).notNull(),
 	songVotedThreshold: integer().default(1).notNull(),
-});
-
-export const notification = pgTable("Notification", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	type: text().notNull(),
-	message: text().notNull(),
-	read: boolean().default(false).notNull(),
-	userId: integer().notNull(),
-	songId: integer(),
 });
 
 export const playTime = pgTable("PlayTime", {
@@ -138,37 +90,6 @@ export const semester = pgTable("Semester", {
 	isActive: boolean().default(false).notNull(),
 });
 
-export const songBlacklist = pgTable("SongBlacklist", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	type: blacklistType().notNull(),
-	value: text().notNull(),
-	reason: text(),
-	isActive: boolean().default(true).notNull(),
-	createdBy: integer(),
-});
-
-export const songCollaborators = pgTable("song_collaborators", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	songId: integer("song_id").notNull(),
-	userId: integer("user_id").notNull(),
-	status: collaboratorStatus().default('PENDING').notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-});
-
-export const songReplayRequests = pgTable("song_replay_requests", {
-	id: serial().primaryKey().notNull(),
-	songId: integer("song_id").notNull(),
-	userId: integer("user_id").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	status: replayRequestStatus().default('PENDING').notNull(),
-}, (table) => [
-	unique("song_replay_requests_song_id_user_id_unique").on(table.songId, table.userId),
-]);
-
 export const song = pgTable("Song", {
 	id: serial().primaryKey().notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
@@ -185,6 +106,17 @@ export const song = pgTable("Song", {
 	musicPlatform: text(),
 	musicId: text(),
 	hitRequestId: integer(),
+});
+
+export const songBlacklist = pgTable("SongBlacklist", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	type: blacklistType().notNull(),
+	value: text().notNull(),
+	reason: text(),
+	isActive: boolean().default(true).notNull(),
+	createdBy: integer(),
 });
 
 export const systemSettings = pgTable("SystemSettings", {
@@ -217,16 +149,6 @@ export const systemSettings = pgTable("SystemSettings", {
 	enableReplayRequests: boolean().default(false).notNull(),
 });
 
-export const userStatusLogs = pgTable("user_status_logs", {
-	id: serial().primaryKey().notNull(),
-	userId: integer("user_id").notNull(),
-	oldStatus: userStatus("old_status"),
-	newStatus: userStatus("new_status").notNull(),
-	reason: text(),
-	operatorId: integer("operator_id"),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-});
-
 export const user = pgTable("User", {
 	id: serial().primaryKey().notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
@@ -255,4 +177,82 @@ export const vote = pgTable("Vote", {
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 	songId: integer().notNull(),
 	userId: integer().notNull(),
+});
+
+export const apiKeyPermissions = pgTable("api_key_permissions", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	apiKeyId: uuid("api_key_id").notNull(),
+	permission: varchar({ length: 100 }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
+export const apiKeys = pgTable("api_keys", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text(),
+	keyHash: varchar("key_hash", { length: 255 }).notNull(),
+	keyPrefix: varchar("key_prefix", { length: 10 }).notNull(),
+	isActive: boolean("is_active").default(true).notNull(),
+	expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	lastUsedAt: timestamp("last_used_at", { withTimezone: true, mode: 'string' }),
+	createdByUserId: integer("created_by_user_id").notNull(),
+	usageCount: integer("usage_count").default(0).notNull(),
+}, (table) => [
+	unique("api_keys_key_hash_unique").on(table.keyHash),
+]);
+
+export const apiLogs = pgTable("api_logs", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	apiKeyId: uuid("api_key_id"),
+	endpoint: varchar({ length: 500 }).notNull(),
+	method: varchar({ length: 10 }).notNull(),
+	ipAddress: text("ip_address").notNull(),
+	userAgent: text("user_agent"),
+	statusCode: integer("status_code").notNull(),
+	responseTimeMs: integer("response_time_ms").notNull(),
+	requestBody: text("request_body"),
+	responseBody: text("response_body"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	errorMessage: text("error_message"),
+});
+
+export const collaborationLogs = pgTable("collaboration_logs", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	collaboratorId: uuid("collaborator_id").notNull(),
+	action: varchar({ length: 50 }).notNull(),
+	operatorId: integer("operator_id").notNull(),
+	ipAddress: text("ip_address"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
+export const songCollaborators = pgTable("song_collaborators", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	songId: integer("song_id").notNull(),
+	userId: integer("user_id").notNull(),
+	status: collaboratorStatus().default('PENDING').notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
+export const songReplayRequests = pgTable("song_replay_requests", {
+	id: serial().primaryKey().notNull(),
+	songId: integer("song_id").notNull(),
+	userId: integer("user_id").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	status: replayRequestStatus().default('PENDING').notNull(),
+}, (table) => [
+	unique("song_replay_requests_song_id_user_id_unique").on(table.songId, table.userId),
+]);
+
+export const userStatusLogs = pgTable("user_status_logs", {
+	id: serial().primaryKey().notNull(),
+	userId: integer("user_id").notNull(),
+	oldStatus: userStatus("old_status"),
+	newStatus: userStatus("new_status").notNull(),
+	reason: text(),
+	operatorId: integer("operator_id"),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 });
