@@ -1,8 +1,9 @@
 <template>
   <div class="request-form">
-    <div class="rules-section">
+    <!-- Desktop Rules Section (Restored from requestformold.vue) -->
+    <div class="rules-section desktop-only-rules">
       <h2 class="section-title">投稿须知</h2>
-      <div class="rules-content">
+      <div class="rules-content-desktop">
         <div v-if="submissionGuidelines" class="guidelines-content"
              v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
         <div v-else class="default-guidelines">
@@ -12,9 +13,30 @@
           <p>4. 点播的歌曲将由管理员进行审核</p>
           <p>5. 审核通过后将安排在播放时段播出</p>
           <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
-          <p>7.
-            本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
+          <p>7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
           <p>8. 最终解释权归广播站所有</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Rules Section (Original RequestForm.vue style) -->
+    <div class="rules-section mobile-only-rules">
+      <h3 class="rules-title">
+        <Icon :size="16" class="rules-icon" name="bell" />
+        投稿须知
+      </h3>
+      <div class="rules-content">
+        <div v-if="submissionGuidelines" class="guidelines-content"
+             v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+        <div v-else class="default-guidelines">
+          <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
+          <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
+          <div class="rule-item"><span>3.</span> 禁止投递含有违规内容的歌曲</div>
+          <div class="rule-item"><span>4.</span> 点播的歌曲将由管理员进行审核</div>
+          <div class="rule-item"><span>5.</span> 审核通过后将安排在播放时段播出</div>
+          <div class="rule-item"><span>6.</span> 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</div>
+          <div class="rule-item"><span>7.</span> 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。</div>
+          <div class="rule-item"><span>8.</span> 最终解释权归广播站所有</div>
         </div>
       </div>
     </div>
@@ -1994,6 +2016,15 @@ defineExpose({
   overflow: hidden;
 }
 
+/* Desktop Rules Styles */
+.desktop-only-rules {
+  display: block;
+}
+
+.mobile-only-rules {
+  display: none;
+}
+
 .rules-section {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 13px;
@@ -2001,6 +2032,61 @@ defineExpose({
   width: 40%;
   height: 100%;
   overflow-y: auto;
+}
+
+.section-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 1rem;
+}
+
+.rules-content-desktop {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.8;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+
+.rules-content-desktop p {
+  margin-bottom: 0.8rem;
+}
+
+/* Mobile Rules Styles (Hidden on desktop) */
+.rules-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1.25rem;
+}
+
+.rules-icon {
+  color: #f59e0b;
+}
+
+.rules-content {
+  font-family: 'MiSans', sans-serif;
+  font-size: 13px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.rule-item {
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
+.rule-item span {
+  margin-right: 0.5rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 600;
 }
 
 .form-container {
@@ -2093,14 +2179,7 @@ defineExpose({
 }
 
 
-.section-title {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 400;
-  font-size: 16px;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 1rem;
-}
+
 
 /* 联合投稿人区域 */
 .collaborators-section {
@@ -2171,25 +2250,7 @@ defineExpose({
   color: #fff;
 }
 
-.rules-content {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 1.8;
-  letter-spacing: 0.04em;
-}
 
-.rules-content p {
-  margin-bottom: 0.8rem;
-}
-
-.guidelines-content {
-  line-height: 1.8;
-}
-
-.default-guidelines p {
-  margin-bottom: 0.8rem;
-}
 
 
 /* 横向投稿状态样式 */
@@ -2439,7 +2500,7 @@ defineExpose({
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -2450,12 +2511,12 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.25);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.25);
   filter: brightness(1.1);
 }
 
@@ -3429,9 +3490,22 @@ defineExpose({
   transition: transform 0.2s ease;
 }
 
-.play-button-bg:hover {
-  transform: scale(1.1);
-}
+.play-button-bg {
+    display: none !important;
+  }
+
+  .play-overlay {
+    background: transparent !important;
+    opacity: 1 !important;
+  }
+
+  .result-cover {
+    cursor: pointer;
+  }
+
+  .result-cover:active {
+    transform: scale(0.95);
+  }
 
 .result-info {
   flex: 1;
@@ -3722,6 +3796,15 @@ defineExpose({
     padding: 0.6rem 0.4rem;
   }
 
+  /* 移动端显示/隐藏控制 */
+  .desktop-only-rules {
+    display: none;
+  }
+
+  .mobile-only-rules {
+    display: block;
+  }
+
   .request-form {
     flex-direction: column;
     height: auto;
@@ -3732,8 +3815,25 @@ defineExpose({
   .rules-section {
     width: 100%;
     height: auto;
-    margin-bottom: 1rem;
-    padding: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+  }
+
+  .rules-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 1.25rem;
+    letter-spacing: normal;
+  }
+
+  .rules-icon {
+    display: block;
+    color: #f59e0b;
   }
 
   .form-container {
@@ -3749,18 +3849,22 @@ defineExpose({
     display: flex;
     flex-direction: column;
     height: auto;
-    gap: 1rem;
+    gap: 1.25rem;
   }
 
   .search-results-container {
     flex: 1;
     height: auto;
     max-height: 85vh;
-    padding: 1rem;
+    padding: 0.75rem;
     overflow: visible;
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
   }
 
   .results-content {
@@ -3814,8 +3918,8 @@ defineExpose({
   .search-section {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
     flex: none;
     width: 100%;
   }
@@ -3839,34 +3943,49 @@ defineExpose({
   }
 
   .search-input-group {
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .search-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 15px;
+    flex: 1;
   }
 
   .search-button {
-    padding: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
   }
 
   /* 移动端平台选择按钮 */
   .platform-selection {
-    flex-direction: row;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
-
-  .platform-selection::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    display: flex;
+    overflow: visible;
   }
 
   .platform-btn {
-    padding: 0.6rem 0.8rem;
+    flex: 1;
+    padding: 0.5rem;
     font-size: 13px;
-    flex-shrink: 0;
-    min-width: fit-content;
+    border-radius: 10px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    min-width: auto;
+  }
+
+  .platform-btn.active {
+    background: #0B5AFE;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(11, 90, 254, 0.3);
   }
 
   /* 移动端音源状态显示 */
@@ -3967,47 +4086,48 @@ defineExpose({
 
   /* 移动端搜索结果优化 */
   .result-item {
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 0.5rem;
+    padding: 10px;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
   }
 
   .result-cover {
-    width: 60px;
-    height: 60px;
-    align-self: center;
+    width: 64px;
+    height: 64px;
+    align-self: flex-start;
   }
 
   .result-info {
-    text-align: center;
+    text-align: left;
+    flex: 1;
   }
 
   .result-title {
     font-size: 15px;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
-    line-height: 1.3;
-    margin-bottom: 0.5rem;
+    font-weight: 600;
   }
 
   .result-artist {
-    font-size: 13px;
-    margin: 0.3rem 0;
-  }
-
-  .result-album {
-    font-size: 11px;
-    margin: 0.2rem 0;
+    font-size: 12px;
+    opacity: 0.6;
+    margin: 4px 0;
   }
 
   .result-actions {
-    justify-content: center;
+    flex-direction: row;
+    width: auto;
   }
 
   .select-btn {
-    width: 100%;
-    padding: 0.6rem 1rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 12px;
+    border-radius: 10px;
+    width: auto;
   }
 
   /* 移动端弹窗优化 */
@@ -4051,6 +4171,7 @@ defineExpose({
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 8rem;
+    padding-right: 0;
   }
 
   /* 移动端期望排期选择 */

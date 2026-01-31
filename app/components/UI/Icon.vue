@@ -269,6 +269,12 @@
       <line x1="12" x2="12" y1="15" y2="3"></line>
     </g>
 
+    <!-- 搜索图标 -->
+    <g v-else-if="name === 'search'">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" x2="16.65" y1="21" y2="16.65"></line>
+    </g>
+
     <!-- 上传图标 -->
     <g v-else-if="name === 'upload'">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
