@@ -75,7 +75,6 @@ export default defineNuxtConfig({
   
   // 服务器端配置
   nitro: {
-    preset: process.env.VERCEL ? 'vercel' : (process.env.NITRO_PRESET || 'node-server'),
     experimental: {
       wasm: true,
       asyncContext: true
@@ -147,20 +146,7 @@ export default defineNuxtConfig({
           'Expires': '0'
         }
       }
-    },
-    // 根据部署环境调整配置
-    ...(process.env.VERCEL ? {
-      // Vercel 环境：使用标准配置
-    } : process.env.NETLIFY ? {
-      // Netlify 环境：确保 Drizzle 正确打包
-    } : {
-      // EdgeOne 环境：应用特定的输出目录
-      output: {
-        dir: '.edgeone',
-        publicDir: '.edgeone/assets',
-        serverDir: '.edgeone/server-handler'
-      }
-    })
+    }
   },
   
   // Vite 配置
