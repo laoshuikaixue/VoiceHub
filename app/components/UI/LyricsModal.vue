@@ -52,6 +52,7 @@
           <div 
             class="main-content" 
             ref="mainContent"
+            :style="{ zIndex: isMobile && showQualitySettings ? 101 : undefined }"
             @scroll="onMainContentScroll"
             @click="handleOverlayClick" 
           >
@@ -1801,12 +1802,12 @@ onUnmounted(() => {
   /* 音质菜单动画 */
   .badge-quality-menu {
     position: absolute;
-    top: 100%; /* 向下弹出 */
-    bottom: auto;
+    bottom: 100%; /* 向上弹出 */
+    top: auto;
     left: 50%;
     transform: translateX(-50%) scale(0.9);
-    margin-top: 12px; /* 顶部间距 */
-    margin-bottom: 0;
+    margin-bottom: 12px; /* 底部间距 */
+    margin-top: 0;
     background: rgba(245, 245, 245, 0.9);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -1820,7 +1821,7 @@ onUnmounted(() => {
     flex-direction: column;
     gap: 2px;
     opacity: 0;
-    transform-origin: top center; /* 动画原点设为顶部 */
+    transform-origin: bottom center; /* 动画原点设为底部 */
     animation: menu-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     max-height: 240px;
     overflow-y: auto;
@@ -1829,7 +1830,7 @@ onUnmounted(() => {
   @keyframes menu-pop-in {
     0% {
       opacity: 0;
-      transform: translateX(-50%) scale(0.9) translateY(-10px);
+      transform: translateX(-50%) scale(0.9) translateY(10px);
     }
     100% {
       opacity: 1;
