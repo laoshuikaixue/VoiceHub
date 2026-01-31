@@ -3,6 +3,14 @@ import {db} from '~/drizzle/db'
 import {schedules, semesters, songBlacklists, songs, users} from '~/drizzle/schema'
 import {and, count, eq, gte, lt} from 'drizzle-orm'
 import {cacheService} from '../../services/cacheService'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc.js'
+import timezone from 'dayjs/plugin/timezone.js'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
+const BEIJING_TIMEZONE = 'Asia/Shanghai'
 
 export default defineEventHandler(async (event) => {
     // 检查认证和权限
@@ -75,24 +83,40 @@ export default defineEventHandler(async (event) => {
 
             // 今日排期数 (按天计算)
             (async () => {
-                const todaySchedulesList = await db.select({playDate: schedules.playDate})
+                const query = db.select({playDate: schedules.playDate})
                     .from(schedules)
-                    .where(and(
-                        gte(schedules.playDate, today),
-                        lt(schedules.playDate, new Date(today.getTime() + 24 * 60 * 60 * 1000))
-                    ))
+                
+                const whereConditions = [
+                    gte(schedules.playDate, today),
+                    lt(schedules.playDate, new Date(today.getTime() + 24 * 60 * 60 * 1000))
+                ]
 
-                // 按日期去重计算天数
-                const uniqueDates = new Set(todaySchedulesList.map(s => s.playDate.toISOString().split('T')[0]))
+                if (semester && semester !== 'all') {
+                    query.innerJoin(songs, eq(schedules.songId, songs.id))
+                    whereConditions.push(eq(songs.semester, semester))
+                }
+
+                const todaySchedulesList = await query.where(and(...whereConditions))
+
+                // 按北京时间日期去重计算天数
+                const uniqueDates = new Set(todaySchedulesList.map(s => dayjs(s.playDate).tz(BEIJING_TIMEZONE).format('YYYY-MM-DD')))
                 return uniqueDates.size
             })(),
 
             // 总排期数 (按天计算)
             (async () => {
-                const allSchedules = await db.select({playDate: schedules.playDate}).from(schedules)
+                const query = db.select({playDate: schedules.playDate})
+                    .from(schedules)
 
-                // 按日期去重计算天数
-                const uniqueDates = new Set(allSchedules.map(s => s.playDate.toISOString().split('T')[0]))
+                if (semester && semester !== 'all') {
+                    query.innerJoin(songs, eq(schedules.songId, songs.id))
+                        .where(eq(songs.semester, semester))
+                }
+
+                const allSchedules = await query
+
+                // 按北京时间日期去重计算天数
+                const uniqueDates = new Set(allSchedules.map(s => dayjs(s.playDate).tz(BEIJING_TIMEZONE).format('YYYY-MM-DD')))
                 return uniqueDates.size
             })(),
 
@@ -187,7 +211,7 @@ export default defineEventHandler(async (event) => {
                     const countValue = result[0].count
 
                     trends.push({
-                        date: startOfDay.toISOString().split('T')[0],
+                        date: dayjs(startOfDay).tz(BEIJING_TIMEZONE).format('YYYY-MM-DD'),
                         count: countValue
                     })
                 }
@@ -206,7 +230,7 @@ export default defineEventHandler(async (event) => {
                     const countValue = result[0].count
 
                     trends.push({
-                        date: startOfDay.toISOString().split('T')[0],
+                        date: dayjs(startOfDay).tz(BEIJING_TIMEZONE).format('YYYY-MM-DD'),
                         count: countValue
                     })
                 }
@@ -221,18 +245,26 @@ export default defineEventHandler(async (event) => {
                     const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
                     const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
 
-                    const schedulesList = await db.select({playDate: schedules.playDate})
+                    const query = db.select({playDate: schedules.playDate})
                         .from(schedules)
-                        .where(and(
-                            gte(schedules.playDate, startOfDay),
-                            lt(schedules.playDate, endOfDay)
-                        ))
+                    
+                    const whereConditions = [
+                        gte(schedules.playDate, startOfDay),
+                        lt(schedules.playDate, endOfDay)
+                    ]
 
-                    // 按日期去重计算天数
-                    const uniqueDates = new Set(schedulesList.map(s => s.playDate.toISOString().split('T')[0]))
+                    if (semester && semester !== 'all') {
+                        query.innerJoin(songs, eq(schedules.songId, songs.id))
+                        whereConditions.push(eq(songs.semester, semester))
+                    }
+
+                    const schedulesList = await query.where(and(...whereConditions))
+
+                    // 按北京时间日期去重计算天数
+                    const uniqueDates = new Set(schedulesList.map(s => dayjs(s.playDate).tz(BEIJING_TIMEZONE).format('YYYY-MM-DD')))
 
                     trends.push({
-                        date: startOfDay.toISOString().split('T')[0],
+                        date: dayjs(startOfDay).tz(BEIJING_TIMEZONE).format('YYYY-MM-DD'),
                         count: uniqueDates.size
                     })
                 }
@@ -255,7 +287,7 @@ export default defineEventHandler(async (event) => {
                     const countValue = result[0].count
 
                     trends.push({
-                        date: startOfDay.toISOString().split('T')[0],
+                        date: dayjs(startOfDay).tz(BEIJING_TIMEZONE).format('YYYY-MM-DD'),
                         count: countValue
                     })
                 }
