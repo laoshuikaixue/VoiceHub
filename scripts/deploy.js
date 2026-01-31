@@ -153,6 +153,25 @@ async function deploy() {
       throw new Error('应用构建失败');
     }
     logSuccess('应用构建完成');
+
+    // 5.1. 修复 EdgeOne 部署兼容性问题 (Nuxt 4 结构适配)
+    // EdgeOne 插件似乎期望 nitro.mjs 在 chunks/nitro/nitro.mjs，但 Nuxt 4 (Nitro) 将其放在 chunks/_/nitro.mjs
+    // 注意：nuxt.config.ts 中配置了 output.dir 为 .edgeone
+    logStep('🔧', '应用 EdgeOne 兼容性补丁...');
+    const nitroSourcePath = '.edgeone/server-handler/chunks/_/nitro.mjs';
+    const nitroTargetDir = '.edgeone/server-handler/chunks/nitro';
+    const nitroTargetPath = '.edgeone/server-handler/chunks/nitro/nitro.mjs';
+    
+    if (fileExists(nitroSourcePath)) {
+      if (!fileExists(nitroTargetDir)) {
+        fs.mkdirSync(nitroTargetDir, { recursive: true });
+      }
+      fs.copyFileSync(nitroSourcePath, nitroTargetPath);
+      logSuccess('已复制 nitro.mjs 以适配 EdgeOne (.edgeone)');
+    } else {
+      // 尝试查找其他可能的位置或者不做处理
+      logWarning(`未找到 ${nitroSourcePath}，跳过 EdgeOne 适配 (可能是因为目录结构已更改)`);
+    }
     
     // 6. 部署后检查
     logStep('🔍', '执行部署后检查...');
