@@ -3,45 +3,94 @@
     <!-- 移除顶部径向渐变 -->
 
     <div class="song-list-header">
-      <div class="tab-controls">
-        <button
-            v-ripple
-            :class="{ 'active': activeTab === 'all' }"
-            class="tab-button"
-            @click="setActiveTab('all')"
-        >
-          全部投稿
-        </button>
-        <button
-            v-if="isAuthenticated"
-            v-ripple
-            :class="{ 'active': activeTab === 'mine' }"
-            class="tab-button"
-            @click="setActiveTab('mine')"
-        >
-          我的投稿
-        </button>
-        <button
-            v-if="isAuthenticated"
-            v-ripple
-            :class="{ 'active': activeTab === 'replays' }"
-            class="tab-button"
-            @click="setActiveTab('replays')"
-        >
-          我的重播
-        </button>
-      </div>
-
-      <div class="search-actions">
-        <div class="search-box">
+      <!-- 移动端搜索栏 (参考参考项目设计) -->
+      <div class="mobile-search-container mobile-only">
+        <div class="search-bar-wrapper">
+          <div class="search-icon-box">
+            <Icon name="search" :size="18" />
+          </div>
           <input
               v-model="searchQuery"
-              class="search-input"
-              placeholder="输入想要搜索的歌曲"
+              class="mobile-search-input"
+              placeholder="搜索点播记录..."
               type="text"
           />
-          <span class="search-icon">🔍</span>
         </div>
+
+        <div class="mobile-tabs">
+          <button
+              v-ripple
+              :class="{ 'active': activeTab === 'all' }"
+              class="mobile-tab-btn"
+              @click="setActiveTab('all')"
+          >
+            全部投稿
+            <div v-if="activeTab === 'all'" class="active-indicator"></div>
+          </button>
+          <button
+              v-if="isAuthenticated"
+              v-ripple
+              :class="{ 'active': activeTab === 'mine' }"
+              class="mobile-tab-btn"
+              @click="setActiveTab('mine')"
+          >
+            我的投稿
+            <div v-if="activeTab === 'mine'" class="active-indicator"></div>
+          </button>
+          <button
+              v-if="isAuthenticated"
+              v-ripple
+              :class="{ 'active': activeTab === 'replays' }"
+              class="mobile-tab-btn"
+              @click="setActiveTab('replays')"
+          >
+            我的重播
+            <div v-if="activeTab === 'replays'" class="active-indicator"></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 桌面端操作区域 (包含搜索和学期选择) -->
+      <div class="desktop-header-content desktop-only">
+        <div class="tab-controls">
+          <button
+              v-ripple
+              :class="{ 'active': activeTab === 'all' }"
+              class="tab-button"
+              @click="setActiveTab('all')"
+          >
+            全部投稿
+          </button>
+          <button
+              v-if="isAuthenticated"
+              v-ripple
+              :class="{ 'active': activeTab === 'mine' }"
+              class="tab-button"
+              @click="setActiveTab('mine')"
+          >
+            我的投稿
+          </button>
+          <button
+              v-if="isAuthenticated"
+              v-ripple
+              :class="{ 'active': activeTab === 'replays' }"
+              class="tab-button"
+              @click="setActiveTab('replays')"
+          >
+            我的重播
+          </button>
+        </div>
+
+        <div class="search-actions">
+          <div class="search-box">
+            <input
+                v-model="searchQuery"
+                class="search-input"
+                placeholder="输入想要搜索的歌曲"
+                type="text"
+            />
+            <span class="search-icon">🔍</span>
+          </div>
 
         <!-- 学期选择器 -->
         <div v-if="availableSemesters.length > 1" class="semester-selector-compact">
@@ -240,58 +289,86 @@
         </TransitionGroup>
 
         <!-- 分页控件 -->
-        <div v-if="totalPages > 1" class="pagination">
-          <button
-              :disabled="currentPage === 1"
-              class="page-button"
-              @click="goToPage(currentPage - 1)"
-          >
-            上一页
-          </button>
-
-          <div class="page-numbers">
+        <div v-if="totalPages > 1" class="pagination-wrapper">
+          <!-- 桌面端分页 -->
+          <div class="pagination desktop-only">
             <button
-                v-for="page in displayedPageNumbers"
-                :key="page"
-                :class="['page-number', { active: currentPage === page }]"
-                @click="goToPage(page)"
+                :disabled="currentPage === 1"
+                class="page-button"
+                @click="goToPage(currentPage - 1)"
             >
-              {{ page }}
+              上一页
             </button>
-          </div>
 
-          <button
-              :disabled="currentPage === totalPages"
-              class="page-button"
-              @click="goToPage(currentPage + 1)"
-          >
-            下一页
-          </button>
+            <div class="page-numbers">
+              <button
+                  v-for="page in displayedPageNumbers"
+                  :key="page"
+                  :class="['page-number', { active: currentPage === page }]"
+                  @click="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+            </div>
 
-          <div class="page-info">
-            {{ currentPage }} / {{ totalPages }} 页
-          </div>
-
-          <!-- 自定义跳转控件 -->
-          <div class="page-jump">
-            <span class="jump-label">跳转至</span>
-            <input
-                v-model.number="jumpPageInput"
-                :max="totalPages"
-                :min="1"
-                :placeholder="'1-' + totalPages"
-                class="jump-input"
-                type="number"
-                @input="validateJumpInput"
-                @keyup.enter="handleJumpToPage"
-            />
             <button
-                :disabled="!isValidJumpPage"
-                class="jump-button"
-                title="跳转到指定页面"
-                @click="handleJumpToPage"
+                :disabled="currentPage === totalPages"
+                class="page-button"
+                @click="goToPage(currentPage + 1)"
             >
-              跳转
+              下一页
+            </button>
+
+            <div class="page-info">
+              {{ currentPage }} / {{ totalPages }} 页
+            </div>
+
+            <!-- 自定义跳转控件 -->
+            <div class="page-jump">
+              <span class="jump-label">跳转至</span>
+              <input
+                  v-model.number="jumpPageInput"
+                  :max="totalPages"
+                  :min="1"
+                  :placeholder="'1-' + totalPages"
+                  class="jump-input"
+                  type="number"
+                  @input="validateJumpInput"
+                  @keyup.enter="handleJumpToPage"
+              />
+              <button
+                  :disabled="!isValidJumpPage"
+                  class="jump-button"
+                  title="跳转到指定页面"
+                  @click="handleJumpToPage"
+              >
+                跳转
+              </button>
+            </div>
+          </div>
+
+          <!-- 移动端分页 (重新设计) -->
+          <div class="pagination-mobile mobile-only">
+            <button
+                :disabled="currentPage === 1"
+                class="page-nav-btn prev"
+                @click="goToPage(currentPage - 1)"
+            >
+              <Icon name="chevron-left" :size="20" />
+            </button>
+
+            <div class="page-indicator">
+              <span class="current">{{ currentPage }}</span>
+              <span class="divider">/</span>
+              <span class="total">{{ totalPages }}</span>
+            </div>
+
+            <button
+                :disabled="currentPage === totalPages"
+                class="page-nav-btn next"
+                @click="goToPage(currentPage + 1)"
+            >
+              <Icon name="chevron-right" :size="20" />
             </button>
           </div>
         </div>
@@ -1430,11 +1507,127 @@ const vRipple = {
   z-index: 2;
 }
 
+/* 桌面端/移动端显示控制 */
+.desktop-only {
+  display: flex !important;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+}
+
 .song-list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+}
+
+.desktop-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.mobile-search-container {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .song-list-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+  }
+
+  .mobile-search-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 16px;
+    padding: 0 4px;
+  }
+
+  .search-bar-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-icon-box {
+    position: absolute;
+    left: 14px;
+    color: rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .mobile-search-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 16px 12px 42px;
+    font-size: 14px;
+    color: #fff;
+    width: 100%;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-search-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
+
+  .mobile-tabs {
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 2px;
+  }
+
+  .mobile-tab-btn {
+    background: transparent;
+    border: none;
+    padding: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    position: relative;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-tab-btn.active {
+    color: #3b82f6;
+  }
+
+  .active-indicator {
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #3b82f6;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  }
 }
 
 .tab-controls {
@@ -2349,43 +2542,44 @@ button:disabled {
 
   /* 歌曲卡片 - 无边框卡片设计 */
   .song-cards {
-    gap: 8px;
+    gap: 12px;
     display: flex;
     flex-direction: column;
+    padding: 4px;
   }
 
   .song-card {
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
     overflow: hidden;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   }
 
   .song-card:active {
-    transform: scale(0.98);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
+    transform: scale(0.97);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
   }
 
   .song-card.played {
-    opacity: 0.5;
-    filter: grayscale(0.5);
+    opacity: 0.6;
+    filter: grayscale(0.3);
   }
 
   .song-card-main {
     height: auto;
-    min-height: 72px;
-    padding: 14px;
+    min-height: 80px;
+    padding: 12px;
     position: relative;
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     background: transparent;
     box-shadow: none;
     border-radius: 0;
@@ -2394,9 +2588,9 @@ button:disabled {
 
   /* 歌曲封面 */
   .song-cover {
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
@@ -2405,107 +2599,105 @@ button:disabled {
     display: none !important;
   }
 
-  .song-cover {
-    cursor: pointer;
-  }
-
-  .song-cover:active {
-    transform: scale(0.95);
-  }
-
   .song-info {
     flex: 1;
     min-width: 0;
-    padding-right: 4px;
+    padding-right: 0;
   }
 
   .song-title {
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 2px;
-    line-height: 1.4;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.2;
     color: #FFFFFF;
     letter-spacing: 0.01em;
   }
 
   .requester {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     font-weight: 400;
+    margin-top: 2px;
   }
 
   /* 操作区域 */
   .action-area {
-    gap: 12px;
+    gap: 16px;
     margin-left: 0;
     min-width: auto;
-    padding-right: 0;
+    padding-right: 4px;
   }
 
   .vote-count .count {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 800;
-    color: #0B5AFE;
+    color: var(--primary);
     font-family: 'MiSans-Bold', sans-serif;
     line-height: 1;
+    text-shadow: 0 0 10px var(--primary-light);
   }
 
   .vote-count .label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.3);
     margin-top: 2px;
+    text-transform: uppercase;
   }
 
   .like-button {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background: rgba(11, 90, 254, 0.1);
-    border: 1px solid rgba(11, 90, 254, 0.2);
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
   .like-button.liked {
-    background: rgba(11, 90, 254, 0.2);
-    border-color: #0B5AFE;
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
   }
 
   .like-icon {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
   }
 
   /* 投稿时间和操作 */
   .submission-footer {
-    background: transparent;
-    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 10px 16px;
     height: auto;
     width: 100%;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
   }
 
   .submission-time {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.3);
-    max-width: 60%;
+    font-weight: 400;
   }
 
   .withdraw-button {
-    height: 24px;
-    min-width: auto;
-    padding: 4px 10px;
-    font-size: 11px;
-    border-radius: 6px;
+    height: 28px;
+    padding: 0 12px;
+    font-size: 12px;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.08);
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
   }
 
   .withdraw-button.replay-cancel-btn,
   .withdraw-button.replay-request-btn {
-    background: rgba(11, 90, 254, 0.12);
-    min-width: auto;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary-border);
   }
 
   /* 加载和空状态 */
@@ -2669,6 +2861,69 @@ button:disabled {
 
   .submission-time {
     font-size: 10px;
+  }
+}
+
+/* 移动端分页重新设计 */
+.pagination-mobile {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  padding-bottom: 1rem;
+}
+
+.page-nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-nav-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #3b82f6;
+}
+
+.page-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+}
+
+.page-indicator .current {
+  font-size: 18px;
+  color: #3b82f6;
+}
+
+.page-indicator .divider {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.page-indicator .total {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+@media (max-width: 768px) {
+  .pagination-mobile {
+    display: flex;
   }
 }
 

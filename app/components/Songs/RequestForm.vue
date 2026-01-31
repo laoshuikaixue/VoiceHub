@@ -1,20 +1,22 @@
 <template>
   <div class="request-form">
     <div class="rules-section">
-      <h2 class="section-title">投稿须知</h2>
+      <h3 class="rules-title">
+        <Icon :size="16" class="rules-icon" name="bell" />
+        投稿须知
+      </h3>
       <div class="rules-content">
         <div v-if="submissionGuidelines" class="guidelines-content"
              v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
         <div v-else class="default-guidelines">
-          <p>1. 投稿时无需加入书名号</p>
-          <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
-          <p>3. 禁止投递含有违规内容的歌曲</p>
-          <p>4. 点播的歌曲将由管理员进行审核</p>
-          <p>5. 审核通过后将安排在播放时段播出</p>
-          <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
-          <p>7.
-            本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
-          <p>8. 最终解释权归广播站所有</p>
+          <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
+          <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
+          <div class="rule-item"><span>3.</span> 禁止投递含有违规内容的歌曲</div>
+          <div class="rule-item"><span>4.</span> 点播的歌曲将由管理员进行审核</div>
+          <div class="rule-item"><span>5.</span> 审核通过后将安排在播放时段播出</div>
+          <div class="rule-item"><span>6.</span> 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</div>
+          <div class="rule-item"><span>7.</span> 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。</div>
+          <div class="rule-item"><span>8.</span> 最终解释权归广播站所有</div>
         </div>
       </div>
     </div>
@@ -1995,12 +1997,45 @@ defineExpose({
 }
 
 .rules-section {
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 13px;
+  background: #1A1D24;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   padding: 1.5rem;
   width: 40%;
   height: 100%;
   overflow-y: auto;
+}
+
+.rules-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1.25rem;
+}
+
+.rules-icon {
+  color: #f59e0b;
+}
+
+.rules-content {
+  font-family: 'MiSans', sans-serif;
+  font-size: 13px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.rule-item {
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
+.rule-item span {
+  margin-right: 0.5rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 600;
 }
 
 .form-container {
@@ -2093,14 +2128,7 @@ defineExpose({
 }
 
 
-.section-title {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 400;
-  font-size: 16px;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 1rem;
-}
+
 
 /* 联合投稿人区域 */
 .collaborators-section {
@@ -2171,25 +2199,7 @@ defineExpose({
   color: #fff;
 }
 
-.rules-content {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 1.8;
-  letter-spacing: 0.04em;
-}
 
-.rules-content p {
-  margin-bottom: 0.8rem;
-}
-
-.guidelines-content {
-  line-height: 1.8;
-}
-
-.default-guidelines p {
-  margin-bottom: 0.8rem;
-}
 
 
 /* 横向投稿状态样式 */
@@ -2439,7 +2449,7 @@ defineExpose({
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -2450,12 +2460,12 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.25);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.25);
   filter: brightness(1.1);
 }
 
@@ -3748,7 +3758,7 @@ defineExpose({
     margin-bottom: 1.5rem;
     padding: 1.25rem;
     background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px;
   }

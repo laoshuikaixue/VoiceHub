@@ -15,38 +15,43 @@
           </div>
         </div>
 
-        <!-- 用户信息区域修改 -->
+        <!-- 用户信息区域现代化重写 -->
         <div class="user-section">
           <ClientOnly>
             <div v-if="isClientAuthenticated" class="user-info">
-              <div class="user-details-mobile">
-                <span class="user-name-text">{{ auth?.user?.value?.name || '用户' }}</span>
+              <div class="user-details-desktop">
+                <span class="user-name">{{ user?.name || '用户' }}</span>
+                <span v-if="isAdmin" class="user-badge admin">管理员</span>
+                <span v-else class="user-badge">同学</span>
+              </div>
+              
+              <div class="user-avatar-wrapper" @click="toggleUserActions">
+                <img v-if="user?.avatar" :src="user.avatar" class="user-avatar" />
+                <div v-else class="user-avatar-placeholder">
+                  {{ user?.name?.[0] || 'U' }}
+                </div>
               </div>
 
-              <div class="user-actions">
-                <button class="action-button logout-button" @click="handleLogout" title="退出登录">
-                  <Icon name="logout" :size="16" class="mobile-only-icon" />
-                  <span class="logout-text">退出登录</span>
-                </button>
-                <NuxtLink v-if="isAdmin" class="action-button dashboard-button" to="/dashboard" title="管理后台">
-                  <Icon name="settings" :size="16" class="mobile-only-icon" />
-                  <span class="btn-text">管理后台</span>
-                </NuxtLink>
-                <NuxtLink v-else class="action-button password-button" to="/change-password" title="修改密码">
-                  <Icon name="settings" :size="16" class="mobile-only-icon" />
-                  <span class="btn-text">修改密码</span>
-                </NuxtLink>
-                <!-- 年度回顾暂时隐藏
-                <NuxtLink class="action-button review-button" to="/year-review">
-                  <Icon name="target" :size="16" class="mobile-only-icon" />
-                  <span class="btn-text">年度回顾</span>
-                </NuxtLink>
-                -->
-              </div>
+              <Transition name="dropdown-fade">
+                <div class="user-actions-dropdown" v-if="showUserActions">
+                  <button class="action-item logout" @click="handleLogout">
+                    <Icon name="logout" :size="16" />
+                    <span>退出登录</span>
+                  </button>
+                  <NuxtLink v-if="isAdmin" class="action-item" to="/dashboard">
+                    <Icon name="settings" :size="16" />
+                    <span>管理后台</span>
+                  </NuxtLink>
+                  <NuxtLink v-else class="action-item" to="/change-password">
+                    <Icon name="settings" :size="16" />
+                    <span>修改密码</span>
+                  </NuxtLink>
+                </div>
+              </Transition>
             </div>
 
             <div v-else class="login-options">
-              <NuxtLink class="btn btn-primary login-btn" to="/login">
+              <NuxtLink class="login-btn" to="/login">
                 <Icon name="user" :size="16" />
                 <span>登录</span>
               </NuxtLink>
@@ -85,7 +90,7 @@
                :class="{ 'active': activeTab === 'request' }"
                class="section-tab"
                @click="handleTabClick('request')">
-            <Icon class="tab-icon" name="plus" :size="20" />
+            <Icon class="tab-icon" name="search" :size="20" />
             <span class="tab-text">投稿歌曲</span>
           </div>
           <ClientOnly>
@@ -416,13 +421,28 @@
             </div>
 
             <div class="modal-body">
-              <div class="rules-content">
-                <h3 class="font-bold mb-2">投稿须知</h3>
-                <div v-if="submissionGuidelines" class="guidelines-content"
-                     v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+              <div class="rules-container">
+                <div class="rules-group">
+                  <h3 class="rules-subtitle">
+                    <Icon name="bell" :size="16" class="rules-icon" />
+                    投稿须知
+                  </h3>
+                  <div v-if="submissionGuidelines" class="guidelines-content"
+                       v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+                  <div v-else class="default-rules">
+                    <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
+                    <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
+                    <div class="rule-item"><span>3.</span> 禁止投递含有违规内容的歌曲</div>
+                  </div>
+                </div>
 
-                <h3 class="font-bold mb-2">播放时间</h3>
-                <p>每天夜自修静班前</p>
+                <div class="rules-group">
+                  <h3 class="rules-subtitle">
+                    <Icon name="calendar" :size="16" class="rules-icon" />
+                    播放时间
+                  </h3>
+                  <p class="rules-text">每天夜自修静班前</p>
+                </div>
               </div>
             </div>
           </div>
@@ -475,6 +495,31 @@ const isRequestOpen = ref(true)
 // 弹窗状态
 const showRequestModal = ref(false)
 const showRules = ref(false)
+const showUserActions = ref(false)
+
+const toggleUserActions = (event) => {
+  event.stopPropagation()
+  showUserActions.value = !showUserActions.value
+}
+
+// 点击外部关闭下拉菜单
+const handleClickOutside = (event) => {
+  if (showUserActions.value) {
+    const dropdown = document.querySelector('.user-actions-dropdown')
+    const avatar = document.querySelector('.user-avatar-wrapper')
+    if (dropdown && !dropdown.contains(event.target) && !avatar.contains(event.target)) {
+      showUserActions.value = false
+    }
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleClickOutside)
+})
 
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
@@ -1380,93 +1425,105 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 .user-section {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1rem;
-}
-
-.user-avatar-mobile {
-  display: none;
-}
-
-.mobile-only-icon {
-  display: none;
+  position: relative;
+  z-index: 100;
 }
 
 .user-info {
   display: flex;
-  gap: 1rem;
   align-items: center;
+  gap: 12px;
+  cursor: pointer;
 }
 
-.user-details {
-  text-align: right;
+.user-details-desktop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .user-name {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: 4%;
-}
-
-.user-class {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 600;
   font-size: 14px;
-  letter-spacing: 4%;
-  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.user-actions {
-  display: flex;
-  gap: 0.75rem;
+.user-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  margin-top: 2px;
 }
 
-.action-button {
-  position: relative;
+.user-badge.admin {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.user-avatar-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #2a2a2a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1rem;
+}
+
+.user-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-avatar-placeholder {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.user-actions-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: #1a1a1f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 160px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: 8px;
-  font-family: 'MiSans', sans-serif;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
-  letter-spacing: 4%;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.logout-button {
-  background: linear-gradient(180deg, #FF2F2F 0%, #FF654D 100%);
-  color: #FFFFFF;
-}
-
-.password-button {
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  transition: all 0.2s;
   text-decoration: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
 }
 
-.dashboard-button {
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
-  text-decoration: none;
+.action-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
 }
 
-.review-button {
-  background: rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
-  text-decoration: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  transition: all 0.2s ease;
-}
-
-.review-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+.action-item.logout:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 .notification-badge {
@@ -1484,6 +1541,33 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   align-items: center;
   justify-content: center;
   padding: 0 4px;
+}
+
+/* 登录按钮 - 桌面端 */
+.login-options .login-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.login-options .login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+  filter: brightness(1.05);
+}
+
+.login-options .login-btn:active {
+  transform: scale(0.98);
 }
 
 /* 站点标题 */
@@ -1810,6 +1894,18 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* 下拉菜单动画 */
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+}
+
 /* 通知面板 */
 .notification-pane {
   height: 100%;
@@ -1830,25 +1926,28 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  margin-bottom: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.25rem 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .notification-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--light);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #FFFFFF;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .settings-icon {
-  background: transparent;
-  border: none;
-  color: var(--light);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1858,16 +1957,16 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
 .settings-icon:hover {
   background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
   transform: rotate(30deg);
 }
-
 
 /* 通知列表 */
 .notification-list {
   flex: 1;
   overflow-y: auto;
-  padding: 5px;
-  margin-bottom: 10px;
+  padding: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .loading-indicator {
@@ -1875,311 +1974,159 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
-  color: rgba(255, 255, 255, 0.6);
+  padding: 3rem 0;
+  color: rgba(255, 255, 255, 0.4);
+  gap: 1rem;
 }
 
 .loading-spinner {
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top: 3px solid var(--primary);
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #3b82f6;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 15px;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.empty-notification {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 0;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.empty-icon {
-  font-size: 4rem;
-  margin-bottom: 20px;
+  to { transform: rotate(360deg); }
 }
 
 .notification-items {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  will-change: transform, opacity;
+  gap: 1rem;
 }
 
 .notification-card {
-  background-color: rgba(30, 41, 59, 0.5);
-  border-radius: 12px;
-  padding: 0;
-  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  border-left: 3px solid transparent;
-  overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .notification-card:hover {
-  background-color: rgba(30, 41, 59, 0.8);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .notification-card.unread {
-  border-left-color: var(--primary);
-  background-color: rgba(33, 44, 63, 0.7);
+  background: rgba(59, 130, 246, 0.05);
+  border-color: rgba(59, 130, 246, 0.2);
 }
 
 .notification-card-header {
   display: flex;
-  padding: 12px 12px 8px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: flex-start;
+  margin-bottom: 1rem;
 }
 
 .notification-icon-type {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  margin-right: 12px;
+  width: 40px;
+  height: 40px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border-radius: 12px;
+  margin-right: 1rem;
   flex-shrink: 0;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
 }
 
 .notification-title-row {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  min-width: 0;
 }
 
 .notification-title {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-  margin-bottom: 5px;
-  font-size: 1rem;
-  color: var(--light);
-}
-
-.unread-indicator {
-  width: 8px;
-  height: 8px;
-  background-color: var(--primary);
-  border-radius: 50%;
-  margin-left: 8px;
-  display: inline-block;
-}
-
-.notification-card-body {
-  padding: 15px;
-}
-
-.notification-text {
-  color: rgba(255, 255, 255, 0.8);
   font-size: 0.95rem;
-  line-height: 1.5;
-  word-break: break-word;
-}
-
-.invite-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.invite-actions .action-button {
-  flex: 1;
-  border: none;
-}
-
-.accept-btn {
-  background: var(--primary);
-  color: white;
-}
-
-.accept-btn:hover {
-  background: #0043F8;
-}
-
-.reject-btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-.reject-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.invite-actions .action-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.invite-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.status-tag {
-  font-size: 0.9em;
-  margin-left: 8px;
-  font-weight: normal;
-}
-
-.status-tag.accepted {
-  color: #10b981;
-}
-
-.status-tag.rejected {
-  color: #ef4444;
-}
-
-.status-tag.invalid {
-  color: #9ca3af;
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
   font-weight: 600;
-}
-
-.status-badge.accepted {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.status-badge.rejected {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.status-badge.invalid {
-  background: rgba(107, 114, 128, 0.1);
-  color: #9ca3af;
-  border: 1px solid rgba(107, 114, 128, 0.2);
-}
-
-.status-time {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.8rem;
+  color: #FFFFFF;
+  margin-bottom: 0.25rem;
 }
 
 .notification-time {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.8rem;
-  margin-top: 2px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.notification-card-body {
+  padding: 0 0 0 3.5rem;
+}
+
+.notification-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
 .notification-card-actions {
   display: flex;
   justify-content: flex-end;
-  padding: 10px 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background-color: rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+  padding-left: 3.5rem;
 }
 
 .action-button.delete {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
-  padding: 6px 12px;
-  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.85rem;
-}
-
-.action-button.delete svg {
-  margin-right: 5px;
+  gap: 0.4rem;
+  transition: all 0.2s;
 }
 
 .action-button.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.notification-actions-bar {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.action-button-large {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  padding: 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-button-large:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.action-button-large.danger {
   color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
 }
 
-/* 范围滑块样式 */
-.range-label {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  margin-top: 10px;
+.action-button-large.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
 }
 
-.range-value {
-  margin-top: 5px;
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--light);
-}
-
-.range-slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.2);
-  outline: none;
-  margin: 10px 0;
-}
-
-.range-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--primary);
-  cursor: pointer;
-}
-
-.range-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--primary);
-  cursor: pointer;
-  border: none;
-}
-
-.range-values {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.sub-setting {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
+.action-button-large.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* 分页控件样式 */
@@ -2434,142 +2381,6 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* 移动端通知样式重新设计 */
-  .notification-container {
-    padding: 0;
-  }
-
-  .notification-header {
-    padding: 16px 4px;
-    margin-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  }
-
-  .notification-title {
-    font-size: 1.25rem;
-    letter-spacing: 0.02em;
-  }
-
-  .notification-items {
-    gap: 10px;
-    padding-bottom: 24px;
-  }
-
-  .notification-card {
-    position: relative;
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-left: none;
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-  }
-
-  .notification-card.unread {
-    background: rgba(11, 90, 254, 0.06);
-    border-color: rgba(11, 90, 254, 0.2);
-    box-shadow: 0 4px 20px rgba(11, 90, 254, 0.1);
-  }
-
-  .notification-card.unread::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: #0B5AFE;
-    box-shadow: 0 0 10px rgba(11, 90, 254, 0.6);
-    z-index: 1;
-  }
-
-  .notification-card-header {
-    padding: 12px 12px 6px;
-    border-bottom: none;
-  }
-
-  .notification-icon-type {
-    width: 32px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    margin-right: 10px;
-  }
-
-  .notification-title {
-    font-size: 0.95rem;
-    margin-bottom: 2px;
-  }
-
-  .notification-card-body {
-    padding: 0 12px 12px 54px; /* 图标对齐 */
-  }
-
-  .notification-text {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
-    line-height: 1.4;
-  }
-
-  .notification-time {
-    font-size: 0.75rem;
-    opacity: 0.5;
-  }
-
-  .notification-card-actions {
-    display: flex;
-    justify-content: flex-end;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.02);
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
-  }
-
-  .action-button.delete {
-    padding: 4px 10px;
-    font-size: 0.8rem;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    width: auto;
-  }
-
-  .unread-indicator {
-    display: none; /* 使用左侧指示条代替 */
-  }
-
-  .invite-actions {
-    margin-top: 12px;
-    gap: 8px;
-  }
-
-  .invite-actions .action-button {
-    height: 34px;
-    font-size: 0.85rem;
-    border-radius: 10px;
-  }
-
-  /* 分页和底部栏适配 */
-  .notification-pagination {
-    padding: 16px 0;
-    margin-bottom: 8px;
-  }
-
-  .notification-actions-bar {
-    padding: 12px 0;
-    gap: 12px;
-  }
-
-  .action-button-large {
-    height: 44px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-
 /* ==================== 移动端现代化设计 ==================== */
 
 /* 基础移动端适配 */
@@ -2619,33 +2430,9 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     background: rgba(255, 255, 255, 0.15);
   }
 
-  /* 移动端标题优化 */
+  /* 移动端的主页面里不需要写学校名，保持简洁 */
   .site-title {
-    margin: 1.25rem 0;
-    padding: 0 1rem;
-  }
-
-  .main-title {
-    font-size: 32px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    background: linear-gradient(135deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  }
-
-  .sub-title {
-    font-size: 12px;
-    letter-spacing: 0.15em;
-    opacity: 0.6;
-  }
-
-  .title-divider {
-    width: 32px;
-    height: 4px;
-    background: #0B5AFE;
-    box-shadow: 0 0 15px rgba(11, 90, 254, 0.6);
+    display: none;
   }
 
   .school-logo {
@@ -2655,104 +2442,59 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
   /* 用户区域简化 */
   .user-section {
-    align-items: center;
     width: auto;
-    max-width: 50%;
   }
 
-  .user-details-mobile {
-    display: block;
+  .user-details-desktop {
+    display: none; /* 移动端仅显示头像 */
+  }
+
+  .user-avatar-wrapper {
+    width: 32px;
+    height: 32px;
     background: rgba(255, 255, 255, 0.05);
-    padding: 4px 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100px;
+    border-color: rgba(255, 255, 255, 0.1);
   }
 
-  .user-name-text {
+  .user-avatar-placeholder {
+    font-size: 14px;
+  }
+
+  .user-actions-dropdown {
+    top: calc(100% + 10px);
+    min-width: 140px;
+    padding: 6px;
+  }
+
+  .action-item {
+    padding: 8px 10px;
     font-size: 13px;
-    font-weight: 600;
-    color: #FFFFFF;
   }
 
-  .user-info {
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .user-details {
-    display: none; /* 移动端完全隐藏详细信息 */
-  }
-
-  .user-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-
-  .action-button {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.2s ease;
-  }
-
-  .action-button:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .action-button .logout-text,
-  .action-button .btn-text {
-    display: none; /* 移动端按钮仅显示图标 */
-  }
-
-  .mobile-only-icon {
-    display: block;
-    color: rgba(255, 255, 255, 0.8);
-  }
-
-  .review-button {
-    display: none; /* 移动端彻底隐藏年度回顾 */
-  }
-
+  /* 登录按钮现代化重写 */
   .login-options .login-btn {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
-    border-radius: 10px;
+    padding: 8px 18px;
+    border-radius: 12px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
+    background: var(--primary);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px var(--primary-light);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .login-options .login-btn:active {
+    transform: scale(0.95);
+    filter: brightness(0.9);
   }
 
   /* Footer 间距优化 */
   :deep(.site-footer) {
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
-  }
-
-  /* 站点标题 - 更紧凑 */
-  .site-title {
-    margin: 8px 0 12px;
-    padding: 0 16px;
-  }
-
-  .site-title h2 {
-    font-size: 18px;
-    font-weight: 500;
-    letter-spacing: 0;
-    color: rgba(255, 255, 255, 0.9);
   }
 
   /* 内容区域 - 全宽无边框 */
@@ -3086,6 +2828,64 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 /* 弹窗主体 */
 .modal-body {
   padding: 24px 28px 28px;
+}
+
+.rules-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.rules-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rules-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.rules-icon {
+  color: #3b82f6;
+}
+
+.rules-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.guidelines-content {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+}
+
+.default-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rule-item {
+  display: flex;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
+
+.rule-item span {
+  margin-right: 0.5rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 600;
 }
 
 /* 年度报告弹窗现代化重写 */
