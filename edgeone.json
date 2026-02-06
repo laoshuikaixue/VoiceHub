@@ -1,7 +1,7 @@
 {
   "name": "voicehub",
   "buildCommand": "node scripts/deploy.js",
-  "installCommand": "npm ci --include=optional || npm install --include=optional",
+  "installCommand": "npm ci || npm install",
   "outputDirectory": "./output",
   "nodeVersion": "22.11.0",
  

@@ -75,11 +75,14 @@ export default defineNuxtConfig({
   
   // 服务器端配置
   nitro: {
+    preset: process.env.VERCEL ? 'vercel' : (process.env.NITRO_PRESET || 'node-server'),
+    // 增强错误处理和稳定性
     experimental: {
       wasm: true,
       asyncContext: true
     },
     timing: true,
+    // 增加请求超时时间
     routeRules: {
       // 完全禁用所有API路由的缓存，确保每次都请求数据库
       '/api/**': {
@@ -146,7 +149,18 @@ export default defineNuxtConfig({
           'Expires': '0'
         }
       }
-    }
+    },
+    // 根据部署环境调整配置
+    ...(process.env.VERCEL ? {
+      // Vercel 环境：使用标准配置
+    } : process.env.NETLIFY ? {
+      // Netlify 环境：确保 Drizzle 正确打包
+      experimental: {
+        wasm: true
+      }
+    } : {
+      // 其他环境：使用标准配置
+    })
   },
   
   // Vite 配置

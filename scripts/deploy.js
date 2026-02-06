@@ -91,24 +91,11 @@ async function deploy() {
     
     // 1. 安装依赖
     logStep('📦', '检查并安装依赖...');
-    
-    // 如果在 CI 环境中，npm 可能存在 optionalDependencies 安装 bug
-    if (process.env.CI) {
-      logWarning('检测到 CI 环境，正在确保原生绑定依赖已正确安装...');
-      // 尝试使用 --include=optional 确保安装可选依赖
-      if (!safeExec('npm install --include=optional')) {
-        logWarning('npm install --include=optional 失败，尝试标准安装...');
-        if (!safeExec('npm install')) {
-          throw new Error('依赖安装失败');
-        }
-      }
-    } else {
-      if (!safeExec('npm install')) {
-        throw new Error('依赖安装失败');
-      }
+    if (!safeExec('npm install')) {
+      throw new Error('依赖安装失败');
     }
     logSuccess('依赖安装完成');
-    
+
     // 2. 检查 Drizzle 配置
     logStep('🔧', '检查 Drizzle 配置...');
     if (!fileExists('drizzle.config.ts')) {
@@ -121,14 +108,14 @@ async function deploy() {
       throw new Error('Drizzle 数据库连接文件不存在');
     }
     logSuccess('Drizzle 配置检查完成');
-    
+
     // 2.1. 确保迁移目录存在
     if (!fileExists('app/drizzle/migrations')) {
       logStep('📁', '创建迁移目录...');
       fs.mkdirSync('app/drizzle/migrations', { recursive: true });
       logSuccess('迁移目录创建完成');
     }
-    
+
     // 3. 数据库同步
     logStep('🗄️', '执行数据库同步...');
     let dbSyncSuccess = false;
@@ -149,7 +136,7 @@ async function deploy() {
       logWarning('未设置 DATABASE_URL，跳过数据库迁移');
       logWarning('请确保在部署平台设置了正确的数据库连接字符串');
     }
-    
+
     // 4. 创建管理员账户（如果脚本存在）
     if (fileExists('scripts/create-admin.js')) {
       logStep('👤', '检查管理员账户...');
@@ -159,7 +146,7 @@ async function deploy() {
         logWarning('管理员账户创建跳过（可能已存在或数据库未连接）');
       }
     }
-    
+
     // 5. 构建应用
     logStep('🔨', '构建应用...');
     if (!safeExec('npx nuxt build')) {
