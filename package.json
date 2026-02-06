@@ -62,6 +62,14 @@
     "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
+  "optionalDependencies": {
+    "@oxc-parser/binding-linux-x64-gnu": "0.110.0",
+    "@oxc-parser/binding-linux-x64-musl": "0.110.0",
+    "@oxc-parser/binding-win32-x64-msvc": "0.110.0",
+    "@oxc-transform/binding-linux-x64-gnu": "0.110.0",
+    "@oxc-transform/binding-linux-x64-musl": "0.110.0",
+    "@oxc-transform/binding-win32-x64-msvc": "0.110.0"
+  },
   "devDependencies": {
     "tsx": "^4.21.0",
     "vite-plugin-wasm": "^3.5.0"

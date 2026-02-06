@@ -91,8 +91,21 @@ async function deploy() {
     
     // 1. 安装依赖
     logStep('📦', '检查并安装依赖...');
-    if (!safeExec('npm install')) {
-      throw new Error('依赖安装失败');
+    
+    // 如果在 CI 环境中，npm 可能存在 optionalDependencies 安装 bug
+    if (process.env.CI) {
+      logWarning('检测到 CI 环境，正在确保原生绑定依赖已正确安装...');
+      // 尝试使用 --include=optional 确保安装可选依赖
+      if (!safeExec('npm install --include=optional')) {
+        logWarning('npm install --include=optional 失败，尝试标准安装...');
+        if (!safeExec('npm install')) {
+          throw new Error('依赖安装失败');
+        }
+      }
+    } else {
+      if (!safeExec('npm install')) {
+        throw new Error('依赖安装失败');
+      }
     }
     logSuccess('依赖安装完成');
     
