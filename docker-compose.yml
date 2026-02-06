@@ -7,7 +7,6 @@ services:
       - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
       - JWT_SECRET=your-jwt-secret-here
       - NODE_ENV=production
-      - ENABLE_IDLE_MODE=false
     depends_on:
       - postgres
     volumes:
