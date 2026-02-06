@@ -1229,6 +1229,7 @@ Thanks goes to these wonderful people:
 - [meting-api](https://github.com/injahow/meting-api)
 - [lx-music-desktop](https://github.com/lyswhut/lx-music-desktop) (搜索功能参考)
 - [the1068fm - 深中风华子衿广播站点歌系统](https://github.com/SMS-COSMO/the1068fm)
+- [Sound-of-experiment - 实验之声广播站点歌系统](https://github.com/ljk743121/Sound-of-experiment) (哔哩哔哩音源参考)
 - [official-website - Sparkinit](https://github.com/Sparkinit/official-website)
 
 ## 许可证

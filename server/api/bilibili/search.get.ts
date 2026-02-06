@@ -1,3 +1,7 @@
+/**
+ * Bilibili 搜索接口
+ * 代码参考 https://github.com/ljk743121/Sound-of-experiment/blob/v4/server/utils/plugins/bilibili.ts
+ */
 import { defineEventHandler, getQuery, createError } from 'h3'
 
 interface SongInfo {
