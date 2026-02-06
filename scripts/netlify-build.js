@@ -147,7 +147,9 @@ async function netlifyBuild() {
     
     // 7. 构建应用
     logStep('🔨', '构建 Nuxt 应用...');
-    if (!safeExec('npx nuxt build')) {
+    // 使用 npm run build 替代 npx nuxt build，确保使用项目依赖
+    // 显式传递环境变量
+    if (!safeExec('npm run build', { env: process.env })) {
       throw new Error('Nuxt 应用构建失败');
     }
     logSuccess('Nuxt 应用构建完成');
@@ -155,6 +157,22 @@ async function netlifyBuild() {
     // 8. 验证构建输出
     logStep('🔍', '验证构建输出...');
     if (!fileExists('.output')) {
+      logError('构建输出目录不存在 (.output)');
+      log('当前目录文件列表:', 'yellow');
+      try {
+        // 尝试列出当前目录文件，帮助调试
+        safeExec('ls -la');
+      } catch (e) {
+        console.log('无法列出文件列表');
+      }
+      
+      // 检查 dist 目录是否存在
+      if (fileExists('dist')) {
+        logWarning('发现 dist 目录，可能是构建目标配置错误');
+        log('dist 目录内容:', 'yellow');
+        safeExec('ls -la dist');
+      }
+      
       throw new Error('构建输出目录不存在');
     }
     
