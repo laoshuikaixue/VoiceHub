@@ -153,7 +153,7 @@ async function deploy() {
       throw new Error('应用构建失败');
     }
     logSuccess('应用构建完成');
-    
+
     // 6. 部署后检查
     logStep('🔍', '执行部署后检查...');
     if (fileExists('scripts/check-deploy.js')) {
