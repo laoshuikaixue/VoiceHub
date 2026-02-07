@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* 导入浏览器主题保护样式 */
 @import url('./theme-protection.css');
 

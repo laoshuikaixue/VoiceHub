@@ -5,7 +5,7 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
   devtools: { enabled: true },
-  modules: [],
+  modules: ['@nuxtjs/tailwindcss'],
   
   // 引入全局CSS
   css: [
