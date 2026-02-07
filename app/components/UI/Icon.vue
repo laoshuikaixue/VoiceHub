@@ -11,8 +11,13 @@
       stroke-width="2"
       viewBox="0 0 24 24"
   >
+    <!-- 消息图标 (圆形气泡) -->
+    <g v-if="name === 'message-circle'">
+      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+    </g>
+
     <!-- 播放图标 -->
-    <polygon v-if="name === 'play'" fill="currentColor" points="5,3 19,12 5,21"/>
+    <polygon v-else-if="name === 'play'" fill="currentColor" points="5,3 19,12 5,21"/>
 
     <!-- 暂停图标 -->
     <g v-else-if="name === 'pause'">

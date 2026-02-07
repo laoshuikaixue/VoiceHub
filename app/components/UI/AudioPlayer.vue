@@ -1189,7 +1189,7 @@ const getFirstChar = (text) => {
 
 /* 移动端播放器样式 */
 .music-widget.mobile-player-bar {
-  bottom: calc(65px + env(safe-area-inset-bottom, 0px)); /* 放在 tab 上方 */
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px)); /* 放在悬浮 tab 上方 (16px bottom + 64px height + 12px gap) */
   left: 10px;
   right: 10px;
   width: calc(100% - 20px);
@@ -1218,7 +1218,7 @@ const getFirstChar = (text) => {
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
+  height: 2px;
   background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
   z-index: 10;
@@ -1228,7 +1228,7 @@ const getFirstChar = (text) => {
   height: 100%;
   background: #0B5AFE;
   box-shadow: 0 0 8px rgba(11, 90, 254, 0.6);
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 1px 1px 0;
 }
 
 .music-widget.mobile-player-bar .title {

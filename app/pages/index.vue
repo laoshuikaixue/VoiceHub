@@ -72,22 +72,19 @@
       <div class="content-area">
         <!-- 选项卡区域 -->
         <div class="tabs-row">
-          <div v-ripple
-               :class="{ 'active': activeTab === 'schedule' }"
+          <div :class="{ 'active': activeTab === 'schedule' }"
                class="section-tab"
                @click="handleTabClick('schedule')">
             <Icon class="tab-icon" name="calendar" :size="20" />
             <span class="tab-text">播出排期</span>
           </div>
-          <div v-ripple
-               :class="{ 'active': activeTab === 'songs' }"
+          <div :class="{ 'active': activeTab === 'songs' }"
                class="section-tab"
                @click="handleTabClick('songs')">
             <Icon class="tab-icon" name="music" :size="20" />
             <span class="tab-text">歌曲列表</span>
           </div>
-          <div v-ripple
-               :class="{ 'active': activeTab === 'request' }"
+          <div :class="{ 'active': activeTab === 'request' }"
                class="section-tab"
                @click="handleTabClick('request')">
             <Icon class="tab-icon" name="search" :size="20" />
@@ -96,25 +93,24 @@
           <ClientOnly>
             <div :key="notificationTabKey"
                  ref="notificationTabRef"
-                 v-ripple
                  :class="{ 'active': activeTab === 'notification', 'disabled': !isClientAuthenticated }"
                  class="section-tab"
                  data-tab="notification"
                  @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()">
               <div class="icon-wrapper">
-                <Icon class="tab-icon" name="bell" :size="20" />
+                <Icon class="tab-icon" name="message-circle" :size="20" />
                 <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
               </div>
               <span class="tab-text">
-                通知
+                消息
                 <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-desktop"></span>
               </span>
             </div>
             <template #fallback>
               <div class="section-tab disabled"
                    data-tab="notification">
-                <Icon class="tab-icon" name="bell" :size="20" />
-                <span class="tab-text">通知</span>
+                <Icon class="tab-icon" name="message-circle" :size="20" />
+                <span class="tab-text">消息</span>
               </div>
             </template>
           </ClientOnly>
@@ -385,7 +381,7 @@
                       class="action-button-large danger"
                       @click="clearAllNotifications"
                   >
-                    清空所有通知
+                    清空所有消息
                   </button>
                 </div>
 
@@ -524,6 +520,12 @@ onUnmounted(() => {
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
 
+const tabOrder = ['schedule', 'songs', 'request', 'notification'];
+const activeIndex = computed(() => {
+  const index = tabOrder.indexOf(activeTab.value);
+  return index === -1 ? 0 : index;
+});
+
 // 通知按钮强制更新相关
 const notificationTabRef = ref(null)
 const notificationTabKey = ref(0)
@@ -621,8 +623,8 @@ const deleteNotification = async (id) => {
   pendingAction.value = 'delete'
   pendingId.value = id
   confirmDialogConfig.value = {
-    title: '删除通知',
-    message: '确定要删除此通知吗？',
+    title: '删除消息',
+    message: '确定要删除此消息吗？',
     type: 'warning',
     confirmText: '删除',
     cancelText: '取消'
@@ -634,8 +636,8 @@ const deleteNotification = async (id) => {
 const clearAllNotifications = async () => {
   pendingAction.value = 'clearAll'
   confirmDialogConfig.value = {
-    title: '清空所有通知',
-    message: '确定要清空所有通知吗？此操作不可撤销。',
+    title: '清空所有消息',
+    message: '确定要清空所有消息吗？此操作不可撤销。',
     type: 'danger',
     confirmText: '清空',
     cancelText: '取消'
@@ -2502,23 +2504,26 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     min-height: auto;
   }
 
-  /* 现代化选项卡 - 底部固定导航风格 */
   .tabs-row {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    left: 1rem;
+    right: 1rem;
+    margin: 0 auto;
+    max-width: 500px;
     display: flex;
     justify-content: space-around;
     align-items: center;
     gap: 0;
-    padding: 6px 0 calc(10px + env(safe-area-inset-bottom, 0px));
-    background: rgba(10, 10, 15, 0.85);
+    padding: 0 0.5rem;
+    height: 64px;
+    background: rgba(28, 28, 30, 0.9);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
     z-index: 1000;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
   }
 
   .section-tab {
@@ -2529,43 +2534,52 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     padding: 6px 4px;
     font-size: 10px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.4);
+    color: #71717a; /* text-zinc-500 */
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
     position: relative;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
   }
 
   .section-tab .tab-icon {
     display: block;
     margin-bottom: 2px;
-    opacity: 0.6;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     color: currentColor;
   }
 
   .section-tab .tab-text {
-    font-size: 10px;
+    font-size: 9px;
+    font-weight: 700;
     letter-spacing: 0.02em;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
   }
 
   .section-tab.active {
-    color: #0B5AFE;
-    background: transparent;
+    color: #3b82f6 !important; /* text-blue-500 - Force blue */
+    background: transparent !important;
+    transform: none !important;
+    text-shadow: 0 0 12px rgba(59, 130, 246, 0.6); /* Text Glow */
+  }
+
+  /* Prevent hover from turning it white on mobile */
+  .section-tab.active:hover {
+    color: #3b82f6 !important;
+    background: transparent !important;
+    box-shadow: none !important;
   }
 
   .section-tab.active .tab-icon {
     opacity: 1;
-    color: #0B5AFE;
-    transform: scale(1.1);
-    filter: drop-shadow(0 0 8px rgba(11, 90, 254, 0.4));
+    color: currentColor;
+    transform: none;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5)); /* Icon Glow */
   }
 
   .section-tab.active .tab-text {
-    font-weight: 600;
+    font-weight: 700;
   }
 
   /* 移除原有的伪元素图标 */
@@ -2573,17 +2587,9 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     display: none;
   }
 
-  /* 底部圆点指示器 */
-  .section-tab.active::after {
-    content: '';
-    display: block;
-    width: 4px;
-    height: 4px;
-    background: #0B5AFE;
-    border-radius: 50%;
-    margin-top: 4px;
-    box-shadow: 0 0 5px rgba(11, 90, 254, 0.6);
-    animation: dot-pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* 移除底部指示器（横条）- 彻底隐藏 */
+  .section-tab::after {
+    display: none !important;
   }
 
   @keyframes dot-pop-in {

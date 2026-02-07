@@ -336,7 +336,7 @@
               <LazyAdminUserManager/>
             </div>
 
-            <!-- 通知管理 -->
+            <!-- 消息管理 -->
             <div v-if="activeTab === 'notifications' && permissions.canAccessPage('notifications')"
                  class="content-section">
               <LazyAdminNotificationSender/>
