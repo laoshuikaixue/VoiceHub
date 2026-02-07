@@ -1549,27 +1549,46 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .login-options .login-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 10px 24px;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: 14px;
+  font-size: 14px;
   font-weight: 600;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
 }
 
 .login-options .login-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(59, 130, 246, 0.5);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-  filter: brightness(1.05);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+  color: white;
+}
+
+.login-options .login-btn :deep(.icon),
+.login-options .login-btn i {
+  color: #3b82f6;
+  transition: all 0.3s ease;
+}
+
+.login-options .login-btn:hover :deep(.icon),
+.login-options .login-btn:hover i {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5));
 }
 
 .login-options .login-btn:active {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.96);
+  transition: all 0.1s;
 }
 
 /* 站点标题 */
@@ -2482,16 +2501,23 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
-    background: var(--primary);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     color: white;
-    border: none;
-    box-shadow: 0 4px 12px var(--primary-light);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .login-options .login-btn :deep(.icon) {
+    color: #3b82f6;
   }
 
   .login-options .login-btn:active {
     transform: scale(0.95);
-    filter: brightness(0.9);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
   }
 
   /* Footer 间距优化 */
