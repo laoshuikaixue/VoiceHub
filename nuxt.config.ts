@@ -5,7 +5,7 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
   devtools: { enabled: true },
-  modules: [],
+  modules: ['@nuxtjs/tailwindcss'],
   
   // 引入全局CSS
   css: [
@@ -53,7 +53,7 @@ export default defineNuxtConfig({
         { name: 'format-detection', content: 'telephone=no' }
       ],
       link: [
-          { rel: 'icon', type: 'image/x-icon', href: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico' },
+          { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico?v=2' },
           // 优先加载常规字体，确保页面快速显示
           { rel: 'preload', as: 'style', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css' },
           { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css' },

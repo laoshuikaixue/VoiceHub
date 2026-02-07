@@ -1,8 +1,9 @@
 <template>
   <div class="request-form">
-    <div class="rules-section">
+    <!-- Desktop Rules Section (Restored from requestformold.vue) -->
+    <div class="rules-section desktop-only-rules">
       <h2 class="section-title">投稿须知</h2>
-      <div class="rules-content">
+      <div class="rules-content-desktop">
         <div v-if="submissionGuidelines" class="guidelines-content"
              v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
         <div v-else class="default-guidelines">
@@ -12,9 +13,30 @@
           <p>4. 点播的歌曲将由管理员进行审核</p>
           <p>5. 审核通过后将安排在播放时段播出</p>
           <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
-          <p>7.
-            本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
+          <p>7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
           <p>8. 最终解释权归广播站所有</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Rules Section (Original RequestForm.vue style) -->
+    <div class="rules-section mobile-only-rules">
+      <h3 class="rules-title">
+        <Icon :size="16" class="rules-icon" name="bell" />
+        投稿须知
+      </h3>
+      <div class="rules-content">
+        <div v-if="submissionGuidelines" class="guidelines-content"
+             v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+        <div v-else class="default-guidelines">
+          <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
+          <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
+          <div class="rule-item"><span>3.</span> 禁止投递含有违规内容的歌曲</div>
+          <div class="rule-item"><span>4.</span> 点播的歌曲将由管理员进行审核</div>
+          <div class="rule-item"><span>5.</span> 审核通过后将安排在播放时段播出</div>
+          <div class="rule-item"><span>6.</span> 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</div>
+          <div class="rule-item"><span>7.</span> 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。</div>
+          <div class="rule-item"><span>8.</span> 最终解释权归广播站所有</div>
         </div>
       </div>
     </div>
@@ -1994,17 +2016,83 @@ defineExpose({
   overflow: hidden;
 }
 
+/* Desktop Rules Styles */
+.desktop-only-rules {
+  display: block;
+}
+
+.mobile-only-rules {
+  display: none;
+}
+
 .rules-section {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 13px;
-  padding: 1.5rem;
-  width: 40%;
+  padding: 1.25rem;
+  flex: 0 0 35%; /* 稍微缩小规则区域占比 */
+  min-width: 300px;
   height: 100%;
   overflow-y: auto;
 }
 
+.section-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.75rem;
+}
+
+.rules-content-desktop {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+
+.rules-content-desktop p {
+  margin-bottom: 0.6rem;
+}
+
+/* Mobile Rules Styles (Hidden on desktop) */
+.rules-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1.25rem;
+}
+
+.rules-icon {
+  color: #f59e0b;
+}
+
+.rules-content {
+  font-family: 'MiSans', sans-serif;
+  font-size: 13px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.rule-item {
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
+.rule-item span {
+  margin-right: 0.5rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+}
+
 .form-container {
-  width: 60%;
+  flex: 1;
+  min-width: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -2024,42 +2112,47 @@ defineExpose({
 .form-header-row {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 1rem;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding-top: 4px; /* 为按钮悬停上浮留出空间 */
+  flex-wrap: wrap; /* 允许在窄屏下换行 */
 }
 
 .search-section {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex: 1.2;
+  gap: 0.75rem;
+  flex: 1.5;
+  min-width: 400px; /* 增加最小宽度，确保搜索框、标签和按钮有足够空间 */
 }
 
 .search-label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: #FFFFFF;
   white-space: nowrap;
+  flex-shrink: 0; /* 防止标签被压缩 */
 }
 
 .search-input-group {
   display: flex;
   gap: 0.5rem;
   flex: 1;
+  min-width: 0; /* 允许内部元素正常压缩 */
 }
 
 .search-input {
   background: #040E15;
   border: 1px solid #242F38;
   border-radius: 8px;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.85rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.6);
   flex: 1;
-  min-width: 0;
+  min-width: 100px; /* 确保输入框不会缩到太小 */
 }
 
 .search-input:focus {
@@ -2079,6 +2172,7 @@ defineExpose({
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.3s ease;
+  flex-shrink: 0; /* 确保搜索按钮始终完整显示，不被重叠 */
 }
 
 .search-button:hover:not(:disabled) {
@@ -2093,14 +2187,7 @@ defineExpose({
 }
 
 
-.section-title {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 400;
-  font-size: 16px;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 1rem;
-}
+
 
 /* 联合投稿人区域 */
 .collaborators-section {
@@ -2108,7 +2195,7 @@ defineExpose({
   align-items: center;
   gap: 1rem;
   flex: 1;
-  min-width: 0;
+  min-width: 200px; /* 增加最小宽度，防止在窄屏下与搜索框重叠 */
 }
 
 .section-label {
@@ -2117,6 +2204,7 @@ defineExpose({
   font-size: 16px;
   color: #FFFFFF;
   white-space: nowrap;
+  flex-shrink: 0; /* 防止标签被压缩 */
 }
 
 .collaborators-list {
@@ -2171,76 +2259,58 @@ defineExpose({
   color: #fff;
 }
 
-.rules-content {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 1.8;
-  letter-spacing: 0.04em;
-}
 
-.rules-content p {
-  margin-bottom: 0.8rem;
-}
-
-.guidelines-content {
-  line-height: 1.8;
-}
-
-.default-guidelines p {
-  margin-bottom: 0.8rem;
-}
 
 
 /* 横向投稿状态样式 */
 .submission-status-horizontal {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .admin-notice-horizontal {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   justify-content: center;
 }
 
 .admin-notice-horizontal .admin-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .admin-notice-horizontal .admin-text {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   color: #FFD700;
 }
 
 .submission-closed-notice {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   justify-content: center;
 }
 
 .submission-closed-notice .closed-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .submission-closed-notice .closed-text {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   color: #FF6B6B;
 }
 
 .status-content-horizontal {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -2248,32 +2318,32 @@ defineExpose({
 .status-item-horizontal {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .status-item-horizontal .status-label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #FFFFFF;
 }
 
 .status-item-horizontal .status-value {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #0B5AFE;
 }
 
 .status-item-horizontal .status-remaining {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
   background: rgba(11, 90, 254, 0.1);
   border: 1px solid rgba(11, 90, 254, 0.3);
   border-radius: 4px;
-  padding: 0.25rem 0.5rem;
+  padding: 0.15rem 0.4rem;
 }
 
 
@@ -2300,9 +2370,10 @@ defineExpose({
 .form-group label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 20px;
-  letter-spacing: 0.04em;
-  color: #ffffff;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.25rem;
 }
 
 .input-wrapper {
@@ -2348,11 +2419,11 @@ defineExpose({
   position: relative;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
-  padding: 0.75rem 1rem;
+  padding: 0.4rem 0.75rem; /* 稍微缩小内边距 */
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.4rem; /* 缩小间距 */
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -2377,18 +2448,18 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .netease-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .netease-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #c20c0c;
   box-shadow: 0 0 8px rgba(194, 12, 12, 0.6);
@@ -2397,7 +2468,7 @@ defineExpose({
 .netease-title {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #ffffff;
 }
 
@@ -2405,9 +2476,9 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   background: rgba(255, 255, 255, 0.02);
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.85rem;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   transition: all 0.3s ease;
@@ -2424,7 +2495,7 @@ defineExpose({
 }
 
 .login-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #ffffff;
   margin: 0;
@@ -2434,35 +2505,35 @@ defineExpose({
 .login-hint {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.45);
-  margin: 4px 0 0 0;
-  line-height: 1.4;
+  margin: 2px 0 0 0;
+  line-height: 1.3;
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  border-radius: 7px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.25);
+  box-shadow: 0 5px 14px rgba(59, 130, 246, 0.25);
   filter: brightness(1.1);
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .header-btn {
@@ -2471,31 +2542,31 @@ defineExpose({
   gap: 0.25rem;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
-  padding: 0.25rem 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .header-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .login-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .import-btn {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.5rem 0.8rem;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.45rem 0.75rem;
+  border-radius: 7px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -2504,12 +2575,12 @@ defineExpose({
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .import-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
   color: #ffffff;
 }
 
@@ -2522,25 +2593,25 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   min-width: 0;
 }
 
 .user-avatar {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-name {
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
   white-space: nowrap;
@@ -2550,19 +2621,19 @@ defineExpose({
 
 .user-actions-row {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .action-btn-compact {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.8);
-  padding: 0.4rem 0.75rem;
+  gap: 0.3rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.35rem 0.6rem;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
@@ -2570,9 +2641,9 @@ defineExpose({
 }
 
 .action-btn-compact:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .search-type-switch {
@@ -2587,10 +2658,10 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  padding: 0.2rem 0.6rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 4px;
   transition: all 0.2s ease;
 }
@@ -2598,8 +2669,8 @@ defineExpose({
 .radio-label.active {
   color: #ffffff;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .radio-label input {
@@ -2609,31 +2680,31 @@ defineExpose({
 .logout-btn {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.2rem;
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.4);
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.7);
   background: rgba(255, 255, 255, 0.05);
 }
 
 .platform-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.85rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
@@ -2785,7 +2856,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 1rem 1.5rem 1.5rem 1.5rem; /* 上边距小一点 */
+  padding: 0.75rem 1.25rem 1.25rem 1.25rem; /* 稍微缩小内边距 */
   position: relative;
   z-index: 1;
 }
@@ -2878,22 +2949,22 @@ defineExpose({
   justify-content: center;
   flex: 1;
   text-align: center;
-  gap: 1rem;
-  padding: 2rem;
-  min-height: 300px;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  min-height: 150px; /* 进一步缩小最小高度以适应小屏幕 */
 }
 
 .empty-icon,
 .initial-icon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
+  font-size: 2.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .empty-text,
 .initial-text {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: #FFFFFF;
   margin: 0;
 }
@@ -2901,7 +2972,7 @@ defineExpose({
 .empty-hint,
 .initial-hint {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
+  font-size: 13px;
   margin: 0;
 }
 
@@ -2912,15 +2983,16 @@ defineExpose({
   justify-content: center;
   width: 100%;
   height: 100%;
-  min-height: 200px;
+  min-height: 120px;
 }
 
 .search-svg {
-  width: 30%;
-  max-width: 400px;
-  min-width: 200px;
+  width: 25%;
+  max-width: 300px;
+  min-width: 150px;
   height: auto;
   object-fit: contain;
+  opacity: 0.8;
 }
 
 /* 手动输入触发按钮 */
@@ -3368,8 +3440,8 @@ defineExpose({
 
 .result-item {
   display: flex;
-  padding: 1rem 1.5rem 1rem 1.5rem;
-  gap: 1.2rem;
+  padding: 0.6rem 1rem; /* 缩小内边距以提高信息密度 */
+  gap: 1rem;
   transition: all 0.2s ease;
   cursor: pointer;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -3384,8 +3456,8 @@ defineExpose({
 }
 
 .result-cover {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   position: relative;
   flex-shrink: 0;
 }
@@ -3418,8 +3490,8 @@ defineExpose({
 }
 
 .play-button-bg {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: rgba(11, 90, 254, 0.8);
   display: flex;
@@ -3429,47 +3501,71 @@ defineExpose({
   transition: transform 0.2s ease;
 }
 
-.play-button-bg:hover {
-  transform: scale(1.1);
-}
+.play-button-bg {
+    display: none !important;
+  }
+
+  .play-overlay {
+    background: transparent !important;
+    opacity: 1 !important;
+  }
+
+  .result-cover {
+    cursor: pointer;
+  }
+
+  .result-cover:active {
+    transform: scale(0.95);
+  }
 
 .result-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .result-title {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: #ffffff;
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.result-artist {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  margin: 0.25rem 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.result-artist {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-  margin: 0.5rem 0;
-}
-
 .result-album,
 .result-quality,
 .result-pay {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
-  margin: 0.25rem 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  margin: 0.15rem 0;
 }
 
 
 .result-actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-right: 0.5rem;
+  gap: 0.4rem;
+  margin-right: 0.25rem;
+  flex-shrink: 0;
 }
 
 .similar-song-info {
@@ -3722,6 +3818,15 @@ defineExpose({
     padding: 0.6rem 0.4rem;
   }
 
+  /* 移动端显示/隐藏控制 */
+  .desktop-only-rules {
+    display: none;
+  }
+
+  .mobile-only-rules {
+    display: block;
+  }
+
   .request-form {
     flex-direction: column;
     height: auto;
@@ -3732,8 +3837,25 @@ defineExpose({
   .rules-section {
     width: 100%;
     height: auto;
-    margin-bottom: 1rem;
-    padding: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+  }
+
+  .rules-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 1.25rem;
+    letter-spacing: normal;
+  }
+
+  .rules-icon {
+    display: block;
+    color: #f59e0b;
   }
 
   .form-container {
@@ -3749,18 +3871,22 @@ defineExpose({
     display: flex;
     flex-direction: column;
     height: auto;
-    gap: 1rem;
+    gap: 1.25rem;
   }
 
   .search-results-container {
     flex: 1;
     height: auto;
     max-height: 85vh;
-    padding: 1rem;
+    padding: 0.75rem;
     overflow: visible;
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
   }
 
   .results-content {
@@ -3814,8 +3940,8 @@ defineExpose({
   .search-section {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
     flex: none;
     width: 100%;
   }
@@ -3839,34 +3965,49 @@ defineExpose({
   }
 
   .search-input-group {
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .search-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 15px;
+    flex: 1;
   }
 
   .search-button {
-    padding: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
   }
 
   /* 移动端平台选择按钮 */
   .platform-selection {
-    flex-direction: row;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
-
-  .platform-selection::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    display: flex;
+    overflow: visible;
   }
 
   .platform-btn {
-    padding: 0.6rem 0.8rem;
+    flex: 1;
+    padding: 0.5rem;
     font-size: 13px;
-    flex-shrink: 0;
-    min-width: fit-content;
+    border-radius: 10px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    min-width: auto;
+  }
+
+  .platform-btn.active {
+    background: #0B5AFE;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(11, 90, 254, 0.3);
   }
 
   /* 移动端音源状态显示 */
@@ -3967,47 +4108,48 @@ defineExpose({
 
   /* 移动端搜索结果优化 */
   .result-item {
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 0.5rem;
+    padding: 10px;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
   }
 
   .result-cover {
-    width: 60px;
-    height: 60px;
-    align-self: center;
+    width: 64px;
+    height: 64px;
+    align-self: flex-start;
   }
 
   .result-info {
-    text-align: center;
+    text-align: left;
+    flex: 1;
   }
 
   .result-title {
     font-size: 15px;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
-    line-height: 1.3;
-    margin-bottom: 0.5rem;
+    font-weight: 600;
   }
 
   .result-artist {
-    font-size: 13px;
-    margin: 0.3rem 0;
-  }
-
-  .result-album {
-    font-size: 11px;
-    margin: 0.2rem 0;
+    font-size: 12px;
+    opacity: 0.6;
+    margin: 4px 0;
   }
 
   .result-actions {
-    justify-content: center;
+    flex-direction: row;
+    width: auto;
   }
 
   .select-btn {
-    width: 100%;
-    padding: 0.6rem 1rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 12px;
+    border-radius: 10px;
+    width: auto;
   }
 
   /* 移动端弹窗优化 */
@@ -4051,6 +4193,7 @@ defineExpose({
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 8rem;
+    padding-right: 0;
   }
 
   /* 移动端期望排期选择 */

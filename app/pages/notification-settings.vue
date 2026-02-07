@@ -10,7 +10,7 @@
         </svg>
         返回主页
       </button>
-      <h1 class="page-title">通知设置</h1>
+      <h1 class="page-title">消息设置</h1>
     </div>
 
 
@@ -24,15 +24,15 @@
         <!-- 站内通知设置 -->
         <section class="settings-section">
           <div class="section-header">
-            <h2>站内通知设置</h2>
-            <p>配置您希望接收的通知类型</p>
+            <h2>站内消息设置</h2>
+            <p>配置您希望接收的消息类型</p>
           </div>
 
           <div class="settings-grid">
-            <!-- 歌曲被选中通知 -->
-            <div class="setting-card">
+            <!-- 歌曲被选中消息 -->
+            <div class="setting-item">
               <div class="setting-info">
-                <h3>歌曲被选中通知</h3>
+                <h3>歌曲被选中消息</h3>
                 <p>当您投稿的歌曲被选中播放时通知您</p>
               </div>
               <div class="setting-control">
@@ -46,10 +46,10 @@
               </div>
             </div>
 
-            <!-- 歌曲已播放通知 -->
-            <div class="setting-card">
+            <!-- 歌曲已播放消息 -->
+            <div class="setting-item">
               <div class="setting-info">
-                <h3>歌曲已播放通知</h3>
+                <h3>歌曲已播放消息</h3>
                 <p>当您投稿的歌曲播放完成时通知您</p>
               </div>
               <div class="setting-control">
@@ -63,10 +63,10 @@
               </div>
             </div>
 
-            <!-- 歌曲获得投票通知 -->
-            <div class="setting-card">
+            <!-- 歌曲获得投票消息 -->
+            <div class="setting-item">
               <div class="setting-info">
-                <h3>歌曲获得投票通知</h3>
+                <h3>歌曲获得投票消息</h3>
                 <p>当您投稿的歌曲获得投票时通知您</p>
               </div>
               <div class="setting-control">
@@ -155,8 +155,8 @@
             <!-- 邮箱绑定 -->
             <div class="setting-card email-card">
               <div class="setting-info">
-                <h3>邮箱通知</h3>
-                <p v-if="!userEmail">绑定邮箱以接收邮件通知</p>
+                <h3>邮箱消息</h3>
+                <p v-if="!userEmail">绑定邮箱以接收邮件消息</p>
                 <p v-else-if="!emailVerified" class="pending-info">邮箱：<span class="email-address">{{
                     userEmail
                   }}</span> <span class="status pending">待验证</span></p>

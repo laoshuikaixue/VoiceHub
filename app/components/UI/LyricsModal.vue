@@ -52,6 +52,7 @@
           <div 
             class="main-content" 
             ref="mainContent"
+            :style="{ zIndex: isMobile && showQualitySettings ? 101 : undefined }"
             @scroll="onMainContentScroll"
             @click="handleOverlayClick" 
           >
@@ -780,6 +781,7 @@ const handleProgressTouchMove = (event) => {
 
 // 工具方法
 const formatTime = (seconds) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
@@ -1399,10 +1401,10 @@ onUnmounted(() => {
   color: #ffffff;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  white-space: nowrap; /* 防止不必要换行 */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%; /* 确保不超过容器宽度 */
+  white-space: normal; /* 允许换行 */
+  overflow: visible; /* 允许内容展示 */
+  text-align: center;
+  width: 100%;
 }
 
 .song-artist {
@@ -1495,10 +1497,12 @@ onUnmounted(() => {
   min-width: 45px;
   text-align: center;
   font-weight: 500;
+  flex-shrink: 0; /* 防止时间显示被压缩 */
 }
 
 .progress-bar {
   flex: 1;
+  min-width: 0; /* 防止在 flex 容器中溢出 */
   height: 5px;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 3px;
@@ -1713,7 +1717,7 @@ onUnmounted(() => {
     top: 50px; /* 大致匹配 endTop 逻辑 */
     left: 0;
     width: 100%;
-    padding: 0 24px 0 84px; /* 左内边距: 24px + 48px(封面) + 12px(间隙) */
+    padding: 0 70px 0 84px; /* 右侧增加 padding 以避开关闭按钮 */
     pointer-events: none;
     z-index: 50;
     box-sizing: border-box;
@@ -1801,12 +1805,12 @@ onUnmounted(() => {
   /* 音质菜单动画 */
   .badge-quality-menu {
     position: absolute;
-    top: 100%; /* 向下弹出 */
-    bottom: auto;
+    bottom: 100%; /* 向上弹出 */
+    top: auto;
     left: 50%;
     transform: translateX(-50%) scale(0.9);
-    margin-top: 12px; /* 顶部间距 */
-    margin-bottom: 0;
+    margin-bottom: 12px; /* 底部间距 */
+    margin-top: 0;
     background: rgba(245, 245, 245, 0.9);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -1820,7 +1824,7 @@ onUnmounted(() => {
     flex-direction: column;
     gap: 2px;
     opacity: 0;
-    transform-origin: top center; /* 动画原点设为顶部 */
+    transform-origin: bottom center; /* 动画原点设为底部 */
     animation: menu-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     max-height: 240px;
     overflow-y: auto;
@@ -1829,7 +1833,7 @@ onUnmounted(() => {
   @keyframes menu-pop-in {
     0% {
       opacity: 0;
-      transform: translateX(-50%) scale(0.9) translateY(-10px);
+      transform: translateX(-50%) scale(0.9) translateY(10px);
     }
     100% {
       opacity: 1;
@@ -1990,10 +1994,17 @@ onUnmounted(() => {
   .song-title {
     font-size: 2rem;
     margin-bottom: 0.5rem;
-    display: block; /* 覆盖 inline-block */
-    max-width: 100%; /* 放宽宽度限制 */
-    padding: 0 1rem; /* 增加内边距防止贴边 */
+    display: block;
+    max-width: 100%;
+    padding: 0 1rem;
     box-sizing: border-box;
+    /* 允许换行，限制最大行数防止撑破布局 */
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
   }
   
   .song-artist {

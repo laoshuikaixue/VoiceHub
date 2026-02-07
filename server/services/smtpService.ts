@@ -84,7 +84,7 @@ export class SmtpService {
     `
     }
 
-    // 重构后的模板配置
+    // 模板配置
     private builtinTemplates: Record<string, {
         name: string;
         subject: string;
