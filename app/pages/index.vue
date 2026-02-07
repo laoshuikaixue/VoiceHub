@@ -3158,15 +3158,15 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
 /* 通知标签上的未读徽章 */
 .notification-badge-tab {
-  position: relative;
-  top: -8px;
-  right: -2px;
+  position: absolute; /* 修改为绝对定位，防止挤压图标 */
+  top: 0;
+  right: 0;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--danger);
+  background-color: #0B5AFE;
   display: inline-block;
-  animation: pulse 2s infinite;
+  z-index: 2;
 }
 
 @keyframes pulse {
