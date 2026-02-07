@@ -31,6 +31,7 @@
     "@applemusic-like-lyrics/lyric": "^0.3.0",
     "@applemusic-like-lyrics/vue": "^0.2.0",
     "@netlify/functions": "^2.0.0",
+    "@nuxtjs/tailwindcss": "^6.14.0",
     "@types/bcrypt": "^5.0.2",
     "@types/crypto-js": "^4.2.2",
     "@types/jsonwebtoken": "^9.0.10",
@@ -58,15 +59,12 @@
     "postgres": "^3.4.7",
     "prompts": "^2.4.2",
     "redis": "^5.10.0",
+    "tsx": "^4.21.0",
+    "vite-plugin-wasm": "^3.5.0",
     "vue": "^3.5.26",
     "vue-router": "^4.6.4",
     "xlsx": "^0.18.5",
     "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@nuxtjs/tailwindcss": "^6.14.0",
-    "tsx": "^4.21.0",
-    "vite-plugin-wasm": "^3.5.0"
   },
   "engines": {
     "node": ">=18.20.0",
