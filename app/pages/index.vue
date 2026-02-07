@@ -2513,7 +2513,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     max-width: 500px;
     display: flex;
     justify-content: space-around;
-    align-items: center;
+    align-items: stretch; /* 修改为 stretch 以配合子元素 height: 100% */
     gap: 0;
     padding: 0 0.5rem;
     height: 64px;
@@ -2528,16 +2528,18 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
   .section-tab {
     flex: 1;
+    height: 100%; /* 确保填满容器高度 */
     background: transparent;
     border: none;
     border-radius: 0;
-    padding: 6px 4px;
+    padding: 0; /* 移除固定内边距，改用 flex 居中 */
     font-size: 10px;
     font-weight: 500;
     color: #71717a; /* text-zinc-500 */
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center; /* 垂直居中内容 */
     gap: 4px;
     position: relative;
     transition: all 0.2s ease;
@@ -2713,23 +2715,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     font-size: 16px;
   }
 
-  .tabs-row {
-    padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .section-tab {
-    padding: 6px 2px;
-    font-size: 10px;
-  }
-
-  .section-tab::before {
-    width: 20px;
-    height: 20px;
-    font-size: 16px !important;
-  }
-
   .tab-content-container {
-    padding: 0 4px 90px;
+    padding: 0 4px calc(80px + env(safe-area-inset-bottom, 0px));
   }
 }
 

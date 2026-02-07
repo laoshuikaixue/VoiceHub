@@ -2028,8 +2028,9 @@ defineExpose({
 .rules-section {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 13px;
-  padding: 1.5rem;
-  width: 40%;
+  padding: 1.25rem;
+  flex: 0 0 35%; /* 稍微缩小规则区域占比 */
+  min-width: 300px;
   height: 100%;
   overflow-y: auto;
 }
@@ -2037,23 +2038,23 @@ defineExpose({
 .section-title {
   font-family: 'MiSans', sans-serif;
   font-weight: 400;
-  font-size: 16px;
+  font-size: 15px;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .rules-content-desktop {
   font-family: 'MiSans', sans-serif;
   font-weight: 400;
-  font-size: 16px;
-  line-height: 1.8;
+  font-size: 15px;
+  line-height: 1.7;
   letter-spacing: 0.04em;
   color: #fff;
 }
 
 .rules-content-desktop p {
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.6rem;
 }
 
 /* Mobile Rules Styles (Hidden on desktop) */
@@ -2090,7 +2091,8 @@ defineExpose({
 }
 
 .form-container {
-  width: 60%;
+  flex: 1;
+  min-width: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -2110,21 +2112,23 @@ defineExpose({
 .form-header-row {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 1rem;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap; /* 允许在窄屏下换行 */
 }
 
 .search-section {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex: 1.2;
+  gap: 0.75rem;
+  flex: 1.5;
+  min-width: 300px; /* 保证搜索框有最小宽度 */
 }
 
 .search-label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: #FFFFFF;
   white-space: nowrap;
 }
@@ -2139,10 +2143,10 @@ defineExpose({
   background: #040E15;
   border: 1px solid #242F38;
   border-radius: 8px;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.85rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.6);
   flex: 1;
   min-width: 0;
@@ -2257,51 +2261,51 @@ defineExpose({
 .submission-status-horizontal {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .admin-notice-horizontal {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   justify-content: center;
 }
 
 .admin-notice-horizontal .admin-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .admin-notice-horizontal .admin-text {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   color: #FFD700;
 }
 
 .submission-closed-notice {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   justify-content: center;
 }
 
 .submission-closed-notice .closed-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .submission-closed-notice .closed-text {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   color: #FF6B6B;
 }
 
 .status-content-horizontal {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -2309,32 +2313,32 @@ defineExpose({
 .status-item-horizontal {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .status-item-horizontal .status-label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #FFFFFF;
 }
 
 .status-item-horizontal .status-value {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #0B5AFE;
 }
 
 .status-item-horizontal .status-remaining {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
   background: rgba(11, 90, 254, 0.1);
   border: 1px solid rgba(11, 90, 254, 0.3);
   border-radius: 4px;
-  padding: 0.25rem 0.5rem;
+  padding: 0.15rem 0.4rem;
 }
 
 
@@ -2361,9 +2365,10 @@ defineExpose({
 .form-group label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 20px;
-  letter-spacing: 0.04em;
-  color: #ffffff;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.25rem;
 }
 
 .input-wrapper {
@@ -2409,11 +2414,11 @@ defineExpose({
   position: relative;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
-  padding: 0.75rem 1rem;
+  padding: 0.4rem 0.75rem; /* 稍微缩小内边距 */
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.4rem; /* 缩小间距 */
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -2438,18 +2443,18 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .netease-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .netease-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #c20c0c;
   box-shadow: 0 0 8px rgba(194, 12, 12, 0.6);
@@ -2458,7 +2463,7 @@ defineExpose({
 .netease-title {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #ffffff;
 }
 
@@ -2466,9 +2471,9 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   background: rgba(255, 255, 255, 0.02);
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.85rem;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   transition: all 0.3s ease;
@@ -2485,7 +2490,7 @@ defineExpose({
 }
 
 .login-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #ffffff;
   margin: 0;
@@ -2495,35 +2500,35 @@ defineExpose({
 .login-hint {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.45);
-  margin: 4px 0 0 0;
-  line-height: 1.4;
+  margin: 2px 0 0 0;
+  line-height: 1.3;
 }
 
 .login-btn {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  border-radius: 7px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 5px 14px rgba(59, 130, 246, 0.25);
   filter: brightness(1.1);
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .header-btn {
@@ -2532,31 +2537,31 @@ defineExpose({
   gap: 0.25rem;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
-  padding: 0.25rem 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .header-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .login-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .import-btn {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.5rem 0.8rem;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.45rem 0.75rem;
+  border-radius: 7px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -2565,12 +2570,12 @@ defineExpose({
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .import-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
   color: #ffffff;
 }
 
@@ -2583,25 +2588,25 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   min-width: 0;
 }
 
 .user-avatar {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-name {
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
   white-space: nowrap;
@@ -2611,19 +2616,19 @@ defineExpose({
 
 .user-actions-row {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .action-btn-compact {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.8);
-  padding: 0.4rem 0.75rem;
+  gap: 0.3rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.35rem 0.6rem;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
@@ -2631,9 +2636,9 @@ defineExpose({
 }
 
 .action-btn-compact:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .search-type-switch {
@@ -2648,10 +2653,10 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  padding: 0.2rem 0.6rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 4px;
   transition: all 0.2s ease;
 }
@@ -2659,8 +2664,8 @@ defineExpose({
 .radio-label.active {
   color: #ffffff;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .radio-label input {
@@ -2670,31 +2675,31 @@ defineExpose({
 .logout-btn {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.2rem;
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.4);
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.7);
   background: rgba(255, 255, 255, 0.05);
 }
 
 .platform-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.85rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
@@ -2846,7 +2851,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 1rem 1.5rem 1.5rem 1.5rem; /* 上边距小一点 */
+  padding: 0.75rem 1.25rem 1.25rem 1.25rem; /* 稍微缩小内边距 */
   position: relative;
   z-index: 1;
 }
@@ -2939,22 +2944,22 @@ defineExpose({
   justify-content: center;
   flex: 1;
   text-align: center;
-  gap: 1rem;
-  padding: 2rem;
-  min-height: 300px;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  min-height: 150px; /* 进一步缩小最小高度以适应小屏幕 */
 }
 
 .empty-icon,
 .initial-icon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
+  font-size: 2.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .empty-text,
 .initial-text {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: #FFFFFF;
   margin: 0;
 }
@@ -2962,7 +2967,7 @@ defineExpose({
 .empty-hint,
 .initial-hint {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
+  font-size: 13px;
   margin: 0;
 }
 
@@ -2973,15 +2978,16 @@ defineExpose({
   justify-content: center;
   width: 100%;
   height: 100%;
-  min-height: 200px;
+  min-height: 120px;
 }
 
 .search-svg {
-  width: 30%;
-  max-width: 400px;
-  min-width: 200px;
+  width: 25%;
+  max-width: 300px;
+  min-width: 150px;
   height: auto;
   object-fit: contain;
+  opacity: 0.8;
 }
 
 /* 手动输入触发按钮 */
@@ -3429,8 +3435,8 @@ defineExpose({
 
 .result-item {
   display: flex;
-  padding: 1rem 1.5rem 1rem 1.5rem;
-  gap: 1.2rem;
+  padding: 0.6rem 1rem; /* 缩小内边距以提高信息密度 */
+  gap: 1rem;
   transition: all 0.2s ease;
   cursor: pointer;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -3445,8 +3451,8 @@ defineExpose({
 }
 
 .result-cover {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   position: relative;
   flex-shrink: 0;
 }
@@ -3479,8 +3485,8 @@ defineExpose({
 }
 
 .play-button-bg {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: rgba(11, 90, 254, 0.8);
   display: flex;
@@ -3510,40 +3516,51 @@ defineExpose({
 .result-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .result-title {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: #ffffff;
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.result-artist {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  margin: 0.25rem 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.result-artist {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-  margin: 0.5rem 0;
-}
-
 .result-album,
 .result-quality,
 .result-pay {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
-  margin: 0.25rem 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  margin: 0.15rem 0;
 }
 
 
 .result-actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-right: 0.5rem;
+  gap: 0.4rem;
+  margin-right: 0.25rem;
+  flex-shrink: 0;
 }
 
 .similar-song-info {
