@@ -2114,6 +2114,7 @@ defineExpose({
   align-items: center;
   gap: 1rem;
   margin-bottom: 0.75rem;
+  padding-top: 4px; /* 为按钮悬停上浮留出空间 */
   flex-wrap: wrap; /* 允许在窄屏下换行 */
 }
 
@@ -2122,7 +2123,7 @@ defineExpose({
   align-items: center;
   gap: 0.75rem;
   flex: 1.5;
-  min-width: 300px; /* 保证搜索框有最小宽度 */
+  min-width: 400px; /* 增加最小宽度，确保搜索框、标签和按钮有足够空间 */
 }
 
 .search-label {
@@ -2131,12 +2132,14 @@ defineExpose({
   font-size: 15px;
   color: #FFFFFF;
   white-space: nowrap;
+  flex-shrink: 0; /* 防止标签被压缩 */
 }
 
 .search-input-group {
   display: flex;
   gap: 0.5rem;
   flex: 1;
+  min-width: 0; /* 允许内部元素正常压缩 */
 }
 
 .search-input {
@@ -2149,7 +2152,7 @@ defineExpose({
   font-size: 15px;
   color: rgba(255, 255, 255, 0.6);
   flex: 1;
-  min-width: 0;
+  min-width: 100px; /* 确保输入框不会缩到太小 */
 }
 
 .search-input:focus {
@@ -2169,6 +2172,7 @@ defineExpose({
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.3s ease;
+  flex-shrink: 0; /* 确保搜索按钮始终完整显示，不被重叠 */
 }
 
 .search-button:hover:not(:disabled) {
@@ -2191,7 +2195,7 @@ defineExpose({
   align-items: center;
   gap: 1rem;
   flex: 1;
-  min-width: 0;
+  min-width: 200px; /* 增加最小宽度，防止在窄屏下与搜索框重叠 */
 }
 
 .section-label {
@@ -2200,6 +2204,7 @@ defineExpose({
   font-size: 16px;
   color: #FFFFFF;
   white-space: nowrap;
+  flex-shrink: 0; /* 防止标签被压缩 */
 }
 
 .collaborators-list {
