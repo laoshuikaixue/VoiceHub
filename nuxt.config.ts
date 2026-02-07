@@ -29,7 +29,8 @@ export default defineNuxtConfig({
       apiBase: '/api',
       siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
       siteLogo: process.env.NUXT_PUBLIC_SITE_LOGO || '',
-      siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见'
+      siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
+      isNetlify: process.env.NETLIFY === 'true'
     }
   },
   
@@ -75,7 +76,7 @@ export default defineNuxtConfig({
   
   // 服务器端配置
   nitro: {
-    preset: process.env.VERCEL ? 'vercel' : (process.env.NITRO_PRESET || 'node-server'),
+    preset: process.env.VERCEL ? 'vercel' : (process.env.NETLIFY ? 'netlify' : (process.env.NITRO_PRESET || 'node-server')),
     // 增强错误处理和稳定性
     experimental: {
       wasm: true,

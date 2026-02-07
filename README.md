@@ -88,16 +88,17 @@
 - **数据库**：使用 Drizzle ORM + Neon Database，提供类型安全和高性能的数据库操作
 - **认证**：标准 JWT 认证系统
 - **缓存**：可选的 Redis 缓存层，提升系统响应速度
-- **部署**：支持 Vercel、Netlify 等 Serverless 平台一键部署
+- **部署**：支持 Vercel、Netlify、EdgeOne 等 Serverless 平台一键部署
 
 ## 部署指南
 
 ### 一键部署
 
-本项目可以一键部署到Vercel/Netlify平台：
+本项目可以一键部署到Vercel/Netlify/EdgeOne平台：
 
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/laoshuikaixue/VoiceHub&env=DATABASE_URL,JWT_SECRET&envDescription=需要配置Neon数据库地址和JWT密钥&envLink=https://github.com/laoshuikaixue/VoiceHub#环境变量说明)
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flaoshuikaixue%2FVoiceHub&env=DATABASE_URL,JWT_SECRET,NODE_ENV&envDefaults=%7B%22NODE_ENV%22%3A%22production%22%7D&envDescription=%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E8%AF%B4%E6%98%8E&envLink=https%3A%2F%2Fgithub.com%2Flaoshuikaixue%2FVoiceHub%23%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E8%AF%B4%E6%98%8E)
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/laoshuikaixue/VoiceHub)
+[![Deploy to EdgeOne Pages](https://cdnstatic.tencentcs.com/edgeone/pages/deploy.svg)](https://edgeone.ai/pages/new?repository-url=https://github.com/laoshuikaixue/VoiceHub&env=DATABASE_URL,JWT_SECRET&env-description=%E9%9C%80%E8%A6%81%E9%85%8D%E7%BD%AE%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%B0%E5%9D%80%E3%80%81JWT%E5%AF%86%E9%92%A5)
 
 在部署过程中，需要输入必要的环境变量：
 1. `DATABASE_URL`：PostgreSQL数据库连接地址
@@ -1229,6 +1230,7 @@ Thanks goes to these wonderful people:
 - [meting-api](https://github.com/injahow/meting-api)
 - [lx-music-desktop](https://github.com/lyswhut/lx-music-desktop) (搜索功能参考)
 - [the1068fm - 深中风华子衿广播站点歌系统](https://github.com/SMS-COSMO/the1068fm)
+- [Sound-of-experiment - 实验之声广播站点歌系统](https://github.com/ljk743121/Sound-of-experiment) (哔哩哔哩音源参考)
 - [official-website - Sparkinit](https://github.com/Sparkinit/official-website)
 
 ## 许可证

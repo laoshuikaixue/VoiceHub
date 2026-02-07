@@ -1,0 +1,5 @@
+{
+  "buildCommand": "node scripts/deploy.js",
+  "installCommand": "npm ci || npm install",
+  "nodeVersion": "24.5.0"
+}

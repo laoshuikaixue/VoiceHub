@@ -14,6 +14,11 @@
           {{ systemName }} v{{ systemVersion }}
         </a>
       </span>
+      <span v-if="isNetlify" class="footer-item">
+        <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer" class="netlify-badge">
+          <img src="https://www.netlify.com/img/global/badges/netlify-color-accent.svg" alt="Deploys by Netlify" />
+        </a>
+      </span>
     </div>
   </div>
 </template>
@@ -25,6 +30,8 @@ import packageJson from '~~/package.json'
 
 // 使用 useSiteConfig composable 获取配置
 const { siteTitle, icp: icpNumber } = useSiteConfig()
+const config = useRuntimeConfig()
+const isNetlify = config.public.isNetlify
 
 const copyrightOwner = getCopyrightOwner()
 const systemName = getSystemName()
@@ -94,6 +101,22 @@ onMounted(() => {
 .icp-link:hover,
 .voicehub-link:hover {
   color: rgba(255, 255, 255, 0.8);
+}
+
+.netlify-badge {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.netlify-badge img {
+  height: 16px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.netlify-badge:hover img {
+  opacity: 1;
 }
 
 @media (max-width: 768px) {

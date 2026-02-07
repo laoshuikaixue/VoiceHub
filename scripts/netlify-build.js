@@ -114,24 +114,24 @@ async function netlifyBuild() {
     if (!fileExists('app/drizzle/schema.ts')) {
       throw new Error('Drizzle schema 文件不存在');
     }
-    
+
     logSuccess('Drizzle 配置检查完成');
-    
+
     // 5. 验证 Drizzle 配置是否正确
     logStep('🔍', '验证 Drizzle 配置...');
     const drizzleConfigPath = 'drizzle.config.ts';
     const drizzleSchemaPath = 'app/drizzle/schema.ts';
-    
+
     if (!fileExists(drizzleConfigPath)) {
       throw new Error('Drizzle 配置文件未找到');
     }
-    
+
     if (!fileExists(drizzleSchemaPath)) {
       throw new Error('Drizzle schema 文件未找到');
     }
-    
+
     logSuccess('Drizzle 配置验证成功');
-    
+
     // 6. 数据库同步
     if (process.env.DATABASE_URL) {
       logStep('🗄️', '执行数据库同步...')
@@ -144,14 +144,14 @@ async function netlifyBuild() {
     } else {
       logWarning('未设置 DATABASE_URL，跳过数据库迁移')
     }
-    
+
     // 7. 构建应用
     logStep('🔨', '构建 Nuxt 应用...');
     if (!safeExec('npx nuxt build')) {
       throw new Error('Nuxt 应用构建失败');
     }
     logSuccess('Nuxt 应用构建完成');
-    
+
     // 8. 验证构建输出
     logStep('🔍', '验证构建输出...');
 
@@ -171,9 +171,9 @@ async function netlifyBuild() {
     if (!hasNetlifyFunctions && !hasOutputPublic) {
       throw new Error('构建输出目录不存在，请检查构建配置');
     }
-    
+
     log('🎉 Netlify 构建完成！', 'green');
-    
+
   } catch (error) {
     logError(`构建失败: ${error.message}`);
     process.exit(1);
