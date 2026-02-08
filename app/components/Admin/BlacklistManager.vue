@@ -1,165 +1,285 @@
 <template>
-<div class="blacklist-manager">
-    <div class="header">
-      <h3>歌曲黑名单管理</h3>
-      <p class="description">管理禁止点歌的歌曲和关键词</p>
-    </div>
-
-    <!-- 添加黑名单项 -->
-    <div class="add-section">
-      <h4>添加黑名单项</h4>
-      <div class="add-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label>类型:</label>
-            <select v-model="newItem.type" class="form-select">
-              <option value="SONG">具体歌曲</option>
-              <option value="KEYWORD">关键词</option>
-            </select>
-          </div>
-          <div class="form-group flex-1">
-            <label>{{ newItem.type === 'SONG' ? '歌曲名称 - 艺术家' : '关键词' }}:</label>
-            <input
-                v-model="newItem.value"
-                :placeholder="newItem.type === 'SONG' ? '例如: 歌曲名 - 艺术家' : '例如: 敏感词'"
-                class="form-input"
-                type="text"
-            />
-          </div>
-        </div>
-        <div class="form-group">
-          <label>原因 (可选):</label>
-          <input
-              v-model="newItem.reason"
-              class="form-input"
-              placeholder="加入黑名单的原因"
-              type="text"
-          />
-        </div>
-        <button :disabled="!newItem.value || loading" class="add-btn" @click="addBlacklistItem">
-          {{ loading ? '添加中...' : '添加到黑名单' }}
-        </button>
+  <div class="max-w-[1400px] mx-auto space-y-8 pb-20 px-2 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <!-- 页面标题 -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+          歌曲黑名单管理
+        </h2>
+        <p class="text-xs text-zinc-500 mt-1 font-medium">禁止特定歌曲或包含关键词的歌曲被点播，维护广播内容的健康与合规</p>
       </div>
     </div>
 
-    <!-- 搜索和筛选 -->
-    <div class="filter-section">
-      <div class="filter-row">
-        <div class="form-group">
-          <label>类型筛选:</label>
-          <select v-model="filters.type" class="form-select" @change="loadBlacklist">
-            <option value="">全部</option>
-            <option value="SONG">具体歌曲</option>
-            <option value="KEYWORD">关键词</option>
-          </select>
+    <!-- 添加黑名单项表单 -->
+    <section class="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-8 shadow-xl">
+      <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-6 px-1">添加黑名单项</h3>
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-end">
+        <div class="xl:col-span-2 space-y-2">
+          <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">封禁类型</label>
+          <div class="flex p-1 bg-zinc-950 border border-zinc-800 rounded-2xl">
+            <button 
+              @click="newItem.type = 'SONG'"
+              class="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[11px] font-bold transition-all"
+              :class="newItem.type === 'SONG' ? 'bg-zinc-800 text-blue-400' : 'text-zinc-600'"
+            >
+              <Music :size="12" /> 具体歌曲
+            </button>
+            <button 
+              @click="newItem.type = 'KEYWORD'"
+              class="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[11px] font-bold transition-all"
+              :class="newItem.type === 'KEYWORD' ? 'bg-zinc-800 text-purple-400' : 'text-zinc-600'"
+            >
+              <Type :size="12" /> 关键词
+            </button>
+          </div>
         </div>
-        <div class="form-group flex-1">
-          <label>搜索:</label>
-          <input
-              v-model="filters.search"
-              class="form-input"
-              placeholder="搜索黑名单项..."
-              type="text"
-              @input="debounceSearch"
+
+        <div class="xl:col-span-4 space-y-2">
+          <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">
+            {{ newItem.type === 'SONG' ? '歌曲名称 - 艺术家' : '关键词内容' }}
+          </label>
+          <input 
+            type="text" 
+            v-model="newItem.value"
+            :placeholder="newItem.type === 'SONG' ? '例如: 歌曲名 - 艺术家' : '例如: 敏感词、特定风格'" 
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
           />
         </div>
+
+        <div class="xl:col-span-4 space-y-2">
+          <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">封禁原因 (可选)</label>
+          <input 
+            type="text" 
+            v-model="newItem.reason"
+            placeholder="简述加入黑名单的原因" 
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
+          />
+        </div>
+
+        <div class="xl:col-span-2">
+          <button 
+            @click="addBlacklistItem"
+            :disabled="!newItem.value || loading"
+            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-2xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+          >
+            <Plus v-if="!loading" :size="16" />
+            <div v-else class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            {{ loading ? '处理中...' : '添加到黑名单' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 筛选和搜索 -->
+    <div class="bg-zinc-900/20 border border-zinc-800 rounded-3xl p-4 flex flex-col md:flex-row gap-4 items-center">
+      <div class="flex-1 relative w-full">
+        <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" :size="18" />
+        <input 
+          type="text" 
+          placeholder="在黑名单中搜索..." 
+          v-model="filters.search"
+          @input="debounceSearch"
+          class="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl pl-12 pr-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
+        />
+      </div>
+      <div class="flex gap-3 w-full md:w-auto">
+        <CustomSelect 
+          label="类型筛选" 
+          :value="typeFilterLabel" 
+          :options="['全部类型', '具体歌曲', '关键词']" 
+          @change="handleTypeFilterChange"
+          class="flex-1 md:w-48"
+        />
+        <button 
+          @click="loadBlacklist"
+          class="p-3 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-600 hover:text-blue-400 transition-all active:scale-95"
+        >
+          <Filter :size="18" />
+        </button>
       </div>
     </div>
 
     <!-- 黑名单列表 -->
-    <div class="blacklist-section">
-      <h4>黑名单列表 ({{ pagination.total }} 项)</h4>
-
-      <div v-if="loading && blacklist.length === 0" class="loading">
-        加载中...
+    <div class="space-y-4">
+      <div class="flex items-center justify-between px-2">
+        <h4 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+          黑名单列表 ({{ pagination.total }} 项)
+        </h4>
       </div>
 
-      <div v-else-if="blacklist.length === 0" class="empty">
-        暂无黑名单项
-      </div>
-
-      <div v-else class="blacklist-list">
-        <div v-for="item in blacklist" :key="item.id" class="blacklist-item">
-          <div class="item-header">
-            <div class="item-info">
-              <span :class="item.type.toLowerCase()" class="item-type">
-                {{ item.type === 'SONG' ? '歌曲' : '关键词' }}
-              </span>
-              <span class="item-value">{{ item.value }}</span>
-              <span v-if="!item.isActive" class="item-status disabled">已禁用</span>
-            </div>
-            <div class="item-actions">
-              <button
-                  :class="item.isActive ? 'disable-btn' : 'enable-btn'"
-                  :disabled="loading"
-                  @click="toggleItemStatus(item)"
+      <div class="grid grid-cols-1 gap-3">
+        <TransitionGroup 
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="transform scale-95 opacity-0"
+          enter-to-class="transform scale-100 opacity-100"
+          leave-active-class="transition duration-200 ease-in absolute w-full"
+          leave-from-class="transform scale-100 opacity-100"
+          leave-to-class="transform scale-95 opacity-0"
+        >
+          <div
+            v-for="item in blacklist"
+            :key="item.id"
+            class="group flex flex-col lg:flex-row lg:items-center gap-6 p-6 bg-zinc-900/30 border rounded-3xl transition-all hover:border-zinc-700"
+            :class="[
+              item.isActive ? 'border-zinc-800' : 'border-zinc-800/40 opacity-60'
+            ]"
+          >
+            <div class="flex-1 flex items-start gap-5">
+              <div class="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center border transition-all"
+                :class="[
+                  item.type === 'SONG' 
+                    ? 'bg-blue-600/10 text-blue-500 border-blue-500/20 shadow-lg shadow-blue-900/5' 
+                    : 'bg-purple-600/10 text-purple-500 border-purple-500/20 shadow-lg shadow-purple-900/5'
+                ]"
               >
+                <Music v-if="item.type === 'SONG'" :size="22" />
+                <Type v-else :size="22" />
+              </div>
+              
+              <div class="space-y-1.5 min-w-0">
+                <div class="flex items-center gap-3">
+                  <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border"
+                    :class="[
+                      item.type === 'SONG' ? 'bg-blue-600/10 text-blue-400 border-blue-500/20' : 'bg-purple-600/10 text-purple-400 border-purple-500/20'
+                    ]"
+                  >
+                    {{ item.type === 'SONG' ? '具体歌曲' : '关键词' }}
+                  </span>
+                  <h5 class="text-base font-black text-zinc-100 truncate tracking-tight">{{ item.value }}</h5>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-4">
+                  <div class="flex items-center gap-2 text-zinc-500 font-bold text-[11px]">
+                    <MessageSquare :size="12" class="text-zinc-700" />
+                    原因: {{ item.reason || '未填写原因' }}
+                  </div>
+                  <div class="flex items-center gap-2 text-zinc-600 font-bold text-[10px] uppercase tracking-tighter">
+                    <Clock :size="11" class="text-zinc-800" />
+                    创建时间: {{ formatDate(item.createdAt) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 lg:pt-0 border-t lg:border-t-0 border-zinc-800/50">
+               <button 
+                @click="toggleItemStatus(item)"
+                :disabled="loading"
+                class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                :class="[
+                  item.isActive 
+                    ? 'bg-zinc-800 text-zinc-500 hover:text-amber-500 hover:bg-amber-500/5 hover:border-amber-500/10 border border-transparent' 
+                    : 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+                ]"
+              >
+                <Power :size="12" />
                 {{ item.isActive ? '禁用' : '启用' }}
               </button>
-              <button :disabled="loading" class="delete-btn" @click="deleteItem(item)">
-                删除
+              <button 
+                @click="deleteItem(item)"
+                :disabled="loading"
+                class="p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-700 hover:text-red-500 hover:border-red-500/30 transition-all active:scale-95"
+              >
+                <Trash2 :size="16" />
               </button>
             </div>
           </div>
-          <div v-if="item.reason" class="item-reason">
-            原因: {{ item.reason }}
+        </TransitionGroup>
+
+        <!-- 加载状态 -->
+        <div v-if="loading && blacklist.length === 0" class="py-20 flex flex-col items-center justify-center space-y-4">
+          <div class="w-12 h-12 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin"></div>
+          <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest">加载中...</p>
+        </div>
+
+        <!-- 空状态 -->
+        <div v-else-if="blacklist.length === 0" class="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-zinc-900/10 border border-zinc-800/40 border-dashed rounded-3xl">
+          <div class="w-16 h-16 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-800 shadow-xl">
+            <Ban :size="32" />
           </div>
-          <div class="item-meta">
-            创建时间: {{ formatDate(item.createdAt) }}
+          <div class="space-y-1 px-4">
+            <h6 class="text-sm font-bold text-zinc-600">未找到匹配的黑名单项</h6>
+            <p class="text-[10px] text-zinc-700 font-bold uppercase tracking-widest">请尝试调整筛选条件或添加新项目</p>
           </div>
         </div>
       </div>
 
-      <!-- 分页 -->
-      <div v-if="pagination.pages > 1" class="pagination">
-        <button
-            :disabled="pagination.page <= 1 || loading"
-            class="page-btn"
-            @click="changePage(pagination.page - 1)"
+      <!-- 分页控制 -->
+      <div v-if="pagination.pages > 1" class="flex items-center justify-center gap-4 mt-8">
+        <button 
+          @click="changePage(pagination.page - 1)"
+          :disabled="pagination.page <= 1 || loading"
+          class="p-3 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
         >
-          上一页
+          <ChevronLeft :size="20" />
         </button>
-        <span class="page-info">
-          第 {{ pagination.page }} 页，共 {{ pagination.pages }} 页
-        </span>
-        <button
-            :disabled="pagination.page >= pagination.pages || loading"
-            class="page-btn"
-            @click="changePage(pagination.page + 1)"
+        <div class="px-6 py-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl text-[11px] font-black text-zinc-400 uppercase tracking-widest">
+          第 {{ pagination.page }} 页 / 共 {{ pagination.pages }} 页
+        </div>
+        <button 
+          @click="changePage(pagination.page + 1)"
+          :disabled="pagination.page >= pagination.pages || loading"
+          class="p-3 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
         >
-          下一页
+          <ChevronRight :size="20" />
         </button>
       </div>
     </div>
 
-    <!-- 错误信息 -->
-    <div v-if="error" class="error">
-      {{ error }}
-    </div>
-
-    <!-- 成功信息 -->
-    <div v-if="success" class="success">
-      {{ success }}
-    </div>
+    <!-- 删除确认模态框 -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="showDeleteDialog" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
+        <div 
+          class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+          @click.stop
+        >
+          <div class="flex flex-col items-center py-8 space-y-6 text-center px-8">
+            <div class="w-16 h-16 rounded-2xl bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/20 shadow-2xl shadow-red-900/10">
+              <Trash2 :size="28" />
+            </div>
+            <div class="space-y-2">
+              <h4 class="text-lg font-bold text-zinc-100">确认从黑名单移除</h4>
+              <p class="text-xs text-zinc-500 leading-relaxed">
+                确定要移除 <span class="text-zinc-300 font-bold">"{{ deleteTargetItem?.value }}"</span> 吗？移除后，该项目将恢复为正常状态。
+              </p>
+            </div>
+            <div class="flex gap-3 w-full pt-4">
+              <button 
+                @click="showDeleteDialog = false" 
+                class="flex-1 px-4 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] font-black rounded-2xl transition-all uppercase tracking-widest"
+              >
+                取消
+              </button>
+              <button 
+                @click="confirmDelete" 
+                :disabled="loading"
+                class="flex-1 px-4 py-4 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black rounded-2xl shadow-xl shadow-red-900/20 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50"
+              >
+                {{ loading ? '删除中...' : '确认移除' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
-
-  <!-- 确认删除对话框 -->
-  <ConfirmDialog
-      :loading="loading"
-      :message="deleteDialogMessage"
-      :show="showDeleteDialog"
-      cancel-text="取消"
-      confirm-text="删除"
-      title="删除黑名单项"
-      type="danger"
-      @close="showDeleteDialog = false"
-      @confirm="confirmDelete"
-  />
 </template>
 
 <script setup>
-import {onMounted, reactive, ref} from 'vue'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import { onMounted, reactive, ref, computed } from 'vue'
+import { 
+  ShieldAlert, Music, Type, Plus, Search, Filter, 
+  MessageSquare, Clock, Power, Trash2, Ban,
+  ChevronLeft, ChevronRight, ChevronDown
+} from 'lucide-vue-next'
+import CustomSelect from '~/components/admin/Common/CustomSelect.vue'
 
 const blacklist = ref([])
 const loading = ref(false)
@@ -168,7 +288,6 @@ const success = ref('')
 
 // 删除对话框相关
 const showDeleteDialog = ref(false)
-const deleteDialogMessage = ref('')
 const deleteTargetItem = ref(null)
 
 const newItem = reactive({
@@ -189,6 +308,12 @@ const pagination = reactive({
   pages: 0
 })
 
+const typeFilterLabel = computed(() => {
+  if (filters.type === 'SONG') return '具体歌曲'
+  if (filters.type === 'KEYWORD') return '关键词'
+  return '全部类型'
+})
+
 let searchTimeout = null
 
 // 加载黑名单
@@ -200,8 +325,8 @@ const loadBlacklist = async () => {
     const params = new URLSearchParams({
       page: pagination.page.toString(),
       limit: pagination.limit.toString(),
-      ...(filters.type && {type: filters.type}),
-      ...(filters.search && {search: filters.search})
+      ...(filters.type && { type: filters.type }),
+      ...(filters.search && { search: filters.search })
     })
 
     const response = await $fetch(`/api/admin/blacklist?${params}`, {
@@ -213,9 +338,22 @@ const loadBlacklist = async () => {
   } catch (err) {
     error.value = '获取黑名单失败'
     console.error('获取黑名单失败:', err)
+    if (window.$showNotification) {
+      window.$showNotification('获取黑名单失败: ' + (err.data?.message || err.message), 'error')
+    }
   } finally {
     loading.value = false
   }
+}
+
+// 处理类型筛选变更
+const handleTypeFilterChange = (label) => {
+  if (label === '具体歌曲') filters.type = 'SONG'
+  else if (label === '关键词') filters.type = 'KEYWORD'
+  else filters.type = ''
+  
+  pagination.page = 1
+  loadBlacklist()
 }
 
 // 添加黑名单项
@@ -237,7 +375,9 @@ const addBlacklistItem = async () => {
       ...useAuth().getAuthConfig()
     })
 
-    success.value = '黑名单项添加成功'
+    if (window.$showNotification) {
+      window.$showNotification('黑名单项添加成功', 'success')
+    }
 
     // 重置表单
     newItem.value = ''
@@ -246,13 +386,12 @@ const addBlacklistItem = async () => {
     // 重新加载列表
     pagination.page = 1
     await loadBlacklist()
-
-    setTimeout(() => {
-      success.value = ''
-    }, 3000)
   } catch (err) {
     error.value = err.data?.message || '添加黑名单项失败'
     console.error('添加黑名单项失败:', err)
+    if (window.$showNotification) {
+      window.$showNotification('添加失败: ' + error.value, 'error')
+    }
   } finally {
     loading.value = false
   }
@@ -273,23 +412,23 @@ const toggleItemStatus = async (item) => {
     })
 
     item.isActive = !item.isActive
-    success.value = `黑名单项已${item.isActive ? '启用' : '禁用'}`
-
-    setTimeout(() => {
-      success.value = ''
-    }, 2000)
+    if (window.$showNotification) {
+      window.$showNotification(`黑名单项已${item.isActive ? '启用' : '禁用'}`, 'success')
+    }
   } catch (err) {
     error.value = '更新状态失败'
     console.error('更新状态失败:', err)
+    if (window.$showNotification) {
+      window.$showNotification('更新状态失败', 'error')
+    }
   } finally {
     loading.value = false
   }
 }
 
 // 删除项目
-const deleteItem = async (item) => {
+const deleteItem = (item) => {
   deleteTargetItem.value = item
-  deleteDialogMessage.value = `确定要删除黑名单项"${item.value}"吗？`
   showDeleteDialog.value = true
 }
 
@@ -309,6 +448,7 @@ const confirmDelete = async () => {
     if (window.$showNotification) {
       window.$showNotification('黑名单项删除成功', 'success')
     }
+    showDeleteDialog.value = false
     await loadBlacklist()
   } catch (err) {
     error.value = '删除失败'
@@ -318,7 +458,6 @@ const confirmDelete = async () => {
     }
   } finally {
     loading.value = false
-    showDeleteDialog.value = false
     deleteTargetItem.value = null
   }
 }
@@ -340,7 +479,16 @@ const changePage = (page) => {
 
 // 格式化日期
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleString('zh-CN')
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
 }
 
 onMounted(() => {
@@ -349,267 +497,30 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.blacklist-manager {
-  padding: 20px;
-  background: var(--bg-primary);
-  min-height: 100vh;
-  color: #e2e8f0;
+/* 使用 Tailwind CSS，这里只需要少量自定义动画或覆盖 */
+.animate-in {
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
 }
 
-.header {
-  margin-bottom: 30px;
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-.header h3 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #f8fafc;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
-.description {
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0;
+/* 隐藏滚动条但保持功能 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
 }
-
-.add-section, .filter-section, .blacklist-section {
-  background: #1a1a1a;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-  border: 1px solid #2a2a2a;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-.add-section h4, .blacklist-section h4 {
-  color: #fff;
-  margin: 0 0 15px 0;
-  font-size: 16px;
-}
-
-.form-row {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 15px;
-}
-
-.filter-row {
-  display: flex;
-  gap: 15px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.form-group.flex-1 {
-  flex: 1;
-}
-
-.form-group label {
-  color: #fff;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.form-input, .form-select {
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 14px;
-}
-
-.form-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.form-select option {
-  background: #1a1a1a;
-  color: #fff;
-}
-
-.add-btn {
-  padding: 10px 20px;
-  background: var(--btn-primary-bg);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.add-btn:hover:not(:disabled) {
-  background: var(--btn-primary-hover-bg);
-}
-
-.add-btn:disabled {
-  background: rgba(11, 90, 254, 0.5);
-  cursor: not-allowed;
-}
-
-.blacklist-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.blacklist-item {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  padding: 15px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.item-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.item-type {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.item-type.song {
-  background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-}
-
-.item-type.keyword {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
-}
-
-.item-value {
-  color: #fff;
-  font-weight: 500;
-}
-
-.item-status.disabled {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  background: rgba(156, 163, 175, 0.2);
-  color: #9ca3af;
-}
-
-.item-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.enable-btn, .disable-btn, .delete-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.enable-btn {
-  background: rgba(16, 185, 129, 0.2);
-  color: #34d399;
-}
-
-.enable-btn:hover:not(:disabled) {
-  background: rgba(16, 185, 129, 0.3);
-}
-
-.disable-btn {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
-}
-
-.disable-btn:hover:not(:disabled) {
-  background: rgba(245, 158, 11, 0.3);
-}
-
-.delete-btn {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-}
-
-.delete-btn:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.3);
-}
-
-.item-reason, .item-meta {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: 5px;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.page-btn {
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.page-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.page-info {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-}
-
-.loading, .empty {
-  text-align: center;
-  padding: 40px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.error, .success {
-  padding: 12px;
-  border-radius: 6px;
-  margin-top: 15px;
-  text-align: center;
-}
-
-.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.success {
-  background: rgba(16, 185, 129, 0.1);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
 }
 </style>
