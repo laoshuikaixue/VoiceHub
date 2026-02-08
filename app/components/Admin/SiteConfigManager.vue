@@ -252,6 +252,9 @@ import {
   Globe, ImageIcon, FileText, Settings2, Shield,
   Save, RotateCcw, CheckCircle2, AlertCircle
 } from 'lucide-vue-next'
+import { useToast } from '~/composables/useToast'
+
+const { showToast: showNotification } = useToast()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -340,7 +343,7 @@ const loadConfig = async () => {
     originalData.value = JSON.parse(JSON.stringify(formData.value))
   } catch (error) {
     console.error('加载配置失败:', error)
-    window.$showNotification?.('加载配置失败', 'error')
+    showNotification('加载配置失败', 'error')
   } finally {
     loading.value = false
   }
@@ -371,14 +374,14 @@ const saveConfig = async () => {
 
     saveSuccess.value = true
     originalData.value = JSON.parse(JSON.stringify(formData.value))
-    window.$showNotification?.('配置保存成功！', 'success')
+    showNotification('配置保存成功！', 'success')
 
     setTimeout(() => {
       saveSuccess.value = false
     }, 3000)
   } catch (error) {
     console.error('保存配置失败:', error)
-    window.$showNotification?.('保存配置失败，请重试', 'error')
+    showNotification('保存配置失败，请重试', 'error')
   } finally {
     saving.value = false
   }
