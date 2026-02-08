@@ -1,7 +1,7 @@
 <template>
   <div class="relative" :class="className" ref="containerRef">
     <div 
-      @click="isOpen = !isOpen"
+      @click="toggleDropdown"
       class="flex items-center gap-2 px-3 py-2 bg-zinc-950 border rounded-xl transition-all cursor-pointer select-none"
       :class="[
         isOpen ? 'border-blue-500/50 bg-blue-600/5 shadow-lg' : 'border-zinc-800 hover:border-zinc-700'
@@ -21,39 +21,43 @@
       </div>
     </div>
 
-    <Transition
-      enter-active-class="transition duration-100 ease-out"
-      enter-from-class="transform scale-95 opacity-0"
-      enter-to-class="transform scale-100 opacity-100"
-      leave-active-class="transition duration-75 ease-in"
-      leave-from-class="transform scale-100 opacity-100"
-      leave-to-class="transform scale-95 opacity-0"
-    >
-      <div 
-        v-if="isOpen"
-        class="absolute left-0 right-0 top-full mt-1 z-50 p-1 bg-[#0c0c0e] border border-zinc-800 rounded-xl shadow-2xl backdrop-blur-xl"
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-100 ease-out"
+        enter-from-class="transform scale-95 opacity-0"
+        enter-to-class="transform scale-100 opacity-100"
+        leave-active-class="transition duration-75 ease-in"
+        leave-from-class="transform scale-100 opacity-100"
+        leave-to-class="transform scale-95 opacity-0"
       >
-        <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
-          <button
-            v-for="option in normalizedOptions"
-            :key="option.value"
-            @click="selectOption(option)"
-            class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-bold transition-all"
-            :class="[
-              isSelected(option) ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'
-            ]"
-          >
-            <span class="truncate">{{ option.label }}</span>
-            <Check v-if="isSelected(option)" :size="12" class="shrink-0" />
-          </button>
+        <div 
+          v-if="isOpen"
+          ref="dropdownRef"
+          :style="dropdownStyle"
+          class="fixed z-[9999] p-1 bg-[#0c0c0e] border border-zinc-800 rounded-xl shadow-2xl backdrop-blur-xl origin-top"
+        >
+          <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
+            <button
+              v-for="option in normalizedOptions"
+              :key="option.value"
+              @click="selectOption(option)"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-bold transition-all"
+              :class="[
+                isSelected(option) ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'
+              ]"
+            >
+              <span class="truncate">{{ option.label }}</span>
+              <Check v-if="isSelected(option)" :size="12" class="shrink-0" />
+            </button>
+          </div>
         </div>
-      </div>
-    </Transition>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { ChevronDown, Check } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -82,6 +86,8 @@ const emit = defineEmits(['update:modelValue', 'change'])
 
 const isOpen = ref(false)
 const containerRef = ref(null)
+const dropdownRef = ref(null)
+const dropdownStyle = ref({})
 
 // 规范化选项为 { label, value } 格式
 const normalizedOptions = computed(() => {
@@ -107,6 +113,48 @@ const isSelected = (option) => {
   return option.value === props.modelValue
 }
 
+const updatePosition = () => {
+  if (!isOpen.value || !containerRef.value) return
+
+  const rect = containerRef.value.getBoundingClientRect()
+  const scrollTop = window.scrollY || document.documentElement.scrollTop
+  const scrollLeft = window.scrollX || document.documentElement.scrollLeft
+  
+  // 简单的位置计算，默认向下弹出
+  // 可以在这里添加更复杂的逻辑（如检测底部空间不足时向上弹出）
+  
+  // 检查底部空间
+  const windowHeight = window.innerHeight
+  const dropdownHeight = 200 // 预估高度，或者等到 nextTick 获取实际高度
+  const spaceBelow = windowHeight - rect.bottom
+  
+  let top = rect.bottom + 4
+  
+  // 如果底部空间不足且顶部空间充足，则向上弹出
+  // 注意：这里需要更精确的高度计算，暂时使用简单逻辑
+  if (spaceBelow < 220 && rect.top > 220) {
+    // 向上弹出逻辑稍微复杂，因为需要知道dropdown高度
+    // 这里暂时保持向下，或者使用 fixed 定位让它尽量可见
+  }
+
+  dropdownStyle.value = {
+    top: `${top}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    minWidth: '120px' // 最小宽度
+  }
+}
+
+const toggleDropdown = async () => {
+  if (isOpen.value) {
+    isOpen.value = false
+  } else {
+    isOpen.value = true
+    await nextTick()
+    updatePosition()
+  }
+}
+
 const selectOption = (option) => {
   emit('update:modelValue', option.value)
   emit('change', option.value)
@@ -114,10 +162,31 @@ const selectOption = (option) => {
 }
 
 const handleClickOutside = (event) => {
-  if (containerRef.value && !containerRef.value.contains(event.target)) {
+  // 检查点击是否在容器内部或者下拉框内部
+  const isClickInContainer = containerRef.value && containerRef.value.contains(event.target)
+  const isClickInDropdown = dropdownRef.value && dropdownRef.value.contains(event.target)
+  
+  if (!isClickInContainer && !isClickInDropdown) {
     isOpen.value = false
   }
 }
+
+const handleScrollOrResize = () => {
+  if (isOpen.value) {
+    updatePosition()
+  }
+}
+
+// 监听 isOpen 变化来添加/移除事件监听
+watch(isOpen, (val) => {
+  if (val) {
+    window.addEventListener('scroll', handleScrollOrResize, true) // capture=true to catch scroll in sub-elements
+    window.addEventListener('resize', handleScrollOrResize)
+  } else {
+    window.removeEventListener('scroll', handleScrollOrResize, true)
+    window.removeEventListener('resize', handleScrollOrResize)
+  }
+})
 
 onMounted(() => {
   document.addEventListener('mousedown', handleClickOutside)
@@ -125,6 +194,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside)
+  window.removeEventListener('scroll', handleScrollOrResize, true)
+  window.removeEventListener('resize', handleScrollOrResize)
 })
 </script>
 

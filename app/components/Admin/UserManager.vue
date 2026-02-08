@@ -49,35 +49,26 @@
       </div>
       <div class="flex items-center gap-2 w-full lg:w-auto overflow-x-auto custom-scrollbar no-scrollbar">
         <!-- 角色筛选 -->
-        <div class="relative flex-1 lg:w-40 min-w-[120px]">
-          <select
-              v-model="roleFilter"
-              class="w-full bg-zinc-950 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 appearance-none cursor-pointer"
-          >
-            <option value="">全部角色</option>
-            <option v-for="role in allRoles" :key="role.name" :value="role.name">
-              {{ role.displayName }}
-            </option>
-          </select>
-          <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
-            <ChevronDown :size="14"/>
-          </div>
-        </div>
+        <CustomSelect
+            v-model="roleFilter"
+            :options="roleFilterOptions"
+            label="角色"
+            placeholder="全部角色"
+            label-key="displayName"
+            value-key="name"
+            class-name="flex-1 lg:w-40 min-w-[120px]"
+        />
 
         <!-- 状态筛选 -->
-        <div class="relative flex-1 lg:w-32 min-w-[100px]">
-          <select
-              v-model="statusFilter"
-              class="w-full bg-zinc-950 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 appearance-none cursor-pointer"
-          >
-            <option value="">全部状态</option>
-            <option value="active">正常</option>
-            <option value="withdrawn">退学</option>
-          </select>
-          <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
-            <ChevronDown :size="14"/>
-          </div>
-        </div>
+        <CustomSelect
+            v-model="statusFilter"
+            :options="statusFilterOptions"
+            label="状态"
+            placeholder="全部状态"
+            label-key="label"
+            value-key="value"
+            class-name="flex-1 lg:w-32 min-w-[100px]"
+        />
 
         <button
             class="p-3 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-600 hover:text-blue-400 transition-all shadow-sm"
@@ -146,7 +137,7 @@
               <td class="px-6 py-5 text-center font-bold text-zinc-500">{{ user.grade || '-' }} {{ user.class || '-' }}</td>
               <td class="px-6 py-5">
                 <p class="text-zinc-400 font-bold">{{ formatDate(user.lastLogin) }}</p>
-                <p class="text-[9px] text-zinc-700 font-mono mt-1 flex items-center gap-1"><MapPin :size="8" /> {{ user.lastLoginIp || '-' }}</p>
+                <p class="text-[11px] text-zinc-700 font-mono mt-1 flex items-center gap-1"><MapPin :size="10" /> {{ user.lastLoginIp || '-' }}</p>
               </td>
               <td class="px-6 py-5 text-right pr-10">
                 <div class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all action-buttons">
@@ -230,7 +221,7 @@
               </div>
               <div class="space-y-1 text-right">
                 <p class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">最后登录IP</p>
-                <p class="text-[10px] font-mono text-zinc-600">{{ user.lastLoginIp || '-' }}</p>
+                <p class="text-[11px] font-mono text-zinc-600">{{ user.lastLoginIp || '-' }}</p>
               </div>
             </div>
 
@@ -371,32 +362,23 @@
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">角色权限</label>
-                  <div class="relative">
-                    <Shield class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none" :size="16" />
-                    <select
-                        v-model="userForm.role"
-                        class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-10 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 appearance-none cursor-pointer"
-                    >
-                      <option v-for="role in availableRoles" :key="role.name" :value="role.name">
-                        {{ role.displayName }}
-                      </option>
-                    </select>
-                    <ChevronDown class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none" :size="14" />
-                  </div>
+                  <CustomSelect
+                      v-model="userForm.role"
+                      :options="availableRoles"
+                      label-key="displayName"
+                      value-key="name"
+                      placeholder="请选择角色"
+                  />
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">账户状态</label>
-                  <div class="relative">
-                    <CheckCircle2 class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none" :size="16" />
-                    <select
-                        v-model="userForm.status"
-                        class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-10 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 appearance-none cursor-pointer"
-                    >
-                      <option value="active">正常访问</option>
-                      <option value="withdrawn">限制访问 (退学)</option>
-                    </select>
-                    <ChevronDown class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none" :size="14" />
-                  </div>
+                  <CustomSelect
+                      v-model="userForm.status"
+                      :options="userStatusOptions"
+                      label-key="label"
+                      value-key="value"
+                      placeholder="请选择状态"
+                  />
                 </div>
               </div>
 
@@ -1016,6 +998,7 @@ import {
   AtSign,
   Briefcase
 } from 'lucide-vue-next'
+import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 
@@ -1036,6 +1019,23 @@ const allRoles = [
   {name: 'SONG_ADMIN', displayName: '歌曲管理员'},
   {name: 'ADMIN', displayName: '管理员'},
   {name: 'SUPER_ADMIN', displayName: '超级管理员'}
+]
+
+// 筛选选项
+const roleFilterOptions = computed(() => [
+  { name: '', displayName: '全部角色' },
+  ...allRoles
+])
+
+const statusFilterOptions = [
+  { label: '全部状态', value: '' },
+  { label: '正常', value: 'active' },
+  { label: '退学', value: 'withdrawn' }
+]
+
+const userStatusOptions = [
+  { label: '正常访问', value: 'active' },
+  { label: '限制访问 (退学)', value: 'withdrawn' }
 ]
 
 // 模态框状态
