@@ -64,7 +64,7 @@
       </div>
 
       <!-- 过滤器栏 -->
-      <div class="bg-zinc-900/30 border border-zinc-800/60 rounded-[2.5rem] p-4 flex flex-col lg:flex-row gap-4 items-center">
+      <div class="bg-zinc-900/30 border border-zinc-800/60 rounded-[2.5rem] p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
         <div class="relative flex-1 group w-full lg:w-auto">
           <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors" :size="18" />
           <input
@@ -74,7 +74,7 @@
             class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
           />
         </div>
-        <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:flex lg:items-center gap-3 w-full lg:w-auto">
           <CustomSelect
             v-model="selectedSemester"
             label="学期"
@@ -82,21 +82,21 @@
             label-key="name"
             value-key="name"
             placeholder="选择学期"
-            className="w-40"
+            className="w-full lg:w-40"
           />
           <CustomSelect
             v-model="statusFilter"
             label="状态"
             :options="statusOptions"
             placeholder="选择状态"
-            className="w-32"
+            className="w-full lg:w-32"
           />
           <CustomSelect
             v-model="sortOption"
             label="排序"
             :options="sortOptions"
             placeholder="选择排序"
-            className="w-36"
+            className="w-full lg:w-36 col-span-2 md:col-span-1"
           />
         </div>
       </div>
