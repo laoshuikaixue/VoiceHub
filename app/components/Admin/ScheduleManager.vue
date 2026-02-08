@@ -232,6 +232,9 @@
                       <span>{{ song.requester }}</span>
                       <span v-if="song.requesterGrade" class="text-zinc-600">|</span>
                       <span v-if="song.requesterGrade">{{ song.requesterGrade }}</span>
+                      <span v-if="song.preferredPlayTimeId" class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap">
+                        期望: {{ getPlayTimeName(song.preferredPlayTimeId) }}
+                      </span>
                     </div>
                   </div>
                   
@@ -420,6 +423,9 @@
                         <span>{{ schedule.song.requester }}</span>
                         <span v-if="schedule.song.requesterGrade" class="text-zinc-700">|</span>
                         <span v-if="schedule.song.requesterGrade">{{ schedule.song.requesterGrade }}</span>
+                        <span v-if="schedule.song.preferredPlayTimeId" class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap">
+                          期望: {{ getPlayTimeName(schedule.song.preferredPlayTimeId) }}
+                        </span>
                      </div>
                    </div>
                    
