@@ -279,7 +279,10 @@ import {
   MessageSquare, Clock, Power, Trash2, Ban,
   ChevronLeft, ChevronRight, ChevronDown
 } from 'lucide-vue-next'
+import { useToast } from '~/composables/useToast'
 import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
+
+const { showToast: showNotification } = useToast()
 
 const blacklist = ref([])
 const loading = ref(false)
@@ -338,9 +341,7 @@ const loadBlacklist = async () => {
   } catch (err) {
     error.value = '获取黑名单失败'
     console.error('获取黑名单失败:', err)
-    if (window.$showNotification) {
-      window.$showNotification('获取黑名单失败: ' + (err.data?.message || err.message), 'error')
-    }
+    showNotification('获取黑名单失败: ' + (err.data?.message || err.message), 'error')
   } finally {
     loading.value = false
   }
@@ -375,9 +376,7 @@ const addBlacklistItem = async () => {
       ...useAuth().getAuthConfig()
     })
 
-    if (window.$showNotification) {
-      window.$showNotification('黑名单项添加成功', 'success')
-    }
+    showNotification('黑名单项添加成功', 'success')
 
     // 重置表单
     newItem.value = ''
@@ -389,9 +388,7 @@ const addBlacklistItem = async () => {
   } catch (err) {
     error.value = err.data?.message || '添加黑名单项失败'
     console.error('添加黑名单项失败:', err)
-    if (window.$showNotification) {
-      window.$showNotification('添加失败: ' + error.value, 'error')
-    }
+    showNotification('添加失败: ' + error.value, 'error')
   } finally {
     loading.value = false
   }
@@ -412,15 +409,11 @@ const toggleItemStatus = async (item) => {
     })
 
     item.isActive = !item.isActive
-    if (window.$showNotification) {
-      window.$showNotification(`黑名单项已${item.isActive ? '启用' : '禁用'}`, 'success')
-    }
+    showNotification(`黑名单项已${item.isActive ? '启用' : '禁用'}`, 'success')
   } catch (err) {
     error.value = '更新状态失败'
     console.error('更新状态失败:', err)
-    if (window.$showNotification) {
-      window.$showNotification('更新状态失败', 'error')
-    }
+    showNotification('更新状态失败', 'error')
   } finally {
     loading.value = false
   }
@@ -445,19 +438,15 @@ const confirmDelete = async () => {
       ...useAuth().getAuthConfig()
     })
 
-    if (window.$showNotification) {
-      window.$showNotification('黑名单项删除成功', 'success')
-    }
-    showDeleteDialog.value = false
+    showNotification('黑名单项删除成功', 'success')
     await loadBlacklist()
   } catch (err) {
     error.value = '删除失败'
     console.error('删除失败:', err)
-    if (window.$showNotification) {
-      window.$showNotification('删除失败: ' + err.message, 'error')
-    }
+    showNotification('删除失败: ' + err.message, 'error')
   } finally {
     loading.value = false
+    showDeleteDialog.value = false
     deleteTargetItem.value = null
   }
 }
