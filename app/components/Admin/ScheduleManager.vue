@@ -95,9 +95,8 @@
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading && !songs.length && !localScheduledSongs.length" class="flex flex-col items-center justify-center py-20">
-      <div class="w-10 h-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-      <div class="text-zinc-500 text-xs font-bold uppercase tracking-widest">正在加载排期...</div>
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20 min-h-[60vh]">
+      <LoadingState title="正在加载排期数据" message="请稍候..." />
     </div>
 
     <div v-else>
@@ -533,6 +532,7 @@ import {
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import CustomSelect from './Common/CustomSelect.vue'
+import LoadingState from './Common/LoadingState.vue'
 import { convertToHttps } from '~/utils/url'
 
 // 响应式数据
@@ -1022,26 +1022,33 @@ const fetchReplayRequests = async () => {
 
 // 拒绝重播申请
 const rejectReplayRequest = async (songId) => {
-  if (!confirm('确定要拒绝该重播申请吗？')) return
-
-  try {
-    await $fetch('/api/admin/schedule/reject-replay', {
-      method: 'POST',
-      body: { songId },
-      ...auth.getAuthConfig()
-    })
-    
-    // 刷新申请列表
-    await fetchReplayRequests()
-    if (window.$showNotification) {
-      window.$showNotification('重播申请已拒绝', 'success')
-    }
-  } catch (err) {
-    console.error('拒绝申请失败', err)
-    if (window.$showNotification) {
-      window.$showNotification('拒绝申请失败: ' + (err.data?.message || err.message), 'error')
+  confirmDialogTitle.value = '拒绝重播申请'
+  confirmDialogMessage.value = '确定要拒绝该重播申请吗？'
+  confirmDialogType.value = 'warning'
+  confirmDialogConfirmText.value = '拒绝申请'
+  
+  confirmAction.value = async () => {
+    try {
+      await $fetch('/api/admin/schedule/reject-replay', {
+        method: 'POST',
+        body: { songId },
+        ...auth.getAuthConfig()
+      })
+      
+      // 刷新申请列表
+      await fetchReplayRequests()
+      if (window.$showNotification) {
+        window.$showNotification('重播申请已拒绝', 'success')
+      }
+    } catch (err) {
+      console.error('拒绝申请失败', err)
+      if (window.$showNotification) {
+        window.$showNotification('拒绝申请失败: ' + (err.data?.message || err.message), 'error')
+      }
     }
   }
+  
+  showConfirmDialog.value = true
 }
 
 // 加载数据
@@ -1428,32 +1435,40 @@ const handleReturnToDraggable = async (event) => {
 // 标记全部已播放
 const markAllAsPlayed = async () => {
   if (localScheduledSongs.value.length === 0) return
-  if (!confirm('确定要将列表中的所有歌曲标记为已播放吗？')) return
+  
+  confirmDialogTitle.value = '标记全部已播'
+  confirmDialogMessage.value = '确定要将列表中的所有歌曲标记为已播放吗？'
+  confirmDialogType.value = 'info'
+  confirmDialogConfirmText.value = '确认标记'
+  
+  confirmAction.value = async () => {
+    loading.value = true
+    try {
+      const songIds = localScheduledSongs.value.map(s => s.song.id)
+      
+      await $fetch('/api/admin/songs/mark-played', {
+        method: 'POST',
+        body: { songIds },
+        ...auth.getAuthConfig()
+      })
 
-  loading.value = true
-  try {
-    const songIds = localScheduledSongs.value.map(s => s.song.id)
-    
-    await $fetch('/api/admin/songs/mark-played', {
-      method: 'POST',
-      body: { songIds },
-      ...auth.getAuthConfig()
-    })
-
-    if (window.$showNotification) {
-      window.$showNotification('所有歌曲已标记为播放', 'success')
+      if (window.$showNotification) {
+        window.$showNotification('所有歌曲已标记为播放', 'success')
+      }
+      
+      // 重新加载数据
+      await loadData()
+    } catch (err) {
+      console.error('标记播放失败:', err)
+      if (window.$showNotification) {
+        window.$showNotification('操作失败', 'error')
+      }
+    } finally {
+      loading.value = false
     }
-    
-    // 重新加载数据
-    await loadData()
-  } catch (err) {
-    console.error('标记播放失败:', err)
-    if (window.$showNotification) {
-      window.$showNotification('操作失败', 'error')
-    }
-  } finally {
-    loading.value = false
   }
+  
+  showConfirmDialog.value = true
 }
 
 // 保存并发布
