@@ -1,521 +1,444 @@
 <template>
-  <div class="data-analysis-panel">
-    <!-- 全局加载状态 -->
-    <LoadingState
-        v-if="isLoading && !hasInitialData"
-        :current-step="currentLoadingStep"
-        :steps="loadingSteps"
-        message="正在获取最新的统计数据..."
-        spinner-type="pulse"
-        title="加载数据分析"
-    />
+  <div class="max-w-[1600px] mx-auto space-y-10 pb-20">
+    <!-- 加载状态 -->
+    <div v-if="isLoading && !hasInitialData" class="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+      <div class="relative w-24 h-24">
+        <div class="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+        <div class="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <Activity class="text-blue-500 animate-pulse" :size="32" />
+        </div>
+      </div>
+      <div class="text-center">
+        <h3 class="text-xl font-black text-white tracking-tight">{{ loadingSteps[currentLoadingStep] }}</h3>
+        <p class="text-sm text-zinc-500 mt-2">正在获取最新的统计数据...</p>
+      </div>
+    </div>
 
-    <!-- 错误边界 -->
-    <ErrorBoundary
-        v-else-if="error && !hasInitialData"
-        :error="error"
-        :on-retry="refreshAllData"
-        :show-details="true"
-        error-message="无法获取数据分析信息，请检查网络连接或稍后重试"
-        error-title="数据加载失败"
-    />
+    <!-- 错误状态 -->
+    <div v-else-if="error && !hasInitialData" class="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+      <div class="p-6 bg-red-500/10 border border-red-500/20 rounded-[2.5rem]">
+        <X class="text-red-500" :size="48" />
+      </div>
+      <div class="text-center">
+        <h3 class="text-xl font-black text-white tracking-tight">数据加载失败</h3>
+        <p class="text-sm text-zinc-500 mt-2 max-w-md">{{ error }}</p>
+        <button 
+          @click="refreshAllData"
+          class="mt-6 px-8 py-3 bg-zinc-900 border border-zinc-800 rounded-full text-sm font-black text-white hover:bg-zinc-800 transition-all flex items-center gap-2 mx-auto"
+        >
+          <RefreshCw :size="16" />
+          立即重试
+        </button>
+      </div>
+    </div>
 
     <!-- 主要内容 -->
-    <div v-else class="panel-content">
-      <!-- 面板标题和控制区域 -->
-      <div class="panel-header">
-        <div class="header-left">
-          <h2>数据分析</h2>
-          <div v-if="error" class="error-message">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="15" x2="9" y1="9" y2="15"/>
-              <line x1="9" x2="15" y1="9" y2="15"/>
-            </svg>
-            {{ error }}
-          </div>
+    <div v-else class="space-y-10">
+      <!-- Header with Filter -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h2 class="text-3xl font-black text-white tracking-tight">数据中心</h2>
+          <p class="text-sm text-zinc-500 mt-1 font-medium">洞察校园声音背后的互动趋势与影响力</p>
         </div>
-        <div class="header-controls">
-          <button
-              :disabled="isLoading"
-              class="refresh-btn"
-              title="刷新数据"
-              @click="refreshAllData"
+        <div class="flex items-center gap-3">
+          <button 
+            @click="refreshAllData"
+            :disabled="isLoading"
+            class="p-2.5 bg-zinc-900/50 border border-zinc-800 rounded-full text-zinc-400 hover:text-white transition-all group"
           >
-            <svg
-                :class="{ 'spinning': isLoading }"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-            >
-              <polyline points="23,4 23,10 17,10"/>
-              <polyline points="1,20 1,14 7,14"/>
-              <path d="M20.49,9A9,9,0,0,0,5.64,5.64L1,10m22,4a9,9,0,0,1-14.85,4.36L23,14"/>
-            </svg>
+            <RefreshCw :size="18" :class="{ 'animate-spin': isLoading }" />
           </button>
-          <div class="semester-selector">
-            <label for="semester-select">选择学期:</label>
+          <div class="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center gap-2">
+            <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+            <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">实时模式</span>
+          </div>
+          <div class="relative group">
             <select
-                id="semester-select"
-                v-model="selectedSemester"
-                :disabled="isLoading"
-                class="semester-select"
-                @change="handleSemesterChange"
+              v-model="selectedSemester"
+              @change="handleSemesterChange"
+              class="appearance-none bg-zinc-900 border border-zinc-800 rounded-full px-6 py-2 text-xs font-black text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer pr-10"
             >
               <option value="all">全部学期</option>
-              <option
-                  v-for="semester in availableSemesters"
-                  :key="semester.id"
-                  :value="semester.name"
-              >
-                {{ semester.name }}
+              <option v-for="sem in availableSemesters" :key="sem.id" :value="sem.name">
+                {{ sem.name }}
               </option>
             </select>
+            <Calendar class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none group-hover:text-zinc-400 transition-colors" :size="14" />
           </div>
         </div>
       </div>
 
-      <!-- 数据概览卡片 -->
-      <div class="stats-grid">
-        <StatCard
-            :is-loading="isLoading"
-            :value="analysisData.totalUsers"
-            format="number"
-            icon="users"
-            icon-class="success"
-            label="注册用户"
-            subtitle="系统中的用户总数"
-        />
-
-        <StatCard
-            :change="analysisData.songsChange"
-            :is-loading="isLoading"
-            :trend-data="analysisData.songsTrend"
-            :value="analysisData.totalSongs"
-            change-label="较上周"
-            format="number"
-            icon="songs"
-            icon-class="primary"
-            label="总歌曲数"
-            subtitle="活跃歌曲库"
-        />
-
-        <StatCard
-            :change="analysisData.schedulesChange"
-            :is-loading="isLoading"
-            :trend-data="analysisData.schedulesTrend"
-            :value="analysisData.totalSchedules"
-            change-label="较上周"
-            format="number"
-            icon="schedule"
-            icon-class="info"
-            label="总排期天数"
-            subtitle="本学期排期天数"
-        />
-
-        <StatCard
-            :change="analysisData.requestsChange"
-            :is-loading="isLoading"
-            :trend-data="analysisData.requestsTrend"
-            :value="analysisData.totalRequests"
-            change-label="较上周"
-            format="number"
-            icon="votes"
-            icon-class="warning"
-            label="本周点歌数"
-            subtitle="累计点播歌曲"
-        />
-      </div>
-
-      <!-- 实时数据卡片 -->
-      <div class="realtime-stats">
-        <div class="realtime-card">
-          <div class="realtime-header">
-            <h3>实时数据</h3>
-            <div class="live-indicator">
-              <div class="pulse-dot"></div>
-              <span>实时</span>
+      <!-- Grid Row 1: Key Performance Indicators -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div 
+          v-for="(stat, i) in [
+            { label: '注册用户总量', value: analysisData.totalUsers, trend: analysisData.usersChange, icon: Users, color: 'blue' },
+            { label: '活跃歌曲库', value: analysisData.totalSongs, trend: analysisData.songsChange, icon: Music, color: 'emerald' },
+            { label: '本学期排期天数', value: analysisData.totalSchedules, trend: analysisData.schedulesChange, icon: Calendar, color: 'amber' },
+            { label: '累计点歌次数', value: analysisData.totalRequests, trend: analysisData.requestsChange, icon: Heart, color: 'rose' }
+          ]"
+          :key="i"
+          class="group relative p-6 bg-zinc-900/40 border border-zinc-800/60 rounded-[2rem] overflow-hidden hover:border-zinc-700 transition-all hover:shadow-2xl hover:shadow-black/40"
+        >
+          <div class="flex justify-between items-start">
+            <div :class="`p-3 rounded-2xl bg-zinc-950 border border-zinc-800 text-zinc-400 group-hover:text-${stat.color}-400 group-hover:border-${stat.color}-500/30 transition-all`">
+              <component :is="stat.icon" :size="20" />
+            </div>
+            <div 
+              v-if="stat.trend !== 0"
+              :class="`flex items-center gap-1 text-[11px] font-black ${stat.trend < 0 ? 'text-red-500' : `text-${stat.color}-500`}`"
+            >
+              <ArrowDownRight v-if="stat.trend < 0" :size="12" />
+              <ArrowUpRight v-else :size="12" />
+              {{ Math.abs(stat.trend) }}%
+            </div>
+            <div v-else class="text-[11px] font-black text-zinc-500 uppercase tracking-widest">
+              稳定
             </div>
           </div>
-          <div class="realtime-grid">
-            <div ref="onlineUsersRef" class="realtime-item online-users-item" @mouseenter="handleMouseEnter"
-                 @mouseleave="handleMouseLeave">
-              <span class="realtime-label">活跃用户</span>
-              <span class="realtime-value">{{ realtimeStats.activeUsers }}</span>
-            </div>
-            <div class="realtime-item">
-              <span class="realtime-label">今日点播</span>
-              <span class="realtime-value">{{ realtimeStats.todayRequests }}</span>
-            </div>
+          <div class="mt-4">
+            <h4 class="text-3xl font-black text-zinc-100 tracking-tighter">{{ typeof stat.value === 'number' && stat.value >= 1000 ? (stat.value / 1000).toFixed(1) + 'K' : stat.value }}</h4>
+            <p class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mt-1">{{ stat.label }}</p>
           </div>
+          <div :class="`absolute -right-4 -bottom-4 w-24 h-24 bg-${stat.color}-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity`" />
         </div>
       </div>
 
-      <!-- 图表区域 -->
-      <div class="charts-grid">
-        <div class="chart-card enhanced">
-          <div class="chart-header">
-            <h3>歌曲点播趋势</h3>
-            <div class="chart-actions">
-              <button class="chart-btn" title="查看详情">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              </button>
-            </div>
+      <!-- Grid Row 2: Charts & Real-time -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Real-time Pulse Section -->
+        <div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div 
+            @mouseenter="handleMouseEnter"
+            @mouseleave="handleMouseLeave"
+            class="p-8 bg-zinc-900/20 border border-zinc-800/40 rounded-[2.5rem] flex items-center justify-between relative overflow-hidden group cursor-help"
+          >
+             <div class="relative z-10">
+               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">当前活跃用户</span>
+               <div class="flex items-baseline gap-2 mt-1">
+                 <h3 class="text-5xl font-black text-white">{{ realtimeStats.activeUsers }}</h3>
+                 <span class="text-xs font-bold text-zinc-500">人在线</span>
+               </div>
+             </div>
+             <div class="relative z-10 w-24 h-24 flex items-center justify-center">
+               <div class="absolute inset-0 bg-blue-500/20 rounded-full animate-ping opacity-20" />
+               <div class="absolute inset-4 bg-blue-500/20 rounded-full animate-pulse opacity-40" />
+               <Activity class="text-blue-500" :size="32" />
+             </div>
           </div>
-          <div class="chart-container">
-            <div v-if="trendData.length > 0" class="chart-content">
-              <div class="trend-chart-wrapper">
-                <svg class="trend-svg" viewBox="0 0 400 200">
-                  <!-- 网格线 -->
-                  <defs>
-                    <pattern id="grid" height="20" patternUnits="userSpaceOnUse" width="40">
-                      <path d="M 40 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                    </pattern>
-                  </defs>
-                  <rect fill="url(#grid)" height="100%" width="100%"/>
-
-                  <!-- 趋势线 -->
-                  <polyline
-                      :points="getTrendPoints(trendData)"
-                      class="trend-line"
-                      fill="none"
-                      stroke="#4f46e5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="3"
-                  />
-
-                  <!-- 数据点 -->
-                  <circle
-                      v-for="(item, index) in trendData.slice(0, 10)"
-                      :key="index"
-                      :cx="(index / 9) * 360 + 20"
-                      :cy="180 - (item.count / Math.max(...trendData.map(d => d.count))) * 160"
-                      class="trend-point"
-                      fill="#4f46e5"
-                      r="4"
-                  />
-                </svg>
-              </div>
-              <div class="trend-legend">
-                <div v-for="(item, index) in trendData.slice(0, 5)" :key="index" class="trend-item">
-                  <span class="trend-date">{{ item.date }}</span>
-                  <span class="trend-count">{{ item.count }} 首</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="chart-placeholder">
-              <div class="placeholder-icon">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M3 3v18h18"/>
-                  <path d="M7 12l3-3 3 3 5-5"/>
-                </svg>
-              </div>
-              <p>暂无趋势数据</p>
-              <span class="placeholder-subtext">数据收集中...</span>
-            </div>
+          <div class="p-8 bg-zinc-900/20 border border-zinc-800/40 rounded-[2.5rem] flex items-center justify-between relative overflow-hidden group">
+             <div class="relative z-10">
+               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">今日累计点播</span>
+               <div class="flex items-baseline gap-2 mt-1">
+                 <h3 class="text-5xl font-black text-emerald-500">{{ realtimeStats.todayRequests }}</h3>
+                 <span class="text-xs font-bold text-zinc-500">首歌曲</span>
+               </div>
+             </div>
+             <div class="relative z-10 w-24 h-24 flex items-center justify-center">
+               <div class="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping opacity-10" />
+               <Globe class="text-emerald-500" :size="32" />
+             </div>
           </div>
         </div>
 
-        <div class="chart-card enhanced">
-          <div class="chart-header">
-            <h3>热门歌曲排行</h3>
-            <div v-if="panelStates.topSongs.loading" class="panel-loading">
-              <svg class="loading-spinner" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
-                        stroke-dashoffset="31.416" stroke-width="2">
-                  <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
-                           values="0 31.416;15.708 15.708;0 31.416"/>
-                  <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite"
-                           values="0;-15.708;-31.416"/>
-                </circle>
-              </svg>
+        <!-- Trend Analysis Chart Card -->
+        <div class="lg:col-span-8 bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 shadow-2xl overflow-hidden flex flex-col min-h-[500px]">
+          <div class="flex items-center justify-between mb-10">
+            <div>
+              <h3 class="text-xl font-bold flex items-center gap-3 text-white">
+                <BarChart2 class="text-blue-500" :size="20" />
+                点歌趋势分析
+              </h3>
+              <p class="text-xs text-zinc-500 mt-1">近 7 日投稿量波动情况</p>
             </div>
-            <div class="sort-controls">
+            <div class="flex items-center gap-4">
+              <div v-if="panelStates.trends.loading" class="animate-spin text-blue-500">
+                <RefreshCw :size="16" />
+              </div>
               <button 
-                :class="['sort-btn', { active: selectedSortBy === 'vote' }]"
-                @click="handleSortChange('vote')"
+                v-if="panelStates.trends.error"
+                @click="loadTrends"
+                class="p-2 text-red-400 hover:text-red-300 transition-colors"
+                title="重试"
               >
-                点赞
-              </button>
-              <button 
-                :class="['sort-btn', { active: selectedSortBy === 'replay' }]"
-                @click="handleSortChange('replay')"
-              >
-                重播
+                <RefreshCw :size="16" />
               </button>
             </div>
           </div>
-          <div class="chart-container">
-            <!-- 错误状态 -->
-            <div v-if="panelStates.topSongs.error" class="chart-error">
-              <div class="error-icon">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" x2="9" y1="9" y2="15"/>
-                  <line x1="9" x2="15" y1="9" y2="15"/>
-                </svg>
-              </div>
-              <p>{{ panelStates.topSongs.error }}</p>
-              <button class="retry-btn" @click="handleSortChange(selectedSortBy)">重试</button>
+          
+          <div v-if="panelStates.trends.loading && trendData.length === 0" class="flex-1 flex flex-col items-center justify-center space-y-4">
+            <div class="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+            <p class="text-xs font-black text-zinc-600 uppercase tracking-widest">正在加载趋势数据...</p>
+          </div>
+          <div v-else-if="panelStates.trends.error && trendData.length === 0" class="flex-1 flex flex-col items-center justify-center space-y-4">
+            <div class="p-4 bg-red-500/10 rounded-2xl">
+              <Activity class="text-red-500/50" :size="32" />
             </div>
-            <!-- 加载状态 -->
-            <div v-else-if="panelStates.topSongs.loading" class="chart-loading">
-              <div class="loading-content">
-                <div class="loading-text">加载热门歌曲数据...</div>
+            <p class="text-xs font-black text-red-400 uppercase tracking-widest">{{ panelStates.trends.error }}</p>
+            <button @click="loadTrends" class="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] font-black uppercase tracking-widest rounded-full transition-all">立即重试</button>
+          </div>
+          <div v-else-if="trendData.length > 0" class="flex-1 flex items-end gap-2 md:gap-4 px-2 mb-4">
+            <div 
+              v-for="(item, i) in trendData.slice(-7)" 
+              :key="i" 
+              class="flex-1 flex flex-col items-center gap-3 group h-full relative"
+            >
+              <div class="relative w-full flex flex-col justify-end h-full">
+                 <div 
+                   :style="{ height: `${(item.count / Math.max(...trendData.map(d => d.count), 1)) * 100}%` }"
+                   class="w-full bg-gradient-to-t from-blue-600/10 to-blue-500/40 rounded-t-xl group-hover:from-blue-600/30 group-hover:to-blue-400 transition-all border-x border-t border-blue-500/20 group-hover:border-blue-500/40 min-h-[4px]"
+                 ></div>
+                 <div 
+                   class="absolute left-1/2 -translate-x-1/2 -translate-y-full mb-2 text-[10px] font-black text-blue-400 opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none z-10"
+                   :style="{ bottom: `${(item.count / Math.max(...trendData.map(d => d.count), 1)) * 100}%` }"
+                 >
+                   {{ item.count }}首
+                 </div>
               </div>
+              <span class="text-[10px] font-black text-zinc-600 group-hover:text-zinc-400 transition-colors uppercase tracking-widest">
+                {{ item.date.split('-').slice(1).join('-') }}
+              </span>
             </div>
-            <div v-else-if="topSongs.length > 0" class="chart-content">
-              <div class="songs-ranking">
-                <div v-for="(song, index) in topSongs" :key="song.id" class="song-item enhanced">
-                  <div :class="getRankClass(index)" class="song-rank-badge">
-                    <span v-if="index < 3" class="rank-icon">{{ getRankIcon(index) }}</span>
-                    <span v-else class="rank-number">{{ index + 1 }}</span>
-                  </div>
-                  <div class="song-info">
-                    <div class="song-title">{{ song.title }}</div>
-                    <div class="song-artist">{{ song.artist }}</div>
-                  </div>
-                  <div class="song-stats">
-                    <div class="vote-count">{{ song.count }}</div>
-                    <div class="vote-label">{{ selectedSortBy === 'replay' ? '次重播' : '次点赞' }}</div>
-                    <div class="vote-bar">
-                      <div
-                          :style="{ width: (song.count / Math.max(...topSongs.map(s => s.count))) * 100 + '%' }"
-                          class="vote-fill"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div v-else class="chart-placeholder">
-              <div class="placeholder-icon">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M9 18V5l12-2v13"/>
-                  <circle cx="6" cy="18" r="3"/>
-                  <circle cx="18" cy="16" r="3"/>
-                </svg>
-              </div>
-              <p>暂无热门歌曲</p>
-              <span class="placeholder-subtext">等待用户点播...</span>
-            </div>
+          </div>
+          <div v-else class="flex-1 flex flex-col items-center justify-center space-y-4 text-zinc-600">
+            <BarChart2 :size="48" class="opacity-20" />
+            <p class="text-sm font-medium">暂无趋势数据</p>
           </div>
         </div>
 
-        <!-- 活跃用户排名 -->
-        <div class="chart-card enhanced">
-          <div class="chart-header">
-            <h3>活跃用户排名</h3>
-            <div v-if="panelStates.activeUsers.loading" class="panel-loading">
-              <svg class="loading-spinner" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
-                        stroke-dashoffset="31.416" stroke-width="2">
-                  <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
-                           values="0 31.416;15.708 15.708;0 31.416"/>
-                  <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite"
-                           values="0;-15.708;-31.416"/>
-                </circle>
-              </svg>
+        <!-- Top Rankings List -->
+        <div class="lg:col-span-4 bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]">
+          <div class="flex items-center justify-between mb-8">
+            <h3 class="text-xl font-bold flex items-center gap-3 text-white">
+              <Trophy class="text-amber-500" :size="20" />
+              热门歌曲排行
+            </h3>
+            <div class="flex items-center gap-4">
+              <div class="flex gap-2">
+                <button 
+                  @click="handleSortChange('vote')"
+                  :class="`text-[10px] font-black uppercase tracking-widest transition-colors ${selectedSortBy === 'vote' ? 'text-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`"
+                >
+                  点赞
+                </button>
+                <span class="text-zinc-800">|</span>
+                <button 
+                  @click="handleSortChange('replay')"
+                  :class="`text-[10px] font-black uppercase tracking-widest transition-colors ${selectedSortBy === 'replay' ? 'text-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`"
+                >
+                  重播
+                </button>
+              </div>
+              <div v-if="panelStates.topSongs.loading" class="animate-spin text-amber-500">
+                <RefreshCw :size="14" />
+              </div>
             </div>
           </div>
-          <div class="chart-container">
-            <!-- 错误状态 -->
-            <div v-if="panelStates.activeUsers.error" class="chart-error">
-              <div class="error-icon">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" x2="9" y1="9" y2="15"/>
-                  <line x1="9" x2="15" y1="9" y2="15"/>
-                </svg>
+          
+          <div v-if="panelStates.topSongs.loading && topSongs.length === 0" class="flex-1 space-y-4">
+            <div v-for="i in 5" :key="i" class="h-20 bg-zinc-800/20 animate-pulse rounded-2xl"></div>
+          </div>
+          <div v-else-if="panelStates.topSongs.error && topSongs.length === 0" class="flex-1 flex flex-col items-center justify-center space-y-4">
+            <Music :size="32" class="text-red-500/20" />
+            <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">{{ panelStates.topSongs.error }}</p>
+            <button @click="loadTopSongs" class="px-4 py-2 bg-zinc-800 text-[10px] font-black uppercase rounded-full">重试</button>
+          </div>
+          <div v-else-if="topSongs.length > 0" class="flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-2">
+            <div v-for="(song, i) in topSongs.slice(0, 5)" :key="i" class="p-4 bg-zinc-950/50 border border-zinc-800/40 rounded-2xl flex items-center gap-4 group hover:bg-zinc-800/30 transition-all">
+              <div :class="`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${
+                i === 0 ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 
+                i === 1 ? 'bg-zinc-300 text-black' : 
+                i === 2 ? 'bg-amber-800 text-white' : 'text-zinc-600 border border-zinc-800'
+              }`">
+                {{ i + 1 }}
               </div>
-              <p>{{ panelStates.activeUsers.error }}</p>
-              <button class="retry-btn" @click="loadActiveUsers">重试</button>
-            </div>
-            <!-- 加载状态 -->
-            <div v-else-if="panelStates.activeUsers.loading" class="chart-loading">
-              <div class="loading-content">
-                <div class="loading-text">加载活跃用户数据...</div>
+              <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-bold text-zinc-200 truncate group-hover:text-white transition-colors">{{ song.title }}</h4>
+                <p class="text-[10px] text-zinc-600 font-medium truncate uppercase tracking-widest">{{ song.artist }}</p>
               </div>
-            </div>
-            <!-- 正常内容 -->
-            <div v-else-if="activeUsers.length > 0" class="chart-content">
-              <div class="users-ranking">
-                <div v-for="(user, index) in activeUsers" :key="user.id" class="user-item">
-                  <div class="user-rank">
-                    <div :class="['rank-badge', getRankClass(index)]">
-                      <span v-if="index < 3" class="rank-icon">{{ getRankIcon(index) }}</span>
-                      <span v-else class="rank-number">{{ index + 1 }}</span>
-                    </div>
-                  </div>
-                  <div class="user-info">
-                    <div class="user-name">{{ user.name }}</div>
-                    <div class="user-details">
-                      <span class="contribution-count">{{ user.contributions }}首投稿</span>
-                      <span class="like-count">{{ user.likes }}次点赞</span>
-                    </div>
-                  </div>
-                  <div class="user-stats">
-                    <div class="activity-score">{{ user.activityScore }}</div>
-                    <div class="score-label">活跃度</div>
-                    <div class="activity-bar">
-                      <div
-                          :style="{ width: `${(user.activityScore / Math.max(...activeUsers.map(u => u.activityScore))) * 100}%` }"
-                          class="activity-fill"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
+              <div class="text-right">
+                <span class="text-xs font-black text-zinc-400">{{ song.count }}</span>
+                <div class="text-[8px] font-black text-zinc-700 uppercase">{{ selectedSortBy === 'replay' ? '次数' : '点赞' }}</div>
               </div>
             </div>
-            <!-- 空状态 -->
-            <div v-else class="chart-placeholder">
-              <div class="placeholder-icon">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              </div>
-              <p>暂无活跃用户数据</p>
-              <span class="placeholder-subtext">等待用户活动...</span>
-            </div>
+          </div>
+          <div v-else class="flex-1 flex flex-col items-center justify-center text-zinc-700">
+            <Music :size="32" class="opacity-20 mb-2" />
+            <p class="text-xs font-bold uppercase tracking-widest">暂无数据</p>
           </div>
         </div>
+      </div>
 
-        <div class="chart-card enhanced">
-          <div class="chart-header">
-            <h3>学期对比分析</h3>
-          </div>
-          <div class="chart-container">
-            <div v-if="semesterComparison.length > 0" class="chart-content">
-              <div class="semester-comparison">
-                <div v-for="semester in semesterComparison" :key="semester.semester" class="semester-card">
-                  <div class="semester-header">
-                    <div class="semester-title">
-                      <h4>{{ semester.semester }}</h4>
-                      <span v-if="semester.isActive" class="current-badge">当前学期</span>
-                    </div>
-                    <div class="semester-period">
-                      {{ formatSemesterPeriod(semester.semester) }}
-                    </div>
+      <!-- Grid Row 3: Users & Semester Comparison -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+         <!-- User Rankings -->
+         <div class="bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]">
+            <div class="flex items-center justify-between mb-8">
+              <h3 class="text-xl font-bold flex items-center gap-3 text-white">
+                <UserCheck class="text-purple-500" :size="20" />
+                活跃用户排行榜
+              </h3>
+              <div v-if="panelStates.activeUsers.loading" class="animate-spin text-purple-500">
+                <RefreshCw :size="16" />
+              </div>
+            </div>
+            
+            <div v-if="panelStates.activeUsers.loading && activeUsers.length === 0" class="flex-1 space-y-4">
+              <div v-for="i in 4" :key="i" class="h-24 bg-zinc-800/20 animate-pulse rounded-3xl"></div>
+            </div>
+            <div v-else-if="panelStates.activeUsers.error && activeUsers.length === 0" class="flex-1 flex flex-col items-center justify-center space-y-4">
+              <Users :size="32" class="text-red-500/20" />
+              <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">{{ panelStates.activeUsers.error }}</p>
+              <button @click="loadActiveUsers" class="px-4 py-2 bg-zinc-800 text-[10px] font-black uppercase rounded-full">重试</button>
+            </div>
+            <div v-else-if="activeUsers.length > 0" class="flex-1 space-y-3 overflow-y-auto custom-scrollbar pr-2">
+              <div v-for="(user, i) in activeUsers.slice(0, 5)" :key="i" class="relative p-5 bg-zinc-950/30 border border-zinc-800/50 rounded-3xl overflow-hidden group">
+                <div class="flex items-center gap-4 relative z-10">
+                  <div class="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center font-black text-zinc-500 group-hover:text-zinc-200 transition-colors">
+                    {{ user.name.charAt(0) }}
                   </div>
-                  <div class="semester-metrics">
-                    <div class="metric-item">
-                      <div class="metric-icon songs">
-                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <path d="M9 18V5l12-2v13"/>
-                          <circle cx="6" cy="18" r="3"/>
-                          <circle cx="18" cy="16" r="3"/>
-                        </svg>
-                      </div>
-                      <div class="metric-content">
-                        <div class="metric-value">{{ semester.totalSongs }}</div>
-                        <div class="metric-label">歌曲总数</div>
-                      </div>
-                    </div>
-                    <div class="metric-item">
-                      <div class="metric-icon schedules">
-                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
-                          <line x1="16" x2="16" y1="2" y2="6"/>
-                          <line x1="8" x2="8" y1="2" y2="6"/>
-                          <line x1="3" x2="21" y1="10" y2="10"/>
-                        </svg>
-                      </div>
-                      <div class="metric-content">
-                        <div class="metric-value">{{ semester.totalSchedules }}</div>
-                        <div class="metric-label">排期歌曲数</div>
-                      </div>
-                    </div>
-                    <div class="metric-item">
-                      <div class="metric-icon requests">
-                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <path d="M9 12l2 2 4-4"/>
-                          <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/>
-                          <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
-                          <path d="M12 3c0 1-1 3-3 3s-3-2-3-3 1-3 3-3 3 2 3 3"/>
-                          <path d="M12 21c0-1 1-3 3-3s3 2 3 3-1 3-3 3-3-2-3-3"/>
-                        </svg>
-                      </div>
-                      <div class="metric-content">
-                        <div class="metric-value">{{ semester.totalRequests }}</div>
-                        <div class="metric-label">获赞歌曲数</div>
-                      </div>
-                    </div>
+                  <div class="flex-1">
+                    <h4 class="text-sm font-bold text-zinc-100">{{ user.name }}</h4>
+                    <p class="text-xs text-zinc-600 font-medium mt-1">{{ user.contributions }}首投稿 · {{ user.likes }}次点赞</p>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-xl font-black text-zinc-300 group-hover:text-purple-400 transition-colors">{{ user.activityScore }}</span>
+                    <p class="text-[10px] font-black text-zinc-700 uppercase tracking-widest">活跃度</p>
+                  </div>
+                </div>
+                <!-- Progress Indicator -->
+                <div 
+                  class="absolute bottom-0 left-0 h-1 bg-purple-500/20 group-hover:bg-purple-500/40 transition-all" 
+                  :style="{ width: `${(user.activityScore / Math.max(...activeUsers.map(u => u.activityScore), 1)) * 100}%` }" 
+                />
+              </div>
+            </div>
+            <div v-else class="flex-1 flex flex-col items-center justify-center text-zinc-700">
+              <Users :size="32" class="opacity-20 mb-2" />
+              <p class="text-xs font-bold uppercase tracking-widest">暂无活跃用户</p>
+            </div>
+         </div>
+
+         <!-- Semester Comparison -->
+         <div class="bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]">
+            <div class="flex items-center justify-between mb-8">
+              <h3 class="text-xl font-bold flex items-center gap-3 text-white">
+                <Globe class="text-emerald-500" :size="20" />
+                学期对比分析
+              </h3>
+              <div v-if="panelStates.semesterComparison.loading" class="animate-spin text-emerald-500">
+                <RefreshCw :size="16" />
+              </div>
+            </div>
+            
+            <div v-if="panelStates.semesterComparison.loading && semesterComparison.length === 0" class="flex-1 space-y-4">
+              <div v-for="i in 3" :key="i" class="h-32 bg-zinc-800/20 animate-pulse rounded-[2rem]"></div>
+            </div>
+            <div v-else-if="panelStates.semesterComparison.error && semesterComparison.length === 0" class="flex-1 flex flex-col items-center justify-center space-y-4">
+              <Globe :size="32" class="text-red-500/20" />
+              <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">{{ panelStates.semesterComparison.error }}</p>
+              <button @click="loadSemesterComparison" class="px-4 py-2 bg-zinc-800 text-[10px] font-black uppercase rounded-full">重试</button>
+            </div>
+            <div v-else-if="semesterComparison.length > 0" class="flex-1 space-y-6 overflow-y-auto custom-scrollbar pr-2">
+              <div 
+                v-for="(sem, i) in semesterComparison" 
+                :key="i" 
+                :class="`p-6 border rounded-[2rem] transition-all ${sem.isActive ? 'bg-emerald-500/5 border-emerald-500/20 shadow-lg shadow-emerald-500/5' : 'bg-zinc-950/20 border-zinc-800/60 opacity-60 hover:opacity-100'}`"
+              >
+                <div class="flex items-center justify-between mb-4">
+                  <span class="text-xs font-black text-zinc-300 uppercase tracking-widest">{{ sem.semester }}</span>
+                  <span v-if="sem.isActive" class="px-2 py-0.5 bg-emerald-500/20 text-emerald-500 rounded text-[8px] font-black uppercase">当前学期</span>
+                  <span v-else class="text-[10px] font-black text-zinc-600">历史基准</span>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                  <div>
+                    <h5 class="text-lg font-black text-zinc-100">{{ sem.totalSongs }}</h5>
+                    <p class="text-[9px] font-black text-zinc-600 uppercase tracking-tighter mt-1">歌曲总量</p>
+                  </div>
+                  <div>
+                    <h5 class="text-lg font-black text-zinc-100">{{ sem.totalSchedules }}</h5>
+                    <p class="text-[9px] font-black text-zinc-600 uppercase tracking-tighter mt-1">排期总数</p>
+                  </div>
+                  <div>
+                    <h5 class="text-lg font-black text-zinc-100">{{ sem.totalRequests }}</h5>
+                    <p class="text-[9px] font-black text-zinc-600 uppercase tracking-tighter mt-1">获赞总数</p>
                   </div>
                 </div>
               </div>
             </div>
-            <div v-else class="chart-placeholder">
-              <div class="placeholder-icon">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M3 3v18h18"/>
-                  <path d="M7 12l3-3 3 3 5-5"/>
-                </svg>
-              </div>
-              <p>暂无学期数据</p>
-              <span class="placeholder-subtext">等待学期设置...</span>
+            <div v-else class="flex-1 flex flex-col items-center justify-center text-zinc-700">
+              <Globe :size="32" class="opacity-20 mb-2" />
+              <p class="text-xs font-bold uppercase tracking-widest">暂无对比数据</p>
             </div>
-          </div>
-        </div>
+         </div>
       </div>
     </div>
+
+    <!-- 全局悬浮提示框 -->
+    <Teleport to="body">
+      <div 
+        v-if="tooltip.show" 
+        :style="tooltip.style" 
+        class="fixed z-[999999] pointer-events-auto"
+        @mouseenter="handleTooltipMouseEnter"
+        @mouseleave="handleTooltipMouseLeave"
+      >
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl bg-opacity-90 animate-in fade-in zoom-in duration-200">
+          <div class="p-6 border-b border-zinc-800/50 bg-gradient-to-br from-blue-500/10 to-transparent">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-sm font-black text-white uppercase tracking-widest">活跃用户详情</h4>
+              <div class="flex items-center gap-2 px-2 py-1 bg-blue-500/20 rounded-full">
+                <div class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                <span class="text-[10px] font-black text-blue-400">{{ realtimeStats.activeUsers }} 在线</span>
+              </div>
+            </div>
+            
+            <div v-if="realtimeStats.activeUsersList && realtimeStats.activeUsersList.length > 0" class="space-y-4">
+              <div 
+                v-for="user in realtimeStats.activeUsersList.slice(0, 5)" 
+                :key="user.id"
+                class="flex items-center gap-3 p-3 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl group hover:border-blue-500/30 transition-all"
+              >
+                <div class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-zinc-500 group-hover:text-blue-400 transition-colors">
+                  {{ user.name.charAt(0) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold text-zinc-200 truncate">{{ user.name }}</div>
+                  <div class="text-[10px] text-zinc-500 font-medium truncate">@{{ user.username }}</div>
+                </div>
+                <div class="text-[10px] font-black text-zinc-600 bg-zinc-900 px-2 py-1 rounded-lg">
+                  {{ user.lastActive }}
+                </div>
+              </div>
+              <div v-if="realtimeStats.activeUsersList.length > 5" class="text-center py-2">
+                <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">及其他 {{ realtimeStats.activeUsersList.length - 5 }} 位用户</span>
+              </div>
+            </div>
+            <div v-else class="py-10 flex flex-col items-center justify-center text-zinc-600">
+              <Users :size="32" class="opacity-20 mb-3" />
+              <p class="text-xs font-black uppercase tracking-widest">暂无在线用户</p>
+            </div>
+          </div>
+          <div class="px-6 py-4 bg-zinc-950/50 flex items-center justify-between">
+            <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">实时数据同步中</span>
+            <Activity :size="12" class="text-blue-500 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
-
-  <!-- 全局悬浮提示框 -->
-  <Teleport to="body">
-    <div v-if="tooltip.show" :style="tooltip.style" class="users-tooltip-global" @mouseenter="handleTooltipMouseEnter"
-         @mouseleave="handleTooltipMouseLeave">
-      <!-- 有活跃用户时的提示 -->
-      <div v-if="realtimeStats.activeUsersList && realtimeStats.activeUsersList.length > 0">
-        <div class="tooltip-header">
-          <h4>活跃用户列表</h4>
-          <span class="user-count">({{ realtimeStats.activeUsersList.length }}人)</span>
-        </div>
-        <div class="users-list">
-          <div v-for="user in realtimeStats.activeUsersList" :key="user.id" class="user-item-tooltip">
-            <div class="user-avatar">
-              <div class="avatar-placeholder">
-                {{ user.name ? user.name.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase() }}
-              </div>
-            </div>
-            <div class="user-info-tooltip">
-              <div class="user-name">{{ user.name || user.username }}</div>
-              <div class="user-username">@{{ user.username }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 无活跃用户时的提示 -->
-      <div v-else class="empty-tooltip">
-        <div class="tooltip-header">
-          <h4>活跃用户列表</h4>
-        </div>
-        <div class="empty-message">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-          <p>暂无活跃用户</p>
-        </div>
-      </div>
-    </div>
-  </Teleport>
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue'
-import {useSemesters} from '~/composables/useSemesters'
-import StatCard from './Common/StatCard.vue'
-import LoadingState from './Common/LoadingState.vue'
-import ErrorBoundary from './Common/ErrorBoundary.vue'
+import { onMounted, ref, computed } from 'vue'
+import { 
+  TrendingUp, Users, Music, Calendar, Heart, 
+  Activity, ArrowUpRight, ArrowDownRight, 
+  Trophy, UserCheck, BarChart2, Globe,
+  RefreshCw, Eye, MousePointer2
+} from 'lucide-vue-next'
+import { useSemesters } from '~/composables/useSemesters'
 
 // 使用学期管理 composable
 const {fetchSemesters, semesters: availableSemesters, currentSemester} = useSemesters()
