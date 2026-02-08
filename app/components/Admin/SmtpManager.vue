@@ -74,9 +74,9 @@
               <div class="space-y-1.5">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">加密方式</label>
                 <CustomSelect
-                    :value="config.smtpSecure ? 'SSL/TLS' : '无'"
+                    :model-value="config.smtpSecure ? 'SSL/TLS' : '无'"
                     :options="['SSL/TLS', '无']"
-                    @update:value="val => config.smtpSecure = val === 'SSL/TLS'"
+                    @update:model-value="val => config.smtpSecure = val === 'SSL/TLS'"
                     class="w-full"
                 />
               </div>
