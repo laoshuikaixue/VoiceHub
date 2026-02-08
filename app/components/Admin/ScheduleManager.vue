@@ -2,7 +2,7 @@
   <div class="space-y-6 pb-24 md:pb-8">
     <!-- 日期选择器 -->
     <div class="relative bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-1 overflow-hidden">
-      <div class="flex items-center">
+      <div class="flex items-center" @touchstart.stop>
         <button
             :disabled="isFirstDateVisible"
             class="p-2 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
@@ -13,7 +13,7 @@
           </svg>
         </button>
 
-        <div ref="dateSelector" class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 scroll-smooth">
+        <div ref="dateSelector" class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 scroll-smooth overscroll-x-contain" style="overscroll-behavior-x: contain; touch-action: pan-x;">
           <button
               v-for="date in availableDates"
               :key="date.value"
@@ -85,14 +85,14 @@
       />
     </div>
 
-    <!-- 触控拖拽帮助提示 -->
-    <div 
-      v-if="showTouchHint" 
-      class="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-zinc-800 text-zinc-200 px-4 py-2 rounded-full shadow-lg border border-zinc-700 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300"
-    >
-      <Info class="w-4 h-4 text-blue-400" />
-      {{ touchHintText }}
-    </div>
+    <!-- 触控拖拽帮助提示 (仅桌面端显示或完全移除) -->
+      <div 
+        v-if="showTouchHint && isDesktop" 
+        class="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-zinc-800 text-zinc-200 px-4 py-2 rounded-full shadow-lg border border-zinc-700 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300"
+      >
+        <Info class="w-4 h-4 text-blue-400" />
+        {{ touchHintText }}
+      </div>
 
     <!-- 加载状态 -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 min-h-[60vh]">
@@ -100,14 +100,13 @@
     </div>
 
     <div v-else>
-      <!-- 移动端 Tab 切换 -->
-      <div class="lg:hidden sticky top-16 z-20 flex p-1 bg-zinc-950/80 backdrop-blur-md rounded-xl border border-zinc-800 shadow-xl mb-6">
+      <div class="lg:hidden sticky -top-4 -mx-4 -mt-4 z-20 flex p-1 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 shadow-xl mb-4 pt-4">
         <button 
           @click="mobileTab = 'pending'" 
           :class="['flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all', mobileTab === 'pending' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500']"
         >
           <ListMusic class="w-4 h-4" /> 
-          <span class="flex items-center gap-1.5">待排库 <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{ filteredUnscheduledSongs.length }}</span></span>
+          <span class="flex items-center gap-1.5">待排歌曲 <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{ filteredUnscheduledSongs.length }}</span></span>
         </button>
         <button 
           @click="mobileTab = 'scheduled'" 
@@ -262,6 +261,14 @@
                       title="拒绝申请"
                     >
                       <CloseIcon class="w-3.5 h-3.5" />
+                    </button>
+
+                    <!-- Mobile Add Button -->
+                    <button 
+                      class="lg:hidden p-2 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 active:scale-95 transition-all flex-shrink-0"
+                      @click.stop="addSongToSchedule(song)"
+                    >
+                      <Plus class="w-5 h-5" />
                     </button>
 
                     <!-- Menu Button -->
@@ -438,6 +445,15 @@
                      >
                        <Send class="w-3.5 h-3.5" />
                      </button>
+                     
+                     <!-- Mobile Remove Button -->
+                     <button 
+                       class="lg:hidden p-2 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500/30 active:scale-95 transition-all flex-shrink-0"
+                       @click.stop="removeSongFromSchedule(schedule)"
+                     >
+                       <Minus class="w-5 h-5" />
+                     </button>
+
                      <div class="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400 transition-colors">
                        <MoreVertical class="w-4 h-4" />
                      </div>
@@ -450,21 +466,28 @@
       </div>
 
       <!-- 移动端底部操作栏 -->
-      <div class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-4 bg-zinc-950/80 backdrop-blur-xl border-t border-zinc-800 flex items-center gap-3">
-        <div class="flex-1 flex gap-2">
-           <button @click="openDownloadDialog" class="flex-1 py-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-2xl flex items-center justify-center active:scale-95 transition-all">
-             <Download class="w-5 h-5" />
-           </button>
-           <button @click="saveDraft" class="flex-1 py-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-2xl flex items-center justify-center active:scale-95 transition-all">
-             <Save class="w-5 h-5" />
-           </button>
-        </div>
+      <div class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800 flex items-center gap-3 pb-6">
+        <!-- 次要操作栏 (图标按钮) -->
+        <button @click="openDownloadDialog" class="p-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+          <Download class="w-5 h-5" />
+        </button>
+        <button @click="saveDraft" class="p-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+          <Save class="w-5 h-5" />
+        </button>
+        <button @click="markAllAsPlayed" class="p-3 bg-zinc-900 border border-zinc-800 text-emerald-500 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+          <CheckCircle2 class="w-5 h-5" />
+        </button>
+        <button @click="publishSchedule" class="p-3 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all" title="仅发布排期">
+          <Send class="w-5 h-5" />
+        </button>
+        
+        <!-- 主要操作 -->
         <button 
-          @click="publishSchedule"
-          class="flex-[2] py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-blue-900/40 active:scale-95 transition-all flex items-center justify-center gap-2"
+          @click="saveSequence" 
+          :disabled="!hasChanges && localScheduledSongs.length > 0"
+          class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          <FileBadge class="w-4 h-4" />
-          立即发布排期
+          <FileBadge class="w-4 h-4" /> 保存并发布
         </button>
       </div>
     </div>
@@ -533,7 +556,7 @@ import {
   FileBadge, PlaySquare, ChevronDown, ListMusic,
   Filter, Info, Clock, User, AlertTriangle, X as CloseIcon,
   ChevronRight, MoreVertical, Calendar as CalendarIcon,
-  ArrowLeft, ArrowRight, Music2, Heart
+  ArrowLeft, ArrowRight, Music2, Heart, Plus, Minus
 } from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
@@ -1402,6 +1425,48 @@ const dropReorder = async (event, dropIndex) => {
   draggedSchedule.value = null
 }
 
+// 添加歌曲到排期（点击方式）
+const addSongToSchedule = (song) => {
+  const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === song.id)
+  if (existingIndex !== -1) return
+
+  const newSchedule = {
+    id: Date.now(),
+    song: song,
+    playDate: selectedDate.value,
+    sequence: localScheduledSongs.value.length + 1,
+    isNew: true,
+    isLocalOnly: true
+  }
+
+  scheduledSongIds.value.add(song.id)
+  localScheduledSongs.value.push(newSchedule)
+  hasChanges.value = true
+  
+  if (navigator.vibrate) navigator.vibrate(50)
+}
+
+// 从排期移除歌曲（点击方式）
+const removeSongFromSchedule = (schedule) => {
+  const index = localScheduledSongs.value.findIndex(s => s.id === schedule.id)
+  
+  if (index !== -1) {
+    const removed = localScheduledSongs.value.splice(index, 1)[0]
+    
+    if (removed.song) {
+      scheduledSongIds.value.delete(removed.song.id)
+    }
+    
+    // 重新排序
+    localScheduledSongs.value.forEach((item, idx) => {
+      item.sequence = idx + 1
+    })
+    
+    hasChanges.value = true
+    if (navigator.vibrate) navigator.vibrate(50)
+  }
+}
+
 // 处理拖回待排区域
 const handleReturnToDraggable = async (event) => {
   try {
@@ -1696,6 +1761,11 @@ const publishSingleDraftConfirmed = async (draft) => {
 
 // 触摸拖拽方法
 const handleTouchStart = (event, item, type) => {
+  // 在移动端，如果是待排歌曲列表（type='song'），禁用拖拽逻辑，只允许通过加号按钮添加
+  if (window.innerWidth < 1024 && type === 'song') {
+    return
+  }
+
   // 在所有设备上启用触摸拖拽，但桌面端优先使用原生拖拽
 
   const touch = event.touches[0]
