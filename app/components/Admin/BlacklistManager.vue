@@ -279,7 +279,7 @@ import {
   MessageSquare, Clock, Power, Trash2, Ban,
   ChevronLeft, ChevronRight, ChevronDown
 } from 'lucide-vue-next'
-import CustomSelect from '~/components/admin/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
 
 const blacklist = ref([])
 const loading = ref(false)

@@ -1,9 +1,9 @@
+/* 导入浏览器主题保护样式 */
+@import url('./theme-protection.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* 导入浏览器主题保护样式 */
-@import url('./theme-protection.css');
 
 /* 防止浏览器自动应用深色主题 */
 :root {
