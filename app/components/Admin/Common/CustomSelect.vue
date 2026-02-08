@@ -58,6 +58,7 @@ import { ChevronDown, Check } from 'lucide-vue-next'
 
 const props = defineProps({
   label: String,
+  modelValue: String,
   value: String,
   options: {
     type: Array,
@@ -66,12 +67,17 @@ const props = defineProps({
   className: String
 })
 
-const emit = defineEmits(['update:value', 'change'])
+const emit = defineEmits(['update:modelValue', 'update:value', 'change'])
 
 const isOpen = ref(false)
 const containerRef = ref(null)
 
+const displayValue = computed(() => {
+  return props.modelValue !== undefined ? props.modelValue : props.value
+})
+
 const selectOption = (option) => {
+  emit('update:modelValue', option)
   emit('update:value', option)
   emit('change', option)
   isOpen.value = false
