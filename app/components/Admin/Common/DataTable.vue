@@ -1,405 +1,253 @@
 <template>
-  <div class="data-table">
+  <div class="space-y-4">
     <!-- 表格工具栏 -->
-    <div v-if="showToolbar" class="table-toolbar">
-      <div class="toolbar-left">
+    <div v-if="showToolbar" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-1">
+      <div class="flex items-center gap-3">
         <slot name="toolbar-left">
-          <div v-if="selectedRows.length > 0" class="selection-info">
-            已选择 {{ selectedRows.length }} 项
+          <div v-if="selectedRows.length > 0" class="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 rounded-xl">
+            <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">已选择 {{ selectedRows.length }} 项</span>
+            <button @click="$emit('clear-selection')" class="p-0.5 text-blue-400 hover:text-blue-300 transition-colors">
+              <X :size="12" />
+            </button>
           </div>
         </slot>
       </div>
-      <div class="toolbar-right">
+      <div class="flex items-center gap-2 w-full sm:w-auto">
         <slot name="toolbar-right">
           <button
-              v-if="refreshable"
-              :disabled="loading"
-              class="btn-base btn-secondary btn-sm"
-              @click="$emit('refresh')"
+            v-if="refreshable"
+            :disabled="loading"
+            @click="$emit('refresh')"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-50"
           >
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <polyline points="23,4 23,10 17,10"/>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-            </svg>
-            刷新
+            <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
+            <span>刷新数据</span>
           </button>
         </slot>
       </div>
     </div>
 
-    <!-- 表格容器 -->
-    <div class="table-container">
+    <!-- 表格主容器 -->
+    <div class="relative bg-zinc-900/50 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl shadow-black/20">
       <!-- 加载状态 -->
-      <div v-if="loading" class="loading-overlay">
-        <div class="spinner"></div>
-        <div class="loading-text">{{ loadingText }}</div>
+      <div v-if="loading" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-zinc-950/60 backdrop-blur-[2px] animate-in fade-in duration-300">
+        <div class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+        <span class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{{ loadingText }}</span>
       </div>
 
       <!-- 桌面端表格 -->
-      <div class="desktop-table">
-        <!-- 表格头部 -->
-        <div class="table-header">
-          <div
-              v-if="selectable"
-              class="header-cell checkbox-cell"
-          >
-            <input
-                :checked="isAllSelected"
-                class="checkbox"
-                type="checkbox"
-                @change="toggleSelectAll"
-            />
-          </div>
-          <div
-              v-for="column in columns"
-              :key="column.key"
-              :class="column.class"
-              :style="{ width: column.width }"
-              class="header-cell"
-          >
-            {{ column.title }}
-          </div>
-          <div
-              v-if="hasActions"
-              class="header-cell actions-cell"
-          >
-            操作
-          </div>
-        </div>
-      </div>
-
-      <!-- 桌面端表格内容 -->
-      <div class="desktop-table">
-        <div class="table-body">
-          <!-- 空状态 -->
-          <div v-if="!loading && data.length === 0" class="empty-state">
-            <slot name="empty">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M8 12h8"/>
-              </svg>
-              <div class="empty-text">暂无数据</div>
-            </slot>
-          </div>
-
-          <!-- 数据行 -->
-          <div
-              v-for="(row, index) in data"
-              :key="getRowKey(row, index)"
-              :class="['table-row', {
-              selected: selectedRows.includes(getRowKey(row, index)),
-              clickable: rowClickable
-            }]"
-              @click="handleRowClick(row, index)"
-          >
-            <div
-                v-if="selectable"
-                class="cell checkbox-cell"
-                @click.stop
-            >
-              <input
-                  :checked="selectedRows.includes(getRowKey(row, index))"
-                  class="checkbox"
+      <div class="hidden md:block overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-zinc-800 bg-zinc-900/50">
+              <th v-if="selectable" class="p-4 w-10">
+                <input
                   type="checkbox"
-                  @change="toggleSelectRow(getRowKey(row, index))"
-              />
-            </div>
-
-            <div
+                  :checked="isAllSelected"
+                  @change="toggleSelectAll"
+                  class="w-4 h-4 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
+                />
+              </th>
+              <th
                 v-for="column in columns"
                 :key="column.key"
-                :class="column.class"
+                :class="[column.class, 'p-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest']"
                 :style="{ width: column.width }"
-                class="cell"
-            >
-              <slot
-                  :index="index"
-                  :name="`cell-${column.key}`"
-                  :row="row"
-                  :value="getNestedValue(row, column.key)"
               >
-                {{ formatCellValue(getNestedValue(row, column.key), column) }}
-              </slot>
-            </div>
-
-            <div
-                v-if="hasActions"
-                class="cell actions-cell"
-                @click.stop
+                {{ column.title }}
+              </th>
+              <th v-if="hasActions" class="p-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right">
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-800/50">
+            <tr v-if="!loading && data.length === 0">
+              <td :colspan="totalColumns" class="p-20 text-center">
+                <slot name="empty">
+                  <div class="flex flex-col items-center gap-3 text-zinc-700">
+                    <Database :size="40" stroke-width="1" />
+                    <span class="text-[10px] font-black uppercase tracking-widest">暂无数据内容</span>
+                  </div>
+                </slot>
+              </td>
+            </tr>
+            <tr
+              v-for="(row, index) in data"
+              :key="getRowKey(row, index)"
+              class="group hover:bg-zinc-800/30 transition-colors cursor-default"
+              :class="{ 'bg-blue-600/5': selectedRows.includes(getRowKey(row, index)) }"
+              @click="handleRowClick(row, index)"
             >
-              <slot
-                  :index="index"
-                  :row="row"
-                  name="actions"
+              <td v-if="selectable" class="p-4" @click.stop>
+                <input
+                  type="checkbox"
+                  :checked="selectedRows.includes(getRowKey(row, index))"
+                  @change="toggleSelectRow(getRowKey(row, index))"
+                  class="w-4 h-4 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
+                />
+              </td>
+              <td
+                v-for="column in columns"
+                :key="column.key"
+                :class="[column.class, 'p-4 text-xs font-bold text-zinc-300']"
               >
-                <div class="action-buttons">
-                  <button class="action-btn edit-btn" title="编辑">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                  </button>
-                  <button class="action-btn delete-btn" title="删除">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <polyline points="3,6 5,6 21,6"/>
-                      <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
-                    </svg>
-                  </button>
+                <slot :name="`cell-${column.key}`" :row="row" :index="index" :value="getNestedValue(row, column.key)">
+                  {{ formatCellValue(getNestedValue(row, column.key), column) }}
+                </slot>
+              </td>
+              <td v-if="hasActions" class="p-4 text-right" @click.stop>
+                <div class="flex items-center justify-end gap-1">
+                  <slot name="actions" :row="row" :index="index">
+                    <button class="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all" title="编辑">
+                      <Edit2 :size="14" />
+                    </button>
+                    <button class="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all" title="删除">
+                      <Trash2 :size="14" />
+                    </button>
+                  </slot>
                 </div>
-              </slot>
-            </div>
-          </div>
-        </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- 移动端卡片布局 -->
-      <div class="mobile-cards">
-        <!-- 空状态 -->
-        <div v-if="!loading && data.length === 0" class="empty-state">
+      <!-- 移动端卡片列表 -->
+      <div class="md:hidden divide-y divide-zinc-800">
+        <div v-if="!loading && data.length === 0" class="p-20 text-center">
           <slot name="empty">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M8 12h8"/>
-            </svg>
-            <div class="empty-text">暂无数据</div>
+            <div class="flex flex-col items-center gap-3 text-zinc-700">
+              <Database :size="40" stroke-width="1" />
+              <span class="text-[10px] font-black uppercase tracking-widest">暂无数据内容</span>
+            </div>
           </slot>
         </div>
-
-        <!-- 数据卡片 -->
         <div
-            v-for="(row, index) in data"
-            :key="getRowKey(row, index)"
-            :class="['data-card', {
-            selected: selectedRows.includes(getRowKey(row, index)),
-            clickable: rowClickable
-          }]"
-            @click="handleRowClick(row, index)"
+          v-for="(row, index) in data"
+          :key="getRowKey(row, index)"
+          class="p-4 space-y-4 hover:bg-zinc-800/30 transition-colors"
+          :class="{ 'bg-blue-600/5': selectedRows.includes(getRowKey(row, index)) }"
+          @click="handleRowClick(row, index)"
         >
-          <div class="card-header">
-            <div v-if="selectable" class="card-selection" @click.stop>
-              <input
-                  :checked="selectedRows.includes(getRowKey(row, index))"
-                  class="checkbox"
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div v-if="selectable" @click.stop>
+                <input
                   type="checkbox"
+                  :checked="selectedRows.includes(getRowKey(row, index))"
                   @change="toggleSelectRow(getRowKey(row, index))"
-              />
-            </div>
-            <div class="card-primary">
-              <slot
-                  :index="index"
-                  :row="row"
-                  name="mobile-primary"
-              >
-                <!-- 默认显示第一列 -->
-                <div class="primary-value">
-                  {{ formatCellValue(getNestedValue(row, columns[0]?.key), columns[0]) }}
-                </div>
+                  class="w-4 h-4 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
+                />
+              </div>
+              <slot name="mobile-primary" :row="row" :index="index">
+                <span class="text-sm font-black text-zinc-100">{{ formatCellValue(getNestedValue(row, columns[0]?.key), columns[0]) }}</span>
               </slot>
             </div>
-            <div v-if="hasActions" class="card-actions" @click.stop>
-              <slot
-                  :index="index"
-                  :row="row"
-                  name="actions"
-              ></slot>
+            <div v-if="hasActions" class="flex items-center gap-1" @click.stop>
+              <slot name="actions" :row="row" :index="index">
+                <button class="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all">
+                  <Edit2 :size="14" />
+                </button>
+                <button class="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all">
+                  <Trash2 :size="14" />
+                </button>
+              </slot>
             </div>
           </div>
-          <div class="card-body">
-            <slot
-                :columns="columns"
-                :index="index"
-                :row="row"
-                name="mobile-content"
-            >
-              <!-- 默认显示所有列（除第一列外） -->
-              <div
-                  v-for="column in columns.slice(1)"
-                  :key="column.key"
-                  class="card-field"
-              >
-                <span class="field-label">{{ column.title }}:</span>
-                <span class="field-value">
-                  <slot
-                      :index="index"
-                      :name="`cell-${column.key}`"
-                      :row="row"
-                      :value="getNestedValue(row, column.key)"
-                  >
-                    {{ formatCellValue(getNestedValue(row, column.key), column) }}
-                  </slot>
-                </span>
+          <div class="grid grid-cols-2 gap-y-3 gap-x-4">
+            <div v-for="column in columns.slice(1)" :key="column.key" class="space-y-1">
+              <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest block">{{ column.title }}</span>
+              <div class="text-xs font-bold text-zinc-400">
+                <slot :name="`cell-${column.key}`" :row="row" :index="index" :value="getNestedValue(row, column.key)">
+                  {{ formatCellValue(getNestedValue(row, column.key), column) }}
+                </slot>
               </div>
-            </slot>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- 分页 -->
-    <div v-if="pagination && totalPages > 1" class="pagination">
-      <button
-          :disabled="currentPage === 1"
-          class="pagination-btn"
-          @click="$emit('page-change', 1)"
-      >
-        首页
-      </button>
-      <button
-          :disabled="currentPage === 1"
-          class="pagination-btn"
-          @click="$emit('page-change', currentPage - 1)"
-      >
-        上一页
-      </button>
-
-      <div class="pagination-info">
-        第 {{ currentPage }} 页，共 {{ totalPages }} 页
-      </div>
-
-      <button
-          :disabled="currentPage === totalPages"
-          class="pagination-btn"
-          @click="$emit('page-change', currentPage + 1)"
-      >
-        下一页
-      </button>
-      <button
-          :disabled="currentPage === totalPages"
-          class="pagination-btn"
-          @click="$emit('page-change', totalPages)"
-      >
-        末页
-      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import {computed, ref, watch} from 'vue'
+import { computed } from 'vue'
+import {
+  X, RefreshCw, Database,
+  Edit2, Trash2, ChevronRight,
+  MoreHorizontal
+} from 'lucide-vue-next'
 
 const props = defineProps({
-  data: {
-    type: Array,
-    default: () => []
-  },
-  columns: {
-    type: Array,
-    required: true
-  },
-  loading: {
-    type: Boolean,
-    default: false
-  },
-  loadingText: {
-    type: String,
-    default: '正在加载...'
-  },
-  selectable: {
-    type: Boolean,
-    default: false
-  },
-  rowKey: {
-    type: [String, Function],
-    default: 'id'
-  },
-  rowClickable: {
-    type: Boolean,
-    default: false
-  },
-  showToolbar: {
-    type: Boolean,
-    default: true
-  },
-  refreshable: {
-    type: Boolean,
-    default: true
-  },
-  pagination: {
-    type: Boolean,
-    default: false
-  },
-  currentPage: {
-    type: Number,
-    default: 1
-  },
-  totalPages: {
-    type: Number,
-    default: 1
-  }
+  columns: { type: Array, required: true },
+  data: { type: Array, required: true },
+  loading: { type: Boolean, default: false },
+  loadingText: { type: String, default: '正在加载数据...' },
+  selectable: { type: Boolean, default: false },
+  selectedRows: { type: Array, default: () => [] },
+  rowKey: { type: [String, Function], default: 'id' },
+  refreshable: { type: Boolean, default: false },
+  showToolbar: { type: Boolean, default: true },
+  hasActions: { type: Boolean, default: true },
+  rowClickable: { type: Boolean, default: false }
 })
 
 const emit = defineEmits([
-  'refresh',
+  'update:selectedRows',
   'row-click',
-  'selection-change',
-  'page-change'
+  'refresh',
+  'clear-selection'
 ])
 
-const selectedRows = ref([])
-
-const hasActions = computed(() => {
-  return !!props.columns.find(col => col.key === 'actions') ||
-      !!Object.keys($slots).find(key => key === 'actions')
+const totalColumns = computed(() => {
+  let count = props.columns.length
+  if (props.selectable) count++
+  if (props.hasActions) count++
+  return count
 })
 
 const isAllSelected = computed(() => {
-  return props.data.length > 0 &&
-      props.data.every(row => selectedRows.value.includes(getRowKey(row)))
+  if (props.data.length === 0) return false
+  return props.data.every(row => props.selectedRows.includes(getRowKey(row)))
 })
 
 const getRowKey = (row, index) => {
-  if (typeof props.rowKey === 'function') {
-    return props.rowKey(row, index)
-  }
+  if (typeof props.rowKey === 'function') return props.rowKey(row, index)
   return row[props.rowKey] || index
 }
 
 const getNestedValue = (obj, path) => {
-  return path.split('.').reduce((current, key) => current?.[key], obj)
+  if (!path) return undefined
+  return path.split('.').reduce((acc, part) => acc && acc[part], obj)
 }
 
 const formatCellValue = (value, column) => {
-  if (column.formatter && typeof column.formatter === 'function') {
-    return column.formatter(value)
-  }
-
-  if (value === null || value === undefined) {
-    return '-'
-  }
-
+  if (column.formatter) return column.formatter(value)
+  if (value === null || value === undefined) return '-'
   return value
 }
 
-const toggleSelectAll = () => {
-  if (isAllSelected.value) {
-    selectedRows.value = []
-  } else {
-    selectedRows.value = props.data.map((row, index) => getRowKey(row, index))
-  }
-  emit('selection-change', selectedRows.value)
+const toggleSelectAll = (event) => {
+  const checked = event.target.checked
+  const newSelectedRows = checked
+    ? [...new Set([...props.selectedRows, ...props.data.map(row => getRowKey(row))])]
+    : props.selectedRows.filter(id => !props.data.map(row => getRowKey(row)).includes(id))
+  emit('update:selectedRows', newSelectedRows)
 }
 
-const toggleSelectRow = (rowKey) => {
-  const index = selectedRows.value.indexOf(rowKey)
-  if (index > -1) {
-    selectedRows.value.splice(index, 1)
-  } else {
-    selectedRows.value.push(rowKey)
-  }
-  emit('selection-change', selectedRows.value)
+const toggleSelectRow = (key) => {
+  const newSelectedRows = props.selectedRows.includes(key)
+    ? props.selectedRows.filter(id => id !== key)
+    : [...props.selectedRows, key]
+  emit('update:selectedRows', newSelectedRows)
 }
 
 const handleRowClick = (row, index) => {
   if (props.rowClickable) {
-    emit('row-click', row, index)
+    emit('row-click', { row, index })
   }
 }
-
-// 监听数据变化，清理无效的选择
-watch(() => props.data, (newData) => {
-  const validKeys = newData.map((row, index) => getRowKey(row, index))
-  selectedRows.value = selectedRows.value.filter(key => validKeys.includes(key))
-}, {deep: true})
 </script>
 
 <style scoped>

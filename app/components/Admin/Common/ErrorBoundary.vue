@@ -1,60 +1,65 @@
 <template>
-  <div class="error-boundary">
-    <slot v-if="!hasError"/>
+  <div class="relative w-full">
+    <slot v-if="!hasError" />
 
     <!-- 错误状态 -->
-    <div v-else class="error-state">
-      <div class="error-icon">
-        <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path
-              d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-              stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-        </svg>
+    <div v-else class="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-zinc-900/30 border border-dashed border-zinc-800 rounded-3xl animate-in fade-in zoom-in duration-300">
+      <div class="relative mb-6">
+        <div class="absolute inset-0 blur-2xl bg-red-500/10 rounded-full"></div>
+        <div class="relative flex items-center justify-center w-16 h-16 bg-zinc-950 border border-red-500/30 rounded-2xl text-red-500 shadow-xl shadow-black/40">
+          <AlertCircle :size="32" stroke-width="1.5" />
+        </div>
       </div>
 
-      <h3 class="error-title">{{ errorTitle }}</h3>
-      <p class="error-message">{{ errorMessage }}</p>
+      <h3 class="text-xl font-black text-zinc-100 tracking-tight mb-2">{{ errorTitle }}</h3>
+      <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest max-w-xs mb-8">{{ errorMessage }}</p>
 
-      <div class="error-actions">
+      <div class="flex flex-wrap items-center justify-center gap-4">
         <button
-            :disabled="retrying"
-            class="retry-btn"
-            @click="handleRetry"
+          :disabled="retrying"
+          class="flex items-center gap-2 px-6 py-2.5 bg-zinc-950 border border-zinc-800 hover:border-blue-500/50 text-zinc-400 hover:text-zinc-100 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-black/20 disabled:opacity-50"
+          @click="handleRetry"
         >
-          <svg v-if="retrying" class="spin" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path
-                d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-                opacity="0.25" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-            <path d="M21 12C21 9.61305 20.0518 7.32387 18.364 5.63604C16.6761 3.94821 14.3869 3 12 3"
-                  stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-          </svg>
-          <svg v-else fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path
-                d="M1 4V10H7M23 20V14H17M20.49 9C19.9828 7.56678 19.1209 6.28392 17.9845 5.27493C16.8482 4.26595 15.4745 3.56905 13.9917 3.24575C12.5089 2.92246 10.9652 2.98546 9.51691 3.42597C8.06861 3.86648 6.76071 4.66952 5.71 5.76L1 10M23 14L18.29 18.24C17.2393 19.3305 15.9314 20.1335 14.4831 20.574C13.0348 21.0145 11.4911 21.0775 10.0083 20.7542C8.52547 20.431 7.1518 19.7341 6.01547 18.7251C4.87913 17.7161 4.01717 16.4332 3.51 15"
-                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-          </svg>
-          {{ retrying ? '重试中...' : '重试' }}
+          <RefreshCw :size="14" :class="{ 'animate-spin': retrying }" />
+          <span>{{ retrying ? '正在重试' : '重新尝试' }}</span>
         </button>
 
         <button
-            v-if="showDetails"
-            class="details-btn"
-            @click="toggleDetails"
+          v-if="showDetails"
+          class="px-6 py-2.5 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-500 hover:text-zinc-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+          @click="toggleDetails"
         >
-          {{ showErrorDetails ? '隐藏详情' : '查看详情' }}
+          {{ showErrorDetails ? '隐藏详细信息' : '查看详细信息' }}
         </button>
       </div>
 
       <!-- 错误详情 -->
-      <div v-if="showErrorDetails" class="error-details">
-        <h4>错误详情:</h4>
-        <pre>{{ errorDetails }}</pre>
-      </div>
+      <transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="transform scale-95 opacity-0"
+        enter-to-class="transform scale-100 opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="transform scale-100 opacity-100"
+        leave-to-class="transform scale-95 opacity-0"
+      >
+        <div v-if="showErrorDetails" class="mt-8 w-full max-w-2xl text-left">
+          <div class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">系统调试信息</span>
+            </div>
+            <pre class="text-[10px] font-mono text-zinc-500 leading-relaxed overflow-x-auto p-4 bg-black/30 rounded-xl whitespace-pre-wrap break-all">{{ errorDetails }}</pre>
+          </div>
+        </div>
+      </transition>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
+import { AlertCircle, RefreshCw } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+
 interface Props {
   error?: Error | string | null
   errorTitle?: string

@@ -1,123 +1,116 @@
 <template>
-  <div class="search-filter">
+  <div class="flex flex-col lg:flex-row items-center gap-4 w-full">
     <!-- 搜索输入框 -->
-    <div class="search-section">
-      <div class="search-input-wrapper">
-        <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input
-            :placeholder="searchPlaceholder"
-            :value="searchQuery"
-            class="search-input"
-            type="text"
-            @input="$emit('update:searchQuery', $event.target.value)"
-        />
-        <button
-            v-if="searchQuery"
-            class="clear-search-btn"
-            @click="$emit('update:searchQuery', '')"
-        >
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="18" x2="6" y1="6" y2="18"/>
-            <line x1="6" x2="18" y1="6" y2="18"/>
-          </svg>
-        </button>
+    <div class="relative flex-1 w-full">
+      <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <Search :size="16" class="text-zinc-500" />
       </div>
+      <input
+        :value="searchQuery"
+        type="text"
+        :placeholder="searchPlaceholder"
+        class="block w-full pl-11 pr-11 py-2.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-blue-600/5 transition-all"
+        @input="$emit('update:searchQuery', $event.target.value)"
+      />
+      <button
+        v-if="searchQuery"
+        @click="$emit('update:searchQuery', '')"
+        class="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-500 hover:text-zinc-300 transition-colors"
+      >
+        <X :size="14" />
+      </button>
     </div>
 
-    <!-- 过滤器 -->
-    <div v-if="filters.length > 0" class="filters-section">
+    <!-- 过滤器容器 -->
+    <div v-if="filters.length > 0" class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
       <div
-          v-for="filter in filters"
-          :key="filter.key"
-          class="filter-group"
+        v-for="filter in filters"
+        :key="filter.key"
+        class="flex-1 lg:flex-none min-w-[140px]"
       >
-        <label v-if="filter.label" class="filter-label">{{ filter.label }}</label>
-
-        <!-- 选择框过滤器 -->
-        <select
-            v-if="filter.type === 'select'"
-            :value="filterValues[filter.key]"
-            class="filter-select"
-            @change="updateFilter(filter.key, $event.target.value)"
-        >
-          <option
-              v-for="option in filter.options"
-              :key="option.value"
-              :value="option.value"
-          >
-            {{ option.label }}
-          </option>
-        </select>
+        <!-- 选择框过滤器 - 使用 CustomSelect -->
+        <CustomSelect
+          v-if="filter.type === 'select'"
+          :label="filter.label"
+          :value="getSelectValueLabel(filter)"
+          :options="filter.options.map(o => o.label)"
+          @change="(val) => updateSelectFilter(filter, val)"
+          class="w-full"
+        />
 
         <!-- 日期范围过滤器 -->
-        <div v-else-if="filter.type === 'dateRange'" class="date-range-filter">
+        <div v-else-if="filter.type === 'dateRange'" class="flex items-center gap-2 p-1 bg-zinc-950 border border-zinc-800 rounded-2xl">
           <input
-              :placeholder="filter.startPlaceholder || '开始日期'"
-              :value="filterValues[filter.key]?.start || ''"
-              class="date-input"
-              type="date"
-              @input="updateDateRange(filter.key, 'start', $event.target.value)"
+            type="date"
+            :value="filterValues[filter.key]?.start || ''"
+            class="bg-transparent border-none text-[10px] font-bold text-zinc-300 focus:ring-0 px-2 py-1 w-28"
+            @input="updateDateRange(filter.key, 'start', $event.target.value)"
           />
-          <span class="date-separator">至</span>
+          <span class="text-zinc-700 text-[10px] font-black uppercase">至</span>
           <input
-              :placeholder="filter.endPlaceholder || '结束日期'"
-              :value="filterValues[filter.key]?.end || ''"
-              class="date-input"
-              type="date"
-              @input="updateDateRange(filter.key, 'end', $event.target.value)"
+            type="date"
+            :value="filterValues[filter.key]?.end || ''"
+            class="bg-transparent border-none text-[10px] font-bold text-zinc-300 focus:ring-0 px-2 py-1 w-28"
+            @input="updateDateRange(filter.key, 'end', $event.target.value)"
           />
         </div>
 
         <!-- 多选过滤器 -->
-        <div v-else-if="filter.type === 'multiSelect'" class="multi-select-filter">
-          <div :class="{ open: openDropdown === filter.key }" class="multi-select-dropdown">
-            <button
-                class="multi-select-trigger"
-                @click="toggleDropdown(filter.key)"
-            >
-              <span>
-                {{ getMultiSelectLabel(filter) }}
-              </span>
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <polyline points="6,9 12,15 18,9"/>
-              </svg>
-            </button>
+        <div v-else-if="filter.type === 'multiSelect'" class="relative" ref="dropdownRef">
+          <button
+            @click="toggleDropdown(filter.key)"
+            class="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-2xl transition-all hover:border-zinc-700"
+            :class="{ 'border-blue-500/50 bg-blue-600/5': openDropdown === filter.key }"
+          >
+            <div class="flex flex-col items-start gap-0.5 overflow-hidden">
+              <span v-if="filter.label" class="text-[9px] font-black text-zinc-600 uppercase tracking-widest leading-none">{{ filter.label }}</span>
+              <span class="text-[11px] font-bold text-zinc-300 truncate w-full text-left">{{ getMultiSelectLabel(filter) }}</span>
+            </div>
+            <ChevronDown :size="14" class="text-zinc-500 shrink-0 transition-transform" :class="{ 'rotate-180': openDropdown === filter.key }" />
+          </button>
 
-            <div v-if="openDropdown === filter.key" class="multi-select-options">
-              <label
+          <Transition
+            enter-active-class="transition duration-100 ease-out"
+            enter-from-class="transform scale-95 opacity-0"
+            enter-to-class="transform scale-100 opacity-100"
+            leave-active-class="transition duration-75 ease-in"
+            leave-from-class="transform scale-100 opacity-100"
+            leave-to-class="transform scale-95 opacity-0"
+          >
+            <div 
+              v-if="openDropdown === filter.key"
+              class="absolute z-50 mt-2 w-full min-w-[200px] bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden py-1"
+            >
+              <div class="max-h-60 overflow-y-auto custom-scrollbar">
+                <label
                   v-for="option in filter.options"
                   :key="option.value"
-                  class="multi-select-option"
-              >
-                <input
-                    :checked="(filterValues[filter.key] || []).includes(option.value)"
-                    class="checkbox"
+                  class="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-800 cursor-pointer group transition-colors"
+                >
+                  <input
                     type="checkbox"
+                    :checked="(filterValues[filter.key] || []).includes(option.value)"
+                    class="w-3.5 h-3.5 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all"
                     @change="toggleMultiSelectOption(filter.key, option.value)"
-                />
-                <span>{{ option.label }}</span>
-              </label>
+                  />
+                  <span class="text-xs font-bold text-zinc-400 group-hover:text-zinc-200">{{ option.label }}</span>
+                </label>
+              </div>
             </div>
-          </div>
+          </Transition>
         </div>
       </div>
     </div>
 
     <!-- 操作按钮 -->
-    <div v-if="showActions" class="actions-section">
+    <div v-if="showActions" class="flex items-center gap-2 w-full lg:w-auto">
       <button
-          :disabled="!hasActiveFilters"
-          class="btn-base btn-secondary btn-sm"
-          @click="clearAllFilters"
+        v-if="hasActiveFilters"
+        @click="clearAllFilters"
+        class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-red-500/30 hover:bg-red-500/5 text-zinc-400 hover:text-red-400 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all"
       >
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-          <path d="M3 3v5h5"/>
-        </svg>
-        清除筛选
+        <RotateCcw :size="14" />
+        <span>清除筛选</span>
       </button>
 
       <slot name="actions"></slot>
@@ -126,29 +119,16 @@
 </template>
 
 <script setup>
-import {computed, onMounted, onUnmounted, ref} from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { Search, X, ChevronDown, RotateCcw } from 'lucide-vue-next'
+import CustomSelect from './CustomSelect.vue'
 
 const props = defineProps({
-  searchQuery: {
-    type: String,
-    default: ''
-  },
-  searchPlaceholder: {
-    type: String,
-    default: '搜索...'
-  },
-  filters: {
-    type: Array,
-    default: () => []
-  },
-  filterValues: {
-    type: Object,
-    default: () => ({})
-  },
-  showActions: {
-    type: Boolean,
-    default: true
-  }
+  searchQuery: { type: String, default: '' },
+  searchPlaceholder: { type: String, default: '搜索...' },
+  filters: { type: Array, default: () => [] },
+  filterValues: { type: Object, default: () => ({}) },
+  showActions: { type: Boolean, default: true }
 })
 
 const emit = defineEmits([
@@ -158,69 +138,82 @@ const emit = defineEmits([
 ])
 
 const openDropdown = ref(null)
+const dropdownRef = ref(null)
 
 const hasActiveFilters = computed(() => {
   return props.searchQuery ||
-      Object.values(props.filterValues).some(value => {
-        if (Array.isArray(value)) return value.length > 0
-        if (typeof value === 'object' && value !== null) {
-          return Object.values(value).some(v => v)
-        }
-        return value !== '' && value !== null && value !== undefined
-      })
+    Object.values(props.filterValues).some(value => {
+      if (Array.isArray(value)) return value.length > 0
+      if (typeof value === 'object' && value !== null) {
+        return Object.values(value).some(v => v)
+      }
+      return value !== '' && value !== null && value !== undefined
+    })
 })
 
 const updateFilter = (key, value) => {
-  const newValues = {...props.filterValues, [key]: value}
+  const newValues = { ...props.filterValues, [key]: value }
   emit('update:filterValues', newValues)
-  emit('filter-change', {key, value, allValues: newValues})
+  emit('filter-change', { key, value, allValues: newValues })
+}
+
+const updateSelectFilter = (filter, label) => {
+  const option = filter.options.find(o => o.label === label)
+  if (option) {
+    updateFilter(filter.key, option.value)
+  }
+}
+
+const getSelectValueLabel = (filter) => {
+  const value = props.filterValues[filter.key]
+  const option = filter.options.find(o => o.value === value)
+  return option ? option.label : (filter.placeholder || '请选择')
 }
 
 const updateDateRange = (key, type, value) => {
   const currentRange = props.filterValues[key] || {}
-  const newRange = {...currentRange, [type]: value}
+  const newRange = { ...currentRange, [type]: value }
   updateFilter(key, newRange)
 }
 
 const toggleMultiSelectOption = (filterKey, optionValue) => {
   const currentValues = props.filterValues[filterKey] || []
   const newValues = currentValues.includes(optionValue)
-      ? currentValues.filter(v => v !== optionValue)
-      : [...currentValues, optionValue]
-
+    ? currentValues.filter(v => v !== optionValue)
+    : [...currentValues, optionValue]
   updateFilter(filterKey, newValues)
-}
-
-const getMultiSelectLabel = (filter) => {
-  const selectedValues = props.filterValues[filter.key] || []
-  if (selectedValues.length === 0) {
-    return filter.placeholder || '请选择'
-  }
-  if (selectedValues.length === 1) {
-    const option = filter.options.find(opt => opt.value === selectedValues[0])
-    return option ? option.label : selectedValues[0]
-  }
-  return `已选择 ${selectedValues.length} 项`
 }
 
 const toggleDropdown = (key) => {
   openDropdown.value = openDropdown.value === key ? null : key
 }
 
-const closeDropdown = () => {
-  openDropdown.value = null
+const getMultiSelectLabel = (filter) => {
+  const selectedValues = props.filterValues[filter.key] || []
+  if (selectedValues.length === 0) return filter.placeholder || '请选择'
+  if (selectedValues.length === 1) {
+    const option = filter.options.find(opt => opt.value === selectedValues[0])
+    return option ? option.label : selectedValues[0]
+  }
+  return `已选 ${selectedValues.length} 项`
 }
 
 const clearAllFilters = () => {
   emit('update:searchQuery', '')
-  emit('update:filterValues', {})
-  emit('filter-change', {key: null, value: null, allValues: {}})
+  const clearedValues = {}
+  props.filters.forEach(f => {
+    if (f.type === 'multiSelect') clearedValues[f.key] = []
+    else if (f.type === 'dateRange') clearedValues[f.key] = { start: '', end: '' }
+    else clearedValues[f.key] = ''
+  })
+  emit('update:filterValues', clearedValues)
+  emit('filter-change', { key: 'all', value: null, allValues: clearedValues })
 }
 
 // 点击外部关闭下拉框
 const handleClickOutside = (event) => {
-  if (!event.target.closest('.multi-select-dropdown')) {
-    closeDropdown()
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+    openDropdown.value = null
   }
 }
 

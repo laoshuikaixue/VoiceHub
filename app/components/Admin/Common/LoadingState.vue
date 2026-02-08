@@ -1,112 +1,109 @@
 <template>
-  <div :class="{ 'full-screen': fullScreen }" class="loading-state">
-    <div class="loading-content">
+  <div
+    :class="{
+      'fixed inset-0 z-[9999] bg-zinc-950/80 backdrop-blur-md': fullScreen,
+      'min-h-[200px] py-12': !fullScreen
+    }"
+    class="flex flex-col items-center justify-center animate-in fade-in duration-300"
+  >
+    <div class="flex flex-col items-center text-center max-w-md w-full px-6">
       <!-- 加载动画 -->
-      <div :class="spinnerType" class="loading-spinner">
-        <div v-if="spinnerType === 'dots'" class="dots-spinner">
-          <div class="dot"></div>
-          <div class="dot"></div>
-          <div class="dot"></div>
+      <div class="mb-8">
+        <!-- 默认圆形加载器 -->
+        <div v-if="spinnerType === 'circle'" class="relative">
+          <div class="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+          <div class="absolute inset-0 blur-lg bg-blue-500/20 rounded-full animate-pulse"></div>
         </div>
 
-        <div v-else-if="spinnerType === 'pulse'" class="pulse-spinner">
-          <div class="pulse-ring"></div>
-          <div class="pulse-ring"></div>
-          <div class="pulse-ring"></div>
+        <!-- 点状加载器 -->
+        <div v-else-if="spinnerType === 'dots'" class="flex gap-2">
+          <div v-for="i in 3" :key="i"
+               class="w-3 h-3 bg-blue-500 rounded-full animate-bounce"
+               :style="{ animationDelay: `${(i - 1) * 0.2}s` }"></div>
         </div>
 
-        <div v-else-if="spinnerType === 'bars'" class="bars-spinner">
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
+        <!-- 脉冲加载器 -->
+        <div v-else-if="spinnerType === 'pulse'" class="relative w-12 h-12">
+          <div v-for="i in 3" :key="i"
+               class="absolute inset-0 border-2 border-blue-500 rounded-full animate-ping"
+               :style="{ animationDelay: `${(i - 1) * 0.4}s`, animationDuration: '2s' }"></div>
         </div>
 
-        <div v-else class="circle-spinner">
-          <svg viewBox="0 0 50 50">
-            <circle
-                cx="25"
-                cy="25"
-                fill="none"
-                r="20"
-                stroke="currentColor"
-                stroke-dasharray="31.416"
-                stroke-dashoffset="31.416"
-                stroke-linecap="round"
-                stroke-width="3"
-            >
-              <animate
-                  attributeName="stroke-dasharray"
-                  dur="2s"
-                  repeatCount="indefinite"
-                  values="0 31.416;15.708 15.708;0 31.416"
-              />
-              <animate
-                  attributeName="stroke-dashoffset"
-                  dur="2s"
-                  repeatCount="indefinite"
-                  values="0;-15.708;-31.416"
-              />
-            </circle>
-          </svg>
+        <!-- 条状加载器 -->
+        <div v-else-if="spinnerType === 'bars'" class="flex items-end gap-1.5 h-8">
+          <div v-for="i in 5" :key="i"
+               class="w-1.5 bg-blue-500 rounded-full animate-bounce"
+               :style="{
+                 animationDelay: `${(i - 1) * 0.1}s`,
+                 height: `${40 + Math.random() * 60}%`
+               }"></div>
         </div>
       </div>
 
       <!-- 加载文本 -->
-      <div class="loading-text">
-        <h3 v-if="title" class="loading-title">{{ title }}</h3>
-        <p class="loading-message">{{ message }}</p>
+      <div class="w-full space-y-2">
+        <h3 v-if="title" class="text-xl font-black text-zinc-100 tracking-tight">{{ title }}</h3>
+        <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{{ message }}</p>
 
         <!-- 进度条 -->
-        <div v-if="showProgress" class="progress-container">
-          <div class="progress-bar">
+        <div v-if="showProgress" class="mt-8 space-y-2">
+          <div class="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
             <div
-                :style="{ width: `${progress}%` }"
-                class="progress-fill"
+              class="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+              :style="{ width: `${progress}%` }"
             ></div>
           </div>
-          <span class="progress-text">{{ progress }}%</span>
+          <div class="flex justify-between items-center px-1">
+            <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">加载进度</span>
+            <span class="text-[10px] font-black text-blue-500 tracking-widest">{{ progress }}%</span>
+          </div>
         </div>
 
         <!-- 加载步骤 -->
-        <div v-if="steps && steps.length > 0" class="loading-steps">
+        <div v-if="steps && steps.length > 0" class="mt-8 space-y-3 text-left">
           <div
-              v-for="(step, index) in steps"
-              :key="index"
-              :class="{
-              'completed': index < currentStep,
-              'active': index === currentStep,
-              'pending': index > currentStep
+            v-for="(step, index) in steps"
+            :key="index"
+            class="flex items-center gap-3 transition-all duration-300"
+            :class="{
+              'opacity-100': index <= currentStep,
+              'opacity-30': index > currentStep
             }"
-              class="step-item"
           >
-            <div class="step-icon">
-              <svg v-if="index < currentStep" fill="none" viewBox="0 0 24 24">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                      stroke-width="2"/>
-              </svg>
-              <div v-else-if="index === currentStep" class="step-spinner"></div>
-              <span v-else class="step-number">{{ index + 1 }}</span>
+            <div class="relative flex items-center justify-center w-6 h-6">
+              <div v-if="index < currentStep" class="flex items-center justify-center w-6 h-6 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <Check :size="12" class="text-blue-500" />
+              </div>
+              <div v-else-if="index === currentStep" class="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-lg animate-spin"></div>
+              <div v-else class="flex items-center justify-center w-6 h-6 bg-zinc-900 border border-zinc-800 rounded-lg">
+                <span class="text-[10px] font-black text-zinc-600">{{ index + 1 }}</span>
+              </div>
             </div>
-            <span class="step-text">{{ step }}</span>
+            <span
+              class="text-[10px] font-black uppercase tracking-widest transition-colors"
+              :class="index === currentStep ? 'text-zinc-200' : 'text-zinc-600'"
+            >
+              {{ step }}
+            </span>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 取消按钮 -->
-    <button
+      <!-- 取消按钮 -->
+      <button
         v-if="showCancel && onCancel"
-        class="cancel-btn"
         @click="onCancel"
-    >
-      取消
-    </button>
+        class="mt-10 px-6 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+      >
+        取消加载
+      </button>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
+import { Check } from 'lucide-vue-next'
+
 interface Props {
   title?: string
   message?: string
@@ -135,349 +132,10 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <style scoped>
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  min-height: 200px;
-}
-
-.loading-state.full-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
-  z-index: 9999;
-  min-height: 100vh;
-}
-
-.loading-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  max-width: 400px;
-}
-
-/* 加载动画样式 */
-.loading-spinner {
-  margin-bottom: 24px;
-}
-
-/* 圆形加载器 */
-.circle-spinner {
-  width: 50px;
-  height: 50px;
-  color: #4f46e5;
-}
-
-.circle-spinner svg {
-  width: 100%;
-  height: 100%;
-  transform-origin: center;
-  animation: rotate 2s linear infinite;
-}
-
-/* 点状加载器 */
-.dots-spinner {
-  display: flex;
-  gap: 4px;
-}
-
-.dots-spinner .dot {
-  width: 8px;
-  height: 8px;
-  background: #4f46e5;
-  border-radius: 50%;
-  animation: dots-bounce 1.4s ease-in-out infinite both;
-}
-
-.dots-spinner .dot:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.dots-spinner .dot:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-.dots-spinner .dot:nth-child(3) {
-  animation-delay: 0s;
-}
-
-/* 脉冲加载器 */
-.pulse-spinner {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-
-.pulse-ring {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 3px solid #4f46e5;
-  border-radius: 50%;
-  opacity: 0;
-  animation: pulse-ring 1.25s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-.pulse-ring:nth-child(2) {
-  animation-delay: 0.33s;
-}
-
-.pulse-ring:nth-child(3) {
-  animation-delay: 0.66s;
-}
-
-/* 条状加载器 */
-.bars-spinner {
-  display: flex;
-  gap: 3px;
-  align-items: end;
-  height: 30px;
-}
-
-.bars-spinner .bar {
-  width: 4px;
-  background: #4f46e5;
-  border-radius: 2px;
-  animation: bars-scale 1.2s ease-in-out infinite;
-}
-
-.bars-spinner .bar:nth-child(1) {
-  animation-delay: -1.1s;
-}
-
-.bars-spinner .bar:nth-child(2) {
-  animation-delay: -1.0s;
-}
-
-.bars-spinner .bar:nth-child(3) {
-  animation-delay: -0.9s;
-}
-
-.bars-spinner .bar:nth-child(4) {
-  animation-delay: -0.8s;
-}
-
-.bars-spinner .bar:nth-child(5) {
-  animation-delay: -0.7s;
-}
-
-/* 文本样式 */
-.loading-text {
-  width: 100%;
-}
-
-.loading-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #f1f5f9;
-  margin: 0 0 8px 0;
-}
-
-.loading-message {
-  font-size: 16px;
-  color: #94a3b8;
-  margin: 0 0 20px 0;
-  line-height: 1.5;
-}
-
-/* 进度条 */
-.progress-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  width: 100%;
-}
-
-.progress-bar {
-  flex: 1;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #4f46e5, #7c3aed);
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  font-size: 14px;
-  font-weight: 500;
-  color: #4f46e5;
-  min-width: 40px;
-}
-
-/* 加载步骤 */
-.loading-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  text-align: left;
-}
-
-.step-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  transition: all 0.3s ease;
-}
-
-.step-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.step-item.completed .step-icon {
-  background: #10b981;
-  color: white;
-}
-
-.step-item.completed .step-icon svg {
-  width: 14px;
-  height: 14px;
-}
-
-.step-item.active .step-icon {
-  background: #4f46e5;
-  color: white;
-}
-
-.step-item.pending .step-icon {
-  background: rgba(255, 255, 255, 0.1);
-  color: #64748b;
-}
-
-.step-spinner {
-  width: 12px;
-  height: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.step-text {
-  font-size: 14px;
-  transition: color 0.3s ease;
-}
-
-.step-item.completed .step-text {
-  color: #10b981;
-}
-
-.step-item.active .step-text {
-  color: #f1f5f9;
-  font-weight: 500;
-}
-
-.step-item.pending .step-text {
-  color: #64748b;
-}
-
-/* 取消按钮 */
-.cancel-btn {
-  margin-top: 24px;
-  padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: #94a3b8;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #f1f5f9;
-}
-
-/* 动画定义 */
-@keyframes rotate {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes dots-bounce {
-  0%, 80%, 100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
-}
-
+/* 保持必要的动画定义，如果 Tailwind 无法完全覆盖的话 */
 @keyframes pulse-ring {
-  0% {
-    transform: scale(0.33);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0;
-  }
-}
-
-@keyframes bars-scale {
-  0%, 40%, 100% {
-    transform: scaleY(0.4);
-  }
-  20% {
-    transform: scaleY(1);
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .loading-state {
-    padding: 24px 16px;
-  }
-
-  .loading-title {
-    font-size: 18px;
-  }
-
-  .loading-message {
-    font-size: 14px;
-  }
-
-  .loading-steps {
-    text-align: center;
-  }
-
-  .step-item {
-    justify-content: center;
-  }
+  0% { transform: scale(.33); opacity: 0; }
+  80%, 100% { opacity: 0; }
+  50% { opacity: .5; }
 }
 </style>
