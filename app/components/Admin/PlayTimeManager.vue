@@ -332,19 +332,9 @@ const fetchPlayTimes = async () => {
 
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch('/api/admin/play-times', {
-      headers: {
-        'Content-Type': 'application/json'
-      },
+    const data = await $fetch('/api/admin/play-times', {
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `获取播出时段失败: ${response.status}`)
-    }
-
-    const data = await response.json()
 
     // 自定义排序：先按启用状态排序，然后有时间的排在前面，没有时间的排在后面
     playTimes.value = data.sort((a: PlayTime, b: PlayTime) => {
@@ -388,20 +378,9 @@ const fetchSystemSettings = async () => {
 
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch('/api/admin/system-settings', {
-      headers: {
-        'Content-Type': 'application/json'
-      },
+    const data = await $fetch('/api/admin/system-settings', {
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error(`获取系统设置失败: ${errorData.message || response.status}`)
-      return
-    }
-
-    const data = await response.json()
     enablePlayTimeSelection.value = data.enablePlayTimeSelection
   } catch (err: any) {
     console.error('获取系统设置失败:', err.message)
@@ -420,21 +399,13 @@ const updateSystemSettings = async () => {
 
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch('/api/admin/system-settings', {
+    await $fetch('/api/admin/system-settings', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+      body: {
         enablePlayTimeSelection: enablePlayTimeSelection.value
-      }),
+      },
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `更新系统设置失败: ${response.status}`)
-    }
     
     showNotification('系统设置已更新', 'success')
   } catch (err: any) {
@@ -477,21 +448,13 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
 
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch(`/api/admin/play-times/${playTime.id}`, {
+    await $fetch(`/api/admin/play-times/${playTime.id}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+      body: {
         enabled: !playTime.enabled
-      }),
+      },
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `更新播出时段状态失败: ${response.status}`)
-    }
 
     // 更新本地数据
     await fetchPlayTimes()
@@ -516,15 +479,10 @@ const deletePlayTime = async () => {
 
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch(`/api/admin/play-times/${playTimeToDelete.value.id}`, {
+    await $fetch(`/api/admin/play-times/${playTimeToDelete.value.id}`, {
       method: 'DELETE',
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `删除播出时段失败: ${response.status}`)
-    }
 
     // 更新本地数据
     await fetchPlayTimes()
@@ -572,25 +530,17 @@ const savePlayTime = async () => {
   try {
     const authConfig = getAuthConfig()
 
-    const response = await fetch(isUpdate ? `/api/admin/play-times/${formData.id}` : '/api/admin/play-times', {
+    await $fetch(isUpdate ? `/api/admin/play-times/${formData.id}` : '/api/admin/play-times', {
       method: isUpdate ? 'PUT' : 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+      body: {
         name: formData.name.trim(),
         startTime: formData.startTime || null,
         endTime: formData.endTime || null,
         description: formData.description || null,
         enabled: formData.enabled
-      }),
+      },
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `${isUpdate ? '更新' : '创建'}播出时段失败: ${response.status}`)
-    }
 
     // 更新本地数据
     await fetchPlayTimes()

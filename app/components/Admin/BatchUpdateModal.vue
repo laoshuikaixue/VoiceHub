@@ -9,7 +9,7 @@
   >
     <div v-if="show" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="$emit('close')">
       <div class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" @click.stop>
-        <!-- Header -->
+        <!-- 头部 -->
         <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800/50">
           <div>
             <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
@@ -255,7 +255,7 @@
           </div>
         </div>
 
-        <!-- Footer -->
+        <!-- 底部按钮 -->
         <div class="p-8 pt-4 border-t border-zinc-800/50 bg-zinc-900/50 flex gap-3">
           <button class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest" @click="$emit('close')">
             取消操作

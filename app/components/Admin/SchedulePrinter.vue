@@ -19,7 +19,7 @@
     </div>
 
     <div v-else class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
-      <!-- Settings Panel -->
+      <!-- 设置面板 -->
       <div class="lg:col-span-4 flex flex-col gap-6">
         <div class="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 space-y-6 shadow-lg flex flex-col h-full">
           <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100">
@@ -30,15 +30,12 @@
             <!-- 纸张大小 -->
             <div class="space-y-2">
               <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider">纸张大小</label>
-              <div class="relative">
-                <select v-model="settings.paperSize" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none appearance-none text-zinc-300 focus:border-blue-500/50 transition-colors">
-                  <option value="A4">A4 (210×297mm)</option>
-                  <option value="A3">A3 (297×420mm)</option>
-                  <option value="Letter">Letter (216×279mm)</option>
-                  <option value="Legal">Legal (216×356mm)</option>
-                </select>
-                <ChevronDown class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 w-3.5 h-3.5 pointer-events-none" />
-              </div>
+              <CustomSelect
+                v-model="settings.paperSize"
+                :options="paperSizeOptions"
+                placeholder="选择纸张大小"
+                class-name="w-full"
+              />
             </div>
 
             <!-- 页面方向 -->
@@ -117,7 +114,7 @@
             </div>
           </div>
 
-          <!-- Action Buttons -->
+          <!-- 操作按钮 -->
           <div class="space-y-2 pt-4 border-t border-zinc-800 shrink-0">
             <button @click="refreshPreview" class="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-sm font-bold rounded-xl border border-zinc-700 transition-all">
               <RefreshCw class="w-4 h-4" /> 刷新预览
@@ -137,7 +134,7 @@
         </div>
       </div>
 
-      <!-- Preview Container -->
+      <!-- 预览区域 -->
       <div class="lg:col-span-8 flex flex-col gap-4 min-h-0">
         <div class="bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col h-full shadow-lg">
           <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
@@ -152,7 +149,7 @@
           </div>
           
           <div class="flex-1 bg-zinc-950/50 p-6 md:p-12 overflow-y-auto custom-scrollbar flex justify-center">
-            <!-- Paper -->
+            <!-- 纸张预览 -->
             <div
                 ref="previewContent"
                 :class="[
@@ -274,25 +271,26 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref, watch} from 'vue'
-import {useRuntimeConfig} from '#app'
-import {usePermissions} from '~/composables/usePermissions'
-import {useSiteConfig} from '~/composables/useSiteConfig'
-import {convertToHttps} from '~/utils/url'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRuntimeConfig } from '#app'
+import { usePermissions } from '~/composables/usePermissions'
+import { useSiteConfig } from '~/composables/useSiteConfig'
+import { convertToHttps } from '~/utils/url'
 import html2canvas from 'html2canvas'
 import {
   Layout, ChevronDown, CheckCircle2, Printer, 
   FileText, ImageIcon, AlignLeft, RefreshCw
 } from 'lucide-vue-next'
+import CustomSelect from './Common/CustomSelect.vue'
 
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
 
 // 权限检查
-const {canPrintSchedule} = usePermissions()
+const { canPrintSchedule } = usePermissions()
 
 // 站点配置
-const {siteTitle, schoolLogoPrintUrl, initSiteConfig} = useSiteConfig()
+const { siteTitle, schoolLogoPrintUrl, initSiteConfig } = useSiteConfig()
 import logoPng from '~/public/images/logo.png'
 
 // 配置
@@ -325,6 +323,13 @@ const settings = ref({
   showPlayTime: true,
   remark: ''
 })
+
+const paperSizeOptions = [
+  { label: 'A4 (210×297mm)', value: 'A4' },
+  { label: 'A3 (297×420mm)', value: 'A3' },
+  { label: 'Letter (216×279mm)', value: 'Letter' },
+  { label: 'Legal (216×356mm)', value: 'Legal' }
+]
 
 const dateRanges = [
   { label: '今天', value: 'today' },
@@ -645,13 +650,6 @@ const exportPDFForPrint = async () => {
     pagebreak: { mode: ['css', 'legacy'] }
   }
 
-  // 执行打印 (这里实际上是生成PDF并自动打开打印对话框，或者只是生成PDF)
-  // 注意：html2pdf.js 默认是下载。如果想直接打印，可能需要先生成 blob url。
-  // 为了简单起见，这里我们保持原有的逻辑，或者使用浏览器的 window.print() 
-  // 但 window.print() 会打印整个页面，我们需要创建一个临时的 iframe 或者隐藏其他元素。
-  // 鉴于之前的逻辑似乎是自定义的 exportPDFForPrint (我看不到完整代码)，我这里使用 html2pdf 的标准用法
-  
-  // 如果需要直接打印，可以考虑:
   await html2pdf().from(printPage).set(opt).toPdf().get('pdf').then((pdf) => {
     pdf.autoPrint()
     window.open(pdf.output('bloburl'), '_blank')
@@ -1043,307 +1041,7 @@ watch(settings, () => {
 </script>
 
 <style scoped>
-.schedule-printer {
-  font-family: 'Inter', sans-serif;
-  padding: 24px;
-  background: #0a0a0a;
-  color: #ffffff;
-  min-height: 100vh;
-}
-
-.printer-header {
-  margin-bottom: 32px;
-}
-
-.printer-header h2 {
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #ffffff;
-}
-
-.subtitle {
-  color: #888;
-  font-size: 16px;
-}
-
-/* 权限拒绝样式 */
-.permission-denied {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  text-align: center;
-  color: #888;
-}
-
-.permission-icon {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 24px;
-  color: #ff6b6b;
-}
-
-.permission-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.permission-denied h3 {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 12px 0;
-  color: #ffffff;
-}
-
-.permission-denied p {
-  font-size: 16px;
-  line-height: 1.5;
-  margin: 0;
-  max-width: 400px;
-}
-
-.printer-layout {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 32px;
-  height: calc(100vh - 120px);
-}
-
-/* 设置面板 */
-.settings-panel {
-  background: #111111;
-  border-radius: 12px;
-  padding: 24px;
-  border: 1px solid #1f1f1f;
-  overflow-y: auto;
-}
-
-.settings-panel::-webkit-scrollbar {
-  width: 6px;
-}
-
-.settings-panel::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.settings-panel::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
-}
-
-.settings-panel::-webkit-scrollbar-thumb:hover {
-  background: #444;
-}
-
-.setting-group h3 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #ffffff;
-}
-
-.setting-item {
-  margin-bottom: 20px;
-}
-
-.setting-item label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: #cccccc;
-}
-
-.setting-select,
-.date-input {
-  width: 100%;
-  padding: 10px 12px;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 6px;
-  color: #ffffff;
-  font-size: 14px;
-  font-family: inherit;
-}
-
-.setting-select:focus,
-.date-input:focus {
-  outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.date-input::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  cursor: pointer;
-}
-
-.date-range {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.date-range span {
-  color: #888;
-  font-size: 14px;
-}
-
-.content-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.checkbox-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 4px 0;
-}
-
-.checkbox-item input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: #4f46e5;
-}
-
-.checkbox-item span {
-  font-size: 14px;
-  color: #cccccc;
-}
-
-.date-shortcuts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.shortcut-btn {
-  padding: 8px 12px;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #cccccc;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.shortcut-btn:hover {
-  background: #2a2a2a;
-  border-color: #4f46e5;
-  color: #ffffff;
-}
-
-.action-buttons {
-  margin-top: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.btn-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.btn-primary {
-  background: #4f46e5;
-  color: #ffffff;
-}
-
-.btn-primary:hover {
-  background: #4338ca;
-}
-
-.btn-secondary {
-  background: #374151;
-  color: #ffffff;
-}
-
-.btn-secondary:hover {
-  background: #4b5563;
-}
-
-.btn-success {
-  background: #059669;
-  color: #ffffff;
-}
-
-.btn-success:hover {
-  background: #047857;
-}
-
-.btn-warning {
-  background: #d97706;
-  color: #ffffff;
-}
-
-.btn-warning:hover {
-  background: #b45309;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 预览面板 */
-.preview-panel {
-  background: #111111;
-  border-radius: 12px;
-  border: 1px solid #1f1f1f;
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 120px);
-}
-
-.preview-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid #1f1f1f;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.preview-header h3 {
-  font-size: 18px;
-  font-weight: bold;
-  color: #ffffff;
-}
-
-.preview-info {
-  display: flex;
-  gap: 16px;
-  font-size: 14px;
-  color: #888;
-}
-
-.debug-info {
-  color: #ff6b6b !important;
-  font-weight: 500;
-}
+/* 预览区域和打印样式的核心CSS - 保持原生CSS以确保精确控制 */
 
 .preview-content {
   flex: 1;
@@ -1352,7 +1050,8 @@ watch(settings, () => {
   background: #ffffff;
   padding: 20px;
   position: relative;
-  height: 0; /* 强制flex子元素使用flex-grow */
+  /* 强制flex子元素使用flex-grow */
+  height: 0; 
 }
 
 /* 打印页面样式 */
@@ -1559,29 +1258,6 @@ watch(settings, () => {
   white-space: pre-wrap;
 }
 
-.remark-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #333;
-  border-radius: 6px;
-  background: #1a1a1a;
-  color: #ffffff;
-  font-size: 14px;
-  resize: vertical;
-  min-height: 60px;
-  font-family: inherit;
-}
-
-.remark-input:focus {
-  outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-}
-
-.remark-input::placeholder {
-  color: #666;
-}
-
 /* 纸张大小 - 固定尺寸预览 */
 .paper-a4 {
   width: 800px;
@@ -1657,33 +1333,6 @@ watch(settings, () => {
     width: 100% !important;
     max-width: none !important;
     box-sizing: border-box !important;
-  }
-}
-
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .printer-layout {
-    grid-template-columns: 280px 1fr;
-    gap: 24px;
-  }
-}
-
-@media screen and (max-width: 768px) {
-  .printer-layout {
-    grid-template-columns: 1fr;
-    gap: 20px;
-    height: auto;
-    overflow: visible;
-  }
-
-  .settings-panel {
-    height: auto;
-    overflow: visible;
-  }
-
-  .preview-panel {
-    height: auto;
-    overflow: visible;
   }
 }
 </style>
