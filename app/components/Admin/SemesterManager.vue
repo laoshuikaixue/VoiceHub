@@ -216,6 +216,9 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import { useToast } from '~/composables/useToast'
+
+const { showToast: showNotification } = useToast()
 
 const {
   semesters,
@@ -264,9 +267,18 @@ const formatDate = (dateString) => {
 
 // 设置活跃学期
 const setActive = async (semesterId) => {
-  const success = await setActiveSemester(semesterId)
-  if (success && window.$showNotification) {
-    window.$showNotification('活跃学期设置成功！', 'success')
+  try {
+    const success = await setActiveSemester(semesterId)
+    // 注意：这里需要重新获取error，因为useSemesters内部可能没有正确更新error的响应式引用
+    // 或者直接依据success返回值判断
+    if (success) {
+      showNotification('活跃学期设置成功！', 'success')
+    } else {
+      // 如果setActiveSemester返回false，尝试直接显示一个通用错误，因为error可能为空
+      showNotification(error.value || '设置活跃学期失败，请稍后重试', 'error')
+    }
+  } catch (err) {
+    showNotification(err.message || '设置失败', 'error')
   }
 }
 
@@ -284,9 +296,15 @@ const deleteSemester = (semesterId) => {
 const confirmDelete = async () => {
   if (!deleteTargetId.value) return
 
-  const success = await deleteSemesterAPI(deleteTargetId.value)
-  if (success && window.$showNotification) {
-    window.$showNotification('学期删除成功！', 'success')
+  try {
+    const success = await deleteSemesterAPI(deleteTargetId.value)
+    if (success) {
+      showNotification('学期删除成功！', 'success')
+    } else {
+      showNotification(error.value || '删除学期失败', 'error')
+    }
+  } catch (err) {
+    showNotification(err.message || '删除失败', 'error')
   }
 
   showDeleteDialog.value = false
@@ -305,13 +323,14 @@ const handleAddSemester = async () => {
       isActive: newSemester.value.isActive
     })
     if (result) {
-      if (window.$showNotification) {
-        window.$showNotification('学期创建成功！', 'success')
-      }
+      showNotification('学期创建成功！', 'success')
       closeAddModal()
+    } else {
+      showNotification(error.value || '创建学期失败', 'error')
     }
   } catch (err) {
     console.error('创建学期失败:', err)
+    showNotification(err.message || '创建学期失败', 'error')
   } finally {
     submitting.value = false
   }

@@ -290,7 +290,7 @@ import {
 } from 'lucide-vue-next'
 
 const { getAuthConfig, isAdmin } = useAuth()
-const { showNotification } = useToast()
+const { showToast: showNotification } = useToast()
 
 const playTimes = ref<PlayTime[]>([])
 const loading = ref(false)

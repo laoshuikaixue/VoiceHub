@@ -647,7 +647,7 @@ import { useSemesters } from '~/composables/useSemesters'
 import { validateUrl } from '~/utils/url'
 
 // 响应式数据
-const { showNotification } = useToast()
+const { showToast: showNotification } = useToast()
 const loading = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('all')

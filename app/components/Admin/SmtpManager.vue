@@ -204,7 +204,7 @@ import {
   XCircle
 } from 'lucide-vue-next'
 
-const { showNotification } = useToast()
+const { showToast: showNotification } = useToast()
 
 // 响应式数据
 const config = ref({
