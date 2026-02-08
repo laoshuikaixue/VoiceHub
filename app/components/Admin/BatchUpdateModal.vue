@@ -74,23 +74,25 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">当前年级</label>
-                  <div class="relative group">
-                    <select v-model="gradeFilter" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-xs focus:outline-none focus:border-purple-500/30 transition-all text-zinc-200 appearance-none cursor-pointer">
-                      <option value="">全部年级</option>
-                      <option v-for="grade in availableGrades" :key="grade" :value="grade">{{ grade }}</option>
-                    </select>
-                    <ChevronDown :size="14" class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-                  </div>
+                  <CustomSelect
+                      v-model="gradeFilter"
+                      :options="gradeOptions"
+                      label-key="label"
+                      value-key="value"
+                      placeholder="全部年级"
+                      class-name="w-full"
+                  />
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">当前班级</label>
-                  <div class="relative group">
-                    <select v-model="classFilter" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-xs focus:outline-none focus:border-purple-500/30 transition-all text-zinc-200 appearance-none cursor-pointer">
-                      <option value="">全部班级</option>
-                      <option v-for="cls in availableClasses" :key="cls" :value="cls">{{ cls }}</option>
-                    </select>
-                    <ChevronDown :size="14" class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-                  </div>
+                  <CustomSelect
+                      v-model="classFilter"
+                      :options="classOptions"
+                      label-key="label"
+                      value-key="value"
+                      placeholder="全部班级"
+                      class-name="w-full"
+                  />
                 </div>
               </div>
 
@@ -294,6 +296,8 @@ import {
   CheckCircle2
 } from 'lucide-vue-next'
 
+import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
+
 const props = defineProps({
   show: Boolean,
   users: Array
@@ -338,6 +342,20 @@ const availableGrades = computed(() => {
 
 const availableClasses = computed(() => {
   return allClasses.value.length > 0 ? allClasses.value : [...new Set(students.value.map(s => s.class).filter(Boolean))].sort()
+})
+
+const gradeOptions = computed(() => {
+  return [
+    { label: '全部年级', value: '' },
+    ...availableGrades.value.map(g => ({ label: g, value: g }))
+  ]
+})
+
+const classOptions = computed(() => {
+  return [
+    { label: '全部班级', value: '' },
+    ...availableClasses.value.map(c => ({ label: c, value: c }))
+  ]
 })
 
 const filteredStudents = computed(() => {
