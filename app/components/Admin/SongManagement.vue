@@ -1,769 +1,657 @@
 <template>
-  <div class="song-management">
-    <!-- 工具栏 -->
-    <div class="toolbar">
-      <div class="search-section">
-        <div class="search-input-wrapper">
-          <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-              v-model="searchQuery"
-              class="search-input"
-              placeholder="搜索歌曲标题、艺术家或投稿人..."
-              type="text"
-          />
-          <button
-              v-if="searchQuery"
-              class="clear-search-btn"
-              @click="searchQuery = ''"
+  <div class="space-y-10 max-w-[1600px] mx-auto pb-20">
+    <!-- 顶部标题和工具栏区域 -->
+    <div class="space-y-6">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
+        <div class="space-y-1">
+          <h2 class="text-3xl font-black text-zinc-100 tracking-tight">歌曲管理</h2>
+          <div class="flex items-center gap-6 mt-4">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">总计</span>
+              <span class="text-sm font-bold text-zinc-300">{{ filteredSongs.length }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">已播放</span>
+              <span class="text-sm font-bold text-emerald-500">{{ playedCount }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">待播放</span>
+              <span class="text-sm font-bold text-blue-500">{{ pendingCount }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- 批量操作 -->
+          <Transition
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="opacity-0 scale-95 translate-x-10"
+            enter-to-class="opacity-100 scale-100 translate-x-0"
+            leave-active-class="transition duration-150 ease-in"
+            leave-from-class="opacity-100 scale-100 translate-x-0"
+            leave-to-class="opacity-0 scale-95 translate-x-10"
           >
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" x2="6" y1="6" y2="18"/>
-              <line x1="6" x2="18" y1="6" y2="18"/>
-            </svg>
+            <div v-if="selectedSongs.length > 0" class="flex items-center gap-2 p-1.5 bg-zinc-900/90 border border-zinc-800 rounded-2xl backdrop-blur-xl shadow-2xl">
+              <button
+                @click="openDownloadDialog"
+                class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-[11px] font-black rounded-xl border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
+              >
+                <Download :size="14" class="text-emerald-500/70" /> 下载 ({{ selectedSongs.length }})
+              </button>
+              <button
+                @click="batchDelete"
+                class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-[11px] font-black rounded-xl border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
+              >
+                <Trash2 :size="14" class="text-red-500/70" /> 删除 ({{ selectedSongs.length }})
+              </button>
+            </div>
+          </Transition>
+
+          <button
+            @click="showAddSongModal = true"
+            class="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all active:scale-95"
+          >
+            <Plus :size="16" /> 手动添加
+          </button>
+          <button
+            @click="refreshSongs(true)"
+            :disabled="loading"
+            class="flex items-center gap-2 px-5 py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs font-bold rounded-xl border border-blue-500/20 transition-all disabled:opacity-50"
+          >
+            <RotateCcw :size="16" :class="{ 'animate-spin': loading }" /> 刷新
           </button>
         </div>
       </div>
 
-      <div class="filter-section">
-        <select v-model="selectedSemester" class="filter-select semester-select">
-          <option value="all">全部学期</option>
-          <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
-            {{ semester.name }}
-          </option>
-        </select>
-
-        <select v-model="statusFilter" class="filter-select">
-          <option value="all">全部状态</option>
-          <option value="pending">待排期</option>
-          <option value="scheduled">已排期</option>
-          <option value="played">已播放</option>
-        </select>
-
-        <select v-model="sortOption" class="filter-select">
-          <option value="time-desc">最新投稿</option>
-          <option value="time-asc">最早投稿</option>
-          <option value="votes-desc">热度最高</option>
-          <option value="votes-asc">热度最低</option>
-          <option value="title-asc">标题A-Z</option>
-          <option value="title-desc">标题Z-A</option>
-        </select>
-      </div>
-
-      <div class="action-section">
-        <button
-            class="filter-select add-song-btn"
-            @click="showAddSongModal = true"
-        >
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="12" x2="12" y1="5" y2="19"/>
-            <line x1="5" x2="19" y1="12" y2="12"/>
-          </svg>
-          手动添加
-        </button>
-
-        <button
-            :disabled="loading"
-            class="refresh-btn"
-            @click="refreshSongs"
-        >
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <polyline points="23,4 23,10 17,10"/>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-          </svg>
-          刷新
-        </button>
-
-        <button
-            v-if="selectedSongs.length > 0"
-            class="batch-download-btn"
-            @click="openDownloadDialog"
-        >
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7,10 12,15 17,10"/>
-            <line x1="12" x2="12" y1="15" y2="3"/>
-          </svg>
-          下载选中 ({{ selectedSongs.length }})
-        </button>
-
-        <button
-            v-if="selectedSongs.length > 0"
-            class="batch-delete-btn"
-            @click="batchDelete"
-        >
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <polyline points="3,6 5,6 21,6"/>
-            <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
-          </svg>
-          删除选中 ({{ selectedSongs.length }})
-        </button>
-      </div>
-    </div>
-
-    <!-- 统计信息 -->
-    <div class="stats-bar">
-      <div class="stat-item">
-        <span class="stat-label">总计:</span>
-        <span class="stat-value">{{ filteredSongs.length }}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">已播放:</span>
-        <span class="stat-value">{{ playedCount }}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">待播放:</span>
-        <span class="stat-value">{{ pendingCount }}</span>
-      </div>
-    </div>
-
-    <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      <div class="spinner"></div>
-      <div class="loading-text">正在加载歌曲...</div>
-    </div>
-
-    <!-- 歌曲列表 -->
-    <div v-else class="song-list">
-      <div v-if="filteredSongs.length === 0" class="empty-state">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M8 12h8"/>
-        </svg>
-        <div class="empty-text">
-          {{ searchQuery ? '没有找到匹配的歌曲' : '暂无歌曲数据' }}
+      <!-- 过滤器栏 -->
+      <div class="bg-zinc-900/30 border border-zinc-800/60 rounded-[2.5rem] p-4 flex flex-col lg:flex-row gap-4 items-center">
+        <div class="relative flex-1 group w-full lg:w-auto">
+          <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors" :size="18" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索歌曲标题、艺术家或投稿人..."
+            class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
+          />
         </div>
-      </div>
-
-      <div v-else class="song-table">
-        <!-- 表头 -->
-        <div class="table-header">
-          <div class="header-cell checkbox-cell">
-            <input
-                :checked="isAllSelected"
-                class="checkbox"
-                type="checkbox"
-                @change="toggleSelectAll"
-            />
+        <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+          <!-- 学期选择 -->
+          <div class="relative min-w-[160px]">
+            <select
+              v-model="selectedSemester"
+              class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-zinc-400 focus:outline-none focus:border-blue-500/30 appearance-none cursor-pointer hover:bg-zinc-900/50 transition-all"
+            >
+              <option value="all">全部学期</option>
+              <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
+                {{ semester.name }}
+              </option>
+            </select>
+            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
+              <ChevronDown :size="14" />
+            </div>
           </div>
-          <div class="header-cell song-info-cell">歌曲信息</div>
-          <div class="header-cell submitter-cell">投稿人</div>
-          <div class="header-cell stats-cell">统计</div>
-          <div class="header-cell status-cell">状态</div>
-          <div class="header-cell actions-cell">操作</div>
-        </div>
 
-        <!-- 歌曲行 -->
+          <!-- 状态过滤 -->
+          <div class="relative min-w-[140px]">
+            <select
+              v-model="statusFilter"
+              class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-zinc-400 focus:outline-none focus:border-blue-500/30 appearance-none cursor-pointer hover:bg-zinc-900/50 transition-all"
+            >
+              <option value="all">全部状态</option>
+              <option value="pending">待排期</option>
+              <option value="scheduled">已排期</option>
+              <option value="played">已播放</option>
+            </select>
+            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
+              <ChevronDown :size="14" />
+            </div>
+          </div>
+
+          <!-- 排序方式 -->
+          <div class="relative min-w-[140px]">
+            <select
+              v-model="sortOption"
+              class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-zinc-400 focus:outline-none focus:border-blue-500/30 appearance-none cursor-pointer hover:bg-zinc-900/50 transition-all"
+            >
+              <option value="time-desc">最新投稿</option>
+              <option value="time-asc">最早投稿</option>
+              <option value="votes-desc">热度最高</option>
+              <option value="votes-asc">热度最低</option>
+              <option value="title-asc">标题A-Z</option>
+              <option value="title-desc">标题Z-A</option>
+            </select>
+            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
+              <ChevronDown :size="14" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 歌曲表格 -->
+    <div class="bg-zinc-900/10 border border-zinc-800/40 rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+      <!-- 加载遮罩 -->
+      <div v-if="loading" class="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm z-10 flex items-center justify-center">
+        <div class="flex flex-col items-center gap-3">
+          <div class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+          <span class="text-xs font-bold text-zinc-400 tracking-widest uppercase">正在加载...</span>
+        </div>
+      </div>
+
+      <!-- 表头 -->
+      <div class="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 border-b border-zinc-800/60 bg-zinc-900/40">
+        <div class="col-span-1 flex items-center">
+          <input
+            type="checkbox"
+            :checked="isAllSelected"
+            @change="toggleSelectAll"
+            class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
+          />
+        </div>
+        <div class="col-span-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">歌曲信息</div>
+        <div class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest">投稿人</div>
+        <div class="col-span-1 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center">统计</div>
+        <div class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center">状态</div>
+        <div class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right pr-4">操作</div>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-if="filteredSongs.length === 0 && !loading" class="py-20 flex flex-col items-center justify-center text-zinc-500">
+        <Music :size="48" class="text-zinc-800 mb-4" />
+        <p class="text-sm font-bold">{{ searchQuery ? '没有找到匹配的歌曲' : '暂无歌曲数据' }}</p>
+      </div>
+
+      <!-- 列表内容 -->
+      <div v-else class="divide-y divide-zinc-800/40">
         <div
-            v-for="song in paginatedSongs"
-            :key="song.id"
-            :class="['song-row', { selected: selectedSongs.includes(song.id) }]"
+          v-for="song in paginatedSongs"
+          :key="song.id"
+          :class="[
+            'grid grid-cols-1 lg:grid-cols-12 gap-4 px-6 lg:px-8 py-5 transition-all items-center group relative',
+            selectedSongs.includes(song.id) ? 'bg-blue-600/5' : 'hover:bg-zinc-800/20'
+          ]"
         >
-          <div class="cell checkbox-cell">
+          <div class="hidden lg:flex col-span-1 items-center">
             <input
-                :checked="selectedSongs.includes(song.id)"
-                class="checkbox"
-                type="checkbox"
-                @change="toggleSelectSong(song.id)"
+              type="checkbox"
+              :checked="selectedSongs.includes(song.id)"
+              @change="toggleSelectSong(song.id)"
+              class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
             />
           </div>
 
-          <div class="cell song-info-cell">
-            <div class="song-info">
-              <div class="song-title">{{ song.title }}</div>
-              <div class="song-artist">{{ song.artist }}</div>
-              <div class="song-meta">
-                <span class="song-time">{{ formatDate(song.createdAt) }}</span>
-                <span v-if="song.url" class="song-url">有音频</span>
-              </div>
+          <div class="col-span-12 lg:col-span-4 flex items-center gap-4">
+            <div :class="[
+              'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-zinc-800/40 border-zinc-700/30 group-hover:border-zinc-600',
+              selectedSongs.includes(song.id) ? 'border-blue-500/50' : ''
+            ]">
+              <img v-if="song.cover" :src="song.cover" class="w-full h-full object-cover" />
+              <Music v-else :size="20" class="text-zinc-600" />
+            </div>
+            <div class="min-w-0">
+              <h4 :class="[
+                'font-bold truncate transition-colors',
+                selectedSongs.includes(song.id) ? 'text-blue-400' : 'text-zinc-100 group-hover:text-blue-400'
+              ]">
+                {{ song.title }}
+              </h4>
+              <p class="text-xs text-zinc-500 font-medium truncate mt-0.5">{{ song.artist }}</p>
+              <span class="lg:hidden text-[9px] font-black text-zinc-700 uppercase tracking-wider mt-1 inline-block">{{ formatDate(song.createdAt) }}</span>
             </div>
           </div>
 
-          <div class="cell submitter-cell">
-            <div class="submitter-info">
-              <div class="submitter-name">{{ song.requester || '未知' }}</div>
-              <div v-if="song.user" class="submitter-username">@{{ song.user.username }}</div>
-            </div>
+          <div class="col-span-6 lg:col-span-2 flex flex-col lg:items-start">
+            <span class="text-xs font-bold text-zinc-400">{{ song.requester || '未知' }}</span>
+            <span v-if="song.user" class="text-[10px] font-bold text-zinc-600">@{{ song.user.username }}</span>
+            <span class="hidden lg:inline text-[9px] font-black text-zinc-700 uppercase tracking-widest mt-1 opacity-60">{{ formatDate(song.createdAt) }}</span>
           </div>
 
-          <div class="cell stats-cell">
-            <div class="song-stats">
-              <div :title="song.voteCount > 0 ? '点击查看投票人员' : '暂无投票'" class="stat-item clickable"
-                   @click="showVoters(song.id)">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path
-                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-                {{ song.voteCount || 0 }}
-              </div>
-            </div>
+          <div class="col-span-3 lg:col-span-1 text-center">
+            <button
+              @click="showVoters(song.id)"
+              :disabled="!(song.voteCount > 0)"
+              :class="[
+                'inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg transition-all',
+                song.voteCount > 0 ? 'bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 cursor-pointer' : 'bg-zinc-950/30 text-zinc-700 cursor-default'
+              ]"
+            >
+              <Heart :size="12" :class="song.voteCount > 0 ? 'fill-pink-500/20' : ''" />
+              {{ song.voteCount || 0 }}
+            </button>
           </div>
 
-          <div class="cell status-cell">
-            <span :class="['status-badge', getStatusClass(song)]">
+          <div class="col-span-3 lg:col-span-2 text-center">
+            <span :class="[
+              'px-2 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider',
+              song.played ? 'bg-emerald-500/10 text-emerald-500' :
+              song.scheduled ? 'bg-blue-500/10 text-blue-500' : 'bg-zinc-800 text-zinc-500'
+            ]">
               {{ getStatusText(song) }}
             </span>
           </div>
 
-          <div class="cell actions-cell">
-            <div class="action-buttons">
-              <button
-                  class="action-btn edit-btn"
-                  title="编辑歌曲"
-                  @click="editSong(song)"
-              >
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-              </button>
+          <div class="col-span-12 lg:col-span-2 flex items-center justify-end gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
+            <button
+              @click="editSong(song)"
+              class="p-2 bg-zinc-800/50 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+              title="编辑歌曲"
+            >
+              <Edit2 :size="14" />
+            </button>
 
-              <button
-                  v-if="!song.played"
-                  class="action-btn played-btn"
-                  title="标记为已播放"
-                  @click="markAsPlayed(song.id)"
-              >
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <polyline points="20,6 9,17 4,12"/>
-                </svg>
-              </button>
+            <button
+              v-if="!song.played"
+              @click="markAsPlayed(song.id)"
+              class="p-2 bg-zinc-800/50 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+              title="标记为已播放"
+            >
+              <Check :size="14" />
+            </button>
+            <button
+              v-else
+              @click="markAsUnplayed(song.id)"
+              class="p-2 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+              title="标记为未播放"
+            >
+              <RotateCcw :size="14" />
+            </button>
 
-              <button
-                  v-else
-                  class="action-btn unplayed-btn"
-                  title="标记为未播放"
-                  @click="markAsUnplayed(song.id)"
-              >
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                  <path d="M3 3v5h5"/>
-                </svg>
-              </button>
-
-              <button
-                  class="action-btn reject-btn"
-                  title="驳回歌曲"
-                  @click="rejectSong(song.id)"
-              >
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" x2="9" y1="9" y2="15"/>
-                  <line x1="9" x2="15" y1="9" y2="15"/>
-                </svg>
-              </button>
-
-              <button
-                  class="action-btn delete-btn"
-                  title="删除歌曲"
-                  @click="deleteSong(song.id)"
-              >
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <polyline points="3,6 5,6 21,6"/>
-                  <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
-                  <line x1="10" x2="10" y1="11" y2="17"/>
-                  <line x1="14" x2="14" y1="11" y2="17"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 分页 -->
-      <div v-if="totalPages > 1" class="pagination">
-        <button
-            :disabled="currentPage === 1"
-            class="page-btn"
-            @click="currentPage = 1"
-        >
-          首页
-        </button>
-        <button
-            :disabled="currentPage === 1"
-            class="page-btn"
-            @click="currentPage--"
-        >
-          上一页
-        </button>
-
-        <div class="page-info">
-          第 {{ currentPage }} 页，共 {{ totalPages }} 页
-        </div>
-
-        <button
-            :disabled="currentPage === totalPages"
-            class="page-btn"
-            @click="currentPage++"
-        >
-          下一页
-        </button>
-        <button
-            :disabled="currentPage === totalPages"
-            class="page-btn"
-            @click="currentPage = totalPages"
-        >
-          末页
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 确认删除对话框 -->
-  <ConfirmDialog
-      :loading="loading"
-      :message="deleteDialogMessage"
-      :show="showDeleteDialog"
-      :title="deleteDialogTitle"
-      cancel-text="取消"
-      confirm-text="删除"
-      type="danger"
-      @close="showDeleteDialog = false"
-      @confirm="confirmDelete"
-  />
-
-  <!-- 驳回歌曲对话框 -->
-  <div v-if="showRejectDialog" class="modal-overlay" @click="cancelReject">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h3>驳回歌曲</h3>
-        <button class="close-btn" @click="cancelReject">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="reject-song-info">
-          <div class="song-title">{{ rejectSongInfo.title }}</div>
-          <div class="song-artist">{{ rejectSongInfo.artist }}</div>
-          <div class="song-submitter">投稿人：{{ rejectSongInfo.requester }}</div>
-        </div>
-        <form @submit.prevent="confirmReject">
-          <div class="form-group">
-            <label>驳回原因</label>
-            <textarea
-                v-model="rejectReason"
-                class="form-textarea"
-                placeholder="请输入驳回原因，将通过系统通知发送给投稿人..."
-                required
-                rows="4"
-            ></textarea>
-          </div>
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input
-                  v-model="addToBlacklist"
-                  class="checkbox"
-                  type="checkbox"
-              />
-              <span class="checkbox-text">同时将此歌曲加入黑名单</span>
-            </label>
-            <div class="field-hint">
-              加入黑名单后，该歌曲将无法再次被投稿
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-cancel" type="button" @click="cancelReject">取消</button>
-            <button :disabled="rejectLoading" class="btn-danger" type="submit">
-              {{ rejectLoading ? '驳回中...' : '确认驳回' }}
+            <button
+              @click="rejectSong(song.id)"
+              class="p-2 bg-zinc-800/50 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+              title="驳回歌曲"
+            >
+              <X :size="14" />
+            </button>
+            <button
+              @click="deleteSong(song.id)"
+              class="p-2 bg-zinc-800/50 text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+              title="删除歌曲"
+            >
+              <Trash2 :size="14" />
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- 投票人员弹窗 -->
-  <VotersModal
+    <!-- 分页区域 -->
+    <div v-if="totalPages > 1" class="flex items-center justify-between px-2">
+      <div class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
+        第 {{ currentPage }} 页 / 共 {{ totalPages }} 页
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          @click="currentPage = 1"
+          :disabled="currentPage === 1"
+          class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
+        >
+          <ChevronsLeft :size="16" />
+        </button>
+        <button
+          @click="currentPage--"
+          :disabled="currentPage === 1"
+          class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
+        >
+          <ChevronLeft :size="16" />
+        </button>
+        <div class="flex items-center gap-1 mx-2">
+          <button
+            v-for="p in totalPages"
+            :key="p"
+            v-show="Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages"
+            @click="currentPage = p"
+            :class="[
+              'w-8 h-8 rounded-xl text-xs font-bold transition-all',
+              currentPage === p ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-zinc-500 hover:text-zinc-300'
+            ]"
+          >
+            {{ p }}
+          </button>
+        </div>
+        <button
+          @click="currentPage++"
+          :disabled="currentPage === totalPages"
+          class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
+        >
+          <ChevronRight :size="16" />
+        </button>
+        <button
+          @click="currentPage = totalPages"
+          :disabled="currentPage === totalPages"
+          class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
+        >
+          <ChevronsRight :size="16" />
+        </button>
+      </div>
+    </div>
+
+    <!-- Modals (模态框) -->
+    <!-- 确认删除对话框 -->
+    <ConfirmDialog
+      :show="showDeleteDialog"
+      :title="deleteDialogTitle"
+      :message="deleteDialogMessage"
+      :loading="loading"
+      type="danger"
+      confirm-text="确认删除"
+      cancel-text="取消"
+      @confirm="confirmDelete"
+      @close="showDeleteDialog = false"
+    />
+
+    <!-- 驳回歌曲对话框 -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="showRejectDialog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
+        <div class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-[2.5rem] shadow-2xl overflow-hidden" @click.stop>
+          <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
+            <h3 class="text-xl font-black text-zinc-100">驳回歌曲</h3>
+            <button @click="cancelReject" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+              <X :size="20" />
+            </button>
+          </div>
+
+          <div class="p-8 space-y-6">
+            <div class="p-5 bg-zinc-950 border border-zinc-800 rounded-[1.5rem] flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/10">
+                <Music :size="18" />
+              </div>
+              <div>
+                <h4 class="font-bold text-zinc-100 text-sm">{{ rejectSongInfo.title }}</h4>
+                <p class="text-xs text-zinc-500">投稿人: {{ rejectSongInfo.requester }}</p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">驳回原因</label>
+              <textarea
+                v-model="rejectReason"
+                placeholder="请输入驳回原因，将通过系统通知发送给投稿人..."
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-4 text-sm text-zinc-200 focus:outline-none focus:border-red-500/30 min-h-[120px] resize-none transition-all"
+              />
+            </div>
+
+            <label class="flex items-center gap-3 cursor-pointer group px-1">
+              <input v-model="addToBlacklist" type="checkbox" class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-red-600" />
+              <div>
+                <span class="text-xs font-bold text-zinc-300 group-hover:text-red-400 transition-colors">同时将此歌曲加入黑名单</span>
+                <p class="text-[10px] text-zinc-600 font-medium">加入黑名单后，该歌曲将无法再次被投稿</p>
+              </div>
+            </label>
+          </div>
+
+          <div class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end">
+            <button @click="cancelReject" class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300">取消</button>
+            <button
+              @click="confirmReject"
+              :disabled="rejectLoading"
+              class="px-8 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
+            >
+              {{ rejectLoading ? '处理中...' : '确认驳回' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- 投票人员弹窗 -->
+    <VotersModal
       :show="showVotersModal"
       :song-id="selectedSongId"
       @close="closeVotersModal"
-  />
+    />
 
-  <!-- 下载歌曲对话框 -->
-  <SongDownloadDialog
+    <!-- 下载歌曲对话框 -->
+    <SongDownloadDialog
       :show="showDownloadDialog"
       :songs="selectedSongsForDownload"
       @close="closeDownloadDialog"
-  />
+    />
 
-  <!-- 编辑歌曲模态框 -->
-  <div v-if="showEditModal" class="modal-overlay" @click="cancelEditSong">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h3>编辑歌曲</h3>
-        <button class="close-btn" @click="cancelEditSong">×</button>
-      </div>
-      <div class="modal-body">
-        <form @submit.prevent="saveEditSong">
-          <div class="form-group">
-            <label>歌曲名称</label>
-            <input
-                v-model="editForm.title"
-                class="form-input"
-                placeholder="请输入歌曲名称"
-                required
-                type="text"
-            />
-          </div>
-          <div class="form-group">
-            <label>歌手</label>
-            <input
-                v-model="editForm.artist"
-                class="form-input"
-                placeholder="请输入歌手名称"
-                required
-                type="text"
-            />
-          </div>
-          <div class="form-group">
-            <label>投稿人</label>
-            <div class="user-search-container">
-              <div class="search-input-wrapper">
-                <input
-                    v-model="editUserSearchQuery"
-                    class="form-input"
-                    placeholder="搜索用户姓名或用户名"
-                    type="text"
-                    @focus="showEditUserDropdown = true"
-                    @input="searchEditUsers"
-                />
-                <div v-if="editUserSearchLoading" class="search-loading">
-                  <svg class="loading-spinner" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
-                            stroke-dashoffset="31.416" stroke-width="2">
-                      <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
-                               values="0 31.416;15.708 15.708;0 31.416"/>
-                      <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite"
-                               values="0;-15.708;-31.416"/>
-                    </circle>
-                  </svg>
-                </div>
-              </div>
-              <div v-if="showEditUserDropdown && filteredEditUsers.length > 0" class="user-dropdown">
-                <div
-                    v-for="user in filteredEditUsers.slice(0, 10)"
-                    :key="user.id"
-                    class="user-option"
-                    @click="selectEditUser(user)"
-                >
-                  <div class="user-info">
-                    <span class="user-name">{{ user.name }}</span>
-                    <span class="user-username">@{{ user.username }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div v-if="selectedEditUser" class="selected-user">
-              <span>已选择: {{ selectedEditUser.name }}{{ selectedEditUser.username ? ` (@${selectedEditUser.username})` : '' }}</span>
-              <button class="clear-user-btn" type="button" @click="clearSelectedEditUser">×</button>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>联合投稿人</label>
-            <div class="collaborator-search-container user-search-container">
-              <div class="search-input-wrapper">
-                <input
-                    v-model="editCollaboratorSearchQuery"
-                    class="form-input"
-                    placeholder="搜索并添加联合投稿人"
-                    type="text"
-                    @focus="showEditCollaboratorDropdown = true"
-                    @input="searchEditCollaborators"
-                />
-                <div v-if="editCollaboratorSearchLoading" class="search-loading">
-                  <svg class="loading-spinner" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
-                            stroke-dashoffset="31.416" stroke-width="2">
-                      <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
-                               values="0 31.416;15.708 15.708;0 31.416"/>
-                      <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite"
-                               values="0;-15.708;-31.416"/>
-                    </circle>
-                  </svg>
-                </div>
-              </div>
-              <div v-if="showEditCollaboratorDropdown && filteredEditCollaborators.length > 0" class="user-dropdown">
-                <div
-                    v-for="user in filteredEditCollaborators.slice(0, 10)"
-                    :key="user.id"
-                    class="user-option"
-                    @click="selectEditCollaborator(user)"
-                >
-                  <div class="user-info">
-                    <span class="user-name">{{ user.name }}</span>
-                    <span v-if="user.username" class="user-username">@{{ user.username }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div v-if="selectedEditCollaborators.length > 0" class="selected-users-list">
-              <div v-for="user in selectedEditCollaborators" :key="user.id" class="selected-user-tag">
-                <span>{{ user.name }}{{ user.username ? ` (@${user.username})` : '' }}</span>
-                <button class="remove-user-btn" type="button" @click="removeEditCollaborator(user.id)">×</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>学期</label>
-            <select v-model="editForm.semester" class="form-select">
-              <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
-                {{ semester.name }}
-              </option>
-            </select>
-          </div>
-
-          <!-- 音乐平台和ID（可选） -->
-          <div class="form-group">
-            <label>音乐平台 <span class="optional-label">（可选）</span></label>
-            <select v-model="editForm.musicPlatform" class="form-select">
-              <option value="">请选择平台</option>
-              <option value="netease">网易云音乐</option>
-              <option value="tencent">QQ音乐</option>
-              <option value="bilibili">哔哩哔哩</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>音乐ID <span class="optional-label">（可选）</span></label>
-            <input
-                v-model="editForm.musicId"
-                class="form-input"
-                placeholder="请输入音乐平台上的歌曲ID"
-                type="text"
-            />
-            <div class="field-hint">
-              音乐ID是歌曲在对应平台上的唯一标识符，用于播放功能
-            </div>
-          </div>
-          <div class="form-group">
-            <label>歌曲封面URL <span class="optional-label">（可选）</span></label>
-            <div class="input-wrapper">
-              <input
-                  v-model="editForm.cover"
-                  :class="{ 'error': editForm.cover && !editCoverValidation.valid }"
-                  class="form-input"
-                  placeholder="请输入歌曲封面图片的URL地址"
-                  type="url"
-              />
-              <div v-if="editCoverValidation.validating" class="validation-loading">
-                验证中...
-              </div>
-              <div v-if="editForm.cover && !editCoverValidation.valid && !editCoverValidation.validating"
-                   class="validation-error">
-                {{ editCoverValidation.error }}
-              </div>
-              <div v-if="editForm.cover && editCoverValidation.valid && !editCoverValidation.validating"
-                   class="validation-success">
-                ✓ URL有效
-              </div>
-              <div class="field-hint">
-                歌曲封面将显示在歌曲列表中，建议使用高质量的图片链接
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>播放地址URL <span class="optional-label">（可选）</span></label>
-            <div class="input-wrapper">
-              <input
-                  v-model="editForm.playUrl"
-                  :class="{ 'error': editForm.playUrl && !editPlayUrlValidation.valid }"
-                  class="form-input"
-                  placeholder="请输入歌曲播放的URL地址"
-                  type="url"
-              />
-              <div v-if="editPlayUrlValidation.validating" class="validation-loading">
-                验证中...
-              </div>
-              <div v-if="editForm.playUrl && !editPlayUrlValidation.valid && !editPlayUrlValidation.validating"
-                   class="validation-error">
-                {{ editPlayUrlValidation.error }}
-              </div>
-              <div v-if="editForm.playUrl && editPlayUrlValidation.valid && !editPlayUrlValidation.validating"
-                   class="validation-success">
-                ✓ URL有效
-              </div>
-              <div class="field-hint">
-                播放地址是音乐播放器直接播放的链接，如果提供将优先使用此地址播放
-              </div>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-cancel" type="button" @click="cancelEditSong">取消</button>
-            <button :disabled="editLoading" class="btn-primary" type="submit">
-              {{ editLoading ? '保存中...' : '保存' }}
+    <!-- 编辑/添加歌曲模态框 -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="showEditModal || showAddSongModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm overflow-y-auto">
+        <div class="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-[2.5rem] shadow-2xl overflow-hidden my-auto" @click.stop>
+          <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
+            <h3 class="text-xl font-black text-zinc-100">{{ showEditModal ? '编辑歌曲' : '手动添加歌曲' }}</h3>
+            <button @click="showEditModal ? cancelEditSong() : cancelAddSong()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+              <X :size="20" />
             </button>
           </div>
-        </form>
-      </div>
-    </div>
-  </div>
 
-  <!-- 手动添加歌曲模态框 -->
-  <div v-if="showAddSongModal" class="modal-overlay" @click="cancelAddSong">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h3>手动添加歌曲</h3>
-        <button class="close-btn" @click="cancelAddSong">×</button>
-      </div>
-      <div class="modal-body">
-        <form @submit.prevent="saveAddSong">
-          <div class="form-group">
-            <label>歌曲名称</label>
-            <input
-                v-model="addForm.title"
-                class="form-input"
-                placeholder="请输入歌曲名称"
-                required
-                type="text"
-            />
-          </div>
-          <div class="form-group">
-            <label>歌手</label>
-            <input
-                v-model="addForm.artist"
-                class="form-input"
-                placeholder="请输入歌手名称"
-                required
-                type="text"
-            />
-          </div>
-          <div class="form-group">
-            <label>投稿人</label>
-            <div class="user-search-container">
-              <div class="search-input-wrapper">
+          <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">歌曲名称</label>
                 <input
-                    v-model="userSearchQuery"
-                    class="form-input"
-                    placeholder="搜索用户姓名或用户名"
-                    type="text"
-                    @focus="showUserDropdown = true"
-                    @input="searchUsers"
+                  v-if="showEditModal"
+                  v-model="editForm.title"
+                  type="text"
+                  placeholder="输入歌曲标题"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 />
-                <div v-if="userSearchLoading" class="search-loading">
-                  <svg class="loading-spinner" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
-                            stroke-dashoffset="31.416" stroke-width="2">
-                      <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
-                               values="0 31.416;15.708 15.708;0 31.416"/>
-                      <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite"
-                               values="0;-15.708;-31.416"/>
-                    </circle>
-                  </svg>
-                </div>
+                <input
+                  v-else
+                  v-model="addForm.title"
+                  type="text"
+                  placeholder="输入歌曲标题"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                />
               </div>
-              <div v-if="showUserDropdown && filteredUsers.length > 0" class="user-dropdown">
-                <div
-                    v-for="user in filteredUsers.slice(0, 10)"
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">歌手</label>
+                <input
+                  v-if="showEditModal"
+                  v-model="editForm.artist"
+                  type="text"
+                  placeholder="输入歌手姓名"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                />
+                <input
+                  v-else
+                  v-model="addForm.artist"
+                  type="text"
+                  placeholder="输入歌手姓名"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">投稿人</label>
+              <div class="relative">
+                <input
+                  v-if="showEditModal"
+                  v-model="editUserSearchQuery"
+                  @focus="showEditUserDropdown = true"
+                  @input="searchEditUsers()"
+                  type="text"
+                  placeholder="搜索用户姓名或用户名"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                />
+                <input
+                  v-else
+                  v-model="userSearchQuery"
+                  @focus="showUserDropdown = true"
+                  @input="searchUsers()"
+                  type="text"
+                  placeholder="搜索用户姓名或用户名"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                />
+                <div v-if="(showEditModal ? editUserSearchLoading : userSearchLoading)" class="absolute right-4 top-1/2 -translate-y-1/2">
+                  <div class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                </div>
+
+                <!-- 用户下拉列表 -->
+                <div v-if="(showEditModal ? showEditUserDropdown && filteredEditUsers.length > 0 : showUserDropdown && filteredUsers.length > 0)"
+                     class="absolute z-10 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto">
+                  <div
+                    v-for="user in (showEditModal ? filteredEditUsers.slice(0, 10) : filteredUsers.slice(0, 10))"
                     :key="user.id"
-                    class="user-option"
-                    @click="selectUser(user)"
-                >
-                  <div class="user-info">
-                    <span class="user-name">{{ user.name }}</span>
-                    <span v-if="user.username" class="user-username">@{{ user.username }}</span>
+                    @click="(showEditModal ? selectEditUser(user) : selectUser(user))"
+                    class="px-4 py-3 hover:bg-zinc-800 cursor-pointer transition-colors flex items-center justify-between group"
+                  >
+                    <div class="flex flex-col">
+                      <span class="text-sm font-bold text-zinc-200">{{ user.name }}</span>
+                      <span class="text-[10px] text-zinc-500">@{{ user.username }}</span>
+                    </div>
+                    <Check v-if="(showEditModal ? selectedEditUser?.id === user.id : selectedUser?.id === user.id)" :size="14" class="text-blue-500" />
                   </div>
                 </div>
               </div>
+              <div v-if="(showEditModal ? selectedEditUser : selectedUser)" class="flex items-center gap-2 mt-2 px-1">
+                <span class="text-[10px] font-bold text-blue-500">已选择: {{ (showEditModal ? selectedEditUser : selectedUser).name }} (@{{ (showEditModal ? selectedEditUser : selectedUser).username }})</span>
+                <button @click="(showEditModal ? clearSelectedEditUser() : clearSelectedUser())" class="text-zinc-600 hover:text-zinc-400">
+                  <X :size="12" />
+                </button>
+              </div>
             </div>
-            <div v-if="selectedUser" class="selected-user">
-              <span>已选择: {{ selectedUser.name }}{{ selectedUser.username ? ` (@${selectedUser.username})` : '' }}</span>
-              <button class="clear-user-btn" type="button" @click="clearSelectedUser">×</button>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">学期</label>
+              <select
+                v-if="showEditModal"
+                v-model="editForm.semester"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all appearance-none"
+              >
+                <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
+                  {{ semester.name }}
+                </option>
+              </select>
+              <select
+                v-else
+                v-model="addForm.semester"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all appearance-none"
+              >
+                <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
+                  {{ semester.name }}
+                </option>
+              </select>
             </div>
-          </div>
-          <div class="form-group">
-            <label>学期</label>
-            <select v-model="addForm.semester" class="form-select">
-              <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
-                {{ semester.name }}
-              </option>
-            </select>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-zinc-800/50">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">音乐平台 (可选)</label>
+                <select
+                  v-if="showEditModal"
+                  v-model="editForm.musicPlatform"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none appearance-none"
+                >
+                  <option value="">请选择平台</option>
+                  <option value="netease">网易云音乐</option>
+                  <option value="tencent">QQ音乐</option>
+                  <option value="bilibili">哔哩哔哩</option>
+                </select>
+                <select
+                  v-else
+                  v-model="addForm.musicPlatform"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none appearance-none"
+                >
+                  <option value="">请选择平台</option>
+                  <option value="netease">网易云音乐</option>
+                  <option value="tencent">QQ音乐</option>
+                  <option value="bilibili">哔哩哔哩</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">音乐ID (可选)</label>
+                <input
+                  v-if="showEditModal"
+                  v-model="editForm.musicId"
+                  type="text"
+                  placeholder="输入平台唯一标识符"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                />
+                <input
+                  v-else
+                  v-model="addForm.musicId"
+                  type="text"
+                  placeholder="输入平台唯一标识符"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">封面URL (可选)</label>
+              <input
+                v-if="showEditModal"
+                v-model="editForm.cover"
+                type="text"
+                placeholder="http://..."
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+              />
+              <input
+                v-else
+                v-model="addForm.cover"
+                type="text"
+                placeholder="http://..."
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+              />
+              <p v-if="(showEditModal ? editCoverValidation.valid : addCoverValidation.valid) && (showEditModal ? editForm.cover : addForm.cover)"
+                 class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1">
+                <Check :size="10"/> URL有效
+              </p>
+              <p v-if="!(showEditModal ? editCoverValidation.valid : addCoverValidation.valid) && (showEditModal ? editForm.cover : addForm.cover)"
+                 class="text-[10px] text-red-500/80 font-bold px-1 flex items-center gap-1">
+                <X :size="10"/> {{ (showEditModal ? editCoverValidation.error : addCoverValidation.error) }}
+              </p>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">播放地址URL (可选)</label>
+              <input
+                v-if="showEditModal"
+                v-model="editForm.playUrl"
+                type="text"
+                placeholder="http://..."
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+              />
+              <input
+                v-else
+                v-model="addForm.playUrl"
+                type="text"
+                placeholder="http://..."
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+              />
+              <p v-if="(showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) && (showEditModal ? editForm.playUrl : addForm.playUrl)"
+                 class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1">
+                <Check :size="10"/> URL有效
+              </p>
+              <p v-if="!(showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) && (showEditModal ? editForm.playUrl : addForm.playUrl)"
+                 class="text-[10px] text-red-500/80 font-bold px-1 flex items-center gap-1">
+                <X :size="10"/> {{ (showEditModal ? editPlayUrlValidation.error : addPlayUrlValidation.error) }}
+              </p>
+            </div>
           </div>
 
-          <!-- 音乐平台和ID（可选） -->
-          <div class="form-group">
-            <label>音乐平台 <span class="optional-label">（可选）</span></label>
-            <select v-model="addForm.musicPlatform" class="form-select">
-              <option value="">请选择平台</option>
-              <option value="netease">网易云音乐</option>
-              <option value="tencent">QQ音乐</option>
-              <option value="bilibili">哔哩哔哩</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>音乐ID <span class="optional-label">（可选）</span></label>
-            <input
-                v-model="addForm.musicId"
-                class="form-input"
-                placeholder="请输入音乐平台上的歌曲ID"
-                type="text"
-            />
-            <div class="field-hint">
-              音乐ID是歌曲在对应平台上的唯一标识符，用于播放功能
-            </div>
-          </div>
-          <div class="form-group">
-            <label>歌曲封面URL <span class="optional-label">（可选）</span></label>
-            <div class="input-wrapper">
-              <input
-                  v-model="addForm.cover"
-                  :class="{ 'error': addForm.cover && !addCoverValidation.valid }"
-                  class="form-input"
-                  placeholder="请输入歌曲封面图片的URL地址"
-                  type="url"
-              />
-              <div v-if="addCoverValidation.validating" class="validation-loading">
-                验证中...
-              </div>
-              <div v-if="addForm.cover && !addCoverValidation.valid && !addCoverValidation.validating"
-                   class="validation-error">
-                {{ addCoverValidation.error }}
-              </div>
-              <div v-if="addForm.cover && addCoverValidation.valid && !addCoverValidation.validating"
-                   class="validation-success">
-                ✓ URL有效
-              </div>
-              <div class="field-hint">
-                歌曲封面将显示在歌曲列表中，建议使用高质量的图片链接
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>播放地址URL <span class="optional-label">（可选）</span></label>
-            <div class="input-wrapper">
-              <input
-                  v-model="addForm.playUrl"
-                  :class="{ 'error': addForm.playUrl && !addPlayUrlValidation.valid }"
-                  class="form-input"
-                  placeholder="请输入歌曲播放的URL地址"
-                  type="url"
-              />
-              <div v-if="addPlayUrlValidation.validating" class="validation-loading">
-                验证中...
-              </div>
-              <div v-if="addForm.playUrl && !addPlayUrlValidation.valid && !addPlayUrlValidation.validating"
-                   class="validation-error">
-                {{ addPlayUrlValidation.error }}
-              </div>
-              <div v-if="addForm.playUrl && addPlayUrlValidation.valid && !addPlayUrlValidation.validating"
-                   class="validation-success">
-                ✓ URL有效
-              </div>
-              <div class="field-hint">
-                播放地址是音乐播放器直接播放的链接，如果提供将优先使用此地址播放
-              </div>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-cancel" type="button" @click="cancelAddSong">取消</button>
-            <button :disabled="!canSubmitAddForm || addLoading" class="btn-primary" type="submit">
-              {{ addLoading ? '添加中...' : '添加歌曲' }}
+          <div class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end">
+            <button @click="showEditModal ? cancelEditSong() : cancelAddSong()" class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300">取消</button>
+            <button
+              @click="showEditModal ? saveEditSong() : saveAddSong()"
+              :disabled="(showEditModal ? editLoading : !canSubmitAddForm || addLoading)"
+              class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
+            >
+              {{ (showEditModal ? (editLoading ? '保存中...' : '保存更改') : (addLoading ? '添加中...' : '添加歌曲')) }}
             </button>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -772,6 +660,11 @@ import {computed, onMounted, ref, watch} from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
+import {
+  Search, Plus, RotateCcw, Edit2, Check, X, Trash2,
+  Music, Heart, Download, ChevronDown, ChevronLeft, ChevronRight,
+  ChevronsLeft, ChevronsRight
+} from 'lucide-vue-next'
 import {useSongs} from '~/composables/useSongs'
 import {useAdmin} from '~/composables/useAdmin'
 import {useAuth} from '~/composables/useAuth'
