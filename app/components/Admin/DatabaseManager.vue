@@ -300,6 +300,10 @@ import {
   X
 } from 'lucide-vue-next'
 import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
+import { useToast } from '~/composables/useToast'
+import { useAuth } from '~/composables/useAuth'
+
+const { showToast: showNotification } = useToast()
 
 // 状态
 const activeModal = ref('none')
@@ -431,12 +435,6 @@ const handleFileDrop = (event) => {
     selectedFile.value = file
   } else {
     showNotification('请选择有效的JSON备份文件', 'error')
-  }
-}
-
-const showNotification = (message, type = 'info') => {
-  if (window.$showNotification) {
-    window.$showNotification(message, type)
   }
 }
 
@@ -606,7 +604,6 @@ const resetDatabase = async () => {
     if (response.success) {
       showNotification('数据库已成功重置', 'success')
       activeModal.value = 'none'
-      // 可以在这里跳转到登录页或刷新页面
       setTimeout(() => window.location.reload(), 1500)
     } else {
       throw new Error(response.message || '重置失败')
