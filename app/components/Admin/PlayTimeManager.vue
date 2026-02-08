@@ -282,6 +282,7 @@
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useToast } from '~/composables/useToast'
 import type { PlayTime } from '~/types'
 import { 
   Plus, Clock, Edit2, Trash2, MoreVertical, 
@@ -289,6 +290,7 @@ import {
 } from 'lucide-vue-next'
 
 const { getAuthConfig, isAdmin } = useAuth()
+const { showNotification } = useToast()
 
 const playTimes = ref<PlayTime[]>([])
 const loading = ref(false)
@@ -433,8 +435,11 @@ const updateSystemSettings = async () => {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || `更新系统设置失败: ${response.status}`)
     }
+    
+    showNotification('系统设置已更新', 'success')
   } catch (err: any) {
     error.value = err.message || '更新系统设置失败'
+    showNotification(error.value, 'error')
     // 如果失败，恢复状态
     enablePlayTimeSelection.value = !enablePlayTimeSelection.value
   }
@@ -490,8 +495,10 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
 
     // 更新本地数据
     await fetchPlayTimes()
+    showNotification(playTime.enabled ? '播出时段已禁用' : '播出时段已启用', 'success')
   } catch (err: any) {
     error.value = err.message || '更新播出时段状态失败'
+    showNotification(error.value, 'error')
   }
 }
 
@@ -523,8 +530,10 @@ const deletePlayTime = async () => {
     await fetchPlayTimes()
     showDeleteConfirm.value = false
     playTimeToDelete.value = null
+    showNotification('播出时段已删除', 'success')
   } catch (err: any) {
     error.value = err.message || '删除播出时段失败'
+    showNotification(error.value, 'error')
   } finally {
     deleteInProgress.value = false
   }
@@ -586,8 +595,10 @@ const savePlayTime = async () => {
     // 更新本地数据
     await fetchPlayTimes()
     cancelForm()
+    showNotification(isUpdate ? '播出时段已更新' : '播出时段已创建', 'success')
   } catch (err: any) {
     formError.value = err.message || '保存播出时段失败'
+    showNotification(formError.value, 'error')
   } finally {
     formSubmitting.value = false
   }
