@@ -8,19 +8,19 @@
       leave-to-class="opacity-0 scale-95"
   >
     <div v-if="show" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="$emit('close')">
-      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" @click.stop>
+      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" @click.stop>
         <!-- 头部 -->
         <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800/50">
           <div>
             <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-purple-600/10 flex items-center justify-center text-purple-500">
+              <div class="w-10 h-10 rounded-xl bg-purple-600/10 flex items-center justify-center text-purple-500">
                 <Layers :size="20" />
               </div>
               批量更新学生信息
             </h3>
             <p class="text-xs text-zinc-500 mt-1 ml-13">快速调整学生年级、班级或通过 Excel 批量修改</p>
           </div>
-          <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all" @click="$emit('close')">
+          <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all" @click="$emit('close')">
             <X :size="20" />
           </button>
         </div>
@@ -29,12 +29,12 @@
           <!-- 更新方式选择 -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label 
-              :class="['relative flex flex-col p-5 rounded-3xl border-2 transition-all cursor-pointer group', 
+              :class="['relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group', 
                 updateType === 'grade-only' ? 'bg-purple-500/5 border-purple-500/50 ring-4 ring-purple-500/10' : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700']"
             >
               <input v-model="updateType" type="radio" value="grade-only" class="sr-only" />
               <div class="flex items-center justify-between mb-3">
-                <div :class="['w-10 h-10 rounded-xl flex items-center justify-center transition-colors', updateType === 'grade-only' ? 'bg-purple-500 text-white' : 'bg-zinc-800 text-zinc-500 group-hover:text-zinc-300']">
+                <div :class="['w-10 h-10 rounded-lg flex items-center justify-center transition-colors', updateType === 'grade-only' ? 'bg-purple-500 text-white' : 'bg-zinc-800 text-zinc-500 group-hover:text-zinc-300']">
                   <Calendar :size="18" />
                 </div>
                 <div v-if="updateType === 'grade-only'" class="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
@@ -46,12 +46,12 @@
             </label>
 
             <label 
-              :class="['relative flex flex-col p-5 rounded-3xl border-2 transition-all cursor-pointer group', 
+              :class="['relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group', 
                 updateType === 'excel-batch' ? 'bg-emerald-500/5 border-emerald-500/50 ring-4 ring-emerald-500/10' : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700']"
             >
               <input v-model="updateType" type="radio" value="excel-batch" class="sr-only" />
               <div class="flex items-center justify-between mb-3">
-                <div :class="['w-10 h-10 rounded-xl flex items-center justify-center transition-colors', updateType === 'excel-batch' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-500 group-hover:text-zinc-300']">
+                <div :class="['w-10 h-10 rounded-lg flex items-center justify-center transition-colors', updateType === 'excel-batch' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-500 group-hover:text-zinc-300']">
                   <FileSpreadsheet :size="18" />
                 </div>
                 <div v-if="updateType === 'excel-batch'" class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
@@ -65,7 +65,7 @@
 
           <!-- 仅更新年级面板 -->
           <div v-if="updateType === 'grade-only'" class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div class="p-6 bg-zinc-950/50 border border-zinc-800/50 rounded-3xl space-y-6">
+            <div class="p-6 bg-zinc-950/50 border border-zinc-800/50 rounded-xl space-y-6">
               <div class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest">
                 <Filter :size="14" class="text-purple-500" />
                 学生范围筛选
@@ -103,13 +103,13 @@
                     {{ isAllSelected ? '取消全选' : '选择当前全部' }}
                   </button>
                 </div>
-                <div class="max-h-48 overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-2 custom-scrollbar">
+                <div class="max-h-48 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 p-2 custom-scrollbar">
                   <div v-if="filteredStudents.length === 0" class="py-10 text-center text-xs text-zinc-600 font-medium">
                     没有匹配条件的学生
                   </div>
                   <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-1">
-                    <label v-for="student in filteredStudents" :key="student.id" class="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-900/50 cursor-pointer transition-colors group">
-                      <input v-model="selectedUserIds" :value="student.id" type="checkbox" class="w-4 h-4 rounded-lg border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20" />
+                    <label v-for="student in filteredStudents" :key="student.id" class="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-900/50 cursor-pointer transition-colors group">
+                      <input v-model="selectedUserIds" :value="student.id" type="checkbox" class="w-4 h-4 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20" />
                       <div class="flex flex-col">
                         <span class="text-xs font-bold text-zinc-200 group-hover:text-purple-400 transition-colors">{{ student.name }}</span>
                         <span class="text-[10px] text-zinc-600 font-mono">{{ student.username }}</span>
@@ -120,7 +120,7 @@
               </div>
             </div>
 
-            <div class="p-6 bg-purple-500/5 border border-purple-500/20 rounded-3xl space-y-6">
+            <div class="p-6 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-6">
               <div class="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest">
                 <Save :size="14" />
                 目标设置
@@ -130,11 +130,11 @@
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">目标年级</label>
                   <div class="relative group">
                     <Calendar class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-purple-500 transition-colors" :size="16" />
-                    <input v-model="targetGrade" type="text" placeholder="例如: 2025" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-purple-500/30 transition-all text-zinc-200" />
+                    <input v-model="targetGrade" type="text" placeholder="例如: 2025" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-purple-500/30 transition-all text-zinc-200" />
                   </div>
                 </div>
-                <label class="flex items-center gap-3 p-3 bg-zinc-950 border border-zinc-800 rounded-2xl cursor-pointer hover:border-zinc-700 transition-all">
-                  <input v-model="keepClass" type="checkbox" class="w-5 h-5 rounded-lg border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20" />
+                <label class="flex items-center gap-3 p-3 bg-zinc-950 border border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-700 transition-all">
+                  <input v-model="keepClass" type="checkbox" class="w-5 h-5 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20" />
                   <span class="text-xs font-bold text-zinc-300">保持原有班级不变</span>
                 </label>
               </div>
@@ -150,9 +150,9 @@
               @click="$refs.fileInput.click()"
             >
               <input ref="fileInput" accept=".xlsx,.xls" class="hidden" type="file" @change="handleFileSelect" />
-              <div :class="['w-full py-12 border-2 border-dashed rounded-[2.5rem] transition-all flex flex-col items-center justify-center gap-4', 
+              <div :class="['w-full py-12 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center gap-4', 
                 isDragOver ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800 hover:border-emerald-500/50 hover:bg-emerald-500/5']">
-                <div :class="['w-16 h-16 rounded-[2rem] bg-zinc-900 flex items-center justify-center transition-colors shadow-xl', isDragOver ? 'text-emerald-500' : 'text-zinc-600 group-hover:text-emerald-500']">
+                <div :class="['w-16 h-16 rounded-lg bg-zinc-900 flex items-center justify-center transition-colors shadow-xl', isDragOver ? 'text-emerald-500' : 'text-zinc-600 group-hover:text-emerald-500']">
                   <Upload :size="32" />
                 </div>
                 <div class="text-center">
@@ -164,7 +164,7 @@
 
             <!-- 模板与说明 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="md:col-span-2 p-5 bg-zinc-950 border border-zinc-800 rounded-3xl space-y-3">
+              <div class="md:col-span-2 p-5 bg-zinc-950 border border-zinc-800 rounded-xl space-y-3">
                 <div class="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                   <Info :size="12" />
                   文件格式规范
@@ -175,8 +175,8 @@
                   <li class="flex items-start gap-2"><div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" /> 字段留空则保持原值不变，不进行覆盖更新</li>
                 </ul>
               </div>
-              <button @click="downloadTemplate" class="p-5 bg-emerald-500/5 border border-emerald-500/20 hover:border-emerald-500/40 rounded-3xl transition-all flex flex-col items-center justify-center gap-2 group">
-                <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:scale-110 transition-transform">
+              <button @click="downloadTemplate" class="p-5 bg-emerald-500/5 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl transition-all flex flex-col items-center justify-center gap-2 group">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:scale-110 transition-transform">
                   <Download :size="20" />
                 </div>
                 <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">获取模板文件</span>
@@ -198,7 +198,7 @@
                   </div>
                 </div>
               </div>
-              <div class="rounded-[2rem] border border-zinc-800 bg-zinc-950 overflow-hidden shadow-xl">
+              <div class="rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden shadow-xl">
                 <div class="overflow-x-auto custom-scrollbar">
                   <table class="w-full text-left border-collapse">
                     <thead class="bg-zinc-900/80 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-b border-zinc-800">

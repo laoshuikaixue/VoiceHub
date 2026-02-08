@@ -2,7 +2,7 @@
   <div class="relative" :class="className" ref="containerRef">
     <div 
       @click="toggleDropdown"
-      class="flex items-center gap-2 px-3 py-2 bg-zinc-950 border rounded-xl transition-all cursor-pointer select-none"
+      class="flex items-center gap-2 px-3 py-2 bg-zinc-950 border rounded-lg transition-all cursor-pointer select-none"
       :class="[
         isOpen ? 'border-blue-500/50 bg-blue-600/5 shadow-lg' : 'border-zinc-800 hover:border-zinc-700'
       ]"
@@ -34,14 +34,14 @@
           v-if="isOpen"
           ref="dropdownRef"
           :style="dropdownStyle"
-          class="fixed z-[9999] p-1 bg-[#0c0c0e] border border-zinc-800 rounded-xl shadow-2xl backdrop-blur-xl origin-top"
+          class="fixed z-[9999] p-1 bg-[#0c0c0e] border border-zinc-800 rounded-lg shadow-2xl backdrop-blur-xl origin-top"
         >
           <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
             <button
               v-for="option in normalizedOptions"
               :key="option.value"
               @click="selectOption(option)"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-bold transition-all"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="[
                 isSelected(option) ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'
               ]"

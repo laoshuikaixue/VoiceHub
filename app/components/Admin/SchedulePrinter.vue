@@ -6,7 +6,7 @@
     </div>
 
     <!-- 权限检查 -->
-    <div v-if="!canPrintSchedule" class="flex flex-col items-center justify-center py-20 bg-zinc-900/50 rounded-3xl border border-zinc-800">
+    <div v-if="!canPrintSchedule" class="flex flex-col items-center justify-center py-20 bg-zinc-900/50 rounded-xl border border-zinc-800">
       <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-4">
         <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10"/>
@@ -21,7 +21,7 @@
     <div v-else class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
       <!-- 设置面板 -->
       <div class="lg:col-span-4 flex flex-col gap-6">
-        <div class="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 space-y-6 shadow-lg flex flex-col h-full">
+        <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-full">
           <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100">
             <Layout class="w-4 h-4 text-blue-500" /> 打印设置
           </h3>
@@ -44,13 +44,13 @@
               <div class="grid grid-cols-2 gap-2">
                 <button 
                   @click="settings.orientation = 'portrait'"
-                  :class="['py-2.5 rounded-xl text-sm font-bold transition-all', settings.orientation === 'portrait' ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm' : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300']"
+                  :class="['py-2.5 rounded-lg text-sm font-bold transition-all', settings.orientation === 'portrait' ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm' : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300']"
                 >
                   纵向
                 </button>
                 <button 
                   @click="settings.orientation = 'landscape'"
-                  :class="['py-2.5 rounded-xl text-sm font-bold transition-all', settings.orientation === 'landscape' ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm' : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300']"
+                  :class="['py-2.5 rounded-lg text-sm font-bold transition-all', settings.orientation === 'landscape' ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm' : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300']"
                 >
                   横向
                 </button>
@@ -64,18 +64,18 @@
                 <input
                     v-model="settings.startDate"
                     type="date"
-                    class="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
+                    class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
                     max="9999-12-31"
                 />
                 <input
                     v-model="settings.endDate"
                     type="date"
-                    class="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
+                    class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
                     max="9999-12-31"
                 />
               </div>
               <div class="flex gap-2 flex-wrap">
-                <button v-for="range in dateRanges" :key="range.value" @click="setDateRange(range.value)" class="px-2 py-1 bg-zinc-800/50 hover:bg-zinc-800 text-[10px] text-zinc-400 rounded-lg transition-colors border border-zinc-800">
+                <button v-for="range in dateRanges" :key="range.value" @click="setDateRange(range.value)" class="px-2 py-1 bg-zinc-800/50 hover:bg-zinc-800 text-[10px] text-zinc-400 rounded-md transition-colors border border-zinc-800">
                   {{ range.label }}
                 </button>
               </div>
@@ -109,24 +109,24 @@
               <textarea 
                 v-model="settings.remark"
                 placeholder="请输入备注信息（可选）" 
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none text-zinc-300 min-h-[80px] resize-none focus:border-blue-500/50 transition-colors"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm focus:outline-none text-zinc-300 min-h-[80px] resize-none focus:border-blue-500/50 transition-colors"
               ></textarea>
             </div>
           </div>
 
           <!-- 操作按钮 -->
           <div class="space-y-2 pt-4 border-t border-zinc-800 shrink-0">
-            <button @click="refreshPreview" class="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-sm font-bold rounded-xl border border-zinc-700 transition-all">
+            <button @click="refreshPreview" class="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-sm font-bold rounded-lg border border-zinc-700 transition-all">
               <RefreshCw class="w-4 h-4" /> 刷新预览
             </button>
-            <button :disabled="isPrinting" @click="printSchedule" class="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all">
+            <button :disabled="isPrinting" @click="printSchedule" class="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-900/20 transition-all">
               <Printer class="w-4 h-4" /> {{ isPrinting ? '打印中...' : '打印' }}
             </button>
             <div class="grid grid-cols-2 gap-2">
-              <button :disabled="isExporting" @click="exportPDF" class="flex items-center justify-center gap-2 py-2.5 bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-xl border border-emerald-500/20 transition-all">
+              <button :disabled="isExporting" @click="exportPDF" class="flex items-center justify-center gap-2 py-2.5 bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-emerald-500/20 transition-all">
                 <FileText class="w-3.5 h-3.5" /> {{ isExporting ? '导出中...' : '导出PDF' }}
               </button>
-              <button :disabled="isExportingImage" @click="exportImage" class="flex items-center justify-center gap-2 py-2.5 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-xl border border-amber-500/20 transition-all">
+              <button :disabled="isExportingImage" @click="exportImage" class="flex items-center justify-center gap-2 py-2.5 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-amber-500/20 transition-all">
                 <ImageIcon class="w-3.5 h-3.5" /> {{ isExportingImage ? '导出中...' : '导出长图' }}
               </button>
             </div>
@@ -136,7 +136,7 @@
 
       <!-- 预览区域 -->
       <div class="lg:col-span-8 flex flex-col gap-4 min-h-0">
-        <div class="bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col h-full shadow-lg">
+        <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg">
           <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
             <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100">
               <AlignLeft class="w-4.5 h-4.5 text-zinc-500" /> 预览区域

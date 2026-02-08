@@ -83,7 +83,7 @@
       </div>
 
       <!-- 系统状态 -->
-      <div class="lg:col-span-4 bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20">
+      <div class="lg:col-span-4 bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-lg shadow-black/20">
         <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
             <ShieldCheck :size="18" class="text-emerald-500" /> 系统状态
@@ -122,7 +122,7 @@
             :key="i"
             @click="navigateTo(action.id)"
             :class="[
-              'w-full flex items-center gap-3 px-5 py-4 rounded-2xl border font-bold text-sm transition-all text-left group',
+              'w-full flex items-center gap-3 px-5 py-4 rounded-lg border font-bold text-sm transition-all text-left group',
               action.primary 
                 ? 'bg-blue-600 border-blue-500 text-white shadow-xl shadow-blue-900/20 hover:bg-blue-500' 
                 : 'bg-zinc-950/40 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'

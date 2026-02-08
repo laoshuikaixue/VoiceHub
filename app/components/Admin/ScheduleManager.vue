@@ -18,7 +18,7 @@
               v-for="date in availableDates"
               :key="date.value"
               :class="[
-                'flex flex-col items-center justify-center min-w-[64px] h-16 rounded-xl transition-all duration-200 border',
+                'flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg transition-all duration-200 border',
                 selectedDate === date.value
                   ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20'
                   : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 hover:border-zinc-700'
@@ -54,7 +54,7 @@
     
     <!-- 手动日期选择弹窗 -->
     <div v-if="showManualDatePicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" @click.stop>
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden" @click.stop>
         <div class="flex items-center justify-between p-4 border-b border-zinc-800">
           <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">选择日期</h3>
           <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="showManualDatePicker = false">
@@ -76,7 +76,7 @@
     </div>
     
     <!-- 播出时段选择器 (如果启用) -->
-    <div v-if="playTimeEnabled" class="flex items-center gap-3 bg-zinc-900/30 border border-zinc-800 rounded-xl p-3">
+    <div v-if="playTimeEnabled" class="flex items-center gap-3 bg-zinc-900/30 border border-zinc-800 rounded-lg p-3">
       <CustomSelect 
         v-model="selectedPlayTime" 
         label="播出时段"

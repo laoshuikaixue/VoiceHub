@@ -7,7 +7,7 @@
         <p class="text-xs text-zinc-500 mt-1">定义校园广播的常规播放窗口，用户仅可在这些时间段内进行点歌或查看排期</p>
       </div>
       <div class="flex items-center gap-3">
-        <div class="bg-zinc-900/40 border border-zinc-800 rounded-2xl px-4 py-2 flex items-center gap-3">
+        <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl px-4 py-2 flex items-center gap-3">
           <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">启用播出时段选择</span>
           <button 
             @click="toggleGlobalEnabled"
@@ -26,7 +26,7 @@
         </div>
         <button 
           @click="openAddForm"
-          class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+          class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95"
         >
           <Plus :size="14" /> 添加播出时段
         </button>
@@ -34,7 +34,7 @@
     </div>
 
     <!-- 信息卡片 -->
-    <div class="bg-blue-600/5 border border-blue-500/10 rounded-2xl p-5 flex items-start gap-4">
+    <div class="bg-blue-600/5 border border-blue-500/10 rounded-xl p-5 flex items-start gap-4">
       <Info class="text-blue-500 shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
         <p class="text-xs font-bold text-zinc-300">关于时段限制</p>
@@ -45,13 +45,13 @@
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20 space-y-4 bg-zinc-900/20 border border-zinc-800/50 rounded-[2rem]">
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20 space-y-4 bg-zinc-900/20 border border-zinc-800/50 rounded-xl">
       <div class="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
       <p class="text-xs font-black text-zinc-500 uppercase tracking-widest">加载中...</p>
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="error" class="bg-red-500/5 border border-red-500/10 rounded-2xl p-5 flex items-start gap-4">
+    <div v-else-if="error" class="bg-red-500/5 border border-red-500/10 rounded-xl p-5 flex items-start gap-4">
       <AlertCircle class="text-red-500 shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
         <p class="text-xs font-bold text-zinc-300">获取数据失败</p>
@@ -60,8 +60,8 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="playTimes.length === 0" class="flex flex-col items-center justify-center py-20 space-y-6 bg-zinc-900/20 border border-zinc-800/50 rounded-[2rem]">
-      <div class="p-6 rounded-[2rem] bg-zinc-950 border border-zinc-800 text-zinc-700">
+    <div v-else-if="playTimes.length === 0" class="flex flex-col items-center justify-center py-20 space-y-6 bg-zinc-900/20 border border-zinc-800/50 rounded-xl">
+      <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-700">
         <Clock :size="48" />
       </div>
       <div class="text-center space-y-2">
@@ -77,14 +77,14 @@
           v-for="playTime in playTimes"
           :key="playTime.id"
           :class="[
-            'group relative bg-zinc-900/30 border rounded-[2rem] p-8 transition-all hover:shadow-2xl hover:shadow-black/40',
+            'group relative bg-zinc-900/30 border rounded-xl p-8 transition-all hover:shadow-2xl hover:shadow-black/40',
             playTime.enabled ? 'border-zinc-800/80' : 'border-zinc-800/40 opacity-60'
           ]"
         >
           <div class="flex items-start justify-between mb-6">
             <div 
               :class="[
-                'p-3 rounded-2xl bg-zinc-950 border border-zinc-800 transition-all',
+                'p-3 rounded-xl bg-zinc-950 border border-zinc-800 transition-all',
                 playTime.enabled ? 'text-blue-500 border-blue-500/20' : 'text-zinc-700'
               ]"
             >
@@ -124,13 +124,13 @@
             <div class="flex gap-2">
               <button 
                 @click="editPlayTime(playTime)"
-                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-blue-400 hover:border-blue-500/30 transition-all"
+                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-500 hover:text-blue-400 hover:border-blue-500/30 transition-all"
               >
                 <Edit2 :size="14" />
               </button>
               <button 
                 @click="confirmDelete(playTime)"
-                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-red-400 hover:border-red-500/30 transition-all"
+                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-500 hover:text-red-400 hover:border-red-500/30 transition-all"
               >
                 <Trash2 :size="14" />
               </button>
@@ -138,7 +138,7 @@
             <button 
               @click="togglePlayTimeStatus(playTime)"
               :class="[
-                'flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
+                'flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
                 playTime.enabled 
                   ? 'bg-zinc-800 text-zinc-400 hover:text-zinc-200' 
                   : 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
@@ -156,7 +156,7 @@
     <Transition name="modal">
       <div v-if="showAddForm || editingPlayTime" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="cancelForm"></div>
-        <div class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-[2.5rem] shadow-2xl overflow-hidden">
+        <div class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden">
           <div class="p-8">
             <div class="flex items-center justify-between mb-8">
               <h3 class="text-xl font-black text-zinc-100 tracking-tight">
@@ -174,7 +174,7 @@
                   type="text" 
                   v-model="formData.name"
                   placeholder="例如: 午间广播" 
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30" 
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30" 
                 />
               </div>
 
@@ -185,7 +185,7 @@
                     <input 
                       type="time" 
                       v-model="formData.startTime"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none" 
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none" 
                     />
                     <Clock class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none" :size="14" />
                   </div>
@@ -197,7 +197,7 @@
                     <input 
                       type="time" 
                       v-model="formData.endTime"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none" 
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none" 
                     />
                     <Clock class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none" :size="14" />
                   </div>
@@ -212,7 +212,7 @@
                 <textarea 
                   v-model="formData.description"
                   placeholder="请输入时段描述信息..." 
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[100px] resize-none"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[100px] resize-none"
                 />
               </div>
 
@@ -225,7 +225,7 @@
                 <span class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors">启用此播出时段</span>
               </label>
 
-              <div v-if="formError" class="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-[11px] text-red-400">
+              <div v-if="formError" class="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[11px] text-red-400">
                 {{ formError }}
               </div>
             </div>
@@ -236,7 +236,7 @@
             <button 
               @click="savePlayTime"
               :disabled="formSubmitting"
-              class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95"
+              class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg shadow-lg transition-all active:scale-95"
             >
               {{ formSubmitting ? '保存中...' : '保存设置' }}
             </button>
@@ -249,10 +249,10 @@
     <Transition name="modal">
       <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showDeleteConfirm = false"></div>
-        <div class="relative w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-[2.5rem] shadow-2xl overflow-hidden">
+        <div class="relative w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden">
           <div class="p-8">
             <div class="flex flex-col items-center py-4 space-y-6">
-              <div class="w-16 h-16 rounded-[2rem] bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/10 shadow-xl shadow-red-900/5">
+              <div class="w-16 h-16 rounded-xl bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/10 shadow-xl shadow-red-900/5">
                 <AlertCircle :size="32" />
               </div>
               <div class="text-center space-y-2 px-4">
@@ -262,11 +262,11 @@
                 </p>
               </div>
               <div class="flex gap-3 w-full pt-4">
-                <button @click="showDeleteConfirm = false" class="flex-1 px-4 py-3 bg-zinc-950 border border-zinc-800 text-zinc-500 text-xs font-black rounded-2xl transition-all hover:bg-zinc-800">取消</button>
+                <button @click="showDeleteConfirm = false" class="flex-1 px-4 py-3 bg-zinc-950 border border-zinc-800 text-zinc-500 text-xs font-black rounded-lg transition-all hover:bg-zinc-800">取消</button>
                 <button 
                   @click="deletePlayTime"
                   :disabled="deleteInProgress"
-                  class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-2xl shadow-xl shadow-red-900/20 transition-all active:scale-95"
+                  class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg shadow-xl shadow-red-900/20 transition-all active:scale-95"
                 >
                   {{ deleteInProgress ? '删除中...' : '确认删除' }}
                 </button>

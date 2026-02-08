@@ -10,21 +10,21 @@
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button
-            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all uppercase tracking-widest active:scale-95 shadow-lg shadow-blue-900/20"
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg transition-all uppercase tracking-widest active:scale-95 shadow-lg shadow-blue-900/20"
             @click="showAddModal = true"
         >
           <UserPlus :size="14"/>
           添加
         </button>
         <button
-            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-black rounded-lg transition-all uppercase tracking-widest"
             @click="showImportModal = true"
         >
           <FileSpreadsheet class="text-emerald-500" :size="14"/>
           导入
         </button>
         <button
-            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-black rounded-lg transition-all uppercase tracking-widest"
             @click="showBatchUpdateModal = true"
         >
           <Layers class="text-purple-500" :size="14"/>
@@ -34,7 +34,7 @@
     </div>
 
     <!-- Filter Bar -->
-    <div class="bg-zinc-900/40 border border-zinc-800/60 rounded-3xl p-3 flex flex-col lg:flex-row gap-3 items-center">
+    <div class="bg-zinc-900/40 border border-zinc-800/60 rounded-xl p-3 flex flex-col lg:flex-row gap-3 items-center">
       <div class="relative flex-1 w-full group">
         <Search
             class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors"
@@ -42,7 +42,7 @@
         />
         <input
             v-model="searchQuery"
-            class="w-full bg-zinc-950 border border-zinc-800/80 rounded-2xl pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+            class="w-full bg-zinc-950 border border-zinc-800/80 rounded-lg pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
             placeholder="通过姓名或学号搜索..."
             type="text"
         />
@@ -71,7 +71,7 @@
         />
 
         <button
-            class="p-3 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-600 hover:text-blue-400 transition-all shadow-sm"
+            class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-600 hover:text-blue-400 transition-all shadow-sm"
             @click="loadUsers(1)"
         >
           <RefreshCw :size="14"/>
@@ -86,8 +86,8 @@
         <div class="text-xs font-black uppercase tracking-widest">正在加载用户...</div>
       </div>
 
-      <div v-else-if="users.length === 0" class="flex flex-col items-center justify-center py-20 bg-zinc-900/20 border border-zinc-800/50 rounded-[2rem]">
-        <div class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center text-zinc-600 mb-4">
+      <div v-else-if="users.length === 0" class="flex flex-col items-center justify-center py-20 bg-zinc-900/20 border border-zinc-800/50 rounded-xl">
+        <div class="w-16 h-16 rounded-lg bg-zinc-800/50 flex items-center justify-center text-zinc-600 mb-4">
           <Search :size="32" />
         </div>
         <div class="text-sm font-black text-zinc-500 uppercase tracking-widest">
@@ -97,7 +97,7 @@
 
       <template v-else>
         <!-- 桌面端表格 -->
-        <div class="hidden lg:block bg-zinc-900/20 border border-zinc-800/50 rounded-[2rem] overflow-hidden shadow-lg custom-scrollbar">
+        <div class="hidden lg:block bg-zinc-900/20 border border-zinc-800/50 rounded-xl overflow-hidden shadow-lg custom-scrollbar">
           <table class="w-full">
             <thead>
             <tr class="bg-zinc-900/60 border-b border-zinc-800 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
@@ -181,10 +181,10 @@
 
         <!-- 移动端卡片式布局 -->
         <div class="lg:hidden grid grid-cols-1 gap-4">
-          <div v-for="user in users" :key="user.id" class="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-5 space-y-5 shadow-lg shadow-black/20" @click="showUserDetail(user, $event)">
+          <div v-for="user in users" :key="user.id" class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-5 shadow-lg shadow-black/20" @click="showUserDetail(user, $event)">
             <div class="flex items-start justify-between">
               <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center font-black text-lg text-zinc-500 border border-zinc-700">{{ user.name.charAt(0) }}</div>
+                <div class="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center font-black text-lg text-zinc-500 border border-zinc-700">{{ user.name.charAt(0) }}</div>
                 <div>
                   <h4 class="text-base font-black text-zinc-100">{{ user.name }}</h4>
                   <p class="text-xs text-zinc-500 font-mono">@{{ user.username }}</p>
@@ -228,27 +228,27 @@
             <div class="flex gap-2 action-buttons">
               <button
                   :disabled="isSelf(user)"
-                  class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-blue-600 active:text-white transition-colors disabled:opacity-20 action-btn"
+                  class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-blue-600 active:text-white transition-colors disabled:opacity-20 action-btn"
                   @click="editUser(user)"
               >
                 <Edit2 :size="12"/> 编辑
               </button>
               <button
-                  class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-purple-600 active:text-white transition-colors action-btn"
+                  class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-purple-600 active:text-white transition-colors action-btn"
                   @click="viewUserSongs(user)"
               >
                 <Music :size="12"/> 记录
               </button>
               <button
                   :disabled="isSelf(user)"
-                  class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-amber-600 active:text-white transition-colors disabled:opacity-20 action-btn"
+                  class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-amber-600 active:text-white transition-colors disabled:opacity-20 action-btn"
                   @click="resetPassword(user)"
               >
                 <Lock :size="12"/> 重置
               </button>
               <button
                   :disabled="isSelf(user)"
-                  class="px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-400 active:bg-red-600 active:text-white transition-colors disabled:opacity-20 action-btn"
+                  class="px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 active:bg-red-600 active:text-white transition-colors disabled:opacity-20 action-btn"
                   @click="confirmDeleteUser(user)"
               >
                 <Trash2 :size="14"/>
@@ -267,19 +267,19 @@
       <div class="flex gap-2">
         <button
             :disabled="currentPage === 1"
-            class="w-10 h-10 rounded-xl border border-zinc-800 flex items-center justify-center text-zinc-700 disabled:opacity-20"
+            class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 disabled:opacity-20"
             @click="goToPage(currentPage - 1)"
         >
           <ChevronLeft :size="18" />
         </button>
         <button
-            class="w-10 h-10 rounded-xl bg-blue-600 text-white text-xs font-black shadow-lg shadow-blue-900/20"
+            class="w-10 h-10 rounded-lg bg-blue-600 text-white text-xs font-black shadow-lg shadow-blue-900/20"
         >
           {{ currentPage }}
         </button>
         <button
             :disabled="currentPage === totalPages"
-            class="w-10 h-10 rounded-xl border border-zinc-800 flex items-center justify-center text-zinc-700 disabled:opacity-20"
+            class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 disabled:opacity-20"
             @click="goToPage(currentPage + 1)"
         >
           <ChevronRight :size="18" />

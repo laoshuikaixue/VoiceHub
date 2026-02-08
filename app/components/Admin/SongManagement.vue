@@ -31,16 +31,16 @@
             leave-from-class="opacity-100 scale-100 translate-x-0"
             leave-to-class="opacity-0 scale-95 translate-x-10"
           >
-            <div v-if="selectedSongs.length > 0" class="flex items-center gap-2 p-1.5 bg-zinc-900/90 border border-zinc-800 rounded-2xl backdrop-blur-xl shadow-2xl">
+            <div v-if="selectedSongs.length > 0" class="flex items-center gap-2 p-1.5 bg-zinc-900/90 border border-zinc-800 rounded-lg backdrop-blur-xl shadow-2xl">
               <button
                 @click="openDownloadDialog"
-                class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-[11px] font-black rounded-xl border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
               >
                 <Download :size="14" class="text-emerald-500/70" /> 下载 ({{ selectedSongs.length }})
               </button>
               <button
                 @click="batchDelete"
-                class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-[11px] font-black rounded-xl border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
               >
                 <Trash2 :size="14" class="text-red-500/70" /> 删除 ({{ selectedSongs.length }})
               </button>
@@ -49,14 +49,14 @@
 
           <button
             @click="openAddSongModal"
-            class="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all active:scale-95"
+            class="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-lg transition-all active:scale-95"
           >
             <Plus :size="16" /> 手动添加
           </button>
           <button
             @click="refreshSongs(true)"
             :disabled="loading"
-            class="flex items-center gap-2 px-5 py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs font-bold rounded-xl border border-blue-500/20 transition-all disabled:opacity-50"
+            class="flex items-center gap-2 px-5 py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs font-bold rounded-lg border border-blue-500/20 transition-all disabled:opacity-50"
           >
             <RotateCcw :size="16" :class="{ 'animate-spin': loading }" /> 刷新
           </button>
@@ -64,14 +64,14 @@
       </div>
 
       <!-- 过滤器栏 -->
-      <div class="bg-zinc-900/30 border border-zinc-800/60 rounded-[2.5rem] p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
+      <div class="bg-zinc-900/30 border border-zinc-800/60 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
         <div class="relative flex-1 group w-full lg:w-auto">
           <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors" :size="18" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="搜索歌曲标题、艺术家或投稿人..."
-            class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
+            class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
           />
         </div>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:flex lg:items-center gap-3 w-full lg:w-auto">
@@ -103,7 +103,7 @@
     </div>
 
     <!-- 歌曲表格 -->
-    <div class="bg-zinc-900/10 border border-zinc-800/40 rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+    <div class="bg-zinc-900/10 border border-zinc-800/40 rounded-xl overflow-hidden shadow-2xl relative">
       <!-- 加载遮罩 -->
       <div v-if="loading" class="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm z-10 flex items-center justify-center">
         <div class="flex flex-col items-center gap-3">
@@ -156,7 +156,7 @@
 
           <div class="col-span-12 lg:col-span-4 flex items-center gap-4">
             <div :class="[
-              'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-zinc-800/40 border-zinc-700/30 group-hover:border-zinc-600',
+              'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-zinc-800/40 border-zinc-700/30 group-hover:border-zinc-600',
               selectedSongs.includes(song.id) ? 'border-blue-500/50' : ''
             ]">
               <img v-if="song.cover" :src="song.cover" class="w-full h-full object-cover" />
@@ -323,7 +323,7 @@
       leave-to-class="opacity-0"
     >
       <div v-if="showRejectDialog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-        <div class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-[2.5rem] shadow-2xl overflow-hidden" @click.stop>
+        <div class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden" @click.stop>
           <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
             <h3 class="text-xl font-black text-zinc-100">驳回歌曲</h3>
             <button @click="cancelReject" class="text-zinc-500 hover:text-zinc-300 transition-colors">
@@ -332,8 +332,8 @@
           </div>
 
           <div class="p-8 space-y-6">
-            <div class="p-5 bg-zinc-950 border border-zinc-800 rounded-[1.5rem] flex items-center gap-4">
-              <div class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/10">
+            <div class="p-5 bg-zinc-950 border border-zinc-800 rounded-lg flex items-center gap-4">
+              <div class="w-10 h-10 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/10">
                 <Music :size="18" />
               </div>
               <div>
@@ -347,7 +347,7 @@
               <textarea
                 v-model="rejectReason"
                 placeholder="请输入驳回原因，将通过系统通知发送给投稿人..."
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-4 text-sm text-zinc-200 focus:outline-none focus:border-red-500/30 min-h-[120px] resize-none transition-all"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-4 text-sm text-zinc-200 focus:outline-none focus:border-red-500/30 min-h-[120px] resize-none transition-all"
               />
             </div>
 
@@ -365,7 +365,7 @@
             <button
               @click="confirmReject"
               :disabled="rejectLoading"
-              class="px-8 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
+              class="px-8 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
             >
               {{ rejectLoading ? '处理中...' : '确认驳回' }}
             </button>
@@ -398,7 +398,7 @@
       leave-to-class="opacity-0"
     >
       <div v-if="showEditModal || showAddSongModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm overflow-y-auto">
-        <div class="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-[2.5rem] shadow-2xl overflow-hidden my-auto" @click.stop>
+        <div class="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden my-auto" @click.stop>
           <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
             <h3 class="text-xl font-black text-zinc-100">{{ showEditModal ? '编辑歌曲' : '手动添加歌曲' }}</h3>
             <button @click="showEditModal ? cancelEditSong() : cancelAddSong()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
@@ -415,14 +415,14 @@
                   v-model="editForm.title"
                   type="text"
                   placeholder="输入歌曲标题"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 />
                 <input
                   v-else
                   v-model="addForm.title"
                   type="text"
                   placeholder="输入歌曲标题"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 />
               </div>
               <div class="space-y-2">
@@ -432,14 +432,14 @@
                   v-model="editForm.artist"
                   type="text"
                   placeholder="输入歌手姓名"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 />
                 <input
                   v-else
                   v-model="addForm.artist"
                   type="text"
                   placeholder="输入歌手姓名"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 />
               </div>
             </div>
@@ -455,7 +455,7 @@
                     @input="searchEditUsers()"
                     type="text"
                     placeholder="搜索用户姓名或用户名"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                   />
                   <input
                     v-else
@@ -464,7 +464,7 @@
                     @input="searchUsers()"
                     type="text"
                     placeholder="搜索用户姓名或用户名"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                   />
                   <div v-if="(showEditModal ? editUserSearchLoading : userSearchLoading)" class="absolute right-4 top-1/2 -translate-y-1/2">
                     <div class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
@@ -473,7 +473,7 @@
 
                 <!-- 用户下拉列表 -->
                 <div v-if="(showEditModal ? showEditUserDropdown && filteredEditUsers.length > 0 : showUserDropdown && filteredUsers.length > 0)"
-                     class="absolute z-10 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto">
+                     class="absolute z-10 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden max-h-48 overflow-y-auto">
                   <div
                     v-for="user in (showEditModal ? filteredEditUsers.slice(0, 10) : filteredUsers.slice(0, 10))"
                     :key="user.id"
@@ -547,14 +547,14 @@
                   v-model="editForm.musicId"
                   type="text"
                   placeholder="输入平台唯一标识符"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
                 />
                 <input
                   v-else
                   v-model="addForm.musicId"
                   type="text"
                   placeholder="输入平台唯一标识符"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -566,14 +566,14 @@
                 v-model="editForm.cover"
                 type="text"
                 placeholder="http://..."
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
               />
               <input
                 v-else
                 v-model="addForm.cover"
                 type="text"
                 placeholder="http://..."
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
               />
               <p v-if="(showEditModal ? editCoverValidation.valid : addCoverValidation.valid) && (showEditModal ? editForm.cover : addForm.cover)"
                  class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1">
@@ -592,14 +592,14 @@
                 v-model="editForm.playUrl"
                 type="text"
                 placeholder="http://..."
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
               />
               <input
                 v-else
                 v-model="addForm.playUrl"
                 type="text"
                 placeholder="http://..."
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
               />
               <p v-if="(showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) && (showEditModal ? editForm.playUrl : addForm.playUrl)"
                  class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1">
@@ -617,7 +617,7 @@
             <button
               @click="showEditModal ? saveEditSong() : saveAddSong()"
               :disabled="(showEditModal ? editLoading : !canSubmitAddForm || addLoading)"
-              class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
+              class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
             >
               {{ (showEditModal ? (editLoading ? '保存中...' : '保存更改') : (addLoading ? '添加中...' : '添加歌曲')) }}
             </button>

@@ -11,22 +11,22 @@
     </div>
 
     <!-- 添加黑名单项表单 -->
-    <section class="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-8 shadow-xl">
+    <section class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-8 shadow-xl">
       <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-6 px-1">添加黑名单项</h3>
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-end">
         <div class="xl:col-span-2 space-y-2">
           <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">封禁类型</label>
-          <div class="flex p-1 bg-zinc-950 border border-zinc-800 rounded-2xl">
+          <div class="flex p-1 bg-zinc-950 border border-zinc-800 rounded-lg">
             <button 
               @click="newItem.type = 'SONG'"
-              class="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[11px] font-bold transition-all"
+              class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="newItem.type === 'SONG' ? 'bg-zinc-800 text-blue-400' : 'text-zinc-600'"
             >
               <Music :size="12" /> 具体歌曲
             </button>
             <button 
               @click="newItem.type = 'KEYWORD'"
-              class="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[11px] font-bold transition-all"
+              class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="newItem.type === 'KEYWORD' ? 'bg-zinc-800 text-purple-400' : 'text-zinc-600'"
             >
               <Type :size="12" /> 关键词
@@ -42,7 +42,7 @@
             type="text" 
             v-model="newItem.value"
             :placeholder="newItem.type === 'SONG' ? '例如: 歌曲名 - 艺术家' : '例如: 敏感词、特定风格'" 
-            class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
           />
         </div>
 
@@ -52,7 +52,7 @@
             type="text" 
             v-model="newItem.reason"
             placeholder="简述加入黑名单的原因" 
-            class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
           />
         </div>
 
@@ -60,7 +60,7 @@
           <button 
             @click="addBlacklistItem"
             :disabled="!newItem.value || loading"
-            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-2xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95"
           >
             <Plus v-if="!loading" :size="16" />
             <div v-else class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -71,7 +71,7 @@
     </section>
 
     <!-- 筛选和搜索 -->
-    <div class="bg-zinc-900/20 border border-zinc-800 rounded-3xl p-4 flex flex-col md:flex-row gap-4 items-center">
+    <div class="bg-zinc-900/20 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center">
       <div class="flex-1 relative w-full">
         <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" :size="18" />
         <input 
@@ -79,7 +79,7 @@
           placeholder="在黑名单中搜索..." 
           v-model="filters.search"
           @input="debounceSearch"
-          class="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl pl-12 pr-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
+          class="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg pl-12 pr-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
         />
       </div>
       <div class="flex gap-3 w-full md:w-auto">
@@ -92,7 +92,7 @@
         />
         <button 
           @click="loadBlacklist"
-          class="p-3 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-600 hover:text-blue-400 transition-all active:scale-95"
+          class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-600 hover:text-blue-400 transition-all active:scale-95"
         >
           <Filter :size="18" />
         </button>
@@ -119,13 +119,13 @@
           <div
             v-for="item in blacklist"
             :key="item.id"
-            class="group flex flex-col lg:flex-row lg:items-center gap-6 p-6 bg-zinc-900/30 border rounded-3xl transition-all hover:border-zinc-700"
+            class="group flex flex-col lg:flex-row lg:items-center gap-6 p-6 bg-zinc-900/30 border rounded-xl transition-all hover:border-zinc-700"
             :class="[
               item.isActive ? 'border-zinc-800' : 'border-zinc-800/40 opacity-60'
             ]"
           >
             <div class="flex-1 flex items-start gap-5">
-              <div class="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center border transition-all"
+              <div class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border transition-all"
                 :class="[
                   item.type === 'SONG' 
                     ? 'bg-blue-600/10 text-blue-500 border-blue-500/20 shadow-lg shadow-blue-900/5' 
@@ -193,8 +193,8 @@
         </div>
 
         <!-- 空状态 -->
-        <div v-else-if="blacklist.length === 0" class="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-zinc-900/10 border border-zinc-800/40 border-dashed rounded-3xl">
-          <div class="w-16 h-16 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-800 shadow-xl">
+        <div v-else-if="blacklist.length === 0" class="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-zinc-900/10 border border-zinc-800/40 border-dashed rounded-xl">
+          <div class="w-16 h-16 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-800 shadow-xl">
             <Ban :size="32" />
           </div>
           <div class="space-y-1 px-4">
@@ -209,17 +209,17 @@
         <button 
           @click="changePage(pagination.page - 1)"
           :disabled="pagination.page <= 1 || loading"
-          class="p-3 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+          class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
         >
           <ChevronLeft :size="20" />
         </button>
-        <div class="px-6 py-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl text-[11px] font-black text-zinc-400 uppercase tracking-widest">
+        <div class="px-6 py-3 bg-zinc-900/50 border border-zinc-800 rounded-lg text-[11px] font-black text-zinc-400 uppercase tracking-widest">
           第 {{ pagination.page }} 页 / 共 {{ pagination.pages }} 页
         </div>
         <button 
           @click="changePage(pagination.page + 1)"
           :disabled="pagination.page >= pagination.pages || loading"
-          class="p-3 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+          class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
         >
           <ChevronRight :size="20" />
         </button>
@@ -237,11 +237,11 @@
     >
       <div v-if="showDeleteDialog" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
         <div 
-          class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+          class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
           @click.stop
         >
           <div class="flex flex-col items-center py-8 space-y-6 text-center px-8">
-            <div class="w-16 h-16 rounded-2xl bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/20 shadow-2xl shadow-red-900/10">
+            <div class="w-16 h-16 rounded-lg bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/20 shadow-2xl shadow-red-900/10">
               <Trash2 :size="28" />
             </div>
             <div class="space-y-2">
@@ -253,14 +253,14 @@
             <div class="flex gap-3 w-full pt-4">
               <button 
                 @click="showDeleteDialog = false" 
-                class="flex-1 px-4 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] font-black rounded-2xl transition-all uppercase tracking-widest"
+                class="flex-1 px-4 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] font-black rounded-lg transition-all uppercase tracking-widest"
               >
                 取消
               </button>
               <button 
                 @click="confirmDelete" 
                 :disabled="loading"
-                class="flex-1 px-4 py-4 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black rounded-2xl shadow-xl shadow-red-900/20 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50"
+                class="flex-1 px-4 py-4 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black rounded-lg shadow-xl shadow-red-900/20 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50"
               >
                 {{ loading ? '删除中...' : '确认移除' }}
               </button>

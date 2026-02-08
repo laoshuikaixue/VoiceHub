@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="relative overflow-hidden p-6 bg-zinc-900 border border-zinc-800 rounded-3xl group hover:border-blue-500/30 transition-all duration-300 shadow-xl shadow-black/20"
+    class="relative overflow-hidden p-6 bg-zinc-900 border border-zinc-800 rounded-xl group hover:border-blue-500/30 transition-all duration-300 shadow-xl shadow-black/20"
     :class="{ 'opacity-60 grayscale cursor-wait': isLoading }"
   >
     <!-- 背景装饰 -->
@@ -10,7 +10,7 @@
       <div class="space-y-4 flex-1">
         <div class="flex items-center gap-2">
           <div 
-            class="p-2.5 rounded-2xl bg-zinc-950 border border-zinc-800 group-hover:border-blue-500/30 group-hover:bg-blue-600/5 transition-all duration-300"
+            class="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 group-hover:border-blue-500/30 group-hover:bg-blue-600/5 transition-all duration-300"
             :class="iconClass"
           >
             <component :is="iconComponent" :size="18" class="text-zinc-400 group-hover:text-blue-400 transition-colors" />

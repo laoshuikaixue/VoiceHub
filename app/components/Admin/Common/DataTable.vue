@@ -4,7 +4,7 @@
     <div v-if="showToolbar" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-1">
       <div class="flex items-center gap-3">
         <slot name="toolbar-left">
-          <div v-if="selectedRows.length > 0" class="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 rounded-xl">
+          <div v-if="selectedRows.length > 0" class="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 rounded-lg">
             <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">已选择 {{ selectedRows.length }} 项</span>
             <button @click="$emit('clear-selection')" class="p-0.5 text-blue-400 hover:text-blue-300 transition-colors">
               <X :size="12" />
@@ -28,7 +28,7 @@
     </div>
 
     <!-- 表格主容器 -->
-    <div class="relative bg-zinc-900/50 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl shadow-black/20">
+    <div class="relative bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl shadow-black/20">
       <!-- 加载状态 -->
       <div v-if="loading" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-zinc-950/60 backdrop-blur-[2px] animate-in fade-in duration-300">
         <div class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
