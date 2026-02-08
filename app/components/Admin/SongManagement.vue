@@ -48,7 +48,7 @@
           </Transition>
 
           <button
-            @click="showAddSongModal = true"
+            @click="openAddSongModal"
             class="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all active:scale-95"
           >
             <Plus :size="16" /> 手动添加
@@ -75,55 +75,29 @@
           />
         </div>
         <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
-          <!-- 学期选择 -->
-          <div class="relative min-w-[160px]">
-            <select
-              v-model="selectedSemester"
-              class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-zinc-400 focus:outline-none focus:border-blue-500/30 appearance-none cursor-pointer hover:bg-zinc-900/50 transition-all"
-            >
-              <option value="all">全部学期</option>
-              <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
-                {{ semester.name }}
-              </option>
-            </select>
-            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
-              <ChevronDown :size="14" />
-            </div>
-          </div>
-
-          <!-- 状态过滤 -->
-          <div class="relative min-w-[140px]">
-            <select
-              v-model="statusFilter"
-              class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-zinc-400 focus:outline-none focus:border-blue-500/30 appearance-none cursor-pointer hover:bg-zinc-900/50 transition-all"
-            >
-              <option value="all">全部状态</option>
-              <option value="pending">待排期</option>
-              <option value="scheduled">已排期</option>
-              <option value="played">已播放</option>
-            </select>
-            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
-              <ChevronDown :size="14" />
-            </div>
-          </div>
-
-          <!-- 排序方式 -->
-          <div class="relative min-w-[140px]">
-            <select
-              v-model="sortOption"
-              class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-zinc-400 focus:outline-none focus:border-blue-500/30 appearance-none cursor-pointer hover:bg-zinc-900/50 transition-all"
-            >
-              <option value="time-desc">最新投稿</option>
-              <option value="time-asc">最早投稿</option>
-              <option value="votes-desc">热度最高</option>
-              <option value="votes-asc">热度最低</option>
-              <option value="title-asc">标题A-Z</option>
-              <option value="title-desc">标题Z-A</option>
-            </select>
-            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
-              <ChevronDown :size="14" />
-            </div>
-          </div>
+          <CustomSelect
+            v-model="selectedSemester"
+            label="学期"
+            :options="availableSemesters"
+            label-key="name"
+            value-key="name"
+            placeholder="选择学期"
+            className="w-40"
+          />
+          <CustomSelect
+            v-model="statusFilter"
+            label="状态"
+            :options="statusOptions"
+            placeholder="选择状态"
+            className="w-32"
+          />
+          <CustomSelect
+            v-model="sortOption"
+            label="排序"
+            :options="sortOptions"
+            placeholder="选择排序"
+            className="w-36"
+          />
         </div>
       </div>
     </div>
@@ -297,9 +271,8 @@
         </button>
         <div class="flex items-center gap-1 mx-2">
           <button
-            v-for="p in totalPages"
+            v-for="p in displayedPages"
             :key="p"
-            v-show="Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages"
             @click="currentPage = p"
             :class="[
               'w-8 h-8 rounded-xl text-xs font-bold transition-all',
@@ -473,27 +446,29 @@
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">投稿人</label>
-              <div class="relative">
-                <input
-                  v-if="showEditModal"
-                  v-model="editUserSearchQuery"
-                  @focus="showEditUserDropdown = true"
-                  @input="searchEditUsers()"
-                  type="text"
-                  placeholder="搜索用户姓名或用户名"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
-                />
-                <input
-                  v-else
-                  v-model="userSearchQuery"
-                  @focus="showUserDropdown = true"
-                  @input="searchUsers()"
-                  type="text"
-                  placeholder="搜索用户姓名或用户名"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
-                />
-                <div v-if="(showEditModal ? editUserSearchLoading : userSearchLoading)" class="absolute right-4 top-1/2 -translate-y-1/2">
-                  <div class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+              <div class="relative user-search-container">
+                <div class="relative">
+                  <input
+                    v-if="showEditModal"
+                    v-model="editUserSearchQuery"
+                    @focus="showEditUserDropdown = true"
+                    @input="searchEditUsers()"
+                    type="text"
+                    placeholder="搜索用户姓名或用户名"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                  />
+                  <input
+                    v-else
+                    v-model="userSearchQuery"
+                    @focus="showUserDropdown = true"
+                    @input="searchUsers()"
+                    type="text"
+                    placeholder="搜索用户姓名或用户名"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                  />
+                  <div v-if="(showEditModal ? editUserSearchLoading : userSearchLoading)" class="absolute right-4 top-1/2 -translate-y-1/2">
+                    <div class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                  </div>
                 </div>
 
                 <!-- 用户下拉列表 -->
@@ -523,49 +498,47 @@
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">学期</label>
-              <select
+              <CustomSelect
                 v-if="showEditModal"
                 v-model="editForm.semester"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all appearance-none"
-              >
-                <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
-                  {{ semester.name }}
-                </option>
-              </select>
-              <select
+                :options="availableSemesters"
+                label-key="name"
+                value-key="name"
+                placeholder="选择学期"
+              />
+              <CustomSelect
                 v-else
                 v-model="addForm.semester"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all appearance-none"
-              >
-                <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
-                  {{ semester.name }}
-                </option>
-              </select>
+                :options="availableSemesters"
+                label-key="name"
+                value-key="name"
+                placeholder="选择学期"
+              />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-zinc-800/50">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">音乐平台 (可选)</label>
-                <select
+                <CustomSelect
                   v-if="showEditModal"
                   v-model="editForm.musicPlatform"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none appearance-none"
-                >
-                  <option value="">请选择平台</option>
-                  <option value="netease">网易云音乐</option>
-                  <option value="tencent">QQ音乐</option>
-                  <option value="bilibili">哔哩哔哩</option>
-                </select>
-                <select
+                  :options="[
+                    { label: '网易云音乐', value: 'netease' },
+                    { label: 'QQ音乐', value: 'tencent' },
+                    { label: '哔哩哔哩', value: 'bilibili' }
+                  ]"
+                  placeholder="选择平台"
+                />
+                <CustomSelect
                   v-else
                   v-model="addForm.musicPlatform"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none appearance-none"
-                >
-                  <option value="">请选择平台</option>
-                  <option value="netease">网易云音乐</option>
-                  <option value="tencent">QQ音乐</option>
-                  <option value="bilibili">哔哩哔哩</option>
-                </select>
+                  :options="[
+                    { label: '网易云音乐', value: 'netease' },
+                    { label: 'QQ音乐', value: 'tencent' },
+                    { label: '哔哩哔哩', value: 'bilibili' }
+                  ]"
+                  placeholder="选择平台"
+                />
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">音乐ID (可选)</label>
@@ -656,20 +629,21 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref, watch} from 'vue'
+import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
+import CustomSelect from './Common/CustomSelect.vue'
 import {
   Search, Plus, RotateCcw, Edit2, Check, X, Trash2,
   Music, Heart, Download, ChevronDown, ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight
 } from 'lucide-vue-next'
-import {useSongs} from '~/composables/useSongs'
-import {useAdmin} from '~/composables/useAdmin'
-import {useAuth} from '~/composables/useAuth'
-import {useSemesters} from '~/composables/useSemesters'
-import {validateUrl} from '~/utils/url'
+import { useSongs } from '~/composables/useSongs'
+import { useAdmin } from '~/composables/useAdmin'
+import { useAuth } from '~/composables/useAuth'
+import { useSemesters } from '~/composables/useSemesters'
+import { validateUrl } from '~/utils/url'
 
 // 响应式数据
 const loading = ref(false)
@@ -683,6 +657,23 @@ const pageSize = ref(20)
 // 学期相关
 const selectedSemester = ref('all')
 const availableSemesters = ref([])
+
+// 选项配置
+const statusOptions = [
+  { label: '全部状态', value: 'all' },
+  { label: '待排期', value: 'pending' },
+  { label: '已排期', value: 'scheduled' },
+  { label: '已播放', value: 'played' }
+]
+
+const sortOptions = [
+  { label: '最新投稿', value: 'time-desc' },
+  { label: '最早投稿', value: 'time-asc' },
+  { label: '热度最高', value: 'votes-desc' },
+  { label: '热度最低', value: 'votes-asc' },
+  { label: '标题 A-Z', value: 'title-asc' },
+  { label: '标题 Z-A', value: 'title-desc' }
+]
 
 // 删除对话框相关
 const showDeleteDialog = ref(false)
@@ -741,16 +732,15 @@ const addForm = ref({
 })
 
 // URL验证状态
-const addCoverValidation = ref({valid: true, error: '', validating: false})
-const addPlayUrlValidation = ref({valid: true, error: '', validating: false})
-const editCoverValidation = ref({valid: true, error: '', validating: false})
-const editPlayUrlValidation = ref({valid: true, error: '', validating: false})
+const addCoverValidation = ref({ valid: true, error: '', validating: false })
+const addPlayUrlValidation = ref({ valid: true, error: '', validating: false })
+const editCoverValidation = ref({ valid: true, error: '', validating: false })
+const editPlayUrlValidation = ref({ valid: true, error: '', validating: false })
 
 // 用户搜索相关
 const userSearchQuery = ref('')
 const showUserDropdown = ref(false)
 const selectedUser = ref(null)
-const allUsers = ref([])
 const filteredUsers = ref([])
 const userSearchLoading = ref(false)
 
@@ -760,6 +750,14 @@ const showEditUserDropdown = ref(false)
 const selectedEditUser = ref(null)
 const filteredEditUsers = ref([])
 const editUserSearchLoading = ref(false)
+
+// 联合投稿人搜索相关
+const selectedEditCollaborators = ref([])
+const editCollaboratorSearchQuery = ref('')
+const filteredEditCollaborators = ref([])
+const showEditCollaboratorDropdown = ref(false)
+const editCollaboratorSearchLoading = ref(false)
+let editCollaboratorSearchTimeout = null
 
 // 数据
 const songs = ref([])
@@ -779,14 +777,14 @@ const filteredSongs = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(song =>
-        song.title?.toLowerCase().includes(query) ||
-        song.artist?.toLowerCase().includes(query) ||
-        song.requester?.toLowerCase().includes(query)
+      song.title?.toLowerCase().includes(query) ||
+      song.artist?.toLowerCase().includes(query) ||
+      song.requester?.toLowerCase().includes(query)
     )
   }
 
   // 学期过滤
-  if (selectedSemester.value !== 'all') {
+  if (selectedSemester.value && selectedSemester.value !== 'all') {
     filtered = filtered.filter(song => song.semester === selectedSemester.value)
   }
 
@@ -842,6 +840,34 @@ const totalPages = computed(() => {
   return Math.ceil(filteredSongs.value.length / pageSize.value)
 })
 
+// 显示的分页按钮
+const displayedPages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const pages = []
+  
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+  } else {
+    if (current <= 4) {
+      for (let i = 1; i <= 5; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
+    } else if (current >= total - 3) {
+      pages.push(1)
+      pages.push('...')
+      for (let i = total - 4; i <= total; i++) pages.push(i)
+    } else {
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 1; i <= current + 1; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
+    }
+  }
+  return pages.filter(p => typeof p === 'number')
+})
+
 const playedCount = computed(() => {
   return songs.value.filter(song => song.played).length
 })
@@ -852,26 +878,24 @@ const pendingCount = computed(() => {
 
 const isAllSelected = computed(() => {
   return paginatedSongs.value.length > 0 &&
-      paginatedSongs.value.every(song => selectedSongs.value.includes(song.id))
+    paginatedSongs.value.every(song => selectedSongs.value.includes(song.id))
 })
 
 // 计算属性：检查添加歌曲表单是否可以提交
 const canSubmitAddForm = computed(() => {
   // 必填字段检查
   if (!addForm.value.title.trim() ||
-      !addForm.value.artist.trim() ||
-      !selectedUser.value ||
-      !addForm.value.semester) {
+    !addForm.value.artist.trim() ||
+    !selectedUser.value ||
+    !addForm.value.semester) {
     return false
   }
 
   // 可选字段验证检查
-  // 如果输入了封面URL，必须验证通过且不在验证中
   if (addForm.value.cover && (!addCoverValidation.value.valid || addCoverValidation.value.validating)) {
     return false
   }
 
-  // 如果输入了播放URL，必须验证通过且不在验证中
   if (addForm.value.playUrl && (!addPlayUrlValidation.value.valid || addPlayUrlValidation.value.validating)) {
     return false
   }
@@ -891,12 +915,6 @@ const formatDate = (dateString) => {
   return `${Math.floor(diff / 86400000)}天前`
 }
 
-const getStatusClass = (song) => {
-  if (song.played) return 'played'
-  if (song.scheduled) return 'pending'
-  return 'unscheduled'
-}
-
 const getStatusText = (song) => {
   if (song.played) return '已播放'
   if (song.scheduled) return '待播放'
@@ -906,12 +924,12 @@ const getStatusText = (song) => {
 const toggleSelectAll = () => {
   if (isAllSelected.value) {
     selectedSongs.value = selectedSongs.value.filter(id =>
-        !paginatedSongs.value.some(song => song.id === id)
+      !paginatedSongs.value.some(song => song.id === id)
     )
   } else {
     const newSelections = paginatedSongs.value
-        .map(song => song.id)
-        .filter(id => !selectedSongs.value.includes(id))
+      .map(song => song.id)
+      .filter(id => !selectedSongs.value.includes(id))
     selectedSongs.value.push(...newSelections)
   }
 }
@@ -973,7 +991,6 @@ const deleteSong = async (songId) => {
       await adminService.deleteSong(songId)
       await refreshSongs()
 
-      // 从选中列表中移除
       const index = selectedSongs.value.indexOf(songId)
       if (index > -1) {
         selectedSongs.value.splice(index, 1)
@@ -1037,11 +1054,10 @@ const closeVotersModal = () => {
 
 // 打开下载对话框
 const openDownloadDialog = () => {
-  // 将选中的歌曲转换为下载对话框需要的格式（与ScheduleManager保持一致）
   selectedSongsForDownload.value = selectedSongs.value.map(songId => {
     const song = songs.value.find(s => s.id === songId)
     return {
-      id: `temp-${song.id}`, // 临时ID，因为这不是真正的排期
+      id: `temp-${song.id}`,
       song: {
         id: song.id,
         title: song.title,
@@ -1049,7 +1065,7 @@ const openDownloadDialog = () => {
         musicPlatform: song.musicPlatform || 'unknown',
         requester: song.requester || '未知',
         musicId: song.musicId,
-        playUrl: song.playUrl  // 添加缺失的playUrl字段
+        playUrl: song.playUrl
       }
     }
   })
@@ -1099,7 +1115,7 @@ const confirmReject = async () => {
 
   rejectLoading.value = true
   try {
-    const response = await $fetch('/api/admin/songs/reject', {
+    await $fetch('/api/admin/songs/reject', {
       method: 'POST',
       body: {
         songId: rejectSongInfo.value.id,
@@ -1108,10 +1124,8 @@ const confirmReject = async () => {
       }
     })
 
-    // 强制绕过缓存刷新歌曲列表
     await refreshSongs(true)
 
-    // 从选中列表中移除
     const index = selectedSongs.value.indexOf(rejectSongInfo.value.id)
     if (index > -1) {
       selectedSongs.value.splice(index, 1)
@@ -1159,7 +1173,6 @@ const editSong = (song) => {
     playUrl: song.playUrl || ''
   }
 
-  // 设置编辑时的用户信息
   if (song.requester_name) {
     selectedEditUser.value = {
       id: song.requester_id || song.requester,
@@ -1171,7 +1184,6 @@ const editSong = (song) => {
     clearSelectedEditUser()
   }
 
-  // 设置联合投稿人
   if (song.collaborators && Array.isArray(song.collaborators)) {
     selectedEditCollaborators.value = [...song.collaborators]
   } else {
@@ -1189,7 +1201,6 @@ const saveEditSong = async () => {
     return
   }
 
-  // 检查封面URL验证状态
   if (editForm.value.cover && !editCoverValidation.value.valid) {
     if (window.$showNotification) {
       window.$showNotification('请等待封面URL验证完成或修正无效的URL', 'error')
@@ -1197,7 +1208,6 @@ const saveEditSong = async () => {
     return
   }
 
-  // 检查播放URL验证状态
   if (editForm.value.playUrl && !editPlayUrlValidation.value.valid) {
     if (window.$showNotification) {
       window.$showNotification('请等待播放URL验证完成或修正无效的URL', 'error')
@@ -1205,7 +1215,6 @@ const saveEditSong = async () => {
     return
   }
 
-  // 检查是否正在验证中
   if (editCoverValidation.value.validating || editPlayUrlValidation.value.validating) {
     if (window.$showNotification) {
       window.$showNotification('正在验证URL，请稍候...', 'warning')
@@ -1215,8 +1224,7 @@ const saveEditSong = async () => {
 
   editLoading.value = true
   try {
-    const {updateSong} = adminService
-    // 传递投稿人字段，支持修改投稿人
+    const { updateSong } = adminService
     await updateSong(editForm.value.id, {
       title: editForm.value.title,
       artist: editForm.value.artist,
@@ -1237,17 +1245,12 @@ const saveEditSong = async () => {
     }
   } catch (error) {
     console.error('更新歌曲失败:', error)
-
-    // 提取具体的错误信息
     let errorMessage = '更新失败'
     if (error.data && error.data.message) {
       errorMessage = error.data.message
     } else if (error.message) {
       errorMessage = error.message
-    } else if (error.statusMessage) {
-      errorMessage = error.statusMessage
     }
-
     if (window.$showNotification) {
       window.$showNotification(errorMessage, 'error')
     }
@@ -1269,21 +1272,19 @@ const cancelEditSong = () => {
     cover: '',
     playUrl: ''
   }
-  // 重置验证状态
-  editCoverValidation.value = {valid: true, error: '', validating: false}
-  editPlayUrlValidation.value = {valid: true, error: '', validating: false}
+  editCoverValidation.value = { valid: true, error: '', validating: false }
+  editPlayUrlValidation.value = { valid: true, error: '', validating: false }
   clearSelectedEditUser()
   selectedEditCollaborators.value = []
   editCollaboratorSearchQuery.value = ''
 }
 
-// 添加歌曲
 const openAddSongModal = () => {
   addForm.value = {
     title: '',
     artist: '',
     requester: '',
-    semester: '',
+    semester: selectedSemester.value !== 'all' ? selectedSemester.value : '',
     musicPlatform: '',
     musicId: '',
     cover: ''
@@ -1291,9 +1292,7 @@ const openAddSongModal = () => {
   showAddSongModal.value = true
 }
 
-
 const saveAddSong = async () => {
-  // 验证必填字段
   if (!addForm.value.title || !addForm.value.artist) {
     if (window.$showNotification) {
       window.$showNotification('请填写歌曲名称和歌手', 'error')
@@ -1301,7 +1300,6 @@ const saveAddSong = async () => {
     return
   }
 
-  // 验证投稿人是否已选择
   if (!selectedUser.value || !addForm.value.requester) {
     if (window.$showNotification) {
       window.$showNotification('请选择投稿人', 'error')
@@ -1309,7 +1307,6 @@ const saveAddSong = async () => {
     return
   }
 
-  // 验证学期是否已选择
   if (!addForm.value.semester) {
     if (window.$showNotification) {
       window.$showNotification('请选择学期', 'error')
@@ -1317,7 +1314,6 @@ const saveAddSong = async () => {
     return
   }
 
-  // 验证可选字段URL有效性 - 如果输入了可选字段，必须验证通过
   if (addForm.value.cover) {
     if (!addCoverValidation.value.valid) {
       if (window.$showNotification) {
@@ -1350,11 +1346,11 @@ const saveAddSong = async () => {
 
   addLoading.value = true
   try {
-    const {addSong} = adminService
+    const { addSong } = adminService
     await addSong({
       title: addForm.value.title,
       artist: addForm.value.artist,
-      requester: addForm.value.requester, // 这里应该是用户ID
+      requester: addForm.value.requester,
       semester: addForm.value.semester,
       musicPlatform: addForm.value.musicPlatform || null,
       musicId: addForm.value.musicId || null,
@@ -1365,7 +1361,6 @@ const saveAddSong = async () => {
     await refreshSongs()
     showAddSongModal.value = false
 
-    // 清空表单内容
     addForm.value = {
       title: '',
       artist: '',
@@ -1383,17 +1378,12 @@ const saveAddSong = async () => {
     }
   } catch (error) {
     console.error('添加歌曲失败:', error)
-
-    // 提取具体的错误信息
     let errorMessage = '添加失败'
     if (error.data && error.data.message) {
       errorMessage = error.data.message
     } else if (error.message) {
       errorMessage = error.message
-    } else if (error.statusMessage) {
-      errorMessage = error.statusMessage
     }
-
     if (window.$showNotification) {
       window.$showNotification(errorMessage, 'error')
     }
@@ -1414,17 +1404,14 @@ const cancelAddSong = () => {
     cover: '',
     playUrl: ''
   }
-  // 重置URL验证状态
-  addCoverValidation.value = {valid: true, error: '', validating: false}
-  addPlayUrlValidation.value = {valid: true, error: '', validating: false}
+  addCoverValidation.value = { valid: true, error: '', validating: false }
+  addPlayUrlValidation.value = { valid: true, error: '', validating: false }
   clearSelectedUser()
 }
 
 // 用户搜索功能
-// 防抖定时器
 let searchTimeout = null
 
-// API搜索用户函数
 const searchUsersFromAPI = async (query) => {
   if (!query.trim()) {
     return []
@@ -1435,7 +1422,7 @@ const searchUsersFromAPI = async (query) => {
       method: 'GET',
       query: {
         search: query,
-        limit: 20 // 限制返回数量，提高性能
+        limit: 20
       }
     })
     return response.users || []
@@ -1453,12 +1440,10 @@ const searchUsers = async () => {
     return
   }
 
-  // 清除之前的定时器
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
 
-  // 设置防抖
   searchTimeout = setTimeout(async () => {
     userSearchLoading.value = true
     try {
@@ -1472,12 +1457,12 @@ const searchUsers = async () => {
     } finally {
       userSearchLoading.value = false
     }
-  }, 300) // 300ms防抖延迟
+  }, 300)
 }
 
 const selectUser = (user) => {
   selectedUser.value = user
-  addForm.value.requester = user.id // 存储用户ID
+  addForm.value.requester = user.id
   userSearchQuery.value = user.name
   showUserDropdown.value = false
 }
@@ -1490,7 +1475,6 @@ const clearSelectedUser = () => {
 }
 
 // 编辑模态框的用户搜索功能
-// 编辑模态框防抖定时器
 let editSearchTimeout = null
 
 const searchEditUsers = async () => {
@@ -1501,12 +1485,10 @@ const searchEditUsers = async () => {
     return
   }
 
-  // 清除之前的定时器
   if (editSearchTimeout) {
     clearTimeout(editSearchTimeout)
   }
 
-  // 设置防抖
   editSearchTimeout = setTimeout(async () => {
     editUserSearchLoading.value = true
     try {
@@ -1520,12 +1502,12 @@ const searchEditUsers = async () => {
     } finally {
       editUserSearchLoading.value = false
     }
-  }, 300) // 300ms防抖延迟
+  }, 300)
 }
 
 const selectEditUser = (user) => {
   selectedEditUser.value = user
-  editForm.value.requester = user.id // 存储用户ID
+  editForm.value.requester = user.id
   editUserSearchQuery.value = user.name
   showEditUserDropdown.value = false
 }
@@ -1538,13 +1520,6 @@ const clearSelectedEditUser = () => {
 }
 
 // 联合投稿人搜索相关
-const selectedEditCollaborators = ref([])
-const editCollaboratorSearchQuery = ref('')
-const filteredEditCollaborators = ref([])
-const showEditCollaboratorDropdown = ref(false)
-const editCollaboratorSearchLoading = ref(false)
-let editCollaboratorSearchTimeout = null
-
 const searchEditCollaborators = async () => {
   if (!editCollaboratorSearchQuery.value.trim()) {
     filteredEditCollaborators.value = []
@@ -1561,7 +1536,6 @@ const searchEditCollaborators = async () => {
     editCollaboratorSearchLoading.value = true
     try {
       const users = await searchUsersFromAPI(editCollaboratorSearchQuery.value)
-      // 过滤掉已经是主投稿人或已在联合投稿人列表中的用户
       filteredEditCollaborators.value = users.filter(u => 
         (!selectedEditUser.value || u.id !== selectedEditUser.value.id) &&
         !selectedEditCollaborators.value.some(c => c.id === u.id)
@@ -1595,8 +1569,6 @@ const handleClickOutside = (event) => {
   if (!event.target.closest('.user-search-container')) {
     showUserDropdown.value = false
     showEditUserDropdown.value = false
-  }
-  if (!event.target.closest('.collaborator-search-container')) {
     showEditCollaboratorDropdown.value = false
   }
 }
@@ -1607,11 +1579,9 @@ watch([searchQuery, statusFilter, sortOption, selectedSemester], () => {
 })
 
 // 生命周期
-// 监听学期更新事件
-const {semesters, fetchSemesters, semesterUpdateEvent} = useSemesters()
+const { semesters, fetchSemesters, semesterUpdateEvent } = useSemesters()
 
 watch(semesterUpdateEvent, async () => {
-  // 当学期更新时，重新获取学期列表
   await fetchSemesters()
   availableSemesters.value = semesters.value || []
 })
@@ -1621,21 +1591,17 @@ onMounted(async () => {
   adminService = useAdmin()
   auth = useAuth()
 
-  // 获取可用学期
-  const {fetchCurrentSemester, currentSemester} = useSemesters()
+  const { fetchCurrentSemester, currentSemester } = useSemesters()
   await fetchSemesters()
   await fetchCurrentSemester()
 
   availableSemesters.value = semesters.value || []
+  availableSemesters.value.unshift({ id: 'all', name: '全部学期' })
 
-  // 设置默认学期为当前学期
   if (currentSemester.value) {
     selectedSemester.value = currentSemester.value.name
   }
 
-  // 用户搜索改为实时API搜索，不再预加载用户列表
-
-  // 添加点击外部关闭下拉框的事件监听
   document.addEventListener('click', handleClickOutside)
 
   await refreshSongs()
@@ -1644,7 +1610,7 @@ onMounted(async () => {
 // URL验证函数
 const validateAddCoverUrl = async (url) => {
   if (!url) {
-    addCoverValidation.value = {valid: true, error: '', validating: false}
+    addCoverValidation.value = { valid: true, error: '', validating: false }
     return
   }
 
@@ -1659,7 +1625,7 @@ const validateAddCoverUrl = async (url) => {
 
 const validateAddPlayUrl = async (url) => {
   if (!url) {
-    addPlayUrlValidation.value = {valid: true, error: '', validating: false}
+    addPlayUrlValidation.value = { valid: true, error: '', validating: false }
     return
   }
 
@@ -1674,7 +1640,7 @@ const validateAddPlayUrl = async (url) => {
 
 const validateEditCoverUrl = async (url) => {
   if (!url) {
-    editCoverValidation.value = {valid: true, error: '', validating: false}
+    editCoverValidation.value = { valid: true, error: '', validating: false }
     return
   }
 
@@ -1689,7 +1655,7 @@ const validateEditCoverUrl = async (url) => {
 
 const validateEditPlayUrl = async (url) => {
   if (!url) {
-    editPlayUrlValidation.value = {valid: true, error: '', validating: false}
+    editPlayUrlValidation.value = { valid: true, error: '', validating: false }
     return
   }
 
@@ -1705,1256 +1671,65 @@ const validateEditPlayUrl = async (url) => {
 // 监听URL变化并验证
 watch(() => addForm.value.cover, (newUrl) => {
   if (newUrl) {
-    // 防抖处理，避免频繁验证
     clearTimeout(addCoverValidation.value.debounceTimer)
     addCoverValidation.value.debounceTimer = setTimeout(() => {
       validateAddCoverUrl(newUrl)
     }, 1000)
   } else {
-    addCoverValidation.value = {valid: true, error: '', validating: false}
+    addCoverValidation.value = { valid: true, error: '', validating: false }
   }
 })
 
 watch(() => addForm.value.playUrl, (newUrl) => {
   if (newUrl) {
-    // 防抖处理，避免频繁验证
     clearTimeout(addPlayUrlValidation.value.debounceTimer)
     addPlayUrlValidation.value.debounceTimer = setTimeout(() => {
       validateAddPlayUrl(newUrl)
     }, 1000)
   } else {
-    addPlayUrlValidation.value = {valid: true, error: '', validating: false}
+    addPlayUrlValidation.value = { valid: true, error: '', validating: false }
   }
 })
 
 watch(() => editForm.value.cover, (newUrl) => {
   if (newUrl) {
-    // 防抖处理，避免频繁验证
     clearTimeout(editCoverValidation.value.debounceTimer)
     editCoverValidation.value.debounceTimer = setTimeout(() => {
       validateEditCoverUrl(newUrl)
     }, 1000)
   } else {
-    editCoverValidation.value = {valid: true, error: '', validating: false}
+    editCoverValidation.value = { valid: true, error: '', validating: false }
   }
 })
 
 watch(() => editForm.value.playUrl, (newUrl) => {
   if (newUrl) {
-    // 防抖处理，避免频繁验证
     clearTimeout(editPlayUrlValidation.value.debounceTimer)
     editPlayUrlValidation.value.debounceTimer = setTimeout(() => {
       validateEditPlayUrl(newUrl)
     }, 1000)
   } else {
-    editPlayUrlValidation.value = {valid: true, error: '', validating: false}
+    editPlayUrlValidation.value = { valid: true, error: '', validating: false }
   }
 })
 
-// 组件卸载时移除事件监听
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
 <style scoped>
-.song-management {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 24px;
-  background: var(--bg-primary);
-  border-radius: 12px;
-  border: 1px solid #1f1f1f;
-  color: #e2e8f0;
-  min-height: 100vh;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
 }
-
-/* 工具栏 */
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 20px;
-  background: #1a1a1a;
-  border-radius: 12px;
-  border: 1px solid #2a2a2a;
-  flex-wrap: wrap;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-.toolbar h2 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #f8fafc;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
 }
-
-.search-section {
-  flex: 1;
-  min-width: 300px;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  position: absolute;
-  left: 16px;
-  width: 20px;
-  height: 20px;
-  color: #666666;
-  z-index: 1;
-}
-
-.search-input {
-  width: 100%;
-  padding: 12px 16px 12px 48px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.search-input::placeholder {
-  color: #666666;
-}
-
-.clear-search-btn {
-  position: absolute;
-  right: 12px;
-  width: 24px;
-  height: 24px;
-  background: none;
-  border: none;
-  color: #666666;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.clear-search-btn:hover {
-  background: #3a3a3a;
-  color: #ffffff;
-}
-
-.clear-search-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.filter-section {
-  display: flex;
-  gap: 12px;
-}
-
-.filter-select {
-  padding: 12px 16px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.semester-select {
-  width: 120px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.action-section {
-  display: flex;
-  gap: 12px;
-}
-
-.refresh-btn,
-.batch-download-btn,
-.batch-delete-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-.refresh-btn {
-  background: #667eea;
-  color: #ffffff;
-}
-
-.refresh-btn:hover:not(:disabled) {
-  background: #5a67d8;
-}
-
-.refresh-btn:disabled {
-  background: #3a3a3a;
-  color: #666666;
-  cursor: not-allowed;
-}
-
-.batch-download-btn {
-  background: #10b981;
-  color: #ffffff;
-}
-
-.batch-download-btn:hover {
-  background: #059669;
-}
-
-.batch-delete-btn {
-  background: #ef4444;
-  color: #ffffff;
-}
-
-.batch-delete-btn:hover {
-  background: #dc2626;
-}
-
-.refresh-btn svg,
-.batch-download-btn svg,
-.batch-delete-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* 统计栏 */
-.stats-bar {
-  display: flex;
-  gap: 32px;
-  padding: 16px 20px;
-  background: #1a1a1a;
-  border-radius: 8px;
-  border: 1px solid #2a2a2a;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #888888;
-}
-
-.stat-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-/* 加载状态 */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  gap: 16px;
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #2a2a2a;
-  border-top: 3px solid #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-text {
-  color: #888888;
-  font-size: 14px;
-}
-
-/* 空状态 */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  gap: 16px;
-}
-
-.empty-state svg {
-  width: 48px;
-  height: 48px;
-  color: #444444;
-}
-
-.empty-text {
-  color: #666666;
-  font-size: 16px;
-  text-align: center;
-}
-
-/* 歌曲表格 */
-.song-table {
-  background: #1a1a1a;
-  border-radius: 12px;
-  border: 1px solid #2a2a2a;
-  overflow: hidden;
-}
-
-.table-header {
-  display: grid;
-  grid-template-columns: 50px 2fr 150px 100px 100px 160px;
-  gap: 16px;
-  padding: 16px 20px;
-  background: #2a2a2a;
-  border-bottom: 1px solid #3a3a3a;
-}
-
-.header-cell {
-  font-size: 14px;
-  font-weight: 600;
-  color: #cccccc;
-  display: flex;
-  align-items: center;
-}
-
-.song-row {
-  display: grid;
-  grid-template-columns: 50px 2fr 150px 100px 100px 160px;
-  gap: 16px;
-  padding: 16px 20px;
-  border-bottom: 1px solid #2a2a2a;
-  transition: all 0.2s ease;
-}
-
-.song-row:hover {
-  background: #1f1f1f;
-}
-
-.song-row.selected {
-  background: rgba(102, 126, 234, 0.1);
-  border-color: #667eea;
-}
-
-.song-row:last-child {
-  border-bottom: none;
-}
-
-.cell {
-  display: flex;
-  align-items: center;
-}
-
-.checkbox-cell {
-  justify-content: center;
-}
-
-.checkbox {
-  width: 16px;
-  height: 16px;
-  accent-color: #667eea;
-}
-
-.song-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.song-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  line-height: 1.2;
-}
-
-.song-artist {
-  font-size: 14px;
-  color: #cccccc;
-}
-
-.song-meta {
-  display: flex;
-  gap: 12px;
-  margin-top: 4px;
-}
-
-.song-time {
-  font-size: 12px;
-  color: #888888;
-}
-
-.song-url {
-  font-size: 12px;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.submitter-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.submitter-name {
-  font-size: 14px;
-  color: #ffffff;
-  font-weight: 500;
-}
-
-.submitter-username {
-  font-size: 12px;
-  color: #888888;
-}
-
-.song-stats {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.song-stats .stat-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  color: #888888;
-}
-
-.song-stats .stat-item.clickable {
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.song-stats .stat-item.clickable:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-.song-stats .stat-item.clickable:hover svg {
-  color: #ef4444;
-}
-
-.song-stats svg {
-  width: 14px;
-  height: 14px;
-  color: #ef4444;
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  text-align: center;
-}
-
-.status-badge.pending {
-  background: rgba(251, 191, 36, 0.1);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.2);
-}
-
-.status-badge.unscheduled {
-  background: rgba(107, 114, 128, 0.1);
-  color: #6b7280;
-  border: 1px solid rgba(107, 114, 128, 0.2);
-}
-
-.status-badge.played {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 6px;
-  flex-wrap: nowrap;
-}
-
-.action-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.action-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.played-btn {
-  background: #10b981;
-  color: #ffffff;
-}
-
-.played-btn:hover {
-  background: #059669;
-}
-
-.unplayed-btn {
-  background: #f59e0b;
-  color: #ffffff;
-}
-
-.unplayed-btn:hover {
-  background: #d97706;
-}
-
-.delete-btn {
-  background: #ef4444;
-  color: #ffffff;
-}
-
-.delete-btn:hover {
-  background: #dc2626;
-}
-
-.reject-btn {
-  background: #f59e0b;
-  color: #ffffff;
-}
-
-.reject-btn:hover {
-  background: #d97706;
-}
-
-/* 分页 */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 20px;
-}
-
-.page-btn {
-  padding: 8px 16px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
-  color: #cccccc;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: #3a3a3a;
-  color: #ffffff;
-}
-
-.page-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.page-info {
-  font-size: 14px;
-  color: #888888;
-  margin: 0 16px;
-}
-
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
-
-  .search-section {
-    min-width: auto;
-  }
-
-  .filter-section,
-  .action-section {
-    justify-content: flex-start;
-  }
-
-  .table-header,
-  .song-row {
-    grid-template-columns: 50px 2fr 120px 80px 80px 140px;
-    gap: 12px;
-    padding: 12px 16px;
-  }
-}
-
-@media (max-width: 768px) {
-  .song-management {
-    padding: 16px;
-  }
-
-  .stats-bar {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .table-header,
-  .song-row {
-    grid-template-columns: 40px 1fr 60px 80px;
-    gap: 8px;
-    padding: 12px;
-  }
-
-  .submitter-cell,
-  .stats-cell {
-    display: none;
-  }
-
-  .song-meta {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .action-btn {
-    width: 28px;
-    height: 28px;
-  }
-
-  .pagination {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-}
-
-/* 模态框样式 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal-content {
-  background: #1a1a1a;
-  border-radius: 12px;
-  border: 1px solid #2a2a2a;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid #2a2a2a;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #f8fafc;
-  margin: 0;
-}
-
-.modal-close {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: none;
-  color: #888888;
-  cursor: pointer;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.modal-close:hover {
-  background: #2a2a2a;
-  color: #ffffff;
-}
-
-.modal-body {
-  padding: 24px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #e2e8f0;
-}
-
-.form-input,
-.form-select {
-  width: 100%;
-  padding: 12px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  color: #e2e8f0;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.form-input:focus,
-.form-select:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-textarea {
-  width: 100%;
-  padding: 12px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  color: #e2e8f0;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  resize: vertical;
-  min-height: 100px;
-  font-family: inherit;
-}
-
-.form-textarea:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-input::placeholder {
-  color: #666666;
-}
-
-.form-row {
-  display: flex;
-  gap: 12px;
-}
-
-.form-row .form-group {
-  flex: 1;
-}
-
-.auto-match-section {
-  display: flex;
-  gap: 12px;
-  align-items: end;
-}
-
-.auto-match-section .form-group {
-  flex: 1;
-  margin-bottom: 0;
-}
-
-.auto-match-btn {
-  padding: 12px 16px;
-  background: #667eea;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.auto-match-btn:hover:not(:disabled) {
-  background: #5a67d8;
-}
-
-.auto-match-btn:disabled {
-  background: #3a3a3a;
-  color: #666666;
-  cursor: not-allowed;
-}
-
-.modal-footer {
-  padding: 20px 24px;
-  border-top: 1px solid #2a2a2a;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.modal-btn {
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.modal-btn.primary {
-  background: #667eea;
-  color: #ffffff;
-}
-
-.modal-btn.primary:hover:not(:disabled) {
-  background: #5a67d8;
-}
-
-.modal-btn.secondary {
-  background: #2a2a2a;
-  color: #e2e8f0;
-  border: 1px solid #3a3a3a;
-}
-
-.modal-btn.secondary:hover {
-  background: #3a3a3a;
-}
-
-.modal-btn:disabled {
-  background: #3a3a3a;
-  color: #666666;
-  cursor: not-allowed;
-}
-
-.edit-btn {
-  background: #667eea;
-  color: #ffffff;
-}
-
-.edit-btn:hover {
-  background: #5a67d8;
-}
-
-.add-song-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.add-song-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* 模态框按钮样式 */
-.close-btn {
-  background: none;
-  border: none;
-  color: #888888;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background: #2a2a2a;
-  color: #ffffff;
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid #2a2a2a;
-}
-
-.btn-cancel {
-  padding: 12px 24px;
-  background: #2a2a2a;
-  color: #e2e8f0;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-cancel:hover {
-  background: #3a3a3a;
-}
-
-.btn-primary {
-  padding: 12px 24px;
-  background: #667eea;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #5a67d8;
-}
-
-.btn-primary:disabled {
-  background: #3a3a3a;
-  color: #666666;
-  cursor: not-allowed;
-}
-
-.btn-danger {
-  padding: 12px 24px;
-  background: #ef4444;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: #dc2626;
-}
-
-.btn-danger:disabled {
-  background: #3a3a3a;
-  color: #666666;
-  cursor: not-allowed;
-}
-
-/* 驳回歌曲对话框样式 */
-.reject-song-info {
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
-}
-
-.reject-song-info .song-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 4px;
-}
-
-.reject-song-info .song-artist {
-  font-size: 14px;
-  color: #94a3b8;
-  margin-bottom: 8px;
-}
-
-.reject-song-info .song-submitter {
-  font-size: 13px;
-  color: #64748b;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  cursor: pointer;
-  margin-bottom: 0;
-}
-
-.checkbox-label .checkbox {
-  margin: 0;
-  margin-top: 2px;
-}
-
-.checkbox-text {
-  font-size: 14px;
-  color: #e2e8f0;
-  line-height: 1.4;
-}
-
-.search-input-group {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.search-input-group .form-input {
-  flex: 1;
-}
-
-.auto-fill-btn {
-  padding: 12px 16px;
-  background: #10b981;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.auto-fill-btn:hover:not(:disabled) {
-  background: #059669;
-}
-
-.auto-fill-btn:disabled {
-  background: #3a3a3a;
-  color: #666666;
-  cursor: not-allowed;
-}
-
-/* 用户搜索样式 */
-.user-search-container {
-  position: relative;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-loading {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.loading-spinner {
-  width: 16px;
-  height: 16px;
-  color: #667eea;
-}
-
-.user-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 1000;
-}
-
-.user-option {
-  padding: 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #3a3a3a;
-  transition: background-color 0.2s;
-}
-
-.user-option:hover {
-  background-color: #3a3a3a;
-}
-
-.user-option:last-child {
-  border-bottom: none;
-}
-
-.user-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.user-name {
-  font-weight: 500;
-  color: #ffffff;
-}
-
-.user-username {
-  font-size: 0.875rem;
-  color: #888888;
-}
-
-.selected-user {
-  margin-top: 8px;
-  padding: 8px 12px;
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid #667eea;
-  border-radius: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.875rem;
-  color: #667eea;
-}
-
-.clear-user-btn {
-  background: none;
-  border: none;
-  color: #888888;
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 0;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-
-.clear-user-btn:hover {
-  background: #3a3a3a;
-  color: #ffffff;
-}
-
-/* 联合投稿人列表样式 */
-.selected-users-list {
-  margin-top: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.selected-user-tag {
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid #667eea;
-  border-radius: 8px;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #667eea;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-}
-
-.selected-user-tag:hover {
-  background: rgba(102, 126, 234, 0.15);
-  transform: translateY(-1px);
-}
-
-.remove-user-btn {
-  background: none;
-  border: none;
-  color: #888888;
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 0;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s;
-  line-height: 1;
-}
-
-.remove-user-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-/* 可选字段样式 */
-.optional-label {
-  font-size: 0.75rem;
-  color: #888888;
-  font-weight: normal;
-}
-
-.field-hint {
-  margin-top: 4px;
-  font-size: 0.75rem;
-  color: #888888;
-  line-height: 1.4;
-}
-
-/* URL验证状态样式 */
-.validation-loading {
-  margin-top: 4px;
-  font-size: 0.75rem;
-  color: #667eea;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.validation-error {
-  margin-top: 4px;
-  font-size: 0.75rem;
-  color: #ef4444;
-  line-height: 1.4;
-}
-
-.validation-success {
-  margin-top: 4px;
-  font-size: 0.75rem;
-  color: #10b981;
-  line-height: 1.4;
-}
-
-.input-wrapper .form-input.error {
-  border-color: #ef4444;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
 </style>
