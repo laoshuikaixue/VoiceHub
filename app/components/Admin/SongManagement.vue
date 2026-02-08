@@ -642,10 +642,12 @@ import {
 import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
 import { useAuth } from '~/composables/useAuth'
+import { useToast } from '~/composables/useToast'
 import { useSemesters } from '~/composables/useSemesters'
 import { validateUrl } from '~/utils/url'
 
 // 响应式数据
+const { showNotification } = useToast()
 const loading = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('all')
@@ -962,9 +964,7 @@ const markAsPlayed = async (songId) => {
     await refreshSongs()
   } catch (error) {
     console.error('标记已播放失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('标记失败: ' + error.message, 'error')
-    }
+    showNotification('标记失败: ' + error.message, 'error')
   }
 }
 
@@ -974,9 +974,7 @@ const markAsUnplayed = async (songId) => {
     await refreshSongs()
   } catch (error) {
     console.error('标记未播放失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('标记失败: ' + error.message, 'error')
-    }
+    showNotification('标记失败: ' + error.message, 'error')
   }
 }
 
@@ -996,14 +994,10 @@ const deleteSong = async (songId) => {
         selectedSongs.value.splice(index, 1)
       }
 
-      if (window.$showNotification) {
-        window.$showNotification('歌曲删除成功', 'success')
-      }
+      showNotification('歌曲删除成功', 'success')
     } catch (error) {
       console.error('删除歌曲失败:', error)
-      if (window.$showNotification) {
-        window.$showNotification('删除失败: ' + error.message, 'error')
-      }
+      showNotification('删除失败: ' + error.message, 'error')
     }
   }
   showDeleteDialog.value = true
@@ -1025,14 +1019,10 @@ const batchDelete = async () => {
       await refreshSongs()
       selectedSongs.value = []
 
-      if (window.$showNotification) {
-        window.$showNotification('批量删除成功', 'success')
-      }
+      showNotification('批量删除成功', 'success')
     } catch (error) {
       console.error('批量删除失败:', error)
-      if (window.$showNotification) {
-        window.$showNotification('批量删除失败: ' + error.message, 'error')
-      }
+      showNotification('批量删除失败: ' + error.message, 'error')
     } finally {
       loading.value = false
     }
@@ -1107,9 +1097,7 @@ const rejectSong = (songId) => {
 // 确认驳回
 const confirmReject = async () => {
   if (!rejectReason.value.trim()) {
-    if (window.$showNotification) {
-      window.$showNotification('请填写驳回原因', 'error')
-    }
+    showNotification('请填写驳回原因', 'error')
     return
   }
 
@@ -1133,14 +1121,10 @@ const confirmReject = async () => {
 
     showRejectDialog.value = false
 
-    if (window.$showNotification) {
-      window.$showNotification('歌曲驳回成功，已通知投稿人', 'success')
-    }
+    showNotification('歌曲驳回成功，已通知投稿人', 'success')
   } catch (error) {
     console.error('驳回歌曲失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('驳回失败: ' + (error.data?.message || error.message), 'error')
-    }
+    showNotification('驳回失败: ' + (error.data?.message || error.message), 'error')
   } finally {
     rejectLoading.value = false
   }
@@ -1195,30 +1179,22 @@ const editSong = (song) => {
 
 const saveEditSong = async () => {
   if (!editForm.value.title || !editForm.value.artist) {
-    if (window.$showNotification) {
-      window.$showNotification('请填写歌曲名称和歌手', 'error')
-    }
+    showNotification('请填写歌曲名称和歌手', 'error')
     return
   }
 
   if (editForm.value.cover && !editCoverValidation.value.valid) {
-    if (window.$showNotification) {
-      window.$showNotification('请等待封面URL验证完成或修正无效的URL', 'error')
-    }
+    showNotification('请等待封面URL验证完成或修正无效的URL', 'error')
     return
   }
 
   if (editForm.value.playUrl && !editPlayUrlValidation.value.valid) {
-    if (window.$showNotification) {
-      window.$showNotification('请等待播放URL验证完成或修正无效的URL', 'error')
-    }
+    showNotification('请等待播放URL验证完成或修正无效的URL', 'error')
     return
   }
 
   if (editCoverValidation.value.validating || editPlayUrlValidation.value.validating) {
-    if (window.$showNotification) {
-      window.$showNotification('正在验证URL，请稍候...', 'warning')
-    }
+    showNotification('正在验证URL，请稍候...', 'warning')
     return
   }
 
@@ -1240,9 +1216,7 @@ const saveEditSong = async () => {
     await refreshSongs()
     showEditModal.value = false
 
-    if (window.$showNotification) {
-      window.$showNotification('歌曲信息更新成功', 'success')
-    }
+    showNotification('歌曲信息更新成功', 'success')
   } catch (error) {
     console.error('更新歌曲失败:', error)
     let errorMessage = '更新失败'
@@ -1251,9 +1225,7 @@ const saveEditSong = async () => {
     } else if (error.message) {
       errorMessage = error.message
     }
-    if (window.$showNotification) {
-      window.$showNotification(errorMessage, 'error')
-    }
+    showNotification(errorMessage, 'error')
   } finally {
     editLoading.value = false
   }
@@ -1294,52 +1266,38 @@ const openAddSongModal = () => {
 
 const saveAddSong = async () => {
   if (!addForm.value.title || !addForm.value.artist) {
-    if (window.$showNotification) {
-      window.$showNotification('请填写歌曲名称和歌手', 'error')
-    }
+    showNotification('请填写歌曲名称和歌手', 'error')
     return
   }
 
   if (!selectedUser.value || !addForm.value.requester) {
-    if (window.$showNotification) {
-      window.$showNotification('请选择投稿人', 'error')
-    }
+    showNotification('请选择投稿人', 'error')
     return
   }
 
   if (!addForm.value.semester) {
-    if (window.$showNotification) {
-      window.$showNotification('请选择学期', 'error')
-    }
+    showNotification('请选择学期', 'error')
     return
   }
 
   if (addForm.value.cover) {
     if (!addCoverValidation.value.valid) {
-      if (window.$showNotification) {
-        window.$showNotification('歌曲封面URL无效，请检查后重试', 'error')
-      }
+      showNotification('歌曲封面URL无效，请检查后重试', 'error')
       return
     }
     if (addCoverValidation.value.validating) {
-      if (window.$showNotification) {
-        window.$showNotification('正在验证封面URL，请稍候...', 'warning')
-      }
+      showNotification('正在验证封面URL，请稍候...', 'warning')
       return
     }
   }
 
   if (addForm.value.playUrl) {
     if (!addPlayUrlValidation.value.valid) {
-      if (window.$showNotification) {
-        window.$showNotification('播放地址URL无效，请检查后重试', 'error')
-      }
+      showNotification('播放地址URL无效，请检查后重试', 'error')
       return
     }
     if (addPlayUrlValidation.value.validating) {
-      if (window.$showNotification) {
-        window.$showNotification('正在验证播放地址URL，请稍候...', 'warning')
-      }
+      showNotification('正在验证播放地址URL，请稍候...', 'warning')
       return
     }
   }
@@ -1373,9 +1331,7 @@ const saveAddSong = async () => {
     }
     clearSelectedUser()
 
-    if (window.$showNotification) {
-      window.$showNotification('歌曲添加成功', 'success')
-    }
+    showNotification('歌曲添加成功', 'success')
   } catch (error) {
     console.error('添加歌曲失败:', error)
     let errorMessage = '添加失败'
@@ -1384,9 +1340,7 @@ const saveAddSong = async () => {
     } else if (error.message) {
       errorMessage = error.message
     }
-    if (window.$showNotification) {
-      window.$showNotification(errorMessage, 'error')
-    }
+    showNotification(errorMessage, 'error')
   } finally {
     addLoading.value = false
   }
