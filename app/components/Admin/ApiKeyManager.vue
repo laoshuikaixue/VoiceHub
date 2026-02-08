@@ -29,10 +29,10 @@
       <div class="flex items-center gap-2 w-full lg:w-auto">
         <CustomSelect 
           label="状态" 
-          v-model:value="statusFilterText" 
+          v-model="statusFilterText" 
           :options="['全部状态', '活跃', '非活跃', '已过期']" 
           @change="handleStatusFilterChange"
-          class="flex-1 lg:w-40" 
+          class-name="flex-1 lg:w-40" 
         />
         <div class="relative flex-1 lg:w-48">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700" :size="14" />
@@ -182,10 +182,10 @@
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5">过期时间</label>
               <CustomSelect 
-                v-model:value="expiresAtText" 
+                v-model="expiresAtText" 
                 :options="['永不过期', '3天后过期', '7天后过期', '30天后过期', '60天后过期', '90天后过期']" 
                 @change="handleExpiresAtChange"
-                class="w-full"
+                class-name="w-full"
               />
             </div>
             <div class="space-y-3">
