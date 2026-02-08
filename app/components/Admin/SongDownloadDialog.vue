@@ -1,127 +1,160 @@
 <template>
-  <div v-if="show" class="download-dialog-overlay" @click="closeDialog">
-    <div class="download-dialog" @click.stop>
-      <div class="dialog-header">
-        <h3>下载歌曲</h3>
-        <button class="close-btn" @click="closeDialog">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="18" x2="6" y1="6" y2="18"/>
-            <line x1="6" x2="18" y1="6" y2="18"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="dialog-content">
-        <!-- 音质选择 -->
-        <div class="quality-section">
-          <h4>选择音质</h4>
-          <div class="quality-options">
-            <div
-                v-for="option in qualityOptions"
-                :key="option.value"
-                :class="{ 'active': selectedQuality === option.value }"
-                class="quality-option"
-                @click="selectedQuality = option.value"
-            >
-              <div class="option-info">
-                <span class="option-label">{{ option.label }}</span>
-                <span class="option-description">{{ option.description }}</span>
-              </div>
-              <div class="option-radio">
-                <div v-if="selectedQuality === option.value" class="radio-checked"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 歌曲选择 -->
-        <div class="songs-section">
-          <div class="section-header">
-            <h4>选择要下载的歌曲</h4>
-            <div class="select-actions">
-              <button class="select-btn" @click="selectAll">全选</button>
-              <button class="select-btn" @click="selectNone">取消全选</button>
-            </div>
+  <Transition name="fade">
+    <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" @click="closeDialog">
+      <Transition name="scale">
+        <div v-if="show" class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]" @click.stop>
+          
+          <!-- Header -->
+          <div class="flex items-center justify-between p-4 border-b border-zinc-800 shrink-0">
+            <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">下载歌曲</h3>
+            <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="closeDialog">
+              <CloseIcon class="w-5 h-5" />
+            </button>
           </div>
 
-          <div class="songs-list">
-            <div
-                v-for="song in songs"
-                :key="song.id"
-                :class="{ 'selected': selectedSongs.has(song.song.id) }"
-                class="song-item"
-                @click="toggleSongSelection(song.song.id)"
-            >
-              <div class="song-checkbox">
-                <div v-if="selectedSongs.has(song.song.id)" class="checkbox-checked">
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <polyline points="20,6 9,17 4,12"/>
-                  </svg>
+          <!-- 内容区域 -->
+          <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+            
+            <!-- 音质选择 -->
+            <section class="space-y-3">
+              <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em] px-1">选择音质</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  v-for="option in extendedQualityOptions"
+                  :key="option.value"
+                  @click="selectedQuality = option.value"
+                  class="flex flex-col p-4 rounded-2xl border text-left transition-all relative overflow-hidden group"
+                  :class="[
+                    selectedQuality === option.value 
+                      ? 'bg-blue-600/10 border-blue-500 shadow-sm' 
+                      : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
+                  ]"
+                >
+                  <div class="flex items-center justify-between mb-1 relative z-10">
+                    <span class="text-xs font-bold transition-colors" :class="selectedQuality === option.value ? 'text-blue-400' : 'text-zinc-200'">{{ option.label }}</span>
+                    <div v-if="selectedQuality === option.value" class="w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                  </div>
+                  <span class="text-[10px] text-zinc-500 relative z-10">{{ option.description }}</span>
+                </button>
+              </div>
+            </section>
+
+            <!-- 歌曲选择 -->
+            <section class="space-y-3">
+              <div class="flex items-center justify-between px-1">
+                <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em]">歌曲列表</label>
+                <button 
+                  @click="toggleSelectAll"
+                  class="text-[10px] font-bold text-blue-500/80 hover:text-blue-400 transition-colors"
+                >
+                  {{ isAllSelected ? '取消全选' : '全选' }}
+                </button>
+              </div>
+              
+              <div class="bg-zinc-950/50 border border-zinc-800/50 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar">
+                <button
+                  v-for="song in songs"
+                  :key="song.id"
+                  @click="toggleSongSelection(song.song.id)"
+                  class="w-full flex items-center gap-3 p-3.5 hover:bg-zinc-800/30 transition-all text-left border-b border-zinc-800/30 last:border-0 group"
+                >
+                  <div class="w-4 h-4 rounded flex items-center justify-center border transition-all shrink-0"
+                    :class="[
+                      selectedSongs.has(song.song.id) ? 'bg-blue-600 border-blue-600 shadow-sm' : 'bg-zinc-900 border-zinc-800 group-hover:border-zinc-700'
+                    ]"
+                  >
+                    <Check v-if="selectedSongs.has(song.song.id)" class="w-2.5 h-2.5 text-white font-bold" stroke-width="3" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-zinc-300 truncate">{{ song.song.title }}</p>
+                    <p class="text-[10px] text-zinc-500 truncate">{{ song.song.artist }}</p>
+                  </div>
+                  <div class="text-[9px] font-mono text-zinc-600 uppercase">{{ getPlatformShortName(song.song.musicPlatform) }}</div>
+                </button>
+                
+                <div v-if="songs.length === 0" class="p-8 text-center text-zinc-600 text-[10px]">
+                  暂无歌曲
                 </div>
               </div>
-              <div class="song-info">
-                <div class="song-title">{{ song.song.title }}</div>
-                <div class="song-artist">{{ song.song.artist }}</div>
-                <div class="song-meta">
-                  <span class="song-platform">{{ getPlatformName(song.song.musicPlatform) }}</span>
-                  <span class="song-requester">投稿: {{ song.song.requester }}</span>
-                </div>
-              </div>
-            </div>
+            </section>
+
+            <!-- 下载进度 -->
+            <section v-if="downloading || downloadedCount > 0" class="space-y-3 pt-4 border-t border-zinc-800/50">
+               <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider">
+                 <span class="text-zinc-400">下载进度</span>
+                 <span class="text-blue-400">{{ downloadedCount }} / {{ totalCount }}</span>
+               </div>
+               <div class="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50">
+                 <div class="h-full bg-blue-600 transition-all duration-300 ease-out" :style="{ width: `${totalCount > 0 ? (downloadedCount / totalCount) * 100 : 0}%` }"></div>
+               </div>
+               <div class="text-[10px] text-zinc-500 truncate">
+                 <template v-if="downloading">
+                   {{ currentDownloadSong ? `正在下载: ${currentDownloadSong}` : '准备中...' }}
+                 </template>
+                 <template v-else>
+                   {{ downloadErrors.length > 0 ? '下载完成，部分失败' : '下载完成' }}
+                 </template>
+               </div>
+               
+               <!-- 错误列表 -->
+               <div v-if="downloadErrors.length > 0" class="bg-red-500/5 border border-red-500/10 rounded-xl p-3 space-y-2">
+                 <div class="text-[10px] font-bold text-red-400 flex items-center gap-2">
+                   <AlertTriangle class="w-3 h-3" />
+                   下载失败 ({{ downloadErrors.length }})
+                 </div>
+                 <div class="max-h-[60px] overflow-y-auto custom-scrollbar space-y-1">
+                   <div v-for="error in downloadErrors" :key="error.id" class="text-[9px] text-red-500/70 truncate">
+                     {{ error.title }} - {{ error.error }}
+                   </div>
+                 </div>
+               </div>
+            </section>
           </div>
-        </div>
-      </div>
 
-      <div class="dialog-footer">
-        <div class="download-info">
-          <span>已选择 {{ selectedSongs.size }} 首歌曲</span>
-        </div>
-        <div class="dialog-actions">
-          <button class="cancel-btn" @click="closeDialog">取消</button>
-          <button
-              :disabled="selectedSongs.size === 0 || downloading"
-              class="download-btn"
-              @click="startDownload"
-          >
-            {{ downloading ? '下载中...' : '开始下载' }}
-          </button>
-        </div>
-      </div>
+          <!-- 底部按钮 -->
+          <div class="p-4 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between shrink-0">
+             <div class="text-[11px] font-black text-zinc-500 uppercase tracking-widest">
+                已选择 <span class="text-blue-400">{{ selectedSongs.size }}</span> 首歌曲
+             </div>
+             <div class="flex items-center gap-2">
+               <button 
+                 @click="closeDialog" 
+                 class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-wider"
+                 :disabled="downloading"
+               >
+                 取消
+               </button>
+               <button 
+                 v-if="!downloading && downloadedCount > 0"
+                 @click="closeDialog"
+                 class="px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl border border-zinc-700 transition-all uppercase tracking-wider"
+               >
+                 关闭
+               </button>
+               <button 
+                 v-else
+                 @click="startDownload"
+                 :disabled="selectedSongs.size === 0 || downloading"
+                 class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-wider flex items-center gap-2"
+               >
+                 <Download v-if="!downloading" class="w-3.5 h-3.5" />
+                 <span v-else class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                 {{ downloading ? '下载中...' : '开始下载' }}
+               </button>
+             </div>
+          </div>
 
-      <!-- 下载进度 -->
-      <div v-if="downloading" class="download-progress">
-        <div class="progress-header">
-          <span>下载进度: {{ downloadedCount }}/{{ totalCount }}</span>
-          <span>{{ Math.round((downloadedCount / totalCount) * 100) }}%</span>
         </div>
-        <div class="progress-bar">
-          <div
-              :style="{ width: `${(downloadedCount / totalCount) * 100}%` }"
-              class="progress-fill"
-          ></div>
-        </div>
-        <div v-if="currentDownloadSong" class="current-download">
-          正在下载: {{ currentDownloadSong }}
-        </div>
-        <div v-if="downloadErrors.length > 0" class="download-errors">
-          <details>
-            <summary>下载失败的歌曲 ({{ downloadErrors.length }})</summary>
-            <ul>
-              <li v-for="error in downloadErrors" :key="error.id">
-                {{ error.title }} - {{ error.artist }}: {{ error.error }}
-              </li>
-            </ul>
-          </details>
-        </div>
-      </div>
+      </Transition>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <script setup>
-import {computed, ref, watch} from 'vue'
-import {useAudioQuality} from '~/composables/useAudioQuality'
-import {getMusicUrl} from '~/utils/musicUrl'
+import { computed, ref, watch } from 'vue'
+import { useAudioQuality } from '~/composables/useAudioQuality'
+import { getMusicUrl } from '~/utils/musicUrl'
+import { X as CloseIcon, Check, Download, AlertTriangle } from 'lucide-vue-next'
 
 const props = defineProps({
   show: {
@@ -137,17 +170,35 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 // 音质相关
-const {getQualityOptions, getQuality} = useAudioQuality()
+const { getQualityOptions, getQuality } = useAudioQuality()
 
-// 获取默认音质选项（使用网易云音乐的选项作为通用选项）
-const qualityOptions = computed(() => {
-  return getQualityOptions('netease')
+// 音质描述映射
+const qualityDescriptions = {
+  standard: '节省流量',
+  higher: '高品质体验',
+  exhigh: '极高音质',
+  lossless: '母带级音质',
+  hires: '极点解析'
+}
+
+// 扩展音质选项，添加描述
+const extendedQualityOptions = computed(() => {
+  const options = getQualityOptions('netease')
+  return options.map(opt => ({
+    ...opt,
+    description: qualityDescriptions[opt.value] || '标准音质'
+  }))
 })
 
 const selectedQuality = ref(getQuality('netease'))
 
 // 歌曲选择
 const selectedSongs = ref(new Set())
+
+// 是否全选
+const isAllSelected = computed(() => {
+  return props.songs.length > 0 && selectedSongs.value.size === props.songs.length
+})
 
 // 下载状态
 const downloading = ref(false)
@@ -156,34 +207,24 @@ const totalCount = ref(0)
 const currentDownloadSong = ref('')
 const downloadErrors = ref([])
 
-// 获取平台名称
-const getPlatformName = (platform) => {
+// 获取平台简写
+const getPlatformShortName = (platform) => {
   switch (platform) {
-    case 'netease':
-      return '网易云音乐'
-    case 'netease-podcast':
-      return '网易云音乐-播客'
-    case 'tencent':
-      return 'QQ音乐'
-    case 'bilibili':
-      return '哔哩哔哩'
-    case null:
-    case undefined:
-    case '':
-      return '自定义链接'
-    default:
-      return '未知平台'
+    case 'netease': return 'WY'
+    case 'netease-podcast': return 'DJ'
+    case 'tencent': return 'QQ'
+    case 'bilibili': return 'BL'
+    default: return 'OT'
   }
 }
 
-// 选择所有歌曲
-const selectAll = () => {
-  selectedSongs.value = new Set(props.songs.map(song => song.song.id))
-}
-
-// 取消选择所有歌曲
-const selectNone = () => {
-  selectedSongs.value = new Set()
+// 切换全选/取消全选
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedSongs.value = new Set()
+  } else {
+    selectedSongs.value = new Set(props.songs.map(song => song.song.id))
+  }
 }
 
 // 切换歌曲选择状态
@@ -197,9 +238,8 @@ const toggleSongSelection = (songId) => {
 
 // 关闭对话框
 const closeDialog = () => {
-  if (!downloading.value) {
-    emit('close')
-  }
+  // 即使在下载中也可以关闭（后台运行），但如果下载中，不触发close事件，而是隐藏
+  emit('close')
 }
 
 // 获取音乐播放URL（直接使用utils中的统一方法）
@@ -207,7 +247,7 @@ const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
   try {
     // 检查是否为播客内容
     const isPodcast = song.musicPlatform === 'netease-podcast' || song.sourceInfo?.type === 'voice' || (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
-    const options = isPodcast ? {unblock: false} : {}
+    const options = isPodcast ? { unblock: false } : {}
 
     // 直接调用统一的getMusicUrl方法，它会自动处理playUrl优先级
     const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl, options)
@@ -292,7 +332,6 @@ const startDownload = async () => {
       // 下载文件
       await downloadFile(audioUrl, filename)
 
-      downloadedCount.value++
     } catch (error) {
       console.error(`下载失败: ${song.title}`, error)
       downloadErrors.value.push({
@@ -301,12 +340,15 @@ const startDownload = async () => {
         artist: song.artist,
         error: error.message
       })
+    } finally {
+      // 无论成功失败，都更新进度
       downloadedCount.value++
     }
 
     // 添加延迟避免请求过于频繁
     await new Promise(resolve => setTimeout(resolve, 500))
   }
+
 
   currentDownloadSong.value = ''
 
@@ -320,401 +362,66 @@ const startDownload = async () => {
     }
   }
 
-  // 延迟关闭对话框
-  setTimeout(() => {
-    downloading.value = false
-    if (downloadErrors.value.length === 0) {
+  // 延迟关闭对话框（仅在没有错误时）
+  if (downloadErrors.value.length === 0) {
+    setTimeout(() => {
+      downloading.value = false
       closeDialog()
-    }
-  }, 2000)
+    }, 2000)
+  } else {
+    downloading.value = false
+  }
 }
 
 // 监听显示状态变化，重置状态
 watch(() => props.show, (newShow) => {
   if (newShow) {
-    selectedSongs.value = new Set()
-    downloading.value = false
-    downloadedCount.value = 0
-    totalCount.value = 0
-    currentDownloadSong.value = ''
-    downloadErrors.value = []
+    selectedSongs.value = new Set(props.songs.map(song => song.song.id))
+    // 如果没有正在下载，重置状态
+    if (!downloading.value) {
+      downloadedCount.value = 0
+      totalCount.value = 0
+      currentDownloadSong.value = ''
+      downloadErrors.value = []
+    }
     selectedQuality.value = getQuality('netease')
   }
 })
 </script>
 
 <style scoped>
-.download-dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
 
-.download-dialog {
-  background: #1a1a1a;
-  border-radius: 12px;
-  border: 1px solid #2a2a2a;
-  width: 100%;
-  max-width: 600px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  color: #e2e8f0;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px;
-  border-bottom: 1px solid #2a2a2a;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
-.dialog-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+.scale-enter-active,
+.scale-leave-active {
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  color: #888;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  color: #fff;
-  background: #333;
-}
-
-.close-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.dialog-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.quality-section {
-  margin-bottom: 24px;
-}
-
-.quality-section h4 {
-  margin: 0 0 12px 0;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.quality-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.quality-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.quality-option:hover {
-  background: #333;
-  border-color: #4a4a4a;
-}
-
-.quality-option.active {
-  background: #667eea;
-  border-color: #667eea;
-}
-
-.option-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.option-label {
-  font-weight: 500;
-}
-
-.option-description {
-  font-size: 12px;
-  color: #888;
-}
-
-.quality-option.active .option-description {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.option-radio {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #4a4a4a;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.quality-option.active .option-radio {
-  border-color: white;
-}
-
-.radio-checked {
-  width: 10px;
-  height: 10px;
-  background: white;
-  border-radius: 50%;
-}
-
-.songs-section h4 {
-  margin: 0 0 12px 0;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.select-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.select-btn {
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  color: #e2e8f0;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-.select-btn:hover {
-  background: #333;
-  border-color: #4a4a4a;
-}
-
-.songs-list {
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-}
-
-.song-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-bottom: 1px solid #2a2a2a;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.song-item:last-child {
-  border-bottom: none;
-}
-
-.song-item:hover {
-  background: #2a2a2a;
-}
-
-.song-item.selected {
-  background: rgba(102, 126, 234, 0.1);
-  border-color: rgba(102, 126, 234, 0.3);
-}
-
-.song-checkbox {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #4a4a4a;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.song-item.selected .song-checkbox {
-  background: #667eea;
-  border-color: #667eea;
-}
-
-.checkbox-checked svg {
-  width: 12px;
-  height: 12px;
-  color: white;
-}
-
-.song-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.song-title {
-  font-weight: 500;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.song-artist {
-  color: #888;
-  font-size: 14px;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.song-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: #666;
-}
-
-.dialog-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px;
-  border-top: 1px solid #2a2a2a;
-}
-
-.download-info {
-  color: #888;
-  font-size: 14px;
-}
-
-.dialog-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.cancel-btn {
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  color: #e2e8f0;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.cancel-btn:hover {
-  background: #333;
-  border-color: #4a4a4a;
-}
-
-.download-btn {
-  background: #667eea;
-  border: 1px solid #667eea;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.download-btn:hover:not(:disabled) {
-  background: #5a6fd8;
-  border-color: #5a6fd8;
-}
-
-.download-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.download-progress {
-  padding: 20px;
-  border-top: 1px solid #2a2a2a;
-  background: #1a1a1a;
-}
-
-.progress-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background: #2a2a2a;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-
-.progress-fill {
-  height: 100%;
-  background: #667eea;
-  transition: width 0.3s ease;
-}
-
-.current-download {
-  font-size: 14px;
-  color: #888;
-  margin-bottom: 12px;
-}
-
-.download-errors {
-  margin-top: 12px;
-}
-
-.download-errors details {
-  background: #2a1a1a;
-  border: 1px solid #4a2a2a;
-  border-radius: 6px;
-  padding: 8px;
-}
-
-.download-errors summary {
-  cursor: pointer;
-  font-weight: 500;
-  color: #ff6b6b;
-}
-
-.download-errors ul {
-  margin: 8px 0 0 0;
-  padding-left: 20px;
-}
-
-.download-errors li {
-  margin-bottom: 4px;
-  font-size: 12px;
-  color: #ccc;
+.scale-enter-from,
+.scale-leave-to {
+  transform: scale(0.95);
+  opacity: 0;
 }
 </style>

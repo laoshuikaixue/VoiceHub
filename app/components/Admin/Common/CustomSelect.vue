@@ -14,7 +14,7 @@
         >
           {{ label }}
         </span>
-        <span class="text-[11px] font-bold text-zinc-300 truncate">{{ displayValue }}</span>
+        <span class="text-[11px] font-bold text-zinc-300 truncate">{{ displayLabel }}</span>
       </div>
       <div class="transition-transform duration-200" :class="{ 'rotate-180': isOpen }">
         <ChevronDown :size="12" :class="isOpen ? 'text-blue-400' : 'text-zinc-700'" />
@@ -37,14 +37,14 @@
           <button
             v-for="option in normalizedOptions"
             :key="option.value"
-            @click="selectOption(option.value)"
+            @click="selectOption(option)"
             class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-bold transition-all"
             :class="[
-              isSelected(option.value) ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'
+              isSelected(option) ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'
             ]"
           >
             <span class="truncate">{{ option.label }}</span>
-            <Check v-if="isSelected(option.value)" :size="12" class="shrink-0" />
+            <Check v-if="isSelected(option)" :size="12" class="shrink-0" />
           </button>
         </div>
       </div>
@@ -58,12 +58,24 @@ import { ChevronDown, Check } from 'lucide-vue-next'
 
 const props = defineProps({
   label: String,
-  modelValue: [String, Number, Boolean, Object],
+  modelValue: [String, Number, Object],
   options: {
     type: Array,
     required: true
   },
-  className: String
+  className: String,
+  labelKey: {
+    type: String,
+    default: 'label'
+  },
+  valueKey: {
+    type: String,
+    default: 'value'
+  },
+  placeholder: {
+    type: String,
+    default: '请选择'
+  }
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -71,27 +83,33 @@ const emit = defineEmits(['update:modelValue', 'change'])
 const isOpen = ref(false)
 const containerRef = ref(null)
 
+// 规范化选项为 { label, value } 格式
 const normalizedOptions = computed(() => {
   return props.options.map(option => {
-    if (typeof option === 'object' && option !== null && 'value' in option && 'label' in option) {
-      return option
+    if (typeof option === 'object' && option !== null) {
+      return {
+        label: option[props.labelKey] || option.label,
+        value: option[props.valueKey] !== undefined ? option[props.valueKey] : option.value,
+        original: option
+      }
     }
-    return { label: String(option), value: option }
+    return { label: option, value: option, original: option }
   })
 })
 
-const displayValue = computed(() => {
+// 获取当前显示标签
+const displayLabel = computed(() => {
   const selected = normalizedOptions.value.find(opt => opt.value === props.modelValue)
-  return selected ? selected.label : props.modelValue
+  return selected ? selected.label : (props.modelValue && typeof props.modelValue !== 'object' ? props.modelValue : props.placeholder)
 })
 
-const isSelected = (value) => {
-  return value === props.modelValue
+const isSelected = (option) => {
+  return option.value === props.modelValue
 }
 
-const selectOption = (value) => {
-  emit('update:modelValue', value)
-  emit('change', value)
+const selectOption = (option) => {
+  emit('update:modelValue', option.value)
+  emit('change', option.value)
   isOpen.value = false
 }
 

@@ -77,23 +77,12 @@
     
     <!-- 播出时段选择器 (如果启用) -->
     <div v-if="playTimeEnabled" class="flex items-center gap-3 bg-zinc-900/30 border border-zinc-800 rounded-xl p-3">
-      <label class="text-xs font-bold text-zinc-500 uppercase tracking-wider">播出时段</label>
-      <select 
+      <CustomSelect 
         v-model="selectedPlayTime" 
-        class="bg-zinc-950 border border-zinc-800 text-zinc-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
-      >
-        <option value="">未选择时段 (全天)</option>
-        <option
-            v-for="playTime in playTimes"
-            :key="playTime.id"
-            :value="playTime.id"
-        >
-          {{ playTime.name }}
-          <template v-if="playTime.startTime || playTime.endTime">
-            ({{ formatPlayTimeRange(playTime) }})
-          </template>
-        </option>
-      </select>
+        label="播出时段"
+        :options="playTimeOptions"
+        className="w-full"
+      />
     </div>
 
     <!-- 触控拖拽帮助提示 -->
@@ -154,8 +143,8 @@
           </div>
 
           <!-- 筛选区 - 移动端折叠 -->
-          <div class="bg-zinc-900/40 border border-zinc-800 rounded-2xl overflow-hidden shadow-xl">
-            <div class="p-4 flex items-center justify-between lg:hidden border-b border-zinc-800/50" @click="mobileFiltersOpen = !mobileFiltersOpen">
+          <div class="bg-zinc-900/40 border border-zinc-800 rounded-2xl shadow-xl">
+            <div class="p-4 flex items-center justify-between lg:hidden border-b border-zinc-800/50 rounded-t-2xl" @click="mobileFiltersOpen = !mobileFiltersOpen">
               <div class="flex items-center gap-2 text-zinc-400">
                 <Filter class="w-3.5 h-3.5" />
                 <span class="text-[11px] font-black uppercase tracking-widest">检索与筛选</span>
@@ -163,7 +152,7 @@
               <ChevronRight :class="['w-3.5 h-3.5 text-zinc-700 transition-transform duration-300', mobileFiltersOpen ? 'rotate-90' : '']" />
             </div>
             
-            <div v-show="mobileFiltersOpen || isDesktop" class="p-3 space-y-2 transition-all duration-300 ease-in-out">
+            <div v-show="mobileFiltersOpen || isDesktop" class="p-3 space-y-2 transition-all duration-300 ease-in-out rounded-b-2xl">
               <div class="relative">
                 <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700 w-3.5 h-3.5" />
                 <input 
@@ -181,37 +170,25 @@
                 </button>
               </div>
               <div class="grid grid-cols-1 gap-2">
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">当前学期</label>
-                  <div class="relative">
-                    <select v-model="selectedSemester" @change="onSemesterChange" class="w-full appearance-none bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors">
-                      <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">{{ semester.name }}</option>
-                    </select>
-                    <ChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 w-3.5 h-3.5 pointer-events-none" />
-                  </div>
-                </div>
+                <CustomSelect
+                  v-model="selectedSemester"
+                  label="当前学期"
+                  :options="availableSemesters"
+                  label-key="name"
+                  value-key="name"
+                  @change="onSemesterChange"
+                />
                 <div class="grid grid-cols-2 gap-2">
-                  <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">年级</label>
-                    <div class="relative">
-                      <select v-model="selectedGrade" class="w-full appearance-none bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors">
-                        <option v-for="grade in availableGrades" :key="grade" :value="grade">{{ grade }}</option>
-                      </select>
-                      <ChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 w-3.5 h-3.5 pointer-events-none" />
-                    </div>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">排序</label>
-                    <div class="relative">
-                      <select v-model="songSortOption" class="w-full appearance-none bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors">
-                        <option value="time-desc">最新投稿</option>
-                        <option value="time-asc">最早投稿</option>
-                        <option value="votes-desc">热度最高</option>
-                        <option value="votes-asc">热度最低</option>
-                      </select>
-                      <ChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 w-3.5 h-3.5 pointer-events-none" />
-                    </div>
-                  </div>
+                  <CustomSelect
+                    v-model="selectedGrade"
+                    label="年级"
+                    :options="availableGrades"
+                  />
+                  <CustomSelect
+                    v-model="songSortOption"
+                    label="排序"
+                    :options="sortOptions"
+                  />
                 </div>
               </div>
             </div>
@@ -555,6 +532,7 @@ import {
 } from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
+import CustomSelect from './Common/CustomSelect.vue'
 import { convertToHttps } from '~/utils/url'
 
 // 响应式数据
@@ -661,6 +639,29 @@ const isDraftMode = ref(false)
 const playTimes = ref([])
 const playTimeEnabled = ref(false)
 const selectedPlayTime = ref('')
+
+// 播出时段选项
+const playTimeOptions = computed(() => {
+  const options = [{ label: '未选择时段 (全天)', value: '' }]
+  if (playTimes.value) {
+    playTimes.value.forEach(pt => {
+      let label = pt.name
+      if (pt.startTime || pt.endTime) {
+        label += ` (${formatPlayTimeRange(pt)})`
+      }
+      options.push({ label, value: pt.id })
+    })
+  }
+  return options
+})
+
+// 排序选项
+const sortOptions = [
+  { label: '最新投稿', value: 'time-desc' },
+  { label: '最早投稿', value: 'time-asc' },
+  { label: '热度最高', value: 'votes-desc' },
+  { label: '热度最低', value: 'votes-asc' }
+]
 
 // 学期相关
 const availableSemesters = ref([])
