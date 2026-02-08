@@ -35,7 +35,7 @@
 
     <!-- 主要内容 -->
     <div v-else class="space-y-10">
-      <!-- Header with Filter -->
+      <!-- 顶部标题和筛选栏 -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 class="text-3xl font-black text-white tracking-tight">数据中心</h2>
@@ -45,7 +45,7 @@
           <button 
             @click="refreshAllData"
             :disabled="isLoading"
-            class="p-2.5 bg-zinc-900/50 border border-zinc-800 rounded-full text-zinc-400 hover:text-white transition-all group"
+            class="p-2.5 bg-zinc-900/50 border border-zinc-800 rounded-full text-zinc-400 hover:text-white transition-all group disabled:opacity-50"
           >
             <RefreshCw :size="18" :class="{ 'animate-spin': isLoading }" />
           </button>
@@ -53,31 +53,22 @@
             <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
             <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">实时模式</span>
           </div>
-          <div class="relative group">
-            <select
-              v-model="selectedSemester"
-              @change="handleSemesterChange"
-              class="appearance-none bg-zinc-900 border border-zinc-800 rounded-full px-6 py-2 text-xs font-black text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer pr-10"
-            >
-              <option value="all">全部学期</option>
-              <option v-for="sem in availableSemesters" :key="sem.id" :value="sem.name">
-                {{ sem.name }}
-              </option>
-            </select>
-            <Calendar class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none group-hover:text-zinc-400 transition-colors" :size="14" />
-          </div>
+          <CustomSelect
+            v-model="selectedSemester"
+            :options="availableSemesterOptions"
+            label-key="name"
+            value-key="value"
+            placeholder="选择学期"
+            class-name="w-48"
+            @change="handleSemesterChange"
+          />
         </div>
       </div>
 
-      <!-- Grid Row 1: Key Performance Indicators -->
+      <!-- 第一行：关键绩效指标 (KPI) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div 
-          v-for="(stat, i) in [
-            { label: '注册用户总量', value: analysisData.totalUsers, trend: analysisData.usersChange, icon: Users, color: 'blue' },
-            { label: '活跃歌曲库', value: analysisData.totalSongs, trend: analysisData.songsChange, icon: Music, color: 'emerald' },
-            { label: '本学期排期天数', value: analysisData.totalSchedules, trend: analysisData.schedulesChange, icon: Calendar, color: 'amber' },
-            { label: '累计点歌次数', value: analysisData.totalRequests, trend: analysisData.requestsChange, icon: Heart, color: 'rose' }
-          ]"
+          v-for="(stat, i) in kpiStats"
           :key="i"
           class="group relative p-6 bg-zinc-900/40 border border-zinc-800/60 rounded-[2rem] overflow-hidden hover:border-zinc-700 transition-all hover:shadow-2xl hover:shadow-black/40"
         >
@@ -98,16 +89,17 @@
             </div>
           </div>
           <div class="mt-4">
-            <h4 class="text-3xl font-black text-zinc-100 tracking-tighter">{{ typeof stat.value === 'number' && stat.value >= 1000 ? (stat.value / 1000).toFixed(1) + 'K' : stat.value }}</h4>
+            <h4 class="text-3xl font-black text-zinc-100 tracking-tighter">{{ formatNumber(stat.value) }}</h4>
             <p class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mt-1">{{ stat.label }}</p>
           </div>
+          <!-- 背景装饰 -->
           <div :class="`absolute -right-4 -bottom-4 w-24 h-24 bg-${stat.color}-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity`" />
         </div>
       </div>
 
-      <!-- Grid Row 2: Charts & Real-time -->
+      <!-- 第二行：图表和实时数据 -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <!-- Real-time Pulse Section -->
+        <!-- 实时脉冲部分 -->
         <div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div 
             @mouseenter="handleMouseEnter"
@@ -142,7 +134,7 @@
           </div>
         </div>
 
-        <!-- Trend Analysis Chart Card -->
+        <!-- 趋势分析图表卡片 -->
         <div class="lg:col-span-8 bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 shadow-2xl overflow-hidden flex flex-col min-h-[500px]">
           <div class="flex items-center justify-between mb-10">
             <div>
@@ -197,17 +189,17 @@
                  </div>
               </div>
               <span class="text-[10px] font-black text-zinc-600 group-hover:text-zinc-400 transition-colors uppercase tracking-widest">
-                {{ item.date.split('-').slice(1).join('-') }}
+                {{ formatDateShort(item.date) }}
               </span>
             </div>
           </div>
-          <div v-else class="flex-1 flex flex-col items-center justify-center space-y-4 text-zinc-600">
+          <div v-else class="flex-1 flex flex-col items-center justify-center text-zinc-600">
             <BarChart2 :size="48" class="opacity-20" />
-            <p class="text-sm font-medium">暂无趋势数据</p>
+            <p class="text-sm font-medium mt-4">暂无趋势数据</p>
           </div>
         </div>
 
-        <!-- Top Rankings List -->
+        <!-- 热门歌曲排行榜 -->
         <div class="lg:col-span-4 bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]">
           <div class="flex items-center justify-between mb-8">
             <h3 class="text-xl font-bold flex items-center gap-3 text-white">
@@ -242,7 +234,7 @@
           <div v-else-if="panelStates.topSongs.error && topSongs.length === 0" class="flex-1 flex flex-col items-center justify-center space-y-4">
             <Music :size="32" class="text-red-500/20" />
             <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">{{ panelStates.topSongs.error }}</p>
-            <button @click="loadTopSongs" class="px-4 py-2 bg-zinc-800 text-[10px] font-black uppercase rounded-full">重试</button>
+            <button @click="loadTopSongs" class="px-4 py-2 bg-zinc-800 text-[10px] font-black uppercase rounded-full hover:bg-zinc-700 text-white transition-colors">重试</button>
           </div>
           <div v-else-if="topSongs.length > 0" class="flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-2">
             <div v-for="(song, i) in topSongs.slice(0, 5)" :key="i" class="p-4 bg-zinc-950/50 border border-zinc-800/40 rounded-2xl flex items-center gap-4 group hover:bg-zinc-800/30 transition-all">
@@ -270,9 +262,9 @@
         </div>
       </div>
 
-      <!-- Grid Row 3: Users & Semester Comparison -->
+      <!-- 第三行：用户和学期对比 -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-         <!-- User Rankings -->
+         <!-- 活跃用户排行榜 -->
          <div class="bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]">
             <div class="flex items-center justify-between mb-8">
               <h3 class="text-xl font-bold flex items-center gap-3 text-white">
@@ -290,7 +282,7 @@
             <div v-else-if="panelStates.activeUsers.error && activeUsers.length === 0" class="flex-1 flex flex-col items-center justify-center space-y-4">
               <Users :size="32" class="text-red-500/20" />
               <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">{{ panelStates.activeUsers.error }}</p>
-              <button @click="loadActiveUsers" class="px-4 py-2 bg-zinc-800 text-[10px] font-black uppercase rounded-full">重试</button>
+              <button @click="loadActiveUsers" class="px-4 py-2 bg-zinc-800 text-[10px] font-black uppercase rounded-full hover:bg-zinc-700 text-white transition-colors">重试</button>
             </div>
             <div v-else-if="activeUsers.length > 0" class="flex-1 space-y-3 overflow-y-auto custom-scrollbar pr-2">
               <div v-for="(user, i) in activeUsers.slice(0, 5)" :key="i" class="relative p-5 bg-zinc-950/30 border border-zinc-800/50 rounded-3xl overflow-hidden group">
@@ -307,7 +299,7 @@
                     <p class="text-[10px] font-black text-zinc-700 uppercase tracking-widest">活跃度</p>
                   </div>
                 </div>
-                <!-- Progress Indicator -->
+                <!-- 进度条指示器 -->
                 <div 
                   class="absolute bottom-0 left-0 h-1 bg-purple-500/20 group-hover:bg-purple-500/40 transition-all" 
                   :style="{ width: `${(user.activityScore / Math.max(...activeUsers.map(u => u.activityScore), 1)) * 100}%` }" 
@@ -320,7 +312,7 @@
             </div>
          </div>
 
-         <!-- Semester Comparison -->
+         <!-- 学期对比分析 -->
          <div class="bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]">
             <div class="flex items-center justify-between mb-8">
               <h3 class="text-xl font-bold flex items-center gap-3 text-white">
@@ -338,7 +330,7 @@
             <div v-else-if="panelStates.semesterComparison.error && semesterComparison.length === 0" class="flex-1 flex flex-col items-center justify-center space-y-4">
               <Globe :size="32" class="text-red-500/20" />
               <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">{{ panelStates.semesterComparison.error }}</p>
-              <button @click="loadSemesterComparison" class="px-4 py-2 bg-zinc-800 text-[10px] font-black uppercase rounded-full">重试</button>
+              <button @click="loadSemesterComparison" class="px-4 py-2 bg-zinc-800 text-[10px] font-black uppercase rounded-full hover:bg-zinc-700 text-white transition-colors">重试</button>
             </div>
             <div v-else-if="semesterComparison.length > 0" class="flex-1 space-y-6 overflow-y-auto custom-scrollbar pr-2">
               <div 
@@ -436,9 +428,10 @@ import {
   TrendingUp, Users, Music, Calendar, Heart, 
   Activity, ArrowUpRight, ArrowDownRight, 
   Trophy, UserCheck, BarChart2, Globe,
-  RefreshCw, Eye, MousePointer2
+  RefreshCw, Eye, MousePointer2, Check, X
 } from 'lucide-vue-next'
 import { useSemesters } from '~/composables/useSemesters'
+import CustomSelect from './Common/CustomSelect.vue'
 
 // 使用学期管理 composable
 const {fetchSemesters, semesters: availableSemesters, currentSemester} = useSemesters()
@@ -450,6 +443,12 @@ const isLoading = ref(false)
 const error = ref(null)
 const hasInitialData = ref(false)
 const currentLoadingStep = ref(0)
+
+// 转换学期列表以适应 CustomSelect
+const availableSemesterOptions = computed(() => {
+  const options = (availableSemesters.value || []).map(s => ({ name: s.name, value: s.name }))
+  return [{ name: '全部学期', value: 'all' }, ...options]
+})
 
 // 加载步骤
 const loadingSteps = [
@@ -476,6 +475,14 @@ const analysisData = ref({
   requestsTrend: []
 })
 
+// 计算 KPI 统计数据
+const kpiStats = computed(() => [
+  { label: '注册用户总量', value: analysisData.value.totalUsers, trend: analysisData.value.usersChange, icon: Users, color: 'blue' },
+  { label: '活跃歌曲库', value: analysisData.value.totalSongs, trend: analysisData.value.songsChange, icon: Music, color: 'emerald' },
+  { label: '本学期排期天数', value: analysisData.value.totalSchedules, trend: analysisData.value.schedulesChange, icon: Calendar, color: 'amber' },
+  { label: '累计点歌次数', value: analysisData.value.totalRequests, trend: analysisData.value.requestsChange, icon: Heart, color: 'rose' }
+])
+
 // 图表数据
 const trendData = ref([])
 const topSongs = ref([])
@@ -499,9 +506,6 @@ const realtimeStats = ref({
   peakHours: []
 })
 
-// 悬停提示状态
-const showUsersList = ref(false)
-
 // 全局tooltip状态
 const tooltip = ref({
   show: false,
@@ -518,16 +522,15 @@ const tooltip = ref({
 const handleMouseEnter = (event) => {
   const rect = event.target.getBoundingClientRect()
   const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
-
+  
   // 计算tooltip位置
   let left = rect.left + rect.width / 2
   let top = rect.top - 10
-
+  
   // 确保tooltip不超出视口边界
   const tooltipWidth = 320 // 预估tooltip宽度
   const tooltipHeight = 300 // 预估tooltip高度
-
+  
   if (left + tooltipWidth / 2 > viewportWidth) {
     left = viewportWidth - tooltipWidth / 2 - 10
   }
@@ -537,7 +540,7 @@ const handleMouseEnter = (event) => {
   if (top - tooltipHeight < 0) {
     top = rect.bottom + 10
   }
-
+  
   tooltip.value.style.left = `${left}px`
   tooltip.value.style.top = `${top}px`
   tooltip.value.style.transform = 'translateX(-50%)'
@@ -572,6 +575,10 @@ const handleSemesterChange = async () => {
     loadChartData(),
     loadRealtimeStats()
   ])
+  
+  if (window.$showNotification) {
+    window.$showNotification('数据已更新', 'success')
+  }
 }
 
 // 处理排行方式切换
@@ -596,6 +603,9 @@ const handleSortChange = async (sortBy) => {
     console.warn('获取热门歌曲数据失败:', err)
     panelStates.value.topSongs.error = '加载热门歌曲失败'
     topSongs.value = []
+    if (window.$showNotification) {
+      window.$showNotification('加载热门歌曲失败', 'error')
+    }
   } finally {
     panelStates.value.topSongs.loading = false
   }
@@ -639,6 +649,9 @@ const loadAnalysisData = async () => {
   } catch (err) {
     console.error('加载分析数据失败:', err)
     error.value = '加载数据失败，请稍后重试'
+    if (window.$showNotification) {
+      window.$showNotification('加载统计数据失败', 'error')
+    }
   } finally {
     isLoading.value = false
   }
@@ -722,8 +735,6 @@ const loadChartData = async () => {
       })
       activeUsers.value = activeUsersData || []
       panelStates.value.activeUsers.error = null
-      console.log('活跃用户数据加载完成:', activeUsersData)
-      console.log('activeUsers.value长度:', activeUsers.value.length)
     } catch (err) {
       console.warn('获取活跃用户数据失败:', err)
       panelStates.value.activeUsers.error = '加载活跃用户失败'
@@ -806,16 +817,25 @@ onMounted(async () => {
   } catch (err) {
     console.error('初始化数据分析面板失败:', err)
     error.value = '初始化失败，请刷新页面重试'
+    if (window.$showNotification) {
+      window.$showNotification('数据初始化失败', 'error')
+    }
   }
 })
 
 // 刷新所有数据
 const refreshAllData = async () => {
+  if (isLoading.value) return
+  
   await Promise.all([
     loadAnalysisData(),
     loadChartData(),
     loadRealtimeStats()
   ])
+  
+  if (window.$showNotification) {
+    window.$showNotification('数据刷新成功', 'success')
+  }
 }
 
 // 独立重试函数
@@ -834,1605 +854,71 @@ const loadActiveUsers = async () => {
     })
     activeUsers.value = activeUsersData || []
     panelStates.value.activeUsers.error = null
-    console.log('活跃用户数据重新加载完成:', activeUsersData)
   } catch (err) {
     console.warn('重新获取活跃用户数据失败:', err)
     panelStates.value.activeUsers.error = '加载活跃用户失败'
     activeUsers.value = []
+    if (window.$showNotification) {
+      window.$showNotification('重试失败', 'error')
+    }
   } finally {
     panelStates.value.activeUsers.loading = false
   }
 }
 
-// 获取趋势图点坐标
-const getTrendPoints = (data) => {
-  if (!data || data.length === 0) return ''
-
-  // 过滤并验证数据，确保 count 是有效数字
-  const validData = data.filter(d => d && typeof d.count === 'number' && !isNaN(d.count))
-  if (validData.length === 0) return ''
-
-  const maxCount = Math.max(...validData.map(d => d.count))
-  // 防止除零错误
-  if (maxCount === 0) return ''
-
-  return validData.slice(0, 10).map((item, index) => {
-    const x = (index / Math.max(validData.slice(0, 10).length - 1, 1)) * 360 + 20
-    const y = 180 - (item.count / maxCount) * 160
-    return `${x},${y}`
-  }).join(' ')
-}
-
-// 获取排名样式类
-const getRankClass = (index) => {
-  if (index === 0) return 'rank-gold'
-  if (index === 1) return 'rank-silver'
-  if (index === 2) return 'rank-bronze'
-  return 'rank-normal'
-}
-
-// 获取排名图标
-const getRankIcon = (index) => {
-  const icons = ['🥇', '🥈', '🥉']
-  return icons[index] || (index + 1)
-}
-
-// 格式化学期时间段
-const formatSemesterPeriod = (semester) => {
-  // 解析学期名称，例如 "2024春" -> "2024年春季学期"
-  const match = semester.match(/(\d{4})(春|秋)/)
-  if (match) {
-    const year = match[1]
-    const season = match[2] === '春' ? '春季' : '秋季'
-    return `${year}年${season}学期`
+const loadSemesterComparison = async () => {
+  panelStates.value.semesterComparison.loading = true
+  panelStates.value.semesterComparison.error = null
+  try {
+    const comparison = await $fetch('/api/admin/stats/semester-comparison', {
+      method: 'GET'
+    })
+    semesterComparison.value = comparison || []
+  } catch (err) {
+    console.warn('获取学期对比数据失败:', err)
+    panelStates.value.semesterComparison.error = '加载学期对比失败'
+    if (window.$showNotification) {
+      window.$showNotification('重试失败', 'error')
+    }
+  } finally {
+    panelStates.value.semesterComparison.loading = false
   }
-  return semester
+}
+
+// 格式化数字
+const formatNumber = (num) => {
+  if (typeof num === 'number' && num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K'
+  }
+  return num
+}
+
+// 格式化日期 (短格式)
+const formatDateShort = (dateStr) => {
+  if (!dateStr) return ''
+  // 假设格式为 YYYY-MM-DD
+  const parts = dateStr.split('-')
+  if (parts.length >= 3) {
+    return `${parts[1]}-${parts[2]}`
+  }
+  return dateStr
 }
 </script>
 
 <style scoped>
-.data-analysis-panel {
-  padding: 20px;
-  background: var(--bg-primary);
-  border-radius: 12px;
-  border: 1px solid #1f1f1f;
-  color: #e2e8f0;
-  min-height: 100vh;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 20px;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(139, 92, 246, 0.1));
-  border-radius: 16px;
-  border: 1px solid rgba(79, 70, 229, 0.2);
-}
-
-.header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.panel-header h2 {
-  margin: 0;
-  font-size: 32px;
-  font-weight: 800;
-  color: #f8fafc;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.error-message {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 8px;
-  color: #fca5a5;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.error-message svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.refresh-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: rgba(79, 70, 229, 0.1);
-  border: 1px solid rgba(79, 70, 229, 0.3);
-  border-radius: 10px;
-  color: #a5b4fc;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.refresh-btn:hover:not(:disabled) {
-  background: rgba(79, 70, 229, 0.2);
-  border-color: rgba(79, 70, 229, 0.5);
-  color: #c7d2fe;
-  transform: scale(1.05);
-}
-
-.refresh-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.refresh-btn svg {
-  width: 20px;
-  height: 20px;
-  transition: transform 0.2s ease;
-}
-
-.refresh-btn svg.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.semester-selector {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.semester-selector label {
-  font-weight: 500;
-  color: #cbd5e1;
-}
-
-.semester-select {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  padding: 8px 12px;
-  color: #e2e8f0;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.semester-select:hover {
-  border-color: #4f46e5;
-}
-
-.semester-select:focus {
-  outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-/* 实时数据样式 */
-.realtime-stats {
-  margin-bottom: 32px;
-}
-
-.realtime-card {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: 16px;
-  padding: 24px;
-  transition: all 0.3s ease;
-}
-
-.realtime-card:hover {
-  border-color: rgba(16, 185, 129, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1);
-}
-
-.realtime-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.realtime-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #f1f5f9;
-}
-
-.live-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: rgba(16, 185, 129, 0.2);
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #6ee7b7;
-}
-
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  background: #10b981;
-  border-radius: 50%;
-  animation: pulse-live 2s infinite;
-}
-
-@keyframes pulse-live {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.2);
-  }
-}
-
-.realtime-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 20px;
-}
-
-.realtime-item {
-  text-align: center;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  position: relative;
-}
-
-.realtime-label {
-  display: block;
-  font-size: 14px;
-  color: #94a3b8;
-  margin-bottom: 8px;
-}
-
-.realtime-value {
-  display: block;
-  font-size: 24px;
-  font-weight: 700;
-  color: #10b981;
-  text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-}
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-  gap: 24px;
-}
-
-.chart-card {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.chart-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.chart-card:hover::before {
-  opacity: 1;
-}
-
-.chart-card:hover {
-  border-color: #3a3a3a;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-}
-
-.chart-card.enhanced {
-  background: linear-gradient(135deg, #1a1a1a, #1f1f1f);
-  border: 1px solid #2d2d2d;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.chart-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #f1f5f9;
-}
-
-/* 排序控制样式 */
-.sort-controls {
-  display: flex;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 4px;
-  border-radius: 8px;
-}
-
-.sort-btn {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.sort-btn:hover {
-  color: #e2e8f0;
-}
-
-.sort-btn.active {
-  background: #4f46e5;
-  color: white;
-  font-weight: 500;
-  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
-}
-
-.chart-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.chart-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: rgba(79, 70, 229, 0.1);
-  border: 1px solid rgba(79, 70, 229, 0.2);
-  border-radius: 8px;
-  color: #a5b4fc;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.chart-btn:hover {
-  background: rgba(79, 70, 229, 0.2);
-  border-color: rgba(79, 70, 229, 0.4);
-  color: #c7d2fe;
-}
-
-.chart-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.chart-container {
-  height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow-y: auto;
-}
-
-/* 趋势图样式 */
-.trend-svg {
-  width: 100%;
-  height: 200px;
-  margin-bottom: 16px;
-}
-
-.trend-grid {
-  stroke: #2a2a2a;
-  stroke-width: 1;
-  opacity: 0.3;
-}
-
-.trend-line {
-  fill: none;
-  stroke: #4f46e5;
-  stroke-width: 2;
-  filter: drop-shadow(0 0 4px rgba(79, 70, 229, 0.3));
-}
-
-.trend-point {
-  fill: #4f46e5;
-  stroke: #1a1a1a;
-  stroke-width: 2;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.trend-point:hover {
-  fill: #6366f1;
-  r: 6;
-  filter: drop-shadow(0 0 8px rgba(79, 70, 229, 0.5));
-}
-
-.trend-legend {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #94a3b8;
-  margin-top: 8px;
-}
-
-.trend-legend-item {
-  text-align: center;
-  flex: 1;
-}
-
-.trend-legend-date {
-  display: block;
-  margin-bottom: 4px;
-}
-
-.trend-legend-value {
-  display: block;
-  font-weight: 600;
-  color: #4f46e5;
-}
-
-.chart-content {
-  width: 100%;
-  padding: 10px;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.songs-ranking {
-  max-height: 280px;
-  overflow-y: auto;
-  padding-right: 8px;
-}
-
-.songs-ranking::-webkit-scrollbar {
+.custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
-
-.songs-ranking::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 3px;
 }
-
-.songs-ranking::-webkit-scrollbar-thumb {
+.custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(79, 70, 229, 0.3);
   border-radius: 3px;
   transition: background 0.3s ease;
 }
-
-.songs-ranking::-webkit-scrollbar-thumb:hover {
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(79, 70, 229, 0.5);
-}
-
-.chart-placeholder {
-  text-align: center;
-  color: #64748b;
-  font-size: 16px;
-  padding: 60px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.placeholder-icon {
-  width: 64px;
-  height: 64px;
-  opacity: 0.3;
-  margin-bottom: 8px;
-}
-
-.placeholder-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.chart-placeholder p {
-  margin: 10px 0;
-  color: #94a3b8;
-  font-size: 16px;
-}
-
-.placeholder-text {
-  font-size: 16px;
-  font-weight: 500;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.placeholder-subtext {
-  font-size: 14px !important;
-  color: #475569 !important;
-}
-
-.trend-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #2d2d2d;
-}
-
-.trend-date {
-  color: #cbd5e1;
-}
-
-.trend-count {
-  color: #4f46e5;
-  font-weight: 500;
-}
-
-.song-item {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-
-.song-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, #4f46e5, #7c3aed);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.song-item:hover::before {
-  opacity: 1;
-}
-
-.song-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.song-rank-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  margin-right: 16px;
-  font-weight: 700;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.rank-gold {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  color: #1a1a1a;
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
-}
-
-.rank-silver {
-  background: linear-gradient(135deg, #e5e7eb, #9ca3af);
-  color: #1a1a1a;
-  box-shadow: 0 0 20px rgba(156, 163, 175, 0.3);
-}
-
-.rank-bronze {
-  background: linear-gradient(135deg, #d97706, #92400e);
-  color: #fff;
-  box-shadow: 0 0 20px rgba(217, 119, 6, 0.3);
-}
-
-.rank-normal {
-  background: rgba(79, 70, 229, 0.1);
-  border: 2px solid rgba(79, 70, 229, 0.3);
-  color: #a5b4fc;
-}
-
-.rank-icon {
-  font-size: 18px;
-}
-
-.rank-number {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.song-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.song-title {
-  font-weight: 600;
-  color: #f1f5f9;
-  margin-bottom: 4px;
-  font-size: 16px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.song-artist {
-  font-size: 14px;
-  color: #94a3b8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.song-stats {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  min-width: 80px;
-}
-
-.vote-count {
-  font-weight: 600;
-  color: #10b981;
-  font-size: 16px;
-  margin-bottom: 2px;
-}
-
-.vote-label {
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.vote-bar {
-  width: 60px;
-  height: 4px;
-  background: rgba(16, 185, 129, 0.2);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.vote-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #10b981, #059669);
-  border-radius: 2px;
-  transition: width 0.5s ease;
-}
-
-.engagement-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid #2d2d2d;
-}
-
-.engagement-label {
-  color: #cbd5e1;
-}
-
-.engagement-value {
-  color: #4f46e5;
-  font-weight: 500;
-}
-
-.semester-comparison {
-  display: grid;
-  gap: 16px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding-right: 8px;
-}
-
-.semester-comparison::-webkit-scrollbar {
-  width: 6px;
-}
-
-.semester-comparison::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 3px;
-}
-
-.semester-comparison::-webkit-scrollbar-thumb {
-  background: rgba(79, 70, 229, 0.3);
-  border-radius: 3px;
-  transition: background 0.3s ease;
-}
-
-.semester-comparison::-webkit-scrollbar-thumb:hover {
-  background: rgba(79, 70, 229, 0.5);
-}
-
-.semester-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 16px;
-  transition: all 0.3s ease;
-}
-
-.semester-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(79, 70, 229, 0.3);
-  transform: translateY(-2px);
-}
-
-.semester-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.semester-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.semester-title h4 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #f1f5f9;
-}
-
-.current-badge {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.semester-period {
-  font-size: 12px;
-  color: #94a3b8;
-  text-align: right;
-}
-
-.semester-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 12px;
-}
-
-.metric-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.metric-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.metric-icon.songs {
-  background: rgba(79, 70, 229, 0.2);
-  color: #a5b4fc;
-}
-
-.metric-icon.schedules {
-  background: rgba(16, 185, 129, 0.2);
-  color: #6ee7b7;
-}
-
-.metric-icon.requests {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
-}
-
-.metric-icon svg {
-  width: 12px;
-  height: 12px;
-}
-
-.metric-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.metric-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: #f1f5f9;
-  line-height: 1;
-}
-
-.metric-label {
-  font-size: 11px;
-  color: #64748b;
-  margin-top: 2px;
-}
-
-.semester-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #2d2d2d;
-}
-
-.semester-name {
-  color: #f1f5f9;
-  font-weight: 500;
-  flex: 1;
-}
-
-.semester-stats {
-  color: #94a3b8;
-  font-size: 0.9em;
-  flex: 2;
-}
-
-.semester-active {
-  color: #10b981;
-  font-weight: 500;
-  font-size: 0.9em;
-  flex: 1;
-  text-align: right;
-}
-
-/* 响应式设计 */
-@media (max-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-  }
-
-  .charts-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .realtime-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .data-analysis-panel {
-    padding: 16px;
-  }
-
-  .panel-header {
-    flex-direction: column;
-    gap: 16px;
-    align-items: stretch;
-  }
-
-  .header-controls {
-    justify-content: space-between;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .realtime-card {
-    padding: 16px;
-  }
-
-  .realtime-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .chart-card {
-    padding: 16px;
-  }
-
-  .trend-svg {
-    height: 150px;
-  }
-
-  .song-item {
-    padding: 12px;
-  }
-
-  .song-rank-badge {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
-    margin-right: 12px;
-  }
-
-  .song-title {
-    font-size: 14px;
-  }
-
-  .song-artist {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .data-analysis-panel {
-    padding: 12px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .realtime-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .trend-legend {
-    font-size: 10px;
-  }
-
-  .chart-btn {
-    width: 28px;
-    height: 28px;
-  }
-
-  .chart-btn svg {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-/* 活跃用户排名样式 */
-.users-ranking {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.user-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.2s ease;
-}
-
-.user-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
-}
-
-.user-rank {
-  flex-shrink: 0;
-}
-
-.rank-badge {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.rank-badge.gold {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #92400e;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
-}
-
-.rank-badge.silver {
-  background: linear-gradient(135deg, #c0c0c0, #e5e7eb);
-  color: #374151;
-  box-shadow: 0 4px 12px rgba(192, 192, 192, 0.3);
-}
-
-.rank-badge.bronze {
-  background: linear-gradient(135deg, #cd7f32, #d97706);
-  color: #92400e;
-  box-shadow: 0 4px 12px rgba(205, 127, 50, 0.3);
-}
-
-.rank-badge.other {
-  background: rgba(100, 116, 139, 0.2);
-  color: #cbd5e1;
-  border: 1px solid rgba(100, 116, 139, 0.3);
-}
-
-.rank-icon {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  line-height: 1;
-}
-
-.rank-number {
-  font-size: 16px;
-}
-
-.user-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.user-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #f1f5f9;
-  margin-bottom: 4px;
-}
-
-.user-details {
-  display: flex;
-  gap: 16px;
-  font-size: 13px;
-  color: #94a3b8;
-}
-
-.contribution-count,
-.like-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.user-stats {
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.activity-score {
-  font-size: 20px;
-  font-weight: 700;
-  color: #10b981;
-  line-height: 1;
-}
-
-.score-label {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 2px;
-  margin-bottom: 8px;
-}
-
-.activity-bar {
-  width: 80px;
-  height: 4px;
-  background: rgba(100, 116, 139, 0.2);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.activity-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #10b981, #34d399);
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-@media (max-width: 768px) {
-  .user-item {
-    padding: 12px;
-    gap: 12px;
-  }
-
-  .rank-badge {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
-  }
-
-  .rank-icon {
-    width: 16px;
-    height: 16px;
-  }
-
-  .user-name {
-    font-size: 14px;
-  }
-
-  .user-details {
-    font-size: 12px;
-    gap: 12px;
-  }
-
-  .activity-score {
-    font-size: 16px;
-  }
-
-  .activity-bar {
-    width: 60px;
-  }
-}
-
-@media (max-width: 480px) {
-  .user-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .user-rank {
-    align-self: center;
-  }
-
-  .user-info {
-    text-align: center;
-    width: 100%;
-  }
-
-  .user-stats {
-    text-align: center;
-    width: 100%;
-  }
-
-  .user-details {
-    justify-content: center;
-  }
-
-  .activity-bar {
-    margin: 0 auto;
-  }
-}
-
-/* 面板状态样式 */
-.panel-loading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.loading-spinner {
-  width: 20px;
-  height: 20px;
-  color: #4f46e5;
-}
-
-.chart-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  color: #94a3b8;
-}
-
-.loading-content {
-  text-align: center;
-}
-
-.loading-text {
-  font-size: 14px;
-  margin-top: 8px;
-}
-
-.chart-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  color: #ef4444;
-  text-align: center;
-  gap: 16px;
-}
-
-.error-icon {
-  width: 48px;
-  height: 48px;
-  color: #ef4444;
-  opacity: 0.7;
-}
-
-.error-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.chart-error p {
-  margin: 0;
-  font-size: 14px;
-  color: #fca5a5;
-}
-
-/* 活跃用户悬停提示样式 */
-.online-users-item {
-  position: relative;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.online-users-item:hover {
-  background: rgba(79, 70, 229, 0.1);
-  border-radius: 8px;
-}
-
-.users-tooltip {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 8px;
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(100, 116, 139, 0.3);
-  border-radius: 12px;
-  padding: 16px;
-  min-width: 280px;
-  max-width: 320px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-  z-index: 99999;
-  animation: tooltipFadeIn 0.2s ease-out;
-}
-
-.users-tooltip::before {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 12px;
-  height: 12px;
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(100, 116, 139, 0.3);
-  border-bottom: none;
-  border-right: none;
-  transform: translateX(-50%) rotate(45deg);
-}
-
-@keyframes tooltipFadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-.tooltip-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(100, 116, 139, 0.3);
-}
-
-.tooltip-header h4 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #f1f5f9;
-  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.user-count {
-  font-size: 12px;
-  color: #0ea5e9;
-  background: rgba(14, 165, 233, 0.15);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-}
-
-.users-list {
-  max-height: 240px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
-}
-
-.users-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.users-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.users-list::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.3);
-  border-radius: 2px;
-}
-
-.user-item-tooltip {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(100, 116, 139, 0.2);
-  transition: all 0.2s ease;
-}
-
-.user-item-tooltip:last-child {
-  border-bottom: none;
-}
-
-.user-item-tooltip:hover {
-  background: rgba(100, 116, 139, 0.1);
-  border-radius: 6px;
-  padding: 8px 6px;
-}
-
-.user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.user-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: white;
-}
-
-.user-info-tooltip {
-  flex: 1;
-  min-width: 0;
-}
-
-.user-info-tooltip .user-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #f1f5f9;
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-info-tooltip .user-username {
-  font-size: 12px;
-  color: #94a3b8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.empty-tooltip {
-  text-align: center;
-}
-
-.empty-message {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  color: #94a3b8;
-  padding: 20px 0;
-}
-
-.empty-message svg {
-  width: 36px;
-  height: 36px;
-  opacity: 0.5;
-  color: #0ea5e9;
-}
-
-.empty-message p {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .users-tooltip {
-    min-width: 240px;
-    max-width: 280px;
-    left: 0;
-    transform: none;
-    margin-left: 0;
-  }
-
-  .users-tooltip::before {
-    left: 24px;
-    transform: rotate(45deg);
-  }
-}
-
-@media (max-width: 480px) {
-  .users-tooltip {
-    min-width: 200px;
-    max-width: 240px;
-    padding: 12px;
-  }
-
-  .user-item-tooltip {
-    gap: 8px;
-  }
-
-  .user-avatar {
-    width: 28px;
-    height: 28px;
-  }
-
-  .avatar-placeholder {
-    font-size: 12px;
-  }
-
-  .user-info-tooltip .user-name {
-    font-size: 13px;
-  }
-
-  .user-info-tooltip .user-username {
-    font-size: 11px;
-  }
-}
-
-.retry-btn {
-  padding: 8px 16px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 6px;
-  color: #ef4444;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.retry-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.5);
-}
-
-.retry-btn:active {
-  transform: translateY(1px);
-}
-
-/* 全局悬浮提示框样式 */
-.users-tooltip-global {
-  position: fixed;
-  z-index: 999999;
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(100, 116, 139, 0.3);
-  border-radius: 16px;
-  padding: 18px;
-  min-width: 280px;
-  max-width: 320px;
-  max-height: 300px;
-  overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 10px 20px -5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(100, 116, 139, 0.2);
-  animation: tooltipFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
-}
-
-.users-tooltip-global::before {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-top: 10px solid rgba(15, 23, 42, 0.98);
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
-}
-
-/* 当tooltip在下方显示时，箭头在上方 */
-.users-tooltip-global.tooltip-below::before {
-  top: -8px;
-  border-top: none;
-  border-bottom: 8px solid rgba(15, 23, 42, 0.98);
-}
-
-@keyframes tooltipFadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-8px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
-}
-
-/* 响应式设计 - 全局tooltip */
-@media (max-width: 768px) {
-  .users-tooltip-global {
-    min-width: 240px;
-    max-width: 280px;
-    padding: 14px;
-  }
-}
-
-@media (max-width: 480px) {
-  .users-tooltip-global {
-    min-width: 200px;
-    max-width: 240px;
-    padding: 12px;
-    font-size: 13px;
-  }
-
-  .users-tooltip-global .tooltip-header h4 {
-    font-size: 13px;
-  }
-
-  .users-tooltip-global .user-count {
-    font-size: 11px;
-  }
 }
 </style>
