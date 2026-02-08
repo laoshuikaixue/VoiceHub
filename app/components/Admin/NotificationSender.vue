@@ -66,9 +66,9 @@
                   <div class="space-y-1.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1">选择年级</span>
                     <CustomSelect 
-                      :value="form.grade || '请选择年级'" 
-                      :options="['请选择年级', '高一', '高二', '高三', '教师']" 
-                      @update:value="val => form.grade = val === '请选择年级' ? '' : val"
+                      v-model="form.grade" 
+                      :options="['高一', '高二', '高三', '教师']" 
+                      placeholder="请选择年级"
                       class="w-full md:w-64" 
                     />
                   </div>
@@ -78,9 +78,9 @@
                   <div class="space-y-1.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1">年级</span>
                     <CustomSelect 
-                      :value="form.classGrade || '请选择年级'" 
-                      :options="['请选择年级', '高一', '高二', '高三', '教师']" 
-                      @update:value="val => form.classGrade = val === '请选择年级' ? '' : val"
+                      v-model="form.classGrade" 
+                      :options="['高一', '高二', '高三', '教师']" 
+                      placeholder="请选择年级"
                       class="w-full" 
                     />
                   </div>
@@ -99,9 +99,10 @@
                   <div class="p-6 bg-zinc-950/50 border border-zinc-800 border-dashed rounded-2xl">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                       <CustomSelect 
-                        :value="multiClassForm.grade || '请选择年级'" 
-                        :options="['请选择年级', '高一', '高二', '高三', '教师']" 
-                        @update:value="val => multiClassForm.grade = val === '请选择年级' ? '' : val"
+                        v-model="multiClassForm.grade" 
+                        :options="['高一', '高二', '高三', '教师']" 
+                        placeholder="请选择年级"
+                        class="w-full"
                       />
                       <div class="flex gap-2">
                         <input 
@@ -139,8 +140,9 @@
                 </div>
 
                 <div v-else-if="form.scope === 'SPECIFIC_USERS'" key="specific" class="space-y-4">
-                  <div class="relative">
-                    <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" :size="16" />
+                  <div class="relative flex items-center">
+                    <Search v-if="!userSearchLoading" class="absolute left-4 text-zinc-700 pointer-events-none" :size="16" />
+                    <Loader2 v-else class="absolute left-4 text-blue-500 animate-spin pointer-events-none" :size="16" />
                     <input 
                       type="text" 
                       v-model="userSearchQuery"
@@ -558,6 +560,11 @@ const sendNotification = async () => {
 
     if (result && result.success) {
       success.value = `成功发送通知给 ${result.sentCount} 名用户`
+      
+      // 3秒后自动隐藏成功提示
+      setTimeout(() => {
+        success.value = ''
+      }, 3000)
 
       // 清空表单
       form.value = {
@@ -586,6 +593,11 @@ const sendNotification = async () => {
   } catch (err) {
     error.value = err.message || '发送通知时发生错误'
     console.error('发送通知错误:', err)
+    
+    // 3秒后自动隐藏错误提示
+    setTimeout(() => {
+      error.value = ''
+    }, 3000)
   } finally {
     loading.value = false
   }
