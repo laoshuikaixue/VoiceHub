@@ -299,7 +299,7 @@ import {
   FileJson,
   X
 } from 'lucide-vue-next'
-import CustomSelect from '~/components/admin/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
 
 // 状态
 const activeModal = ref('none')

@@ -77,52 +77,29 @@
         <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
           <!-- 学期选择 -->
           <div class="relative min-w-[160px]">
-            <select
+            <CustomSelect
               v-model="selectedSemester"
-              class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-zinc-400 focus:outline-none focus:border-blue-500/30 appearance-none cursor-pointer hover:bg-zinc-900/50 transition-all"
-            >
-              <option value="all">全部学期</option>
-              <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
-                {{ semester.name }}
-              </option>
-            </select>
-            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
-              <ChevronDown :size="14" />
-            </div>
+              :options="semesterOptions"
+              className="w-full"
+            />
           </div>
 
           <!-- 状态过滤 -->
           <div class="relative min-w-[140px]">
-            <select
+            <CustomSelect
               v-model="statusFilter"
-              class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-zinc-400 focus:outline-none focus:border-blue-500/30 appearance-none cursor-pointer hover:bg-zinc-900/50 transition-all"
-            >
-              <option value="all">全部状态</option>
-              <option value="pending">待排期</option>
-              <option value="scheduled">已排期</option>
-              <option value="played">已播放</option>
-            </select>
-            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
-              <ChevronDown :size="14" />
-            </div>
+              :options="statusOptions"
+              className="w-full"
+            />
           </div>
 
           <!-- 排序方式 -->
           <div class="relative min-w-[140px]">
-            <select
+            <CustomSelect
               v-model="sortOption"
-              class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-zinc-400 focus:outline-none focus:border-blue-500/30 appearance-none cursor-pointer hover:bg-zinc-900/50 transition-all"
-            >
-              <option value="time-desc">最新投稿</option>
-              <option value="time-asc">最早投稿</option>
-              <option value="votes-desc">热度最高</option>
-              <option value="votes-asc">热度最低</option>
-              <option value="title-asc">标题A-Z</option>
-              <option value="title-desc">标题Z-A</option>
-            </select>
-            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
-              <ChevronDown :size="14" />
-            </div>
+              :options="sortOptions"
+              className="w-full"
+            />
           </div>
         </div>
       </div>
@@ -523,49 +500,31 @@
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">学期</label>
-              <select
+              <CustomSelect
                 v-if="showEditModal"
                 v-model="editForm.semester"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all appearance-none"
-              >
-                <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
-                  {{ semester.name }}
-                </option>
-              </select>
-              <select
+                :options="editSemesterOptions"
+              />
+              <CustomSelect
                 v-else
                 v-model="addForm.semester"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all appearance-none"
-              >
-                <option v-for="semester in availableSemesters" :key="semester.id" :value="semester.name">
-                  {{ semester.name }}
-                </option>
-              </select>
+                :options="editSemesterOptions"
+              />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-zinc-800/50">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">音乐平台 (可选)</label>
-                <select
+                <CustomSelect
                   v-if="showEditModal"
                   v-model="editForm.musicPlatform"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none appearance-none"
-                >
-                  <option value="">请选择平台</option>
-                  <option value="netease">网易云音乐</option>
-                  <option value="tencent">QQ音乐</option>
-                  <option value="bilibili">哔哩哔哩</option>
-                </select>
-                <select
+                  :options="platformOptions"
+                />
+                <CustomSelect
                   v-else
                   v-model="addForm.musicPlatform"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 focus:outline-none appearance-none"
-                >
-                  <option value="">请选择平台</option>
-                  <option value="netease">网易云音乐</option>
-                  <option value="tencent">QQ音乐</option>
-                  <option value="bilibili">哔哩哔哩</option>
-                </select>
+                  :options="platformOptions"
+                />
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">音乐ID (可选)</label>
@@ -660,6 +619,7 @@ import {computed, onMounted, ref, watch} from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
+import CustomSelect from './Common/CustomSelect.vue'
 import {
   Search, Plus, RotateCcw, Edit2, Check, X, Trash2,
   Music, Heart, Download, ChevronDown, ChevronLeft, ChevronRight,
@@ -683,6 +643,44 @@ const pageSize = ref(20)
 // 学期相关
 const selectedSemester = ref('all')
 const availableSemesters = ref([])
+
+const semesterOptions = computed(() => {
+  const opts = [{ label: '全部学期', value: 'all' }]
+  if (availableSemesters.value) {
+    opts.push(...availableSemesters.value.map(s => ({ label: s.name, value: s.name })))
+  }
+  return opts
+})
+
+const editSemesterOptions = computed(() => {
+  if (availableSemesters.value) {
+    return availableSemesters.value.map(s => ({ label: s.name, value: s.name }))
+  }
+  return []
+})
+
+const statusOptions = [
+  { label: '全部状态', value: 'all' },
+  { label: '待排期', value: 'pending' },
+  { label: '已排期', value: 'scheduled' },
+  { label: '已播放', value: 'played' }
+]
+
+const sortOptions = [
+  { label: '最新投稿', value: 'time-desc' },
+  { label: '最早投稿', value: 'time-asc' },
+  { label: '热度最高', value: 'votes-desc' },
+  { label: '热度最低', value: 'votes-asc' },
+  { label: '标题A-Z', value: 'title-asc' },
+  { label: '标题Z-A', value: 'title-desc' }
+]
+
+const platformOptions = [
+  { label: '请选择平台', value: '' },
+  { label: '网易云音乐', value: 'netease' },
+  { label: 'QQ音乐', value: 'tencent' },
+  { label: '哔哩哔哩', value: 'bilibili' }
+]
 
 // 删除对话框相关
 const showDeleteDialog = ref(false)

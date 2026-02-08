@@ -14,7 +14,7 @@
         >
           {{ label }}
         </span>
-        <span class="text-[11px] font-bold text-zinc-300 truncate">{{ value }}</span>
+        <span class="text-[11px] font-bold text-zinc-300 truncate">{{ displayValue }}</span>
       </div>
       <div class="transition-transform duration-200" :class="{ 'rotate-180': isOpen }">
         <ChevronDown :size="12" :class="isOpen ? 'text-blue-400' : 'text-zinc-700'" />
@@ -35,16 +35,16 @@
       >
         <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
           <button
-            v-for="option in options"
-            :key="option"
-            @click="selectOption(option)"
+            v-for="option in normalizedOptions"
+            :key="option.value"
+            @click="selectOption(option.value)"
             class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-bold transition-all"
             :class="[
-              value === option ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'
+              isSelected(option.value) ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'
             ]"
           >
-            <span class="truncate">{{ option }}</span>
-            <Check v-if="value === option" :size="12" class="shrink-0" />
+            <span class="truncate">{{ option.label }}</span>
+            <Check v-if="isSelected(option.value)" :size="12" class="shrink-0" />
           </button>
         </div>
       </div>
@@ -53,13 +53,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { ChevronDown, Check } from 'lucide-vue-next'
 
 const props = defineProps({
   label: String,
-  modelValue: String,
-  value: String,
+  modelValue: [String, Number, Boolean, Object],
   options: {
     type: Array,
     required: true
@@ -67,19 +66,32 @@ const props = defineProps({
   className: String
 })
 
-const emit = defineEmits(['update:modelValue', 'update:value', 'change'])
+const emit = defineEmits(['update:modelValue', 'change'])
 
 const isOpen = ref(false)
 const containerRef = ref(null)
 
-const displayValue = computed(() => {
-  return props.modelValue !== undefined ? props.modelValue : props.value
+const normalizedOptions = computed(() => {
+  return props.options.map(option => {
+    if (typeof option === 'object' && option !== null && 'value' in option && 'label' in option) {
+      return option
+    }
+    return { label: String(option), value: option }
+  })
 })
 
-const selectOption = (option) => {
-  emit('update:modelValue', option)
-  emit('update:value', option)
-  emit('change', option)
+const displayValue = computed(() => {
+  const selected = normalizedOptions.value.find(opt => opt.value === props.modelValue)
+  return selected ? selected.label : props.modelValue
+})
+
+const isSelected = (value) => {
+  return value === props.modelValue
+}
+
+const selectOption = (value) => {
+  emit('update:modelValue', value)
+  emit('change', value)
   isOpen.value = false
 }
 
