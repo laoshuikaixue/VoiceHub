@@ -1,58 +1,200 @@
 <template>
-  <div class="email-template-manager">
-    <div class="section-header">
-      <h2>邮件模板管理</h2>
-      <p>自定义系统邮件的主题与内容，支持占位符</p>
-    </div>
-
-    <div class="list-and-editor">
-      <div class="template-list">
-        <div class="list-header">模板列表</div>
-        <div v-for="t in templates" :key="t.key" :class="['tpl-item', selectedKey===t.key?'active':'']"
-             @click="select(t)">
-          <div class="tpl-name">{{ t.name }} <span class="tpl-key">({{ t.key }})</span></div>
-          <div class="tpl-meta">
-            <span v-if="t.isBuiltin" class="badge">内置</span>
-            <span v-if="t.isOverridden" class="badge badge-green">已自定义</span>
-          </div>
+  <div class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b border-zinc-800 bg-zinc-900/20">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center border border-blue-500/20">
+          <Mail :size="20" class="text-blue-500" />
+        </div>
+        <div>
+          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">邮件模板管理</h3>
+          <p class="text-[10px] text-zinc-500 mt-0.5">自定义系统邮件的主题与内容，支持变量替换</p>
         </div>
       </div>
-      <div v-if="selected" class="editor">
-        <div class="form-group">
-          <label>模板名称</label>
-          <input v-model="form.name" class="form-input"/>
+      <div class="flex items-center gap-3">
+        <button
+            v-if="selected"
+            class="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-[11px] font-bold rounded-xl transition-all"
+            @click="doPreview"
+            :disabled="saving"
+        >
+          <Eye :size="14" /> {{ previewHtml ? '刷新预览' : '实时预览' }}
+        </button>
+        <button
+            v-if="selected"
+            class="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+            @click="save"
+            :disabled="saving"
+        >
+          <Save :size="14" /> {{ saving ? '保存中...' : '更新模板' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[650px]">
+      <!-- Left: Template List -->
+      <div class="lg:col-span-3 border-r border-zinc-800 bg-zinc-900/10 flex flex-col">
+        <div class="p-4 border-b border-zinc-800/50">
+          <div class="relative">
+            <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+            <input
+                type="text"
+                placeholder="搜索模板..."
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-[10px] text-zinc-400 focus:outline-none focus:border-blue-500/30"
+            />
+          </div>
         </div>
-        <div class="form-group">
-          <label v-pre>主题（可用 {{var}} 占位符）</label>
-          <input v-model="form.subject" class="form-input"/>
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+          <button
+              v-for="t in templates"
+              :key="t.key"
+              @click="select(t)"
+              class="w-full group flex flex-col gap-1 p-3 rounded-2xl transition-all text-left border"
+              :class="[
+                selectedKey === t.key
+                  ? 'bg-blue-600/10 border-blue-500/20'
+                  : 'bg-transparent border-transparent hover:bg-zinc-800/40'
+              ]"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-black tracking-tight transition-colors"
+                    :class="selectedKey === t.key ? 'text-blue-400' : 'text-zinc-300 group-hover:text-zinc-100'">
+                {{ t.name }}
+              </span>
+              <div class="flex gap-1">
+                <span v-if="t.isBuiltin && !t.isOverridden" class="px-1.5 py-0.5 rounded-md bg-zinc-800 text-[8px] font-black text-zinc-500 uppercase tracking-tighter">
+                  内置
+                </span>
+                <span v-if="t.isOverridden" class="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-[8px] font-black text-emerald-500 uppercase tracking-tighter">
+                  自定义
+                </span>
+              </div>
+            </div>
+            <span class="text-[9px] font-bold text-zinc-600 font-mono">{{ t.key }}</span>
+          </button>
         </div>
-        <div class="form-group">
-          <label v-pre>HTML 内容（可用 {{var}} 与 {{#if cond}}...{{/if}}）</label>
-          <textarea v-model="form.html" class="form-textarea" rows="14"></textarea>
+      </div>
+
+      <!-- Right: Editor Area -->
+      <div class="lg:col-span-9 flex flex-col bg-zinc-950/20 overflow-hidden">
+        <div v-if="selected" class="flex-1 overflow-y-auto custom-scrollbar p-8">
+          <div class="max-w-4xl mx-auto space-y-8">
+            <!-- Basic Info & Subject -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">模板名称</label>
+                <input
+                    v-model="form.name"
+                    type="text"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                />
+              </div>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between px-1">
+                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">邮件主题</label>
+                  <span class="text-[9px] text-zinc-500 font-bold uppercase">支持变量</span>
+                </div>
+                <input
+                    v-model="form.subject"
+                    type="text"
+                    placeholder="请输入邮件主题..."
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                />
+              </div>
+            </div>
+
+            <!-- Variables Hint -->
+            <div class="bg-blue-600/5 border border-blue-500/10 rounded-2xl p-4 flex gap-4">
+              <div class="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                <Info :size="16" class="text-blue-500" />
+              </div>
+              <div class="space-y-1">
+                <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest">可用变量</h4>
+                <p class="text-[11px] text-zinc-500 leading-relaxed font-mono">
+                  <template v-if="selected.key==='verification.code'">
+                    <span v-pre>{{name}}, {{email}}, {{code}}, {{expiresInMinutes}}</span>
+                  </template>
+                  <template v-else>
+                    <span v-pre>{{title}}, {{message}}, {{actionUrl}}, {{fromName}}</span>
+                  </template>
+                </p>
+              </div>
+            </div>
+
+            <!-- Content Editor -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between px-1">
+                <div class="flex items-center gap-2">
+                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">HTML 内容</label>
+                  <span class="px-2 py-0.5 rounded-md bg-zinc-900 text-[8px] font-black text-zinc-500 uppercase">Handlebars</span>
+                </div>
+                <button
+                    v-if="selected.isOverridden"
+                    @click="restore"
+                    class="flex items-center gap-1.5 text-[10px] font-bold text-rose-500 hover:text-rose-400 transition-colors"
+                >
+                  <RotateCcw :size="12" /> 恢复默认配置
+                </button>
+              </div>
+              <div class="relative group">
+                <div class="absolute right-4 top-4 p-2 rounded-lg bg-zinc-900/50 border border-zinc-800 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Code :size="14" class="text-zinc-500" />
+                </div>
+                <textarea
+                    v-model="form.html"
+                    rows="16"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-6 text-[11px] text-zinc-300 font-mono leading-relaxed focus:outline-none focus:border-blue-500/30 custom-scrollbar"
+                    placeholder="<html>..."
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Preview Frame -->
+            <Transition
+                enter-active-class="transition duration-300 ease-out"
+                enter-from-class="transform translate-y-4 opacity-0"
+                enter-to-class="transform translate-y-0 opacity-100"
+            >
+              <div v-if="previewHtml" class="space-y-4 pt-4 border-t border-zinc-800">
+                <div class="flex items-center justify-between px-1">
+                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-2">
+                    <Eye :size="14" /> 实时预览: <span class="text-zinc-400 font-normal normal-case">{{ previewSubject }}</span>
+                  </label>
+                  <button @click="previewHtml = ''" class="text-[10px] font-bold text-zinc-500 hover:text-zinc-300">隐藏预览</button>
+                </div>
+                <div class="rounded-2xl overflow-hidden border border-zinc-800 bg-white shadow-2xl">
+                  <iframe :srcdoc="previewHtml" class="w-full h-[500px] border-none"></iframe>
+                </div>
+              </div>
+            </Transition>
+          </div>
         </div>
-        <div class="hint">
-          <strong>常用变量：</strong>
-          <span v-if="selected.key==='verification.code'">name, email, code, expiresInMinutes</span>
-          <span v-else>title, message, actionUrl, fromName</span>
-        </div>
-        <div class="actions">
-          <button :disabled="saving" class="btn btn-primary" @click="save">{{ saving ? '保存中...' : '保存' }}</button>
-          <button :disabled="saving || !selected.isOverridden" class="btn" @click="restore">恢复默认</button>
-          <button :disabled="saving" class="btn btn-secondary" @click="doPreview">预览</button>
-        </div>
-        <div v-if="previewHtml" class="preview">
-          <div class="preview-header">预览：{{ previewSubject }}</div>
-          <iframe :srcdoc="previewHtml" class="preview-frame"></iframe>
+
+        <!-- Empty State -->
+        <div v-else class="flex-1 flex flex-col items-center justify-center text-zinc-700 space-y-4">
+          <div class="w-16 h-16 rounded-3xl bg-zinc-900/50 flex items-center justify-center border border-zinc-800/50">
+            <Mail :size="32" class="text-zinc-800" />
+          </div>
+          <p class="text-xs font-bold tracking-widest uppercase">请在左侧选择一个邮件模板</p>
         </div>
       </div>
     </div>
   </div>
-
 </template>
 
 <script lang="ts" setup>
 import {computed, onMounted, ref} from 'vue'
 import {useToast} from '~/composables/useToast'
+import {
+  Mail,
+  Info,
+  Save,
+  RotateCcw,
+  Eye,
+  Code,
+  Search,
+  ChevronRight
+} from 'lucide-vue-next'
 
 type TemplateItem = {
   key: string;
@@ -147,176 +289,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.email-template-manager {
-  background: #111;
-  border: 1px solid #1f1f1f;
-  border-radius: 12px;
-  padding: 24px;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
 }
-
-.section-header h2 {
-  color: #fff;
-  margin: 0 0 8px;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-.section-header p {
-  color: #888;
-  margin: 0 0 16px;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
 }
-
-.list-and-editor {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 16px;
-}
-
-.template-list {
-  background: #0f0f0f;
-  border: 1px solid #1f1f1f;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.list-header {
-  color: #ccc;
-  padding: 12px 16px;
-  border-bottom: 1px solid #1f1f1f;
-}
-
-.tpl-item {
-  padding: 12px 16px;
-  border-bottom: 1px solid #1f1f1f;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.tpl-item:hover {
-  background: #171717;
-}
-
-.tpl-item.active {
-  background: #151515;
-}
-
-.tpl-name {
-  color: #fff;
-  font-weight: 600;
-}
-
-.tpl-key {
-  color: #666;
-  font-weight: 400;
-  font-size: 12px;
-}
-
-.badge {
-  display: inline-block;
-  font-size: 12px;
-  color: #aaa;
-  border: 1px solid #333;
-  padding: 2px 6px;
-  border-radius: 6px;
-  margin-left: 6px;
-}
-
-.badge-green {
-  color: #10b981;
-  border-color: rgba(16, 185, 129, 0.4);
-}
-
-.editor {
-  background: #0f0f0f;
-  border: 1px solid #1f1f1f;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.form-group {
-  margin-bottom: 12px;
-}
-
-label {
-  color: #ccc;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.form-input {
-  width: 100%;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  color: #fff;
-  border-radius: 8px;
-  padding: 10px;
-}
-
-.form-textarea {
-  width: 100%;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  color: #fff;
-  border-radius: 8px;
-  padding: 10px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
-
-.hint {
-  color: #888;
-  font-size: 12px;
-  margin-bottom: 12px;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.btn {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid #333;
-  background: #1a1a1a;
-  color: #fff;
-  cursor: pointer;
-}
-
-.btn:hover {
-  background: #222;
-}
-
-.btn-primary {
-  background: #007bff;
-  border-color: #0056b3;
-}
-
-.btn-secondary {
-  background: #333;
-}
-
-.preview {
-  border-top: 1px solid #1f1f1f;
-  padding-top: 12px;
-}
-
-.preview-header {
-  color: #ccc;
-  margin-bottom: 8px;
-}
-
-.preview-frame {
-  width: 100%;
-  height: 360px;
-  background: #fff;
-  border: 1px solid #333;
-  border-radius: 6px;
-}
-
-@media (max-width: 900px) {
-  .list-and-editor {
-    grid-template-columns: 1fr;
-  }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
 </style>

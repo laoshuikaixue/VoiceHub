@@ -1,208 +1,210 @@
 <template>
-  <div class="smtp-manager">
-    <div class="section-header">
-      <h2>SMTP邮件服务配置</h2>
-      <p>配置邮件服务器以发送邮件通知</p>
+  <div
+      class="max-w-[1400px] mx-auto space-y-10 pb-20 px-2"
+  >
+    <!-- Header Area -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">邮件服务配置</h2>
+        <p class="text-xs text-zinc-500 mt-1">配置 SMTP 服务以发送系统验证码、投稿通知及其他重要提醒</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button
+            class="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
+            @click="sendTestEmail"
+            :disabled="testing || !testEmail || !config.smtpEnabled"
+        >
+          <Check v-if="testResult?.success" :size="14" class="text-emerald-500" />
+          <Send v-else :size="14" />
+          {{ testing ? '发送中...' : (testResult?.success ? "测试邮件已发送" : "发送测试邮件") }}
+        </button>
+        <button
+            class="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+            @click="saveConfig"
+            :disabled="saving"
+        >
+          <Save :size="14" /> {{ saving ? '保存中...' : '保存配置' }}
+        </button>
+      </div>
     </div>
 
-    <div class="config-section">
-      <div class="form-row">
-        <label class="switch-label">
-          <input
-              v-model="config.smtpEnabled"
-              class="switch-input"
-              type="checkbox"
-          >
-          <span class="switch-slider"></span>
-          启用SMTP邮件服务
-        </label>
-      </div>
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
 
-      <div v-if="config.smtpEnabled" class="smtp-config">
-        <div class="form-group">
-          <label>SMTP服务器地址</label>
-          <input
-              v-model="config.smtpHost"
-              class="form-input"
-              placeholder="例如: smtp.gmail.com"
-              type="text"
-          >
-        </div>
+      <!-- Left Column: SMTP Settings & Guides -->
+      <div class="xl:col-span-4 space-y-8">
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>端口</label>
-            <input
-                v-model.number="config.smtpPort"
-                class="form-input"
-                placeholder="587"
-                type="number"
+        <!-- SMTP Core Settings -->
+        <section class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] p-6 space-y-6">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2">
+              <Server :size="16" class="text-blue-500" /> 服务配置
+            </h3>
+            <button
+                class="relative w-10 h-5 rounded-full transition-colors"
+                :class="config.smtpEnabled ? 'bg-blue-600' : 'bg-zinc-800'"
+                @click="config.smtpEnabled = !config.smtpEnabled"
             >
+              <div
+                  class="absolute top-1 w-3 h-3 bg-white rounded-full transition-all"
+                  :class="config.smtpEnabled ? 'left-6' : 'left-1'"
+              />
+            </button>
           </div>
-          <div class="form-group">
-            <label>SSL/TLS设置</label>
-            <div class="ssl-button-group">
-              <button
-                  :class="['ssl-button', { 'active': config.smtpSecure }]"
-                  type="button"
-                  @click="config.smtpSecure = true"
-              >
-                启用SSL/TLS
-              </button>
-              <button
-                  :class="['ssl-button', { 'active': !config.smtpSecure }]"
-                  type="button"
-                  @click="config.smtpSecure = false"
-              >
-                禁用SSL/TLS
-              </button>
+
+          <div class="space-y-4">
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">SMTP 服务器</label>
+              <input
+                  v-model="config.smtpHost"
+                  type="text"
+                  placeholder="smtp.example.com"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+              />
             </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>用户名</label>
-            <input
-                v-model="config.smtpUsername"
-                class="form-input"
-                placeholder="邮箱地址或用户名"
-                type="text"
-            >
-          </div>
-          <div class="form-group">
-            <label>密码</label>
-            <input
-                v-model="config.smtpPassword"
-                class="form-input"
-                placeholder="密码或应用专用密码"
-                type="password"
-            >
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>发件人邮箱</label>
-            <input
-                v-model="config.smtpFromEmail"
-                class="form-input"
-                placeholder="发件人邮箱地址"
-                type="email"
-            >
-          </div>
-          <div class="form-group">
-            <label>发件人姓名</label>
-            <input
-                v-model="config.smtpFromName"
-                class="form-input"
-                placeholder="校园广播站"
-                type="text"
-            >
-          </div>
-        </div>
-
-        <div class="test-section">
-          <h3>测试SMTP连接</h3>
-          <div class="test-form">
-            <div class="form-group">
-              <label>测试邮箱</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">端口</label>
+                <input
+                    v-model.number="config.smtpPort"
+                    type="number"
+                    placeholder="587"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">加密方式</label>
+                <CustomSelect
+                    :value="config.smtpSecure ? 'SSL/TLS' : '无'"
+                    :options="['SSL/TLS', '无']"
+                    @update:value="val => config.smtpSecure = val === 'SSL/TLS'"
+                    class="w-full"
+                />
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">发件人账号</label>
+              <input
+                  v-model="config.smtpUsername"
+                  type="text"
+                  placeholder="your-email@example.com"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+              />
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">授权码 / 密码</label>
+              <input
+                  v-model="config.smtpPassword"
+                  type="password"
+                  placeholder="••••••••••••"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+              />
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">发件人姓名</label>
+              <input
+                  v-model="config.smtpFromName"
+                  type="text"
+                  placeholder="校园广播站"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+              />
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">测试接收邮箱</label>
               <input
                   v-model="testEmail"
-                  class="form-input"
-                  placeholder="输入测试邮箱地址"
                   type="email"
-              >
+                  placeholder="输入测试邮箱地址"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+              />
             </div>
-            <div class="test-buttons">
-              <button
-                  :disabled="testing || !config.smtpEnabled"
-                  class="btn btn-secondary"
-                  @click="testConnection"
+
+            <div v-if="testResult" class="mt-4">
+              <div
+                  class="flex items-center gap-2 p-3 rounded-xl text-xs"
+                  :class="testResult.success ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'"
               >
-                {{ testing ? '测试中...' : '测试连接' }}
-              </button>
-              <button
-                  :disabled="testing || !testEmail || !config.smtpEnabled"
-                  class="btn btn-secondary"
-                  @click="sendTestEmail"
-              >
-                {{ testing ? '发送中...' : '发送测试邮件' }}
-              </button>
+                <CheckCircle v-if="testResult.success" :size="14" />
+                <XCircle v-else :size="14" />
+                {{ testResult.message }}
+              </div>
             </div>
           </div>
+        </section>
 
-          <div v-if="testResult" :class="['test-result', testResult.success ? 'success' : 'error']">
-            <Icon :name="testResult.success ? 'check-circle' : 'x-circle'"/>
-            {{ testResult.message }}
+        <!-- Provider Guides -->
+        <section class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] p-6 space-y-5">
+          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2">
+            <HelpCircle :size="16" class="text-emerald-500" /> 配置指引
+          </h3>
+          <div class="space-y-3">
+            <div
+                v-for="(guide, i) in providerGuides"
+                :key="i"
+                class="p-4 bg-zinc-950/50 border border-zinc-800/60 rounded-2xl group hover:border-zinc-700 transition-all"
+            >
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-zinc-200">{{ guide.name }}</span>
+                <span class="text-[10px] font-black text-zinc-700 group-hover:text-blue-500 transition-colors uppercase tracking-widest">使用推荐</span>
+              </div>
+              <p class="text-[10px] text-zinc-500 leading-relaxed font-medium">
+                服务器: <code class="text-zinc-400">{{ guide.host }}</code><br/>
+                端口: <code class="text-zinc-400">{{ guide.port }}</code><br/>
+                备注: {{ guide.note }}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Safety Tips -->
+        <div class="p-5 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex items-start gap-4">
+          <Shield class="text-amber-500 shrink-0 mt-0.5" :size="18" />
+          <div class="space-y-1">
+            <h4 class="text-[11px] font-black text-amber-500/80 uppercase tracking-widest">安全提示</h4>
+            <ul class="text-[10px] text-zinc-500 space-y-1.5 list-disc pl-3 font-medium">
+              <li>建议使用专门的部门邮箱账号用于系统通知</li>
+              <li>使用应用专用密码而非主账号登录密码</li>
+              <li>定期更换密码以确保安全性</li>
+              <li>测试成功后再开启服务</li>
+            </ul>
           </div>
         </div>
       </div>
 
-      <div class="action-buttons">
-        <button
-            :disabled="saving"
-            class="btn btn-primary"
-            @click="saveConfig"
-        >
-          {{ saving ? '保存中...' : '保存配置' }}
-        </button>
-        <button
-            class="btn btn-secondary"
-            @click="resetConfig"
-        >
-          重置
-        </button>
+      <!-- Right Column: Template Editor -->
+      <div class="xl:col-span-8">
+        <EmailTemplateManager />
       </div>
-    </div>
-
-    <!-- 使用说明 -->
-    <div class="help-section">
-      <h3>配置说明</h3>
-      <div class="help-content">
-        <h4>常用邮件服务提供商配置：</h4>
-        <div class="provider-configs">
-          <div class="provider-item">
-            <strong>Gmail</strong>
-            <p>服务器: smtp.gmail.com, 端口: 587, 使用SSL/TLS</p>
-            <p>需要使用应用专用密码，不能使用普通密码</p>
-          </div>
-          <div class="provider-item">
-            <strong>QQ邮箱</strong>
-            <p>服务器: smtp.qq.com, 端口: 587, 使用SSL/TLS</p>
-            <p>需要在QQ邮箱设置中开启SMTP服务并获取授权码</p>
-          </div>
-          <div class="provider-item">
-            <strong>163邮箱</strong>
-            <p>服务器: smtp.163.com, 端口: 994, 使用SSL/TLS</p>
-            <p>需要在邮箱设置中开启SMTP服务并设置授权密码</p>
-          </div>
-        </div>
-
-        <h4>安全提示：</h4>
-        <ul>
-          <li>建议使用专门的邮箱账号用于系统通知</li>
-          <li>使用应用专用密码而不是账号密码</li>
-          <li>定期更换密码以确保安全</li>
-          <li>测试成功后再启用服务</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- 模板管理 -->
-    <div class="templates-section" style="margin-top: 24px;">
-      <h3 style="color:#fff; font-size:18px; margin:0 0 12px;">邮件模板</h3>
-      <EmailTemplateManager/>
     </div>
   </div>
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue'
-import {useToast} from '~/composables/useToast'
+import { onMounted, ref } from 'vue'
+import { useToast } from '~/composables/useToast'
 import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
+import CustomSelect from '~/components/admin/Common/CustomSelect.vue'
+import {
+  Server,
+  Mail,
+  Shield,
+  HelpCircle,
+  Save,
+  RotateCcw,
+  Check,
+  AlertCircle,
+  ExternalLink,
+  Code,
+  FileJson,
+  Eye,
+  Send,
+  Info,
+  ChevronRight,
+  Layout,
+  CheckCircle,
+  XCircle
+} from 'lucide-vue-next'
 
-const {showNotification} = useToast()
+const { showNotification } = useToast()
 
 // 响应式数据
 const config = ref({
@@ -222,6 +224,12 @@ const saving = ref(false)
 const testResult = ref(null)
 const originalConfig = ref({})
 
+const providerGuides = [
+  { name: 'Gmail', host: 'smtp.gmail.com', port: '587', note: '需要使用应用专用密码' },
+  { name: 'QQ邮箱', host: 'smtp.qq.com', port: '587', note: '需要在QQ邮箱设置中开启SMTP服务' },
+  { name: '163邮箱', host: 'smtp.163.com', port: '994', note: '需要在邮箱设置中开启SMTP服务' },
+]
+
 // 加载配置
 const loadConfig = async () => {
   try {
@@ -239,7 +247,7 @@ const loadConfig = async () => {
     }
 
     // 保存原始配置用于重置
-    originalConfig.value = {...config.value}
+    originalConfig.value = { ...config.value }
   } catch (error) {
     console.error('加载SMTP配置失败:', error)
     showNotification('加载配置失败', 'error')
@@ -263,7 +271,7 @@ const saveConfig = async () => {
       body: config.value
     })
 
-    originalConfig.value = {...config.value}
+    originalConfig.value = { ...config.value }
     showNotification('SMTP配置保存成功', 'success')
   } catch (error) {
     console.error('保存SMTP配置失败:', error)
@@ -275,7 +283,7 @@ const saveConfig = async () => {
 
 // 重置配置
 const resetConfig = () => {
-  config.value = {...originalConfig.value}
+  config.value = { ...originalConfig.value }
   testResult.value = null
   showNotification('配置已重置', 'info')
 }
@@ -328,6 +336,12 @@ const sendTestEmail = async () => {
     })
 
     testResult.value = response
+    if (response.success) {
+      showNotification('测试邮件发送成功', 'success')
+      setTimeout(() => {
+        testResult.value = null
+      }, 5000)
+    }
   } catch (error) {
     console.error('发送测试邮件失败:', error)
     testResult.value = {
@@ -346,332 +360,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.smtp-manager {
-  background: #111111;
-  border-radius: 12px;
-  padding: 24px;
-  border: 1px solid #1f1f1f;
-}
-
-.section-header {
-  margin-bottom: 32px;
-}
-
-.section-header h2 {
-  color: #ffffff;
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-}
-
-.section-header p {
-  color: #888888;
-  margin: 0;
-}
-
-.config-section {
-  margin-bottom: 32px;
-}
-
-.form-row {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.form-group {
-  flex: 1;
-}
-
-.form-group-switch {
-  display: flex;
-  flex-direction: column;
-}
-
-.switch-wrapper {
-  margin-top: 8px;
-}
-
-.form-group label {
-  display: block;
-  color: #cccccc;
-  font-weight: 500;
-  margin-bottom: 8px;
-}
-
-.form-input {
-  width: 100%;
-  padding: 12px;
-  background: #1a1a1a;
-  border: 1px solid #333333;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.form-input:focus {
-  border-color: #007bff;
-  outline: none;
-  background: #222222;
-}
-
-.form-input::placeholder {
-  color: #666666;
-}
-
-.switch-label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  color: #cccccc;
-  font-weight: 500;
-}
-
-.switch-input {
-  display: none;
-}
-
-.switch-slider {
-  position: relative;
-  width: 44px;
-  height: 24px;
-  background: #333333;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-}
-
-.switch-slider::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  background: #ffffff;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-}
-
-.switch-input:checked + .switch-slider {
-  background: #007bff;
-}
-
-.switch-input:checked + .switch-slider::before {
-  transform: translateX(20px);
-}
-
-/* SSL按钮组样式 */
-.ssl-button-group {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.ssl-button {
-  padding: 10px 16px;
-  border: 2px solid #4a5568;
-  border-radius: 8px;
-  background: #2d3748;
-  color: #9ca3af;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  outline: none;
-}
-
-.ssl-button:hover {
-  border-color: #6b7280;
-  background: #374151;
-  color: #ffffff;
-}
-
-.ssl-button.active {
-  border-color: #22c55e;
-  background: #22c55e;
-  color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
-}
-
-.ssl-button.active:hover {
-  background: #16a34a;
-  border-color: #16a34a;
-}
-
-.smtp-config {
-  background: #0f0f0f;
-  border-radius: 8px;
-  padding: 24px;
-  border: 1px solid #1f1f1f;
-  margin-top: 20px;
-}
-
-.test-section {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #1f1f1f;
-}
-
-.test-section h3 {
-  color: #ffffff;
-  font-size: 18px;
-  margin: 0 0 16px 0;
-}
-
-.test-form {
-  display: flex;
-  gap: 16px;
-  align-items: end;
-  margin-bottom: 16px;
-}
-
-.test-buttons {
-  display: flex;
-  gap: 12px;
-}
-
-.test-result {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-.test-result.success {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.test-result.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-.btn {
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  font-size: 14px;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: #007bff;
-  color: #ffffff;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #0056b3;
-}
-
-.btn-secondary {
-  background: #333333;
-  color: #ffffff;
-  border: 1px solid #444444;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #444444;
-}
-
-.help-section {
-  background: #0f0f0f;
-  border-radius: 8px;
-  padding: 24px;
-  border: 1px solid #1f1f1f;
-}
-
-.help-section h3 {
-  color: #ffffff;
-  font-size: 18px;
-  margin: 0 0 16px 0;
-}
-
-.help-section h4 {
-  color: #cccccc;
-  font-size: 16px;
-  margin: 16px 0 12px 0;
-}
-
-.help-content {
-  color: #888888;
-  line-height: 1.6;
-}
-
-.provider-configs {
-  display: grid;
-  gap: 16px;
-  margin: 16px 0;
-}
-
-.provider-item {
-  background: #1a1a1a;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #2a2a2a;
-}
-
-.provider-item strong {
-  color: #ffffff;
-  display: block;
-  margin-bottom: 8px;
-}
-
-.provider-item p {
-  margin: 4px 0;
-  font-size: 14px;
-}
-
-.help-content ul {
-  margin: 12px 0;
-  padding-left: 20px;
-}
-
-.help-content li {
-  margin: 8px 0;
-  font-size: 14px;
-}
-
-@media (max-width: 768px) {
-  .form-row {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .test-form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .test-buttons {
-    flex-direction: column;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-  }
-
-  .provider-configs {
-    grid-template-columns: 1fr;
-  }
-}
+/* 移除旧样式，完全使用 Tailwind */
 </style>
+
