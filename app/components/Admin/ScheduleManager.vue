@@ -57,7 +57,7 @@
           <button
             class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"
             title="选择特定日期"
-            @click="showManualDatePicker = true"
+            @click="openManualDatePicker"
           >
             <CalendarIcon class="w-5 h-5" />
           </button>
@@ -994,6 +994,11 @@ onMounted(async () => {
   checkWindowSize()
   window.addEventListener('resize', checkWindowSize)
 
+  // 立即滚动到当前日期，避免等待数据加载
+  nextTick(() => {
+    scrollToDateElement('auto')
+  })
+
   // 先加载学期数据，然后加载其他数据
   await loadSemesters()
   await loadData()
@@ -1005,16 +1010,21 @@ onMounted(async () => {
       dateSelector.value.addEventListener('scroll', updateScrollButtonState)
     }
     updateScrollButtonState()
-
-    // 初始滚动到选中日期
-    if (selectedDate.value) {
-      const el = dateSelector.value.querySelector(`[data-date="${selectedDate.value}"]`)
-      if (el) {
-        el.scrollIntoView({ block: 'nearest', inline: 'center' })
-      }
-    }
+    
+    // 再次确认滚动位置（防止布局偏移）
+    scrollToDateElement('auto')
   })
 })
+
+// 滚动到指定日期元素
+const scrollToDateElement = (behavior = 'smooth') => {
+  if (!dateSelector.value || !selectedDate.value) return
+
+  const el = dateSelector.value.querySelector(`[data-date="${selectedDate.value}"]`)
+  if (el) {
+    el.scrollIntoView({ behavior, block: 'nearest', inline: 'center' })
+  }
+}
 
 // 清理事件监听器
 onUnmounted(() => {
@@ -1025,6 +1035,12 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
 
+// 打开手动日期选择器
+const openManualDatePicker = () => {
+  manualSelectedDate.value = selectedDate.value
+  showManualDatePicker.value = true
+}
+
 // 确认手动日期选择
 const confirmManualDate = () => {
   if (manualSelectedDate.value) {
@@ -1033,10 +1049,7 @@ const confirmManualDate = () => {
 
     // 选中日期后，如果是手动选择的日期可能在当前列表外，滚动到该日期
     nextTick(() => {
-      const el = dateSelector.value.querySelector(`[data-date="${selectedDate.value}"]`)
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-      }
+      scrollToDateElement('smooth')
     })
   }
 }
@@ -1053,10 +1066,7 @@ const scrollToToday = () => {
   }
 
   nextTick(() => {
-    const todayEl = dateSelector.value.querySelector(`[data-date="${todayStr}"]`)
-    if (todayEl) {
-      todayEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-    }
+    scrollToDateElement('smooth')
   })
 }
 
