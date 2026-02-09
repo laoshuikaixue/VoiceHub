@@ -261,35 +261,6 @@ const handleImageError = (event) => {
   }
 }
 
-/* 响应式布局 - 仅在屏幕显示时应用，打印时不应用 */
-@media screen and (max-width: 768px) {
-  .item-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .sequence-number {
-    align-self: flex-start;
-  }
-
-  .cover-section {
-    width: 60px;
-    height: 60px;
-  }
-
-  .song-info {
-    width: 100%;
-  }
-
-  .requester-info,
-  .votes-info,
-  .playtime-info {
-    width: 100%;
-    justify-content: flex-start;
-  }
-}
-
 /* 紧凑模式 */
 .compact .schedule-item-print {
   padding: 4px 0;

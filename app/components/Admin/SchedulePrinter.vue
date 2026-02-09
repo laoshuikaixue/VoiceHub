@@ -148,7 +148,7 @@
             </div>
           </div>
           
-          <div class="flex-1 bg-zinc-950/50 p-6 md:p-12 overflow-y-auto custom-scrollbar flex justify-center">
+          <div class="flex-1 bg-zinc-950/50 p-6 md:p-12 overflow-auto custom-scrollbar flex items-start">
             <!-- 纸张预览 -->
             <div
                 ref="previewContent"
@@ -156,7 +156,7 @@
                 `paper-${settings.paperSize.toLowerCase()}`,
                 `orientation-${settings.orientation}`
               ]"
-                class="preview-content"
+                class="preview-content m-auto shrink-0"
             >
               <div class="print-page">
                 <!-- 页面头部 -->
@@ -957,7 +957,19 @@ const preprocessImages = async (element) => {
 }
 
 const generateAndDownloadImage = async (sourceElement, filename, preProcessCallback = null) => {
-  const originalWidth = sourceElement.offsetWidth
+  // 根据设置计算固定宽度，而不是依赖 offsetWidth (在移动端可能受屏幕宽度限制而不准确)
+  let targetWidth = 800 // 默认为 A4 Portrait 宽度
+  const s = settings.value
+  
+  if (s.paperSize === 'A4') {
+    targetWidth = s.orientation === 'landscape' ? 1132 : 800
+  } else if (s.paperSize === 'A3') {
+    targetWidth = s.orientation === 'landscape' ? 1600 : 1132
+  } else if (s.paperSize === 'Letter') {
+    targetWidth = s.orientation === 'landscape' ? 1034 : 800
+  } else if (s.paperSize === 'Legal') {
+    targetWidth = s.orientation === 'landscape' ? 1318 : 800
+  }
 
   const imageContainer = document.createElement('div')
   imageContainer.style.cssText = `
@@ -968,7 +980,7 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
       opacity: 0;
       background: white;
       color: black;
-      width: ${originalWidth}px;
+      width: ${targetWidth}px;
       padding: 40px;
       box-sizing: border-box;
       height: auto; 
@@ -981,7 +993,7 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
   clonedPage.style.setProperty('background', 'white', 'important')
   clonedPage.style.setProperty('color', 'black', 'important')
   clonedPage.style.setProperty('box-sizing', 'border-box', 'important')
-  clonedPage.style.setProperty('width', `${originalWidth - 80}px`, 'important')
+  clonedPage.style.setProperty('width', `${targetWidth - 80}px`, 'important') // 减去 padding (40px * 2)
   clonedPage.style.setProperty('margin', '0 auto', 'important')
   clonedPage.style.setProperty('padding', '0', 'important')
   clonedPage.style.setProperty('height', 'auto', 'important')
@@ -1035,7 +1047,7 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
     const blob = await toBlob(imageContainer, {
       quality: 0.9,
       backgroundColor: '#ffffff',
-      width: originalWidth,
+      width: targetWidth,
       height: contentHeight,
       pixelRatio: pixelRatio,
       skipAutoScale: true,
@@ -1212,14 +1224,11 @@ watch(settings, () => {
 /* 预览区域和打印样式的核心CSS - 保持原生CSS以确保精确控制 */
 
 .preview-content {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
+  overflow-y: hidden;
+  overflow-x: hidden;
   background: #ffffff;
-  padding: 20px;
+  padding: 0;
   position: relative;
-  /* 强制flex子元素使用flex-grow */
-  height: 0; 
 }
 
 /* 打印页面样式 */
