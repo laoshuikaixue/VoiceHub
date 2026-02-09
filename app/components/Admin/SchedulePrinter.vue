@@ -276,7 +276,8 @@ import { useRuntimeConfig } from '#app'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { convertToHttps } from '~/utils/url'
-import html2canvas from 'html2canvas'
+import { toPng } from 'html-to-image'
+import { jsPDF } from 'jspdf'
 import {
   Layout, ChevronDown, CheckCircle2, Printer, 
   FileText, ImageIcon, AlignLeft, RefreshCw
@@ -603,8 +604,9 @@ const printSchedule = async () => {
     await exportPDFForPrint()
   } catch (error) {
     console.error('打印失败:', error)
+    const errorMsg = error?.message || (typeof error === 'string' ? error : '未知错误')
     if (window.$showNotification) {
-      window.$showNotification('打印失败: ' + error.message, 'error')
+      window.$showNotification('打印失败: ' + errorMsg, 'error')
     }
   } finally {
     // 延迟重置状态，给用户足够的时间看到"打印中"状态
@@ -616,9 +618,6 @@ const printSchedule = async () => {
 
 // 专门用于打印的PDF生成函数
 const exportPDFForPrint = async () => {
-  // 动态导入PDF库
-  const html2pdf = (await import('html2pdf.js')).default
-
   if (!previewContent.value) {
     throw new Error('预览内容未找到')
   }
@@ -630,30 +629,113 @@ const exportPDFForPrint = async () => {
     throw new Error('打印页面元素未找到')
   }
 
-  // 配置选项
-  const opt = {
-    margin: 10,
-    filename: `排期表_${new Date().toISOString().split('T')[0]}.pdf`,
-    image: { type: 'jpeg', quality: 0.9 },
-    html2canvas: { 
-      scale: 2, 
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false
-    },
-    jsPDF: { 
-      unit: 'mm', 
-      format: settings.value.paperSize.toLowerCase(), 
-      orientation: settings.value.orientation === 'landscape' ? 'l' : 'p'
-    },
-    pagebreak: { mode: ['css', 'legacy'] }
-  }
+  // 克隆预览内容，保持原有样式
+  const clonedPage = printPage.cloneNode(true)
 
-  await html2pdf().from(printPage).set(opt).toPdf().get('pdf').then((pdf) => {
+  // 创建PDF渲染容器
+  const pdfContainer = document.createElement('div')
+  pdfContainer.style.cssText = `
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: -9999;
+    opacity: 0;
+    background: white;
+    color: black;
+    box-sizing: border-box;
+    width: ${settings.value.paperSize === 'A4' ? '794px' : '1123px'};
+    pointer-events: none;
+  `
+
+  // 调整克隆页面的样式
+  // 使用 setProperty 避免覆盖其他重要样式
+  clonedPage.style.setProperty('background', 'white', 'important')
+  clonedPage.style.setProperty('color', 'black', 'important')
+  clonedPage.style.setProperty('box-sizing', 'border-box', 'important')
+  clonedPage.style.setProperty('width', '100%', 'important')
+  clonedPage.style.setProperty('padding', '40px', 'important')
+  clonedPage.style.setProperty('margin', '0', 'important')
+  clonedPage.style.setProperty('min-height', 'auto', 'important')
+  clonedPage.style.setProperty('height', 'auto', 'important')
+
+  // 确保所有子元素的颜色和样式正确
+  const allElements = clonedPage.querySelectorAll('*')
+  allElements.forEach(el => {
+    if (el.style) {
+      // 强制设置文字颜色为黑色
+      el.style.setProperty('color', 'black', 'important')
+      // 保持背景为白色
+      el.style.setProperty('background', 'white', 'important')
+      el.style.setProperty('background-color', 'white', 'important')
+    }
+  })
+
+  pdfContainer.appendChild(clonedPage)
+  document.body.appendChild(pdfContainer)
+
+  // 预处理图片，将图片转换为Base64，避免跨域问题
+  await preprocessImages(clonedPage)
+
+  try {
+    // 等待渲染完成，给浏览器一点时间重绘
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // 获取实际内容高度
+    const elementHeight = clonedPage.offsetHeight || clonedPage.scrollHeight
+
+    // 使用html-to-image生成图片
+    // 使用 cacheBust 防止缓存导致的问题
+    const imgData = await toPng(clonedPage, {
+      quality: 1.0,
+      pixelRatio: 2,
+      backgroundColor: '#ffffff',
+      width: pdfContainer.offsetWidth,
+      height: elementHeight,
+      cacheBust: true,
+      style: {
+        visibility: 'visible',
+        opacity: '1'
+      }
+    })
+
+    // 创建PDF
+    const pdf = new jsPDF({
+      unit: 'mm',
+      format: settings.value.paperSize.toLowerCase(),
+      orientation: settings.value.orientation === 'landscape' ? 'l' : 'p'
+    })
+
+    const pdfWidth = pdf.internal.pageSize.getWidth()
+    const pdfHeight = pdf.internal.pageSize.getHeight()
+    const margin = 10
+    const contentWidth = pdfWidth - 2 * margin
+    const contentHeight = pdfHeight - 2 * margin
+
+    const imgProps = pdf.getImageProperties(imgData)
+    const imgHeight = (imgProps.height * contentWidth) / imgProps.width
+
+    let heightLeft = imgHeight
+    let position = margin
+
+    // 第一页
+    pdf.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight)
+    heightLeft -= contentHeight
+
+    // 后续页面
+    while (heightLeft > 0) {
+      position -= contentHeight
+      pdf.addPage()
+      pdf.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight)
+      heightLeft -= contentHeight
+    }
+
     pdf.autoPrint()
     window.open(pdf.output('bloburl'), '_blank')
-  })
+  } finally {
+    if (document.body.contains(pdfContainer)) {
+      document.body.removeChild(pdfContainer)
+    }
+  }
 }
 
 // 预下载图片并转换为base64
@@ -728,31 +810,32 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
 
   const imageContainer = document.createElement('div')
   imageContainer.style.cssText = `
-      position: absolute;
-      left: -9999px;
+      position: fixed;
+      left: 0;
       top: 0;
-      z-index: -1;
+      z-index: -9999;
+      opacity: 0;
       background: white;
       color: black;
       width: ${originalWidth}px;
       padding: 40px;
       box-sizing: border-box;
       height: auto; 
+      pointer-events: none;
     `
 
   const clonedPage = sourceElement.cloneNode(true)
 
-  clonedPage.style.cssText = `
-      background: white !important;
-      color: black !important;
-      box-sizing: border-box !important;
-      width: ${originalWidth - 80}px !important;
-      margin: 0 auto !important;
-      padding: 0 !important;
-      height: auto !important;
-      min-height: auto !important;
-      box-shadow: none !important;
-    `
+  // 使用 setProperty 避免覆盖其他重要样式
+  clonedPage.style.setProperty('background', 'white', 'important')
+  clonedPage.style.setProperty('color', 'black', 'important')
+  clonedPage.style.setProperty('box-sizing', 'border-box', 'important')
+  clonedPage.style.setProperty('width', `${originalWidth - 80}px`, 'important')
+  clonedPage.style.setProperty('margin', '0 auto', 'important')
+  clonedPage.style.setProperty('padding', '0', 'important')
+  clonedPage.style.setProperty('height', 'auto', 'important')
+  clonedPage.style.setProperty('min-height', 'auto', 'important')
+  clonedPage.style.setProperty('box-shadow', 'none', 'important')
 
   if (preProcessCallback) {
     const shouldProceed = preProcessCallback(clonedPage)
@@ -774,8 +857,8 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
         el.classList.contains('page-header') ||
         el.classList.contains('page-footer') ||
         el.classList.contains('schedule-content'))) {
-      el.style.background = 'white !important'
-      el.style.backgroundColor = 'white !important'
+      el.style.setProperty('background', 'white', 'important')
+      el.style.setProperty('background-color', 'white', 'important')
     }
   })
 
@@ -785,25 +868,27 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
   await preprocessImages(clonedPage)
 
   try {
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // 增加等待时间，确保渲染完成
+    await new Promise(resolve => setTimeout(resolve, 1000))
 
-    const contentHeight = imageContainer.offsetHeight
+    const contentHeight = imageContainer.offsetHeight || imageContainer.scrollHeight
 
-    const canvas = await html2canvas(imageContainer, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
+    const dataUrl = await toPng(imageContainer, {
+      quality: 1.0,
       backgroundColor: '#ffffff',
       width: originalWidth,
       height: contentHeight,
-      windowHeight: contentHeight,
-      scrollX: 0,
-      scrollY: 0
+      pixelRatio: 2,
+      cacheBust: true,
+      style: {
+        visibility: 'visible',
+        opacity: '1'
+      }
     })
 
     const link = document.createElement('a')
     link.download = filename
-    link.href = canvas.toDataURL('image/png', 1.0)
+    link.href = dataUrl
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -884,8 +969,6 @@ const exportPDF = async () => {
   isExporting.value = true
   
   try {
-    const html2pdf = (await import('html2pdf.js')).default
-    
     // 获取预览页面元素
     const printPage = previewContent.value.querySelector('.print-page') || previewContent.value
     
@@ -895,75 +978,101 @@ const exportPDF = async () => {
     // 创建PDF渲染容器
     const pdfContainer = document.createElement('div')
     pdfContainer.style.cssText = `
-      position: absolute;
-      left: -9999px;
+      position: fixed;
+      left: 0;
       top: 0;
-      z-index: -1;
+      z-index: -9999;
+      opacity: 0;
       background: white;
       color: black;
       box-sizing: border-box;
       width: ${settings.value.paperSize === 'A4' ? '794px' : '1123px'};
+      pointer-events: none;
     `
 
     // 调整克隆页面的样式
-    clonedPage.style.cssText = `
-      background: white !important;
-      color: black !important;
-      box-sizing: border-box !important;
-      width: 100% !important;
-      padding: 40px !important;
-      margin: 0 !important;
-    `
+    // 使用 setProperty 避免覆盖其他重要样式
+    clonedPage.style.setProperty('background', 'white', 'important')
+    clonedPage.style.setProperty('color', 'black', 'important')
+    clonedPage.style.setProperty('box-sizing', 'border-box', 'important')
+    clonedPage.style.setProperty('width', '100%', 'important')
+    clonedPage.style.setProperty('padding', '40px', 'important')
+    clonedPage.style.setProperty('margin', '0', 'important')
+    clonedPage.style.setProperty('min-height', 'auto', 'important')
+    clonedPage.style.setProperty('height', 'auto', 'important')
 
     // 确保所有子元素的颜色和样式正确
     const allElements = clonedPage.querySelectorAll('*')
     allElements.forEach(el => {
       if (el.style) {
         // 强制设置文字颜色为黑色
-        el.style.color = 'black !important'
+        el.style.setProperty('color', 'black', 'important')
         // 保持背景为白色
-        el.style.background = 'white !important'
-        el.style.backgroundColor = 'white !important'
-      }
-
-      // 特别处理页面元素的背景
-      if (el.classList && (
-          el.classList.contains('print-page') ||
-          el.classList.contains('page-header') ||
-          el.classList.contains('page-footer') ||
-          el.classList.contains('schedule-content'))) {
-        el.style.background = 'white !important'
-        el.style.backgroundColor = 'white !important'
+        el.style.setProperty('background', 'white', 'important')
+        el.style.setProperty('background-color', 'white', 'important')
       }
     })
 
     pdfContainer.appendChild(clonedPage)
     document.body.appendChild(pdfContainer)
 
-    try {
-      // 等待渲染完成
-      await new Promise(resolve => setTimeout(resolve, 500))
+    // 预处理图片，将图片转换为Base64，避免跨域问题
+    await preprocessImages(clonedPage)
 
-      const options = {
-        margin: 10,
-        filename: `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.9 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true, 
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          logging: false
-        },
-        jsPDF: { 
-          unit: 'mm', 
-          format: settings.value.paperSize.toLowerCase(), 
-          orientation: settings.value.orientation === 'landscape' ? 'l' : 'p' 
-        },
-        pagebreak: { mode: ['css', 'legacy'] }
+    try {
+      // 等待渲染完成，给浏览器一点时间重绘
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      const filename = `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
+      
+      // 获取实际内容高度
+      const elementHeight = clonedPage.offsetHeight || clonedPage.scrollHeight
+      
+      // 使用html-to-image生成图片
+      // 使用 cacheBust 防止缓存导致的问题
+      const imgData = await toPng(clonedPage, {
+        quality: 1.0,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        width: pdfContainer.offsetWidth,
+        height: elementHeight,
+        cacheBust: true,
+        style: {
+          visibility: 'visible',
+          opacity: '1'
+        }
+      })
+
+      // 创建PDF
+      const pdf = new jsPDF({
+        unit: 'mm',
+        format: settings.value.paperSize.toLowerCase(),
+        orientation: settings.value.orientation === 'landscape' ? 'l' : 'p'
+      })
+
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = pdf.internal.pageSize.getHeight()
+      const margin = 10
+      const contentWidth = pdfWidth - 2 * margin
+      const contentHeight = pdfHeight - 2 * margin
+
+      const imgProps = pdf.getImageProperties(imgData)
+      const imgHeight = (imgProps.height * contentWidth) / imgProps.width
+
+      let heightLeft = imgHeight
+      let position = margin
+
+      pdf.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight)
+      heightLeft -= contentHeight
+
+      while (heightLeft > 0) {
+        position -= contentHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight)
+        heightLeft -= contentHeight
       }
 
-      await html2pdf().from(clonedPage).set(options).save()
+      pdf.save(filename)
       
       document.body.removeChild(pdfContainer)
       

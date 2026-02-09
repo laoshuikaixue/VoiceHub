@@ -41,11 +41,11 @@
             <polyline points="9,18 15,12 9,6"/>
           </svg>
         </button>
-        
+
         <!-- 操作按钮组 -->
         <div class="flex items-center border-l border-zinc-800 ml-1 pl-1">
           <!-- 定位到今天 -->
-          <button 
+          <button
              class="p-2 text-zinc-500 hover:text-emerald-400 transition-colors"
              title="跳转到今天"
              @click="scrollToToday"
@@ -54,7 +54,7 @@
            </button>
 
           <!-- 手动日期选择按钮 -->
-          <button 
+          <button
             class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"
             title="选择特定日期"
             @click="showManualDatePicker = true"
@@ -64,7 +64,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 手动日期选择弹窗 -->
     <div v-if="showManualDatePicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden" @click.stop>
@@ -87,11 +87,11 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 播出时段选择器 (如果启用) -->
     <div v-if="playTimeEnabled" class="flex items-center gap-3 bg-zinc-900/30 border border-zinc-800 rounded-lg p-3">
-      <CustomSelect 
-        v-model="selectedPlayTime" 
+      <CustomSelect
+        v-model="selectedPlayTime"
         label="播出时段"
         :options="playTimeOptions"
         className="w-full"
@@ -99,8 +99,8 @@
     </div>
 
     <!-- 触控拖拽帮助提示 (仅桌面端显示或完全移除) -->
-      <div 
-        v-if="showTouchHint && isDesktop" 
+      <div
+        v-if="showTouchHint && isDesktop"
         class="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-zinc-800 text-zinc-200 px-4 py-2 rounded-full shadow-lg border border-zinc-700 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300"
       >
         <Info class="w-4 h-4 text-blue-400" />
@@ -114,25 +114,25 @@
 
     <div v-else>
       <div class="lg:hidden sticky -top-4 -mx-4 -mt-4 z-20 flex p-1 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 shadow-xl mb-4 pt-4">
-        <button 
-          @click="mobileTab = 'pending'" 
+        <button
+          @click="mobileTab = 'pending'"
           :class="['flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all', mobileTab === 'pending' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500']"
         >
-          <ListMusic class="w-4 h-4" /> 
+          <ListMusic class="w-4 h-4" />
           <span class="flex items-center gap-1.5">待排歌曲 <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{ filteredUnscheduledSongs.length }}</span></span>
         </button>
-        <button 
-          @click="mobileTab = 'scheduled'" 
+        <button
+          @click="mobileTab = 'scheduled'"
           :class="['flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all', mobileTab === 'scheduled' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500']"
         >
-          <PlaySquare class="w-4 h-4" /> 
+          <PlaySquare class="w-4 h-4" />
           <span class="flex items-center gap-1.5">播放列表 <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{ localScheduledSongs.length }}</span></span>
         </button>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
         <!-- Left: Pending Songs (待排库) -->
-        <div 
+        <div
           v-show="mobileTab === 'pending' || isDesktop"
           :class="['lg:col-span-4 flex flex-col space-y-2', mobileTab === 'scheduled' ? 'hidden lg:flex' : 'flex']"
           @dragover.prevent="handleDraggableDragOver"
@@ -162,15 +162,15 @@
               </div>
               <ChevronRight :class="['w-3.5 h-3.5 text-zinc-700 transition-transform duration-300', mobileFiltersOpen ? 'rotate-90' : '']" />
             </div>
-            
+
             <div v-show="mobileFiltersOpen || isDesktop" class="p-3 space-y-2 transition-all duration-300 ease-in-out rounded-b-2xl">
               <div class="relative">
                 <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700 w-3.5 h-3.5" />
-                <input 
+                <input
                   v-model="searchQuery"
-                  type="text" 
-                  placeholder="搜索歌曲、艺术家..." 
-                  class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200" 
+                  type="text"
+                  placeholder="搜索歌曲、艺术家..."
+                  class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
                 />
                 <button
                     v-if="searchQuery"
@@ -205,7 +205,7 @@
             </div>
           </div>
 
-          <div 
+          <div
             :class="['draggable-songs flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200', isDraggableOver ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800/80 bg-zinc-900/20']"
           >
             <div class="space-y-2">
@@ -224,9 +224,9 @@
                 <div class="flex items-center gap-3">
                   <!-- Cover Image -->
                   <div class="relative w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50">
-                    <img 
+                    <img
                       v-if="song.cover"
-                      :src="convertToHttps(song.cover)" 
+                      :src="convertToHttps(song.cover)"
                       class="w-full h-full object-cover"
                       referrerpolicy="no-referrer"
                       loading="lazy"
@@ -249,7 +249,7 @@
                       </span>
                     </div>
                   </div>
-                  
+
                   <div class="flex items-center gap-2">
                     <!-- Normal Mode: Vote Count -->
                     <div v-if="activeTab !== 'replay'" class="flex items-center gap-1 text-[10px] font-bold text-zinc-500 bg-zinc-950/50 px-2 py-1 rounded-md border border-zinc-800/50">
@@ -258,7 +258,7 @@
                     </div>
 
                     <!-- Replay Mode: View Button -->
-                    <button 
+                    <button
                       v-if="activeTab === 'replay'"
                       class="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-[10px] font-bold transition-colors"
                       @click.stop="openReplayModal(song)"
@@ -267,8 +267,8 @@
                     </button>
 
                     <!-- Replay Mode: Reject Button (Mobile Only) -->
-                    <button 
-                      v-if="activeTab === 'replay'" 
+                    <button
+                      v-if="activeTab === 'replay'"
                       class="lg:hidden p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors"
                       @click.stop="rejectReplayRequest(song.id)"
                       title="拒绝申请"
@@ -277,7 +277,7 @@
                     </button>
 
                     <!-- Mobile Add Button -->
-                    <button 
+                    <button
                       class="lg:hidden p-2 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 active:scale-95 transition-all flex-shrink-0"
                       @click.stop="addSongToSchedule(song)"
                     >
@@ -304,19 +304,19 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Pagination -->
             <div v-if="totalPages > 1" class="mt-4 flex items-center justify-between pt-4 border-t border-zinc-800/50">
-               <button 
-                 :disabled="currentPage === 1" 
+               <button
+                 :disabled="currentPage === 1"
                  @click="prevPage"
                  class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 disabled:opacity-30 transition-colors"
                >
                  <ArrowLeft class="w-4 h-4" />
                </button>
                <span class="text-[10px] font-bold text-zinc-600">{{ currentPage }} / {{ totalPages }}</span>
-               <button 
-                 :disabled="currentPage === totalPages" 
+               <button
+                 :disabled="currentPage === totalPages"
                  @click="nextPage"
                  class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 disabled:opacity-30 transition-colors"
                >
@@ -327,7 +327,7 @@
         </div>
 
         <!-- Right: Schedule List (播放顺序) -->
-        <div 
+        <div
           v-show="mobileTab === 'scheduled' || isDesktop"
           :class="['lg:col-span-8 flex flex-col space-y-4', mobileTab === 'pending' ? 'hidden lg:flex' : 'flex']"
         >
@@ -335,7 +335,7 @@
             <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">播放顺序</h3>
             <div class="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl">
               <div class="flex gap-1">
-                <button 
+                <button
                   @click="saveDraft"
                   :disabled="!hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts"
                   class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
@@ -343,7 +343,7 @@
                   <Save class="w-3.5 h-3.5" />
                   <span class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700">保存草稿</span>
                 </button>
-                <button 
+                <button
                   @click="openDownloadDialog"
                   :disabled="localScheduledSongs.length === 0"
                   class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
@@ -351,7 +351,7 @@
                   <Download class="w-3.5 h-3.5" />
                   <span class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700">下载歌曲</span>
                 </button>
-                <button 
+                <button
                   @click="markAllAsPlayed"
                   :disabled="localScheduledSongs.length === 0"
                   class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-emerald-500 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
@@ -361,14 +361,14 @@
                 </button>
               </div>
               <div class="h-6 w-[1px] bg-zinc-800 mx-1" />
-              <button 
+              <button
                 @click="publishSchedule"
                 :disabled="!canPublish"
                 class="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-[10px] font-black rounded-xl border border-emerald-500/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 <Send class="w-3 h-3" /> 发布排期
               </button>
-              <button 
+              <button
                 @click="saveSequence"
                 :disabled="!hasChanges && localScheduledSongs.length > 0"
                 class="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
@@ -378,7 +378,7 @@
             </div>
           </div>
 
-          <div 
+          <div
             ref="sequenceList"
             :class="['sequence-list flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200', isSequenceOver ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800/80 bg-zinc-900/20']"
             @dragleave="handleSequenceDragLeave"
@@ -417,12 +417,12 @@
                      <span class="text-[8px] text-zinc-600 uppercase leading-none mb-0.5">POS</span>
                      <span class="text-sm text-zinc-300 leading-none">{{ index + 1 < 10 ? '0' + (index + 1) : index + 1 }}</span>
                    </div>
-                   
+
                    <!-- Cover Image -->
                    <div class="relative w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50">
-                      <img 
+                      <img
                         v-if="schedule.song.cover"
-                        :src="convertToHttps(schedule.song.cover)" 
+                        :src="convertToHttps(schedule.song.cover)"
                         class="w-full h-full object-cover"
                         referrerpolicy="no-referrer"
                         loading="lazy"
@@ -432,7 +432,7 @@
                         <Music2 class="w-5 h-5 opacity-50" />
                       </div>
                    </div>
-                   
+
                    <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                      <div class="flex items-center gap-2">
                        <h4 class="font-bold text-zinc-200 text-sm truncate">{{ schedule.song.title }}</h4>
@@ -448,7 +448,7 @@
                         </span>
                      </div>
                    </div>
-                   
+
                    <div class="flex items-center gap-2">
                      <button
                         v-if="schedule.isDraft"
@@ -458,9 +458,9 @@
                      >
                        <Send class="w-3.5 h-3.5" />
                      </button>
-                     
+
                      <!-- Mobile Remove Button -->
-                     <button 
+                     <button
                        class="lg:hidden p-2 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500/30 active:scale-95 transition-all flex-shrink-0"
                        @click.stop="removeSongFromSchedule(schedule)"
                      >
@@ -493,10 +493,10 @@
         <button @click="publishSchedule" class="p-3 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all" title="仅发布排期">
           <Send class="w-5 h-5" />
         </button>
-        
+
         <!-- 主要操作 -->
-        <button 
-          @click="saveSequence" 
+        <button
+          @click="saveSequence"
           :disabled="!hasChanges && localScheduledSongs.length > 0"
           class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
@@ -768,14 +768,14 @@ const availableDates = computed(() => {
 // 获取所有可选年级
 const availableGrades = computed(() => {
   if (!songs.value) return ['全部']
-  
+
   const grades = new Set()
   songs.value.forEach(song => {
     if (song.requesterGrade) {
       grades.add(song.requesterGrade)
     }
   })
-  
+
   // 对年级进行简单排序
   const sortedGrades = Array.from(grades).sort()
   return ['全部', ...sortedGrades]
@@ -788,10 +788,10 @@ const allUnscheduledSongs = computed(() => {
 
   let unscheduledSongs = sourceData.filter(song => {
     // 检查是否已在当前显示的排期列表中（当前日期、当前时段）
-    const isScheduledInCurrentView = localScheduledSongs.value.some(s => 
+    const isScheduledInCurrentView = localScheduledSongs.value.some(s =>
       (s.song && s.song.id === song.id) || s.songId === song.id
     )
-    
+
     if (isScheduledInCurrentView) return false
 
     if (activeTab.value === 'replay' || activeTab.value === 'all') {
@@ -819,7 +819,7 @@ const allUnscheduledSongs = computed(() => {
 
   // 年级过滤 (针对普通投稿和所有歌曲)
   if ((activeTab.value === 'normal' || activeTab.value === 'all') && selectedGrade.value !== '全部') {
-    unscheduledSongs = unscheduledSongs.filter(song => 
+    unscheduledSongs = unscheduledSongs.filter(song =>
       song.requesterGrade === selectedGrade.value
     )
   }
@@ -934,15 +934,15 @@ const handleDateSelectorWheel = (event) => {
 // 滚动日期选择器
 const scrollDates = (direction) => {
   if (!dateSelector.value) return
-  
+
   const scrollAmount = 200
   const currentScroll = dateSelector.value.scrollLeft
-  
+
   dateSelector.value.scrollTo({
     left: direction === 'right' ? currentScroll + scrollAmount : currentScroll - scrollAmount,
     behavior: 'smooth'
   })
-  
+
   setTimeout(() => {
     updateScrollButtonState()
   }, 300)
@@ -951,9 +951,9 @@ const scrollDates = (direction) => {
 // 更新滚动按钮状态并加载更多日期
 const updateScrollButtonState = () => {
   if (!dateSelector.value) return
-  
+
   const { scrollLeft, scrollWidth, clientWidth } = dateSelector.value
-  
+
   // 接近左边界，加载更多过去日期
   if (scrollLeft < 50) {
     const oldScrollWidth = scrollWidth
@@ -963,7 +963,7 @@ const updateScrollButtonState = () => {
       dateSelector.value.scrollLeft += (newScrollWidth - oldScrollWidth)
     })
   }
-  
+
   // 接近右边界，加载更多未来日期
   if (scrollWidth - scrollLeft - clientWidth < 50) {
     dateRange.value.end += 7
@@ -989,7 +989,7 @@ onMounted(async () => {
   adminService = useAdmin()
   auth = useAuth()
   semesterService = useSemesters()
-  
+
   // 初始化窗口大小检测
   checkWindowSize()
   window.addEventListener('resize', checkWindowSize)
@@ -1005,7 +1005,7 @@ onMounted(async () => {
       dateSelector.value.addEventListener('scroll', updateScrollButtonState)
     }
     updateScrollButtonState()
-    
+
     // 初始滚动到选中日期
     if (selectedDate.value) {
       const el = dateSelector.value.querySelector(`[data-date="${selectedDate.value}"]`)
@@ -1030,7 +1030,7 @@ const confirmManualDate = () => {
   if (manualSelectedDate.value) {
     selectedDate.value = manualSelectedDate.value
     showManualDatePicker.value = false
-    
+
     // 选中日期后，如果是手动选择的日期可能在当前列表外，滚动到该日期
     nextTick(() => {
       const el = dateSelector.value.querySelector(`[data-date="${selectedDate.value}"]`)
@@ -1045,13 +1045,13 @@ const confirmManualDate = () => {
 const scrollToToday = () => {
   const todayStr = new Date().toISOString().split('T')[0]
   selectedDate.value = todayStr
-  
+
   // 确保今天在范围内
   if (dateRange.value.start > 0 || dateRange.value.end < 0) {
     dateRange.value.start = -15
     dateRange.value.end = 15
   }
-  
+
   nextTick(() => {
     const todayEl = dateSelector.value.querySelector(`[data-date="${todayStr}"]`)
     if (todayEl) {
@@ -1123,7 +1123,7 @@ const rejectReplayRequest = async (songId) => {
   confirmDialogMessage.value = '确定要拒绝该重播申请吗？'
   confirmDialogType.value = 'warning'
   confirmDialogConfirmText.value = '拒绝申请'
-  
+
   confirmAction.value = async () => {
     try {
       await $fetch('/api/admin/schedule/reject-replay', {
@@ -1131,7 +1131,7 @@ const rejectReplayRequest = async (songId) => {
         body: { songId },
         ...auth.getAuthConfig()
       })
-      
+
       // 刷新申请列表
       await fetchReplayRequests()
       if (window.$showNotification) {
@@ -1144,7 +1144,7 @@ const rejectReplayRequest = async (songId) => {
       }
     }
   }
-  
+
   showConfirmDialog.value = true
 }
 
@@ -1402,7 +1402,7 @@ const dropToSequence = async (event) => {
       if (!song) {
         song = replayRequests.value.find(s => s.id === songId)
       }
-      
+
       if (!song) return
 
       const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
@@ -1460,7 +1460,7 @@ const dropReorder = async (event, dropIndex) => {
       if (!song) {
         song = replayRequests.value.find(s => s.id === songId)
       }
-      
+
       if (!song) return
 
       const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
@@ -1510,26 +1510,26 @@ const addSongToSchedule = (song) => {
   scheduledSongIds.value.add(song.id)
   localScheduledSongs.value.push(newSchedule)
   hasChanges.value = true
-  
+
   if (navigator.vibrate) navigator.vibrate(50)
 }
 
 // 从排期移除歌曲（点击方式）
 const removeSongFromSchedule = (schedule) => {
   const index = localScheduledSongs.value.findIndex(s => s.id === schedule.id)
-  
+
   if (index !== -1) {
     const removed = localScheduledSongs.value.splice(index, 1)[0]
-    
+
     if (removed.song) {
       scheduledSongIds.value.delete(removed.song.id)
     }
-    
+
     // 重新排序
     localScheduledSongs.value.forEach((item, idx) => {
       item.sequence = idx + 1
     })
-    
+
     hasChanges.value = true
     if (navigator.vibrate) navigator.vibrate(50)
   }
@@ -1547,44 +1547,44 @@ const handleReturnToDraggable = async (event) => {
       // 从播放列表拖回待排列表（移除）
       const scheduleId = parseInt(dragData.scheduleId)
       const index = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
-      
+
       if (index !== -1) {
         const removed = localScheduledSongs.value.splice(index, 1)[0]
-        
+
         // 如果是本地新增的，直接移除；如果是已存在的，需要记录删除操作（这里简化为本地移除，保存时处理）
         if (removed.song) {
           scheduledSongIds.value.delete(removed.song.id)
         }
-        
+
         // 重新排序
         localScheduledSongs.value.forEach((item, idx) => {
           item.sequence = idx + 1
         })
-        
+
         hasChanges.value = true
       }
     }
   } catch (err) {
     console.error('处理移除失败:', err)
   }
-  
+
   isDraggableOver.value = false
 }
 
 // 标记全部已播放
 const markAllAsPlayed = async () => {
   if (localScheduledSongs.value.length === 0) return
-  
+
   confirmDialogTitle.value = '标记全部已播'
   confirmDialogMessage.value = '确定要将列表中的所有歌曲标记为已播放吗？'
   confirmDialogType.value = 'info'
   confirmDialogConfirmText.value = '确认标记'
-  
+
   confirmAction.value = async () => {
     loading.value = true
     try {
       const songIds = localScheduledSongs.value.map(s => s.song.id)
-      
+
       await $fetch('/api/admin/songs/mark-played', {
         method: 'POST',
         body: { songIds },
@@ -1594,7 +1594,7 @@ const markAllAsPlayed = async () => {
       if (window.$showNotification) {
         window.$showNotification('所有歌曲已标记为播放', 'success')
       }
-      
+
       // 重新加载数据
       await loadData()
     } catch (err) {
@@ -1606,7 +1606,7 @@ const markAllAsPlayed = async () => {
       loading.value = false
     }
   }
-  
+
   showConfirmDialog.value = true
 }
 
@@ -1953,7 +1953,7 @@ const updateDragPosition = (x, y) => {
   const sequenceList = elementBelow.closest('.sequence-list')
   const scheduledSong = elementBelow.closest('.scheduled-song')
   const draggableSongs = elementBelow.closest('.draggable-songs')
-  
+
   // 根据拖拽类型高亮不同的目标区域
   if (touchDragData.value?.type === 'song') {
     // 拖拽待排歌曲时，高亮播放列表区域
@@ -2048,7 +2048,7 @@ const handleTouchEnd = (event) => {
       const sequenceList = elementBelow.closest('.sequence-list')
       const scheduledSong = elementBelow.closest('.scheduled-song')
       const draggableSongs = elementBelow.closest('.draggable-songs')
-      
+
       if (touchDragData.value.type === 'song' && (sequenceList || scheduledSong)) {
         // 从左侧拖拽到右侧
         handleTouchDropToSequence(scheduledSong)
@@ -2128,17 +2128,17 @@ const handleTouchReorder = async (targetElement) => {
   const scheduleId = parseInt(targetElement.dataset.scheduleId)
   const draggedIndex = localScheduledSongs.value.findIndex(s => s.id === draggedSchedule.id)
   const dropIndex = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
-  
+
   if (draggedIndex === -1 || dropIndex === -1 || draggedIndex === dropIndex) return
-  
+
   const newOrder = [...localScheduledSongs.value]
   const [draggedItem] = newOrder.splice(draggedIndex, 1)
   newOrder.splice(dropIndex, 0, draggedItem)
-  
+
   newOrder.forEach((item, index) => {
     item.sequence = index + 1
   })
-  
+
   localScheduledSongs.value = newOrder
   hasChanges.value = true
 }
@@ -2146,19 +2146,19 @@ const handleTouchReorder = async (targetElement) => {
 const handleTouchReturnToDraggable = async () => {
   const draggedSchedule = touchDragData.value.item
   const index = localScheduledSongs.value.findIndex(s => s.id === draggedSchedule.id)
-  
+
   if (index !== -1) {
     const removed = localScheduledSongs.value.splice(index, 1)[0]
-    
+
     if (removed.song) {
       scheduledSongIds.value.delete(removed.song.id)
     }
-    
+
     // 重新排序
     localScheduledSongs.value.forEach((item, idx) => {
       item.sequence = idx + 1
     })
-    
+
     hasChanges.value = true
   }
 }
