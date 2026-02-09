@@ -199,35 +199,89 @@
             <!-- 歌曲选择 -->
             <section class="space-y-3">
               <div class="flex items-center justify-between px-1">
-                <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em]">歌曲列表</label>
-                <button 
-                  @click="toggleSelectAll"
-                  class="text-[10px] font-bold text-blue-500/80 hover:text-blue-400 transition-colors"
-                >
-                  {{ isAllSelected ? '取消全选' : '全选' }}
-                </button>
+                <div class="flex items-center gap-3">
+                  <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em]">歌曲列表</label>
+                  <div v-if="estimatedTotalDuration.count > 0" class="flex items-center gap-1.5 text-[10px] text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                    <Clock class="w-3 h-3" />
+                    <span>预估总时长: {{ formatDuration(estimatedTotalDuration.total) }}</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button 
+                    v-if="selectedSongs.size > 0"
+                    @click="preloadSelectedSongs"
+                    class="text-[10px] font-bold text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
+                    title="预下载选中歌曲到浏览器缓存"
+                  >
+                    <DownloadCloud class="w-3 h-3" />
+                    预下载选中
+                  </button>
+                  <button 
+                    @click="toggleSelectAll"
+                    class="text-[10px] font-bold text-blue-500/80 hover:text-blue-400 transition-colors"
+                  >
+                    {{ isAllSelected ? '取消全选' : '全选' }}
+                  </button>
+                </div>
               </div>
               
               <div class="bg-zinc-950/50 border border-zinc-800/50 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar">
-                <button
+                <div
                   v-for="song in songs"
                   :key="song.id"
-                  @click="toggleSongSelection(song.song.id)"
-                  class="w-full flex items-center gap-3 p-3.5 hover:bg-zinc-800/30 transition-all text-left border-b border-zinc-800/30 last:border-0 group"
+                  class="w-full flex items-center gap-3 p-3.5 hover:bg-zinc-800/30 transition-all text-left border-b border-zinc-800/30 last:border-0 group relative"
                 >
-                  <div class="w-4 h-4 rounded flex items-center justify-center border transition-all shrink-0"
+                  <!-- 预下载进度条背景 -->
+                  <div 
+                    v-if="preloadedSongs.has(song.song.id) && preloadedSongs.get(song.song.id).loading"
+                    class="absolute bottom-0 left-0 h-0.5 bg-blue-500/50 transition-all duration-300 ease-out"
+                    :style="{ width: `${preloadedSongs.get(song.song.id).progress}%` }"
+                  ></div>
+
+                  <button 
+                    @click="toggleSongSelection(song.song.id)"
+                    class="flex items-center justify-center shrink-0 w-4 h-4 rounded border transition-all"
                     :class="[
                       selectedSongs.has(song.song.id) ? 'bg-blue-600 border-blue-600 shadow-sm' : 'bg-zinc-900 border-zinc-800 group-hover:border-zinc-700'
                     ]"
                   >
                     <Check v-if="selectedSongs.has(song.song.id)" class="w-2.5 h-2.5 text-white font-bold" stroke-width="3" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold text-zinc-300 truncate">{{ song.song.title }}</p>
+                  </button>
+                  
+                  <div class="flex-1 min-w-0 flex flex-col cursor-pointer" @click="toggleSongSelection(song.song.id)">
+                    <div class="flex items-center gap-2">
+                      <p class="text-xs font-bold text-zinc-300 truncate">{{ song.song.title }}</p>
+                      <!-- 预下载标记 -->
+                      <div v-if="preloadedSongs.has(song.song.id) && !preloadedSongs.get(song.song.id).loading" class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/10 border border-green-500/20">
+                        <Check class="w-2 h-2 text-green-400" />
+                        <span class="text-[9px] font-mono text-green-400">{{ formatDuration(preloadedSongs.get(song.song.id).duration) }}</span>
+                      </div>
+                    </div>
                     <p class="text-[10px] text-zinc-500 truncate">{{ song.song.artist }}</p>
                   </div>
-                  <div class="text-[9px] font-mono text-zinc-600 uppercase">{{ getPlatformShortName(song.song.musicPlatform) }}</div>
-                </button>
+                  
+                  <div class="flex items-center gap-3">
+                     <div class="text-[9px] font-mono text-zinc-600 uppercase">{{ getPlatformShortName(song.song.musicPlatform) }}</div>
+                     
+                     <!-- 单个预下载/删除按钮 -->
+                     <button 
+                       v-if="preloadedSongs.has(song.song.id)"
+                       @click.stop="removePreloaded(song.song.id)"
+                       class="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-600 hover:text-red-400 transition-colors"
+                       title="删除缓存"
+                     >
+                       <Trash2 class="w-3.5 h-3.5" />
+                     </button>
+                     <button 
+                       v-else
+                       @click.stop="preloadSong(song.song)"
+                       class="p-1.5 rounded-lg hover:bg-blue-500/10 text-zinc-600 hover:text-blue-400 transition-colors"
+                       title="预下载此歌曲"
+                     >
+                       <DownloadCloud class="w-3.5 h-3.5" />
+                     </button>
+                  </div>
+                </div>
                 
                 <div v-if="songs.length === 0" class="p-8 text-center text-zinc-600 text-[10px]">
                   暂无歌曲
@@ -314,10 +368,10 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, reactive } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { getMusicUrl } from '~/utils/musicUrl'
-import { X as CloseIcon, Check, Download, AlertTriangle, Settings2, Volume2, Edit3, Save, Music } from 'lucide-vue-next'
+import { X as CloseIcon, Check, Download, AlertTriangle, Settings2, Volume2, Edit3, Save, Music, DownloadCloud, Trash2, Clock } from 'lucide-vue-next'
 import { Mp3Encoder } from '@breezystack/lamejs'
 
 const props = defineProps({
@@ -380,6 +434,7 @@ const downloadedCount = ref(0)
 const totalCount = ref(0)
 const currentDownloadSong = ref('')
 const downloadErrors = ref([])
+const preloadedSongs = reactive(new Map()) // songId -> { blob, duration, loading, progress }
 
 // 获取平台简写
 const getPlatformShortName = (platform) => {
@@ -391,6 +446,108 @@ const getPlatformShortName = (platform) => {
     default: return 'OT'
   }
 }
+
+// 格式化时长
+const formatDuration = (seconds) => {
+  if (!seconds) return '00:00'
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+}
+
+// 预下载单个歌曲
+const preloadSong = async (song) => {
+  if (preloadedSongs.has(song.id) && !preloadedSongs.get(song.id).loading) return
+  
+  preloadedSongs.set(song.id, { loading: true, progress: 0 })
+  
+  try {
+    const url = await getMusicUrlForDownload(song, selectedQuality.value)
+    
+    // 使用 fetch 获取并追踪进度
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+    
+    const contentLength = response.headers.get('content-length')
+    const total = contentLength ? parseInt(contentLength, 10) : 0
+    let loaded = 0
+    
+    const reader = response.body.getReader()
+    const chunks = []
+    
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      
+      chunks.push(value)
+      loaded += value.length
+      
+      if (total) {
+        // 更新进度
+        const progress = (loaded / total) * 100
+        const current = preloadedSongs.get(song.id)
+        if (current) {
+          current.progress = progress
+        }
+      }
+    }
+    
+    const blob = new Blob(chunks, { type: 'audio/mpeg' }) // 假设是音频，具体类型可能需要根据响应头判断
+    
+    // 获取时长
+    const duration = await new Promise((resolve) => {
+      const audio = new Audio(URL.createObjectURL(blob))
+      audio.onloadedmetadata = () => {
+        resolve(audio.duration)
+        URL.revokeObjectURL(audio.src)
+      }
+      audio.onerror = () => resolve(0)
+    })
+    
+    preloadedSongs.set(song.id, {
+      blob,
+      duration,
+      loading: false,
+      progress: 100
+    })
+  } catch (error) {
+    console.error('预下载失败:', error)
+    preloadedSongs.delete(song.id)
+    if (window.$showNotification) {
+      window.$showNotification(`预下载失败: ${song.title}`, 'error')
+    }
+  }
+}
+
+// 批量预下载选中歌曲
+const preloadSelectedSongs = async () => {
+  if (selectedSongs.value.size === 0) return
+  
+  const songsToLoad = props.songs.filter(s => selectedSongs.value.has(s.song.id) && !preloadedSongs.has(s.song.id))
+  
+  for (const songItem of songsToLoad) {
+    await preloadSong(songItem.song)
+  }
+}
+
+// 删除预下载缓存
+const removePreloaded = (songId) => {
+  preloadedSongs.delete(songId)
+}
+
+// 获取总时长估算
+const estimatedTotalDuration = computed(() => {
+  let total = 0
+  let count = 0
+  selectedSongs.value.forEach(id => {
+    const data = preloadedSongs.get(id)
+    if (data && data.duration) {
+      total += data.duration
+      count++
+    }
+  })
+  return { total, count }
+})
 
 // 切换全选/取消全选
 const toggleSelectAll = () => {
@@ -479,9 +636,18 @@ const processAndMergeAudio = async (selectedSongsList) => {
       processingStatus.value = `正在下载 (${i + 1}/${selectedSongsList.length}): ${song.title}`
       
       try {
-        const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
-        const blob = await downloadAsBlob(audioUrl)
-        const arrayBuffer = await blob.arrayBuffer()
+        let arrayBuffer
+        
+        // 检查是否有预下载缓存
+        if (preloadedSongs.has(song.id) && !preloadedSongs.get(song.id).loading) {
+          console.log(`使用预下载缓存: ${song.title}`)
+          const cached = preloadedSongs.get(song.id)
+          arrayBuffer = await cached.blob.arrayBuffer()
+        } else {
+          const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
+          const blob = await downloadAsBlob(audioUrl)
+          arrayBuffer = await blob.arrayBuffer()
+        }
         
         processingStatus.value = `正在解码: ${song.title}`
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
@@ -829,6 +995,9 @@ const startDownload = async () => {
     
     // 合并模式完成后
     if (downloadErrors.value.length === 0) {
+      // 清除预下载缓存
+      preloadedSongs.clear()
+      
       setTimeout(() => {
         downloading.value = false
         closeDialog()
