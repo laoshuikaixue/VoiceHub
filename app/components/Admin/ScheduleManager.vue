@@ -17,6 +17,7 @@
           <button
               v-for="date in availableDates"
               :key="date.value"
+              :data-date="date.value"
               :class="[
                 'flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg transition-all duration-200 border',
                 selectedDate === date.value
@@ -41,14 +42,26 @@
           </svg>
         </button>
         
-        <!-- 手动日期选择按钮 -->
-        <button 
-          class="ml-1 p-2 text-zinc-500 hover:text-blue-400 transition-colors border-l border-zinc-800 pl-3"
-          title="选择特定日期"
-          @click="showManualDatePicker = true"
-        >
-          <CalendarIcon class="w-5 h-5" />
-        </button>
+        <!-- 操作按钮组 -->
+        <div class="flex items-center border-l border-zinc-800 ml-1 pl-1">
+          <!-- 定位到今天 -->
+          <button 
+             class="p-2 text-zinc-500 hover:text-emerald-400 transition-colors"
+             title="跳转到今天"
+             @click="scrollToToday"
+           >
+             <CircleDot class="w-5 h-5" />
+           </button>
+
+          <!-- 手动日期选择按钮 -->
+          <button 
+            class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"
+            title="选择特定日期"
+            @click="showManualDatePicker = true"
+          >
+            <CalendarIcon class="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
     
@@ -556,7 +569,7 @@ import {
   FileBadge, PlaySquare, ChevronDown, ListMusic,
   Filter, Info, Clock, User, AlertTriangle, X as CloseIcon,
   ChevronRight, MoreVertical, Calendar as CalendarIcon,
-  ArrowLeft, ArrowRight, Music2, Heart, Plus, Minus
+  ArrowLeft, ArrowRight, Music2, Heart, Plus, Minus, CircleDot
 } from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
@@ -696,6 +709,9 @@ const sortOptions = [
 const availableSemesters = ref([])
 const selectedSemester = ref('')
 
+// 日期范围（用于无限滚动）
+const dateRange = ref({ start: -15, end: 15 })
+
 // 手动日期选择
 const showManualDatePicker = ref(false)
 const manualSelectedDate = ref('')
@@ -722,13 +738,13 @@ let adminService = null
 let auth = null
 let semesterService = null
 
-// 生成日期列表（固定14天）
+// 生成日期列表（无限滚动模式）
 const availableDates = computed(() => {
   const dates = []
   const today = new Date()
 
-  // 生成前7天到后7天的日期
-  for (let i = -7; i <= 7; i++) {
+  // 根据当前范围生成日期
+  for (let i = dateRange.value.start; i <= dateRange.value.end; i++) {
     const date = new Date(today)
     date.setDate(today.getDate() + i)
 
@@ -932,13 +948,30 @@ const scrollDates = (direction) => {
   }, 300)
 }
 
-// 更新滚动按钮状态
+// 更新滚动按钮状态并加载更多日期
 const updateScrollButtonState = () => {
   if (!dateSelector.value) return
   
   const { scrollLeft, scrollWidth, clientWidth } = dateSelector.value
-  isFirstDateVisible.value = scrollLeft <= 0
-  isLastDateVisible.value = scrollLeft + clientWidth >= scrollWidth - 10
+  
+  // 接近左边界，加载更多过去日期
+  if (scrollLeft < 50) {
+    const oldScrollWidth = scrollWidth
+    dateRange.value.start -= 7
+    nextTick(() => {
+      const newScrollWidth = dateSelector.value.scrollWidth
+      dateSelector.value.scrollLeft += (newScrollWidth - oldScrollWidth)
+    })
+  }
+  
+  // 接近右边界，加载更多未来日期
+  if (scrollWidth - scrollLeft - clientWidth < 50) {
+    dateRange.value.end += 7
+  }
+
+  // 无限滚动模式下，除非有特定限制，否则按钮始终可用
+  isFirstDateVisible.value = false
+  isLastDateVisible.value = false
 }
 
 // 确认对话框处理
@@ -972,6 +1005,14 @@ onMounted(async () => {
       dateSelector.value.addEventListener('scroll', updateScrollButtonState)
     }
     updateScrollButtonState()
+    
+    // 初始滚动到选中日期
+    if (selectedDate.value) {
+      const el = dateSelector.value.querySelector(`[data-date="${selectedDate.value}"]`)
+      if (el) {
+        el.scrollIntoView({ block: 'nearest', inline: 'center' })
+      }
+    }
   })
 })
 
@@ -989,7 +1030,34 @@ const confirmManualDate = () => {
   if (manualSelectedDate.value) {
     selectedDate.value = manualSelectedDate.value
     showManualDatePicker.value = false
+    
+    // 选中日期后，如果是手动选择的日期可能在当前列表外，滚动到该日期
+    nextTick(() => {
+      const el = dateSelector.value.querySelector(`[data-date="${selectedDate.value}"]`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+      }
+    })
   }
+}
+
+// 定位到今天
+const scrollToToday = () => {
+  const todayStr = new Date().toISOString().split('T')[0]
+  selectedDate.value = todayStr
+  
+  // 确保今天在范围内
+  if (dateRange.value.start > 0 || dateRange.value.end < 0) {
+    dateRange.value.start = -15
+    dateRange.value.end = 15
+  }
+  
+  nextTick(() => {
+    const todayEl = dateSelector.value.querySelector(`[data-date="${todayStr}"]`)
+    if (todayEl) {
+      todayEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    }
+  })
 }
 
 // 分页控制方法
