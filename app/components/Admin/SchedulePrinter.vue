@@ -276,7 +276,7 @@ import { useRuntimeConfig } from '#app'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { convertToHttps } from '~/utils/url'
-import { toPng } from 'html-to-image'
+import { toPng, toBlob } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import {
   Layout, ChevronDown, CheckCircle2, Printer, 
@@ -616,124 +616,275 @@ const printSchedule = async () => {
   }
 }
 
-// 专门用于打印的PDF生成函数
-const exportPDFForPrint = async () => {
-  if (!previewContent.value) {
-    throw new Error('预览内容未找到')
-  }
+// 统一的PDF生成函数（支持打印和下载）
+// 采用DOM分页策略，避免长图渲染导致的内存溢出和卡死
+const exportPDFForPrint = async (action = 'print') => {
+  if (!previewContent.value) throw new Error('预览内容未找到')
 
-  // 获取预览页面元素
-  const printPage = previewContent.value.querySelector('.print-page') || previewContent.value
+  const originalPrintPage = previewContent.value.querySelector('.print-page')
+  if (!originalPrintPage) throw new Error('打印页面元素未找到')
+
+  // 1. 准备PDF
+  const pdf = new jsPDF({
+    unit: 'mm',
+    format: settings.value.paperSize.toLowerCase(),
+    orientation: settings.value.orientation === 'landscape' ? 'l' : 'p'
+  })
+
+  const pdfWidth = pdf.internal.pageSize.getWidth()
+  const pdfHeight = pdf.internal.pageSize.getHeight()
   
-  if (!printPage) {
-    throw new Error('打印页面元素未找到')
-  }
+  // 计算容器尺寸 (使用 A4 纸比例的像素值，确保清晰度)
+  // A4 @ 96dpi approx 794x1123. Use 2x for better quality? 
+  // No, let's match standard pixel width for A4 usually used in web (794px).
+  // The scale factor will be handled by toPng pixelRatio.
+  const containerWidth = settings.value.paperSize === 'A4' ? 794 : 1123
+  // 保持宽高比
+  const ratio = pdfHeight / pdfWidth
+  const containerHeight = Math.floor(containerWidth * ratio)
 
-  // 克隆预览内容，保持原有样式
-  const clonedPage = printPage.cloneNode(true)
-
-  // 创建PDF渲染容器
-  const pdfContainer = document.createElement('div')
-  pdfContainer.style.cssText = `
+  // 创建分页容器（模拟单页纸张）
+  const pageContainer = document.createElement('div')
+  pageContainer.className = 'print-page' // 复用样式类
+  pageContainer.style.cssText = `
     position: fixed;
     left: 0;
     top: 0;
-    z-index: -9999;
-    opacity: 0;
+    width: ${containerWidth}px;
+    height: ${containerHeight}px;
     background: white;
     color: black;
+    padding: 40px; 
     box-sizing: border-box;
-    width: ${settings.value.paperSize === 'A4' ? '794px' : '1123px'};
-    pointer-events: none;
+    z-index: -9999;
+    overflow: hidden;
   `
-
-  // 调整克隆页面的样式
-  // 使用 setProperty 避免覆盖其他重要样式
-  clonedPage.style.setProperty('background', 'white', 'important')
-  clonedPage.style.setProperty('color', 'black', 'important')
-  clonedPage.style.setProperty('box-sizing', 'border-box', 'important')
-  clonedPage.style.setProperty('width', '100%', 'important')
-  clonedPage.style.setProperty('padding', '40px', 'important')
-  clonedPage.style.setProperty('margin', '0', 'important')
-  clonedPage.style.setProperty('min-height', 'auto', 'important')
-  clonedPage.style.setProperty('height', 'auto', 'important')
-
-  // 确保所有子元素的颜色和样式正确
-  const allElements = clonedPage.querySelectorAll('*')
-  allElements.forEach(el => {
-    if (el.style) {
-      // 强制设置文字颜色为黑色
-      el.style.setProperty('color', 'black', 'important')
-      // 保持背景为白色
+  
+  // 辅助：强制样式
+  const applyForceStyles = (el) => {
       el.style.setProperty('background', 'white', 'important')
-      el.style.setProperty('background-color', 'white', 'important')
-    }
-  })
+      el.style.setProperty('color', 'black', 'important')
+      el.style.setProperty('box-shadow', 'none', 'important')
+  }
 
-  pdfContainer.appendChild(clonedPage)
-  document.body.appendChild(pdfContainer)
-
-  // 预处理图片，将图片转换为Base64，避免跨域问题
-  await preprocessImages(clonedPage)
+  document.body.appendChild(pageContainer)
 
   try {
-    // 等待渲染完成，给浏览器一点时间重绘
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    // 获取实际内容高度
-    const elementHeight = clonedPage.offsetHeight || clonedPage.scrollHeight
-
-    // 使用html-to-image生成图片
-    // 使用 cacheBust 防止缓存导致的问题
-    const imgData = await toPng(clonedPage, {
-      quality: 1.0,
-      pixelRatio: 2,
-      backgroundColor: '#ffffff',
-      width: pdfContainer.offsetWidth,
-      height: elementHeight,
-      cacheBust: true,
-      style: {
-        visibility: 'visible',
-        opacity: '1'
-      }
-    })
-
-    // 创建PDF
-    const pdf = new jsPDF({
-      unit: 'mm',
-      format: settings.value.paperSize.toLowerCase(),
-      orientation: settings.value.orientation === 'landscape' ? 'l' : 'p'
-    })
-
-    const pdfWidth = pdf.internal.pageSize.getWidth()
-    const pdfHeight = pdf.internal.pageSize.getHeight()
-    const margin = 10
-    const contentWidth = pdfWidth - 2 * margin
-    const contentHeight = pdfHeight - 2 * margin
-
-    const imgProps = pdf.getImageProperties(imgData)
-    const imgHeight = (imgProps.height * contentWidth) / imgProps.width
-
-    let heightLeft = imgHeight
-    let position = margin
-
-    // 第一页
-    pdf.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight)
-    heightLeft -= contentHeight
-
-    // 后续页面
-    while (heightLeft > 0) {
-      position -= contentHeight
-      pdf.addPage()
-      pdf.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight)
-      heightLeft -= contentHeight
+    const sourceHeader = originalPrintPage.querySelector('.page-header')
+    const sourceFooter = originalPrintPage.querySelector('.page-footer')
+    const sourceContent = originalPrintPage.querySelector('.schedule-content')
+    
+    // 如果找不到标准结构，尝试直接克隆（兼容旧版）
+    if (!sourceContent) {
+        throw new Error('排期内容结构不符合分页要求')
     }
 
-    pdf.autoPrint()
-    window.open(pdf.output('bloburl'), '_blank')
+    // 辅助：渲染当前页并添加到PDF
+    const renderPage = async (isFirst) => {
+      applyForceStyles(pageContainer)
+      
+      // 预处理当前页面的图片
+      await preprocessImages(pageContainer)
+      
+      // 稍微等待渲染
+      await new Promise(r => setTimeout(r, 100))
+
+      const blob = await toBlob(pageContainer, {
+        quality: 0.9,
+        pixelRatio: 2, // 保持清晰度
+        width: containerWidth,
+        height: containerHeight,
+        style: { visibility: 'visible', opacity: '1', background: 'white' }
+      })
+      
+      if (!blob) throw new Error('页面渲染失败')
+      const imgUrl = URL.createObjectURL(blob)
+
+      if (!isFirst) pdf.addPage()
+      pdf.addImage(imgUrl, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')
+      
+      // 清理
+      URL.revokeObjectURL(imgUrl)
+    }
+
+    // 辅助：重置页面容器（添加页眉页脚）
+    let currentContentWrapper = null
+    
+    const resetPageContainer = () => {
+      pageContainer.innerHTML = ''
+      
+      // 添加 Header
+      if (sourceHeader) {
+        const h = sourceHeader.cloneNode(true)
+        applyForceStyles(h)
+        pageContainer.appendChild(h)
+      }
+      
+      // 创建内容区域
+      const cw = document.createElement('div')
+      cw.className = 'schedule-content'
+      cw.style.margin = '0'
+      cw.style.padding = '0'
+      pageContainer.appendChild(cw)
+      currentContentWrapper = cw
+      
+      // 添加 Footer (绝对定位到底部)
+      if (sourceFooter) {
+        const f = sourceFooter.cloneNode(true)
+        applyForceStyles(f)
+        f.style.position = 'absolute'
+        f.style.bottom = '30px'
+        f.style.left = '40px'
+        f.style.right = '40px'
+        f.style.width = 'auto'
+        pageContainer.appendChild(f)
+      }
+    }
+
+    // 分页处理状态
+    let isFirstPage = true
+    resetPageContainer()
+    
+    // 检查是否溢出
+    // 我们预留 footer 高度 (约50px)
+    const MAX_CONTENT_HEIGHT = containerHeight - 60 // 简单的缓冲
+    const checkOverflow = () => {
+        return pageContainer.scrollHeight > containerHeight
+    }
+
+    // 递归处理节点
+    // 策略：我们手动遍历主要结构，因为结构是已知的
+    const dateGroups = sourceContent.querySelectorAll('.date-group')
+    
+    for (const group of dateGroups) {
+        // 1. 克隆 Date Group 容器和标题
+        const groupClone = group.cloneNode(false) // shallow
+        const groupTitle = group.querySelector('.group-title').cloneNode(true)
+        groupClone.appendChild(groupTitle)
+        
+        currentContentWrapper.appendChild(groupClone)
+        
+        // 检查标题是否溢出（极少见）
+        if (checkOverflow()) {
+            currentContentWrapper.removeChild(groupClone)
+            await renderPage(isFirstPage)
+            isFirstPage = false
+            resetPageContainer()
+            currentContentWrapper.appendChild(groupClone)
+        }
+        
+        // 2. 遍历 Date Group 的子元素 (Playtime Groups 或 Schedule List)
+        const children = Array.from(group.children).filter(el => !el.classList.contains('group-title'))
+        
+        for (const child of children) {
+            if (child.classList.contains('playtime-groups')) {
+                // 处理时段组
+                const ptWrapper = document.createElement('div')
+                ptWrapper.className = 'playtime-groups'
+                groupClone.appendChild(ptWrapper)
+                
+                const ptGroups = child.querySelectorAll('.playtime-group')
+                for (const ptGroup of ptGroups) {
+                    const ptGroupClone = ptGroup.cloneNode(false)
+                    const ptTitle = ptGroup.querySelector('.playtime-title').cloneNode(true)
+                    ptGroupClone.appendChild(ptTitle)
+                    ptWrapper.appendChild(ptGroupClone)
+                    
+                    const listWrapper = document.createElement('div')
+                    listWrapper.className = 'schedule-list'
+                    ptGroupClone.appendChild(listWrapper)
+                    
+                    let currentPtListWrapper = listWrapper
+
+                    // 遍历排期项
+                    const items = ptGroup.querySelectorAll('.schedule-item')
+                    for (const item of items) {
+                        const itemClone = item.cloneNode(true)
+                        currentPtListWrapper.appendChild(itemClone)
+                        
+                        if (checkOverflow()) {
+                            currentPtListWrapper.removeChild(itemClone)
+                            await renderPage(isFirstPage)
+                            isFirstPage = false
+                            resetPageContainer()
+                            
+                            // 在新页面重建路径
+                            const newGroup = group.cloneNode(false)
+                            newGroup.appendChild(group.querySelector('.group-title').cloneNode(true))
+                            currentContentWrapper.appendChild(newGroup)
+                            
+                            const newPtWrapper = document.createElement('div')
+                            newPtWrapper.className = 'playtime-groups'
+                            newGroup.appendChild(newPtWrapper)
+                            
+                            const newPtGroup = ptGroup.cloneNode(false)
+                            newPtGroup.appendChild(ptGroup.querySelector('.playtime-title').cloneNode(true))
+                            newPtWrapper.appendChild(newPtGroup)
+                            
+                            const newListWrapper = document.createElement('div')
+                            newListWrapper.className = 'schedule-list'
+                            newPtGroup.appendChild(newListWrapper)
+                            
+                            // 添加项
+                            newListWrapper.appendChild(itemClone)
+                            currentPtListWrapper = newListWrapper
+                        }
+                    }
+                }
+            } else if (child.classList.contains('schedule-list')) {
+                // 处理直接列表
+                const listWrapper = document.createElement('div')
+                listWrapper.className = 'schedule-list'
+                groupClone.appendChild(listWrapper)
+                
+                // 我们需要一个可变的引用
+                let currentListWrapper = listWrapper
+                
+                const items = child.querySelectorAll('.schedule-item')
+                for (const item of items) {
+                    const itemClone = item.cloneNode(true)
+                    currentListWrapper.appendChild(itemClone)
+                    
+                    if (checkOverflow()) {
+                        currentListWrapper.removeChild(itemClone)
+                        await renderPage(isFirstPage)
+                        isFirstPage = false
+                        resetPageContainer()
+                        
+                        // 重建路径
+                        const newGroup = group.cloneNode(false)
+                        newGroup.appendChild(group.querySelector('.group-title').cloneNode(true))
+                        currentContentWrapper.appendChild(newGroup)
+                        
+                        const newListWrapper = document.createElement('div')
+                        newListWrapper.className = 'schedule-list'
+                        newGroup.appendChild(newListWrapper)
+                        
+                        newListWrapper.appendChild(itemClone)
+                        currentListWrapper = newListWrapper
+                    }
+                }
+            }
+        }
+    }
+    
+    // 渲染最后一页
+    await renderPage(isFirstPage)
+
+    if (action === 'print') {
+        pdf.autoPrint()
+        window.open(pdf.output('bloburl'), '_blank')
+    } else {
+        const filename = `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
+        pdf.save(filename)
+        if (window.$showNotification) {
+            window.$showNotification('PDF导出成功', 'success')
+        }
+    }
+
   } finally {
-    if (document.body.contains(pdfContainer)) {
-      document.body.removeChild(pdfContainer)
+    if (document.body.contains(pageContainer)) {
+      document.body.removeChild(pageContainer)
     }
   }
 }
@@ -741,8 +892,8 @@ const exportPDFForPrint = async () => {
 // 预下载图片并转换为base64
 const downloadImageAsBase64 = async (url) => {
   try {
-    // 使用我们的代理API来获取图片，并指定较低的图片质量
-    const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(url)}&quality=60`
+    // 使用代理API获取图片
+    const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(url)}`
     const response = await fetch(proxyUrl)
 
     if (!response.ok) throw new Error('图片代理下载失败')
@@ -873,18 +1024,30 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
 
     const contentHeight = imageContainer.offsetHeight || imageContainer.scrollHeight
 
-    const dataUrl = await toPng(imageContainer, {
-      quality: 1.0,
+    // 动态调整像素比
+    let pixelRatio = 2
+    if (contentHeight > 10000) {
+      pixelRatio = 1
+    } else if (contentHeight > 5000) {
+      pixelRatio = 1.5
+    }
+
+    const blob = await toBlob(imageContainer, {
+      quality: 0.9,
       backgroundColor: '#ffffff',
       width: originalWidth,
       height: contentHeight,
-      pixelRatio: 2,
-      cacheBust: true,
+      pixelRatio: pixelRatio,
+      skipAutoScale: true,
       style: {
         visibility: 'visible',
         opacity: '1'
       }
     })
+
+    if (!blob) throw new Error('生成图片失败')
+
+    const dataUrl = URL.createObjectURL(blob)
 
     const link = document.createElement('a')
     link.download = filename
@@ -892,6 +1055,8 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    
+    setTimeout(() => URL.revokeObjectURL(dataUrl), 60000)
   } catch (error) {
     console.error(`生成图片失败 (${filename}):`, error)
     throw error
@@ -959,132 +1124,14 @@ const exportSplitImages = async (printPage) => {
 const exportPDF = async () => {
   if (isExporting.value) return
   
-  if (!previewContent.value) {
-    if (window.$showNotification) {
-      window.$showNotification('预览内容未找到', 'error')
-    }
-    return
-  }
-
   isExporting.value = true
-  
   try {
-    // 获取预览页面元素
-    const printPage = previewContent.value.querySelector('.print-page') || previewContent.value
-    
-    // 克隆预览内容，保持原有样式
-    const clonedPage = printPage.cloneNode(true)
-
-    // 创建PDF渲染容器
-    const pdfContainer = document.createElement('div')
-    pdfContainer.style.cssText = `
-      position: fixed;
-      left: 0;
-      top: 0;
-      z-index: -9999;
-      opacity: 0;
-      background: white;
-      color: black;
-      box-sizing: border-box;
-      width: ${settings.value.paperSize === 'A4' ? '794px' : '1123px'};
-      pointer-events: none;
-    `
-
-    // 调整克隆页面的样式
-    // 使用 setProperty 避免覆盖其他重要样式
-    clonedPage.style.setProperty('background', 'white', 'important')
-    clonedPage.style.setProperty('color', 'black', 'important')
-    clonedPage.style.setProperty('box-sizing', 'border-box', 'important')
-    clonedPage.style.setProperty('width', '100%', 'important')
-    clonedPage.style.setProperty('padding', '40px', 'important')
-    clonedPage.style.setProperty('margin', '0', 'important')
-    clonedPage.style.setProperty('min-height', 'auto', 'important')
-    clonedPage.style.setProperty('height', 'auto', 'important')
-
-    // 确保所有子元素的颜色和样式正确
-    const allElements = clonedPage.querySelectorAll('*')
-    allElements.forEach(el => {
-      if (el.style) {
-        // 强制设置文字颜色为黑色
-        el.style.setProperty('color', 'black', 'important')
-        // 保持背景为白色
-        el.style.setProperty('background', 'white', 'important')
-        el.style.setProperty('background-color', 'white', 'important')
-      }
-    })
-
-    pdfContainer.appendChild(clonedPage)
-    document.body.appendChild(pdfContainer)
-
-    // 预处理图片，将图片转换为Base64，避免跨域问题
-    await preprocessImages(clonedPage)
-
-    try {
-      // 等待渲染完成，给浏览器一点时间重绘
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      const filename = `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
-      
-      // 获取实际内容高度
-      const elementHeight = clonedPage.offsetHeight || clonedPage.scrollHeight
-      
-      // 使用html-to-image生成图片
-      // 使用 cacheBust 防止缓存导致的问题
-      const imgData = await toPng(clonedPage, {
-        quality: 1.0,
-        pixelRatio: 2,
-        backgroundColor: '#ffffff',
-        width: pdfContainer.offsetWidth,
-        height: elementHeight,
-        cacheBust: true,
-        style: {
-          visibility: 'visible',
-          opacity: '1'
-        }
-      })
-
-      // 创建PDF
-      const pdf = new jsPDF({
-        unit: 'mm',
-        format: settings.value.paperSize.toLowerCase(),
-        orientation: settings.value.orientation === 'landscape' ? 'l' : 'p'
-      })
-
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = pdf.internal.pageSize.getHeight()
-      const margin = 10
-      const contentWidth = pdfWidth - 2 * margin
-      const contentHeight = pdfHeight - 2 * margin
-
-      const imgProps = pdf.getImageProperties(imgData)
-      const imgHeight = (imgProps.height * contentWidth) / imgProps.width
-
-      let heightLeft = imgHeight
-      let position = margin
-
-      pdf.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight)
-      heightLeft -= contentHeight
-
-      while (heightLeft > 0) {
-        position -= contentHeight
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight)
-        heightLeft -= contentHeight
-      }
-
-      pdf.save(filename)
-      
-      document.body.removeChild(pdfContainer)
-      
-      if (window.$showNotification) {
-        window.$showNotification('PDF导出成功', 'success')
-      }
-    } catch (err) {
-      if (document.body.contains(pdfContainer)) {
-        document.body.removeChild(pdfContainer)
-      }
-      throw err
+    if (window.$showNotification) {
+      window.$showNotification('正在准备PDF...', 'info')
     }
+
+    // 复用 DOM 分页逻辑导出 PDF，避免长图导致内存溢出
+    await exportPDFForPrint('download')
   } catch (error) {
     console.error('导出PDF失败:', error)
     if (window.$showNotification) {
@@ -1114,12 +1161,24 @@ const exportImage = async () => {
     const fullHeight = printPage.scrollHeight
     const MAX_HEIGHT = 15000
 
+    // 检查设备是否为移动端
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    
+    // 如果是移动端且内容过长，建议使用PDF导出
+    if (isMobile && fullHeight > 5000) {
+       if (confirm('当前排期内容较长，在移动设备上生成长图可能会导致卡顿或失败。建议使用"导出PDF"功能，是否继续尝试生成长图？')) {
+         // 用户坚持要生成，继续
+       } else {
+         isExportingImage.value = false
+         return
+       }
+    }
+
     if (fullHeight > MAX_HEIGHT) {
       if (window.$showNotification) {
-        window.$showNotification('排期内容过长，将分段导出', 'info')
+        window.$showNotification('排期内容过长，将自动分段导出', 'info')
       }
-      // 这里可以保留原来的分段逻辑，或者简化
-      await generateAndDownloadImage(printPage, `广播排期表_${new Date().getTime()}.png`)
+      await exportSplitImages(printPage)
     } else {
       await generateAndDownloadImage(printPage, `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.png`)
     }
