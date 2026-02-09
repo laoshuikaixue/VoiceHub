@@ -1545,7 +1545,6 @@ const markAllAsPlayed = async () => {
 // 保存并发布
 const saveSequence = async () => {
   try {
-    await saveDraft()
     await publishSchedule()
   } catch (err) {
     console.error('保存并发布失败:', err)
