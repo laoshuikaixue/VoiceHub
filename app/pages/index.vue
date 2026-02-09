@@ -216,22 +216,25 @@
                         <div class="notification-card-header">
                           <div class="notification-icon-type">
                             <Icon v-if="notification.type === 'SONG_SELECTED'" :size="20" color="#4f46e5"
-                                  name="target"/>
+                                  name="check"/>
                             <Icon v-else-if="notification.type === 'SONG_PLAYED'" :size="20" color="#10b981"
-                                  name="music"/>
+                                  name="play"/>
                             <Icon v-else-if="notification.type === 'SONG_VOTED'" :size="20" color="#f59e0b"
                                   name="thumbs-up"/>
+                            <Icon v-else-if="notification.type === 'SONG_REJECTED'" :size="20" color="#ef4444"
+                                  name="x-circle"/>
                             <Icon v-else-if="notification.type === 'COLLABORATION_INVITE'" :size="20" color="#0B5AFE"
                                   name="users"/>
                             <Icon v-else-if="notification.type === 'COLLABORATION_RESPONSE'" :size="20" color="#8b5cf6"
-                                  name="info"/>
-                            <Icon v-else :size="20" color="#6b7280" name="speaker"/>
+                                  name="message-circle"/>
+                            <Icon v-else :size="20" color="#6b7280" name="bell"/>
                           </div>
                           <div class="notification-title-row">
                             <div class="notification-title">
                               <span v-if="notification.type === 'SONG_SELECTED'">歌曲已选中</span>
                               <span v-else-if="notification.type === 'SONG_PLAYED'">歌曲已播放</span>
                               <span v-else-if="notification.type === 'SONG_VOTED'">收到新投票</span>
+                              <span v-else-if="notification.type === 'SONG_REJECTED'">歌曲被驳回</span>
                               <span v-else-if="notification.type === 'COLLABORATION_INVITE'">
                                 联合投稿邀请
                                 <span v-if="notification.handled"
