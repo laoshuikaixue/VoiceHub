@@ -52,6 +52,7 @@
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^3.0.4",
     "jszip": "^3.10.1",
+    "lamejs": "^1.2.1",
     "lucide-vue-next": "^0.563.0",
     "multer": "^2.0.2",
     "nodemailer": "^6.10.1",
