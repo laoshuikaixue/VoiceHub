@@ -645,51 +645,67 @@ const encodeToMp3 = async (buffer) => {
       const leftData = buffer.getChannelData(0)
       const rightData = buffer.getChannelData(1) // 之前合并时已确保是双声道
       
-      // 分块处理，避免阻塞主线程太久
       const sampleBlockSize = 1152 // MP3 frame size
       const totalSamples = leftData.length
       
       let processed = 0
       
       const processChunk = () => {
-        const chunkSamples = 11520 // 处理 10 帧
-        const end = Math.min(processed + chunkSamples, totalSamples)
+        // 使用时间片处理：每次运行最多 50ms，以保证UI不卡顿的同时最大化吞吐量
+        // 这比固定样本数快得多，因为它减少了 setTimeout 的调用次数
+        const startTime = performance.now()
+        const timeSlice = 50 // ms
         
-        const leftChunk = new Int16Array(end - processed)
-        const rightChunk = new Int16Array(end - processed)
-        
-        for (let i = 0; i < end - processed; i++) {
-          // Float32 -> Int16
-          const idx = processed + i
+        while (processed < totalSamples) {
+          // 每次处理一个较小的基本块 (例如 10 帧 = 11520 样本)
+          // 保持小块是为了频繁检查时间，防止单个循环过长
+          const chunkSamples = 11520 
+          const end = Math.min(processed + chunkSamples, totalSamples)
           
-          // Clamp and scale
-          let l = Math.max(-1, Math.min(1, leftData[idx]))
-          let r = Math.max(-1, Math.min(1, rightData[idx]))
+          const leftChunk = new Int16Array(end - processed)
+          const rightChunk = new Int16Array(end - processed)
           
-          leftChunk[i] = l < 0 ? l * 0x8000 : l * 0x7FFF
-          rightChunk[i] = r < 0 ? r * 0x8000 : r * 0x7FFF
-        }
-        
-        const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk)
-        if (mp3buf.length > 0) {
-          mp3Data.push(mp3buf)
-        }
-        
-        processed = end
-        
-        if (processed < totalSamples) {
-          // 继续处理下一块
-          // 使用 setTimeout 让出主线程，更新 UI
-          processingStatus.value = `正在编码 MP3: ${Math.round(processed / totalSamples * 100)}%`
-          setTimeout(processChunk, 0)
-        } else {
-          // 结束
-          const mp3buf = mp3encoder.flush()
+          for (let i = 0; i < end - processed; i++) {
+            // Float32 -> Int16
+            const idx = processed + i
+            
+            // Clamp and scale
+            let l = leftData[idx]
+            let r = rightData[idx]
+            
+            // 简单的 clamping 优化
+            if (l > 1) l = 1
+            else if (l < -1) l = -1
+            
+            if (r > 1) r = 1
+            else if (r < -1) r = -1
+            
+            leftChunk[i] = l < 0 ? l * 0x8000 : l * 0x7FFF
+            rightChunk[i] = r < 0 ? r * 0x8000 : r * 0x7FFF
+          }
+          
+          const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk)
           if (mp3buf.length > 0) {
             mp3Data.push(mp3buf)
           }
-          resolve(new Blob(mp3Data, { type: 'audio/mp3' }))
+          
+          processed = end
+          
+          // 检查时间片
+          if (performance.now() - startTime > timeSlice) {
+            // 时间片用完，更新进度并让出主线程
+            processingStatus.value = `正在编码 MP3: ${Math.round(processed / totalSamples * 100)}%`
+            setTimeout(processChunk, 0)
+            return
+          }
         }
+        
+        // 全部处理完成
+        const mp3buf = mp3encoder.flush()
+        if (mp3buf.length > 0) {
+          mp3Data.push(mp3buf)
+        }
+        resolve(new Blob(mp3Data, { type: 'audio/mp3' }))
       }
       
       processChunk()
