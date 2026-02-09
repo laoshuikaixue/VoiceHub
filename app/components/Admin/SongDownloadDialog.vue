@@ -318,6 +318,7 @@ import { computed, ref, watch, onMounted } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { getMusicUrl } from '~/utils/musicUrl'
 import { X as CloseIcon, Check, Download, AlertTriangle, Settings2, Volume2, Edit3, Save, Music } from 'lucide-vue-next'
+import { Mp3Encoder } from '@breezystack/lamejs'
 
 const props = defineProps({
   show: {
@@ -630,40 +631,15 @@ const normalizeBuffer = (buffer, targetDbValue) => {
   }
 }
 
-// 加载 lamejs
-const loadLameJs = () => {
-  return new Promise((resolve, reject) => {
-    if (window.lamejs) {
-      resolve(window.lamejs)
-      return
-    }
-    
-    const script = document.createElement('script')
-    script.src = '/js/lame.min.js'
-    script.onload = () => {
-      if (window.lamejs) {
-        resolve(window.lamejs)
-      } else {
-        reject(new Error('lamejs 加载失败'))
-      }
-    }
-    script.onerror = () => reject(new Error('lamejs 加载失败'))
-    document.head.appendChild(script)
-  })
-}
-
 // 编码 MP3
 const encodeToMp3 = async (buffer) => {
-  // 确保 lamejs 已加载
-  await loadLameJs()
-
   return new Promise((resolve, reject) => {
     try {
       const channels = 2
       const sampleRate = buffer.sampleRate
       const kbps = 128 // 128kbps 标准音质
       
-      const mp3encoder = new window.lamejs.Mp3Encoder(channels, sampleRate, kbps)
+      const mp3encoder = new Mp3Encoder(channels, sampleRate, kbps)
       const mp3Data = []
       
       const leftData = buffer.getChannelData(0)
