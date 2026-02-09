@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
         const search = query.search as string || ''
         const semester = query.semester as string || ''
         const grade = query.grade as string || ''
+        const scope = query.scope as string || '' // 'mine' or empty
         const sortBy = query.sortBy as string || 'createdAt'
         const sortOrder = query.sortOrder as string || 'desc'
         const bypassCache = query.bypass_cache === 'true'
@@ -31,6 +32,8 @@ export default defineEventHandler(async (event) => {
             search: search || '',
             semester: semester || '',
             grade: grade || '',
+            scope: scope || '',
+            userId: scope === 'mine' ? user?.id : undefined, // Include userId in cache key if scope is mine
             sortBy,
             sortOrder
         }
@@ -110,6 +113,10 @@ export default defineEventHandler(async (event) => {
 
         if (grade) {
             conditions.push(eq(users.grade, grade))
+        }
+
+        if (scope === 'mine' && user) {
+            conditions.push(eq(songs.requesterId, user.id))
         }
 
         const whereCondition = conditions.length > 0 ? and(...conditions) : undefined

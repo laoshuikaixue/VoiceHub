@@ -7,7 +7,7 @@
         <p class="text-xs text-zinc-500 mt-1">定义系统的教学周期，点歌、排期及统计数据将基于当前活跃学期进行归档</p>
       </div>
       <button 
-        @click="showAddModal = true"
+        @click="openAddModal"
         class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -55,7 +55,7 @@
         <div v-else class="bg-zinc-900/30 border border-zinc-800 border-dashed rounded-[2.5rem] p-20 flex flex-col items-center justify-center text-center gap-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-700"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           <p class="text-sm font-bold text-zinc-600">未设置当前活跃学期</p>
-          <button @click="showAddModal = true" class="text-xs text-blue-500 font-black hover:underline">立即创建</button>
+          <button @click="openAddModal" class="text-xs text-blue-500 font-black hover:underline">立即创建</button>
         </div>
 
         <div class="p-6 bg-zinc-900/20 border border-zinc-800 rounded-3xl flex items-start gap-4">
@@ -159,7 +159,7 @@
               <input 
                 v-model="newSemester.name"
                 type="text" 
-                placeholder="例如: 2025-2026学年上学期" 
+                placeholder="例如: 2025学年第一学期" 
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 font-bold transition-all" 
               />
             </div>
@@ -345,6 +345,33 @@ const closeAddModal = () => {
   }
 }
 
+const getRecommendedName = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth() + 1
+    
+    let academicYear = year
+    let term = '第一学期'
+
+    if (month >= 3 && month <= 8) {
+      academicYear = year - 1
+      term = '第二学期'
+    } else if (month <= 2) {
+      academicYear = year - 1
+      term = '第一学期'
+    } else {
+      academicYear = year
+      term = '第一学期'
+    }
+    
+    return `${academicYear}学年${term}`
+}
+
+const openAddModal = () => {
+  newSemester.value.name = getRecommendedName()
+  showAddModal.value = true
+}
+
 // 组件挂载时获取数据
 onMounted(async () => {
   await Promise.all([
@@ -355,6 +382,4 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* 使用 Tailwind CSS，移除大部分 scoped 样式 */
-/* 仅保留必要的过渡动画或特殊处理 */
 </style>

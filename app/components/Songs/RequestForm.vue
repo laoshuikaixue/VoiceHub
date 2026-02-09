@@ -1,6 +1,5 @@
 <template>
   <div class="request-form">
-    <!-- Desktop Rules Section (Restored from requestformold.vue) -->
     <div class="rules-section desktop-only-rules">
       <h2 class="section-title">投稿须知</h2>
       <div class="rules-content-desktop">
@@ -62,6 +61,10 @@
                 {{ loading || searching ? '处理中...' : '搜索' }}
               </button>
             </div>
+            <button class="import-semester-btn" type="button" @click="showImportSongsModal = true" title="从往期导入">
+              <Icon :size="16" name="history" />
+              <span class="btn-text">从往期导入</span>
+            </button>
           </div>
 
           <!-- 联合投稿人区域 -->
@@ -466,6 +469,13 @@
 
     </div>
 
+    <!-- 历史学期导入弹窗 -->
+    <ImportSongsModal
+      :show="showImportSongsModal"
+      @close="showImportSongsModal = false"
+      @import-success="handleImportSuccess"
+    />
+
     <!-- 网易云音乐登录弹窗 -->
     <NeteaseLoginModal
         :show="showLoginModal"
@@ -648,6 +658,7 @@ import Icon from '../UI/Icon.vue'
 import {convertToHttps, validateUrl} from '~/utils/url'
 import {getLoginStatus} from '~/utils/neteaseApi'
 
+import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
 import RecentSongsModal from './RecentSongsModal.vue'
@@ -684,6 +695,7 @@ const submitting = ref(false)
 const voting = ref(false)
 const requestingReplay = ref(false)
 const similarSongs = ref([])
+const showImportSongsModal = ref(false)
 const showLoginModal = ref(false)
 const isNeteaseLoggedIn = ref(false)
 const neteaseUser = ref(null)
@@ -743,6 +755,17 @@ const playUrlValidation = ref({valid: true, error: '', validating: false})
 
 // 网易云音乐登录检查状态
 const checkingNeteaseLogin = ref(false)
+
+const handleImportSuccess = async () => {
+  // 不自动关闭弹窗，等待用户在结果页点击完成
+  // showImportSongsModal.value = false 
+  // 刷新歌曲列表以便检查相似歌曲
+  try {
+    await songService.fetchSongs(true, currentSemester.value?.name, false, true)
+  } catch (error) {
+    console.error('刷新歌曲列表失败:', error)
+  }
+}
 
 const handleUserSelect = (users) => {
   if (Array.isArray(users)) {
@@ -2016,7 +2039,7 @@ defineExpose({
   overflow: hidden;
 }
 
-/* Desktop Rules Styles */
+/* 桌面端样式 */
 .desktop-only-rules {
   display: block;
 }
@@ -2057,7 +2080,7 @@ defineExpose({
   margin-bottom: 0.6rem;
 }
 
-/* Mobile Rules Styles (Hidden on desktop) */
+/* 移动端样式 */
 .rules-title {
   display: flex;
   align-items: center;
@@ -2186,9 +2209,6 @@ defineExpose({
   transform: none;
 }
 
-
-
-
 /* 联合投稿人区域 */
 .collaborators-section {
   display: flex;
@@ -2258,9 +2278,6 @@ defineExpose({
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
-
-
-
 
 /* 横向投稿状态样式 */
 .submission-status-horizontal {
@@ -2345,7 +2362,6 @@ defineExpose({
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
 }
-
 
 .form-row {
   display: flex;
@@ -3058,9 +3074,6 @@ defineExpose({
   cursor: not-allowed;
   transform: none;
 }
-
-/* 错误和成功提示现在使用全局通知 */
-
 .similar-song-alert {
   background: #21242d;
   border-radius: 10px;
@@ -4276,5 +4289,37 @@ defineExpose({
 .form-input.error {
   border-color: #ef4444;
   box-shadow: 0 0 0 1px #ef4444;
+}
+
+.import-semester-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  height: 42px; /* 使匹配搜索输入框的大致高度 */
+  flex-shrink: 0;
+}
+
+.import-semester-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  .import-semester-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>

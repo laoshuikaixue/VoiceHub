@@ -40,15 +40,23 @@ export default defineEventHandler(async (event) => {
         })
     }
 
+    // 检查是否是第一个学期，如果是，强制设为活跃
+    const allSemestersCount = await db.select({ id: semesters.id }).from(semesters).limit(1)
+    let shouldBeActive = body.isActive
+
+    if (allSemestersCount.length === 0) {
+        shouldBeActive = true
+    }
+
     // 如果设置为活跃学期，先将其他学期设为非活跃
-    if (body.isActive) {
+    if (shouldBeActive) {
         await db.update(semesters).set({isActive: false}).where(eq(semesters.isActive, true))
     }
 
     // 创建新学期
     const semesterResult = await db.insert(semesters).values({
         name: body.name,
-        isActive: body.isActive || false
+        isActive: shouldBeActive || false
     }).returning()
     const semester = semesterResult[0]
 
