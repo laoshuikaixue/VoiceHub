@@ -252,14 +252,14 @@
                   <div
                       v-for="(result, index) in searchResults"
                       :key="`${platform}-${result.id || index}`"
-                      class="result-item"
+                      class="result-item group"
                   >
-                    <div class="result-cover group/cover" @click.stop="playSong(result)">
-                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img group-hover/cover:scale-110 transition-transform duration-500"
+                    <div class="result-cover" @click.stop="playSong(result)">
+                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img"
                            referrerpolicy="no-referrer"/>
-                      <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/cover:opacity-100 transition-opacity">
-                        <div class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shadow-xl">
-                          <Icon name="play" :size="18" class="fill-current ml-1" />
+                      <div class="play-overlay-container">
+                        <div class="play-button-wrapper">
+                          <Icon name="play" :size="20" class="play-icon" />
                         </div>
                       </div>
                     </div>
@@ -3521,12 +3521,54 @@ defineExpose({
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: #18181b;
 }
 
 .cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.result-item:hover .cover-img {
+  transform: scale(1.1);
+}
+
+.play-overlay-container {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+
+.result-item:hover .play-overlay-container {
+  opacity: 1;
+}
+
+.play-button-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.play-icon {
+  fill: currentColor;
+  margin-left: 2px;
 }
 
 .result-info {

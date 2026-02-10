@@ -74,7 +74,7 @@ const props = defineProps({
   },
   type: {
     type: String,
-    default: 'warning', // 'warning', 'danger', 'info', 'success'
+    default: 'warning', // 'warning' (警告), 'danger' (危险), 'info' (信息), 'success' (成功)
     validator: value => ['warning', 'danger', 'info', 'success'].includes(value)
   },
   confirmText: {
