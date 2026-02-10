@@ -24,7 +24,7 @@
           <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">当前活跃学期</h3>
         </div>
 
-        <div v-if="currentSemester" class="relative bg-gradient-to-br from-blue-600 to-blue-700 rounded-[2.5rem] p-10 shadow-2xl shadow-blue-900/20 overflow-hidden group">
+        <div v-if="currentSemester" class="relative bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-10 shadow-2xl shadow-blue-900/20 overflow-hidden group">
           <div class="relative z-10 space-y-6">
             <div class="w-16 h-16 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
@@ -52,7 +52,7 @@
           </div>
         </div>
 
-        <div v-else class="bg-zinc-900/30 border border-zinc-800 border-dashed rounded-[2.5rem] p-20 flex flex-col items-center justify-center text-center gap-4">
+        <div v-else class="bg-zinc-900/30 border border-zinc-800 border-dashed rounded-3xl p-20 flex flex-col items-center justify-center text-center gap-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-700"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           <p class="text-sm font-bold text-zinc-600">未设置当前活跃学期</p>
           <button @click="openAddModal" class="text-xs text-blue-500 font-black hover:underline">立即创建</button>
@@ -144,7 +144,7 @@
 
     <!-- 添加学期弹窗 -->
     <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div class="w-full max-w-md bg-zinc-900 rounded-[2.5rem] border border-zinc-800 shadow-2xl overflow-hidden" @click.stop>
+      <div class="w-full max-w-md bg-zinc-900 rounded-3xl border border-zinc-800 shadow-2xl overflow-hidden" @click.stop>
         <div class="p-8 space-y-6">
           <div class="flex items-center justify-between">
             <h3 class="text-xl font-black text-white tracking-tight">添加新学期</h3>

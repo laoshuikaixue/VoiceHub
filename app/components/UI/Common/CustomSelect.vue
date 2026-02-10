@@ -47,7 +47,7 @@
               ]"
             >
               <span class="truncate">{{ option.label }}</span>
-              <Check v-if="isSelected(option)" :size="12" class="shrink-0" />
+              <Icon v-if="isSelected(option)" name="check" :size="12" class="shrink-0" />
             </button>
           </div>
         </div>
@@ -58,7 +58,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
-import { ChevronDown, Check } from 'lucide-vue-next'
+import Icon from '~/components/UI/Icon.vue'
 
 const props = defineProps({
   label: String,
@@ -117,24 +117,17 @@ const updatePosition = () => {
   if (!isOpen.value || !containerRef.value) return
 
   const rect = containerRef.value.getBoundingClientRect()
-  const scrollTop = window.scrollY || document.documentElement.scrollTop
-  const scrollLeft = window.scrollX || document.documentElement.scrollLeft
   
   // 简单的位置计算，默认向下弹出
-  // 可以在这里添加更复杂的逻辑（如检测底部空间不足时向上弹出）
-  
   // 检查底部空间
   const windowHeight = window.innerHeight
-  const dropdownHeight = 200 // 预估高度，或者等到 nextTick 获取实际高度
   const spaceBelow = windowHeight - rect.bottom
   
   let top = rect.bottom + 4
   
   // 如果底部空间不足且顶部空间充足，则向上弹出
-  // 注意：这里需要更精确的高度计算，暂时使用简单逻辑
   if (spaceBelow < 220 && rect.top > 220) {
-    // 向上弹出逻辑稍微复杂，因为需要知道dropdown高度
-    // 这里暂时保持向下，或者使用 fixed 定位让它尽量可见
+    // 暂时保持向下，或者使用 fixed 定位让它尽量可见
   }
 
   dropdownStyle.value = {
@@ -180,7 +173,7 @@ const handleScrollOrResize = () => {
 // 监听 isOpen 变化来添加/移除事件监听
 watch(isOpen, (val) => {
   if (val) {
-    window.addEventListener('scroll', handleScrollOrResize, true) // capture=true to catch scroll in sub-elements
+    window.addEventListener('scroll', handleScrollOrResize, true) // capture=true 以捕获子元素的滚动
     window.addEventListener('resize', handleScrollOrResize)
   } else {
     window.removeEventListener('scroll', handleScrollOrResize, true)

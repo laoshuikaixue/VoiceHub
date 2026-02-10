@@ -383,21 +383,15 @@
             v-if="playTimeSelectionEnabled && playTimes.length > 0"
             class="form-group"
         >
-          <label for="playTime">期望播出时段</label>
           <div class="input-wrapper">
-            <select id="playTime" v-model="preferredPlayTimeId" class="form-select">
-              <option value="">选择时段</option>
-              <option
-                  v-for="playTime in enabledPlayTimes"
-                  :key="playTime.id"
-                  :value="playTime.id"
-              >
-                {{ playTime.name }}
-                <template v-if="playTime.startTime || playTime.endTime">
-                  ({{ formatPlayTimeRange(playTime) }})
-                </template>
-              </option>
-            </select>
+            <CustomSelect
+                v-model="preferredPlayTimeId"
+                :options="formattedPlayTimes"
+                label="期望播出时段"
+                label-key="displayName"
+                value-key="id"
+                placeholder="选择时段"
+            />
           </div>
         </div>
       </form>
@@ -527,94 +521,134 @@
 
     <!-- 手动输入弹窗 -->
     <Teleport to="body">
-      <Transition name="modal-animation">
-        <div v-if="showManualModal" class="modal-overlay" @click.self="showManualModal = false">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h3>手动输入歌曲信息</h3>
-              <button class="close-btn" @click="showManualModal = false">&times;</button>
+      <Transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
+      >
+        <div v-if="showManualModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" @click.self="showManualModal = false">
+          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+          <div class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" @click.stop>
+            <!-- Header -->
+            <div class="flex items-center justify-between p-8 pb-4">
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight">手动输入歌曲信息</h3>
+              <button
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+                  @click="showManualModal = false"
+              >
+                <X class="w-5 h-5" />
+              </button>
             </div>
-            <div class="modal-body">
-              <div class="form-group">
-                <label for="modal-title">歌曲名称</label>
-                <div class="input-wrapper">
-                  <input
-                      id="modal-title"
-                      :value="title"
-                      class="form-input readonly"
-                      readonly
-                      type="text"
-                  />
-                </div>
-              </div>
 
-              <div class="form-group">
-                <label for="modal-artist">歌手名称</label>
-                <div class="input-wrapper">
-                  <input
-                      id="modal-artist"
-                      v-model="manualArtist"
-                      class="form-input"
-                      placeholder="请输入歌手名称"
-                      required
-                      type="text"
-                  />
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="modal-cover">歌曲封面地址（选填）</label>
-                <div class="input-wrapper">
-                  <input
-                      id="modal-cover"
-                      v-model="manualCover"
-                      :class="{ 'error': manualCover && !coverValidation.valid }"
-                      class="form-input"
-                      placeholder="请输入歌曲封面图片URL"
-                      type="url"
-                  />
-                  <div v-if="coverValidation.validating" class="validation-loading">
-                    验证中...
-                  </div>
-                  <div v-if="manualCover && !coverValidation.valid && !coverValidation.validating"
-                       class="validation-error">
-                    {{ coverValidation.error }}
-                  </div>
-                  <div v-if="manualCover && coverValidation.valid && !coverValidation.validating"
-                       class="validation-success">
-                    ✓ URL有效
+            <!-- Body -->
+            <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
+              <div class="space-y-6">
+                <!-- 歌曲名称 -->
+                <div class="space-y-2">
+                  <label class="text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌曲名称</label>
+                  <div class="relative group">
+                    <input
+                        :value="title"
+                        class="w-full px-6 py-4 bg-zinc-800/30 border border-zinc-800 rounded-2xl text-zinc-400 font-bold focus:outline-none cursor-not-allowed transition-all"
+                        readonly
+                        type="text"
+                    />
+                    <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                      <Lock class="w-4 h-4 text-zinc-600" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="form-group">
-                <label for="modal-play-url">播放地址（选填）</label>
-                <div class="input-wrapper">
-                  <input
-                      id="modal-play-url"
-                      v-model="manualPlayUrl"
-                      :class="{ 'error': manualPlayUrl && !playUrlValidation.valid }"
-                      class="form-input"
-                      placeholder="请输入歌曲播放URL"
-                      type="url"
-                  />
-                  <div v-if="playUrlValidation.validating" class="validation-loading">
-                    验证中...
-                  </div>
-                  <div v-if="manualPlayUrl && !playUrlValidation.valid && !playUrlValidation.validating"
-                       class="validation-error">
-                    {{ playUrlValidation.error }}
-                  </div>
-                  <div v-if="manualPlayUrl && playUrlValidation.valid && !playUrlValidation.validating"
-                       class="validation-success">
-                    ✓ URL有效
+                <!-- 歌手名称 -->
+                <div class="space-y-2">
+                  <label for="modal-artist" class="text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌手名称</label>
+                  <div class="relative group">
+                    <input
+                        id="modal-artist"
+                        v-model="manualArtist"
+                        class="w-full px-6 py-4 bg-zinc-800/50 border border-zinc-700/50 rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-700 focus:bg-zinc-800 transition-all"
+                        placeholder="请输入歌手名称"
+                        required
+                        type="text"
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div class="modal-actions">
+                <!-- 歌曲封面地址 -->
+                <div class="space-y-2">
+                  <label for="modal-cover" class="text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌曲封面地址（选填）</label>
+                  <div class="relative group">
+                    <input
+                        id="modal-cover"
+                        v-model="manualCover"
+                        :class="[
+                          'w-full px-6 py-4 bg-zinc-800/50 border rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
+                          manualCover && !coverValidation.valid ? 'border-red-500/50 focus:ring-red-500/20' : 'border-zinc-700/50 focus:ring-zinc-700 focus:bg-zinc-800'
+                        ]"
+                        placeholder="请输入歌曲封面图片URL"
+                        type="url"
+                    />
+                    <div v-if="coverValidation.validating" class="absolute inset-y-0 right-4 flex items-center">
+                      <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
+                    </div>
+                  </div>
+                  <Transition
+                      enter-active-class="transition duration-200 ease-out"
+                      enter-from-class="opacity-0 -translate-y-1"
+                      enter-to-class="opacity-100 translate-y-0"
+                  >
+                    <div v-if="manualCover && !coverValidation.validating" class="px-1">
+                      <p v-if="!coverValidation.valid" class="text-xs font-bold text-red-400">{{ coverValidation.error }}</p>
+                      <p v-else class="text-xs font-bold text-emerald-400 flex items-center">
+                        <Check class="w-3 h-3 mr-1" /> URL有效
+                      </p>
+                    </div>
+                  </Transition>
+                </div>
+
+                <!-- 播放地址 -->
+                <div class="space-y-2">
+                  <label for="modal-play-url" class="text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">播放地址（选填）</label>
+                  <div class="relative group">
+                    <input
+                        id="modal-play-url"
+                        v-model="manualPlayUrl"
+                        :class="[
+                          'w-full px-6 py-4 bg-zinc-800/50 border rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
+                          manualPlayUrl && !playUrlValidation.valid ? 'border-red-500/50 focus:ring-red-500/20' : 'border-zinc-700/50 focus:ring-zinc-700 focus:bg-zinc-800'
+                        ]"
+                        placeholder="请输入歌曲播放URL"
+                        type="url"
+                    />
+                    <div v-if="playUrlValidation.validating" class="absolute inset-y-0 right-4 flex items-center">
+                      <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
+                    </div>
+                  </div>
+                  <Transition
+                      enter-active-class="transition duration-200 ease-out"
+                      enter-from-class="opacity-0 -translate-y-1"
+                      enter-to-class="opacity-100 translate-y-0"
+                  >
+                    <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1">
+                      <p v-if="!playUrlValidation.valid" class="text-xs font-bold text-red-400">{{ playUrlValidation.error }}</p>
+                      <p v-else class="text-xs font-bold text-emerald-400 flex items-center">
+                        <Check class="w-3 h-3 mr-1" /> URL有效
+                      </p>
+                    </div>
+                  </Transition>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-8 pt-0">
+              <div class="flex gap-3">
                 <button
-                    class="btn btn-secondary"
+                    class="flex-1 px-6 py-4 rounded-2xl bg-zinc-800 text-zinc-300 font-bold hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
                     type="button"
                     @click="showManualModal = false"
                 >
@@ -622,7 +656,7 @@
                 </button>
                 <button
                     :disabled="!canSubmitManualForm || submitting"
-                    class="btn btn-primary"
+                    class="flex-[2] px-6 py-4 rounded-2xl bg-zinc-100 text-zinc-900 font-black hover:bg-white disabled:opacity-50 disabled:hover:bg-zinc-100 disabled:active:scale-100 transition-all active:scale-95"
                     type="button"
                     @click="handleManualSubmit"
                 >
@@ -646,14 +680,16 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref, watch} from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import searchIcon from '~/public/images/search.svg'
+import {X, Lock, Loader2, Check} from 'lucide-vue-next'
 import {useSongs} from '~/composables/useSongs'
 import {useAudioPlayer} from '~/composables/useAudioPlayer'
 import {useSiteConfig} from '~/composables/useSiteConfig'
 import {useAuth} from '~/composables/useAuth'
 import {useSemesters} from '~/composables/useSemesters'
 import {useMusicSources} from '~/composables/useMusicSources'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '../UI/Icon.vue'
 import {convertToHttps, validateUrl} from '~/utils/url'
 import {getLoginStatus} from '~/utils/neteaseApi'
@@ -974,6 +1010,15 @@ onMounted(async () => {
 // 过滤出启用的播出时段
 const enabledPlayTimes = computed(() => {
   return playTimes.value.filter((pt) => pt.enabled)
+})
+
+const formattedPlayTimes = computed(() => {
+  return enabledPlayTimes.value.map(pt => ({
+    ...pt,
+    displayName: pt.startTime || pt.endTime
+        ? `${pt.name} (${formatPlayTimeRange(pt)})`
+        : pt.name
+  }))
 })
 
 // 格式化播出时段时间范围

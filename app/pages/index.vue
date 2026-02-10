@@ -307,17 +307,13 @@
                     <!-- 每页显示数量选择器 -->
                     <div class="page-size-selector">
                       <label for="pageSize">每页显示：</label>
-                      <select
+                      <CustomSelect
                           id="pageSize"
-                          :value="notificationsService.pageSize.value"
-                          class="page-size-select"
-                          @change="handlePageSizeChange($event.target.value)"
-                      >
-                        <option value="5">5条</option>
-                        <option value="10">10条</option>
-                        <option value="20">20条</option>
-                        <option value="50">50条</option>
-                      </select>
+                          :model-value="notificationsService.pageSize.value"
+                          :options="pageSizeOptions"
+                          class="page-size-custom-select"
+                          @update:model-value="handlePageSizeChange"
+                      />
                     </div>
 
                     <!-- 页码导航 -->
@@ -411,38 +407,76 @@
 
     <!-- 规则弹窗 -->
     <Teleport to="body">
-      <Transition name="modal-animation">
-        <div v-if="showRules" class="modal-overlay" @click.self="showRules = false">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h2 class="text-xl font-bold">点歌规则</h2>
-              <button class="close-button" @click="showRules = false">×</button>
+      <Transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
+      >
+        <div v-if="showRules" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="showRules = false">
+          <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-8 pb-4 flex items-center justify-between">
+              <div>
+                <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                    <Icon name="bell" :size="20" />
+                  </div>
+                  点歌规则
+                </h3>
+                <p class="text-xs text-zinc-500 mt-1 ml-13">投稿前请仔细阅读以下规则</p>
+              </div>
+              <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all" @click="showRules = false">
+                <Icon name="x" :size="20" />
+              </button>
             </div>
 
-            <div class="modal-body">
-              <div class="rules-container">
-                <div class="rules-group">
-                  <h3 class="rules-subtitle">
-                    <Icon name="bell" :size="16" class="rules-icon" />
-                    投稿须知
-                  </h3>
-                  <div v-if="submissionGuidelines" class="guidelines-content"
-                       v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
-                  <div v-else class="default-rules">
-                    <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
-                    <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
-                    <div class="rule-item"><span>3.</span> 禁止投递含有违规内容的歌曲</div>
+            <div class="p-8 pt-4 space-y-8">
+              <div class="rules-group space-y-4">
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                  <Icon name="message-circle" :size="12" />
+                  投稿须知
+                </h4>
+                <div v-if="submissionGuidelines" class="text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
+                     v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+                <div v-else class="space-y-3 bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50">
+                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
+                    <span class="text-blue-500 font-black">01</span>
+                    <p>投稿时无需加入书名号</p>
+                  </div>
+                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
+                    <span class="text-blue-500 font-black">02</span>
+                    <p>除DJ外，其他类型歌曲均接收（包括小语种）</p>
+                  </div>
+                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
+                    <span class="text-blue-500 font-black">03</span>
+                    <p>禁止投递含有违规内容的歌曲</p>
                   </div>
                 </div>
+              </div>
 
-                <div class="rules-group">
-                  <h3 class="rules-subtitle">
-                    <Icon name="calendar" :size="16" class="rules-icon" />
-                    播放时间
-                  </h3>
-                  <p class="rules-text">每天夜自修静班前</p>
+              <div class="rules-group space-y-4">
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                  <Icon name="calendar" :size="12" />
+                  播放时间
+                </h4>
+                <div class="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-900/40">
+                    <Icon name="clock" :size="24" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-black text-zinc-100">每天夜自修静班前</p>
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">PLAYBACK TIME</p>
+                  </div>
                 </div>
               </div>
+            </div>
+
+            <div class="p-8 pt-0">
+              <button class="w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95" @click="showRules = false">
+                我知道了
+              </button>
             </div>
           </div>
         </div>
@@ -461,6 +495,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 import {useNotifications} from '~/composables/useNotifications'
 import {useSiteConfig} from '~/composables/useSiteConfig'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
@@ -548,6 +583,13 @@ const hasUnreadNotifications = computed(() => {
   return unreadCount > 0
 })
 const showNotificationSettings = ref(false)
+
+const pageSizeOptions = [
+  { label: '5条', value: 5 },
+  { label: '10条', value: 10 },
+  { label: '20条', value: 20 },
+  { label: '50条', value: 50 }
+]
 
 const notificationSettings = ref({
   songSelectedNotify: true,
@@ -2189,37 +2231,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   white-space: nowrap;
 }
 
-.page-size-select {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: var(--light);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.page-size-select:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.page-size-select:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(11, 90, 254, 0.2);
-}
-
-.page-size-select option {
-  background-color: rgba(30, 30, 30, 0.95);
-  color: var(--light);
-  padding: 8px 12px;
-  border: none;
-}
-
-.page-size-select option:hover {
-  background-color: rgba(50, 50, 50, 0.95);
+.page-size-custom-select {
+  width: 90px;
 }
 
 .page-navigation {

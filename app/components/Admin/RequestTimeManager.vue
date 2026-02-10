@@ -57,7 +57,7 @@
       <!-- 添加时段按钮卡片 -->
       <button
         @click="showAddForm = true"
-        class="group relative h-full min-h-[220px] bg-zinc-900/20 border-2 border-dashed border-zinc-800 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 hover:bg-blue-600/5 hover:border-blue-500/40 transition-all active:scale-95"
+        class="group relative h-full min-h-[220px] bg-zinc-900/20 border-2 border-dashed border-zinc-800 rounded-3xl flex flex-col items-center justify-center gap-4 hover:bg-blue-600/5 hover:border-blue-500/40 transition-all active:scale-95"
       >
         <div class="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-blue-500 group-hover:bg-blue-600/10 group-hover:border-blue-500/20 transition-all">
           <Plus :size="28" />
@@ -81,7 +81,7 @@
           v-for="slot in requestTimes"
           :key="slot.id"
           :class="[
-            'group bg-zinc-900/40 border rounded-[2.5rem] p-8 space-y-6 transition-all hover:shadow-2xl hover:shadow-black/40',
+            'group bg-zinc-900/40 border rounded-3xl p-8 space-y-6 transition-all hover:shadow-2xl hover:shadow-black/40',
             slot.enabled && !slot.past ? 'border-zinc-800' : 'border-zinc-800/40 opacity-60'
           ]"
         >
@@ -177,7 +177,7 @@
     </div>
 
     <!-- 统计概览 -->
-    <div class="bg-zinc-900/20 border border-zinc-800 rounded-[2.5rem] p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+    <div class="bg-zinc-900/20 border border-zinc-800 rounded-3xl p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
       <div v-for="(stat, i) in stats" :key="i" class="flex items-center gap-4 group">
         <div :class="[
           'w-12 h-12 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 transition-colors',
@@ -202,7 +202,7 @@
       leave-to-class="opacity-0"
     >
       <div v-if="showAddForm || editingRequestTime" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm" @click.self="cancelForm">
-        <div class="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-[2.5rem] shadow-2xl overflow-hidden">
+        <div class="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
           <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
             <h3 class="text-xl font-black text-zinc-100">{{ editingRequestTime ? '编辑投稿开放时段' : '添加投稿开放时段' }}</h3>
             <button @click="cancelForm" class="text-zinc-500 hover:text-zinc-300 transition-colors">
@@ -310,7 +310,7 @@
       leave-to-class="opacity-0"
     >
       <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm" @click.self="showDeleteConfirm = false">
-        <div class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-[2.5rem] shadow-2xl overflow-hidden p-8">
+        <div class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden p-8">
           <div class="flex flex-col items-center space-y-6">
             <div class="w-16 h-16 rounded-[2rem] bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/20 shadow-xl shadow-red-900/10">
               <Trash2 :size="28" />

@@ -299,7 +299,7 @@ import {
   FileJson,
   X
 } from 'lucide-vue-next'
-import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'
 

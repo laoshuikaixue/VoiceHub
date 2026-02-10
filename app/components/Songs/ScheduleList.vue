@@ -212,148 +212,192 @@
   </div>
 
   <Teleport to="body">
-    <Transition name="modal-fade">
-      <div v-if="showPlaylistModal" class="playlist-modal-overlay" @click.self="closePlaylistModal">
-        <div class="playlist-modal">
-          <div class="playlist-modal-header">
-            <div class="header-title">
-              <Icon :size="20" class="header-icon" name="music"/>
-              <h3>添加到歌单</h3>
+    <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="showPlaylistModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" @click.self="closePlaylistModal">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+        <div class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" @click.stop>
+          <!-- 头部 -->
+          <div class="flex items-center justify-between p-8 pb-4">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                <Icon name="music" :size="24" />
+              </div>
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight">添加到歌单</h3>
             </div>
-            <button class="playlist-modal-close" type="button" @click="closePlaylistModal">
-              <Icon :size="20" name="close"/>
+            <button
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+                type="button"
+                @click="closePlaylistModal"
+            >
+              <Icon name="x" :size="20" />
             </button>
           </div>
 
-          <div class="playlist-modal-body custom-scrollbar">
-            <div v-if="!isNeteaseLoggedIn" class="login-prompt-container">
-              <div class="login-icon-wrapper">
-                <Icon :size="48" class="login-icon" name="music"/>
+          <!-- 主体 -->
+          <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
+            <div v-if="!isNeteaseLoggedIn" class="flex flex-col items-center justify-center py-20 text-center">
+              <div class="w-20 h-20 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-6">
+                <Icon name="music" :size="40" class="text-zinc-500 opacity-20" />
               </div>
-              <p class="login-hint">需要登录网易云音乐账号才能管理歌单</p>
-              <button class="btn-primary full-width" type="button" @click="openLoginFromPlaylist">
+              <p class="text-zinc-400 font-medium mb-8">需要登录网易云音乐账号才能管理歌单</p>
+              <button
+                  class="px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black transition-all active:scale-95 shadow-xl shadow-blue-900/20"
+                  type="button"
+                  @click="openLoginFromPlaylist"
+              >
                 立即登录
               </button>
             </div>
 
-            <div v-else class="playlist-form">
+            <div v-else class="space-y-8">
               <!-- 用户信息栏 -->
-              <div v-if="neteaseUser" class="user-profile-bar">
-                <div class="user-avatar">
-                  <img v-if="neteaseUser.avatarUrl" :src="neteaseUser.avatarUrl" alt="avatar">
-                  <Icon v-else :size="20" name="user"/>
+              <div v-if="neteaseUser" class="flex items-center p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-2xl">
+                <div class="w-12 h-12 rounded-xl overflow-hidden bg-zinc-800 mr-4 ring-2 ring-zinc-700/50">
+                  <img v-if="neteaseUser.avatarUrl" :src="neteaseUser.avatarUrl" alt="avatar" class="w-full h-full object-cover">
+                  <Icon v-else name="user" :size="24" class="w-full h-full p-3 text-zinc-500" />
                 </div>
-                <div class="user-info">
-                  <span class="user-name">{{ neteaseUser.nickname || neteaseUser.userName || '网易云用户' }}</span>
+                <div class="flex-1 min-w-0">
+                  <span class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-0.5">当前账号</span>
+                  <span class="block font-bold text-zinc-100 truncate">
+                    {{ neteaseUser.nickname || neteaseUser.userName || '网易云用户' }}
+                  </span>
                 </div>
               </div>
 
               <!-- 歌单操作区域 -->
-              <div class="control-panel">
-                <div class="panel-section">
-                  <label class="section-label">选择目标歌单</label>
-                  <div class="input-group">
-                    <div class="select-wrapper">
-                      <select v-model="selectedPlaylistId" class="custom-select">
-                        <option disabled value="">请选择歌单</option>
-                        <option
-                            v-for="pl in playlists"
-                            :key="pl.id"
-                            :value="pl.id"
-                        >
-                          {{ pl.name }} ({{ pl.trackCount }}首)
-                        </option>
-                      </select>
-                      <Icon :size="14" class="select-arrow" name="chevron-down"/>
-                    </div>
+              <div class="space-y-6">
+                <!-- 选择歌单 -->
+                <div class="space-y-3">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">选择目标歌单</label>
+                  <div class="flex gap-3">
+                    <CustomSelect
+                        v-model="selectedPlaylistId"
+                        :options="formattedPlaylists"
+                        label-key="displayName"
+                        value-key="id"
+                        placeholder="请选择歌单"
+                        class="flex-1"
+                    />
                     <button
                         :disabled="playlistsLoading"
-                        class="btn-icon"
+                        class="w-10 h-[38px] flex items-center justify-center rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 transition-all disabled:opacity-50"
                         title="刷新歌单列表"
                         type="button"
                         @click="reloadPlaylists"
                     >
-                      <Icon :class="{ 'spin': playlistsLoading }" :size="18" name="refresh"/>
+                      <Icon name="refresh" :size="16" :class="{ 'animate-spin': playlistsLoading }" />
                     </button>
                   </div>
 
-                  <div v-if="selectedPlaylistId" class="playlist-actions-row">
+                  <div v-if="selectedPlaylistId" class="px-1 pt-1">
                     <button
                         :disabled="playlistActionLoading"
-                        class="btn-text-danger"
+                        class="text-[10px] font-black text-red-400/60 hover:text-red-400 flex items-center gap-1.5 transition-colors uppercase tracking-wider"
                         type="button"
                         @click="handleDeletePlaylist"
                     >
-                      <Icon :size="14" name="trash"/>
+                      <Icon name="trash" :size="14" />
                       删除当前歌单
                     </button>
                   </div>
                 </div>
 
-                <div class="divider">
-                  <span>或</span>
+                <div class="relative py-2 flex items-center justify-center">
+                  <div class="absolute inset-0 flex items-center px-8">
+                    <div class="w-full border-t border-zinc-800/30"></div>
+                  </div>
+                  <span class="relative px-4 bg-zinc-900 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">或</span>
                 </div>
 
-                <div class="panel-section">
-                  <label class="section-label">创建新歌单</label>
-                  <div class="input-group create-playlist-group">
+                <!-- 创建新歌单 -->
+                <div class="space-y-4">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">创建新歌单</label>
+                  <div class="flex gap-3">
                     <input
                         v-model="newPlaylistName"
-                        class="custom-input"
+                        class="flex-1 px-5 py-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
                         placeholder="输入新歌单名称"
                         type="text"
                     />
                     <button
                         :disabled="!newPlaylistName.trim() || playlistActionLoading"
-                        class="btn-secondary"
+                        class="px-8 py-3.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
                         type="button"
                         @click="handleCreatePlaylist"
                     >
-                      {{ playlistActionLoading ? '创建中' : '新建' }}
+                      {{ playlistActionLoading ? '...' : '新建' }}
                     </button>
                   </div>
-                  <label class="checkbox-wrapper">
-                    <input
-                        v-model="newPlaylistPrivacy"
-                        type="checkbox"
-                    >
-                    <span class="checkbox-custom"></span>
-                    <span class="checkbox-label">设为隐私歌单</span>
+                  <label class="flex items-center gap-3 cursor-pointer group w-fit ml-1">
+                    <div class="relative">
+                      <input
+                          v-model="newPlaylistPrivacy"
+                          class="sr-only peer"
+                          type="checkbox"
+                      >
+                      <div class="w-9 h-5 bg-zinc-800 rounded-full border border-zinc-700 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-all"></div>
+                      <div class="absolute left-1 top-1 w-3 h-3 bg-zinc-500 rounded-full transition-all peer-checked:left-5 peer-checked:bg-white"></div>
+                    </div>
+                    <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors">设为隐私歌单</span>
                   </label>
                 </div>
               </div>
 
               <!-- 歌曲选择区域 -->
-              <div class="songs-selection-panel">
-                <div class="panel-header">
-                  <label class="section-label">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between px-1">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                     选择歌曲
-                    <span class="highlight-count">{{ selectedSongIds.length }}</span> / {{ neteaseSongs.length }}
+                    <span class="ml-2 px-2 py-0.5 rounded-md bg-blue-600/10 text-blue-500 text-[9px]">{{ selectedSongIds.length }} / {{ neteaseSongs.length }}</span>
                   </label>
-                  <div class="panel-actions">
-                    <button class="btn-text" type="button" @click="selectAllNeteaseSongs">全选</button>
-                    <button class="btn-text" type="button" @click="clearSelectedSongs">清空</button>
+                  <div class="flex gap-4">
+                    <button class="text-[10px] font-black text-zinc-400 hover:text-blue-500 uppercase tracking-wider transition-colors" type="button" @click="selectAllNeteaseSongs">全选</button>
+                    <button class="text-[10px] font-black text-zinc-400 hover:text-red-400 uppercase tracking-wider transition-colors" type="button" @click="clearSelectedSongs">清空</button>
                   </div>
                 </div>
 
-                <div v-if="neteaseSongs.length === 0" class="empty-state">
-                  当前日期没有来自网易云的歌曲
+                <div v-if="neteaseSongs.length === 0" class="flex flex-col items-center justify-center py-12 bg-zinc-950/30 border border-dashed border-zinc-800 rounded-3xl text-zinc-600">
+                  <Icon name="music" :size="32" class="mb-3 opacity-20" />
+                  <p class="text-[10px] font-black uppercase tracking-widest">当前日期没有来自网易云的歌曲</p>
                 </div>
 
-                <div v-else class="songs-list custom-scrollbar">
+                <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
                       v-for="song in neteaseSongs"
                       :key="song.id"
-                      :class="{ 'selected': isSongSelected(song.id) }"
-                      class="song-item"
+                      :class="[
+                        'group flex items-center p-3.5 rounded-xl border transition-all cursor-pointer',
+                        isSongSelected(song.id)
+                          ? 'bg-blue-600/10 border-blue-500/30 shadow-lg'
+                          : 'bg-zinc-950 border-transparent hover:border-zinc-800'
+                      ]"
                       @click="toggleSongSelection(song.id)"
                   >
-                    <div class="song-checkbox">
-                      <Icon v-if="isSongSelected(song.id)" :size="12" color="#fff" name="check"/>
+                    <div
+                        :class="[
+                          'w-5 h-5 rounded-lg border-2 flex items-center justify-center mr-3.5 transition-all',
+                          isSongSelected(song.id)
+                            ? 'bg-blue-600 border-blue-600 text-white'
+                            : 'border-zinc-800 group-hover:border-zinc-700'
+                        ]"
+                    >
+                      <Icon v-if="isSongSelected(song.id)" name="check" :size="12" />
                     </div>
-                    <div class="song-details">
-                      <div class="song-name">{{ song.title }}</div>
-                      <div class="song-artist">{{ song.artist }}</div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-bold truncate text-zinc-100">
+                        {{ song.title }}
+                      </div>
+                      <div class="text-[10px] font-black uppercase tracking-widest truncate mt-0.5 text-zinc-500">
+                        {{ song.artist }}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -361,20 +405,27 @@
             </div>
           </div>
 
-          <div v-if="isNeteaseLoggedIn" class="playlist-modal-footer">
-            <button class="btn-ghost" type="button" @click="closePlaylistModal">
-              取消
-            </button>
-            <button
-                :disabled="!selectedPlaylistId || selectedSongIds.length === 0 || playlistActionLoading"
-                class="btn-primary"
-                type="button"
-                @click="handleAddSongsToPlaylist"
-            >
-              <Icon v-if="playlistActionLoading" :class="{ 'spin': true }" :size="16" name="loader"/>
-              <Icon v-else :size="16" name="plus"/>
-              <span>{{ playlistActionLoading ? '处理中...' : '添加到歌单' }}</span>
-            </button>
+          <!-- 底部操作栏 -->
+          <div v-if="isNeteaseLoggedIn" class="p-8 pt-0">
+            <div class="flex gap-3">
+              <button
+                  class="flex-1 px-6 py-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
+                  type="button"
+                  @click="closePlaylistModal"
+              >
+                取消
+              </button>
+              <button
+                  :disabled="!selectedPlaylistId || selectedSongIds.length === 0 || playlistActionLoading"
+                  class="flex-[2] px-6 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 uppercase tracking-widest"
+                  type="button"
+                  @click="handleAddSongsToPlaylist"
+              >
+                <Icon v-if="playlistActionLoading" name="loader" :size="16" class="animate-spin" />
+                <Icon v-else name="plus" :size="16" />
+                <span>{{ playlistActionLoading ? '正在添加...' : '确认添加' }}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -406,11 +457,13 @@
 
 <script setup>
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import { Music, X, User, RefreshCw, Trash2, Check, Plus, Loader2 } from 'lucide-vue-next'
 import {useSongs} from '~/composables/useSongs'
 import {useAudioPlayer} from '~/composables/useAudioPlayer'
 import {useMusicSources} from '~/composables/useMusicSources'
 import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import {convertToHttps} from '~/utils/url'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import {addSongsToPlaylist, createPlaylist, deletePlaylist, getUserPlaylists} from '~/utils/neteaseApi'
@@ -448,6 +501,12 @@ const neteaseUser = ref(null)
 const neteaseCookie = ref('')
 const playlists = ref([])
 const playlistsLoading = ref(false)
+const formattedPlaylists = computed(() => {
+  return playlists.value.map(pl => ({
+    ...pl,
+    displayName: `${pl.name} (${pl.trackCount}首)`
+  }))
+})
 const selectedPlaylistId = ref('')
 const playlistActionLoading = ref(false)
 const selectedSongIds = ref([])

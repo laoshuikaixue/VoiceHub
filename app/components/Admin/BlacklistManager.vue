@@ -280,7 +280,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
-import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 const { showToast: showNotification } = useToast()
 

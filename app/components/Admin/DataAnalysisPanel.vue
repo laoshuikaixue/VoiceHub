@@ -17,7 +17,7 @@
 
     <!-- 错误状态 -->
     <div v-else-if="error && !hasInitialData" class="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
-      <div class="p-6 bg-red-500/10 border border-red-500/20 rounded-[2.5rem]">
+      <div class="p-6 bg-red-500/10 border border-red-500/20 rounded-3xl">
         <X class="text-red-500" :size="48" />
       </div>
       <div class="text-center">
@@ -104,7 +104,7 @@
           <div 
             @mouseenter="handleMouseEnter"
             @mouseleave="handleMouseLeave"
-            class="p-8 bg-zinc-900/20 border border-zinc-800/40 rounded-[2.5rem] flex items-center justify-between relative overflow-hidden group cursor-help"
+            class="p-8 bg-zinc-900/20 border border-zinc-800/40 rounded-3xl flex items-center justify-between relative overflow-hidden group cursor-help"
           >
              <div class="relative z-10">
                <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">当前活跃用户</span>
@@ -119,7 +119,7 @@
                <Activity class="text-blue-500" :size="32" />
              </div>
           </div>
-          <div class="p-8 bg-zinc-900/20 border border-zinc-800/40 rounded-[2.5rem] flex items-center justify-between relative overflow-hidden group">
+          <div class="p-8 bg-zinc-900/20 border border-zinc-800/40 rounded-3xl flex items-center justify-between relative overflow-hidden group">
              <div class="relative z-10">
                <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">今日累计点播</span>
                <div class="flex items-baseline gap-2 mt-1">
@@ -431,7 +431,7 @@ import {
   RefreshCw, Eye, MousePointer2, Check, X
 } from 'lucide-vue-next'
 import { useSemesters } from '~/composables/useSemesters'
-import CustomSelect from './Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 使用学期管理 composable
 const {fetchSemesters, semesters: availableSemesters, currentSemester} = useSemesters()

@@ -296,7 +296,7 @@ import {
   CheckCircle2
 } from 'lucide-vue-next'
 
-import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 const props = defineProps({
   show: Boolean,

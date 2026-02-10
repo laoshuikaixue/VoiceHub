@@ -573,8 +573,8 @@ import {
 } from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
-import CustomSelect from './Common/CustomSelect.vue'
-import LoadingState from './Common/LoadingState.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { convertToHttps } from '~/utils/url'
 
 // 响应式数据

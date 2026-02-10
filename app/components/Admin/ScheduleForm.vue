@@ -65,7 +65,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { useSongs } from '~/composables/useSongs'
-import CustomSelect from './Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 const props = defineProps({
   song: {

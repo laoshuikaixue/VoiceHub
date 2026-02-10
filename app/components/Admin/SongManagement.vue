@@ -633,7 +633,7 @@ import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
-import CustomSelect from './Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import {
   Search, Plus, RotateCcw, Edit2, Check, X, Trash2,
   Music, Heart, Download, ChevronDown, ChevronLeft, ChevronRight,

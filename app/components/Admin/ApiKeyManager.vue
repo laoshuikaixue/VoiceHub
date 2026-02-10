@@ -60,7 +60,7 @@
     </div>
 
     <div v-else-if="apiKeys.length === 0" class="flex flex-col items-center justify-center py-20 px-4 text-center">
-      <div class="w-20 h-20 rounded-[2.5rem] bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 text-zinc-700 shadow-xl">
+      <div class="w-20 h-20 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 text-zinc-700 shadow-xl">
         <Key :size="32" :stroke-width="1.5" />
       </div>
       <h3 class="text-lg font-bold text-zinc-200">暂无API密钥</h3>
@@ -413,7 +413,7 @@ import {
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 响应式数据
 const loading = ref(false)

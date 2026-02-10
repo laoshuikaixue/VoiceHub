@@ -308,7 +308,7 @@ import {
   Search, Bell, Info, X, Check, Plus, AlertCircle,
   Eye, MessageSquare, Loader2
 } from 'lucide-vue-next'
-import CustomSelect from './Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'
 

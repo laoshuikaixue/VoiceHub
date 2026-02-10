@@ -282,7 +282,7 @@ import {
   Layout, ChevronDown, CheckCircle2, Printer, 
   FileText, ImageIcon, AlignLeft, RefreshCw
 } from 'lucide-vue-next'
-import CustomSelect from './Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'

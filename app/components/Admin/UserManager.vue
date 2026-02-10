@@ -297,7 +297,7 @@
         leave-to-class="opacity-0 scale-95"
     >
       <div v-if="showAddModal || editingUser" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="closeModal">
-        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl" @click.stop>
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl" @click.stop>
           <div class="p-8">
             <div class="flex items-center justify-between mb-8">
               <div>
@@ -444,7 +444,7 @@
         leave-to-class="opacity-0 scale-95"
     >
       <div v-if="resetPasswordUser" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="closeResetPassword">
-        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl" @click.stop>
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl" @click.stop>
           <div class="p-8 text-center">
             <div class="w-20 h-20 bg-amber-500/10 rounded-[2rem] flex items-center justify-center text-amber-500 mx-auto mb-6">
               <Lock :size="32" />
@@ -515,7 +515,7 @@
       leave-to-class="opacity-0 scale-95"
   >
     <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="closeImportModal">
-      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl" @click.stop>
+      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl" @click.stop>
         <div class="p-8">
           <div class="flex items-center justify-between mb-8">
             <div>
@@ -672,10 +672,10 @@
       leave-to-class="opacity-0 scale-95"
   >
     <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="closeDeleteModal">
-      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl" @click.stop>
+      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl" @click.stop>
         <div class="p-8">
           <div class="flex flex-col items-center text-center">
-            <div class="w-20 h-20 rounded-[2.5rem] bg-red-500/10 flex items-center justify-center text-red-500 mb-6">
+            <div class="w-20 h-20 rounded-3xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6">
               <Trash2 :size="40" />
             </div>
             
@@ -734,7 +734,7 @@
       leave-to-class="opacity-0 scale-95"
   >
     <div v-if="showUserDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="closeUserDetailModal">
-      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-3xl rounded-[2.5rem] overflow-hidden shadow-2xl" @click.stop>
+      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl" @click.stop>
         <div class="p-8">
           <div class="flex items-center justify-between mb-8">
             <div>
@@ -998,7 +998,7 @@ import {
   AtSign,
   Briefcase
 } from 'lucide-vue-next'
-import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 

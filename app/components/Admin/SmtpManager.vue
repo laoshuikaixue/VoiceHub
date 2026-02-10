@@ -182,7 +182,7 @@
 import { onMounted, ref } from 'vue'
 import { useToast } from '~/composables/useToast'
 import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
-import CustomSelect from '~/components/Admin/Common/CustomSelect.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import {
   Server,
   Mail,
