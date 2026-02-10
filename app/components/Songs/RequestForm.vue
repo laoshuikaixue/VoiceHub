@@ -3941,7 +3941,6 @@ defineExpose({
   .search-results-container {
     flex: 1;
     height: auto;
-    max-height: 85vh;
     padding: 0.75rem;
     overflow: visible;
     display: flex;
@@ -3956,7 +3955,6 @@ defineExpose({
   .results-content {
     height: auto;
     min-height: 400px; /* 防止加载时高度塌陷 */
-    max-height: 80vh;
     overflow: visible;
     flex: 1;
   }
@@ -4257,14 +4255,12 @@ defineExpose({
   .results-list {
     flex: 1;
     height: auto;
-    max-height: 75vh;
     overflow: visible;
   }
 
   .results-grid {
-    max-height: 75vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    height: auto;
+    overflow: visible;
     padding-bottom: 8rem;
     padding-right: 0;
   }
