@@ -87,8 +87,8 @@ export default defineEventHandler(async (event) => {
         console.error('测试SMTP连接失败:', error)
         return {
             success: false,
-            message: error instanceof Error ? error.message : '测试连接失败'
+            message: '测试连接失败',
+            detail: error instanceof Error ? error.message : String(error)
         }
     }
 })
-

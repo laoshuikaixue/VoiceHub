@@ -1,7 +1,5 @@
 <template>
   <div class="song-list">
-    <!-- 移除顶部径向渐变 -->
-
     <div class="song-list-header">
       <!-- 移动端搜索栏 -->
       <div class="mobile-search-container mobile-only">
@@ -244,8 +242,6 @@
                   </button>
                 </div>
               </div>
-
-              <!-- 移除原来位置的已排期标签 -->
             </div>
 
             <!-- 投稿时间和撤销按钮 -->
@@ -1929,12 +1925,6 @@ const vRipple = {
   align-items: center; /* 垂直居中 */
   gap: 15px; /* 元素之间的间隔 */
   box-sizing: border-box; /* 确保内边距不会增加元素的总宽度 */
-}
-
-/* 移除左侧状态条 */
-
-.song-card.played {
-  /* opacity: 0.6;  移除透明度设置，防止影响按钮颜色 */
 }
 
 /* 已播放歌曲的封面和文字可以保持半透明，以示区别 */

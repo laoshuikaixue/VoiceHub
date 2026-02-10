@@ -705,7 +705,6 @@ const cancelForm = () => {
 </script>
 
 <style scoped>
-/* 移除旧样式，全部使用 Tailwind CSS */
 ::-webkit-scrollbar {
   width: 6px;
 }

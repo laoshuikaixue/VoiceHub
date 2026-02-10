@@ -155,5 +155,4 @@ const confirmBtnClasses = computed(() => {
 </script>
 
 <style scoped>
-/* 移除旧的 scoped styles */
 </style>

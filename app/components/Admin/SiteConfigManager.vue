@@ -411,7 +411,6 @@ onMounted(loadConfig)
 </script>
 
 <style scoped>
-/* 移除旧的样式，全部使用 Tailwind */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;

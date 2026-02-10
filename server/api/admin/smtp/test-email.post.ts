@@ -98,8 +98,8 @@ export default defineEventHandler(async (event) => {
         console.error('发送测试邮件失败:', error)
         return {
             success: false,
-            message: error instanceof Error ? error.message : '发送测试邮件失败'
+            message: '发送测试邮件失败',
+            detail: error instanceof Error ? error.message : String(error)
         }
     }
 })
-

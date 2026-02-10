@@ -1,6 +1,6 @@
 <template>
   <div class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] overflow-hidden">
-    <!-- Header -->
+    <!-- 头部 -->
     <div class="flex items-center justify-between p-6 border-b border-zinc-800 bg-zinc-900/20">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center border border-blue-500/20">
@@ -32,7 +32,7 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[650px]">
-      <!-- Left: Template List -->
+      <!-- 左侧：模板列表 -->
       <div class="lg:col-span-3 border-r border-zinc-800 bg-zinc-900/10 flex flex-col">
         <div class="p-4 border-b border-zinc-800/50">
           <div class="relative">
@@ -75,11 +75,11 @@
         </div>
       </div>
 
-      <!-- Right: Editor Area -->
+      <!-- 右侧：编辑器区域 -->
       <div class="lg:col-span-9 flex flex-col bg-zinc-950/20 overflow-hidden">
         <div v-if="selected" class="flex-1 overflow-y-auto custom-scrollbar p-8">
           <div class="max-w-4xl mx-auto space-y-8">
-            <!-- Basic Info & Subject -->
+            <!-- 基础信息与主题 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">模板名称</label>
@@ -103,7 +103,7 @@
               </div>
             </div>
 
-            <!-- Variables Hint -->
+            <!-- 变量提示 -->
             <div class="bg-blue-600/5 border border-blue-500/10 rounded-2xl p-4 flex gap-4">
               <div class="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
                 <Info :size="16" class="text-blue-500" />
@@ -121,7 +121,7 @@
               </div>
             </div>
 
-            <!-- Content Editor -->
+            <!-- 内容编辑器 -->
             <div class="space-y-3">
               <div class="flex items-center justify-between px-1">
                 <div class="flex items-center gap-2">
@@ -149,7 +149,7 @@
               </div>
             </div>
 
-            <!-- Preview Frame -->
+            <!-- 预览框 -->
             <Transition
                 enter-active-class="transition duration-300 ease-out"
                 enter-from-class="transform translate-y-4 opacity-0"
@@ -170,7 +170,7 @@
           </div>
         </div>
 
-        <!-- Empty State -->
+        <!-- 空状态 -->
         <div v-else class="flex-1 flex flex-col items-center justify-center text-zinc-700 space-y-4">
           <div class="w-16 h-16 rounded-3xl bg-zinc-900/50 flex items-center justify-center border border-zinc-800/50">
             <Mail :size="32" class="text-zinc-800" />

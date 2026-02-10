@@ -784,7 +784,6 @@ const saveSettings = async () => {
 </script>
 
 <style scoped>
-/* 移除旧的样式，全部使用 Tailwind */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;

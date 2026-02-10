@@ -155,5 +155,4 @@ const trendColor = computed(() => {
 </script>
 
 <style scoped>
-/* 移除所有冗余 CSS */
 </style>

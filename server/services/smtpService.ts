@@ -12,7 +12,7 @@ export class SmtpService {
     private static instance: SmtpService
     public transporter: nodemailer.Transporter | null = null
     public smtpConfig: any = null
-    // 基础邮件模板结构
+    /** 基础邮件模板结构 */
     private baseTemplate = `
     <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
       <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -45,7 +45,7 @@ export class SmtpService {
     </div>
   `
 
-    // 内容块模板
+    /** 内容块模板 */
     private contentBlocks: Record<string, string> = {
         'verification': `
       <p>您好，{{name}}！</p>
@@ -84,7 +84,7 @@ export class SmtpService {
     `
     }
 
-    // 模板配置
+    /** 模板配置 */
     private builtinTemplates: Record<string, {
         name: string;
         subject: string;
@@ -242,7 +242,7 @@ export class SmtpService {
     async sendMail(to: string, subject: string, htmlContent: string, textContent?: string, ipAddress?: string): Promise<boolean> {
         // 确保配置已初始化
         if (!(await this.ensureInitialized())) {
-            return false
+            throw new Error('SMTP配置未初始化或无效')
         }
 
         try {
@@ -268,12 +268,12 @@ export class SmtpService {
                 text: textContent || finalHtml.replace(/<[^>]*>/g, '') // 简单的HTML转文本
             }
 
-            const result = await this.transporter.sendMail(mailOptions)
+            const result = await this.transporter!.sendMail(mailOptions)
             console.log(`邮件发送成功: ${result.messageId}`)
             return true
         } catch (error) {
             console.error('发送邮件失败:', error)
-            return false
+            throw error
         }
     }
 
@@ -324,34 +324,47 @@ export class SmtpService {
      * 渲染并发送模板
      */
     async renderAndSend(to: string, key: string, data: Record<string, any>, ipAddress?: string): Promise<boolean> {
-        // 确保配置已初始化
-        if (!(await this.ensureInitialized())) {
+        try {
+            // 确保配置已初始化
+            if (!(await this.ensureInitialized())) {
+                return false
+            }
+
+            // 格式化IP地址用于模板渲染（统一处理）
+            const formattedIP = ipAddress ? formatIPForEmail(ipAddress) : undefined
+            const templateData = {...data, ipAddress: formattedIP}
+
+            const {subject, html} = await this.renderTemplate(key, templateData)
+            if (!subject || !html) {
+                // 若模板缺失，退回到简单包装（传入已格式化的IP）
+                const mergedData = await this.prepareTemplateData(templateData)
+                const fallbackHtml = this.generateEmailTemplate(data.title || '通知', data.message || '', data.actionUrl, formattedIP)
+                const fallbackSubject = `${data.title || '通知'} | ${mergedData.siteTitle}通知推送`
+                return await this.sendMail(to, fallbackSubject, fallbackHtml, undefined, ipAddress)
+            }
+            return await this.sendMail(to, subject, html, undefined, ipAddress)
+        } catch (error) {
+            console.error('渲染并发送邮件失败:', error)
             return false
         }
-
-        // 格式化IP地址用于模板渲染（统一处理）
-        const formattedIP = ipAddress ? formatIPForEmail(ipAddress) : undefined
-        const templateData = {...data, ipAddress: formattedIP}
-
-        const {subject, html} = await this.renderTemplate(key, templateData)
-        if (!subject || !html) {
-            // 若模板缺失，退回到简单包装（传入已格式化的IP）
-            const mergedData = await this.prepareTemplateData(templateData)
-            const fallbackHtml = this.generateEmailTemplate(data.title || '通知', data.message || '', data.actionUrl, formattedIP)
-            const fallbackSubject = `${data.title || '通知'} | ${mergedData.siteTitle}通知推送`
-            return this.sendMail(to, fallbackSubject, fallbackHtml, undefined, ipAddress)
-        }
-        return this.sendMail(to, subject, html, undefined, ipAddress)
     }
 
     /**
      * 测试SMTP连接
      */
-    async testConnection(): Promise<{ success: boolean; message: string }> {
+    async testConnection(): Promise<{ success: boolean; message: string; detail?: string }> {
         if (!this.transporter) {
-            const initialized = await this.initializeSmtpConfig()
-            if (!initialized) {
-                return {success: false, message: 'SMTP配置无效或未启用'}
+            try {
+                const initialized = await this.initializeSmtpConfig()
+                if (!initialized) {
+                    return {success: false, message: 'SMTP配置无效或未启用'}
+                }
+            } catch (error) {
+                return {
+                    success: false, 
+                    message: '初始化SMTP配置失败',
+                    detail: error instanceof Error ? error.message : '未知错误'
+                }
             }
         }
 
@@ -359,28 +372,40 @@ export class SmtpService {
             await this.transporter!.verify()
             return {success: true, message: 'SMTP连接测试成功'}
         } catch (error) {
-            return {success: false, message: `SMTP连接测试失败: ${error instanceof Error ? error.message : '未知错误'}`}
+            return {
+                success: false, 
+                message: 'SMTP连接测试失败',
+                detail: error instanceof Error ? error.message : '未知错误'
+            }
         }
     }
 
     /**
      * 发送测试邮件
      */
-    async sendTestEmail(to: string, ipAddress?: string): Promise<{ success: boolean; message: string }> {
-        const formattedIP = ipAddress ? formatIPForEmail(ipAddress) : undefined
-        const templateData = await this.prepareTemplateData({ipAddress: formattedIP})
-        const subject = `测试邮件 | ${templateData.siteTitle}通知推送`
-        const htmlContent = this.generateEmailTemplate(
-            '测试邮件',
-            '这是一封来自校园广播站系统的测试邮件。<br>如果您收到这封邮件，说明SMTP配置已经正确设置。',
-            undefined,
-            formattedIP
-        )
+    async sendTestEmail(to: string, ipAddress?: string): Promise<{ success: boolean; message: string; detail?: string }> {
+        try {
+            const formattedIP = ipAddress ? formatIPForEmail(ipAddress) : undefined
+            const templateData = await this.prepareTemplateData({ipAddress: formattedIP})
+            const subject = `测试邮件 | ${templateData.siteTitle}通知推送`
+            const htmlContent = this.generateEmailTemplate(
+                '测试邮件',
+                '这是一封来自校园广播站系统的测试邮件。<br>如果您收到这封邮件，说明SMTP配置已经正确设置。',
+                undefined,
+                formattedIP
+            )
 
-        const success = await this.sendMail(to, subject, htmlContent, undefined, ipAddress)
-        return {
-            success,
-            message: success ? '测试邮件发送成功' : '测试邮件发送失败'
+            const success = await this.sendMail(to, subject, htmlContent, undefined, ipAddress)
+            return {
+                success,
+                message: success ? '测试邮件发送成功' : '测试邮件发送失败'
+            }
+        } catch (error) {
+            return {
+                success: false,
+                message: '测试邮件发送失败',
+                detail: error instanceof Error ? error.message : '未知错误'
+            }
         }
     }
 
@@ -575,4 +600,3 @@ export async function sendBatchEmailNotifications(
 
     return {success, failed}
 }
-

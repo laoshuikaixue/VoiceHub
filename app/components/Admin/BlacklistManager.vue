@@ -486,7 +486,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 使用 Tailwind CSS，这里只需要少量自定义动画或覆盖 */
 .animate-in {
   animation-duration: 0.5s;
   animation-fill-mode: both;
