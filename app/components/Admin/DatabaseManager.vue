@@ -363,7 +363,7 @@ const backupOptions = [
 // 表单数据
 const createForm = ref({
   includeSongs: true,
-  includeUsers: false,
+  includeUsers: true,
   includeSystemData: true
 })
 
