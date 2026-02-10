@@ -1,7 +1,6 @@
 <template>
   <div class="home">
     <div class="ellipse-effect"></div>
-
     <div class="main-content">
       <div class="top-bar">
         <div class="logo-section">
@@ -2707,7 +2706,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     filter: grayscale(1);
   }
 
-  /* 内容容器 - 优化间距 */
+  /* 内容容器 */
   .tab-content-container {
     background: transparent;
     border: none;

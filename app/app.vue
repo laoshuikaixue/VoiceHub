@@ -179,7 +179,6 @@ const handleLogout = () => {
 </script>
 
 <style>
-/* 全局样式由assets/css/main.css提供 */
 
 /* 应用布局 */
 .app {
@@ -189,7 +188,7 @@ const handleLogout = () => {
   position: relative;
 }
 
-/* 主要内容 - 确保渐变能透过去 */
+/* 主要内容 */
 .main-content {
   flex: 1;
   padding: 0;

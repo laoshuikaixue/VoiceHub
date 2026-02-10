@@ -269,6 +269,27 @@ export function useSemesters() {
         }
     }
 
+    // 获取所有学期选项
+    const fetchSemesterOptions = async () => {
+        loading.value = true
+        error.value = ''
+        try {
+            const response = await fetch('/api/semesters/options')
+            if (!response.ok) {
+                throw new Error('获取学期选项失败')
+            }
+            const data = await response.json()
+            if (data.success) {
+                semesters.value = data.data
+            }
+        } catch (err: any) {
+            console.error('获取学期选项失败:', err)
+            error.value = err.message || '获取学期选项失败'
+        } finally {
+            loading.value = false
+        }
+    }
+
     return {
         semesters: readonly(semesters),
         currentSemester: readonly(currentSemester),
@@ -277,6 +298,7 @@ export function useSemesters() {
         semesterUpdateEvent: readonly(semesterUpdateEvent),
         fetchSemesters,
         fetchCurrentSemester,
+        fetchSemesterOptions,
         createSemester,
         setActiveSemester,
         deleteSemester,

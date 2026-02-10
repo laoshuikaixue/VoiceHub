@@ -61,7 +61,7 @@
                 {{ loading || searching ? '处理中...' : '搜索' }}
               </button>
             </div>
-            <button class="import-semester-btn" type="button" @click="showImportSongsModal = true" title="从往期导入">
+            <button v-if="showImportSemesterBtn" class="import-semester-btn" type="button" @click="showImportSongsModal = true" title="从往期导入">
               <Icon :size="16" name="history" />
               <span class="btn-text">从往期导入</span>
             </button>
@@ -719,7 +719,10 @@ const user = computed(() => auth.user.value)
 const isSuperAdmin = computed(() => user.value?.role === 'SUPER_ADMIN')
 
 // 学期管理
-const {fetchCurrentSemester, currentSemester} = useSemesters()
+const {fetchCurrentSemester, currentSemester, fetchSemesterOptions, semesters} = useSemesters()
+
+// 是否显示“从往期导入”按钮：只有在有多个学期的情况下才显示
+const showImportSemesterBtn = computed(() => semesters.value && semesters.value.length > 1)
 
 const title = ref('')
 const artist = ref('')
@@ -993,8 +996,11 @@ onMounted(async () => {
   fetchPlayTimes()
   initSiteConfig()
   fetchSubmissionStatus()
-  // 获取当前学期
-  await fetchCurrentSemester()
+  // 获取当前学期和所有学期选项
+  await Promise.all([
+    fetchCurrentSemester(),
+    fetchSemesterOptions()
+  ])
   // 只有在用户已登录时才加载歌曲列表以便检查相似歌曲
   if (auth.isAuthenticated.value) {
     try {
@@ -2937,6 +2943,7 @@ defineExpose({
   justify-content: center;
   flex: 1;
   gap: 1rem;
+  min-height: 200px; /* 添加最小高度 */
 }
 
 .loading-spinner {
@@ -3012,7 +3019,7 @@ defineExpose({
   text-align: center;
   gap: 0.75rem;
   padding: 1.5rem;
-  min-height: 150px; /* 进一步缩小最小高度以适应小屏幕 */
+  min-height: 200px; /* 增加最小高度 */
 }
 
 .empty-icon,
@@ -3914,7 +3921,7 @@ defineExpose({
 
   .form-container {
     width: 100%;
-    flex: 1;
+    flex: none; /* 改为不占用flex空间，让内容自然撑开 */
     display: flex;
     flex-direction: column;
     height: auto;
@@ -3923,7 +3930,7 @@ defineExpose({
   }
 
   .song-request-form {
-    flex: 1;
+    flex: none; /* 改为不占用flex空间，让内容自然撑开 */
     display: flex;
     flex-direction: column;
     height: auto;
@@ -3939,8 +3946,9 @@ defineExpose({
   }
 
   .search-results-container {
-    flex: 1;
+    flex: none; /* 改为不占用flex空间，让内容自然撑开 */
     height: auto;
+    max-height: none; /* 移除最大高度限制 */
     padding: 0.75rem;
     overflow: visible;
     display: flex;
@@ -3950,13 +3958,16 @@ defineExpose({
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px;
+    /* 允许容器内容触发页面滚动 */
+    touch-action: pan-y;
   }
 
   .results-content {
     height: auto;
-    min-height: 400px; /* 防止加载时高度塌陷 */
+    min-height: 200px; /* 减小最小高度 */
+    max-height: none; /* 移除最大高度限制 */
     overflow: visible;
-    flex: 1;
+    flex: none; /* 改为不占用flex空间 */
   }
 
   /* 移动端搜索区域 */
@@ -4253,16 +4264,29 @@ defineExpose({
 
   /* 移动端搜索结果列表 */
   .results-list {
-    flex: 1;
+    flex: none; /* 改为不占用flex空间 */
     height: auto;
+    max-height: none; /* 移除最大高度限制 */
     overflow: visible;
   }
 
   .results-grid {
-    height: auto;
-    overflow: visible;
-    padding-bottom: 8rem;
+    max-height: 60vh; /* 保持合理的最大高度，防止结果过长 */
+    overflow-y: auto; /* 当结果超过最大高度时允许滚动 */
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2rem; /* 减小底部内边距 */
     padding-right: 0;
+    /* 优化触摸滚动体验 */
+    overscroll-behavior: contain; /* 防止滚动穿透 */
+  }
+  
+  /* 当没有搜索结果时，移除滚动容器的高度限制 */
+  .initial-state,
+  .empty-state,
+  .loading-state {
+    min-height: 300px;
+    max-height: none;
+    overflow: visible;
   }
 
   /* 移动端期望排期选择 */
