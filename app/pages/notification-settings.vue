@@ -1,304 +1,349 @@
 <template>
-  <div class="notification-settings-page">
+  <div class="min-h-screen bg-zinc-950 text-zinc-200 pb-24">
     <!-- 顶部导航栏 -->
-    <div class="top-nav">
-      <button class="back-button" @click="goBack">
-        <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-             stroke-width="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
-          <path d="m12 19-7-7 7-7"/>
-          <path d="M19 12H5"/>
-        </svg>
-        返回主页
-      </button>
-      <h1 class="page-title">消息设置</h1>
+    <div class="sticky top-0 z-30 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-900/50 px-4 py-4 mb-8">
+      <div class="max-w-[1000px] mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <button 
+            @click="goBack"
+            class="p-2 hover:bg-zinc-900 rounded-xl transition-all text-zinc-400 hover:text-zinc-100"
+          >
+            <ArrowLeft :size="20" />
+          </button>
+          <div>
+            <h1 class="text-xl font-black text-zinc-100 tracking-tight">消息设置</h1>
+            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-widest mt-0.5">Notification Settings</p>
+          </div>
+        </div>
+        
+        <button
+          @click="saveSettings"
+          :disabled="loading || saving"
+          class="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
+        >
+          <template v-if="saving">
+            <Loader2 :size="14" class="animate-spin" /> 保存中...
+          </template>
+          <template v-else>
+            <Save :size="14" /> 保存设置
+          </template>
+        </button>
+      </div>
     </div>
 
-
-    <div class="main-container">
-      <div v-if="loading" class="loading-container">
-        <div class="loading-spinner"></div>
-        <span>加载中...</span>
+    <div class="max-w-[1000px] mx-auto px-4">
+      <div v-if="loading" class="flex flex-col items-center justify-center py-32">
+        <Loader2 :size="32" class="text-blue-500 animate-spin mb-4" />
+        <p class="text-zinc-500 text-sm font-medium">加载设置中...</p>
       </div>
 
-      <div v-else class="settings-content">
+      <div v-else class="space-y-8">
         <!-- 站内通知设置 -->
-        <section class="settings-section">
-          <div class="section-header">
-            <h2>站内消息设置</h2>
-            <p>配置您希望接收的消息类型</p>
+        <section :class="sectionClass">
+          <div class="flex items-center gap-3 border-b border-zinc-800/50 pb-5 mb-6">
+            <div class="p-2.5 bg-blue-500/10 rounded-xl">
+              <Bell :size="20" class="text-blue-500" />
+            </div>
+            <div>
+              <h2 class="text-base font-black text-zinc-100">站内消息设置</h2>
+              <p class="text-xs text-zinc-500 mt-0.5">配置您希望在系统内接收的消息类型</p>
+            </div>
           </div>
 
-          <div class="settings-grid">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- 歌曲被选中消息 -->
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>歌曲被选中消息</h3>
-                <p>当您投稿的歌曲被选中播放时通知您</p>
+            <div :class="itemClass">
+              <div class="flex-1">
+                <h3 class="text-sm font-bold text-zinc-200">歌曲被选中消息</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">当您投稿的歌曲被选中播放时通知您</p>
               </div>
-              <div class="setting-control">
-                <label class="toggle-switch">
-                  <input
-                      v-model="localSettings.songSelectedNotify"
-                      type="checkbox"
-                  >
-                  <span class="switch"></span>
-                </label>
+              <div class="shrink-0">
+                <input
+                  v-model="localSettings.songSelectedNotify"
+                  type="checkbox"
+                  class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                >
               </div>
             </div>
 
             <!-- 歌曲已播放消息 -->
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>歌曲已播放消息</h3>
-                <p>当您投稿的歌曲播放完成时通知您</p>
+            <div :class="itemClass">
+              <div class="flex-1">
+                <h3 class="text-sm font-bold text-zinc-200">歌曲已播放消息</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">当您投稿的歌曲播放完成时通知您</p>
               </div>
-              <div class="setting-control">
-                <label class="toggle-switch">
-                  <input
-                      v-model="localSettings.songPlayedNotify"
-                      type="checkbox"
-                  >
-                  <span class="switch"></span>
-                </label>
+              <div class="shrink-0">
+                <input
+                  v-model="localSettings.songPlayedNotify"
+                  type="checkbox"
+                  class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                >
               </div>
             </div>
 
             <!-- 歌曲获得投票消息 -->
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>歌曲获得投票消息</h3>
-                <p>当您投稿的歌曲获得投票时通知您</p>
+            <div :class="itemClass">
+              <div class="flex-1">
+                <h3 class="text-sm font-bold text-zinc-200">歌曲获得投票消息</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">当您投稿的歌曲获得投票时通知您</p>
               </div>
-              <div class="setting-control">
-                <label class="toggle-switch">
-                  <input
-                      v-model="localSettings.songVotedNotify"
-                      type="checkbox"
-                  >
-                  <span class="switch"></span>
-                </label>
-              </div>
-            </div>
-
-            <!-- 投票阈值设置 -->
-            <div class="setting-card">
-              <div class="setting-info">
-                <h3>投票通知阈值</h3>
-                <p>当投票数达到此阈值时才发送通知</p>
-              </div>
-              <div class="setting-control">
-                <div class="threshold-input">
-                  <input
-                      v-model.number="localSettings.songVotedThreshold"
-                      class="number-input"
-                      max="100"
-                      min="1"
-                      type="number"
-                  >
-                  <span class="unit">票</span>
-                </div>
+              <div class="shrink-0">
+                <input
+                  v-model="localSettings.songVotedNotify"
+                  type="checkbox"
+                  class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                >
               </div>
             </div>
 
             <!-- 系统通知 -->
-            <div class="setting-card">
-              <div class="setting-info">
-                <h3>系统通知</h3>
-                <p>接收系统重要通知和公告</p>
+            <div :class="itemClass">
+              <div class="flex-1">
+                <h3 class="text-sm font-bold text-zinc-200">系统通知</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">接收系统重要通知和公告</p>
               </div>
-              <div class="setting-control">
-                <label class="toggle-switch">
-                  <input
-                      v-model="localSettings.systemNotify"
-                      type="checkbox"
-                  >
-                  <span class="switch"></span>
-                </label>
+              <div class="shrink-0">
+                <input
+                  v-model="localSettings.systemNotify"
+                  type="checkbox"
+                  class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                >
               </div>
             </div>
 
-            <!-- 邮件通知总开关移除：绑定且已验证邮箱即启用邮件通知 -->
-
-            <!-- 邮件通知细分设置移除：邮件沿用上面的通知类型设置 -->
+            <!-- 投票阈值设置 -->
+            <div :class="[itemClass, 'md:col-span-1']">
+              <div class="flex-1">
+                <h3 class="text-sm font-bold text-zinc-200">投票通知阈值</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">当投票数达到此阈值时才发送通知</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model.number="localSettings.songVotedThreshold"
+                  type="number"
+                  max="100"
+                  min="1"
+                  class="w-16 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:border-blue-500/30"
+                >
+                <span class="text-[10px] font-black text-zinc-600 uppercase">票</span>
+              </div>
+            </div>
 
             <!-- 通知刷新间隔 -->
-            <div class="setting-card">
-              <div class="setting-info">
-                <h3>通知刷新间隔</h3>
-                <p>设置通知检查的时间间隔</p>
+            <div :class="[itemClass, 'md:col-span-1']">
+              <div class="flex-1">
+                <h3 class="text-sm font-bold text-zinc-200">通知刷新间隔</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">设置系统自动检查新通知的时间间隔</p>
               </div>
-              <div class="setting-control">
-                <div class="interval-input">
-                  <input
-                      v-model.number="localSettings.refreshInterval"
-                      class="range-input"
-                      max="300"
-                      min="30"
-                      step="30"
-                      type="range"
-                  >
-                  <span class="interval-display">{{ localSettings.refreshInterval }}秒</span>
-                </div>
+              <div class="flex items-center gap-3">
+                <input
+                  v-model.number="localSettings.refreshInterval"
+                  type="range"
+                  max="300"
+                  min="30"
+                  step="30"
+                  class="w-24 h-1.5 bg-zinc-800 rounded-full appearance-none accent-blue-600 cursor-pointer"
+                >
+                <span class="text-[11px] font-bold text-blue-500 min-w-[40px] text-right">{{ localSettings.refreshInterval }}s</span>
               </div>
             </div>
           </div>
         </section>
 
         <!-- 社交账号绑定 -->
-        <section class="settings-section">
-          <div class="section-header">
-            <h2>社交账号</h2>
-            <p>绑定您的社交账号以接收推送通知</p>
+        <section :class="sectionClass">
+          <div class="flex items-center gap-3 border-b border-zinc-800/50 pb-5 mb-6">
+            <div class="p-2.5 bg-purple-500/10 rounded-xl">
+              <Link :size="20" class="text-purple-500" />
+            </div>
+            <div>
+              <h2 class="text-base font-black text-zinc-100">社交账号绑定</h2>
+              <p class="text-xs text-zinc-500 mt-0.5">绑定您的社交账号以接收实时推送通知</p>
+            </div>
           </div>
 
-          <div class="settings-grid">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- 邮箱绑定 -->
-            <div class="setting-card email-card">
-              <div class="setting-info">
-                <h3>邮箱消息</h3>
-                <p v-if="!userEmail">绑定邮箱以接收邮件消息</p>
-                <p v-else-if="!emailVerified" class="pending-info">邮箱：<span class="email-address">{{
-                    userEmail
-                  }}</span> <span class="status pending">待验证</span></p>
-                <p v-else class="bound-info">已绑定邮箱：<span class="email-address">{{ userEmail }}</span> <span
-                    class="status verified">已验证</span></p>
-              </div>
-              <div class="setting-control">
-                <!-- 未绑定状态 -->
-                <div v-if="!userEmail" class="email-bind-section">
-                  <div class="bind-step">
-                    <input
-                        v-model="newEmail"
-                        :disabled="bindingEmail"
-                        class="email-input"
-                        placeholder="请输入邮箱地址"
-                        type="email"
-                    >
-                    <button
-                        :disabled="!newEmail || bindingEmail"
-                        class="btn btn-primary"
-                        @click="bindEmail"
-                    >
-                      {{ bindingEmail ? '绑定中...' : '绑定邮箱' }}
-                    </button>
-                  </div>
+            <div v-if="smtpEnabled" :class="cardClass">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 bg-zinc-950 rounded-lg border border-zinc-800">
+                  <Mail :size="16" class="text-zinc-400" />
                 </div>
-
-                <!-- 待验证状态：验证码方式 -->
-                <div v-else-if="!emailVerified" class="email-verify-section">
-                  <div class="verify-info">
-                    <p>验证码已发送到您的邮箱：<span class="email-address">{{ userEmail }}</span></p>
-                    <p>请在5分钟内输入6位验证码完成验证：</p>
-                  </div>
-                  <div class="verify-input-group">
-                    <input
-                        v-model="emailCode"
-                        :class="{ 'complete': emailCode.length === 6, 'error': emailCodeError }"
-                        :disabled="bindingEmail"
-                        autocomplete="off"
-                        class="verify-input"
-                        inputmode="numeric"
-                        maxlength="6"
-                        pattern="[0-9]*"
-                        placeholder="输入6位验证码"
-                        type="text"
-                        @input="handleEmailCodeInput"
-                        @keydown="handleEmailCodeKeydown"
-                    >
-                    <div class="verify-actions">
-                      <button :disabled="bindingEmail || emailCode.length !== 6" class="btn btn-primary"
-                              @click="verifyEmailCode">
-                        {{ bindingEmail ? '验证中...' : '确认验证' }}
-                      </button>
-                      <button :disabled="resendingEmail" class="btn btn-secondary" @click="resendVerificationEmail">
-                        {{ resendingEmail ? '发送中...' : '重新发送验证码' }}
-                      </button>
-                      <button class="btn btn-outline" @click="changeEmail">
-                        更换邮箱
-                      </button>
+                <h3 class="text-sm font-bold text-zinc-200">邮箱消息通知</h3>
+              </div>
+              
+              <div class="space-y-4">
+                <div v-if="userEmail" class="p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">当前绑定邮箱</p>
+                      <p class="text-sm font-medium text-zinc-200">{{ userEmail }}</p>
+                    </div>
+                    <div :class="['px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider', emailVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500']">
+                      {{ emailVerified ? '已验证' : '待验证' }}
                     </div>
                   </div>
                 </div>
 
-                <!-- 已验证状态 -->
-                <div v-else class="email-bound-section">
-                  <div class="bound-actions">
-                    <button
-                        class="btn btn-outline"
-                        @click="changeEmail"
+                <!-- 未绑定状态 -->
+                <div v-if="!userEmail" class="space-y-3">
+                  <p class="text-xs text-zinc-500">绑定邮箱后，您可以接收到实时的邮件通知提醒。</p>
+                  <div class="flex flex-col sm:flex-row gap-2">
+                    <input
+                      v-model="newEmail"
+                      :disabled="bindingEmail"
+                      type="email"
+                      placeholder="请输入邮箱地址"
+                      class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500/30 w-full sm:w-auto"
                     >
-                      更换邮箱
-                    </button>
                     <button
-                        :disabled="unbindingEmail"
-                        class="btn btn-danger"
-                        @click="unbindEmail"
+                      @click="bindEmail"
+                      :disabled="!newEmail || bindingEmail"
+                      class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition-all disabled:opacity-50 whitespace-nowrap"
                     >
-                      {{ unbindingEmail ? '解绑中...' : '解绑邮箱' }}
+                      {{ bindingEmail ? '请稍候...' : '立即绑定' }}
                     </button>
                   </div>
+                </div>
+
+                <!-- 待验证状态 -->
+                <div v-else-if="!emailVerified" class="space-y-4 pt-2">
+                  <div class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3">
+                    <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
+                    <p class="text-[11px] text-zinc-500 leading-relaxed">
+                      验证码已发送至您的邮箱，请在 5 分钟内完成验证。若未收到邮件，请检查垃圾箱。
+                    </p>
+                  </div>
+                  
+                  <div class="space-y-3">
+                    <input
+                      v-model="emailCode"
+                      type="text"
+                      maxlength="6"
+                      placeholder="输入 6 位数字验证码"
+                      :class="['w-full bg-zinc-950 border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all', emailCodeError ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-zinc-800 focus:border-blue-500/30']"
+                      @input="handleEmailCodeInput"
+                      @keydown="handleEmailCodeKeydown"
+                    >
+                    <div class="grid grid-cols-2 gap-2">
+                      <button
+                        @click="verifyEmailCode"
+                        :disabled="bindingEmail || emailCode.length !== 6"
+                        class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
+                      >
+                        {{ bindingEmail ? '验证中...' : '确认验证' }}
+                      </button>
+                      <button
+                        @click="resendVerificationEmail"
+                        :disabled="resendingEmail"
+                        class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                      >
+                        {{ resendingEmail ? '发送中...' : '重新发送' }}
+                      </button>
+                    </div>
+                    <button @click="changeEmail" class="w-full py-2 text-zinc-600 hover:text-zinc-400 text-[10px] font-black uppercase tracking-widest transition-all">
+                      更换邮箱地址
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 已验证状态 -->
+                <div v-else class="flex gap-2 pt-2">
+                  <button
+                    @click="changeEmail"
+                    class="flex-1 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
+                  >
+                    更换邮箱
+                  </button>
+                  <button
+                    @click="unbindEmail"
+                    :disabled="unbindingEmail"
+                    class="flex-1 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all"
+                  >
+                    {{ unbindingEmail ? '正在解绑...' : '解绑邮箱' }}
+                  </button>
                 </div>
               </div>
             </div>
 
             <!-- MeoW 账号绑定 -->
-            <div class="setting-card meow-card">
-              <div class="setting-info">
-                <h3>MeoW 账号</h3>
-                <p v-if="!localSettings.meowUserId">绑定 MeoW 账号以接收推送通知</p>
-                <p v-else class="bound-info">已绑定账号：<span class="user-id">{{ localSettings.meowUserId }}</span></p>
+            <div :class="[cardClass, 'border-blue-500/20 bg-blue-500/[0.02]']">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                    <Smartphone :size="16" class="text-blue-500" />
+                  </div>
+                  <h3 class="text-sm font-bold text-zinc-200">MeoW App 推送</h3>
+                </div>
               </div>
-              <div class="setting-control">
+
+              <div class="space-y-4">
+                <div v-if="localSettings.meowUserId" class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-[10px] text-blue-500/60 font-black uppercase tracking-widest mb-1">当前绑定 ID</p>
+                      <p class="text-sm font-black text-blue-500 tracking-tight">{{ localSettings.meowUserId }}</p>
+                    </div>
+                    <div class="px-2 py-0.5 bg-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider">
+                      已连接
+                    </div>
+                  </div>
+                </div>
+
                 <!-- 未绑定状态 -->
-                <div v-if="!localSettings.meowUserId" class="meow-bind-section">
+                <div v-if="!localSettings.meowUserId" class="space-y-3">
+                  <p class="text-xs text-zinc-500">通过 MeoW 客户端接收更及时的系统通知和歌曲状态变更提醒。</p>
+                  
                   <!-- 第一步：输入用户ID -->
-                  <div v-if="!verificationSent" class="bind-step">
+                  <div v-if="!verificationSent" class="flex flex-col sm:flex-row gap-2">
                     <input
-                        v-model="meowUserId"
-                        :disabled="binding"
-                        class="meow-input"
-                        placeholder="请输入 MeoW 用户 ID"
-                        type="text"
+                      v-model="meowUserId"
+                      :disabled="binding"
+                      type="text"
+                      placeholder="请输入 MeoW 用户 ID"
+                      class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500/30 w-full sm:w-auto"
                     >
                     <button
-                        :disabled="!meowUserId || binding"
-                        class="btn btn-primary"
-                        @click="sendVerificationCode"
+                      @click="sendVerificationCode"
+                      :disabled="!meowUserId || binding"
+                      class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-blue-900/20 whitespace-nowrap"
                     >
                       {{ binding ? '发送中...' : '发送验证码' }}
                     </button>
                   </div>
 
                   <!-- 第二步：输入验证码 -->
-                  <div v-else class="verify-step">
-                    <div class="verify-info">
-                      <p>验证码已发送到 MeoW ID: <strong>{{ meowUserId }}</strong></p>
-                      <p>请在 MeoW 中查收验证码并输入：</p>
+                  <div v-else class="space-y-4">
+                    <div class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3">
+                      <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
+                      <p class="text-[11px] text-zinc-500 leading-relaxed">
+                        验证码已发送至 MeoW ID: <span class="font-bold text-zinc-200">{{ meowUserId }}</span>，请在客户端查收。
+                      </p>
                     </div>
-                    <div class="verify-input-group">
+                    
+                    <div class="space-y-3">
                       <input
-                          v-model="verificationCode"
-                          :class="{
-                          'complete': verificationCode.length === 6,
-                          'error': verificationCodeError
-                        }"
-                          :disabled="binding"
-                          autocomplete="off"
-                          class="verify-input"
-                          inputmode="numeric"
-                          maxlength="6"
-                          pattern="[0-9]*"
-                          placeholder="输入6位验证码"
-                          type="text"
-                          @input="handleVerificationCodeInput"
-                          @keydown="handleVerificationCodeKeydown"
+                        v-model="verificationCode"
+                        type="text"
+                        maxlength="6"
+                        placeholder="输入 6 位验证码"
+                        :class="['w-full bg-zinc-950 border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all', verificationCodeError ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-zinc-800 focus:border-blue-500/30']"
+                        @input="handleVerificationCodeInput"
+                        @keydown="handleVerificationCodeKeydown"
                       >
-                      <div class="verify-actions">
-                        <button :disabled="binding || verificationCode.length !== 6" class="btn btn-primary"
-                                @click="verifyAndBind">
+                      <div class="grid grid-cols-2 gap-2">
+                        <button
+                          @click="verifyAndBind"
+                          :disabled="binding || verificationCode.length !== 6"
+                          class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
+                        >
                           {{ binding ? '验证中...' : '确认绑定' }}
                         </button>
-                        <button :disabled="binding" class="btn btn-secondary" @click="cancelVerification">
+                        <button
+                          @click="cancelVerification"
+                          :disabled="binding"
+                          class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                        >
                           取消
                         </button>
                       </div>
@@ -307,44 +352,52 @@
                 </div>
 
                 <!-- 已绑定状态 -->
-                <div v-else class="meow-bound-section">
-                  <button class="btn btn-danger" @click="showUnbindConfirm">
-                    解绑账号
+                <div v-else class="pt-2">
+                  <button
+                    @click="showUnbindConfirm"
+                    class="w-full py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all"
+                  >
+                    解除 MeoW 账号绑定
                   </button>
                 </div>
               </div>
             </div>
           </div>
         </section>
-
-        <!-- 保存按钮 -->
-        <div class="save-section">
-          <button :disabled="saving" class="btn btn-primary save-btn" @click="saveSettings">
-            {{ saving ? '保存中...' : '保存设置' }}
-          </button>
-        </div>
       </div>
     </div>
 
     <!-- 确认对话框 -->
     <ConfirmDialog
-        v-model:show="showConfirmDialog"
-        :loading="confirmDialog.loading"
-        :message="confirmDialog.message"
-        :title="confirmDialog.title"
-        :type="confirmDialog.type"
-        @cancel="confirmDialog.onCancel"
-        @confirm="confirmDialog.onConfirm"
+      v-model:show="showConfirmDialog"
+      :loading="confirmDialog.loading"
+      :message="confirmDialog.message"
+      :title="confirmDialog.title"
+      :type="confirmDialog.type"
+      @cancel="confirmDialog.onCancel"
+      @confirm="confirmDialog.onConfirm"
     />
   </div>
 </template>
 
 <script setup>
-import {nextTick, onMounted, ref} from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
+import {
+  Bell, Mail, Link, MessageSquare, Clock, ArrowLeft,
+  Save, Shield, Trash2, User, ExternalLink, CheckCircle2,
+  AlertCircle, Loader2, Smartphone
+} from 'lucide-vue-next'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import {useSiteConfig} from '~/composables/useSiteConfig'
+import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useToast } from '~/composables/useToast'
 
-const {siteTitle} = useSiteConfig()
+const { siteTitle, smtpEnabled, initSiteConfig } = useSiteConfig()
+const { showToast } = useToast()
+
+// 样式类常量
+const sectionClass = "bg-zinc-900/40 border border-zinc-900 rounded-3xl p-6 md:p-8 shadow-2xl"
+const cardClass = "bg-zinc-950/40 border border-zinc-800/50 rounded-2xl p-5 transition-all hover:border-zinc-700/50"
+const itemClass = "flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all group"
 
 // 页面状态
 const loading = ref(true)
@@ -360,8 +413,6 @@ const localSettings = ref({
   systemNotify: true,
   refreshInterval: 60,
   meowUserId: '',
-  // 邮件通知设置
-  // 邮件通知总开关移除：以邮箱是否已验证判断
 })
 
 // MeoW 绑定相关
@@ -387,20 +438,14 @@ const confirmDialog = ref({
   message: '',
   type: 'warning',
   loading: false,
-  onConfirm: () => {
-  },
-  onCancel: () => {
-  }
+  onConfirm: () => { },
+  onCancel: () => { }
 })
 
 
 // 通知显示函数
 const showNotification = (message, type = 'info') => {
-  if (typeof window !== 'undefined' && window.$showNotification) {
-    window.$showNotification(message, type)
-  } else {
-    console.log(`[${type.toUpperCase()}] ${message}`)
-  }
+  showToast(message, type)
 }
 
 // 返回主页
@@ -412,6 +457,8 @@ const goBack = () => {
 
 // 页面初始化
 onMounted(async () => {
+  await initSiteConfig()
+  
   // 设置页面标题
   if (typeof document !== 'undefined' && siteTitle.value) {
     document.title = `通知设置 | ${siteTitle.value}`
@@ -420,59 +467,17 @@ onMounted(async () => {
   await loadSettings()
 })
 
-// 格式化时间间隔显示
-const formatInterval = (seconds) => {
-  if (seconds < 60) {
-    return `${seconds}秒`
-  } else {
-    return `${Math.floor(seconds / 60)}分钟`
-  }
-}
-
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleString('zh-CN')
-}
-
 // 处理验证码输入
 const handleVerificationCodeInput = (event) => {
-  // 只允许数字输入
   const value = event.target.value.replace(/[^0-9]/g, '')
   verificationCode.value = value
-
-  // 清除错误状态
   if (verificationCodeError.value) {
     verificationCodeError.value = false
-  }
-
-  // 如果输入了6位数字，自动聚焦到确认按钮
-  if (value.length === 6) {
-    nextTick(() => {
-      const confirmBtn = document.querySelector('.verify-actions .btn-primary')
-      if (confirmBtn && !confirmBtn.disabled) {
-        confirmBtn.focus()
-      }
-    })
   }
 }
 
 // 处理验证码输入键盘事件
 const handleVerificationCodeKeydown = (event) => {
-  // 允许的键：数字、退格、删除、方向键、Tab
-  const allowedKeys = [
-    'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab',
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-  ]
-
-  // 如果不是允许的键，阻止输入
-  if (!allowedKeys.includes(event.key)) {
-    event.preventDefault()
-    return
-  }
-
-  // 如果按下回车键且验证码长度为6位，执行绑定
   if (event.key === 'Enter' && verificationCode.value.length === 6) {
     verifyAndBind()
   }
@@ -493,10 +498,8 @@ const loadSettings = async () => {
         systemNotify: response.data.systemNotify || true,
         refreshInterval: response.data.refreshInterval || 60,
         meowUserId: response.data.meowUserId || '',
-        // 邮件通知总开关移除
       }
 
-      // 加载用户邮箱信息
       userEmail.value = response.data.userEmail || ''
       emailVerified.value = response.data.emailVerified || false
     }
@@ -517,7 +520,6 @@ const sendVerificationCode = async () => {
 
   try {
     binding.value = true
-
     const response = await $fetch('/api/meow/bind', {
       method: 'POST',
       body: {
@@ -530,11 +532,10 @@ const sendVerificationCode = async () => {
       verificationSent.value = true
       showNotification('验证码已发送到您的 MeoW 账号', 'success')
     } else {
-      showNotification(response.message || '发送验证码失败，请检查 MeoW ID 是否正确', 'error')
+      showNotification(response.message || '发送验证码失败', 'error')
     }
   } catch (err) {
-    console.error('发送验证码失败:', err)
-    showNotification(err.data?.message || '发送验证码失败，请检查 MeoW ID 是否正确', 'error')
+    showNotification(err.data?.message || '发送验证码失败', 'error')
   } finally {
     binding.value = false
   }
@@ -550,7 +551,6 @@ const verifyAndBind = async () => {
 
   try {
     binding.value = true
-
     const response = await $fetch('/api/meow/bind', {
       method: 'POST',
       body: {
@@ -562,28 +562,17 @@ const verifyAndBind = async () => {
 
     if (response.success) {
       localSettings.value.meowUserId = meowUserId.value.trim()
-
-      // 重置状态
       meowUserId.value = ''
       verificationCode.value = ''
       verificationSent.value = false
-
       showNotification('MeoW 账号绑定成功！', 'success')
     } else {
-      showNotification(response.message || '验证码错误或已过期，请重试', 'error')
+      showNotification(response.message || '验证失败', 'error')
       verificationCodeError.value = true
-      // 添加抖动动画效果
-      setTimeout(() => {
-        verificationCodeError.value = false
-      }, 1000)
     }
   } catch (err) {
-    console.error('绑定失败:', err)
-    showNotification(err.data?.message || '验证码错误或已过期，请重试', 'error')
+    showNotification(err.data?.message || '验证失败', 'error')
     verificationCodeError.value = true
-    setTimeout(() => {
-      verificationCodeError.value = false
-    }, 1000)
   } finally {
     binding.value = false
   }
@@ -604,9 +593,7 @@ const showUnbindConfirm = () => {
     type: 'danger',
     loading: false,
     onConfirm: performUnbind,
-    onCancel: () => {
-      showConfirmDialog.value = false
-    }
+    onCancel: () => { showConfirmDialog.value = false }
   }
   showConfirmDialog.value = true
 }
@@ -615,10 +602,7 @@ const showUnbindConfirm = () => {
 const performUnbind = async () => {
   try {
     confirmDialog.value.loading = true
-
-    const response = await $fetch('/api/meow/unbind', {
-      method: 'POST'
-    })
+    const response = await $fetch('/api/meow/unbind', { method: 'POST' })
 
     if (response.success) {
       localSettings.value.meowUserId = ''
@@ -628,8 +612,7 @@ const performUnbind = async () => {
       showNotification(response.message || '解绑失败', 'error')
     }
   } catch (err) {
-    console.error('解绑失败:', err)
-    showNotification(err.data?.message || '解绑失败，请重试', 'error')
+    showNotification(err.data?.message || '解绑失败', 'error')
   } finally {
     confirmDialog.value.loading = false
   }
@@ -642,7 +625,6 @@ const bindEmail = async () => {
     return
   }
 
-  // 简单的邮箱格式验证
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(newEmail.value)) {
     showNotification('请输入有效的邮箱地址', 'error')
@@ -653,7 +635,7 @@ const bindEmail = async () => {
   try {
     const response = await $fetch('/api/user/email/bind', {
       method: 'POST',
-      body: {email: newEmail.value}
+      body: { email: newEmail.value }
     })
 
     if (response.success) {
@@ -665,13 +647,11 @@ const bindEmail = async () => {
       showNotification(response.message || '绑定失败', 'error')
     }
   } catch (err) {
-    console.error('绑定邮箱失败:', err)
-    showNotification(err.data?.message || '绑定邮箱失败，请重试', 'error')
+    showNotification(err.data?.message || '绑定失败', 'error')
   } finally {
     bindingEmail.value = false
   }
 }
-
 
 const handleEmailCodeInput = (event) => {
   const value = event.target.value.replace(/[^0-9]/g, '')
@@ -680,11 +660,6 @@ const handleEmailCodeInput = (event) => {
 }
 
 const handleEmailCodeKeydown = (event) => {
-  const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-  if (!allowed.includes(event.key)) {
-    event.preventDefault();
-    return
-  }
   if (event.key === 'Enter' && emailCode.value.length === 6) verifyEmailCode()
 }
 
@@ -698,7 +673,7 @@ const verifyEmailCode = async () => {
     bindingEmail.value = true
     const response = await $fetch('/api/user/email/verify-code', {
       method: 'POST',
-      body: {email: userEmail.value, code: emailCode.value}
+      body: { email: userEmail.value, code: emailCode.value }
     })
     if (response.success) {
       emailVerified.value = true
@@ -706,28 +681,24 @@ const verifyEmailCode = async () => {
       showNotification('邮箱验证成功', 'success')
     } else {
       emailCodeError.value = true
-      showNotification(response.message || '验证码错误或已过期', 'error')
+      showNotification(response.message || '验证失败', 'error')
     }
   } catch (err) {
-    console.error('邮箱验证失败:', err)
     emailCodeError.value = true
-    showNotification(err.data?.message || '邮箱验证失败，请重试', 'error')
+    showNotification(err.data?.message || '验证失败', 'error')
   } finally {
     bindingEmail.value = false
   }
 }
 
 const changeEmail = () => {
-  // 显示确认对话框
   confirmDialog.value = {
     title: '更换邮箱',
     message: '更换邮箱将清除当前绑定的邮箱信息，需要重新验证新邮箱。确定要继续吗？',
     type: 'warning',
     loading: false,
     onConfirm: performChangeEmail,
-    onCancel: () => {
-      showConfirmDialog.value = false
-    }
+    onCancel: () => { showConfirmDialog.value = false }
   }
   showConfirmDialog.value = true
 }
@@ -739,32 +710,22 @@ const performChangeEmail = () => {
   emailCode.value = ''
   emailCodeError.value = false
   showConfirmDialog.value = false
-  showNotification('已清除邮箱信息，请输入新邮箱地址', 'info')
+  showNotification('已清除邮箱信息', 'info')
 }
 
 const resendVerificationEmail = async () => {
-  if (!userEmail.value) {
-    showNotification('邮箱信息丢失，请重新绑定', 'error')
-    return
-  }
-
   try {
     resendingEmail.value = true
-
-    const response = await $fetch('/api/user/email/resend-verification', {
-      method: 'POST'
-    })
-
+    const response = await $fetch('/api/user/email/resend-verification', { method: 'POST' })
     if (response.success) {
       emailCode.value = ''
       emailCodeError.value = false
-      showNotification('验证码已重新发送，请查收邮箱', 'success')
+      showNotification('验证码已重新发送', 'success')
     } else {
-      showNotification(response.message || '重新发送失败，请稍后重试', 'error')
+      showNotification(response.message || '发送失败', 'error')
     }
   } catch (err) {
-    console.error('重新发送验证码失败:', err)
-    showNotification(err.data?.message || '重新发送失败，请稍后重试', 'error')
+    showNotification(err.data?.message || '发送失败', 'error')
   } finally {
     resendingEmail.value = false
   }
@@ -777,9 +738,7 @@ const unbindEmail = async () => {
     type: 'warning',
     loading: false,
     onConfirm: performEmailUnbind,
-    onCancel: () => {
-      showConfirmDialog.value = false
-    }
+    onCancel: () => { showConfirmDialog.value = false }
   }
   showConfirmDialog.value = true
 }
@@ -787,23 +746,17 @@ const unbindEmail = async () => {
 const performEmailUnbind = async () => {
   try {
     confirmDialog.value.loading = true
-
-    const response = await $fetch('/api/user/email/unbind', {
-      method: 'POST'
-    })
-
+    const response = await $fetch('/api/user/email/unbind', { method: 'POST' })
     if (response.success) {
       userEmail.value = ''
       emailVerified.value = false
-      // 邮件通知总开关移除，无需重置
       showNotification('邮箱已解绑', 'success')
       showConfirmDialog.value = false
     } else {
       showNotification(response.message || '解绑失败', 'error')
     }
   } catch (err) {
-    console.error('解绑邮箱失败:', err)
-    showNotification(err.data?.message || '解绑邮箱失败，请重试', 'error')
+    showNotification(err.data?.message || '解绑失败', 'error')
   } finally {
     confirmDialog.value.loading = false
   }
@@ -813,20 +766,17 @@ const performEmailUnbind = async () => {
 const saveSettings = async () => {
   try {
     saving.value = true
-
     const response = await $fetch('/api/notifications/settings', {
       method: 'POST',
       body: localSettings.value
     })
-
     if (response.success) {
       showNotification('设置保存成功', 'success')
     } else {
       showNotification(response.message || '保存失败', 'error')
     }
   } catch (err) {
-    console.error('保存设置失败:', err)
-    showNotification(err.data?.message || '保存设置失败，请重试', 'error')
+    showNotification(err.data?.message || '保存失败', 'error')
   } finally {
     saving.value = false
   }
@@ -834,717 +784,19 @@ const saveSettings = async () => {
 </script>
 
 <style scoped>
-/* 页面容器 */
-.notification-settings-page {
-  min-height: 100vh;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-}
-
-/* 顶部导航栏 */
-.top-nav {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 2rem;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-secondary);
-}
-
-.back-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-tertiary);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.back-button:hover {
-  background: var(--bg-quaternary);
-  color: var(--text-primary);
-  border-color: var(--border-quaternary);
-}
-
-.page-title {
-  color: var(--text-primary);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  margin: 0;
-}
-
-
-/* 主容器 */
-.main-container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-/* 加载状态 */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem;
-  color: var(--text-secondary);
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--bg-tertiary);
-  border-top: 3px solid var(--primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* 设置内容 */
-.settings-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-/* 设置区域 */
-.settings-section {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-xl);
-  padding: 2rem;
-  border: 1px solid var(--border-secondary);
-}
-
-.section-header {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-secondary);
-}
-
-.section-header h2 {
-  color: var(--text-primary);
-  font-size: var(--text-xl);
-  font-weight: var(--font-semibold);
-  margin-bottom: 0.5rem;
-}
-
-.section-header p {
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  margin: 0;
-}
-
-/* 设置网格 */
-.settings-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-.setting-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.5rem;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-tertiary);
-  transition: var(--transition-normal);
-}
-
-.setting-card:hover {
-  border-color: var(--primary);
-  background: var(--bg-hover);
-}
-
-.setting-info {
-  flex: 1;
-}
-
-.setting-info h3 {
-  color: var(--text-primary);
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  margin-bottom: 0.5rem;
-}
-
-.setting-info p {
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  line-height: 1.4;
-  margin: 0;
-}
-
-.setting-control {
-  margin-left: 1.5rem;
-}
-
-/* 开关样式 */
-.toggle-switch {
-  position: relative;
-}
-
-.toggle-switch input[type="checkbox"] {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 52px;
-  height: 28px;
-  background: var(--bg-quaternary);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.switch::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 24px;
-  height: 24px;
-  background: white;
-  border-radius: 50%;
-  transition: transform 0.3s ease;
-  box-shadow: var(--shadow-sm);
-}
-
-.toggle-switch input[type="checkbox"]:checked + .switch {
-  background: var(--primary);
-}
-
-.toggle-switch input[type="checkbox"]:checked + .switch::before {
-  transform: translateX(24px);
-}
-
-/* 禁用状态的开关 */
-.switch.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 邮箱相关样式 */
-.email-card .setting-info {
-  margin-bottom: 1rem;
-}
-
-.email-address {
-  color: var(--primary);
-  font-weight: var(--font-medium);
-}
-
-.status {
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  margin-left: 0.5rem;
-}
-
-.status.verified {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-}
-
-.status.pending {
-  background: rgba(249, 115, 22, 0.1);
-  color: #f97316;
-}
-
-.email-bind-section .bind-step,
-.email-verify-section,
-.email-bound-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.email-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--border-tertiary);
-  border-radius: var(--radius-md);
-  background: var(--bg-quaternary);
-  color: var(--text-primary);
-  font-size: var(--text-sm);
-  transition: var(--transition-normal);
-}
-
-.email-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: var(--input-shadow-focus);
-}
-
-.email-input::placeholder {
-  color: var(--text-quaternary);
-}
-
-.verify-actions,
-.bound-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.btn-outline {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-tertiary);
-}
-
-.btn-outline:hover:not(:disabled) {
-  background: var(--bg-quaternary);
-  border-color: var(--border-secondary);
-  color: var(--text-primary);
-}
-
-/* 邮件通知细分设置 */
-.email-details {
-  border-left: 3px solid var(--primary);
-}
-
-.email-settings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-}
-
-.email-setting-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  transition: var(--transition-normal);
-}
-
-.email-setting-item:hover {
-  color: var(--text-primary);
-}
-
-.email-setting-item input[type="checkbox"] {
-  display: none;
-}
-
-.checkmark {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--border-tertiary);
-  border-radius: var(--radius-sm);
-  position: relative;
-  transition: var(--transition-normal);
-}
-
-.email-setting-item input[type="checkbox"]:checked + .checkmark {
-  background: var(--primary);
-  border-color: var(--primary);
-}
-
-.email-setting-item input[type="checkbox"]:checked + .checkmark::after {
-  content: '';
-  position: absolute;
-  left: 5px;
-  top: 2px;
-  width: 4px;
-  height: 8px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-/* 阈值输入 */
-.threshold-input {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.number-input {
-  width: 80px;
-  padding: 0.5rem;
-  border: 1px solid var(--border-tertiary);
-  border-radius: var(--radius-md);
-  background: var(--bg-quaternary);
-  color: var(--text-primary);
-  text-align: center;
-  font-size: var(--text-sm);
-}
-
-.number-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: var(--input-shadow-focus);
-}
-
-.unit {
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-}
-
-/* 间隔输入 */
-.interval-input {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  min-width: 200px;
-}
-
-.range-input {
-  flex: 1;
-  height: 6px;
-  background: var(--bg-quaternary);
-  border-radius: 3px;
-  outline: none;
-  appearance: none;
+/* 移除旧的样式，全部使用 Tailwind */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
-}
-
-.range-input::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  background: var(--primary);
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-}
-
-.range-input::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: var(--primary);
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-  box-shadow: var(--shadow-sm);
-}
-
-.interval-display {
-  color: var(--text-primary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  min-width: 60px;
-  text-align: right;
-}
-
-/* MeoW 卡片特殊样式 */
-.meow-card {
-  border: 1px solid var(--primary-border);
-  background: var(--primary-light);
-}
-
-.meow-card:hover {
-  border-color: var(--primary);
-}
-
-.bound-info {
-  color: var(--text-primary);
-}
-
-.user-id {
-  color: var(--primary);
-  font-weight: var(--font-semibold);
-}
-
-/* MeoW 绑定样式 */
-.meow-bind-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.bind-step, .verify-step {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.verify-info {
-  padding: 12px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-
-.verify-info p {
   margin: 0;
-  font-size: 14px;
-  color: var(--text-primary);
-  line-height: 1.4;
 }
-
-.verify-info p:first-child {
-  margin-bottom: 4px;
-}
-
-.verify-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.verify-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.meow-input, .verify-input {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border-tertiary);
-  border-radius: var(--radius-md);
-  background: var(--bg-quaternary);
-  color: var(--text-primary);
-  font-size: var(--text-sm);
-  min-width: 200px;
-}
-
-.meow-input:focus, .verify-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: var(--input-shadow-focus);
-}
-
-.verify-input {
-  text-align: center;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 4px;
-  min-width: auto;
-  width: 180px;
-  height: 48px;
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-tertiary);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-  -webkit-font-feature-settings: "tnum";
-  font-feature-settings: "tnum";
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-}
-
-.verify-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 4px 12px rgba(0, 0, 0, 0.1);
-  background: var(--bg-primary);
-  transform: translateY(-1px);
-}
-
-.verify-input:hover:not(:disabled) {
-  border-color: rgba(59, 130, 246, 0.5);
-}
-
-.verify-input::placeholder {
-  color: var(--text-quaternary);
-  font-weight: 400;
-  letter-spacing: 2px;
-}
-
-/* 验证码输入完成状态 */
-.verify-input.complete {
-  border-color: #10b981;
-  background: rgba(16, 185, 129, 0.05);
-  color: #10b981;
-}
-
-/* 验证码输入错误状态 */
-.verify-input.error {
-  border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.05);
-  animation: shake 0.5s ease-in-out;
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 @keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-4px);
-  }
-  75% {
-    transform: translateX(4px);
-  }
-}
-
-/* 数字输入动画 */
-.verify-input:not(:placeholder-shown) {
-  background: var(--bg-primary);
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-.meow-input::placeholder {
-  color: var(--text-quaternary);
-}
-
-/* 按钮样式 */
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  cursor: pointer;
-  transition: var(--transition-normal);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-primary {
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-text);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--btn-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-secondary {
-  background: var(--btn-secondary-bg);
-  color: var(--btn-secondary-text);
-  border: 1px solid var(--btn-secondary-border);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: var(--btn-secondary-hover);
-  border-color: var(--border-quaternary);
-}
-
-.btn-danger {
-  background: var(--btn-error-bg);
-  color: var(--btn-error-text);
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: var(--btn-error-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-/* 保存按钮 */
-.save-section {
-  display: flex;
-  justify-content: center;
-  padding: 2rem 0;
-}
-
-.save-btn {
-  padding: 0.75rem 2rem;
-  font-size: var(--text-base);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .top-nav {
-    padding: 1rem;
-  }
-
-  .page-title {
-    font-size: var(--text-xl);
-  }
-
-  .main-container {
-    padding: 1rem;
-  }
-
-  .settings-section {
-    padding: 1.5rem;
-  }
-
-  .setting-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem;
-  }
-
-  .setting-control {
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .meow-bind-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .meow-input {
-    min-width: auto;
-  }
-
-  .interval-input {
-    min-width: auto;
-  }
-}
-
-@media (max-width: 480px) {
-  .top-nav {
-    padding: 0.75rem;
-  }
-
-  .back-button {
-    padding: 0.375rem 0.75rem;
-    font-size: var(--text-xs);
-  }
-
-  .page-title {
-    font-size: var(--text-lg);
-  }
-
-  .main-container {
-    padding: 0.75rem;
-  }
-
-  .settings-section {
-    padding: 1rem;
-  }
-
-  .section-header h2 {
-    font-size: var(--text-lg);
-  }
-
-  .setting-info h3 {
-    font-size: var(--text-sm);
-  }
-
-  .setting-info p {
-    font-size: var(--text-xs);
-  }
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 </style>

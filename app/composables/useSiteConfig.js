@@ -1,4 +1,4 @@
-import {computed, ref} from 'vue'
+import {computed, ref, readonly} from 'vue'
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
@@ -69,6 +69,7 @@ export const useSiteConfig = () => {
     const guidelines = computed(() => siteConfig.value.submissionGuidelines || defaultSubmissionGuidelines)
     const icp = computed(() => siteConfig.value.icpNumber || '')
     const enableReplayRequests = computed(() => siteConfig.value.enableReplayRequests || false)
+    const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
 
     // 初始化配置（仅在客户端执行）
     const initSiteConfig = async () => {
@@ -95,6 +96,7 @@ export const useSiteConfig = () => {
         guidelines,
         icp,
         enableReplayRequests,
+        smtpEnabled,
         fetchSiteConfig,
         initSiteConfig,
         refreshSiteConfig
