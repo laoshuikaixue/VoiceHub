@@ -98,15 +98,6 @@
       />
     </div>
 
-    <!-- 触控拖拽帮助提示 (仅桌面端显示或完全移除) -->
-      <div
-        v-if="showTouchHint && isDesktop"
-        class="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-zinc-800 text-zinc-200 px-4 py-2 rounded-full shadow-lg border border-zinc-700 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300"
-      >
-        <Info class="w-4 h-4 text-blue-400" />
-        {{ touchHintText }}
-      </div>
-
     <!-- 加载状态 -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 min-h-[60vh]">
       <LoadingState title="正在加载排期数据" message="请稍候..." />
@@ -642,11 +633,6 @@ const TOUCH_CONFIG = {
   VIBRATION_DURATION: 50, // 震动时长（毫秒）
   SCROLL_THRESHOLD: 10 // 滚动阈值（像素）
 }
-
-// 触控帮助提示
-const showTouchHint = ref(false)
-const touchHintText = ref('')
-const touchHintTimer = ref(null)
 
 // DOM引用
 const dateSelector = ref(null)
@@ -1873,11 +1859,6 @@ const handleTouchStart = (event, item, type) => {
         navigator.vibrate(TOUCH_CONFIG.VIBRATION_DURATION)
       }
 
-      // 显示长按提示
-      if (window.innerWidth <= 768) {
-        showTouchDragHint('长按开始拖拽，拖到目标区域后松开', 2000)
-      }
-
       // 添加长按视觉反馈
       const target = event.target.closest('.draggable-song, .scheduled-song')
       if (target) {
@@ -1918,11 +1899,6 @@ const handleTouchMove = (event) => {
   // 只有在长按识别后或移动距离超过阈值时才开始拖拽
   if (!isDragging.value && (isLongPressing.value || totalDelta > dragThreshold)) {
     isDragging.value = true
-
-    // 显示拖拽提示
-    if (window.innerWidth <= 768) {
-      showTouchDragHint('正在拖拽，移动到目标位置后松开', 2000)
-    }
 
     // 创建拖拽元素
     const target = event.target.closest('.draggable-song, .scheduled-song')
@@ -2015,31 +1991,6 @@ const cleanupTouchDrag = () => {
   clearDragPosition()
 }
 
-// 显示触控帮助提示
-const showTouchDragHint = (message, duration = 3000) => {
-  touchHintText.value = message
-  showTouchHint.value = true
-
-  // 清除之前的定时器
-  if (touchHintTimer.value) {
-    clearTimeout(touchHintTimer.value)
-  }
-
-  // 设置自动隐藏
-  touchHintTimer.value = setTimeout(() => {
-    showTouchHint.value = false
-  }, duration)
-}
-
-// 隐藏触控帮助提示
-const hideTouchDragHint = () => {
-  showTouchHint.value = false
-  if (touchHintTimer.value) {
-    clearTimeout(touchHintTimer.value)
-    touchHintTimer.value = null
-  }
-}
-
 const handleTouchEnd = (event) => {
   if (!touchDragData.value) return
 
@@ -2079,15 +2030,6 @@ const handleTouchEnd = (event) => {
         // 成功拖拽震动反馈
         if (navigator.vibrate) {
           navigator.vibrate([30, 50, 30])
-        }
-      } else {
-        // 拖拽到无效区域的提示
-        if (window.innerWidth <= 768) {
-          if (touchDragData.value.type === 'schedule') {
-            showTouchDragHint('将歌曲拖到左侧待排区域可移出播放列表', 2000)
-          } else {
-            showTouchDragHint('将歌曲拖到右侧播放列表可添加到队列', 2000)
-          }
         }
       }
     }
