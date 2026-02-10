@@ -254,12 +254,12 @@
                       :key="`${platform}-${result.id || index}`"
                       class="result-item"
                   >
-                    <div class="result-cover">
-                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img"
+                    <div class="result-cover group/cover" @click.stop="playSong(result)">
+                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img group-hover/cover:scale-110 transition-transform duration-500"
                            referrerpolicy="no-referrer"/>
-                      <div class="play-overlay" @click.stop="playSong(result)">
-                        <div class="play-button-bg">
-                          <Icon :size="24" color="white" name="play"/>
+                      <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/cover:opacity-100 transition-opacity">
+                        <div class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shadow-xl">
+                          <Icon name="play" :size="18" class="fill-current ml-1" />
                         </div>
                       </div>
                     </div>
@@ -3518,63 +3518,16 @@ defineExpose({
   height: 70px;
   position: relative;
   flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 6px;
 }
-
-.play-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  border-radius: 6px;
-  transition: opacity 0.2s ease;
-  cursor: pointer;
-}
-
-.result-cover:hover .play-overlay {
-  opacity: 1;
-}
-
-.play-button-bg {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(11, 90, 254, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  transition: transform 0.2s ease;
-}
-
-.play-button-bg {
-    display: none !important;
-  }
-
-  .play-overlay {
-    background: transparent !important;
-    opacity: 1 !important;
-  }
-
-  .result-cover {
-    cursor: pointer;
-  }
-
-  .result-cover:active {
-    transform: scale(0.95);
-  }
 
 .result-info {
   flex: 1;

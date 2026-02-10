@@ -45,7 +45,7 @@
                   @keyup.enter="performSearch"
               >
               <div v-if="loading" class="absolute inset-y-0 right-4 flex items-center">
-                <Icon name="refresh" :size="20" class="text-blue-500 animate-spin" />
+                <Icon name="loader" :size="20" class="text-zinc-400 animate-spin" />
               </div>
             </div>
 

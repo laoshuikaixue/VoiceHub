@@ -32,8 +32,8 @@
           <div class="p-8 pt-4 flex flex-col items-center">
             <div class="w-full flex flex-col items-center min-h-[250px] justify-center">
               <div v-if="loading" class="flex flex-col items-center text-zinc-500">
-                <Icon name="refresh" :size="48" class="mb-4 animate-spin text-blue-500" />
-                <p class="font-black uppercase tracking-widest text-[10px]">正在获取二维码...</p>
+                <Icon name="loader" :size="48" class="mb-4 animate-spin text-zinc-400" />
+                <p class="font-bold uppercase tracking-widest text-[10px]">正在获取二维码...</p>
               </div>
 
               <div v-else-if="qrImg" class="relative group">

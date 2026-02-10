@@ -152,27 +152,27 @@
     <!-- 信息图标 -->
     <g v-else-if="name === 'info'">
       <circle cx="12" cy="12" r="10"/>
-      <line x1="12" x2="12" y1="16" y2="12"/>
-      <line x1="12" x2="12.01" y1="8" y2="8"/>
+      <line x1="12" y1="16" x2="12" y2="12"/>
+      <circle cx="12" cy="8" r="1" fill="currentColor"/>
     </g>
 
     <!-- 成功/勾选图标 -->
     <g v-else-if="name === 'check' || name === 'success'">
-      <polyline points="20,6 9,17 4,12"/>
+      <polyline points="20 6 9 17 4 12"/>
     </g>
 
     <!-- 错误/叉叉图标 -->
-    <g v-else-if="name === 'error' || name === 'x-circle'">
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="15" x2="9" y1="9" y2="15"/>
-      <line x1="9" x2="15" y1="9" y2="15"/>
+    <g v-else-if="name === 'error' || name === 'x-circle' || name === 'alert-circle'">
+      <circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.1" />
+      <line x1="15" y1="9" x2="9" y2="15"/>
+      <line x1="9" y1="9" x2="15" y2="15"/>
     </g>
 
     <!-- 警告图标 -->
     <g v-else-if="name === 'warning' || name === 'alert-triangle'">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" x2="12" y1="9" y2="13"/>
-      <line x1="12" x2="12.01" y1="17" y2="17"/>
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="currentColor" fill-opacity="0.1" />
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <circle cx="12" cy="17" r="1" fill="currentColor"/>
     </g>
 
     <!-- 上一首图标 -->

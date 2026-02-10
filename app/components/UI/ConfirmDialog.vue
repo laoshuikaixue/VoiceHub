@@ -114,7 +114,7 @@ const handleOverlayClick = () => {
 
 const iconName = computed(() => {
   switch (props.type) {
-    case 'danger': return 'x-circle'
+    case 'danger': return 'alert-circle'
     case 'success': return 'success'
     case 'info': return 'info'
     case 'warning': 
