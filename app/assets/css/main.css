@@ -341,7 +341,7 @@ body::before {
 /* 手机设备上的优化 */
 @media (max-width: 640px) {
   .home {
-    padding: 1rem !important;
+    padding: 0 !important;
   }
   
   .main-content {
