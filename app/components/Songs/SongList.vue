@@ -349,7 +349,7 @@
             </div>
           </div>
 
-          <!-- 移动端分页 (重新设计) -->
+          <!-- 移动端分页 -->
           <div class="pagination-mobile mobile-only">
             <button
                 :disabled="currentPage === 1"
@@ -384,34 +384,17 @@
         </div>
 
         <!-- 确认对话框 -->
-        <div v-if="confirmDialog.show" class="confirm-dialog-backdrop" @click.self="cancelConfirm">
-          <div class="confirm-dialog">
-            <div class="confirm-dialog-header">
-              <h3>{{ confirmDialog.title }}</h3>
-            </div>
-            <div class="confirm-dialog-content">
-              {{ confirmDialog.message }}
-            </div>
-            <div class="confirm-dialog-actions">
-              <button
-                  class="confirm-dialog-btn confirm-dialog-cancel"
-                  @click="cancelConfirm"
-              >
-                取消
-              </button>
-              <button
-                  class="confirm-dialog-btn confirm-dialog-confirm"
-                  @click="confirmAction"
-              >
-                确认
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+            :show="confirmDialog.show"
+            :title="confirmDialog.title"
+            :message="confirmDialog.message"
+            :type="confirmDialog.type"
+            :loading="actionInProgress"
+            @confirm="confirmAction"
+            @cancel="cancelConfirm"
+        />
       </div>
     </Transition>
-
-    <!-- 使用全局音频播放器，此处不需要audio元素 -->
   </div>
 </template>
 
@@ -426,6 +409,7 @@ import {useSongs} from '~/composables/useSongs'
 import {useSiteConfig} from '~/composables/useSiteConfig'
 import Icon from '~/components/UI/Icon.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import {convertToHttps} from '~/utils/url'
 import thumbsUp from '~/public/images/thumbs-up.svg'
 
@@ -628,6 +612,7 @@ const confirmDialog = ref({
   show: false,
   title: '',
   message: '',
+  type: 'warning', // 'warning', 'danger', 'info', 'success'
   action: '',
   data: null
 })
@@ -856,6 +841,7 @@ const handleWithdraw = (song) => {
       show: true,
       title: '撤回投稿',
       message: `确认撤回歌曲《${song.title}》的投稿吗？这将同时取消所有联合投稿关联。`,
+      type: 'info',
       action: 'withdraw',
       data: song
     }
@@ -864,6 +850,7 @@ const handleWithdraw = (song) => {
       show: true,
       title: '退出联合投稿',
       message: `确认退出歌曲《${song.title}》的联合投稿吗？`,
+      type: 'info',
       action: 'withdraw', // 后端使用相同的接口，根据用户身份处理
       data: song
     }
@@ -875,6 +862,7 @@ const handleCancelReplay = (song) => {
     show: true,
     title: '取消重播申请',
     message: `确认取消歌曲《${song.title}》的重播申请吗？`,
+    type: 'warning',
     action: 'cancelReplay',
     data: song
   }
@@ -885,6 +873,7 @@ const handleRequestReplay = (song) => {
     show: true,
     title: '申请重播',
     message: `确认申请重播歌曲《${song.title}》吗？`,
+    type: 'info',
     action: 'requestReplay',
     data: song
   }
@@ -2351,67 +2340,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* 确认对话框 */
-.confirm-dialog-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.confirm-dialog {
-  background: #21242D;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.confirm-dialog-header {
-  padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.confirm-dialog-content {
-  padding: 1.5rem 1rem;
-}
-
-.confirm-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: 1rem;
-  gap: 0.75rem;
-}
-
-.confirm-dialog-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-family: 'MiSans-Demibold', sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  cursor: pointer;
-}
-
-.confirm-dialog-cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
-}
-
-.confirm-dialog-confirm {
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
-  color: #FFFFFF;
-}
-
-/* ==================== 移动端现代化设计 ==================== */
-
 @media (max-width: 1200px) {
   .song-card {
     width: calc(50% - 0.5rem);
@@ -2423,7 +2351,7 @@ button:disabled {
     padding: 0;
   }
 
-  /* 头部区域 - 紧凑设计 */
+  /* 头部区域 */
   .song-list-header {
     flex-direction: column;
     gap: 12px;
@@ -2431,7 +2359,7 @@ button:disabled {
     margin-bottom: 16px;
   }
 
-  /* 标签按钮 - 现代化设计 */
+  /* 标签按钮 */
   .tab-controls {
     justify-content: flex-start;
     gap: 8px;
@@ -2502,7 +2430,7 @@ button:disabled {
     font-size: 14px;
   }
 
-  /* 学期选择器 - 现代化 */
+  /* 学期选择器 */
   .semester-selector-compact {
     flex-shrink: 0;
   }
@@ -2550,7 +2478,7 @@ button:disabled {
     box-shadow: none;
   }
 
-  /* 歌曲卡片 - 无边框卡片设计 */
+  /* 歌曲卡片 */
   .song-cards {
     gap: 12px;
     display: flex;
@@ -2723,7 +2651,7 @@ button:disabled {
     border-width: 2px;
   }
 
-  /* 分页 - 简化设计 */
+  /* 分页 */
   .pagination {
     flex-wrap: wrap;
     justify-content: center;
@@ -2770,57 +2698,7 @@ button:disabled {
     padding: 8px 12px;
   }
 
-  /* 确认对话框 */
-  .confirm-dialog-backdrop {
-    background: rgba(0, 0, 0, 0.7);
-  }
-
-  .confirm-dialog {
-    background: #1a1a1f;
-    border-radius: 20px;
-    border: none;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  }
-
-  .confirm-dialog-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 20px;
-  }
-
-  .confirm-dialog-header h3 {
-    font-size: 17px;
-    font-weight: 600;
-  }
-
-  .confirm-dialog-content {
-    padding: 20px;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  .confirm-dialog-actions {
-    padding: 16px 20px;
-    gap: 12px;
-  }
-
-  .confirm-dialog-btn {
-    flex: 1;
-    padding: 12px;
-    border-radius: 12px;
-    font-size: 14px;
-    border: none;
-  }
-
-  .confirm-dialog-cancel {
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .confirm-dialog-confirm {
-    background: rgba(11, 90, 254, 0.9);
-  }
-}
-
-@media (max-width: 480px) {
+  /* 移动端分页 */
   .song-list-header {
     gap: 10px;
     margin-bottom: 12px;
@@ -2874,7 +2752,7 @@ button:disabled {
   }
 }
 
-/* 移动端分页重新设计 */
+/* 移动端分页 */
 @media (max-width: 768px) {
   .pagination-mobile {
     display: flex;

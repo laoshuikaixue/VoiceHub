@@ -8,7 +8,7 @@
         leave-from-class="opacity-100 scale-100"
         leave-to-class="opacity-0 scale-95"
     >
-      <div v-if="show" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="close">
+      <div v-if="show" class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="close">
         <div class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
           <!-- 头部 -->
           <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800/50">
@@ -48,7 +48,7 @@
               <p class="text-sm font-bold uppercase tracking-widest">暂无最近播放记录</p>
             </div>
 
-            <div v-else class="space-y-2">
+            <div v-else class="recent-song-list space-y-2">
               <div v-for="item in songs" :key="item.resourceId" class="group flex items-center gap-4 p-3 rounded-2xl hover:bg-zinc-800/50 transition-all border border-transparent hover:border-zinc-800">
                 <div class="relative w-14 h-14 rounded-xl overflow-hidden bg-zinc-800 flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-300">
                   <img :src="convertToHttps(item.data?.al?.picUrl)" alt="cover" class="w-full h-full object-cover" loading="lazy"/>

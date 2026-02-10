@@ -88,7 +88,6 @@
 <script setup>
 /**
  * 后台管理侧边栏组件
- * 适配 React 设计风格，使用 Tailwind CSS
  */
 import { 
   LayoutDashboard, 

@@ -15,7 +15,7 @@
           </div>
         </div>
 
-        <!-- 用户信息区域现代化重写 -->
+        <!-- 用户信息区域 -->
         <div class="user-section">
           <ClientOnly>
             <div v-if="isClientAuthenticated" class="user-info">
@@ -2418,7 +2418,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* ==================== 移动端现代化设计 ==================== */
+/* ==================== 移动端设计 ==================== */
 
 /* 基础移动端适配 */
 @media (max-width: 768px) {
@@ -2436,7 +2436,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     display: none;
   }
 
-  /* 现代化顶部区域 - 紧凑设计 */
+  /* 顶部区域 */
   .top-bar {
     flex-direction: row;
     justify-content: space-between;
@@ -2508,7 +2508,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     font-size: 13px;
   }
 
-  /* 登录按钮现代化重写 */
+  /* 登录按钮 */
   .login-options .login-btn {
     display: flex;
     align-items: center;
@@ -2934,7 +2934,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   font-weight: 600;
 }
 
-/* 年度报告弹窗现代化重写 */
+/* 年度报告弹窗 */
 .year-review-overlay {
   backdrop-filter: blur(8px);
   background: rgba(0, 0, 0, 0.4);

@@ -8,7 +8,7 @@
         leave-from-class="opacity-100 scale-100"
         leave-to-class="opacity-0 scale-95"
     >
-      <div v-if="show" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" @click.self="close">
+      <div v-if="show" class="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6" @click.self="close">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
         <div class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" @click.stop>
@@ -50,7 +50,7 @@
             </div>
 
             <!-- 搜索结果 -->
-            <div class="space-y-3 min-h-[300px]">
+            <div class="user-list space-y-3 min-h-[300px]">
               <div v-if="users.length === 0 && !loading && hasSearched" class="flex flex-col items-center justify-center py-12 text-zinc-500">
                 <div class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4">
                   <Icon name="search" :size="32" class="opacity-20" />

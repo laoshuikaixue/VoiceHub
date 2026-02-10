@@ -662,52 +662,17 @@
     </div>
   </Transition>
 
-  <!-- 删除确认模态框 -->
-  <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-  >
-    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="closeDeleteModal">
-      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl" @click.stop>
-        <div class="p-8">
-          <div class="flex flex-col items-center text-center">
-            <div class="w-20 h-20 rounded-3xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6">
-              <Trash2 :size="40" />
-            </div>
-            
-            <h3 class="text-xl font-black text-zinc-100 tracking-tight mb-2">确认删除用户</h3>
-            <p class="text-sm text-zinc-500 mb-8">
-              确定要删除用户 <span class="text-zinc-200 font-bold">"{{ deletingUser?.name }}"</span> 吗？
-              <br/>
-              此操作将永久移除该账户，不可撤销。
-            </p>
-
-            <div class="flex w-full gap-3">
-              <button 
-                class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
-                @click="closeDeleteModal"
-              >
-                取消
-              </button>
-              <button
-                :disabled="deleting"
-                class="flex-1 px-6 py-4 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-red-900/20 active:scale-95"
-                @click="confirmDelete"
-              >
-                <Trash2 v-if="!deleting" :size="16" />
-                <RefreshCw v-else class="animate-spin" :size="16" />
-                {{ deleting ? '正在删除...' : '确认删除' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Transition>
+  <!-- 删除确认对话框 -->
+  <ConfirmDialog
+      :show="showDeleteModal"
+      title="确认删除用户"
+      :message="`确定要删除用户 &quot;${deletingUser?.name}&quot; 吗？此操作将永久移除该账户，不可撤销。`"
+      type="danger"
+      confirm-text="确认删除"
+      :loading="deleting"
+      @confirm="confirmDelete"
+      @close="closeDeleteModal"
+  />
 
   <!-- 批量更新模态框 -->
   <BatchUpdateModal
@@ -1001,6 +966,7 @@ import {
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 // 响应式数据
 const loading = ref(false)

@@ -1131,7 +1131,7 @@ const getFirstChar = (text) => {
   }
 }
 
-/* iOS Liquid Glass UI 风格 - 基于 Figma 设计 */
+/* IOS Liquid Glass UI 风格 */
 .player-overlay {
   position: fixed;
   bottom: 0;
@@ -1305,7 +1305,7 @@ const getFirstChar = (text) => {
   to { transform: rotate(360deg); }
 }
 
-/* 时间区域 - 基于 Figma 设计 */
+/* 时间区域 */
 .time {
   display: flex;
   flex-direction: column;
@@ -1316,7 +1316,7 @@ const getFirstChar = (text) => {
   width: 376px;
 }
 
-/* 进度条样式 - 基于 Figma 设计 */
+/* 进度条样式 */
 .progress-bar {
   display: flex;
   flex-shrink: 0;
@@ -1528,7 +1528,7 @@ const getFirstChar = (text) => {
   row-gap: 10px;
 }
 
-/* 进度条 - 参考 Figma 设计稿优化 */
+/* 进度条 */
 .ios-progress-bar {
   display: flex;
   flex-shrink: 0;

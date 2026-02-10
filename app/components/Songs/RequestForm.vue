@@ -546,11 +546,11 @@
 
             <!-- Body -->
             <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
-              <div class="space-y-6">
+              <div class="manual-form-fields space-y-6">
                 <!-- 歌曲名称 -->
-                <div class="space-y-2">
-                  <label class="text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌曲名称</label>
-                  <div class="relative group">
+                <div class="form-field space-y-2">
+                  <label class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌曲名称</label>
+                  <div class="input-container relative group">
                     <input
                         :value="title"
                         class="w-full px-6 py-4 bg-zinc-800/30 border border-zinc-800 rounded-2xl text-zinc-400 font-bold focus:outline-none cursor-not-allowed transition-all"
@@ -564,9 +564,9 @@
                 </div>
 
                 <!-- 歌手名称 -->
-                <div class="space-y-2">
-                  <label for="modal-artist" class="text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌手名称</label>
-                  <div class="relative group">
+                <div class="form-field space-y-2">
+                  <label for="modal-artist" class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌手名称</label>
+                  <div class="input-container relative group">
                     <input
                         id="modal-artist"
                         v-model="manualArtist"
@@ -579,9 +579,9 @@
                 </div>
 
                 <!-- 歌曲封面地址 -->
-                <div class="space-y-2">
-                  <label for="modal-cover" class="text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌曲封面地址（选填）</label>
-                  <div class="relative group">
+                <div class="form-field space-y-2">
+                  <label for="modal-cover" class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌曲封面地址（选填）</label>
+                  <div class="input-container relative group">
                     <input
                         id="modal-cover"
                         v-model="manualCover"
@@ -611,9 +611,9 @@
                 </div>
 
                 <!-- 播放地址 -->
-                <div class="space-y-2">
-                  <label for="modal-play-url" class="text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">播放地址（选填）</label>
-                  <div class="relative group">
+                <div class="form-field space-y-2">
+                  <label for="modal-play-url" class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">播放地址（选填）</label>
+                  <div class="input-container relative group">
                     <input
                         id="modal-play-url"
                         v-model="manualPlayUrl"

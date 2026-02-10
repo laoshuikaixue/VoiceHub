@@ -55,7 +55,7 @@
             </div>
 
             <!-- 歌单列表视图 -->
-            <div v-else-if="view === 'playlists'" class="space-y-3">
+            <div v-else-if="view === 'playlists'" class="playlist-list space-y-3">
               <div v-if="playlists.length === 0" class="flex flex-col items-center justify-center py-12 text-zinc-500">
                 <div class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4">
                   <Icon name="music" :size="32" class="opacity-20" />
@@ -95,7 +95,7 @@
             </div>
 
             <!-- 歌曲列表视图 -->
-            <div v-else class="space-y-3">
+            <div v-else class="song-list space-y-3">
               <div v-if="songs.length === 0" class="flex flex-col items-center justify-center py-12 text-zinc-500">
                 <div class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4">
                   <Icon name="music" :size="32" class="opacity-20" />

@@ -2661,7 +2661,7 @@ const vRipple = {
   opacity: 0.4;
 }
 
-/* ==================== 移动端现代化设计 ==================== */
+/* ==================== 移动端设计 ==================== */
 
 @media (max-width: 768px) {
   .schedule-list {
@@ -2690,7 +2690,7 @@ const vRipple = {
     padding: 0 !important;
   }
 
-  /* 现代化移动端日期导航 - 胶囊式设计 */
+  /* 移动端日期导航 - 胶囊式设计 */
   .mobile-date-nav {
     display: flex !important;
     align-items: center;
@@ -2821,7 +2821,7 @@ const vRipple = {
     display: none;
   }
 
-  /* 时段标题 - 现代化设计 */
+  /* 时段标题 */
   .playtime-group {
     margin-bottom: 20px;
   }
@@ -2979,7 +2979,7 @@ const vRipple = {
     margin-bottom: 12px;
   }
 
-  /* 日期选择弹窗 - 现代化设计 */
+  /* 日期选择弹窗 */
   .date-picker-content {
     background: #1a1a1f;
     border-radius: 20px 20px 0 0;

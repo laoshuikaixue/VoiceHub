@@ -57,7 +57,7 @@
               <p class="text-sm font-bold uppercase tracking-widest">暂无节目</p>
             </div>
 
-            <div v-else class="space-y-3">
+            <div v-else class="program-list space-y-3">
               <div
                   v-for="program in programs"
                   :key="program.id"
