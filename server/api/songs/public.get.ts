@@ -293,9 +293,6 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        console.log('[重播申请] 查询到的重播申请数量:', replayRequestCountsMap.size)
-        console.log('[重播申请] 详细数据:', Array.from(replayRequestCountsMap.entries()))
-
         // 辅助函数：格式化显示名称
         const formatDisplayName = (userObj: any) => {
             if (!userObj || !userObj.name) return '未知用户'
@@ -355,8 +352,6 @@ export default defineEventHandler(async (event) => {
 
             // 判断是否为重播：有重播申请（PENDING 或 FULFILLED）
             const isReplaySong = replayRequestCount > 0
-
-            console.log(`[重播检查] 歌曲ID=${schedule.song.id}, 标题=${schedule.song.title}, 申请数=${replayRequestCount}, 是否重播=${isReplaySong}`)
 
             // 注意：这里不进行模糊化处理，保持完整数据用于缓存
             // 模糊化处理将在最终返回时进行

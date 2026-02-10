@@ -162,7 +162,12 @@
           <div
               v-for="song in paginatedSongs"
               :key="song.id"
-              :class="{ 'played': song.played, 'scheduled': song.scheduled, 'focused': isSongFocused(song.id) }"
+              :class="{ 
+                'played': song.played, 
+                'scheduled': song.scheduled, 
+                'focused': isSongFocused(song.id),
+                'playing': isCurrentPlaying(song.id)
+              }"
               class="song-card"
               @click="handleSongCardClick(song)"
           >
@@ -786,16 +791,27 @@ const validateJumpInput = () => {
 
 // 处理跳转到指定页面
 const handleJumpToPage = () => {
+  // 如果输入为空，直接返回，不触发提示
+  if (jumpPageInput.value === '' || jumpPageInput.value === null || jumpPageInput.value === undefined) {
+    isValidJumpPage.value = false
+    return
+  }
+
   const page = parseInt(jumpPageInput.value)
   if (!isNaN(page) && page >= 1 && page <= totalPages.value) {
-    goToPage(page)
-    jumpPageInput.value = '' // 清空输入框
+    if (page !== currentPage.value) {
+      goToPage(page)
+    }
+    jumpPageInput.value = '' // 跳转成功后清空输入框
     isValidJumpPage.value = false
   } else {
-    // 输入无效时给出提示
+    // 只有在输入不为空且确实无效时才给出提示
     if (window.$showNotification) {
       window.$showNotification(`请输入有效的页码 (1-${totalPages.value})`, 'error')
     }
+    // 清空无效输入，避免重复提示
+    jumpPageInput.value = ''
+    isValidJumpPage.value = false
   }
 }
 
@@ -2604,26 +2620,39 @@ button:disabled {
 
   .song-card {
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.07);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 20px;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .song-card.playing {
+    background: rgba(11, 90, 254, 0.12);
+    border-color: rgba(11, 90, 254, 0.4);
+    box-shadow: 0 0 20px rgba(11, 90, 254, 0.2);
+  }
+
+  .song-card.playing .song-title {
+    color: #0B5AFE;
+    text-shadow: 0 0 10px rgba(11, 90, 254, 0.3);
   }
 
   .song-card:active {
     transform: scale(0.97);
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .song-card.played {
-    opacity: 0.6;
-    filter: grayscale(0.3);
-  }
+      opacity: 0.8;
+      filter: grayscale(0.35);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
 
   .song-card-main {
     height: auto;

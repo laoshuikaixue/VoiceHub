@@ -274,6 +274,14 @@
       <line x1="12" x2="12" y1="15" y2="3"></line>
     </g>
 
+    <!-- 重播/循环图标 -->
+    <g v-else-if="name === 'repeat'">
+      <polyline points="17 1 21 5 17 9"></polyline>
+      <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+      <polyline points="7 23 3 19 7 15"></polyline>
+      <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+    </g>
+
     <!-- 搜索图标 -->
     <g v-else-if="name === 'search'">
       <circle cx="11" cy="11" r="8"></circle>

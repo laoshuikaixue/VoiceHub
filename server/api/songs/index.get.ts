@@ -76,17 +76,33 @@ export default defineEventHandler(async (event) => {
 
             // 获取用户的重播申请状态
             const userReplayRequestsQuery = await db.select({
-                songId: songReplayRequests.songId
+                songId: songReplayRequests.songId,
+                status: songReplayRequests.status,
+                updatedAt: songReplayRequests.updatedAt
             })
                 .from(songReplayRequests)
                 .where(eq(songReplayRequests.userId, user.id))
 
-            const userReplayRequestedSongs = new Set(userReplayRequestsQuery.map(r => r.songId))
+            const userReplayRequestsMap = new Map(userReplayRequestsQuery.map(r => [r.songId, r]))
 
             // 为每首歌添加用户特定的状态
             cachedData.data.songs.forEach((song: any) => {
                 song.voted = userVotedSongs.has(song.id)
-                song.replayRequested = userReplayRequestedSongs.has(song.id)
+                song.replayRequested = userReplayRequestsMap.has(song.id)
+                
+                // 注入重播申请详细状态
+                if (userReplayRequestsMap.has(song.id)) {
+                    const replayRequest = userReplayRequestsMap.get(song.id)!
+                    song.replayRequestStatus = replayRequest.status
+                    
+                    if (replayRequest.status === 'REJECTED' && replayRequest.updatedAt) {
+                        const COOLDOWN_HOURS = 24
+                        const cooldownTime = COOLDOWN_HOURS * 60 * 60 * 1000
+                        const timeSinceUpdate = Date.now() - new Date(replayRequest.updatedAt).getTime()
+                        const remainingTime = cooldownTime - timeSinceUpdate
+                        song.replayRequestCooldownRemaining = remainingTime > 0 ? Math.ceil(remainingTime / (60 * 60 * 1000)) : 0
+                    }
+                }
             })
             }
 

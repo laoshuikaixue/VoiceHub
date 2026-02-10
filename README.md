@@ -457,10 +457,6 @@ VoiceHub/
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
 │   │   ├── admin/          # 管理员API
-│   │   │   ├── activities.get.ts    # 活动管理API
-│   │   │   ├── analytics/           # 数据分析API
-│   │   │   │   ├── prediction/      # 预测分析子目录
-│   │   │   │   └── reports/         # 报告生成子目录
 │   │   │   ├── api-keys/            # API密钥管理API
 │   │   │   │   ├── [id].delete.ts   # 删除API密钥
 │   │   │   │   ├── [id].get.ts      # 获取API密钥详情
@@ -471,9 +467,11 @@ VoiceHub/
 │   │   │   ├── backup/              # 备份管理API
 │   │   │   │   ├── delete/          # 删除备份子目录
 │   │   │   │   ├── download/        # 下载备份子目录
+│   │   │   │   ├── clear.post.ts    # 清空备份历史
 │   │   │   │   ├── download.get.ts  # 下载备份
 │   │   │   │   ├── export.post.ts   # 创建备份
 │   │   │   │   ├── list.get.ts      # 获取备份列表
+│   │   │   │   ├── restore-chunk.post.ts # 恢复备份分片
 │   │   │   │   ├── restore.post.ts  # 恢复备份
 │   │   │   │   └── upload.post.ts   # 上传备份文件
 │   │   │   ├── blacklist/           # 黑名单管理API
@@ -495,31 +493,25 @@ VoiceHub/
 │   │   │   │   └── preview.post.ts  # 预览邮件模板
 │   │   │   ├── fix-sequence.post.ts # 修复数据库序列
 │   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
-│   │   │   ├── music-sources/       # 音乐源管理API
-│   │   │   │   └── [id]/            # 音乐源详情操作子目录
 │   │   │   ├── notifications/       # 管理员通知API
-│   │   │   │   ├── history/         # 通知历史子目录
 │   │   │   │   └── send.post.ts     # 发送通知
-│   │   │   ├── permissions/         # 权限管理API
-│   │   │   │   └── user/            # 用户权限管理子目录
 │   │   │   ├── play-times/          # 播放时间管理API
 │   │   │   │   ├── [id].ts          # 播放时间操作
 │   │   │   │   ├── index.post.ts    # 创建播放时间
 │   │   │   │   └── index.ts         # 播放时间列表
+│   │   │   ├── replay-requests/     # 重播申请管理API
+│   │   │   │   ├── index.get.ts     # 获取重播申请列表
+│   │   │   │   └── reject.post.ts   # 拒绝重播申请
 │   │   │   ├── request-times/       # 点歌时间管理API
 │   │   │   │   ├── [id].ts          # 点歌时间操作
 │   │   │   │   ├── index.post.ts    # 创建点歌时间
 │   │   │   │   └── index.ts         # 点歌时间列表
-│   │   │   ├── roles/               # 角色管理API
-│   │   │   │   └── [id]/            # 角色详情操作子目录
 │   │   │   ├── schedule/            # 排期管理API
 │   │   │   │   ├── bulk-publish.post.ts # 批量发布排期
 │   │   │   │   ├── draft.post.ts    # 保存排期草稿
 │   │   │   │   ├── full.get.ts      # 获取完整排期数据（包含草稿）
 │   │   │   │   ├── publish.post.ts  # 发布排期草稿
-│   │   │   │   ├── reject-replay.post.ts # 拒绝重播申请
 │   │   │   │   ├── remove.post.ts   # 移除排期
-│   │   │   │   ├── replay-requests.get.ts # 获取重播申请列表
 │   │   │   │   └── sequence.post.ts # 更新排期顺序
 │   │   │   ├── schedule.post.ts     # 创建排期
 │   │   │   ├── semesters/           # 学期管理API
@@ -534,6 +526,7 @@ VoiceHub/
 │   │   │   │   ├── delete.post.ts   # 删除歌曲
 │   │   │   │   └── reject.post.ts  # 驳回歌曲
 │   │   │   ├── stats.get.ts         # 统计数据
+│   │   │   ├── activities.get.ts    # 活动管理API
 │   │   │   ├── stats/               # 详细统计API
 │   │   │   │   ├── active-users.get.ts # 活跃用户统计
 │   │   │   │   ├── realtime.get.ts  # 实时统计
@@ -546,8 +539,10 @@ VoiceHub/
 │   │   │   │   └── index.ts         # 获取系统设置
 │   │   │   └── users/               # 用户管理API
 │   │   │       ├── [id]/            # 用户详情操作子目录
+│   │   │       │   ├── reset-password.post.ts # 重置用户密码
 │   │   │       │   ├── songs.get.ts     # 获取用户点歌记录
-│   │   │       │   └── status-logs.get.ts # 获取用户状态变更日志
+│   │   │       │   ├── status-logs.get.ts # 获取用户状态变更日志
+│   │   │       │   └── status.put.ts    # 更新用户状态
 │   │   │       ├── [id].delete.ts   # 删除用户
 │   │   │       ├── [id].put.ts      # 更新用户
 │   │   │       ├── [id].ts          # 用户详情
@@ -555,7 +550,6 @@ VoiceHub/
 │   │   │       ├── batch-status.put.ts # 批量状态更新
 │   │   │       ├── batch-update.post.ts # 批量更新用户
 │   │   │       ├── batch.post.ts    # 批量操作用户
-│   │   │       ├── excel-batch-update/ # Excel批量更新子目录
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       ├── index.ts         # 用户管理
@@ -606,7 +600,8 @@ VoiceHub/
 │   │   ├── proxy/          # 代理服务API
 │   │   │   └── image.get.ts         # 图片代理（解决HTTP/HTTPS混合内容及跨域问题）
 │   │   ├── semesters/      # 学期API
-│   │   │   └── current.get.ts       # 获取当前学期
+│   │   │   ├── current.get.ts       # 获取当前学期
+│   │   │   └── options.get.ts       # 获取学期选项
 │   │   ├── site-config.get.ts       # 站点配置API
 │   │   ├── songs/          # 歌曲相关API
 │   │   │   ├── [id]/                # 歌曲详情操作
@@ -616,6 +611,7 @@ VoiceHub/
 │   │   │   │   └── reply.post.ts    # 处理联合投稿邀请
 │   │   │   ├── add.post.ts          # 添加歌曲
 │   │   │   ├── count.get.ts         # 歌曲统计
+│   │   │   ├── import.post.ts       # 导入歌曲
 │   │   │   ├── index.get.ts         # 歌曲列表
 │   │   │   ├── public.get.ts        # 公开歌曲列表
 │   │   │   ├── request.post.ts      # 点歌请求
