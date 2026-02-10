@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
         throw createError({statusCode: 400, message: '缺少必要字段：key/name/subject/html'})
     }
 
-    // upsert by key
+    // 根据 key 进行更新或插入
     const exist = await db.select().from(emailTemplates).where(eq(emailTemplates.key, key)).limit(1)
     if (exist.length) {
         const res = await db.update(emailTemplates)

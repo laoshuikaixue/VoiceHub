@@ -145,6 +145,9 @@ export default defineEventHandler(async (event) => {
             console.log('清空现有数据...')
             try {
                 // 按照外键依赖顺序删除数据
+                await db.delete(apiLogs)
+                await db.delete(apiKeyPermissions)
+                await db.delete(apiKeys)
                 await db.delete(notifications)
                 await db.delete(notificationSettings)
                 await db.delete(collaborationLogs)
@@ -153,9 +156,13 @@ export default defineEventHandler(async (event) => {
                 await db.delete(schedules)
                 await db.delete(votes)
                 await db.delete(songs)
+                await db.delete(songBlacklists)
+                await db.delete(userStatusLogs)
+                await db.delete(emailTemplates)
                 await db.delete(users).where(ne(users.role, 'SUPER_ADMIN'))
                 await db.delete(playTimes)
                 await db.delete(semesters)
+                await db.delete(requestTimes)
                 await db.delete(systemSettings)
                 console.log('✅ 现有数据已清空')
             } catch (error) {
@@ -174,8 +181,8 @@ export default defineEventHandler(async (event) => {
             'playTimes',
             'semesters',
             'requestTimes',
-            'emailTemplates',
             'users',
+            'emailTemplates',
             'userStatusLogs',
             'songBlacklist',
             'songs',
@@ -323,14 +330,27 @@ export default defineEventHandler(async (event) => {
                                                         .returning({id: users.id})
                                                     createdUser = result[0]
                                                 } else {
-                                                    // ID不存在，使用原始ID创建
-                                                    const result = await tx.insert(users)
-                                                        .values({
-                                                            ...buildUserData(true),
-                                                            id: record.id
-                                                        })
-                                                        .returning({id: users.id})
-                                                    createdUser = result[0]
+                                                    // ID不存在，检查用户名是否冲突（针对保留的超级管理员等情况）
+                                                    const existingUserWithUsername = await tx.select().from(users).where(eq(users.username, record.username)).limit(1)
+
+                                                    if (existingUserWithUsername.length > 0) {
+                                                        // 用户名已存在（如保留的admin），更新该用户，并建立映射
+                                                        console.warn(`用户 ${record.username} (ID ${record.id}) 的用户名已存在于 ID ${existingUserWithUsername[0].id}，将合并数据`)
+                                                        const result = await tx.update(users)
+                                                            .set(buildUserData(false))
+                                                            .where(eq(users.id, existingUserWithUsername[0].id))
+                                                            .returning({id: users.id})
+                                                        createdUser = result[0]
+                                                    } else {
+                                                        // ID不存在且用户名不冲突，使用原始ID创建
+                                                        const result = await tx.insert(users)
+                                                            .values({
+                                                                ...buildUserData(true),
+                                                                id: record.id
+                                                            })
+                                                            .returning({id: users.id})
+                                                        createdUser = result[0]
+                                                    }
                                                 }
                                             }
                                             // 建立ID映射
@@ -1569,7 +1589,7 @@ export default defineEventHandler(async (event) => {
         // 重置所有自增序列
         console.log(`🔄 开始重置自增序列...`)
         const sequenceResetResults = []
-        const tablesToReset = ['Song', 'User', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist', 'SongReplayRequest', 'RequestTime']
+        const tablesToReset = ['Song', 'User', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist', 'SongReplayRequest', 'RequestTime', 'EmailTemplate']
 
         for (const tableName of tablesToReset) {
             try {

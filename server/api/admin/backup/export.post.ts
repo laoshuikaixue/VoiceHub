@@ -347,7 +347,7 @@ export default defineEventHandler(async (event) => {
                 console.log(`✅ ${tableName}: ${tableData.length} 条记录`)
             } catch (error) {
                 // 检查是否为表不存在错误
-                // Postgres error 42P01: undefined_table
+                // Postgres 错误代码 42P01: undefined_table (表不存在)
                 const isTableMissing = error.code === '42P01' || 
                                       (error.message && error.message.includes('does not exist')) ||
                                       (error.statusMessage && error.statusMessage.includes('does not exist'));

@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
         const search = query.search as string || ''
         const semester = query.semester as string || ''
         const grade = query.grade as string || ''
-        const scope = query.scope as string || '' // 'mine' or empty
+        const scope = query.scope as string || '' // 'mine' 或为空
         const sortBy = query.sortBy as string || 'createdAt'
         const sortOrder = query.sortOrder as string || 'desc'
         const bypassCache = query.bypass_cache === 'true'
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
             semester: semester || '',
             grade: grade || '',
             scope: scope || '',
-            userId: scope === 'mine' ? user?.id : undefined, // Include userId in cache key if scope is mine
+            userId: scope === 'mine' ? user?.id : undefined, // 如果 scope 为 mine，则将 userId 包含在缓存键中
             sortBy,
             sortOrder
         }

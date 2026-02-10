@@ -2,7 +2,7 @@ import { db, songReplayRequests } from '~/drizzle/db'
 import { eq, and } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
-    // Check Admin
+    // 检查管理员权限
     const user = event.context.user
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
         throw createError({ statusCode: 403, message: '权限不足' })

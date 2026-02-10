@@ -20,8 +20,8 @@ export default defineNitroPlugin(async (nitroApp) => {
 
                 try {
                     // 尝试重新连接数据库
-                    // Note: Drizzle doesn't have explicit connect/disconnect methods
-                    // Connection is managed automatically
+                    // 注意: Drizzle 没有显式的 connect/disconnect 方法
+                    // 连接由库自动管理
                     await new Promise(resolve => setTimeout(resolve, 2000)) // 等待2秒
                     console.log('Database reconnection successful')
                 } catch (reconnectError) {
@@ -85,8 +85,8 @@ export default defineNitroPlugin(async (nitroApp) => {
     })
 
     // 数据库连接错误的特殊处理
-    // Note: Drizzle handles connection management automatically
-    // We'll implement a simple retry mechanism for database operations
+    // 注意: Drizzle 自动管理连接
+    // 我们将为数据库操作实现简单的重试机制
     const originalExecute = db.execute
     db.execute = new Proxy(originalExecute, {
         apply: async (target, thisArg, argumentsList) => {
