@@ -3885,6 +3885,7 @@ defineExpose({
     height: auto;
     max-height: none;
     overflow: visible;
+    padding: 0; /* 移除可能的内边距 */
   }
 
   .rules-section {
@@ -3917,6 +3918,8 @@ defineExpose({
     display: flex;
     flex-direction: column;
     height: auto;
+    overflow-x: hidden; /* 防止横向溢出 */
+    max-width: 100%; /* 确保不超过父容器宽度 */
   }
 
   .song-request-form {
@@ -3925,6 +3928,14 @@ defineExpose({
     flex-direction: column;
     height: auto;
     gap: 1.25rem;
+    max-width: 100%; /* 确保不超过父容器宽度 */
+  }
+
+  .form-header-row {
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%; /* 确保占满宽度 */
+    max-width: 100%; /* 防止超出 */
   }
 
   .search-results-container {
@@ -3998,6 +4009,7 @@ defineExpose({
     margin-bottom: 1.25rem;
     flex: none;
     width: 100%;
+    min-width: unset; /* 移除桌面端的最小宽度限制 */
   }
 
   .collaborators-section {
@@ -4021,6 +4033,8 @@ defineExpose({
   .search-input-group {
     flex-direction: row;
     gap: 0.5rem;
+    width: 100%; /* 确保占满父容器宽度 */
+    max-width: 100%; /* 防止超出 */
   }
 
   .search-input {
@@ -4030,11 +4044,16 @@ defineExpose({
     padding: 0.75rem 1rem;
     font-size: 15px;
     flex: 1;
+    min-width: 0; /* 允许输入框在必要时缩小 */
+    max-width: 100%; /* 防止超出 */
   }
 
   .search-button {
-    padding: 0.75rem 1.25rem;
+    padding: 0.75rem 1rem; /* 减小按钮的左右内边距 */
     border-radius: 12px;
+    flex-shrink: 0; /* 防止按钮被压缩 */
+    white-space: nowrap; /* 防止按钮文字换行 */
+    font-size: 14px; /* 稍微减小字体 */
   }
 
   /* 移动端平台选择按钮 */

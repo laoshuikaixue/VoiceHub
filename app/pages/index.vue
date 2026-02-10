@@ -2560,6 +2560,9 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   /* 内容区域 - 全宽无边框 */
   .content-area {
     min-height: auto;
+    overflow-x: hidden; /* 防止横向溢出 */
+    max-width: 100vw; /* 确保不超过视口宽度 */
+    box-sizing: border-box; /* 确保padding计入总宽度 */
   }
 
   .tabs-row {
@@ -2716,6 +2719,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
   .tab-pane {
     padding: 0;
+    overflow-x: hidden; /* 防止横向溢出 */
+    max-width: 100%; /* 确保不超过视口宽度 */
   }
 
   /* 排期标签页优化 */
@@ -2728,6 +2733,10 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   .request-pane {
     flex-direction: column;
     gap: 16px;
+    overflow-x: hidden; /* 防止横向溢出 */
+    max-width: 100%; /* 确保不超过视口宽度 */
+    padding: 0 0.5rem; /* 添加左右内边距，防止内容贴边 */
+    box-sizing: border-box; /* 确保padding计入总宽度 */
   }
 
   /* 登录选项 */
