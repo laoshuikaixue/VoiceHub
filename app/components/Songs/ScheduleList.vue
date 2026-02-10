@@ -180,13 +180,17 @@
                       <div class="song-info">
                         <h3 :title="schedule.song.title + ' - ' + schedule.song.artist" class="song-title">
                           {{ schedule.song.title }} - {{ schedule.song.artist }}
+                          <!-- 重播标识 -->
+                          <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge" title="重播歌曲">
+                            <Icon name="repeat" :size="14" />
+                          </span>
                         </h3>
                         <div class="song-meta">
                           <span
                               v-if="schedule.song.replayRequestCount > 0"
                               :title="'重播申请人：' + (schedule.song.replayRequesters || []).map(r => r.displayName || r.name).join('、')"
                               class="requester replay-requester">
-                            重播人数：{{ schedule.song.replayRequestCount }}人
+                            申请人：{{ (schedule.song.replayRequesters || []).slice(0, 2).map(r => r.displayName || r.name).join('、') }}{{ schedule.song.replayRequestCount > 2 ? ' 等' : '' }}
                           </span>
                           <span
                               v-else
@@ -200,11 +204,11 @@
                         </div>
                       </div>
 
-                      <!-- 热度展示 -->
+                      <!-- 人数展示 -->
                       <div class="action-area">
                         <div class="vote-count">
-                          <span class="count">{{ schedule.song.voteCount }}</span>
-                          <span class="label">热度</span>
+                          <span class="count">{{ schedule.song.replayRequestCount > 0 ? schedule.song.replayRequestCount : schedule.song.voteCount }}</span>
+                          <span class="label">{{ schedule.song.replayRequestCount > 0 ? '重播' : '热度' }}</span>
                         </div>
                       </div>
                     </div>
@@ -2613,6 +2617,31 @@ const vRipple = {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 重播标识 */
+.replay-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  background: rgba(11, 90, 254, 0.15);
+  border: 1px solid rgba(11, 90, 254, 0.3);
+  border-radius: 4px;
+  color: #0B5AFE;
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+  cursor: help;
+  transition: all 0.2s ease;
+}
+
+.replay-badge:hover {
+  background: rgba(11, 90, 254, 0.25);
+  border-color: rgba(11, 90, 254, 0.5);
 }
 
 .song-meta {
@@ -2632,13 +2661,10 @@ const vRipple = {
 
 /* 重播申请人数样式 */
 .replay-requester {
-  color: rgba(11, 90, 254, 0.8);
-  font-weight: 500;
+  /* 使用和普通投稿人相同的颜色 */
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: normal;
   cursor: help;
-}
-
-.replay-requester:hover {
-  color: rgba(11, 90, 254, 1);
 }
 
 /* 热度样式 */

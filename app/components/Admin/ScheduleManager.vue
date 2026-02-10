@@ -427,11 +427,20 @@
                    <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                      <div class="flex items-center gap-2">
                        <h4 class="font-bold text-zinc-200 text-sm truncate">{{ schedule.song.title }}</h4>
+                       <!-- 重播标识 -->
+                       <span v-if="schedule.song.replayRequestCount > 0" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider flex items-center gap-1" title="重播歌曲">
+                         <Icon name="repeat" :size="10" />
+                         重播
+                       </span>
                        <span v-if="schedule.isDraft" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">草稿</span>
                      </div>
                      <div class="text-xs text-zinc-500 truncate">{{ schedule.song.artist }}</div>
                      <div class="text-[10px] text-zinc-600 truncate flex items-center gap-1">
-                        <span>{{ schedule.song.requester }}</span>
+                        <!-- 显示申请人或投稿人 -->
+                        <span v-if="schedule.song.replayRequestCount > 0" :title="'重播申请人：' + (schedule.song.replayRequesters || []).map(r => r.displayName || r.name).join('、')">
+                          申请人: {{ (schedule.song.replayRequesters || []).slice(0, 2).map(r => r.displayName || r.name).join('、') }}{{ schedule.song.replayRequestCount > 2 ? ' 等' + schedule.song.replayRequestCount + '人' : '' }}
+                        </span>
+                        <span v-else>{{ schedule.song.requester }}</span>
                         <span v-if="schedule.song.requesterGrade" class="text-zinc-700">|</span>
                         <span v-if="schedule.song.requesterGrade">{{ schedule.song.requesterGrade }}</span>
                         <span v-if="schedule.song.preferredPlayTimeId" class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap">

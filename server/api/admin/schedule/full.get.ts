@@ -164,7 +164,7 @@ export default defineEventHandler(async (event) => {
         const replayRequestersMap = new Map()
 
         if (songIds.length > 0) {
-            // 获取每首歌的重播申请数量（仅统计 PENDING 状态）
+            // 获取每首歌的重播申请数量（统计 PENDING 和 FULFILLED 状态）
             const replayCountsData = await db.select({
                 songId: songReplayRequests.songId,
                 count: count(songReplayRequests.id)
@@ -172,7 +172,7 @@ export default defineEventHandler(async (event) => {
                 .from(songReplayRequests)
                 .where(and(
                     inArray(songReplayRequests.songId, songIds),
-                    eq(songReplayRequests.status, 'PENDING')
+                    inArray(songReplayRequests.status, ['PENDING', 'FULFILLED'])
                 ))
                 .groupBy(songReplayRequests.songId)
 
@@ -189,13 +189,14 @@ export default defineEventHandler(async (event) => {
                     grade: users.grade,
                     class: users.class
                 },
+                status: songReplayRequests.status,
                 createdAt: songReplayRequests.createdAt
             })
                 .from(songReplayRequests)
                 .innerJoin(users, eq(songReplayRequests.userId, users.id))
                 .where(and(
                     inArray(songReplayRequests.songId, songIds),
-                    eq(songReplayRequests.status, 'PENDING')
+                    inArray(songReplayRequests.status, ['PENDING', 'FULFILLED'])
                 ))
                 .orderBy(desc(songReplayRequests.createdAt))
 
@@ -209,7 +210,8 @@ export default defineEventHandler(async (event) => {
                         id: r.user.id,
                         name: r.user.name || '未知用户',
                         grade: r.user.grade,
-                        class: r.user.class
+                        class: r.user.class,
+                        status: r.status
                     })
                 }
             })
@@ -278,8 +280,12 @@ export default defineEventHandler(async (event) => {
                 name: r.name,
                 displayName: formatDisplayName(r),
                 grade: r.grade,
-                class: r.class
+                class: r.class,
+                status: r.status
             }))
+
+            // 判断是否为重播：有重播申请（PENDING 或 FULFILLED）
+            const isReplaySong = replayRequestCount > 0
 
             return {
                 id: schedule.id,
@@ -315,9 +321,9 @@ export default defineEventHandler(async (event) => {
                     semester: schedule.songSemester || null,
                     createdAt: schedule.songCreatedAt,
                     // 重播申请信息
-                    replayRequestCount: replayRequestCount,
-                    replayRequesters: formattedReplayRequesters,
-                    isReplay: replayRequestCount > 0 // 如果有重播申请，标记为重播歌曲
+                    replayRequestCount: isReplaySong ? replayRequestCount : 0,
+                    replayRequesters: isReplaySong ? formattedReplayRequesters : [],
+                    isReplay: isReplaySong // 只有已播放过且有重播申请的才标记为重播
                 }
             }
         })
