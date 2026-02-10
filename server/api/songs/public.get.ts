@@ -1,8 +1,8 @@
 import {createError, defineEventHandler, getCookie, getHeader, getQuery} from 'h3'
 import jwt from 'jsonwebtoken'
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songCollaborators, songs, systemSettings, users, votes} from '~/drizzle/schema'
-import {and, count, eq, inArray} from 'drizzle-orm'
+import {playTimes, schedules, songCollaborators, songReplayRequests, songs, systemSettings, users, votes} from '~/drizzle/schema'
+import {and, count, desc, eq, inArray} from 'drizzle-orm'
 import {cacheService} from '~~/server/services/cacheService'
 import {executeRedisCommand, isRedisReady} from '../../utils/redis'
 import {formatDateTime} from '~/utils/timeUtils'
@@ -232,6 +232,67 @@ export default defineEventHandler(async (event) => {
             })
         }
 
+        // 获取重播申请信息
+        const replayRequestCountsMap = new Map()
+        const replayRequestersMap = new Map()
+
+        if (songIds.length > 0) {
+            // 获取每首歌的重播申请数量（统计 PENDING 和 FULFILLED 状态）
+            // FULFILLED 表示已经被排期，PENDING 表示等待排期
+            const replayCountsData = await db.select({
+                songId: songReplayRequests.songId,
+                count: count(songReplayRequests.id)
+            })
+                .from(songReplayRequests)
+                .where(and(
+                    inArray(songReplayRequests.songId, songIds),
+                    // 查询 PENDING 或 FULFILLED 状态的申请
+                    // PENDING: 等待排期，FULFILLED: 已排期但可能还未播放
+                    inArray(songReplayRequests.status, ['PENDING', 'FULFILLED'])
+                ))
+                .groupBy(songReplayRequests.songId)
+
+            replayCountsData.forEach(r => {
+                replayRequestCountsMap.set(r.songId, r.count)
+            })
+
+            // 获取重播申请人列表（前5个，包括 PENDING 和 FULFILLED）
+            const replayRequestersData = await db.select({
+                songId: songReplayRequests.songId,
+                user: {
+                    id: users.id,
+                    name: users.name,
+                    grade: users.grade,
+                    class: users.class
+                },
+                status: songReplayRequests.status,
+                createdAt: songReplayRequests.createdAt
+            })
+                .from(songReplayRequests)
+                .innerJoin(users, eq(songReplayRequests.userId, users.id))
+                .where(and(
+                    inArray(songReplayRequests.songId, songIds),
+                    inArray(songReplayRequests.status, ['PENDING', 'FULFILLED'])
+                ))
+                .orderBy(desc(songReplayRequests.createdAt))
+
+            replayRequestersData.forEach(r => {
+                if (!replayRequestersMap.has(r.songId)) {
+                    replayRequestersMap.set(r.songId, [])
+                }
+                // 只保留前5个
+                if (replayRequestersMap.get(r.songId).length < 5) {
+                    replayRequestersMap.get(r.songId).push({
+                        id: r.user.id,
+                        name: r.user.name || '未知用户',
+                        grade: r.user.grade,
+                        class: r.user.class,
+                        status: r.status
+                    })
+                }
+            })
+        }
+
         // 辅助函数：格式化显示名称
         const formatDisplayName = (userObj: any) => {
             if (!userObj || !userObj.name) return '未知用户'
@@ -277,6 +338,21 @@ export default defineEventHandler(async (event) => {
                 class: c.class
             }))
 
+            // 获取重播申请信息
+            const replayRequestCount = replayRequestCountsMap.get(schedule.song.id) || 0
+            const replayRequesters = replayRequestersMap.get(schedule.song.id) || []
+            const formattedReplayRequesters = replayRequesters.map((r: any) => ({
+                id: r.id,
+                name: r.name,
+                displayName: formatDisplayName(r),
+                grade: r.grade,
+                class: r.class,
+                status: r.status
+            }))
+
+            // 判断是否为重播：有重播申请（PENDING 或 FULFILLED）
+            const isReplaySong = replayRequestCount > 0
+
             // 注意：这里不进行模糊化处理，保持完整数据用于缓存
             // 模糊化处理将在最终返回时进行
 
@@ -306,7 +382,11 @@ export default defineEventHandler(async (event) => {
                     musicId: schedule.song.musicId || null,
                     playUrl: schedule.song.playUrl || null,
                     semester: schedule.song.semester || null,
-                    requestedAt: schedule.song.createdAt ? formatDateTime(schedule.song.createdAt) : null
+                    requestedAt: schedule.song.createdAt ? formatDateTime(schedule.song.createdAt) : null,
+                    // 重播申请信息
+                    replayRequestCount: isReplaySong ? replayRequestCount : 0,
+                    replayRequesters: isReplaySong ? formattedReplayRequesters : [],
+                    isReplay: isReplaySong // 只有已播放过且有重播申请的才标记为重播
                 }
             }
         })

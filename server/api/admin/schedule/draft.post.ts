@@ -1,5 +1,5 @@
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songs} from '~/drizzle/schema'
+import {playTimes, schedules, songs, songReplayRequests} from '~/drizzle/schema'
 import {and, desc, eq, gte, lte} from 'drizzle-orm'
 import {cacheService} from '~~/server/services/cacheService'
 import {getClientIP} from '~~/server/utils/ip-utils'
@@ -125,6 +125,23 @@ export default defineEventHandler(async (event) => {
                 // 删除现有排期或草稿
                 await tx.delete(schedules)
                     .where(eq(schedules.id, existingSchedule.id))
+                
+                // 恢复该歌曲的重播申请状态为 PENDING
+                // 只恢复状态为 FULFILLED 的申请
+                const updatedRequests = await tx.update(songReplayRequests)
+                    .set({ 
+                        status: 'PENDING',
+                        updatedAt: new Date()
+                    })
+                    .where(and(
+                        eq(songReplayRequests.songId, body.songId),
+                        eq(songReplayRequests.status, 'FULFILLED')
+                    ))
+                    .returning()
+                
+                if (updatedRequests.length > 0) {
+                    console.log(`恢复了 ${updatedRequests.length} 个重播申请状态为 PENDING（草稿保存时删除旧排期）`)
+                }
             }
 
             // 获取序号，如果未提供则查找当天最大序号+1

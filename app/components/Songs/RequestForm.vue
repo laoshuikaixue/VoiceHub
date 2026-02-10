@@ -291,15 +291,13 @@
 
                         <!-- 开启重播申请且非管理员对已播放的相似歌曲：显示申请重播 -->
                         <button
-                            v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
-                            :disabled="requestingReplay || getSimilarSong(result)?.replayRequested"
-                            :title="getSimilarSong(result)?.replayRequested ? '该歌曲已申请过重播' : '申请重播'"
-                            class="replay-btn"
-                            @click.stop.prevent="handleRequestReplay(getSimilarSong(result))"
-                        >
-                          {{
-                            requestingReplay ? '申请中...' : (getSimilarSong(result)?.replayRequested ? '已申请重播' : '申请重播')
-                          }}
+                    v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
+                    :disabled="isReplayButtonDisabled(getSimilarSong(result))"
+                    :title="getReplayButtonTitle(getSimilarSong(result))"
+                    class="replay-btn"
+                    @click.stop.prevent="handleRequestReplay(getSimilarSong(result))"
+                >
+                          {{ getReplayButtonText(getSimilarSong(result)) }}
                         </button>
 
                         <!-- 其他用户：显示点赞按钮，根据状态设置不同样式 -->
@@ -442,13 +440,13 @@
             <!-- 如果歌曲已播放且开启了重播申请（超级管理员不显示） -->
             <div v-if="song.played && enableReplayRequests && !isSuperAdmin" class="song-actions">
               <button
-                  :disabled="requestingReplay || song.replayRequested"
-                  :title="song.replayRequested ? '该歌曲已申请过重播' : '申请重播'"
+                  :disabled="isReplayButtonDisabled(song)"
+                  :title="getReplayButtonTitle(song)"
                   class="replay-btn small"
                   type="button"
                   @click="handleRequestReplay(song)"
               >
-                {{ requestingReplay ? '申请中...' : (song.replayRequested ? '已申请重播' : '申请重播') }}
+                {{ getReplayButtonText(song) }}
               </button>
             </div>
           </div>
@@ -1897,6 +1895,95 @@ const handleRequestReplay = async (song) => {
   } finally {
     requestingReplay.value = false
   }
+}
+
+// 获取重播按钮文本
+const getReplayButtonText = (song) => {
+  if (requestingReplay.value) return '申请中...'
+  if (!song) return '申请重播'
+  
+  // 检查学期
+  if (currentSemester.value && song.semester !== currentSemester.value.name) {
+    return '非本学期'
+  }
+  
+  // 检查重播申请状态
+  if (song.replayRequestStatus === 'REJECTED') {
+    // 如果在冷却期内
+    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
+      return `已拒绝（${song.replayRequestCooldownRemaining}小时后可重新申请）`
+    }
+    // 冷却期已过
+    return '申请重播'
+  }
+  
+  if (song.replayRequestStatus === 'FULFILLED') {
+    return '已重播'
+  }
+  
+  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
+    return '已申请重播'
+  }
+  
+  return '申请重播'
+}
+
+// 获取重播按钮标题（tooltip）
+const getReplayButtonTitle = (song) => {
+  if (!song) return '申请重播'
+  
+  // 检查学期
+  if (currentSemester.value && song.semester !== currentSemester.value.name) {
+    return '只能申请重播当前学期的歌曲'
+  }
+  
+  // 检查重播申请状态
+  if (song.replayRequestStatus === 'REJECTED') {
+    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
+      return `申请被拒绝，需要等待 ${song.replayRequestCooldownRemaining} 小时后才能重新申请`
+    }
+    return '申请重播'
+  }
+  
+  if (song.replayRequestStatus === 'FULFILLED') {
+    return '该歌曲已重播'
+  }
+  
+  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
+    return '该歌曲已申请过重播'
+  }
+  
+  return '申请重播'
+}
+
+// 检查重播按钮是否应该禁用
+const isReplayButtonDisabled = (song) => {
+  if (requestingReplay.value || !song) return true
+  
+  // 检查学期
+  if (currentSemester.value && song.semester !== currentSemester.value.name) {
+    return true
+  }
+  
+  // 检查重播申请状态
+  if (song.replayRequestStatus === 'REJECTED') {
+    // 如果在冷却期内，禁用按钮
+    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
+      return true
+    }
+    // 冷却期已过，允许重新申请
+    return false
+  }
+  
+  if (song.replayRequestStatus === 'FULFILLED') {
+    return true
+  }
+  
+  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
+    return true
+  }
+  
+  return false
 }
 
 // 重置表单

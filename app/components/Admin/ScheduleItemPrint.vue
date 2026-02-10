@@ -29,13 +29,17 @@
       <div class="song-info">
         <div v-if="settings.showTitle" class="song-title">
           {{ schedule.song.title }}
+          <!-- 重播标识 -->
+          <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge-print">
+            重播
+          </span>
         </div>
         <div v-if="settings.showArtist" class="song-artist">
           {{ schedule.song.artist }}
         </div>
       </div>
 
-      <!-- 投稿人信息 -->
+      <!-- 投稿人信息（重播歌曲不显示申请人，只显示原投稿人） -->
       <div v-if="settings.showRequester" class="requester-info">
         <span class="label">投稿人：</span>
         <span class="value">
@@ -46,10 +50,11 @@
         </span>
       </div>
 
-      <!-- 热度信息 -->
+      <!-- 人数信息 -->
       <div v-if="settings.showVotes" class="votes-info">
-        <span class="label">热度：</span>
-        <span class="value">{{ schedule.song.voteCount || 0 }}</span>
+        <span v-if="schedule.song.replayRequestCount > 0" class="label">申请重播：</span>
+        <span v-else class="label">热度：</span>
+        <span class="value">{{ schedule.song.replayRequestCount > 0 ? schedule.song.replayRequestCount + '人' : (schedule.song.voteCount || 0) }}</span>
       </div>
 
       <!-- 播出时段 -->
@@ -161,6 +166,22 @@ const handleImageError = (event) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 打印用重播标识 */
+.replay-badge-print {
+  display: inline-block;
+  padding: 1px 4px;
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 3px;
+  color: #1976d2;
+  font-size: 10px;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
 .song-artist {

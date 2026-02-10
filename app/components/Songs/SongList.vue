@@ -162,7 +162,12 @@
           <div
               v-for="song in paginatedSongs"
               :key="song.id"
-              :class="{ 'played': song.played, 'scheduled': song.scheduled, 'focused': isSongFocused(song.id) }"
+              :class="{ 
+                'played': song.played, 
+                'scheduled': song.scheduled, 
+                'focused': isSongFocused(song.id),
+                'playing': isCurrentPlaying(song.id)
+              }"
               class="song-card"
               @click="handleSongCardClick(song)"
           >
@@ -208,15 +213,27 @@
                   >
                     已排期
                   </span>
+                  <span
+                      v-else-if="song.isReplay"
+                      title="重播歌曲"
+                      class="replay-tag"
+                  >
+                    重播
+                  </span>
                 </h3>
                 <div class="song-meta">
                   <span
                       :title="(song.collaborators && song.collaborators.length ? '主投稿人: ' : '投稿人: ') + song.requester + (song.collaborators && song.collaborators.length ? '\n联合投稿: ' + song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
                       class="requester">
-                    投稿人：{{ song.requester }}
-                    <span v-if="song.collaborators && song.collaborators.length > 0">
-                       & {{ song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
-                    </span>
+                    <template v-if="song.isReplay">
+                      重播申请 ({{ song.replayRequestCount || 0 }})：{{ song.replayRequesters ? song.replayRequesters.map(r => r.name).slice(0, 3).join(', ') + (song.replayRequesters.length > 3 ? '...' : '') : '' }}
+                    </template>
+                    <template v-else>
+                      投稿人：{{ song.requester }}
+                      <span v-if="song.collaborators && song.collaborators.length > 0">
+                         & {{ song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
+                      </span>
+                    </template>
                   </span>
                 </div>
               </div>
@@ -264,7 +281,7 @@
               <!-- 申请/取消重播按钮 -->
               <template v-if="song.played && isAuthenticated">
                 <button
-                    v-if="song.replayRequested"
+                    v-if="shouldShowCancelButton(song)"
                     :disabled="actionInProgress"
                     class="withdraw-button replay-cancel-btn"
                     title="撤回重播申请"
@@ -273,13 +290,13 @@
                   撤回申请
                 </button>
                 <button
-                    v-else-if="enableReplayRequests"
-                    :disabled="actionInProgress"
+                    v-else-if="enableReplayRequests && shouldShowRequestButton(song)"
+                    :disabled="isReplayButtonDisabled(song)"
                     class="withdraw-button replay-request-btn"
-                    title="申请重播"
+                    :title="getReplayButtonTitle(song)"
                     @click.stop="handleRequestReplay(song)"
                 >
-                  申请重播
+                  {{ getReplayButtonText(song) }}
                 </button>
               </template>
             </div>
@@ -774,16 +791,27 @@ const validateJumpInput = () => {
 
 // 处理跳转到指定页面
 const handleJumpToPage = () => {
+  // 如果输入为空，直接返回，不触发提示
+  if (jumpPageInput.value === '' || jumpPageInput.value === null || jumpPageInput.value === undefined) {
+    isValidJumpPage.value = false
+    return
+  }
+
   const page = parseInt(jumpPageInput.value)
   if (!isNaN(page) && page >= 1 && page <= totalPages.value) {
-    goToPage(page)
-    jumpPageInput.value = '' // 清空输入框
+    if (page !== currentPage.value) {
+      goToPage(page)
+    }
+    jumpPageInput.value = '' // 跳转成功后清空输入框
     isValidJumpPage.value = false
   } else {
-    // 输入无效时给出提示
+    // 只有在输入不为空且确实无效时才给出提示
     if (window.$showNotification) {
       window.$showNotification(`请输入有效的页码 (1-${totalPages.value})`, 'error')
     }
+    // 清空无效输入，避免重复提示
+    jumpPageInput.value = ''
+    isValidJumpPage.value = false
   }
 }
 
@@ -873,6 +901,107 @@ const handleRequestReplay = (song) => {
     action: 'requestReplay',
     data: song
   }
+}
+
+// 获取重播按钮文本
+const getReplayButtonText = (song) => {
+  if (actionInProgress.value) return '处理中...'
+  if (!song) return '申请重播'
+  
+  // 检查学期
+  if (currentSemester.value && song.semester !== currentSemester.value.name) {
+    return '非本学期'
+  }
+  
+  // 检查重播申请状态
+  if (song.replayRequestStatus === 'REJECTED') {
+    // 如果在冷却期内
+    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
+      return `已拒绝（${song.replayRequestCooldownRemaining}小时后可重新申请）`
+    }
+    // 冷却期已过
+    return '申请重播'
+  }
+  
+  if (song.replayRequestStatus === 'FULFILLED') {
+    return '已重播'
+  }
+  
+  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
+    return '撤回申请'
+  }
+  
+  return '申请重播'
+}
+
+// 获取重播按钮标题（tooltip）
+const getReplayButtonTitle = (song) => {
+  if (!song) return '申请重播'
+  
+  // 检查学期
+  if (currentSemester.value && song.semester !== currentSemester.value.name) {
+    return '只能申请重播当前学期的歌曲'
+  }
+  
+  // 检查重播申请状态
+  if (song.replayRequestStatus === 'REJECTED') {
+    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
+      return `申请被拒绝，需要等待 ${song.replayRequestCooldownRemaining} 小时后才能重新申请`
+    }
+    return '申请重播'
+  }
+  
+  if (song.replayRequestStatus === 'FULFILLED') {
+    return '该歌曲已重播'
+  }
+  
+  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
+    return '撤回重播申请'
+  }
+  
+  return '申请重播'
+}
+
+// 检查重播按钮是否应该禁用
+const isReplayButtonDisabled = (song) => {
+  if (actionInProgress.value || !song) return true
+  
+  // 检查学期
+  if (currentSemester.value && song.semester !== currentSemester.value.name) {
+    return true
+  }
+  
+  // 检查重播申请状态
+  if (song.replayRequestStatus === 'REJECTED') {
+    // 如果在冷却期内，禁用按钮
+    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
+      return true
+    }
+    // 冷却期已过，允许重新申请
+    return false
+  }
+  
+  if (song.replayRequestStatus === 'FULFILLED') {
+    return true
+  }
+  
+  // PENDING 状态时不禁用，因为可以撤回
+  return false
+}
+
+// 判断是否应该显示撤回按钮
+const shouldShowCancelButton = (song) => {
+  return song.replayRequested && song.replayRequestStatus === 'PENDING'
+}
+
+// 判断是否应该显示申请按钮
+const shouldShowRequestButton = (song) => {
+  // 如果是 PENDING 状态，显示撤回按钮而不是申请按钮
+  if (song.replayRequested && song.replayRequestStatus === 'PENDING') {
+    return false
+  }
+  // 其他情况显示申请按钮
+  return true
 }
 
 // 处理刷新按钮点击
@@ -2172,6 +2301,19 @@ const vRipple = {
   align-self: center; /* 确保垂直居中 */
 }
 
+.replay-tag {
+  display: inline-flex;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  color: #3b82f6;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+  align-self: center;
+}
+
 /* 投稿时间和撤销按钮 */
 .submission-footer {
   display: flex;
@@ -2478,26 +2620,39 @@ button:disabled {
 
   .song-card {
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.07);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 20px;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .song-card.playing {
+    background: rgba(11, 90, 254, 0.12);
+    border-color: rgba(11, 90, 254, 0.4);
+    box-shadow: 0 0 20px rgba(11, 90, 254, 0.2);
+  }
+
+  .song-card.playing .song-title {
+    color: #0B5AFE;
+    text-shadow: 0 0 10px rgba(11, 90, 254, 0.3);
   }
 
   .song-card:active {
     transform: scale(0.97);
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .song-card.played {
-    opacity: 0.6;
-    filter: grayscale(0.3);
-  }
+      opacity: 0.8;
+      filter: grayscale(0.35);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
 
   .song-card-main {
     height: auto;

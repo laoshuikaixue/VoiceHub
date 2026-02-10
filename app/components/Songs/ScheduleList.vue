@@ -149,7 +149,10 @@
                   <div
                       v-for="schedule in schedules"
                       :key="schedule.id"
-                      :class="{ 'played': schedule.song.played }"
+                      :class="{ 
+                        'played': schedule.song.played && schedule.song.replayRequestCount === 0,
+                        'playing': isCurrentPlaying(schedule.song.id)
+                      }"
                       class="song-card"
                   >
                     <div class="song-card-main">
@@ -179,10 +182,21 @@
 
                       <div class="song-info">
                         <h3 :title="schedule.song.title + ' - ' + schedule.song.artist" class="song-title">
-                          {{ schedule.song.title }} - {{ schedule.song.artist }}
+                          <span class="title-text">{{ schedule.song.title }} - {{ schedule.song.artist }}</span>
+                          <!-- 重播标识 -->
+                          <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge" title="重播歌曲">
+                            <Icon name="repeat" :size="14" />
+                          </span>
                         </h3>
                         <div class="song-meta">
                           <span
+                              v-if="schedule.song.replayRequestCount > 0"
+                              :title="'重播申请人：' + (schedule.song.replayRequesters || []).map(r => r.displayName || r.name).join('、')"
+                              class="requester replay-requester">
+                            申请人：{{ (schedule.song.replayRequesters || [])[0] ? ((schedule.song.replayRequesters[0].displayName || schedule.song.replayRequesters[0].name) + (schedule.song.replayRequestCount > 1 ? '...' : '')) : '未知' }}
+                          </span>
+                          <span
+                              v-else
                               :title="(schedule.song.collaborators && schedule.song.collaborators.length > 0 ? '主投稿人: ' : '投稿人: ') + schedule.song.requester + (schedule.song.collaborators && schedule.song.collaborators.length ? '\n联合投稿: ' + schedule.song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
                               class="requester">
                             投稿人：{{ schedule.song.requester }}
@@ -193,11 +207,11 @@
                         </div>
                       </div>
 
-                      <!-- 热度展示 -->
+                      <!-- 人数展示 -->
                       <div class="action-area">
                         <div class="vote-count">
-                          <span class="count">{{ schedule.song.voteCount }}</span>
-                          <span class="label">热度</span>
+                          <span class="count">{{ schedule.song.replayRequestCount > 0 ? schedule.song.replayRequestCount : schedule.song.voteCount }}</span>
+                          <span class="label">{{ schedule.song.replayRequestCount > 0 ? '重播' : '热度' }}</span>
                         </div>
                       </div>
                     </div>
@@ -2603,9 +2617,43 @@ const vRipple = {
   letter-spacing: 0.04em;
   color: #FFFFFF;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  line-height: 1.4;
+  overflow: hidden;
+}
+
+.title-text {
+  flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 重播标识 */
+.replay-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  background: rgba(11, 90, 254, 0.15);
+  border: 1px solid rgba(11, 90, 254, 0.3);
+  border-radius: 4px;
+  color: #0B5AFE;
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+  cursor: help;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.replay-badge:hover {
+  background: rgba(11, 90, 254, 0.25);
+  border-color: rgba(11, 90, 254, 0.5);
 }
 
 .song-meta {
@@ -2621,6 +2669,14 @@ const vRipple = {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
   text-align: left;
+}
+
+/* 重播申请人数样式 */
+.replay-requester {
+  /* 使用和普通投稿人相同的颜色 */
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: normal;
+  cursor: help;
 }
 
 /* 热度样式 */
@@ -2853,25 +2909,38 @@ const vRipple = {
 
   .song-card {
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-radius: 18px;
     overflow: hidden;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .song-card.playing {
+    background: rgba(11, 90, 254, 0.18);
+    border-color: rgba(11, 90, 254, 0.5);
+    box-shadow: 0 0 20px rgba(11, 90, 254, 0.3);
+  }
+
+  .song-card.playing .song-title {
+    color: #0B5AFE;
+    text-shadow: 0 0 10px rgba(11, 90, 254, 0.4);
   }
 
   .song-card:active {
     transform: scale(0.98);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
   }
 
   .song-card.played {
-    opacity: 0.5;
-    filter: grayscale(0.5);
+    opacity: 0.8;
+    filter: grayscale(0.35);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
   }
 
   .song-card-main {

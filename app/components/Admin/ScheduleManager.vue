@@ -361,7 +361,7 @@
               </button>
               <button
                 @click="saveSequence"
-                :disabled="!hasChanges && localScheduledSongs.length > 0"
+                :disabled="!hasChanges"
                 class="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 <FileBadge class="w-3.5 h-3.5" /> 保存并发布
@@ -427,11 +427,20 @@
                    <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                      <div class="flex items-center gap-2">
                        <h4 class="font-bold text-zinc-200 text-sm truncate">{{ schedule.song.title }}</h4>
+                       <!-- 重播标识 -->
+                       <span v-if="schedule.song.replayRequestCount > 0" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider flex items-center gap-1" title="重播歌曲">
+                         <Icon name="repeat" :size="10" />
+                         重播
+                       </span>
                        <span v-if="schedule.isDraft" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">草稿</span>
                      </div>
                      <div class="text-xs text-zinc-500 truncate">{{ schedule.song.artist }}</div>
                      <div class="text-[10px] text-zinc-600 truncate flex items-center gap-1">
-                        <span>{{ schedule.song.requester }}</span>
+                        <!-- 显示申请人或投稿人 -->
+                        <span v-if="schedule.song.replayRequestCount > 0" :title="'重播申请人：' + (schedule.song.replayRequesters || []).map(r => r.displayName || r.name).join('、')">
+                          申请人: {{ (schedule.song.replayRequesters || []).slice(0, 2).map(r => r.displayName || r.name).join('、') }}{{ schedule.song.replayRequestCount > 2 ? ' 等' + schedule.song.replayRequestCount + '人' : '' }}
+                        </span>
+                        <span v-else>{{ schedule.song.requester }}</span>
                         <span v-if="schedule.song.requesterGrade" class="text-zinc-700">|</span>
                         <span v-if="schedule.song.requesterGrade">{{ schedule.song.requesterGrade }}</span>
                         <span v-if="schedule.song.preferredPlayTimeId" class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap">
@@ -488,7 +497,7 @@
         <!-- 主要操作 -->
         <button
           @click="saveSequence"
-          :disabled="!hasChanges && localScheduledSongs.length > 0"
+          :disabled="!hasChanges"
           class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           <FileBadge class="w-4 h-4" /> 保存并发布
@@ -522,9 +531,17 @@
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" @click.stop>
       <div class="flex items-center justify-between p-4 border-b border-zinc-800">
         <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ replayModalTitle }} - 重播申请详情</h3>
-        <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="closeReplayModal">
-          <CloseIcon class="w-5 h-5" />
-        </button>
+        <div class="flex items-center gap-3">
+          <button
+            class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-xs font-bold transition-colors"
+            @click="rejectReplayRequest(replayModalSongId); closeReplayModal()"
+          >
+            拒绝申请
+          </button>
+          <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="closeReplayModal">
+            <CloseIcon class="w-5 h-5" />
+          </button>
+        </div>
       </div>
       <div class="p-0 overflow-y-auto max-h-[60vh]">
         <div class="divide-y divide-zinc-800/50">
@@ -597,10 +614,12 @@ const openDownloadDialog = () => {
 const showReplayModal = ref(false)
 const replayModalTitle = ref('')
 const replayModalRequests = ref([])
+const replayModalSongId = ref(null)
 
 const openReplayModal = (song) => {
   replayModalTitle.value = song.title
   replayModalRequests.value = song.requestDetails || []
+  replayModalSongId.value = song.id
   showReplayModal.value = true
 }
 
@@ -608,6 +627,7 @@ const closeReplayModal = () => {
   showReplayModal.value = false
   replayModalTitle.value = ''
   replayModalRequests.value = []
+  replayModalSongId.value = null
 }
 
 // 拖拽状态
@@ -1105,7 +1125,10 @@ watch(selectedGrade, () => {
 // 加载重播申请
 const fetchReplayRequests = async () => {
   try {
-    const data = await $fetch('/api/admin/schedule/replay-requests', auth.getAuthConfig())
+    const data = await $fetch('/api/admin/replay-requests', {
+      ...auth.getAuthConfig(),
+      query: { status: 'PENDING' }
+    })
     replayRequests.value = data || []
   } catch (err) {
     console.error('Failed to fetch replay requests', err)
@@ -1122,7 +1145,7 @@ const rejectReplayRequest = async (songId) => {
 
   confirmAction.value = async () => {
     try {
-      await $fetch('/api/admin/schedule/reject-replay', {
+      await $fetch('/api/admin/replay-requests/reject', {
         method: 'POST',
         body: { songId },
         ...auth.getAuthConfig()
@@ -1720,13 +1743,20 @@ const saveDraft = async () => {
 
 // 发布排期（需要确认）
 const publishSchedule = async () => {
-  if (localScheduledSongs.value.length === 0) return
-
   try {
-    confirmDialogTitle.value = '发布排期'
-    confirmDialogMessage.value = '确定要发布当前排期吗？发布后将立即公示并发送通知。'
-    confirmDialogType.value = 'warning'
-    confirmDialogConfirmText.value = '发布排期'
+    // 如果列表为空，提示删除排期
+    if (localScheduledSongs.value.length === 0) {
+      confirmDialogTitle.value = '删除排期'
+      confirmDialogMessage.value = '确定要删除当天的所有排期吗？此操作不可恢复。'
+      confirmDialogType.value = 'danger'
+      confirmDialogConfirmText.value = '确认删除'
+    } else {
+      confirmDialogTitle.value = '发布排期'
+      confirmDialogMessage.value = '确定要发布当前排期吗？发布后将立即公示并发送通知。'
+      confirmDialogType.value = 'warning'
+      confirmDialogConfirmText.value = '发布排期'
+    }
+    
     confirmAction.value = async () => {
       await publishScheduleConfirmed()
     }
@@ -1765,7 +1795,11 @@ const publishScheduleConfirmed = async () => {
     updateLocalScheduledSongs()
 
     if (window.$showNotification) {
-      window.$showNotification('排期发布成功，通知已发送！', 'success')
+      if (songsToPublish.length === 0) {
+        window.$showNotification('排期已删除！', 'success')
+      } else {
+        window.$showNotification('排期发布成功，通知已发送！', 'success')
+      }
     }
   } catch (error) {
     console.error('发布排期失败:', error)
