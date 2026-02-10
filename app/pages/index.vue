@@ -2030,19 +2030,35 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 /* 通知列表 */
 .notification-list {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   padding: 0.5rem;
   margin-bottom: 1.5rem;
+  min-height: 400px;
 }
 
-.loading-indicator {
+.loading-indicator,
+.empty-notification {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 3rem 0;
   color: rgba(255, 255, 255, 0.4);
-  gap: 1rem;
+  gap: 1.25rem;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
 }
 
 .loading-spinner {
