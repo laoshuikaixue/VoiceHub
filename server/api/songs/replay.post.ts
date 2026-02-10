@@ -4,7 +4,8 @@ import {
     eq,
     songs,
     systemSettings,
-    songReplayRequests
+    songReplayRequests,
+    semesters
 } from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
@@ -29,17 +30,27 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 403, message: '重播申请功能未开启' })
     }
 
-    // 4. 检查歌曲
+    // 4. 检查当前学期
+    const currentSemesterResult = await db.select().from(semesters).where(eq(semesters.isActive, true)).limit(1)
+    const currentSemester = currentSemesterResult[0]
+    
+    // 5. 检查歌曲
     const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
     const song = songResult[0]
     if (!song) {
         throw createError({ statusCode: 404, message: '歌曲不存在' })
     }
+    
+    // 检查歌曲是否属于当前学期
+    if (currentSemester && song.semester && song.semester !== currentSemester.name) {
+        throw createError({ statusCode: 400, message: '无法申请非当前学期歌曲的重播' })
+    }
+
     if (!song.played) {
         throw createError({ statusCode: 400, message: '该歌曲尚未播放，无法申请重播' })
     }
 
-    // 5. 检查是否重复申请
+    // 6. 检查是否重复申请
     const existing = await db.select().from(songReplayRequests).where(
         and(
             eq(songReplayRequests.songId, songId),
