@@ -183,6 +183,13 @@
                         </h3>
                         <div class="song-meta">
                           <span
+                              v-if="schedule.song.replayRequestCount > 0"
+                              :title="'重播申请人：' + (schedule.song.replayRequesters || []).map(r => r.displayName || r.name).join('、')"
+                              class="requester replay-requester">
+                            重播人数：{{ schedule.song.replayRequestCount }}人
+                          </span>
+                          <span
+                              v-else
                               :title="(schedule.song.collaborators && schedule.song.collaborators.length > 0 ? '主投稿人: ' : '投稿人: ') + schedule.song.requester + (schedule.song.collaborators && schedule.song.collaborators.length ? '\n联合投稿: ' + schedule.song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
                               class="requester">
                             投稿人：{{ schedule.song.requester }}
@@ -2621,6 +2628,17 @@ const vRipple = {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
   text-align: left;
+}
+
+/* 重播申请人数样式 */
+.replay-requester {
+  color: rgba(11, 90, 254, 0.8);
+  font-weight: 500;
+  cursor: help;
+}
+
+.replay-requester:hover {
+  color: rgba(11, 90, 254, 1);
 }
 
 /* 热度样式 */

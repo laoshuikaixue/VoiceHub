@@ -636,3 +636,67 @@ export async function createBatchSystemNotifications(
         return null
     }
 }
+
+/**
+ * 创建重播申请拒绝通知
+ */
+export async function createReplayRequestRejectedNotification(
+    userId: number,
+    songInfo: { title: string, artist: string },
+    ipAddress?: string
+) {
+    try {
+        // 获取用户通知设置
+        const settingsResult = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, userId)).limit(1)
+        const settings = settingsResult[0]
+
+        // 如果用户关闭了通知，则不发送
+        if (settings && !settings.enabled) {
+            return null
+        }
+
+        // 创建通知消息
+        const message = `您的重播申请《${songInfo.title}》已被管理员拒绝。`
+
+        // 创建站内通知
+        let notification
+        try {
+            const notificationResult = await db.insert(notifications).values({
+                userId,
+                type: 'REPLAY_REJECTED',
+                message,
+            }).returning()
+            notification = notificationResult[0]
+        } catch (error) {
+            throw error
+        }
+
+        // 同步发送 MeoW 通知
+        try {
+            await sendMeowNotificationToUser(
+                userId,
+                '重播申请已拒绝',
+                message
+            )
+        } catch (error) {
+            console.error('发送 MeoW 通知失败:', error)
+        }
+
+        // 同步发送邮件通知
+        try {
+            await sendEmailNotificationToUser(
+                userId,
+                '重播申请已拒绝',
+                message,
+                ipAddress
+            )
+        } catch (error) {
+            console.error('发送邮件通知失败:', error)
+        }
+
+        return notification
+    } catch (err) {
+        console.error('创建重播申请拒绝通知失败:', err)
+        return null
+    }
+}

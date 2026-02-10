@@ -208,15 +208,27 @@
                   >
                     已排期
                   </span>
+                  <span
+                      v-else-if="song.isReplay"
+                      title="重播歌曲"
+                      class="replay-tag"
+                  >
+                    重播
+                  </span>
                 </h3>
                 <div class="song-meta">
                   <span
                       :title="(song.collaborators && song.collaborators.length ? '主投稿人: ' : '投稿人: ') + song.requester + (song.collaborators && song.collaborators.length ? '\n联合投稿: ' + song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
                       class="requester">
-                    投稿人：{{ song.requester }}
-                    <span v-if="song.collaborators && song.collaborators.length > 0">
-                       & {{ song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
-                    </span>
+                    <template v-if="song.isReplay">
+                      重播申请 ({{ song.replayRequestCount || 0 }})：{{ song.replayRequesters ? song.replayRequesters.map(r => r.name).slice(0, 3).join(', ') + (song.replayRequesters.length > 3 ? '...' : '') : '' }}
+                    </template>
+                    <template v-else>
+                      投稿人：{{ song.requester }}
+                      <span v-if="song.collaborators && song.collaborators.length > 0">
+                         & {{ song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
+                      </span>
+                    </template>
                   </span>
                 </div>
               </div>
@@ -264,7 +276,7 @@
               <!-- 申请/取消重播按钮 -->
               <template v-if="song.played && isAuthenticated">
                 <button
-                    v-if="song.replayRequested"
+                    v-if="shouldShowCancelButton(song)"
                     :disabled="actionInProgress"
                     class="withdraw-button replay-cancel-btn"
                     title="撤回重播申请"
@@ -273,13 +285,13 @@
                   撤回申请
                 </button>
                 <button
-                    v-else-if="enableReplayRequests"
-                    :disabled="actionInProgress"
+                    v-else-if="enableReplayRequests && shouldShowRequestButton(song)"
+                    :disabled="isReplayButtonDisabled(song)"
                     class="withdraw-button replay-request-btn"
-                    title="申请重播"
+                    :title="getReplayButtonTitle(song)"
                     @click.stop="handleRequestReplay(song)"
                 >
-                  申请重播
+                  {{ getReplayButtonText(song) }}
                 </button>
               </template>
             </div>
@@ -873,6 +885,107 @@ const handleRequestReplay = (song) => {
     action: 'requestReplay',
     data: song
   }
+}
+
+// 获取重播按钮文本
+const getReplayButtonText = (song) => {
+  if (actionInProgress.value) return '处理中...'
+  if (!song) return '申请重播'
+  
+  // 检查学期
+  if (currentSemester.value && song.semester !== currentSemester.value.name) {
+    return '非本学期'
+  }
+  
+  // 检查重播申请状态
+  if (song.replayRequestStatus === 'REJECTED') {
+    // 如果在冷却期内
+    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
+      return `已拒绝（${song.replayRequestCooldownRemaining}小时后可重新申请）`
+    }
+    // 冷却期已过
+    return '申请重播'
+  }
+  
+  if (song.replayRequestStatus === 'FULFILLED') {
+    return '已重播'
+  }
+  
+  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
+    return '撤回申请'
+  }
+  
+  return '申请重播'
+}
+
+// 获取重播按钮标题（tooltip）
+const getReplayButtonTitle = (song) => {
+  if (!song) return '申请重播'
+  
+  // 检查学期
+  if (currentSemester.value && song.semester !== currentSemester.value.name) {
+    return '只能申请重播当前学期的歌曲'
+  }
+  
+  // 检查重播申请状态
+  if (song.replayRequestStatus === 'REJECTED') {
+    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
+      return `申请被拒绝，需要等待 ${song.replayRequestCooldownRemaining} 小时后才能重新申请`
+    }
+    return '申请重播'
+  }
+  
+  if (song.replayRequestStatus === 'FULFILLED') {
+    return '该歌曲已重播'
+  }
+  
+  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
+    return '撤回重播申请'
+  }
+  
+  return '申请重播'
+}
+
+// 检查重播按钮是否应该禁用
+const isReplayButtonDisabled = (song) => {
+  if (actionInProgress.value || !song) return true
+  
+  // 检查学期
+  if (currentSemester.value && song.semester !== currentSemester.value.name) {
+    return true
+  }
+  
+  // 检查重播申请状态
+  if (song.replayRequestStatus === 'REJECTED') {
+    // 如果在冷却期内，禁用按钮
+    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
+      return true
+    }
+    // 冷却期已过，允许重新申请
+    return false
+  }
+  
+  if (song.replayRequestStatus === 'FULFILLED') {
+    return true
+  }
+  
+  // PENDING 状态时不禁用，因为可以撤回
+  return false
+}
+
+// 判断是否应该显示撤回按钮
+const shouldShowCancelButton = (song) => {
+  return song.replayRequested && song.replayRequestStatus === 'PENDING'
+}
+
+// 判断是否应该显示申请按钮
+const shouldShowRequestButton = (song) => {
+  // 如果是 PENDING 状态，显示撤回按钮而不是申请按钮
+  if (song.replayRequested && song.replayRequestStatus === 'PENDING') {
+    return false
+  }
+  // 其他情况显示申请按钮
+  return true
 }
 
 // 处理刷新按钮点击
@@ -2170,6 +2283,19 @@ const vRipple = {
   margin-left: 0.5rem;
   flex-shrink: 0; /* 防止标签被压缩 */
   align-self: center; /* 确保垂直居中 */
+}
+
+.replay-tag {
+  display: inline-flex;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  color: #3b82f6;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+  align-self: center;
 }
 
 /* 投稿时间和撤销按钮 */

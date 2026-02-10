@@ -2,9 +2,10 @@ import {
     db,
     songs,
     songReplayRequests,
-    users
+    users,
+    semesters
 } from '~/drizzle/db'
-import { desc, eq, sql, and } from 'drizzle-orm'
+import { desc, eq, sql, and, or } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
     // 1. 检查权限
@@ -13,9 +14,25 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 403, message: '权限不足' })
     }
 
+    // 获取查询参数
+    const query = getQuery(event)
+    const status = query.status as string || 'PENDING' // PENDING, FULFILLED, REJECTED, ALL
+    const semesterName = query.semester as string
+
+    // 构建查询条件
+    const conditions = []
+    
+    if (status !== 'ALL') {
+        conditions.push(eq(songReplayRequests.status, status as any))
+    }
+
+    if (semesterName) {
+        conditions.push(eq(songs.semester, semesterName))
+    }
+
     // 2. 查询
     // 获取歌曲信息及重播申请数量，同时关联用户信息
-    const requests = await db
+    const requestsQuery = db
         .select({
             song: songs,
             requester: {
@@ -30,11 +47,16 @@ export default defineEventHandler(async (event) => {
         .from(songs)
         .innerJoin(songReplayRequests, eq(songs.id, songReplayRequests.songId))
         .leftJoin(users, eq(songs.requesterId, users.id))
-        .where(eq(songReplayRequests.status, 'PENDING'))
         .groupBy(songs.id, users.id)
         .orderBy(desc(sql`request_count`))
 
-    // 获取所有用户姓名，用于处理同名情况（复用 index.get.ts 的逻辑）
+    if (conditions.length > 0) {
+        requestsQuery.where(and(...conditions))
+    }
+
+    const requests = await requestsQuery
+
+    // 获取所有用户姓名，用于处理同名情况
     const allUsers = await db.select({
         name: users.name,
         grade: users.grade
@@ -64,26 +86,44 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取详细的重播申请人信息
-    const requestDetails = await db.select({
+    const requestDetailsQuery = db.select({
         songId: songReplayRequests.songId,
         user: {
             name: users.name,
             grade: users.grade,
             class: users.class
         },
-        createdAt: songReplayRequests.createdAt
+        createdAt: songReplayRequests.createdAt,
+        status: songReplayRequests.status
     })
     .from(songReplayRequests)
     .innerJoin(users, eq(songReplayRequests.userId, users.id))
-    .where(eq(songReplayRequests.status, 'PENDING'))
+    .innerJoin(songs, eq(songReplayRequests.songId, songs.id)) 
     .orderBy(desc(songReplayRequests.createdAt))
+
+    const subConditions = []
+    if (status !== 'ALL') {
+        subConditions.push(eq(songReplayRequests.status, status as any))
+    }
+    if (semesterName) {
+        subConditions.push(eq(songs.semester, semesterName))
+    }
+
+    if (subConditions.length > 0) {
+        requestDetailsQuery.where(and(...subConditions))
+    }
+
+    const requestDetails = await requestDetailsQuery
 
     const detailsMap = new Map()
     requestDetails.forEach(d => {
         if (!detailsMap.has(d.songId)) detailsMap.set(d.songId, [])
         detailsMap.get(d.songId).push({
             name: formatDisplayName(d.user),
-            createdAt: d.createdAt
+            grade: d.user.grade,
+            class: d.user.class,
+            createdAt: d.createdAt,
+            status: d.status
         })
     })
 
@@ -92,7 +132,7 @@ export default defineEventHandler(async (event) => {
         requester: formatDisplayName(item.requester),
         requesterGrade: item.requester?.grade,
         requesterClass: item.requester?.class,
-        voteCount: item.requestCount, // 将申请人数映射为 voteCount，方便前端统一显示
+        voteCount: item.requestCount,
         requestCount: item.requestCount,
         lastRequestedAt: item.lastRequestedAt,
         requestDetails: detailsMap.get(item.song.id) || []

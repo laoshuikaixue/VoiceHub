@@ -1,4 +1,4 @@
-import {db, eq, schedules, songs} from '~/drizzle/db'
+import {db, eq, schedules, songs, songReplayRequests, and} from '~/drizzle/db'
 import {cacheService} from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -26,9 +26,10 @@ export default defineEventHandler(async (event) => {
 
         console.log(`准备删除排期 ID=${scheduleIdNumber}`)
 
-        // 先检查排期是否存在
+        // 先检查排期是否存在，并获取歌曲ID
         const existingSchedule = await db.select({
             id: schedules.id,
+            songId: schedules.songId,
             songTitle: songs.title,
             songArtist: songs.artist
         })
@@ -54,6 +55,26 @@ export default defineEventHandler(async (event) => {
             .returning()
 
         console.log(`成功删除排期 ID=${scheduleIdNumber}`)
+
+        // 恢复该歌曲的重播申请状态为 PENDING
+        // 只恢复状态不是 PENDING 的申请（可能是 FULFILLED 或其他状态）
+        if (existingSchedule.songId) {
+            const updatedRequests = await db.update(songReplayRequests)
+                .set({ 
+                    status: 'PENDING',
+                    updatedAt: new Date()
+                })
+                .where(and(
+                    eq(songReplayRequests.songId, existingSchedule.songId),
+                    // 不恢复已拒绝的申请
+                    eq(songReplayRequests.status, 'FULFILLED')
+                ))
+                .returning()
+            
+            if (updatedRequests.length > 0) {
+                console.log(`恢复了 ${updatedRequests.length} 个重播申请状态为 PENDING`)
+            }
+        }
 
         // 清除相关缓存
         try {

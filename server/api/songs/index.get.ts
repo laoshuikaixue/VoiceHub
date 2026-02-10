@@ -201,15 +201,56 @@ export default defineEventHandler(async (event) => {
             played: s.played
         }]))
 
-        // 获取每首歌的重播申请状态（全局，不分用户）
-        const allReplayRequestsQuery = await db.select({
-            songId: songReplayRequests.songId,
-            count: count(songReplayRequests.id)
-        })
+        // 获取每首歌的重播申请状态（全局，不分用户，仅统计 PENDING）
+        const songIds = songsData.map(s => s.id)
+        let replayRequestCounts = new Map()
+        let replayRequestersMap = new Map()
+
+        if (songIds.length > 0) {
+            const allReplayRequestsQuery = await db.select({
+                songId: songReplayRequests.songId,
+                count: count(songReplayRequests.id)
+            })
+                .from(songReplayRequests)
+                .where(and(
+                    inArray(songReplayRequests.songId, songIds),
+                    eq(songReplayRequests.status, 'PENDING')
+                ))
+                .groupBy(songReplayRequests.songId)
+            
+            replayRequestCounts = new Map(allReplayRequestsQuery.map(r => [r.songId, r.count]))
+
+            // 获取重播申请人信息
+            const replayRequestersData = await db.select({
+                songId: songReplayRequests.songId,
+                user: {
+                    id: users.id,
+                    name: users.name
+                },
+                createdAt: songReplayRequests.createdAt
+            })
             .from(songReplayRequests)
-            .groupBy(songReplayRequests.songId)
-        
-        const replayRequestCounts = new Map(allReplayRequestsQuery.map(r => [r.songId, r.count]))
+            .innerJoin(users, eq(songReplayRequests.userId, users.id))
+            .where(and(
+                inArray(songReplayRequests.songId, songIds),
+                eq(songReplayRequests.status, 'PENDING')
+            ))
+            .orderBy(desc(songReplayRequests.createdAt))
+
+            replayRequestersData.forEach(r => {
+                if (!replayRequestersMap.has(r.songId)) {
+                    replayRequestersMap.set(r.songId, [])
+                }
+                // 只保留前3个
+                if (replayRequestersMap.get(r.songId).length < 3) {
+                    replayRequestersMap.get(r.songId).push({
+                        id: r.user.id,
+                        name: r.user.name || '未知用户',
+                        createdAt: r.createdAt
+                    })
+                }
+            })
+        }
 
         // 获取期望播放时段信息
         const playTimesQuery = await db.select()
@@ -238,18 +279,27 @@ export default defineEventHandler(async (event) => {
 
         // 获取当前用户的重播申请
         let userReplayRequestedSongs = new Set()
+        let userReplayRequestsMap = new Map() // 存储详细的重播申请信息
         if (user) {
             const userReplayRequestsQuery = await db.select({
-                songId: songReplayRequests.songId
+                songId: songReplayRequests.songId,
+                status: songReplayRequests.status,
+                updatedAt: songReplayRequests.updatedAt
             })
                 .from(songReplayRequests)
                 .where(eq(songReplayRequests.userId, user.id))
 
-            userReplayRequestedSongs = new Set(userReplayRequestsQuery.map(r => r.songId))
+            userReplayRequestsQuery.forEach(r => {
+                userReplayRequestedSongs.add(r.songId)
+                userReplayRequestsMap.set(r.songId, {
+                    status: r.status,
+                    updatedAt: r.updatedAt
+                })
+            })
         }
 
         // 获取联合投稿人信息
-        const songIds = songsData.map(s => s.id)
+        // const songIds = songsData.map(s => s.id) // Already defined above
         const collaboratorsMap = new Map()
 
         if (songIds.length > 0) {
@@ -336,7 +386,31 @@ export default defineEventHandler(async (event) => {
                 playUrl: song.playUrl || null, // 添加播放地址字段
                 requesterGrade: song.requester?.grade || null, // 添加投稿人年级
                 requesterClass: song.requester?.class || null, // 添加投稿人班级
-                replayRequested: userReplayRequestedSongs.has(song.id) // 添加是否已被申请重播的标志
+                replayRequested: userReplayRequestedSongs.has(song.id), // 添加是否已被申请重播的标志
+                replayRequestCount: replayRequestCounts.get(song.id) || 0,
+                isReplay: (replayRequestCounts.get(song.id) || 0) > 0,
+                replayRequesters: replayRequestersMap.get(song.id) || []
+            }
+
+            // 添加用户的重播申请详细状态
+            if (user && userReplayRequestsMap.has(song.id)) {
+                const replayRequest = userReplayRequestsMap.get(song.id)
+                songObject.replayRequestStatus = replayRequest.status
+                songObject.replayRequestUpdatedAt = replayRequest.updatedAt
+                
+                // 如果状态是 REJECTED，计算冷却期剩余时间
+                if (replayRequest.status === 'REJECTED') {
+                    const COOLDOWN_HOURS = 24
+                    const cooldownTime = COOLDOWN_HOURS * 60 * 60 * 1000
+                    const timeSinceUpdate = Date.now() - new Date(replayRequest.updatedAt).getTime()
+                    const remainingTime = cooldownTime - timeSinceUpdate
+                    
+                    if (remainingTime > 0) {
+                        songObject.replayRequestCooldownRemaining = Math.ceil(remainingTime / (60 * 60 * 1000)) // 剩余小时数
+                    } else {
+                        songObject.replayRequestCooldownRemaining = 0
+                    }
+                }
             }
 
             // 添加排期信息
@@ -389,7 +463,7 @@ export default defineEventHandler(async (event) => {
             success: true,
             data: {
                 songs: formattedSongs.map(song => {
-                    const {voted, replayRequested, ...baseSong} = song
+                    const {voted, replayRequested, replayRequestStatus, replayRequestUpdatedAt, replayRequestCooldownRemaining, ...baseSong} = song
                     return baseSong
                 }),
                 total

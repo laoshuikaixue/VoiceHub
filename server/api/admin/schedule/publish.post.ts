@@ -1,5 +1,5 @@
 import {db} from '~/drizzle/db'
-import {playTimes, schedules, songs, users, votes} from '~/drizzle/schema'
+import {playTimes, schedules, songs, users, votes, songReplayRequests} from '~/drizzle/schema'
 import {and, asc, count, eq} from 'drizzle-orm'
 import {createSongSelectedNotification} from '~~/server/services/notificationService'
 import {cacheService} from '~~/server/services/cacheService'
@@ -98,21 +98,21 @@ export default defineEventHandler(async (event) => {
             playDate: draft.playDate
         }, clientIP)
 
-        // 如果是重播歌曲，将相关的重播申请标记为已完成
-        await db.update(songReplayRequests)
-            .set({ status: 'FULFILLED' })
+        // 将该歌曲的所有待处理重播申请标记为已完成
+        const updatedRequests = await db.update(songReplayRequests)
+            .set({ 
+                status: 'FULFILLED',
+                updatedAt: new Date()
+            })
             .where(and(
                 eq(songReplayRequests.songId, draft.song.id),
                 eq(songReplayRequests.status, 'PENDING')
             ))
-
-        // 标记该歌曲的所有待处理重播申请为已完成
-        await db.update(songReplayRequests)
-            .set({ status: 'FULFILLED' })
-            .where(and(
-                eq(songReplayRequests.songId, draft.song.id),
-                eq(songReplayRequests.status, 'PENDING')
-            ))
+            .returning()
+        
+        if (updatedRequests.length > 0) {
+            console.log(`发布排期：将 ${updatedRequests.length} 个重播申请标记为 FULFILLED`)
+        }
 
         // 清除相关缓存
         try {
