@@ -3944,6 +3944,7 @@ defineExpose({
 
   .results-content {
     height: auto;
+    min-height: 400px; /* 防止加载时高度塌陷 */
     max-height: 80vh;
     overflow: visible;
     flex: 1;
