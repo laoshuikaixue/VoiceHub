@@ -1,89 +1,101 @@
 <template>
-  <div v-if="show" class="modal-overlay" @click="handleOverlayClick">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h3>歌曲已存在</h3>
-        <button class="close-btn" @click="$emit('close')">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="18" x2="6" y1="6" y2="18"></line>
-            <line x1="6" x2="18" y1="6" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <p class="duplicate-message">
-          这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！
-        </p>
-
-        <!-- 歌曲卡片 -->
-        <div class="song-card">
-          <div class="song-cover">
-            <img
-                v-if="song.cover"
-                :alt="song.title"
-                :src="convertToHttps(song.cover)"
-                referrerpolicy="no-referrer"
-                @error="handleImageError"
-            />
-            <div v-else class="default-cover">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="m9 12 1.5-1.5L16 16"/>
-                <path d="M21 15.5c.621 0 1-.504 1-1.125v-3.75c0-.621-.379-1.125-1-1.125h-1.5"/>
-                <path d="M3 15.5c-.621 0-1-.504-1-1.125v-3.75c0-.621.379-1.125 1-1.125h1.5"/>
-              </svg>
-            </div>
+  <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+  >
+    <div v-if="show" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="$emit('close')">
+      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col" @click.stop>
+        <!-- 头部 -->
+        <div class="p-8 pb-4 flex items-center justify-between">
+          <div>
+            <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                <Icon name="alert-triangle" :size="20" />
+              </div>
+              歌曲已存在
+            </h3>
+            <p class="text-xs text-zinc-500 mt-1 ml-13">这首歌曲已经在列表中了，不能重复投稿</p>
           </div>
+          <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all" @click="$emit('close')">
+            <Icon name="x" :size="20" />
+          </button>
+        </div>
 
-          <div class="song-info">
-            <h4 class="song-title">{{ song.title }}</h4>
-            <p class="song-artist">{{ song.artist }}</p>
-            <p class="song-requester">投稿者：{{ song.requester }}</p>
-            <div class="song-stats">
-              <span class="vote-count">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path
-                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-                {{ song.voteCount || 0 }} 票
-              </span>
-              <span :class="{ played: song.played }" class="play-status">
-                {{ song.played ? '已播放' : '待播放' }}
-              </span>
+        <div class="p-8 pt-4 space-y-6">
+          <p class="text-sm text-zinc-400 leading-relaxed font-medium">
+            您可以为它点赞支持，或者尝试搜索其他歌曲！
+          </p>
+
+          <!-- 歌曲卡片 -->
+          <div class="flex gap-4 p-5 bg-zinc-950 border border-zinc-800 rounded-3xl group shadow-xl">
+            <div class="w-20 h-20 rounded-2xl overflow-hidden bg-zinc-900 flex-shrink-0 border border-zinc-800">
+              <img
+                  v-if="song.cover"
+                  :alt="song.title"
+                  :src="convertToHttps(song.cover)"
+                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  referrerpolicy="no-referrer"
+                  @error="handleImageError"
+              />
+              <div v-else class="w-full h-full flex items-center justify-center text-zinc-700">
+                <Icon name="music" :size="32" />
+              </div>
+            </div>
+
+            <div class="flex-1 min-w-0 py-1">
+              <h4 class="text-base font-black text-zinc-100 truncate mb-1">{{ song.title }}</h4>
+              <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 truncate mb-3">{{ song.artist }}</p>
+              
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5 text-[10px] font-black text-red-500 uppercase tracking-widest">
+                  <Icon name="heart" :size="12" class="fill-current" />
+                  {{ song.voteCount || 0 }} 票
+                </div>
+                <div 
+                  :class="[
+                    'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border',
+                    song.played 
+                      ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                      : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                  ]"
+                >
+                  {{ song.played ? '已播放' : '待播放' }}
+                </div>
+              </div>
+              <p class="text-[10px] text-zinc-600 font-black uppercase tracking-widest mt-2">投稿者：{{ song.requester }}</p>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="modal-footer">
-        <button
-            class="btn btn-secondary"
-            @click="$emit('close')"
-        >
-          取消
-        </button>
-        <button
-            :disabled="liking || song.voted"
-            class="btn btn-primary like-btn"
-            @click="handleLike"
-        >
-          <svg v-if="!liking" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path
-                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-          <div v-else class="loading-spinner"></div>
-          {{ song.voted ? '已点赞' : '立即点赞' }}
-        </button>
+        <!-- 底部按钮 -->
+        <div class="p-8 pt-0 flex gap-3">
+          <button class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest active:scale-95" @click="$emit('close')">
+            返回重选
+          </button>
+          <button
+              :disabled="liking || song.voted"
+              class="flex-[2] px-6 py-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-2xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
+              @click="handleLike"
+          >
+            <Icon v-if="liking" name="loader" :size="16" class="animate-spin" />
+            <Icon v-else name="heart" :size="16" :class="[song.voted ? 'fill-current' : '']" />
+            {{ song.voted ? '已点赞' : '立即点赞' }}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <script lang="ts" setup>
 import {ref} from 'vue'
 import type {Song} from '~/types'
 import {convertToHttps} from '~/utils/url'
+import Icon from '~/components/UI/Icon.vue'
 
 interface Props {
   show: boolean
@@ -121,324 +133,4 @@ const handleLike = async () => {
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-width: 500px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  color: #6b7280;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.close-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.close-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.modal-body {
-  padding: 20px 24px;
-}
-
-.duplicate-message {
-  margin: 0 0 20px;
-  color: #6b7280;
-  line-height: 1.5;
-}
-
-.song-card {
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-
-.song-cover {
-  flex-shrink: 0;
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.song-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.default-cover {
-  color: #9ca3af;
-}
-
-.default-cover svg {
-  width: 32px;
-  height: 32px;
-}
-
-.song-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.song-title {
-  margin: 0 0 4px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #111827;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.song-artist {
-  margin: 0 0 4px;
-  color: #6b7280;
-  font-size: 0.9rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.song-requester {
-  margin: 0 0 8px;
-  color: #9ca3af;
-  font-size: 0.85rem;
-}
-
-.song-stats {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 0.85rem;
-}
-
-.vote-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #ef4444;
-}
-
-.vote-count svg {
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
-}
-
-.play-status {
-  color: #f59e0b;
-}
-
-.play-status.played {
-  color: #10b981;
-}
-
-.modal-footer {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding: 16px 24px 20px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.btn {
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.btn-secondary:hover {
-  background: #e5e7eb;
-}
-
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #2563eb;
-}
-
-.btn-primary:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-}
-
-.like-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.loading-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Dark mode support */
-:root[class~="dark"] .modal-content {
-  background: rgba(20, 20, 25, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-:root[class~="dark"] .modal-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-:root[class~="dark"] .modal-header h3 {
-  color: #ffffff;
-}
-
-:root[class~="dark"] .close-btn {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-:root[class~="dark"] .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-:root[class~="dark"] .duplicate-message {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-:root[class~="dark"] .song-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.05);
-}
-
-:root[class~="dark"] .song-title {
-  color: #ffffff;
-}
-
-:root[class~="dark"] .song-artist {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-:root[class~="dark"] .song-requester {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-:root[class~="dark"] .song-cover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-:root[class~="dark"] .modal-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-:root[class~="dark"] .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.8);
-}
-
-:root[class~="dark"] .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-@media (max-width: 640px) {
-  .modal-content {
-    margin: 10px;
-    max-width: none;
-  }
-
-  .song-card {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .song-cover {
-    width: 120px;
-    height: 120px;
-  }
-
-  .modal-footer {
-    flex-direction: column;
-  }
-
-  .btn {
-    width: 100%;
-    justify-content: center;
-  }
-}
 </style>

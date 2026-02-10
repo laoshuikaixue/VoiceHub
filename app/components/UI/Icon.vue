@@ -11,8 +11,13 @@
       stroke-width="2"
       viewBox="0 0 24 24"
   >
+    <!-- 消息图标 (圆形气泡) -->
+    <g v-if="name === 'message-circle'">
+      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+    </g>
+
     <!-- 播放图标 -->
-    <polygon v-if="name === 'play'" fill="currentColor" points="5,3 19,12 5,21"/>
+    <polygon v-else-if="name === 'play'" fill="currentColor" points="5,3 19,12 5,21"/>
 
     <!-- 暂停图标 -->
     <g v-else-if="name === 'pause'">
@@ -147,27 +152,27 @@
     <!-- 信息图标 -->
     <g v-else-if="name === 'info'">
       <circle cx="12" cy="12" r="10"/>
-      <line x1="12" x2="12" y1="16" y2="12"/>
-      <line x1="12" x2="12.01" y1="8" y2="8"/>
+      <line x1="12" y1="16" x2="12" y2="12"/>
+      <circle cx="12" cy="8" r="1" fill="currentColor"/>
     </g>
 
     <!-- 成功/勾选图标 -->
     <g v-else-if="name === 'check' || name === 'success'">
-      <polyline points="20,6 9,17 4,12"/>
+      <polyline points="20 6 9 17 4 12"/>
     </g>
 
     <!-- 错误/叉叉图标 -->
-    <g v-else-if="name === 'error' || name === 'x-circle'">
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="15" x2="9" y1="9" y2="15"/>
-      <line x1="9" x2="15" y1="9" y2="15"/>
+    <g v-else-if="name === 'error' || name === 'x-circle' || name === 'alert-circle'">
+      <circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="2" />
+      <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" />
+      <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" />
     </g>
 
     <!-- 警告图标 -->
     <g v-else-if="name === 'warning' || name === 'alert-triangle'">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" x2="12" y1="9" y2="13"/>
-      <line x1="12" x2="12.01" y1="17" y2="17"/>
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="2" />
+      <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" />
+      <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
     </g>
 
     <!-- 上一首图标 -->
@@ -267,6 +272,12 @@
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
       <polyline points="7 10 12 15 17 10"></polyline>
       <line x1="12" x2="12" y1="15" y2="3"></line>
+    </g>
+
+    <!-- 搜索图标 -->
+    <g v-else-if="name === 'search'">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" x2="16.65" y1="21" y2="16.65"></line>
     </g>
 
     <!-- 上传图标 -->

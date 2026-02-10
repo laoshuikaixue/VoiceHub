@@ -1,105 +1,133 @@
 <template>
   <Teleport to="body">
-    <Transition name="modal-animation">
-      <div v-if="show" class="modal-overlay" @click.self="close">
-        <div class="modal-content podcast-modal">
-          <div class="modal-header">
-            <h3>最近播放 - 歌曲</h3>
-            <button class="close-btn" @click="close">&times;</button>
+    <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="show" class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="close">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+          <!-- 头部 -->
+          <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800/50">
+            <div>
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                  <Icon name="history" :size="20" />
+                </div>
+                最近播放 - 歌曲
+              </h3>
+              <p class="text-xs text-zinc-500 mt-1 ml-13">查看并快速投稿您最近在网易云播放的歌曲</p>
+            </div>
+            <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all" @click="close">
+              <Icon name="x" :size="20" />
+            </button>
           </div>
 
-          <div class="modal-body">
-            <div v-if="loading" class="loading-state">
-              <div class="loading-spinner"></div>
-              <p>处理中...</p>
+          <!-- 主体 -->
+          <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-zinc-500">
+              <Icon name="refresh" :size="32" class="animate-spin mb-4 text-blue-500" />
+              <div class="text-[10px] font-black uppercase tracking-widest">正在获取播放记录...</div>
             </div>
 
-            <div v-else-if="error" class="error-state">
-              <p>{{ error }}</p>
-              <button class="retry-btn" @click="fetchRecentSongs">重试</button>
+            <div v-else-if="error" class="flex flex-col items-center justify-center py-20 text-center px-8">
+              <div class="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-4">
+                <Icon name="alert-triangle" :size="32" />
+              </div>
+              <p class="text-sm text-zinc-400 mb-6">{{ error }}</p>
+              <button class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all uppercase tracking-widest" @click="fetchRecentSongs">
+                重试加载
+              </button>
             </div>
 
-            <div v-else-if="songs.length === 0" class="empty-state">
-              <p>暂无最近播放记录</p>
+            <div v-else-if="songs.length === 0" class="flex flex-col items-center justify-center py-20 text-zinc-600">
+              <Icon name="music" :size="48" class="mb-4 opacity-20" />
+              <p class="text-sm font-bold uppercase tracking-widest">暂无最近播放记录</p>
             </div>
 
-            <div v-else class="programs-list">
-              <div v-for="item in songs" :key="item.resourceId" class="program-item">
-                <div class="program-cover">
-                  <img :src="convertToHttps(item.data?.al?.picUrl)" alt="cover" loading="lazy"/>
-                  <div class="play-overlay" @click.stop="playSong(item.data)">
-                    <div class="play-button-bg">
-                      <Icon :size="16" color="white" name="play"/>
+            <div v-else class="recent-song-list space-y-2">
+              <div v-for="item in songs" :key="item.resourceId" class="group flex items-center gap-4 p-3 rounded-2xl hover:bg-zinc-800/50 transition-all border border-transparent hover:border-zinc-800">
+                <div class="relative w-14 h-14 rounded-xl overflow-hidden bg-zinc-800 flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                  <img :src="convertToHttps(item.data?.al?.picUrl)" alt="cover" class="w-full h-full object-cover" loading="lazy"/>
+                  <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" @click.stop="playSong(item.data)">
+                    <div class="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30">
+                      <Icon name="play" :size="14" class="fill-current" />
                     </div>
                   </div>
                 </div>
-                <div class="program-info">
-                  <h4 :title="item.data?.name" class="program-title">{{ item.data?.name }}</h4>
-                  <div class="program-meta">
-                    <span class="program-date">{{ formatTime(item.playTime) }}</span>
-                    <span class="program-artist">{{ item.data?.ar?.map(a => a.name).join('/') }}</span>
+
+                <div class="flex-1 min-w-0">
+                  <h4 :title="item.data?.name" class="text-sm font-black text-zinc-100 truncate mb-1">{{ item.data?.name }}</h4>
+                  <div class="flex items-center gap-3">
+                    <span class="text-[10px] text-zinc-500 font-medium whitespace-nowrap">{{ formatTime(item.playTime) }}</span>
+                    <span class="text-[10px] text-zinc-600 truncate font-bold uppercase tracking-tighter">{{ item.data?.ar?.map(a => a.name).join('/') }}</span>
                   </div>
                 </div>
-                <div class="program-action">
-                  <div v-if="songsLoadingForSimilar" class="similar-song-info">
-                    <span class="similar-text">处理中...</span>
-                  </div>
-                  <div v-else-if="getSimilarSong(item.data)" class="similar-song-info">
-                    <span v-if="getSimilarSong(item.data)?.played" class="similar-text status-played">歌曲已播放</span>
-                    <span v-else-if="getSimilarSong(item.data)?.scheduled"
-                          class="similar-text status-scheduled">歌曲已排期</span>
-                    <span v-else class="similar-text">歌曲已存在</span>
 
-                    <div class="similar-actions">
+                <div class="flex flex-col items-end gap-2">
+                  <div v-if="songsLoadingForSimilar" class="flex items-center gap-2 px-3 py-1 bg-zinc-800/50 rounded-lg">
+                    <Icon name="refresh" :size="10" class="animate-spin text-zinc-500" />
+                    <span class="text-[10px] text-zinc-500 font-black uppercase">检查中</span>
+                  </div>
+                  <template v-else-if="getSimilarSong(item.data)">
+                    <div 
+                      :class="[
+                        'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter border',
+                        getSimilarSong(item.data)?.played 
+                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                          : getSimilarSong(item.data)?.scheduled
+                            ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                            : 'bg-zinc-800 text-zinc-500 border-zinc-700'
+                      ]"
+                    >
+                      {{ getSimilarSong(item.data)?.played ? '已播放' : getSimilarSong(item.data)?.scheduled ? '已排期' : '已在列表中' }}
+                    </div>
+
+                    <div class="flex items-center gap-2">
                       <button
                           v-if="getSimilarSong(item.data)?.played && isSuperAdmin"
                           :disabled="submitting"
-                          class="select-btn"
+                          class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black rounded-lg transition-all uppercase tracking-widest disabled:opacity-50"
                           @click="selectSong(item.data)"
                       >
                         {{ submitting && selectedSongId === item.data?.id ? '处理中...' : '继续投稿' }}
                       </button>
                       <button
                           v-else
-                          :class="{
-                          'like-btn': true,
-                          'disabled': getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled || getSimilarSong(item.data)?.voted || submitting
-                        }"
                           :disabled="getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled || getSimilarSong(item.data)?.voted || submitting"
-                          :title="
-                          getSimilarSong(item.data)?.played
-                            ? '已播放的歌曲不能点赞'
-                            : getSimilarSong(item.data)?.scheduled
-                              ? '已排期的歌曲不能点赞'
-                              : getSimilarSong(item.data)?.voted
-                                ? '已点赞'
-                                : '点赞'
-                        "
+                          class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:bg-zinc-900/50 text-zinc-400 disabled:text-zinc-700 text-[10px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-1.5"
                           @click="getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled ? null : handleLike(getSimilarSong(item.data))"
                       >
-                        {{
-                          getSimilarSong(item.data)?.played
-                              ? '已播放'
-                              : getSimilarSong(item.data)?.scheduled
-                                  ? '已排期'
-                                  : getSimilarSong(item.data)?.voted
-                                      ? '已点赞'
-                                      : '点赞'
-                        }}
+                        <Icon name="heart" :size="10" :class="[getSimilarSong(item.data)?.voted ? 'text-red-500 fill-current' : '']" />
+                        {{ getSimilarSong(item.data)?.voted ? '已点赞' : '点赞' }}
                       </button>
                     </div>
-                  </div>
+                  </template>
                   <button
                       v-else
                       :disabled="submitting || songsLoadingForSimilar"
-                      class="select-btn"
+                      class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black rounded-xl transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 shadow-lg shadow-blue-900/20"
                       @click="selectSong(item.data)"
                   >
-                    {{ submitting && selectedSongId === item.data?.id ? '处理中...' : '选择投稿' }}
+                    {{ submitting && selectedSongId === item.data?.id ? '正在提交...' : '选择投稿' }}
                   </button>
                 </div>
               </div>
             </div>
+          </div>
+          
+          <!-- 底部栏 -->
+          <div class="p-6 border-t border-zinc-800/50 bg-zinc-900/50 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+              <Icon name="info" :size="12" />
+              数据来自网易云音乐播放记录
+            </div>
+            <button class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-xl transition-all uppercase tracking-widest" @click="close">
+              关闭窗口
+            </button>
           </div>
         </div>
       </div>
@@ -111,7 +139,7 @@
 import {computed, ref, watch} from 'vue'
 import {getRecentSongs} from '~/utils/neteaseApi'
 import {convertToHttps} from '~/utils/url'
-import Icon from '../UI/Icon.vue'
+import Icon from '~/components/UI/Icon.vue'
 import {useSongs} from '~/composables/useSongs'
 import {useAuth} from '~/composables/useAuth'
 import {useSemesters} from '~/composables/useSemesters'
@@ -302,319 +330,21 @@ defineExpose({
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-  backdrop-filter: blur(4px);
+/* 自定义滚动条样式 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
 }
 
-.modal-content {
-  background: var(--bg-secondary, #fff);
-  border-radius: 16px;
-  width: 90%;
-  max-width: 600px;
-  height: 80vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-color, #e5e7eb);
-  color: var(--text-primary, #111827);
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #4a5568;
+  border-radius: 3px;
 }
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: var(--text-primary, #111827);
-  font-weight: 600;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: var(--text-secondary, #6b7280);
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-.modal-body {
-  padding: 0;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.programs-list {
-  padding: 10px 0;
-}
-
-.program-item {
-  display: flex;
-  gap: 12px;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--border-color, #f3f4f6);
-  align-items: center;
-  transition: background-color 0.2s;
-}
-
-.program-item:hover {
-  background-color: var(--bg-hover, #f9fafb);
-}
-
-.program-cover {
-  position: relative;
-  cursor: pointer;
-  width: 50px;
-  height: 50px;
-  border-radius: 6px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.program-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.play-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
-  border-radius: 6px;
-}
-
-.program-cover:hover .play-overlay {
-  opacity: 1;
-}
-
-.play-button-bg {
-  width: 32px;
-  height: 32px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(2px);
-}
-
-.program-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.program-title {
-  margin: 0 0 4px;
-  font-size: 0.95rem;
-  color: var(--text-primary, #111827);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 500;
-}
-
-.program-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 0.8rem;
-  color: var(--text-secondary, #6b7280);
-}
-
-.program-action {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  min-width: 120px;
-}
-
-.select-btn {
-  padding: 6px 16px;
-  background-color: var(--primary-color, #3b82f6);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: opacity 0.2s;
-}
-
-.select-btn:hover {
-  opacity: 0.9;
-}
-
-.select-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.loading-state, .error-state, .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: var(--text-secondary, #6b7280);
-}
-
-.loading-spinner {
-  border: 3px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top: 3px solid var(--primary-color, #3b82f6);
-  width: 30px;
-  height: 30px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 12px;
-}
-
-.retry-btn {
-  margin-top: 10px;
-  padding: 6px 12px;
-  background-color: var(--primary-color, #3b82f6);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes modal-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.similar-song-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  text-align: right;
-}
-
-.similar-text {
-  font-size: 12px;
-  color: var(--text-secondary, #6b7280);
-  font-weight: 500;
-}
-
-.similar-text.status-played {
-  color: #ef4444;
-  font-weight: 600;
-}
-
-.similar-text.status-scheduled {
-  color: #f59e0b;
-  font-weight: 600;
-}
-
-.similar-actions {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.like-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
-  font-size: 12px;
-  cursor: pointer;
-  color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
-  white-space: nowrap;
-}
-
-.like-btn.disabled {
-  background: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
-  box-shadow: none;
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-/* Dark mode overrides - updated to match new style */
-:root[class~="dark"] .modal-content {
-  background: rgba(20, 20, 25, 0.95);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-:root[class~="dark"] .modal-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-:root[class~="dark"] .program-item {
-  border-color: rgba(255, 255, 255, 0.05);
-}
-
-:root[class~="dark"] .program-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-:root[class~="dark"] .modal-header h3,
-:root[class~="dark"] .program-title {
-  color: #ffffff;
-}
-
-:root[class~="dark"] .close-btn {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-:root[class~="dark"] .close-btn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-:root[class~="dark"] .program-meta {
-  color: rgba(255, 255, 255, 0.5);
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #718096;
 }
 </style>

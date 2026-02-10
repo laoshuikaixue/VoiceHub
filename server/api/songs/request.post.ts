@@ -344,6 +344,11 @@ export default defineEventHandler(async (event) => {
 
         if (error.statusCode) {
             throw error
+        } else if (error.message === '未设置活跃学期') {
+            throw createError({
+                statusCode: 400,
+                message: '系统未设置当前活跃学期，请联系管理员'
+            })
         } else {
             throw createError({
                 statusCode: 500,
@@ -353,7 +358,7 @@ export default defineEventHandler(async (event) => {
     }
 })
 
-// 获取当前学期名称（从数据库）
+// 获取当前学期名称
 async function getCurrentSemesterName() {
     try {
         // 获取当前活跃的学期
@@ -364,27 +369,10 @@ async function getCurrentSemesterName() {
             return currentSemester.name
         }
 
-        // 如果没有活跃学期，使用默认逻辑
-        return getCurrentSemester()
+        // 如果没有活跃学期，抛出错误
+        throw new Error('未设置活跃学期')
     } catch (error) {
-        console.error('获取当前学期失败，使用默认逻辑:', error)
-        return getCurrentSemester()
+        console.error('获取当前学期失败:', error)
+        throw error
     }
-}
-
-// 获取当前学期（后备函数）
-function getCurrentSemester() {
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = now.getMonth() + 1
-
-    // 假设上学期为9-2月，下学期为3-8月
-    const term = month >= 3 && month <= 8 ? '下' : '上'
-
-    // 如果是上学期（9-12月），年份应该是当前年份
-    // 如果是上学期（1-2月），年份应该是前一年
-    // 如果是下学期（3-8月），年份应该是当前年份
-    const academicYear = month >= 9 ? year : (month <= 2 ? year - 1 : year)
-
-    return `${academicYear}-${academicYear + 1}学年${term}学期`
 }

@@ -1,15 +1,24 @@
 <template>
   <div>
     <Transition name="overlay-animation">
-      <div v-show="visible" class="player-overlay"></div>
+      <div v-show="visible && !isMobile" class="player-overlay"></div>
     </Transition>
 
     <Transition name="player-animation">
-      <div v-show="visible" class="music-widget">
+      <div v-show="visible" class="music-widget" :class="{ 'mobile-player-bar': isMobile }" @click="handlePlayerClick">
+        <!-- 移动端顶部进度条 (仅移动端，支持拖动) -->
+        <div v-if="isMobile"
+             class="mobile-top-progress"
+             @click.stop="handleSeekToPosition"
+             @touchstart.stop="handleStartTouchDrag"
+        >
+          <div :style="{ width: `${control.progress.value}%` }" class="progress-fill"></div>
+        </div>
+
         <!-- 标题区域 -->
         <div class="title">
           <!-- 封面 -->
-          <div class="cover-container">
+          <div class="cover-container" @click.stop="isMobile ? toggleLyrics() : null">
             <template v-if="activeSong && activeSong.cover && !coverError">
               <img :src="convertToHttps(activeSong.cover)" alt="封面" class="player-cover" referrerpolicy="no-referrer"
                    @error="handleImageError"/>
@@ -25,14 +34,25 @@
             <p class="song-artist">{{ activeSong?.artist || '未知艺术家' }}</p>
           </div>
 
-          <!-- 右上角关闭按钮 -->
-          <div class="close-button" title="关闭播放器" @click="stopPlaying">
+          <!-- 移动端播放控制 (仅移动端) -->
+          <div v-if="isMobile" class="mobile-controls">
+            <button class="mobile-control-btn" @click.stop="handleTogglePlay">
+              <div v-if="control.isLoadingTrack.value" class="loading-spinner-small"></div>
+              <Icon v-else :name="control.isPlaying.value ? 'pause' : 'play'" :size="24" color="white" />
+            </button>
+            <button class="mobile-control-btn" @click.stop="stopPlaying">
+              <Icon name="close" :size="20" color="rgba(255,255,255,0.6)" />
+            </button>
+          </div>
+
+          <!-- PC端右上角关闭按钮 -->
+          <div v-if="!isMobile" class="close-button" title="关闭播放器" @click="stopPlaying">
             <span class="music-icon">×</span>
           </div>
         </div>
 
-        <!-- 媒体控制区域 -->
-        <div class="media-controls">
+        <!-- 媒体控制区域 (PC端显示) -->
+        <div v-if="!isMobile" class="media-controls">
           <!-- 进度条区域 -->
           <div class="time">
             <!-- 进度条 -->
@@ -505,6 +525,10 @@ const handleNext = async () => {
   }
 }
 
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
+
 // 确保音频播放器引用的辅助函数
 const ensureAudioPlayerRef = () => {
   // 首先检查计算属性是否有值
@@ -796,12 +820,32 @@ watch([
   sync.notifyPlaylistState()
 }, {immediate: true})
 
+const isMobile = ref(false)
+
+// 检查是否为移动端
+const checkMobile = () => {
+  if (process.client) {
+    isMobile.value = window.innerWidth <= 768
+  }
+}
+
+// 移动端点击播放条处理
+const handlePlayerClick = () => {
+  if (isMobile.value) {
+    toggleLyrics()
+  }
+}
+
 onMounted(async () => {
   // 处理热重载清理
   enhanced.handleHotReload()
 
   // 设置挂载标记
   isMounted.value = true
+
+  // 移动端检查
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
 
   // 等待子组件挂载完成
   await nextTick()
@@ -1087,7 +1131,7 @@ const getFirstChar = (text) => {
   }
 }
 
-/* iOS Liquid Glass UI 风格 - 基于 Figma 设计 */
+/* IOS Liquid Glass UI 风格 */
 .player-overlay {
   position: fixed;
   bottom: 0;
@@ -1143,7 +1187,125 @@ const getFirstChar = (text) => {
   opacity: 0;
 }
 
-/* 时间区域 - 基于 Figma 设计 */
+/* 移动端播放器样式 */
+.music-widget.mobile-player-bar {
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px)); /* 放在悬浮 tab 上方 (16px bottom + 64px height + 12px gap) */
+  left: 10px;
+  right: 10px;
+  width: calc(100% - 20px);
+  height: 64px;
+  transform: none;
+  border-radius: 16px;
+  padding: 0 12px;
+  flex-direction: row;
+  align-items: center;
+  background: rgba(20, 20, 25, 0.85);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: none;
+  overflow: hidden;
+}
+
+.music-widget.mobile-player-bar:hover {
+  transform: none;
+}
+
+/* 移动端顶部进度条 */
+.mobile-top-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.mobile-top-progress .progress-fill {
+  height: 100%;
+  background: #0B5AFE;
+  box-shadow: 0 0 8px rgba(11, 90, 254, 0.6);
+  border-radius: 0 1px 1px 0;
+}
+
+.music-widget.mobile-player-bar .title {
+  width: 100%;
+  margin-left: 0;
+  column-gap: 12px;
+}
+
+.music-widget.mobile-player-bar .cover-container {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.music-widget.mobile-player-bar .song-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.music-widget.mobile-player-bar .song-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-widget.mobile-player-bar .song-artist {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.mobile-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-control-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mobile-control-btn:active {
+  transform: scale(0.9);
+  opacity: 0.7;
+}
+
+/* 移动端动画适配 */
+.player-animation-enter-from.mobile-player-bar,
+.player-animation-leave-to.mobile-player-bar {
+  transform: translateY(100px) scale(0.95);
+  opacity: 0;
+}
+
+.loading-spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 时间区域 */
 .time {
   display: flex;
   flex-direction: column;
@@ -1154,7 +1316,7 @@ const getFirstChar = (text) => {
   width: 376px;
 }
 
-/* 进度条样式 - 基于 Figma 设计 */
+/* 进度条样式 */
 .progress-bar {
   display: flex;
   flex-shrink: 0;
@@ -1366,7 +1528,7 @@ const getFirstChar = (text) => {
   row-gap: 10px;
 }
 
-/* 进度条 - 参考 Figma 设计稿优化 */
+/* 进度条 */
 .ios-progress-bar {
   display: flex;
   flex-shrink: 0;

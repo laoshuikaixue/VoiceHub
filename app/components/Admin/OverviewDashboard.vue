@@ -1,168 +1,136 @@
 <template>
-  <div class="overview-dashboard">
-    <!-- 统计卡片 -->
-    <div class="stats-grid">
-      <StatCard
-          :change="stats.songsChange"
-          :value="stats.totalSongs"
-          icon="songs"
-          icon-class="primary"
-          label="总歌曲数"
-      />
-
-      <StatCard
-          :value="stats.totalUsers"
-          icon="users"
-          icon-class="success"
-          label="注册用户"
-      />
-
-      <StatCard
-          :value="stats.todaySchedules"
-          icon="schedule"
-          icon-class="info"
-          label="今日排期"
-      />
-
-      <StatCard
-          :change="stats.requestsChange"
-          :value="stats.weeklyRequests"
-          icon="votes"
-          icon-class="warning"
-          label="本周点歌"
-      />
+  <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <!-- 统计卡片网格 -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div 
+        v-for="(stat, i) in statCards" 
+        :key="i" 
+        class="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 relative overflow-hidden group hover:border-zinc-700 transition-all shadow-lg shadow-black/20"
+      >
+        <div class="flex justify-between items-start mb-4">
+          <div :class="[
+            'p-3 rounded-xl border',
+            stat.color === 'blue' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+            stat.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+            stat.color === 'pink' ? 'bg-pink-500/10 text-pink-500 border-pink-500/20' :
+            'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
+          ]">
+            <component :is="stat.icon" :size="24" />
+          </div>
+          <div v-if="stat.trend" :class="[
+            'flex items-center gap-1 text-[11px] font-bold',
+            stat.trendDown ? 'text-red-400' : 'text-emerald-400'
+          ]">
+            <TrendingDown v-if="stat.trendDown" :size="12" />
+            <TrendingUp v-else :size="12" />
+            {{ stat.trend }}
+          </div>
+        </div>
+        <div>
+          <p class="text-zinc-500 text-sm font-medium">{{ stat.label }}</p>
+          <h4 class="text-3xl font-bold tracking-tight text-zinc-100">{{ stat.value }}</h4>
+        </div>
+      </div>
     </div>
 
-    <!-- 图表和活动 -->
-    <div class="dashboard-grid">
-      <div class="dashboard-card">
-        <div class="card-header">
-          <h3>最近活动</h3>
-          <button class="refresh-btn" @click="refreshActivities">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <polyline points="23,4 23,10 17,10"/>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-            </svg>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- 最近活动 -->
+      <div class="lg:col-span-5 bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20">
+        <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
+          <h3 class="text-lg font-bold flex items-center gap-2">
+            <Activity :size="18" class="text-blue-500" /> 最近活动
+          </h3>
+          <button 
+            @click="refreshActivities" 
+            class="p-2 text-zinc-500 hover:text-zinc-300 transition-colors"
+            :class="{ 'animate-spin': loadingActivities }"
+          >
+            <RefreshCw :size="16" />
           </button>
         </div>
-        <div class="activity-list">
-          <div v-if="loadingActivities" class="loading-state">
-            <div class="spinner"></div>
-            <span>加载中...</span>
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1 min-h-[380px] max-h-[500px]">
+          <div v-if="loadingActivities && recentActivities.length === 0" class="flex flex-col items-center justify-center h-full text-zinc-500 gap-3 py-20">
+            <RefreshCw :size="24" class="animate-spin" />
+            <span class="text-sm">加载中...</span>
           </div>
-          <div v-else-if="recentActivities.length === 0" class="empty-state">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M8 12h8"/>
-            </svg>
-            <span>暂无活动记录</span>
+          <div v-else-if="recentActivities.length === 0" class="flex flex-col items-center justify-center h-full text-zinc-500 gap-3 py-20">
+            <Inbox :size="24" />
+            <span class="text-sm">暂无活动记录</span>
           </div>
-          <div v-else>
-            <div v-for="activity in recentActivities" :key="activity.id" class="activity-item">
-              <div :class="activity.type" class="activity-icon">
-                <svg v-if="activity.type === 'song'" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 1v6m0 6v6"/>
-                </svg>
-                <svg v-else-if="activity.type === 'user'" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <svg v-else-if="activity.type === 'schedule'" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                  <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
-                  <line x1="16" x2="16" y1="2" y2="6"/>
-                  <line x1="8" x2="8" y1="2" y2="6"/>
-                  <line x1="3" x2="21" y1="10" y2="10"/>
-                </svg>
-                <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" x2="12" y1="8" y2="12"/>
-                  <line x1="12" x2="12.01" y1="16" y2="16"/>
-                </svg>
+          <template v-else>
+            <div 
+              v-for="(activity, idx) in recentActivities" 
+              :key="idx" 
+              class="flex items-start gap-4 p-4 rounded-2xl hover:bg-zinc-800/40 transition-all cursor-pointer group"
+            >
+              <div :class="[
+                'shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm',
+                getActivityStyle(activity.type).bg
+              ]">
+                <component :is="getActivityStyle(activity.type).icon" :size="18" />
               </div>
-              <div class="activity-content">
-                <div class="activity-title">{{ activity.title }}</div>
-                <div class="activity-description">{{ activity.description }}</div>
-                <div class="activity-time">{{ formatTime(activity.createdAt) }}</div>
+              <div class="flex-1 min-w-0">
+                <h5 class="font-bold text-sm text-zinc-200 group-hover:text-blue-400 transition-colors">{{ activity.title }}</h5>
+                <p class="text-xs text-zinc-500 truncate mt-1">{{ activity.description }}</p>
+                <div class="flex items-center gap-1.5 mt-2">
+                  <Clock :size="10" class="text-zinc-600" />
+                  <span class="text-[10px] text-zinc-600 font-medium uppercase tracking-wider">{{ formatTime(activity.createdAt) }}</span>
+                </div>
               </div>
             </div>
-          </div>
+          </template>
         </div>
       </div>
 
-      <div class="dashboard-card">
-        <div class="card-header">
-          <h3>系统状态</h3>
-          <div :class="{ online: systemStatus.online }" class="status-indicator">
+      <!-- 系统状态 -->
+      <div class="lg:col-span-4 bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-lg shadow-black/20">
+        <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
+          <h3 class="text-lg font-bold flex items-center gap-2">
+            <ShieldCheck :size="18" class="text-emerald-500" /> 系统状态
+          </h3>
+          <span :class="[
+            'px-3 py-1 text-[10px] font-black uppercase rounded-full border',
+            systemStatus.online ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'
+          ]">
             {{ systemStatus.online ? '在线' : '离线' }}
-          </div>
+          </span>
         </div>
-        <div class="system-status">
-          <div class="status-item">
-            <div :class="{ active: systemStatus.database }" class="status-dot"></div>
-            <span>数据库连接</span>
-            <div class="status-value">{{ systemStatus.database ? '正常' : '异常' }}</div>
-          </div>
-          <div class="status-item">
-            <div :class="{ active: systemStatus.api }" class="status-dot"></div>
-            <span>API服务</span>
-            <div class="status-value">{{ systemStatus.api ? '正常' : '异常' }}</div>
-          </div>
-          <div class="status-item">
-            <div :class="{ active: !!stats.currentSemester }" class="status-dot"></div>
-            <span>当前学期</span>
-            <div class="status-value">{{ stats.currentSemester || '未设置' }}</div>
-          </div>
-          <div class="status-item">
-            <div :class="{ active: stats.blacklistCount >= 0 }" class="status-dot"></div>
-            <span>黑名单项目</span>
-            <div class="status-value">{{ stats.blacklistCount }} 项</div>
-          </div>
-          <div class="status-item">
-            <div class="status-dot active"></div>
-            <span>系统版本</span>
-            <div class="status-value">v{{ systemVersion }}</div>
+        <div class="p-6 space-y-6">
+          <div v-for="(status, i) in statusItems" :key="i" class="flex items-center justify-between group">
+            <div class="flex items-center gap-3">
+              <div :class="[
+                'w-1.5 h-1.5 rounded-full',
+                status.active ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.7)]' : 'bg-zinc-600'
+              ]" />
+              <span class="text-xs font-semibold text-zinc-400">{{ status.label }}</span>
+            </div>
+            <span class="text-xs font-bold text-zinc-200">{{ status.value }}</span>
           </div>
         </div>
       </div>
 
-      <div class="dashboard-card">
-        <div class="card-header">
-          <h3>快速操作</h3>
+      <!-- 快速操作 -->
+      <div class="lg:col-span-3 bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20">
+        <div class="px-6 py-5 border-b border-zinc-800">
+          <h3 class="text-lg font-bold flex items-center gap-2">
+            <Zap :size="18" class="text-yellow-500" /> 快速操作
+          </h3>
         </div>
-        <div class="quick-actions">
-          <button class="action-btn primary" @click="navigateTo('schedule')">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
-              <line x1="16" x2="16" y1="2" y2="6"/>
-              <line x1="8" x2="8" y1="2" y2="6"/>
-              <line x1="3" x2="21" y1="10" y2="10"/>
-            </svg>
-            管理排期
-          </button>
-          <button class="action-btn" @click="navigateTo('users')">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-            用户管理
-          </button>
-          <button class="action-btn" @click="navigateTo('notifications')">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            发送通知
-          </button>
-          <button class="action-btn" @click="navigateTo('blacklist')">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="4.93" x2="19.07" y1="4.93" y2="19.07"/>
-            </svg>
-            黑名单管理
+        <div class="p-6 space-y-3">
+          <button 
+            v-for="(action, i) in quickActions" 
+            :key="i"
+            @click="navigateTo(action.id)"
+            :class="[
+              'w-full flex items-center gap-3 px-5 py-4 rounded-lg border font-bold text-sm transition-all text-left group',
+              action.primary 
+                ? 'bg-blue-600 border-blue-500 text-white shadow-xl shadow-blue-900/20 hover:bg-blue-500' 
+                : 'bg-zinc-950/40 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+            ]"
+          >
+            <component :is="action.icon" :size="18" />
+            {{ action.label }}
+            <ExternalLink v-if="action.primary" :size="14" class="ml-auto opacity-50" />
           </button>
         </div>
       </div>
@@ -171,21 +139,16 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue'
-import StatCard from './Common/StatCard.vue'
+import { onMounted, ref, computed } from 'vue'
+import { 
+  Music, Users, Calendar, Heart, TrendingDown, TrendingUp, Activity, 
+  ShieldCheck, RefreshCw, Clock, Zap, Bell, Ban, ExternalLink, Inbox
+} from 'lucide-vue-next'
+import packageJson from '~~/package.json'
 
-// 定义事件
 const emit = defineEmits(['navigate'])
 
-
-// 导航方法
-const navigateTo = (tab) => {
-  emit('navigate', tab)
-}
-
-import packageJson from '~~/package.json'
 const systemVersion = ref(packageJson.version)
-// 响应式数据
 const stats = ref({
   totalSongs: 0,
   totalUsers: 0,
@@ -208,7 +171,69 @@ const systemStatus = ref({
   api: true
 })
 
-// 方法
+// 统计卡片数据
+const statCards = computed(() => [
+  { 
+    label: '总歌曲数', 
+    value: formatNumber(stats.value.totalSongs), 
+    icon: Music, 
+    color: 'blue', 
+    trend: stats.value.songsChange !== 0 ? `${Math.abs(stats.value.songsChange)}%` : null, 
+    trendDown: stats.value.songsChange < 0 
+  },
+  { 
+    label: '注册用户', 
+    value: formatNumber(stats.value.totalUsers), 
+    icon: Users, 
+    color: 'emerald' 
+  },
+  { 
+    label: '今日排期', 
+    value: formatNumber(stats.value.todaySchedules), 
+    icon: Calendar, 
+    color: 'zinc' 
+  },
+  { 
+    label: '本周点歌', 
+    value: formatNumber(stats.value.weeklyRequests), 
+    icon: Heart, 
+    color: 'pink', 
+    trend: stats.value.requestsChange !== 0 ? `${Math.abs(stats.value.requestsChange)}%` : null, 
+    trendDown: stats.value.requestsChange < 0 
+  }
+])
+
+// 系统状态项
+const statusItems = computed(() => [
+  { label: '数据库连接', value: systemStatus.value.database ? '正常' : '异常', active: systemStatus.value.database },
+  { label: 'API服务', value: systemStatus.value.api ? '正常' : '异常', active: systemStatus.value.api },
+  { label: '当前学期', value: stats.value.currentSemester || '未设置', active: !!stats.value.currentSemester },
+  { label: '黑名单项目', value: `${stats.value.blacklistCount} 项`, active: stats.value.blacklistCount >= 0 },
+  { label: '系统版本', value: `v${systemVersion.value}`, active: true }
+])
+
+// 快速操作
+const quickActions = [
+  { label: '管理排期', icon: Calendar, id: 'schedule', primary: true },
+  { label: '用户管理', icon: Users, id: 'users' },
+  { label: '发送通知', icon: Bell, id: 'notifications' },
+  { label: '黑名单管理', icon: Ban, id: 'blacklist' }
+]
+
+const formatNumber = (num) => {
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
+  return num.toString()
+}
+
+const getActivityStyle = (type) => {
+  const styles = {
+    song: { icon: Music, bg: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
+    user: { icon: Users, bg: 'bg-pink-500/10 text-pink-500 border-pink-500/20' },
+    schedule: { icon: Calendar, bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' }
+  }
+  return styles[type] || { icon: Activity, bg: 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20' }
+}
+
 const loadStats = async () => {
   try {
     const response = await $fetch('/api/admin/stats', {
@@ -250,7 +275,10 @@ const formatTime = (dateString) => {
   return `${Math.floor(diff / 86400000)}天前`
 }
 
-// 生命周期
+const navigateTo = (tab) => {
+  emit('navigate', tab)
+}
+
 onMounted(() => {
   loadStats()
   loadRecentActivities()
@@ -258,519 +286,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.overview-dashboard {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
 }
-
-/* 统计卡片网格 */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-.stat-card {
-  background: #111111;
-  border: 1px solid #1f1f1f;
-  border-radius: 12px;
-  padding: 24px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  transition: all 0.2s ease;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
 }
-
-.stat-card:hover {
-  border-color: #2a2a2a;
-  transform: translateY(-2px);
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.stat-icon svg {
-  width: 24px;
-  height: 24px;
-  color: #ffffff;
-}
-
-.stat-icon.songs {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-icon.users {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.stat-icon.schedules {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.stat-icon.activity {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 4px;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #888888;
-  margin-bottom: 8px;
-}
-
-.stat-change {
-  font-size: 12px;
-  color: #666666;
-}
-
-.stat-change.positive {
-  color: #10b981;
-}
-
-/* 仪表板网格 */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 24px;
-}
-
-.dashboard-card {
-  background: #111111;
-  border: 1px solid #1f1f1f;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid #1f1f1f;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.card-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0;
-}
-
-.refresh-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  color: #888888;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.refresh-btn:hover {
-  background: #2a2a2a;
-  color: #ffffff;
-}
-
-.refresh-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.status-indicator {
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
-  background: #1f1f1f;
-  color: #888888;
-}
-
-.status-indicator.online {
-  background: #10b981;
-  color: #ffffff;
-}
-
-/* 活动列表 */
-.activity-list {
-  padding: 24px;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.loading-state,
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  color: #666666;
-  gap: 12px;
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid #1f1f1f;
-  border-top: 2px solid #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.empty-state svg {
-  width: 32px;
-  height: 32px;
-  color: #444444;
-}
-
-.activity-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid #1a1a1a;
-}
-
-.activity-item:last-child {
-  border-bottom: none;
-}
-
-.activity-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.activity-icon svg {
-  width: 16px;
-  height: 16px;
-  color: #ffffff;
-}
-
-.activity-icon.song {
-  background: #667eea;
-}
-
-.activity-icon.user {
-  background: #f5576c;
-}
-
-.activity-icon.schedule {
-  background: #4facfe;
-}
-
-.activity-content {
-  flex: 1;
-}
-
-.activity-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
-  margin-bottom: 4px;
-}
-
-.activity-description {
-  font-size: 12px;
-  color: #888888;
-  margin-bottom: 4px;
-}
-
-.activity-time {
-  font-size: 11px;
-  color: #666666;
-}
-
-/* 系统状态 */
-.system-status {
-  padding: 24px;
-}
-
-.status-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid #1a1a1a;
-}
-
-.status-item:last-child {
-  border-bottom: none;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #444444;
-  flex-shrink: 0;
-}
-
-.status-dot.active {
-  background: #10b981;
-}
-
-.status-item span {
-  flex: 1;
-  font-size: 14px;
-  color: #cccccc;
-}
-
-.status-value {
-  font-size: 12px;
-  color: #888888;
-}
-
-/* 快速操作 */
-.quick-actions {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  color: #cccccc;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.action-btn:hover {
-  background: #2a2a2a;
-  color: #ffffff;
-  border-color: #3a3a3a;
-}
-
-.action-btn.primary {
-  background: #1e40af;
-  border-color: #1e40af;
-  color: #ffffff;
-}
-
-.action-btn.primary:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
-}
-
-.action-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .overview-dashboard {
-    gap: 20px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .dashboard-card {
-    border-radius: 10px;
-  }
-
-  .card-header {
-    padding: 16px 20px;
-  }
-
-  .card-header h3 {
-    font-size: 16px;
-  }
-
-  .refresh-btn {
-    width: 36px;
-    height: 36px;
-  }
-
-  .refresh-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .activity-list {
-    padding: 20px;
-    max-height: 300px;
-  }
-
-  .activity-item {
-    padding: 10px 0;
-  }
-
-  .activity-icon {
-    width: 28px;
-    height: 28px;
-  }
-
-  .activity-icon svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .activity-title {
-    font-size: 13px;
-  }
-
-  .activity-description {
-    font-size: 11px;
-  }
-
-  .activity-time {
-    font-size: 10px;
-  }
-
-  .system-status {
-    padding: 20px;
-  }
-
-  .status-item {
-    padding: 10px 0;
-  }
-
-  .status-item span {
-    font-size: 13px;
-  }
-
-  .status-value {
-    font-size: 11px;
-  }
-
-  .quick-actions {
-    padding: 20px;
-    gap: 10px;
-  }
-
-  .action-btn {
-    padding: 12px 14px !important;
-    font-size: 13px !important;
-    width: 100% !important;
-    justify-content: flex-start !important;
-    box-sizing: border-box !important;
-  }
-
-  .action-btn svg {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-/* 小屏幕设备进一步优化 */
-@media (max-width: 480px) {
-  .overview-dashboard {
-    gap: 16px;
-  }
-
-  .stats-grid {
-    gap: 12px;
-  }
-
-  .dashboard-grid {
-    gap: 12px;
-  }
-
-  .card-header {
-    padding: 12px 16px;
-  }
-
-  .card-header h3 {
-    font-size: 15px;
-  }
-
-  .refresh-btn {
-    width: 32px;
-    height: 32px;
-  }
-
-  .refresh-btn svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .activity-list {
-    padding: 16px;
-    max-height: 250px;
-  }
-
-  .system-status {
-    padding: 16px;
-  }
-
-  .quick-actions {
-    padding: 16px;
-    gap: 8px;
-  }
-
-  .action-btn {
-    padding: 10px 12px !important;
-    font-size: 12px !important;
-    width: 100% !important;
-    justify-content: flex-start !important;
-    box-sizing: border-box !important;
-  }
-
-  .action-btn svg {
-    width: 12px;
-    height: 12px;
-  }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
 </style>

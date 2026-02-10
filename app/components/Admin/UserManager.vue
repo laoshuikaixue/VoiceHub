@@ -1,609 +1,678 @@
 <template>
-  <div class="user-manager">
-    <!-- 工具栏 -->
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <h3>用户管理</h3>
-        <div class="stats">
-          <span class="stat-item">总计: {{ totalUsers }} 个用户</span>
-        </div>
+  <div
+      class="max-w-[1400px] mx-auto space-y-6 pb-20 px-2"
+  >
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mt-4">
+      <div>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">用户管理</h2>
+        <p class="text-xs text-zinc-500 mt-1">系统共有 {{ totalUsers }} 位成员 · 权限与账户管理</p>
       </div>
-      <div class="toolbar-right">
-        <div class="search-box">
-          <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-              v-model="searchQuery"
-              class="search-input"
-              placeholder="搜索用户（姓名、用户名、IP地址）..."
-              type="text"
-          />
-        </div>
-        <select v-model="roleFilter" class="filter-select">
-          <option value="">全部角色</option>
-          <option v-for="role in allRoles" :key="role.name" :value="role.name">
-            {{ role.displayName }}
-          </option>
-        </select>
-        <select v-model="statusFilter" class="filter-select">
-          <option value="">全部状态</option>
-          <option value="active">正常</option>
-          <option value="withdrawn">退学</option>
-        </select>
-        <div class="action-buttons">
-          <button class="btn-primary" @click="showAddModal = true">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="12" x2="12" y1="5" y2="19"/>
-              <line x1="5" x2="19" y1="12" y2="12"/>
-            </svg>
-            添加用户
-          </button>
-          <button class="btn-secondary" @click="showImportModal = true">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14,2 14,8 20,8"/>
-              <line x1="16" x2="8" y1="13" y2="13"/>
-              <line x1="16" x2="8" y1="17" y2="17"/>
-              <polyline points="10,9 9,9 8,9"/>
-            </svg>
-            批量导入
-          </button>
-          <button class="btn-secondary" @click="showBatchUpdateModal = true">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M12 20h9"/>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
-            批量更新
-          </button>
-        </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg transition-all uppercase tracking-widest active:scale-95 shadow-lg shadow-blue-900/20"
+            @click="showAddModal = true"
+        >
+          <UserPlus :size="14"/>
+          添加
+        </button>
+        <button
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+            @click="showImportModal = true"
+        >
+          <FileSpreadsheet class="text-emerald-500" :size="14"/>
+          导入
+        </button>
+        <button
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+            @click="showBatchUpdateModal = true"
+        >
+          <Layers class="text-purple-500" :size="14"/>
+          更新
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="bg-zinc-900/40 border border-zinc-800/60 rounded-xl p-3 flex flex-col lg:flex-row gap-3 items-center">
+      <div class="relative flex-1 w-full group">
+        <Search
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors"
+            :size="16"
+        />
+        <input
+            v-model="searchQuery"
+            class="w-full bg-zinc-950 border border-zinc-800/80 rounded-lg pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+            placeholder="通过姓名或学号搜索..."
+            type="text"
+        />
+      </div>
+      <div class="flex items-center gap-2 w-full lg:w-auto overflow-x-auto custom-scrollbar no-scrollbar">
+        <!-- 角色筛选 -->
+        <CustomSelect
+            v-model="roleFilter"
+            :options="roleFilterOptions"
+            label="角色"
+            placeholder="全部角色"
+            label-key="displayName"
+            value-key="name"
+            class-name="flex-1 lg:w-40 min-w-[120px]"
+        />
+
+        <!-- 状态筛选 -->
+        <CustomSelect
+            v-model="statusFilter"
+            :options="statusFilterOptions"
+            label="状态"
+            placeholder="全部状态"
+            label-key="label"
+            value-key="value"
+            class-name="flex-1 lg:w-32 min-w-[100px]"
+        />
+
+        <button
+            class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-600 hover:text-blue-400 transition-all shadow-sm"
+            @click="loadUsers(1)"
+        >
+          <RefreshCw :size="14"/>
+        </button>
       </div>
     </div>
 
     <!-- 用户表格 -->
-    <div class="table-container">
-      <div v-if="loading" class="loading-state">
-        <div class="spinner"></div>
-        <div>正在加载用户...</div>
+    <div class="space-y-4">
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-zinc-500">
+        <div class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+        <div class="text-xs font-black uppercase tracking-widest">正在加载用户...</div>
       </div>
 
-      <div v-else-if="filteredUsers.length === 0" class="empty-state">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
-        </svg>
-        <div class="empty-text">
+      <div v-else-if="users.length === 0" class="flex flex-col items-center justify-center py-20 bg-zinc-900/20 border border-zinc-800/50 rounded-xl">
+        <div class="w-16 h-16 rounded-lg bg-zinc-800/50 flex items-center justify-center text-zinc-600 mb-4">
+          <Search :size="32" />
+        </div>
+        <div class="text-sm font-black text-zinc-500 uppercase tracking-widest">
           {{ searchQuery ? '没有找到匹配的用户' : '暂无用户数据' }}
         </div>
       </div>
 
-      <!-- 桌面端表格 -->
-      <div v-else class="table-container">
-        <table class="user-table desktop-table">
-          <thead>
-          <tr>
-            <th>ID</th>
-            <th>姓名</th>
-            <th>用户名</th>
-            <th>角色</th>
-            <th>状态</th>
-            <th>年级</th>
-            <th>班级</th>
-            <th>最后登录</th>
-            <th>登录IP</th>
-            <th>操作</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr v-for="user in paginatedUsers" :key="user.id" class="user-row" @click="showUserDetail(user, $event)">
-            <td>{{ user.id }}</td>
-            <td>{{ user.name }}</td>
-            <td>{{ user.username }}</td>
-            <td>
-                <span :class="['role-badge', getRoleClass(user.role)]">
-                  {{ getRoleDisplayName(user.role) }}
-                </span>
-            </td>
-            <td>
-                <span :class="['status-badge', getStatusClass(user.status)]">
-                  {{ getStatusDisplayName(user.status) }}
-                </span>
-            </td>
-            <td>{{ user.grade || '-' }}</td>
-            <td>{{ user.class || '-' }}</td>
-            <td>{{ formatDate(user.lastLogin) }}</td>
-            <td>{{ user.lastLoginIp || '-' }}</td>
-            <td>
-              <div class="action-buttons">
-                <button
-                    :disabled="isSelf(user)"
-                    class="action-btn edit-btn"
-                    title="编辑用户"
-                    @click="editUser(user)"
-                >
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button
-                    class="action-btn music-btn"
-                    title="查看歌曲"
-                    @click="viewUserSongs(user)"
-                >
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M9 18V5l12-2v13"/>
-                    <circle cx="6" cy="18" r="3"/>
-                    <circle cx="18" cy="16" r="3"/>
-                  </svg>
-                </button>
-                <button
-                    :disabled="isSelf(user)"
-                    class="action-btn warning-btn"
-                    title="重置密码"
-                    @click="resetPassword(user)"
-                >
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
-                    <circle cx="12" cy="16" r="1"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </button>
+      <template v-else>
+        <!-- 桌面端表格 -->
+        <div class="hidden lg:block bg-zinc-900/20 border border-zinc-800/50 rounded-xl overflow-hidden shadow-lg custom-scrollbar">
+          <table class="w-full">
+            <thead>
+            <tr class="bg-zinc-900/60 border-b border-zinc-800 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+              <th class="px-6 py-5 text-left">用户详情</th>
+              <th class="px-6 py-5 text-left">角色权限</th>
+              <th class="px-6 py-5 text-left">账户状态</th>
+              <th class="px-6 py-5 text-center">所在班级</th>
+              <th class="px-6 py-5 text-left">最后交互</th>
+              <th class="px-6 py-5 text-right pr-10">操作</th>
+            </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800/40">
+            <tr v-for="user in users" :key="user.id" class="group hover:bg-zinc-800/30 transition-all text-xs cursor-pointer" @click="showUserDetail(user, $event)">
+              <td class="px-6 py-5">
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-zinc-500 group-hover:text-zinc-300 transition-colors border border-zinc-700/50">{{ user.name.charAt(0) }}</div>
+                  <div>
+                    <p class="font-black text-zinc-100">{{ user.name }}</p>
+                    <p class="text-[10px] text-zinc-600 font-mono mt-0.5">ID: {{ user.username }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-5">
+                <span v-if="user.role === 'super_admin'" class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest">超级管理员</span>
+                <span v-else-if="user.role === 'admin'" class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest">管理员</span>
+                <span v-else-if="user.role === 'song_admin'" class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest">歌曲管理</span>
+                <span v-else class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest">用户</span>
+              </td>
+              <td class="px-6 py-5">
+                <div v-if="user.status === 'active'" class="flex items-center gap-1.5 text-emerald-500 font-black uppercase text-[10px] tracking-widest">
+                  <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />正常
+                </div>
+                <div v-else class="flex items-center gap-1.5 text-red-500 font-black uppercase text-[10px] tracking-widest">
+                  <div class="w-1.5 h-1.5 rounded-full bg-red-500" />禁用
+                </div>
+              </td>
+              <td class="px-6 py-5 text-center font-bold text-zinc-500">{{ user.grade || '-' }} {{ user.class || '-' }}</td>
+              <td class="px-6 py-5">
+                <p class="text-zinc-400 font-bold">{{ formatDate(user.lastLogin) }}</p>
+                <p class="text-[11px] text-zinc-700 font-mono mt-1 flex items-center gap-1"><MapPin :size="10" /> {{ user.lastLoginIp || '-' }}</p>
+              </td>
+              <td class="px-6 py-5 text-right pr-10">
+                <div class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all action-buttons">
+                  <button
+                      :disabled="isSelf(user)"
+                      class="p-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-blue-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
+                      title="编辑用户"
+                      @click="editUser(user)"
+                  >
+                    <Edit2 :size="13"/>
+                  </button>
+                  <button
+                      class="p-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-purple-400 transition-colors action-btn"
+                      title="查看歌曲"
+                      @click="viewUserSongs(user)"
+                  >
+                    <Music :size="13"/>
+                  </button>
+                  <button
+                      :disabled="isSelf(user)"
+                      class="p-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-amber-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
+                      title="重置密码"
+                      @click="resetPassword(user)"
+                  >
+                    <Lock :size="13"/>
+                  </button>
+                  <button
+                      :disabled="isSelf(user)"
+                      class="p-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-red-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
+                      title="删除用户"
+                      @click="confirmDeleteUser(user)"
+                  >
+                    <Trash2 :size="13"/>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
 
-                <button
-                    :disabled="isSelf(user)"
-                    class="action-btn delete-btn"
-                    title="删除用户"
-                    @click="confirmDeleteUser(user)"
-                >
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <polyline points="3,6 5,6 21,6"/>
-                    <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
-                  </svg>
-                </button>
+        <!-- 移动端卡片式布局 -->
+        <div class="lg:hidden grid grid-cols-1 gap-4">
+          <div v-for="user in users" :key="user.id" class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-5 shadow-lg shadow-black/20" @click="showUserDetail(user, $event)">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center font-black text-lg text-zinc-500 border border-zinc-700">{{ user.name.charAt(0) }}</div>
+                <div>
+                  <h4 class="text-base font-black text-zinc-100">{{ user.name }}</h4>
+                  <p class="text-xs text-zinc-500 font-mono">@{{ user.username }}</p>
+                </div>
               </div>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- 移动端卡片式布局 -->
-      <div class="mobile-cards">
-        <div v-for="user in paginatedUsers" :key="user.id" class="user-card" @click="showUserDetail(user, $event)">
-          <div class="card-header">
-            <div class="user-primary-info">
-              <div class="user-name-container">
-                <span class="user-name-label">{{ user.name }}</span>
-                <span :class="['role-badge', getRoleClass(user.role)]">
-                  {{ getRoleDisplayName(user.role) }}
-                </span>
-                <span :class="['status-badge', getStatusClass(user.status)]">
-                  {{ getStatusDisplayName(user.status) }}
-                </span>
+              <div class="text-right">
+                <div v-if="user.status === 'active'" class="flex items-center gap-1.5 text-emerald-500 font-black uppercase text-[10px] tracking-widest">
+                  <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />正常
+                </div>
+                <div v-else class="flex items-center gap-1.5 text-red-500 font-black uppercase text-[10px] tracking-widest">
+                  <div class="w-1.5 h-1.5 rounded-full bg-red-500" />禁用
+                </div>
+                <p class="text-[10px] font-black text-zinc-700 uppercase mt-1">账户状态</p>
               </div>
-              <div class="user-username">{{ user.username }}</div>
             </div>
-            <div class="card-actions">
+
+            <div class="grid grid-cols-2 gap-4 py-4 border-y border-zinc-800/50">
+              <div class="space-y-1">
+                <p class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">角色/等级</p>
+                <div>
+                  <span v-if="user.role === 'super_admin'" class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest">超级管理员</span>
+                  <span v-else-if="user.role === 'admin'" class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest">管理员</span>
+                  <span v-else-if="user.role === 'song_admin'" class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest">歌曲管理</span>
+                  <span v-else class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest">用户</span>
+                </div>
+              </div>
+              <div class="space-y-1 text-right">
+                <p class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">所在班级</p>
+                <p class="text-xs font-bold text-zinc-300">{{ user.grade || '-' }} {{ user.class || '-' }}</p>
+              </div>
+              <div class="space-y-1">
+                <p class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">最近活动</p>
+                <p class="text-xs font-bold text-zinc-400">{{ formatDate(user.lastLogin) }}</p>
+              </div>
+              <div class="space-y-1 text-right">
+                <p class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">最后登录IP</p>
+                <p class="text-[11px] font-mono text-zinc-600">{{ user.lastLoginIp || '-' }}</p>
+              </div>
+            </div>
+
+            <div class="flex gap-2 action-buttons">
               <button
                   :disabled="isSelf(user)"
-                  class="action-btn edit-btn"
-                  title="编辑用户"
+                  class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-blue-600 active:text-white transition-colors disabled:opacity-20 action-btn"
                   @click="editUser(user)"
               >
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
+                <Edit2 :size="12"/> 编辑
               </button>
               <button
-                  class="action-btn music-btn"
-                  title="查看歌曲"
+                  class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-purple-600 active:text-white transition-colors action-btn"
                   @click="viewUserSongs(user)"
               >
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M9 18V5l12-2v13"/>
-                  <circle cx="6" cy="18" r="3"/>
-                  <circle cx="18" cy="16" r="3"/>
-                </svg>
+                <Music :size="12"/> 记录
               </button>
               <button
                   :disabled="isSelf(user)"
-                  class="action-btn warning-btn"
-                  title="重置密码"
+                  class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-amber-600 active:text-white transition-colors disabled:opacity-20 action-btn"
                   @click="resetPassword(user)"
               >
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
+                <Lock :size="12"/> 重置
               </button>
-
               <button
                   :disabled="isSelf(user)"
-                  class="action-btn delete-btn"
-                  title="删除用户"
+                  class="px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 active:bg-red-600 active:text-white transition-colors disabled:opacity-20 action-btn"
                   @click="confirmDeleteUser(user)"
               >
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <polyline points="3,6 5,6 21,6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
+                <Trash2 :size="14"/>
               </button>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="info-row">
-              <span class="info-label">ID:</span>
-              <span class="info-value">{{ user.id }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">年级班级:</span>
-              <span class="info-value">{{ user.grade || '-' }} {{ user.class || '-' }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">最后登录:</span>
-              <span class="info-value">{{ formatDate(user.lastLogin) }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">登录IP:</span>
-              <span class="info-value">{{ user.lastLoginIp || '-' }}</span>
             </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
 
     <!-- 分页 -->
-    <div v-if="totalPages > 1" class="pagination">
-      <button
-          :disabled="currentPage === 1"
-          class="page-btn"
-          @click="goToPage(1)"
-      >
-        首页
-      </button>
-      <button
-          :disabled="currentPage === 1"
-          class="page-btn"
-          @click="goToPage(currentPage - 1)"
-      >
-        上一页
-      </button>
-      <span class="page-info">
-        第 {{ currentPage }} 页，共 {{ totalPages }} 页 (共 {{ totalUsers }} 个用户)
+    <div v-if="totalPages > 1" class="flex items-center justify-between px-2 pt-4">
+      <span class="text-[10px] font-black text-zinc-700 uppercase tracking-[0.2em]">
+        第 {{ currentPage }} 页 · 共 {{ totalPages }} 页 (共 {{ totalUsers }} 个用户)
       </span>
-      <button
-          :disabled="currentPage === totalPages"
-          class="page-btn"
-          @click="goToPage(currentPage + 1)"
-      >
-        下一页
-      </button>
-      <button
-          :disabled="currentPage === totalPages"
-          class="page-btn"
-          @click="goToPage(totalPages)"
-      >
-        末页
-      </button>
+      <div class="flex gap-2">
+        <button
+            :disabled="currentPage === 1"
+            class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 disabled:opacity-20"
+            @click="goToPage(currentPage - 1)"
+        >
+          <ChevronLeft :size="18" />
+        </button>
+        <button
+            class="w-10 h-10 rounded-lg bg-blue-600 text-white text-xs font-black shadow-lg shadow-blue-900/20"
+        >
+          {{ currentPage }}
+        </button>
+        <button
+            :disabled="currentPage === totalPages"
+            class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 disabled:opacity-20"
+            @click="goToPage(currentPage + 1)"
+        >
+          <ChevronRight :size="18" />
+        </button>
+      </div>
     </div>
 
     <!-- 添加/编辑用户模态框 -->
-    <div v-if="showAddModal || editingUser" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>{{ editingUser ? '编辑用户' : '添加用户' }}</h3>
-          <button class="close-btn" @click="closeModal">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" x2="6" y1="6" y2="18"/>
-              <line x1="6" x2="18" y1="6" y2="18"/>
-            </svg>
-          </button>
-        </div>
-
-        <div class="modal-body">
-          <div class="form-group">
-            <label>姓名</label>
-            <input
-                v-model="userForm.name"
-                class="form-input"
-                placeholder="请输入姓名"
-                type="text"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>用户名</label>
-            <input
-                v-model="userForm.username"
-                :disabled="!!editingUser"
-                class="form-input"
-                placeholder="请输入用户名"
-                type="text"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>密码</label>
-            <input
-                v-model="userForm.password"
-                :placeholder="editingUser ? '留空则不修改密码' : '请输入密码'"
-                class="form-input"
-                type="password"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>角色</label>
-            <select v-model="userForm.role" class="form-select">
-              <option v-for="role in availableRoles" :key="role.name" :value="role.name">
-                {{ role.displayName }}
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>用户状态</label>
-            <select v-model="userForm.status" class="form-select">
-              <option value="active">正常</option>
-              <option value="withdrawn">退学</option>
-            </select>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>年级</label>
-              <input
-                  v-model="userForm.grade"
-                  class="form-input"
-                  placeholder="如: 2024"
-                  type="text"
-              />
+    <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="showAddModal || editingUser" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="closeModal">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl" @click.stop>
+          <div class="p-8">
+            <div class="flex items-center justify-between mb-8">
+              <div>
+                <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                    <UserPlus v-if="!editingUser" :size="20" />
+                    <Edit2 v-else :size="20" />
+                  </div>
+                  {{ editingUser ? '编辑用户信息' : '创建新用户' }}
+                </h3>
+                <p class="text-xs text-zinc-500 mt-1 ml-13">请填写以下账户详细信息以继续</p>
+              </div>
+              <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all" @click="closeModal">
+                <X :size="20" />
+              </button>
             </div>
-            <div class="form-group">
-              <label>班级</label>
-              <input
-                  v-model="userForm.class"
-                  class="form-input"
-                  placeholder="如: 1班"
-                  type="text"
-              />
+
+            <div class="space-y-5">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">姓名</label>
+                  <div class="relative group">
+                    <User class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors" :size="16" />
+                    <input
+                        v-model="userForm.name"
+                        class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                        placeholder="请输入真实姓名"
+                        type="text"
+                    />
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">用户名/学号</label>
+                  <div class="relative group">
+                    <AtSign class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors" :size="16" />
+                    <input
+                        v-model="userForm.username"
+                        :disabled="!!editingUser"
+                        class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 disabled:opacity-50"
+                        placeholder="登录唯一标识"
+                        type="text"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">
+                  {{ editingUser ? '新密码 (留空则不修改)' : '初始密码' }}
+                </label>
+                <div class="relative group">
+                  <Lock class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors" :size="16" />
+                  <input
+                      v-model="userForm.password"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                      placeholder="设置安全访问密码"
+                      type="password"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">角色权限</label>
+                  <CustomSelect
+                      v-model="userForm.role"
+                      :options="availableRoles"
+                      label-key="displayName"
+                      value-key="name"
+                      placeholder="请选择角色"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">账户状态</label>
+                  <CustomSelect
+                      v-model="userForm.status"
+                      :options="userStatusOptions"
+                      label-key="label"
+                      value-key="value"
+                      placeholder="请选择状态"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">年级</label>
+                  <div class="relative group">
+                    <Calendar class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors" :size="16" />
+                    <input
+                        v-model="userForm.grade"
+                        class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                        placeholder="例如: 2024"
+                        type="text"
+                    />
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">班级</label>
+                  <div class="relative group">
+                    <Briefcase class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors" :size="16" />
+                    <input
+                        v-model="userForm.class"
+                        class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                        placeholder="例如: 1班"
+                        type="text"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="formError" class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs">
+                <AlertCircle :size="16" />
+                {{ formError }}
+              </div>
+            </div>
+
+            <div class="flex gap-3 mt-10">
+              <button class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest" @click="closeModal">
+                取消操作
+              </button>
+              <button
+                  :disabled="saving"
+                  class="flex-[2] px-6 py-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-900/20 active:scale-95"
+                  @click="saveUser"
+              >
+                <Save v-if="!saving" :size="16" />
+                <RefreshCw v-else class="animate-spin" :size="16" />
+                {{ saving ? '正在保存...' : (editingUser ? '更新用户信息' : '确认创建用户') }}
+              </button>
             </div>
           </div>
-
-          <div v-if="formError" class="error-message">
-            {{ formError }}
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn-secondary" @click="closeModal">取消</button>
-          <button :disabled="saving" class="btn-primary" @click="saveUser">
-            {{ saving ? '保存中...' : '保存' }}
-          </button>
         </div>
       </div>
-    </div>
+    </Transition>
 
     <!-- 重置密码模态框 -->
-    <div v-if="resetPasswordUser" class="modal-overlay" @click="closeResetPassword">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>重置密码 - {{ resetPasswordUser.name }}</h3>
-          <button class="close-btn" @click="closeResetPassword">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" x2="6" y1="6" y2="18"/>
-              <line x1="6" x2="18" y1="6" y2="18"/>
-            </svg>
-          </button>
-        </div>
+    <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="resetPasswordUser" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="closeResetPassword">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl" @click.stop>
+          <div class="p-8 text-center">
+            <div class="w-20 h-20 bg-amber-500/10 rounded-[2rem] flex items-center justify-center text-amber-500 mx-auto mb-6">
+              <Lock :size="32" />
+            </div>
+            <h3 class="text-xl font-black text-zinc-100 tracking-tight">重置访问密码</h3>
+            <p class="text-xs text-zinc-500 mt-2 mb-8">
+              正在为 <span class="text-zinc-200 font-bold">{{ resetPasswordUser.name }}</span> 修改登录凭据
+            </p>
 
-        <div class="modal-body">
-          <div class="form-group">
-            <label>新密码</label>
-            <input
-                v-model="passwordForm.password"
-                class="form-input"
-                placeholder="请输入新密码"
-                type="password"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>确认密码</label>
-            <input
-                v-model="passwordForm.confirmPassword"
-                class="form-input"
-                placeholder="请再次输入新密码"
-                type="password"
-            />
-          </div>
-
-          <div v-if="passwordError" class="error-message">
-            {{ passwordError }}
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn-secondary" @click="closeResetPassword">取消</button>
-          <button :disabled="resetting" class="btn-primary" @click="confirmResetPassword">
-            {{ resetting ? '重置中...' : '重置密码' }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 批量导入用户模态框 -->
-  <div v-if="showImportModal" class="modal-overlay" @click="closeImportModal">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h3>批量导入用户</h3>
-        <button class="close-btn" @click="closeImportModal">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="18" x2="6" y1="6" y2="18"/>
-            <line x1="6" x2="18" y1="6" y2="18"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div class="import-instructions">
-          <p>请上传Excel格式文件 (.xlsx)，文件格式如下：</p>
-          <div class="excel-format">
-            <table>
-              <thead>
-              <tr>
-                <th>A列</th>
-                <th>B列</th>
-                <th>C列</th>
-                <th>D列</th>
-                <th>E列</th>
-                <th>F列</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr>
-                <td>姓名</td>
-                <td>账号名</td>
-                <td>密码</td>
-                <td>角色</td>
-                <td>年级</td>
-                <td>班级</td>
-              </tr>
-              <tr>
-                <td>张三</td>
-                <td>zhangsan</td>
-                <td>password123</td>
-                <td>USER</td>
-                <td>高一</td>
-                <td>1班</td>
-              </tr>
-              <tr>
-                <td>李四</td>
-                <td>lisi</td>
-                <td>password456</td>
-                <td>ADMIN</td>
-                <td>教师</td>
-                <td>-</td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="import-note">
-            注意：第一行可以是标题行（会自动跳过），角色可以是：
-            <span v-if="isSuperAdmin">USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）</span>
-            <span v-else>USER（普通用户）、SONG_ADMIN（歌曲管理员）</span>
-          </p>
-        </div>
-
-        <div class="form-group">
-          <label>选择文件</label>
-          <div class="file-upload-container">
-            <input
-                id="file-upload"
-                accept=".xlsx"
-                class="file-input-hidden"
-                type="file"
-                @change="handleFileUpload"
-            />
-            <label class="file-upload-btn" for="file-upload">
-              <div class="upload-text">
-                <div class="upload-title">点击选择Excel文件</div>
-                <div class="upload-subtitle">或拖拽文件到此处</div>
+            <div class="space-y-4 text-left">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">新密码</label>
+                <div class="relative group">
+                  <Key class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-amber-500 transition-colors" :size="16" />
+                  <input
+                      v-model="passwordForm.password"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500/30 transition-all text-zinc-200"
+                      placeholder="设置高强度新密码"
+                      type="password"
+                  />
+                </div>
               </div>
-            </label>
-            <div class="file-upload-info">
-              支持 .xlsx 格式文件
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">确认新密码</label>
+                <div class="relative group">
+                  <Key class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-amber-500 transition-colors" :size="16" />
+                  <input
+                      v-model="passwordForm.confirmPassword"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500/30 transition-all text-zinc-200"
+                      placeholder="请再次输入以确认"
+                      type="password"
+                  />
+                </div>
+              </div>
+
+              <div v-if="passwordError" class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs">
+                <AlertCircle :size="16" />
+                {{ passwordError }}
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div v-if="importError" class="error-message">{{ importError }}</div>
-        <div v-if="importSuccess" class="success-message">{{ importSuccess }}</div>
-
-        <div v-if="previewData.length > 0" class="preview-section">
-          <h4>预览数据 ({{ previewData.length }}条记录)</h4>
-          <div class="preview-table-container">
-            <table class="preview-table">
-              <thead>
-              <tr>
-                <th>姓名</th>
-                <th>账号名</th>
-                <th>密码</th>
-                <th>角色</th>
-                <th>年级</th>
-                <th>班级</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="(row, index) in previewData.slice(0, 5)" :key="index">
-                <td>{{ row.name }}</td>
-                <td>{{ row.username }}</td>
-                <td>******</td>
-                <td>{{ row.role }}</td>
-                <td>{{ row.grade || '-' }}</td>
-                <td>{{ row.class || '-' }}</td>
-              </tr>
-              </tbody>
-            </table>
-            <div v-if="previewData.length > 5" class="preview-more">
-              以及另外 {{ previewData.length - 5 }} 条记录
+            <div class="flex gap-3 mt-8">
+              <button class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest" @click="closeResetPassword">
+                取消
+              </button>
+              <button
+                  :disabled="resetting"
+                  class="flex-[2] px-6 py-4 bg-amber-600 hover:bg-amber-500 text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-amber-900/20 active:scale-95"
+                  @click="confirmResetPassword"
+              >
+                <Save v-if="!resetting" :size="16" />
+                <RefreshCw v-else class="animate-spin" :size="16" />
+                {{ resetting ? '正在重置...' : '确认重置密码' }}
+              </button>
             </div>
           </div>
         </div>
       </div>
+    </Transition>
 
-      <div class="modal-footer">
-        <button class="btn-secondary" @click="closeImportModal">取消</button>
-        <button
-            :disabled="importLoading || previewData.length === 0"
-            class="btn-primary"
-            @click="importUsers"
-        >
-          {{ importLoading ? '导入中...' : '确认导入' }}
-        </button>
-      </div>
-    </div>
-  </div>
+    <!-- 批量导入用户模态框 -->
+  <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+  >
+    <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="closeImportModal">
+      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl" @click.stop>
+        <div class="p-8">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-600/10 flex items-center justify-center text-emerald-500">
+                  <FileSpreadsheet :size="20" />
+                </div>
+                批量导入用户
+              </h3>
+              <p class="text-xs text-zinc-500 mt-1 ml-13">支持 .xlsx 格式文件，请按模板要求上传</p>
+            </div>
+            <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all" @click="closeImportModal">
+              <X :size="20" />
+            </button>
+          </div>
 
-  <!-- 删除确认模态框 -->
-  <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
-    <div class="modal-content modal-sm" @click.stop>
-      <div class="modal-header">
-        <h3>确认删除</h3>
-        <button class="close-btn" @click="closeDeleteModal">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="18" x2="6" y1="6" y2="18"/>
-            <line x1="6" x2="18" y1="6" y2="18"/>
-          </svg>
-        </button>
-      </div>
+          <div class="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div class="p-5 bg-zinc-950/50 border border-zinc-800/50 rounded-3xl space-y-4">
+              <div class="flex items-center gap-2 text-zinc-300 font-bold text-sm mb-2">
+                <Info :size="16" class="text-blue-400" />
+                导入说明
+              </div>
+              <p class="text-xs text-zinc-500 leading-relaxed">
+                请上传Excel格式文件 (.xlsx)，系统会自动解析数据。
+                注意：第一行可以是标题行（会自动跳过），角色字段必须匹配系统定义的角色。
+              </p>
+              
+              <div class="overflow-hidden rounded-2xl border border-zinc-800/80">
+                <table class="w-full text-[10px] text-left">
+                  <thead class="bg-zinc-900 text-zinc-400 uppercase tracking-tighter">
+                    <tr>
+                      <th class="px-3 py-2 border-b border-zinc-800">姓名</th>
+                      <th class="px-3 py-2 border-b border-zinc-800">账号名</th>
+                      <th class="px-3 py-2 border-b border-zinc-800">密码</th>
+                      <th class="px-3 py-2 border-b border-zinc-800">角色</th>
+                      <th class="px-3 py-2 border-b border-zinc-800">年级</th>
+                      <th class="px-3 py-2 border-b border-zinc-800">班级</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-zinc-500">
+                    <tr class="border-b border-zinc-900/50">
+                      <td class="px-3 py-2">张三</td>
+                      <td class="px-3 py-2">zhangsan</td>
+                      <td class="px-3 py-2">******</td>
+                      <td class="px-3 py-2">USER</td>
+                      <td class="px-3 py-2">高一</td>
+                      <td class="px-3 py-2">1班</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <div class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-[10px] text-blue-400/80 leading-relaxed">
+                <strong>支持的角色：</strong>
+                <span v-if="isSuperAdmin">USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）</span>
+                <span v-else>USER（普通用户）、SONG_ADMIN（歌曲管理员）</span>
+              </div>
+            </div>
 
-      <div class="modal-body">
-        <div class="delete-warning">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" x2="12" y1="9" y2="13"/>
-            <line x1="12" x2="12.01" y1="17" y2="17"/>
-          </svg>
-          <div class="warning-text">
-            <p>确定要删除用户 <strong>"{{ deletingUser?.name }}"</strong> 吗？</p>
-            <p class="warning-note">此操作不可撤销，请谨慎操作！</p>
+            <div class="space-y-3">
+              <label class="block text-xs font-black text-zinc-400 uppercase tracking-widest ml-1">选择数据文件</label>
+              <div 
+                class="relative group cursor-pointer"
+                @click="$refs.fileInput.click()"
+              >
+                <input
+                  ref="fileInput"
+                  id="file-upload"
+                  accept=".xlsx"
+                  class="hidden"
+                  type="file"
+                  @change="handleFileUpload"
+                />
+                <div class="w-full py-10 border-2 border-dashed border-zinc-800 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/5 rounded-3xl transition-all flex flex-col items-center justify-center gap-3">
+                  <div class="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center text-zinc-600 group-hover:text-emerald-500 transition-colors">
+                    <Upload :size="24" />
+                  </div>
+                  <div class="text-center">
+                    <p class="text-sm font-bold text-zinc-300">点击或拖拽上传 Excel 文件</p>
+                    <p class="text-xs text-zinc-500 mt-1">仅支持 .xlsx 格式</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="importError" class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs">
+              <AlertCircle :size="16" />
+              {{ importError }}
+            </div>
+            
+            <div v-if="importSuccess" class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-3 text-emerald-400 text-xs">
+              <CheckCircle2 :size="16" />
+              {{ importSuccess }}
+            </div>
+
+            <div v-if="previewData.length > 0" class="space-y-3">
+              <div class="flex items-center justify-between ml-1">
+                <label class="text-xs font-black text-zinc-400 uppercase tracking-widest">预览数据 ({{ previewData.length }}条记录)</label>
+              </div>
+              <div class="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/30">
+                <table class="w-full text-xs text-left">
+                  <thead class="bg-zinc-900/50 text-zinc-500">
+                    <tr>
+                      <th class="px-4 py-3 font-medium">姓名</th>
+                      <th class="px-4 py-3 font-medium">账号</th>
+                      <th class="px-4 py-3 font-medium">角色</th>
+                      <th class="px-4 py-3 font-medium">年级/班级</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-zinc-900">
+                    <tr v-for="(row, index) in previewData.slice(0, 5)" :key="index" class="text-zinc-300">
+                      <td class="px-4 py-3">{{ row.name }}</td>
+                      <td class="px-4 py-3">{{ row.username }}</td>
+                      <td class="px-4 py-3">
+                        <span class="px-2 py-0.5 bg-zinc-800 rounded-md text-[10px] text-zinc-400 uppercase">{{ row.role }}</span>
+                      </td>
+                      <td class="px-4 py-3 text-zinc-500">{{ row.grade || '-' }} / {{ row.class || '-' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-if="previewData.length > 5" class="p-3 text-center border-t border-zinc-900 text-[10px] text-zinc-500 font-medium">
+                  以及另外 {{ previewData.length - 5 }} 条记录...
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-8">
+            <button class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest" @click="closeImportModal">
+              取消
+            </button>
+            <button
+                :disabled="importLoading || previewData.length === 0"
+                class="flex-[2] px-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-900/20 active:scale-95"
+                @click="importUsers"
+            >
+              <Save v-if="!importLoading" :size="16" />
+              <RefreshCw v-else class="animate-spin" :size="16" />
+              {{ importLoading ? '正在导入...' : '确认开始导入' }}
+            </button>
           </div>
         </div>
       </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" @click="closeDeleteModal">取消</button>
-        <button :disabled="deleting" class="btn-danger" @click="confirmDelete">
-          {{ deleting ? '删除中...' : '确认删除' }}
-        </button>
-      </div>
     </div>
-  </div>
+  </Transition>
+
+  <!-- 删除确认对话框 -->
+  <ConfirmDialog
+      :show="showDeleteModal"
+      title="确认删除用户"
+      :message="`确定要删除用户 &quot;${deletingUser?.name}&quot; 吗？此操作将永久移除该账户，不可撤销。`"
+      type="danger"
+      confirm-text="确认删除"
+      :loading="deleting"
+      @confirm="confirmDelete"
+      @close="closeDeleteModal"
+  />
 
   <!-- 批量更新模态框 -->
   <BatchUpdateModal
@@ -621,195 +690,283 @@
   />
 
   <!-- 用户详细信息模态框 -->
-  <div v-if="showUserDetailModal" class="modal-overlay" @click="closeUserDetailModal">
-    <div class="modal-content user-detail-modal" @click.stop>
-      <div class="modal-header">
-        <h3>用户详细信息</h3>
-        <button class="close-btn" @click="closeUserDetailModal">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="18" x2="6" y1="6" y2="18"/>
-            <line x1="6" x2="18" y1="6" y2="18"/>
-          </svg>
-        </button>
-      </div>
+  <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+  >
+    <div v-if="showUserDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="closeUserDetailModal">
+      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl" @click.stop>
+        <div class="p-8">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                  <User :size="20" />
+                </div>
+                用户详细信息
+              </h3>
+              <p class="text-xs text-zinc-500 mt-1 ml-13">查看完整的账户资料与操作记录</p>
+            </div>
+            <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all" @click="closeUserDetailModal">
+              <X :size="20" />
+            </button>
+          </div>
 
-      <div v-if="selectedUserDetail" class="modal-body">
-        <!-- 基本信息 -->
-        <div class="detail-section">
-          <h4 class="section-title">基本信息</h4>
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">用户ID:</span>
-              <span class="detail-value">{{ selectedUserDetail.id }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">姓名:</span>
-              <span class="detail-value">{{ selectedUserDetail.name }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">用户名:</span>
-              <span class="detail-value">{{ selectedUserDetail.username }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">角色:</span>
-              <span :class="['role-badge', getRoleClass(selectedUserDetail.role)]">
-                {{ getRoleDisplayName(selectedUserDetail.role) }}
-              </span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">年级:</span>
-              <span class="detail-value">{{ selectedUserDetail.grade || '未设置' }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">班级:</span>
-              <span class="detail-value">{{ selectedUserDetail.class || '未设置' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 账户状态 -->
-        <div class="detail-section">
-          <h4 class="section-title">账户状态</h4>
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">密码状态:</span>
-              <span
-                  :class="['status-badge', (!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? 'status-success' : 'status-warning']">
-                {{
-                  (!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? '密码已修改' : '需要修改密码'
-                }}
-              </span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">MeoW账号:</span>
-              <span :class="['status-badge', selectedUserDetail.meowNickname ? 'status-success' : 'status-inactive']">
-                {{ selectedUserDetail.meowNickname ? '已绑定' : '未绑定' }}
-              </span>
-            </div>
-            <div v-if="selectedUserDetail.meowNickname" class="detail-item">
-              <span class="detail-label">MeoW昵称:</span>
-              <span class="detail-value">{{ selectedUserDetail.meowNickname }}</span>
-            </div>
-            <div v-if="selectedUserDetail.meowBoundAt" class="detail-item">
-              <span class="detail-label">绑定时间:</span>
-              <span class="detail-value">{{ formatDate(selectedUserDetail.meowBoundAt) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 登录信息 -->
-        <div class="detail-section">
-          <h4 class="section-title">登录信息</h4>
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">最后登录:</span>
-              <span class="detail-value">{{ formatDate(selectedUserDetail.lastLogin) }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">登录IP:</span>
-              <span class="detail-value">{{ selectedUserDetail.lastLoginIp || '未知' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 时间信息 -->
-        <div class="detail-section">
-          <h4 class="section-title">时间信息</h4>
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">创建时间:</span>
-              <span class="detail-value">{{ formatDate(selectedUserDetail.createdAt) }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">更新时间:</span>
-              <span class="detail-value">{{ formatDate(selectedUserDetail.updatedAt) }}</span>
-            </div>
-            <div v-if="selectedUserDetail.passwordChangedAt" class="detail-item">
-              <span class="detail-label">密码修改时间:</span>
-              <span class="detail-value">{{ formatDate(selectedUserDetail.passwordChangedAt) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 状态变更日志 -->
-        <div class="detail-section">
-          <h4 class="section-title">状态变更日志</h4>
-          <div v-if="statusLogsLoading" class="loading-container">
-            <div class="loading-spinner"></div>
-            <span>加载中...</span>
-          </div>
-          <div v-else-if="statusLogsError" class="error-container">
-            <p class="error-message">{{ statusLogsError }}</p>
-          </div>
-          <div v-else-if="statusLogs.length === 0" class="empty-container">
-            <p class="empty-message">暂无状态变更记录</p>
-          </div>
-          <div v-else class="status-logs-timeline">
-            <div v-for="log in statusLogs" :key="log.id" class="timeline-item">
-              <div class="timeline-marker"></div>
-              <div class="timeline-content">
-                <div class="log-header">
-                  <div class="status-change">
-                    <span :class="getStatusClass(log.oldStatus)" class="status-badge">
-                      {{ log.oldStatusDisplay || '初始状态' }}
-                    </span>
-                    <svg class="arrow-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <line x1="5" x2="19" y1="12" y2="12"/>
-                      <polyline points="12,5 19,12 12,19"/>
-                    </svg>
-                    <span :class="getStatusClass(log.newStatus)" class="status-badge">
-                      {{ log.newStatusDisplay }}
+          <div v-if="selectedUserDetail" class="space-y-8 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+            <!-- 基本信息 -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest ml-1">
+                <Info :size="14" class="text-blue-500" />
+                基本信息
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">用户 ID</div>
+                  <div class="text-sm font-bold text-zinc-300">{{ selectedUserDetail.id }}</div>
+                </div>
+                <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">姓名</div>
+                  <div class="text-sm font-bold text-zinc-300">{{ selectedUserDetail.name }}</div>
+                </div>
+                <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">用户名</div>
+                  <div class="text-sm font-bold text-zinc-300">{{ selectedUserDetail.username }}</div>
+                </div>
+                <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">角色权限</div>
+                  <div>
+                    <span :class="['px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest', getRoleClass(selectedUserDetail.role)]">
+                      {{ getRoleDisplayName(selectedUserDetail.role) }}
                     </span>
                   </div>
-                  <div class="log-time">{{ formatStatusLogDate(log.createdAt) }}</div>
                 </div>
-                <div v-if="log.reason" class="log-reason">
-                  <span class="reason-label">变更原因:</span>
-                  <span class="reason-text">{{ log.reason }}</span>
+                <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">年级</div>
+                  <div class="text-sm font-bold text-zinc-300">{{ selectedUserDetail.grade || '未设置' }}</div>
                 </div>
-                <div class="log-operator">
-                  <span class="operator-label">操作者:</span>
-                  <span class="operator-name">{{ log.operator?.name || '系统' }}</span>
+                <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">班级</div>
+                  <div class="text-sm font-bold text-zinc-300">{{ selectedUserDetail.class || '未设置' }}</div>
                 </div>
               </div>
             </div>
-            <!-- 分页 -->
-            <div v-if="statusLogsPagination.totalPages > 1" class="logs-pagination">
-              <button
-                  :disabled="!statusLogsPagination.hasPrevPage"
-                  class="btn-secondary btn-sm"
-                  @click="loadStatusLogsPage(statusLogsPagination.page - 1)"
-              >
-                上一页
-              </button>
-              <span class="pagination-info">
-                第 {{ statusLogsPagination.page }} 页，共 {{ statusLogsPagination.totalPages }} 页
-              </span>
-              <button
-                  :disabled="!statusLogsPagination.hasNextPage"
-                  class="btn-secondary btn-sm"
-                  @click="loadStatusLogsPage(statusLogsPagination.page + 1)"
-              >
-                下一页
-              </button>
+
+            <!-- 账户状态 -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest ml-1">
+                <Shield :size="14" class="text-emerald-500" />
+                账户状态
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center justify-between">
+                  <div class="space-y-1">
+                    <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">密码状态</div>
+                    <div class="text-sm font-bold" :class="(!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? 'text-emerald-500' : 'text-amber-500'">
+                      {{ (!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? '密码已修改' : '需要修改密码' }}
+                    </div>
+                  </div>
+                  <div :class="['w-8 h-8 rounded-xl flex items-center justify-center', (!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt) ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500']">
+                    <CheckCircle2 v-if="!selectedUserDetail.forcePasswordChange && selectedUserDetail.passwordChangedAt" :size="16" />
+                    <AlertCircle v-else :size="16" />
+                  </div>
+                </div>
+                <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center justify-between">
+                  <div class="space-y-1">
+                    <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">MeoW 账号绑定</div>
+                    <div class="text-sm font-bold" :class="selectedUserDetail.meowNickname ? 'text-emerald-500' : 'text-zinc-500'">
+                      {{ selectedUserDetail.meowNickname ? `已绑定: ${selectedUserDetail.meowNickname}` : '未绑定' }}
+                    </div>
+                  </div>
+                  <div :class="['w-8 h-8 rounded-xl flex items-center justify-center', selectedUserDetail.meowNickname ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-800 text-zinc-600']">
+                    <AtSign :size="16" />
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <!-- 登录与时间 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="space-y-4">
+                <div class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest ml-1">
+                  <Clock :size="14" class="text-purple-500" />
+                  登录信息
+                </div>
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30">
+                    <span class="text-zinc-500">最后登录</span>
+                    <span class="text-zinc-300 font-medium">{{ formatDate(selectedUserDetail.lastLogin) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30">
+                    <span class="text-zinc-500">登录 IP</span>
+                    <span class="text-zinc-300 font-medium">{{ selectedUserDetail.lastLoginIp || '未知' }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <div class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest ml-1">
+                  <Calendar :size="14" class="text-amber-500" />
+                  时间记录
+                </div>
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30">
+                    <span class="text-zinc-500">创建时间</span>
+                    <span class="text-zinc-300 font-medium">{{ formatDate(selectedUserDetail.createdAt) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30">
+                    <span class="text-zinc-500">最近更新</span>
+                    <span class="text-zinc-300 font-medium">{{ formatDate(selectedUserDetail.updatedAt) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 状态变更日志 -->
+            <div class="space-y-4">
+              <div class="flex items-center justify-between ml-1">
+                <div class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest">
+                  <History :size="14" class="text-emerald-500" />
+                  状态变更日志
+                </div>
+              </div>
+              
+              <div v-if="statusLogsLoading" class="py-12 flex flex-col items-center justify-center text-zinc-600 gap-3">
+                <RefreshCw :size="24" class="animate-spin" />
+                <span class="text-[10px] font-black uppercase tracking-widest">正在加载记录...</span>
+              </div>
+              
+              <div v-else-if="statusLogs.length === 0" class="py-12 text-center bg-zinc-950/30 border border-zinc-800/50 rounded-3xl">
+                <p class="text-xs text-zinc-600">暂无状态变更记录</p>
+              </div>
+              
+              <div v-else class="space-y-4">
+                <div class="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-800">
+                  <div v-for="log in statusLogs" :key="log.id" class="relative">
+                    <div class="absolute -left-[23px] top-1.5 w-3 h-3 rounded-full bg-zinc-900 border-2 border-zinc-700 ring-4 ring-zinc-900"></div>
+                    <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-3">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                          <span :class="['px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter', getStatusClass(log.oldStatus)]">
+                            {{ log.oldStatusDisplay || '初始' }}
+                          </span>
+                          <ArrowRight :size="12" class="text-zinc-700" />
+                          <span :class="['px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter', getStatusClass(log.newStatus)]">
+                            {{ log.newStatusDisplay }}
+                          </span>
+                        </div>
+                        <span class="text-[10px] text-zinc-600 font-medium">{{ formatStatusLogDate(log.createdAt) }}</span>
+                      </div>
+                      
+                      <div v-if="log.reason" class="text-xs text-zinc-400 bg-zinc-900/50 p-2.5 rounded-xl border border-zinc-800/30 leading-relaxed">
+                        <span class="text-zinc-600 font-bold mr-1">原因:</span>
+                        {{ log.reason }}
+                      </div>
+                      
+                      <div class="flex items-center gap-2 text-[10px]">
+                        <div class="w-4 h-4 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500">
+                          <User :size="8" />
+                        </div>
+                        <span class="text-zinc-500">操作者:</span>
+                        <span class="text-zinc-300 font-bold">{{ log.operator?.name || '系统' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 分页 -->
+                <div v-if="statusLogsPagination.totalPages > 1" class="flex items-center justify-between bg-zinc-950/30 p-3 rounded-2xl border border-zinc-800/30">
+                  <button
+                      :disabled="!statusLogsPagination.hasPrevPage"
+                      class="p-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 text-zinc-300 rounded-xl transition-all"
+                      @click="loadStatusLogsPage(statusLogsPagination.page - 1)"
+                  >
+                    <ChevronLeft :size="16" />
+                  </button>
+                  <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                    第 {{ statusLogsPagination.page }} / {{ statusLogsPagination.totalPages }} 页
+                  </span>
+                  <button
+                      :disabled="!statusLogsPagination.hasNextPage"
+                      class="p-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 text-zinc-300 rounded-xl transition-all"
+                      @click="loadStatusLogsPage(statusLogsPagination.page + 1)"
+                  >
+                    <ChevronRight :size="16" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-8">
+            <button class="w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest" @click="closeUserDetailModal">
+              关闭窗口
+            </button>
           </div>
         </div>
       </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" @click="closeUserDetailModal">关闭</button>
-      </div>
     </div>
-  </div>
+  </Transition>
+</div>
 </template>
 
 <script setup>
 import {computed, onMounted, ref, watch} from 'vue'
 import {useAuth} from '~/composables/useAuth'
 import {usePermissions} from '~/composables/usePermissions'
+import {
+  Check,
+  UserPlus,
+  FileSpreadsheet,
+  Layers,
+  Search,
+  ChevronDown,
+  RefreshCw,
+  MapPin,
+  Edit2,
+  Music,
+  Lock,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  ArrowRight,
+  History,
+  AlertCircle,
+  CheckCircle2,
+  User,
+  Shield,
+  Clock,
+  ExternalLink,
+  Save,
+  Trash,
+  Info,
+  Key,
+  Database,
+  Eye,
+  Settings,
+  MoreVertical,
+  LogOut,
+  Mail,
+  Plus,
+  ArrowLeft,
+  Filter,
+  Download,
+  Upload,
+  UserCog,
+  ShieldAlert,
+  Calendar,
+  Clock3,
+  Hash,
+  AtSign,
+  Briefcase
+} from 'lucide-vue-next'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 // 响应式数据
 const loading = ref(false)
@@ -828,6 +985,23 @@ const allRoles = [
   {name: 'SONG_ADMIN', displayName: '歌曲管理员'},
   {name: 'ADMIN', displayName: '管理员'},
   {name: 'SUPER_ADMIN', displayName: '超级管理员'}
+]
+
+// 筛选选项
+const roleFilterOptions = computed(() => [
+  { name: '', displayName: '全部角色' },
+  ...allRoles
+])
+
+const statusFilterOptions = [
+  { label: '全部状态', value: '' },
+  { label: '正常', value: 'active' },
+  { label: '退学', value: 'withdrawn' }
+]
+
+const userStatusOptions = [
+  { label: '正常访问', value: 'active' },
+  { label: '限制访问 (退学)', value: 'withdrawn' }
 ]
 
 // 模态框状态
@@ -1292,6 +1466,7 @@ const loadUsers = async (page = 1, limit = 100) => {
     // 处理分页响应数据
     if (response.users) {
       users.value = response.users
+      console.log('加载用户成功:', users.value.length)
       // 更新分页信息
       if (response.pagination) {
         totalUsers.value = response.pagination.total
@@ -1300,6 +1475,7 @@ const loadUsers = async (page = 1, limit = 100) => {
       }
     } else {
       users.value = []
+      console.warn('响应中没有用户数据')
     }
   } catch (error) {
     console.error('加载用户失败:', error)
@@ -1563,6 +1739,7 @@ const formatStatusLogDate = (dateString) => {
 
 // 生命周期
 onMounted(async () => {
+  console.log('UserManager 组件挂载')
   await loadUsers(1, pageSize.value)
   // 预加载XLSX库
   loadXLSX()
@@ -1570,1356 +1747,26 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.user-manager {
-  padding: 20px;
-  background: var(--bg-primary);
-  min-height: 100vh;
-  color: #e2e8f0;
+/* 自定义滚动条样式 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
 }
 
-/* 工具栏 */
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 20px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.toolbar-left h3 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #f8fafc;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.stats {
-  display: flex;
-  gap: 16px;
-}
-
-.stat-item {
-  font-size: 14px;
-  color: #888888;
-}
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* 操作按钮组 */
-.action-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 禁用状态样式 */
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-/* 搜索框样式 */
-.search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 200px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  color: #666666;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.search-input {
-  width: 100%;
-  padding: 8px 12px 8px 34px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-.search-input::placeholder {
-  color: #666666;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-}
-
-.filter-select {
-  padding: 8px 12px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 14px;
-  cursor: pointer;
-  text-align: center;
-  text-align-last: center;
-}
-
-.filter-select option {
-  text-align: left;
-  background: #2a2a2a;
-  color: #ffffff;
-  padding: 8px 12px;
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.btn-primary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #667eea;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-  background: #5a67d8;
-}
-
-.btn-primary svg {
-  width: 16px;
-  height: 16px;
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+.custom-scrollbar::-webkit-scrollbar-thumb {
   background: #4a5568;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-  background: #2d3748;
-}
-
-.btn-secondary svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* 表格容器 */
-.table-container {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-/* 加载和空状态 */
-.loading-state,
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  color: #888888;
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #2a2a2a;
-  border-top: 3px solid #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.empty-state svg {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 16px;
-  color: #444444;
-}
-
-.empty-text {
-  font-size: 16px;
-  color: #888888;
-}
-
-/* 用户表格 */
-.user-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.user-table th {
-  padding: 16px;
-  background: #2a2a2a;
-  color: #cccccc;
-  font-weight: 600;
-  font-size: 14px;
-  text-align: left;
-  border-bottom: 1px solid #3a3a3a;
-}
-
-.user-table td {
-  padding: 16px;
-  border-bottom: 1px solid #2a2a2a;
-  font-size: 14px;
-  color: #ffffff;
-}
-
-.user-row:hover {
-  background: #1e1e1e;
-}
-
-/* 角色徽章 */
-.role-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.role-badge.user {
-  background: #1e3a8a;
-  color: #93c5fd;
-}
-
-.role-badge.admin {
-  background: #7c2d12;
-  color: #fed7aa;
-}
-
-.role-badge.song-admin {
-  background: #166534;
-  color: #bbf7d0;
-}
-
-.role-badge.super-admin {
-  background: #7c2d12;
-  color: #fca5a5;
-}
-
-/* 操作按钮 */
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.action-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.edit-btn {
-  background: #1e40af;
-  color: #ffffff;
-}
-
-.edit-btn:hover {
-  background: #1d4ed8;
-}
-
-.music-btn {
-  background: #7c3aed;
-  color: #ffffff;
-}
-
-.music-btn:hover {
-  background: #8b5cf6;
-}
-
-.warning-btn {
-  background: #d97706;
-  color: #ffffff;
-}
-
-.warning-btn:hover {
-  background: #f59e0b;
-}
-
-.delete-btn {
-  background: #dc2626;
-  color: #ffffff;
-}
-
-.delete-btn:hover {
-  background: #ef4444;
-}
-
-.status-log-btn {
-  background: #059669;
-  color: #ffffff;
-}
-
-.status-log-btn:hover {
-  background: #10b981;
-}
-
-/* 状态变更日志样式 */
-.status-logs-timeline {
-  position: relative;
-  padding-left: 20px;
-}
-
-.timeline-item {
-  position: relative;
-  padding-bottom: 24px;
-  border-left: 2px solid #e5e7eb;
-}
-
-.timeline-item:last-child {
-  border-left-color: transparent;
-}
-
-.timeline-marker {
-  position: absolute;
-  left: -6px;
-  top: 8px;
-  width: 10px;
-  height: 10px;
-  background-color: #3b82f6;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 0 0 2px #e5e7eb;
-}
-
-.timeline-content {
-  margin-left: 20px;
-  background: #1f2937;
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid #374151;
-}
-
-.log-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.status-change {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.status-badge.active {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.status-badge.inactive {
-  background-color: #fef2f2;
-  color: #991b1b;
-}
-
-.status-badge.suspended {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.arrow-icon {
-  width: 16px;
-  height: 16px;
-  color: #6b7280;
-}
-
-.log-time {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.log-reason {
-  margin-bottom: 8px;
-  padding: 8px;
-  background: #111827;
-  border-radius: 4px;
-  border-left: 3px solid #3b82f6;
-}
-
-.reason-label {
-  font-weight: 500;
-  color: #d1d5db;
-  margin-right: 8px;
-}
-
-.reason-text {
-  color: #9ca3af;
-}
-
-.log-operator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.operator-label {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.operator-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: #e5e7eb;
-  background: #374151;
-  padding: 2px 6px;
   border-radius: 3px;
 }
 
-.loading-container, .error-container, .empty-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
-  text-align: center;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #718096;
 }
 
-.loading-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #e5e7eb;
-  border-top: 2px solid #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-right: 8px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.error-message {
-  color: #dc2626;
-  font-weight: 500;
-}
-
-.empty-message {
-  color: #6b7280;
-  font-style: italic;
-}
-
-.logs-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.pagination-info {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 12px;
-  border-radius: 4px;
-}
-
-.btn-secondary {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background-color: #e5e7eb;
-}
-
-.btn-secondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 分页 */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 24px;
-  padding: 20px;
-}
-
-.page-btn {
-  padding: 8px 12px;
-  background: #2a2a2a;
-  color: #ffffff;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: #3a3a3a;
-  border-color: #4a4a4a;
-}
-
-.page-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.page-info {
-  color: #888888;
-  font-size: 14px;
-  margin: 0 8px;
-}
-
-/* 模态框 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #2a2a2a;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.close-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: #2a2a2a;
-  color: #888888;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background: #3a3a3a;
-  color: #ffffff;
-}
-
-.close-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.modal-body {
-  padding: 20px;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #cccccc;
-}
-
-.form-input,
-.form-select {
-  width: 100%;
-  padding: 10px 12px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-.form-input::placeholder {
-  color: #666666;
-}
-
-.form-input:focus,
-.form-select:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-}
-
-.form-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.error-message {
-  padding: 12px;
-  background: #7f1d1d;
-  border: 1px solid #991b1b;
-  border-radius: 8px;
-  color: #fecaca;
-  font-size: 14px;
-  margin-top: 16px;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 20px;
-  border-top: 1px solid #2a2a2a;
-}
-
-.btn-secondary {
-  padding: 8px 16px;
-  background: #2a2a2a;
-  color: #ffffff;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-  background: #3a3a3a;
-  border-color: #4a4a4a;
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* 移动端卡片布局 */
-.mobile-cards {
-  display: none;
-}
-
-.user-card {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  margin-bottom: 16px;
-  overflow: hidden;
-  transition: all 0.2s ease;
-}
-
-.user-card:hover {
-  border-color: #3a3a3a;
-  transform: translateY(-1px);
-}
-
-.user-card:active {
-  transform: scale(0.98);
-  transition: transform 0.1s ease;
-}
-
-.card-header {
-  padding: 16px;
-  border-bottom: 1px solid #2a2a2a;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.user-primary-info {
-  flex: 1;
-}
-
-.user-name-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.user-name-label {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.user-username {
-  font-size: 14px;
-  color: #888888;
-}
-
-.card-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.card-body {
-  padding: 16px;
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #1a1a1a;
-}
-
-.info-row:last-child {
-  border-bottom: none;
-}
-
-.info-label {
-  font-size: 13px;
-  color: #888888;
-  font-weight: 500;
-}
-
-.info-value {
-  font-size: 13px;
-  color: #cccccc;
-  text-align: right;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .user-manager {
-    padding: 16px;
-  }
-
-  .toolbar {
-    flex-direction: column;
-    gap: 16px;
-    align-items: stretch;
-  }
-
-  .toolbar-right {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
-
-  /* 移动端第一行：搜索和筛选 */
-  .toolbar-right > .search-box {
-    flex: 1;
-    min-width: 0;
-    order: 1;
-  }
-
-  .toolbar-right > .filter-select {
-    flex-shrink: 0;
-    min-width: 100px;
-    order: 2;
-  }
-
-  /* 移动端第二行：按钮组 */
-  .toolbar-right > .action-buttons {
-    order: 3;
-    flex-basis: 100%; /* 占满整行 */
-    width: 100%;
-  }
-
-  /* 移动端搜索框样式 - 使用更强的选择器 */
-  .toolbar-right > .search-box {
-    width: 100% !important;
-    flex: 1 !important;
-    min-width: 0 !important;
-  }
-
-  .user-manager .toolbar-right > .search-box .search-input {
-    width: 100% !important;
-    padding: 12px 16px 12px 44px !important; /* 匹配mobile-admin.css的padding但增加左padding */
-    font-size: 16px !important; /* 匹配mobile-admin.css */
-    box-sizing: border-box !important;
-    min-height: 44px !important; /* 匹配mobile-admin.css */
-    border-radius: 10px !important; /* 匹配mobile-admin.css */
-  }
-
-  .user-manager .toolbar-right > .search-box .search-icon {
-    left: 16px !important; /* 调整图标位置匹配新的padding */
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 18px !important; /* 稍微增大图标 */
-    height: 18px !important;
-    position: absolute !important;
-    z-index: 10 !important;
-  }
-
-  /* 移动端按钮组保持一行 */
-  .action-buttons {
-    flex-direction: row;
-    width: 100%;
-    gap: 8px;
-    flex-basis: 100%; /* 占满整行 */
-  }
-
-  .action-buttons .btn-primary,
-  .action-buttons .btn-secondary {
-    flex: 1;
-    justify-content: center;
-  }
-
-  /* 隐藏桌面端表格，显示移动端卡片 */
-  .desktop-table {
-    display: none;
-  }
-
-  .mobile-cards {
-    display: block;
-  }
-
-  .modal-content {
-    width: 95%;
-    max-width: 480px;
-    margin: 20px;
-    max-height: 85vh;
-    overflow-y: auto;
-  }
-
-  /* 移动端模态框按钮优化 */
-  .modal-footer {
-    flex-direction: row;
-    gap: 8px;
-  }
-
-  .modal-footer .btn-secondary,
-  .modal-footer .btn-primary {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  /* 移动端分页优化 */
-  .pagination {
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-  }
-
-  .page-btn {
-    padding: 10px 14px;
-    font-size: 14px;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .page-info {
-    font-size: 14px;
-    padding: 10px;
-  }
-}
-
-/* 小屏幕设备进一步优化 */
-@media (max-width: 480px) {
-  .user-manager {
-    padding: 12px;
-  }
-
-  .toolbar-title {
-    font-size: 18px;
-  }
-
-  .toolbar-description {
-    font-size: 12px;
-  }
-
-  .user-card {
-    margin-bottom: 12px;
-  }
-
-  .card-header {
-    padding: 12px;
-  }
-
-  .card-body {
-    padding: 12px;
-  }
-
-  .user-name-label {
-    font-size: 15px;
-  }
-
-  .user-username {
-    font-size: 13px;
-  }
-
-  .role-badge {
-    font-size: 10px;
-    padding: 3px 6px;
-  }
-
-  .info-label, .info-value {
-    font-size: 12px;
-  }
-
-  .action-btn {
-    width: 28px;
-    height: 28px;
-  }
-
-  .action-btn svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .pagination {
-    padding: 12px 0;
-  }
-
-  .page-btn {
-    padding: 8px 12px;
-    font-size: 13px;
-    min-width: 40px;
-    min-height: 40px;
-  }
-}
-
-/* 批量导入相关样式 */
-.import-instructions {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 0.375rem;
-}
-
-.excel-format {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 0.375rem;
-  overflow-x: auto;
-}
-
-.excel-format table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.excel-format th, .excel-format td {
-  padding: 0.5rem;
-  text-align: left;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 0.875rem;
-}
-
-.excel-format th {
-  background: rgba(255, 255, 255, 0.05);
-  color: #888888;
-  font-weight: 500;
-}
-
-.import-note {
-  margin-top: 1rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  color: #888888;
-  font-size: 0.875rem;
-}
-
-.preview-section {
-  margin: 1.5rem 0;
-}
-
-.preview-section h4 {
-  margin: 0 0 0.5rem 0;
-  color: #ffffff;
-}
-
-.preview-table-container {
-  background: rgba(15, 23, 42, 0.6);
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  overflow-x: auto;
-}
-
-.preview-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.preview-table th, .preview-table td {
-  padding: 0.5rem;
-  text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 0.875rem;
-}
-
-.preview-more {
-  text-align: center;
-  padding: 0.5rem;
-  color: #888888;
-  font-style: italic;
-}
-
-.success-message {
-  color: #10b981;
-  margin: 0.5rem 0;
-}
-
-.error-message {
-  color: #ef4444;
-  margin: 0.5rem 0;
-}
-
-/* 文件上传样式 */
-.file-upload-container {
-  margin-top: 0.5rem;
-}
-
-.file-input-hidden {
-  display: none;
-}
-
-.file-upload-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: #2a2a2a;
-  border: 2px dashed #4a5568;
-  border-radius: 8px;
-  color: #ffffff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 80px;
-}
-
-.file-upload-btn:hover {
-  background: #3a3a3a;
-  border-color: #667eea;
-}
-
-.upload-text {
-  text-align: center;
-}
-
-.upload-title {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.upload-subtitle {
-  font-size: 14px;
-  color: #888888;
-}
-
-.file-upload-info {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #888888;
-  text-align: center;
-}
-
-/* 删除确认模态框样式 */
-.modal-sm {
-  max-width: 400px;
-}
-
-.delete-warning {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 16px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
-}
-
-.delete-warning svg {
-  width: 24px;
-  height: 24px;
-  color: #ef4444;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.warning-text p {
-  margin: 0 0 8px 0;
-  color: #ffffff;
-}
-
-.warning-text .warning-note {
-  font-size: 14px;
-  color: #ef4444;
-  margin: 8px 0 0 0;
-}
-
-.btn-danger {
-  background: #dc2626;
-  color: #ffffff;
-  border: 1px solid #dc2626;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: #ef4444;
-  border-color: #ef4444;
-}
-
-.btn-danger:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 用户详细信息弹窗样式 */
-.user-detail-modal {
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.detail-section {
-  margin-bottom: 2rem;
-}
-
-.detail-section:last-child {
-  margin-bottom: 0;
-}
-
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #3b82f6;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.detail-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-}
-
-.detail-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.detail-label {
-  font-weight: 500;
-  color: #d1d5db;
-  font-size: 0.875rem;
-  flex-shrink: 0;
-  margin-right: 1rem;
-}
-
-.detail-value {
-  color: #ffffff;
-  font-size: 0.875rem;
-  text-align: right;
-  word-break: break-all;
-}
-
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.status-active {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.status-withdrawn {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.status-success {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.status-warning {
-  background: rgba(245, 158, 11, 0.2);
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.status-inactive {
-  background: rgba(107, 114, 128, 0.2);
-  color: #6b7280;
-  border: 1px solid rgba(107, 114, 128, 0.3);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .user-detail-modal {
-    max-width: 95vw;
-    margin: 1rem;
-  }
-
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .detail-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .detail-value {
-    text-align: left;
-  }
-}
-
-/* 表格行和卡片的点击样式 */
-.user-row {
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.user-row:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.user-card {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.user-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+/* 确保模态框中的表格在移动端可以滚动 */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
 }
 </style>
-// 判断是否为当前登录用户
-const isSelf = (user) => {
-return auth.user.value?.id === user?.id
-}

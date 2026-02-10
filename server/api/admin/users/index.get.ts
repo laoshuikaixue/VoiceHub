@@ -78,6 +78,9 @@ export default defineEventHandler(async (event) => {
             lastLogin: users.lastLogin,
             lastLoginIp: users.lastLoginIp,
             passwordChangedAt: users.passwordChangedAt,
+            forcePasswordChange: users.forcePasswordChange,
+            meowNickname: users.meowNickname,
+            meowBoundAt: users.meowBoundAt,
             createdAt: users.createdAt,
             updatedAt: users.updatedAt
         })

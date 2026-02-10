@@ -1,12 +1,16 @@
 /* 导入浏览器主题保护样式 */
 @import url('./theme-protection.css');
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* 防止浏览器自动应用深色主题 */
 :root {
   color-scheme: light dark;
 }
 
-/* 现代化流体背景与全局样式 */
+/* 流体背景与全局样式 */
 
 * {
   margin: 0;

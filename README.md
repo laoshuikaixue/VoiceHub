@@ -343,12 +343,6 @@ VoiceHub/
 │   │       └── year-review.css    # 年度回顾样式
 │   ├── components/            # Vue组件目录
 │   │   ├── Admin/             # 管理员功能组件
-│   │   │   ├── Common/        # 通用管理组件
-│   │   │   │   ├── DataTable.vue      # 通用数据表格组件
-│   │   │   │   ├── ErrorBoundary.vue  # 错误边界组件
-│   │   │   │   ├── LoadingState.vue   # 加载状态组件
-│   │   │   │   ├── SearchFilter.vue   # 搜索过滤组件
-│   │   │   │   └── StatCard.vue       # 统计卡片组件
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
@@ -365,6 +359,7 @@ VoiceHub/
 │   │   │   ├── ScheduleManager.vue    # 排期管理
 │   │   │   ├── SchedulePrinter.vue    # 排期打印功能
 │   │   │   ├── SemesterManager.vue    # 学期管理
+│   │   │   ├── Sidebar.vue            # 管理后台侧边栏
 │   │   │   ├── SiteConfigManager.vue  # 站点配置管理
 │   │   │   ├── SmtpManager.vue        # SMTP邮件服务管理
 │   │   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
@@ -381,18 +376,26 @@ VoiceHub/
 │   │   │   └── NotificationSettings.vue # 通知设置
 │   │   ├── Songs/             # 歌曲相关组件
 │   │   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
-│   │   │   ├── RequestForm.vue        # 点歌表单
-│   │   │   ├── ScheduleList.vue       # 排期列表展示
-│   │   │   ├── SongList.vue           # 歌曲列表
+│   │   │   ├── ImportSongsModal.vue   # 导入歌曲弹窗
 │   │   │   ├── NeteaseLoginModal.vue  # 网易云音乐登录弹窗
 │   │   │   ├── PlaylistSelectionModal.vue # 歌单选择弹窗
+│   │   │   ├── PodcastEpisodesModal.vue # 播客节目弹窗
 │   │   │   ├── RecentSongsModal.vue   # 最近播放弹窗
-│   │   │   └── PodcastEpisodesModal.vue # 播客节目弹窗
+│   │   │   ├── RequestForm.vue        # 点歌表单
+│   │   │   ├── ScheduleList.vue       # 排期列表展示
+│   │   │   └── SongList.vue           # 歌曲列表
 │   │   ├── UI/                # 通用UI组件
 │   │   │   ├── AudioPlayer/   # 音频播放器组件模块
 │   │   │   │   ├── AudioElement.vue   # 音频元素组件
 │   │   │   │   ├── PlayerControls.vue # 播放器控制组件
 │   │   │   │   └── PlayerInfo.vue     # 播放器信息组件
+│   │   │   ├── Common/        # 通用UI组件
+│   │   │   │   ├── CustomSelect.vue   # 自定义选择器
+│   │   │   │   ├── DataTable.vue      # 通用数据表格组件
+│   │   │   │   ├── ErrorBoundary.vue  # 错误边界组件
+│   │   │   │   ├── LoadingState.vue   # 加载状态组件
+│   │   │   │   ├── SearchFilter.vue   # 搜索过滤组件
+│   │   │   │   └── StatCard.vue       # 统计卡片组件
 │   │   │   ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件
 │   │   │   ├── AudioPlayer.vue        # 主音频播放器组件
 │   │   │   ├── ConfirmDialog.vue      # 确认对话框
@@ -403,7 +406,8 @@ VoiceHub/
 │   │   │   ├── NotificationContainer.vue # 通知容器组件
 │   │   │   ├── PageTransition.vue     # 页面过渡动画
 │   │   │   └── ProgressBar.vue        # 进度条组件
-│   │   └── year-review/       # 年度回顾组件
+│   │   ├── year-review/       # 年度回顾组件
+│   │   └── SiteFooter.vue         # 站点页脚
 │   ├── composables/           # Vue 3 组合式API
 │   │   ├── useAdmin.ts         # 管理员功能hooks
 │   │   ├── useAudioPlayer.ts   # 音频播放器hooks
@@ -417,17 +421,17 @@ VoiceHub/
 │   │   ├── useErrorHandler.ts  # 错误处理hooks
 │   │   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
 │   │   ├── useLyrics.ts        # 歌词功能hooks
-│   │   ├── useMediaSession.ts  # 媒体会话API hooks（浏览器SMTC支持）
+│   │   ├── useMediaSession.ts  # 媒体会话API hooks
 │   │   ├── useMusicSources.ts    # 音乐源管理hooks
 │   │   ├── useMusicWebSocket.ts  # 音乐WebSocket hooks
 │   │   ├── useNotifications.ts # 通知功能hooks
 │   │   ├── usePermissions.ts   # 权限管理hooks
-│   │   ├── useProgress.ts      # 进度条功能hooks
+│   │   ├── useProgress.ts      # 进度管理hooks
 │   │   ├── useProgressEvents.ts # 进度事件hooks
 │   │   ├── useRequestDedup.ts  # 请求去重hooks
 │   │   ├── useSemesters.ts     # 学期管理hooks
 │   │   ├── useSiteConfig.js    # 站点配置hooks
-│   │   ├── useSongs.ts         # 歌曲功能hooks
+│   │   ├── useSongs.ts         # 歌曲管理hooks
 │   │   └── useToast.ts         # Toast提示hooks
 │   ├── drizzle/               # 数据库相关
 │   │   ├── db.ts               # 数据库连接

@@ -1,41 +1,34 @@
 <template>
-  <div class="schedule-form">
-    <h3>为歌曲 "{{ song?.title }}" 创建排期</h3>
+  <div class="backdrop-blur-md p-6 rounded-xl border border-white/10 bg-slate-800/70 shadow-2xl max-w-[400px] mx-auto text-zinc-100 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_30px_rgba(0,0,0,0.2)]">
+    <h3 class="mb-6 pb-2 border-b border-white/10 text-zinc-100 font-bold text-lg">为歌曲 "{{ song?.title }}" 创建排期</h3>
 
     <form @submit.prevent="handleSubmit">
-      <div class="form-group">
-        <label for="playDate">播放日期</label>
+      <div class="mb-4">
+        <label class="block mb-2 font-medium text-zinc-100" for="playDate">播放日期</label>
         <input
             id="playDate"
             v-model="playDate"
-            class="date-input"
+            class="w-full p-3 border border-white/10 rounded-lg text-base bg-[#0f172a99] text-zinc-100 outline-none transition-colors duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.25)]"
             required
             type="date"
         />
       </div>
 
       <!-- 播出时段选择 -->
-      <div v-if="playTimeEnabled" class="form-group">
-        <label for="playTime">播出时段</label>
-        <select
-            id="playTime"
+      <div v-if="playTimeEnabled" class="mb-4">
+        <CustomSelect
             v-model="playTimeId"
-            class="time-input"
-        >
-          <option value="">未指定</option>
-          <option
-              v-for="playTime in playTimes"
-              :key="playTime.id"
-              :value="playTime.id"
-          >
-            {{ playTime.name }} ({{ playTime.startTime }} - {{ playTime.endTime }})
-          </option>
-        </select>
-        <div v-if="song?.preferredPlayTime" class="preferred-time-hint">
-          <div class="hint-icon">💡</div>
+            :options="playTimeOptions"
+            label="播出时段"
+            placeholder="未指定"
+            class-name="w-full"
+        />
+        
+        <div v-if="song?.preferredPlayTime" class="mt-3 p-3 bg-white/5 rounded-lg text-sm flex items-start gap-2">
+          <div class="text-base">💡</div>
           <div>
             用户期望的播出时段:
-            <span class="preferred-time">
+            <span class="font-medium text-indigo-300">
               {{ song.preferredPlayTime.name }}
               <template v-if="song.preferredPlayTime.startTime || song.preferredPlayTime.endTime">
                 ({{ formatPlayTimeRange(song.preferredPlayTime) }})
@@ -45,13 +38,23 @@
         </div>
       </div>
 
-      <div v-if="error" class="error">{{ error }}</div>
+      <div v-if="error" class="p-3 mt-4 bg-red-500/10 text-red-300 rounded-lg">
+        {{ error }}
+      </div>
 
-      <div class="form-actions">
-        <button class="cancel-btn" type="button" @click="$emit('cancel')">
+      <div class="flex justify-between gap-4 mt-6">
+        <button 
+          class="flex-1 p-3 border border-white/10 rounded-lg text-base cursor-pointer transition-all duration-200 bg-white/10 text-zinc-100 hover:bg-white/15" 
+          type="button" 
+          @click="$emit('cancel')"
+        >
           取消
         </button>
-        <button :disabled="loading" class="submit-btn" type="submit">
+        <button 
+          :disabled="loading" 
+          class="flex-1 p-3 border-none rounded-lg text-base cursor-pointer transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-px disabled:bg-indigo-500/50 disabled:cursor-not-allowed disabled:transform-none" 
+          type="submit"
+        >
           {{ loading ? '创建中...' : '创建排期' }}
         </button>
       </div>
@@ -60,8 +63,9 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue'
-import {useSongs} from '~/composables/useSongs'
+import { onMounted, ref, computed } from 'vue'
+import { useSongs } from '~/composables/useSongs'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 const props = defineProps({
   song: {
@@ -80,7 +84,23 @@ const playDate = ref('')
 const playTimeId = ref('')
 const error = ref('')
 const playTimes = ref([])
-const {playTimeEnabled} = useSongs()
+const { playTimeEnabled } = useSongs()
+
+// 转换播出时段为 CustomSelect 选项格式
+const playTimeOptions = computed(() => {
+  const options = [{ label: '未指定', value: '' }]
+  
+  if (playTimes.value && playTimes.value.length > 0) {
+    playTimes.value.forEach(pt => {
+      options.push({
+        label: `${pt.name} (${pt.startTime} - ${pt.endTime})`,
+        value: pt.id
+      })
+    })
+  }
+  
+  return options
+})
 
 // 初始化
 onMounted(async () => {
@@ -143,129 +163,3 @@ const handleSubmit = () => {
   })
 }
 </script>
-
-<style scoped>
-.schedule-form {
-  backdrop-filter: blur(10px);
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(30, 41, 59, 0.7);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  max-width: 400px;
-  margin: 0 auto;
-  color: var(--light);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.schedule-form:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-}
-
-h3 {
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--light);
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: var(--light);
-}
-
-.date-input, .time-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  background: rgba(15, 23, 42, 0.6);
-  color: var(--light);
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.date-input:focus, .time-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
-}
-
-.preferred-time-hint {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.hint-icon {
-  font-size: 1rem;
-}
-
-.preferred-time {
-  font-weight: 500;
-  color: var(--primary-light);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-button {
-  flex: 1;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.cancel-btn {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--light);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.cancel-btn:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-}
-
-.submit-btn {
-  background-color: var(--primary);
-  color: white;
-}
-
-.submit-btn:hover {
-  background-color: var(--primary-dark);
-  transform: translateY(-1px);
-}
-
-.submit-btn:disabled {
-  background-color: rgba(99, 102, 241, 0.5);
-  cursor: not-allowed;
-  transform: none;
-}
-
-.error {
-  padding: 0.75rem;
-  margin-top: 1rem;
-  background: rgba(239, 68, 68, 0.1);
-  color: rgb(252, 165, 165);
-  border-radius: 0.5rem;
-}
-</style> 

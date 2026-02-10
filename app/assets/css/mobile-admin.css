@@ -373,7 +373,7 @@
     touch-action: manipulation;
   }
 
-  /* iOS特定优化 */
+  /* IOS特定优化 */
   .form-input[type="text"],
   .form-input[type="email"],
   .form-input[type="password"],

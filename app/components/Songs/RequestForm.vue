@@ -1,8 +1,8 @@
 <template>
   <div class="request-form">
-    <div class="rules-section">
+    <div class="rules-section desktop-only-rules">
       <h2 class="section-title">投稿须知</h2>
-      <div class="rules-content">
+      <div class="rules-content-desktop">
         <div v-if="submissionGuidelines" class="guidelines-content"
              v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
         <div v-else class="default-guidelines">
@@ -12,9 +12,30 @@
           <p>4. 点播的歌曲将由管理员进行审核</p>
           <p>5. 审核通过后将安排在播放时段播出</p>
           <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
-          <p>7.
-            本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
+          <p>7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
           <p>8. 最终解释权归广播站所有</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Rules Section (Original RequestForm.vue style) -->
+    <div class="rules-section mobile-only-rules">
+      <h3 class="rules-title">
+        <Icon :size="16" class="rules-icon" name="bell" />
+        投稿须知
+      </h3>
+      <div class="rules-content">
+        <div v-if="submissionGuidelines" class="guidelines-content"
+             v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+        <div v-else class="default-guidelines">
+          <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
+          <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
+          <div class="rule-item"><span>3.</span> 禁止投递含有违规内容的歌曲</div>
+          <div class="rule-item"><span>4.</span> 点播的歌曲将由管理员进行审核</div>
+          <div class="rule-item"><span>5.</span> 审核通过后将安排在播放时段播出</div>
+          <div class="rule-item"><span>6.</span> 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</div>
+          <div class="rule-item"><span>7.</span> 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。</div>
+          <div class="rule-item"><span>8.</span> 最终解释权归广播站所有</div>
         </div>
       </div>
     </div>
@@ -40,6 +61,10 @@
                 {{ loading || searching ? '处理中...' : '搜索' }}
               </button>
             </div>
+            <button class="import-semester-btn" type="button" @click="showImportSongsModal = true" title="从往期导入">
+              <Icon :size="16" name="history" />
+              <span class="btn-text">从往期导入</span>
+            </button>
           </div>
 
           <!-- 联合投稿人区域 -->
@@ -227,14 +252,14 @@
                   <div
                       v-for="(result, index) in searchResults"
                       :key="`${platform}-${result.id || index}`"
-                      class="result-item"
+                      class="result-item group"
                   >
-                    <div class="result-cover">
+                    <div class="result-cover" @click.stop="playSong(result)">
                       <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img"
                            referrerpolicy="no-referrer"/>
-                      <div class="play-overlay" @click.stop="playSong(result)">
-                        <div class="play-button-bg">
-                          <Icon :size="24" color="white" name="play"/>
+                      <div class="play-overlay-container">
+                        <div class="play-button-wrapper">
+                          <Icon name="play" :size="20" class="play-icon" />
                         </div>
                       </div>
                     </div>
@@ -358,21 +383,15 @@
             v-if="playTimeSelectionEnabled && playTimes.length > 0"
             class="form-group"
         >
-          <label for="playTime">期望播出时段</label>
           <div class="input-wrapper">
-            <select id="playTime" v-model="preferredPlayTimeId" class="form-select">
-              <option value="">选择时段</option>
-              <option
-                  v-for="playTime in enabledPlayTimes"
-                  :key="playTime.id"
-                  :value="playTime.id"
-              >
-                {{ playTime.name }}
-                <template v-if="playTime.startTime || playTime.endTime">
-                  ({{ formatPlayTimeRange(playTime) }})
-                </template>
-              </option>
-            </select>
+            <CustomSelect
+                v-model="preferredPlayTimeId"
+                :options="formattedPlayTimes"
+                label="期望播出时段"
+                label-key="displayName"
+                value-key="id"
+                placeholder="选择时段"
+            />
           </div>
         </div>
       </form>
@@ -444,6 +463,13 @@
 
     </div>
 
+    <!-- 历史学期导入弹窗 -->
+    <ImportSongsModal
+      :show="showImportSongsModal"
+      @close="showImportSongsModal = false"
+      @import-success="handleImportSuccess"
+    />
+
     <!-- 网易云音乐登录弹窗 -->
     <NeteaseLoginModal
         :show="showLoginModal"
@@ -495,94 +521,134 @@
 
     <!-- 手动输入弹窗 -->
     <Teleport to="body">
-      <Transition name="modal-animation">
-        <div v-if="showManualModal" class="modal-overlay" @click.self="showManualModal = false">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h3>手动输入歌曲信息</h3>
-              <button class="close-btn" @click="showManualModal = false">&times;</button>
+      <Transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
+      >
+        <div v-if="showManualModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" @click.self="showManualModal = false">
+          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+          <div class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" @click.stop>
+            <!-- Header -->
+            <div class="flex items-center justify-between p-8 pb-4">
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight">手动输入歌曲信息</h3>
+              <button
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+                  @click="showManualModal = false"
+              >
+                <X class="w-5 h-5" />
+              </button>
             </div>
-            <div class="modal-body">
-              <div class="form-group">
-                <label for="modal-title">歌曲名称</label>
-                <div class="input-wrapper">
-                  <input
-                      id="modal-title"
-                      :value="title"
-                      class="form-input readonly"
-                      readonly
-                      type="text"
-                  />
-                </div>
-              </div>
 
-              <div class="form-group">
-                <label for="modal-artist">歌手名称</label>
-                <div class="input-wrapper">
-                  <input
-                      id="modal-artist"
-                      v-model="manualArtist"
-                      class="form-input"
-                      placeholder="请输入歌手名称"
-                      required
-                      type="text"
-                  />
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="modal-cover">歌曲封面地址（选填）</label>
-                <div class="input-wrapper">
-                  <input
-                      id="modal-cover"
-                      v-model="manualCover"
-                      :class="{ 'error': manualCover && !coverValidation.valid }"
-                      class="form-input"
-                      placeholder="请输入歌曲封面图片URL"
-                      type="url"
-                  />
-                  <div v-if="coverValidation.validating" class="validation-loading">
-                    验证中...
-                  </div>
-                  <div v-if="manualCover && !coverValidation.valid && !coverValidation.validating"
-                       class="validation-error">
-                    {{ coverValidation.error }}
-                  </div>
-                  <div v-if="manualCover && coverValidation.valid && !coverValidation.validating"
-                       class="validation-success">
-                    ✓ URL有效
+            <!-- Body -->
+            <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
+              <div class="manual-form-fields space-y-6">
+                <!-- 歌曲名称 -->
+                <div class="form-field space-y-2">
+                  <label class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌曲名称</label>
+                  <div class="input-container relative group">
+                    <input
+                        :value="title"
+                        class="w-full px-6 py-4 bg-zinc-800/30 border border-zinc-800 rounded-2xl text-zinc-400 font-bold focus:outline-none cursor-not-allowed transition-all"
+                        readonly
+                        type="text"
+                    />
+                    <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                      <Lock class="w-4 h-4 text-zinc-600" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="form-group">
-                <label for="modal-play-url">播放地址（选填）</label>
-                <div class="input-wrapper">
-                  <input
-                      id="modal-play-url"
-                      v-model="manualPlayUrl"
-                      :class="{ 'error': manualPlayUrl && !playUrlValidation.valid }"
-                      class="form-input"
-                      placeholder="请输入歌曲播放URL"
-                      type="url"
-                  />
-                  <div v-if="playUrlValidation.validating" class="validation-loading">
-                    验证中...
-                  </div>
-                  <div v-if="manualPlayUrl && !playUrlValidation.valid && !playUrlValidation.validating"
-                       class="validation-error">
-                    {{ playUrlValidation.error }}
-                  </div>
-                  <div v-if="manualPlayUrl && playUrlValidation.valid && !playUrlValidation.validating"
-                       class="validation-success">
-                    ✓ URL有效
+                <!-- 歌手名称 -->
+                <div class="form-field space-y-2">
+                  <label for="modal-artist" class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌手名称</label>
+                  <div class="input-container relative group">
+                    <input
+                        id="modal-artist"
+                        v-model="manualArtist"
+                        class="w-full px-6 py-4 bg-zinc-800/50 border border-zinc-700/50 rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-700 focus:bg-zinc-800 transition-all"
+                        placeholder="请输入歌手名称"
+                        required
+                        type="text"
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div class="modal-actions">
+                <!-- 歌曲封面地址 -->
+                <div class="form-field space-y-2">
+                  <label for="modal-cover" class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌曲封面地址（选填）</label>
+                  <div class="input-container relative group">
+                    <input
+                        id="modal-cover"
+                        v-model="manualCover"
+                        :class="[
+                          'w-full px-6 py-4 bg-zinc-800/50 border rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
+                          manualCover && !coverValidation.valid ? 'border-red-500/50 focus:ring-red-500/20' : 'border-zinc-700/50 focus:ring-zinc-700 focus:bg-zinc-800'
+                        ]"
+                        placeholder="请输入歌曲封面图片URL"
+                        type="url"
+                    />
+                    <div v-if="coverValidation.validating" class="absolute inset-y-0 right-4 flex items-center">
+                      <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
+                    </div>
+                  </div>
+                  <Transition
+                      enter-active-class="transition duration-200 ease-out"
+                      enter-from-class="opacity-0 -translate-y-1"
+                      enter-to-class="opacity-100 translate-y-0"
+                  >
+                    <div v-if="manualCover && !coverValidation.validating" class="px-1">
+                      <p v-if="!coverValidation.valid" class="text-xs font-bold text-red-400">{{ coverValidation.error }}</p>
+                      <p v-else class="text-xs font-bold text-emerald-400 flex items-center">
+                        <Check class="w-3 h-3 mr-1" /> URL有效
+                      </p>
+                    </div>
+                  </Transition>
+                </div>
+
+                <!-- 播放地址 -->
+                <div class="form-field space-y-2">
+                  <label for="modal-play-url" class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">播放地址（选填）</label>
+                  <div class="input-container relative group">
+                    <input
+                        id="modal-play-url"
+                        v-model="manualPlayUrl"
+                        :class="[
+                          'w-full px-6 py-4 bg-zinc-800/50 border rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
+                          manualPlayUrl && !playUrlValidation.valid ? 'border-red-500/50 focus:ring-red-500/20' : 'border-zinc-700/50 focus:ring-zinc-700 focus:bg-zinc-800'
+                        ]"
+                        placeholder="请输入歌曲播放URL"
+                        type="url"
+                    />
+                    <div v-if="playUrlValidation.validating" class="absolute inset-y-0 right-4 flex items-center">
+                      <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
+                    </div>
+                  </div>
+                  <Transition
+                      enter-active-class="transition duration-200 ease-out"
+                      enter-from-class="opacity-0 -translate-y-1"
+                      enter-to-class="opacity-100 translate-y-0"
+                  >
+                    <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1">
+                      <p v-if="!playUrlValidation.valid" class="text-xs font-bold text-red-400">{{ playUrlValidation.error }}</p>
+                      <p v-else class="text-xs font-bold text-emerald-400 flex items-center">
+                        <Check class="w-3 h-3 mr-1" /> URL有效
+                      </p>
+                    </div>
+                  </Transition>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-8 pt-0">
+              <div class="flex gap-3">
                 <button
-                    class="btn btn-secondary"
+                    class="flex-1 px-6 py-4 rounded-2xl bg-zinc-800 text-zinc-300 font-bold hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
                     type="button"
                     @click="showManualModal = false"
                 >
@@ -590,7 +656,7 @@
                 </button>
                 <button
                     :disabled="!canSubmitManualForm || submitting"
-                    class="btn btn-primary"
+                    class="flex-[2] px-6 py-4 rounded-2xl bg-zinc-100 text-zinc-900 font-black hover:bg-white disabled:opacity-50 disabled:hover:bg-zinc-100 disabled:active:scale-100 transition-all active:scale-95"
                     type="button"
                     @click="handleManualSubmit"
                 >
@@ -614,18 +680,21 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref, watch} from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import searchIcon from '~/public/images/search.svg'
+import {X, Lock, Loader2, Check} from 'lucide-vue-next'
 import {useSongs} from '~/composables/useSongs'
 import {useAudioPlayer} from '~/composables/useAudioPlayer'
 import {useSiteConfig} from '~/composables/useSiteConfig'
 import {useAuth} from '~/composables/useAuth'
 import {useSemesters} from '~/composables/useSemesters'
 import {useMusicSources} from '~/composables/useMusicSources'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '../UI/Icon.vue'
 import {convertToHttps, validateUrl} from '~/utils/url'
 import {getLoginStatus} from '~/utils/neteaseApi'
 
+import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
 import RecentSongsModal from './RecentSongsModal.vue'
@@ -662,6 +731,7 @@ const submitting = ref(false)
 const voting = ref(false)
 const requestingReplay = ref(false)
 const similarSongs = ref([])
+const showImportSongsModal = ref(false)
 const showLoginModal = ref(false)
 const isNeteaseLoggedIn = ref(false)
 const neteaseUser = ref(null)
@@ -721,6 +791,17 @@ const playUrlValidation = ref({valid: true, error: '', validating: false})
 
 // 网易云音乐登录检查状态
 const checkingNeteaseLogin = ref(false)
+
+const handleImportSuccess = async () => {
+  // 不自动关闭弹窗，等待用户在结果页点击完成
+  // showImportSongsModal.value = false 
+  // 刷新歌曲列表以便检查相似歌曲
+  try {
+    await songService.fetchSongs(true, currentSemester.value?.name, false, true)
+  } catch (error) {
+    console.error('刷新歌曲列表失败:', error)
+  }
+}
 
 const handleUserSelect = (users) => {
   if (Array.isArray(users)) {
@@ -929,6 +1010,15 @@ onMounted(async () => {
 // 过滤出启用的播出时段
 const enabledPlayTimes = computed(() => {
   return playTimes.value.filter((pt) => pt.enabled)
+})
+
+const formattedPlayTimes = computed(() => {
+  return enabledPlayTimes.value.map(pt => ({
+    ...pt,
+    displayName: pt.startTime || pt.endTime
+        ? `${pt.name} (${formatPlayTimeRange(pt)})`
+        : pt.name
+  }))
 })
 
 // 格式化播出时段时间范围
@@ -1994,17 +2084,83 @@ defineExpose({
   overflow: hidden;
 }
 
+/* 桌面端样式 */
+.desktop-only-rules {
+  display: block;
+}
+
+.mobile-only-rules {
+  display: none;
+}
+
 .rules-section {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 13px;
-  padding: 1.5rem;
-  width: 40%;
+  padding: 1.25rem;
+  flex: 0 0 35%; /* 稍微缩小规则区域占比 */
+  min-width: 300px;
   height: 100%;
   overflow-y: auto;
 }
 
+.section-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.75rem;
+}
+
+.rules-content-desktop {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+
+.rules-content-desktop p {
+  margin-bottom: 0.6rem;
+}
+
+/* 移动端样式 */
+.rules-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1.25rem;
+}
+
+.rules-icon {
+  color: #f59e0b;
+}
+
+.rules-content {
+  font-family: 'MiSans', sans-serif;
+  font-size: 13px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.rule-item {
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
+.rule-item span {
+  margin-right: 0.5rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+}
+
 .form-container {
-  width: 60%;
+  flex: 1;
+  min-width: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -2024,42 +2180,47 @@ defineExpose({
 .form-header-row {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 1rem;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding-top: 4px; /* 为按钮悬停上浮留出空间 */
+  flex-wrap: wrap; /* 允许在窄屏下换行 */
 }
 
 .search-section {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex: 1.2;
+  gap: 0.75rem;
+  flex: 1.5;
+  min-width: 400px; /* 增加最小宽度，确保搜索框、标签和按钮有足够空间 */
 }
 
 .search-label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: #FFFFFF;
   white-space: nowrap;
+  flex-shrink: 0; /* 防止标签被压缩 */
 }
 
 .search-input-group {
   display: flex;
   gap: 0.5rem;
   flex: 1;
+  min-width: 0; /* 允许内部元素正常压缩 */
 }
 
 .search-input {
   background: #040E15;
   border: 1px solid #242F38;
   border-radius: 8px;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.85rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.6);
   flex: 1;
-  min-width: 0;
+  min-width: 100px; /* 确保输入框不会缩到太小 */
 }
 
 .search-input:focus {
@@ -2079,6 +2240,7 @@ defineExpose({
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.3s ease;
+  flex-shrink: 0; /* 确保搜索按钮始终完整显示，不被重叠 */
 }
 
 .search-button:hover:not(:disabled) {
@@ -2092,23 +2254,13 @@ defineExpose({
   transform: none;
 }
 
-
-.section-title {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 400;
-  font-size: 16px;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 1rem;
-}
-
 /* 联合投稿人区域 */
 .collaborators-section {
   display: flex;
   align-items: center;
   gap: 1rem;
   flex: 1;
-  min-width: 0;
+  min-width: 200px; /* 增加最小宽度，防止在窄屏下与搜索框重叠 */
 }
 
 .section-label {
@@ -2117,6 +2269,7 @@ defineExpose({
   font-size: 16px;
   color: #FFFFFF;
   white-space: nowrap;
+  flex-shrink: 0; /* 防止标签被压缩 */
 }
 
 .collaborators-list {
@@ -2171,76 +2324,55 @@ defineExpose({
   color: #fff;
 }
 
-.rules-content {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 1.8;
-  letter-spacing: 0.04em;
-}
-
-.rules-content p {
-  margin-bottom: 0.8rem;
-}
-
-.guidelines-content {
-  line-height: 1.8;
-}
-
-.default-guidelines p {
-  margin-bottom: 0.8rem;
-}
-
-
 /* 横向投稿状态样式 */
 .submission-status-horizontal {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .admin-notice-horizontal {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   justify-content: center;
 }
 
 .admin-notice-horizontal .admin-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .admin-notice-horizontal .admin-text {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   color: #FFD700;
 }
 
 .submission-closed-notice {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   justify-content: center;
 }
 
 .submission-closed-notice .closed-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .submission-closed-notice .closed-text {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   color: #FF6B6B;
 }
 
 .status-content-horizontal {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -2248,34 +2380,33 @@ defineExpose({
 .status-item-horizontal {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .status-item-horizontal .status-label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #FFFFFF;
 }
 
 .status-item-horizontal .status-value {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #0B5AFE;
 }
 
 .status-item-horizontal .status-remaining {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
   background: rgba(11, 90, 254, 0.1);
   border: 1px solid rgba(11, 90, 254, 0.3);
   border-radius: 4px;
-  padding: 0.25rem 0.5rem;
+  padding: 0.15rem 0.4rem;
 }
-
 
 .form-row {
   display: flex;
@@ -2300,9 +2431,10 @@ defineExpose({
 .form-group label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 20px;
-  letter-spacing: 0.04em;
-  color: #ffffff;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.25rem;
 }
 
 .input-wrapper {
@@ -2348,11 +2480,11 @@ defineExpose({
   position: relative;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
-  padding: 0.75rem 1rem;
+  padding: 0.4rem 0.75rem; /* 稍微缩小内边距 */
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.4rem; /* 缩小间距 */
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -2377,18 +2509,18 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .netease-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .netease-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #c20c0c;
   box-shadow: 0 0 8px rgba(194, 12, 12, 0.6);
@@ -2397,7 +2529,7 @@ defineExpose({
 .netease-title {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #ffffff;
 }
 
@@ -2405,9 +2537,9 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   background: rgba(255, 255, 255, 0.02);
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.85rem;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   transition: all 0.3s ease;
@@ -2424,7 +2556,7 @@ defineExpose({
 }
 
 .login-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #ffffff;
   margin: 0;
@@ -2434,35 +2566,35 @@ defineExpose({
 .login-hint {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.45);
-  margin: 4px 0 0 0;
-  line-height: 1.4;
+  margin: 2px 0 0 0;
+  line-height: 1.3;
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  border-radius: 7px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.25);
+  box-shadow: 0 5px 14px rgba(59, 130, 246, 0.25);
   filter: brightness(1.1);
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .header-btn {
@@ -2471,31 +2603,31 @@ defineExpose({
   gap: 0.25rem;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
-  padding: 0.25rem 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .header-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .login-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .import-btn {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.5rem 0.8rem;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.45rem 0.75rem;
+  border-radius: 7px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -2504,12 +2636,12 @@ defineExpose({
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .import-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
   color: #ffffff;
 }
 
@@ -2522,25 +2654,25 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   min-width: 0;
 }
 
 .user-avatar {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-name {
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
   white-space: nowrap;
@@ -2550,19 +2682,19 @@ defineExpose({
 
 .user-actions-row {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .action-btn-compact {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.8);
-  padding: 0.4rem 0.75rem;
+  gap: 0.3rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.35rem 0.6rem;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
@@ -2570,9 +2702,9 @@ defineExpose({
 }
 
 .action-btn-compact:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .search-type-switch {
@@ -2587,10 +2719,10 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  padding: 0.2rem 0.6rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 4px;
   transition: all 0.2s ease;
 }
@@ -2598,8 +2730,8 @@ defineExpose({
 .radio-label.active {
   color: #ffffff;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .radio-label input {
@@ -2609,31 +2741,31 @@ defineExpose({
 .logout-btn {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.2rem;
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.4);
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.7);
   background: rgba(255, 255, 255, 0.05);
 }
 
 .platform-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.85rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
@@ -2785,7 +2917,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 1rem 1.5rem 1.5rem 1.5rem; /* 上边距小一点 */
+  padding: 0.75rem 1.25rem 1.25rem 1.25rem; /* 稍微缩小内边距 */
   position: relative;
   z-index: 1;
 }
@@ -2878,22 +3010,22 @@ defineExpose({
   justify-content: center;
   flex: 1;
   text-align: center;
-  gap: 1rem;
-  padding: 2rem;
-  min-height: 300px;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  min-height: 150px; /* 进一步缩小最小高度以适应小屏幕 */
 }
 
 .empty-icon,
 .initial-icon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
+  font-size: 2.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .empty-text,
 .initial-text {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: #FFFFFF;
   margin: 0;
 }
@@ -2901,7 +3033,7 @@ defineExpose({
 .empty-hint,
 .initial-hint {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
+  font-size: 13px;
   margin: 0;
 }
 
@@ -2912,15 +3044,16 @@ defineExpose({
   justify-content: center;
   width: 100%;
   height: 100%;
-  min-height: 200px;
+  min-height: 120px;
 }
 
 .search-svg {
-  width: 30%;
-  max-width: 400px;
-  min-width: 200px;
+  width: 25%;
+  max-width: 300px;
+  min-width: 150px;
   height: auto;
   object-fit: contain;
+  opacity: 0.8;
 }
 
 /* 手动输入触发按钮 */
@@ -2986,9 +3119,6 @@ defineExpose({
   cursor: not-allowed;
   transform: none;
 }
-
-/* 错误和成功提示现在使用全局通知 */
-
 .similar-song-alert {
   background: #21242d;
   border-radius: 10px;
@@ -3368,8 +3498,8 @@ defineExpose({
 
 .result-item {
   display: flex;
-  padding: 1rem 1.5rem 1rem 1.5rem;
-  gap: 1.2rem;
+  padding: 0.6rem 1rem; /* 缩小内边距以提高信息密度 */
+  gap: 1rem;
   transition: all 0.2s ease;
   cursor: pointer;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -3384,92 +3514,111 @@ defineExpose({
 }
 
 .result-cover {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   position: relative;
   flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: #18181b;
 }
 
 .cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 6px;
+  transition: transform 0.5s ease;
 }
 
-.play-overlay {
+.result-item:hover .cover-img {
+  transform: scale(1.1);
+}
+
+.play-overlay-container {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0, 0, 0, 0.4);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   opacity: 0;
-  border-radius: 6px;
-  transition: opacity 0.2s ease;
-  cursor: pointer;
+  transition: opacity 0.3s ease;
+  z-index: 2;
 }
 
-.result-cover:hover .play-overlay {
+.result-item:hover .play-overlay-container {
   opacity: 1;
 }
 
-.play-button-bg {
-  width: 40px;
-  height: 40px;
+.play-button-wrapper {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: rgba(11, 90, 254, 0.8);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  transition: transform 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
-.play-button-bg:hover {
-  transform: scale(1.1);
+.play-icon {
+  fill: currentColor;
+  margin-left: 2px;
 }
 
 .result-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .result-title {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: #ffffff;
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.result-artist {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  margin: 0.25rem 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.result-artist {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-  margin: 0.5rem 0;
-}
-
 .result-album,
 .result-quality,
 .result-pay {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
-  margin: 0.25rem 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  margin: 0.15rem 0;
 }
 
 
 .result-actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-right: 0.5rem;
+  gap: 0.4rem;
+  margin-right: 0.25rem;
+  flex-shrink: 0;
 }
 
 .similar-song-info {
@@ -3722,6 +3871,15 @@ defineExpose({
     padding: 0.6rem 0.4rem;
   }
 
+  /* 移动端显示/隐藏控制 */
+  .desktop-only-rules {
+    display: none;
+  }
+
+  .mobile-only-rules {
+    display: block;
+  }
+
   .request-form {
     flex-direction: column;
     height: auto;
@@ -3732,8 +3890,25 @@ defineExpose({
   .rules-section {
     width: 100%;
     height: auto;
-    margin-bottom: 1rem;
-    padding: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+  }
+
+  .rules-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 1.25rem;
+    letter-spacing: normal;
+  }
+
+  .rules-icon {
+    display: block;
+    color: #f59e0b;
   }
 
   .form-container {
@@ -3749,22 +3924,27 @@ defineExpose({
     display: flex;
     flex-direction: column;
     height: auto;
-    gap: 1rem;
+    gap: 1.25rem;
   }
 
   .search-results-container {
     flex: 1;
     height: auto;
     max-height: 85vh;
-    padding: 1rem;
+    padding: 0.75rem;
     overflow: visible;
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
   }
 
   .results-content {
     height: auto;
+    min-height: 400px; /* 防止加载时高度塌陷 */
     max-height: 80vh;
     overflow: visible;
     flex: 1;
@@ -3814,8 +3994,8 @@ defineExpose({
   .search-section {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
     flex: none;
     width: 100%;
   }
@@ -3839,34 +4019,49 @@ defineExpose({
   }
 
   .search-input-group {
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .search-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 15px;
+    flex: 1;
   }
 
   .search-button {
-    padding: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
   }
 
   /* 移动端平台选择按钮 */
   .platform-selection {
-    flex-direction: row;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
-
-  .platform-selection::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    display: flex;
+    overflow: visible;
   }
 
   .platform-btn {
-    padding: 0.6rem 0.8rem;
+    flex: 1;
+    padding: 0.5rem;
     font-size: 13px;
-    flex-shrink: 0;
-    min-width: fit-content;
+    border-radius: 10px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    min-width: auto;
+  }
+
+  .platform-btn.active {
+    background: #0B5AFE;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(11, 90, 254, 0.3);
   }
 
   /* 移动端音源状态显示 */
@@ -3967,47 +4162,48 @@ defineExpose({
 
   /* 移动端搜索结果优化 */
   .result-item {
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 0.5rem;
+    padding: 10px;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
   }
 
   .result-cover {
-    width: 60px;
-    height: 60px;
-    align-self: center;
+    width: 64px;
+    height: 64px;
+    align-self: flex-start;
   }
 
   .result-info {
-    text-align: center;
+    text-align: left;
+    flex: 1;
   }
 
   .result-title {
     font-size: 15px;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
-    line-height: 1.3;
-    margin-bottom: 0.5rem;
+    font-weight: 600;
   }
 
   .result-artist {
-    font-size: 13px;
-    margin: 0.3rem 0;
-  }
-
-  .result-album {
-    font-size: 11px;
-    margin: 0.2rem 0;
+    font-size: 12px;
+    opacity: 0.6;
+    margin: 4px 0;
   }
 
   .result-actions {
-    justify-content: center;
+    flex-direction: row;
+    width: auto;
   }
 
   .select-btn {
-    width: 100%;
-    padding: 0.6rem 1rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 12px;
+    border-radius: 10px;
+    width: auto;
   }
 
   /* 移动端弹窗优化 */
@@ -4051,6 +4247,7 @@ defineExpose({
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 8rem;
+    padding-right: 0;
   }
 
   /* 移动端期望排期选择 */
@@ -4133,5 +4330,37 @@ defineExpose({
 .form-input.error {
   border-color: #ef4444;
   box-shadow: 0 0 0 1px #ef4444;
+}
+
+.import-semester-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  height: 42px; /* 使匹配搜索输入框的大致高度 */
+  flex-shrink: 0;
+}
+
+.import-semester-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  .import-semester-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>

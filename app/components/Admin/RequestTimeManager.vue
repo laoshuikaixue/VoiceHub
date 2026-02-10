@@ -1,224 +1,397 @@
 <template>
-  <div class="play-time-manager">
-    <div class="header-section">
-      <h2 class="title">投稿管理
-      </h2>
-      <div class="settings-toggle">
-        <span class="label">当前投稿开放状态</span>
-        <div :class="{ 'enabled': hitRequestTime, 'disabled': !hitRequestTime }" class="status-badge">
-          {{ hitRequestTime ? '开放中' : '已关闭' }}
-        </div>
-        <span class="label">启用投稿</span>
-        <label class="toggle-switch">
-          <input v-model="enableRequest" type="checkbox" @change="updateSystemSettings">
-          <span class="slider round"></span>
-        </label>
-        <span class="label">启用投稿开放时段选择</span>
-        <label class="toggle-switch">
-          <input v-model="enableRequestTimeLimitation" type="checkbox" @change="updateSystemSettings">
-          <span class="slider round"></span>
-        </label>
+  <div class="max-w-[1400px] mx-auto space-y-8 pb-20 px-2">
+    <!-- 顶部标题和全局开关 -->
+    <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
+      <div class="space-y-1">
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">投稿开放管理</h2>
+        <p class="text-xs text-zinc-500">管理全校师生点歌投稿的开放时间、限制数量及全局状态控制</p>
       </div>
-    </div>
 
-    <div class="action-bar">
-      <button class="btn btn-primary" @click="showAddForm = true">
-        <span class="icon">+</span> 添加投稿开放时段
-      </button>
-    </div>
-
-    <!-- 投稿开放时段列表 -->
-    <div v-if="loading" class="loading-container">
-      <div class="loading-spinner"></div>
-      <span>加载中...</span>
-    </div>
-
-    <div v-else-if="error" class="error-message">
-      {{ error }}
-    </div>
-
-    <div v-else-if="requestTimes.length === 0" class="empty-state">
-      <div class="icon">🕒</div>
-      <p>暂无投稿开放时段</p>
-      <p class="hint">点击"添加投稿开放时段"按钮创建第一个投稿开放时段</p>
-    </div>
-
-    <div v-else class="request-times-list">
-      <div v-for="RequestTime in requestTimes" :key="RequestTime.id" class="play-time-card">
-        <div class="card-header">
-          <h3 class="time-name">{{ RequestTime.name }} ({{RequestTime.accepted}}/{{ RequestTime.expected }})</h3>
-          <div :class="{ 'enabled': !RequestTime.past && RequestTime.enabled, 'disabled': !RequestTime.past && !RequestTime.enabled, 'past': RequestTime.past }" class="status-badge">
-            {{ RequestTime.past ? '已过期' : (RequestTime.enabled ? '已启用' : '已禁用') }}
-          </div>
+      <div class="flex flex-wrap items-center gap-4 bg-zinc-900/40 border border-zinc-800 p-2 rounded-3xl">
+        <div class="flex items-center gap-3 px-3 border-r border-zinc-800/50 mr-1">
+          <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">当前状态</span>
+          <span :class="[
+            'px-2 py-0.5 rounded text-[10px] font-black uppercase transition-all',
+            hitRequestTime ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
+          ]">
+            {{ hitRequestTime ? '已开放' : '已关闭' }}
+          </span>
         </div>
 
-        <div class="time-details">
-          <div class="time-range">
-            <span class="label">投稿开放时间:</span>
-            <span class="value">
-              <template v-if="RequestTime.startTime && RequestTime.endTime">
-                {{ RequestTime.startTime }} - {{ RequestTime.endTime }}
-              </template>
-              <template v-else-if="RequestTime.startTime">
-                {{ RequestTime.startTime }} 开始
-              </template>
-              <template v-else-if="RequestTime.endTime">
-                {{ RequestTime.endTime }} 结束
-              </template>
-              <template v-else>
-                不限时间
-              </template>
-            </span>
-          </div>
-
-          <div v-if="RequestTime.description" class="description">
-            <span class="label">描述:</span>
-            <span class="value">{{ RequestTime.description }}</span>
-          </div>
-        </div>
-
-        <div class="actions">
-          <button class="btn btn-secondary" @click="editRequestTime(RequestTime)" v-show="!RequestTime.past">
-            编辑
-          </button>
+        <div class="flex items-center gap-3 px-2">
+          <span class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">启用投稿</span>
           <button
-              :class="RequestTime.enabled ? 'btn-warning' : 'btn-success'"
-              class="btn"
-              @click="toggleRequestTimeStatus(RequestTime)"
-              v-show="!RequestTime.past"
+            @click="toggleGlobalRequest"
+            :class="[
+              'relative w-10 h-5 rounded-full transition-colors',
+              enableRequest ? 'bg-blue-600' : 'bg-zinc-800'
+            ]"
           >
-            {{ RequestTime.enabled ? '禁用' : '启用' }}
+            <div :class="[
+              'absolute top-1 w-3 h-3 bg-white rounded-full transition-all',
+              enableRequest ? 'left-6' : 'left-1'
+            ]" />
           </button>
-          <button class="btn btn-danger" @click="confirmDelete(RequestTime)">
-            删除
+        </div>
+
+        <div class="flex items-center gap-3 px-2 border-l border-zinc-800/50">
+          <span class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">启用时段限制</span>
+          <button
+            @click="toggleTimeLimitation"
+            :class="[
+              'relative w-10 h-5 rounded-full transition-colors',
+              enableRequestTimeLimitation ? 'bg-purple-600' : 'bg-zinc-800'
+            ]"
+          >
+            <div :class="[
+              'absolute top-1 w-3 h-3 bg-white rounded-full transition-all',
+              enableRequestTimeLimitation ? 'left-6' : 'left-1'
+            ]" />
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 添加/编辑投稿开放时段表单 -->
-    <div v-if="showAddForm || editingRequestTime" class="modal-overlay" @click.self="cancelForm">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>{{ editingRequestTime ? '编辑投稿开放时段' : '添加投稿开放时段' }}</h3>
-          <button class="close-button" @click="cancelForm">&times;</button>
+    <!-- 主要内容区域 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- 添加时段按钮卡片 -->
+      <button
+        @click="showAddForm = true"
+        class="group relative h-full min-h-[220px] bg-zinc-900/20 border-2 border-dashed border-zinc-800 rounded-3xl flex flex-col items-center justify-center gap-4 hover:bg-blue-600/5 hover:border-blue-500/40 transition-all active:scale-95"
+      >
+        <div class="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-blue-500 group-hover:bg-blue-600/10 group-hover:border-blue-500/20 transition-all">
+          <Plus :size="28" />
         </div>
+        <div class="text-center">
+          <h4 class="text-sm font-black text-zinc-400 group-hover:text-blue-400 transition-colors uppercase tracking-widest">添加投稿时段</h4>
+          <p class="text-[10px] text-zinc-600 mt-1">创建一个新的投稿开放周期</p>
+        </div>
+      </button>
 
-        <div class="modal-body">
-          <form @submit.prevent="saveRequestTime">
-            <div class="form-group">
-              <label for="name">时段名称</label>
+      <!-- 时段列表 -->
+      <TransitionGroup
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+      >
+        <div
+          v-for="slot in requestTimes"
+          :key="slot.id"
+          :class="[
+            'group bg-zinc-900/40 border rounded-3xl p-8 space-y-6 transition-all hover:shadow-2xl hover:shadow-black/40',
+            slot.enabled && !slot.past ? 'border-zinc-800' : 'border-zinc-800/40 opacity-60'
+          ]"
+        >
+          <div class="flex items-start justify-between">
+            <div :class="[
+              'p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 text-zinc-400 transition-colors',
+              slot.enabled && !slot.past ? 'text-blue-500 border-blue-500/20 shadow-lg shadow-blue-900/10' : ''
+            ]">
+              <Calendar :size="22" />
+            </div>
+            <div class="flex items-center gap-2">
+              <span :class="[
+                'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border transition-all',
+                slot.past ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                slot.enabled ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                'bg-zinc-800/50 text-zinc-600 border-zinc-700/50'
+              ]">
+                {{ slot.past ? '已过期' : (slot.enabled ? '已启用' : '已禁用') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <h4 class="text-lg font-black text-zinc-100 flex items-baseline gap-2 group-hover:text-blue-400 transition-colors">
+                {{ slot.name }}
+                <span class="text-xs font-bold text-zinc-600 tracking-tight">({{ slot.accepted }}/{{ slot.expected || '∞' }})</span>
+              </h4>
+              <div class="mt-3 space-y-2">
+                <div class="flex items-center gap-2 text-zinc-500 font-bold">
+                  <Clock :size="12" class="text-zinc-700" />
+                  <span class="text-[10px] uppercase tracking-tighter truncate">{{ slot.startTime || '不限' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-zinc-500 font-bold">
+                  <div class="w-3 h-[2px] bg-zinc-800 ml-1.5" />
+                  <span class="text-[10px] uppercase tracking-tighter truncate">{{ slot.endTime || '不限' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-xs text-zinc-500 font-medium leading-relaxed min-h-[32px] line-clamp-2 italic">
+              {{ slot.description || '暂无详细描述...' }}
+            </p>
+
+            <!-- 投稿进度条 -->
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-[9px] font-black text-zinc-600 uppercase tracking-widest px-0.5">
+                <span>投稿进度</span>
+                <span>{{ slot.expected > 0 ? Math.min(100, Math.round((slot.accepted / slot.expected) * 100)) : 0 }}%</span>
+              </div>
+              <div class="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50">
+                <div
+                  class="h-full transition-all duration-500"
+                  :style="{ width: `${slot.expected > 0 ? Math.min(100, (slot.accepted / slot.expected) * 100) : 0}%` }"
+                  :class="slot.expected > 0 && slot.accepted >= slot.expected ? 'bg-rose-500' : 'bg-blue-500'"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-6 border-t border-zinc-800/50 flex items-center justify-between">
+            <div class="flex gap-2">
+              <button
+                v-show="!slot.past"
+                @click="editRequestTime(slot)"
+                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-blue-400 hover:border-blue-500/30 transition-all"
+              >
+                <Edit2 :size="14" />
+              </button>
+              <button
+                @click="confirmDelete(slot)"
+                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-red-400 hover:border-red-500/30 transition-all"
+              >
+                <Trash2 :size="14" />
+              </button>
+            </div>
+            <button
+              v-show="!slot.past"
+              @click="toggleRequestTimeStatus(slot)"
+              :class="[
+                'flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
+                slot.enabled
+                  ? 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                  : 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+              ]"
+            >
+              <Power :size="12" />
+              {{ slot.enabled ? '禁用' : '启用' }}
+            </button>
+          </div>
+        </div>
+      </TransitionGroup>
+    </div>
+
+    <!-- 统计概览 -->
+    <div class="bg-zinc-900/20 border border-zinc-800 rounded-3xl p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div v-for="(stat, i) in stats" :key="i" class="flex items-center gap-4 group">
+        <div :class="[
+          'w-12 h-12 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 transition-colors',
+          `group-hover:text-${stat.color}-500`
+        ]">
+          <component :is="stat.icon" :size="20" />
+        </div>
+        <div>
+          <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ stat.label }}</p>
+          <h5 class="text-xl font-black text-zinc-200">{{ stat.value }}</h5>
+        </div>
+      </div>
+    </div>
+
+    <!-- 添加/编辑模态框 -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="showAddForm || editingRequestTime" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm" @click.self="cancelForm">
+        <div class="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
+          <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
+            <h3 class="text-xl font-black text-zinc-100">{{ editingRequestTime ? '编辑投稿开放时段' : '添加投稿开放时段' }}</h3>
+            <button @click="cancelForm" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+              <X :size="20" />
+            </button>
+          </div>
+
+          <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">时段名称</label>
               <input
-                  id="name"
-                  v-model="formData.name"
-                  class="form-control"
-                  placeholder="例如：上午、下午"
-                  required
-                  type="text"
+                v-model="formData.name"
+                type="text"
+                placeholder="例如: 2025冬季常规点歌"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30"
               />
             </div>
 
-            <div class="form-group">
-              <label for="startTime">开始时间</label>
-              <input
-                  id="startTime"
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">开始日期时间</label>
+                <input
                   v-model="formData.startTime"
-                  class="form-control"
                   type="datetime-local"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="endTime">结束时间</label>
-              <input
-                  id="endTime"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">结束日期时间</label>
+                <input
                   v-model="formData.endTime"
-                  class="form-control"
                   type="datetime-local"
-              />
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                />
+              </div>
             </div>
 
-            <div class="form-group">
-              <label for="description">描述 (可选)</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">计划投稿数</label>
+                <div class="relative group">
+                  <input
+                    v-model="formData.expected"
+                    type="number"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                  />
+                  <div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-zinc-600 font-bold text-[10px]">
+                    <Hash :size="12" />
+                    首歌曲
+                  </div>
+                </div>
+                <p class="text-[9px] text-zinc-600 px-1">填 0 表示不限制投稿总数</p>
+              </div>
+              <div class="space-y-2 flex flex-col justify-center pt-2">
+                <label class="flex items-center gap-3 cursor-pointer group px-1">
+                  <input
+                    v-model="formData.enabled"
+                    type="checkbox"
+                    class="w-4.5 h-4.5 rounded-lg border-zinc-800 bg-zinc-950 accent-blue-600"
+                  />
+                  <div>
+                    <span class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors">启用此投稿时段</span>
+                    <p class="text-[9px] text-zinc-600 font-medium">只有启用的时段才会根据时间限制生效</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">时段描述 (可选)</label>
               <textarea
-                  id="description"
-                  v-model="formData.description"
-                  class="form-control"
-                  placeholder="时段描述..."
-              ></textarea>
-            </div>
-
-            <div class="form-group">
-              <label for="expected">计划投稿数</label>
-              <input
-                  id="expected"
-                  v-model="formData.expected"
-                  class="form-control"
-                  type="number"
+                v-model="formData.description"
+                placeholder="请输入针对此开放周期的特殊规则或介绍信息..."
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[100px] resize-none"
               />
             </div>
 
-            <div class="form-group checkbox-group">
-              <label class="checkbox-label">
-                <input v-model="formData.enabled" type="checkbox">
-                <span>启用此投稿开放时段</span>
-              </label>
-            </div>
-
-            <div v-if="formError" class="form-error">
+            <div v-if="formError" class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-500 text-xs font-bold">
+              <AlertCircle :size="16" />
               {{ formError }}
             </div>
+          </div>
 
-            <div class="form-actions">
-              <button class="btn btn-secondary" type="button" @click="cancelForm">
-                取消
-              </button>
-              <button :disabled="formSubmitting" class="btn btn-primary" type="submit">
-                {{ formSubmitting ? '保存中...' : '保存' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- 删除确认对话框 -->
-    <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
-      <div class="modal-content delete-confirm">
-        <div class="modal-header">
-          <h3>确认删除</h3>
-          <button class="close-button" @click="showDeleteConfirm = false">&times;</button>
-        </div>
-
-        <div class="modal-body">
-          <p>确定要删除投稿开放时段 "{{ RequestTimeToDelete?.name }}" 吗？</p>
-          <p class="warning">此操作不可恢复</p>
-
-          <div class="form-actions">
-            <button class="btn btn-secondary" type="button" @click="showDeleteConfirm = false">
-              取消
-            </button>
+          <div class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end">
+            <button @click="cancelForm" class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300">取消</button>
             <button
-                :disabled="deleteInProgress"
-                class="btn btn-danger"
-                type="button"
-                @click="deleteRequestTime"
+              @click="saveRequestTime"
+              :disabled="formSubmitting"
+              class="px-10 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50"
             >
-              {{ deleteInProgress ? '删除中...' : '确认删除' }}
+              {{ formSubmitting ? '保存中...' : '保存设置' }}
             </button>
           </div>
         </div>
+      </div>
+    </Transition>
+
+    <!-- 删除确认模态框 -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm" @click.self="showDeleteConfirm = false">
+        <div class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden p-8">
+          <div class="flex flex-col items-center space-y-6">
+            <div class="w-16 h-16 rounded-[2rem] bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/20 shadow-xl shadow-red-900/10">
+              <Trash2 :size="28" />
+            </div>
+            <div class="text-center space-y-2 px-4">
+              <h4 class="text-lg font-bold text-zinc-100">确定要彻底移除 "{{ RequestTimeToDelete?.name }}" 吗？</h4>
+              <p class="text-xs text-zinc-500 leading-relaxed">
+                删除时段后，原本属于此周期的投稿关联记录可能失效。建议先尝试 <span class="text-zinc-300 font-bold">禁用</span> 该时段。
+              </p>
+            </div>
+            <div class="flex gap-3 w-full pt-4">
+              <button @click="showDeleteConfirm = false" class="flex-1 px-4 py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-500 text-xs font-black rounded-2xl transition-all">保留时段</button>
+              <button
+                @click="deleteRequestTime"
+                :disabled="deleteInProgress"
+                class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-2xl shadow-xl shadow-red-900/20 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {{ deleteInProgress ? '删除中...' : '确认删除' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- 说明部分 -->
+    <div class="flex flex-col md:flex-row gap-6">
+      <div class="flex-1 bg-zinc-900/30 border border-zinc-800 rounded-[2rem] p-6 space-y-4">
+        <h4 class="text-xs font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2">
+          <CheckCircle2 :size="14" class="text-emerald-500" /> 逻辑优先级说明
+        </h4>
+        <ul class="text-[11px] text-zinc-500 space-y-2 font-medium">
+          <li class="flex gap-2">
+            <span class="text-zinc-700 font-black">1.</span>
+            <span><span class="text-zinc-300">全局开关</span> 具有最高优先级，关闭后所有投稿均不可用。</span>
+          </li>
+          <li class="flex gap-2">
+            <span class="text-zinc-700 font-black">2.</span>
+            <span>开启 <span class="text-zinc-300">时段限制</span> 后，系统会检查当前时间是否处于任一 <span class="text-zinc-300">已启用</span> 且未达到 <span class="text-zinc-300">计划数</span> 的时段内。</span>
+          </li>
+          <li class="flex gap-2">
+            <span class="text-zinc-700 font-black">3.</span>
+            <span>若关闭时段限制，则全天候均可投稿（只要全局开关开启）。</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="flex-1 bg-zinc-900/30 border border-zinc-800 rounded-[2rem] p-6 space-y-4">
+        <h4 class="text-xs font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2">
+          <XCircle :size="14" class="text-rose-500" /> 注意事项
+        </h4>
+        <ul class="text-[11px] text-zinc-500 space-y-2 font-medium">
+          <li class="flex gap-2">
+            <span class="text-zinc-700 font-black">•</span>
+            <span>时段重叠时，系统将合并开放范围。</span>
+          </li>
+          <li class="flex gap-2">
+            <span class="text-zinc-700 font-black">•</span>
+            <span>计划投稿数设置为 0 时，系统将忽略数量上限检查。</span>
+          </li>
+          <li class="flex gap-2">
+            <span class="text-zinc-700 font-black">•</span>
+            <span>过期的时段将自动显示为“已过期”，不可编辑或重新启用。</span>
+          </li>
+        </ul>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import {onMounted, reactive, ref} from 'vue'
-import {useAuth} from '~/composables/useAuth'
-import type {RequestTime} from '~/types'
+import { onMounted, onUnmounted, reactive, ref, computed } from 'vue'
+import { useAuth } from '~/composables/useAuth'
+import type { RequestTime } from '~/types'
+import {
+  Plus, Calendar, Clock, Edit2, Trash2, Power,
+  AlertCircle, Hash, CheckCircle2, XCircle, X,
+  BarChart3, Filter
+} from 'lucide-vue-next'
 
-const {getAuthConfig, isAdmin} = useAuth()
+const { getAuthConfig, isAdmin } = useAuth()
 
 const requestTimes = ref<RequestTime[]>([])
 const loading = ref(false)
@@ -233,6 +406,9 @@ const formError = ref('')
 const enableRequestTimeLimitation = ref(false)
 const hitRequestTime = ref(false)
 const enableRequest = ref(true)
+
+let refreshInterval: any = null
+
 const formData = reactive({
   id: 0,
   name: '',
@@ -243,10 +419,49 @@ const formData = reactive({
   expected: 0
 })
 
+// 统计数据
+const stats = computed(() => [
+  {
+    label: '活跃时段',
+    value: requestTimes.value.filter(s => s.enabled && !s.past).length.toString(),
+    icon: Clock,
+    color: 'blue'
+  },
+  {
+    label: '累计已接收',
+    value: requestTimes.value.reduce((acc, s) => acc + s.accepted, 0).toString(),
+    icon: BarChart3,
+    color: 'emerald'
+  },
+  {
+    label: '计划总容量',
+    value: requestTimes.value.reduce((acc, s) => acc + (s.expected || 0), 0) || '不限',
+    icon: Hash,
+    color: 'purple'
+  },
+  {
+    label: '剩余总名额',
+    value: (() => {
+      const totalExpected = requestTimes.value.reduce((acc, s) => acc + (s.expected || 0), 0);
+      const totalAccepted = requestTimes.value.reduce((acc, s) => acc + s.accepted, 0);
+      return totalExpected > 0 ? Math.max(0, totalExpected - totalAccepted).toString() : '不限';
+    })(),
+    icon: Filter,
+    color: 'amber'
+  }
+])
+
 onMounted(async () => {
   await fetchRequestTimes()
   await fetchSystemSettings()
   await fetchRequestTimeHit()
+  
+  // 每 30 秒自动刷新一次状态，以确保时间同步
+  refreshInterval = setInterval(fetchRequestTimeHit, 30000)
+})
+
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval)
 })
 
 const fetchRequestTimes = async () => {
@@ -275,33 +490,18 @@ const fetchRequestTimes = async () => {
     const data = await response.json()
 
     requestTimes.value = data.sort((a: RequestTime, b: RequestTime) => {
-      if (a.past !== b.past) {
-        return a.past ? 1 : -1;
-      }
-      if (a.enabled !== b.enabled) {
-        return a.enabled ? -1 : 1;
-      }
-
-
-      const aHasTime = !!(a.startTime || a.endTime);
-      const bHasTime = !!(b.startTime || b.endTime);
-
-      if (aHasTime !== bHasTime) {
-        return aHasTime ? -1 : 1;
-      }
-
+      if (a.past !== b.past) return a.past ? 1 : -1
+      if (a.enabled !== b.enabled) return a.enabled ? -1 : 1
+      const aHasTime = !!(a.startTime || a.endTime)
+      const bHasTime = !!(b.startTime || b.endTime)
+      if (aHasTime !== bHasTime) return aHasTime ? -1 : 1
       if (aHasTime && bHasTime) {
-        if (a.startTime && b.startTime) {
-          return a.startTime.localeCompare(b.startTime);
-        } else if (a.startTime) {
-          return -1;
-        } else if (b.startTime) {
-          return 1;
-        }
+        if (a.startTime && b.startTime) return a.startTime.localeCompare(b.startTime)
+        else if (a.startTime) return -1
+        else if (b.startTime) return 1
       }
-
-      return a.name.localeCompare(b.name);
-    });
+      return a.name.localeCompare(b.name)
+    })
   } catch (err: any) {
     error.value = err.message || '获取投稿开放时段失败'
   } finally {
@@ -311,22 +511,13 @@ const fetchRequestTimes = async () => {
 
 const fetchSystemSettings = async () => {
   if (!isAdmin.value) return
-
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/system-settings', {
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error(`获取系统设置失败: ${errorData.message || response.status}`)
-      return
-    }
-
+    if (!response.ok) return
     const data = await response.json()
     enableRequestTimeLimitation.value = data.enableRequestTimeLimitation
     enableRequest.value = (!data.forceBlockAllRequests)
@@ -337,22 +528,13 @@ const fetchSystemSettings = async () => {
 
 const fetchRequestTimeHit = async () => {
   if (!isAdmin.value) return
-
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/request-times', {
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error(`获取投稿开放状态失败: ${errorData.message || response.status}`)
-      return
-    }
-
+    if (!response.ok) return
     const data = await response.json()
     hitRequestTime.value = data.hit
   } catch (err: any) {
@@ -360,23 +542,31 @@ const fetchRequestTimeHit = async () => {
   }
 }
 
+const toggleGlobalRequest = async () => {
+  enableRequest.value = !enableRequest.value
+  await updateSystemSettings()
+  await fetchRequestTimeHit()
+}
+
+const toggleTimeLimitation = async () => {
+  enableRequestTimeLimitation.value = !enableRequestTimeLimitation.value
+  await updateSystemSettings()
+  await fetchRequestTimeHit()
+}
+
 const updateSystemSettings = async () => {
   if (!isAdmin.value) return
-
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/system-settings', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         enableRequestTimeLimitation: enableRequestTimeLimitation.value,
         forceBlockAllRequests: !enableRequest.value
       }),
       ...authConfig
     })
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || `更新系统设置失败: ${response.status}`)
@@ -401,26 +591,20 @@ const editRequestTime = (RequestTime: RequestTime) => {
 
 const toggleRequestTimeStatus = async (RequestTime: RequestTime) => {
   if (!isAdmin.value) return
-
   try {
     const authConfig = getAuthConfig()
     const response = await fetch(`/api/admin/request-times/${RequestTime.id}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        enabled: !RequestTime.enabled
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: !RequestTime.enabled }),
       ...authConfig
     })
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || `更新投稿开放时段状态失败: ${response.status}`)
     }
-
     await fetchRequestTimes()
+    await fetchRequestTimeHit()
   } catch (err: any) {
     error.value = err.message || '更新投稿开放时段状态失败'
   }
@@ -433,22 +617,19 @@ const confirmDelete = (RequestTime: RequestTime) => {
 
 const deleteRequestTime = async () => {
   if (!RequestTimeToDelete.value || !isAdmin.value) return
-
   deleteInProgress.value = true
-
   try {
     const authConfig = getAuthConfig()
     const response = await fetch(`/api/admin/request-times/${RequestTimeToDelete.value.id}`, {
       method: 'DELETE',
       ...authConfig
     })
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || `删除投稿开放时段失败: ${response.status}`)
     }
-
     await fetchRequestTimes()
+    await fetchRequestTimeHit()
     showDeleteConfirm.value = false
     RequestTimeToDelete.value = null
   } catch (err: any) {
@@ -460,38 +641,29 @@ const deleteRequestTime = async () => {
 
 const saveRequestTime = async () => {
   formError.value = ''
-
   if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
     formError.value = '开始时间必须早于结束时间'
     return
   }
-
   if (!formData.name.trim()) {
     formError.value = '时段名称不能为空'
     return
   }
-
   const isUpdate = !!editingRequestTime.value
   const nameExists = requestTimes.value.some(pt =>
-      pt.name.toLowerCase() === formData.name.trim().toLowerCase() &&
-      (!isUpdate || pt.id !== formData.id)
+    pt.name.toLowerCase() === formData.name.trim().toLowerCase() &&
+    (!isUpdate || pt.id !== formData.id)
   )
-
   if (nameExists) {
     formError.value = '投稿开放时段名称已存在，请使用其他名称'
     return
   }
-
   formSubmitting.value = true
-
   try {
     const authConfig = getAuthConfig()
-
     const response = await fetch(isUpdate ? `/api/admin/request-times/${formData.id}` : '/api/admin/request-times', {
       method: isUpdate ? 'PUT' : 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: formData.name.trim(),
         startTime: formData.startTime || null,
@@ -502,13 +674,12 @@ const saveRequestTime = async () => {
       }),
       ...authConfig
     })
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || `${isUpdate ? '更新' : '创建'}投稿开放时段失败: ${response.status}`)
     }
-
     await fetchRequestTimes()
+    await fetchRequestTimeHit()
     cancelForm()
   } catch (err: any) {
     formError.value = err.message || '保存投稿开放时段失败'
@@ -521,497 +692,31 @@ const cancelForm = () => {
   showAddForm.value = false
   editingRequestTime.value = null
   formError.value = ''
-
   Object.assign(formData, {
     id: 0,
     name: '',
     startTime: '',
     endTime: '',
     description: '',
-    enabled: true
+    enabled: true,
+    expected: 0
   })
 }
 </script>
 
 <style scoped>
-.play-time-manager {
-  background: #111111;
-  border: 1px solid #1f1f1f;
-  border-radius: 12px;
-  padding: 24px;
-  position: relative;
-  width: 100%;
-}
-
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.title {
-  font-size: 1.5rem;
-  color: #ffffff;
-  margin: 0;
-  font-weight: 600;
-}
-
-.settings-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.label {
-  color: #cccccc;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 24px;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #374151;
-  transition: .3s;
-  border-radius: 24px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: #ffffff;
-  transition: .3s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: #4f46e5;
-}
-
-input:focus + .slider {
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
-}
-
-input:checked + .slider:before {
-  transform: translateX(26px);
-}
-
-.slider.round {
-  border-radius: 34px;
-}
-
-.slider.round:before {
-  border-radius: 50%;
-}
-
-.action-bar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 1.5rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 0.375rem;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary {
-  background-color: #4f46e5;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #4338ca;
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #d1d5db;
-}
-
-.btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-}
-
-.btn-danger {
-  background-color: rgba(239, 68, 68, 0.8);
-  color: white;
-}
-
-.btn-danger:hover {
-  background-color: rgba(239, 68, 68, 1);
-}
-
-.btn-warning {
-  background-color: rgba(234, 179, 8, 0.8);
-  color: white;
-}
-
-.btn-warning:hover {
-  background-color: rgba(234, 179, 8, 1);
-}
-
-.btn-success {
-  background-color: rgba(34, 197, 94, 0.8);
-  color: white;
-}
-
-.btn-success:hover {
-  background-color: rgba(34, 197, 94, 1);
-}
-
-.icon {
-  margin-right: 0.25rem;
-  font-size: 1rem;
-}
-
-.loading-container, .error-message, .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  border-radius: 8px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  text-align: center;
-}
-
-.loading-spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #4f46e5;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 0.5rem;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.error-message {
-  color: #ef4444;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 2rem;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-}
-
-.empty-state .icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.empty-state p {
-  color: #9ca3af;
-  margin: 0.5rem 0;
-}
-
-.empty-state .hint {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.request-times-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.play-time-card {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  padding: 1.25rem;
-  transition: all 0.2s ease;
-}
-
-.play-time-card:hover {
-  border-color: #3a3a3a;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.time-name {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0;
-}
-
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.status-badge.enabled {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
-}
-
-.status-badge.disabled {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-}
-
-.status-badge.past {
-  background-color: rgba(156, 163, 175, 0.2);
-  color: #9ca3af;
-}
-
-.time-details {
-  margin-bottom: 1rem;
-}
-
-.time-range, .description {
-  display: flex;
-  margin-bottom: 0.5rem;
-}
-
-.time-range .label, .description .label {
-  min-width: 120px;
-  color: #9ca3af;
-  font-size: 0.875rem;
-}
-
-.time-range .value, .description .value {
-  color: #d1d5db;
-  font-size: 0.875rem;
-}
-
-.actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal-content {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  max-width: 500px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem;
-  border-bottom: 1px solid #2a2a2a;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: #ffffff;
-  font-weight: 600;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: #9ca3af;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.close-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-.modal-body {
-  padding: 1.25rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #d1d5db;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.625rem;
-  background: #111111;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #ffffff;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-}
-
-.form-control::placeholder {
-  color: #6b7280;
-}
-
-textarea.form-control {
-  min-height: 80px;
-  resize: vertical;
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  color: #d1d5db;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  margin-right: 0.5rem;
-  accent-color: #4f46e5;
-}
-
-.form-error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
-  padding: 0.75rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-}
-
-.form-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.delete-confirm p {
-  color: #d1d5db;
-  margin: 0.5rem 0;
-}
-
-.delete-confirm .warning {
-  color: #ef4444;
-  font-weight: 500;
-  margin-top: 1rem;
-}
-
-@media (max-width: 768px) {
-  .header-section {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .settings-toggle {
-    flex-wrap: wrap;
-  }
-
-  .actions {
-    flex-direction: column;
-  }
-
-  .actions .btn {
-    width: 100%;
-  }
+/* 移除旧样式，全部使用 Tailwind CSS */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
 </style>

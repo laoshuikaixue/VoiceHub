@@ -1,254 +1,269 @@
 <template>
-  <div class="site-config-manager">
-    <div class="header">
-      <h3>站点配置</h3>
-      <p class="description">管理站点标题、Logo、描述等基本信息</p>
+  <div class="max-w-[1200px] mx-auto space-y-6 pb-24 px-2">
+    <!-- 顶部标题栏 -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">站点配置</h2>
+        <p class="text-xs text-zinc-500 mt-1 font-medium">管理站点全局属性、视觉识别、点歌逻辑及系统安全策略</p>
+      </div>
+      <div class="flex gap-3">
+        <button
+          @click="resetForm"
+          :disabled="loading || saving"
+          class="flex items-center gap-2 px-5 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <RotateCcw :size="14" /> 重置
+        </button>
+        <button
+          @click="saveConfig"
+          :disabled="loading || saving"
+          class="flex items-center gap-2 px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <template v-if="saving">
+            <div class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            保存中...
+          </template>
+          <template v-else-if="saveSuccess">
+            <CheckCircle2 :size="14" /> 已保存
+          </template>
+          <template v-else>
+            <Save :size="14" /> 保存配置
+          </template>
+        </button>
+      </div>
     </div>
 
-    <div v-if="!loading" class="config-form">
-      <div class="form-group">
-        <label for="siteTitle">站点标题</label>
-        <input
-            id="siteTitle"
-            v-model="formData.siteTitle"
-            maxlength="100"
-            placeholder="请输入站点标题"
-            type="text"
-        />
-        <small class="help-text">显示在浏览器标题栏和页面顶部</small>
-      </div>
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div class="w-8 h-8 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+      <p class="text-zinc-500 text-sm">加载配置中...</p>
+    </div>
 
-      <div class="form-group">
-        <label for="siteLogoUrl">站点Logo URL</label>
-        <input
-            id="siteLogoUrl"
-            v-model="formData.siteLogoUrl"
-            placeholder="请输入Logo图片URL"
-            type="url"
-        />
-        <small class="help-text">支持相对路径（如 /logo.png）或完整URL</small>
-      </div>
-
-
-      <div class="form-group">
-        <label for="schoolLogoHomeUrl">首页学校Logo URL（可选）</label>
-        <input
-            id="schoolLogoHomeUrl"
-            v-model="formData.schoolLogoHomeUrl"
-            placeholder="请输入首页用的学校Logo图片URL"
-            type="url"
-        />
-        <small class="help-text">设置后将在首页VoiceHub Logo旁边显示学校Logo（大尺寸）</small>
-      </div>
-
-      <div class="form-group">
-        <label for="schoolLogoPrintUrl">打印页学校Logo URL（可选）</label>
-        <input
-            id="schoolLogoPrintUrl"
-            v-model="formData.schoolLogoPrintUrl"
-            placeholder="请输入打印页用的学校Logo图片URL"
-            type="url"
-        />
-        <small class="help-text">设置后将在排期打印页面显示学校Logo（小尺寸）</small>
-      </div>
-
-      <div class="form-group">
-        <label for="siteDescription">站点描述</label>
-        <textarea
-            id="siteDescription"
-            v-model="formData.siteDescription"
-            maxlength="200"
-            placeholder="请输入站点描述"
-            rows="3"
-        ></textarea>
-        <small class="help-text">用于SEO和页面介绍，建议控制在200字以内</small>
-      </div>
-
-      <div class="form-group">
-        <label for="submissionGuidelines">投稿须知</label>
-        <textarea
-            id="submissionGuidelines"
-            v-model="formData.submissionGuidelines"
-            maxlength="1000"
-            placeholder="请输入投稿须知内容"
-            rows="5"
-        ></textarea>
-        <small class="help-text">向用户说明投稿规则和注意事项</small>
-      </div>
-
-      <div class="form-group">
-        <label for="icpNumber">备案号（可选）</label>
-        <input
-            id="icpNumber"
-            v-model="formData.icpNumber"
-            maxlength="50"
-            placeholder="请输入ICP备案号"
-            type="text"
-        />
-        <small class="help-text">如有备案号，将显示在页面底部</small>
-      </div>
-
-      <!-- 投稿限额设置 -->
-      <div class="form-section">
-        <h4 class="section-title">投稿功能设置</h4>
-
-        <div class="form-group">
-          <label class="checkbox-label">
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- 基础信息 -->
+      <section :class="cardClass">
+        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4">
+          <Globe :size="16" class="text-blue-500" /> 基础信息
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <label :class="labelClass">站点标题</label>
             <input
-                v-model="formData.enableReplayRequests"
-                type="checkbox"
+              v-model="formData.siteTitle"
+              type="text"
+              placeholder="请输入站点标题"
+              :class="inputClass"
             />
-            <span class="checkbox-text">启用重播申请功能</span>
-          </label>
-          <small class="help-text">开启后，允许用户对本学期已播放的歌曲申请重播</small>
-        </div>
-
-        <div class="form-group">
-          <label class="checkbox-label">
+          </div>
+          <div>
+            <label :class="labelClass">备案号 (ICP)</label>
             <input
+              v-model="formData.icpNumber"
+              type="text"
+              placeholder="请输入备案号"
+              :class="inputClass"
+            />
+          </div>
+          <div>
+            <label :class="labelClass">站点描述</label>
+            <textarea
+              v-model="formData.siteDescription"
+              :rows="3"
+              placeholder="请输入站点描述"
+              :class="[inputClass, 'resize-none']"
+            />
+          </div>
+        </div>
+      </section>
+
+      <!-- 视觉识别 -->
+      <section :class="cardClass">
+        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4">
+          <ImageIcon :size="16" class="text-purple-500" /> 视觉识别
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <label :class="labelClass">站点 Logo URL</label>
+            <input
+              v-model="formData.siteLogoUrl"
+              type="text"
+              placeholder="请输入Logo图片URL"
+              :class="inputClass"
+            />
+          </div>
+          <div>
+            <label :class="labelClass">首页学校 Logo URL (大尺寸)</label>
+            <input
+              v-model="formData.schoolLogoHomeUrl"
+              type="text"
+              placeholder="请输入首页学校Logo URL"
+              :class="inputClass"
+            />
+          </div>
+          <div>
+            <label :class="labelClass">打印排期 Logo URL (小尺寸)</label>
+            <input
+              v-model="formData.schoolLogoPrintUrl"
+              type="text"
+              placeholder="请输入打印页学校Logo URL"
+              :class="inputClass"
+            />
+          </div>
+        </div>
+      </section>
+
+      <!-- 投稿须知 -->
+      <section class="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6">
+        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4">
+          <FileText :size="16" class="text-emerald-500" /> 投稿须知 (Markdown)
+        </h3>
+        <textarea
+          v-model="formData.submissionGuidelines"
+          :rows="6"
+          placeholder="请输入投稿须知内容"
+          :class="[inputClass, 'font-mono text-xs leading-relaxed min-h-[150px]']"
+        />
+      </section>
+
+      <!-- 投稿逻辑设置 -->
+      <section :class="cardClass">
+        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4">
+          <Settings2 :size="16" class="text-amber-500" /> 投稿逻辑设置
+        </h3>
+        <div class="space-y-6">
+          <div class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl">
+            <div>
+              <p class="text-xs font-bold text-zinc-200">启用重播申请</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户对本学期已播放过的歌曲再次申请</p>
+            </div>
+            <input
+              v-model="formData.enableReplayRequests"
+              type="checkbox"
+              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+            />
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl">
+              <div>
+                <p class="text-xs font-bold text-zinc-200">启用投稿限额</p>
+                <p class="text-[10px] text-zinc-500 mt-0.5">限制单个用户的点歌频率</p>
+              </div>
+              <input
                 v-model="formData.enableSubmissionLimit"
                 type="checkbox"
-            />
-            <span class="checkbox-text">启用投稿限额</span>
-          </label>
-          <small class="help-text">开启后将限制用户的投稿频率</small>
-        </div>
-
-        <div v-if="formData.enableSubmissionLimit" class="submission-limits">
-          <div class="limit-type-selection">
-            <label class="radio-label">
-              <input
-                  :checked="limitType === 'daily'"
-                  name="limitType"
-                  type="radio"
-                  value="daily"
-                  @change="handleLimitTypeChange('daily')"
+                class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
               />
-              <span class="radio-text">每日限额</span>
-            </label>
-            <label class="radio-label">
-              <input
-                  :checked="limitType === 'weekly'"
-                  name="limitType"
-                  type="radio"
-                  value="weekly"
-                  @change="handleLimitTypeChange('weekly')"
-              />
-              <span class="radio-text">每周限额</span>
-            </label>
-          </div>
+            </div>
 
-          <div v-if="limitType === 'daily'" class="form-group">
-            <label for="dailySubmissionLimit">每日投稿限额</label>
-            <input
-                id="dailySubmissionLimit"
-                v-model.number="formData.dailySubmissionLimit"
-                max="100"
-                min="0"
-                placeholder="请输入每日最大投稿数量"
-                type="number"
-            />
-            <small class="help-text">每个用户每天最多可以投稿的歌曲数量，设置为0表示关闭投稿功能</small>
-          </div>
+            <div v-if="formData.enableSubmissionLimit" class="space-y-4">
+              <div class="grid grid-cols-2 gap-2 p-1 bg-zinc-950 border border-zinc-800 rounded-xl">
+                <button
+                  @click="handleLimitTypeChange('daily')"
+                  :class="[
+                    'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    currentLimitType === 'daily' ? 'bg-zinc-800 text-blue-400 shadow-sm' : 'text-zinc-600 hover:text-zinc-400'
+                  ]"
+                >
+                  每日限额
+                </button>
+                <button
+                  @click="handleLimitTypeChange('weekly')"
+                  :class="[
+                    'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    currentLimitType === 'weekly' ? 'bg-zinc-800 text-blue-400 shadow-sm' : 'text-zinc-600 hover:text-zinc-400'
+                  ]"
+                >
+                  每周限额
+                </button>
+              </div>
 
-          <div v-if="limitType === 'weekly'" class="form-group">
-            <label for="weeklySubmissionLimit">每周投稿限额</label>
-            <input
-                id="weeklySubmissionLimit"
-                v-model.number="formData.weeklySubmissionLimit"
-                max="500"
-                min="0"
-                placeholder="请输入每周最大投稿数量"
-                type="number"
-            />
-            <small class="help-text">每个用户每周最多可以投稿的歌曲数量，设置为0表示关闭投稿功能</small>
+              <div>
+                <label :class="labelClass">{{ currentLimitType === 'daily' ? '单日' : '单周' }}投稿上限</label>
+                <div class="relative">
+                  <input
+                    v-model.number="currentLimitValue"
+                    type="number"
+                    min="0"
+                    :class="inputClass"
+                  />
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-zinc-700 uppercase">首 / 人</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- 黑名单设置 -->
-      <div class="form-section">
-        <h4 class="section-title">黑名单设置</h4>
+      <!-- 安全与隐私设置 -->
+      <section :class="cardClass">
+        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4">
+          <Shield :size="16" class="text-rose-500" /> 安全与隐私设置
+        </h3>
+        <div class="space-y-4">
+          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 pt-0.5">
+                <input
+                  id="show-keywords"
+                  v-model="formData.showBlacklistKeywords"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                />
+              </div>
+              <label for="show-keywords" class="cursor-pointer">
+                <p class="text-xs font-bold text-zinc-200">显示黑名单具体关键词</p>
+                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示“包含关键词”。</p>
+              </label>
+            </div>
+          </div>
 
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input
-                v-model="formData.showBlacklistKeywords"
-                type="checkbox"
-            />
-            <span class="checkbox-text">显示具体黑名单关键词</span>
-          </label>
-          <small class="help-text">开启后，在投稿时会显示"包含关键词：XXX"；关闭时只显示"包含关键词"</small>
+          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 pt-0.5">
+                <input
+                  id="hide-students"
+                  v-model="formData.hideStudentInfo"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                />
+              </div>
+              <label for="hide-students" class="cursor-pointer">
+                <p class="text-xs font-bold text-zinc-200">隐藏学生详细信息</p>
+                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">开启后，非管理员用户在前端点歌列表、排期预览中将无法查看投稿学生的完整学号与真实姓名。</p>
+              </label>
+            </div>
+          </div>
+
+          <div class="p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3">
+            <AlertCircle class="text-blue-500 shrink-0 mt-0.5" :size="14" />
+            <p class="text-[10px] text-zinc-500 leading-normal">
+              站点基础配置在保存后将立即对所有终端生效。请在修改关键业务逻辑（如投稿限额）前确保已知晓对现有用户的影响。
+            </p>
+          </div>
         </div>
-      </div>
-
-      <!-- 隐私设置 -->
-      <div class="form-section">
-        <h4 class="section-title">隐私设置</h4>
-
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input
-                v-model="formData.hideStudentInfo"
-                type="checkbox"
-            />
-            <span class="checkbox-text">隐藏学生信息</span>
-          </label>
-          <small class="help-text">开启后，未登录用户将无法查看完整的学生姓名</small>
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <button
-            :disabled="saving"
-            class="btn btn-primary"
-            @click="saveConfig"
-        >
-          <span v-if="saving">保存中...</span>
-          <span v-else>保存配置</span>
-        </button>
-
-        <button
-            :disabled="saving"
-            class="btn btn-secondary"
-            @click="resetForm"
-        >
-          重置
-        </button>
-      </div>
+      </section>
     </div>
-
-    <div v-else class="loading">
-      <div class="loading-spinner"></div>
-      <p>加载配置中...</p>
-    </div>
-
-
   </div>
 </template>
 
 <script setup>
-import {computed, onMounted, ref} from 'vue'
-import {useAuth} from '~/composables/useAuth'
+import { computed, onMounted, ref } from 'vue'
+import {
+  Globe, ImageIcon, FileText, Settings2, Shield,
+  Save, RotateCcw, CheckCircle2, AlertCircle
+} from 'lucide-vue-next'
+import { useToast } from '~/composables/useToast'
 
-const {getAuthConfig} = useAuth()
+const { showToast: showNotification } = useToast()
 
 const loading = ref(true)
 const saving = ref(false)
+const saveSuccess = ref(false)
 
-// 限额类型：daily 或 weekly（二选一逻辑）
-const limitType = computed(() => {
-  // 如果每日限额不为 null/undefined，则使用每日限额
-  if (formData.value.dailySubmissionLimit !== null && formData.value.dailySubmissionLimit !== undefined) {
-    return 'daily'
-  }
-  // 如果每周限额不为 null/undefined，则使用每周限额
-  if (formData.value.weeklySubmissionLimit !== null && formData.value.weeklySubmissionLimit !== undefined) {
-    return 'weekly'
-  }
-  // 默认为每日限额
-  return 'daily'
-})
+// 样式类常量
+const inputClass = "w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800"
+const labelClass = "text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2"
+const cardClass = "bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6"
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
@@ -269,13 +284,33 @@ const formData = ref({
   icpNumber: '',
   enableReplayRequests: false,
   enableSubmissionLimit: false,
-  dailySubmissionLimit: 0,
-  weeklySubmissionLimit: 0,
+  dailySubmissionLimit: 5,
+  weeklySubmissionLimit: null,
   showBlacklistKeywords: false,
   hideStudentInfo: true
 })
 
 const originalData = ref({})
+
+// 当前限额类型和值的快捷访问
+const currentLimitType = computed(() => {
+  return formData.value.weeklySubmissionLimit !== null ? 'weekly' : 'daily'
+})
+
+const currentLimitValue = computed({
+  get: () => {
+    return currentLimitType.value === 'daily'
+      ? formData.value.dailySubmissionLimit
+      : formData.value.weeklySubmissionLimit
+  },
+  set: (val) => {
+    if (currentLimitType.value === 'daily') {
+      formData.value.dailySubmissionLimit = val
+    } else {
+      formData.value.weeklySubmissionLimit = val
+    }
+  }
+})
 
 // 加载配置
 const loadConfig = async () => {
@@ -285,9 +320,7 @@ const loadConfig = async () => {
       credentials: 'include'
     })
 
-    if (!response.ok) {
-      throw new Error('获取配置失败')
-    }
+    if (!response.ok) throw new Error('获取配置失败')
 
     const data = await response.json()
 
@@ -299,35 +332,18 @@ const loadConfig = async () => {
       siteDescription: data.siteDescription || '',
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
       icpNumber: data.icpNumber || '',
-      enableReplayRequests: data.enableReplayRequests || false,
-      enableSubmissionLimit: data.enableSubmissionLimit || false,
-      dailySubmissionLimit: data.dailySubmissionLimit !== undefined ? data.dailySubmissionLimit : 5,
-      weeklySubmissionLimit: data.weeklySubmissionLimit !== undefined ? data.weeklySubmissionLimit : null,
-      showBlacklistKeywords: data.showBlacklistKeywords || false,
+      enableReplayRequests: !!data.enableReplayRequests,
+      enableSubmissionLimit: !!data.enableSubmissionLimit,
+      dailySubmissionLimit: data.dailySubmissionLimit ?? 5,
+      weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
+      showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true
     }
 
-    // 保存原始数据用于重置
-    originalData.value = {...formData.value}
-
+    originalData.value = JSON.parse(JSON.stringify(formData.value))
   } catch (error) {
     console.error('加载配置失败:', error)
-    // 使用默认值
-    formData.value = {
-      siteTitle: 'VoiceHub',
-      siteLogoUrl: '/favicon.ico',
-      schoolLogoHomeUrl: '',
-      schoolLogoPrintUrl: '',
-      siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
-      submissionGuidelines: defaultSubmissionGuidelines,
-      icpNumber: '',
-      enableReplayRequests: false,
-      enableSubmissionLimit: false,
-      dailySubmissionLimit: 5,
-      weeklySubmissionLimit: null,
-      showBlacklistKeywords: false
-    }
-    originalData.value = {...formData.value}
+    showNotification('加载配置失败', 'error')
   } finally {
     loading.value = false
   }
@@ -337,46 +353,35 @@ const loadConfig = async () => {
 const saveConfig = async () => {
   try {
     saving.value = true
-    // 处理空值，使用默认值，确保二选一逻辑
     const configToSave = {
+      ...formData.value,
       siteTitle: (formData.value.siteTitle || '').trim() || '校园广播站点歌系统',
       siteLogoUrl: (formData.value.siteLogoUrl || '').trim() || '/favicon.ico',
-      schoolLogoHomeUrl: (formData.value.schoolLogoHomeUrl || '').trim(),
-      schoolLogoPrintUrl: (formData.value.schoolLogoPrintUrl || '').trim(),
-      siteDescription: (formData.value.siteDescription || '').trim() || '校园广播站点歌系统 - 让你的声音被听见',
       submissionGuidelines: (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines,
-      icpNumber: (formData.value.icpNumber || '').trim(),
-      enableReplayRequests: !!formData.value.enableReplayRequests,
-      enableSubmissionLimit: !!formData.value.enableSubmissionLimit,
-      dailySubmissionLimit: formData.value.dailySubmissionLimit === '' ? null : formData.value.dailySubmissionLimit,
-      weeklySubmissionLimit: formData.value.weeklySubmissionLimit === '' ? null : formData.value.weeklySubmissionLimit,
-      showBlacklistKeywords: !!formData.value.showBlacklistKeywords,
-      hideStudentInfo: !!formData.value.hideStudentInfo
+      // 确保根据限额类型处理空值
+      dailySubmissionLimit: currentLimitType.value === 'daily' ? formData.value.dailySubmissionLimit : null,
+      weeklySubmissionLimit: currentLimitType.value === 'weekly' ? formData.value.weeklySubmissionLimit : null
     }
 
     const response = await fetch('/api/admin/system-settings', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(configToSave)
     })
 
-    if (!response.ok) {
-      throw new Error('保存配置失败')
-    }
+    if (!response.ok) throw new Error('保存配置失败')
 
-    // 更新表单数据和原始数据
-    formData.value = {...configToSave}
-    originalData.value = {...configToSave}
+    saveSuccess.value = true
+    originalData.value = JSON.parse(JSON.stringify(formData.value))
+    showNotification('配置保存成功！', 'success')
 
-    // 显示成功通知
-    window.$showNotification('配置保存成功！', 'success')
-
+    setTimeout(() => {
+      saveSuccess.value = false
+    }, 3000)
   } catch (error) {
     console.error('保存配置失败:', error)
-    window.$showNotification('保存配置失败，请重试', 'error')
+    showNotification('保存配置失败，请重试', 'error')
   } finally {
     saving.value = false
   }
@@ -385,268 +390,35 @@ const saveConfig = async () => {
 // 处理限额类型变化
 const handleLimitTypeChange = (type) => {
   if (type === 'daily') {
-    // 切换到每日限额，清空每周限额
     formData.value.weeklySubmissionLimit = null
-    if (formData.value.dailySubmissionLimit === null || formData.value.dailySubmissionLimit === undefined) {
-      formData.value.dailySubmissionLimit = 5 // 默认值
+    if (formData.value.dailySubmissionLimit === null) {
+      formData.value.dailySubmissionLimit = 5
     }
-  } else if (type === 'weekly') {
-    // 切换到每周限额，清空每日限额
+  } else {
     formData.value.dailySubmissionLimit = null
-    if (formData.value.weeklySubmissionLimit === null || formData.value.weeklySubmissionLimit === undefined) {
-      formData.value.weeklySubmissionLimit = 20 // 默认值
+    if (formData.value.weeklySubmissionLimit === null) {
+      formData.value.weeklySubmissionLimit = 20
     }
   }
 }
 
 // 重置表单
 const resetForm = () => {
-  formData.value = {...originalData.value}
+  formData.value = JSON.parse(JSON.stringify(originalData.value))
 }
 
-onMounted(() => {
-  loadConfig()
-})
+onMounted(loadConfig)
 </script>
 
 <style scoped>
-.site-config-manager {
-  width: 100%;
-  max-width: none;
+/* 移除旧的样式，全部使用 Tailwind */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
   margin: 0;
-  padding: 20px;
-  box-sizing: border-box;
 }
 
-.header {
-  margin-bottom: 30px;
-}
-
-.header h3 {
-  margin: 0 0 8px 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.description {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.config-form {
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 30px;
-}
-
-.form-group {
-  margin-bottom: 24px;
-}
-
-.form-group:last-child {
-  margin-bottom: 0;
-}
-
-.form-section {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border-secondary);
-}
-
-.section-title {
-  margin: 0 0 20px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: auto;
-  margin-right: 8px;
-  cursor: pointer;
-}
-
-.checkbox-text {
-  font-size: 14px;
-}
-
-.submission-limits {
-  margin-top: 16px;
-  padding: 16px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-secondary);
-  border-radius: 8px;
-}
-
-.limit-type-selection {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-  padding: 12px;
-  background: var(--bg-secondary);
-  border-radius: 6px;
-}
-
-.radio-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.radio-label input[type="radio"] {
-  width: auto;
-  margin-right: 8px;
-  cursor: pointer;
-}
-
-.radio-text {
-  font-size: 14px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: var(--text-primary);
-  font-size: 14px;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid var(--border-secondary);
-  border-radius: 8px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 14px;
-  transition: border-color 0.2s ease;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.help-text {
-  display: block;
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-secondary);
-}
-
-.btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
-}
-
-.btn-secondary {
-  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-  color: white;
-  border: 1px solid rgba(71, 85, 105, 0.3);
-  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #475569 0%, #334155 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 25px rgba(100, 116, 139, 0.4);
-}
-
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  color: var(--text-secondary);
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--border-secondary);
-  border-top: 3px solid var(--primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .site-config-manager {
-    padding: 16px;
-  }
-
-  .config-form,
-  .preview-section {
-    padding: 16px;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .btn {
-    width: 100%;
-  }
+input[type=number] {
+  -moz-appearance: textfield;
 }
 </style>

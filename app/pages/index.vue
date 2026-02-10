@@ -15,85 +15,102 @@
           </div>
         </div>
 
-        <!-- 用户信息区域修改 -->
+        <!-- 用户信息区域 -->
         <div class="user-section">
           <ClientOnly>
             <div v-if="isClientAuthenticated" class="user-info">
-              <div class="user-details">
-                <h3 class="user-name">你好，{{ auth?.user?.value?.name || '游客' }}</h3>
-                <p v-if="auth?.user?.value?.grade || auth?.user?.value?.class" class="user-class">
-                  {{ auth?.user?.value?.grade }} {{ auth?.user?.value?.class }}
-                </p>
-                <p v-else-if="isAdmin" class="user-class">
-                  管理员
-                </p>
+              <div class="user-details-desktop">
+                <span class="user-name">{{ user?.name || '用户' }}</span>
+                <span v-if="isAdmin" class="user-badge admin">管理员</span>
+                <span v-else class="user-badge">同学</span>
+              </div>
+              
+              <div class="user-avatar-wrapper" @click="toggleUserActions">
+                <img v-if="user?.avatar" :src="user.avatar" class="user-avatar" />
+                <div v-else class="user-avatar-placeholder">
+                  {{ user?.name?.[0] || 'U' }}
+                </div>
               </div>
 
-              <div class="user-actions">
-                <!-- 删除通知铃铛按钮 -->
-                <button class="action-button logout-button" @click="handleLogout">
-                  <span class="logout-text">退出登录</span>
-                </button>
-                <NuxtLink v-if="isAdmin" class="action-button dashboard-button" to="/dashboard">
-                  管理后台
-                </NuxtLink>
-                <NuxtLink v-else class="action-button password-button" to="/change-password">
-                  修改密码
-                </NuxtLink>
-                <NuxtLink class="action-button review-button" to="/year-review">
-                  年度回顾
-                </NuxtLink>
-              </div>
+              <Transition name="dropdown-fade">
+                <div class="user-actions-dropdown" v-if="showUserActions">
+                  <button class="action-item logout" @click="handleLogout">
+                    <Icon name="logout" :size="16" />
+                    <span>退出登录</span>
+                  </button>
+                  <NuxtLink v-if="isAdmin" class="action-item" to="/dashboard">
+                    <Icon name="settings" :size="16" />
+                    <span>管理后台</span>
+                  </NuxtLink>
+                  <NuxtLink v-else class="action-item" to="/change-password">
+                    <Icon name="settings" :size="16" />
+                    <span>修改密码</span>
+                  </NuxtLink>
+                </div>
+              </Transition>
             </div>
 
             <div v-else class="login-options">
-              <NuxtLink class="btn btn-outline no-underline" to="/login">登录</NuxtLink>
+              <NuxtLink class="login-btn" to="/login">
+                <Icon name="user" :size="16" />
+                <span>登录</span>
+              </NuxtLink>
             </div>
           </ClientOnly>
         </div>
       </div>
 
       <div v-if="siteTitle" class="site-title">
-        <h2>{{ siteTitle }} | VoiceHub</h2>
+        <div class="title-container">
+          <h2 class="main-title">{{ siteTitle }}</h2>
+          <div class="title-divider"></div>
+          <span class="sub-title">VoiceHub 校园广播系统</span>
+        </div>
       </div>
 
       <!-- 中间主体内容区域 -->
       <div class="content-area">
         <!-- 选项卡区域 -->
         <div class="tabs-row">
-          <div v-ripple
-               :class="{ 'active': activeTab === 'schedule' }"
+          <div :class="{ 'active': activeTab === 'schedule' }"
                class="section-tab"
                @click="handleTabClick('schedule')">
-            播出排期
+            <Icon class="tab-icon" name="calendar" :size="20" />
+            <span class="tab-text">播出排期</span>
           </div>
-          <div v-ripple
-               :class="{ 'active': activeTab === 'songs' }"
+          <div :class="{ 'active': activeTab === 'songs' }"
                class="section-tab"
                @click="handleTabClick('songs')">
-            歌曲列表
+            <Icon class="tab-icon" name="music" :size="20" />
+            <span class="tab-text">歌曲列表</span>
           </div>
-          <div v-ripple
-               :class="{ 'active': activeTab === 'request' }"
+          <div :class="{ 'active': activeTab === 'request' }"
                class="section-tab"
                @click="handleTabClick('request')">
-            投稿歌曲
+            <Icon class="tab-icon" name="search" :size="20" />
+            <span class="tab-text">投稿歌曲</span>
           </div>
           <ClientOnly>
             <div :key="notificationTabKey"
                  ref="notificationTabRef"
-                 v-ripple
                  :class="{ 'active': activeTab === 'notification', 'disabled': !isClientAuthenticated }"
                  class="section-tab"
                  data-tab="notification"
                  @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()">
-              通知
-              <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
+              <div class="icon-wrapper">
+                <Icon class="tab-icon" name="message-circle" :size="20" />
+                <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
+              </div>
+              <span class="tab-text">
+                消息
+                <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-desktop"></span>
+              </span>
             </div>
             <template #fallback>
               <div class="section-tab disabled"
                    data-tab="notification">
-                通知
+                <Icon class="tab-icon" name="message-circle" :size="20" />
+                <span class="tab-text">消息</span>
               </div>
             </template>
           </ClientOnly>
@@ -199,22 +216,25 @@
                         <div class="notification-card-header">
                           <div class="notification-icon-type">
                             <Icon v-if="notification.type === 'SONG_SELECTED'" :size="20" color="#4f46e5"
-                                  name="target"/>
+                                  name="check"/>
                             <Icon v-else-if="notification.type === 'SONG_PLAYED'" :size="20" color="#10b981"
-                                  name="music"/>
+                                  name="play"/>
                             <Icon v-else-if="notification.type === 'SONG_VOTED'" :size="20" color="#f59e0b"
                                   name="thumbs-up"/>
+                            <Icon v-else-if="notification.type === 'SONG_REJECTED'" :size="20" color="#ef4444"
+                                  name="x-circle"/>
                             <Icon v-else-if="notification.type === 'COLLABORATION_INVITE'" :size="20" color="#0B5AFE"
                                   name="users"/>
                             <Icon v-else-if="notification.type === 'COLLABORATION_RESPONSE'" :size="20" color="#8b5cf6"
-                                  name="info"/>
-                            <Icon v-else :size="20" color="#6b7280" name="speaker"/>
+                                  name="message-circle"/>
+                            <Icon v-else :size="20" color="#6b7280" name="bell"/>
                           </div>
                           <div class="notification-title-row">
                             <div class="notification-title">
                               <span v-if="notification.type === 'SONG_SELECTED'">歌曲已选中</span>
                               <span v-else-if="notification.type === 'SONG_PLAYED'">歌曲已播放</span>
                               <span v-else-if="notification.type === 'SONG_VOTED'">收到新投票</span>
+                              <span v-else-if="notification.type === 'SONG_REJECTED'">歌曲被驳回</span>
                               <span v-else-if="notification.type === 'COLLABORATION_INVITE'">
                                 联合投稿邀请
                                 <span v-if="notification.handled"
@@ -287,17 +307,13 @@
                     <!-- 每页显示数量选择器 -->
                     <div class="page-size-selector">
                       <label for="pageSize">每页显示：</label>
-                      <select
+                      <CustomSelect
                           id="pageSize"
-                          :value="notificationsService.pageSize.value"
-                          class="page-size-select"
-                          @change="handlePageSizeChange($event.target.value)"
-                      >
-                        <option value="5">5条</option>
-                        <option value="10">10条</option>
-                        <option value="20">20条</option>
-                        <option value="50">50条</option>
-                      </select>
+                          :model-value="notificationsService.pageSize.value"
+                          :options="pageSizeOptions"
+                          class="page-size-custom-select"
+                          @update:model-value="handlePageSizeChange"
+                      />
                     </div>
 
                     <!-- 页码导航 -->
@@ -364,7 +380,7 @@
                       class="action-button-large danger"
                       @click="clearAllNotifications"
                   >
-                    清空所有通知
+                    清空所有消息
                   </button>
                 </div>
 
@@ -391,23 +407,76 @@
 
     <!-- 规则弹窗 -->
     <Teleport to="body">
-      <Transition name="modal-animation">
-        <div v-if="showRules" class="modal-overlay" @click.self="showRules = false">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h2 class="text-xl font-bold">点歌规则</h2>
-              <button class="close-button" @click="showRules = false">×</button>
+      <Transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
+      >
+        <div v-if="showRules" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="showRules = false">
+          <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-8 pb-4 flex items-center justify-between">
+              <div>
+                <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                    <Icon name="bell" :size="20" />
+                  </div>
+                  点歌规则
+                </h3>
+                <p class="text-xs text-zinc-500 mt-1 ml-13">投稿前请仔细阅读以下规则</p>
+              </div>
+              <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all" @click="showRules = false">
+                <Icon name="x" :size="20" />
+              </button>
             </div>
 
-            <div class="modal-body">
-              <div class="rules-content">
-                <h3 class="font-bold mb-2">投稿须知</h3>
-                <div v-if="submissionGuidelines" class="guidelines-content"
+            <div class="p-8 pt-4 space-y-8">
+              <div class="rules-group space-y-4">
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                  <Icon name="message-circle" :size="12" />
+                  投稿须知
+                </h4>
+                <div v-if="submissionGuidelines" class="text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
                      v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
-
-                <h3 class="font-bold mb-2">播放时间</h3>
-                <p>每天夜自修静班前</p>
+                <div v-else class="space-y-3 bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50">
+                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
+                    <span class="text-blue-500 font-black">01</span>
+                    <p>投稿时无需加入书名号</p>
+                  </div>
+                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
+                    <span class="text-blue-500 font-black">02</span>
+                    <p>除DJ外，其他类型歌曲均接收（包括小语种）</p>
+                  </div>
+                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
+                    <span class="text-blue-500 font-black">03</span>
+                    <p>禁止投递含有违规内容的歌曲</p>
+                  </div>
+                </div>
               </div>
+
+              <div class="rules-group space-y-4">
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                  <Icon name="calendar" :size="12" />
+                  播放时间
+                </h4>
+                <div class="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-900/40">
+                    <Icon name="clock" :size="24" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-black text-zinc-100">每天夜自修静班前</p>
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">PLAYBACK TIME</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-8 pt-0">
+              <button class="w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95" @click="showRules = false">
+                我知道了
+              </button>
             </div>
           </div>
         </div>
@@ -426,6 +495,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 import {useNotifications} from '~/composables/useNotifications'
 import {useSiteConfig} from '~/composables/useSiteConfig'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
@@ -459,9 +529,40 @@ const isRequestOpen = ref(true)
 // 弹窗状态
 const showRequestModal = ref(false)
 const showRules = ref(false)
+const showUserActions = ref(false)
+
+const toggleUserActions = (event) => {
+  event.stopPropagation()
+  showUserActions.value = !showUserActions.value
+}
+
+// 点击外部关闭下拉菜单
+const handleClickOutside = (event) => {
+  if (showUserActions.value) {
+    const dropdown = document.querySelector('.user-actions-dropdown')
+    const avatar = document.querySelector('.user-avatar-wrapper')
+    if (dropdown && !dropdown.contains(event.target) && !avatar.contains(event.target)) {
+      showUserActions.value = false
+    }
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleClickOutside)
+})
 
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
+
+const tabOrder = ['schedule', 'songs', 'request', 'notification'];
+const activeIndex = computed(() => {
+  const index = tabOrder.indexOf(activeTab.value);
+  return index === -1 ? 0 : index;
+});
 
 // 通知按钮强制更新相关
 const notificationTabRef = ref(null)
@@ -482,6 +583,13 @@ const hasUnreadNotifications = computed(() => {
   return unreadCount > 0
 })
 const showNotificationSettings = ref(false)
+
+const pageSizeOptions = [
+  { label: '5条', value: 5 },
+  { label: '10条', value: 10 },
+  { label: '20条', value: 20 },
+  { label: '50条', value: 50 }
+]
 
 const notificationSettings = ref({
   songSelectedNotify: true,
@@ -560,8 +668,8 @@ const deleteNotification = async (id) => {
   pendingAction.value = 'delete'
   pendingId.value = id
   confirmDialogConfig.value = {
-    title: '删除通知',
-    message: '确定要删除此通知吗？',
+    title: '删除消息',
+    message: '确定要删除此消息吗？',
     type: 'warning',
     confirmText: '删除',
     cancelText: '取消'
@@ -573,8 +681,8 @@ const deleteNotification = async (id) => {
 const clearAllNotifications = async () => {
   pendingAction.value = 'clearAll'
   confirmDialogConfig.value = {
-    title: '清空所有通知',
-    message: '确定要清空所有通知吗？此操作不可撤销。',
+    title: '清空所有消息',
+    message: '确定要清空所有消息吗？此操作不可撤销。',
     type: 'danger',
     confirmText: '清空',
     cancelText: '取消'
@@ -1287,7 +1395,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 <style scoped>
 .home {
   width: 100%;
-  flex: 1; /* 使用flex: 1 替代 min-height: 100vh */
+  flex: 1;
   background-color: #121318;
   padding: 1.5rem;
   color: #FFFFFF;
@@ -1308,8 +1416,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   width: 1110px;
   height: 309px;
   background: radial-gradient(ellipse at center, rgba(11, 90, 254, 0.3) 0%, rgba(11, 90, 254, 0.15) 30%, rgba(11, 90, 254, 0) 70%);
-  z-index: 0; /* 确保在内容下方但在背景上方 */
-  pointer-events: none; /* 允许点击穿透 */
+  z-index: 0;
+  pointer-events: none;
 }
 
 /* 顶部区域样式 */
@@ -1324,8 +1432,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 20px; /* 添加间距 */
-  min-height: 160px; /* 确保与学校logo高度一致 */
+  gap: 20px;
+  min-height: 160px;
 }
 
 .logo-link {
@@ -1363,87 +1471,106 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   object-fit: contain;
 }
 
-/* 移除不需要的title-group样式 */
-
 .user-section {
+  position: relative;
+  z-index: 100;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.user-details-desktop {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
 }
 
-.user-info {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.user-details {
-  text-align: right;
-}
-
 .user-name {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: 4%;
-}
-
-.user-class {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 600;
   font-size: 14px;
-  letter-spacing: 4%;
-  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.user-actions {
-  display: flex;
-  gap: 0.75rem;
+.user-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  margin-top: 2px;
 }
 
-.action-button {
-  position: relative;
+.user-badge.admin {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.user-avatar-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #2a2a2a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1rem;
+}
+
+.user-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-avatar-placeholder {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.user-actions-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: #1a1a1f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 160px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: 8px;
-  font-family: 'MiSans', sans-serif;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
-  letter-spacing: 4%;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.logout-button {
-  background: linear-gradient(180deg, #FF2F2F 0%, #FF654D 100%);
-  color: #FFFFFF;
-}
-
-.password-button {
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  transition: all 0.2s;
   text-decoration: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
 }
 
-.dashboard-button {
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
-  text-decoration: none;
+.action-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
 }
 
-.review-button {
-  background: rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
-  text-decoration: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  transition: all 0.2s ease;
-}
-
-.review-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+.action-item.logout:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 .notification-badge {
@@ -1463,41 +1590,118 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   padding: 0 4px;
 }
 
+/* 登录按钮 - 桌面端 */
+.login-options .login-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 24px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-options .login-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+  color: white;
+}
+
+.login-options .login-btn :deep(.icon),
+.login-options .login-btn i {
+  color: #3b82f6;
+  transition: all 0.3s ease;
+}
+
+.login-options .login-btn:hover :deep(.icon),
+.login-options .login-btn:hover i {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5));
+}
+
+.login-options .login-btn:active {
+  transform: translateY(0) scale(0.96);
+  transition: all 0.1s;
+}
+
 /* 站点标题 */
 .site-title {
   text-align: center;
-  margin: 2rem 0;
+  margin: 3rem 0;
+  padding: 0 1rem;
 }
 
-.site-title h2 {
+.title-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.main-title {
   font-family: 'MiSans', sans-serif;
-  font-weight: 600;
-  font-size: 36px;
-  letter-spacing: 2%;
+  font-weight: 800;
+  font-size: 42px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.title-divider {
+  width: 40px;
+  height: 4px;
+  background: #0B5AFE;
+  border-radius: 2px;
+  box-shadow: 0 0 15px rgba(11, 90, 254, 0.6);
+}
+
+.sub-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 /* 内容区域结构 */
 .content-area {
   display: flex;
   flex-direction: column;
-  gap: 0; /* 移除间隙 */
-  min-height: 60vh; /* 确保内容区域有足够的高度 */
+  gap: 0;
+  min-height: 60vh;
 }
 
-/* 选项卡样式 */
+/* 选项卡样式 - 桌面端 */
 .tabs-row {
   display: flex;
   gap: 5px;
   margin-bottom: 0;
-  overflow-x: auto; /* 允许在小屏幕上水平滚动 */
+  overflow-x: auto;
   white-space: nowrap;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  padding-bottom: 2px; /* 为滚动条留出空间 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
 }
 
 .tabs-row::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
 
 .section-tab {
@@ -1511,14 +1715,14 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   border: 2px solid #282830;
   border-bottom: none;
   cursor: pointer;
-  flex: 0 0 auto; /* 防止标签被压缩 */
+  flex: 0 0 auto;
 }
 
 .section-tab.active {
   background: #21242D;
   color: #FFFFFF;
   position: relative;
-  z-index: 1; /* 确保活动标签在前面 */
+  z-index: 1;
 }
 
 /* Tab切换动画 */
@@ -1586,6 +1790,35 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   overflow: hidden;
   padding: 0.75rem 1.5rem;
   z-index: 10; /* 确保在内容之上 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.section-tab .tab-icon {
+  display: none; /* PC端默认隐藏图标 */
+}
+
+.section-tab .icon-wrapper {
+  display: none; /* PC端默认隐藏图标容器，避免间距问题 */
+}
+
+.section-tab .tab-text {
+  display: inline;
+  position: relative;
+}
+
+/* PC端通知小圆点 */
+.notification-badge-desktop {
+  position: absolute;
+  top: -2px;
+  right: -8px;
+  width: 6px;
+  height: 6px;
+  background: #0B5AFE;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(11, 90, 254, 0.5);
 }
 
 .section-tab::after {
@@ -1727,6 +1960,18 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* 下拉菜单动画 */
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+}
+
 /* 通知面板 */
 .notification-pane {
   height: 100%;
@@ -1747,25 +1992,28 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  margin-bottom: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.25rem 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .notification-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--light);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #FFFFFF;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .settings-icon {
-  background: transparent;
-  border: none;
-  color: var(--light);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1775,16 +2023,16 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
 .settings-icon:hover {
   background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
   transform: rotate(30deg);
 }
-
 
 /* 通知列表 */
 .notification-list {
   flex: 1;
   overflow-y: auto;
-  padding: 5px;
-  margin-bottom: 10px;
+  padding: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .loading-indicator {
@@ -1792,77 +2040,56 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
-  color: rgba(255, 255, 255, 0.6);
+  padding: 3rem 0;
+  color: rgba(255, 255, 255, 0.4);
+  gap: 1rem;
 }
 
 .loading-spinner {
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top: 3px solid var(--primary);
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #3b82f6;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 15px;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.empty-notification {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 0;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.empty-icon {
-  font-size: 4rem;
-  margin-bottom: 20px;
+  to { transform: rotate(360deg); }
 }
 
 .notification-items {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  will-change: transform, opacity;
+  gap: 1rem;
 }
 
 .notification-card {
-  background-color: rgba(30, 41, 59, 0.5);
-  border-radius: 12px;
-  padding: 0;
-  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  border-left: 3px solid transparent;
-  overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .notification-card:hover {
-  background-color: rgba(30, 41, 59, 0.8);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .notification-card.unread {
-  border-left-color: var(--primary);
-  background-color: rgba(33, 44, 63, 0.7);
+  background: rgba(59, 130, 246, 0.05);
+  border-color: rgba(59, 130, 246, 0.2);
 }
 
 .notification-card-header {
   display: flex;
-  padding: 15px 15px 10px 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: flex-start;
+  margin-bottom: 1rem;
 }
 
 .notification-icon-type {
@@ -1871,232 +2098,101 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   justify-content: center;
   width: 40px;
   height: 40px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  margin-right: 15px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border-radius: 12px;
+  margin-right: 1rem;
   flex-shrink: 0;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
 }
 
 .notification-title-row {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  min-width: 0;
 }
 
 .notification-title {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-  margin-bottom: 5px;
-  font-size: 1rem;
-  color: var(--light);
-}
-
-.unread-indicator {
-  width: 8px;
-  height: 8px;
-  background-color: var(--primary);
-  border-radius: 50%;
-  margin-left: 8px;
-  display: inline-block;
-}
-
-.notification-card-body {
-  padding: 15px;
-}
-
-.notification-text {
-  color: rgba(255, 255, 255, 0.8);
   font-size: 0.95rem;
-  line-height: 1.5;
-  word-break: break-word;
-}
-
-.invite-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.invite-actions .action-button {
-  flex: 1;
-  border: none;
-}
-
-.accept-btn {
-  background: var(--primary);
-  color: white;
-}
-
-.accept-btn:hover {
-  background: #0043F8;
-}
-
-.reject-btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-.reject-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.invite-actions .action-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.invite-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.status-tag {
-  font-size: 0.9em;
-  margin-left: 8px;
-  font-weight: normal;
-}
-
-.status-tag.accepted {
-  color: #10b981;
-}
-
-.status-tag.rejected {
-  color: #ef4444;
-}
-
-.status-tag.invalid {
-  color: #9ca3af;
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
   font-weight: 600;
-}
-
-.status-badge.accepted {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.status-badge.rejected {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.status-badge.invalid {
-  background: rgba(107, 114, 128, 0.1);
-  color: #9ca3af;
-  border: 1px solid rgba(107, 114, 128, 0.2);
-}
-
-.status-time {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.8rem;
+  color: #FFFFFF;
+  margin-bottom: 0.25rem;
 }
 
 .notification-time {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.8rem;
-  margin-top: 2px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.notification-card-body {
+  padding: 0 0 0 3.5rem;
+}
+
+.notification-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
 .notification-card-actions {
   display: flex;
   justify-content: flex-end;
-  padding: 10px 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background-color: rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+  padding-left: 3.5rem;
 }
 
 .action-button.delete {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
-  padding: 6px 12px;
-  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.85rem;
-}
-
-.action-button.delete svg {
-  margin-right: 5px;
+  gap: 0.4rem;
+  transition: all 0.2s;
 }
 
 .action-button.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.notification-actions-bar {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.action-button-large {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  padding: 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-button-large:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.action-button-large.danger {
   color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
 }
 
-/* 范围滑块样式 */
-.range-label {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  margin-top: 10px;
+.action-button-large.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
 }
 
-.range-value {
-  margin-top: 5px;
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--light);
-}
-
-.range-slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.2);
-  outline: none;
-  margin: 10px 0;
-}
-
-.range-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--primary);
-  cursor: pointer;
-}
-
-.range-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--primary);
-  cursor: pointer;
-  border: none;
-}
-
-.range-values {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.sub-setting {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
+.action-button-large.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* 分页控件样式 */
@@ -2135,37 +2231,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   white-space: nowrap;
 }
 
-.page-size-select {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: var(--light);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.page-size-select:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.page-size-select:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(11, 90, 254, 0.2);
-}
-
-.page-size-select option {
-  background-color: rgba(30, 30, 30, 0.95);
-  color: var(--light);
-  padding: 8px 12px;
-  border: none;
-}
-
-.page-size-select option:hover {
-  background-color: rgba(50, 50, 50, 0.95);
+.page-size-custom-select {
+  width: 90px;
 }
 
 .page-navigation {
@@ -2351,136 +2418,367 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* 移动端通知样式 */
+/* ==================== 移动端设计 ==================== */
+
+/* 基础移动端适配 */
 @media (max-width: 768px) {
-  .notification-items {
-    padding-bottom: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .notification-title {
-    font-size: 1.2rem;
+  .home {
+    padding: 0;
+    background-color: #0a0a0f;
   }
 
-  .settings-form .form-group {
-    padding: 8px;
+  .main-content {
+    padding: 0;
   }
 
-  .notification-actions-bar {
-    flex-direction: column;
-    gap: 8px;
+  /* 隐藏原有的ellipse效果，使用更微妙的背景 */
+  .ellipse-effect {
+    display: none;
   }
 
-  .action-button-large {
-    width: 100%;
-  }
-}
-
-/* 响应式样式 */
-@media (max-width: 768px) {
+  /* 顶部区域 */
   .top-bar {
-    flex-direction: column;
-    gap: 1.5rem;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    margin-top: 0.1rem;
+    padding: 10px 12px;
+    margin: 0;
+    background: linear-gradient(180deg, rgba(11, 90, 254, 0.08) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   .logo-section {
-    justify-content: center;
+    min-height: auto;
+    gap: 8px;
   }
 
   .logo-image {
-    width: 120px;
+    width: 76px;
+    height: auto;
   }
 
+  .logo-divider-container {
+    gap: 8px;
+  }
+
+  .logo-divider {
+    height: 28px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* 移动端的主页面里不需要写学校名，保持简洁 */
+  .site-title {
+    display: none;
+  }
+
+  .school-logo {
+    max-width: 50px;
+    max-height: 28px;
+  }
+
+  /* 用户区域简化 */
   .user-section {
-    align-items: center;
-    width: 100%;
+    width: auto;
   }
 
-  .user-info {
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
+  .user-details-desktop {
+    display: none; /* 移动端仅显示头像 */
   }
 
-  .user-details {
-    text-align: center;
+  .user-avatar-wrapper {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
   }
 
-  .user-actions {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .tabs-row {
-    flex-wrap: nowrap; /* 保持水平排列 */
-    justify-content: flex-start; /* 左对齐 */
-    overflow-x: auto; /* 允许水平滚动 */
-    padding-bottom: 5px;
-  }
-
-  .section-tab {
-    flex: 0 0 auto; /* 不要拉伸或压缩 */
-    padding: 12px 20px;
+  .user-avatar-placeholder {
     font-size: 14px;
-    white-space: nowrap;
   }
 
-  .tab-content-container {
-    padding: 0.5rem;
-    border-radius: 0 0 15px 15px; /* 修改圆角，只保留底部圆角 */
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+  .user-actions-dropdown {
+    top: calc(100% + 10px);
+    min-width: 140px;
+    padding: 6px;
   }
 
-  .request-pane {
-    flex-direction: column;
-  }
-
-  .site-title h2 {
-    font-size: 28px;
-  }
-
-  .ellipse-effect {
-    top: -100px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    height: 200px;
-  }
-}
-
-@media (max-width: 480px) {
-  .section-tab {
-    padding: 10px 15px;
+  .action-item {
+    padding: 8px 10px;
     font-size: 13px;
   }
 
+  /* 登录按钮 */
+  .login-options .login-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .login-options .login-btn :deep(.icon) {
+    color: #3b82f6;
+  }
+
+  .login-options .login-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+
+  /* Footer 间距优化 */
+  :deep(.site-footer) {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* 内容区域 - 全宽无边框 */
+  .content-area {
+    min-height: auto;
+  }
+
+  .tabs-row {
+    position: fixed;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    left: 1rem;
+    right: 1rem;
+    margin: 0 auto;
+    max-width: 500px;
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch; /* 修改为 stretch 以配合子元素 height: 100% */
+    gap: 0;
+    padding: 0 0.5rem;
+    height: 64px;
+    background: rgba(28, 28, 30, 0.9);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    z-index: 1000;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  }
+
+  .section-tab {
+    flex: 1;
+    height: 100%; /* 确保填满容器高度 */
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0; /* 移除固定内边距，改用 flex 居中 */
+    font-size: 10px;
+    font-weight: 500;
+    color: #71717a; /* text-zinc-500 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* 垂直居中内容 */
+    gap: 4px;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+
+  .section-tab .tab-icon {
+    display: block;
+    margin-bottom: 2px;
+    transition: all 0.2s ease;
+    color: currentColor;
+  }
+
+  .section-tab .tab-text {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease;
+  }
+
+  .section-tab.active {
+    color: #3b82f6 !important; /* text-blue-500 - Force blue */
+    background: transparent !important;
+    transform: none !important;
+    text-shadow: 0 0 12px rgba(59, 130, 246, 0.6); /* Text Glow */
+  }
+
+  /* Prevent hover from turning it white on mobile */
+  .section-tab.active:hover {
+    color: #3b82f6 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .section-tab.active .tab-icon {
+    opacity: 1;
+    color: currentColor;
+    transform: none;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5)); /* Icon Glow */
+  }
+
+  .section-tab.active .tab-text {
+    font-weight: 700;
+  }
+
+  /* 移除原有的伪元素图标 */
+  .section-tab::before {
+    display: none;
+  }
+
+  /* 移除底部指示器（横条）- 彻底隐藏 */
+  .section-tab::after {
+    display: none !important;
+  }
+
+  @keyframes dot-pop-in {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin: 0 auto;
+  }
+
+  .section-tab .icon-wrapper {
+    display: flex; /* 移动端显示图标容器 */
+  }
+
+  /* 通知徽章 - 回归蓝色风格 */
+  .notification-badge-tab {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px;
+    height: 8px;
+    background: #0B5AFE;
+    border-radius: 50%;
+    border: 1.5px solid #0a0a0f;
+    box-shadow: 0 0 5px rgba(11, 90, 254, 0.4);
+    z-index: 2;
+  }
+
+  .notification-badge-desktop {
+    display: none; /* 移动端隐藏桌面版徽章 */
+  }
+
+  @keyframes badge-pulse {
+    /* 移除导致位移的动画 */
+  }
+
+  .section-tab.disabled {
+    opacity: 0.3;
+    filter: grayscale(1);
+  }
+
+  /* 内容容器 - 优化间距 */
+  .tab-content-container {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0 6px calc(80px + env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    min-height: calc(100vh - 120px);
+  }
+
+  .tab-pane {
+    padding: 0;
+  }
+
+  /* 排期标签页优化 */
+  .schedule-tab-pane {
+    padding: 0;
+    min-height: auto;
+  }
+
+  /* 请求表单区域 */
+  .request-pane {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 登录选项 */
+  .login-options {
+    display: flex;
+    align-items: center;
+  }
+
+  .login-options .btn-outline {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 6px;
+    background: rgba(11, 90, 254, 0.15);
+    border: 1px solid rgba(11, 90, 254, 0.3);
+  }
+}
+
+/* 小屏幕设备额外优化 */
+@media (max-width: 480px) {
+  .top-bar {
+    padding: 8px 10px;
+  }
+
   .logo-image {
-    width: 100px;
+    width: 90px;
+  }
+
+  .school-logo {
+    max-width: 70px;
   }
 
   .action-button {
-    padding: 0.4rem 0.8rem;
-    font-size: 12px;
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .site-title {
+    margin: 6px 0 10px;
+    padding: 0 12px;
   }
 
   .site-title h2 {
-    font-size: 24px;
+    font-size: 16px;
   }
 
   .tab-content-container {
-    padding: 0.5rem;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+    padding: 0 4px calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* 超小屏幕设备 */
+@media (max-width: 360px) {
+  .logo-image {
+    width: 60px;
   }
 
-  .schedule-tab-pane {
-    padding: 0;
+  .school-logo {
+    max-width: 40px;
+  }
+
+  .action-button {
+    padding: 4px 6px;
+    font-size: 9px;
+  }
+
+  .section-tab {
+    font-size: 9px;
   }
 }
 
@@ -2578,7 +2876,65 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   padding: 24px 28px 28px;
 }
 
-/* 年度报告弹窗现代化重写 */
+.rules-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.rules-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rules-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.rules-icon {
+  color: #3b82f6;
+}
+
+.rules-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.guidelines-content {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+}
+
+.default-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rule-item {
+  display: flex;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
+
+.rule-item span {
+  margin-right: 0.5rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+}
+
+/* 年度报告弹窗 */
 .year-review-overlay {
   backdrop-filter: blur(8px);
   background: rgba(0, 0, 0, 0.4);
@@ -2844,15 +3200,15 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
 /* 通知标签上的未读徽章 */
 .notification-badge-tab {
-  position: relative;
-  top: -8px;
-  right: -2px;
+  position: absolute; /* 修改为绝对定位，防止挤压图标 */
+  top: 0;
+  right: 0;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--danger);
+  background-color: #0B5AFE;
   display: inline-block;
-  animation: pulse 2s infinite;
+  z-index: 2;
 }
 
 @keyframes pulse {

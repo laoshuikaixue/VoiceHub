@@ -1,488 +1,394 @@
 <template>
-  <div class="api-key-manager">
-    <!-- 页面标题和操作 -->
-    <div class="manager-header">
-      <div class="header-content">
-        <h2 class="manager-title">API密钥管理</h2>
-        <p class="manager-description">管理开放API的访问密钥，控制第三方应用的访问权限</p>
+  <div class="max-w-[1400px] mx-auto space-y-6 pb-20 px-2">
+    <!-- 头部区域 -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">API密钥管理</h2>
+        <p class="text-xs text-zinc-500 mt-1">管理开放API的访问密钥，控制第三方应用的访问权限</p>
       </div>
-      <div class="header-actions">
-        <button class="btn btn-primary" @click="showCreateModal = true">
-          <svg class="btn-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="12" x2="12" y1="5" y2="19"/>
-            <line x1="5" x2="19" y1="12" y2="12"/>
-          </svg>
-          创建API密钥
+      <button 
+        @click="openCreateModal"
+        class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 active:scale-95"
+      >
+        <Plus :size="14" /> 创建API密钥
+      </button>
+    </div>
+
+    <!-- 过滤器栏 -->
+    <div class="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-3 flex flex-col lg:flex-row gap-3 items-center">
+      <div class="relative flex-1 w-full">
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700" :size="16" />
+        <input 
+          v-model="filters.search"
+          type="text" 
+          placeholder="搜索API密钥名称或描述..." 
+          @input="debouncedSearch"
+          class="w-full bg-zinc-950 border border-zinc-800/80 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
+        />
+      </div>
+      <div class="flex items-center gap-2 w-full lg:w-auto">
+        <CustomSelect 
+          label="状态" 
+          v-model="statusFilterText" 
+          :options="['全部状态', '活跃', '非活跃', '已过期']" 
+          @change="handleStatusFilterChange"
+          class-name="flex-1 lg:w-40" 
+        />
+        <div class="relative flex-1 lg:w-48">
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700" :size="14" />
+          <input 
+            v-model="filters.createdBy"
+            type="text" 
+            placeholder="创建者用户名" 
+            @input="debouncedSearch"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none text-zinc-400 placeholder:text-zinc-800" 
+          />
+        </div>
+        <button 
+          @click="loadApiKeys"
+          class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-600 hover:text-blue-400 transition-all"
+        >
+          <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
         </button>
       </div>
     </div>
 
-    <!-- 筛选和搜索 -->
-    <div class="filters-section">
-      <div class="filters-row">
-        <div class="filter-group">
-          <label class="filter-label">搜索</label>
-          <input
-              v-model="filters.search"
-              class="filter-input"
-              placeholder="搜索API密钥名称或描述"
-              type="text"
-              @input="debouncedSearch"
-          />
+    <!-- 内容区域 -->
+    <div v-if="loading && apiKeys.length === 0" class="flex flex-col items-center justify-center py-20">
+      <div class="loading-spinner mb-4"></div>
+      <p class="text-zinc-500 text-xs">加载中...</p>
+    </div>
+
+    <div v-else-if="apiKeys.length === 0" class="flex flex-col items-center justify-center py-20 px-4 text-center">
+      <div class="w-20 h-20 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 text-zinc-700 shadow-xl">
+        <Key :size="32" :stroke-width="1.5" />
+      </div>
+      <h3 class="text-lg font-bold text-zinc-200">暂无API密钥</h3>
+      <p class="text-xs text-zinc-500 mt-2 max-w-xs leading-relaxed">
+        您还没有创建任何访问密钥。创建密钥后，您可以安全地将 VoiceHub 集成到第三方应用程序中。
+      </p>
+      <button 
+        @click="openCreateModal"
+        class="mt-8 flex items-center gap-2 px-6 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-2xl transition-all"
+      >
+        <Plus :size="16" /> 创建您的第一个密钥
+      </button>
+    </div>
+
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div 
+        v-for="apiKey in apiKeys" 
+        :key="apiKey.id"
+        class="bg-zinc-900/30 border border-zinc-800/60 rounded-2xl p-6 group hover:border-zinc-700 transition-all relative overflow-hidden"
+      >
+        <div class="flex items-start justify-between relative z-10">
+          <div class="space-y-1">
+            <div class="flex items-center gap-3">
+              <h4 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ apiKey.name }}</h4>
+              <span v-if="apiKey.status === 'active'" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase border border-emerald-500/20">活跃</span>
+              <span v-else-if="apiKey.status === 'inactive'" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase border border-zinc-700/50">非活跃</span>
+              <span v-else-if="apiKey.status === 'expired'" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase border border-red-500/20">已过期</span>
+            </div>
+            <p class="text-xs text-zinc-500 font-medium">{{ apiKey.description || '暂无描述' }}</p>
+          </div>
+          <div class="flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
+            <button @click="viewApiKey(apiKey)" class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"><Eye :size="14" /></button>
+            <button @click="editApiKey(apiKey)" class="p-2 text-zinc-500 hover:text-amber-400 transition-colors"><Edit2 :size="14" /></button>
+            <button @click="deleteApiKey(apiKey)" class="p-2 text-zinc-500 hover:text-red-400 transition-colors"><Trash2 :size="14" /></button>
+          </div>
         </div>
-        <div class="filter-group">
-          <label class="filter-label">状态</label>
-          <select v-model="filters.status" class="filter-select" @change="loadApiKeys">
-            <option value="">全部状态</option>
-            <option value="active">活跃</option>
-            <option value="inactive">非活跃</option>
-            <option value="expired">已过期</option>
-          </select>
+
+        <div class="mt-8 grid grid-cols-2 gap-4 border-t border-zinc-800/40 pt-6 relative z-10">
+          <div class="space-y-0.5">
+            <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">创建者</span>
+            <p class="text-xs font-bold text-zinc-400">{{ apiKey.creatorName || '未知' }}</p>
+          </div>
+          <div class="space-y-0.5">
+            <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">创建时间</span>
+            <p class="text-xs font-bold text-zinc-400">{{ formatDate(apiKey.createdAt).split(' ')[0] }}</p>
+          </div>
+          <div class="col-span-2 space-y-1">
+             <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">权限列表</span>
+             <div class="flex flex-wrap gap-1.5">
+               <span 
+                 v-for="perm in apiKey.permissions" 
+                 :key="perm" 
+                 class="text-[9px] font-mono bg-zinc-950 px-1.5 py-0.5 rounded text-zinc-500 border border-zinc-800/50"
+               >
+                 {{ perm }}
+               </span>
+             </div>
+          </div>
         </div>
-        <div class="filter-group">
-          <label class="filter-label">创建者</label>
-          <input
-              v-model="filters.createdBy"
-              class="filter-input"
-              placeholder="创建者用户名"
-              type="text"
-              @input="debouncedSearch"
-          />
-        </div>
+
+        <!-- 背景点缀 -->
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
     </div>
 
-    <!-- API密钥列表 -->
-    <div class="api-keys-section">
-      <div v-if="loading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>加载中...</p>
-      </div>
-
-      <div v-else-if="apiKeys.length === 0" class="empty-state">
-        <svg class="empty-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
-          <circle cx="12" cy="16" r="1"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-        <h3>暂无API密钥</h3>
-        <p>还没有创建任何API密钥，点击上方按钮创建第一个密钥</p>
-      </div>
-
-      <div v-else class="api-keys-grid">
-        <div
-            v-for="apiKey in apiKeys"
-            :key="apiKey.id"
-            :class="{ 'card-inactive': !apiKey.isActive, 'card-expired': apiKey.isExpired }"
-            class="api-key-card"
+    <!-- 分页 -->
+    <div v-if="pagination.totalPages > 1" class="flex justify-center mt-8">
+      <div class="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800/60 p-1.5 rounded-2xl">
+        <button 
+          :disabled="pagination.page <= 1"
+          @click="changePage(pagination.page - 1)"
+          class="p-2 text-zinc-500 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
-          <div class="card-header">
-            <div class="card-title-section">
-              <h3 class="card-title">{{ apiKey.name }}</h3>
-              <span :class="`status-${apiKey.status}`" class="status-badge">
-                {{ getStatusText(apiKey.status) }}
-              </span>
-            </div>
-            <div class="card-actions">
-              <button class="action-btn" title="查看详情" @click="viewApiKey(apiKey)">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              </button>
-              <button class="action-btn" title="编辑" @click="editApiKey(apiKey)">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-              </button>
-              <button class="action-btn action-btn-danger" title="删除" @click="deleteApiKey(apiKey)">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <polyline points="3,6 5,6 21,6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="card-content">
-            <p class="card-description">{{ apiKey.description || '暂无描述' }}</p>
-
-            <div class="card-info">
-              <div class="info-item">
-                <span class="info-label">创建者:</span>
-                <span class="info-value">{{ apiKey.creatorName || '未知' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">创建时间:</span>
-                <span class="info-value">{{ formatDate(apiKey.createdAt) }}</span>
-              </div>
-              <div v-if="apiKey.expiresAt" class="info-item">
-                <span class="info-label">过期时间:</span>
-                <span :class="{ 'text-danger': apiKey.isExpired }" class="info-value">
-                  {{ formatDate(apiKey.expiresAt) }}
-                </span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">权限:</span>
-                <div class="permissions-list">
-                  <span
-                      v-for="permission in apiKey.permissions.slice(0, 3)"
-                      :key="permission"
-                      class="permission-tag"
-                  >
-                    {{ permission }}
-                  </span>
-                  <span v-if="apiKey.permissions.length > 3" class="permission-more">
-                    +{{ apiKey.permissions.length - 3 }}个
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ChevronLeft :size="18" />
+        </button>
+        <div class="px-4 text-[11px] font-black text-zinc-500 uppercase tracking-widest">
+          第 {{ pagination.page }} 页 / 共 {{ pagination.totalPages }} 页
         </div>
-      </div>
-
-      <!-- 分页 -->
-      <div v-if="pagination.totalPages > 1" class="pagination-section">
-        <div class="pagination">
-          <button
-              :disabled="pagination.page <= 1"
-              class="pagination-btn"
-              @click="changePage(pagination.page - 1)"
-          >
-            上一页
-          </button>
-          <span class="pagination-info">
-            第 {{ pagination.page }} 页，共 {{ pagination.totalPages }} 页
-          </span>
-          <button
-              :disabled="pagination.page >= pagination.totalPages"
-              class="pagination-btn"
-              @click="changePage(pagination.page + 1)"
-          >
-            下一页
-          </button>
-        </div>
+        <button 
+          :disabled="pagination.page >= pagination.totalPages"
+          @click="changePage(pagination.page + 1)"
+          class="p-2 text-zinc-500 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronRight :size="18" />
+        </button>
       </div>
     </div>
 
-    <!-- 创建/编辑API密钥模态框 -->
-    <div v-if="showCreateModal || showEditModal" class="modal-overlay" @click="closeModals">
-      <div class="modal" @click.stop>
-        <div class="modal-header">
-          <h3 class="modal-title">
-            {{ showCreateModal ? '创建API密钥' : '编辑API密钥' }}
-          </h3>
-          <button class="modal-close" @click="closeModals">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" x2="6" y1="6" y2="18"/>
-              <line x1="6" x2="18" y1="6" y2="18"/>
-            </svg>
-          </button>
-        </div>
-
-        <div class="modal-body">
-          <form @submit.prevent="showCreateModal ? createApiKey() : updateApiKey()">
-            <div class="form-group">
-              <label class="form-label">名称 *</label>
-              <input
-                  v-model="form.name"
-                  class="form-input"
-                  placeholder="输入API密钥名称"
-                  required
-                  type="text"
+    <!-- 模态框组 -->
+    <Transition name="modal">
+      <div v-if="showCreateModal || showEditModal || showViewModal || showSuccessModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeModals"></div>
+        
+        <!-- 创建/编辑模态框 -->
+        <div v-if="showCreateModal || showEditModal" class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
+            <h3 class="text-lg font-black text-zinc-100 uppercase tracking-widest">{{ showCreateModal ? '创建API密钥' : '编辑API密钥' }}</h3>
+            <button @click="closeModals" class="text-zinc-500 hover:text-zinc-200 transition-colors"><X :size="20" /></button>
+          </div>
+          
+          <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5">名称 *</label>
+              <input 
+                v-model="form.name"
+                type="text" 
+                placeholder="输入API密钥名称" 
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 text-zinc-200 placeholder:text-zinc-800" 
               />
             </div>
-
-            <div class="form-group">
-              <label class="form-label">描述</label>
-              <textarea
-                  v-model="form.description"
-                  class="form-textarea"
-                  placeholder="输入API密钥描述（可选）"
-                  rows="3"
-              ></textarea>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">过期时间</label>
-              <select
-                  v-model="form.expiresAt"
-                  class="form-select"
-              >
-                <option value="">永不过期</option>
-                <option value="3d">3天后过期</option>
-                <option value="7d">7天后过期</option>
-                <option value="30d">30天后过期</option>
-                <option value="60d">60天后过期</option>
-                <option value="90d">90天后过期</option>
-              </select>
-              <small class="form-help">选择API Key的有效期</small>
-            </div>
-
-
-            <div class="form-group">
-              <label class="form-label">权限设置 *</label>
-              <div class="permissions-grid">
-                <label
-                    v-for="permission in availablePermissions"
-                    :key="permission.value"
-                    class="permission-checkbox"
-                >
-                  <input
-                      v-model="form.permissions"
-                      :value="permission.value"
-                      type="checkbox"
-                  />
-                  <span class="checkbox-label">
-                    <strong>{{ permission.label }}</strong>
-                    <small>{{ permission.description }}</small>
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="permission-checkbox">
-                <input v-model="form.isActive" type="checkbox"/>
-                <span class="checkbox-label">启用此API密钥</span>
-              </label>
-            </div>
-
-            <div class="form-actions">
-              <button class="btn btn-secondary" type="button" @click="closeModals">
-                取消
-              </button>
-              <button :disabled="submitting" class="btn btn-primary" type="submit">
-                {{ submitting ? '保存中...' : (showCreateModal ? '创建' : '保存') }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- 查看API密钥详情模态框 -->
-    <div v-if="showViewModal" class="modal-overlay" @click="closeModals">
-      <div class="modal modal-large" @click.stop>
-        <div class="modal-header">
-          <h3 class="modal-title">API密钥详情</h3>
-          <button class="modal-close" @click="closeModals">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" x2="6" y1="6" y2="18"/>
-              <line x1="6" x2="18" y1="6" y2="18"/>
-            </svg>
-          </button>
-        </div>
-
-        <div v-if="selectedApiKey" class="modal-body">
-          <div class="detail-section">
-            <h4 class="detail-title">基本信息</h4>
-            <div class="detail-grid">
-              <div class="detail-item">
-                <span class="detail-label">名称:</span>
-                <span class="detail-value">{{ selectedApiKey.name }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">状态:</span>
-                <span :class="`status-${selectedApiKey.status}`" class="status-badge">
-                  {{ getStatusText(selectedApiKey.status) }}
-                </span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">描述:</span>
-                <span class="detail-value">{{ selectedApiKey.description || '暂无描述' }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">创建者:</span>
-                <span class="detail-value">{{ selectedApiKey.creatorName || '未知' }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">创建时间:</span>
-                <span class="detail-value">{{ formatDate(selectedApiKey.createdAt) }}</span>
-              </div>
-              <div v-if="selectedApiKey.expiresAt" class="detail-item">
-                <span class="detail-label">过期时间:</span>
-                <span :class="{ 'text-danger': selectedApiKey.isExpired }" class="detail-value">
-                  {{ formatDate(selectedApiKey.expiresAt) }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="detail-section">
-            <h4 class="detail-title">使用统计</h4>
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-label">总调用次数:</span>
-                <span class="stat-value">{{ selectedApiKey.usageCount || 0 }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">最后使用:</span>
-                <span class="stat-value">{{
-                    selectedApiKey.lastUsedAt ? formatDate(selectedApiKey.lastUsedAt) : '从未使用'
-                  }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="detail-section">
-            <h4 class="detail-title">使用日志</h4>
-            <div class="logs-container">
-              <div v-if="loadingLogs" class="loading-state">
-                <div class="loading-spinner"></div>
-                <span>加载日志中...</span>
-              </div>
-              <div v-else-if="apiLogs.length === 0" class="empty-state">
-                <span>暂无使用记录</span>
-              </div>
-              <div v-else class="logs-list">
-                <div v-for="log in apiLogs" :key="log.id" class="log-item">
-                  <div class="log-header">
-                    <span :class="`method-${log.method.toLowerCase()}`" class="log-method">{{ log.method }}</span>
-                    <span class="log-endpoint">{{ log.endpoint }}</span>
-                    <span :class="`status-${Math.floor(log.statusCode / 100)}`" class="log-status">{{
-                        log.statusCode
-                      }}</span>
-                  </div>
-                  <div class="log-details">
-                    <span class="log-time">{{ formatDate(log.createdAt) }}</span>
-                    <span class="log-ip">{{ log.ipAddress }}</span>
-                    <span class="log-response-time">{{ log.responseTimeMs }}ms</span>
-                  </div>
-                </div>
-              </div>
-              <div v-if="apiLogs.length > 0 && logsPagination.totalPages > 1" class="logs-pagination">
-                <button
-                    :disabled="logsPagination.page <= 1"
-                    class="btn btn-secondary btn-sm"
-                    @click="loadApiLogs(logsPagination.page - 1)"
-                >
-                  上一页
-                </button>
-                <span class="pagination-info">
-                  {{ logsPagination.page }} / {{ logsPagination.totalPages }}
-                </span>
-                <button
-                    :disabled="logsPagination.page >= logsPagination.totalPages"
-                    class="btn btn-secondary btn-sm"
-                    @click="loadApiLogs(logsPagination.page + 1)"
-                >
-                  下一页
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="detail-section">
-            <h4 class="detail-title">权限列表</h4>
-            <div class="permissions-display">
-              <span
-                  v-for="permission in selectedApiKey.permissions"
-                  :key="permission"
-                  class="permission-tag"
-              >
-                {{ permission }}
-              </span>
-            </div>
-          </div>
-
-
-        </div>
-      </div>
-    </div>
-
-    <!-- API密钥创建成功模态框 -->
-    <div v-if="showSuccessModal" class="modal-overlay" @click="closeModals">
-      <div class="modal modal-large" @click.stop>
-        <div class="modal-header">
-          <h3 class="modal-title">API密钥创建成功</h3>
-          <button class="modal-close" @click="closeModals">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" x2="6" y1="6" y2="18"/>
-              <line x1="6" x2="18" y1="6" y2="18"/>
-            </svg>
-          </button>
-        </div>
-
-        <div v-if="newApiKey" class="modal-body">
-          <div class="success-message">
-            <div class="success-icon">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22,4 12,14.01 9,11.01"/>
-              </svg>
-            </div>
-            <h4>API密钥创建成功！</h4>
-            <p>请妥善保管以下API密钥，它只会显示这一次。</p>
-          </div>
-
-          <div class="detail-section">
-            <h4 class="detail-title">API密钥信息</h4>
-            <div class="detail-grid">
-              <div class="detail-item">
-                <span class="detail-label">名称:</span>
-                <span class="detail-value">{{ newApiKey.name }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">描述:</span>
-                <span class="detail-value">{{ newApiKey.description || '暂无描述' }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">创建者:</span>
-                <span class="detail-value">{{ newApiKey.creatorName || '未知' }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">创建时间:</span>
-                <span class="detail-value">{{ formatDate(newApiKey.createdAt) }}</span>
-              </div>
-              <div v-if="newApiKey.expiresAt" class="detail-item">
-                <span class="detail-label">过期时间:</span>
-                <span class="detail-value">{{ formatDate(newApiKey.expiresAt) }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="detail-section">
-            <h4 class="detail-title">完整API密钥</h4>
-            <div class="api-key-display">
-              <input
-                  :value="newApiKey.apiKey"
-                  class="api-key-input"
-                  readonly
-                  type="text"
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5">描述</label>
+              <textarea 
+                v-model="form.description"
+                placeholder="输入API密钥描述 (可选)" 
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 text-zinc-200 min-h-[80px] resize-none placeholder:text-zinc-800" 
               />
-              <button class="btn btn-secondary" @click="copyToClipboard(newApiKey.apiKey)">
-                复制
-              </button>
             </div>
-            <small class="form-help text-warning">
-              ⚠️ 请立即复制并保存此API密钥，关闭此窗口后将无法再次查看完整密钥
-            </small>
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5">过期时间</label>
+              <CustomSelect 
+                v-model="expiresAtText" 
+                :options="['永不过期', '3天后过期', '7天后过期', '30天后过期', '60天后过期', '90天后过期']" 
+                @change="handleExpiresAtChange"
+                class-name="w-full"
+              />
+            </div>
+            <div class="space-y-3">
+               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5">权限设置 *</label>
+               <div class="grid grid-cols-2 gap-2">
+                 <label 
+                   v-for="perm in availablePermissions" 
+                   :key="perm.value" 
+                   class="flex items-start gap-3 p-3 bg-zinc-950 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-600 transition-all"
+                   :class="{ 'border-blue-500/30 bg-blue-500/5': form.permissions.includes(perm.value) }"
+                 >
+                   <input 
+                     type="checkbox" 
+                     :value="perm.value"
+                     v-model="form.permissions"
+                     class="mt-1 w-3.5 h-3.5 rounded border-zinc-800 bg-zinc-900 accent-blue-600" 
+                   />
+                   <div>
+                     <p class="text-xs font-bold" :class="form.permissions.includes(perm.value) ? 'text-blue-400' : 'text-zinc-300'">{{ perm.label }}</p>
+                     <p class="text-[9px] text-zinc-600 mt-0.5">{{ perm.description }}</p>
+                   </div>
+                 </label>
+               </div>
+            </div>
+            <label 
+              v-if="showEditModal"
+              class="flex items-center gap-2 p-3 bg-blue-600/5 border border-blue-500/10 rounded-xl cursor-pointer group"
+            >
+               <input 
+                 type="checkbox" 
+                 v-model="form.isActive"
+                 class="w-3.5 h-3.5 rounded border-zinc-800 bg-zinc-900 accent-blue-600" 
+               />
+               <span class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors">启用此API密钥</span>
+            </label>
           </div>
 
-          <div class="detail-section">
-            <h4 class="detail-title">权限列表</h4>
-            <div class="permissions-display">
-              <span
-                  v-for="permission in newApiKey.permissions"
-                  :key="permission"
-                  class="permission-tag"
-              >
-                {{ permission }}
-              </span>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button class="btn btn-primary" @click="closeModals">
-              我已保存，关闭窗口
+          <div class="p-6 border-t border-zinc-800 flex gap-2 justify-end">
+            <button @click="closeModals" class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300">取消</button>
+            <button 
+              @click="showCreateModal ? createApiKey() : updateApiKey()" 
+              :disabled="submitting"
+              class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 disabled:opacity-50 transition-all"
+            >
+              {{ submitting ? '保存中...' : (showCreateModal ? '创建密钥' : '保存更改') }}
             </button>
           </div>
         </div>
+
+        <!-- 成功模态框 -->
+        <div v-if="showSuccessModal" class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
+            <h3 class="text-lg font-black text-zinc-100 uppercase tracking-widest">API密钥创建成功</h3>
+            <button @click="closeModals" class="text-zinc-500 hover:text-zinc-200 transition-colors"><X :size="20" /></button>
+          </div>
+          
+          <div class="p-6 space-y-6">
+            <div class="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex flex-col items-center text-center">
+              <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mb-4 shadow-lg shadow-emerald-900/20">
+                <Check :size="24" :stroke-width="3" />
+              </div>
+              <h4 class="text-lg font-black text-emerald-400">API密钥创建成功！</h4>
+              <p class="text-xs text-zinc-500 mt-2">请妥善保管以下API密钥，它只会显示这一次。</p>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5">完整API密钥</label>
+              <div class="flex items-center gap-2">
+                <div class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 font-mono text-xs text-blue-400 break-all select-all">
+                  {{ newApiKey?.apiKey }}
+                </div>
+                <button 
+                  @click="copyToClipboard(newApiKey?.apiKey)"
+                  class="p-3 rounded-xl transition-all"
+                  :class="copied ? 'bg-emerald-600 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'"
+                >
+                  <Check v-if="copied" :size="16" />
+                  <Copy v-else :size="16" />
+                </button>
+              </div>
+              <div class="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-500">
+                 <AlertTriangle :size="14" class="shrink-0" />
+                 <p class="text-[10px] font-bold">请立即复制并保存此API密钥，关闭此窗口后将无法再次查看完整密钥</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6 border-t border-zinc-800">
+            <button @click="closeModals" class="w-full py-2.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all">我已保存，关闭窗口</button>
+          </div>
+        </div>
+
+        <!-- 详情模态框 -->
+        <div v-if="showViewModal && selectedApiKey" class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
+            <h3 class="text-lg font-black text-zinc-100 uppercase tracking-widest">API密钥详情</h3>
+            <button @click="closeModals" class="text-zinc-500 hover:text-zinc-200 transition-colors"><X :size="20" /></button>
+          </div>
+          
+          <div class="p-6 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <section class="space-y-4">
+              <h5 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest border-b border-zinc-800 pb-2">基本信息</h5>
+              <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-1">
+                  <span class="text-[10px] text-zinc-600 font-bold">名称:</span>
+                  <p class="text-xs font-bold text-zinc-200">{{ selectedApiKey.name }}</p>
+                </div>
+                <div class="space-y-1">
+                  <span class="text-[10px] text-zinc-600 font-bold">状态:</span>
+                  <div>
+                    <span v-if="selectedApiKey.status === 'active'" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase border border-emerald-500/20">活跃</span>
+                    <span v-else-if="selectedApiKey.status === 'inactive'" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase border border-zinc-700/50">非活跃</span>
+                    <span v-else-if="selectedApiKey.status === 'expired'" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase border border-red-500/20">已过期</span>
+                  </div>
+                </div>
+                <div class="col-span-2 space-y-1">
+                  <span class="text-[10px] text-zinc-600 font-bold">描述:</span>
+                  <p class="text-xs font-bold text-zinc-400 leading-relaxed">{{ selectedApiKey.description || '暂无描述' }}</p>
+                </div>
+                <div class="space-y-1">
+                  <span class="text-[10px] text-zinc-600 font-bold">创建者:</span>
+                  <p class="text-xs font-bold text-zinc-200">{{ selectedApiKey.creatorName || '未知' }}</p>
+                </div>
+                <div class="space-y-1">
+                  <span class="text-[10px] text-zinc-600 font-bold">创建时间:</span>
+                  <p class="text-xs font-bold text-zinc-200">{{ formatDate(selectedApiKey.createdAt) }}</p>
+                </div>
+                <div v-if="selectedApiKey.expiresAt" class="space-y-1">
+                  <span class="text-[10px] text-zinc-600 font-bold">过期时间:</span>
+                  <p class="text-xs font-bold" :class="selectedApiKey.isExpired ? 'text-red-400' : 'text-zinc-200'">{{ formatDate(selectedApiKey.expiresAt) }}</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="space-y-4">
+              <h5 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest border-b border-zinc-800 pb-2">使用统计</h5>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between group hover:border-blue-500/30 transition-all">
+                  <div class="space-y-0.5">
+                    <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">总调用次数</span>
+                    <p class="text-xl font-black text-zinc-100">{{ selectedApiKey.usageCount || 0 }}</p>
+                  </div>
+                  <div class="p-2 bg-blue-500/10 rounded-xl text-blue-500 group-hover:scale-110 transition-transform"><BarChart :size="20" /></div>
+                </div>
+                <div class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between group hover:border-amber-500/30 transition-all">
+                  <div class="space-y-0.5">
+                    <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">最后使用时间</span>
+                    <p class="text-xs font-bold text-zinc-100">{{ selectedApiKey.lastUsedAt ? formatDate(selectedApiKey.lastUsedAt) : '从未核对' }}</p>
+                  </div>
+                  <div class="p-2 bg-amber-500/10 rounded-xl text-amber-500 group-hover:scale-110 transition-transform"><Clock :size="20" /></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="space-y-4">
+              <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <h5 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">最近调用日志</h5>
+                <div class="flex items-center gap-1">
+                   <button @click="loadApiLogs(logsPagination.page - 1)" :disabled="logsPagination.page <= 1" class="p-1 text-zinc-600 hover:text-zinc-300 disabled:opacity-30 transition-colors"><ChevronLeft :size="14" /></button>
+                   <span class="text-[9px] font-black text-zinc-600">{{ logsPagination.page }} / {{ logsPagination.totalPages }}</span>
+                   <button @click="loadApiLogs(logsPagination.page + 1)" :disabled="logsPagination.page >= logsPagination.totalPages" class="p-1 text-zinc-600 hover:text-zinc-300 disabled:opacity-30 transition-colors"><ChevronRight :size="14" /></button>
+                </div>
+              </div>
+              
+              <div class="space-y-2">
+                <div v-if="loadingLogs" class="flex flex-col items-center justify-center py-10 text-zinc-600 gap-2">
+                   <RefreshCw :size="24" class="animate-spin" />
+                   <span class="text-[10px] font-bold">正在加载日志...</span>
+                </div>
+                <div v-else-if="apiLogs.length === 0" class="flex flex-col items-center justify-center py-10 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl">
+                   <History :size="24" class="text-zinc-800 mb-2" />
+                   <span class="text-[10px] font-bold text-zinc-700 uppercase tracking-widest">暂无调用记录</span>
+                </div>
+                <div v-else v-for="log in apiLogs" :key="log.id" class="p-3 bg-zinc-950 border border-zinc-800/40 rounded-xl flex items-center justify-between group hover:border-zinc-700 transition-all">
+                  <div class="flex items-center gap-4">
+                    <div 
+                      class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border"
+                      :class="getMethodClass(log.method)"
+                    >
+                      {{ log.method }}
+                    </div>
+                    <div class="space-y-0.5">
+                      <p class="text-xs font-mono text-zinc-400">{{ log.endpoint }}</p>
+                      <div class="flex items-center gap-2 text-[9px] font-bold text-zinc-600">
+                        <span>{{ formatDate(log.createdAt) }}</span>
+                        <span>•</span>
+                        <span>{{ log.ipAddress }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <div class="text-right space-y-0.5">
+                      <p class="text-xs font-black" :class="getStatusColorClass(log.statusCode)">{{ log.statusCode }}</p>
+                      <p class="text-[9px] font-bold text-zinc-600">{{ log.responseTimeMs }}ms</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
       </div>
-    </div>
+    </Transition>
 
     <!-- 确认删除对话框 -->
     <ConfirmDialog
@@ -499,9 +405,15 @@
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref} from 'vue'
-import {useToast} from '~/composables/useToast'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { 
+  Plus, Search, Key, Trash2, Edit2, Eye, 
+  Copy, Check, AlertTriangle, RefreshCw,
+  BarChart, Clock, History, ChevronLeft, ChevronRight, X
+} from 'lucide-vue-next'
+import { useToast } from '~/composables/useToast'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 响应式数据
 const loading = ref(false)
@@ -512,13 +424,18 @@ const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showViewModal = ref(false)
 const showSuccessModal = ref(false)
-const showFullKey = ref(false)
 const newApiKey = ref(null)
 const loadingLogs = ref(false)
 const apiLogs = ref([])
+const copied = ref(false)
+
+// 文本映射
+const statusFilterText = ref('全部状态')
+const expiresAtText = ref('永不过期')
+
 const logsPagination = ref({
   page: 1,
-  limit: 10,
+  limit: 5,
   total: 0,
   totalPages: 0
 })
@@ -554,7 +471,6 @@ const form = reactive({
   name: '',
   description: '',
   expiresAt: '',
-
   permissions: [],
   isActive: true
 })
@@ -576,18 +492,34 @@ const availablePermissions = [
 // Toast通知
 const toast = useToast()
 
-// 计算属性
-const debouncedSearch = computed(() => {
-  let timeout
-  return () => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => {
-      loadApiKeys()
-    }, 500)
-  }
-})
-
 // 方法
+const handleStatusFilterChange = (val) => {
+  const statusMap = { '活跃': 'active', '非活跃': 'inactive', '已过期': 'expired' }
+  filters.status = statusMap[val] || ''
+  loadApiKeys()
+}
+
+const handleExpiresAtChange = (val) => {
+  const map = {
+    '永不过期': '',
+    '3天后过期': '3d',
+    '7天后过期': '7d',
+    '30天后过期': '30d',
+    '60天后过期': '60d',
+    '90天后过期': '90d'
+  }
+  form.expiresAt = map[val] || ''
+}
+
+// 搜索防抖
+let searchTimeout
+const debouncedSearch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    loadApiKeys()
+  }, 500)
+}
+
 const loadApiKeys = async () => {
   loading.value = true
   try {
@@ -614,16 +546,23 @@ const loadApiKeys = async () => {
   }
 }
 
+const openCreateModal = () => {
+  resetForm()
+  showCreateModal.value = true
+}
+
 const createApiKey = async () => {
+  if (!form.name) return toast.error('请输入密钥名称')
+  if (form.permissions.length === 0) return toast.error('请至少选择一个权限')
+
   submitting.value = true
   try {
     const data = {
       name: form.name,
       description: form.description || null,
       expiresAt: form.expiresAt || null,
-
       permissions: form.permissions,
-      isActive: form.isActive
+      isActive: true
     }
 
     const response = await $fetch('/api/admin/api-keys', {
@@ -649,14 +588,16 @@ const createApiKey = async () => {
 
 const updateApiKey = async () => {
   if (!selectedApiKey.value) return
+  if (!form.name) return toast.error('请输入密钥名称')
+  if (form.permissions.length === 0) return toast.error('请至少选择一个权限')
 
   submitting.value = true
   try {
     const data = {
       name: form.name,
       description: form.description || null,
-      expiresAt: form.expiresAt || null,
-
+      // 如果是 'keep'，则不发送 expiresAt 字段，后端将不更新该字段
+      ...(form.expiresAt !== 'keep' && { expiresAt: form.expiresAt || null }),
       permissions: form.permissions,
       isActive: form.isActive
     }
@@ -669,7 +610,6 @@ const updateApiKey = async () => {
     if (response.success) {
       toast.success('API密钥更新成功')
       closeModals()
-      resetForm()
       await loadApiKeys()
     }
   } catch (error) {
@@ -724,7 +664,6 @@ const viewApiKey = async (apiKey) => {
     if (response.success) {
       selectedApiKey.value = response.data
       showViewModal.value = true
-      showFullKey.value = false
       // 加载API使用日志
       await loadApiLogs(1)
     }
@@ -743,10 +682,17 @@ const editApiKey = async (apiKey) => {
       // 填充表单
       form.name = response.data.name
       form.description = response.data.description || ''
-      form.expiresAt = response.data.expiresAt
-          ? new Date(response.data.expiresAt).toISOString().slice(0, 16)
-          : ''
-
+      
+      // 处理过期时间显示
+      if (response.data.expiresAt) {
+        const date = new Date(response.data.expiresAt)
+        expiresAtText.value = `到期: ${date.toLocaleDateString()}`
+        form.expiresAt = 'keep' // 特殊值，表示不修改过期时间
+      } else {
+        expiresAtText.value = '永不过期'
+        form.expiresAt = ''
+      }
+      
       form.permissions = response.data.permissions || []
       form.isActive = response.data.isActive
 
@@ -760,6 +706,7 @@ const editApiKey = async (apiKey) => {
 
 const loadApiLogs = async (page = 1) => {
   if (!selectedApiKey.value) return
+  if (page < 1 || (logsPagination.value.totalPages > 0 && page > logsPagination.value.totalPages)) return
 
   loadingLogs.value = true
   try {
@@ -802,13 +749,12 @@ const closeModals = () => {
   showSuccessModal.value = false
   selectedApiKey.value = null
   newApiKey.value = null
-  showFullKey.value = false
   // 重置日志相关状态
   apiLogs.value = []
   loadingLogs.value = false
   logsPagination.value = {
     page: 1,
-    limit: 10,
+    limit: 5,
     total: 0,
     totalPages: 0
   }
@@ -819,33 +765,49 @@ const resetForm = () => {
   form.name = ''
   form.description = ''
   form.expiresAt = ''
-  form.allowedIpsText = ''
+  expiresAtText.value = '永不过期'
   form.permissions = []
   form.isActive = true
 }
 
-const getStatusText = (status) => {
-  const statusMap = {
-    active: '活跃',
-    inactive: '非活跃',
-    expired: '已过期'
-  }
-  return statusMap[status] || status
-}
-
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleString('zh-CN')
+  return new Date(dateString).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
 }
 
 const copyToClipboard = async (text) => {
   try {
     await navigator.clipboard.writeText(text)
+    copied.value = true
     toast.success('已复制到剪贴板')
+    setTimeout(() => copied.value = false, 2000)
   } catch (error) {
     console.error('复制失败:', error)
     toast.error('复制失败')
   }
+}
+
+const getMethodClass = (method) => {
+  const map = {
+    'GET': 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+    'POST': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+    'PUT': 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+    'DELETE': 'bg-red-500/10 text-red-500 border-red-500/20'
+  }
+  return map[method] || 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
+}
+
+const getStatusColorClass = (code) => {
+  if (code >= 200 && code < 300) return 'text-emerald-500'
+  if (code >= 300 && code < 400) return 'text-amber-500'
+  return 'text-red-500'
 }
 
 // 生命周期
@@ -855,1128 +817,54 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.api-key-manager {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.manager-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-  gap: 24px;
-}
-
-.header-content {
-  flex: 1;
-}
-
-.manager-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 8px 0;
-}
-
-.manager-description {
-  font-size: 16px;
-  color: var(--text-secondary);
-  margin: 0;
-  line-height: 1.5;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: white;
-}
-
-.btn-primary:hover {
-  background: var(--primary-hover);
-}
-
-.btn-secondary {
-  background: #f8f9fa;
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
-}
-
-.btn-secondary:hover {
-  background: #e9ecef;
-  border-color: var(--primary-color);
-}
-
-.btn-icon {
-  width: 16px;
-  height: 16px;
-}
-
-/* 按钮样式 */
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 6px;
-  background: #f8f9fa;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.action-btn:hover {
-  background: #e9ecef;
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.action-btn-danger {
-  background: #fff5f5;
-  border-color: #fed7d7;
-  color: #e53e3e;
-}
-
-.action-btn-danger:hover {
-  background: #fed7d7;
-  border-color: #e53e3e;
-  color: #c53030;
-}
-
-.pagination-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #f8f9fa;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: #e9ecef;
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.pagination-btn:disabled {
-  background: #f1f3f4;
-  border-color: #e0e0e0;
-  color: #9e9e9e;
-  cursor: not-allowed;
-}
-
-.modal-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 6px;
-  background: #f8f9fa;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.modal-close:hover {
-  background: #e9ecef;
-  border-color: #dc3545;
-  color: #dc3545;
-}
-
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 12px;
-}
-
-.filters-section {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-.filters-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 20px;
-  align-items: end;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.filter-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.filter-input,
-.filter-select {
-  padding: 10px 12px;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  font-size: 14px;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  transition: border-color 0.2s ease;
-}
-
-/* select下拉箭头样式 */
-.filter-select,
-.form-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23666' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  padding-right: 40px;
-}
-
-.filter-select:focus,
-.form-select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-/* 确保表单元素有正确的背景和文字颜色 */
-.form-input,
-.form-textarea,
-.form-select {
-  padding: 10px 12px;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  font-size: 14px;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  transition: border-color 0.2s ease;
-}
-
-.form-input:not([readonly]),
-.form-textarea:not([readonly]),
-.filter-input:not([readonly]) {
-  background: #ffffff;
-  color: #333333;
-  border: 1px solid #d1d5db;
-}
-
-.form-input:not([readonly]):focus,
-.form-textarea:not([readonly]):focus,
-.filter-input:not([readonly]):focus {
-  background: #ffffff;
-  color: #333333;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-/* 确保只读输入框有明显的视觉区别 */
-.form-input[readonly],
-.api-key-input[readonly] {
-  background: #f8f9fa;
-  color: #495057;
-  border: 1px solid #dee2e6;
-}
-
-/* 确保按钮文字颜色正确 */
-.btn {
-  color: inherit;
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: #ffffff;
-  border: 1px solid var(--primary-color);
-}
-
-.btn-secondary {
-  background: #f8f9fa;
-  color: #495057;
-  border: 1px solid #dee2e6;
-}
-
-.btn-secondary:hover {
-  background: #e9ecef;
-  color: #495057;
-  border-color: var(--primary-color);
-}
-
-/* 确保状态徽章有足够的对比度 */
-.status-active {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.status-inactive {
-  background: #f8f9fa;
-  color: #6c757d;
-  border: 1px solid #dee2e6;
-}
-
-.status-expired {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.form-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23666' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  padding-right: 40px;
-}
-
-.api-key-input {
-  flex: 1;
-  padding: 10px 12px;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px 0 0 6px;
-  font-size: 14px;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  font-family: 'Courier New', monospace;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.stat-value {
-  font-size: 16px;
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.logs-container {
-  max-height: 400px;
-  overflow-y: auto;
-  border: 1px solid var(--border-primary);
-  border-radius: 8px;
-  background: var(--bg-secondary);
-}
-
-.loading-state,
-.empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  color: var(--text-secondary);
-  gap: 12px;
-}
-
 .loading-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--border-primary);
-  border-top: 2px solid var(--primary-color);
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #3b82f6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-.logs-list {
-  padding: 8px;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
 }
-
-.log-item {
-  padding: 12px;
-  border-bottom: 1px solid var(--border-primary);
-  transition: background-color 0.2s ease;
-}
-
-.log-item:hover {
-  background: var(--bg-tertiary);
-}
-
-.log-item:last-child {
-  border-bottom: none;
-}
-
-.log-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
-}
-
-.log-method {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.method-get {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.method-post {
-  background: #e8f5e8;
-  color: #388e3c;
-}
-
-.method-put {
-  background: #fff3e0;
-  color: #f57c00;
-}
-
-.method-delete {
-  background: #ffebee;
-  color: #d32f2f;
-}
-
-.log-endpoint {
-  font-family: 'Courier New', monospace;
-  font-size: 13px;
-  color: var(--text-primary);
-  flex: 1;
-}
-
-.log-status {
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status-2 {
-  background: #e8f5e8;
-  color: #388e3c;
-}
-
-.status-3 {
-  background: #fff3e0;
-  color: #f57c00;
-}
-
-.status-4,
-.status-5 {
-  background: #ffebee;
-  color: #d32f2f;
-}
-
-.log-details {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.log-time {
-  font-weight: 500;
-}
-
-.log-ip {
-  font-family: 'Courier New', monospace;
-}
-
-.log-response-time {
-  font-weight: 500;
-  color: var(--primary-color);
-}
-
-.logs-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px;
-  border-top: 1px solid var(--border-primary);
-  background: var(--bg-primary);
-}
-
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 12px;
-}
-
-.pagination-info {
-  font-size: 14px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.filter-input:focus,
-.filter-select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.api-keys-section {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  padding: 24px;
-}
-
-.loading-state,
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--border-primary);
-  border-top: 3px solid var(--primary-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.empty-icon {
-  width: 64px;
-  height: 64px;
-  color: var(--text-tertiary);
-  margin-bottom: 16px;
-}
-
-.empty-state h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 8px 0;
-}
-
-.empty-state p {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.api-keys-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 20px;
-}
-
-.api-key-card {
-  border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.2s ease;
-  background: var(--bg-secondary);
-}
-
-.api-key-card:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.card-inactive {
-  opacity: 0.7;
-  background: var(--bg-tertiary);
-}
-
-.card-expired {
-  border-color: var(--error-color);
-  background: var(--error-bg);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.card-title-section {
-  flex: 1;
-}
-
-.card-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 8px 0;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.status-active {
-  background: var(--success-bg);
-  color: var(--success-color);
-}
-
-.status-inactive {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.status-expired {
-  background: var(--error-bg);
-  color: var(--error-color);
-}
-
-.card-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.action-btn:hover {
-  background: var(--bg-tertiary);
-}
-
-.action-btn-danger:hover {
-  background: var(--error-bg);
-  border-color: var(--error-color);
-  color: var(--error-color);
-}
-
-.action-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.card-content {
-  border-top: 1px solid var(--border-secondary);
-  padding-top: 16px;
-}
-
-.card-description {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin: 0 0 16px 0;
-  line-height: 1.5;
-}
-
-.card-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.info-label {
-  font-weight: 500;
-  color: var(--text-primary);
-  min-width: 70px;
-}
-
-.info-value {
-  color: var(--text-secondary);
-  flex: 1;
-}
-
-.text-danger {
-  color: var(--error-color);
-}
-
-.permissions-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.permission-tag {
-  display: inline-block;
-  padding: 2px 6px;
-  background: var(--primary-bg);
-  color: var(--primary-color);
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.permission-more {
-  display: inline-block;
-  padding: 2px 6px;
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  border-radius: 4px;
-  font-size: 11px;
-}
-
-.pagination-section {
-  margin-top: 24px;
-  display: flex;
-  justify-content: center;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.pagination-btn {
-  padding: 8px 16px;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: var(--bg-tertiary);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination-info {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-/* 模态框样式 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal {
-  background: var(--bg-primary);
-  border-radius: 12px;
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-large {
-  max-width: 800px;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px;
-  border-bottom: 1px solid var(--border-primary);
-}
-
-.modal-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.modal-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
+.custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
-  cursor: pointer;
-  transition: background 0.2s ease;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
 
-.modal-close:hover {
-  background: var(--bg-tertiary);
+/* 模态框动画 */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
 }
 
-.modal-close svg {
-  width: 20px;
-  height: 20px;
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
 }
 
-.modal-body {
-  padding: 24px;
-  overflow-y: auto;
+.modal-enter-active .relative,
+.modal-leave-active .relative {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.form-group {
-  margin-bottom: 20px;
+.modal-enter-from .relative {
+  transform: scale(0.9) translateY(20px);
 }
 
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 6px;
-}
-
-.form-input,
-.form-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  font-size: 14px;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  transition: border-color 0.2s ease;
-  box-sizing: border-box;
-}
-
-.form-input:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-shadow);
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.form-help {
-  display: block;
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 4px;
-}
-
-.text-warning {
-  color: var(--warning-color);
-}
-
-.permissions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 12px;
-}
-
-.permission-checkbox {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.permission-checkbox:hover {
-  background: var(--bg-tertiary);
-}
-
-.permission-checkbox input[type="checkbox"] {
-  margin: 0;
-  margin-top: 2px;
-}
-
-.checkbox-label {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.checkbox-label strong {
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-.checkbox-label small {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-primary);
-}
-
-/* 详情页面样式 */
-.detail-section {
-  margin-bottom: 32px;
-}
-
-.detail-section:last-child {
-  margin-bottom: 0;
-}
-
-.detail-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-primary);
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-}
-
-.detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.detail-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.detail-value {
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-.api-key-display {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.api-key-input {
-  flex: 1;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 13px;
-  background: var(--bg-secondary);
-}
-
-.permissions-display {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.ip-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.ip-tag {
-  display: inline-block;
-  padding: 4px 8px;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .api-key-manager {
-    padding: 16px;
-  }
-
-  .manager-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filters-row {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .api-keys-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .modal {
-    margin: 10px;
-    max-width: none;
-  }
-
-  .permissions-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .api-key-display {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-/* 成功模态框样式 */
-.success-message {
-  text-align: center;
-  margin-bottom: 32px;
-  padding: 24px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 12px;
-  color: white;
-}
-
-.success-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 16px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.success-icon svg {
-  width: 32px;
-  height: 32px;
-  stroke-width: 3;
-}
-
-.success-message h4 {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-}
-
-.success-message p {
-  font-size: 14px;
-  margin: 0;
-  opacity: 0.9;
-}
-
-.api-key-input {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 13px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  color: var(--text-primary);
-  padding: 12px;
-  border-radius: 6px;
-  width: 100%;
-}
-
-.api-key-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+.modal-leave-to .relative {
+  transform: scale(0.9) translateY(20px);
 }
 </style>

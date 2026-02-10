@@ -1,100 +1,151 @@
 <template>
   <Teleport to="body">
-    <Transition name="modal-animation">
-      <div v-if="show" class="modal-overlay" @click.self="close">
-        <div class="modal-content podcast-modal">
-          <div class="modal-header">
-            <h3>{{ radioName }} - 节目列表</h3>
-            <button class="close-btn" @click="close">&times;</button>
+    <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="show" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" @click.self="close">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+        <div class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" @click.stop>
+          <!-- 头部 -->
+          <div class="flex items-center justify-between p-8 pb-4">
+            <div class="flex items-center gap-4 min-w-0">
+              <div class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500 flex-shrink-0">
+                <Icon name="mic" :size="24" />
+              </div>
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight truncate">
+                {{ radioName }} - 节目列表
+              </h3>
+            </div>
+            <button
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
+                @click="close"
+            >
+              <Icon name="x" :size="20" />
+            </button>
           </div>
 
-          <div class="modal-body">
-            <div v-if="loading" class="loading-state">
-              <div class="loading-spinner"></div>
-              <p>加载节目中...</p>
+          <!-- 主体 -->
+          <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
+            <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-zinc-500">
+              <Icon name="refresh" :size="48" class="animate-spin mb-4 text-blue-500" />
+              <p class="font-black uppercase tracking-widest text-[10px]">加载节目中...</p>
             </div>
 
-            <div v-else-if="error" class="error-state">
-              <p>{{ error }}</p>
-              <button class="retry-btn" @click="fetchPrograms(false)">重试</button>
+            <div v-else-if="error" class="flex flex-col items-center justify-center py-20 text-center px-8">
+              <div class="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-4">
+                <Icon name="alert-triangle" :size="32" />
+              </div>
+              <p class="text-sm text-zinc-400 mb-6">{{ error }}</p>
+              <button
+                  class="px-8 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+                  @click="fetchPrograms(false)"
+              >
+                重试
+              </button>
             </div>
 
-            <div v-else-if="programs.length === 0" class="empty-state">
-              <p>暂无节目</p>
+            <div v-else-if="programs.length === 0" class="flex flex-col items-center justify-center py-12 text-zinc-500">
+              <div class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4">
+                <Icon name="mic" :size="32" class="opacity-20" />
+              </div>
+              <p class="text-sm font-bold uppercase tracking-widest">暂无节目</p>
             </div>
 
-            <div v-else class="programs-list">
-              <div v-for="program in programs" :key="program.id" class="program-item">
-                <div class="program-cover">
-                  <img :src="convertToHttps(program.coverUrl || program.mainSong?.album?.picUrl)" alt="cover"
-                       loading="lazy"/>
-                  <div class="play-overlay" @click.stop="playProgram(program)">
-                    <div class="play-button-bg">
-                      <Icon :size="16" color="white" name="play"/>
+            <div v-else class="program-list space-y-3">
+              <div
+                  v-for="program in programs"
+                  :key="program.id"
+                  class="group flex items-center p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-3xl hover:bg-zinc-800/50 hover:border-zinc-700 transition-all"
+              >
+                <!-- 封面与播放叠加层 -->
+                <div class="relative w-14 h-14 rounded-2xl overflow-hidden bg-zinc-800 mr-4 flex-shrink-0 group/cover cursor-pointer" @click.stop="playProgram(program)">
+                  <img :src="convertToHttps(program.coverUrl || program.mainSong?.album?.picUrl)" alt="cover" class="w-full h-full object-cover" loading="lazy" />
+                  <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/cover:opacity-100 transition-opacity">
+                    <div class="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <Icon name="play" :size="16" class="text-white fill-current" />
                     </div>
                   </div>
                 </div>
-                <div class="program-info">
-                  <h4 :title="program.name" class="program-title">{{ program.name }}</h4>
-                  <div class="program-meta">
-                    <span class="program-date">{{ formatDate(program.createTime) }}</span>
-                    <span class="program-duration">{{ formatDuration(program.duration) }}</span>
-                    <span class="program-listener">🎧 {{ formatCount(program.listenerCount) }}</span>
+
+                <!-- 节目信息 -->
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-bold text-zinc-100 truncate group-hover:text-white transition-colors">
+                    {{ program.name }}
+                  </h4>
+                  <div class="flex items-center gap-3 mt-1 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                    <span class="flex items-center">
+                      {{ formatDate(program.createTime) }}
+                    </span>
+                    <span class="flex items-center">
+                      <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40"></span>
+                      {{ formatDuration(program.duration) }}
+                    </span>
+                    <span class="flex items-center">
+                      <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40"></span>
+                      🎧 {{ formatCount(program.listenerCount) }}
+                    </span>
                   </div>
                 </div>
-                <div class="program-action">
-                  <div v-if="songsLoadingForSimilar" class="similar-song-info">
-                    <span class="similar-text">处理中...</span>
-                  </div>
-                  <div v-else-if="getSimilarSong(program)" class="similar-song-info">
-                    <span v-if="getSimilarSong(program)?.played" class="similar-text status-played">歌曲已播放</span>
-                    <span v-else-if="getSimilarSong(program)?.scheduled"
-                          class="similar-text status-scheduled">歌曲已排期</span>
-                    <span v-else class="similar-text">歌曲已存在</span>
 
-                    <div class="similar-actions">
+                <!-- 操作按钮 -->
+                <div class="ml-4 shrink-0 flex items-center gap-3">
+                  <div v-if="songsLoadingForSimilar" class="text-[10px] font-black text-zinc-600 animate-pulse uppercase tracking-widest">
+                    处理中...
+                  </div>
+                  <div v-else-if="getSimilarSong(program)" class="flex flex-col items-end gap-1.5">
+                    <span
+                        v-if="getSimilarSong(program)?.played"
+                        class="px-2 py-0.5 rounded-md bg-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-wider"
+                    >
+                      已播放
+                    </span>
+                    <span
+                        v-else-if="getSimilarSong(program)?.scheduled"
+                        class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-wider"
+                    >
+                      已排期
+                    </span>
+                    <span
+                        v-else
+                        class="px-2 py-0.5 rounded-md bg-zinc-700/50 text-zinc-500 text-[10px] font-black uppercase tracking-wider"
+                    >
+                      已存在
+                    </span>
+
+                    <div class="flex gap-2">
                       <button
                           v-if="getSimilarSong(program)?.played && isSuperAdmin"
                           :disabled="submitting"
-                          class="select-btn"
+                          class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
                           @click.stop="selectProgram(program)"
                       >
-                        {{ submitting && selectedProgramId === program.id ? '提交中...' : '继续投稿' }}
+                        {{ submitting && selectedProgramId === program.id ? '...' : '继续投稿' }}
                       </button>
                       <button
                           v-else
-                          :class="{
-                          'like-btn': true,
-                          'disabled': getSimilarSong(program)?.played || getSimilarSong(program)?.scheduled || getSimilarSong(program)?.voted || submitting
-                        }"
+                          class="px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-widest"
+                          :class="[
+                            getSimilarSong(program)?.voted
+                              ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                              : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 border border-zinc-700/50 hover:border-zinc-600'
+                          ]"
                           :disabled="getSimilarSong(program)?.played || getSimilarSong(program)?.scheduled || getSimilarSong(program)?.voted || submitting"
-                          :title="
-                          getSimilarSong(program)?.played
-                            ? '已播放的歌曲不能点赞'
-                            : getSimilarSong(program)?.scheduled
-                              ? '已排期的歌曲不能点赞'
-                              : getSimilarSong(program)?.voted
-                                ? '已点赞'
-                                : '点赞'
-                        "
-                          @click.stop="getSimilarSong(program)?.played || getSimilarSong(program)?.scheduled ? null : handleLikeFromProgram(getSimilarSong(program))"
+                          @click.stop="handleLikeFromProgram(getSimilarSong(program))"
                       >
-                        {{
-                          getSimilarSong(program)?.played
-                              ? '已播放'
-                              : getSimilarSong(program)?.scheduled
-                                  ? '已排期'
-                                  : getSimilarSong(program)?.voted
-                                      ? '已点赞'
-                                      : '点赞'
-                        }}
+                        {{ getSimilarSong(program)?.voted ? '已点赞' : '点赞' }}
                       </button>
                     </div>
                   </div>
                   <button
                       v-else
                       :disabled="submitting"
-                      class="select-btn"
+                      class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
                       @click="selectProgram(program)"
                   >
                     {{ submitting && selectedProgramId === program.id ? '提交中...' : '选择投稿' }}
@@ -102,8 +153,13 @@
                 </div>
               </div>
 
-              <div v-if="hasMore" class="load-more">
-                <button :disabled="loadingMore" class="load-more-btn" @click="loadMore">
+              <div v-if="hasMore" class="pt-6 pb-2 flex justify-center">
+                <button
+                    :disabled="loadingMore"
+                    class="px-8 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest"
+                    @click="loadMore"
+                >
+                  <Icon v-if="loadingMore" name="loader" :size="16" class="animate-spin" />
                   {{ loadingMore ? '加载中...' : '加载更多' }}
                 </button>
               </div>
@@ -116,13 +172,13 @@
 </template>
 
 <script setup>
-import {computed, ref, watch} from 'vue'
-import {useMusicSources} from '~/composables/useMusicSources'
-import {useSongs} from '~/composables/useSongs'
-import {useAuth} from '~/composables/useAuth'
-import {useSemesters} from '~/composables/useSemesters'
-import {convertToHttps} from '~/utils/url'
-import Icon from '../UI/Icon.vue'
+import { computed, ref, watch } from 'vue'
+import { useMusicSources } from '~/composables/useMusicSources'
+import { useSongs } from '~/composables/useSongs'
+import { useAuth } from '~/composables/useAuth'
+import { useSemesters } from '~/composables/useSemesters'
+import { convertToHttps } from '~/utils/url'
+import Icon from '~/components/UI/Icon.vue'
 
 const props = defineProps({
   show: Boolean,
@@ -229,7 +285,7 @@ const loadMore = () => {
 
 const close = () => {
   emit('close')
-  // Reset state
+  // 重置状态
   submitting.value = false
   selectedProgramId.value = null
 }
@@ -352,353 +408,20 @@ defineExpose({
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-  backdrop-filter: blur(4px);
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
 }
 
-.modal-content {
-  background: var(--bg-secondary, #fff);
-  border-radius: 16px;
-  width: 90%;
-  max-width: 600px;
-  height: 80vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-color, #e5e7eb);
-  color: var(--text-primary, #111827);
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: var(--text-primary, #111827);
-  font-weight: 600;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: var(--text-secondary, #6b7280);
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-.modal-body {
-  padding: 0;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.programs-list {
-  padding: 10px 0;
-}
-
-.program-item {
-  display: flex;
-  gap: 12px;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--border-color, #f3f4f6);
-  align-items: center;
-  transition: background-color 0.2s;
-}
-
-.program-item:hover {
-  background-color: var(--bg-hover, #f9fafb);
-}
-
-.program-cover {
-  position: relative;
-  cursor: pointer;
-}
-
-.program-cover img {
-  width: 50px;
-  height: 50px;
-  border-radius: 6px;
-  object-fit: cover;
-}
-
-.play-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
-  border-radius: 6px;
-}
-
-.program-cover:hover .play-overlay {
-  opacity: 1;
-}
-
-.play-button-bg {
-  width: 32px;
-  height: 32px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(2px);
-}
-
-.program-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.program-title {
-  margin: 0 0 4px;
-  font-size: 0.95rem;
-  color: var(--text-primary, #111827);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 500;
-}
-
-.program-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 0.8rem;
-  color: var(--text-secondary, #6b7280);
-}
-
-.program-action {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  min-width: 120px;
-}
-
-.select-btn {
-  padding: 6px 16px;
-  background-color: var(--primary-color, #3b82f6);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: opacity 0.2s;
-}
-
-.select-btn:hover {
-  opacity: 0.9;
-}
-
-.select-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.load-more {
-  text-align: center;
-  padding: 16px;
-}
-
-.load-more-btn {
-  padding: 8px 16px;
-  background: none;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 6px;
-  color: var(--text-secondary, #6b7280);
-  cursor: pointer;
-}
-
-.loading-state, .error-state, .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: var(--text-secondary, #6b7280);
-}
-
-.loading-spinner {
-  border: 3px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top: 3px solid var(--primary-color, #3b82f6);
-  width: 30px;
-  height: 30px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 12px;
-}
-
-.retry-btn {
-  margin-top: 10px;
-  padding: 6px 12px;
-  background-color: var(--primary-color, #3b82f6);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Similar Song Info Styles */
-.similar-song-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  text-align: right;
-}
-
-.similar-text {
-  font-size: 12px;
-  color: var(--text-secondary, #6b7280);
-  font-weight: 500;
-}
-
-.similar-text.status-played {
-  color: #ef4444;
-  font-weight: 600;
-}
-
-.similar-text.status-scheduled {
-  color: #f59e0b;
-  font-weight: 600;
-}
-
-.similar-actions {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.like-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
-  font-size: 12px;
-  cursor: pointer;
-  color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
-  white-space: nowrap;
-}
-
-.like-btn.disabled {
-  background: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
-  box-shadow: none;
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-/* Modal Animation */
-.modal-animation-enter-active,
-.modal-animation-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-animation-enter-from,
-.modal-animation-leave-to {
-  opacity: 0;
-}
-
-.modal-animation-enter-active .modal-content,
-.modal-animation-leave-active .modal-content {
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.modal-animation-enter-from .modal-content,
-.modal-animation-leave-to .modal-content {
-  transform: scale(0.95);
-  opacity: 0;
-}
-
-/* Dark mode overrides (assuming class 'dark' on html/body) - updated to match new style */
-:root[class~="dark"] .modal-content {
-  background: rgba(20, 20, 25, 0.95);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-:root[class~="dark"] .modal-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-:root[class~="dark"] .program-item {
-  border-color: rgba(255, 255, 255, 0.05);
-}
-
-:root[class~="dark"] .program-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-:root[class~="dark"] .modal-header h3,
-:root[class~="dark"] .program-title {
-  color: #ffffff;
-}
-
-:root[class~="dark"] .close-btn {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-:root[class~="dark"] .close-btn:hover {
-  color: #ffffff;
+.custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
 }
 
-:root[class~="dark"] .program-meta {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-:root[class~="dark"] .load-more-btn {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-}
-
-:root[class~="dark"] .load-more-btn:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 </style>

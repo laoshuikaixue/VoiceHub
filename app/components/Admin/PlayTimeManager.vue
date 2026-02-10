@@ -1,205 +1,296 @@
 <template>
-  <div class="play-time-manager">
-    <div class="header-section">
-      <h2 class="title">播出时段管理</h2>
-      <div class="settings-toggle">
-        <span class="label">启用播出时段选择</span>
-        <label class="toggle-switch">
-          <input v-model="enablePlayTimeSelection" type="checkbox" @change="updateSystemSettings">
-          <span class="slider round"></span>
-        </label>
+  <div class="max-w-[1400px] mx-auto space-y-8 pb-20 px-2">
+    <!-- 页面标题 -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">播出时段管理</h2>
+        <p class="text-xs text-zinc-500 mt-1">定义校园广播的常规播放窗口，用户仅可在这些时间段内进行点歌或查看排期</p>
       </div>
-    </div>
-
-    <div class="action-bar">
-      <button class="btn btn-primary" @click="showAddForm = true">
-        <span class="icon">+</span> 添加播出时段
-      </button>
-    </div>
-
-    <!-- 播出时段列表 -->
-    <div v-if="loading" class="loading-container">
-      <div class="loading-spinner"></div>
-      <span>加载中...</span>
-    </div>
-
-    <div v-else-if="error" class="error-message">
-      {{ error }}
-    </div>
-
-    <div v-else-if="playTimes.length === 0" class="empty-state">
-      <div class="icon">🕒</div>
-      <p>暂无播出时段</p>
-      <p class="hint">点击"添加播出时段"按钮创建第一个播出时段</p>
-    </div>
-
-    <div v-else class="play-times-list">
-      <div v-for="playTime in playTimes" :key="playTime.id" class="play-time-card">
-        <div class="card-header">
-          <h3 class="time-name">{{ playTime.name }}</h3>
-          <div :class="{ 'enabled': playTime.enabled, 'disabled': !playTime.enabled }" class="status-badge">
-            {{ playTime.enabled ? '已启用' : '已禁用' }}
-          </div>
-        </div>
-
-        <div class="time-details">
-          <div class="time-range">
-            <span class="label">播出时间:</span>
-            <span class="value">
-              <template v-if="playTime.startTime && playTime.endTime">
-                {{ playTime.startTime }} - {{ playTime.endTime }}
-              </template>
-              <template v-else-if="playTime.startTime">
-                {{ playTime.startTime }} 开始
-              </template>
-              <template v-else-if="playTime.endTime">
-                {{ playTime.endTime }} 结束
-              </template>
-              <template v-else>
-                不限时间
-              </template>
-            </span>
-          </div>
-
-          <div v-if="playTime.description" class="description">
-            <span class="label">描述:</span>
-            <span class="value">{{ playTime.description }}</span>
-          </div>
-        </div>
-
-        <div class="actions">
-          <button class="btn btn-secondary" @click="editPlayTime(playTime)">
-            编辑
-          </button>
-          <button
-              :class="playTime.enabled ? 'btn-warning' : 'btn-success'"
-              class="btn"
-              @click="togglePlayTimeStatus(playTime)"
+      <div class="flex items-center gap-3">
+        <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl px-4 py-2 flex items-center gap-3">
+          <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">启用播出时段选择</span>
+          <button 
+            @click="toggleGlobalEnabled"
+            :class="[
+              'relative w-10 h-5 rounded-full transition-colors',
+              enablePlayTimeSelection ? 'bg-blue-600' : 'bg-zinc-800'
+            ]"
           >
-            {{ playTime.enabled ? '禁用' : '启用' }}
-          </button>
-          <button class="btn btn-danger" @click="confirmDelete(playTime)">
-            删除
+            <div 
+              :class="[
+                'absolute top-1 w-3 h-3 bg-white rounded-full transition-all',
+                enablePlayTimeSelection ? 'left-6' : 'left-1'
+              ]" 
+            />
           </button>
         </div>
+        <button 
+          @click="openAddForm"
+          class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+        >
+          <Plus :size="14" /> 添加播出时段
+        </button>
       </div>
     </div>
 
-    <!-- 添加/编辑播出时段表单 -->
-    <div v-if="showAddForm || editingPlayTime" class="modal-overlay" @click.self="cancelForm">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>{{ editingPlayTime ? '编辑播出时段' : '添加播出时段' }}</h3>
-          <button class="close-button" @click="cancelForm">&times;</button>
-        </div>
-
-        <div class="modal-body">
-          <form @submit.prevent="savePlayTime">
-            <div class="form-group">
-              <label for="name">时段名称</label>
-              <input
-                  id="name"
-                  v-model="formData.name"
-                  class="form-control"
-                  placeholder="例如：上午、下午"
-                  required
-                  type="text"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="startTime">开始时间 (可选)</label>
-              <input
-                  id="startTime"
-                  v-model="formData.startTime"
-                  class="form-control"
-                  type="time"
-              />
-              <div class="help-text">留空表示不限制开始时间</div>
-            </div>
-
-            <div class="form-group">
-              <label for="endTime">结束时间 (可选)</label>
-              <input
-                  id="endTime"
-                  v-model="formData.endTime"
-                  class="form-control"
-                  type="time"
-              />
-              <div class="help-text">留空表示不限制结束时间</div>
-            </div>
-
-            <div class="form-group">
-              <label for="description">描述 (可选)</label>
-              <textarea
-                  id="description"
-                  v-model="formData.description"
-                  class="form-control"
-                  placeholder="时段描述..."
-              ></textarea>
-            </div>
-
-            <div class="form-group checkbox-group">
-              <label class="checkbox-label">
-                <input v-model="formData.enabled" type="checkbox">
-                <span>启用此播出时段</span>
-              </label>
-            </div>
-
-            <div v-if="formError" class="form-error">
-              {{ formError }}
-            </div>
-
-            <div class="form-actions">
-              <button class="btn btn-secondary" type="button" @click="cancelForm">
-                取消
-              </button>
-              <button :disabled="formSubmitting" class="btn btn-primary" type="submit">
-                {{ formSubmitting ? '保存中...' : '保存' }}
-              </button>
-            </div>
-          </form>
-        </div>
+    <!-- 信息卡片 -->
+    <div class="bg-blue-600/5 border border-blue-500/10 rounded-xl p-5 flex items-start gap-4">
+      <Info class="text-blue-500 shrink-0 mt-0.5" :size="18" />
+      <div class="space-y-1">
+        <p class="text-xs font-bold text-zinc-300">关于时段限制</p>
+        <p class="text-[11px] text-zinc-500 leading-relaxed">
+          启用全局时段选择后，系统将仅在定义的时段内开放点歌功能。如果未设置开始或结束时间，系统将视为该边界不设限。
+        </p>
       </div>
     </div>
 
-    <!-- 删除确认对话框 -->
-    <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
-      <div class="modal-content delete-confirm">
-        <div class="modal-header">
-          <h3>确认删除</h3>
-          <button class="close-button" @click="showDeleteConfirm = false">&times;</button>
-        </div>
+    <!-- 加载状态 -->
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20 space-y-4 bg-zinc-900/20 border border-zinc-800/50 rounded-xl">
+      <div class="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+      <p class="text-xs font-black text-zinc-500 uppercase tracking-widest">加载中...</p>
+    </div>
 
-        <div class="modal-body">
-          <p>确定要删除播出时段 "{{ playTimeToDelete?.name }}" 吗？</p>
-          <p class="warning">此操作不可恢复，相关歌曲和排期的时段设置将被清除。</p>
+    <!-- 错误状态 -->
+    <div v-else-if="error" class="bg-red-500/5 border border-red-500/10 rounded-xl p-5 flex items-start gap-4">
+      <AlertCircle class="text-red-500 shrink-0 mt-0.5" :size="18" />
+      <div class="space-y-1">
+        <p class="text-xs font-bold text-zinc-300">获取数据失败</p>
+        <p class="text-[11px] text-zinc-500 leading-relaxed">{{ error }}</p>
+      </div>
+    </div>
 
-          <div class="form-actions">
-            <button class="btn btn-secondary" type="button" @click="showDeleteConfirm = false">
-              取消
-            </button>
-            <button
-                :disabled="deleteInProgress"
-                class="btn btn-danger"
-                type="button"
-                @click="deletePlayTime"
+    <!-- 空状态 -->
+    <div v-else-if="playTimes.length === 0" class="flex flex-col items-center justify-center py-20 space-y-6 bg-zinc-900/20 border border-zinc-800/50 rounded-xl">
+      <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-700">
+        <Clock :size="48" />
+      </div>
+      <div class="text-center space-y-2">
+        <h3 class="text-lg font-bold text-zinc-100">暂无播出时段</h3>
+        <p class="text-xs text-zinc-500">点击“添加播出时段”按钮创建第一个播出时段</p>
+      </div>
+    </div>
+
+    <!-- 时段网格 -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <TransitionGroup name="list">
+        <div
+          v-for="playTime in playTimes"
+          :key="playTime.id"
+          :class="[
+            'group relative bg-zinc-900/30 border rounded-xl p-8 transition-all hover:shadow-2xl hover:shadow-black/40',
+            playTime.enabled ? 'border-zinc-800/80' : 'border-zinc-800/40 opacity-60'
+          ]"
+        >
+          <div class="flex items-start justify-between mb-6">
+            <div 
+              :class="[
+                'p-3 rounded-xl bg-zinc-950 border border-zinc-800 transition-all',
+                playTime.enabled ? 'text-blue-500 border-blue-500/20' : 'text-zinc-700'
+              ]"
             >
-              {{ deleteInProgress ? '删除中...' : '确认删除' }}
+              <Clock :size="20" />
+            </div>
+            <div class="flex items-center gap-2">
+              <span 
+                :class="[
+                  'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border transition-all',
+                  playTime.enabled 
+                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                    : 'bg-zinc-800/50 text-zinc-600 border-zinc-700/50'
+                ]"
+              >
+                {{ playTime.enabled ? '已启用' : '已禁用' }}
+              </span>
+              <button class="p-1.5 text-zinc-700 hover:text-zinc-400"><MoreVertical :size="14" /></button>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <h4 class="text-lg font-black text-zinc-100 group-hover:text-blue-400 transition-colors">{{ playTime.name }}</h4>
+              <div class="flex items-center gap-2 mt-1.5 text-blue-500/80 font-black tracking-tighter">
+                <span class="text-xl">{{ playTime.startTime || '不限' }}</span>
+                <div class="w-4 h-[2px] bg-zinc-800" />
+                <span class="text-xl">{{ playTime.endTime || '不限' }}</span>
+              </div>
+            </div>
+
+            <p class="text-xs text-zinc-500 font-medium leading-relaxed min-h-[32px] line-clamp-2">
+              {{ playTime.description || '暂无详细描述...' }}
+            </p>
+          </div>
+
+          <div class="mt-8 pt-6 border-t border-zinc-800/50 flex items-center justify-between">
+            <div class="flex gap-2">
+              <button 
+                @click="editPlayTime(playTime)"
+                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-500 hover:text-blue-400 hover:border-blue-500/30 transition-all"
+              >
+                <Edit2 :size="14" />
+              </button>
+              <button 
+                @click="confirmDelete(playTime)"
+                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-500 hover:text-red-400 hover:border-red-500/30 transition-all"
+              >
+                <Trash2 :size="14" />
+              </button>
+            </div>
+            <button 
+              @click="togglePlayTimeStatus(playTime)"
+              :class="[
+                'flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                playTime.enabled 
+                  ? 'bg-zinc-800 text-zinc-400 hover:text-zinc-200' 
+                  : 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+              ]"
+            >
+              <Power :size="12" />
+              {{ playTime.enabled ? '禁用' : '启用' }}
+            </button>
+          </div>
+        </div>
+      </TransitionGroup>
+    </div>
+
+    <!-- 添加/编辑弹窗 -->
+    <Transition name="modal">
+      <div v-if="showAddForm || editingPlayTime" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="cancelForm"></div>
+        <div class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden">
+          <div class="p-8">
+            <div class="flex items-center justify-between mb-8">
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight">
+                {{ editingPlayTime ? "编辑播出时段" : "添加播出时段" }}
+              </h3>
+              <button @click="cancelForm" class="p-2 text-zinc-500 hover:text-zinc-200 transition-colors">
+                <X :size="20" />
+              </button>
+            </div>
+
+            <div class="space-y-6">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">时段名称</label>
+                <input 
+                  type="text" 
+                  v-model="formData.name"
+                  placeholder="例如: 午间广播" 
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30" 
+                />
+              </div>
+
+              <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">开始时间 (可选)</label>
+                  <div class="relative">
+                    <input 
+                      type="time" 
+                      v-model="formData.startTime"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none" 
+                    />
+                    <Clock class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none" :size="14" />
+                  </div>
+                  <p class="text-[9px] text-zinc-600 px-1">留空表示不限制开始时间</p>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">结束时间 (可选)</label>
+                  <div class="relative">
+                    <input 
+                      type="time" 
+                      v-model="formData.endTime"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none" 
+                    />
+                    <Clock class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none" :size="14" />
+                  </div>
+                  <p class="text-[9px] text-zinc-600 px-1">留空表示不限制结束时间</p>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 flex items-center gap-2">
+                  <AlignLeft :size="10" /> 描述 (可选)
+                </label>
+                <textarea 
+                  v-model="formData.description"
+                  placeholder="请输入时段描述信息..." 
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[100px] resize-none"
+                />
+              </div>
+
+              <label class="flex items-center gap-3 cursor-pointer group px-1">
+                <input 
+                  type="checkbox" 
+                  v-model="formData.enabled"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-blue-600" 
+                />
+                <span class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors">启用此播出时段</span>
+              </label>
+
+              <div v-if="formError" class="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[11px] text-red-400">
+                {{ formError }}
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 py-6 bg-zinc-950/50 border-t border-zinc-800 flex justify-end gap-3">
+            <button @click="cancelForm" class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300">取消</button>
+            <button 
+              @click="savePlayTime"
+              :disabled="formSubmitting"
+              class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg shadow-lg transition-all active:scale-95"
+            >
+              {{ formSubmitting ? '保存中...' : '保存设置' }}
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </Transition>
+
+    <!-- 删除确认弹窗 -->
+    <Transition name="modal">
+      <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showDeleteConfirm = false"></div>
+        <div class="relative w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden">
+          <div class="p-8">
+            <div class="flex flex-col items-center py-4 space-y-6">
+              <div class="w-16 h-16 rounded-xl bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/10 shadow-xl shadow-red-900/5">
+                <AlertCircle :size="32" />
+              </div>
+              <div class="text-center space-y-2 px-4">
+                <h4 class="text-lg font-bold text-zinc-100">确定要删除播出时段 "{{ playTimeToDelete?.name }}" 吗？</h4>
+                <p class="text-xs text-zinc-500 leading-relaxed">
+                  此操作不可恢复，相关的歌曲点播和排期的时段设置将受影响或被清除。
+                </p>
+              </div>
+              <div class="flex gap-3 w-full pt-4">
+                <button @click="showDeleteConfirm = false" class="flex-1 px-4 py-3 bg-zinc-950 border border-zinc-800 text-zinc-500 text-xs font-black rounded-lg transition-all hover:bg-zinc-800">取消</button>
+                <button 
+                  @click="deletePlayTime"
+                  :disabled="deleteInProgress"
+                  class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg shadow-xl shadow-red-900/20 transition-all active:scale-95"
+                >
+                  {{ deleteInProgress ? '删除中...' : '确认删除' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script lang="ts" setup>
-import {onMounted, reactive, ref} from 'vue'
-import {useAuth} from '~/composables/useAuth'
-import type {PlayTime} from '~/types'
+import { onMounted, reactive, ref } from 'vue'
+import { useAuth } from '~/composables/useAuth'
+import { useToast } from '~/composables/useToast'
+import type { PlayTime } from '~/types'
+import { 
+  Plus, Clock, Edit2, Trash2, MoreVertical, 
+  Power, Info, AlertCircle, X, AlignLeft 
+} from 'lucide-vue-next'
 
-const {getAuthConfig, isAdmin} = useAuth()
+const { getAuthConfig, isAdmin } = useAuth()
+const { showToast: showNotification } = useToast()
 
 const playTimes = ref<PlayTime[]>([])
 const loading = ref(false)
@@ -241,19 +332,9 @@ const fetchPlayTimes = async () => {
 
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch('/api/admin/play-times', {
-      headers: {
-        'Content-Type': 'application/json'
-      },
+    const data = await $fetch('/api/admin/play-times', {
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `获取播出时段失败: ${response.status}`)
-    }
-
-    const data = await response.json()
 
     // 自定义排序：先按启用状态排序，然后有时间的排在前面，没有时间的排在后面
     playTimes.value = data.sort((a: PlayTime, b: PlayTime) => {
@@ -297,24 +378,19 @@ const fetchSystemSettings = async () => {
 
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch('/api/admin/system-settings', {
-      headers: {
-        'Content-Type': 'application/json'
-      },
+    const data = await $fetch('/api/admin/system-settings', {
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error(`获取系统设置失败: ${errorData.message || response.status}`)
-      return
-    }
-
-    const data = await response.json()
     enablePlayTimeSelection.value = data.enablePlayTimeSelection
   } catch (err: any) {
     console.error('获取系统设置失败:', err.message)
   }
+}
+
+// 切换全局启用状态
+const toggleGlobalEnabled = async () => {
+  enablePlayTimeSelection.value = !enablePlayTimeSelection.value
+  await updateSystemSettings()
 }
 
 // 更新系统设置
@@ -323,24 +399,34 @@ const updateSystemSettings = async () => {
 
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch('/api/admin/system-settings', {
+    await $fetch('/api/admin/system-settings', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+      body: {
         enablePlayTimeSelection: enablePlayTimeSelection.value
-      }),
+      },
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `更新系统设置失败: ${response.status}`)
-    }
+    
+    showNotification('系统设置已更新', 'success')
   } catch (err: any) {
     error.value = err.message || '更新系统设置失败'
+    showNotification(error.value, 'error')
+    // 如果失败，恢复状态
+    enablePlayTimeSelection.value = !enablePlayTimeSelection.value
   }
+}
+
+// 打开添加表单
+const openAddForm = () => {
+  showAddForm.value = true
+  Object.assign(formData, {
+    id: 0,
+    name: '',
+    startTime: '',
+    endTime: '',
+    description: '',
+    enabled: true
+  })
 }
 
 // 编辑播出时段
@@ -349,8 +435,8 @@ const editPlayTime = (playTime: PlayTime) => {
   Object.assign(formData, {
     id: playTime.id,
     name: playTime.name,
-    startTime: playTime.startTime,
-    endTime: playTime.endTime,
+    startTime: playTime.startTime || '',
+    endTime: playTime.endTime || '',
     description: playTime.description || '',
     enabled: playTime.enabled
   })
@@ -362,26 +448,20 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
 
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch(`/api/admin/play-times/${playTime.id}`, {
+    await $fetch(`/api/admin/play-times/${playTime.id}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+      body: {
         enabled: !playTime.enabled
-      }),
+      },
       ...authConfig
     })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `更新播出时段状态失败: ${response.status}`)
-    }
-
     // 更新本地数据
     await fetchPlayTimes()
+    showNotification(playTime.enabled ? '播出时段已禁用' : '播出时段已启用', 'success')
   } catch (err: any) {
     error.value = err.message || '更新播出时段状态失败'
+    showNotification(error.value, 'error')
   }
 }
 
@@ -399,22 +479,19 @@ const deletePlayTime = async () => {
 
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch(`/api/admin/play-times/${playTimeToDelete.value.id}`, {
+    await $fetch(`/api/admin/play-times/${playTimeToDelete.value.id}`, {
       method: 'DELETE',
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `删除播出时段失败: ${response.status}`)
-    }
 
     // 更新本地数据
     await fetchPlayTimes()
     showDeleteConfirm.value = false
     playTimeToDelete.value = null
+    showNotification('播出时段已删除', 'success')
   } catch (err: any) {
     error.value = err.message || '删除播出时段失败'
+    showNotification(error.value, 'error')
   } finally {
     deleteInProgress.value = false
   }
@@ -453,31 +530,25 @@ const savePlayTime = async () => {
   try {
     const authConfig = getAuthConfig()
 
-    const response = await fetch(isUpdate ? `/api/admin/play-times/${formData.id}` : '/api/admin/play-times', {
+    await $fetch(isUpdate ? `/api/admin/play-times/${formData.id}` : '/api/admin/play-times', {
       method: isUpdate ? 'PUT' : 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+      body: {
         name: formData.name.trim(),
         startTime: formData.startTime || null,
         endTime: formData.endTime || null,
         description: formData.description || null,
         enabled: formData.enabled
-      }),
+      },
       ...authConfig
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `${isUpdate ? '更新' : '创建'}播出时段失败: ${response.status}`)
-    }
 
     // 更新本地数据
     await fetchPlayTimes()
     cancelForm()
+    showNotification(isUpdate ? '播出时段已更新' : '播出时段已创建', 'success')
   } catch (err: any) {
     formError.value = err.message || '保存播出时段失败'
+    showNotification(formError.value, 'error')
   } finally {
     formSubmitting.value = false
   }
@@ -502,441 +573,32 @@ const cancelForm = () => {
 </script>
 
 <style scoped>
-.play-time-manager {
-  background: #111111;
-  border: 1px solid #1f1f1f;
-  border-radius: 12px;
-  padding: 24px;
-  position: relative;
-  width: 100%;
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s ease;
 }
-
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.title {
-  font-size: 1.5rem;
-  color: #ffffff;
-  margin: 0;
-  font-weight: 600;
-}
-
-.settings-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.label {
-  color: #cccccc;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 24px;
-}
-
-.toggle-switch input {
+.list-enter-from,
+.list-leave-to {
   opacity: 0;
-  width: 0;
-  height: 0;
+  transform: scale(0.95);
 }
 
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #374151;
-  transition: .3s;
-  border-radius: 24px;
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
 }
 
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: #ffffff;
-  transition: .3s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: #4f46e5;
-}
-
-input:focus + .slider {
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
-}
-
-input:checked + .slider:before {
-  transform: translateX(26px);
-}
-
-.slider.round {
-  border-radius: 34px;
-}
-
-.slider.round:before {
-  border-radius: 50%;
-}
-
-.action-bar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 1.5rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 0.375rem;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary {
-  background-color: #4f46e5;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #4338ca;
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #d1d5db;
-}
-
-.btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-}
-
-.btn-danger {
-  background-color: rgba(239, 68, 68, 0.8);
-  color: white;
-}
-
-.btn-danger:hover {
-  background-color: rgba(239, 68, 68, 1);
-}
-
-.btn-warning {
-  background-color: rgba(234, 179, 8, 0.8);
-  color: white;
-}
-
-.btn-warning:hover {
-  background-color: rgba(234, 179, 8, 1);
-}
-
-.btn-success {
-  background-color: rgba(34, 197, 94, 0.8);
-  color: white;
-}
-
-.btn-success:hover {
-  background-color: rgba(34, 197, 94, 1);
-}
-
-.icon {
-  margin-right: 0.25rem;
-  font-size: 1rem;
-}
-
-.loading-container, .error-message, .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  border-radius: 8px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  text-align: center;
-}
-
-.loading-spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #4f46e5;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 0.5rem;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.error-message {
-  color: #ef4444;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  border-radius: 8px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  text-align: center;
-  min-height: 250px;
-}
-
-.empty-state .icon {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
-  opacity: 0.6;
-  margin-right: 0;
-}
-
-.empty-state .hint {
-  font-size: 0.875rem;
-  color: #888888;
-  margin-top: 0.5rem;
-}
-
-.play-times-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-}
-
-@media (min-width: 1200px) {
-  .play-times-list {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  }
-}
-
-@media (min-width: 1600px) {
-  .play-times-list {
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  }
-}
-
-.play-time-card {
-  background: #1a1a1a;
-  border-radius: 8px;
-  padding: 20px;
+.modal-enter-active .relative,
+.modal-leave-active .relative {
   transition: all 0.3s ease;
-  border: 1px solid #2a2a2a;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
 }
-
-.play-time-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  border-color: rgba(99, 102, 241, 0.3);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.time-name {
-  font-size: 1.125rem;
-  color: #ffffff;
-  margin: 0;
-}
-
-.status-badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 1rem;
-}
-
-.status-badge.enabled {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: rgb(74, 222, 128);
-}
-
-.status-badge.disabled {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: rgb(252, 165, 165);
-}
-
-.time-details {
-  margin-bottom: 1rem;
-  flex-grow: 1;
-}
-
-.time-range, .description {
-  display: flex;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.time-range .label, .description .label {
-  min-width: 5rem;
-  color: #888888;
-}
-
-.time-range .value, .description .value {
-  color: #cccccc;
-}
-
-.actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(3px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 550px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-
-@media (min-width: 1200px) {
-  .modal-content {
-    max-width: 650px;
-  }
-
-  .modal-body {
-    padding: 2rem;
-  }
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: #ffffff;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: #888888;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-.close-button:hover {
-  color: #ffffff;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.25rem;
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.75rem;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  font-size: 1rem;
-  color: #ffffff;
-}
-
-.form-control:focus {
-  border-color: #4f46e5;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25);
-}
-
-textarea.form-control {
-  min-height: 100px;
-  resize: vertical;
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-}
-
-.checkbox-label input {
-  margin-right: 0.5rem;
-}
-
-.form-error {
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background: rgba(239, 68, 68, 0.1);
-  color: rgb(252, 165, 165);
-  border-radius: 0.375rem;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-}
-
-.delete-confirm .warning {
-  color: rgb(252, 165, 165);
-  margin-top: 0.5rem;
+.modal-enter-from .relative,
+.modal-leave-to .relative {
+  transform: scale(0.95);
+  opacity: 0;
 }
 </style>

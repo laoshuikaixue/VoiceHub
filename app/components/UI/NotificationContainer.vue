@@ -31,16 +31,15 @@
         <div class="notification-content">
           {{ notification.message }}
         </div>
-        <button class="notification-close" @click="removeNotification(notification.id)">
+        <button class="notification-close" @click="removeToast(notification.id)">
           <Icon :size="16" name="close"/>
         </button>
 
         <!-- 进度条 -->
-        <div v-if="notification.autoClose" class="notification-progress">
+        <div class="notification-progress">
           <div
               :style="{
-              animationDuration: `${notification.duration}ms`,
-              animationDelay: `${notification.delay || 0}ms`
+              animationDuration: `${notification.duration}ms`
             }"
               class="notification-progress-bar"
           ></div>
@@ -51,56 +50,25 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue'
+import {onMounted, ref, watch} from 'vue'
 import Icon from './Icon.vue'
+import { useToast } from '~/composables/useToast'
 
-const notifications = ref([])
-let notificationId = 0
+// 使用 useToast 的共享状态
+const { toasts, removeToast } = useToast()
+const notifications = toasts
 
-const addNotification = (message, type = 'info', autoClose = true, duration = 3000) => {
-  const id = ++notificationId
-  const notification = {
-    id,
-    message,
-    type,
-    autoClose,
-    duration,
-    delay: 0
-  }
-
-  notifications.value.push(notification)
-
-  if (autoClose) {
-    setTimeout(() => {
-      removeNotification(id)
-    }, duration)
-  }
-
-  return id
-}
-
-const removeNotification = (id) => {
-  const index = notifications.value.findIndex(n => n.id === id)
-  if (index > -1) {
-    notifications.value.splice(index, 1)
-  }
-}
-
-const clearAllNotifications = () => {
-  notifications.value = []
-}
-
-// 暴露方法给父组件
-defineExpose({
-  addNotification,
-  removeNotification,
-  clearAllNotifications
-})
-
-// 全局挂载通知函数
+// 全局挂载通知函数 (兼容旧代码)
 onMounted(() => {
-  window.$showNotification = addNotification
-  window.$clearNotifications = clearAllNotifications
+  // 兼容旧的全局调用方式
+  window.$showNotification = (message, type = 'info', autoClose = true, duration = 3000) => {
+    const { showToast } = useToast()
+    showToast(message, type, duration)
+  }
+  
+  window.$clearNotifications = () => {
+    notifications.value = []
+  }
 })
 </script>
 

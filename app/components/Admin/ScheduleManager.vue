@@ -1,482 +1,498 @@
 <template>
-  <div class="schedule-manager">
+  <div class="space-y-6 pb-24 md:pb-8">
     <!-- 日期选择器 -->
-    <div class="date-selector-container">
-      <button
-          :disabled="isFirstDateVisible"
-          class="date-nav-btn prev-btn"
-          @click="scrollDates('left')"
-      >
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <polyline points="15,18 9,12 15,6"/>
-        </svg>
-      </button>
-
-      <div ref="dateSelector" class="date-selector">
+    <div class="relative bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-1 overflow-hidden">
+      <div class="flex items-center" @touchstart.stop>
         <button
-            v-for="date in availableDates"
-            :key="date.value"
-            :class="['date-btn', { active: selectedDate === date.value, today: date.isToday }]"
-            @click="selectedDate = date.value"
+            :disabled="isFirstDateVisible"
+            class="p-2 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
+            @click="scrollDates('left')"
         >
-          <div class="date-day">{{ date.day }}</div>
-          <div class="date-month">{{ date.month }}</div>
-          <div class="date-weekday">{{ date.weekday }}</div>
-        </button>
-      </div>
-
-      <button
-          :disabled="isLastDateVisible"
-          class="date-nav-btn next-btn"
-          @click="scrollDates('right')"
-      >
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <polyline points="9,18 15,12 9,6"/>
-        </svg>
-      </button>
-
-      <!-- 手动日期选择器 -->
-      <div class="manual-date-selector">
-        <button class="manual-date-btn" @click="showManualDatePicker = true">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
-            <line x1="16" x2="16" y1="2" y2="6"/>
-            <line x1="8" x2="8" y1="2" y2="6"/>
-            <line x1="3" x2="21" y1="10" y2="10"/>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="15,18 9,12 15,6"/>
           </svg>
-          选择日期
         </button>
+
+        <div ref="dateSelector" class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 scroll-smooth overscroll-x-contain" style="overscroll-behavior-x: contain; touch-action: pan-x;">
+          <button
+              v-for="date in availableDates"
+              :key="date.value"
+              :data-date="date.value"
+              :class="[
+                'flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg transition-all duration-200 border',
+                selectedDate === date.value
+                  ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20'
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 hover:border-zinc-700'
+              ]"
+              @click="selectedDate = date.value"
+          >
+            <span class="text-[10px] font-bold uppercase tracking-wider opacity-80">{{ date.weekday }}</span>
+            <span class="text-lg font-black leading-none my-0.5">{{ date.day }}</span>
+            <span class="text-[9px] font-bold opacity-60">{{ date.month }}月</span>
+          </button>
+        </div>
+
+        <button
+            :disabled="isLastDateVisible"
+            class="p-2 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
+            @click="scrollDates('right')"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="9,18 15,12 9,6"/>
+          </svg>
+        </button>
+
+        <!-- 操作按钮组 -->
+        <div class="flex items-center border-l border-zinc-800 ml-1 pl-1">
+          <!-- 定位到今天 -->
+          <button
+             class="p-2 text-zinc-500 hover:text-emerald-400 transition-colors"
+             title="跳转到今天"
+             @click="scrollToToday"
+           >
+             <CircleDot class="w-5 h-5" />
+           </button>
+
+          <!-- 手动日期选择按钮 -->
+          <button
+            class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"
+            title="选择特定日期"
+            @click="openManualDatePicker"
+          >
+            <CalendarIcon class="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- 手动日期选择弹窗 -->
-    <div v-if="showManualDatePicker" class="manual-date-modal">
-      <div class="manual-date-overlay" @click="showManualDatePicker = false"></div>
-      <div class="manual-date-content">
-        <div class="manual-date-header">
-          <h3>选择日期</h3>
-          <button class="close-btn" @click="showManualDatePicker = false">×</button>
+    <div v-if="showManualDatePicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden" @click.stop>
+        <div class="flex items-center justify-between p-4 border-b border-zinc-800">
+          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">选择日期</h3>
+          <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="showManualDatePicker = false">
+            <CloseIcon class="w-5 h-5" />
+          </button>
         </div>
-        <div class="manual-date-body">
+        <div class="p-6 space-y-6">
           <input
               v-model="manualSelectedDate"
-              class="manual-date-input"
+              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors"
               type="date"
           />
-          <div class="manual-date-actions">
-            <button class="cancel-btn" @click="showManualDatePicker = false">取消</button>
-            <button class="confirm-btn" @click="confirmManualDate">确认</button>
+          <div class="flex gap-3">
+            <button class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider" @click="showManualDatePicker = false">取消</button>
+            <button class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-colors uppercase tracking-wider" @click="confirmManualDate">确认</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 播出时段选择器 -->
-    <div v-if="playTimeEnabled" class="playtime-selector-container">
-      <div class="playtime-selector">
-        <label class="playtime-label">播出时段：</label>
-        <select v-model="selectedPlayTime" class="playtime-select">
-          <option value="">未选择时段</option>
-          <option
-              v-for="playTime in playTimes"
-              :key="playTime.id"
-              :value="playTime.id"
-          >
-            {{ playTime.name }}
-            <template v-if="playTime.startTime || playTime.endTime">
-              ({{ formatPlayTimeRange(playTime) }})
-            </template>
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <!-- 触控拖拽帮助提示 -->
-    <div v-if="showTouchHint" class="touch-drag-hint show">
-      {{ touchHintText }}
+    <!-- 播出时段选择器 (如果启用) -->
+    <div v-if="playTimeEnabled" class="flex items-center gap-3 bg-zinc-900/30 border border-zinc-800 rounded-lg p-3">
+      <CustomSelect
+        v-model="selectedPlayTime"
+        label="播出时段"
+        :options="playTimeOptions"
+        className="w-full"
+      />
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      <div class="spinner"></div>
-      <div class="loading-text">正在加载排期...</div>
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20 min-h-[60vh]">
+      <LoadingState title="正在加载排期数据" message="请稍候..." />
     </div>
 
-    <!-- 排期内容 -->
-    <div v-else class="schedule-content">
-      <!-- 待排歌曲列表 -->
-      <div class="song-list-panel">
-        <div class="panel-header">
-          <div class="header-title-row">
-            <h3>待排歌曲</h3>
-          </div>
-          <div class="header-controls-container">
-            <div class="header-controls">
-              <div class="search-section">
-                <div class="search-input-wrapper">
-                  <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="m21 21-4.35-4.35"/>
-                  </svg>
-                  <input
-                      v-model="searchQuery"
-                      class="search-input"
-                      placeholder="搜索歌曲标题、艺术家或投稿人..."
-                      type="text"
-                  />
-                  <button
-                      v-if="searchQuery"
-                      class="clear-search-btn"
-                      @click="searchQuery = ''"
-                  >
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <div class="semester-selector">
-                <label class="semester-label">学期：</label>
-                <select v-model="selectedSemester" class="semester-select" @change="onSemesterChange">
-                  <option
-                      v-for="semester in availableSemesters"
-                      :key="semester.id"
-                      :value="semester.name"
-                  >
-                    {{ semester.name }}
-                  </option>
-                </select>
-              </div>
-              <div class="grade-selector">
-                <label class="grade-label">年级：</label>
-                <select v-model="selectedGrade" class="grade-select">
-                  <option
-                      v-for="grade in availableGrades"
-                      :key="grade"
-                      :value="grade"
-                  >
-                    {{ grade }}
-                  </option>
-                </select>
-              </div>
-              <div class="sort-options">
-                <label>排序:</label>
-                <select v-model="songSortOption" class="sort-select">
-                  <option value="time-desc">最新投稿</option>
-                  <option value="time-asc">最早投稿</option>
-                  <option value="votes-desc">热度最高</option>
-                  <option value="votes-asc">热度最低</option>
-                </select>
-              </div>
-            </div>
-            <div class="header-tabs-row">
-              <div class="header-tabs">
-                <button 
-                  :class="['tab-btn', { active: activeTab === 'normal' }]" 
-                  @click="activeTab = 'normal'"
-                >
-                  普通投稿
-                </button>
-                <button 
-                  :class="['tab-btn', { active: activeTab === 'replay' }]" 
-                  @click="activeTab = 'replay'"
-                >
-                  重播申请
-                </button>
-                <button 
-                  :class="['tab-btn', { active: activeTab === 'all' }]" 
-                  @click="activeTab = 'all'"
-                >
-                  所有歌曲
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-            :class="['draggable-songs', { 'drag-over': isDraggableOver }]"
-            @dragleave="handleDraggableDragLeave"
-            @dragover.prevent="handleDraggableDragOver"
-            @dragenter.prevent="isDraggableOver = true"
-            @drop.stop.prevent="handleReturnToDraggable"
+    <div v-else>
+      <div class="lg:hidden sticky -top-4 -mx-4 -mt-4 z-20 flex p-1 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 shadow-xl mb-4 pt-4">
+        <button
+          @click="mobileTab = 'pending'"
+          :class="['flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all', mobileTab === 'pending' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500']"
         >
-          <div
-              v-for="song in filteredUnscheduledSongs"
-              :key="song.id"
-              class="draggable-song"
-              draggable="true"
-              @dragend="dragEnd"
-              @dragstart="dragStart($event, song)"
-              @touchend="handleTouchEnd"
-              @touchmove="handleTouchMove"
-              @touchstart="handleTouchStart($event, song, 'song')"
-          >
-            <div class="song-info">
-              <div class="song-main">
-                <div class="song-title">{{ song.title }}</div>
-                <div class="song-meta">
-                  <span class="song-artist">{{ song.artist }}</span>
-                </div>
-                <div class="song-stats">
-                  <span class="votes-count">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path
-                          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                    </svg>
-                    {{ song.voteCount || 0 }}
-                  </span>
-                  <span class="time-info">{{ formatDate(song.createdAt) }}</span>
-                </div>
-              </div>
-              <div class="song-side">
-                <span :title="(song.collaborators && song.collaborators.length > 0 ? '主投稿人: ' : '投稿人: ') + song.requester + (song.collaborators && song.collaborators.length ? '\n联合投稿: ' + song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
-                      class="song-submitter">
-                  投稿: {{ song.requester }}
-                  <span v-if="song.collaborators && song.collaborators.length > 0">
-                     & {{ song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
-                  </span>
-                </span>
-                <span v-if="song.requesterGrade" class="song-grade-class">
-                  {{ song.requesterGrade }}{{ song.requesterClass ? ` ${song.requesterClass}` : '' }}
-                </span>
-                <span
-                    v-if="song.preferredPlayTimeId && getPlayTimeName(song.preferredPlayTimeId)"
-                    class="preferred-playtime"
-                >
-                  期望时段: {{ getPlayTimeName(song.preferredPlayTimeId) }}
-                </span>
-                
-                <div v-if="activeTab === 'replay' && song.requestDetails && song.requestDetails.length > 0" class="replay-requests-summary">
-                    <span class="replay-count">
-                      {{ song.requestDetails.length }} 人申请
-                    </span>
-                    <button class="view-requests-btn" @click.stop="openReplayModal(song)">
-                      查看详情
-                    </button>
-                </div>
-              </div>
-              
-              <button 
-                  v-if="activeTab === 'replay'" 
-                  class="reject-btn"
-                  @click.stop="rejectReplayRequest(song.id)"
-                  title="拒绝申请"
-              >
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-              </button>
-            </div>
-            <div class="drag-handle">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="8" cy="8" r="1.5"/>
-                <circle cx="16" cy="8" r="1.5"/>
-                <circle cx="8" cy="16" r="1.5"/>
-                <circle cx="16" cy="16" r="1.5"/>
-              </svg>
-            </div>
-          </div>
-
-          <div v-if="filteredUnscheduledSongs.length === 0" class="empty-message">
-            <div v-if="searchQuery" class="empty-content">
-              <div class="empty-icon">🔍</div>
-              <div class="empty-title">未找到匹配的歌曲</div>
-              <div class="empty-subtitle">尝试调整搜索条件或清空搜索框</div>
-            </div>
-            <div v-else-if="allUnscheduledSongs.length === 0" class="empty-content">
-              <div class="empty-icon">🎵</div>
-              <div class="empty-title">暂无待排歌曲</div>
-              <div class="empty-subtitle">所有歌曲都已安排或播放完毕</div>
-            </div>
-            <div v-else class="empty-content">
-              <div class="empty-icon">📄</div>
-              <div class="empty-title">本页无歌曲</div>
-              <div class="empty-subtitle">查看其他页面或调整每页显示数量</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 分页控件 -->
-        <div v-if="totalPages > 1" class="pagination-container">
-          <div class="pagination-info">
-            共 {{ allUnscheduledSongs.length }} 首歌曲，第 {{ currentPage }} / {{ totalPages }} 页
-          </div>
-          <div class="pagination-controls">
-            <button
-                :disabled="currentPage === 1"
-                class="pagination-btn"
-                @click="prevPage"
-            >
-              上一页
-            </button>
-
-            <div class="page-numbers">
-              <button
-                  v-if="displayedPageNumbers[0] > 1"
-                  class="page-number"
-                  @click="goToPage(1)"
-              >
-                1
-              </button>
-              <span v-if="displayedPageNumbers[0] > 2" class="page-ellipsis">...</span>
-
-              <button
-                  v-for="page in displayedPageNumbers"
-                  :key="page"
-                  :class="['page-number', { active: page === currentPage }]"
-                  @click="goToPage(page)"
-              >
-                {{ page }}
-              </button>
-
-              <span v-if="displayedPageNumbers[displayedPageNumbers.length - 1] < totalPages - 1" class="page-ellipsis">...</span>
-              <button
-                  v-if="displayedPageNumbers[displayedPageNumbers.length - 1] < totalPages"
-                  class="page-number"
-                  @click="goToPage(totalPages)"
-              >
-                {{ totalPages }}
-              </button>
-            </div>
-
-            <button
-                :disabled="currentPage === totalPages"
-                class="pagination-btn"
-                @click="nextPage"
-            >
-              下一页
-            </button>
-          </div>
-        </div>
+          <ListMusic class="w-4 h-4" />
+          <span class="flex items-center gap-1.5">待排歌曲 <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{ filteredUnscheduledSongs.length }}</span></span>
+        </button>
+        <button
+          @click="mobileTab = 'scheduled'"
+          :class="['flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all', mobileTab === 'scheduled' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500']"
+        >
+          <PlaySquare class="w-4 h-4" />
+          <span class="flex items-center gap-1.5">播放列表 <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{ localScheduledSongs.length }}</span></span>
+        </button>
       </div>
 
-      <!-- 排期列表 -->
-      <div class="sequence-panel">
-        <div class="panel-header">
-          <h3>播放顺序</h3>
-          <div class="sequence-actions">
-            <!-- 草稿保存按钮 -->
-            <button
-                :disabled="!hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts"
-                class="draft-btn"
-                @click="saveDraft"
-            >
-              保存草稿
-            </button>
-            <!-- 发布按钮 -->
-            <button
-                :disabled="!canPublish"
-                class="publish-btn"
-                @click="publishSchedule"
-            >
-              发布排期
-            </button>
-            <!-- 保存并发布 -->
-            <button
-                :disabled="!hasChanges && localScheduledSongs.length > 0"
-                class="save-btn"
-                @click="saveSequence"
-            >
-              保存并发布
-            </button>
-            <button
-                :disabled="localScheduledSongs.length === 0"
-                class="download-btn"
-                @click="openDownloadDialog"
-            >
-              下载歌曲
-            </button>
-            <button
-                :disabled="localScheduledSongs.length === 0"
-                class="mark-played-btn"
-                @click="markAllAsPlayed"
-            >
-              全部已播放
-            </button>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
+        <!-- Left: Pending Songs (待排库) -->
+        <div
+          v-show="mobileTab === 'pending' || isDesktop"
+          :class="['lg:col-span-4 flex flex-col space-y-2', mobileTab === 'scheduled' ? 'hidden lg:flex' : 'flex']"
+          @dragover.prevent="handleDraggableDragOver"
+          @dragleave="handleDraggableDragLeave"
+          @drop.stop.prevent="handleReturnToDraggable"
+        >
+          <div class="flex items-center justify-between px-1">
+            <h3 class="hidden lg:block text-lg font-black tracking-tight text-zinc-100 uppercase">待排歌曲</h3>
+            <div class="flex w-full lg:w-auto gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800">
+              <button
+                v-for="tab in [{ id: 'normal', label: '普通投稿' }, { id: 'replay', label: '重播申请' }, { id: 'all', label: '所有' }]"
+                :key="tab.id"
+                @click="activeTab = tab.id"
+                :class="['flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all', activeTab === tab.id ? 'bg-zinc-800 text-blue-400 shadow-md border border-blue-500/20' : 'text-zinc-600 hover:text-zinc-400']"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 筛选区 - 移动端折叠 -->
+          <div class="bg-zinc-900/40 border border-zinc-800 rounded-2xl shadow-xl">
+            <div class="p-4 flex items-center justify-between lg:hidden border-b border-zinc-800/50 rounded-t-2xl" @click="mobileFiltersOpen = !mobileFiltersOpen">
+              <div class="flex items-center gap-2 text-zinc-400">
+                <Filter class="w-3.5 h-3.5" />
+                <span class="text-[11px] font-black uppercase tracking-widest">检索与筛选</span>
+              </div>
+              <ChevronRight :class="['w-3.5 h-3.5 text-zinc-700 transition-transform duration-300', mobileFiltersOpen ? 'rotate-90' : '']" />
+            </div>
+
+            <div v-show="mobileFiltersOpen || isDesktop" class="p-3 space-y-2 transition-all duration-300 ease-in-out rounded-b-2xl">
+              <div class="relative">
+                <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700 w-3.5 h-3.5" />
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  placeholder="搜索歌曲、艺术家..."
+                  class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                />
+                <button
+                    v-if="searchQuery"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400"
+                    @click="searchQuery = ''"
+                >
+                  <CloseIcon class="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div class="grid grid-cols-1 gap-2">
+                <CustomSelect
+                  v-model="selectedSemester"
+                  label="当前学期"
+                  :options="availableSemesters"
+                  label-key="name"
+                  value-key="name"
+                  @change="onSemesterChange"
+                />
+                <div class="grid grid-cols-2 gap-2">
+                  <CustomSelect
+                    v-model="selectedGrade"
+                    label="年级"
+                    :options="availableGrades"
+                  />
+                  <CustomSelect
+                    v-model="songSortOption"
+                    label="排序"
+                    :options="sortOptions"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            :class="['draggable-songs flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200', isDraggableOver ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800/80 bg-zinc-900/20']"
+          >
+            <div class="space-y-2">
+              <div
+                  v-for="song in filteredUnscheduledSongs"
+                  :key="song.id"
+                  class="draggable-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none"
+                  draggable="true"
+                  @dragend="dragEnd"
+                  @dragstart="dragStart($event, song)"
+                  @touchend="handleTouchEnd"
+                  @touchmove="handleTouchMove"
+                  @touchstart="handleTouchStart($event, song, 'song')"
+              >
+                <!-- Song Card Content -->
+                <div class="flex items-center gap-3">
+                  <!-- Cover Image -->
+                  <div class="relative w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50">
+                    <img
+                      v-if="song.cover"
+                      :src="convertToHttps(song.cover)"
+                      class="w-full h-full object-cover"
+                      referrerpolicy="no-referrer"
+                      loading="lazy"
+                      alt=""
+                    />
+                    <div v-else class="w-full h-full flex items-center justify-center text-zinc-600">
+                      <Music2 class="w-6 h-6 opacity-50" />
+                    </div>
+                  </div>
+
+                  <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+                    <h4 class="font-bold text-zinc-100 text-sm truncate">{{ song.title }}</h4>
+                    <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
+                    <div class="text-[10px] text-zinc-500 truncate flex items-center gap-1">
+                      <span>{{ song.requester }}</span>
+                      <span v-if="song.requesterGrade" class="text-zinc-600">|</span>
+                      <span v-if="song.requesterGrade">{{ song.requesterGrade }}</span>
+                      <span v-if="song.preferredPlayTimeId" class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap">
+                        期望: {{ getPlayTimeName(song.preferredPlayTimeId) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <!-- Normal Mode: Vote Count -->
+                    <div v-if="activeTab !== 'replay'" class="flex items-center gap-1 text-[10px] font-bold text-zinc-500 bg-zinc-950/50 px-2 py-1 rounded-md border border-zinc-800/50">
+                       <Heart class="w-3 h-3 text-red-500/50" />
+                       {{ song.voteCount || 0 }}
+                    </div>
+
+                    <!-- Replay Mode: View Button -->
+                    <button
+                      v-if="activeTab === 'replay'"
+                      class="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-[10px] font-bold transition-colors"
+                      @click.stop="openReplayModal(song)"
+                    >
+                      查看
+                    </button>
+
+                    <!-- Replay Mode: Reject Button (Mobile Only) -->
+                    <button
+                      v-if="activeTab === 'replay'"
+                      class="lg:hidden p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors"
+                      @click.stop="rejectReplayRequest(song.id)"
+                      title="拒绝申请"
+                    >
+                      <CloseIcon class="w-3.5 h-3.5" />
+                    </button>
+
+                    <!-- Mobile Add Button -->
+                    <button
+                      class="lg:hidden p-2 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 active:scale-95 transition-all flex-shrink-0"
+                      @click.stop="addSongToSchedule(song)"
+                    >
+                      <Plus class="w-5 h-5" />
+                    </button>
+
+                    <!-- Menu Button -->
+                    <div class="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400 transition-colors">
+                       <MoreVertical class="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div v-if="filteredUnscheduledSongs.length === 0" class="h-[300px] flex flex-col items-center justify-center text-zinc-800">
+                <div v-if="searchQuery" class="flex flex-col items-center">
+                  <Search class="w-8 h-8 mb-2 opacity-20" />
+                  <p class="text-[10px] font-black uppercase tracking-widest">未找到匹配的歌曲</p>
+                </div>
+                <div v-else class="flex flex-col items-center">
+                  <ListMusic class="w-8 h-8 mb-2 opacity-20" />
+                  <p class="text-[10px] font-black uppercase tracking-widest">暂无歌曲记录</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            <div v-if="totalPages > 1" class="mt-4 flex items-center justify-between pt-4 border-t border-zinc-800/50">
+               <button
+                 :disabled="currentPage === 1"
+                 @click="prevPage"
+                 class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 disabled:opacity-30 transition-colors"
+               >
+                 <ArrowLeft class="w-4 h-4" />
+               </button>
+               <span class="text-[10px] font-bold text-zinc-600">{{ currentPage }} / {{ totalPages }}</span>
+               <button
+                 :disabled="currentPage === totalPages"
+                 @click="nextPage"
+                 class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 disabled:opacity-30 transition-colors"
+               >
+                 <ArrowRight class="w-4 h-4" />
+               </button>
+            </div>
           </div>
         </div>
 
+        <!-- Right: Schedule List (播放顺序) -->
         <div
+          v-show="mobileTab === 'scheduled' || isDesktop"
+          :class="['lg:col-span-8 flex flex-col space-y-4', mobileTab === 'pending' ? 'hidden lg:flex' : 'flex']"
+        >
+          <div class="hidden lg:flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-1">
+            <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">播放顺序</h3>
+            <div class="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl">
+              <div class="flex gap-1">
+                <button
+                  @click="saveDraft"
+                  :disabled="!hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts"
+                  class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Save class="w-3.5 h-3.5" />
+                  <span class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700">保存草稿</span>
+                </button>
+                <button
+                  @click="openDownloadDialog"
+                  :disabled="localScheduledSongs.length === 0"
+                  class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download class="w-3.5 h-3.5" />
+                  <span class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700">下载歌曲</span>
+                </button>
+                <button
+                  @click="markAllAsPlayed"
+                  :disabled="localScheduledSongs.length === 0"
+                  class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-emerald-500 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <CheckCircle2 class="w-3.5 h-3.5" />
+                  <span class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700">全部已播放</span>
+                </button>
+              </div>
+              <div class="h-6 w-[1px] bg-zinc-800 mx-1" />
+              <button
+                @click="publishSchedule"
+                :disabled="!canPublish"
+                class="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-[10px] font-black rounded-xl border border-emerald-500/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+              >
+                <Send class="w-3 h-3" /> 发布排期
+              </button>
+              <button
+                @click="saveSequence"
+                :disabled="!hasChanges && localScheduledSongs.length > 0"
+                class="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+              >
+                <FileBadge class="w-3.5 h-3.5" /> 保存并发布
+              </button>
+            </div>
+          </div>
+
+          <div
             ref="sequenceList"
-            :class="['sequence-list', { 'drag-over': isSequenceOver }]"
+            :class="['sequence-list flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200', isSequenceOver ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800/80 bg-zinc-900/20']"
             @dragleave="handleSequenceDragLeave"
             @dragover.prevent="handleDragOver"
             @dragenter.prevent="isSequenceOver = true"
             @drop.stop.prevent="dropToSequence"
-        >
-          <div v-if="localScheduledSongs.length === 0" class="empty-message">
-            <div class="empty-content">
-              <div class="empty-icon">🎧</div>
-              <div class="empty-title">空的播放列表</div>
-              <div class="empty-subtitle">将歌曲拖到此处安排播放顺序</div>
-            </div>
-          </div>
-
-          <TransitionGroup
-              class="schedule-transition-group"
-              name="schedule-list"
-              tag="div"
           >
-            <div
-                v-for="(schedule, index) in localScheduledSongs"
-                :key="schedule.id"
-                :class="['scheduled-song', { 'drag-over': dragOverIndex === index, 'is-draft': schedule.isDraft }]"
-                :data-schedule-id="schedule.id"
-                draggable="true"
-                @dragend="dragEnd"
-                @dragleave="handleDragLeave"
-                @dragstart="dragScheduleStart($event, schedule)"
-                @touchend="handleTouchEnd"
-                @touchmove="handleTouchMove"
-                @touchstart="handleTouchStart($event, schedule, 'schedule')"
-                @dragover.prevent
-                @dragenter.prevent="handleDragEnter($event, index)"
-                @drop.stop.prevent="dropReorder($event, index)"
-            >
-              <div class="order-number">{{ index + 1 }}</div>
-              <div class="scheduled-song-info">
-                <div class="song-main">
-                  <div class="song-title">
-                    {{ schedule.song.title }}
-                    <span v-if="schedule.isDraft" class="draft-badge">草稿</span>
-                  </div>
-                  <div class="song-artist">{{ schedule.song.artist }}</div>
-                  <div :title="(schedule.song.collaborators && schedule.song.collaborators.length > 0 ? '主投稿人: ' : '投稿人: ') + schedule.song.requester + (schedule.song.collaborators && schedule.song.collaborators.length ? '\n联合投稿: ' + schedule.song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
-                       class="song-requester">
-                    投稿人: {{ schedule.song.requester }}
-                    <span v-if="schedule.song.collaborators && schedule.song.collaborators.length > 0">
-                       & {{ schedule.song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div class="song-actions">
-                <!-- 草稿状态显示发布按钮 -->
-                <button
-                    v-if="schedule.isDraft"
-                    class="publish-single-btn"
-                    title="发布此草稿"
-                    @click="publishSingleDraft(schedule)"
-                >
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <polygon points="5,3 19,12 5,21 5,3"/>
-                  </svg>
-                </button>
-                <div class="drag-handle">
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <circle cx="8" cy="8" r="1.5"/>
-                    <circle cx="16" cy="8" r="1.5"/>
-                    <circle cx="8" cy="16" r="1.5"/>
-                    <circle cx="16" cy="16" r="1.5"/>
-                  </svg>
-                </div>
-              </div>
+            <div v-if="localScheduledSongs.length === 0" class="flex flex-col items-center justify-center h-full py-12 text-zinc-800">
+              <PlaySquare class="w-8 h-8 mb-4 opacity-20" />
+              <p class="text-[10px] font-black uppercase tracking-widest">请从待排库中添加歌曲</p>
             </div>
-          </TransitionGroup>
+
+            <TransitionGroup
+                class="space-y-2"
+                name="schedule-list"
+                tag="div"
+            >
+              <div
+                  v-for="(schedule, index) in localScheduledSongs"
+                  :key="schedule.id"
+                  :class="['scheduled-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none', dragOverIndex === index ? 'border-t-2 border-t-blue-500' : '', schedule.isDraft ? 'border-amber-500/30 bg-amber-500/5' : '']"
+                  :data-schedule-id="schedule.id"
+                  draggable="true"
+                  @dragend="dragEnd"
+                  @dragleave="handleDragLeave"
+                  @dragstart="dragScheduleStart($event, schedule)"
+                  @touchend="handleTouchEnd"
+                  @touchmove="handleTouchMove"
+                  @touchstart="handleTouchStart($event, schedule, 'schedule')"
+                  @dragover.prevent
+                  @dragenter.prevent="handleDragEnter($event, index)"
+                  @drop.stop.prevent="dropReorder($event, index)"
+              >
+                <div class="flex items-center gap-3">
+                   <div class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-zinc-950/50 border border-zinc-800 text-zinc-500 font-black text-xs flex-shrink-0">
+                     <span class="text-[8px] text-zinc-600 uppercase leading-none mb-0.5">POS</span>
+                     <span class="text-sm text-zinc-300 leading-none">{{ index + 1 < 10 ? '0' + (index + 1) : index + 1 }}</span>
+                   </div>
+
+                   <!-- Cover Image -->
+                   <div class="relative w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50">
+                      <img
+                        v-if="schedule.song.cover"
+                        :src="convertToHttps(schedule.song.cover)"
+                        class="w-full h-full object-cover"
+                        referrerpolicy="no-referrer"
+                        loading="lazy"
+                        alt=""
+                      />
+                      <div v-else class="w-full h-full flex items-center justify-center text-zinc-600">
+                        <Music2 class="w-5 h-5 opacity-50" />
+                      </div>
+                   </div>
+
+                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+                     <div class="flex items-center gap-2">
+                       <h4 class="font-bold text-zinc-200 text-sm truncate">{{ schedule.song.title }}</h4>
+                       <span v-if="schedule.isDraft" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">草稿</span>
+                     </div>
+                     <div class="text-xs text-zinc-500 truncate">{{ schedule.song.artist }}</div>
+                     <div class="text-[10px] text-zinc-600 truncate flex items-center gap-1">
+                        <span>{{ schedule.song.requester }}</span>
+                        <span v-if="schedule.song.requesterGrade" class="text-zinc-700">|</span>
+                        <span v-if="schedule.song.requesterGrade">{{ schedule.song.requesterGrade }}</span>
+                        <span v-if="schedule.song.preferredPlayTimeId" class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap">
+                          期望: {{ getPlayTimeName(schedule.song.preferredPlayTimeId) }}
+                        </span>
+                     </div>
+                   </div>
+
+                   <div class="flex items-center gap-2">
+                     <button
+                        v-if="schedule.isDraft"
+                        class="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 transition-colors"
+                        title="发布此草稿"
+                        @click="publishSingleDraft(schedule)"
+                     >
+                       <Send class="w-3.5 h-3.5" />
+                     </button>
+
+                     <!-- Mobile Remove Button -->
+                     <button
+                       class="lg:hidden p-2 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500/30 active:scale-95 transition-all flex-shrink-0"
+                       @click.stop="removeSongFromSchedule(schedule)"
+                     >
+                       <Minus class="w-5 h-5" />
+                     </button>
+
+                     <div class="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400 transition-colors">
+                       <MoreVertical class="w-4 h-4" />
+                     </div>
+                   </div>
+                </div>
+              </div>
+            </TransitionGroup>
+          </div>
         </div>
+      </div>
+
+      <!-- 移动端底部操作栏 -->
+      <div class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800 flex items-center gap-3 pb-6">
+        <!-- 次要操作栏 (图标按钮) -->
+        <button @click="openDownloadDialog" class="p-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+          <Download class="w-5 h-5" />
+        </button>
+        <button @click="saveDraft" class="p-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+          <Save class="w-5 h-5" />
+        </button>
+        <button @click="markAllAsPlayed" class="p-3 bg-zinc-900 border border-zinc-800 text-emerald-500 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+          <CheckCircle2 class="w-5 h-5" />
+        </button>
+        <button @click="publishSchedule" class="p-3 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all" title="仅发布排期">
+          <Send class="w-5 h-5" />
+        </button>
+
+        <!-- 主要操作 -->
+        <button
+          @click="saveSequence"
+          :disabled="!hasChanges && localScheduledSongs.length > 0"
+          class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <FileBadge class="w-4 h-4" /> 保存并发布
+        </button>
       </div>
     </div>
   </div>
@@ -502,20 +518,34 @@
   />
 
   <!-- 重播申请详情弹窗 -->
-  <div v-if="showReplayModal" class="replay-modal-overlay" @click="closeReplayModal">
-    <div class="replay-modal-content" @click.stop>
-      <div class="replay-modal-header">
-        <h3>{{ replayModalTitle }} - 重播申请详情</h3>
-        <button class="close-btn" @click="closeReplayModal">×</button>
+  <div v-if="showReplayModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" @click="closeReplayModal">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" @click.stop>
+      <div class="flex items-center justify-between p-4 border-b border-zinc-800">
+        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ replayModalTitle }} - 重播申请详情</h3>
+        <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="closeReplayModal">
+          <CloseIcon class="w-5 h-5" />
+        </button>
       </div>
-      <div class="replay-modal-body">
-        <div class="replay-requests-list">
-          <div v-for="(req, idx) in replayModalRequests" :key="idx" class="replay-request-detail-item">
-            <div class="requester-info">
-              <span class="requester-name">{{ req.name }}</span>
-              <span class="requester-grade" v-if="req.grade">{{ req.grade }}{{ req.class ? ` ${req.class}` : '' }}</span>
+      <div class="p-0 overflow-y-auto max-h-[60vh]">
+        <div class="divide-y divide-zinc-800/50">
+          <div v-for="(req, idx) in replayModalRequests" :key="idx" class="flex items-center justify-between p-4 group">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-blue-400 transition-colors">
+                <User class="w-3.5 h-3.5" />
+              </div>
+              <div class="flex flex-col">
+                <span class="text-sm font-bold text-zinc-200">{{ req.name }}</span>
+                <span v-if="req.grade" class="text-[10px] text-zinc-500">{{ req.grade }}{{ req.class ? ` ${req.class}` : '' }}</span>
+              </div>
             </div>
-            <span class="request-time">{{ formatDate(req.createdAt) }}</span>
+            <div class="flex items-center gap-1.5 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+              <Clock class="w-2.5 h-2.5" />
+              {{ formatDate(req.createdAt) }}
+            </div>
+          </div>
+          <div v-if="replayModalRequests.length === 0" class="py-10 text-center text-zinc-700">
+             <Info class="w-6 h-6 mx-auto mb-2 opacity-20" />
+             <p class="text-xs font-bold uppercase tracking-widest">暂无详细申请记录</p>
           </div>
         </div>
       </div>
@@ -524,9 +554,19 @@
 </template>
 
 <script setup>
-import {computed, nextTick, onMounted, onUnmounted, reactive, ref, watch} from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import {
+  Search, Save, Send, CheckCircle2, Download,
+  FileBadge, PlaySquare, ChevronDown, ListMusic,
+  Filter, Info, Clock, User, AlertTriangle, X as CloseIcon,
+  ChevronRight, MoreVertical, Calendar as CalendarIcon,
+  ArrowLeft, ArrowRight, Music2, Heart, Plus, Minus, CircleDot
+} from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import LoadingState from '~/components/UI/Common/LoadingState.vue'
+import { convertToHttps } from '~/utils/url'
 
 // 响应式数据
 const selectedDate = ref(new Date().toISOString().split('T')[0])
@@ -536,6 +576,8 @@ const hasChanges = ref(false)
 const searchQuery = ref('')
 const selectedGrade = ref('全部')
 const activeTab = ref('normal')
+const mobileTab = ref('pending')
+const mobileFiltersOpen = ref(false)
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
@@ -547,6 +589,9 @@ const confirmAction = ref(null)
 
 // 下载相关
 const showDownloadDialog = ref(false)
+const openDownloadDialog = () => {
+  showDownloadDialog.value = true
+}
 
 // 重播申请弹窗相关
 const showReplayModal = ref(false)
@@ -589,11 +634,6 @@ const TOUCH_CONFIG = {
   SCROLL_THRESHOLD: 10 // 滚动阈值（像素）
 }
 
-// 触控帮助提示
-const showTouchHint = ref(false)
-const touchHintText = ref('')
-const touchHintTimer = ref(null)
-
 // DOM引用
 const dateSelector = ref(null)
 const sequenceList = ref(null)
@@ -628,9 +668,35 @@ const playTimes = ref([])
 const playTimeEnabled = ref(false)
 const selectedPlayTime = ref('')
 
+// 播出时段选项
+const playTimeOptions = computed(() => {
+  const options = [{ label: '未选择时段 (全天)', value: '' }]
+  if (playTimes.value) {
+    playTimes.value.forEach(pt => {
+      let label = pt.name
+      if (pt.startTime || pt.endTime) {
+        label += ` (${formatPlayTimeRange(pt)})`
+      }
+      options.push({ label, value: pt.id })
+    })
+  }
+  return options
+})
+
+// 排序选项
+const sortOptions = [
+  { label: '最新投稿', value: 'time-desc' },
+  { label: '最早投稿', value: 'time-asc' },
+  { label: '热度最高', value: 'votes-desc' },
+  { label: '热度最低', value: 'votes-asc' }
+]
+
 // 学期相关
 const availableSemesters = ref([])
 const selectedSemester = ref('')
+
+// 日期范围（用于无限滚动）
+const dateRange = ref({ start: -15, end: 15 })
 
 // 手动日期选择
 const showManualDatePicker = ref(false)
@@ -658,13 +724,13 @@ let adminService = null
 let auth = null
 let semesterService = null
 
-// 生成日期列表（固定14天）
+// 生成日期列表（无限滚动模式）
 const availableDates = computed(() => {
   const dates = []
   const today = new Date()
 
-  // 生成前7天到后7天的日期
-  for (let i = -7; i <= 7; i++) {
+  // 根据当前范围生成日期
+  for (let i = dateRange.value.start; i <= dateRange.value.end; i++) {
     const date = new Date(today)
     date.setDate(today.getDate() + i)
 
@@ -688,14 +754,14 @@ const availableDates = computed(() => {
 // 获取所有可选年级
 const availableGrades = computed(() => {
   if (!songs.value) return ['全部']
-  
+
   const grades = new Set()
   songs.value.forEach(song => {
     if (song.requesterGrade) {
       grades.add(song.requesterGrade)
     }
   })
-  
+
   // 对年级进行简单排序
   const sortedGrades = Array.from(grades).sort()
   return ['全部', ...sortedGrades]
@@ -708,10 +774,10 @@ const allUnscheduledSongs = computed(() => {
 
   let unscheduledSongs = sourceData.filter(song => {
     // 检查是否已在当前显示的排期列表中（当前日期、当前时段）
-    const isScheduledInCurrentView = localScheduledSongs.value.some(s => 
+    const isScheduledInCurrentView = localScheduledSongs.value.some(s =>
       (s.song && s.song.id === song.id) || s.songId === song.id
     )
-    
+
     if (isScheduledInCurrentView) return false
 
     if (activeTab.value === 'replay' || activeTab.value === 'all') {
@@ -739,7 +805,7 @@ const allUnscheduledSongs = computed(() => {
 
   // 年级过滤 (针对普通投稿和所有歌曲)
   if ((activeTab.value === 'normal' || activeTab.value === 'all') && selectedGrade.value !== '全部') {
-    unscheduledSongs = unscheduledSongs.filter(song => 
+    unscheduledSongs = unscheduledSongs.filter(song =>
       song.requesterGrade === selectedGrade.value
     )
   }
@@ -805,6 +871,9 @@ const displayedPageNumbers = computed(() => {
   return Array.from({ length: end - start + 1 }, (_, i) => start + i)
 })
 
+// 桌面端检测
+const isDesktop = ref(true)
+
 // 方法
 const formatDate = (dateString) => {
   const date = new Date(dateString)
@@ -815,6 +884,11 @@ const formatDate = (dateString) => {
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
   return `${Math.floor(diff / 86400000)}天前`
+}
+
+// 检查窗口大小
+const checkWindowSize = () => {
+  isDesktop.value = window.innerWidth >= 1024
 }
 
 // 处理日期选择器滚轮事件
@@ -843,12 +917,73 @@ const handleDateSelectorWheel = (event) => {
   }, 300)
 }
 
+// 滚动日期选择器
+const scrollDates = (direction) => {
+  if (!dateSelector.value) return
+
+  const scrollAmount = 200
+  const currentScroll = dateSelector.value.scrollLeft
+
+  dateSelector.value.scrollTo({
+    left: direction === 'right' ? currentScroll + scrollAmount : currentScroll - scrollAmount,
+    behavior: 'smooth'
+  })
+
+  setTimeout(() => {
+    updateScrollButtonState()
+  }, 300)
+}
+
+// 更新滚动按钮状态并加载更多日期
+const updateScrollButtonState = () => {
+  if (!dateSelector.value) return
+
+  const { scrollLeft, scrollWidth, clientWidth } = dateSelector.value
+
+  // 接近左边界，加载更多过去日期
+  if (scrollLeft < 50) {
+    const oldScrollWidth = scrollWidth
+    dateRange.value.start -= 7
+    nextTick(() => {
+      const newScrollWidth = dateSelector.value.scrollWidth
+      dateSelector.value.scrollLeft += (newScrollWidth - oldScrollWidth)
+    })
+  }
+
+  // 接近右边界，加载更多未来日期
+  if (scrollWidth - scrollLeft - clientWidth < 50) {
+    dateRange.value.end += 7
+  }
+
+  // 无限滚动模式下，除非有特定限制，否则按钮始终可用
+  isFirstDateVisible.value = false
+  isLastDateVisible.value = false
+}
+
+// 确认对话框处理
+const handleConfirm = async () => {
+  if (confirmAction.value) {
+    await confirmAction.value()
+  }
+  showConfirmDialog.value = false
+  confirmAction.value = null
+}
+
 // 初始化
 onMounted(async () => {
   songsService = useSongs()
   adminService = useAdmin()
   auth = useAuth()
   semesterService = useSemesters()
+
+  // 初始化窗口大小检测
+  checkWindowSize()
+  window.addEventListener('resize', checkWindowSize)
+
+  // 立即滚动到当前日期，避免等待数据加载
+  nextTick(() => {
+    scrollToDateElement('auto')
+  })
 
   // 先加载学期数据，然后加载其他数据
   await loadSemesters()
@@ -858,24 +993,67 @@ onMounted(async () => {
   nextTick(() => {
     if (dateSelector.value) {
       dateSelector.value.addEventListener('wheel', handleDateSelectorWheel, {passive: false})
+      dateSelector.value.addEventListener('scroll', updateScrollButtonState)
     }
     updateScrollButtonState()
+    
+    // 再次确认滚动位置（防止布局偏移）
+    scrollToDateElement('auto')
   })
 })
+
+// 滚动到指定日期元素
+const scrollToDateElement = (behavior = 'smooth') => {
+  if (!dateSelector.value || !selectedDate.value) return
+
+  const el = dateSelector.value.querySelector(`[data-date="${selectedDate.value}"]`)
+  if (el) {
+    el.scrollIntoView({ behavior, block: 'nearest', inline: 'center' })
+  }
+}
 
 // 清理事件监听器
 onUnmounted(() => {
   if (dateSelector.value) {
     dateSelector.value.removeEventListener('wheel', handleDateSelectorWheel)
+    dateSelector.value.removeEventListener('scroll', updateScrollButtonState)
   }
+  window.removeEventListener('resize', checkWindowSize)
 })
+
+// 打开手动日期选择器
+const openManualDatePicker = () => {
+  manualSelectedDate.value = selectedDate.value
+  showManualDatePicker.value = true
+}
 
 // 确认手动日期选择
 const confirmManualDate = () => {
   if (manualSelectedDate.value) {
     selectedDate.value = manualSelectedDate.value
     showManualDatePicker.value = false
+
+    // 选中日期后，如果是手动选择的日期可能在当前列表外，滚动到该日期
+    nextTick(() => {
+      scrollToDateElement('smooth')
+    })
   }
+}
+
+// 定位到今天
+const scrollToToday = () => {
+  const todayStr = new Date().toISOString().split('T')[0]
+  selectedDate.value = todayStr
+
+  // 确保今天在范围内
+  if (dateRange.value.start > 0 || dateRange.value.end < 0) {
+    dateRange.value.start = -15
+    dateRange.value.end = 15
+  }
+
+  nextTick(() => {
+    scrollToDateElement('smooth')
+  })
 }
 
 // 分页控制方法
@@ -937,26 +1115,33 @@ const fetchReplayRequests = async () => {
 
 // 拒绝重播申请
 const rejectReplayRequest = async (songId) => {
-  if (!confirm('确定要拒绝该重播申请吗？')) return
+  confirmDialogTitle.value = '拒绝重播申请'
+  confirmDialogMessage.value = '确定要拒绝该重播申请吗？'
+  confirmDialogType.value = 'warning'
+  confirmDialogConfirmText.value = '拒绝申请'
 
-  try {
-    await $fetch('/api/admin/schedule/reject-replay', {
-      method: 'POST',
-      body: { songId },
-      ...auth.getAuthConfig()
-    })
-    
-    // 刷新申请列表
-    await fetchReplayRequests()
-    if (window.$showNotification) {
-      window.$showNotification('重播申请已拒绝', 'success')
-    }
-  } catch (err) {
-    console.error('拒绝申请失败', err)
-    if (window.$showNotification) {
-      window.$showNotification('拒绝申请失败: ' + (err.data?.message || err.message), 'error')
+  confirmAction.value = async () => {
+    try {
+      await $fetch('/api/admin/schedule/reject-replay', {
+        method: 'POST',
+        body: { songId },
+        ...auth.getAuthConfig()
+      })
+
+      // 刷新申请列表
+      await fetchReplayRequests()
+      if (window.$showNotification) {
+        window.$showNotification('重播申请已拒绝', 'success')
+      }
+    } catch (err) {
+      console.error('拒绝申请失败', err)
+      if (window.$showNotification) {
+        window.$showNotification('拒绝申请失败: ' + (err.data?.message || err.message), 'error')
+      }
     }
   }
+
+  showConfirmDialog.value = true
 }
 
 // 加载数据
@@ -1139,7 +1324,7 @@ const dragStart = (event, song) => {
   }))
 
   setTimeout(() => {
-    event.target.classList.add('dragging')
+    event.target.classList.add('opacity-50')
   }, 0)
 }
 
@@ -1152,12 +1337,12 @@ const dragScheduleStart = (event, schedule) => {
   draggedSchedule.value = {...schedule}
 
   setTimeout(() => {
-    event.target.classList.add('dragging')
+    event.target.classList.add('opacity-50')
   }, 0)
 }
 
 const dragEnd = (event) => {
-  event.target.classList.remove('dragging')
+  event.target.classList.remove('opacity-50')
   dragOverIndex.value = -1
   isSequenceOver.value = false
   isDraggableOver.value = false
@@ -1213,7 +1398,7 @@ const dropToSequence = async (event) => {
       if (!song) {
         song = replayRequests.value.find(s => s.id === songId)
       }
-      
+
       if (!song) return
 
       const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
@@ -1271,7 +1456,7 @@ const dropReorder = async (event, dropIndex) => {
       if (!song) {
         song = replayRequests.value.find(s => s.id === songId)
       }
-      
+
       if (!song) return
 
       const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
@@ -1304,6 +1489,132 @@ const dropReorder = async (event, dropIndex) => {
   draggedSchedule.value = null
 }
 
+// 添加歌曲到排期（点击方式）
+const addSongToSchedule = (song) => {
+  const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === song.id)
+  if (existingIndex !== -1) return
+
+  const newSchedule = {
+    id: Date.now(),
+    song: song,
+    playDate: selectedDate.value,
+    sequence: localScheduledSongs.value.length + 1,
+    isNew: true,
+    isLocalOnly: true
+  }
+
+  scheduledSongIds.value.add(song.id)
+  localScheduledSongs.value.push(newSchedule)
+  hasChanges.value = true
+
+  if (navigator.vibrate) navigator.vibrate(50)
+}
+
+// 从排期移除歌曲（点击方式）
+const removeSongFromSchedule = (schedule) => {
+  const index = localScheduledSongs.value.findIndex(s => s.id === schedule.id)
+
+  if (index !== -1) {
+    const removed = localScheduledSongs.value.splice(index, 1)[0]
+
+    if (removed.song) {
+      scheduledSongIds.value.delete(removed.song.id)
+    }
+
+    // 重新排序
+    localScheduledSongs.value.forEach((item, idx) => {
+      item.sequence = idx + 1
+    })
+
+    hasChanges.value = true
+    if (navigator.vibrate) navigator.vibrate(50)
+  }
+}
+
+// 处理拖回待排区域
+const handleReturnToDraggable = async (event) => {
+  try {
+    const data = event.dataTransfer.getData('text/plain')
+    if (!data) return
+
+    const dragData = JSON.parse(data)
+
+    if (dragData.type === 'reorder-schedule') {
+      // 从播放列表拖回待排列表（移除）
+      const scheduleId = parseInt(dragData.scheduleId)
+      const index = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
+
+      if (index !== -1) {
+        const removed = localScheduledSongs.value.splice(index, 1)[0]
+
+        // 如果是本地新增的，直接移除；如果是已存在的，需要记录删除操作（这里简化为本地移除，保存时处理）
+        if (removed.song) {
+          scheduledSongIds.value.delete(removed.song.id)
+        }
+
+        // 重新排序
+        localScheduledSongs.value.forEach((item, idx) => {
+          item.sequence = idx + 1
+        })
+
+        hasChanges.value = true
+      }
+    }
+  } catch (err) {
+    console.error('处理移除失败:', err)
+  }
+
+  isDraggableOver.value = false
+}
+
+// 标记全部已播放
+const markAllAsPlayed = async () => {
+  if (localScheduledSongs.value.length === 0) return
+
+  confirmDialogTitle.value = '标记全部已播'
+  confirmDialogMessage.value = '确定要将列表中的所有歌曲标记为已播放吗？'
+  confirmDialogType.value = 'info'
+  confirmDialogConfirmText.value = '确认标记'
+
+  confirmAction.value = async () => {
+    loading.value = true
+    try {
+      const songIds = localScheduledSongs.value.map(s => s.song.id)
+
+      await $fetch('/api/admin/songs/mark-played', {
+        method: 'POST',
+        body: { songIds },
+        ...auth.getAuthConfig()
+      })
+
+      if (window.$showNotification) {
+        window.$showNotification('所有歌曲已标记为播放', 'success')
+      }
+
+      // 重新加载数据
+      await loadData()
+    } catch (err) {
+      console.error('标记播放失败:', err)
+      if (window.$showNotification) {
+        window.$showNotification('操作失败', 'error')
+      }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  showConfirmDialog.value = true
+}
+
+// 保存并发布
+const saveSequence = async () => {
+  try {
+    await publishSchedule()
+  } catch (err) {
+    console.error('保存并发布失败:', err)
+  }
+}
+
 // 草稿相关方法
 
 // 加载草稿列表（使用新的综合API）
@@ -1322,26 +1633,6 @@ const loadDrafts = async () => {
     console.error('加载草稿列表失败:', error)
     // 如果加载失败，设置为空数组避免错误
     drafts.value = []
-  }
-}
-
-// 加载完整的排期数据（包括草稿）
-const loadFullScheduleData = async (date = null, playTimeId = null, includeDrafts = 'true') => {
-  try {
-    const query = {}
-    if (date) query.date = date
-    if (playTimeId) query.playTimeId = playTimeId
-    query.includeDrafts = includeDrafts
-
-    const response = await $fetch('/api/admin/schedule/full', {
-      ...auth.getAuthConfig(),
-      query
-    })
-
-    return response.data || {schedules: [], summary: {}}
-  } catch (error) {
-    console.error('加载完整排期数据失败:', error)
-    return {schedules: [], summary: {}}
   }
 }
 
@@ -1531,93 +1822,13 @@ const publishSingleDraftConfirmed = async (draft) => {
   }
 }
 
-// 发布草稿
-const publishDraft = async (draft) => {
-  try {
-    confirmDialogTitle.value = '发布草稿'
-    confirmDialogMessage.value = `确定要发布草稿《${draft.song.title}》吗？发布后将立即公示并发送通知。`
-    confirmDialogType.value = 'warning'
-    confirmDialogConfirmText.value = '发布'
-    confirmAction.value = async () => {
-      await publishDraftConfirmed(draft)
-    }
-    showConfirmDialog.value = true
-  } catch (error) {
-    console.error('发布草稿失败:', error)
-  }
-}
-
-// 确认发布草稿
-const publishDraftConfirmed = async (draft) => {
-  loading.value = true
-
-  try {
-    await $fetch('/api/admin/schedule/publish', {
-      method: 'POST',
-      body: {scheduleId: draft.id},
-      ...auth.getAuthConfig()
-    })
-
-    await loadData() // 重新加载数据
-    await loadDrafts() // 刷新草稿列表
-
-    if (window.$showNotification) {
-      window.$showNotification(`草稿《${draft.song.title}》发布成功，通知已发送！`, 'success')
-    }
-  } catch (error) {
-    console.error('发布草稿失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('发布草稿失败: ' + (error.data?.message || error.message), 'error')
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-// 删除草稿
-const deleteDraft = async (draft) => {
-  try {
-    confirmDialogTitle.value = '删除草稿'
-    confirmDialogMessage.value = `确定要删除草稿《${draft.song.title}》吗？此操作不可恢复。`
-    confirmDialogType.value = 'danger'
-    confirmDialogConfirmText.value = '删除'
-    confirmAction.value = async () => {
-      await deleteDraftConfirmed(draft)
-    }
-    showConfirmDialog.value = true
-  } catch (error) {
-    console.error('删除草稿失败:', error)
-  }
-}
-
-// 确认删除草稿
-const deleteDraftConfirmed = async (draft) => {
-  loading.value = true
-
-  try {
-    await $fetch('/api/admin/schedule/remove', {
-      method: 'POST',
-      body: {scheduleId: draft.id},
-      ...auth.getAuthConfig()
-    })
-
-    await loadDrafts() // 刷新草稿列表
-
-    if (window.$showNotification) {
-      window.$showNotification(`草稿《${draft.song.title}》已删除`, 'success')
-    }
-  } catch (error) {
-    console.error('删除草稿失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('删除草稿失败: ' + (error.data?.message || error.message), 'error')
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
 // 触摸拖拽方法
 const handleTouchStart = (event, item, type) => {
+  // 在移动端，如果是待排歌曲列表（type='song'），禁用拖拽逻辑，只允许通过加号按钮添加
+  if (window.innerWidth < 1024 && type === 'song') {
+    return
+  }
+
   // 在所有设备上启用触摸拖拽，但桌面端优先使用原生拖拽
 
   const touch = event.touches[0]
@@ -1648,15 +1859,10 @@ const handleTouchStart = (event, item, type) => {
         navigator.vibrate(TOUCH_CONFIG.VIBRATION_DURATION)
       }
 
-      // 显示长按提示
-      if (window.innerWidth <= 768) {
-        showTouchDragHint('长按开始拖拽，拖到目标区域后松开', 2000)
-      }
-
       // 添加长按视觉反馈
       const target = event.target.closest('.draggable-song, .scheduled-song')
       if (target) {
-        target.classList.add('long-pressing')
+        target.classList.add('opacity-75', 'scale-95')
         dragElement.value = target
       }
     }
@@ -1694,16 +1900,11 @@ const handleTouchMove = (event) => {
   if (!isDragging.value && (isLongPressing.value || totalDelta > dragThreshold)) {
     isDragging.value = true
 
-    // 显示拖拽提示
-    if (window.innerWidth <= 768) {
-      showTouchDragHint('正在拖拽，移动到目标位置后松开', 2000)
-    }
-
     // 创建拖拽元素
     const target = event.target.closest('.draggable-song, .scheduled-song')
     if (target) {
-      target.classList.remove('long-pressing')
-      target.classList.add('dragging', 'touch-dragging')
+      target.classList.remove('scale-95')
+      target.classList.add('opacity-50')
       dragElement.value = target
 
       // 触发拖拽开始震动
@@ -1726,45 +1927,55 @@ const updateDragPosition = (x, y) => {
   if (!elementBelow) return
 
   // 清除之前的高亮
-  document.querySelectorAll('.drag-target-highlight').forEach(el => {
-    el.classList.remove('drag-target-highlight')
+  document.querySelectorAll('.border-blue-500').forEach(el => {
+    // 仅移除通过拖拽添加的高亮，避免移除原本的样式
+    if (el.dataset.dragHighlight) {
+      el.classList.remove('border-blue-500', 'bg-blue-500/10')
+      delete el.dataset.dragHighlight
+    }
   })
 
   // 高亮当前目标区域
   const sequenceList = elementBelow.closest('.sequence-list')
   const scheduledSong = elementBelow.closest('.scheduled-song')
   const draggableSongs = elementBelow.closest('.draggable-songs')
-  const songListPanel = elementBelow.closest('.song-list-panel')
 
   // 根据拖拽类型高亮不同的目标区域
   if (touchDragData.value?.type === 'song') {
     // 拖拽待排歌曲时，高亮播放列表区域
     if (sequenceList) {
-      sequenceList.classList.add('drag-target-highlight')
+      sequenceList.classList.add('border-blue-500', 'bg-blue-500/10')
+      sequenceList.dataset.dragHighlight = 'true'
     } else if (scheduledSong) {
-      scheduledSong.classList.add('drag-target-highlight')
+      scheduledSong.classList.add('border-blue-500', 'bg-blue-500/10')
+      scheduledSong.dataset.dragHighlight = 'true'
     }
   } else if (touchDragData.value?.type === 'schedule') {
     // 拖拽已排歌曲时，高亮待排区域或其他已排歌曲
-    if (draggableSongs || songListPanel) {
-      (draggableSongs || songListPanel).classList.add('drag-target-highlight')
+    if (draggableSongs) {
+      draggableSongs.classList.add('border-blue-500', 'bg-blue-500/10')
+      draggableSongs.dataset.dragHighlight = 'true'
     } else if (scheduledSong) {
-      scheduledSong.classList.add('drag-target-highlight')
+      scheduledSong.classList.add('border-blue-500', 'bg-blue-500/10')
+      scheduledSong.dataset.dragHighlight = 'true'
     }
   }
 }
 
 // 清除拖拽位置指示
 const clearDragPosition = () => {
-  document.querySelectorAll('.drag-target-highlight').forEach(el => {
-    el.classList.remove('drag-target-highlight')
+  document.querySelectorAll('.border-blue-500').forEach(el => {
+    if (el.dataset.dragHighlight) {
+      el.classList.remove('border-blue-500', 'bg-blue-500/10')
+      delete el.dataset.dragHighlight
+    }
   })
 }
 
 // 清理触控拖拽状态
 const cleanupTouchDrag = () => {
   if (dragElement.value) {
-    dragElement.value.classList.remove('dragging', 'touch-dragging', 'long-pressing')
+    dragElement.value.classList.remove('opacity-50', 'opacity-75', 'scale-95')
     dragElement.value = null
   }
 
@@ -1778,31 +1989,6 @@ const cleanupTouchDrag = () => {
 
   // 清除位置指示
   clearDragPosition()
-}
-
-// 显示触控帮助提示
-const showTouchDragHint = (message, duration = 3000) => {
-  touchHintText.value = message
-  showTouchHint.value = true
-
-  // 清除之前的定时器
-  if (touchHintTimer.value) {
-    clearTimeout(touchHintTimer.value)
-  }
-
-  // 设置自动隐藏
-  touchHintTimer.value = setTimeout(() => {
-    showTouchHint.value = false
-  }, duration)
-}
-
-// 隐藏触控帮助提示
-const hideTouchDragHint = () => {
-  showTouchHint.value = false
-  if (touchHintTimer.value) {
-    clearTimeout(touchHintTimer.value)
-    touchHintTimer.value = null
-  }
 }
 
 const handleTouchEnd = (event) => {
@@ -1823,7 +2009,6 @@ const handleTouchEnd = (event) => {
       const sequenceList = elementBelow.closest('.sequence-list')
       const scheduledSong = elementBelow.closest('.scheduled-song')
       const draggableSongs = elementBelow.closest('.draggable-songs')
-      const songListPanel = elementBelow.closest('.song-list-panel')
 
       if (touchDragData.value.type === 'song' && (sequenceList || scheduledSong)) {
         // 从左侧拖拽到右侧
@@ -1839,21 +2024,12 @@ const handleTouchEnd = (event) => {
         if (navigator.vibrate) {
           navigator.vibrate([30, 50, 30])
         }
-      } else if (touchDragData.value.type === 'schedule' && (draggableSongs || songListPanel)) {
-        // 从右侧拖拽回左侧 - 扩大检测范围
+      } else if (touchDragData.value.type === 'schedule' && draggableSongs) {
+        // 从右侧拖拽回左侧
         handleTouchReturnToDraggable()
         // 成功拖拽震动反馈
         if (navigator.vibrate) {
           navigator.vibrate([30, 50, 30])
-        }
-      } else {
-        // 拖拽到无效区域的提示
-        if (window.innerWidth <= 768) {
-          if (touchDragData.value.type === 'schedule') {
-            showTouchDragHint('将歌曲拖到左侧待排区域可移出播放列表', 2000)
-          } else {
-            showTouchDragHint('将歌曲拖到右侧播放列表可添加到队列', 2000)
-          }
         }
       }
     }
@@ -1920,2326 +2096,51 @@ const handleTouchReorder = async (targetElement) => {
 }
 
 const handleTouchReturnToDraggable = async () => {
-  const schedule = touchDragData.value.item
-  const scheduleIndex = localScheduledSongs.value.findIndex(s => s.id === schedule.id)
-  if (scheduleIndex === -1) return
+  const draggedSchedule = touchDragData.value.item
+  const index = localScheduledSongs.value.findIndex(s => s.id === draggedSchedule.id)
 
-  // 从本地播放列表中移除
-  scheduledSongIds.value.delete(schedule.song.id)
-  localScheduledSongs.value.splice(scheduleIndex, 1)
+  if (index !== -1) {
+    const removed = localScheduledSongs.value.splice(index, 1)[0]
 
-  // 更新序列号
-  localScheduledSongs.value.forEach((item, idx) => {
-    item.sequence = idx + 1
-  })
-
-  hasChanges.value = true
-
-  // 显示成功提示
-  if (window.innerWidth <= 768) {
-    showTouchDragHint('歌曲已移出播放列表', 1500)
-  }
-}
-
-const handleReturnToDraggable = async (event) => {
-  event.preventDefault()
-  isDraggableOver.value = false
-
-  try {
-    const data = event.dataTransfer.getData('text/plain')
-    if (!data) return
-
-    const dragData = JSON.parse(data)
-
-    if (dragData.type === 'reorder-schedule') {
-      const scheduleId = parseInt(dragData.scheduleId)
-      const scheduleIndex = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
-      if (scheduleIndex === -1) return
-
-      const schedule = localScheduledSongs.value[scheduleIndex]
-
-      scheduledSongIds.value.delete(schedule.song.id)
-      localScheduledSongs.value.splice(scheduleIndex, 1)
-
-      localScheduledSongs.value.forEach((item, idx) => {
-        item.sequence = idx + 1
-      })
-
-      hasChanges.value = true
+    if (removed.song) {
+      scheduledSongIds.value.delete(removed.song.id)
     }
-  } catch (err) {
-    console.error('处理返回失败:', err)
-  }
-}
 
-
-const saveSequence = async () => {
-  try {
-    loading.value = true
-
-    // 删除当天指定播出时段的所有排期和草稿
-    const existingSchedules = [...publicSchedules.value, ...drafts.value].filter(s => {
-      if (!s.playDate) return false
-      const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
-      const matchesDate = scheduleDateStr === selectedDate.value
-
-      // 如果选择了特定播出时段，只删除该时段的排期
-      if (selectedPlayTime.value) {
-        return matchesDate && s.playTimeId === parseInt(selectedPlayTime.value)
-      }
-
-      // 如果没有选择播出时段，删除所有未指定时段的排期
-      return matchesDate && !s.playTimeId
+    // 重新排序
+    localScheduledSongs.value.forEach((item, idx) => {
+      item.sequence = idx + 1
     })
 
-    for (const schedule of existingSchedules) {
-      try {
-        await $fetch(`/api/admin/schedule/remove`, {
-          method: 'POST',
-          body: {scheduleId: schedule.id},
-          ...auth.getAuthConfig()
-        })
-      } catch (deleteError) {
-        console.warn('删除排期失败:', deleteError)
-      }
-    }
-
-    // 创建新排期
-    for (let i = 0; i < localScheduledSongs.value.length; i++) {
-      const schedule = localScheduledSongs.value[i]
-
-      await $fetch('/api/admin/schedule', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        ...auth.getAuthConfig(),
-        body: JSON.stringify({
-          songId: schedule.song.id,
-          playDate: selectedDate.value,
-          sequence: i + 1,
-          playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null
-        })
-      })
-    }
-
-    await loadData()
-    hasChanges.value = false
-
-    if (window.$showNotification) {
-      window.$showNotification('排期保存成功', 'success')
-    }
-  } catch (error) {
-    console.error('保存排期失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('保存排期失败: ' + error.message, 'error')
-    }
-  } finally {
-    loading.value = false
+    hasChanges.value = true
   }
 }
-
-const markAllAsPlayed = async () => {
-  // 检查是否有可标记的歌曲
-  const unplayedSongs = localScheduledSongs.value.filter(schedule =>
-      schedule.song && !schedule.song.played
-  )
-
-  if (unplayedSongs.length === 0) {
-    if (window.$showNotification) {
-      window.$showNotification('没有需要标记的歌曲', 'info')
-    }
-    return
-  }
-
-  confirmDialogTitle.value = '标记已播放'
-  confirmDialogMessage.value = `确定要将 ${unplayedSongs.length} 首排期歌曲标记为已播放吗？`
-  confirmDialogType.value = 'info'
-  confirmDialogConfirmText.value = '标记'
-  confirmAction.value = async () => {
-    let successCount = 0
-    let failedCount = 0
-    const errors = []
-
-    try {
-      loading.value = true
-      console.log(`开始标记 ${unplayedSongs.length} 首歌曲为已播放`)
-
-      // 检查songsService是否已初始化
-      if (!songsService || !songsService.markPlayed) {
-        throw new Error('歌曲服务未正确初始化')
-      }
-
-      // 逐个标记歌曲
-      for (const schedule of unplayedSongs) {
-        try {
-          console.log(`标记歌曲: ${schedule.song.title} (ID: ${schedule.song.id})`)
-          await songsService.markPlayed(schedule.song.id)
-          successCount++
-        } catch (error) {
-          console.error(`标记歌曲失败 (ID: ${schedule.song.id}):`, error)
-          failedCount++
-          errors.push(`${schedule.song.title}: ${error.message}`)
-        }
-      }
-
-      // 重新加载数据以更新界面
-      console.log('重新加载数据以更新界面状态')
-      await loadData()
-
-      // 显示结果通知
-      if (failedCount === 0) {
-        if (window.$showNotification) {
-          window.$showNotification(`成功标记 ${successCount} 首歌曲为已播放`, 'success')
-        }
-        console.log(`所有歌曲标记成功，共 ${successCount} 首`)
-      } else {
-        const message = `标记完成：成功 ${successCount} 首，失败 ${failedCount} 首`
-        if (window.$showNotification) {
-          window.$showNotification(message, failedCount > successCount ? 'error' : 'warning')
-        }
-        console.warn(message, '失败详情:', errors)
-      }
-    } catch (error) {
-      console.error('批量标记已播放操作失败:', error)
-      if (window.$showNotification) {
-        window.$showNotification('标记已播放失败: ' + error.message, 'error')
-      }
-    } finally {
-      loading.value = false
-    }
-  }
-  showConfirmDialog.value = true
-}
-
-// 处理确认操作
-const handleConfirm = async () => {
-  if (confirmAction.value) {
-    await confirmAction.value()
-  }
-  showConfirmDialog.value = false
-  confirmAction.value = null
-}
-
-// 日期滚动
-const scrollDates = (direction) => {
-  if (!dateSelector.value) return
-
-  const scrollAmount = 200
-  const currentScroll = dateSelector.value.scrollLeft
-
-  if (direction === 'left') {
-    dateSelector.value.scrollTo({
-      left: currentScroll - scrollAmount,
-      behavior: 'smooth'
-    })
-  } else {
-    dateSelector.value.scrollTo({
-      left: currentScroll + scrollAmount,
-      behavior: 'smooth'
-    })
-  }
-
-  setTimeout(() => {
-    updateScrollButtonState()
-  }, 300)
-}
-
-const updateScrollButtonState = () => {
-  if (!dateSelector.value) return
-
-  const {scrollLeft, scrollWidth, clientWidth} = dateSelector.value
-  isFirstDateVisible.value = scrollLeft <= 0
-  isLastDateVisible.value = scrollLeft >= scrollWidth - clientWidth - 1
-}
-
-// 打开下载对话框
-const openDownloadDialog = () => {
-  showDownloadDialog.value = true
-}
-
-// 检查是否为移动设备
-const isMobileDevice = () => {
-  return window.innerWidth <= 768 || 'ontouchstart' in window
-}
-
-// 组件挂载时显示触控使用指南
-onMounted(() => {
-  // 延迟显示，确保组件完全加载
-  setTimeout(() => {
-    if (isMobileDevice()) {
-      showTouchDragHint('📱 移动端：可以双向拖拽歌曲，左右互相移动', 4000)
-    }
-  }, 1500)
-})
 </script>
 
 <style scoped>
-/* 状态标签样式 */
-.status-badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  margin-left: 8px;
+/* 隐藏滚动条但保留功能 */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
 }
-
-.status-badge.played {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.status-badge.scheduled {
-  background-color: rgba(59, 130, 246, 0.2);
-  color: #3b82f6;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.schedule-manager {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  color: #e2e8f0;
-}
-
-/* 日期选择器 */
-.date-selector-container {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  background: linear-gradient(135deg, #1a1a1a 0%, #1f1f1f 100%);
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  margin-bottom: 24px;
-}
-
-/* 播出时段选择器 */
-.playtime-selector-container {
-  background: linear-gradient(135deg, #1a1a1a 0%, #1f1f1f 100%);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-}
-
-.playtime-selector {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.playtime-label {
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
-  white-space: nowrap;
-  font-size: 15px;
-}
-
-.playtime-select {
-  background: rgba(30, 30, 30, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  color: white;
-  padding: 10px 14px;
-  font-size: 14px;
-  min-width: 220px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-}
-
-.playtime-select:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(30, 30, 30, 0.9);
-}
-
-.playtime-select:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-}
-
-
-.date-nav-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(42, 42, 42, 0.8) 0%, rgba(35, 35, 35, 0.8) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-}
-
-.date-nav-btn:hover:not(:disabled) {
-  background: #3a3a3a;
-  color: #ffffff;
-}
-
-.date-nav-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.date-nav-btn svg {
-  width: 22px;
-  height: 22px;
-}
-
-.date-selector {
-  flex: 1;
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  padding: 6px 0;
-  min-width: 0; /* 防止容器溢出 */
-}
-
-.date-selector::-webkit-scrollbar {
-  display: none;
-}
-
-.date-btn {
-  min-width: 70px;
-  padding: 14px 10px;
-  background: linear-gradient(135deg, rgba(42, 42, 42, 0.8) 0%, rgba(35, 35, 35, 0.8) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0; /* 防止按钮被压缩 */
-}
-
-.date-btn::before {
-  display: none;
-}
-
-.date-btn:hover {
-  background: #3a3a3a;
-  color: #ffffff;
-}
-
-.date-btn:hover::before {
-  display: none;
-}
-
-.date-btn.active {
-  background: #667eea;
-  border-color: #667eea;
-  color: #ffffff;
-}
-
-.date-btn.today {
-  border-color: #10b981;
-}
-
-.date-day {
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.date-month {
-  font-size: 12px;
-  opacity: 0.8;
-  font-weight: 500;
-}
-
-.date-weekday {
-  font-size: 10px;
-  opacity: 0.6;
-  margin-top: 2px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* 加载状态 */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  gap: 20px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.05) 100%);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top: 3px solid #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-text {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 16px;
-  font-weight: 500;
-  text-align: center;
-}
-
-/* 排期内容 */
-.schedule-content {
-  display: grid;
-  grid-template-columns: 2fr 3fr;
-  gap: 24px;
-  min-height: 800px;
-  width: 100%;
-  box-sizing: border-box;
-  align-items: stretch;
-}
-
-/* 响应式设计 */
-@media (max-width: 1400px) {
-  .schedule-content {
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-}
-
-@media (max-width: 1200px) {
-  .schedule-content {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-}
-
-.song-list-panel,
-.sequence-panel {
-  background: #1a1a1a;
-  border-radius: 12px;
-  border: 1px solid #2a2a2a;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-  box-sizing: border-box;
-  transition: all 0.2s ease;
-}
-
-.song-list-panel:hover,
-.sequence-panel:hover {
-  border-color: #3a3a3a;
-}
-
-.header-title-row {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-shrink: 0;
-}
-
-.header-tabs-row {
-  display: flex;
-  justify-content: flex-start;
-  padding-left: 4px;
-}
-
-.header-tabs {
-  display: flex;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 4px;
-  border-radius: 8px;
-  gap: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.tab-btn {
-  padding: 6px 16px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: #888888;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tab-btn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.tab-btn.active {
-  background: #667eea;
-  color: #ffffff;
-}
-
-
-
-.request-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  color: #fbbf24;
-  font-weight: 600;
-}
-
-.request-count svg {
-  width: 16px;
-  height: 16px;
-}
-
-.replay-item {
-  border-left: 4px solid #fbbf24;
-}
-
-.panel-header {
-  padding: 24px 28px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.song-list-panel .panel-header {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.panel-header h3 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  color: #f8fafc;
-  white-space: nowrap;
-}
-
-.header-controls-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-}
-
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.search-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-  color: #888888;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.search-input {
-  height: 40px;
-  padding: 0 40px 0 36px;
-  background: rgba(30, 30, 30, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  color: #ffffff;
-  font-size: 14px;
-  width: 280px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
-  background: rgba(30, 30, 30, 0.9);
-}
-
-.search-input::placeholder {
-  color: #666666;
-}
-
-.clear-search-btn {
-  position: absolute;
-  right: 8px;
-  background: none;
-  border: none;
-  color: #888888;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.clear-search-btn:hover {
-  color: #ffffff;
-  background: #3a3a3a;
-}
-
-.clear-search-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
-.semester-selector,
-.grade-selector,
-.sort-options {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.semester-label,
-.grade-label,
-.sort-options label {
-  font-size: 13px;
-  color: #888888;
-  white-space: nowrap;
-  font-weight: 500;
-}
-
-.semester-select,
-.grade-select,
-.sort-select {
-  height: 40px;
-  padding: 0 32px 0 14px;
-  background-color: rgba(30, 30, 30, 0.7);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  color: #ffffff;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-  appearance: none;
-}
-
-.semester-select {
-  min-width: 160px;
-}
-
-.grade-select {
-  min-width: 100px;
-}
-
-.sort-select {
-  min-width: 120px;
-}
-
-.semester-select:hover,
-.grade-select:hover,
-.sort-select:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background-color: rgba(40, 40, 40, 0.9);
-}
-
-.semester-select:focus,
-.grade-select:focus,
-.sort-select:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
-}
-
-.song-grade-class {
-  font-size: 11px;
-  color: #888888;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 0;
-  margin-top: 2px;
-  text-align: right;
-  width: auto;
-}
-
-.sequence-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.save-btn,
-.mark-played-btn,
-.download-btn,
-.draft-btn,
-.publish-btn {
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: none;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-}
-
-.save-btn::before,
-.mark-played-btn::before,
-.download-btn::before,
-.draft-btn::before,
-.publish-btn::before {
-  display: none;
-}
-
-.save-btn {
-  background: #667eea;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
-}
-
-.save-btn:hover:not(:disabled) {
-  background: #5a67d8;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.mark-played-btn {
-  background: #10b981;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-}
-
-.mark-played-btn:hover:not(:disabled) {
-  background: #059669;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.download-btn {
-  background: #f59e0b;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
-}
-
-.download-btn:hover:not(:disabled) {
-  background: #d97706;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-}
-
-.draft-btn {
-  background: #fbbf24;
-  color: #1a1a1a;
-  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
-}
-
-.draft-btn:hover:not(:disabled) {
-  background: #f59e0b;
-  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
-}
-
-.publish-btn {
-  background: #10b981;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-}
-
-.publish-btn:hover:not(:disabled) {
-  background: #059669;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.save-btn:disabled,
-.mark-played-btn:disabled,
-.download-btn:disabled,
-.draft-btn:disabled,
-.publish-btn:disabled {
-  background: rgba(60, 60, 60, 0.5);
-  color: rgba(255, 255, 255, 0.4);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* 拖拽区域 */
-.draggable-songs,
-.sequence-list {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  min-height: 600px;
-  position: relative;
-}
-
-.draggable-songs.drag-over,
-.sequence-list.drag-over {
-  background: rgba(102, 126, 234, 0.1);
-  border: 2px dashed #667eea;
-  border-radius: 12px;
-}
-
-/* 歌曲项 */
-.draggable-song,
-.scheduled-song {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 18px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  cursor: grab;
-  transition: all 0.2s ease;
-}
-
-.draggable-song::before,
-.scheduled-song::before {
-  display: none;
-}
-
-.draggable-song:hover,
-.scheduled-song:hover {
-  background: #3a3a3a;
-  border-color: #4a4a4a;
-}
-
-.draggable-song:hover::before,
-.scheduled-song:hover::before {
-  display: none;
-}
-
-.draggable-song.dragging,
-.scheduled-song.dragging {
-  opacity: 0.6;
-  transform: scale(1.02);
-}
-
-.scheduled-song.drag-over {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.15);
-}
-
-.song-info,
-.scheduled-song-info {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  display: flex;
-  justify-content: space-between;
-  align-items: stretch;
-  gap: 16px;
-}
-
-.song-main {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.song-side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 4px;
-  flex-shrink: 0;
-  text-align: right;
-  min-height: 60px;
-}
-
-.song-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.song-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.song-artist {
-  font-size: 14px;
-  color: #cccccc;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-}
-
-.song-requester {
-  font-size: 12px;
-  color: #888888;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
-}
-
-.song-submitter {
-  font-size: 12px;
-  color: #888888;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 0;
-}
-
-.preferred-playtime {
-  font-size: 11px;
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.15);
-  padding: 3px 8px;
-  border-radius: 6px;
-  white-space: nowrap;
-  border: 1px solid rgba(102, 126, 234, 0.3);
-}
-
-.song-stats {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.votes-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  color: #888888;
-}
-
-.votes-count svg {
-  width: 14px;
-  height: 14px;
-}
-
-.time-info {
-  font-size: 12px;
-  color: #666666;
-}
-
-.drag-handle {
-  width: 24px;
-  height: 24px;
-  color: #666666;
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.drag-handle:hover {
-  color: #888888;
-}
-
-.drag-handle svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* 排期项特有样式 */
-.order-number {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #667eea;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.order-number::before {
-  display: none;
-}
-
-.scheduled-song:hover .order-number::before {
-  display: none;
-}
-
-.song-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-
-/* 手动日期选择器 */
-.manual-date-selector {
-  margin-left: 12px;
-}
-
-.manual-date-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #3a3a3a;
-  border: 1px solid #4a4a4a;
-  border-radius: 10px;
-  color: #ffffff;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.manual-date-btn:hover {
-  background: #4a4a4a;
-  border-color: #667eea;
-}
-
-.manual-date-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* 手动日期选择弹窗 */
-.manual-date-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.manual-date-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.manual-date-content {
-  position: relative;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  min-width: 320px;
-  max-width: 90vw;
-}
-
-.manual-date-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid #3a3a3a;
-}
-
-.manual-date-header h3 {
-  margin: 0;
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: #888888;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background: #3a3a3a;
-  color: #ffffff;
-}
-
-.manual-date-body {
-  padding: 24px;
-}
-
-.manual-date-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: #1a1a1a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 16px;
-  margin-bottom: 20px;
-  transition: all 0.2s ease;
-}
-
-.manual-date-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-}
-
-.manual-date-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.cancel-btn,
-.confirm-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.cancel-btn {
-  background: #3a3a3a;
-  color: #ffffff;
-}
-
-.cancel-btn:hover {
-  background: #4a4a4a;
-}
-
-.confirm-btn {
-  background: #667eea;
-  color: #ffffff;
-}
-
-.confirm-btn:hover {
-  background: #5a67d8;
-}
-
-/* 空状态 */
-.empty-message {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 16px;
-  text-align: center;
-  border: 2px dashed rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  margin: 20px 0;
-  background: rgba(255, 255, 255, 0.02);
-  min-height: 120px;
-}
-
-.empty-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.empty-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
-  opacity: 0.6;
-}
-
-.empty-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 4px;
-}
-
-.empty-subtitle {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
-  line-height: 1.4;
-}
-
-.empty-message::before {
-  display: none;
-}
-
-/* 分页控件 */
-.pagination-container {
-  margin-top: 20px;
-  padding: 20px;
-  background: linear-gradient(135deg, rgba(42, 42, 42, 0.6) 0%, rgba(35, 35, 35, 0.6) 100%);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-}
-
-.pagination-info {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-  margin-bottom: 16px;
-  font-weight: 500;
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-
-.pagination-btn {
-  padding: 10px 18px;
-  background: linear-gradient(135deg, rgba(60, 60, 60, 0.8) 0%, rgba(45, 45, 45, 0.8) 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: #4a4a4a;
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.page-numbers {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.page-number {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(60, 60, 60, 0.8) 0%, rgba(45, 45, 45, 0.8) 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-}
-
-.page-number:hover {
-  background: #4a4a4a;
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.page-number.active {
-  background: #667eea;
-  border-color: #667eea;
-  color: #ffffff;
-}
-
-.page-ellipsis {
-  color: rgba(255, 255, 255, 0.4);
-  padding: 0 8px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* 响应式设计 */
-@media (max-width: 1400px) {
-  .schedule-content {
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-
-  .search-input {
-    width: 280px;
-  }
-
-  .panel-header h3 {
-    font-size: 22px;
-  }
-}
-
-@media (max-width: 1200px) {
-  .schedule-content {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .panel-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 20px 24px;
-  }
-
-  .header-controls {
-    width: 100%;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 10px 12px;
-  }
-
-  .sequence-actions {
-    width: 100%;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .pagination-controls {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .page-numbers {
-    order: -1;
-  }
-}
-
-@media (max-width: 900px) {
-  .schedule-content {
-    gap: 12px;
-  }
-}
-
-@media (max-width: 768px) {
-  .schedule-manager {
-    padding: 0 8px;
-  }
-
-  .date-selector-container {
-    padding: 12px;
-    border-radius: 12px;
-    margin-bottom: 16px;
-    overflow: hidden;
-  }
-
-  .date-selector {
-    gap: 8px;
-    padding: 4px 0;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .date-nav-btn {
-    width: 36px;
-    height: 36px;
-    flex-shrink: 0;
-  }
-
-  .date-btn {
-    min-width: 50px;
-    padding: 8px 6px;
-    flex-shrink: 0;
-  }
-
-  .playtime-selector-container {
-    padding: 12px;
-    margin-bottom: 16px;
-  }
-
-  .playtime-selector {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
-  .playtime-select {
-    width: 100%;
-    min-width: auto;
-  }
-
-  .panel-header {
-    padding: 16px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-
-  .panel-header h3 {
-    font-size: 18px;
-    text-align: center;
-  }
-
-  .header-controls {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    padding: 8px;
-    background: none;
-    border: none;
-  }
-
-  .search-section {
-    order: 1;
-  }
-
-  .semester-selector {
-    order: 2;
-    justify-content: stretch;
-  }
-
-  .semester-select {
-    flex: 1;
-    min-width: auto;
-  }
-
-  .sort-options {
-    order: 3;
-    justify-content: stretch;
-  }
-
-  .sort-select {
-    flex: 1;
-    padding: 8px 12px;
-  }
-
-  .search-input {
-    width: 100%;
-    font-size: 16px; /* 防止iOS缩放 */
-  }
-
-  .sequence-actions {
-    gap: 6px;
-    padding: 4px;
-    background: none;
-    border: none;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .save-btn,
-  .mark-played-btn,
-  .download-btn,
-  .draft-btn,
-  .publish-btn {
-    padding: 10px 12px;
-    font-size: 13px;
-    min-width: 80px;
-    white-space: nowrap;
-  }
-
-  .draggable-songs,
-  .sequence-list {
-    padding: 12px;
-    min-height: 300px;
-  }
-
-  .draggable-song,
-  .scheduled-song {
-    padding: 12px;
-    gap: 12px;
-    margin-bottom: 8px;
-    /* 移动端触摸优化 */
-    touch-action: manipulation;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-
-  .song-info,
-  .scheduled-song-info {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
-  .song-side {
-    align-items: stretch;
-    text-align: left;
-    min-height: auto;
-  }
-
-  .song-meta {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .drag-handle {
-    width: 28px;
-    height: 28px;
-    /* 增大触摸区域 */
-    padding: 4px;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .order-number {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
-  }
-
-  .song-actions {
-    gap: 6px;
-  }
-
-  .publish-single-btn {
-    width: 32px;
-    height: 32px;
-    margin-right: 6px;
-  }
-
-  .pagination-container {
-    padding: 12px;
-    margin-top: 12px;
-  }
-
-  .pagination-controls {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .page-numbers {
-    order: -1;
-    justify-content: center;
-  }
-
-  .pagination-info {
-    font-size: 12px;
-    margin-bottom: 8px;
-  }
-
-  .pagination-btn {
-    padding: 8px 12px;
-    font-size: 12px;
-  }
-
-  .page-number {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
-  }
-
-  /* 移动端空状态优化 */
-  .empty-message {
-    padding: 30px 15px;
-    font-size: 14px;
-    min-height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* 触摸拖拽帮助文字 */
-  .touch-drag-hint {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    transform: none;
-    background: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 12px;
-    text-align: center;
-    z-index: 2000;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .touch-drag-hint.show {
-    opacity: 1;
-  }
-
-  /* 长按拖拽视觉反馈优化 */
-  .draggable-song.long-pressing,
-  .scheduled-song.long-pressing {
-    transform: scale(1.02);
-    background: rgba(102, 126, 234, 0.15);
-    border-color: #667eea;
-  }
-
-  .draggable-song.touch-dragging,
-  .scheduled-song.touch-dragging {
-    opacity: 0.8;
-    transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    border: 2px solid #667eea;
-  }
-
-  /* 拖拽目标区域高亮 */
-  .drag-target-highlight {
-    background: rgba(102, 126, 234, 0.2) !important;
-    border: 2px dashed #667eea !important;
-  }
-}
-
-/* 草稿相关样式 */
-.scheduled-song.is-draft {
-  border-left: 4px solid #fbbf24;
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-.scheduled-song.is-draft::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0 20px 20px 0;
-  border-color: transparent #fbbf24 transparent transparent;
-}
-
-.draft-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3px 10px;
-  margin-left: 10px;
-  background: #fbbf24;
-  color: #1a1a1a;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 16px;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-}
-
-.publish-single-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: #10b981;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-right: 10px;
-}
-
-.publish-single-btn::before {
-  display: none;
-}
-
-.publish-single-btn:hover {
-  background: #059669;
-}
-
-.publish-single-btn:hover::before {
-  display: none;
-}
-
-.publish-single-btn svg {
-  width: 18px;
-  height: 18px;
-}
-
-.drafts-panel {
-  background: #1a1a1a;
-  border: 1px solid #3a3a3a;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-.drafts-panel .panel-header {
-  background: #2a2a2a;
-  padding: 16px 20px;
-  border-bottom: 1px solid #3a3a3a;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.drafts-panel .panel-header h3 {
-  color: #ffd700; /* 金色，表示草稿状态 */
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.refresh-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: #3a3a3a;
-  color: #ffffff;
-  border: 1px solid #4a4a4a;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.refresh-btn:hover {
-  background: #4a4a4a;
-  border-color: #5a5a5a;
-}
-
-.refresh-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.drafts-list {
-  padding: 16px;
-}
-
-.draft-item {
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 12px;
-  transition: all 0.2s ease;
-}
-
-.draft-item:hover {
-  border-color: #ffd700;
-  background: #2d2d2d;
-}
-
-.draft-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.draft-song {
-  flex: 1;
-}
-
-.draft-song .song-title {
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.draft-song .song-artist {
-  color: #cccccc;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-
-.draft-song .song-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 12px;
-  color: #999999;
-}
-
-.draft-song .song-meta span {
-  white-space: nowrap;
-}
-
-.draft-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.publish-draft-btn {
-  padding: 8px 16px;
-  background: #10b981;
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.publish-draft-btn:hover {
-  background: #059669;
-  transform: translateY(-1px);
-}
-
-.delete-draft-btn {
-  padding: 8px 16px;
-  background: #ef4444;
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.delete-draft-btn:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-}
-
-/* 按钮样式 */
-.draft-btn {
-  background: #fbbf24;
-  color: #1a1a1a;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.draft-btn:hover:not(:disabled) {
-  background: #f59e0b;
-  transform: translateY(-1px);
-}
-
-.draft-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.publish-btn {
-  background: #10b981;
-  color: #ffffff;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.publish-btn:hover:not(:disabled) {
-  background: #059669;
-  transform: translateY(-1px);
-}
-
-.publish-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* 在移动端调整草稿列表 */
-@media (max-width: 768px) {
-  .draft-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .draft-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .draft-song .song-meta {
-    gap: 8px;
-  }
-}
-
-/* 排期列表过渡动画 */
-.schedule-transition-group {
-  position: relative;
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
+/* 列表过渡动画 */
 .schedule-list-move,
 .schedule-list-enter-active,
 .schedule-list-leave-active {
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.schedule-list-enter-from {
-  opacity: 0;
-  transform: translateX(-30px) scale(0.95);
-}
-
+.schedule-list-enter-from,
 .schedule-list-leave-to {
   opacity: 0;
-  transform: translateX(30px) scale(0.95);
+  transform: translateY(20px);
 }
 
 .schedule-list-leave-active {
   position: absolute;
   width: 100%;
-}
-
-/* 拖拽状态动画 */
-.scheduled-song {
-  transition: all 0.2s ease;
-}
-
-.scheduled-song.drag-over {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-  border-color: #667eea;
-}
-
-.scheduled-song:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.dragging {
-  opacity: 0.7;
-  transform: rotate(2deg) scale(1.02);
-  z-index: 1000;
-}
-
-/* 移动端触摸拖拽优化 */
-@media (max-width: 768px) {
-  .draggable-song,
-  .scheduled-song {
-    touch-action: none; /* 防止滚动干扰拖拽 */
-    user-select: none;
-    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-  }
-
-  .drag-handle {
-    width: 32px;
-    height: 32px;
-    touch-action: none;
-  }
-
-  .drag-handle svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  /* 长按识别视觉反馈 */
-  .draggable-song.long-pressing,
-  .scheduled-song.long-pressing {
-    transform: scale(1.02);
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-    border-color: #667eea;
-    background: rgba(102, 126, 234, 0.1);
-    animation: pulse-glow 1s ease-in-out infinite alternate;
-  }
-
-  @keyframes pulse-glow {
-    0% {
-      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-    }
-    100% {
-      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
-    }
-  }
-
-  /* 触控拖拽时的视觉反馈 */
-  .draggable-song.touch-dragging,
-  .scheduled-song.touch-dragging {
-    opacity: 0.9;
-    transform: scale(1.08) rotate(1deg);
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
-    z-index: 1000;
-    border: 2px solid #667eea;
-    background: rgba(102, 126, 234, 0.15);
-  }
-
-  /* 传统拖拽时的视觉反馈 */
-  .draggable-song.dragging:not(.touch-dragging),
-  .scheduled-song.dragging:not(.touch-dragging) {
-    opacity: 0.8;
-    transform: scale(1.05);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-  }
-
-  /* 拖拽目标高亮 */
-  .drag-target-highlight {
-    background: rgba(102, 126, 234, 0.2) !important;
-    border: 2px dashed #667eea !important;
-    animation: target-pulse 0.8s ease-in-out infinite alternate;
-  }
-
-  /* 待排歌曲区域拖拽目标 */
-  .song-list-panel.drag-target-highlight,
-  .draggable-songs.drag-target-highlight {
-    background: rgba(16, 185, 129, 0.15) !important;
-    border: 2px dashed #10b981 !important;
-  }
-
-  /* 播放列表拖拽目标 */
-  .sequence-panel.drag-target-highlight,
-  .sequence-list.drag-target-highlight {
-    background: rgba(102, 126, 234, 0.15) !important;
-    border: 2px dashed #667eea !important;
-  }
-
-  @keyframes target-pulse {
-    0% {
-      background: rgba(102, 126, 234, 0.15) !important;
-    }
-    100% {
-      background: rgba(102, 126, 234, 0.25) !important;
-    }
-  }
-
-  /* 拖拽区域高亮 */
-  .draggable-songs.drag-over,
-  .sequence-list.drag-over {
-    background: rgba(102, 126, 234, 0.15);
-    border: 2px dashed #667eea;
-  }
-
-  .scheduled-song.drag-over {
-    border-color: #667eea;
-    background: rgba(102, 126, 234, 0.15);
-    transform: translateY(-3px);
-  }
-
-  /* 触控拖拽帮助提示 */
-  .touch-drag-hint {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    transform: none;
-    background: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 12px;
-    text-align: center;
-    z-index: 2000;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-
-  .touch-drag-hint.show {
-    opacity: 1;
-  }
-}
-
-/* 重播申请详情弹窗样式 */
-.replay-requests-summary {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: 100%;
-  gap: 12px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.1);
-}
-
-.replay-count {
-  font-size: 13px;
-  color: #fbbf24;
-  font-weight: 500;
-}
-
-.view-requests-btn {
-  padding: 4px 10px;
-  background: rgba(251, 191, 36, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.view-requests-btn:hover {
-  background: rgba(251, 191, 36, 0.25);
-  border-color: rgba(251, 191, 36, 0.5);
-}
-
-.replay-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.replay-modal-content {
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 12px;
-  width: 400px;
-  max-width: 90vw;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  animation: modal-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes modal-fade-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.replay-modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #3a3a3a;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.replay-modal-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.replay-modal-body {
-  padding: 0;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.replay-requests-list {
-  padding: 8px 0;
-}
-
-.replay-request-detail-item {
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.2s ease;
-}
-
-.replay-request-detail-item:last-child {
-  border-bottom: none;
-}
-
-.replay-request-detail-item:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.requester-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.requester-name {
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.requester-grade {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
-}
-
-.request-time {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 12px;
 }
 </style>

@@ -1,65 +1,65 @@
 <template>
-  <transition name="dialog-overlay">
-    <div v-if="show" class="dialog-overlay" @click="handleOverlayClick">
-      <transition name="dialog">
-        <div v-if="show" class="dialog" @click.stop>
-          <div class="dialog-header">
-            <div :class="type" class="dialog-icon">
-              <Icon
-                  v-if="type === 'warning'"
-                  :size="20"
-                  name="warning"
-              />
-              <Icon
-                  v-else-if="type === 'danger'"
-                  :size="20"
-                  name="warning"
-              />
-              <Icon
-                  v-else-if="type === 'info'"
-                  :size="20"
-                  name="info"
-              />
-              <Icon
-                  v-else
-                  :size="20"
-                  name="info"
-              />
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="show" class="fixed inset-0 z-[2000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" @click="handleOverlayClick">
+        <div 
+          class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden" 
+          @click.stop
+        >
+          <!-- 内容 -->
+          <div class="flex flex-col items-center p-8 text-center">
+            <!-- 图标 -->
+            <div 
+              class="w-20 h-20 rounded-[2rem] flex items-center justify-center mb-6 transition-colors border"
+              :class="iconClasses"
+            >
+              <Icon :name="iconName" :size="40" />
             </div>
-            <h3 class="dialog-title">{{ title }}</h3>
-          </div>
 
-          <div class="dialog-content">
-            <p>{{ message }}</p>
-          </div>
+            <!-- 文字内容 -->
+            <div class="space-y-2 mb-8">
+              <h4 class="text-xl font-black text-zinc-100 tracking-tight">{{ title }}</h4>
+              <p class="text-sm text-zinc-500 leading-relaxed font-medium">
+                {{ message }}
+              </p>
+            </div>
 
-          <div class="dialog-actions">
-            <button
+            <!-- 操作按钮 -->
+            <div class="flex gap-3 w-full">
+              <button 
+                @click="handleCancel" 
+                class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="loading"
-                class="dialog-btn dialog-btn-cancel"
-                @click="handleCancel"
-            >
-              {{ cancelText }}
-            </button>
-            <button
-                :class="type"
+              >
+                {{ cancelText }}
+              </button>
+              <button 
+                @click="handleConfirm" 
+                class="flex-[2] px-6 py-4 text-white text-xs font-black rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="confirmBtnClasses"
                 :disabled="loading"
-                class="dialog-btn dialog-btn-confirm"
-                @click="handleConfirm"
-            >
-              <span v-if="loading" class="loading-spinner"></span>
-              {{ confirmText }}
-            </button>
+              >
+                <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
+                {{ loading ? '处理中...' : confirmText }}
+              </button>
+            </div>
           </div>
         </div>
-      </transition>
-    </div>
-  </transition>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import Icon from './Icon.vue'
-
 
 const props = defineProps({
   show: {
@@ -76,8 +76,8 @@ const props = defineProps({
   },
   type: {
     type: String,
-    default: 'warning', // 'warning', 'danger', 'info'
-    validator: value => ['warning', 'danger', 'info'].includes(value)
+    default: 'warning', // 'warning' (警告), 'danger' (危险), 'info' (信息), 'success' (成功)
+    validator: value => ['warning', 'danger', 'info', 'success'].includes(value)
   },
   confirmText: {
     type: String,
@@ -97,7 +97,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['confirm', 'cancel', 'close'])
+const emit = defineEmits(['confirm', 'cancel', 'close', 'update:show'])
 
 const handleConfirm = () => {
   emit('confirm')
@@ -106,236 +106,54 @@ const handleConfirm = () => {
 const handleCancel = () => {
   emit('cancel')
   emit('close')
+  emit('update:show', false)
 }
 
 const handleOverlayClick = () => {
   if (props.closeOnOverlay && !props.loading) {
-    emit('cancel')
-    emit('close')
+    handleCancel()
   }
 }
+
+const iconName = computed(() => {
+  switch (props.type) {
+    case 'danger': return 'alert-circle'
+    case 'success': return 'success'
+    case 'info': return 'info'
+    case 'warning': 
+    default: return 'alert-triangle'
+  }
+})
+
+const iconClasses = computed(() => {
+  switch (props.type) {
+    case 'danger': 
+      return 'bg-red-500/10 text-red-500 border-red-500/20 shadow-red-900/5'
+    case 'success':
+      return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-emerald-900/5'
+    case 'info':
+      return 'bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-blue-900/5'
+    case 'warning':
+    default:
+      return 'bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-amber-900/5'
+  }
+})
+
+const confirmBtnClasses = computed(() => {
+  switch (props.type) {
+    case 'danger':
+      return 'bg-red-600 hover:bg-red-500 shadow-red-900/20'
+    case 'success':
+      return 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20'
+    case 'info':
+      return 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/20'
+    case 'warning':
+    default:
+      return 'bg-amber-600 hover:bg-amber-500 shadow-amber-900/20'
+  }
+})
 </script>
 
 <style scoped>
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  backdrop-filter: blur(4px);
-}
-
-.dialog {
-  background: #21242D;
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-  max-width: 400px;
-  width: 90%;
-  max-height: 90vh;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.dialog-header {
-  display: flex;
-  align-items: center;
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.dialog-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16px;
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.dialog-icon.warning {
-  background: rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
-}
-
-.dialog-icon.danger {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-}
-
-.dialog-icon.info {
-  background: rgba(11, 90, 254, 0.2);
-  color: #0B5AFE;
-}
-
-.dialog-title {
-  color: #FFFFFF;
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-  font-family: 'MiSans', sans-serif;
-}
-
-.dialog-content {
-  padding: 16px 24px 24px;
-}
-
-.dialog-content p {
-  color: #d1d5db;
-  font-size: 14px;
-  line-height: 1.5;
-  margin: 0;
-  font-family: 'MiSans', sans-serif;
-}
-
-.dialog-actions {
-  display: flex;
-  gap: 12px;
-  padding: 0 24px 24px;
-  justify-content: flex-end;
-}
-
-.dialog-btn {
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: none;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: 'MiSans', sans-serif;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 80px;
-  justify-content: center;
-}
-
-.dialog-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.dialog-btn-cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: #d1d5db;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.dialog-btn-cancel:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.dialog-btn-confirm {
-  color: white;
-  border: 1px solid transparent;
-}
-
-.dialog-btn-confirm.warning {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-}
-
-.dialog-btn-confirm.warning:hover:not(:disabled) {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.dialog-btn-confirm.danger {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-}
-
-.dialog-btn-confirm.danger:hover:not(:disabled) {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-}
-
-.dialog-btn-confirm.info {
-  background: linear-gradient(135deg, #0B5AFE, #0847d1);
-}
-
-.dialog-btn-confirm.info:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0847d1, #0639b8);
-}
-
-.loading-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* 动画效果 */
-.dialog-overlay-enter-active {
-  animation: overlay-in 0.3s ease-out;
-}
-
-.dialog-overlay-leave-active {
-  animation: overlay-out 0.2s ease-in;
-}
-
-.dialog-enter-active {
-  animation: dialog-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.dialog-leave-active {
-  animation: dialog-out 0.2s cubic-bezier(0.55, 0.085, 0.68, 0.53);
-}
-
-@keyframes overlay-in {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-@keyframes overlay-out {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes dialog-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.9) translateY(-20px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-@keyframes dialog-out {
-  0% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.9) translateY(-20px);
-  }
-}
+/* 移除旧的 scoped styles */
 </style>

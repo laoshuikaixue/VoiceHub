@@ -1,252 +1,302 @@
 <template>
-  <div v-if="show" class="modal-overlay" @click="$emit('close')">
-    <div class="modal-content modal-lg" @click.stop>
-      <div class="modal-header">
-        <h3>批量更新学生信息</h3>
-        <button class="close-btn" @click="$emit('close')">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="18" x2="6" y1="6" y2="18"/>
-            <line x1="6" x2="18" y1="6" y2="18"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <!-- 更新方式选择 -->
-        <div class="update-type-selector">
-          <div class="radio-group">
-            <label class="radio-option">
-              <input
-                  v-model="updateType"
-                  class="radio-input"
-                  type="radio"
-                  value="grade-only"
-              />
-              <span class="radio-label">仅更新年级</span>
-              <span class="radio-description">批量更新选中学生的年级，保持班级不变</span>
-            </label>
-            <label class="radio-option">
-              <input
-                  v-model="updateType"
-                  class="radio-input"
-                  type="radio"
-                  value="excel-batch"
-              />
-              <span class="radio-label">Excel批量更新</span>
-              <span class="radio-description">通过Excel文件批量更新学生的年级和班级信息</span>
-            </label>
+  <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+  >
+    <div v-if="show" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="$emit('close')">
+      <div class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" @click.stop>
+        <!-- 头部 -->
+        <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800/50">
+          <div>
+            <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-600/10 flex items-center justify-center text-purple-500">
+                <Layers :size="20" />
+              </div>
+              批量更新学生信息
+            </h3>
+            <p class="text-xs text-zinc-500 mt-1 ml-13">快速调整学生年级、班级或通过 Excel 批量修改</p>
           </div>
+          <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all" @click="$emit('close')">
+            <X :size="20" />
+          </button>
         </div>
 
-        <!-- 仅更新年级 -->
-        <div v-if="updateType === 'grade-only'" class="grade-update-section">
-          <div class="section-title">
-            <h4>批量年级更新</h4>
-            <p class="section-description">选择要更新的学生和目标年级</p>
+        <div class="flex-1 overflow-y-auto p-8 pt-6 custom-scrollbar space-y-8">
+          <!-- 更新方式选择 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label 
+              :class="['relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group', 
+                updateType === 'grade-only' ? 'bg-purple-500/5 border-purple-500/50 ring-4 ring-purple-500/10' : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700']"
+            >
+              <input v-model="updateType" type="radio" value="grade-only" class="sr-only" />
+              <div class="flex items-center justify-between mb-3">
+                <div :class="['w-10 h-10 rounded-lg flex items-center justify-center transition-colors', updateType === 'grade-only' ? 'bg-purple-500 text-white' : 'bg-zinc-800 text-zinc-500 group-hover:text-zinc-300']">
+                  <Calendar :size="18" />
+                </div>
+                <div v-if="updateType === 'grade-only'" class="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
+                  <Check :size="12" class="text-white" />
+                </div>
+              </div>
+              <span class="text-sm font-black text-zinc-200 uppercase tracking-widest">仅更新年级</span>
+              <span class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed">批量更新选中学生的年级，保持班级不变</span>
+            </label>
+
+            <label 
+              :class="['relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group', 
+                updateType === 'excel-batch' ? 'bg-emerald-500/5 border-emerald-500/50 ring-4 ring-emerald-500/10' : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700']"
+            >
+              <input v-model="updateType" type="radio" value="excel-batch" class="sr-only" />
+              <div class="flex items-center justify-between mb-3">
+                <div :class="['w-10 h-10 rounded-lg flex items-center justify-center transition-colors', updateType === 'excel-batch' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-500 group-hover:text-zinc-300']">
+                  <FileSpreadsheet :size="18" />
+                </div>
+                <div v-if="updateType === 'excel-batch'" class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                  <Check :size="12" class="text-white" />
+                </div>
+              </div>
+              <span class="text-sm font-black text-zinc-200 uppercase tracking-widest">Excel 批量更新</span>
+              <span class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed">通过 Excel 文件精确匹配并批量修改学生信息</span>
+            </label>
           </div>
 
-          <!-- 学生筛选 -->
-          <div class="filter-section">
-            <div class="filter-row">
-              <div class="filter-group">
-                <label>当前年级筛选</label>
-                <select v-model="gradeFilter" class="form-select">
-                  <option value="">全部年级</option>
-                  <option v-for="grade in availableGrades" :key="grade" :value="grade">
-                    {{ grade }}
-                  </option>
-                </select>
+          <!-- 仅更新年级面板 -->
+          <div v-if="updateType === 'grade-only'" class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div class="p-6 bg-zinc-950/50 border border-zinc-800/50 rounded-xl space-y-6">
+              <div class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest">
+                <Filter :size="14" class="text-purple-500" />
+                学生范围筛选
               </div>
-              <div class="filter-group">
-                <label>当前班级筛选</label>
-                <select v-model="classFilter" class="form-select">
-                  <option value="">全部班级</option>
-                  <option v-for="cls in availableClasses" :key="cls" :value="cls">
-                    {{ cls }}
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- 学生列表 -->
-          <div class="student-list-section">
-            <div class="list-header">
-              <label class="select-all-checkbox">
-                <input
-                    :checked="isAllSelected"
-                    type="checkbox"
-                    @change="toggleSelectAll"
-                />
-                <span>全选 ({{ selectedUserIds.length }}/{{ filteredStudents.length }})</span>
-              </label>
-            </div>
-            <div class="student-list">
-              <div
-                  v-for="student in filteredStudents"
-                  :key="student.id"
-                  class="student-item"
-              >
-                <label class="student-checkbox">
-                  <input
-                      v-model="selectedUserIds"
-                      :value="student.id"
-                      type="checkbox"
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">当前年级</label>
+                  <CustomSelect
+                      v-model="gradeFilter"
+                      :options="gradeOptions"
+                      label-key="label"
+                      value-key="value"
+                      placeholder="全部年级"
+                      class-name="w-full"
                   />
-                  <div class="student-info">
-                    <span class="student-name">{{ student.name }}</span>
-                    <span class="student-details">{{ student.username }} - {{
-                        student.grade || '无'
-                      }}年级 {{ student.class || '无班级' }}</span>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">当前班级</label>
+                  <CustomSelect
+                      v-model="classFilter"
+                      :options="classOptions"
+                      label-key="label"
+                      value-key="value"
+                      placeholder="全部班级"
+                      class-name="w-full"
+                  />
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex items-center justify-between ml-1">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">选择学生 ({{ selectedUserIds.length }}/{{ filteredStudents.length }})</label>
+                  <button @click="toggleSelectAll" class="text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest transition-colors">
+                    {{ isAllSelected ? '取消全选' : '选择当前全部' }}
+                  </button>
+                </div>
+                <div class="max-h-48 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 p-2 custom-scrollbar">
+                  <div v-if="filteredStudents.length === 0" class="py-10 text-center text-xs text-zinc-600 font-medium">
+                    没有匹配条件的学生
                   </div>
+                  <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-1">
+                    <label v-for="student in filteredStudents" :key="student.id" class="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-900/50 cursor-pointer transition-colors group">
+                      <input v-model="selectedUserIds" :value="student.id" type="checkbox" class="w-4 h-4 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20" />
+                      <div class="flex flex-col">
+                        <span class="text-xs font-bold text-zinc-200 group-hover:text-purple-400 transition-colors">{{ student.name }}</span>
+                        <span class="text-[10px] text-zinc-600 font-mono">{{ student.username }}</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-6">
+              <div class="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest">
+                <Save :size="14" />
+                目标设置
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">目标年级</label>
+                  <div class="relative group">
+                    <Calendar class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-purple-500 transition-colors" :size="16" />
+                    <input v-model="targetGrade" type="text" placeholder="例如: 2025" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-purple-500/30 transition-all text-zinc-200" />
+                  </div>
+                </div>
+                <label class="flex items-center gap-3 p-3 bg-zinc-950 border border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-700 transition-all">
+                  <input v-model="keepClass" type="checkbox" class="w-5 h-5 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20" />
+                  <span class="text-xs font-bold text-zinc-300">保持原有班级不变</span>
                 </label>
               </div>
             </div>
           </div>
 
-          <!-- 目标年级设置 -->
-          <div class="target-grade-section">
-            <div class="form-group">
-              <label>目标年级</label>
-              <input
-                  v-model="targetGrade"
-                  class="form-input"
-                  placeholder="如: 2025"
-                  type="text"
-              />
+          <!-- Excel 批量更新面板 -->
+          <div v-if="updateType === 'excel-batch'" class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <!-- 文件上传区 -->
+            <div 
+              :class="['relative group cursor-pointer transition-all', isDragOver ? 'scale-[0.99]' : '']"
+              @drop="handleDrop" @dragover.prevent @dragenter.prevent="isDragOver = true" @dragleave.prevent="isDragOver = false"
+              @click="$refs.fileInput.click()"
+            >
+              <input ref="fileInput" accept=".xlsx,.xls" class="hidden" type="file" @change="handleFileSelect" />
+              <div :class="['w-full py-12 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center gap-4', 
+                isDragOver ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800 hover:border-emerald-500/50 hover:bg-emerald-500/5']">
+                <div :class="['w-16 h-16 rounded-lg bg-zinc-900 flex items-center justify-center transition-colors shadow-xl', isDragOver ? 'text-emerald-500' : 'text-zinc-600 group-hover:text-emerald-500']">
+                  <Upload :size="32" />
+                </div>
+                <div class="text-center">
+                  <p class="text-base font-black text-zinc-200 tracking-tight">拖拽 Excel 文件到此处</p>
+                  <p class="text-xs text-zinc-500 mt-1">或 <span class="text-emerald-500 font-bold">点击选择文件</span> (支持 .xlsx / .xls)</p>
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input
-                    v-model="keepClass"
-                    type="checkbox"
-                />
-                <span>保持班级不变</span>
-              </label>
+
+            <!-- 模板与说明 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="md:col-span-2 p-5 bg-zinc-950 border border-zinc-800 rounded-xl space-y-3">
+                <div class="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                  <Info :size="12" />
+                  文件格式规范
+                </div>
+                <ul class="text-[10px] text-zinc-600 space-y-1.5 font-medium leading-relaxed">
+                  <li class="flex items-start gap-2"><div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" /> 第一行为表头：用户名、姓名、年级、班级、新用户名</li>
+                  <li class="flex items-start gap-2"><div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" /> <span class="text-zinc-400 font-bold">用户名</span> 列用于精确匹配现有账户</li>
+                  <li class="flex items-start gap-2"><div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" /> 字段留空则保持原值不变，不进行覆盖更新</li>
+                </ul>
+              </div>
+              <button @click="downloadTemplate" class="p-5 bg-emerald-500/5 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl transition-all flex flex-col items-center justify-center gap-2 group">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:scale-110 transition-transform">
+                  <Download :size="20" />
+                </div>
+                <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">获取模板文件</span>
+              </button>
             </div>
-          </div>
-        </div>
 
-        <!-- Excel批量更新 -->
-        <div v-if="updateType === 'excel-batch'" class="excel-update-section">
-          <div class="section-title">
-            <h4>Excel批量更新</h4>
-            <p class="section-description">上传Excel文件批量更新学生年级和班级信息</p>
-          </div>
-
-          <!-- 文件上传 -->
-          <div class="file-upload-section">
-            <div :class="{ 'drag-over': isDragOver }" class="upload-area" @drop="handleDrop" @dragover.prevent
-                 @dragenter.prevent="isDragOver = true" @dragleave.prevent="isDragOver = false">
-              <input
-                  ref="fileInput"
-                  accept=".xlsx,.xls"
-                  class="file-input"
-                  type="file"
-                  @change="handleFileSelect"
-              />
-              <div class="upload-content">
-                <svg class="upload-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                  <line x1="16" x2="8" y1="13" y2="13"/>
-                  <line x1="16" x2="8" y1="17" y2="17"/>
-                  <polyline points="10,9 9,9 8,9"/>
-                </svg>
-                <div class="upload-text">
-                  <p>拖拽Excel文件到此处，或
-                    <button class="upload-link" type="button" @click="$refs.fileInput.click()">点击选择文件</button>
-                  </p>
-                  <p class="upload-hint">支持 .xlsx 和 .xls 格式</p>
+            <!-- 预览表格 -->
+            <div v-if="excelPreviewData.length > 0" class="space-y-4">
+              <div class="flex items-center justify-between ml-1">
+                <label class="text-xs font-black text-zinc-400 uppercase tracking-widest">数据预览 ({{ excelPreviewData.length }}条)</label>
+                <div class="flex items-center gap-4">
+                  <div class="flex items-center gap-1.5">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span class="text-[10px] text-zinc-500 font-bold">待更新</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <div class="w-2 h-2 rounded-full bg-red-500" />
+                    <span class="text-[10px] text-zinc-500 font-bold">错误</span>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden shadow-xl">
+                <div class="overflow-x-auto custom-scrollbar">
+                  <table class="w-full text-left border-collapse">
+                    <thead class="bg-zinc-900/80 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-b border-zinc-800">
+                      <tr>
+                        <th class="px-5 py-4 whitespace-nowrap">匹配用户</th>
+                        <th class="px-5 py-4 whitespace-nowrap">当前信息</th>
+                        <th class="px-5 py-4 whitespace-nowrap">更新后</th>
+                        <th class="px-5 py-4 whitespace-nowrap text-right">匹配状态</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-900">
+                      <tr v-for="(row, index) in excelPreviewData.slice(0, 10)" :key="index" :class="[row.error ? 'bg-red-500/5' : 'hover:bg-zinc-900/30 transition-colors']">
+                        <td class="px-5 py-4">
+                          <div class="flex flex-col">
+                            <span :class="['text-xs font-bold', row.error ? 'text-red-400' : 'text-zinc-200']">{{ row.username }}</span>
+                            <span class="text-[10px] text-zinc-600 font-medium">{{ row.name || '-' }}</span>
+                          </div>
+                        </td>
+                        <td class="px-5 py-4">
+                          <div class="text-[10px] text-zinc-500 font-medium">
+                            {{ row.currentGrade || '-' }}年级 {{ row.currentClass || '-' }}
+                          </div>
+                        </td>
+                        <td class="px-5 py-4">
+                          <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-emerald-400">{{ row.newGrade || row.currentGrade || '-' }}</span>
+                            <span class="text-[10px] text-zinc-700">/</span>
+                            <span class="text-xs font-bold text-emerald-400">{{ row.newClass || row.currentClass || '-' }}</span>
+                          </div>
+                        </td>
+                        <td class="px-5 py-4 text-right">
+                          <span v-if="row.error" class="px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase tracking-tighter border border-red-500/20">
+                            {{ row.error }}
+                          </span>
+                          <span v-else class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase tracking-tighter border border-emerald-500/20">
+                            已就绪
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div v-if="excelPreviewData.length > 10" class="p-4 text-center border-t border-zinc-900 bg-zinc-900/20 text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
+                  以及另外 {{ excelPreviewData.length - 10 }} 条记录已在队列中
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Excel模板说明 -->
-          <div class="template-info">
-            <h5>Excel文件格式要求：</h5>
-            <ul>
-              <li>第一行为表头：用户名、姓名、年级、班级、新用户名</li>
-              <li>用户名列用于匹配现有用户</li>
-              <li>年级、班级、新用户名列为要更新的新值</li>
-              <li>如果某个字段为空，则不更新该字段</li>
-              <li>新用户名列为可选，如果不填写则保持原用户名不变</li>
-            </ul>
-            <button class="btn-link" @click="downloadTemplate">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7,10 12,15 17,10"/>
-                <line x1="12" x2="12" y1="15" y2="3"/>
-              </svg>
-              下载Excel模板
-            </button>
-          </div>
-
-          <!-- 预览数据 -->
-          <div v-if="excelPreviewData.length > 0" class="preview-section">
-            <h5>预览数据 ({{ excelPreviewData.length }}条记录)</h5>
-            <div class="preview-table-container">
-              <table class="preview-table">
-                <thead>
-                <tr>
-                  <th>用户名</th>
-                  <th>姓名</th>
-                  <th>当前年级</th>
-                  <th>当前班级</th>
-                  <th>新年级</th>
-                  <th>新班级</th>
-                  <th>新用户名</th>
-                  <th>状态</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="(row, index) in excelPreviewData.slice(0, 10)" :key="index"
-                    :class="{ 'error-row': row.error }">
-                  <td>{{ row.username }}</td>
-                  <td>{{ row.name || '-' }}</td>
-                  <td>{{ row.currentGrade || '-' }}</td>
-                  <td>{{ row.currentClass || '-' }}</td>
-                  <td>{{ row.newGrade || '-' }}</td>
-                  <td>{{ row.newClass || '-' }}</td>
-                  <td>{{ row.newUsername || '-' }}</td>
-                  <td>
-                    <span v-if="row.error" class="status-error">{{ row.error }}</span>
-                    <span v-else class="status-success">准备更新</span>
-                  </td>
-                </tr>
-                </tbody>
-              </table>
-              <div v-if="excelPreviewData.length > 10" class="preview-more">
-                以及另外 {{ excelPreviewData.length - 10 }} 条记录
-              </div>
-            </div>
+          <!-- 错误提示 -->
+          <div v-if="error" class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs animate-in shake duration-300">
+            <AlertCircle :size="16" />
+            {{ error }}
           </div>
         </div>
 
-        <!-- 错误信息 -->
-        <div v-if="error" class="error-message">
-          {{ error }}
+        <!-- 底部按钮 -->
+        <div class="p-8 pt-4 border-t border-zinc-800/50 bg-zinc-900/50 flex gap-3">
+          <button class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest" @click="$emit('close')">
+            取消操作
+          </button>
+          <button
+              :disabled="loading || !canUpdate"
+              :class="['flex-[2] px-6 py-4 text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg active:scale-95', 
+                updateType === 'excel-batch' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20' : 'bg-purple-600 hover:bg-purple-500 shadow-purple-900/20']"
+              @click="performUpdate"
+          >
+            <RefreshCw v-if="loading" class="animate-spin" :size="16" />
+            <Save v-else :size="16" />
+            {{ loading ? '正在提交更新...' : '确认并开始更新' }}
+          </button>
         </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" @click="$emit('close')">取消</button>
-        <button
-            :disabled="loading || !canUpdate"
-            class="btn-primary"
-            @click="performUpdate"
-        >
-          {{ loading ? '更新中...' : '确认更新' }}
-        </button>
       </div>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <script setup>
 import {computed, ref, watch} from 'vue'
 import {useAuth} from '~/composables/useAuth'
+import {
+  Layers, 
+  X, 
+  Calendar, 
+  FileSpreadsheet, 
+  Check, 
+  Filter, 
+  ChevronDown, 
+  Save, 
+  Upload, 
+  Download, 
+  Info, 
+  AlertCircle, 
+  RefreshCw,
+  CheckCircle2
+} from 'lucide-vue-next'
+
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 const props = defineProps({
   show: Boolean,
@@ -292,6 +342,20 @@ const availableGrades = computed(() => {
 
 const availableClasses = computed(() => {
   return allClasses.value.length > 0 ? allClasses.value : [...new Set(students.value.map(s => s.class).filter(Boolean))].sort()
+})
+
+const gradeOptions = computed(() => {
+  return [
+    { label: '全部年级', value: '' },
+    ...availableGrades.value.map(g => ({ label: g, value: g }))
+  ]
+})
+
+const classOptions = computed(() => {
+  return [
+    { label: '全部班级', value: '' },
+    ...availableClasses.value.map(c => ({ label: c, value: c }))
+  ]
 })
 
 const filteredStudents = computed(() => {
@@ -359,9 +423,6 @@ const processExcelFile = async (file) => {
       await new Promise(resolve => setTimeout(resolve, 100))
     }
 
-    console.log('当前学生数据数量:', students.value.length)
-    console.log('前5个学生用户名:', students.value.slice(0, 5).map(s => s.username))
-
     // 动态加载XLSX库
     if (typeof window.XLSX === 'undefined') {
       await loadXLSX()
@@ -400,29 +461,21 @@ const processExcelFile = async (file) => {
 }
 
 const parseExcelData = (jsonData) => {
-  console.log('开始解析Excel数据，当前学生数量:', students.value.length)
-
   const previewData = []
   const userMap = new Map()
 
   // 创建用户映射，同时处理用户名标准化
   students.value.forEach(user => {
     if (user.username) {
-      // 标准化用户名：去除首尾空格，转换为小写
       const normalizedUsername = user.username.trim().toLowerCase()
       userMap.set(normalizedUsername, user)
-      // 同时保存原始用户名映射
       userMap.set(user.username, user)
     }
   })
 
-  console.log('用户映射创建完成，映射数量:', userMap.size)
-  console.log('前10个用户名:', Array.from(userMap.keys()).slice(0, 10))
-
   jsonData.forEach((row, index) => {
     const username = (row['用户名'] || row['username'] || '').toString().trim()
     const name = row['姓名'] || row['name'] || ''
-    // 确保年级和班级转换为字符串类型
     const newGrade = (row['年级'] || row['grade']) ? String(row['年级'] || row['grade']).trim() : ''
     const newClass = (row['班级'] || row['class']) ? String(row['班级'] || row['class']).trim() : ''
     const newUsername = row['新用户名'] || row['new_username'] || ''
@@ -439,12 +492,9 @@ const parseExcelData = (jsonData) => {
       return
     }
 
-    // 尝试多种方式匹配用户名
     let existingUser = userMap.get(username) ||
         userMap.get(username.toLowerCase()) ||
         userMap.get(username.toUpperCase())
-
-    console.log(`查找用户名: "${username}", 找到用户:`, existingUser ? existingUser.username : '未找到')
 
     if (!existingUser) {
       previewData.push({
@@ -469,9 +519,6 @@ const parseExcelData = (jsonData) => {
       newUsername: newUsername
     })
   })
-
-  console.log('Excel数据解析完成，预览数据数量:', previewData.length)
-  console.log('有错误的数据:', previewData.filter(d => d.error).length)
 
   excelPreviewData.value = previewData
   loading.value = false
@@ -573,12 +620,11 @@ const performExcelUpdate = async () => {
 // 获取所有学生用户数据
 const fetchAllStudents = async () => {
   try {
-    console.log('开始获取所有学生数据...')
     const response = await $fetch('/api/admin/users', {
       method: 'GET',
       query: {
         page: 1,
-        limit: 10000, // 获取所有数据
+        limit: 10000,
         role: 'USER'
       },
       ...auth.getAuthConfig()
@@ -588,546 +634,41 @@ const fetchAllStudents = async () => {
       const users = response.users
       allStudents.value = users
 
-      console.log('成功获取学生数据，数量:', users.length)
-      console.log('前5个学生:', users.slice(0, 5).map(u => ({username: u.username, name: u.name})))
-
-      // 同时更新年级班级信息
       const grades = [...new Set(users.map(u => u.grade).filter(Boolean))].sort()
       const classes = [...new Set(users.map(u => u.class).filter(Boolean))].sort()
 
       allGrades.value = grades
       allClasses.value = classes
-    } else {
-      console.warn('获取学生数据响应异常:', response)
     }
   } catch (err) {
     console.error('获取所有学生数据失败:', err)
-    // 如果获取失败，回退到使用props.users
-    allStudents.value = []
   }
 }
 
-// 监听器
+// 监听显示状态
 watch(() => props.show, (newVal) => {
   if (newVal) {
+    fetchAllStudents()
     // 重置状态
-    updateType.value = 'grade-only'
-    gradeFilter.value = ''
-    classFilter.value = ''
     selectedUserIds.value = []
-    targetGrade.value = ''
-    keepClass.value = true
     excelPreviewData.value = []
     error.value = ''
-    if (fileInput.value) {
-      fileInput.value.value = ''
-    }
-
-    // 获取所有学生用户数据
-    fetchAllStudents()
   }
 })
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
 }
-
-.modal-content {
-  background: #1a1a1a;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #2a2a2a;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-.modal-header {
-  padding: 20px;
-  border-bottom: 1px solid #2a2a2a;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #4a5568;
+  border-radius: 3px;
 }
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-btn:hover {
-  background: #2a2a2a;
-}
-
-.close-btn svg {
-  width: 20px;
-  height: 20px;
-  color: #cccccc;
-}
-
-.modal-body {
-  padding: 20px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.update-type-selector {
-  margin-bottom: 24px;
-}
-
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.radio-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  border: 2px solid #2a2a2a;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: #1a1a1a;
-}
-
-.radio-option:hover {
-  border-color: #3a3a3a;
-}
-
-.radio-option:has(.radio-input:checked) {
-  border-color: #3b82f6;
-  background: #1e3a8a;
-}
-
-.radio-input {
-  margin: 0;
-}
-
-.radio-label {
-  font-weight: 500;
-  color: #ffffff;
-}
-
-.radio-description {
-  font-size: 14px;
-  color: #cccccc;
-  margin-top: 4px;
-}
-
-.section-title {
-  margin-bottom: 20px;
-}
-
-.section-title h4 {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.section-description {
-  margin: 0;
-  color: #cccccc;
-  font-size: 14px;
-}
-
-.filter-section {
-  margin-bottom: 20px;
-}
-
-.filter-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.filter-group label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
-}
-
-.form-select {
-  padding: 8px 12px;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  font-size: 14px;
-  background: #1a1a1a;
-  color: #ffffff;
-  min-height: 40px;
-}
-
-.form-select option {
-  background: #1a1a1a;
-  color: #ffffff;
-  padding: 8px;
-}
-
-.student-list-section {
-  margin-bottom: 20px;
-}
-
-.list-header {
-  padding: 12px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px 6px 0 0;
-}
-
-.select-all-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  color: #ffffff;
-}
-
-.student-list {
-  border: 1px solid #2a2a2a;
-  border-top: none;
-  border-radius: 0 0 6px 6px;
-  max-height: 300px;
-  overflow-y: auto;
-  background: #1a1a1a;
-}
-
-.student-item {
-  border-bottom: 1px solid #2a2a2a;
-}
-
-.student-item:last-child {
-  border-bottom: none;
-}
-
-.student-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.student-checkbox:hover {
-  background: #2a2a2a;
-}
-
-.student-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.student-name {
-  font-weight: 500;
-  color: #ffffff;
-}
-
-.student-details {
-  font-size: 14px;
-  color: #cccccc;
-}
-
-.target-grade-section {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 16px;
-  align-items: end;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
-}
-
-.form-input {
-  padding: 8px 12px;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  font-size: 14px;
-  background: #1a1a1a;
-  color: #ffffff;
-}
-
-.form-input::placeholder {
-  color: #888888;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  color: #ffffff;
-}
-
-.file-upload-section {
-  margin-bottom: 20px;
-}
-
-.upload-area {
-  border: 2px dashed #2a2a2a;
-  border-radius: 8px;
-  padding: 40px 20px;
-  text-align: center;
-  transition: all 0.2s;
-  cursor: pointer;
-  background: #1a1a1a;
-}
-
-.upload-area:hover,
-.upload-area.drag-over {
-  border-color: #3b82f6;
-  background: #1e3a8a;
-}
-
-.file-input {
-  display: none;
-}
-
-.upload-icon {
-  width: 48px;
-  height: 48px;
-  color: #cccccc;
-  margin: 0 auto 16px;
-}
-
-.upload-text p {
-  margin: 0 0 8px 0;
-  color: #ffffff;
-}
-
-.upload-link {
-  background: none;
-  border: none;
-  color: #3b82f6;
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: inherit;
-}
-
-.upload-hint {
-  font-size: 14px;
-  color: #cccccc;
-}
-
-.template-info {
-  background: #1a1a1a;
-  padding: 16px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  border: 1px solid #2a2a2a;
-}
-
-.template-info h5 {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.template-info ul {
-  margin: 0 0 16px 0;
-  padding-left: 20px;
-}
-
-.template-info li {
-  font-size: 14px;
-  color: #cccccc;
-  margin-bottom: 4px;
-}
-
-.btn-link {
-  background: none;
-  border: none;
-  color: #3b82f6;
-  text-decoration: underline;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-}
-
-.btn-link svg {
-  width: 16px;
-  height: 16px;
-}
-
-.preview-section {
-  margin-top: 20px;
-}
-
-.preview-section h5 {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.preview-table-container {
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #1a1a1a;
-}
-
-.preview-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.preview-table th,
-.preview-table td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid #2a2a2a;
-  color: #cccccc;
-}
-
-.preview-table th {
-  background: #2a2a2a;
-  font-weight: 500;
-  color: #ffffff;
-}
-
-.preview-table .error-row {
-  background: #7f1d1d;
-}
-
-.status-success {
-  color: #059669;
-  font-size: 12px;
-}
-
-.status-error {
-  color: #dc2626;
-  font-size: 12px;
-}
-
-.preview-more {
-  padding: 12px;
-  text-align: center;
-  color: #cccccc;
-  font-size: 14px;
-  background: #1a1a1a;
-}
-
-.error-message {
-  background: #7f1d1d;
-  border: 1px solid #dc2626;
-  color: #fca5a5;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  margin-top: 16px;
-}
-
-.modal-footer {
-  padding: 20px;
-  border-top: 1px solid #2a2a2a;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.btn-secondary {
-  padding: 8px 16px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-  color: #ffffff;
-}
-
-.btn-secondary:hover {
-  background: #3a3a3a;
-}
-
-.btn-primary {
-  padding: 8px 16px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #2563eb;
-}
-
-.btn-primary:disabled {
-  background: #3a3a3a;
-  cursor: not-allowed;
-}
-
-@media (max-width: 768px) {
-  .modal-content {
-    width: 95%;
-    max-height: 95vh;
-  }
-
-  .filter-row {
-    grid-template-columns: 1fr;
-  }
-
-  .target-grade-section {
-    grid-template-columns: 1fr;
-  }
-
-  .radio-option {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #718096;
 }
 </style>

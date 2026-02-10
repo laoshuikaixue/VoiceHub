@@ -142,32 +142,6 @@ async function safeMigrate() {
           });
       }
 
-      async function safeMigrate() {
-          log('🔄 开始安全数据库迁移流程...', 'bright');
-
-          try {
-              // 获取项目根目录路径
-              const projectRoot = path.resolve(process.cwd(), '..');
-              const drizzleConfigPath = path.join(projectRoot, 'drizzle.config.ts');
-              const schemaPath = path.join(projectRoot, 'drizzle/schema.ts');
-              const migrationsPath = path.join(projectRoot, 'drizzle/migrations');
-
-              // 1. 确保drizzle配置存在
-              if (!fileExists(drizzleConfigPath)) {
-                  throw new Error(`drizzle.config.ts 配置文件不存在: ${drizzleConfigPath}`);
-              }
-
-              // 2. 检查schema文件
-              if (!fileExists(schemaPath)) {
-                  throw new Error(`drizzle/schema.ts 文件不存在: ${schemaPath}`);
-              }
-
-              // 3. 创建迁移目录（如果不存在）
-    if (!fileExists(migrationsPath)) {
-      log('创建迁移目录...', 'cyan');
-      fs.mkdirSync(migrationsPath, { recursive: true });
-    }
-    
     // 4. 生成迁移文件（如果需要）
     log('生成数据库迁移文件...', 'cyan');
     
@@ -179,11 +153,11 @@ async function safeMigrate() {
       NODE_ENV: 'production'
     };
 
-              // 使用新的自动确认函数
-              const generateSuccess = await runGenerateWithAutoConfirm(nonInteractiveEnv);
+    // 使用新的自动确认函数
+    const generateSuccess = await runGenerateWithAutoConfirm(nonInteractiveEnv);
 
-              if (!generateSuccess) {
-                  logWarning('迁移文件生成可能遇到问题，尝试继续...');
+    if (!generateSuccess) {
+        logWarning('迁移文件生成可能遇到问题，尝试继续...');
     } else {
       logSuccess('迁移文件生成完成');
     }
