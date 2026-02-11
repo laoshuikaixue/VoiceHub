@@ -51,98 +51,100 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 检查是否已经为该歌曲创建过排期，如果有则删除旧的排期
-        const existingScheduleResult = await db.select()
-            .from(schedules)
-            .where(eq(schedules.songId, body.songId))
-            .limit(1)
-
-        const existingSchedule = existingScheduleResult[0]
-        if (existingSchedule) {
-            // 删除现有排期
-            await db.delete(schedules)
-                .where(eq(schedules.id, existingSchedule.id))
-        }
-
-        // 获取序号，如果未提供则查找当天最大序号+1
-        let sequence = body.sequence || 1
-
-        if (!body.sequence) {
-            // 解析输入的日期字符串
-            const inputDateStr = typeof body.playDate === 'string' ? body.playDate : body.playDate.toISOString()
-
-            // 创建当天的开始和结束时间
-            const startOfDay = new Date(inputDateStr + 'T00:00:00.000Z')
-            const endOfDay = new Date(inputDateStr + 'T23:59:59.999Z')
-
-            console.log('查询当天排期范围:', {
-                输入日期: body.playDate,
-                开始时间: startOfDay.toISOString(),
-                结束时间: endOfDay.toISOString()
-            })
-
-            const sameDaySchedules = await db.select()
+        await db.transaction(async (tx) => {
+            // 检查是否已经为该歌曲创建过排期，如果有则删除旧的排期
+            const existingScheduleResult = await tx.select()
                 .from(schedules)
-                .where(and(
-                    gte(schedules.playDate, startOfDay),
-                    lte(schedules.playDate, endOfDay)
-                ))
-                .orderBy(desc(schedules.sequence))
+                .where(eq(schedules.songId, body.songId))
                 .limit(1)
 
-            if (sameDaySchedules.length > 0) {
-                sequence = (sameDaySchedules[0].sequence || 0) + 1
+            const existingSchedule = existingScheduleResult[0]
+            if (existingSchedule) {
+                // 删除现有排期
+                await tx.delete(schedules)
+                    .where(eq(schedules.id, existingSchedule.id))
             }
-        }
 
-        // 解析输入的日期字符串，确保日期正确
-        const inputDateStr = typeof body.playDate === 'string' ? body.playDate : body.playDate.toISOString()
+            // 获取序号，如果未提供则查找当天最大序号+1
+            let sequence = body.sequence || 1
 
-        // 直接使用输入的日期字符串，添加时间部分以避免时区问题
-        const playDate = new Date(inputDateStr + 'T00:00:00.000Z')
+            if (!body.sequence) {
+                // 解析输入的日期字符串
+                const inputDateStr = typeof body.playDate === 'string' ? body.playDate : body.playDate.toISOString()
 
-        // 创建排期
-        const scheduleResult = await db.insert(schedules)
-            .values({
-                songId: body.songId,
-                playDate: playDate,
-                sequence: sequence,
-                playTimeId: body.playTimeId || null,
-                // 草稿支持：根据参数决定是否为草稿
-                isDraft: isDraft,
-                publishedAt: isDraft ? null : new Date()
-            })
-            .returning()
+                // 创建当天的开始和结束时间
+                const startOfDay = new Date(inputDateStr + 'T00:00:00.000Z')
+                const endOfDay = new Date(inputDateStr + 'T23:59:59.999Z')
 
-        const schedule = {
-            ...scheduleResult[0],
-            song: {
-                id: song.id,
-                title: song.title,
-                artist: song.artist,
-                requesterId: song.requesterId
+                console.log('查询当天排期范围:', {
+                    输入日期: body.playDate,
+                    开始时间: startOfDay.toISOString(),
+                    结束时间: endOfDay.toISOString()
+                })
+
+                const sameDaySchedules = await tx.select()
+                    .from(schedules)
+                    .where(and(
+                        gte(schedules.playDate, startOfDay),
+                        lte(schedules.playDate, endOfDay)
+                    ))
+                    .orderBy(desc(schedules.sequence))
+                    .limit(1)
+
+                if (sameDaySchedules.length > 0) {
+                    sequence = (sameDaySchedules[0].sequence || 0) + 1
+                }
             }
-        }
 
-        // 获取客户端IP地址
-        const clientIP = getClientIP(event)
+            // 解析输入的日期字符串，确保日期正确
+            const inputDateStr = typeof body.playDate === 'string' ? body.playDate : body.playDate.toISOString()
 
-        // 只有在非草稿模式下才创建通知
-        if (!isDraft) {
-            await createSongSelectedNotification(schedule.song.requesterId, schedule.song.id, {
-                title: schedule.song.title,
-                artist: schedule.song.artist,
-                playDate: schedule.playDate
-            }, clientIP)
+            // 直接使用输入的日期字符串，添加时间部分以避免时区问题
+            const playDate = new Date(inputDateStr + 'T00:00:00.000Z')
 
-            // 标记该歌曲的所有待处理重播申请为已完成
-            await db.update(songReplayRequests)
-                .set({ status: 'FULFILLED' })
-                .where(and(
-                    eq(songReplayRequests.songId, schedule.song.id),
-                    eq(songReplayRequests.status, 'PENDING')
-                ))
-        }
+            // 创建排期
+            const scheduleResult = await tx.insert(schedules)
+                .values({
+                    songId: body.songId,
+                    playDate: playDate,
+                    sequence: sequence,
+                    playTimeId: body.playTimeId || null,
+                    // 草稿支持：根据参数决定是否为草稿
+                    isDraft: isDraft,
+                    publishedAt: isDraft ? null : new Date()
+                })
+                .returning()
+
+            const schedule = {
+                ...scheduleResult[0],
+                song: {
+                    id: song.id,
+                    title: song.title,
+                    artist: song.artist,
+                    requesterId: song.requesterId
+                }
+            }
+
+            // 获取客户端IP地址
+            const clientIP = getClientIP(event)
+
+            // 只有在非草稿模式下才创建通知
+            if (!isDraft) {
+                await createSongSelectedNotification(schedule.song.requesterId, schedule.song.id, {
+                    title: schedule.song.title,
+                    artist: schedule.song.artist,
+                    playDate: schedule.playDate
+                }, clientIP)
+
+                // 标记该歌曲的所有待处理重播申请为已完成
+                await tx.update(songReplayRequests)
+                    .set({ status: 'FULFILLED' })
+                    .where(and(
+                        eq(songReplayRequests.songId, schedule.song.id),
+                        eq(songReplayRequests.status, 'PENDING')
+                    ))
+            }
+        })
 
         // 清除相关缓存
         try {

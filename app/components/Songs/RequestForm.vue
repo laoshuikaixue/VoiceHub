@@ -438,7 +438,7 @@
               </button>
             </div>
             <!-- 如果歌曲已播放且开启了重播申请（超级管理员不显示） -->
-            <div v-if="song.played && enableReplayRequests && !isSuperAdmin" class="song-actions">
+            <div v-if="song.played && enableReplayRequests && !isSuperAdmin && song.semester === currentSemester?.name" class="song-actions">
               <button
                   :disabled="isReplayButtonDisabled(song)"
                   :title="getReplayButtonTitle(song)"
