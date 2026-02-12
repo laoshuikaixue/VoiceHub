@@ -686,6 +686,7 @@ VoiceHub/
 │   ├── __tests__/          # 工具函数测试目录
 │   ├── musicSources.ts     # 音乐源配置和管理工具
 │   ├── musicUrl.ts         # 音乐URL处理工具
+│   ├── oauth.ts            # OAuth工具函数
 │   └── url.ts              # URL处理工具（HTTPS转换等）
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
@@ -1050,6 +1051,26 @@ CASDOOR_CLIENT_SECRET="your-client-secret"         # 应用 Client Secret
 例如：`app/components/Auth/Providers/Google/Icon.vue`
 
 **注意：** 对于 Casdoor，请创建 `app/components/Auth/Providers/Casdoor/Icon.vue`，并填入 Casdoor 的图标代码。
+
+#### OAuth 工具函数
+
+为了统一前端 OAuth 提供商的名称显示，系统提供了 `getProviderDisplayName` 工具函数。
+
+**位置**: `app/utils/oauth.ts`
+
+**使用方法**:
+
+```typescript
+import { getProviderDisplayName } from '~/utils/oauth'
+
+// 获取显示名称
+const displayName = getProviderDisplayName('github') // 返回 "GitHub"
+const displayName2 = getProviderDisplayName('casdoor') // 返回 "Casdoor"
+const displayName3 = getProviderDisplayName('google') // 返回 "Google" (默认首字母大写)
+```
+
+**扩展**:
+当添加新的 OAuth 提供商时，可以在 `app/utils/oauth.ts` 的 `map` 对象中添加对应的映射关系，以实现自定义显示名称。
 
 ---
 

@@ -39,7 +39,7 @@ async function resetAutoIncrementSequences() {
         { name: 'systemSettings', dbName: 'SystemSettings' },
         { name: 'songBlacklists', dbName: 'SongBlacklist' },
         { name: 'userStatusLogs', dbName: 'user_status_logs' },
-        { name: 'userIdentities', dbName: 'user_identities' },
+        { name: 'userIdentities', dbName: 'UserIdentity' },
         { name: 'requestTimes', dbName: 'RequestTime' },
         { name: 'songReplayRequests', dbName: 'song_replay_requests' },
         { name: 'emailTemplates', dbName: 'EmailTemplate' }

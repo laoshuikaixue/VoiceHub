@@ -98,15 +98,14 @@
 <script setup>
 import {ref, computed} from 'vue'
 import {useAuth} from '~/composables/useAuth'
+import {getProviderDisplayName} from '~/utils/oauth'
 
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
 const providerUsername = computed(() => route.query.username || '')
 const providerName = computed(() => {
-  const provider = route.query.provider || '第三方'
-  if (provider === 'github') return 'GitHub'
-  if (provider === 'casdoor') return 'Casdoor'
-  return provider.charAt(0).toUpperCase() + provider.slice(1)
+  const provider = (route.query.provider as string) || '第三方'
+  return getProviderDisplayName(provider)
 })
 
 const username = ref('')

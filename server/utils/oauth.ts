@@ -47,8 +47,8 @@ export const parseState = (stateStr: string, expectedOrigin?: string, expectedCs
         }
 
         // 验证 CSRF
-        if (expectedCsrf && payload.csrf !== expectedCsrf) {
-            console.error('OAuth state CSRF mismatch')
+        if (!expectedCsrf || payload.csrf !== expectedCsrf) {
+            console.error('OAuth state CSRF mismatch or missing cookie')
             return null
         }
         

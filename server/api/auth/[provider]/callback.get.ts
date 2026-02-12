@@ -3,6 +3,7 @@ import { generateBindingToken } from '~~/server/utils/oauth-token'
 import { db, eq, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
+import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
 
 export default defineEventHandler(async (event) => {
     const provider = getRouterParam(event, 'provider')
@@ -46,14 +47,16 @@ export default defineEventHandler(async (event) => {
     try {
         accessToken = await strategy.exchangeToken(code, redirectUri)
     } catch (e: any) {
-        return sendRedirect(event, `/auth/error?code=TOKEN_EXCHANGE_FAILED&message=${encodeURIComponent(e.message || '授权失败')}`)
+        console.error(`[OAuth] ${provider} token exchange failed:`, e.message)
+        return sendRedirect(event, `/auth/error?code=TOKEN_EXCHANGE_FAILED&message=${encodeURIComponent('授权失败，无法获取访问令牌')}`)
     }
 
     // 3. 获取用户信息
     let userInfo
     try {
         userInfo = await strategy.getUserInfo(accessToken)
-    } catch (e) {
+    } catch (e: any) {
+        console.error(`[OAuth] ${provider} get user info failed:`, e.message)
          return sendRedirect(event, `/auth/error?code=USER_INFO_FAILED&message=${encodeURIComponent('获取用户信息失败')}`)
     }
     
@@ -108,6 +111,16 @@ async function handleUserLoginOrBind(event: any, provider: string, providerUserI
 
         // 未登录，则是登录或新绑定流程
         if (existingIdentity && existingIdentity.user) {
+            // 检查用户状态
+            const user = existingIdentity.user
+            if (user.status === 'withdrawn') {
+                return sendRedirect(event, `/auth/error?code=ACCOUNT_WITHDRAWN&message=${encodeURIComponent('账号已注销')}`)
+            }
+            if (isUserBlocked(user.id)) {
+                const remaining = getUserBlockRemainingTime(user.id)
+                return sendRedirect(event, `/auth/error?code=ACCOUNT_BLOCKED&message=${encodeURIComponent(`账户处于风险控制期，请在 ${remaining} 分钟后重试`)}`)
+            }
+
             // 登录
             const token = JWTEnhanced.generateToken(existingIdentity.user.id, existingIdentity.user.role)
             setCookie(event, 'auth-token', token, {
