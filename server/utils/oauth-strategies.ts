@@ -66,7 +66,8 @@ const githubStrategy: OAuthStrategy = {
             return tokenResponse.access_token
         } catch (e: any) {
             console.error('GitHub token exchange failed', e.message || e)
-            throw new Error(e.message || '令牌请求失败')
+            const errorMessage = e.data?.error_description || e.message || '令牌请求失败'
+            throw new Error(errorMessage)
         }
     },
 
@@ -134,7 +135,8 @@ const casdoorStrategy: OAuthStrategy = {
             return tokenResponse.access_token
         } catch(e: any) {
              console.error('Casdoor token exchange failed', e.message || e)
-             throw new Error(e.message || '令牌请求失败')
+             const errorMessage = e.data?.error_description || e.message || '令牌请求失败'
+             throw new Error(errorMessage)
         }
     },
 

@@ -1,4 +1,5 @@
 import CryptoJS from 'crypto-js'
+import { randomBytes } from 'node:crypto'
 
 const SECRET_KEY = process.env.OAUTH_STATE_SECRET
 
@@ -14,7 +15,7 @@ export interface OAuthState {
 
 // 生成 OAuth 状态参数
 export const generateState = (targetOrigin: string): { state: string, csrf: string } => {
-    const csrf = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2)
+    const csrf = randomBytes(32).toString('hex')
     const payload: OAuthState = {
         target: targetOrigin,
         csrf,

@@ -70,7 +70,8 @@ export default defineEventHandler(async (event) => {
     } catch (e: any) {
         // 如果用户尝试再次绑定相同的账户，处理唯一约束违规
         if (e.code === '23505') { // Postgres 唯一性冲突
-             // 已绑定，直接进行登录
+             // 这意味着身份已经绑定，这是正常情况。
+             // 我们可以继续执行登录流程。
         } else {
             // 绑定失败，清除 cookie 防止重放，或者保留允许重试？
             // 如果是系统错误，保留 cookie 可能更好。

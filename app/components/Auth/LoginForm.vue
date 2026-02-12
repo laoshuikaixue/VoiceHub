@@ -95,7 +95,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {ref, computed} from 'vue'
 import {useAuth} from '~/composables/useAuth'
 import {getProviderDisplayName} from '~/utils/oauth'
