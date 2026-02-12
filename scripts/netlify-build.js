@@ -132,6 +132,13 @@ async function netlifyBuild() {
 
     logSuccess('Drizzle 配置验证成功');
 
+    // 5.1. 确保迁移目录存在
+    if (!fileExists('app/drizzle/migrations')) {
+      logStep('📁', '创建迁移目录...');
+      fs.mkdirSync('app/drizzle/migrations', { recursive: true });
+      logSuccess('迁移目录创建完成');
+    }
+
     // 6. 数据库同步
     if (process.env.DATABASE_URL) {
       logStep('🗄️', '执行数据库同步...')
@@ -141,8 +148,18 @@ async function netlifyBuild() {
       } else {
         logWarning('数据库同步失败，继续构建...')
       }
+
+      // 6.1. 检查管理员账户
+      if (fileExists('scripts/create-admin.js')) {
+        logStep('👤', '检查管理员账户...');
+        if (safeExec('npm run create-admin', { env })) {
+          logSuccess('管理员账户检查完成');
+        } else {
+          logWarning('管理员账户创建跳过（可能已存在或数据库未连接）');
+        }
+      }
     } else {
-      logWarning('未设置 DATABASE_URL，跳过数据库迁移')
+      logWarning('未设置 DATABASE_URL，跳过数据库迁移和管理员检查')
     }
 
     // 7. 构建应用
