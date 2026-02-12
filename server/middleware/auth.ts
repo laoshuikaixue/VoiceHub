@@ -20,6 +20,9 @@ export default defineEventHandler(async (event) => {
     // 公共API路径
     const publicApiPaths = [
         '/api/auth/login',
+        '/api/auth/github', // OAuth 登录跳转
+        '/api/auth/github/callback', // OAuth 回调
+        '/api/auth/bind', // 账号绑定
         '/api/auth/verify', // verify端点自行处理token验证
         '/api/semesters/current',
         '/api/play-times',

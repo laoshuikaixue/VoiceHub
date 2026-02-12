@@ -1,8 +1,9 @@
 <template>
   <div class="login-form">
     <div class="form-header">
-      <h2>欢迎回来</h2>
-      <p>登录您的VoiceHub账户</p>
+      <h2>{{ isBindMode ? '绑定账号' : '欢迎回来' }}</h2>
+      <p v-if="isBindMode">即将绑定 {{ providerName }} 账号: {{ providerUsername }}</p>
+      <p v-else>登录您的VoiceHub账户</p>
     </div>
 
     <form :class="['auth-form', { 'has-error': !!error } ]" @submit.prevent="handleLogin">
@@ -79,9 +80,12 @@
             <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite" values="0;-15.708;-31.416"/>
           </circle>
         </svg>
-        <span>{{ loading ? '登录中...' : '登录' }}</span>
+        <span v-if="loading">{{ isBindMode ? '绑定中...' : '登录中...' }}</span>
+        <span v-else>{{ isBindMode ? '绑定并登录' : '登录' }}</span>
       </button>
     </form>
+
+    <AuthOAuthButtons v-if="!isBindMode" />
 
     <div class="form-footer">
       <p class="help-text">
@@ -92,8 +96,18 @@
 </template>
 
 <script setup>
-import {ref} from 'vue'
+import {ref, computed} from 'vue'
 import {useAuth} from '~/composables/useAuth'
+
+const route = useRoute()
+const isBindMode = computed(() => route.query.action === 'bind')
+const providerUsername = computed(() => route.query.username || '')
+const providerName = computed(() => {
+  const provider = route.query.provider || '第三方'
+  if (provider === 'github') return 'GitHub'
+  if (provider === 'casdoor') return 'Casdoor'
+  return provider.charAt(0).toUpperCase() + provider.slice(1)
+})
 
 const username = ref('')
 const password = ref('')
@@ -113,18 +127,32 @@ const handleLogin = async () => {
   loading.value = true
 
   try {
-    await auth.login(username.value, password.value)
-
-    // 登录成功后跳转
-    if (auth.isAdmin.value) {
-      await navigateTo('/dashboard')
-    } else {
+    if (isBindMode.value) {
+      await $fetch('/api/auth/bind', {
+        method: 'POST',
+        body: {
+          username: username.value,
+          password: password.value
+        }
+      })
+      
+      // 绑定成功后刷新认证状态
+      await auth.initAuth()
       await navigateTo('/')
+    } else {
+      await auth.login(username.value, password.value)
+
+      // 登录成功后跳转
+      if (auth.isAdmin.value) {
+        await navigateTo('/dashboard')
+      } else {
+        await navigateTo('/')
+      }
     }
   } catch (err) {
-    error.value = err.message || '登录失败，请检查账号密码'
+    error.value = err.message || (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
     // 密码错误时清空密码字段
-    if (error.value.includes('密码不正确')) {
+    if (error.value.includes('密码') || error.value.includes('错误')) {
       password.value = ''
     }
   } finally {

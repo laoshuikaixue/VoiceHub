@@ -9,6 +9,7 @@ export interface User {
     lastLoginIp?: string | null
     forcePasswordChange?: boolean
     passwordChangedAt?: Date | null
+    avatar?: string | null
 }
 
 export interface Song {

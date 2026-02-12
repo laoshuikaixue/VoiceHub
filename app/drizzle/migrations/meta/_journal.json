@@ -64,6 +64,13 @@
       "when": 1769766215307,
       "tag": "20260130094335_add_replay_request_status",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1770895837437,
+      "tag": "20260212113037_add_user_identities_table",
+      "breakpoints": true
     }
   ]
 }

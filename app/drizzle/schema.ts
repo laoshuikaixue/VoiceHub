@@ -264,11 +264,24 @@ export const songReplayRequests = pgTable('song_replay_requests', {
   unq: unique().on(t.songId, t.userId),
 }));
 
+// 第三方身份关联表
+export const userIdentities = pgTable('UserIdentity', {
+  id: serial('id').primaryKey(),
+  userId: integer('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(),
+  providerUserId: text('providerUserId').notNull(),
+  providerUsername: text('providerUsername'),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+}, (t) => ({
+  unq: unique().on(t.provider, t.providerUserId),
+}));
+
 // 关系定义
 export const usersRelations = relations(users, ({ many, one }) => ({
   songs: many(songs),
   votes: many(votes),
   notifications: many(notifications),
+  identities: many(userIdentities),
   notificationSettings: one(notificationSettings, {
     fields: [users.id],
     references: [notificationSettings.userId],
@@ -279,6 +292,13 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   replayRequests: many(songReplayRequests),
   statusChangedByUser: one(users, {
     fields: [users.statusChangedBy],
+    references: [users.id],
+  }),
+}));
+
+export const userIdentitiesRelations = relations(userIdentities, ({ one }) => ({
+  user: one(users, {
+    fields: [userIdentities.userId],
     references: [users.id],
   }),
 }));
@@ -463,4 +483,5 @@ export type NewSongReplayRequest = typeof songReplayRequests.$inferInsert;
 export type EmailTemplate = typeof emailTemplates.$inferSelect;
 export type NewEmailTemplate = typeof emailTemplates.$inferInsert;export type RequestTime = typeof requestTimes.$inferSelect;
 export type NewRequestTime = typeof requestTimes.$inferInsert;
-
+export type UserIdentity = typeof userIdentities.$inferSelect;
+export type NewUserIdentity = typeof userIdentities.$inferInsert;

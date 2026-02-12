@@ -1,164 +1,131 @@
 <template>
-  <div class="change-password-form">
-    <form class="password-form" @submit.prevent="handleChangePassword">
-      <div v-if="!isFirstLogin" class="form-group">
-        <label for="current-password">当前密码</label>
-        <div class="input-wrapper">
-          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
-            <circle cx="12" cy="16" r="1"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
+  <div class="space-y-6">
+    <form class="space-y-5" @submit.prevent="handleChangePassword">
+      <div v-if="!isFirstLogin" class="space-y-2">
+        <label for="current-password" class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1">当前密码</label>
+        <div class="relative group">
+          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors">
+            <Lock :size="18" />
+          </div>
           <input
               id="current-password"
               v-model="currentPassword"
-              :class="{ 'input-error': error }"
+              :class="[inputClass, error ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-zinc-800 focus:border-blue-500/30']"
               :type="showCurrentPassword ? 'text' : 'password'"
               placeholder="请输入当前密码"
               required
               @input="error = ''"
           />
           <button
-              class="password-toggle"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
               type="button"
               @click="showCurrentPassword = !showCurrentPassword"
           >
-            <svg v-if="showCurrentPassword" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" x2="23" y1="1" y2="23"/>
-            </svg>
-            <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
+            <Eye v-if="!showCurrentPassword" :size="18" />
+            <EyeOff v-else :size="18" />
           </button>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="new-password">新密码</label>
-        <div class="input-wrapper">
-          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
-            <circle cx="12" cy="16" r="1"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
+      <div class="space-y-2">
+        <label for="new-password" class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1">新密码</label>
+        <div class="relative group">
+          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors">
+            <KeyRound :size="18" />
+          </div>
           <input
               id="new-password"
               v-model="newPassword"
-              :class="{ 'input-error': error }"
+              :class="[inputClass, error ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-zinc-800 focus:border-blue-500/30']"
               :type="showNewPassword ? 'text' : 'password'"
               placeholder="请输入新密码"
               required
               @input="error = ''; validatePassword()"
           />
           <button
-              class="password-toggle"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
               type="button"
               @click="showNewPassword = !showNewPassword"
           >
-            <svg v-if="showNewPassword" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" x2="23" y1="1" y2="23"/>
-            </svg>
-            <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
+            <Eye v-if="!showNewPassword" :size="18" />
+            <EyeOff v-else :size="18" />
           </button>
         </div>
 
         <!-- 密码强度指示器 -->
-        <div v-if="newPassword" class="password-strength">
-          <div class="strength-bar">
-            <div :class="passwordStrength.class" :style="{ width: passwordStrength.width }" class="strength-fill"></div>
+        <div v-if="newPassword" class="px-1 pt-1 space-y-2">
+          <div class="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+            <div 
+              class="h-full transition-all duration-500" 
+              :class="passwordStrength.colorClass" 
+              :style="{ width: passwordStrength.width }"
+            ></div>
           </div>
-          <div :class="passwordStrength.class" class="strength-text">
-            {{ passwordStrength.text }}
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500">密码强度</span>
+            <span class="text-[10px] font-black uppercase tracking-widest" :class="passwordStrength.textColorClass">
+              {{ passwordStrength.text }}
+            </span>
           </div>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="confirm-password">确认新密码</label>
-        <div class="input-wrapper">
-          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
-            <circle cx="12" cy="16" r="1"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
+      <div class="space-y-2">
+        <label for="confirm-password" class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1">确认新密码</label>
+        <div class="relative group">
+          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors">
+            <CheckCircle2 :size="18" />
+          </div>
           <input
               id="confirm-password"
               v-model="confirmPassword"
-              :class="{ 'input-error': error || (confirmPassword && newPassword !== confirmPassword) }"
+              :class="[inputClass, (error || (confirmPassword && newPassword !== confirmPassword)) ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-zinc-800 focus:border-blue-500/30']"
               :type="showConfirmPassword ? 'text' : 'password'"
               placeholder="请再次输入新密码"
               required
               @input="error = ''"
           />
           <button
-              class="password-toggle"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
               type="button"
               @click="showConfirmPassword = !showConfirmPassword"
           >
-            <svg v-if="showConfirmPassword" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" x2="23" y1="1" y2="23"/>
-            </svg>
-            <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
+            <Eye v-if="!showConfirmPassword" :size="18" />
+            <EyeOff v-else :size="18" />
           </button>
         </div>
 
         <!-- 密码匹配提示 -->
-        <div v-if="confirmPassword && newPassword !== confirmPassword" class="password-mismatch">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="15" x2="9" y1="9" y2="15"/>
-            <line x1="9" x2="15" y1="9" y2="15"/>
-          </svg>
-          <span>密码不匹配</span>
-        </div>
-        <div v-else-if="confirmPassword && newPassword === confirmPassword" class="password-match">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <polyline points="20,6 9,17 4,12"/>
-          </svg>
-          <span>密码匹配</span>
+        <div v-if="confirmPassword" class="px-1">
+          <div v-if="newPassword !== confirmPassword" class="flex items-center gap-1.5 text-rose-500">
+            <XCircle :size="12" />
+            <span class="text-[10px] font-bold">密码不匹配</span>
+          </div>
+          <div v-else class="flex items-center gap-1.5 text-emerald-500">
+            <CheckCircle2 :size="12" />
+            <span class="text-[10px] font-bold">密码匹配</span>
+          </div>
         </div>
       </div>
 
-      <div v-if="error" class="error-container">
-        <svg class="error-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" x2="12" y1="8" y2="12"/>
-          <line x1="12" x2="12.01" y1="16" y2="16"/>
-        </svg>
-        <span class="error-message">{{ error }}</span>
+      <!-- 状态消息 -->
+      <div v-if="error" class="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3">
+        <AlertCircle :size="16" class="text-rose-500 shrink-0" />
+        <span class="text-xs text-rose-500 font-medium">{{ error }}</span>
       </div>
 
-      <div v-if="success" class="success-container">
-        <svg class="success-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <polyline points="20,6 9,17 4,12"/>
-        </svg>
-        <span class="success-message">{{ success }}</span>
+      <div v-if="success" class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-3">
+        <CheckCircle2 :size="16" class="text-emerald-500 shrink-0" />
+        <span class="text-xs text-emerald-500 font-medium">{{ success }}</span>
       </div>
 
-      <button :disabled="loading || !isFormValid" class="submit-btn" type="submit">
-        <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
-                  stroke-dashoffset="31.416"
-                  stroke-linecap="round" stroke-width="2">
-            <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
-                     values="0 31.416;15.708 15.708;0 31.416"/>
-            <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite" values="0;-15.708;-31.416"/>
-          </circle>
-        </svg>
-        <span>{{ loading ? '处理中...' : (isFirstLogin ? '设置密码' : '修改密码') }}</span>
+      <button 
+        :disabled="loading || !isFormValid" 
+        class="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-[0.98] disabled:opacity-50"
+        type="submit"
+      >
+        <Loader2 v-if="loading" :size="18" class="animate-spin" />
+        <span>{{ loading ? '处理中...' : (isFirstLogin ? '设置初始密码' : '确认修改密码') }}</span>
       </button>
     </form>
   </div>
@@ -166,6 +133,10 @@
 
 <script setup>
 import {computed, ref} from 'vue'
+import { 
+  Lock, KeyRound, Eye, EyeOff, CheckCircle2, 
+  XCircle, AlertCircle, Loader2 
+} from 'lucide-vue-next'
 
 // 组件属性
 const props = defineProps({
@@ -185,6 +156,9 @@ const error = ref('')
 const success = ref('')
 const loading = ref(false)
 
+// 样式类
+const inputClass = "w-full bg-zinc-950 border rounded-xl pl-11 pr-11 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none transition-all"
+
 // 密码显示状态
 const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
@@ -193,47 +167,23 @@ const showConfirmPassword = ref(false)
 // 密码强度计算
 const passwordStrength = computed(() => {
   const password = newPassword.value
-  if (!password) return {width: '0%', class: '', text: ''}
+  if (!password) return {width: '0%', colorClass: '', textColorClass: '', text: ''}
 
   let score = 0
-  let feedback = []
-
-  // 长度检查
-  if (password.length >= 8) {
-    score += 25
-  } else {
-    feedback.push('至少8个字符')
-  }
-
-  // 大写字母
-  if (/[A-Z]/.test(password)) {
-    score += 25
-  } else {
-    feedback.push('包含大写字母')
-  }
-
-  // 小写字母
-  if (/[a-z]/.test(password)) {
-    score += 25
-  } else {
-    feedback.push('包含小写字母')
-  }
-
-  // 数字和特殊字符
-  if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) {
-    score += 25
-  } else {
-    feedback.push('包含数字和特殊字符')
-  }
+  
+  if (password.length >= 8) score += 25
+  if (/[A-Z]/.test(password)) score += 25
+  if (/[a-z]/.test(password)) score += 25
+  if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) score += 25
 
   if (score < 50) {
-    return {width: `${score}%`, class: 'weak', text: '弱'}
+    return {width: `${score || 10}%`, colorClass: 'bg-rose-500', textColorClass: 'text-rose-500', text: '弱'}
   } else if (score < 75) {
-    return {width: `${score}%`, class: 'medium', text: '中等'}
+    return {width: `${score}%`, colorClass: 'bg-amber-500', textColorClass: 'text-amber-500', text: '中等'}
   } else if (score < 100) {
-    return {width: `${score}%`, class: 'strong', text: '强'}
+    return {width: `${score}%`, colorClass: 'bg-blue-500', textColorClass: 'text-blue-500', text: '强'}
   } else {
-    return {width: '100%', class: 'very-strong', text: '很强'}
+    return {width: '100%', colorClass: 'bg-emerald-500', textColorClass: 'text-emerald-500', text: '极强'}
   }
 })
 
@@ -299,7 +249,7 @@ const handleChangePassword = async () => {
       }, 2000)
     } else {
       await auth.changePassword(currentPassword.value, newPassword.value)
-      success.value = '密码修改成功！正在跳转...'
+      success.value = '密码修改成功！请重新登录'
 
       // 清空表单
       currentPassword.value = ''
@@ -330,277 +280,3 @@ const handleChangePassword = async () => {
   }
 }
 </script>
-
-<style scoped>
-.change-password-form {
-  width: 100%;
-  max-width: 400px;
-}
-
-.password-form {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
-}
-
-.input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.input-icon {
-  position: absolute;
-  left: 16px;
-  width: 20px;
-  height: 20px;
-  color: #666666;
-  z-index: 1;
-}
-
-.input-wrapper input {
-  width: 100%;
-  padding: 16px 48px 16px 48px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  color: #ffffff;
-  font-size: 16px;
-  transition: all 0.2s ease;
-}
-
-.input-wrapper input::placeholder {
-  color: #666666;
-}
-
-.input-wrapper input:focus {
-  outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.input-wrapper input:focus + .input-icon,
-.input-wrapper input:not(:placeholder-shown) + .input-icon {
-  color: #4f46e5;
-}
-
-.input-wrapper input.input-error {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-
-.password-toggle {
-  position: absolute;
-  right: 16px;
-  width: 20px;
-  height: 20px;
-  background: none;
-  border: none;
-  color: #666666;
-  cursor: pointer;
-  transition: color 0.2s ease;
-  z-index: 1;
-}
-
-.password-toggle:hover {
-  color: #ffffff;
-}
-
-.password-toggle svg {
-  width: 100%;
-  height: 100%;
-}
-
-/* 密码强度指示器 */
-.password-strength {
-  margin-top: 8px;
-}
-
-.strength-bar {
-  width: 100%;
-  height: 4px;
-  background: #2a2a2a;
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 4px;
-}
-
-.strength-fill {
-  height: 100%;
-  transition: all 0.3s ease;
-  border-radius: 2px;
-}
-
-.strength-fill.weak {
-  background: #ef4444;
-}
-
-.strength-fill.medium {
-  background: #f59e0b;
-}
-
-.strength-fill.strong {
-  background: #10b981;
-}
-
-.strength-fill.very-strong {
-  background: #059669;
-}
-
-.strength-text {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.strength-text.weak {
-  color: #ef4444;
-}
-
-.strength-text.medium {
-  color: #f59e0b;
-}
-
-.strength-text.strong {
-  color: #10b981;
-}
-
-.strength-text.very-strong {
-  color: #059669;
-}
-
-/* 密码匹配提示 */
-.password-mismatch,
-.password-match {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.password-mismatch {
-  color: #ef4444;
-}
-
-.password-match {
-  color: #10b981;
-}
-
-.password-mismatch svg,
-.password-match svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* 错误和成功容器 */
-.error-container,
-.success-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 12px;
-}
-
-.error-container {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #f87171;
-}
-
-.success-container {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  color: #34d399;
-}
-
-.error-icon,
-.success-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-.error-message,
-.success-message {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* 提交按钮 */
-.submit-btn {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.submit-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.submit-btn:hover:not(:disabled)::before {
-  left: 100%;
-}
-
-.submit-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
-}
-
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.loading-spinner {
-  width: 20px;
-  height: 20px;
-}
-
-/* 响应式设计 */
-@media (max-width: 480px) {
-  .input-wrapper input {
-    padding: 14px 44px 14px 44px;
-    font-size: 16px; /* 防止iOS缩放 */
-  }
-
-  .submit-btn {
-    padding: 14px;
-    font-size: 16px;
-  }
-}
-</style>

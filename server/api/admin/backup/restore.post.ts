@@ -17,6 +17,7 @@ import {
     songReplayRequests,
     songs,
     systemSettings,
+    userIdentities,
     users,
     userStatusLogs,
     votes
@@ -159,6 +160,7 @@ export default defineEventHandler(async (event) => {
                 await db.delete(songBlacklists)
                 await db.delete(userStatusLogs)
                 await db.delete(emailTemplates)
+                await db.delete(userIdentities)
                 await db.delete(users).where(ne(users.role, 'SUPER_ADMIN'))
                 await db.delete(playTimes)
                 await db.delete(semesters)
@@ -182,6 +184,7 @@ export default defineEventHandler(async (event) => {
             'semesters',
             'requestTimes',
             'users',
+            'userIdentities',
             'emailTemplates',
             'userStatusLogs',
             'songBlacklist',
@@ -356,6 +359,57 @@ export default defineEventHandler(async (event) => {
                                             // 建立ID映射
                                             if (record.id && createdUser.id) {
                                                 userIdMapping.set(record.id, createdUser.id)
+                                            }
+                                            break
+
+                                        case 'userIdentities':
+                                            // 验证必需字段
+                                            let validIdentityUserId = record.userId
+                                            if (record.userId) {
+                                                const mappedUserId = userIdMapping.get(record.userId)
+                                                if (mappedUserId) {
+                                                    validIdentityUserId = mappedUserId
+                                                } else {
+                                                    const userExists = await tx.select().from(users).where(eq(users.id, record.userId)).limit(1)
+                                                    if (userExists.length === 0) {
+                                                        console.warn(`身份关联记录的用户ID ${record.userId} 不存在，跳过此记录`)
+                                                        break
+                                                    }
+                                                }
+                                            } else {
+                                                console.warn(`身份关联记录缺少userId，跳过此记录`)
+                                                break
+                                            }
+
+                                            const identityData = {
+                                                userId: validIdentityUserId,
+                                                provider: record.provider,
+                                                providerUserId: record.providerUserId,
+                                                providerUsername: record.providerUsername,
+                                                createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+                                            }
+
+                                            if (mode === 'merge') {
+                                                await tx.insert(userIdentities)
+                                                    .values(identityData)
+                                                    .onConflictDoUpdate({
+                                                        target: [userIdentities.provider, userIdentities.providerUserId],
+                                                        set: identityData
+                                                    })
+                                            } else {
+                                                if (record.id) {
+                                                    const existing = await tx.select().from(userIdentities).where(eq(userIdentities.id, record.id)).limit(1)
+                                                    if (existing.length > 0) {
+                                                        await tx.update(userIdentities).set(identityData).where(eq(userIdentities.id, record.id))
+                                                    } else {
+                                                        await tx.insert(userIdentities).values({
+                                                            ...identityData,
+                                                            id: record.id
+                                                        })
+                                                    }
+                                                } else {
+                                                    await tx.insert(userIdentities).values(identityData)
+                                                }
                                             }
                                             break
 
@@ -1589,7 +1643,7 @@ export default defineEventHandler(async (event) => {
         // 重置所有自增序列
         console.log(`🔄 开始重置自增序列...`)
         const sequenceResetResults = []
-        const tablesToReset = ['Song', 'User', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist', 'SongReplayRequest', 'RequestTime', 'EmailTemplate']
+        const tablesToReset = ['Song', 'User', 'UserIdentity', 'UserStatusLog', 'Vote', 'Schedule', 'Notification', 'NotificationSettings', 'PlayTime', 'Semester', 'SystemSettings', 'SongBlacklist', 'SongReplayRequest', 'RequestTime', 'EmailTemplate']
 
         for (const tableName of tablesToReset) {
             try {

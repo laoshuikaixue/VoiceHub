@@ -61,7 +61,12 @@
       <div class="mt-4 pt-4 border-t border-zinc-800">
         <div class="flex items-center gap-3 p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
           <!-- 用户头像/首字母 -->
-          <div class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 font-bold border border-zinc-700 shrink-0">
+          <img 
+            v-if="currentUser?.avatar" 
+            :src="currentUser.avatar" 
+            class="w-10 h-10 rounded-lg object-cover border border-zinc-700 shrink-0" 
+          />
+          <div v-else class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 font-bold border border-zinc-700 shrink-0">
             {{ (currentUser?.name || '管').charAt(0) }}
           </div>
           <!-- 用户详细信息 -->
