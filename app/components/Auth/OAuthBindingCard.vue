@@ -13,7 +13,7 @@
             <AuthProvidersGitHubIcon class="w-5 h-5" />
           </div>
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-zinc-200">GitHub</span>
+            <span class="text-sm font-bold text-zinc-200">{{ getProviderDisplayName('github') }}</span>
             <span v-if="githubIdentity" class="text-[11px] text-blue-500 font-medium mt-0.5">{{ githubIdentity.providerUsername }}</span>
             <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
           </div>
@@ -44,7 +44,7 @@
             <Shield :size="20" />
           </div>
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-zinc-200">Casdoor</span>
+            <span class="text-sm font-bold text-zinc-200">{{ getProviderDisplayName('casdoor') }}</span>
             <span v-if="casdoorIdentity" class="text-[11px] text-blue-500 font-medium mt-0.5">{{ casdoorIdentity.providerUsername }}</span>
             <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
           </div>
@@ -118,6 +118,7 @@ import { ref, onMounted, computed } from 'vue'
 import { Loader2, Shield } from 'lucide-vue-next'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
+import { getProviderDisplayName } from '~/utils/oauth'
 
 const config = useRuntimeConfig()
 const { showToast } = useToast()
@@ -161,13 +162,7 @@ const handleBind = (provider) => {
 }
 
 const confirmUnbind = (provider) => {
-  let providerName = ''
-  switch(provider) {
-    case 'github': providerName = 'GitHub'; break;
-    case 'casdoor': providerName = 'Casdoor'; break;
-    case 'google': providerName = 'Google'; break;
-    default: providerName = provider;
-  }
+  const providerName = getProviderDisplayName(provider)
   
   confirmDialog.value = {
     title: '解除绑定',
