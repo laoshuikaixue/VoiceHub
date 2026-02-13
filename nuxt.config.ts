@@ -30,6 +30,7 @@ export default defineNuxtConfig({
       oauth: {
         github: !!process.env.GITHUB_CLIENT_ID,
         casdoor: !!process.env.CASDOOR_CLIENT_ID,
+        google: !!process.env.GOOGLE_CLIENT_ID,
       },
       siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
       siteLogo: process.env.NUXT_PUBLIC_SITE_LOGO || '',

@@ -11,15 +11,17 @@ export interface OAuthState {
     target: string
     csrf: string
     timestamp: number
+    provider?: string
 }
 
 // 生成 OAuth 状态参数
-export const generateState = (targetOrigin: string): { state: string, csrf: string } => {
+export const generateState = (targetOrigin: string, provider?: string): { state: string, csrf: string } => {
     const csrf = randomBytes(32).toString('hex')
     const payload: OAuthState = {
         target: targetOrigin,
         csrf,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        provider
     }
     const json = JSON.stringify(payload)
     const state = CryptoJS.AES.encrypt(json, SECRET_KEY).toString()

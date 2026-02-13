@@ -173,10 +173,78 @@ const casdoorStrategy: OAuthStrategy = {
     }
 }
 
+// Google 策略实现
+const googleStrategy: OAuthStrategy = {
+    getAuthorizeUrl(redirectUri: string, state: string) {
+        const clientId = process.env.GOOGLE_CLIENT_ID
+        if (!clientId) throw createError({ statusCode: 500, message: 'Google Client ID not configured' })
+        
+        return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&state=${encodeURIComponent(state)}`
+    },
+
+    async exchangeToken(code: string, redirectUri: string) {
+        const clientId = process.env.GOOGLE_CLIENT_ID
+        const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+        
+        if (!clientId || !clientSecret) {
+            throw createError({ statusCode: 500, message: 'Google config missing' })
+        }
+
+        try {
+            const tokenResponse = await $fetch<any>('https://oauth2.googleapis.com/token', {
+                method: 'POST',
+                body: {
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                    code,
+                    grant_type: 'authorization_code',
+                    redirect_uri: redirectUri
+                },
+                headers: { Accept: 'application/json' }
+            })
+            
+            if (tokenResponse.error) {
+                console.error('Google Token Error:', tokenResponse.error)
+                throw new Error('授权失败，请重试')
+            }
+
+            if (!tokenResponse.access_token) {
+                 console.error('Google Token Response missing access_token')
+                 throw new Error('未能获取访问令牌')
+            }
+            return tokenResponse.access_token
+        } catch (e: any) {
+            console.error('Google token exchange failed', e.message || e)
+            const errorMessage = e.data?.error_description || e.message || '令牌请求失败'
+            throw new Error(errorMessage)
+        }
+    },
+
+    async getUserInfo(accessToken: string) {
+        try {
+            const userInfo = await $fetch<any>('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            })
+            
+            return {
+                id: userInfo.sub,
+                username: userInfo.email, // Google doesn't have a username, use email
+                name: userInfo.name,
+                email: userInfo.email,
+                avatar: userInfo.picture
+            }
+        } catch (e: any) {
+            console.error('Google user info failed', e)
+            throw new Error('获取用户信息失败')
+        }
+    }
+}
+
 // 策略注册表
 const strategies: Record<string, OAuthStrategy> = {
     github: githubStrategy,
-    casdoor: casdoorStrategy
+    casdoor: casdoorStrategy,
+    google: googleStrategy
 }
 
 export const getOAuthStrategy = (provider: string): OAuthStrategy => {

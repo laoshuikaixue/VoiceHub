@@ -15,6 +15,16 @@
       >
         <AuthProvidersGitHubIcon />
       </button>
+
+      <button 
+        v-if="config.public.oauth.google"
+        type="button" 
+        class="w-12 h-12 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] flex items-center justify-center cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[var(--bg-tertiary)] hover:bg-white hover:text-black hover:border-[#dadce0]"
+        @click="loginWith('google')"
+        title="使用 Google 登录"
+      >
+        <AuthProvidersGoogleIcon />
+      </button>
       
       <!-- 其他提供商可在此添加 -->
     </div>

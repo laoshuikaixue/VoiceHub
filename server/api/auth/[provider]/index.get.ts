@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 500, message: 'OAUTH_REDIRECT_URI not configured' })
     }
 
-    const { state, csrf } = generateState(origin)
+    const { state, csrf } = generateState(origin, provider)
     
     setCookie(event, 'oauth_csrf', csrf, {
         httpOnly: true,

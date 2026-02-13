@@ -1072,6 +1072,73 @@ const displayName3 = getProviderDisplayName('google') // 返回 "Google" (默认
 **扩展**:
 当添加新的 OAuth 提供商时，可以在 `app/utils/oauth.ts` 的 `map` 对象中添加对应的映射关系，以实现自定义显示名称。
 
+#### 添加绑定卡片
+
+为了在账号管理页面显示新添加的 OAuth 提供商绑定选项，你需要修改 `app/components/Auth/OAuthBindingCard.vue` 文件。
+
+**1. 添加计算属性**
+
+在 `<script setup>` 中，添加用于获取特定提供商身份信息的计算属性：
+
+```javascript
+const googleIdentity = computed(() => identities.value.find(i => i.provider === 'google'))
+```
+
+**2. 添加卡片模板**
+
+在 `<template>` 中添加对应的卡片代码。你可以复制现有的卡片代码并进行修改：
+
+```vue
+<!-- Google (如果启用) -->
+<div v-if="config.public.oauth.google" :class="itemClass">
+  <div class="flex items-center gap-4">
+    <div class="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-zinc-800 text-zinc-100">
+      <!-- 引入你之前创建的图标组件 -->
+      <AuthProvidersGoogleIcon class="w-5 h-5" />
+    </div>
+    <div class="flex flex-col">
+      <span class="text-sm font-bold text-zinc-200">Google</span>
+      <span v-if="googleIdentity" class="text-[11px] text-blue-500 font-medium mt-0.5">{{ googleIdentity.providerUsername }}</span>
+      <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
+    </div>
+  </div>
+  
+  <button
+      v-if="googleIdentity"
+      class="..."
+      @click="confirmUnbind('google')"
+      :disabled="actionLoading"
+  >
+    {{ actionLoading ? '处理中...' : '解绑' }}
+  </button>
+  <button
+      v-else
+      class="..."
+      @click="handleBind('google')"
+      :disabled="actionLoading"
+  >
+    {{ actionLoading ? '跳转中...' : '立即绑定' }}
+  </button>
+</div>
+```
+
+**3. 更新解绑确认逻辑**
+
+修改 `confirmUnbind` 方法，添加新提供商的显示名称映射：
+
+```javascript
+const confirmUnbind = (provider) => {
+  let providerName = ''
+  switch(provider) {
+    case 'github': providerName = 'GitHub'; break;
+    case 'casdoor': providerName = 'Casdoor'; break;
+    case 'google': providerName = 'Google'; break; // <--- 添加这一行
+    default: providerName = provider;
+  }
+  // ...
+}
+```
+
 ---
 
 ### 音源扩展开发指南

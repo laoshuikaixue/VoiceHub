@@ -67,6 +67,37 @@
           {{ actionLoading ? '跳转中...' : '立即绑定' }}
         </button>
       </div>
+
+      <!-- Google (如果启用) -->
+      <div v-if="config.public.oauth.google" :class="itemClass">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-zinc-800 text-zinc-100">
+            <AuthProvidersGoogleIcon class="w-5 h-5" />
+          </div>
+          <div class="flex flex-col">
+            <span class="text-sm font-bold text-zinc-200">Google</span>
+            <span v-if="googleIdentity" class="text-[11px] text-blue-500 font-medium mt-0.5">{{ googleIdentity.providerUsername }}</span>
+            <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
+          </div>
+        </div>
+        
+        <button
+            v-if="googleIdentity"
+            class="px-4 py-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all disabled:opacity-50"
+            @click="confirmUnbind('google')"
+            :disabled="actionLoading"
+        >
+          {{ actionLoading ? '处理中...' : '解绑' }}
+        </button>
+        <button
+            v-else
+            class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
+            @click="handleBind('google')"
+            :disabled="actionLoading"
+        >
+          {{ actionLoading ? '跳转中...' : '立即绑定' }}
+        </button>
+      </div>
     </div>
 
     <!-- 确认对话框 -->
@@ -110,6 +141,7 @@ const itemClass = "flex items-center justify-between p-4 bg-zinc-950/30 border b
 
 const githubIdentity = computed(() => identities.value.find(i => i.provider === 'github'))
 const casdoorIdentity = computed(() => identities.value.find(i => i.provider === 'casdoor'))
+const googleIdentity = computed(() => identities.value.find(i => i.provider === 'google'))
 
 const fetchIdentities = async () => {
   try {
@@ -129,7 +161,14 @@ const handleBind = (provider) => {
 }
 
 const confirmUnbind = (provider) => {
-  const providerName = provider === 'github' ? 'GitHub' : 'Casdoor'
+  let providerName = ''
+  switch(provider) {
+    case 'github': providerName = 'GitHub'; break;
+    case 'casdoor': providerName = 'Casdoor'; break;
+    case 'google': providerName = 'Google'; break;
+    default: providerName = provider;
+  }
+  
   confirmDialog.value = {
     title: '解除绑定',
     message: `确定要解除 ${providerName} 账号的绑定吗？解除后您将无法使用该账号登录。`,
