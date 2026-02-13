@@ -62,9 +62,10 @@
         <div class="flex items-center gap-3 p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
           <!-- 用户头像/首字母 -->
           <img 
-            v-if="currentUser?.avatar" 
+            v-if="currentUser?.avatar && !avatarError" 
             :src="currentUser.avatar" 
             class="w-10 h-10 rounded-lg object-cover border border-zinc-700 shrink-0" 
+            @error="avatarError = true"
           />
           <div v-else class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 font-bold border border-zinc-700 shrink-0">
             {{ (currentUser?.name || '管').charAt(0) }}
@@ -115,6 +116,8 @@ import {
 } from 'lucide-vue-next'
 import logo from '~/public/images/logo.png'
 
+const avatarError = ref(false)
+
 const props = defineProps({
   // 侧边栏是否打开（移动端）
   isOpen: Boolean,
@@ -126,6 +129,10 @@ const props = defineProps({
   permissions: Object,
   // 站点标题
   siteTitle: String
+})
+
+watch(() => props.currentUser?.avatar, () => {
+  avatarError.value = false
 })
 
 const emit = defineEmits(['navigate', 'close', 'logout'])

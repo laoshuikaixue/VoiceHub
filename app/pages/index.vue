@@ -25,7 +25,12 @@
               </div>
               
               <div class="user-avatar-wrapper" @click="toggleUserActions">
-                <img v-if="user?.avatar" :src="user.avatar" class="user-avatar" />
+                <img 
+                  v-if="user?.avatar && !avatarError" 
+                  :src="user.avatar" 
+                  class="user-avatar" 
+                  @error="avatarError = true"
+                />
                 <div v-else class="user-avatar-placeholder">
                   {{ user?.name?.[0] || 'U' }}
                 </div>
@@ -548,11 +553,17 @@ const isRequestOpen = ref(true)
 const showRequestModal = ref(false)
 const showRules = ref(false)
 const showUserActions = ref(false)
+const avatarError = ref(false)
 
 const toggleUserActions = (event) => {
   event.stopPropagation()
   showUserActions.value = !showUserActions.value
 }
+
+// 监听用户头像变化，重置错误状态
+watch(() => user.value?.avatar, () => {
+  avatarError.value = false
+})
 
 // 点击外部关闭下拉菜单
 const handleClickOutside = (event) => {
