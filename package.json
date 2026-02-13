@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
+    "cloudflare-build": "nuxt build --preset cloudflare-pages",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
