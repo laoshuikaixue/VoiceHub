@@ -124,13 +124,13 @@ const casdoorStrategy: OAuthStrategy = {
             })
             
              if (tokenResponse.error) {
-                console.error('Casdoor Token Error:', tokenResponse.error)
-                throw new Error('授权失败')
+                console.error('Casdoor Token Error:', tokenResponse.error, tokenResponse.error_description)
+                throw new Error(tokenResponse.error_description || '授权失败，请重试')
             }
 
             if (!tokenResponse.access_token) {
                  console.error('Casdoor Token Response missing access_token')
-                 throw new Error('未能获取访问令牌')
+                 throw new Error('未能获取访问令牌，请检查 Casdoor 配置')
             }
             return tokenResponse.access_token
         } catch(e: any) {
