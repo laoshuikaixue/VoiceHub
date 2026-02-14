@@ -2,7 +2,7 @@ import {useAuth} from '~/composables/useAuth';
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
     const {isAuthenticated, initAuth} = useAuth();
-    const publicRoutes = ['/login', '/'];
+    const publicRoutes = ['/login', '/', '/auth/error'];
 
     // 客户端初始化认证状态
     if (process.client && !isAuthenticated.value) {
@@ -10,7 +10,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
 
     // 公共页面跳过认证
-    if (publicRoutes.includes(to.path)) {
+    if (publicRoutes.includes(to.path) || to.path.startsWith('/api/auth')) {
         return;
     }
 

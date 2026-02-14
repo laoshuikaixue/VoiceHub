@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
     // 公共API路径
     const publicApiPaths = [
         '/api/auth/login',
+        '/api/auth/bind', // 账号绑定
         '/api/auth/verify', // verify端点自行处理token验证
         '/api/semesters/current',
         '/api/play-times',
@@ -37,6 +38,31 @@ export default defineEventHandler(async (event) => {
     // 公共路径跳过认证检查
     if (publicApiPaths.some(path => pathname.startsWith(path))) {
         return
+    }
+
+    // 动态判断 OAuth 路径
+    // 允许 /api/auth/[provider] 和 /api/auth/[provider]/callback
+    // 但排除已知的受保护/特定 Auth 端点
+    if (pathname.startsWith('/api/auth/')) {
+        const segments = pathname.split('/')
+        // segments: ['', 'api', 'auth', 'provider', 'callback'?]
+        const provider = segments[3]
+        
+        // 已知的受保护或非OAuth的Auth端点
+        const nonOAuthEndpoints = [
+            'identities', 
+            'logout', 
+            'change-password', 
+            'set-initial-password', 
+            'unbind',
+            // login, bind, verify 已经在 publicApiPaths 中处理，这里列出是为了完整性或防止意外匹配
+            'login', 'bind', 'verify'
+        ]
+
+        if (provider && !nonOAuthEndpoints.includes(provider)) {
+            // 这是一个 OAuth 提供商路径 (例如 /api/auth/casdoor)
+            return
+        }
     }
 
     // 从请求头或cookie获取token

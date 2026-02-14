@@ -18,6 +18,7 @@ import {
     songReplayRequests,
     songs,
     systemSettings,
+    userIdentities,
     users,
     userStatusLogs,
     votes
@@ -38,6 +39,7 @@ async function resetAutoIncrementSequences() {
         { name: 'systemSettings', dbName: 'SystemSettings' },
         { name: 'songBlacklists', dbName: 'SongBlacklist' },
         { name: 'userStatusLogs', dbName: 'user_status_logs' },
+        { name: 'userIdentities', dbName: 'UserIdentity' },
         { name: 'requestTimes', dbName: 'RequestTime' },
         { name: 'songReplayRequests', dbName: 'song_replay_requests' },
         { name: 'emailTemplates', dbName: 'EmailTemplate' }
@@ -159,33 +161,38 @@ export default defineEventHandler(async (event) => {
                 resetResults.details.recordsDeleted += deletedStatusLogs.length
                 resetResults.details.tablesCleared++
 
-                // 12. 邮件模板 (依赖于用户 [更新者])
+                // 12. 第三方身份关联 (依赖于用户)
+                const deletedUserIdentities = await tx.delete(userIdentities).returning({id: userIdentities.id})
+                resetResults.details.recordsDeleted += deletedUserIdentities.length
+                resetResults.details.tablesCleared++
+
+                // 13. 邮件模板 (依赖于用户 [更新者])
                 const deletedEmailTemplates = await tx.delete(emailTemplates).returning({id: emailTemplates.id})
                 resetResults.details.recordsDeleted += deletedEmailTemplates.length
                 resetResults.details.tablesCleared++
 
-                // 13. 用户 (除自己外)
+                // 14. 用户 (除自己外)
                 const deletedUsers = await tx.delete(users).where(ne(users.id, user.id)).returning({id: users.id})
                 resetResults.details.recordsDeleted += deletedUsers.length
                 resetResults.details.tablesCleared++
                 resetResults.details.preservedData.push(`保留当前管理员账户: ${user.name}`)
 
-                // 14. 播出时段
+                // 15. 播出时段
                 const deletedPlayTimes = await tx.delete(playTimes).returning({id: playTimes.id})
                 resetResults.details.recordsDeleted += deletedPlayTimes.length
                 resetResults.details.tablesCleared++
 
-                // 15. 学期
+                // 16. 学期
                 const deletedSemesters = await tx.delete(semesters).returning({id: semesters.id})
                 resetResults.details.recordsDeleted += deletedSemesters.length
                 resetResults.details.tablesCleared++
                 
-                // 16. 请求时段
+                // 17. 请求时段
                 const deletedRequestTimes = await tx.delete(requestTimes).returning({id: requestTimes.id})
                 resetResults.details.recordsDeleted += deletedRequestTimes.length
                 resetResults.details.tablesCleared++
 
-                // 17. 系统设置
+                // 18. 系统设置
                 const deletedSystemSettings = await tx.delete(systemSettings).returning({id: systemSettings.id})
                 resetResults.details.recordsDeleted += deletedSystemSettings.length
                 resetResults.details.tablesCleared++

@@ -113,7 +113,8 @@
             <tr v-for="user in users" :key="user.id" class="group hover:bg-zinc-800/30 transition-all text-xs cursor-pointer" @click="showUserDetail(user, $event)">
               <td class="px-6 py-5">
                 <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-zinc-500 group-hover:text-zinc-300 transition-colors border border-zinc-700/50">{{ user.name.charAt(0) }}</div>
+                  <img v-if="user.avatar && !failedImages[user.id]" :src="user.avatar" class="w-10 h-10 rounded-xl object-cover border border-zinc-700/50" @error="handleImageError(user.id)" />
+                  <div v-else class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-zinc-500 group-hover:text-zinc-300 transition-colors border border-zinc-700/50">{{ user.name.charAt(0) }}</div>
                   <div>
                     <p class="font-black text-zinc-100">{{ user.name }}</p>
                     <p class="text-[10px] text-zinc-600 font-mono mt-0.5">ID: {{ user.username }}</p>
@@ -184,7 +185,8 @@
           <div v-for="user in users" :key="user.id" class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-5 shadow-lg shadow-black/20" @click="showUserDetail(user, $event)">
             <div class="flex items-start justify-between">
               <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center font-black text-lg text-zinc-500 border border-zinc-700">{{ user.name.charAt(0) }}</div>
+                <img v-if="user.avatar && !failedImages[user.id]" :src="user.avatar" class="w-12 h-12 rounded-lg object-cover border border-zinc-700" @error="handleImageError(user.id)" />
+                <div v-else class="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center font-black text-lg text-zinc-500 border border-zinc-700">{{ user.name.charAt(0) }}</div>
                 <div>
                   <h4 class="text-base font-black text-zinc-100">{{ user.name }}</h4>
                   <p class="text-xs text-zinc-500 font-mono">@{{ user.username }}</p>
@@ -1034,6 +1036,12 @@ const deleting = ref(false)
 // 用户歌曲模态框状态
 const showUserSongsModal = ref(false)
 const selectedUserId = ref(null)
+
+// 头像加载错误状态管理
+const failedImages = reactive({})
+const handleImageError = (userId) => {
+  failedImages[userId] = true
+}
 
 // 用户详细信息模态框状态
 const showUserDetailModal = ref(false)

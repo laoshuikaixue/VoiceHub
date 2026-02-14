@@ -20,12 +20,17 @@
             <div v-if="isClientAuthenticated" class="user-info">
               <div class="user-details-desktop">
                 <span class="user-name">{{ user?.name || '用户' }}</span>
-                <span v-if="isAdmin" class="user-badge admin">管理员</span>
-                <span v-else class="user-badge">同学</span>
+                <span v-if="isAdmin" class="user-badge admin">{{ roleName }}</span>
+                <span v-else class="user-badge">{{ userClassInfo }}</span>
               </div>
               
               <div class="user-avatar-wrapper" @click="toggleUserActions">
-                <img v-if="user?.avatar" :src="user.avatar" class="user-avatar" />
+                <img 
+                  v-if="user?.avatar && !avatarError" 
+                  :src="user.avatar" 
+                  class="user-avatar" 
+                  @error="avatarError = true"
+                />
                 <div v-else class="user-avatar-placeholder">
                   {{ user?.name?.[0] || 'U' }}
                 </div>
@@ -33,18 +38,18 @@
 
               <Transition name="dropdown-fade">
                 <div class="user-actions-dropdown" v-if="showUserActions">
-                  <button class="action-item logout" @click="handleLogout">
-                    <Icon name="logout" :size="16" />
-                    <span>退出登录</span>
-                  </button>
+                  <NuxtLink class="action-item" to="/account">
+                    <Icon name="user" :size="16" />
+                    <span>账号管理</span>
+                  </NuxtLink>
                   <NuxtLink v-if="isAdmin" class="action-item" to="/dashboard">
                     <Icon name="settings" :size="16" />
                     <span>管理后台</span>
                   </NuxtLink>
-                  <NuxtLink v-else class="action-item" to="/change-password">
-                    <Icon name="settings" :size="16" />
-                    <span>修改密码</span>
-                  </NuxtLink>
+                  <button class="action-item logout" @click="handleLogout">
+                    <Icon name="logout" :size="16" />
+                    <span>退出登录</span>
+                  </button>
                 </div>
               </Transition>
             </div>
@@ -515,6 +520,25 @@ const auth = useAuth()
 const isClientAuthenticated = computed(() => auth?.isAuthenticated?.value || false)
 const isAdmin = computed(() => auth?.isAdmin?.value || false)
 const user = computed(() => auth?.user?.value || null)
+
+const roleName = computed(() => {
+  const role = user.value?.role
+  const map = {
+    'ADMIN': '管理员',
+    'SUPER_ADMIN': '超级管理员',
+    'SONG_ADMIN': '审歌员',
+    'USER': '普通用户'
+  }
+  return map[role] || '管理员'
+})
+
+const userClassInfo = computed(() => {
+  if (user.value?.grade && user.value?.class) {
+    return `${user.value.grade} ${user.value.class}`
+  }
+  return '同学'
+})
+
 let songs = useSongs()
 // 立即初始化通知服务，避免时序问题
 const notificationsService = useNotifications()
@@ -529,11 +553,17 @@ const isRequestOpen = ref(true)
 const showRequestModal = ref(false)
 const showRules = ref(false)
 const showUserActions = ref(false)
+const avatarError = ref(false)
 
 const toggleUserActions = (event) => {
   event.stopPropagation()
   showUserActions.value = !showUserActions.value
 }
+
+// 监听用户头像变化，重置错误状态
+watch(() => user.value?.avatar, () => {
+  avatarError.value = false
+})
 
 // 点击外部关闭下拉菜单
 const handleClickOutside = (event) => {

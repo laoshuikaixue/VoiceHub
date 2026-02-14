@@ -66,29 +66,47 @@ export default defineEventHandler(async (event) => {
         const total = totalResult[0].count
 
         // 获取用户列表
-        const usersList = await db.select({
-            id: users.id,
-            name: users.name,
-            username: users.username,
-            role: users.role,
-            grade: users.grade,
-            class: users.class,
-            status: users.status,
-            statusChangedAt: users.statusChangedAt,
-            lastLogin: users.lastLogin,
-            lastLoginIp: users.lastLoginIp,
-            passwordChangedAt: users.passwordChangedAt,
-            forcePasswordChange: users.forcePasswordChange,
-            meowNickname: users.meowNickname,
-            meowBoundAt: users.meowBoundAt,
-            createdAt: users.createdAt,
-            updatedAt: users.updatedAt
+        const usersList = await db.query.users.findMany({
+            where: whereClause,
+            orderBy: asc(users.id),
+            limit: limitNum,
+            offset: skip,
+            columns: {
+                id: true,
+                name: true,
+                username: true,
+                role: true,
+                grade: true,
+                class: true,
+                status: true,
+                statusChangedAt: true,
+                lastLogin: true,
+                lastLoginIp: true,
+                passwordChangedAt: true,
+                forcePasswordChange: true,
+                meowNickname: true,
+                meowBoundAt: true,
+                createdAt: true,
+                updatedAt: true
+            },
+            with: {
+                identities: {
+                    columns: {
+                        provider: true,
+                        providerUsername: true
+                    },
+                    where: (identities, { eq }) => eq(identities.provider, 'github')
+                }
+            }
         })
-            .from(users)
-            .where(whereClause)
-            .orderBy(asc(users.id))
-            .limit(limitNum)
-            .offset(skip)
+
+        // 处理用户列表，添加头像字段
+        const formattedUsers = usersList.map(user => ({
+            ...user,
+            avatar: user.identities?.[0]?.providerUsername 
+                ? `https://github.com/${user.identities[0].providerUsername}.png` 
+                : null
+        }))
 
         // 计算分页信息
         const totalPages = Math.ceil(total / limitNum)
@@ -97,7 +115,7 @@ export default defineEventHandler(async (event) => {
 
         return {
             success: true,
-            users: usersList,
+            users: formattedUsers,
             pagination: {
                 total,
                 page: pageNum,

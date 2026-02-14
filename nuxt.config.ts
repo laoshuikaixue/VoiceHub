@@ -27,6 +27,11 @@ export default defineNuxtConfig({
     // 公共键（会暴露到客户端）
     public: {
       apiBase: '/api',
+      oauth: {
+        github: !!process.env.GITHUB_CLIENT_ID,
+        casdoor: !!process.env.CASDOOR_CLIENT_ID,
+        google: !!process.env.GOOGLE_CLIENT_ID,
+      },
       siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
       siteLogo: process.env.NUXT_PUBLIC_SITE_LOGO || '',
       siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
@@ -137,6 +142,13 @@ export default defineNuxtConfig({
         }
       },
       '/change-password': {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      },
+      '/auth/**': {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',

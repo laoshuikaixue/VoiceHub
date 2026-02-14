@@ -18,6 +18,7 @@ import {
     songs,
     systemSettings,
     users,
+    userIdentities,
     userStatusLogs,
     votes
 } from '~/drizzle/schema'
@@ -204,6 +205,22 @@ export default defineEventHandler(async (event) => {
                 },
                 description: '用户状态变更日志'
             },
+            userIdentities: {
+                query: async () => {
+                    const identitiesData = await db.select().from(userIdentities)
+                    const usersData = await db.select({
+                        id: users.id,
+                        username: users.username,
+                        name: users.name
+                    }).from(users)
+
+                    return identitiesData.map(identity => ({
+                        ...identity,
+                        user: usersData.find(user => user.id === identity.userId)
+                    }))
+                },
+                description: '第三方身份关联'
+            },
             songCollaborators: {
                 query: async () => {
                     const collaboratorsData = await db.select().from(songCollaborators)
@@ -313,7 +330,7 @@ export default defineEventHandler(async (event) => {
             tablesToProcess = Object.keys(tablesToBackup)
         } else if (tables === 'users') {
             // 仅备份用户相关数据
-            tablesToProcess = ['users', 'notificationSettings', 'userStatusLogs']
+            tablesToProcess = ['users', 'notificationSettings', 'userStatusLogs', 'userIdentities']
             // 如果包含系统数据，也添加到处理列表中
             if (includeSystemData) {
                 tablesToProcess.push('systemSettings')

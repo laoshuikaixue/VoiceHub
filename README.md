@@ -368,8 +368,15 @@ VoiceHub/
 │   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
 │   │   │   └── VotersModal.vue        # 投票人员查看弹窗
 │   │   ├── Auth/              # 认证相关组件
+│   │   │   ├── Providers/     # 第三方登录提供商组件
+│   │   │   │   ├── Casdoor/   # Casdoor登录组件
+│   │   │   │   │   └── Icon.vue # Casdoor图标
+│   │   │   │   ├── GitHub/    # GitHub登录组件
+│   │   │   │   │   └── Icon.vue # GitHub图标
 │   │   │   ├── ChangePasswordForm.vue # 修改密码表单
-│   │   │   └── LoginForm.vue         # 登录表单
+│   │   │   ├── LoginForm.vue         # 登录表单
+│   │   │   ├── OAuthBindingCard.vue  # OAuth绑定卡片
+│   │   │   └── OAuthButtons.vue      # OAuth登录按钮组
 │   │   ├── Common/            # 通用组件
 │   │   │   └── UserSearchModal.vue   # 用户搜索弹窗
 │   │   ├── Notifications/     # 通知系统组件
@@ -442,6 +449,10 @@ VoiceHub/
 │   ├── middleware/            # 中间件
 │   │   └── auth.global.ts      # 全局认证中间件
 │   ├── pages/                 # 页面组件（Nuxt 4路由）
+│   │   ├── account/           # 账户管理页面
+│   │   │   └── index.vue      # 账户中心（绑定管理）
+│   │   ├── auth/              # 认证相关页面
+│   │   │   └── error.vue      # 认证错误页面
 │   │   ├── change-password.vue # 修改密码页面
 │   │   ├── dashboard.vue       # 用户仪表盘
 │   │   ├── index.vue           # 首页
@@ -662,6 +673,9 @@ VoiceHub/
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── jwt-enhanced.ts # JWT工具
+│   │   ├── oauth-strategies.ts # OAuth策略配置
+│   │   ├── oauth.ts        # OAuth通用工具
+│   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── permissions.js  # 权限系统配置
 │   │   └── redis.ts        # Redis连接和操作工具
 │   └── tsconfig.json       # 服务端TypeScript配置
@@ -672,6 +686,7 @@ VoiceHub/
 │   ├── __tests__/          # 工具函数测试目录
 │   ├── musicSources.ts     # 音乐源配置和管理工具
 │   ├── musicUrl.ts         # 音乐URL处理工具
+│   ├── oauth.ts            # OAuth工具函数
 │   └── url.ts              # URL处理工具（HTTPS转换等）
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
@@ -918,6 +933,213 @@ psql -h localhost -U username -d database_name < backup.sql
 4. 确保同时更新 `types/index.ts` 中的TypeScript类型定义
 5. 使用Drizzle Studio查看数据库：`npm run db:studio`
 
+### OAuth 平台扩展指南
+
+VoiceHub 采用策略模式（Strategy Pattern）实现了灵活的 OAuth 扩展机制，允许开发者轻松接入新的第三方登录平台。
+
+#### 扩展步骤
+
+##### 1. 定义 OAuth 策略
+
+在 `server/utils/oauth-strategies.ts` 文件中，实现 `OAuthStrategy` 接口。该接口定义了 OAuth 流程中的三个核心方法：
+
+```typescript
+export interface OAuthStrategy {
+    /**
+     * 获取授权跳转 URL
+     * @param redirectUri 回调地址（通常是 /api/auth/[provider]/callback）
+     * @param state 包含安全校验信息的加密字符串
+     */
+    getAuthorizeUrl(redirectUri: string, state: string): string
+
+    /**
+     * 使用 code 换取 access_token
+     * @param code 授权码
+     * @param redirectUri 回调地址
+     */
+    exchangeToken(code: string, redirectUri: string): Promise<string>
+
+    /**
+     * 获取用户信息
+     * @param accessToken 访问令牌
+     */
+    getUserInfo(accessToken: string): Promise<OAuthUserInfo>
+}
+```
+
+**示例：接入 Google 登录**
+
+```typescript
+// server/utils/oauth-strategies.ts
+const googleStrategy: OAuthStrategy = {
+    getAuthorizeUrl(redirectUri, state) {
+        const clientId = process.env.GOOGLE_CLIENT_ID
+        // Google 授权端点
+        return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&state=${encodeURIComponent(state)}`
+    },
+
+    async exchangeToken(code, redirectUri) {
+        // ... 实现 Google 的 Token 交换逻辑
+        // 通常是发送 POST 请求到 https://oauth2.googleapis.com/token
+    },
+
+    async getUserInfo(accessToken) {
+        // ... 实现获取 Google 用户信息的逻辑
+        // 通常是发送 GET 请求到 https://www.googleapis.com/oauth2/v3/userinfo
+        // 需返回统一的 OAuthUserInfo 格式：
+        // { id, username, email, name, avatar }
+    }
+}
+```
+
+##### 2. 注册策略
+
+在同一个文件 (`server/utils/oauth-strategies.ts`) 的 `strategies` 对象中注册你的新策略：
+
+```typescript
+const strategies: Record<string, OAuthStrategy> = {
+    github: githubStrategy,
+    casdoor: casdoorStrategy,
+    google: googleStrategy, // <--- 注册新平台
+    // ... 其他平台
+}
+```
+
+##### 3. 配置环境变量
+
+在 `.env` 文件中添加新平台所需的配置（如 Client ID 和 Secret）：
+
+```bash
+GOOGLE_CLIENT_ID="your-client-id"
+GOOGLE_CLIENT_SECRET="your-client-secret"
+```
+
+##### 4. 完成！
+
+现在，你可以通过 `/api/auth/google` 访问新的登录流程，VoiceHub 会自动处理路由分发、State 校验、CSRF 保护和用户绑定逻辑。
+
+#### Casdoor 配置说明
+
+项目已内置对 [Casdoor](https://casdoor.org/) 的支持。Casdoor 是一个开源的 UI 优先的身份认证管理系统 (IAM)，支持 OAuth 2.0、OIDC 等多种协议。
+
+要启用 Casdoor 登录，只需在 `.env` 文件中配置以下环境变量：
+
+```bash
+# Casdoor 配置
+CASDOOR_ENDPOINT="https://your-casdoor-domain.com" # Casdoor 服务地址
+CASDOOR_CLIENT_ID="your-client-id"                 # 应用 Client ID
+CASDOOR_CLIENT_SECRET="your-client-secret"         # 应用 Client Secret
+```
+
+配置完成后，系统会自动识别并启用 Casdoor 登录策略。
+
+#### 多环境部署与回调地址代理
+
+在 Vercel 等平台进行多环境部署时，GitHub OAuth App 通常只能配置单一的回调地址。为了解决这个问题，项目可以使用 [VoiceHub-Auth-Broker](https://github.com/laoshuikaixue/VoiceHub-Auth-Broker) 中间件，具体使用方法可见仓库内的文档。
+
+该中间件可以作为统一的回调入口，根据 `state` 参数动态转发回调请求到正确的部署环境，从而实现一个 GitHub OAuth App 支持无限个预览/生产环境。详情请参考该项目文档。
+
+#### 前端图标配置
+
+当添加了新的服务端 OAuth 策略后，如果需要在前端登录页面显示对应的图标按钮，请按照以下步骤操作：
+
+1.  在 `app/components/Auth/Providers` 目录下创建一个以 Provider 名称（首字母大写）命名的文件夹，例如 `Google`。
+2.  在该文件夹内创建一个 `Icon.vue` 组件，放入对应的 SVG 图标代码。
+    *   建议 SVG 大小设置为 `w-5 h-5` 以保持样式统一。
+3.  系统会自动检测并加载该图标，无需额外配置。
+
+例如：`app/components/Auth/Providers/Google/Icon.vue`
+
+**注意：** 对于 Casdoor，请创建 `app/components/Auth/Providers/Casdoor/Icon.vue`，并填入 Casdoor 的图标代码。
+
+#### OAuth 工具函数
+
+为了统一前端 OAuth 提供商的名称显示，系统提供了 `getProviderDisplayName` 工具函数。
+
+**位置**: `app/utils/oauth.ts`
+
+**使用方法**:
+
+```typescript
+import { getProviderDisplayName } from '~/utils/oauth'
+
+// 获取显示名称
+const displayName = getProviderDisplayName('github') // 返回 "GitHub"
+const displayName2 = getProviderDisplayName('casdoor') // 返回 "Casdoor"
+const displayName3 = getProviderDisplayName('google') // 返回 "Google" (默认首字母大写)
+```
+
+**扩展**:
+当添加新的 OAuth 提供商时，可以在 `app/utils/oauth.ts` 的 `map` 对象中添加对应的映射关系，以实现自定义显示名称。
+
+#### 添加绑定卡片
+
+为了在账号管理页面显示新添加的 OAuth 提供商绑定选项，你需要修改 `app/components/Auth/OAuthBindingCard.vue` 文件。
+
+**1. 添加计算属性**
+
+在 `<script setup>` 中，添加用于获取特定提供商身份信息的计算属性：
+
+```javascript
+const googleIdentity = computed(() => identities.value.find(i => i.provider === 'google'))
+```
+
+**2. 添加卡片模板**
+
+在 `<template>` 中添加对应的卡片代码。你可以复制现有的卡片代码并进行修改：
+
+```vue
+<!-- Google (如果启用) -->
+<div v-if="config.public.oauth.google" :class="itemClass">
+  <div class="flex items-center gap-4">
+    <div class="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-zinc-800 text-zinc-100">
+      <!-- 引入你之前创建的图标组件 -->
+      <AuthProvidersGoogleIcon class="w-5 h-5" />
+    </div>
+    <div class="flex flex-col">
+      <span class="text-sm font-bold text-zinc-200">Google</span>
+      <span v-if="googleIdentity" class="text-[11px] text-blue-500 font-medium mt-0.5">{{ googleIdentity.providerUsername }}</span>
+      <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
+    </div>
+  </div>
+  
+  <button
+      v-if="googleIdentity"
+      class="..."
+      @click="confirmUnbind('google')"
+      :disabled="actionLoading"
+  >
+    {{ actionLoading ? '处理中...' : '解绑' }}
+  </button>
+  <button
+      v-else
+      class="..."
+      @click="handleBind('google')"
+      :disabled="actionLoading"
+  >
+    {{ actionLoading ? '跳转中...' : '立即绑定' }}
+  </button>
+</div>
+```
+
+**3. 更新解绑确认逻辑**
+
+修改 `confirmUnbind` 方法，添加新提供商的显示名称映射：
+
+```javascript
+const confirmUnbind = (provider) => {
+  let providerName = ''
+  switch(provider) {
+    case 'github': providerName = 'GitHub'; break;
+    case 'casdoor': providerName = 'Casdoor'; break;
+    case 'google': providerName = 'Google'; break; // <--- 添加这一行
+    default: providerName = provider;
+  }
+  // ...
+}
+```
+
+---
 
 ### 音源扩展开发指南
 

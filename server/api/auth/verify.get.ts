@@ -57,19 +57,32 @@ export default defineEventHandler(async (event) => {
         }
 
         // 缓存未命中或Redis不可用，从数据库获取用户信息
-        const userResult = await db.select({
-            id: users.id,
-            username: users.username,
-            name: users.name,
-            grade: users.grade,
-            class: users.class,
-            role: users.role,
-            forcePasswordChange: users.forcePasswordChange,
-            passwordChangedAt: users.passwordChangedAt
-        }).from(users).where(eq(users.id, userId))
+        // 同时查询 OAuth 绑定信息以获取 GitHub 头像
+        const userResult = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: {
+                id: true,
+                username: true,
+                name: true,
+                grade: true,
+                class: true,
+                role: true,
+                forcePasswordChange: true,
+                passwordChangedAt: true
+            },
+            with: {
+                identities: {
+                    columns: {
+                        provider: true,
+                        providerUsername: true
+                    },
+                    where: (identities, { eq }) => eq(identities.provider, 'github')
+                }
+            }
+        })
 
-        const dbUser = userResult[0] || null
-
+        const dbUser = userResult || null
+        
         if (!dbUser) {
             throw createError({
                 statusCode: 401,
@@ -85,7 +98,11 @@ export default defineEventHandler(async (event) => {
             grade: dbUser.grade,
             class: dbUser.class,
             role: dbUser.role,
-            requirePasswordChange: dbUser.forcePasswordChange || !dbUser.passwordChangedAt
+            requirePasswordChange: dbUser.forcePasswordChange || !dbUser.passwordChangedAt,
+            // 动态生成 GitHub 头像 URL
+            avatar: dbUser.identities?.[0]?.providerUsername 
+                ? `https://github.com/${dbUser.identities[0].providerUsername}.png` 
+                : null
         }
 
         // 将用户认证状态缓存到Redis（如果可用）- 永久缓存
