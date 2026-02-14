@@ -2,12 +2,15 @@
 
 这是一个使用Nuxt 4全栈框架开发的现代化校园广播站点歌管理系统。系统提供完整的点歌、投票、排期管理、通知推送、数据分析、权限控制和数据库管理功能，支持多角色权限管理和灵活的系统配置。
 
-## 项目截图
+<details>
+<summary><h2>项目截图（点击展开）</h2>
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fef6970e-95eb-4cab-a11f-db4e71fc87b5" />
+</summary>
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f76e912c-1263-424b-b379-72321de205f7" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/b5de5880-6635-4698-9fd9-dbea9642f06a" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/05472008-57d5-4586-b7ca-572bff8a30ae" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c30f2e5a-4cc8-48cb-aca2-4d41daeaaaf8" />
+</details>
 
 ## 主要功能
 
@@ -60,35 +63,6 @@
 - **玻璃态设计**：现代化的视觉效果和交互体验
 - **交互反馈**：hover效果，点击反馈，状态变化动画
 - **移动端优化**：适配支持移动设备访问，触摸友好的交互设计
-
-## 技术栈
-
-### 前端技术
-- **Nuxt 4**：Vue.js全栈框架，提供SSR和SPA支持
-- **Vue 3**：响应式前端框架，使用Composition API
-- **TypeScript**：类型安全的JavaScript，提供完整的类型定义
-- **Tailwind CSS**：实用优先的CSS框架，响应式设计
-- **Vue Router**：前端路由管理
-
-### 后端技术
-- **Nuxt Server API**：服务端API路由，支持中间件和认证
-- **Drizzle ORM**：现代化数据库ORM，提供类型安全的数据库操作和高性能查询
-- **Neon Database**：Serverless PostgreSQL数据库，支持自动启停和无缝扩展
-- **PostgreSQL**：关系型数据库，支持复杂查询和事务处理
-- **Redis**：高性能缓存数据库，提升系统响应速度（可选，暂不推荐，可能存在潜在的问题）
-- **JWT**：标准JWT认证机制，支持24小时token有效期
-- **bcrypt**：密码加密，安全的哈希算法
-- **Multer**：文件上传处理，支持多种存储方式
-
-## 系统架构
-
-系统采用了现代化的 Serverless 全栈架构：
-- **前端**：使用 Nuxt 4 + Vue 3 组合式API构建响应式用户界面
-- **后端**：使用 Nuxt Server API 构建 RESTful API 服务
-- **数据库**：使用 Drizzle ORM + Neon Database，提供类型安全和高性能的数据库操作
-- **认证**：标准 JWT 认证系统
-- **缓存**：可选的 Redis 缓存层，提升系统响应速度
-- **部署**：支持 Vercel、Netlify、EdgeOne 等 Serverless 平台一键部署
 
 ## 部署指南
 
@@ -144,7 +118,7 @@
 
 3. 启动应用
    ```bash
-   npm run start
+   npm run deploy && npm start
    ```
 ### Docker 部署
 
@@ -189,11 +163,30 @@ docker-compose up
 
 其他请移步 [docker-compose目录](/docker-compose)
 
-## 安装与运行
+### 数据库配置
+
+部署时需要配置 PostgreSQL 数据库，推荐使用以下云数据库服务：
+
+#### Supabase（推荐）
+1. 访问 [Supabase](https://supabase.com/) 并创建项目
+2. 在项目设置中找到数据库连接字符串
+3. 格式：`postgresql://postgres:password@db.project.supabase.co:5432/postgres?sslmode=require`
+
+#### Railway
+1. 访问 [Railway](https://railway.app/) 并创建 PostgreSQL 数据库
+2. 复制提供的连接字符串
+
+#### Neon
+1. 访问 [Neon](https://neon.tech/) 并创建数据库
+2. 获取连接字符串
+
+<details>
+<summary><h2>手动安装与运行（点击展开）</h2></summary>
+<code>
 
 ### 前提条件
 - Node.js 20+
-- PostgreSQL数据库（推荐Neon）
+- PostgreSQL数据库
 - Redis数据库（可选，暂不推荐，可能存在潜在的问题）
 
 ### 安装步骤
@@ -218,17 +211,11 @@ cp .env.example .env
 4. 编辑`.env`文件，设置数据库连接和JWT密钥：
 ```
 DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
-REDIS_URL="redis://username:password@host:port"
+# REDIS_URL="redis://username:password@host:port"
 JWT_SECRET="your-very-secure-jwt-secret-key"
 ```
 
-5. 初始化数据库和生成数据库模式
-```bash
-npm run db:generate
-npm run db:migrate
-```
-
-或者使用一键设置命令：
+5. 数据库一键设置命令：
 ```bash
 npm run deploy
 ```
@@ -253,8 +240,12 @@ npm run build
 ```bash
 npm start
 ```
+</code>
+</details>
 
-## 系统配置
+<details>
+<summary><h2>系统配置（点击展开）</h2></summary>
+<code>
 
 ### 站点配置管理
 VoiceHub 提供了完整的站点配置管理功能，支持通过管理后台动态配置系统参数：
@@ -312,6 +303,8 @@ VoiceHub 实现了细粒度的权限控制系统：
 - 前端基于角色动态显示界面元素和菜单
 - 后端API进行严格的权限验证
 - 支持页面级和功能级的权限控制
+</code>
+</details>
 
 ## 环境变量说明
 
@@ -320,13 +313,121 @@ VoiceHub 实现了细粒度的权限控制系统：
 | DATABASE_URL | 是  | PostgreSQL数据库连接字符串              | `postgresql://username:password@host:port/database?sslmode=require` |
 | JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串            | `your-very-secure-jwt-secret-key`                                   |
 | NODE_ENV     | 否  | 运行环境，development或production     | `production`                                                        |
-| REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                                |
+| REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能（暂时不可用） | `redis://default:password@host:port`                                |
 | NITRO_PRESET | 否  | Nitro预设                         | `vercel`                                                            |
 
-## 项目结构
+<details>
+<summary><h2>使用说明（点击展开）</h2></summary>
+<code>
 
-```
-VoiceHub/
+### 普通用户
+1. 访问主页，查看当前排期
+2. 注册/登录账号
+3. 在仪表盘中点歌或给喜欢的歌曲投票
+   - 支持搜索网易云音乐、QQ音乐和哔哩哔哩平台
+   - 可以试听歌曲并选择音质
+   - 支持给已有歌曲投票
+   - **网易云音乐登录功能**：
+     - 扫码登录网易云音乐账号
+     - 登录后可一键添加当前排期歌曲到个人歌单
+     - 支持从个人歌单中直接投稿歌曲
+     - 支持从最近播放记录中投稿歌曲
+     - 可搜索并投稿播客和电台内容
+4. 使用内置播放器播放歌曲
+   - 支持多种音质切换（标准、HQ、无损、Hi-Res等）
+   - 实时切换音质并保持播放进度
+5. 查看通知中心获取歌曲状态更新
+
+### 管理员
+1. 使用管理员账号登录（默认账号：admin，密码：admin123）
+2. 进入管理后台，选择相应功能标签
+3. **排期管理**：可以看到左侧"待排歌曲"和右侧"播放顺序"
+   - 通过拖拽将歌曲从左侧添加到右侧的排期列表
+   - 可以在右侧拖拽调整歌曲播放顺序
+   - 支持播出时段管理，可设置不同时段的播放安排
+   - **草稿功能**：支持保存排期草稿，允许管理员先保存未完成的排期安排
+     - 点击"保存草稿"按钮保存当前排期为草稿状态
+     - 草稿不会影响公开展示的排期，可以随时修改
+     - 点击"保存并发布"按钮将草稿发布为正式排期
+   - 点击"保存顺序"按钮保存排期
+4. **打印排期**：专业的排期打印和导出功能
+   - 选择纸张大小（A4、A3、Letter、Legal）和页面方向
+   - 自定义显示内容：歌曲封面、歌名、歌手、投稿人、热度等
+   - 快捷日期选择：今天、明天、本周、下周
+   - 智能分组显示：按日期分组，有多个播出时段时自动按时间排序
+   - 实时预览：所见即所得的打印预览
+   - PDF导出：支持导出高质量PDF文件，自动处理跨域图片
+5. **歌曲管理**：查看和管理所有歌曲
+   - 支持播放歌曲并实时切换音质
+   - 动态获取最新的音乐播放链接
+   - 提供歌曲下载功能，支持批量下载管理
+   - 批量更新歌曲信息和状态
+6. **数据分析**：查看系统使用统计和数据分析
+   - 实时统计数据：用户活跃度、歌曲热度、投票趋势
+   - 学期对比分析：不同学期的数据对比
+   - 用户参与度分析：用户行为和参与度统计
+   - 趋势分析：系统使用趋势和预测
+7. **数据库管理**：数据库备份恢复和维护
+   - 创建和下载数据库备份
+   - 上传和恢复备份文件
+   - 序列重置：修复数据库序列问题
+   - 数据库状态检查和完整性验证
+8. **学期管理**：设置和管理学期信息
+   - 创建新学期（如"2024-2025学年上学期"）
+   - 设置当前活跃学期
+   - 点歌记录自动关联到当前学期
+9. **用户管理**：添加、编辑和删除用户
+   - 单个添加：填写用户信息（包括姓名、账号、年级、班级）
+   - 批量导入：通过EXCEL文件批量添加用户
+   - 可以重置用户密码
+10. **黑名单管理**：管理歌曲和关键词黑名单
+    - 添加具体歌曲或关键词到黑名单
+    - 自动过滤包含黑名单内容的点歌请求
+    - 支持启用/禁用黑名单项
+11. **系统设置**：配置系统参数和功能开关
+    - 站点信息配置：标题、Logo、描述等
+    - 投稿限额设置：每日/每周投稿限制
+    - 播出时段管理：配置不同的播出时间段
+    - 功能开关：启用/禁用特定功能
+12. **通知管理**：向用户发送系统通知
+    - 支持按全体用户、年级、班级或多班级发送
+    - 实时显示发送进度和结果
+    - 通知历史记录和管理
+</code>
+</details>
+
+## 技术栈
+
+### 前端技术
+- **Nuxt 4**：Vue.js全栈框架，提供SSR和SPA支持
+- **Vue 3**：响应式前端框架，使用Composition API
+- **TypeScript**：类型安全的JavaScript，提供完整的类型定义
+- **Tailwind CSS**：实用优先的CSS框架，响应式设计
+- **Vue Router**：前端路由管理
+
+### 后端技术
+- **Nuxt Server API**：服务端API路由，支持中间件和认证
+- **Drizzle ORM**：现代化数据库ORM，提供类型安全的数据库操作和高性能查询
+- **Neon Database**：Serverless PostgreSQL数据库，支持自动启停和无缝扩展
+- **PostgreSQL**：关系型数据库，支持复杂查询和事务处理
+- **Redis**：高性能缓存数据库，提升系统响应速度（可选，暂不推荐，可能存在潜在的问题）
+- **JWT**：标准JWT认证机制，支持24小时token有效期
+- **bcrypt**：密码加密，安全的哈希算法
+- **Multer**：文件上传处理，支持多种存储方式
+
+## 系统架构
+
+系统采用了现代化的 Serverless 全栈架构：
+- **前端**：使用 Nuxt 4 + Vue 3 组合式API构建响应式用户界面
+- **后端**：使用 Nuxt Server API 构建 RESTful API 服务
+- **数据库**：使用 Drizzle ORM + Neon Database，提供类型安全和高性能的数据库操作
+- **认证**：标准 JWT 认证系统
+- **缓存**：可选的 Redis 缓存层，提升系统响应速度
+- **部署**：支持 Vercel、Netlify、EdgeOne 等 Serverless 平台一键部署
+
+<details>
+<summary><h2>项目结构（点击展开）</h2></summary>
+<code>VoiceHub/
 ├── app/                       # Nuxt 4 应用主目录
 │   ├── app.vue                # 应用入口文件
 │   ├── assets/                # 静态资源目录
@@ -702,21 +803,17 @@ VoiceHub/
 ├── README.md              # 项目说明文档
 ├── tsconfig.json          # TypeScript配置文件
 └── vercel.json            # Vercel部署配置
-```
-
+  
 ### 目录说明
-
 #### 核心目录 (app/)
 - **`app/components/`**: Vue组件库，按功能模块组织
 - **`app/pages/`**: 页面组件，Nuxt 4 自动路由
 - **`app/composables/`**: Vue 3组合式API，业务逻辑复用
 - **`app/drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
-
 #### 配置目录 (app/)
 - **`app/assets/css/`**: 样式文件，支持CSS变量和主题
 - **`app/plugins/`**: Nuxt插件，扩展框架功能
 - **`app/middleware/`**: 中间件，处理路由和认证
-
 #### 服务端目录 (server/)
 - **`server/api/`**: 服务端API，RESTful接口设计
 - **`server/config/`**: 服务端配置（常量、环境配置等）
@@ -724,92 +821,17 @@ VoiceHub/
 - **`server/plugins/`**: 服务端插件（错误处理等）
 - **`server/services/`**: 业务逻辑服务层
 - **`server/utils/`**: 服务端工具函数
-
 #### 工具目录
 - **`scripts/`**: 数据库管理和部署脚本
 - **`app/utils/`**: 客户端工具函数
-
 #### 静态资源
 - **`app/public/`**: 静态文件
-- **`app/public/images/`**: 图片资源，包含Logo和图标文件
+- **`app/public/images/`**: 图片资源，包含Logo和图标文件</code>
+</details>
 
-## 使用说明
-
-### 普通用户
-1. 访问主页，查看当前排期
-2. 注册/登录账号
-3. 在仪表盘中点歌或给喜欢的歌曲投票
-   - 支持搜索网易云音乐、QQ音乐和哔哩哔哩平台
-   - 可以试听歌曲并选择音质
-   - 支持给已有歌曲投票
-   - **网易云音乐登录功能**：
-     - 扫码登录网易云音乐账号
-     - 登录后可一键添加当前排期歌曲到个人歌单
-     - 支持从个人歌单中直接投稿歌曲
-     - 支持从最近播放记录中投稿歌曲
-     - 可搜索并投稿播客和电台内容
-4. 使用内置播放器播放歌曲
-   - 支持多种音质切换（标准、HQ、无损、Hi-Res等）
-   - 实时切换音质并保持播放进度
-5. 查看通知中心获取歌曲状态更新
-
-### 管理员
-1. 使用管理员账号登录（默认账号：admin，密码：admin123）
-2. 进入管理后台，选择相应功能标签
-3. **排期管理**：可以看到左侧"待排歌曲"和右侧"播放顺序"
-   - 通过拖拽将歌曲从左侧添加到右侧的排期列表
-   - 可以在右侧拖拽调整歌曲播放顺序
-   - 支持播出时段管理，可设置不同时段的播放安排
-   - **草稿功能**：支持保存排期草稿，允许管理员先保存未完成的排期安排
-     - 点击"保存草稿"按钮保存当前排期为草稿状态
-     - 草稿不会影响公开展示的排期，可以随时修改
-     - 点击"保存并发布"按钮将草稿发布为正式排期
-   - 点击"保存顺序"按钮保存排期
-4. **打印排期**：专业的排期打印和导出功能
-   - 选择纸张大小（A4、A3、Letter、Legal）和页面方向
-   - 自定义显示内容：歌曲封面、歌名、歌手、投稿人、热度等
-   - 快捷日期选择：今天、明天、本周、下周
-   - 智能分组显示：按日期分组，有多个播出时段时自动按时间排序
-   - 实时预览：所见即所得的打印预览
-   - PDF导出：支持导出高质量PDF文件，自动处理跨域图片
-5. **歌曲管理**：查看和管理所有歌曲
-   - 支持播放歌曲并实时切换音质
-   - 动态获取最新的音乐播放链接
-   - 提供歌曲下载功能，支持批量下载管理
-   - 批量更新歌曲信息和状态
-6. **数据分析**：查看系统使用统计和数据分析
-   - 实时统计数据：用户活跃度、歌曲热度、投票趋势
-   - 学期对比分析：不同学期的数据对比
-   - 用户参与度分析：用户行为和参与度统计
-   - 趋势分析：系统使用趋势和预测
-7. **数据库管理**：数据库备份恢复和维护
-   - 创建和下载数据库备份
-   - 上传和恢复备份文件
-   - 序列重置：修复数据库序列问题
-   - 数据库状态检查和完整性验证
-8. **学期管理**：设置和管理学期信息
-   - 创建新学期（如"2024-2025学年上学期"）
-   - 设置当前活跃学期
-   - 点歌记录自动关联到当前学期
-9. **用户管理**：添加、编辑和删除用户
-   - 单个添加：填写用户信息（包括姓名、账号、年级、班级）
-   - 批量导入：通过EXCEL文件批量添加用户
-   - 可以重置用户密码
-10. **黑名单管理**：管理歌曲和关键词黑名单
-    - 添加具体歌曲或关键词到黑名单
-    - 自动过滤包含黑名单内容的点歌请求
-    - 支持启用/禁用黑名单项
-11. **系统设置**：配置系统参数和功能开关
-    - 站点信息配置：标题、Logo、描述等
-    - 投稿限额设置：每日/每周投稿限制
-    - 播出时段管理：配置不同的播出时间段
-    - 功能开关：启用/禁用特定功能
-12. **通知管理**：向用户发送系统通知
-    - 支持按全体用户、年级、班级或多班级发送
-    - 实时显示发送进度和结果
-    - 通知历史记录和管理
-
-## 数据库管理
+<details>
+<summary><h2>数据库管理（点击展开）</h2></summary>
+<code>
 
 ### Drizzle ORM + Neon Database
 
@@ -863,9 +885,12 @@ psql -h localhost -U username -d database_name < backup.sql
 - **创建备份**：在管理后台的数据库管理页面点击"创建备份"按钮
 - **下载备份**：备份完成后可直接下载备份文件
 - **恢复备份**：上传备份文件并选择恢复模式（增量或完全恢复）
-- **序列重置**：修复数据库序列问题，确保自增ID正常工作
+- **序列重置**：修复数据库序列问题，确保自增ID正常工作</code>
+</details>
 
-## 常见问题
+<details>
+<summary><h2>常见问题（点击展开）</h2></summary>
+<code>
 
 ### 数据库连接问题
 
@@ -901,9 +926,12 @@ psql -h localhost -U username -d database_name < backup.sql
 ### 备份文件格式
 - **完整备份**：包含所有数据表的JSON格式文件
 - **用户备份**：仅包含用户相关数据
-- **元数据**：包含创建时间、创建者、表信息等
+- **元数据**：包含创建时间、创建者、表信息等</code>
+</details>
 
-## 开发指南
+<details>
+<summary><h2>开发指南（点击展开）</h2></summary>
+<code>
 
 ### 组合式API
 
@@ -1409,6 +1437,8 @@ const transformMusicApiResponse = (response: any): any[] => {
   }).filter(Boolean)
 }
 ```
+</code>
+</details>
 
 ## 音乐服务免责声明
 
