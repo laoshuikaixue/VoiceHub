@@ -2,12 +2,19 @@
 
 这是一个使用Nuxt 4全栈框架开发的现代化校园广播站点歌管理系统。系统提供完整的点歌、投票、排期管理、通知推送、数据分析、权限控制和数据库管理功能，支持多角色权限管理和灵活的系统配置。
 
-## 项目截图
+<details>
+<summary><h2>项目截图（点击展开）</h2>
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fef6970e-95eb-4cab-a11f-db4e71fc87b5" />
+</summary>
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f76e912c-1263-424b-b379-72321de205f7" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/b5de5880-6635-4698-9fd9-dbea9642f06a" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/05472008-57d5-4586-b7ca-572bff8a30ae" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c30f2e5a-4cc8-48cb-aca2-4d41daeaaaf8" />
+</details>
+
+<details>
+<summary>
+<code>
 
 ## 主要功能
 
@@ -25,7 +32,9 @@
 - **音乐播放器**：内置音乐播放器，支持进度控制和音质实时切换
 - **音质切换**：支持多种音质选择（标准、HQ、无损、Hi-Res等），动态获取最新播放链接
 - **音乐下载功能**：支持管理员下载歌曲到本地，提供多种音质选择和批量下载
-- **歌曲重播功能**：支持用户对已播放过的歌曲发起重播申请，支持查看申请记录和撤回申请
+- **歌曲重播功能**：支持用户对已播放过的歌曲发起重播申请，支持查看申请记录和撤回申请</code>
+</summary>
+<code>
 
 ### 👥 用户管理
 - **用户管理**：管理员添加用户，支持按年级班级分类
@@ -60,6 +69,8 @@
 - **玻璃态设计**：现代化的视觉效果和交互体验
 - **交互反馈**：hover效果，点击反馈，状态变化动画
 - **移动端优化**：适配支持移动设备访问，触摸友好的交互设计
+</code>
+</details>
 
 ## 部署指南
 
