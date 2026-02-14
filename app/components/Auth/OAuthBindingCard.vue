@@ -75,7 +75,7 @@
             <AuthProvidersGoogleIcon class="w-5 h-5" />
           </div>
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-zinc-200">Google</span>
+            <span class="text-sm font-bold text-zinc-200">{{ getProviderDisplayName('google') }}</span>
             <span v-if="googleIdentity" class="text-[11px] text-blue-500 font-medium mt-0.5">{{ googleIdentity.providerUsername }}</span>
             <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
           </div>
