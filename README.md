@@ -144,7 +144,7 @@
 
 3. 启动应用
    ```bash
-   npm run start
+   npm run deploy && npm start
    ```
 ### Docker 部署
 
@@ -218,17 +218,11 @@ cp .env.example .env
 4. 编辑`.env`文件，设置数据库连接和JWT密钥：
 ```
 DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
-REDIS_URL="redis://username:password@host:port"
+# REDIS_URL="redis://username:password@host:port"
 JWT_SECRET="your-very-secure-jwt-secret-key"
 ```
 
-5. 初始化数据库和生成数据库模式
-```bash
-npm run db:generate
-npm run db:migrate
-```
-
-或者使用一键设置命令：
+5. 数据库一键设置命令：
 ```bash
 npm run deploy
 ```
@@ -320,13 +314,12 @@ VoiceHub 实现了细粒度的权限控制系统：
 | DATABASE_URL | 是  | PostgreSQL数据库连接字符串              | `postgresql://username:password@host:port/database?sslmode=require` |
 | JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串            | `your-very-secure-jwt-secret-key`                                   |
 | NODE_ENV     | 否  | 运行环境，development或production     | `production`                                                        |
-| REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                                |
+| REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能（暂时不可用） | `redis://default:password@host:port`                                |
 | NITRO_PRESET | 否  | Nitro预设                         | `vercel`                                                            |
 
-## 项目结构
-
-```
-VoiceHub/
+<details>
+<summary><h2>项目结构（点击展开）</h2></summary>
+<code>VoiceHub/
 ├── app/                       # Nuxt 4 应用主目录
 │   ├── app.vue                # 应用入口文件
 │   ├── assets/                # 静态资源目录
@@ -687,21 +680,17 @@ VoiceHub/
 ├── README.md              # 项目说明文档
 ├── tsconfig.json          # TypeScript配置文件
 └── vercel.json            # Vercel部署配置
-```
-
+  
 ### 目录说明
-
 #### 核心目录 (app/)
 - **`app/components/`**: Vue组件库，按功能模块组织
 - **`app/pages/`**: 页面组件，Nuxt 4 自动路由
 - **`app/composables/`**: Vue 3组合式API，业务逻辑复用
 - **`app/drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
-
 #### 配置目录 (app/)
 - **`app/assets/css/`**: 样式文件，支持CSS变量和主题
 - **`app/plugins/`**: Nuxt插件，扩展框架功能
 - **`app/middleware/`**: 中间件，处理路由和认证
-
 #### 服务端目录 (server/)
 - **`server/api/`**: 服务端API，RESTful接口设计
 - **`server/config/`**: 服务端配置（常量、环境配置等）
@@ -709,14 +698,13 @@ VoiceHub/
 - **`server/plugins/`**: 服务端插件（错误处理等）
 - **`server/services/`**: 业务逻辑服务层
 - **`server/utils/`**: 服务端工具函数
-
 #### 工具目录
 - **`scripts/`**: 数据库管理和部署脚本
 - **`app/utils/`**: 客户端工具函数
-
 #### 静态资源
 - **`app/public/`**: 静态文件
-- **`app/public/images/`**: 图片资源，包含Logo和图标文件
+- **`app/public/images/`**: 图片资源，包含Logo和图标文件</code>
+</details>
 
 ## 使用说明
 
