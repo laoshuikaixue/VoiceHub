@@ -316,7 +316,9 @@ VoiceHub 实现了细粒度的权限控制系统：
 | REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能（暂时不可用） | `redis://default:password@host:port`                                |
 | NITRO_PRESET | 否  | Nitro预设                         | `vercel`                                                            |
 
-## 使用说明
+<details>
+<summary><h2>使用说明（点击展开）</h2></summary>
+<code>
 
 ### 普通用户
 1. 访问主页，查看当前排期
@@ -391,6 +393,8 @@ VoiceHub 实现了细粒度的权限控制系统：
     - 支持按全体用户、年级、班级或多班级发送
     - 实时显示发送进度和结果
     - 通知历史记录和管理
+</code>
+</details>
 
 ## 技术栈
 
