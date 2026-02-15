@@ -7,6 +7,7 @@ services:
       - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
       - JWT_SECRET=your-jwt-secret-here
       - NODE_ENV=production
+      - SKIP_BUILD=true
     depends_on:
       postgres:
         condition: service_healthy
