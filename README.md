@@ -429,12 +429,14 @@ VoiceHub/
 │   │   │   ├── UserManager.vue        # 用户管理
 │   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
 │   │   │   └── VotersModal.vue        # 投票人员查看弹窗
+│   │   ├── AMLL/              # Apple Music-Like Lyrics组件
+│   │   │   └── LyricPlayer.vue # AMLL歌词播放器
 │   │   ├── Auth/              # 认证相关组件
 │   │   │   ├── Providers/     # 第三方登录提供商组件
 │   │   │   │   ├── Casdoor/   # Casdoor登录组件
 │   │   │   │   │   └── Icon.vue # Casdoor图标
-│   │   │   │   ├── GitHub/    # GitHub登录组件
-│   │   │   │   │   └── Icon.vue # GitHub图标
+│   │   │   │   └── GitHub/    # GitHub登录组件
+│   │   │   │       └── Icon.vue # GitHub图标
 │   │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   │   ├── LoginForm.vue         # 登录表单
 │   │   │   ├── OAuthBindingCard.vue  # OAuth绑定卡片
@@ -443,6 +445,8 @@ VoiceHub/
 │   │   │   └── UserSearchModal.vue   # 用户搜索弹窗
 │   │   ├── Notifications/     # 通知系统组件
 │   │   │   └── NotificationSettings.vue # 通知设置
+│   │   ├── Player/            # 播放器相关组件
+│   │   │   └── PlayerLyric/   # 播放器歌词子组件
 │   │   ├── Songs/             # 歌曲相关组件
 │   │   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
 │   │   │   ├── ImportSongsModal.vue   # 导入歌曲弹窗
@@ -488,8 +492,10 @@ VoiceHub/
 │   │   ├── useAuth.ts          # 认证功能hooks
 │   │   ├── useBackgroundRenderer.ts # 背景渲染hooks
 │   │   ├── useErrorHandler.ts  # 错误处理hooks
+│   │   ├── useLyricManager.ts  # 歌词管理hooks
 │   │   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
 │   │   ├── useLyrics.ts        # 歌词功能hooks
+│   │   ├── useLyricSettings.ts # 歌词设置hooks
 │   │   ├── useMediaSession.ts  # 媒体会话API hooks
 │   │   ├── useMusicSources.ts    # 音乐源管理hooks
 │   │   ├── useMusicWebSocket.ts  # 音乐WebSocket hooks
@@ -525,8 +531,34 @@ VoiceHub/
 │   │   ├── auth.client.ts      # 客户端认证插件
 │   │   └── auth.server.ts      # 服务端认证插件
 │   ├── public/                # 静态文件目录
-│   │   └── images/            # 图片资源
+│   │   ├── images/            # 图片资源
+│   │   │   ├── logo.png       # PNG格式Logo
+│   │   │   ├── logo.svg       # SVG格式Logo
+│   │   │   ├── search.svg     # 搜索图标
+│   │   │   └── thumbs-up.svg  # 点赞图标
+│   │   ├── favicon.ico        # 网站图标
+│   │   └── robots.txt         # 搜索引擎爬虫配置
 │   └── utils/                 # 工具函数
+│       ├── core/              # 核心工具
+│       │   └── security.ts    # 安全相关工具
+│       ├── lyric/             # 歌词处理工具
+│       │   ├── exclude.ts     # 歌词排除规则
+│       │   ├── lyricFormat.ts # 歌词格式化
+│       │   ├── lyricParser.ts # 歌词解析器
+│       │   ├── lyricStripper.ts # 歌词清理
+│       │   ├── parseLrc.ts    # LRC格式解析
+│       │   └── qrc-parser.ts  # QRC格式解析
+│       ├── musicSdk/          # 音乐SDK工具
+│       │   ├── tx/            # QQ音乐SDK
+│       │   └── wy/            # 网易云音乐SDK
+│       ├── bilibiliSource.ts  # 哔哩哔哩音源
+│       ├── lyricAdapter.ts    # 歌词适配器
+│       ├── musicSources.ts    # 音乐源配置
+│       ├── musicUrl.ts        # 音乐URL处理
+│       ├── neteaseApi.ts      # 网易云音乐API
+│       ├── oauth.ts           # OAuth工具
+│       ├── timeUtils.ts       # 时间工具
+│       └── url.ts             # URL处理工具
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
 │   │   ├── admin/          # 管理员API
@@ -698,12 +730,12 @@ VoiceHub/
 │   │   │   ├── reconnect.post.ts    # 重连数据库
 │   │   │   └── status.get.ts        # 系统状态
 │   │   ├── user/           # 用户相关API
-│   │   │   └── email/               # 用户邮箱管理
-│   │   │       ├── bind.post.ts     # 绑定邮箱
-│   │   │       ├── resend-verification.post.ts # 重发验证邮件
-│   │   │       ├── send-code.post.ts # 发送验证码
-│   │   │       ├── unbind.post.ts   # 解绑邮箱
-│   │   │       └── verify-code.post.ts # 验证邮箱验证码
+│   │   │   ├── email/               # 用户邮箱管理
+│   │   │   │   ├── bind.post.ts     # 绑定邮箱
+│   │   │   │   ├── resend-verification.post.ts # 重发验证邮件
+│   │   │   │   ├── send-code.post.ts # 发送验证码
+│   │   │   │   ├── unbind.post.ts   # 解绑邮箱
+│   │   │   │   └── verify-code.post.ts # 验证邮箱验证码
 │   │   │   └── year-review.get.ts   # 获取年度回顾数据
 │   │   └── users/          # 用户API
 │   │       ├── meow/                # 用户MeoW相关子目录
@@ -712,11 +744,12 @@ VoiceHub/
 │   │       │   └── meow.post.ts     # MeoW账号操作
 │   │       ├── search.get.ts        # 搜索用户
 │   │       └── social-accounts.get.ts # 获取社交账号
+│   ├── config/             # 服务端配置
+│   │   └── constants.ts    # 风控阈值与时间窗口常量
 │   ├── error.ts            # 全局错误处理
 │   ├── middleware/         # 服务端中间件
+│   │   ├── api-auth.ts     # API认证中间件
 │   │   └── auth.ts         # 认证中间件
-│   ├── models/             # 数据模型
-│   │   └── schema.ts       # 数据模型定义
 │   ├── plugins/            # 服务端插件
 │   │   └── error-handler.ts # 错误处理插件
 │   ├── services/           # 业务服务层
@@ -726,20 +759,27 @@ VoiceHub/
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── securityService.ts # 安全服务
 │   │   └── smtpService.ts  # SMTP邮件服务
-│   ├── config/             # 服务端配置
-│   │   └── constants.ts    # 风控阈值与时间窗口常量
 │   ├── utils/              # 服务端工具函数
 │   │   ├── __tests__/      # 工具函数测试目录
+│   │   ├── musicSdk/       # 音乐SDK工具
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── cache-helpers.ts # 缓存辅助工具
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
+│   │   ├── geo.ts          # 地理位置工具
+│   │   ├── ip-utils.ts     # IP地址工具
 │   │   ├── jwt-enhanced.ts # JWT工具
+│   │   ├── log-manager.ts  # 日志管理工具
+│   │   ├── native_common.ts # 原生API通用工具
+│   │   ├── native_tx.ts    # 腾讯音乐原生API
+│   │   ├── native_wy.ts    # 网易云音乐原生API
 │   │   ├── oauth-strategies.ts # OAuth策略配置
 │   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── oauth-token.ts  # OAuth令牌工具
+│   │   ├── open-api-cache.ts # 开放API缓存
 │   │   ├── permissions.js  # 权限系统配置
-│   │   └── redis.ts        # Redis连接和操作工具
+│   │   ├── redis.ts        # Redis连接和操作工具
+│   │   └── siteUtils.ts    # 站点工具函数
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
@@ -770,6 +810,16 @@ VoiceHub/
 
 #### 核心目录 (app/)
 - **`app/components/`**: Vue组件库，按功能模块组织
+  - **`Admin/`**: 管理后台组件（排期、用户、数据分析等）
+  - **`Admin_Backup/`**: 管理组件备份目录
+  - **`AMLL/`**: Apple Music-Like Lyrics歌词播放器组件
+  - **`Auth/`**: 认证相关组件（登录、OAuth绑定等）
+  - **`Common/`**: 通用业务组件
+  - **`Notifications/`**: 通知系统组件
+  - **`Player/`**: 播放器相关组件
+  - **`Songs/`**: 歌曲相关组件（点歌、导入、歌单等）
+  - **`UI/`**: 通用UI组件（播放器、对话框、进度条等）
+  - **`year-review/`**: 年度回顾功能组件
 - **`app/pages/`**: 页面组件，Nuxt 4 自动路由
 - **`app/composables/`**: Vue 3组合式API，业务逻辑复用
 - **`app/drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
@@ -778,18 +828,24 @@ VoiceHub/
 - **`app/assets/css/`**: 样式文件，支持CSS变量和主题
 - **`app/plugins/`**: Nuxt插件，扩展框架功能
 - **`app/middleware/`**: 中间件，处理路由和认证
+- **`app/utils/`**: 客户端工具函数
+  - **`core/`**: 核心工具（安全等）
+  - **`lyric/`**: 歌词处理工具集
+  - **`musicSdk/`**: 音乐平台SDK工具
 
 #### 服务端目录 (server/)
 - **`server/api/`**: 服务端API，RESTful接口设计
+  - **`admin/`**: 管理员专用API（用户、排期、统计等）
+  - **`auth/`**: 认证相关API
+  - **`songs/`**: 歌曲管理API
+  - **`notifications/`**: 通知系统API
+  - **`open/`**: 公共API（无需认证）
 - **`server/config/`**: 服务端配置（常量、环境配置等）
 - **`server/middleware/`**: 服务端中间件（认证、日志等）
 - **`server/plugins/`**: 服务端插件（错误处理等）
 - **`server/services/`**: 业务逻辑服务层
 - **`server/utils/`**: 服务端工具函数
-
-#### 工具目录
-- **`scripts/`**: 数据库管理和部署脚本
-- **`app/utils/`**: 客户端工具函数
+  - **`musicSdk/`**: 音乐平台SDK服务端工具
 
 #### 静态资源
 - **`app/public/`**: 静态文件
