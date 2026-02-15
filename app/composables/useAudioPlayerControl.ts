@@ -1,41 +1,40 @@
 import {computed, nextTick, ref} from 'vue'
 import {useAudioQuality} from '~/composables/useAudioQuality'
 import {useLyrics} from '~/composables/useLyrics'
+import {useAudioPlayer} from '~/composables/useAudioPlayer'
+
+// 单例状态
+const audioPlayer = ref<HTMLAudioElement | null>(null)
+const isPlaying = ref(false)
+const progress = ref(0)
+const currentTime = ref(0)
+const duration = ref(0)
+const hasError = ref(false)
+const coverError = ref(false)
+const showQualitySettings = ref(false)
+
+// 拖拽状态
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartProgress = ref(0)
+const dragProgress = ref(0)
+
+// 同步状态
+const isSyncingFromGlobal = ref(false)
+const isLoadingNewSong = ref(false)
+const isLoadingTrack = ref(false)
+const progressBarRef = ref<HTMLElement | null>(null)
+const hasUserInteracted = ref(false)
+
+// 共享歌词实例
+const lyrics = useLyrics()
 
 export const useAudioPlayerControl = () => {
-    const audioPlayer = ref<HTMLAudioElement | null>(null)
-    const isPlaying = ref(false)
-    const progress = ref(0)
-    const currentTime = ref(0)
-    const duration = ref(0)
-    const hasError = ref(false)
-    const coverError = ref(false)
-    const showQualitySettings = ref(false)
-
-    // 拖拽相关
-    const isDragging = ref(false)
-    const dragStartX = ref(0)
-    const dragStartProgress = ref(0)
-    const dragProgress = ref(0)
-
-    // 状态同步标记，避免双向触发
-    const isSyncingFromGlobal = ref(false)
-    const isLoadingNewSong = ref(false)
-
-    // 歌曲切换加载状态（用于显示加载图标）
-    const isLoadingTrack = ref(false)
-
-    // 进度条引用
-    const progressBarRef = ref<HTMLElement | null>(null)
-
-    // 用户交互状态
-    const hasUserInteracted = ref(false)
-
-    // 音质设置相关
+    // 音质 (Composable 使用应在 setup/function 内部)
     const {getQualityLabel, getQuality, getQualityOptions, saveQuality} = useAudioQuality()
-
-    // 歌词功能
-    const lyrics = useLyrics()
+    
+    // 全局音频播放器
+    const globalAudioPlayer = useAudioPlayer()
 
     // 基本播放控制
     const play = async (): Promise<boolean> => {
@@ -115,17 +114,46 @@ export const useAudioPlayerControl = () => {
     }
 
     const seek = async (timeInSeconds: number): Promise<boolean> => {
-        if (!audioPlayer.value || !duration.value) return false
+        if (!audioPlayer.value) return false
 
         try {
-            const targetTime = Math.max(0, Math.min(timeInSeconds, duration.value))
+            // 如果 duration 为 0，可能元数据还未加载，直接使用传入时间
+            const maxTime = duration.value > 0 ? duration.value : timeInSeconds + 1000
+            const targetTime = Math.max(0, Math.min(timeInSeconds, maxTime))
+            
             audioPlayer.value.currentTime = targetTime
             currentTime.value = targetTime
-            progress.value = (targetTime / duration.value) * 100
+            if (duration.value > 0) {
+                progress.value = (targetTime / duration.value) * 100
+            }
             return true
         } catch (error) {
             console.error('跳转失败:', error)
             return false
+        }
+    }
+
+    // 抽象后的 seekAndPlay 方法
+    const seekAndPlay = async (timeInSeconds: number) => {
+        if (!audioPlayer.value) return
+
+        // 1. 跳转
+        await seek(timeInSeconds)
+        
+        // 2. 如果暂停则播放
+        try {
+            await audioPlayer.value.play()
+        } catch (e) {
+            console.warn('Play failed:', e)
+        }
+
+        // 3. 与全局音频播放器同步状态
+        globalAudioPlayer.setPosition(timeInSeconds)
+        if (!globalAudioPlayer.getPlayingStatus().value) {
+             const current = globalAudioPlayer.getCurrentSong().value
+             if (current) {
+                 globalAudioPlayer.playSong(current)
+             }
         }
     }
 
@@ -188,7 +216,8 @@ export const useAudioPlayerControl = () => {
 
                     // 如果有音乐平台信息，加载歌词
                     if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
-                        lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+                        // lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+                        // 迁移到 useLyricManager 统一管理，避免重复请求
                     }
                 } else if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
                     // 检查是否是网易云备用源，如果是则不应该调用getMusicUrl
@@ -208,7 +237,8 @@ export const useAudioPlayerControl = () => {
                     }
 
                     // 并行加载歌词（不阻塞音频加载）
-                    lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+                    // lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+                    // 迁移到 useLyricManager 统一管理，避免重复请求
                 } else {
                     throw new Error('歌曲缺少播放信息（音乐平台ID或直接URL）')
                 }
@@ -306,7 +336,7 @@ export const useAudioPlayerControl = () => {
             saveQuality(platform, qualityValue)
 
             // 获取新音质的URL
-            const newUrl = await getMusicUrl(platform, musicId, currentSong.value?.playUrl)
+            const newUrl = await getMusicUrl(platform, musicId, globalAudioPlayer.getCurrentSong().value?.playUrl)
             if (!newUrl) {
                 throw new Error('获取新音质URL失败')
             }
@@ -711,6 +741,7 @@ export const useAudioPlayerControl = () => {
         pause,
         stop,
         seek,
+        seekAndPlay, // 新增
         togglePlay,
         loadSong,
         forceUpdatePosition,

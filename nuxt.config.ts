@@ -1,3 +1,6 @@
+import wasm from 'vite-plugin-wasm'
+import topLevelAwait from 'vite-plugin-top-level-await'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-30',
@@ -179,6 +182,10 @@ export default defineNuxtConfig({
   
   // Vite 配置
   vite: {
+    plugins: [
+      wasm(),
+      topLevelAwait()
+    ],
     optimizeDeps: {
       include: ['drizzle-orm'],
       exclude: ['@applemusic-like-lyrics/vue', '@applemusic-like-lyrics/lyric']
