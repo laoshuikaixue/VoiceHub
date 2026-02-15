@@ -80,6 +80,11 @@ const lyricLines = computed(() => {
 
 // 进度跳转
 const jumpSeek = (line: LyricLineMouseEvent) => {
+  // 移除焦点，防止组件内部焦点导致键盘事件异常
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+
   const lineContent = line.line.getLine();
   if (!lineContent?.startTime) return;
   const time = lineContent.startTime;

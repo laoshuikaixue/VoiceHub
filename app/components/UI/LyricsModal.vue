@@ -7,7 +7,6 @@
           tabindex="-1"
           style="--main-cover-color: 255, 255, 255;"
           @click="handleOverlayClick"
-          @keydown="handleKeydown"
       >
         <div ref="fullscreenContainer" :class="{ leaving: isExiting }" class="lyrics-fullscreen-container">
           <!-- 动态背景 -->
