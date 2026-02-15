@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <Transition :name="isMobile ? 'slide-up' : 'modal-animation'">
+    <Transition :name="isMobile ? 'mobile-flow' : 'modal-animation'">
       <div
           v-if="isVisible"
           class="lyrics-modal-overlay"
@@ -1805,18 +1805,20 @@ onUnmounted(() => {
   transform: translateY(40px) scale(0.98);
 }
 
-.slide-up-enter-active {
-  transition: transform 0.4s ease-in;
+/* 移动端更有层次感的 flow 动画 */
+.mobile-flow-enter-active,
+.mobile-flow-leave-active {
+  transition:
+    opacity 0.5s cubic-bezier(0.2, 0, 0.2, 1),
+    transform 0.5s cubic-bezier(0.2, 0, 0.2, 1),
+    filter 0.5s cubic-bezier(0.2, 0, 0.2, 1);
 }
 
-.slide-up-leave-active {
-  transition: transform 0.6s ease-in;
-}
-
-.slide-up-enter-from,
-.slide-up-leave-to {
-  transform: translateY(100%);
-  opacity: 1;
+.mobile-flow-enter-from,
+.mobile-flow-leave-to {
+  opacity: 0;
+  transform: scale(0.92) translateY(30px);
+  filter: blur(10px);
 }
 
 .mobile-floating-cover {
