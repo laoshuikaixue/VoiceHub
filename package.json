@@ -66,14 +66,12 @@
     "vue": "^3.5.26",
     "vue-router": "^4.6.4",
     "xlsx": "^0.18.5",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@types/lodash-es": "^4.17.12",
+    "lodash-es": "^4.17.23"
   },
   "engines": {
     "node": ">=18.20.0",
     "npm": ">=8.0.0"
-  },
-  "devDependencies": {
-    "@types/lodash-es": "^4.17.12",
-    "lodash-es": "^4.17.23"
   }
 }
