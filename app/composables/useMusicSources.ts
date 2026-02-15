@@ -1030,7 +1030,7 @@ export const useMusicSources = () => {
      */
     const getLyrics = async (platform: 'netease' | 'tencent', id: number | string): Promise<{
         success: boolean;
-        data?: { lrc: string; trans?: string; yrc?: string };
+        data?: { lrc: string; trans?: string; yrc?: string; ttml?: string };
         error?: string
     }> => {
         try {
@@ -1040,7 +1040,7 @@ export const useMusicSources = () => {
 
             if (platform === 'netease' && neteaseSource) {
                 try {
-                    const [lrcResp, yrcResp] = await Promise.allSettled([
+                    const [lrcResp, yrcResp, ttmlResp] = await Promise.allSettled([
                         $fetch(`${neteaseSource.baseUrl}/lyric`, {
                             params: {id: id.toString()},
                             timeout: neteaseSource.timeout || 8000
@@ -1048,10 +1048,20 @@ export const useMusicSources = () => {
                         $fetch(`${neteaseSource.baseUrl}/lyric/new`, {
                             params: {id: id.toString()},
                             timeout: neteaseSource.timeout || 8000
-                        })
+                        }),
+                        // 尝试获取 TTML 歌词
+                        $fetch(`${neteaseSource.baseUrl}/lyric/ttml`, {
+                            params: {id: id.toString()},
+                            timeout: neteaseSource.timeout || 8000
+                        }).catch(() => null) // 允许失败，因为旧版API可能不支持
                     ])
 
-                    const data: { lrc: string; trans?: string; yrc?: string } = {lrc: '', trans: '', yrc: ''}
+                    const data: { lrc: string; trans?: string; yrc?: string; ttml?: string } = {
+                        lrc: '', 
+                        trans: '', 
+                        yrc: '',
+                        ttml: ''
+                    }
 
                     if (lrcResp.status === 'fulfilled' && lrcResp.value?.code === 200) {
                         const lr = lrcResp.value
@@ -1062,8 +1072,15 @@ export const useMusicSources = () => {
                         const yr = yrcResp.value
                         if (yr?.yrc?.lyric) data.yrc = yr.yrc.lyric
                     }
+                    // 处理 TTML
+                    if (ttmlResp.status === 'fulfilled' && ttmlResp.value?.code === 200) {
+                         // 假设返回结构与其他类似，或者直接是 ttml 字段
+                         // 注意：实际 API 返回结构需确认，通常是 { code: 200, ttml: "..." } 或类似
+                         const tr = ttmlResp.value
+                         if (tr?.ttml) data.ttml = tr.ttml
+                    }
 
-                    if (data.lrc || data.yrc) {
+                    if (data.lrc || data.yrc || data.ttml) {
                         return {success: true, data}
                     }
                 } catch (e: any) {
@@ -1088,10 +1105,11 @@ export const useMusicSources = () => {
                 })
                 if (resp?.code === 200 && resp?.data) {
                     const d = resp.data
-                    const data: { lrc: string; trans?: string; yrc?: string } = {
+                    const data: { lrc: string; trans?: string; yrc?: string; ttml?: string } = {
                         lrc: d.lrc || '',
                         trans: d.trans || '',
-                        yrc: d.yrc || ''
+                        yrc: d.yrc || '',
+                        ttml: '' // vkeys 暂时不支持 ttml
                     }
                     if (data.lrc || data.yrc) {
                         return {success: true, data}
@@ -1113,10 +1131,11 @@ export const useMusicSources = () => {
 
                         // Meting API 直接返回歌词文本
                         if (resp && typeof resp === 'string' && resp.trim()) {
-                            const data: { lrc: string; trans?: string; yrc?: string } = {
+                            const data: { lrc: string; trans?: string; yrc?: string; ttml?: string } = {
                                 lrc: resp,
                                 trans: '',
-                                yrc: ''
+                                yrc: '',
+                                ttml: ''
                             }
                             return {success: true, data}
                         }

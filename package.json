@@ -27,7 +27,7 @@
     "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
-    "@applemusic-like-lyrics/core": "^0.2.0-alpha.5",
+    "@applemusic-like-lyrics/core": "^0.2.0",
     "@applemusic-like-lyrics/lyric": "^0.3.0",
     "@applemusic-like-lyrics/vue": "^0.2.0",
     "@breezystack/lamejs": "^1.2.7",
@@ -69,5 +69,10 @@
   "engines": {
     "node": ">=18.20.0",
     "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "lodash-es": "^4.17.23",
+    "vite-plugin-top-level-await": "^1.6.0"
   }
 }
