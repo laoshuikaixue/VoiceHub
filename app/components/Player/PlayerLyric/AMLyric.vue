@@ -28,7 +28,7 @@
         v-else
         ref="lyricPlayerRef"
         :lyricLines="lyricLines"
-        :currentTime="currentTime"
+        :currentTime="currentTime * 1000"
         :playing="audioPlayer.getPlayingStatus().value"
         :enableSpring="settings.useAMSpring.value"
         :enableScale="settings.useAMSpring.value"
@@ -52,11 +52,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import LyricPlayer from '~/components/AMLL/LyricPlayer.vue';
+import LyricPlayer, { type LyricPlayerRef } from '~/components/AMLL/LyricPlayer.vue';
 import Icon from '~/components/UI/Icon.vue';
 import { useLyricManager } from '~/composables/useLyricManager';
 import { useLyricSettings } from '~/composables/useLyricSettings';
 import { useAudioPlayer } from '~/composables/useAudioPlayer';
+import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl';
 import type { LyricLineMouseEvent } from '@applemusic-like-lyrics/core';
 import { cloneDeep } from 'lodash-es';
 
@@ -70,8 +71,9 @@ const props = defineProps({
 const lyricManager = useLyricManager();
 const settings = useLyricSettings();
 const audioPlayer = useAudioPlayer();
+const audioPlayerControl = useAudioPlayerControl();
 
-const lyricPlayerRef = ref<any | null>(null);
+const lyricPlayerRef = ref<LyricPlayerRef | null>(null);
 
 const lyricLines = computed(() => {
     // 使用 cloneDeep 剥离 Vue 响应式代理，防止 structuredClone 错误
@@ -91,32 +93,7 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
   const offsetMs = settings.lyricOffset.value;
   const targetTime = (time - offsetMs) / 1000;
 
-  // 1. 操作 Audio DOM
-  const audioElements = document.querySelectorAll('audio');
-  let audioElement: HTMLAudioElement | null = null;
-  for (const audio of audioElements) {
-     // 找到当前正在使用的 audio 元素 (有 src)
-     if (audio.src) {
-        audioElement = audio;
-        break;
-     }
-  }
-
-  if (audioElement) {
-      audioElement.currentTime = targetTime;
-      // 2. 尝试播放
-      audioElement.play().catch(e => console.warn('Play failed:', e));
-      
-      // 3. 同步状态
-      audioPlayer.setPosition(targetTime);
-      // 如果当前没有播放（暂停状态），则恢复播放状态
-      if (!audioPlayer.getPlayingStatus().value) {
-         const current = audioPlayer.getCurrentSong().value;
-         if (current) {
-             audioPlayer.playSong(current);
-         }
-      }
-  }
+  audioPlayerControl.seekAndPlay(targetTime);
 };
 </script>
 

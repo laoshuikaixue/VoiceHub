@@ -230,20 +230,17 @@ watchEffect(() => {
 
 // 弹簧动画
 watchEffect(() => {
-  if (props.enableSpring !== undefined) playerRef.value?.setEnableSpring(props.enableSpring);
-  else playerRef.value?.setEnableSpring(true);
+  playerRef.value?.setEnableSpring(props.enableSpring);
 });
 
 // 模糊效果
 watchEffect(() => {
-  if (props.enableBlur !== undefined) playerRef.value?.setEnableBlur(props.enableBlur);
-  else playerRef.value?.setEnableBlur(true);
+  playerRef.value?.setEnableBlur(props.enableBlur);
 });
 
 // 缩放效果
 watchEffect(() => {
-  if (props.enableScale !== undefined) playerRef.value?.setEnableScale(props.enableScale);
-  else playerRef.value?.setEnableScale(true);
+  playerRef.value?.setEnableScale(props.enableScale);
 });
 
 // 歌词行数据

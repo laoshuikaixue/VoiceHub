@@ -134,6 +134,7 @@ import type { LyricWord, LyricLine } from "@applemusic-like-lyrics/lyric";
 import { useLyricManager } from '~/composables/useLyricManager';
 import { useLyricSettings } from '~/composables/useLyricSettings';
 import { useAudioPlayer } from '~/composables/useAudioPlayer';
+import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl';
 
 const props = defineProps({
   currentTime: {
@@ -145,6 +146,7 @@ const props = defineProps({
 const lyricManager = useLyricManager();
 const settings = useLyricSettings();
 const audioPlayer = useAudioPlayer();
+const audioPlayerControl = useAudioPlayerControl();
 
 const lyricScrollContainer = ref<HTMLElement | null>(null);
 
@@ -466,30 +468,10 @@ const jumpSeek = (time: number) => {
     userScrollTimeoutId = null;
   }
   
-  // DOM 操作 Seek
   const offsetMs = settings.lyricOffset.value;
   const targetTime = (time - offsetMs) / 1000;
 
-  const audioElements = document.querySelectorAll('audio');
-  let audioElement: HTMLAudioElement | null = null;
-  for (const audio of audioElements) {
-     if (audio.src) {
-        audioElement = audio;
-        break;
-     }
-  }
-
-  if (audioElement) {
-      audioElement.currentTime = targetTime;
-      audioElement.play().catch(e => console.warn('Play failed:', e));
-      audioPlayer.setPosition(targetTime);
-      if (!audioPlayer.getPlayingStatus().value) {
-         const current = audioPlayer.getCurrentSong().value;
-         if (current) {
-             audioPlayer.playSong(current);
-         }
-      }
-  }
+  audioPlayerControl.seekAndPlay(targetTime);
 };
 
 // Utils

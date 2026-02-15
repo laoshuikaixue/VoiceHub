@@ -79,8 +79,7 @@ export const useLyricManager = () => {
         try {
            const cleaned = cleanTTMLTranslations(ttml)
            const parsed = parseTTML(cleaned)
-           // @ts-ignore
-           const lines = parsed?.lines || []
+           const lines = (parsed as any)?.lines || []
            if (lines.length > 0) {
              parsedLyrics = lines
              format = 'ttml'
@@ -169,6 +168,12 @@ export const useLyricManager = () => {
 
       // 4. 格式化 (应用配置，如括号替换)
       if (parsedLyrics.length > 0) {
+          // 检查当前播放的歌曲 ID 是否仍然是请求的歌曲 ID
+          if (currentTrackId.value !== track.id?.toString()) {
+             console.log('[LyricManager] 歌曲已切换，丢弃过期的歌词响应')
+             return
+          }
+
           // 提取元数据用于清洗
           const metadata = {
             title: track.title,
@@ -179,7 +184,7 @@ export const useLyricManager = () => {
           lyricFormat.value = format
           error.value = null
           
-          // Debug
+          // 调试
           console.log('[LyricManager] 解析完成，首行:', lyrics.value[0])
           console.log('[LyricManager] 解析完成，总行数:', lyrics.value.length)
       }

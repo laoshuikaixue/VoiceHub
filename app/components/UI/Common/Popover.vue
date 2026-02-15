@@ -27,8 +27,8 @@
   </div>
 </template>
 
-<script setup>
-import { ref, nextTick, watch, onUnmounted } from 'vue'
+<script setup lang="ts">
+import { ref, nextTick, watch, onUnmounted, type StyleValue } from 'vue'
 
 const props = defineProps({
   placement: {
@@ -42,9 +42,9 @@ const props = defineProps({
 })
 
 const isOpen = ref(false)
-const containerRef = ref(null)
-const contentRef = ref(null)
-const contentStyle = ref({})
+const containerRef = ref<HTMLElement | null>(null)
+const contentRef = ref<HTMLElement | null>(null)
+const contentStyle = ref<StyleValue>({})
 
 const updatePosition = () => {
   if (!isOpen.value || !containerRef.value || !contentRef.value) return
@@ -102,6 +102,10 @@ const updatePosition = () => {
   }
 }
 
+const close = () => {
+  isOpen.value = false
+}
+
 const toggle = async () => {
   if (isOpen.value) {
     close()
@@ -112,16 +116,13 @@ const toggle = async () => {
   }
 }
 
-const close = () => {
-  isOpen.value = false
-}
-
-const handleClickOutside = (event) => {
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as Node
   if (
     containerRef.value && 
-    !containerRef.value.contains(event.target) &&
+    !containerRef.value.contains(target) &&
     contentRef.value && 
-    !contentRef.value.contains(event.target)
+    !contentRef.value.contains(target)
   ) {
     close()
   }

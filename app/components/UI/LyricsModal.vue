@@ -123,9 +123,9 @@
               </div>
 
               <div class="lyrics-display-area">
-                <div v-show="true" class="lyrics-container">
+                <div class="lyrics-container">
                   <!-- 集成 AMLyric 组件 (传入毫秒) -->
-                  <AMLyric v-if="lyricSettings.useAMLyrics.value" :current-time="currentTime * 1000" />
+                  <AMLyric v-if="lyricSettings.useAMLyrics.value" :current-time="currentTime" />
                   <!-- 集成 DefaultLyric 组件 (传入秒) -->
                   <DefaultLyric v-else :current-time="currentTime" />
                 </div>
@@ -255,7 +255,6 @@
 import {computed, nextTick, onUnmounted, ref, watch, onMounted} from 'vue'
 import {useAudioPlayer} from '~/composables/useAudioPlayer'
 import {useAudioPlayerControl} from '~/composables/useAudioPlayerControl'
-import {useLyricManager} from '~/composables/useLyricManager'
 import {useLyricSettings} from '~/composables/useLyricSettings'
 import {useBackgroundRenderer} from '~/composables/useBackgroundRenderer'
 import Icon from '~/components/UI/Icon.vue'
@@ -279,7 +278,6 @@ const emit = defineEmits(['close'])
 // 音频播放器状态
 const audioPlayer = useAudioPlayer()
 const audioPlayerControl = useAudioPlayerControl()
-const lyricManager = useLyricManager()
 const lyricSettings = useLyricSettings()
 
 // 背景渲染器
@@ -598,30 +596,7 @@ const handleKeydown = (event) => {
 }
 
 const togglePlayPause = async () => {
-  const audioElements = document.querySelectorAll('audio')
-  let audioElement = null
-
-  for (const audio of audioElements) {
-    if (audio.src && (audio.currentTime > 0 || !audio.paused)) {
-      audioElement = audio
-      break
-    }
-  }
-
-  if (!audioElement) {
-    return
-  }
-
-  if (isPlaying.value) {
-    audioElement.pause()
-    audioPlayer.pauseSong()
-  } else {
-    audioElement.play().then(() => {
-      audioPlayer.playSong(currentSong.value)
-    }).catch(error => {
-      console.error('[lyrics-modal] 播放失败:', error)
-    })
-  }
+  await audioPlayerControl.togglePlay()
 }
 
 const previousSong = () => {
