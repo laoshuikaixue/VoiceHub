@@ -2,13 +2,14 @@
 FROM node:25-alpine AS builder
 WORKDIR /app
 
-# 复制依赖文件
+# 复制依赖文件和 scripts 目录（postinstall 需要）
 COPY package*.json ./
+COPY scripts ./scripts
 
 # 安装生产依赖
 RUN npm ci --only=production || npm install --only=production
 
-# 复制源代码
+# 复制其余源代码
 COPY . .
 
 # 构建应用
