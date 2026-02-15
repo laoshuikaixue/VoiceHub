@@ -66,25 +66,16 @@ function main() {
 
   const emptyDb = isEmptyDatabase()
   if (emptyDb) {
-    log('执行迁移...', 'cyan')
-    if (!safeExec('npm run db:migrate', { env: NON_INTERACTIVE_ENV })) {
-      err('迁移失败')
-      process.exit(1)
-    }
-    ok('迁移完成')
+    log('检测到空库，执行迁移...', 'cyan')
   } else {
-    log('执行 push 同步...', 'cyan')
-    if (safeExec('npx drizzle-kit push --force --config=drizzle.config.ts', { env: NON_INTERACTIVE_ENV })) {
-      ok('同步完成')
-    } else {
-      warn('push 失败，尝试迁移')
-      if (!safeExec('npm run db:migrate', { env: NON_INTERACTIVE_ENV })) {
-        err('迁移失败')
-        process.exit(1)
-      }
-      ok('迁移完成')
-    }
+    log('检测到非空库，执行迁移...', 'cyan')
   }
+
+  if (!safeExec('npm run db:migrate', { env: NON_INTERACTIVE_ENV })) {
+    err('数据库迁移失败')
+    process.exit(1)
+  }
+  ok('迁移完成')
 }
 
 try {
