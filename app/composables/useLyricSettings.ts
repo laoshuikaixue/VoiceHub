@@ -1,6 +1,9 @@
 export const useLyricSettings = () => {
   const lyricFontSize = useState('lyric-font-size', () => 32)
+  const lyricTranFontSize = useState('lyric-tran-font-size', () => 22)
+  const lyricRomaFontSize = useState('lyric-roma-font-size', () => 18)
   const lyricFontSizeMode = useState('lyric-font-size-mode', () => 'auto') // auto | custom
+  const useAMLyrics = useState('lyric-use-am-style', () => true)
   const useAMSpring = useState('lyric-use-spring', () => true)
   const lyricAlignRight = useState('lyric-align-right', () => false)
   const showTranslation = useState('lyric-show-translation', () => true)
@@ -58,7 +61,10 @@ export const useLyricSettings = () => {
 
   return {
     lyricFontSize,
+    lyricTranFontSize,
+    lyricRomaFontSize,
     lyricFontSizeMode,
+    useAMLyrics,
     useAMSpring,
     lyricAlignRight,
     showTranslation,

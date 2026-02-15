@@ -73,6 +73,7 @@
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
     "lodash-es": "^4.17.23",
+    "sass-embedded": "^1.97.3",
     "vite-plugin-top-level-await": "^1.6.0"
   }
 }

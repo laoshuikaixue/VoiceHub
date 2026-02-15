@@ -126,7 +126,9 @@
               <div class="lyrics-display-area">
                 <div v-show="true" class="lyrics-container">
                   <!-- 集成 AMLyric 组件 (传入毫秒) -->
-                  <AMLyric :current-time="currentTime * 1000" />
+                  <AMLyric v-if="lyricSettings.useAMLyrics.value" :current-time="currentTime * 1000" />
+                  <!-- 集成 DefaultLyric 组件 (传入秒) -->
+                  <DefaultLyric v-else :current-time="currentTime" />
                 </div>
               </div>
               
@@ -138,6 +140,10 @@
                  
                  <!-- 设置菜单 -->
                  <div v-if="showLyricSettings" class="lyric-settings-menu" @click.stop>
+                    <div class="setting-item switch">
+                       <span class="label">AM 风格歌词</span>
+                       <input type="checkbox" v-model="lyricSettings.useAMLyrics.value" />
+                    </div>
                     <div class="setting-item">
                        <span class="label">字体大小</span>
                        <div class="control">
@@ -255,6 +261,7 @@ import {useAudioPlayerEnhanced} from '~/composables/useAudioPlayerEnhanced'
 import {useAudioVisualizer} from '~/composables/useAudioVisualizer'
 import {convertToHttps} from '~/utils/url'
 import AMLyric from '~/components/Player/PlayerLyric/AMLyric.vue'
+import DefaultLyric from '~/components/Player/PlayerLyric/DefaultLyric.vue'
 
 const props = defineProps({
   isVisible: {
