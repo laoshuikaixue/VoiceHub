@@ -4,6 +4,7 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
+  srcDir: 'app/',
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss'],
   

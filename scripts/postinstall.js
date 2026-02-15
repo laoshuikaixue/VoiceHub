@@ -2,23 +2,20 @@
 
 import fs from 'fs';
 
-// 检查是否在CI环境中
 const isCI = process.env.CI || process.env.NETLIFY || process.env.VERCEL;
 
 if (isCI) {
-  console.log('🔧 CI环境检测到，检查 Drizzle 配置...');
+  console.log('🔧 CI 环境检测');
   
   try {
-    // 检查 Drizzle 配置文件是否存在
     if (fs.existsSync('drizzle.config.ts') && fs.existsSync('app/drizzle/schema.ts')) {
-      console.log('✅ Drizzle 配置检查完成');
+      console.log('✅ Drizzle 配置正常');
     } else {
-      console.warn('⚠️ Drizzle 配置文件不完整');
+      console.warn('⚠️  Drizzle 配置不完整');
     }
   } catch (error) {
-    console.error('❌ Drizzle 配置检查失败:', error.message);
-    // 在CI环境中不要因为配置检查失败而中断整个安装过程
+    console.error('❌ 配置检查失败:', error.message);
   }
 } else {
-  console.log('📝 本地开发环境，跳过自动检查');
+  console.log('📝 本地开发环境');
 }

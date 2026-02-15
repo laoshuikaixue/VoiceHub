@@ -3,16 +3,9 @@
 import {execSync} from 'child_process';
 import fs from 'fs';
 
-// 颜色输出函数
+// 颜色输出
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m'
+  reset: '\x1b[0m', red: '\x1b[31m', green: '\x1b[32m', yellow: '\x1b[33m', cyan: '\x1b[36m'
 };
 
 function log(message, color = 'reset') {
@@ -28,7 +21,7 @@ function logSuccess(message) {
 }
 
 function logWarning(message) {
-  log(`⚠️ ${message}`, 'yellow');
+  log(`⚠️  ${message}`, 'yellow');
 }
 
 function logError(message) {
@@ -58,34 +51,23 @@ function fileExists(filePath) {
 
 // Netlify 构建流程
 async function netlifyBuild() {
-  log('🚀 开始 Netlify 构建流程...', 'bright');
+  log('🚀 Netlify 构建', 'cyan');
   
   try {
     // 1. 设置环境变量
     process.env.NETLIFY = 'true';
     process.env.NITRO_PRESET = 'netlify';
     
-    logStep('🔧', '设置 Netlify 环境变量...');
-    logSuccess('环境变量设置完成');
-    
-    // 2. 清理之前的构建
-    logStep('🧹', '清理之前的构建...');
-    if (fileExists('dist')) {
-      safeExec('rm -rf dist');
-    }
-    if (fileExists('.netlify')) {
-      safeExec('rm -rf .netlify');
-    }
-    if (fileExists('.nuxt')) {
-      safeExec('rm -rf .nuxt');
-    }
+    // 2. 清理构建目录
+    logStep('🧹', '清理构建目录...');
+    if (fileExists('dist')) safeExec('rm -rf dist');
+    if (fileExists('.netlify')) safeExec('rm -rf .netlify');
+    if (fileExists('.nuxt')) safeExec('rm -rf .nuxt');
     logSuccess('清理完成');
     
     // 3. 安装依赖
     logStep('📦', '安装依赖...');
-    // 在CI环境中总是重新安装依赖
     if (fileExists('node_modules')) {
-      logStep('🧹', '清理现有依赖...');
       safeExec('rm -rf node_modules');
     }
     
@@ -93,103 +75,67 @@ async function netlifyBuild() {
       throw new Error('依赖安装失败');
     }
     
-    // 确保 Drizzle 相关依赖正确安装
-    logStep('🔍', '验证 Drizzle 依赖...');
+    // 验证 Drizzle 依赖
     if (!safeExec('npm list drizzle-orm drizzle-kit')) {
-      logStep('📦', '重新安装 Drizzle 依赖...');
       if (!safeExec('npm install drizzle-orm drizzle-kit')) {
         throw new Error('Drizzle 依赖安装失败');
       }
     }
     logSuccess('依赖安装完成');
     
-    // 4. 检查 Drizzle 配置（关键步骤）
-    logStep('🔧', '检查 Drizzle 配置...');
-    
-    // 检查 Drizzle 配置文件
-    if (!fileExists('drizzle.config.ts')) {
-      throw new Error('Drizzle 配置文件不存在');
-    }
-    
-    if (!fileExists('app/drizzle/schema.ts')) {
-      throw new Error('Drizzle schema 文件不存在');
+    // 4. 检查 Drizzle 配置
+    if (!fileExists('drizzle.config.ts') || !fileExists('app/drizzle/schema.ts')) {
+      throw new Error('Drizzle 配置文件不完整');
     }
 
-    logSuccess('Drizzle 配置检查完成');
-
-    // 5. 验证 Drizzle 配置是否正确
-    logStep('🔍', '验证 Drizzle 配置...');
-    const drizzleConfigPath = 'drizzle.config.ts';
-    const drizzleSchemaPath = 'app/drizzle/schema.ts';
-
-    if (!fileExists(drizzleConfigPath)) {
-      throw new Error('Drizzle 配置文件未找到');
-    }
-
-    if (!fileExists(drizzleSchemaPath)) {
-      throw new Error('Drizzle schema 文件未找到');
-    }
-
-    logSuccess('Drizzle 配置验证成功');
-
-    // 5.1. 确保迁移目录存在
+    // 5. 确保迁移目录存在
     if (!fileExists('app/drizzle/migrations')) {
-      logStep('📁', '创建迁移目录...');
       fs.mkdirSync('app/drizzle/migrations', { recursive: true });
-      logSuccess('迁移目录创建完成');
     }
 
     // 6. 数据库同步
     if (process.env.DATABASE_URL) {
-      logStep('🗄️', '执行数据库同步...')
+      logStep('�️', '同步数据库...')
       const env = { ...process.env, CI: 'true', DRIZZLE_KIT_FORCE: 'true', NODE_ENV: 'production' }
       if (safeExec('node scripts/db-sync.js', { env })) {
         logSuccess('数据库同步成功')
       } else {
-        logWarning('数据库同步失败，继续构建...')
+        logWarning('数据库同步失败')
       }
 
-      // 6.1. 检查管理员账户
+      // 检查管理员账户
       if (fileExists('scripts/create-admin.js')) {
         logStep('👤', '检查管理员账户...');
-        if (safeExec('npm run create-admin', { env })) {
-          logSuccess('管理员账户检查完成');
-        } else {
-          logWarning('管理员账户创建跳过（可能已存在或数据库未连接）');
-        }
+        safeExec('npm run create-admin', { env });
       }
     } else {
-      logWarning('未设置 DATABASE_URL，跳过数据库迁移和管理员检查')
+      logWarning('未设置 DATABASE_URL')
     }
 
     // 7. 构建应用
-    logStep('🔨', '构建 Nuxt 应用...');
+    logStep('🔨', '构建应用...');
     if (!safeExec('npx nuxt build')) {
-      throw new Error('Nuxt 应用构建失败');
+      throw new Error('构建失败');
     }
-    logSuccess('Nuxt 应用构建完成');
+    logSuccess('构建完成');
 
     // 8. 验证构建输出
-    logStep('🔍', '验证构建输出...');
-
-    // Netlify preset 输出到 .netlify/functions-internal/server/
     const hasNetlifyFunctions = fileExists('.netlify/functions-internal/server');
     const hasOutputPublic = fileExists('.output/public');
 
     if (hasNetlifyFunctions) {
-      logSuccess('Netlify Functions 目录 (.netlify/functions-internal/server) 生成成功');
-
+      logSuccess('Netlify Functions 生成成功');
     }
 
     if (hasOutputPublic) {
-      logSuccess('静态资源目录 (.output/public) 生成成功');
+      logSuccess('静态资源生成成功');
     }
 
     if (!hasNetlifyFunctions && !hasOutputPublic) {
-      throw new Error('构建输出目录不存在，请检查构建配置');
+      throw new Error('构建输出目录不存在');
     }
 
-    log('🎉 Netlify 构建完成！', 'green');
+    log('🎉 构建完成！', 'green');
 
   } catch (error) {
     logError(`构建失败: ${error.message}`);

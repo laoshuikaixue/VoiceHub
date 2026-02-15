@@ -3,6 +3,7 @@ import {db} from '~/drizzle/db'
 import {songs} from '~/drizzle/schema'
 import {count, eq} from 'drizzle-orm'
 import {cache} from '~~/server/utils/cache-helpers'
+import {isRedisReady} from '~~/server/utils/redis'
 
 export default defineEventHandler(async (event) => {
     const query = getQuery(event)
@@ -15,7 +16,9 @@ export default defineEventHandler(async (event) => {
         // 尝试从缓存获取
         const cachedCount = await cache.get<{ count: number }>(cacheKey)
         if (cachedCount !== null) {
-            console.log(`[Cache] 歌曲数量缓存命中: ${cacheKey}, 数量: ${cachedCount.count}`)
+            if (isRedisReady()) {
+                console.log(`[Cache] 歌曲数量缓存命中: ${cacheKey}, 数量: ${cachedCount.count}`)
+            }
             return cachedCount
         }
 
@@ -35,7 +38,9 @@ export default defineEventHandler(async (event) => {
 
         // 缓存结果（5分钟）
         await cache.set(cacheKey, response)
-        console.log(`[Cache] 歌曲数量设置缓存: ${cacheKey}, 数量: ${totalCount}`)
+        if (isRedisReady()) {
+            console.log(`[Cache] 歌曲数量设置缓存: ${cacheKey}, 数量: ${totalCount}`)
+        }
 
         return response
     } catch (error) {
