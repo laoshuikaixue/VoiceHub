@@ -75,15 +75,28 @@ function main() {
     ok('空库迁移完成')
   } else {
     log('🔁 检测到非空库，优先使用 migrate 同步...', 'cyan')
-    if (safeExec('npm run db:migrate', { env: NON_INTERACTIVE_ENV })) {
+    
+    // 尝试执行 migrate
+    const migrateSuccess = safeExec('npm run db:migrate', { 
+      env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' } 
+    })
+
+    if (migrateSuccess) {
       ok('migrate 同步成功')
     } else {
-      warn('migrate 同步失败，回退到 push')
-      if (!safeExec('npx drizzle-kit push --force --config=drizzle.config.ts', { env: NON_INTERACTIVE_ENV })) {
-        err('数据库同步完全失败')
+      warn('migrate 同步失败，可能是由于数据库结构与迁移记录不一致。')
+      log('🔄 尝试使用 push --force 进行强制同步...', 'cyan')
+      
+      // 在 CI 环境下，push 命令如果遇到重命名等歧义可能会弹出交互式提示
+      // 确保 DRIZZLE_KIT_NON_INTERACTIVE 已设置
+      const pushCommand = 'npx drizzle-kit push --force --config=drizzle.config.ts'
+      if (!safeExec(pushCommand, { 
+        env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' } 
+      })) {
+        err('数据库同步完全失败。请检查数据库连接或手动运行 npx drizzle-kit push 以解决歧义。')
         process.exit(1)
       }
-      ok('回退 push 同步成功')
+      ok('强制同步 (push) 成功')
     }
   }
 
