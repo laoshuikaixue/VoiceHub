@@ -78,6 +78,27 @@ class CacheService {
         console.log(`[Cache] 歌曲相关缓存已清除${semester ? ` (学期: ${semester})` : ''}`)
     }
 
+    // 获取歌曲列表缓存
+    async getSongsList(semester?: string): Promise<any[] | null> {
+        const key = this.generateKey(CACHE_PREFIXES.SONGS, 'list', semester || 'all')
+        const cached = await this.getCache<any[]>(key)
+        if (cached) {
+            if (Array.isArray(cached) && cached.length === 1 && cached[0]?.__empty) {
+                return []
+            }
+            return cached
+        }
+        return null
+    }
+
+    // 设置歌曲列表缓存
+    async setSongsList(songs: any[], semester?: string): Promise<void> {
+        const key = this.generateKey(CACHE_PREFIXES.SONGS, 'list', semester || 'all')
+        const cacheData = songs.length === 0 ? [{__empty: true}] : songs
+        const ttl = songs.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SONG_COUNT
+        await this.setCache(key, cacheData, ttl)
+    }
+
     // 清理损坏的缓存数据（UTF-8编码问题）
     async cleanCorruptedCache(): Promise<void> {
         if (!isRedisReady()) {
@@ -229,7 +250,9 @@ class CacheService {
         const ttl = schedules.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SCHEDULES
 
         await this.setCache(key, cacheData, ttl)
-        console.log(`[Cache] 排期列表已缓存: ${key}, 数量: ${schedules.length}`)
+        if (isRedisReady()) {
+            console.log(`[Cache] 排期列表已缓存: ${key}, 数量: ${schedules.length}`)
+        }
     }
 
     // 获取特定日期的排期缓存
@@ -258,7 +281,9 @@ class CacheService {
         const ttl = schedules.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SCHEDULES
 
         await this.setCache(key, cacheData, ttl)
-        console.log(`[Cache] 日期排期已缓存: ${key}, 数量: ${schedules.length}`)
+        if (isRedisReady()) {
+            console.log(`[Cache] 日期排期已缓存: ${key}, 数量: ${schedules.length}`)
+        }
     }
 
     // 清除排期相关缓存
@@ -297,7 +322,9 @@ class CacheService {
     async setSystemSettings(settings: any): Promise<void> {
         const key = this.generateKey('system', 'settings')
         await this.setCache(key, settings, CACHE_TTL.SYSTEM_SETTINGS)
-        console.log(`[Cache] 系统设置已缓存: ${key}`)
+        if (isRedisReady()) {
+            console.log(`[Cache] 系统设置已缓存: ${key}`)
+        }
     }
 
     // 清除系统设置缓存
@@ -333,7 +360,9 @@ class CacheService {
         const ttl = playTimes.length === 0 ? CACHE_TTL.EMPTY_RESULT : CACHE_TTL.SYSTEM_SETTINGS
 
         await this.setCache(key, cacheData, ttl)
-        console.log(`[Cache] 播放时间列表已缓存: ${key}, 数量: ${playTimes.length}`)
+        if (isRedisReady()) {
+            console.log(`[Cache] 播放时间列表已缓存: ${key}, 数量: ${playTimes.length}`)
+        }
     }
 
     // 清除播放时间相关缓存
