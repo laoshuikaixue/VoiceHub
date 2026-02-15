@@ -3,19 +3,17 @@
 import {execSync} from 'child_process';
 import fs from 'fs';
 import {config} from 'dotenv';
+import path from 'path';
 
-// 加载环境变量
-config();
+// 加载环境变量（从项目根目录）
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // 颜色输出函数
 const colors = {
   reset: '\x1b[0m',
-  bright: '\x1b[1m',
   red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
   cyan: '\x1b[36m'
 };
 
@@ -32,7 +30,7 @@ function logSuccess(message) {
 }
 
 function logWarning(message) {
-  log(`⚠️ ${message}`, 'yellow');
+  log(`⚠️  ${message}`, 'yellow');
 }
 
 function logError(message) {
@@ -72,52 +70,46 @@ function checkEnvironment() {
   });
   
   if (missingVars.length > 0) {
-    logWarning(`缺少环境变量: ${missingVars.join(', ')}`);
-    logWarning('请确保在部署平台设置了正确的环境变量');
+    logError(`缺少必需的环境变量: ${missingVars.join(', ')}`);
+    logError('请通过以下方式之一设置环境变量：');
+    logError('1. 创建 .env 文件并配置 DATABASE_URL');
+    logError('2. 使用 docker run -e DATABASE_URL=xxx 传递环境变量');
+    logError('3. 在 docker-compose.yml 中配置 environment');
+    throw new Error('环境变量配置不完整');
   } else {
     logSuccess('环境变量检查通过');
   }
   
-  return missingVars.length === 0;
+  return true;
 }
 
 // 主部署流程
 async function deploy() {
-  log('🚀 开始部署流程...', 'bright');
+  log('🚀 开始部署...', 'cyan');
   
   try {
-    // 0. 检查环境
+    // 0. 检查环境（必须通过）
     checkEnvironment();
     
     // 1. 安装依赖
-    logStep('📦', '检查并安装依赖...');
+    logStep('📦', '安装依赖...');
     if (!safeExec('npm install')) {
       throw new Error('依赖安装失败');
     }
     logSuccess('依赖安装完成');
 
     // 2. 检查 Drizzle 配置
-    logStep('🔧', '检查 Drizzle 配置...');
-    if (!fileExists('drizzle.config.ts')) {
-      throw new Error('Drizzle 配置文件不存在');
+    if (!fileExists('drizzle.config.ts') || !fileExists('app/drizzle/schema.ts') || !fileExists('app/drizzle/db.ts')) {
+      throw new Error('Drizzle 配置文件不完整');
     }
-    if (!fileExists('app/drizzle/schema.ts')) {
-      throw new Error('Drizzle schema 文件不存在');
-    }
-    if (!fileExists('app/drizzle/db.ts')) {
-      throw new Error('Drizzle 数据库连接文件不存在');
-    }
-    logSuccess('Drizzle 配置检查完成');
 
     // 2.1. 确保迁移目录存在
     if (!fileExists('app/drizzle/migrations')) {
-      logStep('📁', '创建迁移目录...');
       fs.mkdirSync('app/drizzle/migrations', { recursive: true });
-      logSuccess('迁移目录创建完成');
     }
 
     // 3. 数据库同步
-    logStep('🗄️', '执行数据库同步...');
+    logStep('🗄️', '同步数据库...');
     let dbSyncSuccess = false;
     if (process.env.DATABASE_URL) {
       const nonInteractiveEnv = {
@@ -130,21 +122,16 @@ async function deploy() {
         logSuccess('数据库同步成功');
         dbSyncSuccess = true;
       } else {
-        logWarning('数据库同步失败，继续构建...');
+        logWarning('数据库同步失败');
       }
     } else {
       logWarning('未设置 DATABASE_URL，跳过数据库迁移');
-      logWarning('请确保在部署平台设置了正确的数据库连接字符串');
     }
 
-    // 4. 创建管理员账户（如果脚本存在）
-    if (fileExists('scripts/create-admin.js')) {
+    // 4. 创建管理员账户
+    if (fileExists('scripts/create-admin.js') && dbSyncSuccess) {
       logStep('👤', '检查管理员账户...');
-      if (safeExec('npm run create-admin')) {
-        logSuccess('管理员账户检查完成');
-      } else {
-        logWarning('管理员账户创建跳过（可能已存在或数据库未连接）');
-      }
+      safeExec('npm run create-admin');
     }
 
     // 5. 构建应用
@@ -153,18 +140,8 @@ async function deploy() {
       throw new Error('应用构建失败');
     }
     logSuccess('应用构建完成');
-
-    // 6. 部署后检查
-    logStep('🔍', '执行部署后检查...');
-    if (fileExists('scripts/check-deploy.js')) {
-      safeExec('node scripts/check-deploy.js');
-    }
     
-    log('🎉 部署流程完成！', 'green');
-    
-    if (!dbSyncSuccess) {
-      logWarning('注意：数据库同步可能未完全成功，请检查数据库连接');
-    }
+    log('🎉 部署完成！', 'green');
     
   } catch (error) {
     logError(`部署失败: ${error.message}`);

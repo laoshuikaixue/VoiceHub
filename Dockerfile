@@ -2,32 +2,25 @@
 FROM node:25-alpine AS builder
 WORKDIR /app
 
-# 配置淘宝npm镜像源（加速npm依赖安装）
-# RUN npm config set registry https://registry.npmmirror.com/
-
-
-# 复制依赖文件和 scripts 目录
+# 复制依赖文件
 COPY package*.json ./
-COPY scripts ./scripts
 
-# 安装所有依赖（含开发依赖）
+# 安装生产依赖
 RUN npm ci --only=production || npm install --only=production
 
-# 复制源代码并构建应用
+# 复制源代码
 COPY . .
+
+# 构建应用
 RUN npm run build
 
 # 第二阶段：运行阶段
 FROM node:25-alpine
 
-# 配置淘宝npm镜像源（加速npm依赖安装）
-# RUN npm config set registry https://registry.npmmirror.com/
-
-# 切换到root用户
 USER root
 WORKDIR /app
 
-# 从构建阶段复制运行所需文件
+# 从构建阶段复制必要文件
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/node_modules ./node_modules
@@ -37,10 +30,11 @@ COPY --from=builder /app/scripts ./scripts
 
 # 环境变量配置
 ENV NODE_ENV=production \
-    NODE_OPTIONS="--experimental-specifier-resolution=node" \
-    PORT=3000\
+    PORT=3000 \
     NPM_CONFIG_UPDATE_NOTIFIER=false
 
-# 暴露端口并设置启动命令
+# 暴露端口
 EXPOSE $PORT
-CMD ["sh", "-c", "npm run deploy && npm start"]
+
+# 启动命令：先执行数据库迁移，再启动应用
+CMD ["sh", "-c", "node scripts/deploy.js && node .output/server/index.mjs"]
