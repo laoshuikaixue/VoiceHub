@@ -1493,8 +1493,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
 /* 学校logo样式 */
 .school-logo {
-  max-width: 160px;
-  max-height: 160px;
+  max-width: 200px;
+  max-height: 80px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -2518,8 +2518,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .school-logo {
-    max-width: 60px;
-    max-height: 40px;
+    max-width: 120px;
+    max-height: 36px;
   }
 
   /* 用户区域简化 */
@@ -2794,7 +2794,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .school-logo {
-    max-width: 80px;
+    max-width: 100px;
+    max-height: 32px;
   }
 
   .action-button {
@@ -2823,7 +2824,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .school-logo {
-    max-width: 50px;
+    max-width: 80px;
+    max-height: 28px;
   }
 
   .action-button {
