@@ -161,15 +161,15 @@
                               <button @click="lyricSettings.lyricOffset.value += 100">+</button>
                            </div>
                         </div>
-                        <div class="setting-item switch">
+                        <div class="setting-item switch" v-if="!lyricSettings.useAMLyrics.value">
                            <span class="label">显示翻译</span>
                            <input type="checkbox" v-model="lyricSettings.showTranslation.value" />
                         </div>
-                        <div class="setting-item switch">
+                        <div class="setting-item switch" v-if="!lyricSettings.useAMLyrics.value">
                            <span class="label">显示罗马音</span>
                            <input type="checkbox" v-model="lyricSettings.showRoma.value" />
                         </div>
-                        <div class="setting-item switch">
+                        <div class="setting-item switch" v-if="!lyricSettings.useAMLyrics.value">
                            <span class="label">逐字歌词 (YRC)</span>
                            <input type="checkbox" v-model="lyricSettings.showYrc.value" />
                         </div>
