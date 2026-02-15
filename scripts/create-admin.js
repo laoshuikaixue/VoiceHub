@@ -58,7 +58,7 @@ async function main() {
     console.log('✅ 管理员创建成功 (admin/admin123)');
     return admin;
   } catch (error) {
-    console.error('❌ 创建管理员失败:', error.message);
+    console.error('❌ 创建管理员失败:', error);
     throw error;
   }
 }
@@ -69,7 +69,7 @@ main()
     process.exit(0);
   })
   .catch(async (error) => {
-    console.error('❌ 初始化失败:', error.message);
+    console.error('❌ 初始化失败:', error);
     await client.end();
     process.exit(1);
   });
