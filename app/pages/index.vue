@@ -2518,8 +2518,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .school-logo {
-    max-width: 50px;
-    max-height: 28px;
+    max-width: 60px;
+    max-height: 40px;
   }
 
   /* 用户区域简化 */
@@ -2794,7 +2794,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .school-logo {
-    max-width: 70px;
+    max-width: 80px;
   }
 
   .action-button {
@@ -2823,7 +2823,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   }
 
   .school-logo {
-    max-width: 40px;
+    max-width: 50px;
   }
 
   .action-button {
