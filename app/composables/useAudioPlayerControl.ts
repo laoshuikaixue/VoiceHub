@@ -188,7 +188,8 @@ export const useAudioPlayerControl = () => {
 
                     // 如果有音乐平台信息，加载歌词
                     if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
-                        lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+                        // lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+                        // 迁移到 useLyricManager 统一管理，避免重复请求
                     }
                 } else if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
                     // 检查是否是网易云备用源，如果是则不应该调用getMusicUrl
@@ -208,7 +209,8 @@ export const useAudioPlayerControl = () => {
                     }
 
                     // 并行加载歌词（不阻塞音频加载）
-                    lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+                    // lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
+                    // 迁移到 useLyricManager 统一管理，避免重复请求
                 } else {
                     throw new Error('歌曲缺少播放信息（音乐平台ID或直接URL）')
                 }

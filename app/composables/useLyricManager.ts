@@ -169,7 +169,13 @@ export const useLyricManager = () => {
 
       // 4. 格式化 (应用配置，如括号替换)
       if (parsedLyrics.length > 0) {
-          lyrics.value = formatLyric(parsedLyrics, settings)
+          // 提取元数据用于清洗
+          const metadata = {
+            title: track.title,
+            artists: track.artist ? [track.artist] : undefined
+          }
+
+          lyrics.value = formatLyric(parsedLyrics, settings, metadata)
           lyricFormat.value = format
           error.value = null
           
