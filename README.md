@@ -104,19 +104,13 @@
 1. `DATABASE_URL`：PostgreSQL数据库连接地址
 2. `JWT_SECRET`：JWT令牌签名密钥
 
-您可以参考[环境变量说明](#环境变量说明)了解更多详情。
-
 ### Claw 部署
 [![Claw](https://ap-southeast-1.run.claw.cloud/logo.svg)](https://ap-southeast-1.run.claw.cloud/)
 
 1. **点击部署按钮**：选择上方的 Claw 部署按钮
-
 2. **打开应用程序启动板**：打开  App Launchpad （应用程序启动板）
-
 3. **创建应用**：选 Create App （创建应用）
-
 4. **相关配置**：
-
    ```
    Application Name：VoiceHub 或 其它
    Image Name: ghcr.io/laoshuikaixue/voicehub:latest
@@ -127,78 +121,100 @@
       JWT_SECRET=your-jwt-secret-here
       # 按实际情况填写
    ```
-
 5. **等待部署**：平台会自动构建和部署应用
-
 6. **访问应用**：部署完成后，您将获得一个可访问的 URL
 
-### 其他平台部署
-
-1. 构建生产版本
-   ```bash
-   npm run build
-   ```
-
-2. 设置环境变量
-   确保设置了必要的环境变量（DATABASE_URL和JWT_SECRET）
-
-3. 启动应用
-   ```bash
-   npm run start
-   ```
 ### Docker 部署
 
-本地构建
+VoiceHub 支持通过 Docker 进行容器化部署，提供了多种部署方式。
 
-```
+#### 方式一：使用 Docker Compose（推荐）
+
+这是最简单的部署方式，会自动创建应用和数据库容器。
+
+1. 克隆项目
+```bash
 git clone https://github.com/laoshuikaixue/VoiceHub.git
 cd VoiceHub
-docker build -t voicehub .
-docker run voicehub
 ```
 
-或使用 Github 的镜像源
-
+2. 修改 docker-compose.yml 中的环境变量
+```yaml
+environment:
+  - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
+  - JWT_SECRET=your-jwt-secret-here  # 请修改为强随机字符串
+  - NODE_ENV=production
 ```
-docker run \
+
+3. 启动服务
+```bash
+docker-compose up -d
+```
+
+4. 访问应用
+打开浏览器访问 http://localhost:3000
+
+默认管理员账号：
+- 用户名：admin
+- 密码：admin123
+
+#### 方式二：使用预构建镜像
+
+如果你已有 PostgreSQL 数据库，可以直接使用预构建的镜像。
+
+使用 GitHub 镜像源：
+```bash
+docker run -d \
   -p 3000:3000 \
-  -e JWT_SECRET=your-very-secure-jwt-secret-key \
   -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  -e JWT_SECRET="your-very-secure-jwt-secret-key" \
+  -e NODE_ENV=production \
+  --name voicehub \
   ghcr.io/laoshuikaixue/voicehub:latest
 ```
 
-或使用 南京大学 的镜像
-
-```
-docker run \
+使用南京大学镜像源：
+```bash
+docker run -d \
   -p 3000:3000 \
-  -e JWT_SECRET=your-very-secure-jwt-secret-key \
   -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  -e JWT_SECRET="your-very-secure-jwt-secret-key" \
+  -e NODE_ENV=production \
+  --name voicehub \
   ghcr.nju.edu.cn/laoshuikaixue/voicehub:latest
 ```
 
-### Docker-compose 部署
+#### 方式三：本地构建镜像
 
-本地构建（不含 redis 数据库）
+如果需要自定义构建，可以本地构建镜像。
 
-```
+```bash
 git clone https://github.com/laoshuikaixue/VoiceHub.git
 cd VoiceHub
-docker-compose up
+
+# 构建镜像（不使用缓存，确保完全重新构建）
+docker build --no-cache -t voicehub .
+
+# 运行容器
+docker run -d \
+  -p 3000:3000 \
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  -e JWT_SECRET="your-very-secure-jwt-secret-key" \
+  -e NODE_ENV=production \
+  --name voicehub \
+  voicehub
 ```
 
-其他请移步 [docker-compose目录](/docker-compose)
+### 本地开发部署
 
-## 安装与运行
-
-### 前提条件
+#### 前提条件
 - Node.js 20+
-- PostgreSQL数据库（推荐Neon）
-- Redis数据库（可选，暂不推荐，可能存在潜在的问题）
+- PostgreSQL 数据库（推荐使用 Neon）
+- Redis 数据库（可选，暂不推荐）
 
-### 安装步骤
+#### 快速开始
 
-1. 克隆仓库
+1. 克隆项目
 ```bash
 git clone https://github.com/laoshuikaixue/VoiceHub.git
 cd VoiceHub
@@ -209,50 +225,96 @@ cd VoiceHub
 npm install
 ```
 
-3. 设置环境变量
-复制`.env.example`文件并重命名为`.env`，然后修改其中的配置：
+3. 配置环境变量
+
+复制 `.env.example` 文件并重命名为 `.env`：
 ```bash
 cp .env.example .env
 ```
 
-4. 编辑`.env`文件，设置数据库连接和JWT密钥：
-```
+编辑 `.env` 文件，配置必需的环境变量：
+```env
+# 数据库连接地址（必填）
 DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
-REDIS_URL="redis://username:password@host:port"
+
+# JWT 认证密钥（必填）
 JWT_SECRET="your-very-secure-jwt-secret-key"
+
+# 应用运行环境（可选）
+NODE_ENV=development
 ```
 
-5. 初始化数据库和生成数据库模式
+4. 初始化数据库
+
+首次运行需要初始化数据库结构：
 ```bash
+# 生成数据库迁移文件
 npm run db:generate
+
+# 执行数据库迁移
 npm run db:migrate
 ```
 
-或者使用一键设置命令：
+或使用一键部署命令（推荐）：
 ```bash
 npm run deploy
 ```
 
-6. 创建管理员账户（如果需要）
+5. 创建管理员账户
+
+系统会在首次部署时自动创建管理员账户。如需手动创建：
 ```bash
-# 创建超级管理员账户
 npm run create-admin
 ```
 
-7. 启动开发服务器
+默认管理员账户：
+- 用户名：admin
+- 密码：admin123
+
+6. 启动开发服务器
 ```bash
 npm run dev
 ```
 
-8. 构建生产版本
+应用将在 http://localhost:3000 启动。
+
+### 生产环境部署
+
+1. 构建生产版本
 ```bash
 npm run build
 ```
 
-9. 运行生产版本
+2. 启动生产服务器
 ```bash
 npm start
 ```
+
+### 数据库管理命令
+
+```bash
+# 生成迁移文件
+npm run db:generate
+
+# 执行数据库迁移
+npm run db:migrate
+
+# 推送模式变更到数据库（开发环境）
+npm run db:push
+
+# 启动 Drizzle Studio（数据库管理界面）
+npm run db:studio
+
+# 清空数据库并重新创建管理员
+npm run clear-db
+
+# 安全迁移（带备份）
+npm run safe-migrate
+```
+
+### 升级与迁移
+
+有关如何升级现有部署和迁移数据，请参阅 [升级指南](UPGRADE.md)。
 
 ## 系统配置
 
@@ -817,11 +879,82 @@ VoiceHub/
 
 #### 核心文件结构
 - **`drizzle.config.ts`** - Drizzle ORM 主配置文件
-- **`app/drizzle/db.ts`** - 数据库连接和客户端配置，针对 Neon Database 优化
-- **`app/drizzle/schema.ts`** - 数据库表结构定义，使用 TypeScript 类型安全
+- **`app/drizzle/db.ts`** - 数据库连接和客户端配置
+- **`app/drizzle/schema.ts`** - 数据库表结构定义（TypeScript 类型安全）
 - **`app/drizzle/migrations/`** - 数据库迁移脚本目录
 
+### 数据库初始化
+
+首次部署时，系统会自动初始化数据库结构。
+
+#### 自动初始化（推荐）
+
+使用部署脚本自动完成数据库初始化：
+```bash
+npm run deploy
+```
+
+该命令会：
+1. 检查环境变量配置
+2. 安装依赖
+3. 执行数据库迁移
+4. 创建默认管理员账户
+5. 构建应用
+
+#### 手动初始化
+
+如需手动管理数据库：
+
+1. 生成迁移文件
+```bash
+npm run db:generate
+```
+
+2. 执行数据库迁移
+```bash
+npm run db:migrate
+```
+
+3. 推送模式变更到数据库（开发环境）
+```bash
+npm run db:push
+```
+
+4. 启动 Drizzle Studio（数据库管理界面）
+```bash
+npm run db:studio
+```
+访问 https://local.drizzle.studio 查看和管理数据库
+
+5. 清空数据库并创建管理员
+```bash
+npm run clear-db
+```
+
 ### 数据库备份与恢复
+
+#### 通过管理后台
+
+1. 创建备份
+   - 登录管理后台
+   - 进入"数据库管理"页面
+   - 点击"创建备份"按钮
+   - 选择备份类型（完整备份/用户数据备份）
+
+2. 下载备份
+   - 备份完成后在列表中找到备份文件
+   - 点击"下载"按钮保存到本地
+
+3. 恢复备份
+   - 点击"上传备份"按钮
+   - 选择备份文件
+   - 选择恢复模式：
+     - 增量恢复：合并备份数据与现有数据
+     - 完全恢复：替换所有现有数据（谨慎使用）
+   - 确认并执行恢复
+
+#### 使用 PostgreSQL 命令行
+
 ```bash
 # 备份数据库
 pg_dump -h localhost -U username -d database_name > backup.sql
@@ -830,76 +963,8 @@ pg_dump -h localhost -U username -d database_name > backup.sql
 psql -h localhost -U username -d database_name < backup.sql
 ```
 
-### 数据库初始化
-
-首次部署时，系统会自动初始化数据库结构。如需手动管理数据库：
-
-1. **生成迁移文件**：
-   ```bash
-   npm run db:generate
-   ```
-
-2. **执行数据库迁移**：
-   ```bash
-   npm run db:migrate
-   ```
-
-3. **推送模式变更到数据库**：
-   ```bash
-   npm run db:push
-   ```
-
-4. **启动 Drizzle Studio（数据库管理界面）**：
-   ```bash
-   npm run db:studio
-   ```
-
-5. **清空数据库并创建管理员**：
-   ```bash
-   npm run clear-db
-   ```
-
-### 数据库备份与恢复
-- **创建备份**：在管理后台的数据库管理页面点击"创建备份"按钮
-- **下载备份**：备份完成后可直接下载备份文件
-- **恢复备份**：上传备份文件并选择恢复模式（增量或完全恢复）
-- **序列重置**：修复数据库序列问题，确保自增ID正常工作
-
-## 常见问题
-
-### 数据库连接问题
-
-如果遇到数据库连接错误，请检查以下配置：
-
-1. 确保已正确配置根目录的`.env`文件（包含有效的DATABASE_URL）
-2. 检查数据库连接字符串格式是否正确
-3. 确保数据库服务正在运行并可访问
-4. 运行数据库迁移确保表结构最新：
-   ```bash
-   npm run db:migrate
-   ```
-
-### 数据库迁移问题
-
-如果遇到数据库表结构不匹配的问题：
-
-1. 确保数据库已经最新：
-   ```bash
-   npm run db:migrate
-   ```
-
-2. 对于复杂的数据库问题，可能需要重置数据库（慎用，会删除所有数据）：
-   ```bash
-   npm run db:reset
-   ```
-
-3. 如果需要清空数据库并重新创建管理员账户：
-   ```bash
-   npm run clear-db
-   ```
-
 ### 备份文件格式
-- **完整备份**：包含所有数据表的JSON格式文件
+- **完整备份**：包含所有数据表的 JSON 格式文件
 - **用户备份**：仅包含用户相关数据
 - **元数据**：包含创建时间、创建者、表信息等
 
