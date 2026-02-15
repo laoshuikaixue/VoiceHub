@@ -133,45 +133,49 @@
               
               <!-- 歌词设置工具栏 -->
               <div class="lyric-toolbar">
-                 <div class="toolbar-btn" @click.stop="showLyricSettings = !showLyricSettings" title="歌词设置">
-                    <Icon name="settings" size="20" />
-                 </div>
-                 
-                 <!-- 设置菜单 -->
-                 <div v-if="showLyricSettings" class="lyric-settings-menu" @click.stop>
-                    <div class="setting-item switch">
-                       <span class="label">AM 风格歌词</span>
-                       <input type="checkbox" v-model="lyricSettings.useAMLyrics.value" />
-                    </div>
-                    <div class="setting-item">
-                       <span class="label">字体大小</span>
-                       <div class="control">
-                          <button @click="lyricSettings.lyricFontSize.value -= 2">-</button>
-                          <span>{{ lyricSettings.lyricFontSize.value }}</span>
-                          <button @click="lyricSettings.lyricFontSize.value += 2">+</button>
-                       </div>
-                    </div>
-                    <div class="setting-item">
-                       <span class="label">歌词偏移 (ms)</span>
-                       <div class="control">
-                          <button @click="lyricSettings.lyricOffset.value -= 100">-</button>
-                          <span>{{ lyricSettings.lyricOffset.value }}</span>
-                          <button @click="lyricSettings.lyricOffset.value += 100">+</button>
-                       </div>
-                    </div>
-                    <div class="setting-item switch">
-                       <span class="label">显示翻译</span>
-                       <input type="checkbox" v-model="lyricSettings.showTranslation.value" />
-                    </div>
-                    <div class="setting-item switch">
-                       <span class="label">显示罗马音</span>
-                       <input type="checkbox" v-model="lyricSettings.showRoma.value" />
-                    </div>
-                    <div class="setting-item switch">
-                       <span class="label">逐字歌词 (YRC)</span>
-                       <input type="checkbox" v-model="lyricSettings.showYrc.value" />
-                    </div>
-                 </div>
+                 <Popover placement="top-end" :offset="12">
+                   <template #trigger>
+                     <div class="toolbar-btn" title="歌词设置">
+                        <Icon name="settings" size="20" />
+                     </div>
+                   </template>
+                   <template #content>
+                     <div class="lyric-settings-content">
+                        <div class="setting-item switch">
+                           <span class="label">AM 风格歌词</span>
+                           <input type="checkbox" v-model="lyricSettings.useAMLyrics.value" />
+                        </div>
+                        <div class="setting-item">
+                           <span class="label">字体大小</span>
+                           <div class="control">
+                              <button @click="lyricSettings.lyricFontSize.value -= 2">-</button>
+                              <span>{{ lyricSettings.lyricFontSize.value }}</span>
+                              <button @click="lyricSettings.lyricFontSize.value += 2">+</button>
+                           </div>
+                        </div>
+                        <div class="setting-item">
+                           <span class="label">歌词偏移 (ms)</span>
+                           <div class="control">
+                              <button @click="lyricSettings.lyricOffset.value -= 100">-</button>
+                              <span>{{ lyricSettings.lyricOffset.value }}</span>
+                              <button @click="lyricSettings.lyricOffset.value += 100">+</button>
+                           </div>
+                        </div>
+                        <div class="setting-item switch">
+                           <span class="label">显示翻译</span>
+                           <input type="checkbox" v-model="lyricSettings.showTranslation.value" />
+                        </div>
+                        <div class="setting-item switch">
+                           <span class="label">显示罗马音</span>
+                           <input type="checkbox" v-model="lyricSettings.showRoma.value" />
+                        </div>
+                        <div class="setting-item switch">
+                           <span class="label">逐字歌词 (YRC)</span>
+                           <input type="checkbox" v-model="lyricSettings.showYrc.value" />
+                        </div>
+                     </div>
+                   </template>
+                 </Popover>
               </div>
             </div>
           </div>
@@ -261,6 +265,7 @@ import {useAudioVisualizer} from '~/composables/useAudioVisualizer'
 import {convertToHttps} from '~/utils/url'
 import AMLyric from '~/components/Player/PlayerLyric/AMLyric.vue'
 import DefaultLyric from '~/components/Player/PlayerLyric/DefaultLyric.vue'
+import Popover from '~/components/UI/Common/Popover.vue'
 
 const props = defineProps({
   isVisible: {
@@ -283,7 +288,6 @@ const audioVisualizer = useAudioVisualizer()
 
 // 响应式状态
 const showQualitySettings = ref(false)
-const showLyricSettings = ref(false)
 const progressBar = ref(null)
 const backgroundContainer = ref(null)
 const coverBlurContainer = ref(null)
@@ -746,14 +750,6 @@ const closeModal = () => {
 const handleOverlayClick = (event) => {
   if (showQualitySettings.value) {
     showQualitySettings.value = false
-    if (event.target.classList.contains('lyrics-modal-overlay')) {
-      closeModal()
-    }
-    return
-  }
-  
-  if (showLyricSettings.value) {
-    showLyricSettings.value = false
     if (event.target.classList.contains('lyrics-modal-overlay')) {
       closeModal()
     }
@@ -1381,23 +1377,12 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.lyric-settings-menu {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
+.lyric-settings-content {
   width: 240px;
-  background: rgba(30, 30, 30, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 12px;
   padding: 12px;
-  margin-bottom: 12px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transform-origin: bottom right;
-  animation: menu-pop-up 0.2s ease-out;
 }
 
 .setting-item {

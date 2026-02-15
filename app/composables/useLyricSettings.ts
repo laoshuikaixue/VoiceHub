@@ -1,5 +1,5 @@
 export const useLyricSettings = () => {
-  const lyricFontSize = useState('lyric-font-size', () => 32)
+  const lyricFontSize = useState('lyric-font-size', () => 44)
   const lyricTranFontSize = useState('lyric-tran-font-size', () => 22)
   const lyricRomaFontSize = useState('lyric-roma-font-size', () => 18)
   const lyricFontSizeMode = useState('lyric-font-size-mode', () => 'auto') // auto | custom
