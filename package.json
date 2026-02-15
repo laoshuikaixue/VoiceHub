@@ -1,6 +1,6 @@
 {
   "name": "voicehub",
-  "version": "1.5.3",
+  "version": "1.5.3.1",
   "description": "校园广播站点歌管理系统 - 基于数据库存储的现代化点歌、排期和播放管理平台",
   "private": true,
   "type": "module",
