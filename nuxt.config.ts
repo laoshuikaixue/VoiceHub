@@ -1,5 +1,7 @@
 import wasm from 'vite-plugin-wasm'
 import topLevelAwait from 'vite-plugin-top-level-await'
+import glsl from 'vite-plugin-glsl'
+import { fileURLToPath } from 'url'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -182,9 +184,22 @@ export default defineNuxtConfig({
   
   // Vite 配置
   vite: {
+    resolve: {
+      alias: [
+        {
+          find: '@applemusic-like-lyrics/core/style.css',
+          replacement: fileURLToPath(new URL('./vendor/amll-core/src/styles/index.css', import.meta.url))
+        },
+        {
+          find: '@applemusic-like-lyrics/core',
+          replacement: fileURLToPath(new URL('./vendor/amll-core/src/index.ts', import.meta.url))
+        }
+      ]
+    },
     plugins: [
       wasm(),
-      topLevelAwait()
+      topLevelAwait(),
+      glsl()
     ],
     optimizeDeps: {
       include: ['drizzle-orm'],
