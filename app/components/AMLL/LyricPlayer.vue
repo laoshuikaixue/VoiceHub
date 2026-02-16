@@ -10,7 +10,7 @@ import {
   type LyricPlayerBase,
   type spring,
 } from "@applemusic-like-lyrics/core";
-import { type PropType, type Ref, type ShallowRef, ref, computed, onMounted, onUnmounted, watchEffect } from "vue";
+import { type PropType, type Ref, type ShallowRef, ref, computed, onMounted, onUnmounted, watch } from "vue";
 import "@applemusic-like-lyrics/core/style.css";
 
 /**
@@ -249,9 +249,15 @@ watchEffect(() => {
 });
 
 // 当前播放时间
-watchEffect(() => {
-  if (props.currentTime !== undefined) playerRef.value?.setCurrentTime(props.currentTime);
-});
+watch(
+  () => props.currentTime,
+  (time, oldTime) => {
+    if (time === undefined) return;
+    const isSeek = oldTime !== undefined && Math.abs(time - oldTime) > 1000;
+    playerRef.value?.setCurrentTime(time, isSeek);
+  },
+  { immediate: true }
+);
 
 // 渐变宽度
 watchEffect(() => {
