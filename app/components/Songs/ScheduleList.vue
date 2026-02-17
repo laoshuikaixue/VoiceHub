@@ -1508,7 +1508,10 @@ const vRipple = {
   margin: 0 !important;
   padding: 0 !important;
   max-width: none !important;
-  min-height: 50vh; /* 确保排期列表有足够的高度 */
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* 占满父容器高度 */
+  min-height: 0; /* 允许 flex 子元素收缩 */
 }
 
 /* 学期选择器样式 */
@@ -1577,7 +1580,8 @@ const vRipple = {
   margin: 0 !important;
   padding: 0 !important;
   max-width: none !important;
-  min-height: 45vh; /* 确保容器有足够的高度 */
+  flex: 1; /* 占据剩余空间 */
+  min-height: 0; /* 允许 flex 子元素收缩 */
 }
 
 /* 左侧日期选择器 */
@@ -1585,12 +1589,17 @@ const vRipple = {
   width: 200px;
   flex-shrink: 0;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 占满容器高度 */
+  min-height: 0; /* 允许 flex 子元素收缩 */
 }
 
 .date-list {
-  max-height: 500px;
+  flex: 1; /* 占据剩余空间 */
   overflow-y: auto;
   width: 100%;
+  min-height: 0; /* 允许 flex 子元素收缩 */
 }
 
 /* 增强日期项目样式 */
@@ -1656,6 +1665,8 @@ const vRipple = {
   );
   margin: 0 1.5rem;
   position: relative;
+  align-self: stretch; /* 占满父容器高度 */
+  flex-shrink: 0;
 }
 
 /* 右侧排期内容 */
@@ -1663,7 +1674,10 @@ const vRipple = {
   flex: 1;
   min-width: 0;
   max-width: calc(100% - 250px); /* 缩小右侧内容区域宽度 */
-  min-height: 40vh; /* 确保内容区域有足够的高度 */
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 占满容器高度 */
+  min-height: 0; /* 允许 flex 子元素收缩 */
 }
 
 .schedule-header {
@@ -1672,6 +1686,7 @@ const vRipple = {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .current-date {
@@ -1733,6 +1748,13 @@ const vRipple = {
 .empty .icon {
   font-size: 3rem;
   opacity: 0.5;
+}
+
+/* 排期内容区域 */
+.schedule-items {
+  flex: 1; /* 占据剩余空间 */
+  overflow-y: auto; /* 允许滚动 */
+  min-height: 0; /* 允许 flex 子元素收缩 */
 }
 
 /* 排期时段分组 */
