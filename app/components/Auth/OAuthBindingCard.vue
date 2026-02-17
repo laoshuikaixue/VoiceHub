@@ -7,7 +7,7 @@
 
     <div v-else class="space-y-4">
       <!-- GitHub -->
-      <div :class="itemClass">
+      <div v-if="config.public.oauth.github" :class="itemClass">
         <div class="flex items-center gap-4">
           <div class="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-zinc-800 text-zinc-100">
             <AuthProvidersGitHubIcon class="w-5 h-5" />
