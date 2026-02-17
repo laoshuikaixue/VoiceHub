@@ -819,8 +819,22 @@ watch(
         updateMobileState()
 
         if (isMobile.value) {
+          // 重置移动端状态
           currentMobilePage.value = 0
           scrollProgress.value = 0
+          currentScrollProgress = 0
+          
+          // 等待DOM更新后滚动到第一页并重置动画状态
+          await nextTick()
+          if (mainContent.value) {
+            mainContent.value.scrollLeft = 0
+          }
+          
+          // 更新布局缓存并重置动画状态
+          updateLayoutCache()
+          
+          // 强制更新动画到初始状态
+          updateMobileAnimations(0, cachedLayout.contentWidth || window.innerWidth)
         }
       } else {
         restorePageScroll()
