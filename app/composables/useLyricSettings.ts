@@ -1,7 +1,23 @@
 export const useLyricSettings = () => {
-  const lyricFontSize = useState('lyric-font-size', () => 44)
-  const lyricTranFontSize = useState('lyric-tran-font-size', () => 22)
-  const lyricRomaFontSize = useState('lyric-roma-font-size', () => 18)
+  // 根据设备类型设置默认字体大小
+  const getDefaultFontSize = () => {
+    if (typeof window === 'undefined') return 44
+    return window.innerWidth <= 1024 ? 32 : 44
+  }
+  
+  const getDefaultTranFontSize = () => {
+    if (typeof window === 'undefined') return 22
+    return window.innerWidth <= 1024 ? 18 : 22
+  }
+  
+  const getDefaultRomaFontSize = () => {
+    if (typeof window === 'undefined') return 18
+    return window.innerWidth <= 1024 ? 14 : 18
+  }
+  
+  const lyricFontSize = useState('lyric-font-size', getDefaultFontSize)
+  const lyricTranFontSize = useState('lyric-tran-font-size', getDefaultTranFontSize)
+  const lyricRomaFontSize = useState('lyric-roma-font-size', getDefaultRomaFontSize)
   const lyricFontSizeMode = useState('lyric-font-size-mode', () => 'auto') // auto | custom
   const useAMLyrics = useState('lyric-use-am-style', () => true)
   const useAMSpring = useState('lyric-use-spring', () => true)
@@ -59,6 +75,20 @@ export const useLyricSettings = () => {
   
   const lyricOffsetStep = useState('lyric-offset-step', () => 100)
 
+  // 根据屏幕尺寸调整字体大小
+  const adjustFontSizeForDevice = () => {
+    if (typeof window === 'undefined') return
+    
+    const isMobile = window.innerWidth <= 1024
+    
+    // 只在 auto 模式下自动调整
+    if (lyricFontSizeMode.value === 'auto') {
+      lyricFontSize.value = isMobile ? 32 : 44
+      lyricTranFontSize.value = isMobile ? 18 : 22
+      lyricRomaFontSize.value = isMobile ? 14 : 18
+    }
+  }
+
   return {
     lyricFontSize,
     lyricTranFontSize,
@@ -97,6 +127,7 @@ export const useLyricSettings = () => {
     showYrc,
     lyricHorizontalOffset,
     fullscreenPlayerElements,
-    lyricOffsetStep
+    lyricOffsetStep,
+    adjustFontSizeForDevice
   }
 }
