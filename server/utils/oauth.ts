@@ -61,3 +61,20 @@ export const parseState = (stateStr: string, expectedOrigin?: string, expectedCs
         return null
     }
 }
+
+export const getRedirectUri = (provider: string): string => {
+    let redirectUri = process.env.OAUTH_REDIRECT_URI
+    if (!redirectUri) {
+        throw createError({ statusCode: 500, message: 'OAUTH_REDIRECT_URI not configured' })
+    }
+    
+    // 支持 [provider] 占位符
+    redirectUri = redirectUri.replace('[provider]', provider)
+    
+    // 兼容用户可能错误地将 "provider" 作为字面量填写的情况
+    if (redirectUri.includes('/provider/callback')) {
+         redirectUri = redirectUri.replace('/provider/callback', `/${provider}/callback`)
+    }
+    
+    return redirectUri
+}

@@ -1,4 +1,4 @@
-import { generateState } from '~~/server/utils/oauth'
+import { generateState, getRedirectUri } from '~~/server/utils/oauth'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 
 export default defineEventHandler(async (event) => {
@@ -15,10 +15,7 @@ export default defineEventHandler(async (event) => {
     const host = headers['host']
     const origin = `${protocol}://${host}`
     
-    const redirectUri = process.env.OAUTH_REDIRECT_URI
-    if (!redirectUri) {
-        throw createError({ statusCode: 500, message: 'OAUTH_REDIRECT_URI not configured' })
-    }
+    const redirectUri = getRedirectUri(provider)
 
     const { state, csrf } = generateState(origin, provider)
     
