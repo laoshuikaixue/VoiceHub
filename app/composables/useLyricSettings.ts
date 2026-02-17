@@ -2,7 +2,7 @@ export const useLyricSettings = () => {
   // 根据设备类型设置默认字体大小
   const getDefaultFontSize = () => {
     if (typeof window === 'undefined') return 44
-    return window.innerWidth <= 1024 ? 32 : 44
+    return window.innerWidth <= 1024 ? 30 : 44
   }
   
   const getDefaultTranFontSize = () => {
@@ -83,7 +83,7 @@ export const useLyricSettings = () => {
     
     // 只在 auto 模式下自动调整
     if (lyricFontSizeMode.value === 'auto') {
-      lyricFontSize.value = isMobile ? 32 : 44
+      lyricFontSize.value = isMobile ? 30 : 44
       lyricTranFontSize.value = isMobile ? 18 : 22
       lyricRomaFontSize.value = isMobile ? 14 : 18
     }
