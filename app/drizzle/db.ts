@@ -6,9 +6,8 @@ import {config} from 'dotenv';
 import path from 'path';
 import {fileURLToPath} from 'url';
 
-// 加载环境变量
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-config({ path: path.resolve(currentDir, '../.env') });
+// 加载环境变量（优先使用工作目录的 .env，确保构建后运行时能正确加载）
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // 检查环境变量
 if (!process.env.DATABASE_URL) {
