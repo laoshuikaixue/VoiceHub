@@ -1025,7 +1025,7 @@ export const useMusicSources = () => {
     }
 
     /**
-     * 获取歌词（统一调度）
+     * 获取歌词（统一调度，支持优先级策略）
      * NeteaseCloudMusicApi 优先，其次 vkeys；腾讯仅 vkeys
      */
     const getLyrics = async (platform: 'netease' | 'tencent', id: number | string): Promise<{
@@ -1034,11 +1034,18 @@ export const useMusicSources = () => {
         error?: string
     }> => {
         try {
+            const settings = useLyricSettings()
             const enabledSources = getEnabledSources()
             const neteaseSource = enabledSources.find(source => source.id.includes('netease-backup'))
             const vkeysSource = enabledSources.find(source => source.id === 'vkeys')
 
-            if (platform === 'netease' && neteaseSource) {
+            // 结果容器
+            const resultData = { lrc: '', trans: '', yrc: '', ttml: '' }
+            let hasResult = false
+
+            // 辅助函数：获取官方歌词 (网易云)
+            const fetchOfficial = async () => {
+                if (platform !== 'netease' || !neteaseSource) return
                 try {
                     const [lrcResp, yrcResp, ttmlResp] = await Promise.allSettled([
                         $fetch(`${neteaseSource.baseUrl}/lyric`, {
@@ -1053,71 +1060,122 @@ export const useMusicSources = () => {
                         $fetch(`${neteaseSource.baseUrl}/lyric/ttml`, {
                             params: {id: id.toString()},
                             timeout: neteaseSource.timeout || 8000
-                        }).catch(() => null) // 允许失败，因为旧版API可能不支持
+                        }).catch(() => null)
                     ])
-
-                    const data: { lrc: string; trans?: string; yrc?: string; ttml?: string } = {
-                        lrc: '', 
-                        trans: '', 
-                        yrc: '',
-                        ttml: ''
-                    }
 
                     if (lrcResp.status === 'fulfilled' && lrcResp.value?.code === 200) {
                         const lr = lrcResp.value
-                        if (lr?.lrc?.lyric) data.lrc = lr.lrc.lyric
-                        if (lr?.tlyric?.lyric) data.trans = lr.tlyric.lyric
+                        if (lr?.lrc?.lyric) resultData.lrc = lr.lrc.lyric
+                        if (lr?.tlyric?.lyric) resultData.trans = lr.tlyric.lyric
                     }
                     if (yrcResp.status === 'fulfilled' && yrcResp.value?.code === 200) {
                         const yr = yrcResp.value
-                        if (yr?.yrc?.lyric) data.yrc = yr.yrc.lyric
+                        if (yr?.yrc?.lyric) resultData.yrc = yr.yrc.lyric
                     }
-                    // 处理 TTML
                     if (ttmlResp.status === 'fulfilled' && ttmlResp.value?.code === 200) {
-                         // 假设返回结构与其他类似，或者直接是 ttml 字段
-                         // 注意：实际 API 返回结构需确认，通常是 { code: 200, ttml: "..." } 或类似
-                         const tr = ttmlResp.value
-                         if (tr?.ttml) data.ttml = tr.ttml
+                        const tr = ttmlResp.value
+                        if (tr?.ttml && !resultData.ttml) resultData.ttml = tr.ttml
                     }
 
-                    if (data.lrc || data.yrc || data.ttml) {
-                        return {success: true, data}
-                    }
+                    if (resultData.lrc || resultData.yrc || resultData.ttml) hasResult = true
                 } catch (e: any) {
                     console.warn('[getLyrics] NeteaseCloudMusicApi 获取失败:', e?.message || e)
                 }
             }
 
-            // 回退到 vkeys
-            if (vkeysSource) {
-                let url: string
-                if (platform === 'netease') {
-                    url = `${vkeysSource.baseUrl}/netease/lyric?id=${id}`
-                } else if (platform === 'tencent') {
-                    url = `${vkeysSource.baseUrl}/tencent/lyric?id=${id}`
-                } else {
-                    throw new Error('不支持的音乐平台')
-                }
+            // 辅助函数：获取 AMLL DB Server TTML
+            const fetchAMLL = async () => {
+                if (platform !== 'netease' || !settings.enableOnlineTTMLLyric.value) return
+                const serverUrl = settings.amllDbServer.value
+                if (!serverUrl) return
 
-                const resp = await $fetch(url, {
-                    timeout: vkeysSource.timeout || 8000,
-                    headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-                })
-                if (resp?.code === 200 && resp?.data) {
-                    const d = resp.data
-                    const data: { lrc: string; trans?: string; yrc?: string; ttml?: string } = {
-                        lrc: d.lrc || '',
-                        trans: d.trans || '',
-                        yrc: d.yrc || '',
-                        ttml: '' // vkeys 暂时不支持 ttml
+                try {
+                    const url = serverUrl.replace('%s', id.toString())
+                    const ttml = await $fetch(url, { responseType: 'text' })
+                    if (ttml && typeof ttml === 'string' && ttml.includes('<tt')) {
+                        resultData.ttml = ttml
+                        hasResult = true
                     }
-                    if (data.lrc || data.yrc) {
-                        return {success: true, data}
-                    }
+                } catch (e) {
+                    // console.warn('[getLyrics] AMLL DB Server 获取失败')
                 }
             }
 
-            // 最后尝试 Meting API（仅支持网易云）
+            // 辅助函数：获取 QQ 音乐 (vkeys)
+            const fetchQM = async () => {
+                if (!vkeysSource) return
+                // 如果禁用了 QM 歌词且不是强制 QM 模式，则跳过
+                if (!settings.enableQQMusicLyric.value && settings.lyricPriority.value !== 'qm') return
+
+                try {
+                    let url: string
+                    if (platform === 'netease') {
+                        url = `${vkeysSource.baseUrl}/netease/lyric?id=${id}`
+                    } else if (platform === 'tencent') {
+                        url = `${vkeysSource.baseUrl}/tencent/lyric?id=${id}`
+                    } else {
+                        return
+                    }
+
+                    const resp = await $fetch(url, {
+                        timeout: vkeysSource.timeout || 8000,
+                        headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+                    })
+                    if (resp?.code === 200 && resp?.data) {
+                        const d = resp.data
+                        if (d.lrc) resultData.lrc = d.lrc
+                        if (d.trans) resultData.trans = d.trans
+                        if (d.yrc) resultData.yrc = d.yrc // QRC
+                        if (d.lrc || d.yrc) hasResult = true
+                    }
+                } catch (e) {
+                    console.warn('[getLyrics] vkeys 获取失败:', e)
+                }
+            }
+
+            // 优先级策略执行
+            const priority = settings.lyricPriority.value
+            console.log(`[getLyrics] 使用策略: ${priority}, 平台: ${platform}, ID: ${id}`)
+
+            if (priority === 'qm') {
+                await fetchQM()
+                if (!hasResult) {
+                    await Promise.all([fetchAMLL(), fetchOfficial()])
+                }
+            } else if (priority === 'ttml') {
+                await fetchAMLL()
+                // 如果 AMLL 没拿到 TTML，尝试官方
+                if (!resultData.ttml) {
+                    await fetchOfficial()
+                } else {
+                    // 即使拿到了 TTML，也可能需要官方的 LRC/翻译 作为补充（如果 AMLL 只有 TTML）
+                    // 但通常 TTML 足够了。为了保险起见，如果缺 LRC，可以去官方拿一下？
+                    // SPlayer 逻辑是：fetchTTMLLyric -> fetchOfficialLyric -> fetchQQMusicLyric
+                    // 这里简化：如果 fetchAMLL 成功，我们认为主要任务完成，但为了完整性（如翻译），可以尝试官方
+                    if (!resultData.lrc || !resultData.trans) {
+                         await fetchOfficial()
+                    }
+                }
+                
+                if (!hasResult) {
+                    await fetchQM()
+                }
+            } else if (priority === 'official') {
+                await fetchOfficial()
+            } else {
+                // auto / default
+                if (settings.enableQQMusicLyric.value) {
+                    await fetchQM()
+                }
+                await Promise.all([fetchAMLL(), fetchOfficial()])
+            }
+
+            // 检查是否有结果
+            if (hasResult) {
+                return { success: true, data: resultData }
+            }
+
+            // 最后尝试 Meting API（仅支持网易云，作为最后的 Fallback）
             if (platform === 'netease') {
                 const metingSources = enabledSources.filter(source => source.id.startsWith('meting-'))
 
@@ -1131,17 +1189,18 @@ export const useMusicSources = () => {
 
                         // Meting API 直接返回歌词文本
                         if (resp && typeof resp === 'string' && resp.trim()) {
-                            const data: { lrc: string; trans?: string; yrc?: string; ttml?: string } = {
-                                lrc: resp,
-                                trans: '',
-                                yrc: '',
-                                ttml: ''
+                            return {
+                                success: true,
+                                data: {
+                                    lrc: resp,
+                                    trans: '',
+                                    yrc: '',
+                                    ttml: ''
+                                }
                             }
-                            return {success: true, data}
                         }
                     } catch (error: any) {
                         console.warn(`[getLyrics] Meting API ${metingSource.name} 获取失败:`, error?.message || error)
-                        // 继续尝试下一个 Meting 源
                     }
                 }
             }

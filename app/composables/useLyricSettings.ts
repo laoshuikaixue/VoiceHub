@@ -55,6 +55,8 @@ export const useLyricSettings = () => {
   const lyricPriority = useState<'qm' | 'official' | 'ttml' | 'auto'>('lyric-priority', () => 'auto')
   const enableQQMusicLyric = useState('lyric-enable-qm', () => true)
   const enableOnlineTTMLLyric = useState('lyric-enable-ttml', () => true)
+  // AMLL TTML DB Server 配置
+  const amllDbServer = useState('lyric-amll-db-server', () => 'https://amlldb.bikonoo.com/ncm-lyrics/%s.ttml')
   const localLyricQQMusicMatch = useState('lyric-local-qm-match', () => true)
   const localLyricPath = useState<string[]>('lyric-local-path', () => [])
   
@@ -120,6 +122,7 @@ export const useLyricSettings = () => {
     lyricPriority,
     enableQQMusicLyric,
     enableOnlineTTMLLyric,
+    amllDbServer,
     localLyricQQMusicMatch,
     localLyricPath,
     preferTraditionalChinese,
