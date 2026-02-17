@@ -1434,6 +1434,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 .main-content {
+  width: 100%;
   max-width: 1440px;
   margin: 0 auto;
   position: relative;
@@ -1722,6 +1723,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   gap: 0;
   flex: 1; /* 占据剩余空间 */
   min-height: 0; /* 允许 flex 子元素收缩 */
+  width: 100%; /* 确保宽度占满 */
 }
 
 /* 选项卡样式 - 桌面端 */
