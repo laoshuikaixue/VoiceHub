@@ -18,11 +18,11 @@ interface VideoInfoRes {
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const bvid = query.bvid as string
-
+  
   if (!bvid) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'bvid is required'
+      statusMessage: 'Missing bvid parameter'
     })
   }
 
@@ -39,12 +39,16 @@ export default defineEventHandler(async (event) => {
       },
     });
 
+    if (videoInfoResp.code !== 0) {
+       throw new Error(videoInfoResp.message || 'Bilibili API error');
+    }
+
     return videoInfoResp.data?.pages || [];
   } catch (error: any) {
     console.error(`Failed to fetch video info for ${bvid}:`, error);
     throw createError({
-      statusCode: 500,
-      statusMessage: error.message || 'Bilibili video info fetch failed'
+        statusCode: 500,
+        statusMessage: error.message || 'Failed to fetch video info'
     })
   }
 })

@@ -274,10 +274,10 @@
                     </div>
                     <div class="result-actions">
                       <!-- 多P视频的特殊处理 -->
-                      <div v-if="isBilibiliMultiP(result) && bilibiliEpisodeStatuses[result.id]?.allSubmitted" class="similar-song-info">
+                      <div v-if="isBilibiliMultiP(result) && getBilibiliEpisodeStatus(result)?.allSubmitted" class="similar-song-info">
                         <span class="similar-text">所有剧集已存在</span>
                       </div>
-                      <div v-else-if="isBilibiliMultiP(result) && bilibiliEpisodeStatuses[result.id]?.partialSubmitted" class="similar-song-info">
+                      <div v-else-if="isBilibiliMultiP(result) && getBilibiliEpisodeStatus(result)?.partialSubmitted" class="similar-song-info">
                         <span class="similar-text">部分剧集已存在</span>
                         <button
                             :disabled="submitting"
@@ -724,6 +724,7 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '../UI/Icon.vue'
 import {convertToHttps, validateUrl} from '~/utils/url'
 import {getLoginStatus} from '~/utils/neteaseApi'
+import {getBilibiliVideoPages} from '~/utils/bilibiliSource'
 
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
@@ -1619,19 +1620,18 @@ const submitSong = async (result, options = {}) => {
 
   // 如果是 Bilibili 平台，且不是具体的剧集提交
   if (platform.value === 'bilibili' && !options.isBilibiliEpisode) {
-    // 如果没有 pages 数据，尝试获取
+    // 检查是否有 pages 数据，如果没有则获取
     if (!result.pages || result.pages.length === 0) {
       try {
-        const pages = await $fetch('/api/bilibili/video', { params: { bvid: result.id } })
+        const pages = await getBilibiliVideoPages(result.id || result.bvid)
         if (pages && pages.length > 0) {
           result.pages = pages
         }
       } catch (e) {
-        console.error('获取视频详情失败:', e)
+        console.error('获取 Bilibili 视频详情失败:', e)
       }
     }
 
-    // 检查是否为多P视频
     if (result.pages && result.pages.length > 1) {
       console.log('打开 Bilibili 剧集列表:', result)
       selectedBilibiliVideo.value = result
@@ -1794,45 +1794,39 @@ const isBilibiliMultiP = (result) => {
   return result && platform.value === 'bilibili' && result.pages && result.pages.length > 1
 }
 
-const bilibiliEpisodeStatuses = computed(() => {
-  const statuses = {}
-  if (platform.value !== 'bilibili' || !searchResults.value || searchResults.value.length === 0) {
-    return statuses
-  }
+const getBilibiliEpisodeStatus = (result) => {
+  if (!result || !isBilibiliMultiP(result)) return null
 
   const currentSemesterName = currentSemester.value?.name
-  const submittedBilibiliSongs = songService.songs.value.filter(song =>
-    song.musicPlatform === 'bilibili' && song.musicId
-  )
+  const bvid = result.id
 
-  searchResults.value.forEach(result => {
-    if (!result.pages || result.pages.length <= 1) return
+  const submittedEpisodes = songService.songs.value.filter(song => {
+    if (song.musicPlatform !== 'bilibili') return false
+    if (!song.musicId) return false
 
-    const bvid = result.id
-    const submittedEpisodes = submittedBilibiliSongs.filter(song => {
-      const songBvid = song.musicId.includes(':') ? song.musicId.split(':')[0] : song.musicId
-      const isSameBvid = songBvid === bvid
-      if (currentSemesterName) {
-        return isSameBvid && song.semester === currentSemesterName
-      }
-      return isSameBvid
-    })
+    const songBvid = song.musicId.includes(':') ? song.musicId.split(':')[0] : song.musicId
 
-    const totalEpisodes = result.pages.length
-    const submittedCount = submittedEpisodes.length
+    const isSameBvid = songBvid === bvid
 
-    statuses[bvid] = {
-      submittedEpisodes,
-      submittedCount,
-      totalEpisodes,
-      allSubmitted: submittedCount === totalEpisodes,
-      partialSubmitted: submittedCount > 0 && submittedCount < totalEpisodes,
-      noneSubmitted: submittedCount === 0
+    if (currentSemesterName) {
+      return isSameBvid && song.semester === currentSemesterName
     }
+
+    return isSameBvid
   })
 
-  return statuses
-})
+  const totalEpisodes = result.pages.length
+  const submittedCount = submittedEpisodes.length
+
+  return {
+    submittedEpisodes,
+    submittedCount,
+    totalEpisodes,
+    allSubmitted: submittedCount === totalEpisodes,
+    partialSubmitted: submittedCount > 0 && submittedCount < totalEpisodes,
+    noneSubmitted: submittedCount === 0
+  }
+}
 
 const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60)

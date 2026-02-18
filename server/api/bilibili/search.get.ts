@@ -20,13 +20,6 @@ interface VideoPage {
   duration: number;
 }
 
-interface VideoInfoRes {
-  code: number;
-  message: string;
-  data: {
-    pages: VideoPage[];
-  };
-}
 
 interface SearchRes {
   code: number;
@@ -107,9 +100,8 @@ export default defineEventHandler(async (event) => {
       return [];
     }
 
-    const results = resp.data.result.map((song) => {
-      return bi_convert_song(song);
-    });
+    // 移除获取视频详情的请求，避免 N+1 问题，改为前端按需获取
+    const results = resp.data.result.map((song: any) => bi_convert_song(song));
 
     return results;
   } catch (error: any) {

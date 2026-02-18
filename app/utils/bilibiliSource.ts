@@ -46,3 +46,15 @@ export async function searchBilibili(keyword: string) {
     return [];
   }
 }
+
+export async function getBilibiliVideoPages(bvid: string) {
+  try {
+    const data = await $fetch<any[]>('/api/bilibili/info', {
+      params: { bvid }
+    });
+    return data || [];
+  } catch (error) {
+    console.error("Bilibili video info error:", error);
+    return [];
+  }
+}
