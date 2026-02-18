@@ -448,6 +448,7 @@ VoiceHub/
 │   │   ├── Player/            # 播放器相关组件
 │   │   │   └── PlayerLyric/   # 播放器歌词子组件
 │   │   ├── Songs/             # 歌曲相关组件
+│   │   │   ├── BilibiliEpisodesModal.vue # Bilibili剧集选择弹窗
 │   │   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
 │   │   │   ├── ImportSongsModal.vue   # 导入歌曲弹窗
 │   │   │   ├── NeteaseLoginModal.vue  # 网易云音乐登录弹窗
