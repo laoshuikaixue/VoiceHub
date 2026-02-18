@@ -103,7 +103,8 @@ export const getBilibiliUrl = (song: { playUrl?: string | null, musicId?: string
         
         // 检查是否有第三个参数（分P信息）
         // 如果没有冒号 (length=1) 或只有一段冒号 (length=2)，则 p=1
-        const p = parts.length >= 3 ? parseInt(parts[2]) : 1
+        const parsedP = parts.length >= 3 ? parseInt(parts[2]) : 1
+        const p = isNaN(parsedP) ? 1 : parsedP
 
         let url = `https://www.bilibili.com/video/${bvId}/`
         
