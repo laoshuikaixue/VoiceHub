@@ -110,9 +110,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useAudioQuality, QUALITY_OPTIONS } from '~/composables/useAudioQuality'
+import { useToast } from '~/composables/useToast'
 
 interface Props {
   show: boolean
@@ -126,6 +127,8 @@ const emit = defineEmits<{
   (e: 'show-login'): void
 }>()
 
+const { success: showSuccess, error: showError } = useToast()
+
 // 音质选项 (QQ音乐)
 const qualityOptions = QUALITY_OPTIONS.tencent
 
@@ -134,14 +137,24 @@ const uploading = ref(false)
 const uploadProgress = ref(0)
 const uploadStatus = ref('')
 const uploadMessage = ref('')
+const isLoggedIn = ref(false)
 
 // 检查登录状态
-const isLoggedIn = computed(() => {
+const checkLoginStatus = () => {
   if (process.client) {
     const cookie = localStorage.getItem('netease_cookie')
-    return !!cookie
+    isLoggedIn.value = !!cookie
   }
-  return false
+}
+
+onMounted(() => {
+  checkLoginStatus()
+})
+
+watch(() => props.show, (newVal) => {
+  if (newVal) {
+    checkLoginStatus()
+  }
 })
 
 const closeDialog = () => {
@@ -358,9 +371,7 @@ const startUpload = async () => {
     uploadStatus.value = '上传完成'
     uploadMessage.value = '歌曲已成功上传到您的网易云音乐云盘'
 
-    if ((window as any).$showNotification) {
-      (window as any).$showNotification('歌曲已成功上传到网易云音乐云盘', 'success')
-    }
+    showSuccess('歌曲已成功上传到网易云音乐云盘')
 
     emit('upload-success')
 
@@ -374,9 +385,7 @@ const startUpload = async () => {
     uploadStatus.value = '上传失败'
     uploadMessage.value = error.message || '未知错误'
     
-    if ((window as any).$showNotification) {
-      (window as any).$showNotification(`上传失败: ${error.message}`, 'error')
-    }
+    showError(`上传失败: ${error.message}`)
   } finally {
     uploading.value = false
   }
