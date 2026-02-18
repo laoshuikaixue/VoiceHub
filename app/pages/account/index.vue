@@ -57,7 +57,7 @@
         <!-- 右侧：详细设置 (PC端占据 8/12) -->
         <div class="lg:col-span-8 space-y-8">
           <!-- 第三方登录绑定 -->
-          <section :class="sectionClass">
+          <section v-if="hasOAuthProviders" :class="sectionClass">
             <div class="flex items-center gap-3 border-b border-zinc-800/50 pb-5 mb-6">
               <div class="p-2.5 bg-purple-500/10 rounded-xl">
                 <LinkIcon :size="20" class="text-purple-500" />
@@ -103,6 +103,11 @@ const auth = useAuth()
 const router = useRouter()
 const route = useRoute()
 const { showToast } = useToast()
+const config = useRuntimeConfig()
+
+const hasOAuthProviders = computed(() => {
+  return config.public.oauth.github || config.public.oauth.casdoor || config.public.oauth.google
+})
 
 const avatarError = ref(false)
 

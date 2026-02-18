@@ -355,6 +355,12 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
             return null
         }
 
+        // 检查投票阈值
+        const threshold = settings?.songVotedThreshold || 1
+        if (songVotes.length % threshold !== 0) {
+            return null
+        }
+
         const message = `您投稿的歌曲《${song.title}》获得了一个新的投票，当前共有 ${songVotes.length} 个投票。`
 
         // 防重复通知：检查最近5分钟内是否有相同歌曲的投票通知

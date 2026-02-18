@@ -1428,12 +1428,19 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   background-color: #121318;
   padding: 1.5rem;
   color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* 确保至少占满视口 */
 }
 
 .main-content {
+  width: 100%;
   max-width: 1440px;
   margin: 0 auto;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 改为占满父容器高度而不是视口高度 */
 }
 
 /* 添加顶部Ellipse 1效果 */
@@ -1714,7 +1721,9 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   display: flex;
   flex-direction: column;
   gap: 0;
-  min-height: 60vh;
+  flex: 1; /* 占据剩余空间 */
+  min-height: 0; /* 允许 flex 子元素收缩 */
+  width: 100%; /* 确保宽度占满 */
 }
 
 /* 选项卡样式 - 桌面端 */
@@ -1893,7 +1902,11 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   margin-top: -2px; /* 使内容容器与标签连接 */
   box-sizing: border-box;
   width: 100%;
-  min-height: 60vh; /* 确保内容区域有足够的高度 */
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* 占据剩余空间 */
+  min-height: 0; /* 允许 flex 子元素收缩 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 @media (max-width: 768px) {
@@ -1915,7 +1928,19 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   width: 100%;
   box-sizing: border-box;
   padding: 0;
-  min-height: 50vh; /* 确保排期内容有足够的高度 */
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* 占满父容器高度 */
+  min-height: 0; /* 允许 flex 子元素收缩 */
+  overflow: hidden; /* 防止内容溢出 */
+}
+
+.schedule-tab-pane .full-width {
+  flex: 1; /* 占据剩余空间 */
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* 允许 flex 子元素收缩 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 @media (max-width: 768px) {

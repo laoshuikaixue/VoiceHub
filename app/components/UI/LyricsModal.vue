@@ -306,6 +306,9 @@ const isDragging = ref(false)
 const dragStartX = ref(0)
 const dragStartTime = ref(0)
 
+// 定时器
+const resizeTimer = ref(null)
+
 // 播放状态
 const currentSong = computed(() => audioPlayer.getCurrentSong().value)
 const isPlaying = computed(() => audioPlayer.getPlayingStatus().value)
@@ -423,6 +426,9 @@ const updateLayoutCache = () => {
       el.style.zIndex = '100'
       el.style.borderRadius = '12px'
       el.style.boxShadow = '0 16px 36px rgba(0,0,0,0.4)'
+      // 确保硬件加速
+      el.style.transform = 'translate3d(0, 0, 0)'
+      el.style.willChange = 'transform, border-radius'
   }
 
   if (isMobile.value) {
@@ -438,6 +444,8 @@ const updateMobileState = () => {
     const newIsMobile = window.innerWidth <= 1024
     if (newIsMobile !== isMobile.value) {
       isMobile.value = newIsMobile
+      // 调整字体大小
+      lyricSettings.adjustFontSizeForDevice()
       if (newIsMobile) {
         nextTick(updateLayoutCache)
       }
@@ -470,9 +478,10 @@ const updateMobileAnimations = (scrollLeft, width) => {
     const targetVisualRadius = 12 - (6 * p) 
     const radius = targetVisualRadius / currentScale
     
+    // 使用 transform 和 will-change 优化性能
     el.style.transform = `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale})`
     el.style.borderRadius = `${radius}px`
-    el.style.opacity = 1
+    el.style.opacity = '1'
     el.style.pointerEvents = p > 0.8 ? 'none' : 'auto'
   }
 
@@ -481,8 +490,9 @@ const updateMobileAnimations = (scrollLeft, width) => {
     const opacity = Math.max(0, 1 - p * 2.5)
     const translateY = p * -20
     
-    el.style.opacity = opacity
-    el.style.transform = `translateY(${translateY}px)`
+    // 使用 transform 优化性能
+    el.style.opacity = String(opacity)
+    el.style.transform = `translate3d(0, ${translateY}px, 0)`
   }
 
   if (pageTwoInfoRef.value) {
@@ -490,8 +500,9 @@ const updateMobileAnimations = (scrollLeft, width) => {
     const opacity = Math.max(0, (p - 0.6) * 2.5)
     const translateY = (1 - p) * 10
     
-    el.style.opacity = opacity
-    el.style.transform = `translateY(${translateY}px)`
+    // 使用 transform 优化性能
+    el.style.opacity = String(opacity)
+    el.style.transform = `translate3d(0, ${translateY}px, 0)`
     el.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none'
   }
 }
@@ -511,6 +522,7 @@ const onMainContentScroll = (event) => {
     currentMobilePage.value = newPage
   }
   
+  // 使用 requestAnimationFrame 优化性能，避免频繁更新
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId)
   }
@@ -547,18 +559,26 @@ const backgroundConfig = ref({
   flowSpeed: 0.3
 })
 
+// 定义窗口大小变化处理函数（防抖优化）
 const handleResize = () => {
-  if (typeof window !== 'undefined') {
-    windowWidth.value = window.innerWidth
-    windowHeight.value = window.innerHeight
+  if (resizeTimer.value) {
+    clearTimeout(resizeTimer.value)
   }
-  updateMobileState()
+  resizeTimer.value = setTimeout(() => {
+    if (typeof window !== 'undefined') {
+      windowWidth.value = window.innerWidth
+      windowHeight.value = window.innerHeight
+    }
+    updateMobileState()
+  }, 150) // 增加防抖延迟以减少频繁触发
 }
 
 onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', handleResize)
     updateMobileState()
+    // 初始化时调整字体大小
+    lyricSettings.adjustFontSizeForDevice()
   }
 })
 
@@ -819,8 +839,22 @@ watch(
         updateMobileState()
 
         if (isMobile.value) {
+          // 重置移动端状态
           currentMobilePage.value = 0
           scrollProgress.value = 0
+          currentScrollProgress = 0
+          
+          // 等待DOM更新后滚动到第一页并重置动画状态
+          await nextTick()
+          if (mainContent.value) {
+            mainContent.value.scrollLeft = 0
+          }
+          
+          // 更新布局缓存并重置动画状态
+          updateLayoutCache()
+          
+          // 强制更新动画到初始状态
+          updateMobileAnimations(0, cachedLayout.contentWidth || window.innerWidth)
         }
       } else {
         restorePageScroll()
@@ -829,6 +863,12 @@ watch(
         document.removeEventListener('keydown', handleKeydown)
         window.removeEventListener('resize', handleResize)
         window.removeEventListener('resize', updateMobileState)
+        
+        // 清理动画帧
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId)
+          animationFrameId = null
+        }
       }
     }
 )
@@ -941,6 +981,18 @@ onUnmounted(() => {
   document.removeEventListener('mouseup', handleProgressMouseUp)
   document.removeEventListener('touchmove', handleProgressTouchMove)
   document.body.style.overflow = ''
+  
+  // 清理动画帧
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+  
+  // 清理定时器
+  if (resizeTimer.value) {
+    clearTimeout(resizeTimer.value)
+    resizeTimer.value = null
+  }
 })
 </script>
 
@@ -1548,6 +1600,9 @@ onUnmounted(() => {
     position: absolute;
     top: 0;
     left: 0;
+    /* 优化滚动性能 */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
   }
   
   .main-content::-webkit-scrollbar {
@@ -1569,6 +1624,10 @@ onUnmounted(() => {
     box-sizing: border-box;
     max-width: none;
     overflow: hidden;
+    /* 优化渲染性能 */
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
 
   .right-column {
@@ -1585,6 +1644,10 @@ onUnmounted(() => {
     position: relative;
     display: flex;
     flex-direction: column;
+    /* 优化渲染性能 */
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
 
   .lyrics-display-area {
@@ -1609,6 +1672,10 @@ onUnmounted(() => {
     flex: initial;
     opacity: 1;
     transform: none;
+    /* 优化动画性能 */
+    will-change: opacity, transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
 
   .song-title {
@@ -1622,6 +1689,7 @@ onUnmounted(() => {
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     text-overflow: ellipsis;
   }
@@ -1695,6 +1763,10 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     height: 48px;
+    /* 优化动画性能 */
+    will-change: opacity, transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
 
   .mini-song-info {
@@ -1704,6 +1776,9 @@ onUnmounted(() => {
     align-items: flex-start;
     width: 100%;
     overflow: hidden;
+    /* 优化渲染 */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
 
   .mini-text-col {
@@ -1785,12 +1860,22 @@ onUnmounted(() => {
   position: absolute;
   overflow: hidden;
   pointer-events: none;
-  will-change: transform, width, height, top, left, border-radius, box-shadow;
+  will-change: transform, border-radius;
+  /* 启用硬件加速 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
 }
 
 .mobile-floating-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* 优化图片渲染 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 </style>

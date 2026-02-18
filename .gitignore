@@ -25,6 +25,7 @@ backups/
 .kiro
 .cursor
 .vercel
+.netlify
 .vscode
 .trae
 .qoder

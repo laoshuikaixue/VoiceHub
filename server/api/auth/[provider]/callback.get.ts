@@ -1,4 +1,4 @@
-import { parseState } from '~~/server/utils/oauth'
+import { parseState, getRedirectUri } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
 import { db, eq, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
@@ -37,10 +37,7 @@ export default defineEventHandler(async (event) => {
     deleteCookie(event, 'oauth_csrf')
     
     const strategy = getOAuthStrategy(provider)
-    const redirectUri = process.env.OAUTH_REDIRECT_URI
-    if (!redirectUri) {
-         throw createError({ statusCode: 500, message: 'OAUTH_REDIRECT_URI not configured' })
-    }
+    const redirectUri = getRedirectUri(provider)
 
     // 2. 使用 Code 换取 Token
     let accessToken = ''
