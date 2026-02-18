@@ -724,7 +724,6 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '../UI/Icon.vue'
 import {convertToHttps, validateUrl} from '~/utils/url'
 import {getLoginStatus} from '~/utils/neteaseApi'
-import {getBilibiliVideoPages} from '~/utils/bilibiliSource'
 
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
@@ -1618,27 +1617,13 @@ const submitSong = async (result, options = {}) => {
     return
   }
 
-  // 如果是 Bilibili 平台，且不是具体的剧集提交
-  if (platform.value === 'bilibili' && !options.isBilibiliEpisode) {
-    // 检查是否有 pages 数据，如果没有则获取
-    if (!result.pages || result.pages.length === 0) {
-      try {
-        const pages = await getBilibiliVideoPages(result.id || result.bvid)
-        if (pages && pages.length > 0) {
-          result.pages = pages
-        }
-      } catch (e) {
-        console.error('获取 Bilibili 视频详情失败:', e)
-      }
-    }
-
-    if (result.pages && result.pages.length > 1) {
-      console.log('打开 Bilibili 剧集列表:', result)
-      selectedBilibiliVideo.value = result
-      bilibiliEpisodes.value = result.pages
-      showBilibiliEpisodesModal.value = true
-      return
-    }
+  // 如果是 Bilibili 平台，且有多个剧集，且不是具体的剧集提交
+  if (platform.value === 'bilibili' && result.pages && result.pages.length > 1 && !options.isBilibiliEpisode) {
+    console.log('打开 Bilibili 剧集列表:', result)
+    selectedBilibiliVideo.value = result
+    bilibiliEpisodes.value = result.pages
+    showBilibiliEpisodesModal.value = true
+    return
   }
 
   console.log('执行submitSong，提交歌曲:', result.title || result.song)
