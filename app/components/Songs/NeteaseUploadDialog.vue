@@ -4,7 +4,7 @@
       <Transition name="scale">
         <div v-if="show" class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]" @click.stop>
           
-          <!-- Header -->
+          <!-- 头部 -->
           <div class="flex items-center justify-between p-4 border-b border-zinc-800 shrink-0">
             <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">上传到网易云音乐</h3>
             <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="closeDialog">
