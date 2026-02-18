@@ -261,18 +261,16 @@ export default defineEventHandler(async (event) => {
             
             // 如果是 Bilibili 平台，处理 musicId 格式
             if (body.musicPlatform === 'bilibili') {
-                // 如果 musicId 已经包含了冒号（可能是 BV:CID 格式），先提取 BVID
-                if (finalMusicId && finalMusicId.includes(':')) {
-                    finalMusicId = finalMusicId.split(':')[0]
-                }
-                
-                // 如果有 CID，重新拼接
-                if (body.bilibiliCid) {
-                    finalMusicId = `${finalMusicId}:${body.bilibiliCid}`
-                    // 如果有 page 且大于 1，追加 page 信息
-                    if (body.bilibiliPage && Number(body.bilibiliPage) > 1) {
-                        finalMusicId += `:${body.bilibiliPage}`
+                const bvId = finalMusicId?.split(':')[0]
+                if (bvId) {
+                    const musicIdParts = [bvId]
+                    if (body.bilibiliCid) {
+                        musicIdParts.push(body.bilibiliCid)
+                        if (body.bilibiliPage && Number(body.bilibiliPage) > 1) {
+                            musicIdParts.push(String(body.bilibiliPage))
+                        }
                     }
+                    finalMusicId = musicIdParts.join(':')
                 }
             }
 

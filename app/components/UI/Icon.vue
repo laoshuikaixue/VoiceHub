@@ -82,6 +82,12 @@
       <circle cx="18" cy="16" r="3"/>
     </g>
 
+    <!-- 视频图标 -->
+    <g v-else-if="name === 'video'">
+      <path d="m22 8-6 4 6 4V8Z" />
+      <rect width="14" height="12" x="2" y="6" rx="2" ry="2" />
+    </g>
+
     <!-- 目标/选中图标 -->
     <g v-else-if="name === 'target'">
       <circle cx="12" cy="12" r="10"/>
