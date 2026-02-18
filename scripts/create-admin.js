@@ -8,7 +8,7 @@ import bcrypt from 'bcrypt';
 import {eq} from 'drizzle-orm';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-config({ path: path.resolve(currentDir, '../.env') });
+config({ path: path.resolve(process.cwd(), '.env') })
 
 if (!process.env.DATABASE_URL) {
   console.error('❌ DATABASE_URL 环境变量未设置');

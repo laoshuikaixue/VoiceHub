@@ -40,3 +40,5 @@ scripts/package-lock.json
 # Tencent Cloud EdgeOne
 .edgeone/*
 .tef_dist/*
+app/drizzle/migrations/relations.ts
+app/drizzle/migrations/schema.ts
