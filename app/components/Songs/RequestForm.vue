@@ -1742,7 +1742,7 @@ const submitSong = async (result, options = {}) => {
 
   // 处理 Bilibili 分 P 信息
   let bilibiliCid = result.bilibiliCid
-  let bilibiliPage = null
+  let bilibiliPage = result.bilibiliPage || null
   
   if (options.isBilibiliEpisode && options.episode) {
       bilibiliCid = options.episode.cid
@@ -1886,7 +1886,10 @@ const handleBilibiliEpisodeSelect = async (episode) => {
     duration: episode.duration
   }
 
-  const success = await submitSong(episodeResult, { isBilibiliEpisode: true })
+  const success = await submitSong(episodeResult, {
+    isBilibiliEpisode: true,
+    episode: episode
+  })
 
   if (success) {
     showBilibiliEpisodesModal.value = false
