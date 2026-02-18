@@ -60,8 +60,8 @@
                   <div class="flex items-center gap-3">
                     <img v-if="song?.img || song?.cover" :src="song.img || song.cover" alt="封面" class="w-12 h-12 rounded-lg object-cover" />
                     <div class="flex-1 min-w-0">
-                      <p class="text-sm font-bold text-zinc-200 truncate">{{ song?.name || song?.song || song?.title || '未知歌曲' }}</p>
-                      <p class="text-xs text-zinc-500 truncate">{{ song?.singer || song?.artist || '未知歌手' }}</p>
+                      <p class="text-sm font-bold text-zinc-200 truncate">{{ songName }}</p>
+                      <p class="text-xs text-zinc-500 truncate">{{ artistName }}</p>
                     </div>
                   </div>
                 </div>
@@ -110,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useAudioQuality, QUALITY_OPTIONS } from '~/composables/useAudioQuality'
 import { useToast } from '~/composables/useToast'
@@ -122,6 +122,11 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const songName = computed(() => props.song?.name || props.song?.song || props.song?.title || '未知歌曲')
+const artistName = computed(() => props.song?.singer || props.song?.artist || '未知歌手')
+const albumName = computed(() => props.song?.album || '未知专辑')
+
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'upload-success'): void
@@ -423,10 +428,6 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
   // 3. 完成上传（导入/发布）
   uploadStatus.value = '正在保存云盘信息'
   
-  const songName = props.song.name || props.song.song || props.song.title || '未知歌曲'
-  const artistName = props.song.singer || props.song.artist || '未知歌手'
-  const albumName = props.song.album || '未知专辑'
-  
   const completeUrl = `${baseApiUrl}/cloud/upload/complete?time=${Date.now()}`
   const completeRes = await fetch(completeUrl, {
     method: 'POST',
@@ -439,9 +440,9 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
       songId,
       resourceId,
       filename,
-      song: songName,
-      artist: artistName,
-      album: albumName,
+      song: songName.value,
+      artist: artistName.value,
+      album: albumName.value,
       bitrate: 999000
     })
   })
@@ -505,9 +506,7 @@ const startUpload = async () => {
 
     // 3. 上传到网易云音乐
     uploadMessage.value = '正在上传到网易云音乐云盘...'
-    const songName = props.song.name || props.song.song || props.song.title || '未知歌曲'
-    const artistName = props.song.singer || props.song.artist || '未知歌手'
-    const filename = `${artistName} - ${songName}.${ext}`
+    const filename = `${artistName.value} - ${songName.value}.${ext}`
     await uploadToNetease(audioBlob, filename)
 
     // 4. 完成
