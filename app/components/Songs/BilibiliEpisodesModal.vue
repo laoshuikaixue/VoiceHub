@@ -57,7 +57,12 @@
               <div
                   v-for="episode in episodes"
                   :key="episode.cid"
-                  class="group flex items-center p-3 sm:p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-3xl hover:bg-zinc-800/50 hover:border-zinc-700 transition-all"
+                  class="group flex items-center p-3 sm:p-4 rounded-3xl transition-all"
+                  :class="[
+                    isEpisodePlaying(episode) 
+                      ? 'bg-blue-600/10 border border-blue-500/50' 
+                      : 'bg-zinc-800/30 border border-zinc-800/50 hover:bg-zinc-800/50 hover:border-zinc-700'
+                  ]"
               >
                 <!-- 剧集编号 -->
                 <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-2xl bg-zinc-800 flex items-center justify-center text-zinc-500 font-black text-xs sm:text-sm flex-shrink-0 mr-3 sm:mr-4 group-hover:text-zinc-300 transition-colors">
@@ -119,6 +124,7 @@
 <script setup>
 import { ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
 
 const props = defineProps({
   show: Boolean,
@@ -135,6 +141,10 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'submit', 'play'])
 
+const { getCurrentSong, getPlayingStatus } = useAudioPlayer()
+const currentSong = getCurrentSong()
+const isPlaying = getPlayingStatus()
+
 const submitting = ref(false)
 const selectedEpisodeCid = ref(null)
 
@@ -142,6 +152,24 @@ const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${minutes}:${secs.toString().padStart(2, '0')}`
+}
+
+const isEpisodePlaying = (episode) => {
+  if (!currentSong.value) return false
+  if (currentSong.value.musicPlatform !== 'bilibili') return false
+  
+  // 检查 CID
+  if (currentSong.value.bilibiliCid && String(currentSong.value.bilibiliCid) === String(episode.cid)) {
+    return true
+  }
+  
+  // 兼容逻辑：检查 musicId 格式是否为 bvid:cid
+  if (currentSong.value.musicId && currentSong.value.musicId.includes(':')) {
+    const [, cid] = currentSong.value.musicId.split(':')
+    return cid === String(episode.cid)
+  }
+  
+  return false
 }
 
 const isEpisodeSubmitted = (episode) => {
