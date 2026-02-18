@@ -78,3 +78,43 @@ export const validateUrls = async (urls: UrlValidationItem[]): Promise<Validatio
 
     return results
 }
+
+/**
+ * 获取 Bilibili 视频链接
+ * @param song - 歌曲对象，包含 playUrl 和 musicId
+ * @returns Bilibili 视频链接
+ */
+export const getBilibiliUrl = (song: { playUrl?: string | null, musicId?: string | null }): string => {
+    if (!song) return '#'
+
+    // 优先使用 playUrl，如果它已经是 Bilibili 链接
+    if (song.playUrl && song.playUrl.includes('bilibili.com')) {
+        return song.playUrl
+    }
+
+    if (song.musicId) {
+        // 处理带分P的情况，支持以下格式：
+        // 1. BVxxx (只有 BV 号) -> 跳转到 BV 视频页
+        // 2. BVxxx:cid (BV + CID) -> 跳转到 BV 视频页 (默认 P1)
+        // 3. BVxxx:cid:p (BV + CID + 分P页码) -> 跳转到指定 P
+        
+        const parts = song.musicId.split(':')
+        const bvId = parts[0]
+        
+        // 检查是否有第三个参数（分P信息）
+        // 如果没有冒号 (length=1) 或只有一段冒号 (length=2)，则 p=1
+        const parsedP = parts.length >= 3 ? parseInt(parts[2]) : 1
+        const p = isNaN(parsedP) ? 1 : parsedP
+
+        let url = `https://www.bilibili.com/video/${bvId}/`
+        
+        // 只有当 p > 1 时才添加 p 参数
+        if (p > 1) {
+            url += `?p=${p}`
+        }
+        
+        return url
+    }
+
+    return '#'
+}

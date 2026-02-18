@@ -122,7 +122,7 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
-        <!-- Left: Pending Songs (待排库) -->
+        <!-- 左侧：待排歌曲（待排库） -->
         <div
           v-show="mobileTab === 'pending' || isDesktop"
           :class="['lg:col-span-4 flex flex-col space-y-2', mobileTab === 'scheduled' ? 'hidden lg:flex' : 'flex']"
@@ -211,9 +211,9 @@
                   @touchmove="handleTouchMove"
                   @touchstart="handleTouchStart($event, song, 'song')"
               >
-                <!-- Song Card Content -->
+                <!-- 歌曲卡片内容 -->
                 <div class="flex items-center gap-3">
-                  <!-- Cover Image -->
+                  <!-- 封面图片 -->
                   <div class="relative w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50">
                     <img
                       v-if="song.cover"
@@ -229,7 +229,19 @@
                   </div>
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <h4 class="font-bold text-zinc-100 text-sm truncate">{{ song.title }}</h4>
+                    <h4 class="font-bold text-zinc-100 text-sm truncate">
+                      <a 
+                        v-if="song.musicPlatform === 'bilibili'" 
+                        :href="getBilibiliUrl(song)" 
+                        target="_blank" 
+                        class="text-zinc-100 hover:text-blue-400 hover:underline flex items-center gap-1 transition-colors w-full"
+                        @click.stop
+                      >
+                        <span class="truncate">{{ song.title }}</span>
+                        <ExternalLink class="w-3 h-3 opacity-70 flex-shrink-0" />
+                      </a>
+                      <span v-else>{{ song.title }}</span>
+                    </h4>
                     <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
                     <div class="text-[10px] text-zinc-500 truncate flex items-center gap-1">
                       <span>{{ song.requester }}</span>
@@ -242,13 +254,13 @@
                   </div>
 
                   <div class="flex items-center gap-2">
-                    <!-- Normal Mode: Vote Count -->
+                    <!-- 普通模式：投票数 -->
                     <div v-if="activeTab !== 'replay'" class="flex items-center gap-1 text-[10px] font-bold text-zinc-500 bg-zinc-950/50 px-2 py-1 rounded-md border border-zinc-800/50">
                        <Heart class="w-3 h-3 text-red-500/50" />
                        {{ song.voteCount || 0 }}
                     </div>
 
-                    <!-- Replay Mode: View Button -->
+                    <!-- 重播模式：查看按钮 -->
                     <button
                       v-if="activeTab === 'replay'"
                       class="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-[10px] font-bold transition-colors"
@@ -257,7 +269,7 @@
                       查看
                     </button>
 
-                    <!-- Replay Mode: Reject Button (Mobile Only) -->
+                    <!-- 重播模式：拒绝按钮（仅移动端） -->
                     <button
                       v-if="activeTab === 'replay'"
                       class="lg:hidden p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors"
@@ -267,7 +279,7 @@
                       <CloseIcon class="w-3.5 h-3.5" />
                     </button>
 
-                    <!-- Mobile Add Button -->
+                    <!-- 移动端添加按钮 -->
                     <button
                       class="lg:hidden p-2 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 active:scale-95 transition-all flex-shrink-0"
                       @click.stop="addSongToSchedule(song)"
@@ -275,7 +287,7 @@
                       <Plus class="w-5 h-5" />
                     </button>
 
-                    <!-- Menu Button -->
+                    <!-- 菜单按钮 -->
                     <div class="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400 transition-colors">
                        <MoreVertical class="w-4 h-4" />
                     </div>
@@ -283,7 +295,7 @@
                 </div>
               </div>
 
-              <!-- Empty State -->
+              <!-- 空状态 -->
               <div v-if="filteredUnscheduledSongs.length === 0" class="h-[300px] flex flex-col items-center justify-center text-zinc-800">
                 <div v-if="searchQuery" class="flex flex-col items-center">
                   <Search class="w-8 h-8 mb-2 opacity-20" />
@@ -296,7 +308,7 @@
               </div>
             </div>
 
-            <!-- Pagination -->
+            <!-- 分页 -->
             <div v-if="totalPages > 1" class="mt-4 flex items-center justify-between pt-4 border-t border-zinc-800/50">
                <button
                  :disabled="currentPage === 1"
@@ -317,7 +329,7 @@
           </div>
         </div>
 
-        <!-- Right: Schedule List (播放顺序) -->
+        <!-- 右侧：播放列表（播放顺序） -->
         <div
           v-show="mobileTab === 'scheduled' || isDesktop"
           :class="['lg:col-span-8 flex flex-col space-y-4', mobileTab === 'pending' ? 'hidden lg:flex' : 'flex']"
@@ -409,7 +421,7 @@
                      <span class="text-sm text-zinc-300 leading-none">{{ index + 1 < 10 ? '0' + (index + 1) : index + 1 }}</span>
                    </div>
 
-                   <!-- Cover Image -->
+                   <!-- 封面图片 -->
                    <div class="relative w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50">
                       <img
                         v-if="schedule.song.cover"
@@ -459,7 +471,7 @@
                        <Send class="w-3.5 h-3.5" />
                      </button>
 
-                     <!-- Mobile Remove Button -->
+                     <!-- 移动端删除按钮 -->
                      <button
                        class="lg:hidden p-2 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500/30 active:scale-95 transition-all flex-shrink-0"
                        @click.stop="removeSongFromSchedule(schedule)"
@@ -577,13 +589,14 @@ import {
   FileBadge, PlaySquare, ChevronDown, ListMusic,
   Filter, Info, Clock, User, AlertTriangle, X as CloseIcon,
   ChevronRight, MoreVertical, Calendar as CalendarIcon,
-  ArrowLeft, ArrowRight, Music2, Heart, Plus, Minus, CircleDot
+  ArrowLeft, ArrowRight, Music2, Heart, Plus, Minus, CircleDot,
+  ExternalLink
 } from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
-import { convertToHttps } from '~/utils/url'
+import { convertToHttps, getBilibiliUrl } from '~/utils/url'
 
 // 响应式数据
 const selectedDate = ref(new Date().toISOString().split('T')[0])

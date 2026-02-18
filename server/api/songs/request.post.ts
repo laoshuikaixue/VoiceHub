@@ -258,8 +258,20 @@ export default defineEventHandler(async (event) => {
 
             // 创建歌曲
             let finalMusicId = body.musicId ? String(body.musicId) : null
-            if (body.musicPlatform === 'bilibili' && body.bilibiliCid) {
-                finalMusicId = `${body.musicId}:${body.bilibiliCid}`
+            
+            // 如果是 Bilibili 平台，处理 musicId 格式
+            if (body.musicPlatform === 'bilibili') {
+                const bvId = finalMusicId?.split(':')[0]
+                if (bvId) {
+                    const musicIdParts = [bvId]
+                    if (body.bilibiliCid) {
+                        musicIdParts.push(body.bilibiliCid)
+                        if (body.bilibiliPage && Number(body.bilibiliPage) > 1) {
+                            musicIdParts.push(String(body.bilibiliPage))
+                        }
+                    }
+                    finalMusicId = musicIdParts.join(':')
+                }
             }
 
             const songResult = await tx.insert(songs).values({
