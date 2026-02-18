@@ -535,7 +535,6 @@
         :show="showUploadDialog"
         :song="selectedUploadSong"
         @close="showUploadDialog = false"
-        @upload-success="handleUploadSuccess"
         @show-login="handleShowLogin"
     />
 
@@ -1637,13 +1636,6 @@ const openUploadDialog = (result) => {
   
   console.log('准备上传的歌曲数据:', selectedUploadSong.value)
   showUploadDialog.value = true
-}
-
-// 上传成功回调
-const handleUploadSuccess = () => {
-  if (window.$showNotification) {
-    window.$showNotification('歌曲已成功上传到网易云音乐云盘', 'success')
-  }
 }
 
 // 显示登录弹窗

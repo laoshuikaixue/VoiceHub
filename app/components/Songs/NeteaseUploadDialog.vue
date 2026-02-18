@@ -359,7 +359,7 @@ const startUpload = async () => {
     uploadMessage.value = '歌曲已成功上传到您的网易云音乐云盘'
 
     if ((window as any).$showNotification) {
-      (window as any).$showNotification('上传成功', 'success')
+      (window as any).$showNotification('歌曲已成功上传到网易云音乐云盘', 'success')
     }
 
     emit('upload-success')
