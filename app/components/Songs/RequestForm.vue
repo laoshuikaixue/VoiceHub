@@ -276,11 +276,11 @@
                       <!-- QQ音乐上传到网易云按钮 -->
                       <button
                         v-if="platform === 'tencent'"
-                        class="upload-btn"
-                        title="上传到网易云音乐"
+                        class="cloud-disk-btn"
+                        title="上传到网易云音乐云盘"
                         @click.stop.prevent="openUploadDialog(result)"
                       >
-                        <Icon name="upload" :size="16" />
+                        <Icon name="cloud-upload" :size="18" />
                       </button>
                       
                       <!-- 多P视频的特殊处理 -->
@@ -3896,31 +3896,42 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
-  gap: 0.4rem;
+  flex-direction: row;
+  gap: 0.8rem;
   margin-right: 0.25rem;
   flex-shrink: 0;
 }
 
-.upload-btn {
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+.cloud-disk-btn {
+  background: linear-gradient(180deg, #ec4141 0%, #d83030 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   width: 32px;
   height: 32px;
+  padding: 0;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-.upload-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-  background: linear-gradient(180deg, #059669 0%, #047857 100%);
+.cloud-disk-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(236, 65, 65, 0.5);
+  background: linear-gradient(180deg, #d83030 0%, #c52020 100%);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.cloud-disk-btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 4px rgba(236, 65, 65, 0.3);
 }
 
 .similar-song-info {
