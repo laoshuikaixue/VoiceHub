@@ -6,7 +6,7 @@ import path from 'path';
 import {config} from 'dotenv';
 
 // 加载环境变量
-config({ path: path.resolve(process.cwd(), '../.env') });
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // 颜色输出函数
 const colors = {
