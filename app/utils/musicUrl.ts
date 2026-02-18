@@ -1,5 +1,6 @@
 import {useAudioQuality} from '~/composables/useAudioQuality'
 import {useMusicSources} from '~/composables/useMusicSources'
+import {parseBilibiliId} from '~/utils/bilibiliSource'
 
 /**
  * 动态获取音乐播放URL
@@ -29,10 +30,10 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
         let finalMusicId = musicId
         let bilibiliCid: string | undefined
 
-        if (platform === 'bilibili' && typeof musicId === 'string' && musicId.includes(':')) {
-            const parts = musicId.split(':')
-            finalMusicId = parts[0]
-            bilibiliCid = parts[1]
+        if (platform === 'bilibili') {
+            const parsed = parseBilibiliId(musicId)
+            finalMusicId = parsed.bvid
+            bilibiliCid = parsed.cid
         }
 
         const extendedOptions = {

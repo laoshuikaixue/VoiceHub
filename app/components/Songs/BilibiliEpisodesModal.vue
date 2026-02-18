@@ -15,8 +15,17 @@
           <!-- 头部 -->
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4 min-w-0">
-              <div class="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center text-pink-500 flex-shrink-0">
-                <Icon name="play" :size="24" />
+              <div class="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 bg-zinc-800">
+                <img 
+                  v-if="video?.cover" 
+                  :src="video.cover" 
+                  :alt="video.title"
+                  class="w-full h-full object-cover"
+                  referrerpolicy="no-referrer"
+                />
+                <div v-else class="w-full h-full bg-blue-600/10 flex items-center justify-center text-blue-500">
+                  <Icon name="play" :size="24" />
+                </div>
               </div>
               <div class="min-w-0">
                 <h3 class="text-xl font-black text-zinc-100 tracking-tight truncate">
@@ -79,10 +88,19 @@
                     <Icon name="play" :size="16" />
                   </button>
 
+                  <!-- 已投稿标签 -->
+                  <div
+                      v-if="isEpisodeSubmitted(episode)"
+                      class="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-500 text-xs font-black shrink-0 uppercase tracking-widest"
+                  >
+                    已投稿
+                  </div>
+
                   <!-- 选择投稿按钮 -->
                   <button
+                      v-else
                       :disabled="submitting"
-                      class="px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-pink-900/20"
+                      class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
                       @click.stop="selectEpisode(episode)"
                   >
                     {{ submitting && selectedEpisodeCid === episode.cid ? '提交中...' : '选择投稿' }}
@@ -107,6 +125,10 @@ const props = defineProps({
   episodes: {
     type: Array,
     default: () => []
+  },
+  submittedEpisodes: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -121,12 +143,27 @@ const formatDuration = (seconds) => {
   return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
+const isEpisodeSubmitted = (episode) => {
+  return props.submittedEpisodes.some(song => {
+    if (!song.musicId) return false
+    const cid = song.musicId.includes(':') ? song.musicId.split(':')[1] : null
+    return cid === String(episode.cid)
+  })
+}
+
 const playEpisode = (episode) => {
-  emit('play', episode)
+  const episodeData = {
+    ...episode,
+    cover: props.video?.cover,
+    bvid: props.video?.id,
+    title: props.video?.title,
+    artist: props.video?.artist
+  }
+  emit('play', episodeData)
 }
 
 const selectEpisode = (episode) => {
-  if (submitting.value) return
+  if (submitting.value || isEpisodeSubmitted(episode)) return
   submitting.value = true
   selectedEpisodeCid.value = episode.cid
   emit('submit', episode)

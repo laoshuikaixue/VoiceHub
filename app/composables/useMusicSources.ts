@@ -15,7 +15,7 @@ import {
     type SongDetailResult,
     type SourceStatus
 } from '~/utils/musicSources'
-import {getBilibiliTrackUrl, searchBilibili} from '~/utils/bilibiliSource'
+import {getBilibiliTrackUrl, searchBilibili, parseBilibiliId} from '~/utils/bilibiliSource'
 
 /**
  * 音源管理器 Composable
@@ -788,14 +788,16 @@ export const useMusicSources = () => {
             let idParam = Array.isArray(id) ? id.join(',') : id.toString()
 
             // 如果是 bilibili 平台且 id 包含 cid，解析出来
-            if (platform === 'bilibili' && typeof id === 'string' && id.includes(':')) {
-                const parts = id.split(':')
-                idParam = parts[0]
-                if (!options) {
-                    options = {}
-                }
-                if (!options.bilibiliCid) {
-                    options.bilibiliCid = parts[1]
+            if (platform === 'bilibili' && !Array.isArray(id)) {
+                const parsed = parseBilibiliId(id)
+                idParam = parsed.bvid
+                if (parsed.cid) {
+                    if (!options) {
+                        options = {}
+                    }
+                    if (!options.bilibiliCid) {
+                        options.bilibiliCid = parsed.cid
+                    }
                 }
             }
 

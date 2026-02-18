@@ -60,6 +60,7 @@ export default defineEventHandler(async (event) => {
       finalCid = resp1.data.pages[0].cid;
     }
 
+    // 使用 platform=html5 参数绕过防盗链验证
     const target_url2 = "https://api.bilibili.com/x/player/playurl";
 
     const resp2 = await $fetch<NoRefererPlayUrlRes>(target_url2, {

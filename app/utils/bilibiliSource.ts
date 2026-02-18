@@ -1,3 +1,23 @@
+export interface ParsedBilibiliId {
+  bvid: string
+  cid?: string
+}
+
+export function parseBilibiliId(id: string | number): ParsedBilibiliId {
+  const idStr = String(id)
+  
+  if (idStr.includes(':')) {
+    const parts = idStr.split(':')
+    return {
+      bvid: parts[0],
+      cid: parts[1]
+    }
+  }
+  
+  return {
+    bvid: idStr
+  }
+}
 
 export async function getBilibiliTrackUrl(id: string, cid?: string) {
   try {
