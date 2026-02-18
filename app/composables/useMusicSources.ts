@@ -749,7 +749,8 @@ export const useMusicSources = () => {
      * 根据平台选择合适的音源：网易云优先使用netease-backup；QQ音乐仅使用vkeys系（不跨平台）
      */
     const getSongUrl = async (id: number | string, quality?: number, platform?: string, cookie?: string, options?: {
-        unblock?: boolean
+        unblock?: boolean,
+        bilibiliCid?: string
     }): Promise<{
         success: boolean;
         url?: string;
@@ -784,7 +785,19 @@ export const useMusicSources = () => {
             const enabledSources = getEnabledSources()
 
             // 支持多个ID的批量查询（用逗号分隔）
-            const idParam = Array.isArray(id) ? id.join(',') : id.toString()
+            let idParam = Array.isArray(id) ? id.join(',') : id.toString()
+
+            // 如果是 bilibili 平台且 id 包含 cid，解析出来
+            if (platform === 'bilibili' && typeof id === 'string' && id.includes(':')) {
+                const parts = id.split(':')
+                idParam = parts[0]
+                if (!options) {
+                    options = {}
+                }
+                if (!options.bilibiliCid) {
+                    options.bilibiliCid = parts[1]
+                }
+            }
 
             // 定义音源尝试顺序
             let sourcesToTry: Array<{ source: MusicSource, type: 'netease' | 'tencent' | 'bilibili' }> = []
@@ -842,7 +855,7 @@ export const useMusicSources = () => {
                     let url: string | null = null
 
                     if (source.id === 'bilibili') {
-                        const result = await getBilibiliTrackUrl(idParam)
+                        const result = await getBilibiliTrackUrl(idParam, options?.bilibiliCid)
                         url = result.url
                     } else if (source.id === 'vkeys') {
                         // Vkeys API

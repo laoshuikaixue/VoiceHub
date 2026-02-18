@@ -26,8 +26,22 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
     try {
         const quality = getQuality(platform)
 
+        let finalMusicId = musicId
+        let bilibiliCid: string | undefined
+
+        if (platform === 'bilibili' && typeof musicId === 'string' && musicId.includes(':')) {
+            const parts = musicId.split(':')
+            finalMusicId = parts[0]
+            bilibiliCid = parts[1]
+        }
+
+        const extendedOptions = {
+            ...options,
+            bilibiliCid
+        }
+
         // 先使用统一组件的音源选择逻辑
-        const backupResult = await getSongUrl(musicId, quality, platform, undefined, options)
+        const backupResult = await getSongUrl(finalMusicId, quality, platform, undefined, extendedOptions)
         if (backupResult.success && backupResult.url) {
             return backupResult.url
         }

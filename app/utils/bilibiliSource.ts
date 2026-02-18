@@ -1,8 +1,12 @@
 
-export async function getBilibiliTrackUrl(id: string) {
+export async function getBilibiliTrackUrl(id: string, cid?: string) {
   try {
+    const params: any = { id }
+    if (cid) {
+      params.cid = cid
+    }
     const data = await $fetch('/api/bilibili/playurl', {
-      params: { id }
+      params
     });
     return data;
   } catch (error) {
