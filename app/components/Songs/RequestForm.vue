@@ -1545,13 +1545,14 @@ const playSong = async (result) => {
 
   // 准备播放所需的数据
   const song = {
-    id: result.musicId || Date.now(),
+    id: finalMusicId || result.musicId || Date.now(),
     title: result.song || result.title,
     artist: result.singer || result.artist,
     cover: result.cover || null,
     musicUrl: result.url,
     musicPlatform: result.musicPlatform || platform.value,
     musicId: finalMusicId,
+    bilibiliCid: result.bilibiliCid, // 确保传递 cid
   }
 
   // 使用全局播放器播放歌曲

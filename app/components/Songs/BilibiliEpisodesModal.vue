@@ -59,7 +59,7 @@
                   :key="episode.cid"
                   class="group flex items-center p-3 sm:p-4 rounded-3xl transition-all"
                   :class="[
-                    isEpisodePlaying(episode) 
+                    isCurrentEpisode(episode) 
                       ? 'bg-blue-600/10 border border-blue-500/50' 
                       : 'bg-zinc-800/30 border border-zinc-800/50 hover:bg-zinc-800/50 hover:border-zinc-700'
                   ]"
@@ -84,13 +84,13 @@
 
                 <!-- 操作按钮 -->
                 <div class="ml-2 sm:ml-4 shrink-0 flex items-center gap-2 sm:gap-3">
-                   <!-- 预听按钮 -->
+                   <!-- 预听/暂停按钮 -->
                    <button
                       class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
-                      title="预听"
-                      @click.stop="playEpisode(episode)"
+                      :title="isCurrentEpisode(episode) && isPlaying ? '暂停' : '预听'"
+                      @click.stop="togglePlay(episode)"
                   >
-                    <Icon name="play" :size="16" />
+                    <Icon :name="isCurrentEpisode(episode) && isPlaying ? 'pause' : 'play'" :size="16" />
                   </button>
 
                   <!-- 已投稿标签 -->
@@ -141,7 +141,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'submit', 'play'])
 
-const { getCurrentSong, getPlayingStatus } = useAudioPlayer()
+const { getCurrentSong, getPlayingStatus, pauseSong } = useAudioPlayer()
 const currentSong = getCurrentSong()
 const isPlaying = getPlayingStatus()
 
@@ -154,7 +154,7 @@ const formatDuration = (seconds) => {
   return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
-const isEpisodePlaying = (episode) => {
+const isCurrentEpisode = (episode) => {
   if (!currentSong.value) return false
   if (currentSong.value.musicPlatform !== 'bilibili') return false
   
@@ -178,6 +178,14 @@ const isEpisodeSubmitted = (episode) => {
     const cid = song.musicId.includes(':') ? song.musicId.split(':')[1] : null
     return cid === String(episode.cid)
   })
+}
+
+const togglePlay = (episode) => {
+  if (isCurrentEpisode(episode) && isPlaying.value) {
+    pauseSong()
+  } else {
+    playEpisode(episode)
+  }
 }
 
 const playEpisode = (episode) => {
