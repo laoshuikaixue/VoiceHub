@@ -450,9 +450,9 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
   const completeData = await completeRes.json()
   
   if (completeData.code !== 200) {
-     if (completeData.code === 502) {
-         console.warn('完成接口返回 502，可能为暂时性错误', completeData)
-         throw new Error(`云盘信息保存可能失败 (错误码: 502)，请稍后检查。`)
+     if (completeData.code === 502 || completeData.code === 526) {
+         console.warn(`完成接口返回 ${completeData.code}，可能为暂时性错误`, completeData)
+         throw new Error(`云盘信息保存可能失败 (错误码: ${completeData.code})，请检查云盘内是否成功上传歌曲。`)
      } else {
          throw new Error(`发布失败: ${completeData.msg || completeData.code}`)
      }
