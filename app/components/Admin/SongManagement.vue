@@ -159,7 +159,7 @@
               'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-zinc-800/40 border-zinc-700/30 group-hover:border-zinc-600',
               selectedSongs.includes(song.id) ? 'border-blue-500/50' : ''
             ]">
-              <img v-if="song.cover" :src="song.cover" class="w-full h-full object-cover" />
+              <img v-if="song.cover" :src="convertToHttps(song.cover)" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
               <Music v-else :size="20" class="text-zinc-600" />
             </div>
             <div class="min-w-0">
@@ -654,7 +654,7 @@ import { useAdmin } from '~/composables/useAdmin'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useSemesters } from '~/composables/useSemesters'
-import { validateUrl, getBilibiliUrl } from '~/utils/url'
+import { validateUrl, getBilibiliUrl, convertToHttps } from '~/utils/url'
 
 // 响应式数据
 const { showToast: showNotification } = useToast()
