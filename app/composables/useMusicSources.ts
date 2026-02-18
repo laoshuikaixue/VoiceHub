@@ -861,7 +861,10 @@ export const useMusicSources = () => {
                         url = result.url
                     } else if (source.id === 'vkeys') {
                         // Vkeys API
-                        const vkeysQuality = type === 'tencent' ? (typeof quality === 'number' ? quality : 8) : (typeof quality === 'number' ? quality : 0)
+                        const numQuality = quality !== undefined && quality !== null && quality !== '' ? Number(quality) : NaN
+                        const vkeysQuality = type === 'tencent' 
+                            ? (!isNaN(numQuality) ? numQuality : 8) 
+                            : (!isNaN(numQuality) ? numQuality : 0)
                         const endpoint = type === 'tencent' ? 'tencent' : 'netease'
                         const vkeysUrl = `${source.baseUrl}/${endpoint}?id=${idParam}&quality=${vkeysQuality}`
 
@@ -893,12 +896,16 @@ export const useMusicSources = () => {
 
                             // 目标音质：优先使用传入quality，否则读取设置
                             let targetQuality: number
-                            if (typeof quality === 'number') {
-                                targetQuality = quality
+                            const numQuality = quality !== undefined && quality !== null && quality !== '' ? Number(quality) : NaN
+                            
+                            if (!isNaN(numQuality)) {
+                                targetQuality = numQuality
                             } else {
                                 try {
                                     const {getQuality} = await import('./useAudioQuality')
-                                    targetQuality = getQuality('tencent')
+                                    const setting = getQuality('tencent')
+                                    targetQuality = Number(setting)
+                                    if (isNaN(targetQuality)) targetQuality = 8
                                 } catch {
                                     targetQuality = 8 // 默认 HQ 高音质
                                 }

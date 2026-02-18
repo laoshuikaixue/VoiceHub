@@ -273,6 +273,16 @@
                       <p v-if="result.album" class="result-album">专辑：{{ result.album }}</p>
                     </div>
                     <div class="result-actions">
+                      <!-- QQ音乐上传到网易云按钮 -->
+                      <button
+                        v-if="platform === 'tencent'"
+                        class="cloud-disk-btn"
+                        title="上传到网易云音乐云盘"
+                        @click.stop.prevent="openUploadDialog(result)"
+                      >
+                        <Icon name="cloud-upload" :size="18" />
+                      </button>
+                      
                       <!-- 多P视频的特殊处理 -->
                       <div v-if="isBilibiliMultiP(result) && getBilibiliEpisodeStatus(result)?.allSubmitted" class="similar-song-info">
                         <span class="similar-text">所有剧集已存在</span>
@@ -520,6 +530,14 @@
         @submit="handleBilibiliEpisodeSelect"
     />
 
+    <!-- 上传到网易云音乐弹窗 -->
+    <NeteaseUploadDialog
+        :show="showUploadDialog"
+        :song="selectedUploadSong"
+        @close="showUploadDialog = false"
+        @show-login="handleShowLogin"
+    />
+
     <!-- 最近播放歌曲弹窗 -->
     <RecentSongsModal
         ref="recentSongsModalRef"
@@ -732,6 +750,7 @@ import BilibiliEpisodesModal from './BilibiliEpisodesModal.vue'
 import RecentSongsModal from './RecentSongsModal.vue'
 import PlaylistSelectionModal from './PlaylistSelectionModal.vue'
 import UserSearchModal from '../Common/UserSearchModal.vue'
+import NeteaseUploadDialog from './NeteaseUploadDialog.vue'
 
 const props = defineProps({
   loading: {
@@ -823,6 +842,10 @@ const manualArtist = ref('')
 const manualCover = ref('')
 const manualPlayUrl = ref('')
 const hasSearched = ref(false)
+
+// 上传到网易云相关
+const showUploadDialog = ref(false)
+const selectedUploadSong = ref(null)
 
 // URL验证相关
 const coverValidation = ref({valid: true, error: '', validating: false})
@@ -1600,6 +1623,25 @@ const selectResult = async (result) => {
   }
 
   console.log('已选择歌曲:', songTitle, '- 填充表单但不自动提交')
+}
+
+// 打开上传到网易云对话框
+const openUploadDialog = (result) => {
+  console.log('QQ音乐搜索结果 - 完整对象:', result)
+  console.log('QQ音乐搜索结果 - 所有键:', Object.keys(result))
+  
+  // 转换QQ音乐搜索结果为上传对话框需要的格式
+  // 直接传递整个 result 对象，让上传对话框自己提取需要的字段
+  selectedUploadSong.value = result
+  
+  console.log('准备上传的歌曲数据:', selectedUploadSong.value)
+  showUploadDialog.value = true
+}
+
+// 显示登录弹窗
+const handleShowLogin = () => {
+  showUploadDialog.value = false
+  showLoginModal.value = true
 }
 
 // 提交选中的歌曲
@@ -3854,10 +3896,42 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
-  gap: 0.4rem;
+  flex-direction: row;
+  gap: 0.8rem;
   margin-right: 0.25rem;
   flex-shrink: 0;
+}
+
+.cloud-disk-btn {
+  background: linear-gradient(180deg, #ec4141 0%, #d83030 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.cloud-disk-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(236, 65, 65, 0.5);
+  background: linear-gradient(180deg, #d83030 0%, #c52020 100%);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.cloud-disk-btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 4px rgba(236, 65, 65, 0.3);
 }
 
 .similar-song-info {
