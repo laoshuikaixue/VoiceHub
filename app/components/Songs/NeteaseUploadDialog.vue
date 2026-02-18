@@ -247,9 +247,10 @@ const detectAudioType = async (blob: Blob): Promise<string | null> => {
   }
   
   // M4A (ftyp M4A): ... ftypM4A
-  // Usually starts at offset 4: 66 74 79 70 4D 34 41
-  // We check for ftyp at index 4
-  if (arr[4] === 0x66 && arr[5] === 0x74 && arr[6] === 0x79 && arr[7] === 0x70) {
+  // Usually starts at offset 4: 66 74 79 70 4D 34 41 20
+  // We check for ftyp at index 4 and M4A at index 8
+  if (arr[4] === 0x66 && arr[5] === 0x74 && arr[6] === 0x79 && arr[7] === 0x70 &&
+      arr[8] === 0x4D && arr[9] === 0x34 && arr[10] === 0x41 && arr[11] === 0x20) {
     return 'm4a'
   }
 
@@ -319,12 +320,6 @@ const downloadAudio = async (url: string): Promise<{ blob: Blob, ext: string }> 
     }
   }
 
-  console.log('文件格式检测结果:', {
-    contentType,
-    detectedExt: ext,
-    size: blob.size
-  })
-
   uploadProgress.value = 50
   return { blob, ext }
 }
@@ -339,24 +334,21 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
   const md5 = CryptoJS.MD5(wordArray).toString()
   const fileSize = audioBlob.size
   const cookie = getNeteaseCookie()
-  
-  // 注意：确保本地 api-enhanced-2 服务运行在 4000 端口
-  // 如果 api-enhanced-2 运行在 3000，请修改此处或环境变量
-  const baseApiUrl = 'http://localhost:4000'
+
+  const baseApiUrl = 'https://api.voicehub.lao-shui.top'
   
   // 获取文件扩展名
   const ext = filename.split('.').pop()?.toLowerCase() || 'mp3'
-  let contentType = 'audio/mpeg'
   
-  if (ext === 'flac') {
-    contentType = 'audio/flac'
-  } else if (ext === 'wav') {
-    contentType = 'audio/wav'
-  } else if (ext === 'ogg') {
-    contentType = 'audio/ogg'
-  } else if (ext === 'm4a') {
-    contentType = 'audio/mp4'
+  const contentTypeMap: Record<string, string> = {
+    flac: 'audio/flac',
+    wav: 'audio/wav',
+    ogg: 'audio/ogg',
+    m4a: 'audio/mp4',
+    mp3: 'audio/mpeg',
   }
+  
+  const contentType = contentTypeMap[ext] || 'audio/mpeg'
 
   // 1. 获取上传凭证
   uploadStatus.value = '正在获取上传凭证'
