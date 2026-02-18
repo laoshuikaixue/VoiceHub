@@ -1833,6 +1833,9 @@ const handleBilibiliEpisodeSelect = async (episode) => {
 
   if (success) {
     showBilibiliEpisodesModal.value = false
+    if (bilibiliModalRef.value && bilibiliModalRef.value.resetSubmissionState) {
+      bilibiliModalRef.value.resetSubmissionState()
+    }
   } else {
     if (bilibiliModalRef.value && bilibiliModalRef.value.resetSubmissionState) {
       bilibiliModalRef.value.resetSubmissionState()
@@ -1841,15 +1844,17 @@ const handleBilibiliEpisodeSelect = async (episode) => {
 }
 
 const handleBilibiliEpisodePlay = async (episodeData) => {
+  const bvid = episodeData.bvid || episodeData.id
   const episodeResult = {
-    id: episodeData.bvid || episodeData.id,
+    id: bvid,
     title: `${episodeData.title} - ${episodeData.part}`,
     artist: episodeData.artist,
     cover: episodeData.cover || '',
-    musicId: episodeData.bvid || episodeData.id,
+    musicId: bvid,
     musicPlatform: 'bilibili',
     bilibiliCid: episodeData.cid,
-    duration: episodeData.duration
+    duration: episodeData.duration,
+    sourceInfo: { source: 'bilibili' }
   }
   await playSong(episodeResult)
 }
