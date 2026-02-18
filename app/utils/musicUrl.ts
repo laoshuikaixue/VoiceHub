@@ -1,5 +1,6 @@
 import {useAudioQuality} from '~/composables/useAudioQuality'
 import {useMusicSources} from '~/composables/useMusicSources'
+import {parseBilibiliId} from '~/utils/bilibiliSource'
 
 /**
  * 动态获取音乐播放URL
@@ -26,8 +27,22 @@ export async function getMusicUrl(platform: string, musicId: string | number, pl
     try {
         const quality = getQuality(platform)
 
+        let finalMusicId = musicId
+        let bilibiliCid: string | undefined
+
+        if (platform === 'bilibili') {
+            const parsed = parseBilibiliId(musicId)
+            finalMusicId = parsed.bvid
+            bilibiliCid = parsed.cid
+        }
+
+        const extendedOptions = {
+            ...options,
+            bilibiliCid
+        }
+
         // 先使用统一组件的音源选择逻辑
-        const backupResult = await getSongUrl(musicId, quality, platform, undefined, options)
+        const backupResult = await getSongUrl(finalMusicId, quality, platform, undefined, extendedOptions)
         if (backupResult.success && backupResult.url) {
             return backupResult.url
         }

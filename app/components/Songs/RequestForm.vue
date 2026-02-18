@@ -254,10 +254,14 @@
                       :key="`${platform}-${result.id || index}`"
                       class="result-item group"
                   >
-                    <div class="result-cover" @click.stop="playSong(result)">
-                      <img :src="convertToHttps(result.cover)" alt="封面" class="cover-img"
-                           referrerpolicy="no-referrer"/>
-                      <div class="play-overlay-container">
+                    <div class="result-cover" @click.stop="isBilibiliMultiP(result) ? submitSong(result) : playSong(result)">
+                      <img 
+                        :src="convertToHttps(result.cover)" 
+                        alt="封面" 
+                        class="cover-img"
+                        referrerpolicy="no-referrer"
+                      />
+                      <div v-if="!isBilibiliMultiP(result)" class="play-overlay-container">
                         <div class="play-button-wrapper">
                           <Icon name="play" :size="20" class="play-icon" />
                         </div>
@@ -269,8 +273,22 @@
                       <p v-if="result.album" class="result-album">专辑：{{ result.album }}</p>
                     </div>
                     <div class="result-actions">
+                      <!-- 多P视频的特殊处理 -->
+                      <div v-if="isBilibiliMultiP(result) && getBilibiliEpisodeStatus(result)?.allSubmitted" class="similar-song-info">
+                        <span class="similar-text">所有剧集已存在</span>
+                      </div>
+                      <div v-else-if="isBilibiliMultiP(result) && getBilibiliEpisodeStatus(result)?.partialSubmitted" class="similar-song-info">
+                        <span class="similar-text">部分剧集已存在</span>
+                        <button
+                            :disabled="submitting"
+                            class="select-btn"
+                            @click.stop.prevent="submitSong(result)"
+                        >
+                          选择剧集
+                        </button>
+                      </div>
                       <!-- 检查是否已存在相似歌曲 -->
-                      <div v-if="getSimilarSong(result)" class="similar-song-info">
+                      <div v-else-if="getSimilarSong(result)" class="similar-song-info">
                         <!-- 根据歌曲状态显示不同的文本 -->
                         <span v-if="getSimilarSong(result)?.played" class="similar-text status-played">
                           {{ isSuperAdmin ? '歌曲已播放' : (enableReplayRequests ? '歌曲已播放' : '歌曲已播放') }}
@@ -333,7 +351,10 @@
                           @click.stop.prevent="submitSong(result)"
                       >
                         {{
-                          submitting ? '处理中...' : (platform === 'netease' && searchType === 1009 ? '选择节目' : '选择投稿')
+                          submitting ? '处理中...' : (
+                            (platform === 'netease' && searchType === 1009) ? '选择节目' :
+                            (isBilibiliMultiP(result) ? '选择剧集' : '选择投稿')
+                          )
                         }}
                       </button>
                     </div>
@@ -485,6 +506,18 @@
         @close="showPodcastModal = false"
         @play="handlePodcastPlay"
         @submit="handlePodcastSubmit"
+    />
+
+    <!-- Bilibili 剧集选择弹窗 -->
+    <BilibiliEpisodesModal
+        ref="bilibiliModalRef"
+        :show="showBilibiliEpisodesModal"
+        :video="selectedBilibiliVideo"
+        :episodes="bilibiliEpisodes"
+        :submitted-episodes="getBilibiliEpisodeStatus(selectedBilibiliVideo)?.submittedEpisodes || []"
+        @close="showBilibiliEpisodesModal = false"
+        @play="handleBilibiliEpisodePlay"
+        @submit="handleBilibiliEpisodeSelect"
     />
 
     <!-- 最近播放歌曲弹窗 -->
@@ -695,6 +728,7 @@ import {getLoginStatus} from '~/utils/neteaseApi'
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
+import BilibiliEpisodesModal from './BilibiliEpisodesModal.vue'
 import RecentSongsModal from './RecentSongsModal.vue'
 import PlaylistSelectionModal from './PlaylistSelectionModal.vue'
 import UserSearchModal from '../Common/UserSearchModal.vue'
@@ -781,6 +815,10 @@ const searchError = ref('')
 
 // 手动输入相关
 const showManualModal = ref(false)
+
+const showBilibiliEpisodesModal = ref(false)
+const selectedBilibiliVideo = ref(null)
+const bilibiliEpisodes = ref([])
 const manualArtist = ref('')
 const manualCover = ref('')
 const manualPlayUrl = ref('')
@@ -1132,6 +1170,10 @@ const normalizeString = (str) => {
 }
 
 const getSimilarSong = (result) => {
+  if (isBilibiliMultiP(result)) {
+    return null
+  }
+
   const title = result.song || result.title
   const artist = result.singer || result.artist
 
@@ -1315,12 +1357,13 @@ const getAudioUrl = async (result) => {
     const sourceType = result.sourceInfo?.source || result.actualSource || ''
 
     // 哔哩哔哩
-    if (sourceType === 'bilibili') {
+    if (sourceType === 'bilibili' || result.musicPlatform === 'bilibili') {
       try {
         const songId = result.musicId || result.id
         if (!songId) throw new Error('缺少歌曲ID参数')
 
-        const urlResult = await musicSources.getSongUrl(songId, 0, 'bilibili')
+        const options = result.bilibiliCid ? { bilibiliCid: String(result.bilibiliCid) } : undefined
+        const urlResult = await musicSources.getSongUrl(songId, 0, 'bilibili', undefined, options)
 
         if (urlResult && urlResult.success && urlResult.url) {
           result.url = urlResult.url
@@ -1495,15 +1538,21 @@ const playSong = async (result) => {
     return
   }
 
+  let finalMusicId = result.musicId ? String(result.musicId) : null
+  if (result.musicPlatform === 'bilibili' && result.bilibiliCid) {
+    finalMusicId = `${result.musicId}:${result.bilibiliCid}`
+  }
+
   // 准备播放所需的数据
   const song = {
-    id: result.musicId || Date.now(),
+    id: finalMusicId || result.musicId || Date.now(),
     title: result.song || result.title,
     artist: result.singer || result.artist,
     cover: result.cover || null,
     musicUrl: result.url,
     musicPlatform: result.musicPlatform || platform.value,
-    musicId: result.musicId ? String(result.musicId) : null,
+    musicId: finalMusicId,
+    bilibiliCid: result.bilibiliCid, // 确保传递 cid
   }
 
   // 使用全局播放器播放歌曲
@@ -1514,8 +1563,9 @@ const playSong = async (result) => {
     try {
       const {useLyrics} = await import('~/composables/useLyrics')
       const lyrics = useLyrics()
-      // 请求歌词
-      await lyrics.fetchLyrics(song.musicPlatform, song.musicId)
+      // 请求歌词（对于bilibili，传递原始的bvid，不包含cid）
+      const lyricMusicId = result.bilibiliCid ? result.musicId : song.musicId
+      await lyrics.fetchLyrics(song.musicPlatform, lyricMusicId)
     } catch (error) {
       console.error('获取歌词失败:', error)
     }
@@ -1565,6 +1615,15 @@ const submitSong = async (result, options = {}) => {
     selectedPodcastName.value = result.title || result.song || result.name
     podcastCookie.value = neteaseCookie.value
     showPodcastModal.value = true
+    return
+  }
+
+  // 如果是 Bilibili 平台，且有多个剧集，且不是具体的剧集提交
+  if (platform.value === 'bilibili' && result.pages && result.pages.length > 1 && !options.isBilibiliEpisode) {
+    console.log('打开 Bilibili 剧集列表:', result)
+    selectedBilibiliVideo.value = result
+    bilibiliEpisodes.value = result.pages
+    showBilibiliEpisodesModal.value = true
     return
   }
 
@@ -1650,7 +1709,8 @@ const submitSong = async (result, options = {}) => {
       cover: selectedCover.value,
       musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
-      collaborators: collaborators.value.map(u => u.id)
+      collaborators: collaborators.value.map(u => u.id),
+      bilibiliCid: result.bilibiliCid || null
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -1716,7 +1776,92 @@ const handleSubmit = async () => {
   }
 }
 
+const isBilibiliMultiP = (result) => {
+  return result && platform.value === 'bilibili' && result.pages && result.pages.length > 1
+}
+
+const getBilibiliEpisodeStatus = (result) => {
+  if (!result || !isBilibiliMultiP(result)) return null
+
+  const currentSemesterName = currentSemester.value?.name
+  const bvid = result.id
+
+  const submittedEpisodes = songService.songs.value.filter(song => {
+    if (song.musicPlatform !== 'bilibili') return false
+    if (!song.musicId) return false
+
+    const songBvid = song.musicId.includes(':') ? song.musicId.split(':')[0] : song.musicId
+
+    const isSameBvid = songBvid === bvid
+
+    if (currentSemesterName) {
+      return isSameBvid && song.semester === currentSemesterName
+    }
+
+    return isSameBvid
+  })
+
+  const totalEpisodes = result.pages.length
+  const submittedCount = submittedEpisodes.length
+
+  return {
+    submittedEpisodes,
+    submittedCount,
+    totalEpisodes,
+    allSubmitted: submittedCount === totalEpisodes,
+    partialSubmitted: submittedCount > 0 && submittedCount < totalEpisodes,
+    noneSubmitted: submittedCount === 0
+  }
+}
+
+const formatDuration = (seconds) => {
+  const minutes = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${minutes}:${secs.toString().padStart(2, '0')}`
+}
+
+const handleBilibiliEpisodeSelect = async (episode) => {
+  if (!selectedBilibiliVideo.value) return
+
+  const episodeResult = {
+    ...selectedBilibiliVideo.value,
+    title: `${selectedBilibiliVideo.value.title} - ${episode.part}`,
+    bilibiliCid: episode.cid,
+    duration: episode.duration
+  }
+
+  const success = await submitSong(episodeResult, { isBilibiliEpisode: true })
+
+  if (success) {
+    showBilibiliEpisodesModal.value = false
+    if (bilibiliModalRef.value && bilibiliModalRef.value.resetSubmissionState) {
+      bilibiliModalRef.value.resetSubmissionState()
+    }
+  } else {
+    if (bilibiliModalRef.value && bilibiliModalRef.value.resetSubmissionState) {
+      bilibiliModalRef.value.resetSubmissionState()
+    }
+  }
+}
+
+const handleBilibiliEpisodePlay = async (episodeData) => {
+  const bvid = episodeData.bvid || episodeData.id
+  const episodeResult = {
+    id: bvid,
+    title: `${episodeData.title} - ${episodeData.part}`,
+    artist: episodeData.artist,
+    cover: episodeData.cover || '',
+    musicId: bvid,
+    musicPlatform: 'bilibili',
+    bilibiliCid: episodeData.cid,
+    duration: episodeData.duration,
+    sourceInfo: { source: 'bilibili' }
+  }
+  await playSong(episodeResult)
+}
+
 // 引用模态框组件
+const bilibiliModalRef = ref(null)
 const podcastModalRef = ref(null)
 const recentSongsModalRef = ref(null)
 const playlistModalRef = ref(null)
@@ -4488,5 +4633,87 @@ defineExpose({
     width: 100%;
     justify-content: center;
   }
+}
+
+.bilibili-episodes-container {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.video-info {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+.video-info h3 {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.video-author {
+  font-family: 'MiSans', sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.episodes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 1rem 1rem;
+}
+
+.episode-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.episode-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(4px);
+}
+
+.episode-number {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.episode-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.episode-title {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #fff;
+}
+
+.episode-duration {
+  font-family: 'MiSans', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
 }
 </style>

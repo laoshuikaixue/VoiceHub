@@ -1,8 +1,32 @@
+export interface ParsedBilibiliId {
+  bvid: string
+  cid?: string
+}
 
-export async function getBilibiliTrackUrl(id: string) {
+export function parseBilibiliId(id: string | number): ParsedBilibiliId {
+  const idStr = String(id)
+  
+  if (idStr.includes(':')) {
+    const parts = idStr.split(':')
+    return {
+      bvid: parts[0],
+      cid: parts[1]
+    }
+  }
+  
+  return {
+    bvid: idStr
+  }
+}
+
+export async function getBilibiliTrackUrl(id: string, cid?: string) {
   try {
+    const params: any = { id }
+    if (cid) {
+      params.cid = cid
+    }
     const data = await $fetch('/api/bilibili/playurl', {
-      params: { id }
+      params
     });
     return data;
   } catch (error) {

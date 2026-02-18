@@ -13,6 +13,21 @@ interface SongInfo {
   duration: string;
 }
 
+interface VideoPage {
+  cid: number;
+  page: number;
+  part: string;
+  duration: number;
+}
+
+interface VideoInfoRes {
+  code: number;
+  message: string;
+  data: {
+    pages: VideoPage[];
+  };
+}
+
 interface SearchRes {
   code: number;
   message: string;
@@ -32,7 +47,7 @@ function htmlDecode(value: string) {
   return value.replace(/<[^>]*>/g, "");
 }
 
-function bi_convert_song(song_info: SongInfo) {
+function bi_convert_song(song_info: SongInfo, pages?: VideoPage[]) {
   let imgUrl = song_info.pic;
   const durationStr = song_info.duration.split(":").map(x => Number.parseInt(x)).reverse();
   let duration = durationStr[0] + durationStr[1] * 60;
@@ -50,6 +65,7 @@ function bi_convert_song(song_info: SongInfo) {
     cover: imgUrl,
     duration,
     album: "Bilibili Video",
+    pages: pages || [],
   };
   return track;
 }
@@ -91,9 +107,29 @@ export default defineEventHandler(async (event) => {
       return [];
     }
 
-    return resp.data.result.map((song) => {
-      return bi_convert_song(song);
-    });
+    const results = await Promise.all(resp.data.result.map(async (song) => {
+      try {
+        const videoInfoResp = await $fetch<VideoInfoRes>(`https://api.bilibili.com/x/web-interface/view`, {
+          method: "GET",
+          params: {
+            bvid: song.bvid,
+          },
+          headers: {
+            Cookie: "buvid3=0",
+            Referer: "https://www.bilibili.com/",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          },
+        });
+
+        const pages = videoInfoResp.data?.pages || [];
+        return bi_convert_song(song, pages);
+      } catch (error) {
+        console.error(`Failed to fetch video info for ${song.bvid}:`, error);
+        return bi_convert_song(song);
+      }
+    }));
+
+    return results;
   } catch (error: any) {
     console.error('Bilibili search error:', error)
     throw createError({

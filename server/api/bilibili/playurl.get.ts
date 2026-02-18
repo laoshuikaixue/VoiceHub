@@ -27,6 +27,7 @@ interface NoRefererPlayUrlRes {
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const bvid = query.id as string
+  const cid = query.cid as string
 
   if (!bvid) {
     throw createError({
@@ -42,18 +43,24 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const target_url = "https://api.bilibili.com/x/web-interface/view";
-    const resp1 = await $fetch<CidRes>(target_url, {
-      method: "GET",
-      params: { bvid },
-      headers
-    });
+    let finalCid = cid;
 
-    if (!resp1?.data?.pages?.[0]?.cid) {
-        throw new Error('Failed to get CID')
+    if (!finalCid) {
+      const target_url = "https://api.bilibili.com/x/web-interface/view";
+      const resp1 = await $fetch<CidRes>(target_url, {
+        method: "GET",
+        params: { bvid },
+        headers
+      });
+
+      if (!resp1?.data?.pages?.[0]?.cid) {
+          throw new Error('Failed to get CID')
+      }
+
+      finalCid = resp1.data.pages[0].cid;
     }
 
-    const cid = resp1.data.pages[0].cid;
+    // 使用 platform=html5 参数绕过防盗链验证
     const target_url2 = "https://api.bilibili.com/x/player/playurl";
 
     const resp2 = await $fetch<NoRefererPlayUrlRes>(target_url2, {
@@ -63,7 +70,7 @@ export default defineEventHandler(async (event) => {
         platform: "html5",
         high_quality: 1,
         bvid,
-        cid,
+        cid: finalCid,
       },
       headers
     });
