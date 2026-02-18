@@ -167,7 +167,17 @@
                 'font-bold truncate transition-colors',
                 selectedSongs.includes(song.id) ? 'text-blue-400' : 'text-zinc-100 group-hover:text-blue-400'
               ]">
-                {{ song.title }}
+                <a 
+                  v-if="song.musicPlatform === 'bilibili'" 
+                  :href="getBilibiliUrl(song)" 
+                  target="_blank" 
+                  @click.stop
+                  class="flex items-center gap-1 hover:underline"
+                >
+                  {{ song.title }}
+                  <ExternalLink :size="12" class="opacity-50" />
+                </a>
+                <span v-else>{{ song.title }}</span>
               </h4>
               <p class="text-xs text-zinc-500 font-medium truncate mt-0.5">{{ song.artist }}</p>
               <span class="lg:hidden text-[9px] font-black text-zinc-700 uppercase tracking-wider mt-1 inline-block">{{ formatDate(song.createdAt) }}</span>
@@ -637,14 +647,14 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import {
   Search, Plus, RotateCcw, Edit2, Check, X, Trash2,
   Music, Heart, Download, ChevronDown, ChevronLeft, ChevronRight,
-  ChevronsLeft, ChevronsRight
+  ChevronsLeft, ChevronsRight, ExternalLink
 } from 'lucide-vue-next'
 import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useSemesters } from '~/composables/useSemesters'
-import { validateUrl } from '~/utils/url'
+import { validateUrl, getBilibiliUrl } from '~/utils/url'
 
 // 响应式数据
 const { showToast: showNotification } = useToast()

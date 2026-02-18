@@ -229,7 +229,19 @@
                   </div>
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <h4 class="font-bold text-zinc-100 text-sm truncate">{{ song.title }}</h4>
+                    <h4 class="font-bold text-zinc-100 text-sm truncate">
+                      <a 
+                        v-if="song.musicPlatform === 'bilibili'" 
+                        :href="getBilibiliUrl(song)" 
+                        target="_blank" 
+                        class="text-zinc-100 hover:text-blue-400 hover:underline flex items-center gap-1 transition-colors w-full"
+                        @click.stop
+                      >
+                        <span class="truncate">{{ song.title }}</span>
+                        <ExternalLink class="w-3 h-3 opacity-70 flex-shrink-0" />
+                      </a>
+                      <span v-else>{{ song.title }}</span>
+                    </h4>
                     <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
                     <div class="text-[10px] text-zinc-500 truncate flex items-center gap-1">
                       <span>{{ song.requester }}</span>
@@ -577,13 +589,14 @@ import {
   FileBadge, PlaySquare, ChevronDown, ListMusic,
   Filter, Info, Clock, User, AlertTriangle, X as CloseIcon,
   ChevronRight, MoreVertical, Calendar as CalendarIcon,
-  ArrowLeft, ArrowRight, Music2, Heart, Plus, Minus, CircleDot
+  ArrowLeft, ArrowRight, Music2, Heart, Plus, Minus, CircleDot,
+  ExternalLink
 } from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
-import { convertToHttps } from '~/utils/url'
+import { convertToHttps, getBilibiliUrl } from '~/utils/url'
 
 // 响应式数据
 const selectedDate = ref(new Date().toISOString().split('T')[0])

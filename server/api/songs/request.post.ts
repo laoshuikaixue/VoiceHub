@@ -258,8 +258,22 @@ export default defineEventHandler(async (event) => {
 
             // 创建歌曲
             let finalMusicId = body.musicId ? String(body.musicId) : null
-            if (body.musicPlatform === 'bilibili' && body.bilibiliCid) {
-                finalMusicId = `${body.musicId}:${body.bilibiliCid}`
+            
+            // 如果是 Bilibili 平台，处理 musicId 格式
+            if (body.musicPlatform === 'bilibili') {
+                // 如果 musicId 已经包含了冒号（可能是 BV:CID 格式），先提取 BVID
+                if (finalMusicId && finalMusicId.includes(':')) {
+                    finalMusicId = finalMusicId.split(':')[0]
+                }
+                
+                // 如果有 CID，重新拼接
+                if (body.bilibiliCid) {
+                    finalMusicId = `${finalMusicId}:${body.bilibiliCid}`
+                    // 如果有 page 且大于 1，追加 page 信息
+                    if (body.bilibiliPage && Number(body.bilibiliPage) > 1) {
+                        finalMusicId += `:${body.bilibiliPage}`
+                    }
+                }
             }
 
             const songResult = await tx.insert(songs).values({

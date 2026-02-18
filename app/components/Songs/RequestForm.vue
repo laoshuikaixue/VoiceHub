@@ -1740,6 +1740,19 @@ const submitSong = async (result, options = {}) => {
     selectedUrl.value = fullResult.url || ''
   }
 
+  // 处理 Bilibili 分 P 信息
+  let bilibiliCid = result.bilibiliCid
+  let bilibiliPage = null
+  
+  if (options.isBilibiliEpisode && options.episode) {
+      bilibiliCid = options.episode.cid
+      bilibiliPage = options.episode.page
+      // 追加分P标题
+      if (options.episode.part && !title.value.includes(options.episode.part)) {
+           title.value += ` - ${options.episode.part}`
+      }
+  }
+
   try {
     // 构建歌曲数据对象
     const songData = {
@@ -1752,7 +1765,8 @@ const submitSong = async (result, options = {}) => {
       musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
       collaborators: collaborators.value.map(u => u.id),
-      bilibiliCid: result.bilibiliCid || null
+      bilibiliCid: bilibiliCid || null,
+      bilibiliPage: bilibiliPage
     }
 
     // 只emit事件，让父组件处理实际的API调用

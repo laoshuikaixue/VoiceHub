@@ -18,7 +18,7 @@
         <!-- 标题区域 -->
         <div class="title">
           <!-- 封面 -->
-          <div class="cover-container" @click.stop="isMobile ? toggleLyrics() : null">
+          <div class="cover-container" @click.stop="isMobile ? (activeSong?.musicPlatform === 'bilibili' ? openBilibiliVideo() : toggleLyrics()) : null">
             <template v-if="activeSong && activeSong.cover && !coverError">
               <img :src="convertToHttps(activeSong.cover)" alt="封面" class="player-cover" referrerpolicy="no-referrer"
                    @error="handleImageError"/>
@@ -88,7 +88,20 @@
           <!-- 控制按钮区域 -->
           <div class="controls-frame">
             <!-- 左侧歌词按钮 -->
-            <span class="lyrics-btn music-icon" title="歌词" @click="toggleLyrics">
+            <span
+              v-if="activeSong?.musicPlatform === 'bilibili'"
+              class="lyrics-btn music-icon"
+              title="观看视频"
+              @click="openBilibiliVideo"
+            >
+              <Icon name="video" size="20"/>
+            </span>
+            <span
+              v-else
+              class="lyrics-btn music-icon"
+              title="歌词"
+              @click="toggleLyrics"
+            >
               <Icon name="music" size="20"/>
             </span>
 
@@ -207,6 +220,7 @@ import {useAudioPlayerSync} from '~/composables/useAudioPlayerSync'
 import {useAudioQuality} from '~/composables/useAudioQuality'
 import {useAudioPlayerEnhanced} from '~/composables/useAudioPlayerEnhanced'
 import {useMediaSession} from '~/composables/useMediaSession'
+import {getBilibiliUrl} from '~/utils/url'
 
 // 添加 router 导入
 const router = useRouter()
@@ -725,6 +739,16 @@ const toggleLyrics = () => {
   showFullscreenLyrics.value = true
 }
 
+const openBilibiliVideo = () => {
+  const song = activeSong.value
+  if (!song) return
+
+  const url = getBilibiliUrl(song)
+  if (url && url !== '#') {
+    window.open(url, '_blank')
+  }
+}
+
 const handleLyricSeek = async (time) => {
   // 如果当前处于暂停状态，先开始播放
   if (!control.isPlaying.value) {
@@ -832,7 +856,11 @@ const checkMobile = () => {
 // 移动端点击播放条处理
 const handlePlayerClick = () => {
   if (isMobile.value) {
-    toggleLyrics()
+    if (activeSong.value?.musicPlatform === 'bilibili') {
+      openBilibiliVideo()
+    } else {
+      toggleLyrics()
+    }
   }
 }
 
