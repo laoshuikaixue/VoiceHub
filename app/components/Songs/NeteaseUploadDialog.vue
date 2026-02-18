@@ -299,14 +299,19 @@ const downloadAudio = async (url: string): Promise<{ blob: Blob, ext: string }> 
   if (!ext) {
     // 降级：通过Content-Type判断
     if (contentType) {
-      if (contentType.includes('audio/flac') || contentType.includes('application/x-flac')) {
-        ext = 'flac'
-      } else if (contentType.includes('audio/wav') || contentType.includes('audio/x-wav')) {
-        ext = 'wav'
-      } else if (contentType.includes('audio/ogg')) {
-        ext = 'ogg'
-      } else if (contentType.includes('audio/aac') || contentType.includes('audio/mp4')) {
-        ext = 'm4a'
+      switch (true) {
+        case contentType.includes('audio/flac') || contentType.includes('application/x-flac'):
+          ext = 'flac'
+          break
+        case contentType.includes('audio/wav') || contentType.includes('audio/x-wav'):
+          ext = 'wav'
+          break
+        case contentType.includes('audio/ogg'):
+          ext = 'ogg'
+          break
+        case contentType.includes('audio/aac') || contentType.includes('audio/mp4'):
+          ext = 'm4a'
+          break
       }
     }
   }
@@ -352,7 +357,7 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
 
   // 1. 获取上传凭证
   uploadStatus.value = '正在获取上传凭证'
-  const tokenUrl = `${baseApiUrl}/cloud/upload/token?time=${Date.now()}&cookie=${encodeURIComponent(cookie)}`
+  const tokenUrl = `${baseApiUrl}/cloud/upload/token?time=${Date.now()}`
   
   // 使用POST请求，适配 api-enhanced-2 接口
   const tokenRes = await fetch(tokenUrl, {
@@ -361,6 +366,7 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
+      cookie,
       md5,
       fileSize,
       filename
@@ -421,13 +427,14 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
   const artistName = props.song.singer || props.song.artist || '未知歌手'
   const albumName = props.song.album || '未知专辑'
   
-  const completeUrl = `${baseApiUrl}/cloud/upload/complete?time=${Date.now()}&cookie=${encodeURIComponent(cookie)}`
+  const completeUrl = `${baseApiUrl}/cloud/upload/complete?time=${Date.now()}`
   const completeRes = await fetch(completeUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
+      cookie,
       md5,
       songId,
       resourceId,
@@ -443,7 +450,8 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
   
   if (completeData.code !== 200) {
      if (completeData.code === 502) {
-         console.warn('完成接口返回 502，假设成功或暂时性错误', completeData)
+         console.warn('完成接口返回 502，可能为暂时性错误', completeData)
+         throw new Error(`云盘信息保存可能失败 (错误码: 502)，请稍后检查。`)
      } else {
          throw new Error(`发布失败: ${completeData.msg || completeData.code}`)
      }
