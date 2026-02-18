@@ -57,16 +57,16 @@
               <div
                   v-for="episode in episodes"
                   :key="episode.cid"
-                  class="group flex items-center p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-3xl hover:bg-zinc-800/50 hover:border-zinc-700 transition-all"
+                  class="group flex items-center p-3 sm:p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-3xl hover:bg-zinc-800/50 hover:border-zinc-700 transition-all"
               >
                 <!-- 剧集编号 -->
-                <div class="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center text-zinc-500 font-black text-sm flex-shrink-0 mr-4 group-hover:text-zinc-300 transition-colors">
+                <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-2xl bg-zinc-800 flex items-center justify-center text-zinc-500 font-black text-xs sm:text-sm flex-shrink-0 mr-3 sm:mr-4 group-hover:text-zinc-300 transition-colors">
                   P{{ episode.page }}
                 </div>
 
                 <!-- 剧集信息 -->
-                <div class="flex-1 min-w-0 cursor-pointer" @click="playEpisode(episode)">
-                  <h4 class="font-bold text-zinc-100 truncate group-hover:text-white transition-colors">
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-bold text-zinc-100 text-sm sm:text-base whitespace-normal sm:whitespace-nowrap sm:truncate line-clamp-2 sm:line-clamp-none group-hover:text-white transition-colors">
                     {{ episode.part }}
                   </h4>
                   <div class="flex items-center gap-3 mt-1 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
@@ -78,10 +78,10 @@
                 </div>
 
                 <!-- 操作按钮 -->
-                <div class="ml-4 shrink-0 flex items-center gap-3">
+                <div class="ml-2 sm:ml-4 shrink-0 flex items-center gap-2 sm:gap-3">
                    <!-- 预听按钮 -->
                    <button
-                      class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
+                      class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
                       title="预听"
                       @click.stop="playEpisode(episode)"
                   >
@@ -91,7 +91,7 @@
                   <!-- 已投稿标签 -->
                   <div
                       v-if="isEpisodeSubmitted(episode)"
-                      class="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-500 text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-zinc-800 text-zinc-500 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                   >
                     已投稿
                   </div>
@@ -100,10 +100,11 @@
                   <button
                       v-else
                       :disabled="submitting"
-                      class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
                       @click.stop="selectEpisode(episode)"
                   >
-                    {{ submitting && selectedEpisodeCid === episode.cid ? '提交中...' : '选择投稿' }}
+                    <span v-if="submitting && selectedEpisodeCid === episode.cid">提交中...</span>
+                    <span v-else><span class="hidden sm:inline">选择</span>投稿</span>
                   </button>
                 </div>
               </div>
