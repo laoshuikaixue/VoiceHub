@@ -193,7 +193,7 @@ const musicSources = useMusicSources()
 const songService = useSongs()
 const auth = useAuth()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
-const {currentSemester} = useSemesters()
+const {currentSemester, fetchCurrentSemester} = useSemesters()
 
 const programs = ref([])
 const loading = ref(false)
@@ -230,15 +230,16 @@ const getSimilarSong = (program) => {
   const normalizedArtist = normalizeString(artist)
   const currentSemesterName = currentSemester.value?.name
 
+  // 如果没有获取到当前学期信息，暂时不进行检查，避免误报
+  if (!currentSemesterName) return null
+
   return songService.songs.value.find(song => {
     const songTitle = normalizeString(song.title)
     const songArtist = normalizeString(song.artist)
     const titleMatch = songTitle === normalizedTitle && songArtist === normalizedArtist
 
-    if (currentSemesterName) {
-      return titleMatch && song.semester === currentSemesterName
-    }
-    return titleMatch
+    // 必须匹配当前学期
+    return titleMatch && song.semester === currentSemesterName
   })
 }
 
@@ -352,8 +353,13 @@ const playProgram = (program) => {
   emit('play', song)
 }
 
-watch(() => props.show, (val) => {
+watch(() => props.show, async (val) => {
   if (val) {
+    // 确保当前学期已加载，用于正确检查歌曲状态
+    if (!currentSemester.value) {
+      await fetchCurrentSemester()
+    }
+    
     submitting.value = false
     selectedProgramId.value = null
     if (auth.isAuthenticated.value && (!songService.songs.value || songService.songs.value.length === 0)) {

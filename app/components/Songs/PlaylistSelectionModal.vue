@@ -245,7 +245,7 @@ const moreLoading = ref(false)
 
 const songService = useSongs()
 const auth = useAuth()
-const {currentSemester} = useSemesters()
+const {currentSemester, fetchCurrentSemester} = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
 
 // 标准化字符串
@@ -272,15 +272,16 @@ const getSimilarSong = (songData) => {
   const normalizedArtist = normalizeString(artist)
   const currentSemesterName = currentSemester.value?.name
 
+  // 如果没有获取到当前学期信息，暂时不进行检查，避免误报
+  if (!currentSemesterName) return null
+
   return songService.songs.value.find(song => {
     const songTitle = normalizeString(song.title)
     const songArtist = normalizeString(song.artist)
     const titleMatch = songTitle === normalizedTitle && songArtist === normalizedArtist
 
-    if (currentSemesterName) {
-      return titleMatch && song.semester === currentSemesterName
-    }
-    return titleMatch
+    // 必须匹配当前学期
+    return titleMatch && song.semester === currentSemesterName
   })
 }
 
@@ -383,7 +384,7 @@ const retry = () => {
   }
 }
 
-watch(() => props.show, (newVal) => {
+watch(() => props.show, async (newVal) => {
   if (newVal) {
     view.value = 'playlists'
     playlists.value = []
@@ -391,6 +392,12 @@ watch(() => props.show, (newVal) => {
     selectedPlaylist.value = null
     offset.value = 0
     hasMore.value = true
+    
+    // 确保当前学期已加载，用于正确检查歌曲状态
+    if (!currentSemester.value) {
+      await fetchCurrentSemester()
+    }
+    
     fetchUserPlaylists()
 
     // 加载歌曲列表以便检查相似歌曲
