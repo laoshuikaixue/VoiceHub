@@ -341,7 +341,7 @@
                             getSimilarSong(result)?.voted ? '已点赞' : '点赞'
                           "
                             class="like-btn"
-                            @click.stop.prevent="getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled ? null : handleLikeFromSearch(getSimilarSong(result))"
+                            @click.stop.prevent="getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled ? null : handleLikeFromSearch(getSimilarSong(result), result)"
                         >
                           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path
@@ -425,7 +425,7 @@
         </div>
       </form>
 
-      <div v-if="similarSongs.length > 0" class="similar-song-alert">
+      <div v-if="groupedSimilarSongs.length > 0" class="similar-song-alert">
         <div class="alert-header">
           <div class="alert-header-left">
             <Icon :size="16" class="alert-icon" name="warning"/>
@@ -437,49 +437,78 @@
           </button>
         </div>
         <div class="similar-songs-list">
-          <div v-for="song in similarSongs" :key="song.id" class="similar-song-item">
-            <div class="song-info">
-              <p class="song-title">
-                《{{ song.title }} - {{ song.artist }}》
-                <span v-if="song.played" class="song-status status-played">已播放</span>
-                <span v-else-if="song.scheduled" class="song-status status-scheduled">已排期</span>
-              </p>
-              <!-- 根据歌曲状态显示不同的提示 -->
-              <p v-if="song.played" class="alert-hint">
-                {{
-                  isSuperAdmin ? '该歌曲已播放，您可以继续投稿' : (enableReplayRequests ? '该歌曲已播放' : '该歌曲已播放，无法进行投票操作')
-                }}
-              </p>
-              <p v-else-if="song.scheduled" class="alert-hint">该歌曲已排期，无法进行投票操作</p>
-              <p v-else-if="!song.voted" class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
-              <p v-else-if="song.voted" class="voted-status">
-                <Icon :size="14" name="success" style="margin-right: 4px;"/>
-                您已为此歌曲投票
-              </p>
-            </div>
-            <!-- 只有在歌曲未排期、未播放且未投票时才显示投票按钮 -->
-            <div v-if="!song.voted && !song.played && !song.scheduled" class="song-actions">
-              <button
-                  :disabled="voting || submitting"
-                  class="vote-btn small"
-                  type="button"
-                  @click="voteForSimilar(song)"
-              >
-                {{ voting ? '投票中...' : '投票支持' }}
-              </button>
-            </div>
-            <!-- 如果歌曲已播放且开启了重播申请（超级管理员不显示） -->
-            <div v-if="song.played && enableReplayRequests && !isSuperAdmin && song.semester === currentSemester?.name" class="song-actions">
-              <button
-                  :disabled="isReplayButtonDisabled(song)"
-                  :title="getReplayButtonTitle(song)"
-                  class="replay-btn small"
-                  type="button"
-                  @click="handleRequestReplay(song)"
-              >
-                {{ getReplayButtonText(song) }}
-              </button>
-            </div>
+          <!-- 遍历分组后的相似歌曲 -->
+          <div v-for="group in groupedSimilarSongs" :key="group.isSingle ? group.song.id : group.bvid" class="similar-song-item">
+            <!-- 单个歌曲（非哔哩哔哩多P） -->
+            <template v-if="group.isSingle">
+              <div class="song-info">
+                <p class="song-title">
+                  《{{ group.song.title }} - {{ group.song.artist }}》
+                  <span v-if="group.song.played" class="song-status status-played">已播放</span>
+                  <span v-else-if="group.song.scheduled" class="song-status status-scheduled">已排期</span>
+                </p>
+                <!-- 根据歌曲状态显示不同的提示 -->
+                <p v-if="group.song.played" class="alert-hint">
+                  {{
+                    isSuperAdmin ? '该歌曲已播放，您可以继续投稿' : (enableReplayRequests ? '该歌曲已播放' : '该歌曲已播放，无法进行投票操作')
+                  }}
+                </p>
+                <p v-else-if="group.song.scheduled" class="alert-hint">该歌曲已排期，无法进行投票操作</p>
+                <p v-else-if="!group.song.voted" class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
+                <p v-else-if="group.song.voted" class="voted-status">
+                  <Icon :size="14" name="success" style="margin-right: 4px;"/>
+                  您已为此歌曲投票
+                </p>
+              </div>
+              <!-- 只有在歌曲未排期、未播放且未投票时才显示投票按钮 -->
+              <div v-if="!group.song.voted && !group.song.played && !group.song.scheduled" class="song-actions">
+                <button
+                    :disabled="voting || submitting"
+                    class="vote-btn small"
+                    type="button"
+                    @click="voteForSimilar(group.song)"
+                >
+                  {{ voting ? '投票中...' : '投票支持' }}
+                </button>
+              </div>
+              <!-- 如果歌曲已播放且开启了重播申请（超级管理员不显示） -->
+              <div v-if="group.song.played && enableReplayRequests && !isSuperAdmin && group.song.semester === currentSemester?.name" class="song-actions">
+                <button
+                    :disabled="isReplayButtonDisabled(group.song)"
+                    :title="getReplayButtonTitle(group.song)"
+                    class="replay-btn small"
+                    type="button"
+                    @click="handleRequestReplay(group.song)"
+                >
+                  {{ getReplayButtonText(group.song) }}
+                </button>
+              </div>
+            </template>
+            
+            <!-- 哔哩哔哩多P合集 -->
+            <template v-else>
+              <div class="song-info">
+                <p class="song-title">
+                  《{{ group.title }} - {{ group.artist }}》
+                  <span v-if="group.allPlayed" class="song-status status-played">全部已播放</span>
+                  <span v-else-if="group.allScheduled" class="song-status status-scheduled">全部已排期</span>
+                  <span v-else class="song-status">{{ group.episodes.length }} 个剧集</span>
+                </p>
+                <p class="alert-hint">
+                  该合集有 {{ group.episodes.length }} 个剧集在列表中
+                </p>
+              </div>
+              <div class="song-actions">
+                <button
+                    :disabled="submitting"
+                    class="vote-btn small"
+                    type="button"
+                    @click.stop="openSimilarEpisodesModal(group)"
+                >
+                  查看详情
+                </button>
+              </div>
+            </template>
           </div>
         </div>
         <!-- 移动端时显示在底部的继续投稿按钮 -->
@@ -525,9 +554,11 @@
         :video="selectedBilibiliVideo"
         :episodes="bilibiliEpisodes"
         :submitted-episodes="getBilibiliEpisodeStatus(selectedBilibiliVideo)?.submittedEpisodes || []"
+        :current-user-id="user?.id"
         @close="showBilibiliEpisodesModal = false"
         @play="handleBilibiliEpisodePlay"
         @submit="handleBilibiliEpisodeSelect"
+        @vote="handleEpisodeVote"
     />
 
     <!-- 上传到网易云音乐弹窗 -->
@@ -785,6 +816,51 @@ const submitting = ref(false)
 const voting = ref(false)
 const requestingReplay = ref(false)
 const similarSongs = ref([])
+
+// 按 BV 号分组相似歌曲（每个合集只显示一次）
+const groupedSimilarSongs = computed(() => {
+  const groups = new Map()
+  
+  for (const song of similarSongs.value) {
+    // 检查是否是哔哩哔哩视频
+    if (song.musicPlatform === 'bilibili' && song.musicId) {
+      const bvid = song.musicId.includes(':') ? song.musicId.split(':')[0] : song.musicId
+      
+      if (!groups.has(bvid)) {
+        // 创建新的分组
+        groups.set(bvid, {
+          bvid,
+          title: song.title.split(' - ')[0] || song.title, // 提取合集标题
+          artist: song.artist,
+          cover: song.cover,
+          episodes: [],
+          allPlayed: true,
+          allScheduled: true,
+          hasVoted: false
+        })
+      }
+      
+      const group = groups.get(bvid)
+      group.episodes.push(song)
+      
+      // 更新状态
+      if (!song.played) group.allPlayed = false
+      if (!song.scheduled) group.allScheduled = false
+      if (song.voted) group.hasVoted = true
+    } else {
+      // 非哔哩哔哩视频，直接作为单独项
+      const key = `${song.id}`
+      if (!groups.has(key)) {
+        groups.set(key, {
+          isSingle: true,
+          song
+        })
+      }
+    }
+  }
+  
+  return Array.from(groups.values())
+})
 const showImportSongsModal = ref(false)
 const showLoginModal = ref(false)
 const isNeteaseLoggedIn = ref(false)
@@ -1180,6 +1256,90 @@ const ignoreSimilar = () => {
   similarSongs.value = []
 }
 
+// 打开相似剧集详情弹窗
+const openSimilarEpisodesModal = (group) => {
+  if (!group || !group.episodes || group.episodes.length === 0) {
+    if (window.$showNotification) {
+      window.$showNotification('无法打开剧集列表', 'error')
+    }
+    return
+  }
+  
+  // 构造一个类似搜索结果的对象
+  const videoData = {
+    id: group.bvid,
+    title: group.title,
+    artist: group.artist,
+    cover: group.cover,
+    pages: group.episodes.map((episode, index) => {
+      // 从 musicId 中提取 cid 和 page
+      const parts = episode.musicId ? episode.musicId.split(':') : []
+      const cid = parts[1] || ''
+      const page = parts[2] ? parseInt(parts[2]) : (index + 1)
+      
+      // 从标题中提取剧集名称
+      const episodeTitle = episode.title && episode.title.includes(' - ') 
+        ? episode.title.split(' - ').slice(1).join(' - ')
+        : episode.title || `第${index + 1}集`
+      
+      return {
+        cid,
+        page,
+        part: episodeTitle,
+        duration: episode.duration || 0,
+        // 直接使用 episode 的完整信息
+        songId: episode.id,
+        played: episode.played || false,
+        scheduled: episode.scheduled || false,
+        voted: episode.voted || false,
+        voteCount: episode.voteCount || 0,
+        requesterId: episode.requesterId
+      }
+    })
+  }
+  
+  selectedBilibiliVideo.value = videoData
+  bilibiliEpisodes.value = videoData.pages
+  showBilibiliEpisodesModal.value = true
+}
+
+// 处理剧集投票
+const handleEpisodeVote = async (episode) => {
+  if (!episode.songId) {
+    if (window.$showNotification) {
+      window.$showNotification('无法投票：缺少歌曲ID', 'error')
+    }
+    return
+  }
+  
+  if (episode.voted) {
+    return
+  }
+  
+  voting.value = true
+  
+  try {
+    await songService.voteSong(episode.songId)
+    
+    // 只有在后端成功返回后才更新前端状态
+    episode.voted = true
+    episode.voteCount = (episode.voteCount || 0) + 1
+    
+    // 刷新歌曲列表
+    setTimeout(() => {
+      songService.refreshSongsSilent().catch(err => {
+        console.error('刷新歌曲列表失败', err)
+      })
+    }, 500)
+  } catch (err) {
+    if (window.$showNotification) {
+      window.$showNotification(err.message || '点赞失败', 'error')
+    }
+  } finally {
+    voting.value = false
+  }
+}
+
 
 // 检查搜索结果是否已存在完全匹配的歌曲
 // 标准化字符串（与useSongs中的逻辑保持一致）
@@ -1193,6 +1353,7 @@ const normalizeString = (str) => {
 }
 
 const getSimilarSong = (result) => {
+  // 多P视频不在这里检查相似性，使用专门的 getBilibiliEpisodeStatus
   if (isBilibiliMultiP(result)) {
     return null
   }
@@ -1225,7 +1386,7 @@ const getSimilarSong = (result) => {
 }
 
 // 从搜索结果中点赞已存在的歌曲
-const handleLikeFromSearch = async (song) => {
+const handleLikeFromSearch = async (song, originalResult = null) => {
   if (!song || song.voted) {
     return
   }
@@ -1235,6 +1396,14 @@ const handleLikeFromSearch = async (song) => {
       const message = song.played ? '已播放的歌曲不能点赞' : '已排期的歌曲不能点赞'
       window.$showNotification(message, 'warning')
     }
+    return
+  }
+
+  // 如果原始结果是多P视频，打开剧集选择弹窗
+  if (originalResult && isBilibiliMultiP(originalResult)) {
+    selectedBilibiliVideo.value = originalResult
+    bilibiliEpisodes.value = originalResult.pages
+    showBilibiliEpisodesModal.value = true
     return
   }
 
@@ -1552,8 +1721,8 @@ const playSong = async (result) => {
     result = await getAudioUrl(result)
   }
 
-  // 如果没有URL，提示错误
-  if (!result.url) {
+  // 对于非哔哩哔哩平台，如果没有URL则提示错误
+  if (!result.url && result.musicPlatform !== 'bilibili' && platform.value !== 'bilibili') {
     error.value = '该歌曲无法播放，可能是付费内容'
     if (window.$showNotification) {
       window.$showNotification('该歌曲无法播放，可能是付费内容', 'error')
@@ -1564,6 +1733,13 @@ const playSong = async (result) => {
   let finalMusicId = result.musicId ? String(result.musicId) : null
   if (result.musicPlatform === 'bilibili' && result.bilibiliCid) {
     finalMusicId = `${result.musicId}:${result.bilibiliCid}`
+    // 如果有分P信息，也添加到 musicId
+    if (result.bilibiliPage || result.page) {
+      const page = result.bilibiliPage || result.page
+      if (Number(page) > 1) {
+        finalMusicId += `:${page}`
+      }
+    }
   }
 
   // 准备播放所需的数据
@@ -1572,14 +1748,26 @@ const playSong = async (result) => {
     title: result.song || result.title,
     artist: result.singer || result.artist,
     cover: result.cover || null,
-    musicUrl: result.url,
+    musicUrl: result.url || null, // 哔哩哔哩可能没有音频URL
     musicPlatform: result.musicPlatform || platform.value,
     musicId: finalMusicId,
     bilibiliCid: result.bilibiliCid, // 确保传递 cid
   }
 
+  console.log('[RequestForm] 准备播放歌曲:', song)
+
   // 使用全局播放器播放歌曲
-  audioPlayer.playSong(song)
+  const playResult = audioPlayer.playSong(song)
+  
+  if (!playResult) {
+    console.error('[RequestForm] 播放器返回 false，播放失败')
+    if (window.$showNotification) {
+      window.$showNotification('播放失败，请稍后重试', 'error')
+    }
+    return
+  }
+
+  console.log('[RequestForm] 播放器已启动')
 
   // 如果有音乐平台信息，请求歌词
   if (song.musicPlatform && song.musicId) {
@@ -1591,6 +1779,7 @@ const playSong = async (result) => {
       await lyrics.fetchLyrics(song.musicPlatform, lyricMusicId)
     } catch (error) {
       console.error('获取歌词失败:', error)
+      // 歌词获取失败不影响播放
     }
   }
 }
@@ -1687,17 +1876,49 @@ const submitSong = async (result, options = {}) => {
 
   // 只有在用户已登录且歌曲列表已加载时才检查是否已存在完全匹配的歌曲
   if (auth.isAuthenticated.value && songService.songs.value && songService.songs.value.length > 0) {
-    const existingSong = songService.songs.value.find(song =>
+    // 对于哔哩哔哩多P视频，使用 musicId 进行精确匹配
+    if (platform.value === 'bilibili' && result.musicId) {
+      // 构建完整的 musicId
+      let fullMusicId = String(result.musicId)
+      if (options.isBilibiliEpisode && options.episode) {
+        const bvId = fullMusicId.split(':')[0]
+        const musicIdParts = [bvId, options.episode.cid]
+        if (options.episode.page && Number(options.episode.page) > 1) {
+          musicIdParts.push(String(options.episode.page))
+        }
+        fullMusicId = musicIdParts.join(':')
+      }
+
+      // 检查是否已有相同 musicId 的歌曲
+      const existingSong = songService.songs.value.find(song =>
+        song.musicPlatform === 'bilibili' &&
+        song.musicId === fullMusicId
+      )
+
+      if (existingSong) {
+        const allowOverride = options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
+        if (!allowOverride) {
+          if (window.$showNotification) {
+            window.$showNotification('这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！', 'warning')
+          }
+          return
+        }
+      }
+    } else {
+      // 对于其他平台，使用标题和艺术家进行匹配
+      const existingSong = songService.songs.value.find(song =>
         song.title.toLowerCase() === songTitle.toLowerCase() &&
         song.artist.toLowerCase() === songArtist.toLowerCase()
-    )
-    if (existingSong) {
-      const allowOverride = options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
-      if (!allowOverride) {
-        if (window.$showNotification) {
-          window.$showNotification('这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！', 'warning')
+      )
+      
+      if (existingSong) {
+        const allowOverride = options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
+        if (!allowOverride) {
+          if (window.$showNotification) {
+            window.$showNotification('这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！', 'warning')
+          }
+          return
         }
-        return
       }
     }
   }

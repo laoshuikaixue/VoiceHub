@@ -167,16 +167,14 @@
                 'font-bold truncate transition-colors',
                 selectedSongs.includes(song.id) ? 'text-blue-400' : 'text-zinc-100 group-hover:text-blue-400'
               ]">
-                <a 
+                <button 
                   v-if="song.musicPlatform === 'bilibili'" 
-                  :href="getBilibiliUrl(song)" 
-                  target="_blank" 
-                  @click.stop
-                  class="flex items-center gap-1 hover:underline"
+                  @click.stop="openBilibiliPreview(song)"
+                  class="flex items-center gap-1 hover:underline text-left"
                 >
                   {{ song.title }}
                   <ExternalLink :size="12" class="opacity-50" />
-                </a>
+                </button>
                 <span v-else>{{ song.title }}</span>
               </h4>
               <p class="text-xs text-zinc-500 font-medium truncate mt-0.5">{{ song.artist }}</p>
@@ -636,6 +634,14 @@
       </div>
     </Transition>
   </div>
+
+  <!-- 哔哩哔哩 iframe 预览弹窗 -->
+  <BilibiliIframeModal
+    :show="showBilibiliPreview"
+    :bvid="previewBvid"
+    :page="previewPage"
+    @close="showBilibiliPreview = false"
+  />
 </template>
 
 <script setup>
@@ -655,6 +661,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useSemesters } from '~/composables/useSemesters'
 import { validateUrl, getBilibiliUrl, convertToHttps } from '~/utils/url'
+import BilibiliIframeModal from '~/components/UI/BilibiliIframeModal.vue'
 
 // 响应式数据
 const { showToast: showNotification } = useToast()
@@ -665,6 +672,21 @@ const sortOption = ref('time-desc')
 const selectedSongs = ref([])
 const currentPage = ref(1)
 const pageSize = ref(20)
+
+// 哔哩哔哩预览相关
+const showBilibiliPreview = ref(false)
+const previewBvid = ref('')
+const previewPage = ref(1)
+
+// 打开哔哩哔哩预览
+const openBilibiliPreview = (song) => {
+  if (!song.musicId) return
+  
+  const parts = song.musicId.split(':')
+  previewBvid.value = parts[0]
+  previewPage.value = parts.length >= 3 ? parseInt(parts[2]) || 1 : 1
+  showBilibiliPreview.value = true
+}
 
 // 学期相关
 const selectedSemester = ref('all')
