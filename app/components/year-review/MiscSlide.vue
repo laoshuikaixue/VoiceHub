@@ -1,25 +1,24 @@
 <template>
   <div class="slide-container">
-    <div class="bg-gradient"></div>
-    
+    <div class="bg-gradient" />
+
     <Transition name="entry" appear>
-      <div class="content" v-show="active">
-        
+      <div v-show="active" class="content">
         <div v-if="data.topPlatform" class="card platform-card">
-           <span class="label">常用平台</span>
-           <span class="platform-value">{{ formatPlatform(data.topPlatform) }}</span>
+          <span class="label">常用平台</span>
+          <span class="platform-value">{{ formatPlatform(data.topPlatform) }}</span>
         </div>
 
         <div class="grid-container">
-           <div v-if="data.activeMonth" class="card active-card">
-              <span class="label">最活跃</span>
-              <span class="active-value">{{ data.activeMonth }}<span class="unit">月</span></span>
-           </div>
-           
-           <div class="card votes-card">
-              <span class="label">投出票数</span>
-              <span class="votes-value">{{ data.totalVotes }}</span>
-           </div>
+          <div v-if="data.activeMonth" class="card active-card">
+            <span class="label">最活跃</span>
+            <span class="active-value">{{ data.activeMonth }}<span class="unit">月</span></span>
+          </div>
+
+          <div class="card votes-card">
+            <span class="label">投出票数</span>
+            <span class="votes-value">{{ data.totalVotes }}</span>
+          </div>
         </div>
       </div>
     </Transition>
@@ -34,13 +33,13 @@ defineProps({
 
 const formatPlatform = (platform) => {
   const map = {
-    'netease': '网易云音乐',
-    'bilibili': '哔哩哔哩',
-    'qq': 'QQ音乐',
-    'kugou': '酷狗音乐',
-    'kuwo': '酷我音乐',
-    'migu': '咪咕音乐',
-    'tencent': 'QQ音乐'
+    netease: '网易云音乐',
+    bilibili: '哔哩哔哩',
+    qq: 'QQ音乐',
+    kugou: '酷狗音乐',
+    kuwo: '酷我音乐',
+    migu: '咪咕音乐',
+    tencent: 'QQ音乐'
   }
   return map[platform] || platform
 }
@@ -112,7 +111,8 @@ const formatPlatform = (platform) => {
   gap: 1rem;
 }
 
-.active-card, .votes-card {
+.active-card,
+.votes-card {
   aspect-ratio: 1;
 }
 
@@ -135,9 +135,17 @@ const formatPlatform = (platform) => {
 }
 
 @media (min-width: 768px) {
-  .platform-value { font-size: 1.875rem; }
-  .active-value { font-size: 3rem; }
-  .votes-value { font-size: 2.25rem; }
-  .card { padding: 1.5rem; }
+  .platform-value {
+    font-size: 1.875rem;
+  }
+  .active-value {
+    font-size: 3rem;
+  }
+  .votes-value {
+    font-size: 2.25rem;
+  }
+  .card {
+    padding: 1.5rem;
+  }
 }
 </style>

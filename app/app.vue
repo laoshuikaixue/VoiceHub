@@ -2,7 +2,7 @@
   <div class="app" data-theme="dark" data-color-scheme="custom">
     <!-- 全局通知容器组件 -->
     <LazyUINotificationContainer ref="notificationContainer" />
-    
+
     <!-- 全局音频播放器 - 使用isPlayerVisible控制显示/隐藏 -->
     <LazyUIAudioPlayer
       v-show="isPlayerVisible"
@@ -11,7 +11,7 @@
       @close="handlePlayerClose"
       @ended="handlePlayerEnded"
     />
-    
+
     <main class="main-content">
       <NuxtPage />
     </main>
@@ -19,11 +19,11 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref, watch} from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 // 导入通知容器组件和音频播放器
-import {useAudioPlayer} from '~/composables/useAudioPlayer'
-import {useAuth} from '~/composables/useAuth'
-import {useRoute} from 'vue-router'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useAuth } from '~/composables/useAuth'
+import { useRoute } from 'vue-router'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
@@ -50,24 +50,32 @@ const isPlaylistMode = computed(() => {
 })
 
 // 监听路由变化，控制播放器显示/隐藏
-watch(() => route.path, (newPath) => {
-  // 其他页面，如果有当前歌曲则显示播放器
-  if (currentSong.value) {
-    isPlayerVisible.value = true
-  }
-}, { immediate: true })
+watch(
+  () => route.path,
+  (newPath) => {
+    // 其他页面，如果有当前歌曲则显示播放器
+    if (currentSong.value) {
+      isPlayerVisible.value = true
+    }
+  },
+  { immediate: true }
+)
 
 // 监听当前播放的歌曲
-watch(() => audioPlayer.getCurrentSong().value, (newSong) => {
-  if (newSong) {
-    currentSong.value = newSong
-    // 显示播放器
-    isPlayerVisible.value = true
-  } else {
-    // 当没有歌曲时，不立即隐藏播放器，而是让动画完成
-    currentSong.value = null
-  }
-}, { immediate: true })
+watch(
+  () => audioPlayer.getCurrentSong().value,
+  (newSong) => {
+    if (newSong) {
+      currentSong.value = newSong
+      // 显示播放器
+      isPlayerVisible.value = true
+    } else {
+      // 当没有歌曲时，不立即隐藏播放器，而是让动画完成
+      currentSong.value = null
+    }
+  },
+  { immediate: true }
+)
 
 // 处理播放器关闭事件
 const handlePlayerClose = () => {
@@ -94,7 +102,7 @@ let isAuthenticated = false
 // 设置鸿蒙系统控制事件监听
 const setupHarmonyOSListeners = () => {
   if (typeof window === 'undefined') return
-  
+
   // 监听鸿蒙系统控制事件
   const handleHarmonyOSPlay = () => {
     const currentGlobalSong = audioPlayer.getCurrentSong().value
@@ -103,15 +111,15 @@ const setupHarmonyOSListeners = () => {
       audioPlayer.playSong(currentGlobalSong)
     }
   }
-  
+
   const handleHarmonyOSPause = () => {
     audioPlayer.pauseSong()
   }
-  
+
   const handleHarmonyOSStop = () => {
     audioPlayer.stopSong()
   }
-  
+
   const handleHarmonyOSNext = async () => {
     try {
       const success = await audioPlayer.playNext()
@@ -124,7 +132,7 @@ const setupHarmonyOSListeners = () => {
       // 切换失败时不停止播放，继续播放当前歌曲
     }
   }
-  
+
   const handleHarmonyOSPrevious = async () => {
     try {
       const success = await audioPlayer.playPrevious()
@@ -137,7 +145,7 @@ const setupHarmonyOSListeners = () => {
       // 切换失败时不停止播放，继续播放当前歌曲
     }
   }
-  
+
   // 使用Nuxt的事件总线监听鸿蒙控制事件
   if (window.__NUXT__ && window.__NUXT__.$nuxt) {
     const nuxtApp = window.__NUXT__.$nuxt
@@ -149,7 +157,7 @@ const setupHarmonyOSListeners = () => {
       nuxtApp.$on('harmonyos-previous', handleHarmonyOSPrevious)
     }
   }
-  
+
   // 备用方案：直接在window上监听自定义事件
   window.addEventListener('harmonyos-play', handleHarmonyOSPlay)
   window.addEventListener('harmonyos-pause', handleHarmonyOSPause)
@@ -162,10 +170,9 @@ const setupHarmonyOSListeners = () => {
 onMounted(async () => {
   auth = useAuth()
   isAuthenticated = auth.isAuthenticated.value
-  
+
   // 初始化鸿蒙系统控制事件监听
   setupHarmonyOSListeners()
-  
 })
 
 // 使用计算属性确保安全地访问auth对象
@@ -179,7 +186,6 @@ const handleLogout = () => {
 </script>
 
 <style>
-
 /* 应用布局 */
 .app {
   display: flex;

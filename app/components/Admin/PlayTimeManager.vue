@@ -4,29 +4,35 @@
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
         <h2 class="text-2xl font-black text-zinc-100 tracking-tight">播出时段管理</h2>
-        <p class="text-xs text-zinc-500 mt-1">定义校园广播的常规播放窗口，用户仅可在这些时间段内进行点歌或查看排期</p>
+        <p class="text-xs text-zinc-500 mt-1">
+          定义校园广播的常规播放窗口，用户仅可在这些时间段内进行点歌或查看排期
+        </p>
       </div>
       <div class="flex items-center gap-3">
-        <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl px-4 py-2 flex items-center gap-3">
-          <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">启用播出时段选择</span>
-          <button 
-            @click="toggleGlobalEnabled"
+        <div
+          class="bg-zinc-900/40 border border-zinc-800 rounded-xl px-4 py-2 flex items-center gap-3"
+        >
+          <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest"
+            >启用播出时段选择</span
+          >
+          <button
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
               enablePlayTimeSelection ? 'bg-blue-600' : 'bg-zinc-800'
             ]"
+            @click="toggleGlobalEnabled"
           >
-            <div 
+            <div
               :class="[
                 'absolute top-1 w-3 h-3 bg-white rounded-full transition-all',
                 enablePlayTimeSelection ? 'left-6' : 'left-1'
-              ]" 
+              ]"
             />
           </button>
         </div>
-        <button 
-          @click="openAddForm"
+        <button
           class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+          @click="openAddForm"
         >
           <Plus :size="14" /> 添加播出时段
         </button>
@@ -45,13 +51,21 @@
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20 space-y-4 bg-zinc-900/20 border border-zinc-800/50 rounded-xl">
-      <div class="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+    <div
+      v-if="loading"
+      class="flex flex-col items-center justify-center py-20 space-y-4 bg-zinc-900/20 border border-zinc-800/50 rounded-xl"
+    >
+      <div
+        class="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"
+      />
       <p class="text-xs font-black text-zinc-500 uppercase tracking-widest">加载中...</p>
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="error" class="bg-red-500/5 border border-red-500/10 rounded-xl p-5 flex items-start gap-4">
+    <div
+      v-else-if="error"
+      class="bg-red-500/5 border border-red-500/10 rounded-xl p-5 flex items-start gap-4"
+    >
       <AlertCircle class="text-red-500 shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
         <p class="text-xs font-bold text-zinc-300">获取数据失败</p>
@@ -60,7 +74,10 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="playTimes.length === 0" class="flex flex-col items-center justify-center py-20 space-y-6 bg-zinc-900/20 border border-zinc-800/50 rounded-xl">
+    <div
+      v-else-if="playTimes.length === 0"
+      class="flex flex-col items-center justify-center py-20 space-y-6 bg-zinc-900/20 border border-zinc-800/50 rounded-xl"
+    >
       <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-700">
         <Clock :size="48" />
       </div>
@@ -82,7 +99,7 @@
           ]"
         >
           <div class="flex items-start justify-between mb-6">
-            <div 
+            <div
               :class="[
                 'p-3 rounded-xl bg-zinc-950 border border-zinc-800 transition-all',
                 playTime.enabled ? 'text-blue-500 border-blue-500/20' : 'text-zinc-700'
@@ -91,24 +108,32 @@
               <Clock :size="20" />
             </div>
             <div class="flex items-center gap-2">
-              <span 
+              <span
                 :class="[
                   'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border transition-all',
-                  playTime.enabled 
-                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                  playTime.enabled
+                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                     : 'bg-zinc-800/50 text-zinc-600 border-zinc-700/50'
                 ]"
               >
                 {{ playTime.enabled ? '已启用' : '已禁用' }}
               </span>
-              <button class="p-1.5 text-zinc-700 hover:text-zinc-400"><MoreVertical :size="14" /></button>
+              <button class="p-1.5 text-zinc-700 hover:text-zinc-400">
+                <MoreVertical :size="14" />
+              </button>
             </div>
           </div>
 
           <div class="space-y-4">
             <div>
-              <h4 class="text-lg font-black text-zinc-100 group-hover:text-blue-400 transition-colors">{{ playTime.name }}</h4>
-              <div class="flex items-center gap-2 mt-1.5 text-blue-500/80 font-black tracking-tighter">
+              <h4
+                class="text-lg font-black text-zinc-100 group-hover:text-blue-400 transition-colors"
+              >
+                {{ playTime.name }}
+              </h4>
+              <div
+                class="flex items-center gap-2 mt-1.5 text-blue-500/80 font-black tracking-tighter"
+              >
                 <span class="text-xl">{{ playTime.startTime || '不限' }}</span>
                 <div class="w-4 h-[2px] bg-zinc-800" />
                 <span class="text-xl">{{ playTime.endTime || '不限' }}</span>
@@ -122,27 +147,27 @@
 
           <div class="mt-8 pt-6 border-t border-zinc-800/50 flex items-center justify-between">
             <div class="flex gap-2">
-              <button 
-                @click="editPlayTime(playTime)"
+              <button
                 class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-500 hover:text-blue-400 hover:border-blue-500/30 transition-all"
+                @click="editPlayTime(playTime)"
               >
                 <Edit2 :size="14" />
               </button>
-              <button 
-                @click="confirmDelete(playTime)"
+              <button
                 class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-500 hover:text-red-400 hover:border-red-500/30 transition-all"
+                @click="confirmDelete(playTime)"
               >
                 <Trash2 :size="14" />
               </button>
             </div>
-            <button 
-              @click="togglePlayTimeStatus(playTime)"
+            <button
               :class="[
                 'flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
-                playTime.enabled 
-                  ? 'bg-zinc-800 text-zinc-400 hover:text-zinc-200' 
+                playTime.enabled
+                  ? 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
                   : 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
               ]"
+              @click="togglePlayTimeStatus(playTime)"
             >
               <Power :size="12" />
               {{ playTime.enabled ? '禁用' : '启用' }}
@@ -154,89 +179,122 @@
 
     <!-- 添加/编辑弹窗 -->
     <Transition name="modal">
-      <div v-if="showAddForm || editingPlayTime" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="cancelForm"></div>
-        <div class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden">
+      <div
+        v-if="showAddForm || editingPlayTime"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      >
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="cancelForm" />
+        <div
+          class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden"
+        >
           <div class="p-8">
             <div class="flex items-center justify-between mb-8">
               <h3 class="text-xl font-black text-zinc-100 tracking-tight">
-                {{ editingPlayTime ? "编辑播出时段" : "添加播出时段" }}
+                {{ editingPlayTime ? '编辑播出时段' : '添加播出时段' }}
               </h3>
-              <button @click="cancelForm" class="p-2 text-zinc-500 hover:text-zinc-200 transition-colors">
+              <button
+                class="p-2 text-zinc-500 hover:text-zinc-200 transition-colors"
+                @click="cancelForm"
+              >
                 <X :size="20" />
               </button>
             </div>
 
             <div class="space-y-6">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">时段名称</label>
-                <input 
-                  type="text" 
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                  >时段名称</label
+                >
+                <input
                   v-model="formData.name"
-                  placeholder="例如: 午间广播" 
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30" 
-                />
+                  type="text"
+                  placeholder="例如: 午间广播"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                >
               </div>
 
               <div class="grid grid-cols-2 gap-6">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">开始时间 (可选)</label>
+                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    >开始时间 (可选)</label
+                  >
                   <div class="relative">
-                    <input 
-                      type="time" 
+                    <input
                       v-model="formData.startTime"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none" 
+                      type="time"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none"
+                    >
+                    <Clock
+                      class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none"
+                      :size="14"
                     />
-                    <Clock class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none" :size="14" />
                   </div>
                   <p class="text-[9px] text-zinc-600 px-1">留空表示不限制开始时间</p>
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">结束时间 (可选)</label>
+                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    >结束时间 (可选)</label
+                  >
                   <div class="relative">
-                    <input 
-                      type="time" 
+                    <input
                       v-model="formData.endTime"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none" 
+                      type="time"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none"
+                    >
+                    <Clock
+                      class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none"
+                      :size="14"
                     />
-                    <Clock class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none" :size="14" />
                   </div>
                   <p class="text-[9px] text-zinc-600 px-1">留空表示不限制结束时间</p>
                 </div>
               </div>
 
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 flex items-center gap-2">
+                <label
+                  class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 flex items-center gap-2"
+                >
                   <AlignLeft :size="10" /> 描述 (可选)
                 </label>
-                <textarea 
+                <textarea
                   v-model="formData.description"
-                  placeholder="请输入时段描述信息..." 
+                  placeholder="请输入时段描述信息..."
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[100px] resize-none"
                 />
               </div>
 
               <label class="flex items-center gap-3 cursor-pointer group px-1">
-                <input 
-                  type="checkbox" 
+                <input
                   v-model="formData.enabled"
-                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-blue-600" 
-                />
-                <span class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors">启用此播出时段</span>
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-blue-600"
+                >
+                <span
+                  class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors"
+                  >启用此播出时段</span
+                >
               </label>
 
-              <div v-if="formError" class="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[11px] text-red-400">
+              <div
+                v-if="formError"
+                class="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[11px] text-red-400"
+              >
                 {{ formError }}
               </div>
             </div>
           </div>
 
           <div class="px-8 py-6 bg-zinc-950/50 border-t border-zinc-800 flex justify-end gap-3">
-            <button @click="cancelForm" class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300">取消</button>
-            <button 
-              @click="savePlayTime"
+            <button
+              class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
+              @click="cancelForm"
+            >
+              取消
+            </button>
+            <button
               :disabled="formSubmitting"
               class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg shadow-lg transition-all active:scale-95"
+              @click="savePlayTime"
             >
               {{ formSubmitting ? '保存中...' : '保存设置' }}
             </button>
@@ -248,25 +306,39 @@
     <!-- 删除确认弹窗 -->
     <Transition name="modal">
       <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showDeleteConfirm = false"></div>
-        <div class="relative w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden">
+        <div
+          class="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          @click="showDeleteConfirm = false"
+        />
+        <div
+          class="relative w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden"
+        >
           <div class="p-8">
             <div class="flex flex-col items-center py-4 space-y-6">
-              <div class="w-16 h-16 rounded-xl bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/10 shadow-xl shadow-red-900/5">
+              <div
+                class="w-16 h-16 rounded-xl bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/10 shadow-xl shadow-red-900/5"
+              >
                 <AlertCircle :size="32" />
               </div>
               <div class="text-center space-y-2 px-4">
-                <h4 class="text-lg font-bold text-zinc-100">确定要删除播出时段 "{{ playTimeToDelete?.name }}" 吗？</h4>
+                <h4 class="text-lg font-bold text-zinc-100">
+                  确定要删除播出时段 "{{ playTimeToDelete?.name }}" 吗？
+                </h4>
                 <p class="text-xs text-zinc-500 leading-relaxed">
                   此操作不可恢复，相关的歌曲点播和排期的时段设置将受影响或被清除。
                 </p>
               </div>
               <div class="flex gap-3 w-full pt-4">
-                <button @click="showDeleteConfirm = false" class="flex-1 px-4 py-3 bg-zinc-950 border border-zinc-800 text-zinc-500 text-xs font-black rounded-lg transition-all hover:bg-zinc-800">取消</button>
-                <button 
-                  @click="deletePlayTime"
+                <button
+                  class="flex-1 px-4 py-3 bg-zinc-950 border border-zinc-800 text-zinc-500 text-xs font-black rounded-lg transition-all hover:bg-zinc-800"
+                  @click="showDeleteConfirm = false"
+                >
+                  取消
+                </button>
+                <button
                   :disabled="deleteInProgress"
                   class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg shadow-xl shadow-red-900/20 transition-all active:scale-95"
+                  @click="deletePlayTime"
                 >
                   {{ deleteInProgress ? '删除中...' : '确认删除' }}
                 </button>
@@ -284,9 +356,17 @@ import { onMounted, reactive, ref } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import type { PlayTime } from '~/types'
-import { 
-  Plus, Clock, Edit2, Trash2, MoreVertical, 
-  Power, Info, AlertCircle, X, AlignLeft 
+import {
+  Plus,
+  Clock,
+  Edit2,
+  Trash2,
+  MoreVertical,
+  Power,
+  Info,
+  AlertCircle,
+  X,
+  AlignLeft
 } from 'lucide-vue-next'
 
 const { getAuthConfig, isAdmin } = useAuth()
@@ -340,31 +420,31 @@ const fetchPlayTimes = async () => {
     playTimes.value = data.sort((a: PlayTime, b: PlayTime) => {
       // 首先按启用状态排序
       if (a.enabled !== b.enabled) {
-        return a.enabled ? -1 : 1; // 启用的排在前面
+        return a.enabled ? -1 : 1 // 启用的排在前面
       }
 
       // 然后按是否有时间排序
-      const aHasTime = !!(a.startTime || a.endTime);
-      const bHasTime = !!(b.startTime || b.endTime);
+      const aHasTime = !!(a.startTime || a.endTime)
+      const bHasTime = !!(b.startTime || b.endTime)
 
       if (aHasTime !== bHasTime) {
-        return aHasTime ? -1 : 1; // 有时间的排在前面
+        return aHasTime ? -1 : 1 // 有时间的排在前面
       }
 
       // 如果都有时间，按开始时间排序
       if (aHasTime && bHasTime) {
         if (a.startTime && b.startTime) {
-          return a.startTime.localeCompare(b.startTime);
+          return a.startTime.localeCompare(b.startTime)
         } else if (a.startTime) {
-          return -1;
+          return -1
         } else if (b.startTime) {
-          return 1;
+          return 1
         }
       }
 
       // 最后按名称排序
-      return a.name.localeCompare(b.name);
-    });
+      return a.name.localeCompare(b.name)
+    })
   } catch (err: any) {
     error.value = err.message || '获取播出时段失败'
   } finally {
@@ -406,7 +486,7 @@ const updateSystemSettings = async () => {
       },
       ...authConfig
     })
-    
+
     showNotification('系统设置已更新', 'success')
   } catch (err: any) {
     error.value = err.message || '更新系统设置失败'
@@ -515,7 +595,8 @@ const savePlayTime = async () => {
 
   // 检查名称是否重复
   const isUpdate = !!editingPlayTime.value
-  const nameExists = playTimes.value.some(pt =>
+  const nameExists = playTimes.value.some(
+    (pt) =>
       pt.name.toLowerCase() === formData.name.trim().toLowerCase() &&
       (!isUpdate || pt.id !== formData.id)
   )

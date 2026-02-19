@@ -374,9 +374,9 @@
   }
 
   /* IOS特定优化 */
-  .form-input[type="text"],
-  .form-input[type="email"],
-  .form-input[type="password"],
+  .form-input[type='text'],
+  .form-input[type='email'],
+  .form-input[type='password'],
   .search-input {
     -webkit-text-size-adjust: 100%;
   }

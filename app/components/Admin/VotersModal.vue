@@ -5,8 +5,8 @@
         <h3 class="modal-title">投票人员列表</h3>
         <button class="close-btn" @click="closeModal">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="18" x2="6" y1="6" y2="18"/>
-            <line x1="6" x2="18" y1="6" y2="18"/>
+            <line x1="18" x2="6" y1="6" y2="18" />
+            <line x1="6" x2="18" y1="6" y2="18" />
           </svg>
         </button>
       </div>
@@ -19,7 +19,8 @@
           <div class="vote-summary">
             <svg class="heart-icon" fill="currentColor" viewBox="0 0 24 24">
               <path
-                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
             </svg>
             <span class="vote-count">{{ totalVotes }} 票</span>
           </div>
@@ -27,16 +28,22 @@
 
         <!-- 加载状态 -->
         <div v-if="loading" class="loading-container">
-          <div class="spinner"></div>
+          <div class="spinner" />
           <p>正在加载投票人员...</p>
         </div>
 
         <!-- 错误状态 -->
         <div v-else-if="error" class="error-container">
-          <svg class="error-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="15" x2="9" y1="9" y2="15"/>
-            <line x1="9" x2="15" y1="9" y2="15"/>
+          <svg
+            class="error-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" x2="9" y1="9" y2="15" />
+            <line x1="9" x2="15" y1="9" y2="15" />
           </svg>
           <p class="error-message">{{ error }}</p>
           <button class="retry-btn" @click="fetchVoters">重试</button>
@@ -48,11 +55,7 @@
             <span class="voters-title">投票人员 ({{ voters.length }})</span>
           </div>
           <div class="voters-container">
-            <div
-                v-for="(voter, index) in voters"
-                :key="voter.id"
-                class="voter-item"
-            >
+            <div v-for="(voter, index) in voters" :key="voter.id" class="voter-item">
               <div class="voter-info">
                 <div class="voter-avatar">
                   {{ getAvatarText(voter.name) }}
@@ -69,9 +72,16 @@
 
         <!-- 无投票状态 -->
         <div v-else class="empty-state">
-          <svg class="empty-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg
+            class="empty-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
             <path
-                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+            />
           </svg>
           <p>暂无投票</p>
         </div>
@@ -85,7 +95,7 @@
 </template>
 
 <script setup>
-import {ref, watch} from 'vue'
+import { ref, watch } from 'vue'
 
 // Props
 const props = defineProps({
@@ -160,17 +170,20 @@ const formatVoteTime = (dateString) => {
 }
 
 // 监听弹窗显示状态
-watch(() => props.show, (newShow) => {
-  if (newShow && props.songId) {
-    fetchVoters()
-  } else {
-    // 重置数据
-    songInfo.value = null
-    voters.value = []
-    totalVotes.value = 0
-    error.value = ''
+watch(
+  () => props.show,
+  (newShow) => {
+    if (newShow && props.songId) {
+      fetchVoters()
+    } else {
+      // 重置数据
+      songInfo.value = null
+      voters.value = []
+      totalVotes.value = 0
+      error.value = ''
+    }
   }
-})
+)
 </script>
 
 <style scoped>

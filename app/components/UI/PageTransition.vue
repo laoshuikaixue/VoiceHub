@@ -1,21 +1,21 @@
 <template>
   <Transition
-      :mode="transitionMode"
-      :name="transitionName"
-      @enter="onEnter"
-      @leave="onLeave"
-      @before-enter="onBeforeEnter"
-      @after-enter="onAfterEnter"
-      @before-leave="onBeforeLeave"
-      @after-leave="onAfterLeave"
+    :mode="transitionMode"
+    :name="transitionName"
+    @enter="onEnter"
+    @leave="onLeave"
+    @before-enter="onBeforeEnter"
+    @after-enter="onAfterEnter"
+    @before-leave="onBeforeLeave"
+    @after-leave="onAfterLeave"
   >
-    <slot/>
+    <slot />
   </Transition>
 </template>
 
 <script setup>
-import {computed, ref} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
@@ -67,7 +67,7 @@ const onBeforeEnter = (el) => {
 
 const onEnter = (el, done) => {
   // 强制重排以确保动画生效
-  el.offsetHeight
+  void el.offsetHeight
   done()
 }
 

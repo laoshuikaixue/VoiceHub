@@ -4,17 +4,17 @@ export const useLyricSettings = () => {
     if (typeof window === 'undefined') return 44
     return window.innerWidth <= 1024 ? 30 : 44
   }
-  
+
   const getDefaultTranFontSize = () => {
     if (typeof window === 'undefined') return 22
     return window.innerWidth <= 1024 ? 18 : 22
   }
-  
+
   const getDefaultRomaFontSize = () => {
     if (typeof window === 'undefined') return 18
     return window.innerWidth <= 1024 ? 14 : 18
   }
-  
+
   const lyricFontSize = useState('lyric-font-size', getDefaultFontSize)
   const lyricTranFontSize = useState('lyric-tran-font-size', getDefaultTranFontSize)
   const lyricRomaFontSize = useState('lyric-roma-font-size', getDefaultRomaFontSize)
@@ -27,7 +27,7 @@ export const useLyricSettings = () => {
   const showWordsRoma = useState('lyric-show-words-roma', () => true) // 逐字罗马音
   const swapTranRoma = useState('lyric-swap-tran-roma', () => false)
   const lyricOffset = useState('lyric-offset', () => 0)
-  
+
   // 括号替换设置
   const replaceLyricBrackets = useState('lyric-replace-brackets', () => true)
   const bracketReplacementPreset = useState('lyric-bracket-preset', () => 'dash')
@@ -39,11 +39,11 @@ export const useLyricSettings = () => {
   const hidePassedLines = useState('lyric-hide-passed', () => false)
   const wordFadeWidth = useState('lyric-word-fade-width', () => 0.5)
   const countDownShow = useState('lyric-countdown-show', () => true)
-  
+
   // 歌词字体
   const lyricFontWeight = useState('lyric-font-weight', () => 'bold')
   const LyricFont = useState('lyric-font-family', () => 'follow') // 'follow' 跟随系统
-  
+
   // 歌词排除规则
   const enableExcludeLyrics = useState('lyric-exclude-enable', () => false)
   const excludeLyricsUserKeywords = useState<string[]>('lyric-exclude-keywords', () => [])
@@ -52,14 +52,20 @@ export const useLyricSettings = () => {
   const enableExcludeLyricsLocal = useState('lyric-exclude-local', () => false)
 
   // 优先级
-  const lyricPriority = useState<'qm' | 'official' | 'ttml' | 'auto'>('lyric-priority', () => 'auto')
+  const lyricPriority = useState<'qm' | 'official' | 'ttml' | 'auto'>(
+    'lyric-priority',
+    () => 'auto'
+  )
   const enableQQMusicLyric = useState('lyric-enable-qm', () => true)
   const enableOnlineTTMLLyric = useState('lyric-enable-ttml', () => true)
   // AMLL TTML DB Server 配置
-  const amllDbServer = useState('lyric-amll-db-server', () => 'https://amlldb.bikonoo.com/ncm-lyrics/%s.ttml')
+  const amllDbServer = useState(
+    'lyric-amll-db-server',
+    () => 'https://amlldb.bikonoo.com/ncm-lyrics/%s.ttml'
+  )
   const localLyricQQMusicMatch = useState('lyric-local-qm-match', () => true)
   const localLyricPath = useState<string[]>('lyric-local-path', () => [])
-  
+
   // 繁简转换
   const preferTraditionalChinese = useState('lyric-prefer-traditional', () => false)
   const traditionalChineseVariant = useState('lyric-traditional-variant', () => 'hk')
@@ -74,15 +80,15 @@ export const useLyricSettings = () => {
     lyricOffset: true,
     lyricSettings: true
   }))
-  
+
   const lyricOffsetStep = useState('lyric-offset-step', () => 100)
 
   // 根据屏幕尺寸调整字体大小
   const adjustFontSizeForDevice = () => {
     if (typeof window === 'undefined') return
-    
+
     const isMobile = window.innerWidth <= 1024
-    
+
     // 只在 auto 模式下自动调整
     if (lyricFontSizeMode.value === 'auto') {
       lyricFontSize.value = isMobile ? 30 : 44

@@ -1,11 +1,11 @@
-import type {Config} from 'drizzle-kit';
+import type { Config } from 'drizzle-kit'
 
 export default {
   out: './app/drizzle/migrations',
   schema: './app/drizzle/schema.ts',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL!
   },
   verbose: process.env.NODE_ENV === 'development',
   strict: false, // 避免在部署时出现交互式提示
@@ -17,4 +17,4 @@ export default {
   introspect: {
     casing: 'camel'
   }
-} satisfies Config;
+} satisfies Config

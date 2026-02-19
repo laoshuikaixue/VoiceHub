@@ -1,17 +1,24 @@
 <template>
-  <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+  <div
+    class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+  >
     <div class="flex flex-col space-y-2">
       <h2 class="text-2xl font-bold tracking-tight text-zinc-100">打印排期</h2>
       <p class="text-sm text-zinc-500">自定义打印设置，预览并导出排期表</p>
     </div>
 
     <!-- 权限检查 -->
-    <div v-if="!canPrintSchedule" class="flex flex-col items-center justify-center py-20 bg-zinc-900/50 rounded-xl border border-zinc-800">
-      <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-4">
+    <div
+      v-if="!canPrintSchedule"
+      class="flex flex-col items-center justify-center py-20 bg-zinc-900/50 rounded-xl border border-zinc-800"
+    >
+      <div
+        class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-4"
+      >
         <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="m15 9-6 6"/>
-          <path d="m9 9 6 6"/>
+          <circle cx="12" cy="12" r="10" />
+          <path d="m15 9-6 6" />
+          <path d="m9 9 6 6" />
         </svg>
       </div>
       <h3 class="text-lg font-bold text-zinc-100">权限不足</h3>
@@ -21,15 +28,19 @@
     <div v-else class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
       <!-- 设置面板 -->
       <div class="lg:col-span-4 flex flex-col gap-6">
-        <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-full">
+        <div
+          class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-full"
+        >
           <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100">
             <Layout class="w-4 h-4 text-blue-500" /> 打印设置
           </h3>
-          
+
           <div class="space-y-5 overflow-y-auto custom-scrollbar pr-2 flex-1">
             <!-- 纸张大小 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider">纸张大小</label>
+              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+                >纸张大小</label
+              >
               <CustomSelect
                 v-model="settings.paperSize"
                 :options="paperSizeOptions"
@@ -40,17 +51,29 @@
 
             <!-- 页面方向 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider">页面方向</label>
+              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+                >页面方向</label
+              >
               <div class="grid grid-cols-2 gap-2">
-                <button 
+                <button
+                  :class="[
+                    'py-2.5 rounded-lg text-sm font-bold transition-all',
+                    settings.orientation === 'portrait'
+                      ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm'
+                      : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300'
+                  ]"
                   @click="settings.orientation = 'portrait'"
-                  :class="['py-2.5 rounded-lg text-sm font-bold transition-all', settings.orientation === 'portrait' ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm' : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300']"
                 >
                   纵向
                 </button>
-                <button 
+                <button
+                  :class="[
+                    'py-2.5 rounded-lg text-sm font-bold transition-all',
+                    settings.orientation === 'landscape'
+                      ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm'
+                      : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300'
+                  ]"
                   @click="settings.orientation = 'landscape'"
-                  :class="['py-2.5 rounded-lg text-sm font-bold transition-all', settings.orientation === 'landscape' ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm' : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300']"
                 >
                   横向
                 </button>
@@ -59,23 +82,30 @@
 
             <!-- 日期范围 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider">日期范围</label>
+              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+                >日期范围</label
+              >
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input
-                    v-model="settings.startDate"
-                    type="date"
-                    class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
-                    max="9999-12-31"
-                />
+                  v-model="settings.startDate"
+                  type="date"
+                  class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
+                  max="9999-12-31"
+                >
                 <input
-                    v-model="settings.endDate"
-                    type="date"
-                    class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
-                    max="9999-12-31"
-                />
+                  v-model="settings.endDate"
+                  type="date"
+                  class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
+                  max="9999-12-31"
+                >
               </div>
               <div class="flex gap-2 flex-wrap">
-                <button v-for="range in dateRanges" :key="range.value" @click="setDateRange(range.value)" class="px-2 py-1 bg-zinc-800/50 hover:bg-zinc-800 text-[10px] text-zinc-400 rounded-md transition-colors border border-zinc-800">
+                <button
+                  v-for="range in dateRanges"
+                  :key="range.value"
+                  class="px-2 py-1 bg-zinc-800/50 hover:bg-zinc-800 text-[10px] text-zinc-400 rounded-md transition-colors border border-zinc-800"
+                  @click="setDateRange(range.value)"
+                >
                   {{ range.label }}
                 </button>
               </div>
@@ -83,50 +113,106 @@
 
             <!-- 显示内容 -->
             <div class="space-y-3">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider">显示内容</label>
+              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+                >显示内容</label
+              >
               <div class="grid grid-cols-1 gap-2.5">
-                <label v-for="option in contentOptions" :key="option.key" class="flex items-center gap-3 cursor-pointer group select-none">
-                  <div :class="['w-5 h-5 rounded flex items-center justify-center border transition-all', settings[option.key] ? 'bg-blue-600 border-blue-600' : 'bg-zinc-950 border-zinc-800 group-hover:border-zinc-700']">
+                <label
+                  v-for="option in contentOptions"
+                  :key="option.key"
+                  class="flex items-center gap-3 cursor-pointer group select-none"
+                >
+                  <div
+                    :class="[
+                      'w-5 h-5 rounded flex items-center justify-center border transition-all',
+                      settings[option.key]
+                        ? 'bg-blue-600 border-blue-600'
+                        : 'bg-zinc-950 border-zinc-800 group-hover:border-zinc-700'
+                    ]"
+                  >
                     <CheckCircle2 v-if="settings[option.key]" class="w-3 h-3 text-white" />
                   </div>
-                  <input type="checkbox" v-model="settings[option.key]" class="hidden" />
-                  <span :class="['text-sm font-medium transition-colors', settings[option.key] ? 'text-zinc-200' : 'text-zinc-500 group-hover:text-zinc-400']">{{ option.label }}</span>
+                  <input v-model="settings[option.key]" type="checkbox" class="hidden" >
+                  <span
+                    :class="[
+                      'text-sm font-medium transition-colors',
+                      settings[option.key]
+                        ? 'text-zinc-200'
+                        : 'text-zinc-500 group-hover:text-zinc-400'
+                    ]"
+                    >{{ option.label }}</span
+                  >
                 </label>
-                
-                <label v-if="schoolLogoPrintUrl" class="flex items-center gap-3 cursor-pointer group select-none">
-                  <div :class="['w-5 h-5 rounded flex items-center justify-center border transition-all', settings.showSchoolLogo ? 'bg-blue-600 border-blue-600' : 'bg-zinc-950 border-zinc-800 group-hover:border-zinc-700']">
+
+                <label
+                  v-if="schoolLogoPrintUrl"
+                  class="flex items-center gap-3 cursor-pointer group select-none"
+                >
+                  <div
+                    :class="[
+                      'w-5 h-5 rounded flex items-center justify-center border transition-all',
+                      settings.showSchoolLogo
+                        ? 'bg-blue-600 border-blue-600'
+                        : 'bg-zinc-950 border-zinc-800 group-hover:border-zinc-700'
+                    ]"
+                  >
                     <CheckCircle2 v-if="settings.showSchoolLogo" class="w-3 h-3 text-white" />
                   </div>
-                  <input type="checkbox" v-model="settings.showSchoolLogo" class="hidden" />
-                  <span :class="['text-sm font-medium transition-colors', settings.showSchoolLogo ? 'text-zinc-200' : 'text-zinc-500 group-hover:text-zinc-400']">学校Logo</span>
+                  <input v-model="settings.showSchoolLogo" type="checkbox" class="hidden" >
+                  <span
+                    :class="[
+                      'text-sm font-medium transition-colors',
+                      settings.showSchoolLogo
+                        ? 'text-zinc-200'
+                        : 'text-zinc-500 group-hover:text-zinc-400'
+                    ]"
+                    >学校Logo</span
+                  >
                 </label>
               </div>
             </div>
 
             <!-- 备注 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider">备注</label>
-              <textarea 
+              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+                >备注</label
+              >
+              <textarea
                 v-model="settings.remark"
-                placeholder="请输入备注信息（可选）" 
+                placeholder="请输入备注信息（可选）"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm focus:outline-none text-zinc-300 min-h-[80px] resize-none focus:border-blue-500/50 transition-colors"
-              ></textarea>
+              />
             </div>
           </div>
 
           <!-- 操作按钮 -->
           <div class="space-y-2 pt-4 border-t border-zinc-800 shrink-0">
-            <button @click="refreshPreview" class="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-sm font-bold rounded-lg border border-zinc-700 transition-all">
+            <button
+              class="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-sm font-bold rounded-lg border border-zinc-700 transition-all"
+              @click="refreshPreview"
+            >
               <RefreshCw class="w-4 h-4" /> 刷新预览
             </button>
-            <button :disabled="isPrinting" @click="printSchedule" class="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-900/20 transition-all">
+            <button
+              :disabled="isPrinting"
+              class="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-900/20 transition-all"
+              @click="printSchedule"
+            >
               <Printer class="w-4 h-4" /> {{ isPrinting ? '打印中...' : '打印' }}
             </button>
             <div class="grid grid-cols-2 gap-2">
-              <button :disabled="isExporting" @click="exportPDF" class="flex items-center justify-center gap-2 py-2.5 bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-emerald-500/20 transition-all">
+              <button
+                :disabled="isExporting"
+                class="flex items-center justify-center gap-2 py-2.5 bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-emerald-500/20 transition-all"
+                @click="exportPDF"
+              >
                 <FileText class="w-3.5 h-3.5" /> {{ isExporting ? '导出中...' : '导出PDF' }}
               </button>
-              <button :disabled="isExportingImage" @click="exportImage" class="flex items-center justify-center gap-2 py-2.5 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-amber-500/20 transition-all">
+              <button
+                :disabled="isExportingImage"
+                class="flex items-center justify-center gap-2 py-2.5 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-amber-500/20 transition-all"
+                @click="exportImage"
+              >
                 <ImageIcon class="w-3.5 h-3.5" /> {{ isExportingImage ? '导出中...' : '导出长图' }}
               </button>
             </div>
@@ -136,131 +222,142 @@
 
       <!-- 预览区域 -->
       <div class="lg:col-span-8 flex flex-col gap-4 min-h-0">
-        <div class="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg">
+        <div
+          class="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg"
+        >
           <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
             <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100">
               <AlignLeft class="w-4.5 h-4.5 text-zinc-500" /> 预览区域
             </h3>
             <div class="flex items-center gap-2 text-xs font-bold">
               <span class="text-zinc-400">{{ filteredSchedules.length }} 首歌曲</span>
-              <span v-if="schedules.length === 0" class="px-2 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20">无数据</span>
-              <span v-else-if="filteredSchedules.length === 0" class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">被过滤</span>
+              <span
+                v-if="schedules.length === 0"
+                class="px-2 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20"
+                >无数据</span
+              >
+              <span
+                v-else-if="filteredSchedules.length === 0"
+                class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                >被过滤</span
+              >
             </div>
           </div>
-          
-          <div class="flex-1 bg-zinc-950/50 p-6 md:p-12 overflow-auto custom-scrollbar flex items-start">
+
+          <div
+            class="flex-1 bg-zinc-950/50 p-6 md:p-12 overflow-auto custom-scrollbar flex items-start"
+          >
             <!-- 纸张预览 -->
             <div
-                ref="previewContent"
-                :class="[
+              ref="previewContent"
+              :class="[
                 `paper-${settings.paperSize.toLowerCase()}`,
                 `orientation-${settings.orientation}`
               ]"
-                class="preview-content m-auto shrink-0"
+              class="preview-content m-auto shrink-0"
             >
               <div class="print-page">
                 <!-- 页面头部 -->
                 <div class="page-header">
                   <div class="logo-section">
-                    <img :src="logoUrl" alt="VoiceHub Logo" class="logo"/>
+                    <img :src="logoUrl" alt="VoiceHub Logo" class="logo" >
                     <!-- 竖线分割 -->
-                    <div class="logo-divider"></div>
+                    <div class="logo-divider" />
                     <!-- 学校logo -->
                     <img
-                        v-if="settings.showSchoolLogo && schoolLogoPrintUrl"
-                        :src="schoolLogoPrintUrl"
-                        alt="学校Logo"
-                        class="school-logo-print"
-                    />
+                      v-if="settings.showSchoolLogo && schoolLogoPrintUrl"
+                      :src="schoolLogoPrintUrl"
+                      alt="学校Logo"
+                      class="school-logo-print"
+                    >
                     <div class="title-section">
                       <h1>{{ siteTitle }}</h1>
                       <h2>广播排期表</h2>
                     </div>
                   </div>
                   <div class="date-info">
-                  <div class="date-range-display">{{ formatDateRange() }}</div>
-                </div>
-              </div>
-
-              <!-- 排期内容 -->
-              <div class="schedule-content">
-                <!-- 无数据提示 -->
-                <div v-if="filteredSchedules.length === 0" class="no-data-message">
-                  <div class="no-data-icon">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <rect height="18" rx="2" ry="2" width="18" x="3" y="4"/>
-                      <line x1="16" x2="16" y1="2" y2="6"/>
-                      <line x1="8" x2="8" y1="2" y2="6"/>
-                      <line x1="3" x2="21" y1="10" y2="10"/>
-                    </svg>
+                    <div class="date-range-display">{{ formatDateRange() }}</div>
                   </div>
-                  <h3>暂无排期数据</h3>
-                  <p v-if="schedules.length === 0">
-                    请先在"排期管理"中添加排期，然后再来打印。
-                  </p>
-                  <p v-else>
-                    当前日期范围内没有排期数据，请调整日期范围或检查排期设置。
-                  </p>
                 </div>
 
-                <div class="grouped-content">
-                  <div
+                <!-- 排期内容 -->
+                <div class="schedule-content">
+                  <!-- 无数据提示 -->
+                  <div v-if="filteredSchedules.length === 0" class="no-data-message">
+                    <div class="no-data-icon">
+                      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <rect height="18" rx="2" ry="2" width="18" x="3" y="4" />
+                        <line x1="16" x2="16" y1="2" y2="6" />
+                        <line x1="8" x2="8" y1="2" y2="6" />
+                        <line x1="3" x2="21" y1="10" y2="10" />
+                      </svg>
+                    </div>
+                    <h3>暂无排期数据</h3>
+                    <p v-if="schedules.length === 0">请先在"排期管理"中添加排期，然后再来打印。</p>
+                    <p v-else>当前日期范围内没有排期数据，请调整日期范围或检查排期设置。</p>
+                  </div>
+
+                  <div class="grouped-content">
+                    <div
                       v-for="(dateGroup, date) in groupedSchedules"
                       :key="date"
                       class="date-group"
                       :data-date="date"
-                  >
-                    <h3 class="group-title">
-                      {{ formatDate(date) }}
-                      <span class="group-count">({{ dateGroup.allSchedules.length }}首)</span>
-                    </h3>
+                    >
+                      <h3 class="group-title">
+                        {{ formatDate(date) }}
+                        <span class="group-count">({{ dateGroup.allSchedules.length }}首)</span>
+                      </h3>
 
-
-                    <!-- 检查是否需要显示时段分组 -->
-                    <div v-if="hasMultiplePlayTimes(dateGroup)" class="playtime-groups">
-                      <div
+                      <!-- 检查是否需要显示时段分组 -->
+                      <div v-if="hasMultiplePlayTimes(dateGroup)" class="playtime-groups">
+                        <div
                           v-for="(playTimeData, playTime) in dateGroup.playTimes"
                           :key="playTime"
                           class="playtime-group"
-                      >
-                        <h4 class="playtime-title">
-                          {{ playTime }}
-                          <span class="playtime-count">({{ playTimeData.schedules.length }}首)</span>
-                        </h4>
-                        <div class="schedule-list">
-                          <div
+                        >
+                          <h4 class="playtime-title">
+                            {{ playTime }}
+                            <span class="playtime-count"
+                              >({{ playTimeData.schedules.length }}首)</span
+                            >
+                          </h4>
+                          <div class="schedule-list">
+                            <div
                               v-for="schedule in playTimeData.schedules"
                               :key="schedule.id"
                               class="schedule-item"
-                          >
-                            <ScheduleItemPrint :schedule="schedule" :settings="settings"/>
+                            >
+                              <ScheduleItemPrint :schedule="schedule" :settings="settings" />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <!-- 如果只有一个时段或没有时段，直接显示歌曲列表 -->
-                    <div v-else class="schedule-list">
-                      <div
+                      <!-- 如果只有一个时段或没有时段，直接显示歌曲列表 -->
+                      <div v-else class="schedule-list">
+                        <div
                           v-for="schedule in dateGroup.allSchedules"
                           :key="schedule.id"
                           class="schedule-item"
-                      >
-                        <ScheduleItemPrint :schedule="schedule" :settings="settings"/>
+                        >
+                          <ScheduleItemPrint :schedule="schedule" :settings="settings" />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- 页面底部 -->
-              <div class="page-footer">
-                <div class="footer-left">
-                  <span>生成时间：{{ new Date().toLocaleString() }}</span>
-                  <span v-if="settings.remark" class="remark-text">备注：{{ settings.remark }}</span>
+                <!-- 页面底部 -->
+                <div class="page-footer">
+                  <div class="footer-left">
+                    <span>生成时间：{{ new Date().toLocaleString() }}</span>
+                    <span v-if="settings.remark" class="remark-text"
+                      >备注：{{ settings.remark }}</span
+                    >
+                  </div>
+                  <span class="footer-right">Generated by VoiceHub | 广播管理系统</span>
                 </div>
-                <span class="footer-right">Generated by VoiceHub | 广播管理系统</span>
-              </div>
               </div>
             </div>
           </div>
@@ -279,20 +376,26 @@ import { convertToHttps } from '~/utils/url'
 import { toPng, toBlob } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import {
-  Layout, ChevronDown, CheckCircle2, Printer, 
-  FileText, ImageIcon, AlignLeft, RefreshCw
+  Layout,
+  ChevronDown,
+  CheckCircle2,
+  Printer,
+  FileText,
+  ImageIcon,
+  AlignLeft,
+  RefreshCw
 } from 'lucide-vue-next'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
+import logoPng from '~/public/images/logo.png'
 
 // 权限检查
 const { canPrintSchedule } = usePermissions()
 
 // 站点配置
 const { siteTitle, schoolLogoPrintUrl, initSiteConfig } = useSiteConfig()
-import logoPng from '~/public/images/logo.png'
 
 // 配置
 const config = useRuntimeConfig()
@@ -360,7 +463,7 @@ const filteredSchedules = computed(() => {
   if (settings.value.startDate) {
     const startDate = new Date(settings.value.startDate)
     startDate.setHours(0, 0, 0, 0)
-    filtered = filtered.filter(s => {
+    filtered = filtered.filter((s) => {
       const scheduleDate = new Date(s.playDate)
       scheduleDate.setHours(0, 0, 0, 0)
       return scheduleDate >= startDate
@@ -370,7 +473,7 @@ const filteredSchedules = computed(() => {
   if (settings.value.endDate) {
     const endDate = new Date(settings.value.endDate)
     endDate.setHours(23, 59, 59, 999)
-    filtered = filtered.filter(s => {
+    filtered = filtered.filter((s) => {
       const scheduleDate = new Date(s.playDate)
       return scheduleDate <= endDate
     })
@@ -387,10 +490,11 @@ const filteredSchedules = computed(() => {
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   // 处理 YYYY-MM-DD 格式，确保在不同浏览器和时区下表现一致
-  const date = dateStr.includes('-') && !dateStr.includes('T') 
-    ? new Date(dateStr.replace(/-/g, '/')) 
-    : new Date(dateStr)
-    
+  const date =
+    dateStr.includes('-') && !dateStr.includes('T')
+      ? new Date(dateStr.replace(/-/g, '/'))
+      : new Date(dateStr)
+
   return date.toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',
@@ -405,7 +509,11 @@ const formatDateRange = () => {
   }
 
   // 如果开始和结束日期相同，只显示一个日期
-  if (settings.value.startDate && settings.value.endDate && settings.value.startDate === settings.value.endDate) {
+  if (
+    settings.value.startDate &&
+    settings.value.endDate &&
+    settings.value.startDate === settings.value.endDate
+  ) {
     return formatDate(settings.value.startDate)
   }
 
@@ -424,8 +532,8 @@ const formatDateRange = () => {
 // 设置日期范围
 const setDateRange = (type) => {
   const today = new Date()
-  let start = new Date()
-  let end = new Date()
+  const start = new Date()
+  const end = new Date()
 
   if (type === 'today') {
     // start and end are already today
@@ -479,7 +587,7 @@ const getPlayTimeSortWeight = (playTime) => {
 const groupedSchedules = computed(() => {
   const groups = {}
 
-  filteredSchedules.value.forEach(schedule => {
+  filteredSchedules.value.forEach((schedule) => {
     // 处理日期，确保正确提取日期部分
     const scheduleDate = new Date(schedule.playDate)
     const dateKey = scheduleDate.toISOString().split('T')[0]
@@ -508,42 +616,46 @@ const groupedSchedules = computed(() => {
 
   // 排序处理
   const sortedGroups = {}
-  Object.keys(groups).sort().forEach(dateKey => {
-    const dateGroup = groups[dateKey]
+  Object.keys(groups)
+    .sort()
+    .forEach((dateKey) => {
+      const dateGroup = groups[dateKey]
 
-    // 对每个时段内的歌曲按序号排序
-    Object.keys(dateGroup.playTimes).forEach(playTimeKey => {
-      dateGroup.playTimes[playTimeKey].schedules.sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+      // 对每个时段内的歌曲按序号排序
+      Object.keys(dateGroup.playTimes).forEach((playTimeKey) => {
+        dateGroup.playTimes[playTimeKey].schedules.sort(
+          (a, b) => (a.sequence || 0) - (b.sequence || 0)
+        )
+      })
+
+      // 对时段按时间顺序排序
+      const sortedPlayTimes = {}
+      const playTimeKeys = Object.keys(dateGroup.playTimes).sort((a, b) => {
+        const playTimeA = dateGroup.playTimes[a].playTime
+        const playTimeB = dateGroup.playTimes[b].playTime
+
+        const weightA = getPlayTimeSortWeight(playTimeA)
+        const weightB = getPlayTimeSortWeight(playTimeB)
+
+        return weightA - weightB
+      })
+
+      playTimeKeys.forEach((key) => {
+        sortedPlayTimes[key] = dateGroup.playTimes[key]
+      })
+
+      // 重新计算allSchedules，按时段顺序排列
+      const sortedAllSchedules = []
+      playTimeKeys.forEach((key) => {
+        sortedAllSchedules.push(...dateGroup.playTimes[key].schedules)
+      })
+
+      sortedGroups[dateKey] = {
+        ...dateGroup,
+        playTimes: sortedPlayTimes,
+        allSchedules: sortedAllSchedules
+      }
     })
-
-    // 对时段按时间顺序排序
-    const sortedPlayTimes = {}
-    const playTimeKeys = Object.keys(dateGroup.playTimes).sort((a, b) => {
-      const playTimeA = dateGroup.playTimes[a].playTime
-      const playTimeB = dateGroup.playTimes[b].playTime
-
-      const weightA = getPlayTimeSortWeight(playTimeA)
-      const weightB = getPlayTimeSortWeight(playTimeB)
-
-      return weightA - weightB
-    })
-
-    playTimeKeys.forEach(key => {
-      sortedPlayTimes[key] = dateGroup.playTimes[key]
-    })
-
-    // 重新计算allSchedules，按时段顺序排列
-    const sortedAllSchedules = []
-    playTimeKeys.forEach(key => {
-      sortedAllSchedules.push(...dateGroup.playTimes[key].schedules)
-    })
-
-    sortedGroups[dateKey] = {
-      ...dateGroup,
-      playTimes: sortedPlayTimes,
-      allSchedules: sortedAllSchedules
-    }
-  })
 
   return sortedGroups
 })
@@ -567,7 +679,7 @@ const loadSchedules = async () => {
     const data = await $fetch('/api/songs/public?bypass_cache=true')
     // API直接返回排期数组，不是包装在schedules属性中
     schedules.value = Array.isArray(data) ? data : []
-    
+
     // 如果没有数据，显示提示
     if (schedules.value.length === 0) {
       if (window.$showNotification) {
@@ -633,9 +745,9 @@ const exportPDFForPrint = async (action = 'print') => {
 
   const pdfWidth = pdf.internal.pageSize.getWidth()
   const pdfHeight = pdf.internal.pageSize.getHeight()
-  
+
   // 计算容器尺寸 (使用 A4 纸比例的像素值，确保清晰度)
-  // A4 @ 96dpi approx 794x1123. Use 2x for better quality? 
+  // A4 @ 96dpi approx 794x1123. Use 2x for better quality?
   // No, let's match standard pixel width for A4 usually used in web (794px).
   // The scale factor will be handled by toPng pixelRatio.
   const containerWidth = settings.value.paperSize === 'A4' ? 794 : 1123
@@ -659,12 +771,12 @@ const exportPDFForPrint = async (action = 'print') => {
     z-index: -9999;
     overflow: hidden;
   `
-  
+
   // 辅助：强制样式
   const applyForceStyles = (el) => {
-      el.style.setProperty('background', 'white', 'important')
-      el.style.setProperty('color', 'black', 'important')
-      el.style.setProperty('box-shadow', 'none', 'important')
+    el.style.setProperty('background', 'white', 'important')
+    el.style.setProperty('color', 'black', 'important')
+    el.style.setProperty('box-shadow', 'none', 'important')
   }
 
   document.body.appendChild(pageContainer)
@@ -673,21 +785,21 @@ const exportPDFForPrint = async (action = 'print') => {
     const sourceHeader = originalPrintPage.querySelector('.page-header')
     const sourceFooter = originalPrintPage.querySelector('.page-footer')
     const sourceContent = originalPrintPage.querySelector('.schedule-content')
-    
+
     // 如果找不到标准结构，尝试直接克隆（兼容旧版）
     if (!sourceContent) {
-        throw new Error('排期内容结构不符合分页要求')
+      throw new Error('排期内容结构不符合分页要求')
     }
 
     // 辅助：渲染当前页并添加到PDF
     const renderPage = async (isFirst) => {
       applyForceStyles(pageContainer)
-      
+
       // 预处理当前页面的图片
       await preprocessImages(pageContainer)
-      
+
       // 稍微等待渲染
-      await new Promise(r => setTimeout(r, 100))
+      await new Promise((r) => setTimeout(r, 100))
 
       const blob = await toBlob(pageContainer, {
         quality: 0.9,
@@ -696,30 +808,30 @@ const exportPDFForPrint = async (action = 'print') => {
         height: containerHeight,
         style: { visibility: 'visible', opacity: '1', background: 'white' }
       })
-      
+
       if (!blob) throw new Error('页面渲染失败')
       const imgUrl = URL.createObjectURL(blob)
 
       if (!isFirst) pdf.addPage()
       pdf.addImage(imgUrl, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')
-      
+
       // 清理
       URL.revokeObjectURL(imgUrl)
     }
 
     // 辅助：重置页面容器（添加页眉页脚）
     let currentContentWrapper = null
-    
+
     const resetPageContainer = () => {
       pageContainer.innerHTML = ''
-      
+
       // 添加 Header
       if (sourceHeader) {
         const h = sourceHeader.cloneNode(true)
         applyForceStyles(h)
         pageContainer.appendChild(h)
       }
-      
+
       // 创建内容区域
       const cw = document.createElement('div')
       cw.className = 'schedule-content'
@@ -727,7 +839,7 @@ const exportPDFForPrint = async (action = 'print') => {
       cw.style.padding = '0'
       pageContainer.appendChild(cw)
       currentContentWrapper = cw
-      
+
       // 添加 Footer (绝对定位到底部)
       if (sourceFooter) {
         const f = sourceFooter.cloneNode(true)
@@ -744,144 +856,145 @@ const exportPDFForPrint = async (action = 'print') => {
     // 分页处理状态
     let isFirstPage = true
     resetPageContainer()
-    
+
     // 检查是否溢出
     // 我们预留 footer 高度 (约50px)
     const MAX_CONTENT_HEIGHT = containerHeight - 60 // 简单的缓冲
     const checkOverflow = () => {
-        return pageContainer.scrollHeight > containerHeight
+      return pageContainer.scrollHeight > containerHeight
     }
 
     // 递归处理节点
     // 策略：我们手动遍历主要结构，因为结构是已知的
     const dateGroups = sourceContent.querySelectorAll('.date-group')
-    
-    for (const group of dateGroups) {
-        // 1. 克隆 Date Group 容器和标题
-        const groupClone = group.cloneNode(false) // shallow
-        const groupTitle = group.querySelector('.group-title').cloneNode(true)
-        groupClone.appendChild(groupTitle)
-        
-        currentContentWrapper.appendChild(groupClone)
-        
-        // 检查标题是否溢出（极少见）
-        if (checkOverflow()) {
-            currentContentWrapper.removeChild(groupClone)
-            await renderPage(isFirstPage)
-            isFirstPage = false
-            resetPageContainer()
-            currentContentWrapper.appendChild(groupClone)
-        }
-        
-        // 2. 遍历 Date Group 的子元素 (Playtime Groups 或 Schedule List)
-        const children = Array.from(group.children).filter(el => !el.classList.contains('group-title'))
-        
-        for (const child of children) {
-            if (child.classList.contains('playtime-groups')) {
-                // 处理时段组
-                const ptWrapper = document.createElement('div')
-                ptWrapper.className = 'playtime-groups'
-                groupClone.appendChild(ptWrapper)
-                
-                const ptGroups = child.querySelectorAll('.playtime-group')
-                for (const ptGroup of ptGroups) {
-                    const ptGroupClone = ptGroup.cloneNode(false)
-                    const ptTitle = ptGroup.querySelector('.playtime-title').cloneNode(true)
-                    ptGroupClone.appendChild(ptTitle)
-                    ptWrapper.appendChild(ptGroupClone)
-                    
-                    const listWrapper = document.createElement('div')
-                    listWrapper.className = 'schedule-list'
-                    ptGroupClone.appendChild(listWrapper)
-                    
-                    let currentPtListWrapper = listWrapper
 
-                    // 遍历排期项
-                    const items = ptGroup.querySelectorAll('.schedule-item')
-                    for (const item of items) {
-                        const itemClone = item.cloneNode(true)
-                        currentPtListWrapper.appendChild(itemClone)
-                        
-                        if (checkOverflow()) {
-                            currentPtListWrapper.removeChild(itemClone)
-                            await renderPage(isFirstPage)
-                            isFirstPage = false
-                            resetPageContainer()
-                            
-                            // 在新页面重建路径
-                            const newGroup = group.cloneNode(false)
-                            newGroup.appendChild(group.querySelector('.group-title').cloneNode(true))
-                            currentContentWrapper.appendChild(newGroup)
-                            
-                            const newPtWrapper = document.createElement('div')
-                            newPtWrapper.className = 'playtime-groups'
-                            newGroup.appendChild(newPtWrapper)
-                            
-                            const newPtGroup = ptGroup.cloneNode(false)
-                            newPtGroup.appendChild(ptGroup.querySelector('.playtime-title').cloneNode(true))
-                            newPtWrapper.appendChild(newPtGroup)
-                            
-                            const newListWrapper = document.createElement('div')
-                            newListWrapper.className = 'schedule-list'
-                            newPtGroup.appendChild(newListWrapper)
-                            
-                            // 添加项
-                            newListWrapper.appendChild(itemClone)
-                            currentPtListWrapper = newListWrapper
-                        }
-                    }
-                }
-            } else if (child.classList.contains('schedule-list')) {
-                // 处理直接列表
-                const listWrapper = document.createElement('div')
-                listWrapper.className = 'schedule-list'
-                groupClone.appendChild(listWrapper)
-                
-                // 我们需要一个可变的引用
-                let currentListWrapper = listWrapper
-                
-                const items = child.querySelectorAll('.schedule-item')
-                for (const item of items) {
-                    const itemClone = item.cloneNode(true)
-                    currentListWrapper.appendChild(itemClone)
-                    
-                    if (checkOverflow()) {
-                        currentListWrapper.removeChild(itemClone)
-                        await renderPage(isFirstPage)
-                        isFirstPage = false
-                        resetPageContainer()
-                        
-                        // 重建路径
-                        const newGroup = group.cloneNode(false)
-                        newGroup.appendChild(group.querySelector('.group-title').cloneNode(true))
-                        currentContentWrapper.appendChild(newGroup)
-                        
-                        const newListWrapper = document.createElement('div')
-                        newListWrapper.className = 'schedule-list'
-                        newGroup.appendChild(newListWrapper)
-                        
-                        newListWrapper.appendChild(itemClone)
-                        currentListWrapper = newListWrapper
-                    }
-                }
+    for (const group of dateGroups) {
+      // 1. 克隆 Date Group 容器和标题
+      const groupClone = group.cloneNode(false) // shallow
+      const groupTitle = group.querySelector('.group-title').cloneNode(true)
+      groupClone.appendChild(groupTitle)
+
+      currentContentWrapper.appendChild(groupClone)
+
+      // 检查标题是否溢出（极少见）
+      if (checkOverflow()) {
+        currentContentWrapper.removeChild(groupClone)
+        await renderPage(isFirstPage)
+        isFirstPage = false
+        resetPageContainer()
+        currentContentWrapper.appendChild(groupClone)
+      }
+
+      // 2. 遍历 Date Group 的子元素 (Playtime Groups 或 Schedule List)
+      const children = Array.from(group.children).filter(
+        (el) => !el.classList.contains('group-title')
+      )
+
+      for (const child of children) {
+        if (child.classList.contains('playtime-groups')) {
+          // 处理时段组
+          const ptWrapper = document.createElement('div')
+          ptWrapper.className = 'playtime-groups'
+          groupClone.appendChild(ptWrapper)
+
+          const ptGroups = child.querySelectorAll('.playtime-group')
+          for (const ptGroup of ptGroups) {
+            const ptGroupClone = ptGroup.cloneNode(false)
+            const ptTitle = ptGroup.querySelector('.playtime-title').cloneNode(true)
+            ptGroupClone.appendChild(ptTitle)
+            ptWrapper.appendChild(ptGroupClone)
+
+            const listWrapper = document.createElement('div')
+            listWrapper.className = 'schedule-list'
+            ptGroupClone.appendChild(listWrapper)
+
+            let currentPtListWrapper = listWrapper
+
+            // 遍历排期项
+            const items = ptGroup.querySelectorAll('.schedule-item')
+            for (const item of items) {
+              const itemClone = item.cloneNode(true)
+              currentPtListWrapper.appendChild(itemClone)
+
+              if (checkOverflow()) {
+                currentPtListWrapper.removeChild(itemClone)
+                await renderPage(isFirstPage)
+                isFirstPage = false
+                resetPageContainer()
+
+                // 在新页面重建路径
+                const newGroup = group.cloneNode(false)
+                newGroup.appendChild(group.querySelector('.group-title').cloneNode(true))
+                currentContentWrapper.appendChild(newGroup)
+
+                const newPtWrapper = document.createElement('div')
+                newPtWrapper.className = 'playtime-groups'
+                newGroup.appendChild(newPtWrapper)
+
+                const newPtGroup = ptGroup.cloneNode(false)
+                newPtGroup.appendChild(ptGroup.querySelector('.playtime-title').cloneNode(true))
+                newPtWrapper.appendChild(newPtGroup)
+
+                const newListWrapper = document.createElement('div')
+                newListWrapper.className = 'schedule-list'
+                newPtGroup.appendChild(newListWrapper)
+
+                // 添加项
+                newListWrapper.appendChild(itemClone)
+                currentPtListWrapper = newListWrapper
+              }
             }
+          }
+        } else if (child.classList.contains('schedule-list')) {
+          // 处理直接列表
+          const listWrapper = document.createElement('div')
+          listWrapper.className = 'schedule-list'
+          groupClone.appendChild(listWrapper)
+
+          // 我们需要一个可变的引用
+          let currentListWrapper = listWrapper
+
+          const items = child.querySelectorAll('.schedule-item')
+          for (const item of items) {
+            const itemClone = item.cloneNode(true)
+            currentListWrapper.appendChild(itemClone)
+
+            if (checkOverflow()) {
+              currentListWrapper.removeChild(itemClone)
+              await renderPage(isFirstPage)
+              isFirstPage = false
+              resetPageContainer()
+
+              // 重建路径
+              const newGroup = group.cloneNode(false)
+              newGroup.appendChild(group.querySelector('.group-title').cloneNode(true))
+              currentContentWrapper.appendChild(newGroup)
+
+              const newListWrapper = document.createElement('div')
+              newListWrapper.className = 'schedule-list'
+              newGroup.appendChild(newListWrapper)
+
+              newListWrapper.appendChild(itemClone)
+              currentListWrapper = newListWrapper
+            }
+          }
         }
+      }
     }
-    
+
     // 渲染最后一页
     await renderPage(isFirstPage)
 
     if (action === 'print') {
-        pdf.autoPrint()
-        window.open(pdf.output('bloburl'), '_blank')
+      pdf.autoPrint()
+      window.open(pdf.output('bloburl'), '_blank')
     } else {
-        const filename = `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
-        pdf.save(filename)
-        if (window.$showNotification) {
-            window.$showNotification('PDF导出成功', 'success')
-        }
+      const filename = `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
+      pdf.save(filename)
+      if (window.$showNotification) {
+        window.$showNotification('PDF导出成功', 'success')
+      }
     }
-
   } finally {
     if (document.body.contains(pageContainer)) {
       document.body.removeChild(pageContainer)
@@ -953,14 +1066,14 @@ const preprocessImages = async (element) => {
 
   await Promise.all(imagePromises)
   // 等待一下让图片加载完成
-  await new Promise(resolve => setTimeout(resolve, 500))
+  await new Promise((resolve) => setTimeout(resolve, 500))
 }
 
 const generateAndDownloadImage = async (sourceElement, filename, preProcessCallback = null) => {
   // 根据设置计算固定宽度，而不是依赖 offsetWidth (在移动端可能受屏幕宽度限制而不准确)
   let targetWidth = 800 // 默认为 A4 Portrait 宽度
   const s = settings.value
-  
+
   if (s.paperSize === 'A4') {
     targetWidth = s.orientation === 'landscape' ? 1132 : 800
   } else if (s.paperSize === 'A3') {
@@ -1008,18 +1121,20 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
   }
 
   const allElements = clonedPage.querySelectorAll('*')
-  allElements.forEach(el => {
+  allElements.forEach((el) => {
     if (el.style) {
       el.style.color = 'black !important'
       el.style.background = 'white !important'
       el.style.backgroundColor = 'white !important'
     }
 
-    if (el.classList && (
-        el.classList.contains('print-page') ||
+    if (
+      el.classList &&
+      (el.classList.contains('print-page') ||
         el.classList.contains('page-header') ||
         el.classList.contains('page-footer') ||
-        el.classList.contains('schedule-content'))) {
+        el.classList.contains('schedule-content'))
+    ) {
       el.style.setProperty('background', 'white', 'important')
       el.style.setProperty('background-color', 'white', 'important')
     }
@@ -1032,7 +1147,7 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
 
   try {
     // 增加等待时间，确保渲染完成
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     const contentHeight = imageContainer.offsetHeight || imageContainer.scrollHeight
 
@@ -1067,7 +1182,7 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    
+
     setTimeout(() => URL.revokeObjectURL(dataUrl), 60000)
   } catch (error) {
     console.error(`生成图片失败 (${filename}):`, error)
@@ -1081,16 +1196,16 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
 
 const exportSingleImage = async (printPage) => {
   await generateAndDownloadImage(
-      printPage,
-      `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.png`
+    printPage,
+    `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.png`
   )
 }
 
 const exportSplitImages = async (printPage) => {
   const dateGroups = printPage.querySelectorAll('.date-group')
   const months = new Set()
-  
-  dateGroups.forEach(group => {
+
+  dateGroups.forEach((group) => {
     const date = group.getAttribute('data-date')
     if (date) {
       months.add(date.substring(0, 7))
@@ -1105,29 +1220,25 @@ const exportSplitImages = async (printPage) => {
   }
 
   for (const month of sortedMonths) {
-    await generateAndDownloadImage(
-        printPage,
-        `广播排期表_${month}.png`,
-        (clonedPage) => {
-          const groups = clonedPage.querySelectorAll('.date-group')
-          let hasContent = false
-          
-          groups.forEach(group => {
-            const date = group.getAttribute('data-date')
-            if (!date || !date.startsWith(month)) {
-              group.remove()
-            } else {
-              hasContent = true
-            }
-          })
-          
-          return hasContent
+    await generateAndDownloadImage(printPage, `广播排期表_${month}.png`, (clonedPage) => {
+      const groups = clonedPage.querySelectorAll('.date-group')
+      let hasContent = false
+
+      groups.forEach((group) => {
+        const date = group.getAttribute('data-date')
+        if (!date || !date.startsWith(month)) {
+          group.remove()
+        } else {
+          hasContent = true
         }
-    )
-    
-    await new Promise(resolve => setTimeout(resolve, 300))
+      })
+
+      return hasContent
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 300))
   }
-  
+
   if (window.$showNotification) {
     window.$showNotification(`已完成分段导出，共 ${sortedMonths.length} 张图片`, 'success')
   }
@@ -1135,7 +1246,7 @@ const exportSplitImages = async (printPage) => {
 
 const exportPDF = async () => {
   if (isExporting.value) return
-  
+
   isExporting.value = true
   try {
     if (window.$showNotification) {
@@ -1156,7 +1267,7 @@ const exportPDF = async () => {
 
 const exportImage = async () => {
   if (isExportingImage.value) return
-  
+
   if (!previewContent.value) {
     if (window.$showNotification) {
       window.$showNotification('预览内容未找到', 'error')
@@ -1165,25 +1276,31 @@ const exportImage = async () => {
   }
 
   isExportingImage.value = true
-  
+
   try {
     const printPage = previewContent.value.querySelector('.print-page') || previewContent.value
-    
+
     // 获取实际内容高度
     const fullHeight = printPage.scrollHeight
     const MAX_HEIGHT = 15000
 
     // 检查设备是否为移动端
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    )
+
     // 如果是移动端且内容过长，建议使用PDF导出
     if (isMobile && fullHeight > 5000) {
-       if (confirm('当前排期内容较长，在移动设备上生成长图可能会导致卡顿或失败。建议使用"导出PDF"功能，是否继续尝试生成长图？')) {
-         // 用户坚持要生成，继续
-       } else {
-         isExportingImage.value = false
-         return
-       }
+      if (
+        confirm(
+          '当前排期内容较长，在移动设备上生成长图可能会导致卡顿或失败。建议使用"导出PDF"功能，是否继续尝试生成长图？'
+        )
+      ) {
+        // 用户坚持要生成，继续
+      } else {
+        isExportingImage.value = false
+        return
+      }
     }
 
     if (fullHeight > MAX_HEIGHT) {
@@ -1192,7 +1309,10 @@ const exportImage = async () => {
       }
       await exportSplitImages(printPage)
     } else {
-      await generateAndDownloadImage(printPage, `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.png`)
+      await generateAndDownloadImage(
+        printPage,
+        `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.png`
+      )
     }
 
     if (window.$showNotification) {
@@ -1214,10 +1334,13 @@ onMounted(() => {
 })
 
 // 监听设置变化，自动保存或刷新（如果需要）
-watch(settings, () => {
-  // 可以保存设置到 localStorage
-}, { deep: true })
-
+watch(
+  settings,
+  () => {
+    // 可以保存设置到 localStorage
+  },
+  { deep: true }
+)
 </script>
 
 <style scoped>

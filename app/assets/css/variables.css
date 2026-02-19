@@ -5,64 +5,64 @@
   --primary-hover: #2563eb;
   --primary-light: rgba(59, 130, 246, 0.1);
   --primary-border: rgba(59, 130, 246, 0.2);
-  
+
   /* 成功色 */
   --success: #10b981;
   --success-hover: #059669;
   --success-light: rgba(16, 185, 129, 0.1);
   --success-border: rgba(16, 185, 129, 0.2);
-  
+
   /* 警告色 */
   --warning: #f59e0b;
   --warning-hover: #d97706;
   --warning-light: rgba(245, 158, 11, 0.1);
   --warning-border: rgba(245, 158, 11, 0.2);
-  
+
   /* 错误色 */
   --error: #ef4444;
   --error-hover: #dc2626;
   --error-light: rgba(239, 68, 68, 0.1);
   --error-border: rgba(239, 68, 68, 0.2);
-  
+
   /* 信息色 */
   --info: #3b82f6;
   --info-hover: #2563eb;
   --info-light: rgba(59, 130, 246, 0.1);
   --info-border: rgba(59, 130, 246, 0.2);
-  
+
   /* 背景色 */
   --bg-primary: #111111;
   --bg-secondary: #1a1a1a;
   --bg-tertiary: #2a2a2a;
   --bg-quaternary: #3a3a3a;
   --bg-hover: #1f1f1f;
-  
+
   /* 文字颜色 */
   --text-primary: #ffffff;
   --text-secondary: #cccccc;
   --text-tertiary: #888888;
   --text-quaternary: #666666;
   --text-disabled: #444444;
-  
+
   /* 边框颜色 */
   --border-primary: #1f1f1f;
   --border-secondary: #2a2a2a;
   --border-tertiary: #3a3a3a;
   --border-quaternary: #4a4a4a;
-  
+
   /* 阴影 */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
-  
+
   /* 圆角 */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
   --radius-2xl: 16px;
-  
+
   /* 间距 */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -71,7 +71,7 @@
   --spacing-xl: 20px;
   --spacing-2xl: 24px;
   --spacing-3xl: 32px;
-  
+
   /* 字体大小 */
   --text-xs: 12px;
   --text-sm: 14px;
@@ -80,18 +80,18 @@
   --text-xl: 20px;
   --text-2xl: 24px;
   --text-3xl: 30px;
-  
+
   /* 字体粗细 */
   --font-normal: 400;
   --font-medium: 500;
   --font-semibold: 600;
   --font-bold: 700;
-  
+
   /* 过渡动画 */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.2s ease;
   --transition-slow: 0.3s ease;
-  
+
   /* Z-index层级 */
   --z-dropdown: 100;
   --z-sticky: 200;
@@ -101,7 +101,7 @@
   --z-popover: 600;
   --z-tooltip: 700;
   --z-toast: 800;
-  
+
   /* 特殊状态颜色 */
   --status-pending: #fbbf24;
   --status-pending-light: rgba(251, 191, 36, 0.1);
@@ -109,58 +109,58 @@
   --status-approved-light: rgba(16, 185, 129, 0.1);
   --status-played: #6b7280;
   --status-played-light: rgba(107, 114, 128, 0.1);
-  
+
   /* 投票相关颜色 */
   --vote-heart: #ef4444;
   --vote-heart-hover: #dc2626;
   --vote-count: var(--text-tertiary);
-  
+
   /* 拖拽状态颜色 */
   --drag-over: var(--primary-light);
   --drag-over-border: var(--primary);
   --dragging-opacity: 0.5;
-  
+
   /* 表格颜色 */
   --table-header-bg: var(--bg-tertiary);
   --table-row-hover: var(--bg-hover);
   --table-border: var(--border-secondary);
   --table-selected: var(--primary-light);
-  
+
   /* 卡片颜色 */
   --card-bg: var(--bg-secondary);
   --card-border: var(--border-secondary);
   --card-hover-border: var(--border-tertiary);
   --card-shadow: var(--shadow-md);
-  
+
   /* 按钮颜色 */
   --btn-primary-bg: var(--primary);
   --btn-primary-hover: var(--primary-hover);
   --btn-primary-text: var(--text-primary);
   --btn-primary-border: var(--primary-border);
-  
+
   --btn-secondary-bg: #3a3a3a;
   --btn-secondary-hover: #4a4a4a;
   --btn-secondary-text: var(--text-primary);
   --btn-secondary-border: #555555;
-  
+
   --btn-success-bg: var(--success);
   --btn-success-hover: var(--success-hover);
   --btn-success-text: var(--text-primary);
   --btn-success-border: var(--success-border);
-  
+
   --btn-warning-bg: var(--warning);
   --btn-warning-hover: var(--warning-hover);
   --btn-warning-text: var(--text-primary);
   --btn-warning-border: var(--warning-border);
-  
+
   --btn-error-bg: var(--error);
   --btn-error-hover: var(--error-hover);
   --btn-error-text: var(--text-primary);
   --btn-error-border: var(--error-border);
-  
+
   --btn-disabled-bg: var(--bg-tertiary);
   --btn-disabled-text: var(--text-disabled);
-  
+
   /* 输入框颜色 */
   --input-bg: var(--bg-tertiary);
   --input-border: var(--border-tertiary);
@@ -168,35 +168,35 @@
   --input-text: var(--text-primary);
   --input-placeholder: var(--text-quaternary);
   --input-shadow-focus: 0 0 0 3px var(--primary-light);
-  
+
   /* 模态框颜色 */
   --modal-backdrop: rgba(0, 0, 0, 0.7);
   --modal-bg: var(--bg-secondary);
   --modal-border: var(--border-secondary);
   --modal-header-border: var(--border-secondary);
   --modal-footer-border: var(--border-secondary);
-  
+
   /* 通知颜色 */
   --notification-success-bg: var(--success-light);
   --notification-success-border: var(--success-border);
   --notification-success-text: var(--success);
-  
+
   --notification-warning-bg: var(--warning-light);
   --notification-warning-border: var(--warning-border);
   --notification-warning-text: var(--warning);
-  
+
   --notification-error-bg: var(--error-light);
   --notification-error-border: var(--error-border);
   --notification-error-text: var(--error);
-  
+
   --notification-info-bg: var(--info-light);
   --notification-info-border: var(--info-border);
   --notification-info-text: var(--info);
-  
+
   /* 加载动画颜色 */
   --spinner-primary: var(--primary);
   --spinner-secondary: var(--bg-tertiary);
-  
+
   /* 滚动条颜色 */
   --scrollbar-track: var(--bg-tertiary);
   --scrollbar-thumb: var(--bg-quaternary);
@@ -299,7 +299,10 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-button, a, input, textarea {
+button,
+a,
+input,
+textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -307,14 +310,17 @@ button, a, input, textarea {
   *:focus {
     outline: none !important;
   }
-  button, a {
+  button,
+  a {
     -webkit-user-select: none;
     user-select: none;
   }
 }
 
 /* 全局输入框重置 */
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: inherit;
   font-size: inherit;
 }
@@ -332,7 +338,8 @@ table {
 }
 
 /* 全局代码样式 */
-code, pre {
+code,
+pre {
   font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
   background: var(--bg-tertiary);
   border-radius: var(--radius-sm);

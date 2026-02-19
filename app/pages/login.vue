@@ -4,15 +4,20 @@
       <div class="form-section">
         <div class="form-header">
           <div class="logo-row">
-            <img :src="brandLogoSrc" alt="Brand Logo" class="brand-logo-center"/>
-            <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider"></div>
-            <img v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" :src="schoolLogoHomeUrl" alt="学校Logo" class="school-logo"/>
+            <img :src="brandLogoSrc" alt="Brand Logo" class="brand-logo-center" >
+            <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider" />
+            <img
+              v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()"
+              :src="schoolLogoHomeUrl"
+              alt="学校Logo"
+              class="school-logo"
+            >
           </div>
-          <h1 class="form-title">{{ siteTitle ? (siteTitle + ' | VoiceHub') : 'VoiceHub' }}</h1>
-          <div class="header-divider"></div>
+          <h1 class="form-title">{{ siteTitle ? siteTitle + ' | VoiceHub' : 'VoiceHub' }}</h1>
+          <div class="header-divider" />
         </div>
         <ClientOnly>
-          <LoginForm/>
+          <LoginForm />
         </ClientOnly>
       </div>
     </div>
@@ -22,19 +27,18 @@
 </template>
 
 <script setup>
-import {onMounted, computed, ref} from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import LoginForm from '~/components/Auth/LoginForm.vue'
 import logo from '~/public/images/logo.svg'
 
 // 使用站点配置
-const {siteTitle, initSiteConfig, logoUrl, schoolLogoHomeUrl, icp: icpNumber} = useSiteConfig()
+const { siteTitle, initSiteConfig, logoUrl, schoolLogoHomeUrl, icp: icpNumber } = useSiteConfig()
 // 主品牌Logo优先使用SVG，其次使用站点配置中非ICO的地址
 const brandLogoSrc = computed(() => {
   const url = logoUrl.value
   if (url && !url.endsWith('.ico')) return url
   return logo
 })
-
 
 // 在组件挂载后初始化站点配置
 onMounted(async () => {
@@ -45,7 +49,6 @@ onMounted(async () => {
   if (typeof document !== 'undefined' && siteTitle.value) {
     document.title = `登录 | ${siteTitle.value}`
   }
-
 })
 </script>
 
@@ -116,12 +119,14 @@ onMounted(async () => {
   height: auto;
   margin-bottom: 24px;
   object-fit: contain;
-  transition: transform var(--transition-slow), filter var(--transition-slow);
+  transition:
+    transform var(--transition-slow),
+    filter var(--transition-slow);
 }
 
 .brand-logo:hover {
   transform: translateY(-3px) scale(1.02);
-  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.25));
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.25));
 }
 
 .brand-title {
@@ -155,7 +160,10 @@ onMounted(async () => {
   border-radius: var(--radius-lg);
   backdrop-filter: none;
   border: 1px solid var(--border-secondary);
-  transition: border-color var(--transition-normal), background var(--transition-normal), transform var(--transition-normal);
+  transition:
+    border-color var(--transition-normal),
+    background var(--transition-normal),
+    transform var(--transition-normal);
 }
 
 .feature-item:hover {
@@ -212,7 +220,7 @@ onMounted(async () => {
   object-fit: contain;
   max-width: 100%;
   max-height: 100%;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
 }
 
 .school-logo {
@@ -222,9 +230,8 @@ onMounted(async () => {
   object-fit: contain;
   max-width: 100%;
   max-height: 100%;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
 }
-
 
 .form-title {
   font-size: 24px;
@@ -283,7 +290,6 @@ onMounted(async () => {
     padding: 12px 16px;
   }
 }
-
 
 .icp-link,
 .voicehub-link {

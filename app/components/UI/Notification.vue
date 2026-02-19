@@ -1,44 +1,29 @@
 <template>
   <transition name="notification">
     <div
-        v-if="show"
-        :class="{
-        'success': type === 'success',
-        'error': type === 'error',
-        'info': type === 'info'
+      v-if="show"
+      :class="{
+        success: type === 'success',
+        error: type === 'error',
+        info: type === 'info'
       }"
-        class="notification"
+      class="notification"
     >
       <div class="notification-icon">
-        <Icon
-            v-if="type === 'success'"
-            :size="16"
-            name="success"
-        />
-        <Icon
-            v-else-if="type === 'error'"
-            :size="16"
-            name="error"
-        />
-        <Icon
-            v-else
-            :size="16"
-            name="info"
-        />
+        <Icon v-if="type === 'success'" :size="16" name="success" />
+        <Icon v-else-if="type === 'error'" :size="16" name="error" />
+        <Icon v-else :size="16" name="info" />
       </div>
       <div class="notification-content">
         {{ message }}
       </div>
       <button class="notification-close" @click="$emit('close')">
-        <Icon :size="16" name="close"/>
+        <Icon :size="16" name="close" />
       </button>
 
       <!-- 进度条 -->
       <div v-if="autoClose" class="notification-progress">
-        <div
-            :style="{ animationDuration: `${duration}ms` }"
-            class="notification-progress-bar"
-        ></div>
+        <div :style="{ animationDuration: `${duration}ms` }" class="notification-progress-bar" />
       </div>
     </div>
   </transition>
@@ -59,7 +44,7 @@ defineProps({
   type: {
     type: String,
     default: 'info', // 'success', 'error', 'info'
-    validator: value => ['success', 'error', 'info'].includes(value)
+    validator: (value) => ['success', 'error', 'info'].includes(value)
   },
   autoClose: {
     type: Boolean,
@@ -85,8 +70,8 @@ defineEmits(['close'])
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  background: #21242D;
-  color: #FFFFFF;
+  background: #21242d;
+  color: #ffffff;
   max-width: 400px;
   min-width: 300px;
   font-family: 'MiSans', sans-serif;
@@ -102,7 +87,7 @@ defineEmits(['close'])
 }
 
 .notification.info {
-  border-left: 4px solid #0B5AFE;
+  border-left: 4px solid #0b5afe;
 }
 
 .notification-icon {
@@ -129,7 +114,7 @@ defineEmits(['close'])
 
 .info .notification-icon {
   background: rgba(11, 90, 254, 0.2);
-  color: #0B5AFE;
+  color: #0b5afe;
 }
 
 .notification-content {
@@ -155,7 +140,7 @@ defineEmits(['close'])
 }
 
 .notification-close:hover {
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 /* 进度条 */
@@ -184,7 +169,7 @@ defineEmits(['close'])
 }
 
 .info .notification-progress-bar {
-  background-color: #0B5AFE;
+  background-color: #0b5afe;
 }
 
 @keyframes progress-shrink {

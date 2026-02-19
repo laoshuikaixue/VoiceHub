@@ -219,7 +219,7 @@
             <div v-if="platform === 'netease'" class="netease-options">
               <div class="netease-header">
                 <div class="netease-badge">
-                  <span class="netease-dot"/>
+                  <span class="netease-dot" />
                   <span class="netease-title">网易云音乐账号</span>
                 </div>
                 <div class="header-actions">
@@ -248,7 +248,7 @@
               <!-- 加载中状态 -->
               <div v-if="checkingNeteaseLogin" class="netease-loading-state">
                 <div class="loading-content">
-                  <div class="loading-spinner"/>
+                  <div class="loading-spinner" />
                   <span class="loading-text">刷新中</span>
                 </div>
               </div>
@@ -320,7 +320,7 @@
           <div class="results-content">
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
-              <div class="loading-spinner"/>
+              <div class="loading-spinner" />
               <p class="loading-text">处理中...</p>
             </div>
 
@@ -772,7 +772,7 @@
           class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
           @click.self="showManualModal = false"
         >
-          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
+          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
           <div
             class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"

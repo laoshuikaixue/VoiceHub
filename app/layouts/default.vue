@@ -1,15 +1,15 @@
 <template>
   <div class="app-layout">
-    <slot/>
-    <SiteFooter/>
+    <slot />
+    <SiteFooter />
   </div>
 </template>
 
 <script setup>
-import {onMounted} from 'vue'
-import {useSiteConfig} from '~/composables/useSiteConfig'
+import { onMounted } from 'vue'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 
-const {initSiteConfig} = useSiteConfig()
+const { initSiteConfig } = useSiteConfig()
 
 // 初始化站点配置
 onMounted(() => {

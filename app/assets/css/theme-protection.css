@@ -7,16 +7,16 @@
 }
 
 /* 只保护表单元素的外观 */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="search"],
-input[type="url"],
-input[type="tel"],
-input[type="number"],
-input[type="date"],
-input[type="time"],
-input[type="datetime-local"],
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+input[type='url'],
+input[type='tel'],
+input[type='number'],
+input[type='date'],
+input[type='time'],
+input[type='datetime-local'],
 textarea,
 select {
   /* 禁用浏览器默认样式 */
@@ -54,13 +54,13 @@ button {
 
 /* 在深色模式偏好下保护表单元素 */
 @media (prefers-color-scheme: dark) {
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="search"],
-  input[type="url"],
-  input[type="tel"],
-  input[type="number"],
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='search'],
+  input[type='url'],
+  input[type='tel'],
+  input[type='number'],
   textarea,
   select {
     color-scheme: none;
@@ -70,7 +70,10 @@ button {
 
 /* 高对比度模式下的调整 */
 @media (prefers-contrast: high) {
-  input, textarea, select, button {
+  input,
+  textarea,
+  select,
+  button {
     border-width: 2px;
   }
 }

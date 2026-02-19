@@ -1,27 +1,47 @@
 <template>
   <div>
     <Transition name="overlay-animation">
-      <div v-show="visible && !isMobile" class="player-overlay"></div>
+      <div v-show="visible && !isMobile" class="player-overlay" />
     </Transition>
 
     <Transition name="player-animation">
-      <div v-show="visible" class="music-widget" :class="{ 'mobile-player-bar': isMobile }" @click="handlePlayerClick">
+      <div
+        v-show="visible"
+        class="music-widget"
+        :class="{ 'mobile-player-bar': isMobile }"
+        @click="handlePlayerClick"
+      >
         <!-- 移动端顶部进度条 -->
-        <div v-if="isMobile"
-             class="mobile-top-progress"
-             @click.stop="handleSeekToPosition"
-             @touchstart.stop="handleStartTouchDrag"
+        <div
+          v-if="isMobile"
+          class="mobile-top-progress"
+          @click.stop="handleSeekToPosition"
+          @touchstart.stop="handleStartTouchDrag"
         >
-          <div :style="{ width: `${control.progress.value}%` }" class="progress-fill"></div>
+          <div :style="{ width: `${control.progress.value}%` }" class="progress-fill" />
         </div>
 
         <!-- 标题区域 -->
         <div class="title">
           <!-- 封面 -->
-          <div class="cover-container" @click.stop="isMobile ? (activeSong?.musicPlatform === 'bilibili' ? openBilibiliVideo() : toggleLyrics()) : null">
+          <div
+            class="cover-container"
+            @click.stop="
+              isMobile
+                ? activeSong?.musicPlatform === 'bilibili'
+                  ? openBilibiliVideo()
+                  : toggleLyrics()
+                : null
+            "
+          >
             <template v-if="activeSong && activeSong.cover && !coverError">
-              <img :src="convertToHttps(activeSong.cover)" alt="封面" class="player-cover" referrerpolicy="no-referrer"
-                   @error="handleImageError"/>
+              <img
+                :src="convertToHttps(activeSong.cover)"
+                alt="封面"
+                class="player-cover"
+                referrerpolicy="no-referrer"
+                @error="handleImageError"
+              >
             </template>
             <div v-else class="text-cover">
               {{ getFirstChar(activeSong?.title || '') }}
@@ -37,8 +57,13 @@
           <!-- 移动端播放控制 -->
           <div v-if="isMobile" class="mobile-controls">
             <button class="mobile-control-btn" @click.stop="handleTogglePlay">
-              <div v-if="control.isLoadingTrack.value" class="loading-spinner-small"></div>
-              <Icon v-else :name="control.isPlaying.value ? 'pause' : 'play'" :size="24" color="white" />
+              <div v-if="control.isLoadingTrack.value" class="loading-spinner-small" />
+              <Icon
+                v-else
+                :name="control.isPlaying.value ? 'pause' : 'play'"
+                :size="24"
+                color="white"
+              />
             </button>
             <button class="mobile-control-btn" @click.stop="stopPlaying">
               <Icon name="close" :size="20" color="rgba(255,255,255,0.6)" />
@@ -57,16 +82,13 @@
           <div class="time">
             <!-- 进度条 -->
             <div
-                ref="progressBar"
-                class="progress-bar"
-                @click="handleSeekToPosition"
-                @mousedown="handleStartDrag"
-                @touchstart="handleStartTouchDrag"
+              ref="progressBar"
+              class="progress-bar"
+              @click="handleSeekToPosition"
+              @mousedown="handleStartDrag"
+              @touchstart="handleStartTouchDrag"
             >
-              <div
-                  :style="{ width: `${control.progress.value}%` }"
-                  class="progress-fill"
-              ></div>
+              <div :style="{ width: `${control.progress.value}%` }" class="progress-fill" />
             </div>
 
             <!-- 时间和音质显示 -->
@@ -76,9 +98,9 @@
                 <span>{{ currentQualityText }}</span>
               </div>
               <span
-                  :title="timeDisplayMode === 'remaining' ? '点击显示总时长' : '点击显示剩余时长'"
-                  class="remaining-time clickable-time"
-                  @click="toggleTimeDisplayMode"
+                :title="timeDisplayMode === 'remaining' ? '点击显示总时长' : '点击显示剩余时长'"
+                class="remaining-time clickable-time"
+                @click="toggleTimeDisplayMode"
               >
                 {{ rightTimeText }}
               </span>
@@ -94,54 +116,49 @@
               title="观看视频"
               @click="openBilibiliVideo"
             >
-              <Icon name="video" size="20"/>
+              <Icon name="video" size="20" />
             </span>
-            <span
-              v-else
-              class="lyrics-btn music-icon"
-              title="歌词"
-              @click="toggleLyrics"
-            >
-              <Icon name="music" size="20"/>
+            <span v-else class="lyrics-btn music-icon" title="歌词" @click="toggleLyrics">
+              <Icon name="music" size="20" />
             </span>
 
             <!-- 中央播放控制 -->
             <div class="center-controls">
               <!-- 上一首 -->
               <span
-                  :class="{ disabled: !sync.globalAudioPlayer.hasPrevious.value }"
-                  class="control-btn music-icon"
-                  title="上一首"
-                  @click="handlePrevious"
+                :class="{ disabled: !sync.globalAudioPlayer.hasPrevious.value }"
+                class="control-btn music-icon"
+                title="上一首"
+                @click="handlePrevious"
               >
-                <Icon name="skip-back" size="20"/>
+                <Icon name="skip-back" size="20" />
               </span>
 
               <!-- 播放/暂停 -->
               <span
-                  :class="{ disabled: control.hasError.value || control.isLoadingTrack.value }"
-                  class="play-pause-btn music-icon"
-                  title="播放/暂停"
-                  @click="handleTogglePlay"
+                :class="{ disabled: control.hasError.value || control.isLoadingTrack.value }"
+                class="play-pause-btn music-icon"
+                title="播放/暂停"
+                @click="handleTogglePlay"
               >
-                <div v-if="control.isLoadingTrack.value" class="loading-spinner"></div>
-                <Icon v-else-if="control.isPlaying.value" name="pause" size="24"/>
-                <Icon v-else name="play" size="24"/>
+                <div v-if="control.isLoadingTrack.value" class="loading-spinner" />
+                <Icon v-else-if="control.isPlaying.value" name="pause" size="24" />
+                <Icon v-else name="play" size="24" />
               </span>
 
               <!-- 下一首 -->
               <span
-                  :class="{ disabled: !sync.globalAudioPlayer.hasNext.value }"
-                  class="control-btn music-icon"
-                  title="下一首"
-                  @click="handleNext"
+                :class="{ disabled: !sync.globalAudioPlayer.hasNext.value }"
+                class="control-btn music-icon"
+                title="下一首"
+                @click="handleNext"
               >
-                <Icon name="skip-forward" size="20"/>
+                <Icon name="skip-forward" size="20" />
               </span>
             </div>
 
             <!-- 右侧占位 -->
-            <div class="right-placeholder"></div>
+            <div class="right-placeholder" />
           </div>
         </div>
 
@@ -149,11 +166,11 @@
         <Transition name="quality-dropdown">
           <div v-if="showQualitySettings" class="quality-dropdown">
             <div
-                v-for="option in currentPlatformOptions"
-                :key="option.value"
-                :class="{ active: isCurrentQuality(option.value) }"
-                class="quality-option"
-                @click="selectQuality(option.value)"
+              v-for="option in currentPlatformOptions"
+              :key="option.value"
+              :class="{ active: isCurrentQuality(option.value) }"
+              class="quality-option"
+              @click="selectQuality(option.value)"
             >
               <span class="sf-pro">{{ option.label }}</span>
             </div>
@@ -164,74 +181,71 @@
         <Transition name="lyrics-slide">
           <div v-if="showLyrics" class="lyrics-panel">
             <AppleMusicLyrics
-                :allow-seek="true"
-                :current-lyric-index="control.lyrics.currentLyricIndex.value"
-                :current-lyrics="control.lyrics.currentLyrics.value"
-                :current-time="control.currentTime.value"
-                :error="control.lyrics.error.value"
-                :font-size="24"
-                :is-loading="control.lyrics.isLoading.value"
-                :line-height="1.4"
-                :show-translation="false"
-                :translation-lyrics="control.lyrics.translationLyrics.value"
-                :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
-                active-line-color="#ffffff"
-                height="120px"
-                inactive-line-color="rgba(255, 255, 255, 0.6)"
-                @seek="handleLyricSeek"
+              :allow-seek="true"
+              :current-lyric-index="control.lyrics.currentLyricIndex.value"
+              :current-lyrics="control.lyrics.currentLyrics.value"
+              :current-time="control.currentTime.value"
+              :error="control.lyrics.error.value"
+              :font-size="24"
+              :is-loading="control.lyrics.isLoading.value"
+              :line-height="1.4"
+              :show-translation="false"
+              :translation-lyrics="control.lyrics.translationLyrics.value"
+              :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
+              active-line-color="#ffffff"
+              height="120px"
+              inactive-line-color="rgba(255, 255, 255, 0.6)"
+              @seek="handleLyricSeek"
             />
           </div>
         </Transition>
 
         <!-- 音频元素 -->
         <AudioElement
-            ref="audioElementRef"
-            :song="song"
-            @canplay="handleCanPlay"
-            @ended="handleEnded"
-            @error="handleError"
-            @loadedmetadata="handleLoaded"
-            @loadstart="handleLoadStart"
-            @pause="handlePause"
-            @play="handlePlay"
-            @timeupdate="handleTimeUpdate"
+          ref="audioElementRef"
+          :song="song"
+          @canplay="handleCanPlay"
+          @ended="handleEnded"
+          @error="handleError"
+          @loadedmetadata="handleLoaded"
+          @loadstart="handleLoadStart"
+          @pause="handlePause"
+          @play="handlePlay"
+          @timeupdate="handleTimeUpdate"
         />
       </div>
     </Transition>
 
     <!-- 全屏歌词模态（仅客户端渲染） -->
     <ClientOnly>
-      <LyricsModal
-          :is-visible="showFullscreenLyrics"
-          @close="showFullscreenLyrics = false"
-      />
+      <LyricsModal :is-visible="showFullscreenLyrics" @close="showFullscreenLyrics = false" />
     </ClientOnly>
 
     <!-- 哔哩哔哩 iframe 预览模态 -->
     <ClientOnly>
       <BilibiliIframeModal
-          :show="showBilibiliIframe"
-          :bvid="activeSong?.musicId?.split(':')[0]"
-          :page="activeSong?.musicId?.split(':')[2] ? parseInt(activeSong.musicId.split(':')[2]) : 1"
-          @close="showBilibiliIframe = false"
+        :show="showBilibiliIframe"
+        :bvid="activeSong?.musicId?.split(':')[0]"
+        :page="activeSong?.musicId?.split(':')[2] ? parseInt(activeSong.musicId.split(':')[2]) : 1"
+        @close="showBilibiliIframe = false"
       />
     </ClientOnly>
   </div>
 </template>
 
 <script setup>
-import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import AppleMusicLyrics from './AppleMusicLyrics.vue'
 import LyricsModal from './LyricsModal.vue'
 import AudioElement from './AudioPlayer/AudioElement.vue'
 import BilibiliIframeModal from './BilibiliIframeModal.vue'
 import Icon from './Icon.vue'
-import {useAudioPlayerControl} from '~/composables/useAudioPlayerControl'
-import {useAudioPlayerSync} from '~/composables/useAudioPlayerSync'
-import {useAudioQuality} from '~/composables/useAudioQuality'
-import {useAudioPlayerEnhanced} from '~/composables/useAudioPlayerEnhanced'
-import {useMediaSession} from '~/composables/useMediaSession'
-import {getBilibiliUrl} from '~/utils/url'
+import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
+import { useAudioPlayerSync } from '~/composables/useAudioPlayerSync'
+import { useAudioQuality } from '~/composables/useAudioQuality'
+import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
+import { useMediaSession } from '~/composables/useMediaSession'
+import { getBilibiliUrl } from '~/utils/url'
 
 // 添加 router 导入
 const router = useRouter()
@@ -256,7 +270,7 @@ const emit = defineEmits(['close', 'ended', 'error', 'songChange'])
 // 使用 composables
 const control = useAudioPlayerControl()
 const sync = useAudioPlayerSync()
-const {getQualityLabel, getQuality, getQualityOptions, saveQuality} = useAudioQuality()
+const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
 const mediaSession = useMediaSession()
 
@@ -287,34 +301,37 @@ const progressBar = computed(() => playerControlsRef.value?.progressBar)
 
 // 记录最近一首歌曲，避免关闭过程中props.song为空导致渲染错误
 const lastSong = ref(null)
-watch(() => props.song, (newSong, oldSong) => {
-  if (newSong) {
-    // 检测是否为音质切换（同一首歌但URL不同）
-    if (oldSong && newSong.id === oldSong.id && newSong.musicUrl !== oldSong.musicUrl) {
-      // 保存当前播放状态和进度
-      const wasPlaying = control.isPlaying.value
-      const currentTime = control.currentTime.value
-      
-      // 在音频加载完成后恢复状态
-      nextTick(() => {
-        if (audioPlayer.value) {
-          const restoreState = () => {
-            audioPlayer.value.currentTime = currentTime
-            if (wasPlaying) {
-              control.play()
-            }
-          }
-          // 监听元数据加载完成事件（此时duration已知，可以seek）
-          audioPlayer.value.addEventListener('loadedmetadata', restoreState, { once: true })
-        }
-      })
-    }
+watch(
+  () => props.song,
+  (newSong, oldSong) => {
+    if (newSong) {
+      // 检测是否为音质切换（同一首歌但URL不同）
+      if (oldSong && newSong.id === oldSong.id && newSong.musicUrl !== oldSong.musicUrl) {
+        // 保存当前播放状态和进度
+        const wasPlaying = control.isPlaying.value
+        const currentTime = control.currentTime.value
 
-    lastSong.value = newSong
-    // 新歌到来时视为重新打开，清除关闭标记
-    isClosed.value = false
+        // 在音频加载完成后恢复状态
+        nextTick(() => {
+          if (audioPlayer.value) {
+            const restoreState = () => {
+              audioPlayer.value.currentTime = currentTime
+              if (wasPlaying) {
+                control.play()
+              }
+            }
+            // 监听元数据加载完成事件（此时duration已知，可以seek）
+            audioPlayer.value.addEventListener('loadedmetadata', restoreState, { once: true })
+          }
+        })
+      }
+
+      lastSong.value = newSong
+      // 新歌到来时视为重新打开，清除关闭标记
+      isClosed.value = false
+    }
   }
-})
+)
 
 // 渲染用的安全歌曲对象：优先使用当前歌曲，其次使用最后一首
 const activeSong = computed(() => props.song ?? lastSong.value)
@@ -355,7 +372,11 @@ const handlePlay = () => {
   }
 
   // 直接调用鸿蒙侧播放状态更新，不传递歌曲信息避免覆盖元数据
-  if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
+  if (
+    typeof window !== 'undefined' &&
+    window.voiceHubPlayer &&
+    window.voiceHubPlayer.onPlayStateChanged
+  ) {
     window.voiceHubPlayer.onPlayStateChanged(true, {
       position: control.currentTime.value,
       duration: control.duration.value
@@ -384,7 +405,11 @@ const handlePause = () => {
   }
 
   // 直接调用鸿蒙侧播放状态更新，不传递歌曲信息避免覆盖元数据
-  if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
+  if (
+    typeof window !== 'undefined' &&
+    window.voiceHubPlayer &&
+    window.voiceHubPlayer.onPlayStateChanged
+  ) {
     window.voiceHubPlayer.onPlayStateChanged(false, {
       position: control.currentTime.value,
       duration: control.duration.value
@@ -418,13 +443,17 @@ const handleLoaded = async () => {
   }
 
   // 先传递基本的歌曲元数据给鸿蒙侧（不包含歌词）
-  sync.notifyHarmonyOS('metadata', {
-    title: props.song?.title || '',
-    artist: props.song?.artist || '',
-    album: props.song?.album || '',
-    artwork: props.song?.cover || '',
-    duration: audioPlayer.value.duration
-  }, props.song)
+  sync.notifyHarmonyOS(
+    'metadata',
+    {
+      title: props.song?.title || '',
+      artist: props.song?.artist || '',
+      album: props.song?.album || '',
+      artwork: props.song?.cover || '',
+      duration: audioPlayer.value.duration
+    },
+    props.song
+  )
 
   // 如果歌曲有平台信息，主动获取并等待歌词加载完成后单独传递歌词
   if (props.song?.musicPlatform && props.song?.musicId) {
@@ -436,7 +465,7 @@ const handleLoaded = async () => {
     const startTime = Date.now()
 
     // 等待歌词加载状态变化：从未开始 -> 加载中 -> 完成/失败
-    while ((Date.now() - startTime) < maxWaitTime) {
+    while (Date.now() - startTime < maxWaitTime) {
       // 检查是否有歌词数据
       if (control.lyrics.currentLyrics.value.length > 0) {
         break
@@ -448,17 +477,24 @@ const handleLoaded = async () => {
       }
 
       // 检查是否加载完成但无歌词（不在加载中且无错误且无歌词）
-      if (!control.lyrics.isLoading.value && !control.lyrics.error.value && control.lyrics.currentLyrics.value.length === 0) {
+      if (
+        !control.lyrics.isLoading.value &&
+        !control.lyrics.error.value &&
+        control.lyrics.currentLyrics.value.length === 0
+      ) {
         break
       }
 
       // 等待100ms后再次检查
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     }
 
     // 检查歌词是否加载成功
     const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
-    const hasValidLyrics = harmonyLyrics && harmonyLyrics !== '[00:00.00]暂无歌词' && control.lyrics.currentLyrics.value.length > 0
+    const hasValidLyrics =
+      harmonyLyrics &&
+      harmonyLyrics !== '[00:00.00]暂无歌词' &&
+      control.lyrics.currentLyrics.value.length > 0
 
     if (hasValidLyrics) {
       // 使用专门的歌词更新方法
@@ -481,19 +517,19 @@ const handleError = async (error) => {
     // 手动设置错误状态，替代 control.onError(error) 以避免通用提示
     control.hasError.value = true
     control.isPlaying.value = false
-    
+
     // 同步全局播放状态，确保全局状态与本地状态一致
     sync.syncPlayStateToGlobal(false, props.song)
-    
+
     if (window.$showNotification) {
       window.$showNotification(
-          isMobile.value
-              ? '哔哩哔哩视频播放失败，点击封面以预览'
-              : '哔哩哔哩视频播放失败，点击视频图标以预览',
-          'warning'
+        isMobile.value
+          ? '哔哩哔哩视频播放失败，点击封面以预览'
+          : '哔哩哔哩视频播放失败，点击视频图标以预览',
+        'warning'
       )
     }
-    
+
     // 不自动关闭播放器，让用户可以点击视频图标
     // 但要停止加载状态
     control.isLoadingTrack.value = false
@@ -504,12 +540,12 @@ const handleError = async (error) => {
 
   // 使用增强的错误处理逻辑
   const result = await enhanced.handlePlaybackError(
-      error,
-      props.song,
-      (newSong) => emit('songChange', newSong),
-      handleNext,
-      () => emit('close'),
-      props.isPlaylistMode
+    error,
+    props.song,
+    (newSong) => emit('songChange', newSong),
+    handleNext,
+    () => emit('close'),
+    props.isPlaylistMode
   )
 
   if (result.handled) {
@@ -747,10 +783,14 @@ const selectQuality = async (qualityValue) => {
 
       // 如果之前在播放，加载完成后继续播放
       if (wasPlaying) {
-        audioPlayer.value.addEventListener('canplay', () => {
-          audioPlayer.value.currentTime = currentTime
-          control.play()
-        }, {once: true})
+        audioPlayer.value.addEventListener(
+          'canplay',
+          () => {
+            audioPlayer.value.currentTime = currentTime
+            control.play()
+          },
+          { once: true }
+        )
       }
     }
 
@@ -758,7 +798,11 @@ const selectQuality = async (qualityValue) => {
     sync.syncPlayStateToGlobal(control.isPlaying.value, updatedSong)
 
     // 直接调用鸿蒙侧播放状态更新
-    if (typeof window !== 'undefined' && window.voiceHubPlayer && window.voiceHubPlayer.onPlayStateChanged) {
+    if (
+      typeof window !== 'undefined' &&
+      window.voiceHubPlayer &&
+      window.voiceHubPlayer.onPlayStateChanged
+    ) {
       window.voiceHubPlayer.onPlayStateChanged(control.isPlaying.value, {
         position: control.currentTime.value,
         duration: control.duration.value
@@ -827,70 +871,86 @@ const stopPlaying = () => {
 }
 
 // 监听器和生命周期钩子
-watch(() => props.song, async (newSong, oldSong) => {
-  if (!newSong) return
+watch(
+  () => props.song,
+  async (newSong, oldSong) => {
+    if (!newSong) return
 
-  // 重置封面错误状态
-  coverError.value = false
+    // 重置封面错误状态
+    coverError.value = false
 
-  // 避免双向触发
-  if (isSyncingFromGlobal.value) return
+    // 避免双向触发
+    if (isSyncingFromGlobal.value) return
 
-  // 确保组件已经挂载
-  if (!isMounted.value) return
+    // 确保组件已经挂载
+    if (!isMounted.value) return
 
-  // 如果是新歌曲，加载并播放
-  if (!oldSong || newSong.id !== oldSong.id) {
-    const loadSuccess = await control.loadSong(newSong)
-    if (loadSuccess) {
-      sync.setGlobalPlaylist(newSong, props.playlist)
-      await control.play()
+    // 如果是新歌曲，加载并播放
+    if (!oldSong || newSong.id !== oldSong.id) {
+      const loadSuccess = await control.loadSong(newSong)
+      if (loadSuccess) {
+        sync.setGlobalPlaylist(newSong, props.playlist)
+        await control.play()
+      }
     }
-  }
-}, {immediate: false})
+  },
+  { immediate: false }
+)
 
 // 监听全局播放状态变化，避免双向触发
-watch(() => sync.globalAudioPlayer.getPlayingStatus().value, (newPlayingStatus) => {
-  if (isSyncingFromGlobal.value) return
+watch(
+  () => sync.globalAudioPlayer.getPlayingStatus().value,
+  (newPlayingStatus) => {
+    if (isSyncingFromGlobal.value) return
 
-  isSyncingFromGlobal.value = true
+    isSyncingFromGlobal.value = true
 
-  if (!newPlayingStatus && control.isPlaying.value) {
-    control.pause()
-  } else if (newPlayingStatus && !control.isPlaying.value) {
-    const currentGlobalSong = sync.globalAudioPlayer.getCurrentSong().value
-    if (currentGlobalSong && props.song && currentGlobalSong.id === props.song.id) {
-      control.play()
+    if (!newPlayingStatus && control.isPlaying.value) {
+      control.pause()
+    } else if (newPlayingStatus && !control.isPlaying.value) {
+      const currentGlobalSong = sync.globalAudioPlayer.getCurrentSong().value
+      if (currentGlobalSong && props.song && currentGlobalSong.id === props.song.id) {
+        control.play()
+      }
     }
-  }
 
-  nextTick(() => {
-    isSyncingFromGlobal.value = false
-  })
-}, {immediate: true})
+    nextTick(() => {
+      isSyncingFromGlobal.value = false
+    })
+  },
+  { immediate: true }
+)
 
 // 监听全局歌曲变化
-watch(() => sync.globalAudioPlayer.getCurrentSong().value, (newGlobalSong) => {
-  if (newGlobalSong && (!props.song || newGlobalSong.id !== props.song.id)) {
-    emit('songChange', newGlobalSong)
-  }
-}, {immediate: false})
+watch(
+  () => sync.globalAudioPlayer.getCurrentSong().value,
+  (newGlobalSong) => {
+    if (newGlobalSong && (!props.song || newGlobalSong.id !== props.song.id)) {
+      emit('songChange', newGlobalSong)
+    }
+  },
+  { immediate: false }
+)
 
 // 监听播放列表状态变化
-watch([
-  () => sync.globalAudioPlayer.hasNext.value,
-  () => sync.globalAudioPlayer.hasPrevious.value,
-  () => sync.globalAudioPlayer.getCurrentPlaylistIndex().value,
-  () => sync.globalAudioPlayer.getCurrentPlaylist().value
-], () => {
-  sync.notifyPlaylistState()
-}, {immediate: true})
+watch(
+  [
+    () => sync.globalAudioPlayer.hasNext.value,
+    () => sync.globalAudioPlayer.hasPrevious.value,
+    () => sync.globalAudioPlayer.getCurrentPlaylistIndex().value,
+    () => sync.globalAudioPlayer.getCurrentPlaylist().value
+  ],
+  () => {
+    sync.notifyPlaylistState()
+  },
+  { immediate: true }
+)
 
 const isMobile = ref(false)
 
 // 检查是否为移动端
 const checkMobile = () => {
-  if (process.client) {
+  if (import.meta.client) {
     isMobile.value = window.innerWidth <= 768
   }
 }
@@ -926,7 +986,7 @@ onMounted(async () => {
   const retryDelay = 50 // 减少重试间隔，提高响应速度
 
   while (!audioPlayer.value && retryCount < maxRetries) {
-    await new Promise(resolve => setTimeout(resolve, retryDelay))
+    await new Promise((resolve) => setTimeout(resolve, retryDelay))
     retryCount++
 
     // 强制触发响应式更新
@@ -967,19 +1027,27 @@ onMounted(async () => {
       sync.setGlobalPlaylist(props.song, props.playlist)
 
       // 传递加载状态到鸿蒙侧
-      sync.notifyHarmonyOS('load', {
-        position: 0,
-        duration: control.duration.value
-      }, props.song)
+      sync.notifyHarmonyOS(
+        'load',
+        {
+          position: 0,
+          duration: control.duration.value
+        },
+        props.song
+      )
 
       // loadSong方法已经包含了自动播放逻辑，这里不需要重复调用
       // 如果自动播放失败，设置用户交互监听器
       if (!control.isPlaying.value) {
         // 通知鸿蒙侧播放失败（暂停状态）
-        sync.notifyHarmonyOS('pause', {
-          position: 0,
-          duration: control.duration.value
-        }, props.song)
+        sync.notifyHarmonyOS(
+          'pause',
+          {
+            position: 0,
+            duration: control.duration.value
+          },
+          props.song
+        )
 
         // 监听用户交互，一旦用户交互就尝试播放
         const handleUserInteraction = async () => {
@@ -994,9 +1062,9 @@ onMounted(async () => {
           }
         }
 
-        document.addEventListener('click', handleUserInteraction, {once: true})
-        document.addEventListener('touchstart', handleUserInteraction, {once: true})
-        document.addEventListener('keydown', handleUserInteraction, {once: true})
+        document.addEventListener('click', handleUserInteraction, { once: true })
+        document.addEventListener('touchstart', handleUserInteraction, { once: true })
+        document.addEventListener('keydown', handleUserInteraction, { once: true })
       }
     }
   }
@@ -1024,14 +1092,19 @@ onMounted(async () => {
 
       // 通知鸿蒙侧清理元数据
       if (sync.isHarmonyOS()) {
-        sync.notifyHarmonyOS('metadata', {}, {
-          title: '',
-          artist: '',
-          album: '',
-          cover: '',
-          duration: 0,
-          position: 0
-        }, '')
+        sync.notifyHarmonyOS(
+          'metadata',
+          {},
+          {
+            title: '',
+            artist: '',
+            album: '',
+            cover: '',
+            duration: 0,
+            position: 0
+          },
+          ''
+        )
       }
 
       nextTick(() => {
@@ -1132,7 +1205,6 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
-
 // 格式化时间
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return '0:00'
@@ -1158,8 +1230,6 @@ const getFirstChar = (text) => {
   if (!text) return '?'
   return text.charAt(0).toUpperCase()
 }
-
-
 </script>
 
 <style scoped>
@@ -1174,26 +1244,30 @@ const getFirstChar = (text) => {
 
 /* 呼吸光效动画 */
 @keyframes breathing-glow {
-  0%, 100% {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
-    0 4px 16px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+  0%,
+  100% {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 4px 16px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
   }
   50% {
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4),
-    0 6px 24px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(255, 255, 255, 0.15),
-    0 0 40px rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 12px 48px rgba(0, 0, 0, 0.4),
+      0 6px 24px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+      0 0 0 1px rgba(255, 255, 255, 0.15),
+      0 0 40px rgba(255, 255, 255, 0.08);
   }
 }
 
 /* 微妙的光晕脉动 */
 @keyframes subtle-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.8;
   }
   50% {
@@ -1220,7 +1294,7 @@ const getFirstChar = (text) => {
 }
 
 .overlay-animation-leave-active {
-  transition: opacity 0.5s cubic-bezier(0.4, 0.0, 0.6, 1);
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .overlay-animation-enter-from,
@@ -1231,8 +1305,9 @@ const getFirstChar = (text) => {
 /* 播放器进入/退出动画（基于 Transition 类） */
 .player-animation-enter-active,
 .player-animation-leave-active {
-  transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.6, 1),
-  opacity 0.5s cubic-bezier(0.4, 0.0, 0.6, 1);
+  transition:
+    transform 0.5s cubic-bezier(0.4, 0, 0.6, 1),
+    opacity 0.5s cubic-bezier(0.4, 0, 0.6, 1);
   will-change: transform, opacity;
   transform-origin: center bottom;
 }
@@ -1259,7 +1334,9 @@ const getFirstChar = (text) => {
 
 /* 移动端播放器样式 */
 .music-widget.mobile-player-bar {
-  bottom: calc(92px + env(safe-area-inset-bottom, 0px)); /* 放在悬浮 tab 上方 (16px bottom + 64px height + 12px gap) */
+  bottom: calc(
+    92px + env(safe-area-inset-bottom, 0px)
+  ); /* 放在悬浮 tab 上方 (16px bottom + 64px height + 12px gap) */
   left: 10px;
   right: 10px;
   width: calc(100% - 20px);
@@ -1296,7 +1373,7 @@ const getFirstChar = (text) => {
 
 .mobile-top-progress .progress-fill {
   height: 100%;
-  background: #0B5AFE;
+  background: #0b5afe;
   box-shadow: 0 0 8px rgba(11, 90, 254, 0.6);
   border-radius: 0 1px 1px 0;
 }
@@ -1373,7 +1450,9 @@ const getFirstChar = (text) => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 时间区域 */
@@ -1423,39 +1502,43 @@ const getFirstChar = (text) => {
   flex-direction: column;
   align-items: flex-start;
   border-radius: 22px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)),
-  rgba(128, 128, 128, 0.25);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)),
+    rgba(128, 128, 128, 0.25);
   padding: 10px 7px 10px 13px;
   width: 400px;
   height: 165px;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   -webkit-backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3),
-  0 8px 24px rgba(0, 0, 0, 0.2),
-  0 4px 12px rgba(0, 0, 0, 0.1),
-  inset 0 1px 0 rgba(255, 255, 255, 0.3),
-  inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-  0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
   z-index: 1000;
   will-change: transform, opacity;
-  font-family: "SF Pro Display", "SF Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  font-family:
+    'SF Pro Display', 'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial,
+    Helvetica, sans-serif;
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   animation: breathing-glow 4s ease-in-out infinite;
 }
 
 .music-widget:hover {
   transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
-  0 12px 32px rgba(0, 0, 0, 0.25),
-  0 6px 16px rgba(0, 0, 0, 0.15),
-  inset 0 1px 0 rgba(255, 255, 255, 0.4),
-  inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-  0 0 0 1px rgba(255, 255, 255, 0.1),
-  0 0 40px rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 12px 32px rgba(0, 0, 0, 0.25),
+    0 6px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 0 40px rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.25);
 }
-
 
 /* 标题区域 */
 .title {
@@ -1494,7 +1577,9 @@ const getFirstChar = (text) => {
   color: #ffffff;
   font-size: 18px;
   font-weight: 600;
-  font-family: "SF Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  font-family:
+    'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
+    sans-serif;
 }
 
 /* 歌曲信息文本 */
@@ -1517,7 +1602,9 @@ const getFirstChar = (text) => {
   padding-bottom: 2px;
   letter-spacing: -0.4px;
   color: #ffffff;
-  font-family: "SF Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  font-family:
+    'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
+    sans-serif;
   font-size: 20px;
   font-weight: 600;
   -webkit-line-clamp: 1;
@@ -1535,7 +1622,9 @@ const getFirstChar = (text) => {
   line-height: 20px;
   letter-spacing: -0.4px;
   color: #ffffff75;
-  font-family: "SF Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  font-family:
+    'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
+    sans-serif;
   font-size: 15px;
   font-weight: 300;
   -webkit-line-clamp: 1;
@@ -1573,7 +1662,8 @@ const getFirstChar = (text) => {
   color: #ffffff;
   font-size: 15px;
   line-height: 1;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -1620,8 +1710,9 @@ const getFirstChar = (text) => {
 
 .ios-progress-bar:hover {
   border-color: #333;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1),
-  inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 0 20px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .progress-fill {
@@ -1651,7 +1742,9 @@ const getFirstChar = (text) => {
   line-height: 18px;
   letter-spacing: 0.42px;
   color: rgba(255, 255, 255, 0.7);
-  font-family: "SF Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  font-family:
+    'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
+    sans-serif;
   font-size: 12px;
   font-weight: 600;
 }
@@ -1728,7 +1821,9 @@ const getFirstChar = (text) => {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
-  font-family: "SF Pro Display", "SF Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  font-family:
+    'SF Pro Display', 'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial,
+    Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -1749,8 +1844,9 @@ const getFirstChar = (text) => {
 .ios-control-btn:hover {
   color: #ffffff;
   transform: scale(1.1);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2),
-  0 0 40px rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 0 20px rgba(255, 255, 255, 0.2),
+    0 0 40px rgba(255, 255, 255, 0.1);
 }
 
 .ios-control-btn:hover::before {
@@ -1759,8 +1855,9 @@ const getFirstChar = (text) => {
 
 .ios-control-btn:active {
   transform: scale(0.95);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3),
-  inset 0 0 10px rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 0 15px rgba(255, 255, 255, 0.3),
+    inset 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 .ios-control-btn:disabled {
@@ -1928,7 +2025,6 @@ const getFirstChar = (text) => {
   }
 }
 
-
 /* 时间和音质显示区域 */
 .time-details-and-audio-q {
   display: flex;
@@ -1946,7 +2042,9 @@ const getFirstChar = (text) => {
   line-height: 18px;
   letter-spacing: 0.42px;
   color: #ffffffb3;
-  font-family: "SF Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  font-family:
+    'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
+    sans-serif;
   font-size: 12px;
   font-weight: 600;
 }
@@ -2078,8 +2176,9 @@ const getFirstChar = (text) => {
   bottom: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15)),
-  rgba(128, 128, 128, 0.85);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15)),
+    rgba(128, 128, 128, 0.85);
   border-radius: 12px;
   padding: 8px 0;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
@@ -2087,13 +2186,14 @@ const getFirstChar = (text) => {
   border: 1px solid rgba(255, 255, 255, 0.4);
   z-index: 9999;
   min-width: 120px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
-  0 12px 32px rgba(0, 0, 0, 0.3),
-  0 6px 16px rgba(0, 0, 0, 0.2),
-  inset 0 1px 0 rgba(255, 255, 255, 0.4),
-  inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-  0 0 0 1px rgba(255, 255, 255, 0.1),
-  0 0 30px rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 12px 32px rgba(0, 0, 0, 0.3),
+    0 6px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 0 30px rgba(255, 255, 255, 0.1);
 }
 
 .quality-option {
@@ -2127,8 +2227,9 @@ const getFirstChar = (text) => {
   color: rgba(255, 255, 255, 0.95);
   transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1),
-  inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 4px 16px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .quality-option:hover::before {
@@ -2136,25 +2237,27 @@ const getFirstChar = (text) => {
 }
 
 .quality-option.active {
-  color: #007AFF;
-  background: linear-gradient(135deg, rgba(0, 122, 255, 0.25), rgba(0, 122, 255, 0.15)),
-  rgba(0, 122, 255, 0.1);
+  color: #007aff;
+  background:
+    linear-gradient(135deg, rgba(0, 122, 255, 0.25), rgba(0, 122, 255, 0.15)),
+    rgba(0, 122, 255, 0.1);
   border: 1px solid rgba(0, 122, 255, 0.6);
   font-weight: 600;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4),
-  0 2px 8px rgba(0, 122, 255, 0.3),
-  inset 0 1px 0 rgba(255, 255, 255, 0.3),
-  0 0 0 1px rgba(0, 122, 255, 0.2);
+  box-shadow:
+    0 6px 20px rgba(0, 122, 255, 0.4),
+    0 2px 8px rgba(0, 122, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 1px rgba(0, 122, 255, 0.2);
 }
 
 /* 音质下拉动画 - 向上弹出优化 */
 .quality-dropdown-enter-active {
-  transition: all 0.5s cubic-bezier(0.4, 0.0, 0.6, 1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .quality-dropdown-leave-active {
-  transition: all 0.5s cubic-bezier(0.4, 0.0, 0.6, 1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .quality-dropdown-enter-from,

@@ -1,7 +1,7 @@
 name: ✨ 功能建议
 description: 为VoiceHub系统提出新功能或改进建议
-title: "[Feature]: "
-labels: ["enhancement", "功能建议"]
+title: '[Feature]: '
+labels: ['enhancement', '功能建议']
 assignees: []
 body:
   - type: markdown
@@ -66,7 +66,7 @@ body:
       description: 描述用户在什么情况下会使用这个功能
       placeholder: |
         作为一个[用户角色]，我希望[功能描述]，这样我就可以[预期收益]。
-        
+
         例如：
         - 作为学生，我希望能够预约点歌时间，这样我就可以在特定时间播放我的歌曲
         - 作为管理员，我希望能够批量管理歌曲，这样我就可以更高效地维护歌曲库

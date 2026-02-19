@@ -1,5 +1,5 @@
 export const txHeaders = {
-  'User-Agent': 'QQMusic 14090508(android 12)',
+  'User-Agent': 'QQMusic 14090508(android 12)'
 }
 
 export const createTxSearchBody = (str: string, page: number, limit: number) => {
@@ -31,7 +31,7 @@ export const createTxSearchBody = (str: string, page: number, limit: number) => 
       teenMode: '0',
       ui_mode: '2',
       nettype: '1020',
-      v4ip: '',
+      v4ip: ''
     },
     req: {
       module: 'music.search.SearchCgiService',
@@ -47,9 +47,9 @@ export const createTxSearchBody = (str: string, page: number, limit: number) => 
         cat: 2,
         grp: 1,
         sin: 0,
-        sem: 0,
-      },
-    },
+        sem: 0
+      }
+    }
   }
 }
 
@@ -59,7 +59,7 @@ export const txRequest = async (url: string, body: any) => {
       method: 'POST',
       headers: txHeaders,
       body,
-      responseType: 'json',
+      responseType: 'json'
     })
     return response
   } catch (error) {

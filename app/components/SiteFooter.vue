@@ -2,7 +2,12 @@
   <div class="site-footer">
     <div class="footer-info">
       <span v-if="icpNumber" class="footer-item">
-        <a :href="`https://beian.miit.gov.cn/`" class="icp-link" rel="noopener noreferrer" target="_blank">
+        <a
+          :href="`https://beian.miit.gov.cn/`"
+          class="icp-link"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
           {{ icpNumber }}
         </a>
       </span>
@@ -15,8 +20,16 @@
         </a>
       </span>
       <span v-if="isNetlify" class="footer-item">
-        <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer" class="netlify-badge">
-          <img src="https://www.netlify.com/img/global/badges/netlify-color-accent.svg" alt="Deploys by Netlify" />
+        <a
+          href="https://www.netlify.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="netlify-badge"
+        >
+          <img
+            src="https://www.netlify.com/img/global/badges/netlify-color-accent.svg"
+            alt="Deploys by Netlify"
+          >
         </a>
       </span>
     </div>
@@ -76,7 +89,7 @@ onMounted(() => {
 }
 
 .footer-item:not(:last-child)::after {
-  content: " | ";
+  content: ' | ';
   margin: 0 10px;
   color: rgba(255, 255, 255, 0.4);
 }

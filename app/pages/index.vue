@@ -1,16 +1,16 @@
 <template>
   <div class="home">
-    <div class="ellipse-effect"></div>
+    <div class="ellipse-effect" />
     <div class="main-content">
       <div class="top-bar">
         <div class="logo-section">
           <NuxtLink class="logo-link" to="/">
-            <img alt="VoiceHub Logo" class="logo-image" :src="logo"/>
+            <img alt="VoiceHub Logo" class="logo-image" :src="logo" >
           </NuxtLink>
           <!-- 横线和学校logo -->
           <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider-container">
-            <div class="logo-divider"></div>
-            <img :src="proxiedSchoolLogoUrl" alt="学校Logo" class="school-logo"/>
+            <div class="logo-divider" />
+            <img :src="proxiedSchoolLogoUrl" alt="学校Logo" class="school-logo" >
           </div>
         </div>
 
@@ -23,21 +23,21 @@
                 <span v-if="isAdmin" class="user-badge admin">{{ roleName }}</span>
                 <span v-else class="user-badge">{{ userClassInfo }}</span>
               </div>
-              
+
               <div class="user-avatar-wrapper" @click="toggleUserActions">
-                <img 
-                  v-if="user?.avatar && !avatarError" 
-                  :src="user.avatar" 
-                  class="user-avatar" 
+                <img
+                  v-if="user?.avatar && !avatarError"
+                  :src="user.avatar"
+                  class="user-avatar"
                   @error="avatarError = true"
-                />
+                >
                 <div v-else class="user-avatar-placeholder">
                   {{ user?.name?.[0] || 'U' }}
                 </div>
               </div>
 
               <Transition name="dropdown-fade">
-                <div class="user-actions-dropdown" v-if="showUserActions">
+                <div v-if="showUserActions" class="user-actions-dropdown">
                   <NuxtLink class="action-item" to="/account">
                     <Icon name="user" :size="16" />
                     <span>账号管理</span>
@@ -67,7 +67,7 @@
       <div v-if="siteTitle" class="site-title">
         <div class="title-container">
           <h2 class="main-title">{{ siteTitle }}</h2>
-          <div class="title-divider"></div>
+          <div class="title-divider" />
           <span class="sub-title">VoiceHub 校园广播系统</span>
         </div>
       </div>
@@ -76,43 +76,56 @@
       <div class="content-area">
         <!-- 选项卡区域 -->
         <div class="tabs-row">
-          <div :class="{ 'active': activeTab === 'schedule' }"
-               class="section-tab"
-               @click="handleTabClick('schedule')">
+          <div
+            :class="{ active: activeTab === 'schedule' }"
+            class="section-tab"
+            @click="handleTabClick('schedule')"
+          >
             <Icon class="tab-icon" name="calendar" :size="20" />
             <span class="tab-text">播出排期</span>
           </div>
-          <div :class="{ 'active': activeTab === 'songs' }"
-               class="section-tab"
-               @click="handleTabClick('songs')">
+          <div
+            :class="{ active: activeTab === 'songs' }"
+            class="section-tab"
+            @click="handleTabClick('songs')"
+          >
             <Icon class="tab-icon" name="music" :size="20" />
             <span class="tab-text">歌曲列表</span>
           </div>
-          <div :class="{ 'active': activeTab === 'request' }"
-               class="section-tab"
-               @click="handleTabClick('request')">
+          <div
+            :class="{ active: activeTab === 'request' }"
+            class="section-tab"
+            @click="handleTabClick('request')"
+          >
             <Icon class="tab-icon" name="search" :size="20" />
             <span class="tab-text">投稿歌曲</span>
           </div>
           <ClientOnly>
-            <div :key="notificationTabKey"
-                 ref="notificationTabRef"
-                 :class="{ 'active': activeTab === 'notification', 'disabled': !isClientAuthenticated }"
-                 class="section-tab"
-                 data-tab="notification"
-                 @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()">
+            <div
+              :key="notificationTabKey"
+              ref="notificationTabRef"
+              :class="{ active: activeTab === 'notification', disabled: !isClientAuthenticated }"
+              class="section-tab"
+              data-tab="notification"
+              @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()"
+            >
               <div class="icon-wrapper">
                 <Icon class="tab-icon" name="message-circle" :size="20" />
-                <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-tab"></span>
+                <span
+                  v-if="isClientAuthenticated && hasUnreadNotifications"
+                  class="notification-badge-tab"
+                />
               </div>
               <span class="tab-text">
                 消息
-                <span v-if="isClientAuthenticated && hasUnreadNotifications" class="notification-badge-desktop"></span>
+                <span
+                  v-if="isClientAuthenticated && hasUnreadNotifications"
+                  class="notification-badge-desktop"
+                />
               </span>
             </div>
             <template #fallback>
-              <div class="section-tab disabled"
-                   data-tab="notification">
+              <div class="section-tab disabled" data-tab="notification">
                 <Icon class="tab-icon" name="message-circle" :size="20" />
                 <span class="tab-text">消息</span>
               </div>
@@ -128,10 +141,10 @@
             <div v-if="activeTab === 'schedule'" key="schedule" class="tab-pane schedule-tab-pane">
               <ClientOnly class="full-width">
                 <LazySongsScheduleList
-                    :error="error"
-                    :loading="loading"
-                    :schedules="publicSchedules"
-                    @semester-change="handleSemesterChange"
+                  :error="error"
+                  :loading="loading"
+                  :schedules="publicSchedules"
+                  @semester-change="handleSemesterChange"
                 />
               </ClientOnly>
             </div>
@@ -141,16 +154,16 @@
               <div class="song-list-container">
                 <ClientOnly>
                   <LazySongsSongList
-                      :error="error"
-                      :isAdmin="isAdmin"
-                      :loading="loading"
-                      :songs="filteredSongs"
-                      @refresh="refreshSongs"
-                      @vote="handleVote"
-                      @withdraw="handleWithdraw"
-                      @cancelReplay="handleCancelReplay"
-                      @requestReplay="handleRequestReplay"
-                      @semester-change="handleSemesterChange"
+                    :error="error"
+                    :is-admin="isAdmin"
+                    :loading="loading"
+                    :songs="filteredSongs"
+                    @refresh="refreshSongs"
+                    @vote="handleVote"
+                    @withdraw="handleWithdraw"
+                    @cancel-replay="handleCancelReplay"
+                    @request-replay="handleRequestReplay"
+                    @semester-change="handleSemesterChange"
                   />
                 </ClientOnly>
               </div>
@@ -159,23 +172,25 @@
             <!-- 投稿歌曲内容 -->
             <div v-else-if="activeTab === 'request'" key="request" class="tab-pane request-pane">
               <LazySongsRequestForm
-                  ref="requestFormRef"
-                  :loading="loading"
-                  @request="handleRequest"
-                  @vote="handleVote"
+                ref="requestFormRef"
+                :loading="loading"
+                @request="handleRequest"
+                @vote="handleVote"
               />
             </div>
 
             <!-- 通知内容 -->
-            <div v-else-if="activeTab === 'notification'" key="notification" class="tab-pane notification-pane">
+            <div
+              v-else-if="activeTab === 'notification'"
+              key="notification"
+              class="tab-pane notification-pane"
+            >
               <div v-if="!isClientAuthenticated" class="login-required-container">
                 <div class="login-required-content">
                   <div class="login-icon">🔒</div>
                   <h3>需要登录</h3>
                   <p>您需要登录才能查看通知</p>
-                  <button class="login-button" @click="navigateToLogin">
-                    立即登录
-                  </button>
+                  <button class="login-button" @click="navigateToLogin">立即登录</button>
                 </div>
               </div>
               <div v-else class="notification-container">
@@ -183,11 +198,21 @@
                 <div class="notification-header">
                   <h2 class="notification-title">通知中心</h2>
                   <button class="settings-icon" @click="toggleNotificationSettings">
-                    <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="12" cy="12" r="3"></circle>
+                    <svg
+                      fill="none"
+                      height="20"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="20"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle cx="12" cy="12" r="3" />
                       <path
-                          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -195,83 +220,135 @@
                 <!-- 通知列表 -->
                 <div class="notification-list">
                   <div v-if="notificationsLoading" class="loading-indicator">
-                    <div class="loading-spinner"></div>
+                    <div class="loading-spinner" />
                     <span>加载中...</span>
                   </div>
 
                   <div v-else-if="userNotifications.length === 0" class="empty-notification">
                     <div class="empty-icon">
-                      <Icon :size="48" color="#6b7280" name="bell"/>
+                      <Icon :size="48" color="#6b7280" name="bell" />
                     </div>
                     <p>暂无通知</p>
                   </div>
 
                   <Transition mode="out-in" name="notification-list-fade">
-                    <div v-if="userNotifications.length > 0" :key="notificationsService.currentPage.value"
-                         class="notification-items">
+                    <div
+                      v-if="userNotifications.length > 0"
+                      :key="notificationsService.currentPage.value"
+                      class="notification-items"
+                    >
                       <div
-                          v-for="(notification, index) in userNotifications"
-                          :key="notification.id"
-                          :class="{ 'unread': !notification.read }"
-                          :style="{ '--animation-delay': index * 0.1 + 's' }"
-                          class="notification-card"
-                          @click="viewNotification(notification)"
+                        v-for="(notification, index) in userNotifications"
+                        :key="notification.id"
+                        :class="{ unread: !notification.read }"
+                        :style="{ '--animation-delay': index * 0.1 + 's' }"
+                        class="notification-card"
+                        @click="viewNotification(notification)"
                       >
                         <div class="notification-card-header">
                           <div class="notification-icon-type">
-                            <Icon v-if="notification.type === 'SONG_SELECTED'" :size="20" color="#4f46e5"
-                                  name="check"/>
-                            <Icon v-else-if="notification.type === 'SONG_PLAYED'" :size="20" color="#10b981"
-                                  name="play"/>
-                            <Icon v-else-if="notification.type === 'SONG_VOTED'" :size="20" color="#f59e0b"
-                                  name="thumbs-up"/>
-                            <Icon v-else-if="notification.type === 'SONG_REJECTED'" :size="20" color="#ef4444"
-                                  name="x-circle"/>
-                            <Icon v-else-if="notification.type === 'COLLABORATION_INVITE'" :size="20" color="#0B5AFE"
-                                  name="users"/>
-                            <Icon v-else-if="notification.type === 'COLLABORATION_RESPONSE'" :size="20" color="#8b5cf6"
-                                  name="message-circle"/>
-                            <Icon v-else :size="20" color="#6b7280" name="bell"/>
+                            <Icon
+                              v-if="notification.type === 'SONG_SELECTED'"
+                              :size="20"
+                              color="#4f46e5"
+                              name="check"
+                            />
+                            <Icon
+                              v-else-if="notification.type === 'SONG_PLAYED'"
+                              :size="20"
+                              color="#10b981"
+                              name="play"
+                            />
+                            <Icon
+                              v-else-if="notification.type === 'SONG_VOTED'"
+                              :size="20"
+                              color="#f59e0b"
+                              name="thumbs-up"
+                            />
+                            <Icon
+                              v-else-if="notification.type === 'SONG_REJECTED'"
+                              :size="20"
+                              color="#ef4444"
+                              name="x-circle"
+                            />
+                            <Icon
+                              v-else-if="notification.type === 'COLLABORATION_INVITE'"
+                              :size="20"
+                              color="#0B5AFE"
+                              name="users"
+                            />
+                            <Icon
+                              v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
+                              :size="20"
+                              color="#8b5cf6"
+                              name="message-circle"
+                            />
+                            <Icon v-else :size="20" color="#6b7280" name="bell" />
                           </div>
                           <div class="notification-title-row">
                             <div class="notification-title">
                               <span v-if="notification.type === 'SONG_SELECTED'">歌曲已选中</span>
-                              <span v-else-if="notification.type === 'SONG_PLAYED'">歌曲已播放</span>
+                              <span v-else-if="notification.type === 'SONG_PLAYED'"
+                                >歌曲已播放</span
+                              >
                               <span v-else-if="notification.type === 'SONG_VOTED'">收到新投票</span>
-                              <span v-else-if="notification.type === 'SONG_REJECTED'">歌曲被驳回</span>
+                              <span v-else-if="notification.type === 'SONG_REJECTED'"
+                                >歌曲被驳回</span
+                              >
                               <span v-else-if="notification.type === 'COLLABORATION_INVITE'">
                                 联合投稿邀请
-                                <span v-if="notification.handled"
-                                      :class="['status-tag', notification.status === 'ACCEPTED' ? 'accepted' : (notification.status === 'INVALID' ? 'invalid' : 'rejected')]">
+                                <span
+                                  v-if="notification.handled"
+                                  :class="[
+                                    'status-tag',
+                                    notification.status === 'ACCEPTED'
+                                      ? 'accepted'
+                                      : notification.status === 'INVALID'
+                                        ? 'invalid'
+                                        : 'rejected'
+                                  ]"
+                                >
                                   {{
-                                    notification.status === 'ACCEPTED' ? '- 已接受' : (notification.status === 'INVALID' ? '- 已失效' : '- 已拒绝')
+                                    notification.status === 'ACCEPTED'
+                                      ? '- 已接受'
+                                      : notification.status === 'INVALID'
+                                        ? '- 已失效'
+                                        : '- 已拒绝'
                                   }}
                                 </span>
                               </span>
-                              <span v-else-if="notification.type === 'COLLABORATION_RESPONSE'">联合投稿回复</span>
+                              <span v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
+                                >联合投稿回复</span
+                              >
                               <span v-else>系统通知</span>
-                              <span v-if="!notification.read" class="unread-indicator"></span>
+                              <span v-if="!notification.read" class="unread-indicator" />
                             </div>
-                            <div class="notification-time">{{ formatNotificationTime(notification.createdAt) }}</div>
+                            <div class="notification-time">
+                              {{ formatNotificationTime(notification.createdAt) }}
+                            </div>
                           </div>
                         </div>
                         <div class="notification-card-body">
                           <div class="notification-text">{{ notification.message }}</div>
 
                           <!-- 联合投稿邀请操作按钮 -->
-                          <div v-if="notification.type === 'COLLABORATION_INVITE' && !notification.handled"
-                               class="invite-actions">
+                          <div
+                            v-if="
+                              notification.type === 'COLLABORATION_INVITE' && !notification.handled
+                            "
+                            class="invite-actions"
+                          >
                             <button
-                                :disabled="notification.processing"
-                                class="action-button accept-btn"
-                                @click.stop="handleCollaborationReply(notification, true)"
+                              :disabled="notification.processing"
+                              class="action-button accept-btn"
+                              @click.stop="handleCollaborationReply(notification, true)"
                             >
                               {{ notification.processing ? '处理中...' : '接受邀请' }}
                             </button>
                             <button
-                                :disabled="notification.processing"
-                                class="action-button reject-btn"
-                                @click.stop="handleCollaborationReply(notification, false)"
+                              :disabled="notification.processing"
+                              class="action-button reject-btn"
+                              @click.stop="handleCollaborationReply(notification, false)"
                             >
                               拒绝
                             </button>
@@ -279,16 +356,25 @@
                         </div>
                         <div class="notification-card-actions">
                           <button
-                              class="action-button delete"
-                              title="删除"
-                              @click.stop="deleteNotification(notification.id)"
+                            class="action-button delete"
+                            title="删除"
+                            @click.stop="deleteNotification(notification.id)"
                           >
-                            <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round"
-                                 stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16"
-                                 xmlns="http://www.w3.org/2000/svg">
-                              <polyline points="3 6 5 6 21 6"></polyline>
+                            <svg
+                              fill="none"
+                              height="16"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              viewBox="0 0 24 24"
+                              width="16"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <polyline points="3 6 5 6 21 6" />
                               <path
-                                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                              />
                             </svg>
                             <span>删除</span>
                           </button>
@@ -299,11 +385,15 @@
                 </div>
 
                 <!-- 分页控件 -->
-                <div v-if="notificationsService.totalCount.value > 0" class="notification-pagination">
+                <div
+                  v-if="notificationsService.totalCount.value > 0"
+                  class="notification-pagination"
+                >
                   <div class="pagination-info">
                     <span class="pagination-text">
-                      共 {{ notificationsService.totalCount.value }} 条通知，
-                      第 {{ notificationsService.currentPage.value }} / {{ notificationsService.totalPages.value }} 页
+                      共 {{ notificationsService.totalCount.value }} 条通知， 第
+                      {{ notificationsService.currentPage.value }} /
+                      {{ notificationsService.totalPages.value }} 页
                     </span>
                   </div>
 
@@ -312,25 +402,37 @@
                     <div class="page-size-selector">
                       <label for="pageSize">每页显示：</label>
                       <CustomSelect
-                          id="pageSize"
-                          :model-value="notificationsService.pageSize.value"
-                          :options="pageSizeOptions"
-                          class="page-size-custom-select"
-                          @update:model-value="handlePageSizeChange"
+                        id="pageSize"
+                        :model-value="notificationsService.pageSize.value"
+                        :options="pageSizeOptions"
+                        class="page-size-custom-select"
+                        @update:model-value="handlePageSizeChange"
                       />
                     </div>
 
                     <!-- 页码导航 -->
                     <div class="page-navigation">
                       <button
-                          :disabled="!notificationsService.hasPrevPage.value || notificationsService.isPaginationLoading.value"
-                          class="page-nav-button"
-                          title="上一页"
-                          @click="notificationsService.prevPage()"
+                        :disabled="
+                          !notificationsService.hasPrevPage.value ||
+                          notificationsService.isPaginationLoading.value
+                        "
+                        class="page-nav-button"
+                        title="上一页"
+                        @click="notificationsService.prevPage()"
                       >
-                        <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                             stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
-                          <polyline points="15 18 9 12 15 6"></polyline>
+                        <svg
+                          fill="none"
+                          height="16"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          viewBox="0 0 24 24"
+                          width="16"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <polyline points="15 18 9 12 15 6" />
                         </svg>
                       </button>
 
@@ -338,10 +440,13 @@
                       <div class="page-numbers">
                         <template v-for="page in getVisiblePages()" :key="page">
                           <button
-                              v-if="page !== '...'"
-                              :class="['page-number-button', { 'active': page === notificationsService.currentPage.value }]"
-                              :disabled="notificationsService.isPaginationLoading.value"
-                              @click="notificationsService.goToPage(page)"
+                            v-if="page !== '...'"
+                            :class="[
+                              'page-number-button',
+                              { active: page === notificationsService.currentPage.value }
+                            ]"
+                            :disabled="notificationsService.isPaginationLoading.value"
+                            @click="notificationsService.goToPage(page)"
                           >
                             {{ page }}
                           </button>
@@ -350,22 +455,37 @@
                       </div>
 
                       <button
-                          :disabled="!notificationsService.hasNextPage.value || notificationsService.isPaginationLoading.value"
-                          class="page-nav-button"
-                          title="下一页"
-                          @click="notificationsService.nextPage()"
+                        :disabled="
+                          !notificationsService.hasNextPage.value ||
+                          notificationsService.isPaginationLoading.value
+                        "
+                        class="page-nav-button"
+                        title="下一页"
+                        @click="notificationsService.nextPage()"
                       >
-                        <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                             stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
-                          <polyline points="9 18 15 12 9 6"></polyline>
+                        <svg
+                          fill="none"
+                          height="16"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          viewBox="0 0 24 24"
+                          width="16"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <polyline points="9 18 15 12 9 6" />
                         </svg>
                       </button>
                     </div>
                   </div>
 
                   <!-- 分页加载状态 -->
-                  <div v-if="notificationsService.isPaginationLoading.value" class="pagination-loading">
-                    <div class="loading-spinner"></div>
+                  <div
+                    v-if="notificationsService.isPaginationLoading.value"
+                    class="pagination-loading"
+                  >
+                    <div class="loading-spinner" />
                     <span>加载中...</span>
                   </div>
                 </div>
@@ -373,31 +493,28 @@
                 <!-- 底部操作按钮 -->
                 <div v-if="userNotifications.length > 0" class="notification-actions-bar">
                   <button
-                      :class="{ 'disabled': !hasUnreadNotifications }"
-                      :disabled="!hasUnreadNotifications"
-                      class="action-button-large"
-                      @click="markAllNotificationsAsRead"
+                    :class="{ disabled: !hasUnreadNotifications }"
+                    :disabled="!hasUnreadNotifications"
+                    class="action-button-large"
+                    @click="markAllNotificationsAsRead"
                   >
                     全部标记为已读
                   </button>
-                  <button
-                      class="action-button-large danger"
-                      @click="clearAllNotifications"
-                  >
+                  <button class="action-button-large danger" @click="clearAllNotifications">
                     清空所有消息
                   </button>
                 </div>
 
                 <!-- 确认对话框 -->
                 <ConfirmDialog
-                    v-model:show="showConfirmDialog"
-                    :cancel-text="confirmDialogConfig.cancelText"
-                    :confirm-text="confirmDialogConfig.confirmText"
-                    :message="confirmDialogConfig.message"
-                    :title="confirmDialogConfig.title"
-                    :type="confirmDialogConfig.type"
-                    @cancel="handleCancelAction"
-                    @confirm="handleConfirmAction"
+                  v-model:show="showConfirmDialog"
+                  :cancel-text="confirmDialogConfig.cancelText"
+                  :confirm-text="confirmDialogConfig.confirmText"
+                  :message="confirmDialogConfig.message"
+                  :title="confirmDialogConfig.title"
+                  :type="confirmDialogConfig.type"
+                  @cancel="handleCancelAction"
+                  @confirm="handleConfirmAction"
                 />
               </div>
             </div>
@@ -412,39 +529,58 @@
     <!-- 规则弹窗 -->
     <Teleport to="body">
       <Transition
-          enter-active-class="transition duration-300 ease-out"
-          enter-from-class="opacity-0 scale-95"
-          enter-to-class="opacity-100 scale-100"
-          leave-active-class="transition duration-200 ease-in"
-          leave-from-class="opacity-100 scale-100"
-          leave-to-class="opacity-0 scale-95"
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
       >
-        <div v-if="showRules" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="showRules = false">
-          <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+        <div
+          v-if="showRules"
+          class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          @click.self="showRules = false"
+        >
+          <div
+            class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+          >
             <div class="p-8 pb-4 flex items-center justify-between">
               <div>
                 <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                  <div
+                    class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                  >
                     <Icon name="bell" :size="20" />
                   </div>
                   点歌规则
                 </h3>
                 <p class="text-xs text-zinc-500 mt-1 ml-13">投稿前请仔细阅读以下规则</p>
               </div>
-              <button class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all" @click="showRules = false">
+              <button
+                class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+                @click="showRules = false"
+              >
                 <Icon name="x" :size="20" />
               </button>
             </div>
 
             <div class="p-8 pt-4 space-y-8">
               <div class="rules-group space-y-4">
-                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                <h4
+                  class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"
+                >
                   <Icon name="message-circle" :size="12" />
                   投稿须知
                 </h4>
-                <div v-if="submissionGuidelines" class="text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
-                     v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
-                <div v-else class="space-y-3 bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50">
+                <div
+                  v-if="submissionGuidelines"
+                  class="text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
+                  v-html="submissionGuidelines.replace(/\n/g, '<br>')"
+                />
+                <div
+                  v-else
+                  class="space-y-3 bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
+                >
                   <div class="flex gap-3 text-sm text-zinc-400 font-medium">
                     <span class="text-blue-500 font-black">01</span>
                     <p>投稿时无需加入书名号</p>
@@ -461,24 +597,35 @@
               </div>
 
               <div class="rules-group space-y-4">
-                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                <h4
+                  class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"
+                >
                   <Icon name="calendar" :size="12" />
                   播放时间
                 </h4>
-                <div class="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-900/40">
+                <div
+                  class="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl flex items-center gap-4"
+                >
+                  <div
+                    class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-900/40"
+                  >
                     <Icon name="clock" :size="24" />
                   </div>
                   <div>
                     <p class="text-sm font-black text-zinc-100">每天夜自修静班前</p>
-                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">PLAYBACK TIME</p>
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">
+                      PLAYBACK TIME
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="p-8 pt-0">
-              <button class="w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95" @click="showRules = false">
+              <button
+                class="w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95"
+                @click="showRules = false"
+              >
                 我知道了
               </button>
             </div>
@@ -490,15 +637,15 @@
 </template>
 
 <script setup>
-import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
-import {useRouter} from 'vue-router'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import logo from '~/public/images/logo.svg'
 import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
-import {useNotifications} from '~/composables/useNotifications'
-import {useSiteConfig} from '~/composables/useSiteConfig'
+import { useNotifications } from '~/composables/useNotifications'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 获取运行时配置
@@ -524,10 +671,10 @@ const user = computed(() => auth?.user?.value || null)
 const roleName = computed(() => {
   const role = user.value?.role
   const map = {
-    'ADMIN': '管理员',
-    'SUPER_ADMIN': '超级管理员',
-    'SONG_ADMIN': '审歌员',
-    'USER': '普通用户'
+    ADMIN: '管理员',
+    SUPER_ADMIN: '超级管理员',
+    SONG_ADMIN: '审歌员',
+    USER: '普通用户'
   }
   return map[role] || '管理员'
 })
@@ -539,7 +686,7 @@ const userClassInfo = computed(() => {
   return '同学'
 })
 
-let songs = useSongs()
+const songs = useSongs()
 // 立即初始化通知服务，避免时序问题
 const notificationsService = useNotifications()
 const unreadNotificationCount = ref(0)
@@ -561,9 +708,12 @@ const toggleUserActions = (event) => {
 }
 
 // 监听用户头像变化，重置错误状态
-watch(() => user.value?.avatar, () => {
-  avatarError.value = false
-})
+watch(
+  () => user.value?.avatar,
+  () => {
+    avatarError.value = false
+  }
+)
 
 // 点击外部关闭下拉菜单
 const handleClickOutside = (event) => {
@@ -587,16 +737,15 @@ onUnmounted(() => {
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
 
-const tabOrder = ['schedule', 'songs', 'request', 'notification'];
+const tabOrder = ['schedule', 'songs', 'request', 'notification']
 const activeIndex = computed(() => {
-  const index = tabOrder.indexOf(activeTab.value);
-  return index === -1 ? 0 : index;
-});
+  const index = tabOrder.indexOf(activeTab.value)
+  return index === -1 ? 0 : index
+})
 
 // 通知按钮强制更新相关
 const notificationTabRef = ref(null)
 const notificationTabKey = ref(0)
-
 
 let refreshInterval = null
 
@@ -842,17 +991,21 @@ watch(activeTab, (newTab) => {
 })
 
 // 监听登录状态变化，确保通知标签页状态立即更新
-watch(() => auth?.isAuthenticated?.value, (newAuthState) => {
-  if (newAuthState) {
-    // 用户刚登录，立即加载通知相关数据
-    nextTick(() => {
-      if (notificationsService) {
-        loadNotifications()
-        fetchNotificationSettings()
-      }
-    })
-  }
-}, {immediate: false})
+watch(
+  () => auth?.isAuthenticated?.value,
+  (newAuthState) => {
+    if (newAuthState) {
+      // 用户刚登录，立即加载通知相关数据
+      nextTick(() => {
+        if (notificationsService) {
+          loadNotifications()
+          fetchNotificationSettings()
+        }
+      })
+    }
+  },
+  { immediate: false }
+)
 
 // 初始化时如果已经在通知标签页，则加载通知
 onMounted(() => {
@@ -863,14 +1016,14 @@ onMounted(() => {
 
 // 获取当前日期和星期
 const getCurrentDate = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const date = now.getDate();
-  const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
-  const weekDay = weekDays[now.getDay()];
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const date = now.getDate()
+  const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+  const weekDay = weekDays[now.getDay()]
 
-  return `${year}年${month}月${date}日 周${weekDay}`;
+  return `${year}年${month}月${date}日 周${weekDay}`
 }
 
 // RequestForm组件引用
@@ -899,11 +1052,15 @@ const updateSongCounts = async (semester = null) => {
 }
 
 // 监听siteTitle变化，确保首页title正确设置
-watch(siteTitle, (newSiteTitle) => {
-  if (typeof document !== 'undefined' && newSiteTitle) {
-    document.title = `首页 | ${newSiteTitle}`
-  }
-}, {immediate: true})
+watch(
+  siteTitle,
+  (newSiteTitle) => {
+    if (typeof document !== 'undefined' && newSiteTitle) {
+      document.title = `首页 | ${newSiteTitle}`
+    }
+  },
+  { immediate: true }
+)
 
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
@@ -914,55 +1071,56 @@ onMounted(async () => {
   const currentUser = await auth.initAuth()
 
   // 监听登录状态变化，确保UI立即响应
-  watch(() => auth?.isAuthenticated?.value, async (newAuthState, oldAuthState) => {
-    if (newAuthState && !oldAuthState) {
-      // 用户刚刚登录成功，立即更新相关数据
-      console.log('用户登录状态变化，开始强制更新通知按钮')
+  watch(
+    () => auth?.isAuthenticated?.value,
+    async (newAuthState, oldAuthState) => {
+      if (newAuthState && !oldAuthState) {
+        // 用户刚刚登录成功，立即更新相关数据
+        console.log('用户登录状态变化，开始强制更新通知按钮')
 
-      // 方法1: 更新key值强制重新渲染
-      notificationTabKey.value++
+        // 方法1: 更新key值强制重新渲染
+        notificationTabKey.value++
 
-      await nextTick()
+        await nextTick()
 
-      // 方法2: 直接操作ref元素
-      if (notificationTabRef.value) {
-        notificationTabRef.value.classList.remove('disabled')
-        notificationTabRef.value.style.opacity = '1'
-        notificationTabRef.value.style.cursor = 'pointer'
-        notificationTabRef.value.style.pointerEvents = 'auto'
-      }
-
-      // 方法3: 强制触发响应式更新
-      await nextTick(() => {
-        // 强制重新计算isClientAuthenticated
-        if (typeof window !== 'undefined') {
-          // 直接操作DOM确保样式立即更新
-          const notificationTab = document.querySelector('.section-tab[data-tab="notification"]')
-          if (notificationTab) {
-            notificationTab.classList.remove('disabled')
-            // 强制重新应用class绑定
-            notificationTab.style.opacity = '1'
-            notificationTab.style.cursor = 'pointer'
-            notificationTab.style.pointerEvents = 'auto'
-          }
+        // 方法2: 直接操作ref元素
+        if (notificationTabRef.value) {
+          notificationTabRef.value.classList.remove('disabled')
+          notificationTabRef.value.style.opacity = '1'
+          notificationTabRef.value.style.cursor = 'pointer'
+          notificationTabRef.value.style.pointerEvents = 'auto'
         }
-      })
 
-      // 方法4: 再次更新key值确保完全重新渲染
-      await nextTick()
-      notificationTabKey.value++
+        // 方法3: 强制触发响应式更新
+        await nextTick(() => {
+          // 强制重新计算isClientAuthenticated
+          if (typeof window !== 'undefined') {
+            // 直接操作DOM确保样式立即更新
+            const notificationTab = document.querySelector('.section-tab[data-tab="notification"]')
+            if (notificationTab) {
+              notificationTab.classList.remove('disabled')
+              // 强制重新应用class绑定
+              notificationTab.style.opacity = '1'
+              notificationTab.style.cursor = 'pointer'
+              notificationTab.style.pointerEvents = 'auto'
+            }
+          }
+        })
 
-      // 方法5: 再次使用nextTick确保Vue响应式系统完全更新
-      await nextTick()
+        // 方法4: 再次更新key值确保完全重新渲染
+        await nextTick()
+        notificationTabKey.value++
 
-      console.log('通知按钮强制更新完成')
+        // 方法5: 再次使用nextTick确保Vue响应式系统完全更新
+        await nextTick()
 
-      await Promise.all([
-        loadNotifications(),
-        fetchNotificationSettings()
-      ])
-    }
-  }, {immediate: false, flush: 'post'})
+        console.log('通知按钮强制更新完成')
+
+        await Promise.all([loadNotifications(), fetchNotificationSettings()])
+      }
+    },
+    { immediate: false, flush: 'post' }
+  )
 
   // 确保title正确设置
   if (typeof document !== 'undefined' && siteTitle.value) {
@@ -985,10 +1143,7 @@ onMounted(async () => {
     await checkPasswordChangeRequired(currentUser)
   } else {
     // 未登录用户：并行加载歌曲总数和公共排期
-    await Promise.all([
-      songs.fetchSongCount(),
-      songs.fetchPublicSchedules()
-    ])
+    await Promise.all([songs.fetchSongCount(), songs.fetchPublicSchedules()])
   }
 
   // 更新统计数据（基于已加载的缓存数据）
@@ -1019,10 +1174,7 @@ onMounted(async () => {
           ])
         } else {
           // 未登录用户：刷新公共排期和歌曲总数
-          await Promise.allSettled([
-            songs.fetchPublicSchedules(true),
-            songs.fetchSongCount()
-          ])
+          await Promise.allSettled([songs.fetchPublicSchedules(true), songs.fetchSongCount()])
         }
 
         // 更新统计数据
@@ -1044,7 +1196,6 @@ onMounted(async () => {
       }
     })
   }
-
 })
 
 // 组件卸载时清除定时器
@@ -1065,11 +1216,11 @@ const allSongs = computed(() => songs?.visibleSongs?.value || [])
 const filteredSongs = computed(() => {
   // 返回所有歌曲，但将已播放的歌曲排在最后
   if (allSongs.value && allSongs.value.length > 0) {
-    const unplayedSongs = allSongs.value.filter(song => !song.played);
-    const playedSongs = allSongs.value.filter(song => song.played);
-    return [...unplayedSongs, ...playedSongs];
+    const unplayedSongs = allSongs.value.filter((song) => !song.played)
+    const playedSongs = allSongs.value.filter((song) => song.played)
+    return [...unplayedSongs, ...playedSongs]
   }
-  return [];
+  return []
 })
 const loading = computed(() => songs?.loading?.value || false)
 const error = computed(() => songs?.error?.value || '')
@@ -1102,7 +1253,7 @@ const handleRequest = async (songData) => {
   }
 
   try {
-    console.log("处理歌曲请求:", songData.title)
+    console.log('处理歌曲请求:', songData.title)
     // 直接传递整个songData对象，确保JSON格式正确
     const result = await songs.requestSong(songData)
     if (result) {
@@ -1112,7 +1263,7 @@ const handleRequest = async (songData) => {
       }
 
       // 强制刷新歌曲列表
-      console.log("投稿成功，刷新歌曲列表")
+      console.log('投稿成功，刷新歌曲列表')
       await refreshSongs()
 
       // 刷新投稿状态
@@ -1160,7 +1311,7 @@ const handleVote = async (song) => {
 
     // 静默刷新歌曲列表以获取最新状态，但不影响当前视图
     setTimeout(() => {
-      songs.refreshSongsSilent().catch(err => {
+      songs.refreshSongsSilent().catch((err) => {
         console.error('刷新歌曲列表失败', err)
       })
     }, 500)
@@ -1244,7 +1395,7 @@ const handleSemesterChange = async (semester) => {
 
     // 触发自定义事件，通知所有监听的组件
     const event = new CustomEvent('semester-filter-change', {
-      detail: {semester}
+      detail: { semester }
     })
     window.dispatchEvent(event)
 
@@ -1261,7 +1412,6 @@ const handleSemesterChange = async (semester) => {
 const updateNotificationCount = async () => {
   // 函数保留但不再使用
 }
-
 
 // 处理登出
 const handleLogout = () => {
@@ -1342,42 +1492,40 @@ const formatRefreshInterval = (seconds) => {
   } else {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
-    return remainingSeconds > 0
-        ? `${minutes}分${remainingSeconds}秒`
-        : `${minutes}分钟`
+    return remainingSeconds > 0 ? `${minutes}分${remainingSeconds}秒` : `${minutes}分钟`
   }
 }
 
 // 波纹效果指令
 const vRipple = {
   mounted(el) {
-    el.addEventListener('click', e => {
-      const rect = el.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+    el.addEventListener('click', (e) => {
+      const rect = el.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
 
-      const ripple = document.createElement('span');
-      ripple.className = 'ripple-effect';
-      ripple.style.left = `${x}px`;
-      ripple.style.top = `${y}px`;
+      const ripple = document.createElement('span')
+      ripple.className = 'ripple-effect'
+      ripple.style.left = `${x}px`
+      ripple.style.top = `${y}px`
 
-      el.appendChild(ripple);
+      el.appendChild(ripple)
 
       setTimeout(() => {
-        ripple.remove();
-      }, 600); // 与CSS动画时间一致
-    });
+        ripple.remove()
+      }, 600) // 与CSS动画时间一致
+    })
   }
-};
+}
 
 // 处理标签点击事件，添加动画效果
 const handleTabClick = (tab) => {
-  activeTab.value = tab;
-};
+  activeTab.value = tab
+}
 
 // 添加导航到登录页面的方法
 const navigateToLogin = () => {
-  router.push('/login');
+  router.push('/login')
 }
 
 // 显示登录提示
@@ -1398,10 +1546,10 @@ const checkPasswordChangeRequired = async (user = null) => {
       setTimeout(() => {
         if (window.$showNotification) {
           window.$showNotification(
-              '为了您的账户安全，建议您修改密码。您可以点击右上角的"修改密码"按钮进行修改。',
-              'info',
-              true,
-              8000 // 显示8秒
+            '为了您的账户安全，建议您修改密码。您可以点击右上角的"修改密码"按钮进行修改。',
+            'info',
+            true,
+            8000 // 显示8秒
           )
         }
       }, 1000)
@@ -1415,9 +1563,13 @@ const checkPasswordChangeRequired = async (user = null) => {
 
 // 添加未读通知计数
 // 之前已声明了unreadNotificationCount，这里对其进行增强
-if (notificationsService && notificationsService.unreadCount && notificationsService.unreadCount.value) {
-  const count = notificationsService.unreadCount.value;
-  unreadNotificationCount.value = count;
+if (
+  notificationsService &&
+  notificationsService.unreadCount &&
+  notificationsService.unreadCount.value
+) {
+  const count = notificationsService.unreadCount.value
+  unreadNotificationCount.value = count
 }
 </script>
 
@@ -1427,7 +1579,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   flex: 1;
   background-color: #121318;
   padding: 1.5rem;
-  color: #FFFFFF;
+  color: #ffffff;
   display: flex;
   flex-direction: column;
   min-height: 100vh; /* 确保至少占满视口 */
@@ -1451,7 +1603,12 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   transform: translateX(-50%) perspective(500px) rotateX(10deg);
   width: 1110px;
   height: 309px;
-  background: radial-gradient(ellipse at center, rgba(11, 90, 254, 0.3) 0%, rgba(11, 90, 254, 0.15) 30%, rgba(11, 90, 254, 0) 70%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(11, 90, 254, 0.3) 0%,
+    rgba(11, 90, 254, 0.15) 30%,
+    rgba(11, 90, 254, 0) 70%
+  );
   z-index: 0;
   pointer-events: none;
 }
@@ -1494,7 +1651,12 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .logo-divider {
   width: 2px;
   height: 100px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.3));
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0.3)
+  );
   border-radius: 1px;
 }
 
@@ -1638,7 +1800,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  color: #FFFFFF;
+  color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
@@ -1691,7 +1853,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   font-weight: 800;
   font-size: 42px;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -1702,7 +1864,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .title-divider {
   width: 40px;
   height: 4px;
-  background: #0B5AFE;
+  background: #0b5afe;
   border-radius: 2px;
   box-shadow: 0 0 15px rgba(11, 90, 254, 0.6);
 }
@@ -1743,7 +1905,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 .section-tab {
-  background: #1A1B24;
+  background: #1a1b24;
   border-radius: 15px 15px 0 0;
   padding: 15px 24px;
   font-family: 'MiSans', sans-serif;
@@ -1757,8 +1919,8 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 .section-tab.active {
-  background: #21242D;
-  color: #FFFFFF;
+  background: #21242d;
+  color: #ffffff;
   position: relative;
   z-index: 1;
 }
@@ -1766,7 +1928,9 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 /* Tab切换动画 */
 .tab-fade-enter-active,
 .tab-fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 
 .tab-fade-enter-from {
@@ -1802,7 +1966,9 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   opacity: 0;
   transform: translateY(20px);
   will-change: transform, opacity;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s ease;
 }
 
 .notification-card:hover {
@@ -1854,7 +2020,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   right: -8px;
   width: 6px;
   height: 6px;
-  background: #0B5AFE;
+  background: #0b5afe;
   border-radius: 50%;
   box-shadow: 0 0 5px rgba(11, 90, 254, 0.5);
 }
@@ -1866,7 +2032,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   left: 50%;
   width: 0;
   height: 2px;
-  background: #0B5AFE;
+  background: #0b5afe;
   transition: all 0.3s ease;
   transform: translateX(-50%);
 }
@@ -1890,12 +2056,12 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .section-tab.active:hover {
   background-color: transparent;
   box-shadow: none;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 /* 内容容器 */
 .tab-content-container {
-  background: #1A1B24;
+  background: #1a1b24;
   border: 2px solid #282830;
   border-radius: 0 15px 15px 15px;
   padding: 1.5rem;
@@ -2054,7 +2220,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .notification-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
   margin: 0;
   display: flex;
   align-items: center;
@@ -2077,7 +2243,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 
 .settings-icon:hover {
   background-color: rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
+  color: #ffffff;
   transform: rotate(30deg);
 }
 
@@ -2125,7 +2291,9 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .notification-items {
@@ -2184,7 +2352,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 .notification-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #FFFFFF;
+  color: #ffffff;
   margin-bottom: 0.25rem;
 }
 
@@ -2239,7 +2407,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   flex: 1;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
+  color: #ffffff;
   padding: 0.75rem;
   border-radius: 12px;
   font-size: 0.875rem;
@@ -2741,7 +2909,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
     right: 0;
     width: 8px;
     height: 8px;
-    background: #0B5AFE;
+    background: #0b5afe;
     border-radius: 50%;
     border: 1.5px solid #0a0a0f;
     box-shadow: 0 0 5px rgba(11, 90, 254, 0.4);
@@ -2921,7 +3089,11 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 .modal-header h2 {
-  font-family: 'MiSans', system-ui, -apple-system, sans-serif;
+  font-family:
+    'MiSans',
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-size: 20px;
   font-weight: 700;
   color: #ffffff;
@@ -2975,7 +3147,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   gap: 0.5rem;
   font-size: 16px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
   margin: 0;
 }
 
@@ -3134,15 +3306,35 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   animation: bar-dance 1.2s ease-in-out infinite;
 }
 
-.bar:nth-child(1) { height: 20px; animation-delay: 0.1s; }
-.bar:nth-child(2) { height: 35px; animation-delay: 0.3s; }
-.bar:nth-child(3) { height: 25px; animation-delay: 0.2s; }
-.bar:nth-child(4) { height: 40px; animation-delay: 0.4s; }
-.bar:nth-child(5) { height: 30px; animation-delay: 0.2s; }
+.bar:nth-child(1) {
+  height: 20px;
+  animation-delay: 0.1s;
+}
+.bar:nth-child(2) {
+  height: 35px;
+  animation-delay: 0.3s;
+}
+.bar:nth-child(3) {
+  height: 25px;
+  animation-delay: 0.2s;
+}
+.bar:nth-child(4) {
+  height: 40px;
+  animation-delay: 0.4s;
+}
+.bar:nth-child(5) {
+  height: 30px;
+  animation-delay: 0.2s;
+}
 
 @keyframes bar-dance {
-  0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(0.6); }
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.6);
+  }
 }
 
 .card-title {
@@ -3287,7 +3479,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #0B5AFE;
+  background-color: #0b5afe;
   display: inline-block;
   z-index: 2;
 }
@@ -3350,7 +3542,7 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
 }
 
 .login-button {
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
   border: none;
   color: white;
   padding: 10px 20px;
@@ -3364,5 +3556,4 @@ if (notificationsService && notificationsService.unreadCount && notificationsSer
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0, 67, 248, 0.3);
 }
-
 </style>

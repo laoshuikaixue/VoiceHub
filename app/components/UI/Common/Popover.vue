@@ -1,7 +1,7 @@
 <template>
-  <div class="relative inline-block" ref="containerRef">
-    <div @click="toggle" class="cursor-pointer">
-      <slot name="trigger" :isOpen="isOpen"></slot>
+  <div ref="containerRef" class="relative inline-block">
+    <div class="cursor-pointer" @click="toggle">
+      <slot name="trigger" :is-open="isOpen" />
     </div>
 
     <Teleport to="body">
@@ -20,7 +20,7 @@
           class="fixed z-[10000] bg-[#1e1e1e]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden"
           @click.stop
         >
-          <slot name="content" :close="close"></slot>
+          <slot name="content" :close="close" />
         </div>
       </Transition>
     </Teleport>
@@ -56,44 +56,44 @@ const updatePosition = () => {
 
   let top = 0
   let left = 0
-  
+
   // Vertical positioning base
   if (props.placement.startsWith('top')) {
-      top = triggerRect.top - contentRect.height - props.offset
+    top = triggerRect.top - contentRect.height - props.offset
   } else {
-      top = triggerRect.bottom + props.offset
+    top = triggerRect.bottom + props.offset
   }
 
   // Horizontal positioning base
   if (props.placement.endsWith('end')) {
-      left = triggerRect.right - contentRect.width
+    left = triggerRect.right - contentRect.width
   } else {
-      left = triggerRect.left
+    left = triggerRect.left
   }
 
   // Boundary checks
   // Right edge
   if (left + contentRect.width > windowWidth - 10) {
-      left = windowWidth - contentRect.width - 10
+    left = windowWidth - contentRect.width - 10
   }
   // Left edge
   if (left < 10) {
-      left = 10
+    left = 10
   }
-  
+
   // Flip vertical if needed
   if (props.placement.startsWith('bottom') && top + contentRect.height > windowHeight - 10) {
-      // Try top
-      const topSpace = triggerRect.top
-      if (topSpace > contentRect.height + props.offset) {
-          top = triggerRect.top - contentRect.height - props.offset
-      }
+    // Try top
+    const topSpace = triggerRect.top
+    if (topSpace > contentRect.height + props.offset) {
+      top = triggerRect.top - contentRect.height - props.offset
+    }
   } else if (props.placement.startsWith('top') && top < 10) {
-      // Try bottom
-      const bottomSpace = windowHeight - triggerRect.bottom
-      if (bottomSpace > contentRect.height + props.offset) {
-          top = triggerRect.bottom + props.offset
-      }
+    // Try bottom
+    const bottomSpace = windowHeight - triggerRect.bottom
+    if (bottomSpace > contentRect.height + props.offset) {
+      top = triggerRect.bottom + props.offset
+    }
   }
 
   contentStyle.value = {
@@ -119,9 +119,9 @@ const toggle = async () => {
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as Node
   if (
-    containerRef.value && 
+    containerRef.value &&
     !containerRef.value.contains(target) &&
-    contentRef.value && 
+    contentRef.value &&
     !contentRef.value.contains(target)
   ) {
     close()

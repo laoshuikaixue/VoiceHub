@@ -2,9 +2,9 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
     inputs:
       reason:
@@ -35,7 +35,7 @@ jobs:
           FULL_VERSION=$(node -p "require('./package.json').version")
           # 提取主版本.次版本 (如 1.2 从 1.2.3)
           MAJOR_MINOR_VERSION=$(echo "$FULL_VERSION" | sed -E 's/^([0-9]+\.[0-9]+)\.[0-9]+$/\1/')
-          
+
           echo "full-version=$FULL_VERSION" >> $GITHUB_OUTPUT
           echo "major-minor-version=$MAJOR_MINOR_VERSION" >> $GITHUB_OUTPUT
           echo "Extracted full version: $FULL_VERSION"

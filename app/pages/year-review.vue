@@ -3,12 +3,15 @@
     <Head>
       <Title>我的年度回顾 - VoiceHub</Title>
       <Meta name="theme-color" content="#000000" />
-      <Meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+      <Meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+      />
     </Head>
 
     <!-- Loading State -->
     <div v-if="pending" class="state-screen loading">
-      <div class="spinner"></div>
+      <div class="spinner" />
       <p class="loading-text">正在生成您的年度回忆...</p>
     </div>
 
@@ -19,9 +22,7 @@
         <h2 class="error-title">获取数据失败</h2>
         <p class="error-desc">可能是网络出了点小差错</p>
       </div>
-      <button class="retry-btn" @click="refresh">
-        <span>🔄</span> 重试
-      </button>
+      <button class="retry-btn" @click="refresh"><span>🔄</span> 重试</button>
     </div>
 
     <!-- Empty State -->
@@ -35,29 +36,31 @@
     </div>
 
     <!-- Main Content -->
-    <div v-else class="slides-container" 
-         @wheel="handleWheel"
-         @touchstart="handleTouchStart"
-         @touchend="handleTouchEnd"
+    <div
+      v-else
+      class="slides-container"
+      @wheel="handleWheel"
+      @touchstart="handleTouchStart"
+      @touchend="handleTouchEnd"
     >
       <!-- Progress Indicators -->
       <div class="indicators">
-        <button 
-          v-for="(slide, idx) in slides" 
+        <button
+          v-for="(slide, idx) in slides"
           :key="slide.id"
           class="indicator-dot"
           :class="{ active: idx === currentIndex }"
           @click="goToSlide(idx)"
-        ></button>
+        />
       </div>
 
       <!-- Slide Transition -->
       <Transition :name="transitionName">
-        <component 
-          :is="currentSlideComponent" 
+        <component
+          :is="currentSlideComponent"
           :key="currentIndex"
           :data="data"
-          :active="!isAnimating" 
+          :active="!isAnimating"
           class="slide-wrapper"
         />
       </Transition>
@@ -66,7 +69,19 @@
       <Transition name="fade">
         <div v-if="currentIndex === 0" class="scroll-hint">
           <span>上滑开启</span>
-          <svg class="animate-bounce" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+          <svg
+            class="animate-bounce"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
+          </svg>
         </div>
       </Transition>
     </div>
@@ -99,7 +114,7 @@ const isEmpty = computed(() => {
 // --- 幻灯片配置 ---
 const slides = computed(() => {
   if (!data.value) return []
-  
+
   const list = [
     { id: 'intro', component: IntroSlide },
     ...(data.value.firstSong ? [{ id: 'first', component: FirstSongSlide }] : []),
@@ -128,10 +143,10 @@ const goToSlide = (index) => {
   const newDir = index > currentIndex.value ? 1 : -1
   direction.value = newDir
   transitionName.value = newDir > 0 ? 'slide-up' : 'slide-down'
-  
+
   isAnimating.value = true
   currentIndex.value = index
-  
+
   setTimeout(() => {
     isAnimating.value = false
   }, 600) // Match transition duration
@@ -182,9 +197,11 @@ const handleTouchStart = (e) => {
 const handleTouchEnd = (e) => {
   const touchEndY = e.changedTouches[0].clientY
   const diff = touchStartY - touchEndY
-  
-  if (Math.abs(diff) > 50) { // Threshold
-    if (diff > 0) nextSlide() // Swipe Up -> Next
+
+  if (Math.abs(diff) > 50) {
+    // Threshold
+    if (diff > 0)
+      nextSlide() // Swipe Up -> Next
     else prevSlide() // Swipe Down -> Prev
   }
 }
@@ -197,7 +214,11 @@ const handleTouchEnd = (e) => {
   background-color: #000;
   color: #fff;
   z-index: 9999;
-  font-family: 'MiSans', system-ui, -apple-system, sans-serif;
+  font-family:
+    'MiSans',
+    system-ui,
+    -apple-system,
+    sans-serif;
   overflow: hidden;
 }
 

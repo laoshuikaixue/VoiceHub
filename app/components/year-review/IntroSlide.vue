@@ -1,11 +1,11 @@
 <template>
   <div class="slide-container intro-bg">
     <!-- Dynamic Background Elements -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
+    <div class="blob blob-1" />
+    <div class="blob blob-2" />
 
     <Transition name="entry" appear>
-      <div class="content" v-show="active">
+      <div v-show="active" class="content">
         <div class="year-bg">{{ data.year }}</div>
         <div class="sub-title">年度点歌报告</div>
         <h1 class="main-title">VoiceHub</h1>
@@ -100,8 +100,14 @@ defineProps({
 }
 
 @media (max-width: 768px) {
-  .year-bg { font-size: 8rem; }
-  .main-title { font-size: 3rem; }
-  .sub-title { font-size: 1rem; }
+  .year-bg {
+    font-size: 8rem;
+  }
+  .main-title {
+    font-size: 3rem;
+  }
+  .sub-title {
+    font-size: 1rem;
+  }
 }
 </style>

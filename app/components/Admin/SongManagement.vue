@@ -7,15 +7,21 @@
           <h2 class="text-3xl font-black text-zinc-100 tracking-tight">歌曲管理</h2>
           <div class="flex items-center gap-6 mt-4">
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">总计</span>
+              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                >总计</span
+              >
               <span class="text-sm font-bold text-zinc-300">{{ filteredSongs.length }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">已播放</span>
+              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                >已播放</span
+              >
               <span class="text-sm font-bold text-emerald-500">{{ playedCount }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">待播放</span>
+              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                >待播放</span
+              >
               <span class="text-sm font-bold text-blue-500">{{ pendingCount }}</span>
             </div>
           </div>
@@ -31,16 +37,21 @@
             leave-from-class="opacity-100 scale-100 translate-x-0"
             leave-to-class="opacity-0 scale-95 translate-x-10"
           >
-            <div v-if="selectedSongs.length > 0" class="flex items-center gap-2 p-1.5 bg-zinc-900/90 border border-zinc-800 rounded-lg backdrop-blur-xl shadow-2xl">
+            <div
+              v-if="selectedSongs.length > 0"
+              class="flex items-center gap-2 p-1.5 bg-zinc-900/90 border border-zinc-800 rounded-lg backdrop-blur-xl shadow-2xl"
+            >
               <button
-                @click="openDownloadDialog"
                 class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
+                @click="openDownloadDialog"
               >
-                <Download :size="14" class="text-emerald-500/70" /> 下载 ({{ selectedSongs.length }})
+                <Download :size="14" class="text-emerald-500/70" /> 下载 ({{
+                  selectedSongs.length
+                }})
               </button>
               <button
-                @click="batchDelete"
                 class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
+                @click="batchDelete"
               >
                 <Trash2 :size="14" class="text-red-500/70" /> 删除 ({{ selectedSongs.length }})
               </button>
@@ -48,15 +59,15 @@
           </Transition>
 
           <button
-            @click="openAddSongModal"
             class="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-lg transition-all active:scale-95"
+            @click="openAddSongModal"
           >
             <Plus :size="16" /> 手动添加
           </button>
           <button
-            @click="refreshSongs(true)"
             :disabled="loading"
             class="flex items-center gap-2 px-5 py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs font-bold rounded-lg border border-blue-500/20 transition-all disabled:opacity-50"
+            @click="refreshSongs(true)"
           >
             <RotateCcw :size="16" :class="{ 'animate-spin': loading }" /> 刷新
           </button>
@@ -64,15 +75,20 @@
       </div>
 
       <!-- 过滤器栏 -->
-      <div class="bg-zinc-900/30 border border-zinc-800/60 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
+      <div
+        class="bg-zinc-900/30 border border-zinc-800/60 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center"
+      >
         <div class="relative flex-1 group w-full lg:w-auto">
-          <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors" :size="18" />
+          <Search
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors"
+            :size="18"
+          />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="搜索歌曲标题、艺术家或投稿人..."
             class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
-          />
+          >
         </div>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:flex lg:items-center gap-3 w-full lg:w-auto">
           <CustomSelect
@@ -82,55 +98,83 @@
             label-key="name"
             value-key="name"
             placeholder="选择学期"
-            className="w-full lg:w-40"
+            class-name="w-full lg:w-40"
           />
           <CustomSelect
             v-model="statusFilter"
             label="状态"
             :options="statusOptions"
             placeholder="选择状态"
-            className="w-full lg:w-32"
+            class-name="w-full lg:w-32"
           />
           <CustomSelect
             v-model="sortOption"
             label="排序"
             :options="sortOptions"
             placeholder="选择排序"
-            className="w-full lg:w-36 col-span-2 md:col-span-1"
+            class-name="w-full lg:w-36 col-span-2 md:col-span-1"
           />
         </div>
       </div>
     </div>
 
     <!-- 歌曲表格 -->
-    <div class="bg-zinc-900/10 border border-zinc-800/40 rounded-xl overflow-hidden shadow-2xl relative">
+    <div
+      class="bg-zinc-900/10 border border-zinc-800/40 rounded-xl overflow-hidden shadow-2xl relative"
+    >
       <!-- 加载遮罩 -->
-      <div v-if="loading" class="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm z-10 flex items-center justify-center">
+      <div
+        v-if="loading"
+        class="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm z-10 flex items-center justify-center"
+      >
         <div class="flex flex-col items-center gap-3">
-          <div class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+          <div
+            class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
+          />
           <span class="text-xs font-bold text-zinc-400 tracking-widest uppercase">正在加载...</span>
         </div>
       </div>
 
       <!-- 表头 -->
-      <div class="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 border-b border-zinc-800/60 bg-zinc-900/40">
+      <div
+        class="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 border-b border-zinc-800/60 bg-zinc-900/40"
+      >
         <div class="col-span-1 flex items-center">
           <input
             type="checkbox"
             :checked="isAllSelected"
-            @change="toggleSelectAll"
             class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
-          />
+            @change="toggleSelectAll"
+          >
         </div>
-        <div class="col-span-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">歌曲信息</div>
-        <div class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest">投稿人</div>
-        <div class="col-span-1 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center">统计</div>
-        <div class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center">状态</div>
-        <div class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right pr-4">操作</div>
+        <div class="col-span-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+          歌曲信息
+        </div>
+        <div class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+          投稿人
+        </div>
+        <div
+          class="col-span-1 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center"
+        >
+          统计
+        </div>
+        <div
+          class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center"
+        >
+          状态
+        </div>
+        <div
+          class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right pr-4"
+        >
+          操作
+        </div>
       </div>
 
       <!-- 空状态 -->
-      <div v-if="filteredSongs.length === 0 && !loading" class="py-20 flex flex-col items-center justify-center text-zinc-500">
+      <div
+        v-if="filteredSongs.length === 0 && !loading"
+        class="py-20 flex flex-col items-center justify-center text-zinc-500"
+      >
         <Music :size="48" class="text-zinc-800 mb-4" />
         <p class="text-sm font-bold">{{ searchQuery ? '没有找到匹配的歌曲' : '暂无歌曲数据' }}</p>
       </div>
@@ -149,28 +193,39 @@
             <input
               type="checkbox"
               :checked="selectedSongs.includes(song.id)"
-              @change="toggleSelectSong(song.id)"
               class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
-            />
+              @change="toggleSelectSong(song.id)"
+            >
           </div>
 
           <div class="col-span-12 lg:col-span-4 flex items-center gap-4">
-            <div :class="[
-              'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-zinc-800/40 border-zinc-700/30 group-hover:border-zinc-600',
-              selectedSongs.includes(song.id) ? 'border-blue-500/50' : ''
-            ]">
-              <img v-if="song.cover" :src="convertToHttps(song.cover)" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+            <div
+              :class="[
+                'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-zinc-800/40 border-zinc-700/30 group-hover:border-zinc-600',
+                selectedSongs.includes(song.id) ? 'border-blue-500/50' : ''
+              ]"
+            >
+              <img
+                v-if="song.cover"
+                :src="convertToHttps(song.cover)"
+                class="w-full h-full object-cover"
+                referrerpolicy="no-referrer"
+              >
               <Music v-else :size="20" class="text-zinc-600" />
             </div>
             <div class="min-w-0">
-              <h4 :class="[
-                'font-bold truncate transition-colors',
-                selectedSongs.includes(song.id) ? 'text-blue-400' : 'text-zinc-100 group-hover:text-blue-400'
-              ]">
-                <button 
-                  v-if="song.musicPlatform === 'bilibili'" 
-                  @click.stop="openBilibiliPreview(song)"
+              <h4
+                :class="[
+                  'font-bold truncate transition-colors',
+                  selectedSongs.includes(song.id)
+                    ? 'text-blue-400'
+                    : 'text-zinc-100 group-hover:text-blue-400'
+                ]"
+              >
+                <button
+                  v-if="song.musicPlatform === 'bilibili'"
                   class="flex items-center gap-1 hover:underline text-left"
+                  @click.stop="openBilibiliPreview(song)"
                 >
                   {{ song.title }}
                   <ExternalLink :size="12" class="opacity-50" />
@@ -178,24 +233,34 @@
                 <span v-else>{{ song.title }}</span>
               </h4>
               <p class="text-xs text-zinc-500 font-medium truncate mt-0.5">{{ song.artist }}</p>
-              <span class="lg:hidden text-[9px] font-black text-zinc-700 uppercase tracking-wider mt-1 inline-block">{{ formatDate(song.createdAt) }}</span>
+              <span
+                class="lg:hidden text-[9px] font-black text-zinc-700 uppercase tracking-wider mt-1 inline-block"
+                >{{ formatDate(song.createdAt) }}</span
+              >
             </div>
           </div>
 
           <div class="col-span-6 lg:col-span-2 flex flex-col lg:items-start">
             <span class="text-xs font-bold text-zinc-400">{{ song.requester || '未知' }}</span>
-            <span v-if="song.user" class="text-[10px] font-bold text-zinc-600">@{{ song.user.username }}</span>
-            <span class="hidden lg:inline text-[9px] font-black text-zinc-700 uppercase tracking-widest mt-1 opacity-60">{{ formatDate(song.createdAt) }}</span>
+            <span v-if="song.user" class="text-[10px] font-bold text-zinc-600"
+              >@{{ song.user.username }}</span
+            >
+            <span
+              class="hidden lg:inline text-[9px] font-black text-zinc-700 uppercase tracking-widest mt-1 opacity-60"
+              >{{ formatDate(song.createdAt) }}</span
+            >
           </div>
 
           <div class="col-span-3 lg:col-span-1 text-center">
             <button
-              @click="showVoters(song.id)"
               :disabled="!(song.voteCount > 0)"
               :class="[
                 'inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg transition-all',
-                song.voteCount > 0 ? 'bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 cursor-pointer' : 'bg-zinc-950/30 text-zinc-700 cursor-default'
+                song.voteCount > 0
+                  ? 'bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 cursor-pointer'
+                  : 'bg-zinc-950/30 text-zinc-700 cursor-default'
               ]"
+              @click="showVoters(song.id)"
             >
               <Heart :size="12" :class="song.voteCount > 0 ? 'fill-pink-500/20' : ''" />
               {{ song.voteCount || 0 }}
@@ -203,52 +268,59 @@
           </div>
 
           <div class="col-span-3 lg:col-span-2 text-center">
-            <span :class="[
-              'px-2 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider',
-              song.played ? 'bg-emerald-500/10 text-emerald-500' :
-              song.scheduled ? 'bg-blue-500/10 text-blue-500' : 'bg-zinc-800 text-zinc-500'
-            ]">
+            <span
+              :class="[
+                'px-2 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider',
+                song.played
+                  ? 'bg-emerald-500/10 text-emerald-500'
+                  : song.scheduled
+                    ? 'bg-blue-500/10 text-blue-500'
+                    : 'bg-zinc-800 text-zinc-500'
+              ]"
+            >
               {{ getStatusText(song) }}
             </span>
           </div>
 
-          <div class="col-span-12 lg:col-span-2 flex items-center justify-end gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
+          <div
+            class="col-span-12 lg:col-span-2 flex items-center justify-end gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all"
+          >
             <button
-              @click="editSong(song)"
               class="p-2 bg-zinc-800/50 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
               title="编辑歌曲"
+              @click="editSong(song)"
             >
               <Edit2 :size="14" />
             </button>
 
             <button
               v-if="!song.played"
-              @click="markAsPlayed(song.id)"
               class="p-2 bg-zinc-800/50 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
               title="标记为已播放"
+              @click="markAsPlayed(song.id)"
             >
               <Check :size="14" />
             </button>
             <button
               v-else
-              @click="markAsUnplayed(song.id)"
               class="p-2 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
               title="标记为未播放"
+              @click="markAsUnplayed(song.id)"
             >
               <RotateCcw :size="14" />
             </button>
 
             <button
-              @click="rejectSong(song.id)"
               class="p-2 bg-zinc-800/50 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
               title="驳回歌曲"
+              @click="rejectSong(song.id)"
             >
               <X :size="14" />
             </button>
             <button
-              @click="deleteSong(song.id)"
               class="p-2 bg-zinc-800/50 text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
               title="删除歌曲"
+              @click="deleteSong(song.id)"
             >
               <Trash2 :size="14" />
             </button>
@@ -264,16 +336,16 @@
       </div>
       <div class="flex items-center gap-2">
         <button
-          @click="currentPage = 1"
           :disabled="currentPage === 1"
           class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
+          @click="currentPage = 1"
         >
           <ChevronsLeft :size="16" />
         </button>
         <button
-          @click="currentPage--"
           :disabled="currentPage === 1"
           class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
+          @click="currentPage--"
         >
           <ChevronLeft :size="16" />
         </button>
@@ -281,26 +353,28 @@
           <button
             v-for="p in displayedPages"
             :key="p"
-            @click="currentPage = p"
             :class="[
               'w-8 h-8 rounded-xl text-xs font-bold transition-all',
-              currentPage === p ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-zinc-500 hover:text-zinc-300'
+              currentPage === p
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+                : 'text-zinc-500 hover:text-zinc-300'
             ]"
+            @click="currentPage = p"
           >
             {{ p }}
           </button>
         </div>
         <button
-          @click="currentPage++"
           :disabled="currentPage === totalPages"
           class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
+          @click="currentPage++"
         >
           <ChevronRight :size="16" />
         </button>
         <button
-          @click="currentPage = totalPages"
           :disabled="currentPage === totalPages"
           class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
+          @click="currentPage = totalPages"
         >
           <ChevronsRight :size="16" />
         </button>
@@ -330,18 +404,29 @@
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div v-if="showRejectDialog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-        <div class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden" @click.stop>
+      <div
+        v-if="showRejectDialog"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm"
+      >
+        <div
+          class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden"
+          @click.stop
+        >
           <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
             <h3 class="text-xl font-black text-zinc-100">驳回歌曲</h3>
-            <button @click="cancelReject" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+            <button
+              class="text-zinc-500 hover:text-zinc-300 transition-colors"
+              @click="cancelReject"
+            >
               <X :size="20" />
             </button>
           </div>
 
           <div class="p-8 space-y-6">
             <div class="p-5 bg-zinc-950 border border-zinc-800 rounded-lg flex items-center gap-4">
-              <div class="w-10 h-10 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/10">
+              <div
+                class="w-10 h-10 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/10"
+              >
                 <Music :size="18" />
               </div>
               <div>
@@ -351,7 +436,9 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">驳回原因</label>
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                >驳回原因</label
+              >
               <textarea
                 v-model="rejectReason"
                 placeholder="请输入驳回原因，将通过系统通知发送给投稿人..."
@@ -360,20 +447,34 @@
             </div>
 
             <label class="flex items-center gap-3 cursor-pointer group px-1">
-              <input v-model="addToBlacklist" type="checkbox" class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-red-600" />
+              <input
+                v-model="addToBlacklist"
+                type="checkbox"
+                class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-red-600"
+              >
               <div>
-                <span class="text-xs font-bold text-zinc-300 group-hover:text-red-400 transition-colors">同时将此歌曲加入黑名单</span>
-                <p class="text-[10px] text-zinc-600 font-medium">加入黑名单后，该歌曲将无法再次被投稿</p>
+                <span
+                  class="text-xs font-bold text-zinc-300 group-hover:text-red-400 transition-colors"
+                  >同时将此歌曲加入黑名单</span
+                >
+                <p class="text-[10px] text-zinc-600 font-medium">
+                  加入黑名单后，该歌曲将无法再次被投稿
+                </p>
               </div>
             </label>
           </div>
 
           <div class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end">
-            <button @click="cancelReject" class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300">取消</button>
             <button
-              @click="confirmReject"
+              class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
+              @click="cancelReject"
+            >
+              取消
+            </button>
+            <button
               :disabled="rejectLoading"
               class="px-8 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              @click="confirmReject"
             >
               {{ rejectLoading ? '处理中...' : '确认驳回' }}
             </button>
@@ -383,11 +484,7 @@
     </Transition>
 
     <!-- 投票人员弹窗 -->
-    <VotersModal
-      :show="showVotersModal"
-      :song-id="selectedSongId"
-      @close="closeVotersModal"
-    />
+    <VotersModal :show="showVotersModal" :song-id="selectedSongId" @close="closeVotersModal" />
 
     <!-- 下载歌曲对话框 -->
     <SongDownloadDialog
@@ -405,11 +502,22 @@
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div v-if="showEditModal || showAddSongModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm overflow-y-auto">
-        <div class="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden my-auto" @click.stop>
+      <div
+        v-if="showEditModal || showAddSongModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm overflow-y-auto"
+      >
+        <div
+          class="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden my-auto"
+          @click.stop
+        >
           <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
-            <h3 class="text-xl font-black text-zinc-100">{{ showEditModal ? '编辑歌曲' : '手动添加歌曲' }}</h3>
-            <button @click="showEditModal ? cancelEditSong() : cancelAddSong()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+            <h3 class="text-xl font-black text-zinc-100">
+              {{ showEditModal ? '编辑歌曲' : '手动添加歌曲' }}
+            </h3>
+            <button
+              class="text-zinc-500 hover:text-zinc-300 transition-colors"
+              @click="showEditModal ? cancelEditSong() : cancelAddSong()"
+            >
               <X :size="20" />
             </button>
           </div>
@@ -417,95 +525,134 @@
           <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">歌曲名称</label>
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                  >歌曲名称</label
+                >
                 <input
                   v-if="showEditModal"
                   v-model="editForm.title"
                   type="text"
                   placeholder="输入歌曲标题"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
-                />
+                >
                 <input
                   v-else
                   v-model="addForm.title"
                   type="text"
                   placeholder="输入歌曲标题"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
-                />
+                >
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">歌手</label>
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                  >歌手</label
+                >
                 <input
                   v-if="showEditModal"
                   v-model="editForm.artist"
                   type="text"
                   placeholder="输入歌手姓名"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
-                />
+                >
                 <input
                   v-else
                   v-model="addForm.artist"
                   type="text"
                   placeholder="输入歌手姓名"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
-                />
+                >
               </div>
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">投稿人</label>
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                >投稿人</label
+              >
               <div class="relative user-search-container">
                 <div class="relative">
                   <input
                     v-if="showEditModal"
                     v-model="editUserSearchQuery"
-                    @focus="showEditUserDropdown = true"
-                    @input="searchEditUsers()"
                     type="text"
                     placeholder="搜索用户姓名或用户名"
                     class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
-                  />
+                    @focus="showEditUserDropdown = true"
+                    @input="searchEditUsers()"
+                  >
                   <input
                     v-else
                     v-model="userSearchQuery"
-                    @focus="showUserDropdown = true"
-                    @input="searchUsers()"
                     type="text"
                     placeholder="搜索用户姓名或用户名"
                     class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
-                  />
-                  <div v-if="(showEditModal ? editUserSearchLoading : userSearchLoading)" class="absolute right-4 top-1/2 -translate-y-1/2">
-                    <div class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                    @focus="showUserDropdown = true"
+                    @input="searchUsers()"
+                  >
+                  <div
+                    v-if="showEditModal ? editUserSearchLoading : userSearchLoading"
+                    class="absolute right-4 top-1/2 -translate-y-1/2"
+                  >
+                    <div
+                      class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
+                    />
                   </div>
                 </div>
 
                 <!-- 用户下拉列表 -->
-                <div v-if="(showEditModal ? showEditUserDropdown && filteredEditUsers.length > 0 : showUserDropdown && filteredUsers.length > 0)"
-                     class="absolute z-10 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden max-h-48 overflow-y-auto">
+                <div
+                  v-if="
+                    showEditModal
+                      ? showEditUserDropdown && filteredEditUsers.length > 0
+                      : showUserDropdown && filteredUsers.length > 0
+                  "
+                  class="absolute z-10 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden max-h-48 overflow-y-auto"
+                >
                   <div
-                    v-for="user in (showEditModal ? filteredEditUsers.slice(0, 10) : filteredUsers.slice(0, 10))"
+                    v-for="user in showEditModal
+                      ? filteredEditUsers.slice(0, 10)
+                      : filteredUsers.slice(0, 10)"
                     :key="user.id"
-                    @click="(showEditModal ? selectEditUser(user) : selectUser(user))"
                     class="px-4 py-3 hover:bg-zinc-800 cursor-pointer transition-colors flex items-center justify-between group"
+                    @click="showEditModal ? selectEditUser(user) : selectUser(user)"
                   >
                     <div class="flex flex-col">
                       <span class="text-sm font-bold text-zinc-200">{{ user.name }}</span>
                       <span class="text-[10px] text-zinc-500">@{{ user.username }}</span>
                     </div>
-                    <Check v-if="(showEditModal ? selectedEditUser?.id === user.id : selectedUser?.id === user.id)" :size="14" class="text-blue-500" />
+                    <Check
+                      v-if="
+                        showEditModal
+                          ? selectedEditUser?.id === user.id
+                          : selectedUser?.id === user.id
+                      "
+                      :size="14"
+                      class="text-blue-500"
+                    />
                   </div>
                 </div>
               </div>
-              <div v-if="(showEditModal ? selectedEditUser : selectedUser)" class="flex items-center gap-2 mt-2 px-1">
-                <span class="text-[10px] font-bold text-blue-500">已选择: {{ (showEditModal ? selectedEditUser : selectedUser).name }} (@{{ (showEditModal ? selectedEditUser : selectedUser).username }})</span>
-                <button @click="(showEditModal ? clearSelectedEditUser() : clearSelectedUser())" class="text-zinc-600 hover:text-zinc-400">
+              <div
+                v-if="showEditModal ? selectedEditUser : selectedUser"
+                class="flex items-center gap-2 mt-2 px-1"
+              >
+                <span class="text-[10px] font-bold text-blue-500"
+                  >已选择: {{ (showEditModal ? selectedEditUser : selectedUser).name }} (@{{
+                    (showEditModal ? selectedEditUser : selectedUser).username
+                  }})</span
+                >
+                <button
+                  class="text-zinc-600 hover:text-zinc-400"
+                  @click="showEditModal ? clearSelectedEditUser() : clearSelectedUser()"
+                >
                   <X :size="12" />
                 </button>
               </div>
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">学期</label>
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                >学期</label
+              >
               <CustomSelect
                 v-if="showEditModal"
                 v-model="editForm.semester"
@@ -526,7 +673,9 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-zinc-800/50">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">音乐平台 (可选)</label>
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                  >音乐平台 (可选)</label
+                >
                 <CustomSelect
                   v-if="showEditModal"
                   v-model="editForm.musicPlatform"
@@ -549,85 +698,126 @@
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">音乐ID (可选)</label>
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                  >音乐ID (可选)</label
+                >
                 <input
                   v-if="showEditModal"
                   v-model="editForm.musicId"
                   type="text"
                   placeholder="输入平台唯一标识符"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
-                />
+                >
                 <input
                   v-else
                   v-model="addForm.musicId"
                   type="text"
                   placeholder="输入平台唯一标识符"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
-                />
+                >
               </div>
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">封面URL (可选)</label>
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                >封面URL (可选)</label
+              >
               <input
                 v-if="showEditModal"
                 v-model="editForm.cover"
                 type="text"
                 placeholder="http://..."
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
-              />
+              >
               <input
                 v-else
                 v-model="addForm.cover"
                 type="text"
                 placeholder="http://..."
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
-              />
-              <p v-if="(showEditModal ? editCoverValidation.valid : addCoverValidation.valid) && (showEditModal ? editForm.cover : addForm.cover)"
-                 class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1">
-                <Check :size="10"/> URL有效
+              >
+              <p
+                v-if="
+                  (showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
+                  (showEditModal ? editForm.cover : addForm.cover)
+                "
+                class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1"
+              >
+                <Check :size="10" /> URL有效
               </p>
-              <p v-if="!(showEditModal ? editCoverValidation.valid : addCoverValidation.valid) && (showEditModal ? editForm.cover : addForm.cover)"
-                 class="text-[10px] text-red-500/80 font-bold px-1 flex items-center gap-1">
-                <X :size="10"/> {{ (showEditModal ? editCoverValidation.error : addCoverValidation.error) }}
+              <p
+                v-if="
+                  !(showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
+                  (showEditModal ? editForm.cover : addForm.cover)
+                "
+                class="text-[10px] text-red-500/80 font-bold px-1 flex items-center gap-1"
+              >
+                <X :size="10" />
+                {{ showEditModal ? editCoverValidation.error : addCoverValidation.error }}
               </p>
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">播放地址URL (可选)</label>
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                >播放地址URL (可选)</label
+              >
               <input
                 v-if="showEditModal"
                 v-model="editForm.playUrl"
                 type="text"
                 placeholder="http://..."
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
-              />
+              >
               <input
                 v-else
                 v-model="addForm.playUrl"
                 type="text"
                 placeholder="http://..."
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
-              />
-              <p v-if="(showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) && (showEditModal ? editForm.playUrl : addForm.playUrl)"
-                 class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1">
-                <Check :size="10"/> URL有效
+              >
+              <p
+                v-if="
+                  (showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) &&
+                  (showEditModal ? editForm.playUrl : addForm.playUrl)
+                "
+                class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1"
+              >
+                <Check :size="10" /> URL有效
               </p>
-              <p v-if="!(showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) && (showEditModal ? editForm.playUrl : addForm.playUrl)"
-                 class="text-[10px] text-red-500/80 font-bold px-1 flex items-center gap-1">
-                <X :size="10"/> {{ (showEditModal ? editPlayUrlValidation.error : addPlayUrlValidation.error) }}
+              <p
+                v-if="
+                  !(showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) &&
+                  (showEditModal ? editForm.playUrl : addForm.playUrl)
+                "
+                class="text-[10px] text-red-500/80 font-bold px-1 flex items-center gap-1"
+              >
+                <X :size="10" />
+                {{ showEditModal ? editPlayUrlValidation.error : addPlayUrlValidation.error }}
               </p>
             </div>
           </div>
 
           <div class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end">
-            <button @click="showEditModal ? cancelEditSong() : cancelAddSong()" class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300">取消</button>
             <button
-              @click="showEditModal ? saveEditSong() : saveAddSong()"
-              :disabled="(showEditModal ? editLoading : !canSubmitAddForm || addLoading)"
-              class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
+              @click="showEditModal ? cancelEditSong() : cancelAddSong()"
             >
-              {{ (showEditModal ? (editLoading ? '保存中...' : '保存更改') : (addLoading ? '添加中...' : '添加歌曲')) }}
+              取消
+            </button>
+            <button
+              :disabled="showEditModal ? editLoading : !canSubmitAddForm || addLoading"
+              class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              @click="showEditModal ? saveEditSong() : saveAddSong()"
+            >
+              {{
+                showEditModal
+                  ? editLoading
+                    ? '保存中...'
+                    : '保存更改'
+                  : addLoading
+                    ? '添加中...'
+                    : '添加歌曲'
+              }}
             </button>
           </div>
         </div>
@@ -651,9 +841,22 @@ import VotersModal from '~/components/Admin/VotersModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import {
-  Search, Plus, RotateCcw, Edit2, Check, X, Trash2,
-  Music, Heart, Download, ChevronDown, ChevronLeft, ChevronRight,
-  ChevronsLeft, ChevronsRight, ExternalLink
+  Search,
+  Plus,
+  RotateCcw,
+  Edit2,
+  Check,
+  X,
+  Trash2,
+  Music,
+  Heart,
+  Download,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ExternalLink
 } from 'lucide-vue-next'
 import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
@@ -799,21 +1002,22 @@ const filteredSongs = computed(() => {
   // 搜索过滤
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(song =>
-      song.title?.toLowerCase().includes(query) ||
-      song.artist?.toLowerCase().includes(query) ||
-      song.requester?.toLowerCase().includes(query)
+    filtered = filtered.filter(
+      (song) =>
+        song.title?.toLowerCase().includes(query) ||
+        song.artist?.toLowerCase().includes(query) ||
+        song.requester?.toLowerCase().includes(query)
     )
   }
 
   // 学期过滤
   if (selectedSemester.value && selectedSemester.value !== 'all') {
-    filtered = filtered.filter(song => song.semester === selectedSemester.value)
+    filtered = filtered.filter((song) => song.semester === selectedSemester.value)
   }
 
   // 状态过滤
   if (statusFilter.value !== 'all') {
-    filtered = filtered.filter(song => {
+    filtered = filtered.filter((song) => {
       switch (statusFilter.value) {
         case 'pending':
           // 待排期：未播放且未排期
@@ -868,7 +1072,7 @@ const displayedPages = computed(() => {
   const total = totalPages.value
   const current = currentPage.value
   const pages = []
-  
+
   if (total <= 7) {
     for (let i = 1; i <= total; i++) pages.push(i)
   } else {
@@ -888,38 +1092,48 @@ const displayedPages = computed(() => {
       pages.push(total)
     }
   }
-  return pages.filter(p => typeof p === 'number')
+  return pages.filter((p) => typeof p === 'number')
 })
 
 const playedCount = computed(() => {
-  return songs.value.filter(song => song.played).length
+  return songs.value.filter((song) => song.played).length
 })
 
 const pendingCount = computed(() => {
-  return songs.value.filter(song => !song.played).length
+  return songs.value.filter((song) => !song.played).length
 })
 
 const isAllSelected = computed(() => {
-  return paginatedSongs.value.length > 0 &&
-    paginatedSongs.value.every(song => selectedSongs.value.includes(song.id))
+  return (
+    paginatedSongs.value.length > 0 &&
+    paginatedSongs.value.every((song) => selectedSongs.value.includes(song.id))
+  )
 })
 
 // 计算属性：检查添加歌曲表单是否可以提交
 const canSubmitAddForm = computed(() => {
   // 必填字段检查
-  if (!addForm.value.title.trim() ||
+  if (
+    !addForm.value.title.trim() ||
     !addForm.value.artist.trim() ||
     !selectedUser.value ||
-    !addForm.value.semester) {
+    !addForm.value.semester
+  ) {
     return false
   }
 
   // 可选字段验证检查
-  if (addForm.value.cover && (!addCoverValidation.value.valid || addCoverValidation.value.validating)) {
+  if (
+    addForm.value.cover &&
+    (!addCoverValidation.value.valid || addCoverValidation.value.validating)
+  ) {
     return false
   }
 
-  if (addForm.value.playUrl && (!addPlayUrlValidation.value.valid || addPlayUrlValidation.value.validating)) {
+  if (
+    addForm.value.playUrl &&
+    (!addPlayUrlValidation.value.valid || addPlayUrlValidation.value.validating)
+  ) {
     return false
   }
 
@@ -946,13 +1160,13 @@ const getStatusText = (song) => {
 
 const toggleSelectAll = () => {
   if (isAllSelected.value) {
-    selectedSongs.value = selectedSongs.value.filter(id =>
-      !paginatedSongs.value.some(song => song.id === id)
+    selectedSongs.value = selectedSongs.value.filter(
+      (id) => !paginatedSongs.value.some((song) => song.id === id)
     )
   } else {
     const newSelections = paginatedSongs.value
-      .map(song => song.id)
-      .filter(id => !selectedSongs.value.includes(id))
+      .map((song) => song.id)
+      .filter((id) => !selectedSongs.value.includes(id))
     selectedSongs.value.push(...newSelections)
   }
 }
@@ -1000,7 +1214,7 @@ const markAsUnplayed = async (songId) => {
 }
 
 const deleteSong = async (songId) => {
-  const song = songs.value.find(s => s.id === songId)
+  const song = songs.value.find((s) => s.id === songId)
   if (!song) return
 
   deleteDialogTitle.value = '删除歌曲'
@@ -1065,8 +1279,8 @@ const closeVotersModal = () => {
 
 // 打开下载对话框
 const openDownloadDialog = () => {
-  selectedSongsForDownload.value = selectedSongs.value.map(songId => {
-    const song = songs.value.find(s => s.id === songId)
+  selectedSongsForDownload.value = selectedSongs.value.map((songId) => {
+    const song = songs.value.find((s) => s.id === songId)
     return {
       id: `temp-${song.id}`,
       song: {
@@ -1100,7 +1314,7 @@ const confirmDelete = async () => {
 
 // 驳回歌曲
 const rejectSong = (songId) => {
-  const song = songs.value.find(s => s.id === songId)
+  const song = songs.value.find((s) => s.id === songId)
   if (!song) return
 
   rejectSongInfo.value = {
@@ -1226,7 +1440,7 @@ const saveEditSong = async () => {
       title: editForm.value.title,
       artist: editForm.value.artist,
       requester: editForm.value.requester,
-      collaborators: selectedEditCollaborators.value.map(u => u.id),
+      collaborators: selectedEditCollaborators.value.map((u) => u.id),
       semester: editForm.value.semester,
       musicPlatform: editForm.value.musicPlatform || null,
       musicId: editForm.value.musicId || null,
@@ -1511,9 +1725,10 @@ const searchEditCollaborators = async () => {
     editCollaboratorSearchLoading.value = true
     try {
       const users = await searchUsersFromAPI(editCollaboratorSearchQuery.value)
-      filteredEditCollaborators.value = users.filter(u => 
-        (!selectedEditUser.value || u.id !== selectedEditUser.value.id) &&
-        !selectedEditCollaborators.value.some(c => c.id === u.id)
+      filteredEditCollaborators.value = users.filter(
+        (u) =>
+          (!selectedEditUser.value || u.id !== selectedEditUser.value.id) &&
+          !selectedEditCollaborators.value.some((c) => c.id === u.id)
       )
       showEditCollaboratorDropdown.value = filteredEditCollaborators.value.length > 0
     } catch (error) {
@@ -1533,7 +1748,7 @@ const selectEditCollaborator = (user) => {
 }
 
 const removeEditCollaborator = (userId) => {
-  const index = selectedEditCollaborators.value.findIndex(u => u.id === userId)
+  const index = selectedEditCollaborators.value.findIndex((u) => u.id === userId)
   if (index > -1) {
     selectedEditCollaborators.value.splice(index, 1)
   }
@@ -1644,49 +1859,61 @@ const validateEditPlayUrl = async (url) => {
 }
 
 // 监听URL变化并验证
-watch(() => addForm.value.cover, (newUrl) => {
-  if (newUrl) {
-    clearTimeout(addCoverValidation.value.debounceTimer)
-    addCoverValidation.value.debounceTimer = setTimeout(() => {
-      validateAddCoverUrl(newUrl)
-    }, 1000)
-  } else {
-    addCoverValidation.value = { valid: true, error: '', validating: false }
+watch(
+  () => addForm.value.cover,
+  (newUrl) => {
+    if (newUrl) {
+      clearTimeout(addCoverValidation.value.debounceTimer)
+      addCoverValidation.value.debounceTimer = setTimeout(() => {
+        validateAddCoverUrl(newUrl)
+      }, 1000)
+    } else {
+      addCoverValidation.value = { valid: true, error: '', validating: false }
+    }
   }
-})
+)
 
-watch(() => addForm.value.playUrl, (newUrl) => {
-  if (newUrl) {
-    clearTimeout(addPlayUrlValidation.value.debounceTimer)
-    addPlayUrlValidation.value.debounceTimer = setTimeout(() => {
-      validateAddPlayUrl(newUrl)
-    }, 1000)
-  } else {
-    addPlayUrlValidation.value = { valid: true, error: '', validating: false }
+watch(
+  () => addForm.value.playUrl,
+  (newUrl) => {
+    if (newUrl) {
+      clearTimeout(addPlayUrlValidation.value.debounceTimer)
+      addPlayUrlValidation.value.debounceTimer = setTimeout(() => {
+        validateAddPlayUrl(newUrl)
+      }, 1000)
+    } else {
+      addPlayUrlValidation.value = { valid: true, error: '', validating: false }
+    }
   }
-})
+)
 
-watch(() => editForm.value.cover, (newUrl) => {
-  if (newUrl) {
-    clearTimeout(editCoverValidation.value.debounceTimer)
-    editCoverValidation.value.debounceTimer = setTimeout(() => {
-      validateEditCoverUrl(newUrl)
-    }, 1000)
-  } else {
-    editCoverValidation.value = { valid: true, error: '', validating: false }
+watch(
+  () => editForm.value.cover,
+  (newUrl) => {
+    if (newUrl) {
+      clearTimeout(editCoverValidation.value.debounceTimer)
+      editCoverValidation.value.debounceTimer = setTimeout(() => {
+        validateEditCoverUrl(newUrl)
+      }, 1000)
+    } else {
+      editCoverValidation.value = { valid: true, error: '', validating: false }
+    }
   }
-})
+)
 
-watch(() => editForm.value.playUrl, (newUrl) => {
-  if (newUrl) {
-    clearTimeout(editPlayUrlValidation.value.debounceTimer)
-    editPlayUrlValidation.value.debounceTimer = setTimeout(() => {
-      validateEditPlayUrl(newUrl)
-    }, 1000)
-  } else {
-    editPlayUrlValidation.value = { valid: true, error: '', validating: false }
+watch(
+  () => editForm.value.playUrl,
+  (newUrl) => {
+    if (newUrl) {
+      clearTimeout(editPlayUrlValidation.value.debounceTimer)
+      editPlayUrlValidation.value.debounceTimer = setTimeout(() => {
+        validateEditPlayUrl(newUrl)
+      }, 1000)
+    } else {
+      editPlayUrlValidation.value = { valid: true, error: '', validating: false }
+    }
   }
-})
+)
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)

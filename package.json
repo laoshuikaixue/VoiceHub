@@ -24,7 +24,10 @@
     "vercel-build": "node scripts/deploy.js",
     "netlify-build": "node scripts/netlify-build.js",
     "check-deploy": "node scripts/check-deploy.js",
-    "postinstall": "node scripts/postinstall.js"
+    "postinstall": "node scripts/postinstall.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@applemusic-like-lyrics/lyric": "^0.3.0",
@@ -66,16 +69,20 @@
     "redis": "^5.10.0",
     "sass": "^1.83.4",
     "tsx": "^4.21.0",
+    "vite-plugin-glsl": "^1.5.5",
     "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.5.0",
     "vue": "^3.5.26",
     "vue-router": "^4.6.4",
     "xlsx": "^0.18.5",
-    "zod": "^4.3.6",
-    "vite-plugin-glsl": "^1.5.5"
+    "zod": "^4.3.6"
   },
   "engines": {
     "node": ">=18.20.0",
     "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.15.1",
+    "eslint": "^9.39.2"
   }
 }

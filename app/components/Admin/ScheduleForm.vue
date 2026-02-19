@@ -1,30 +1,37 @@
 <template>
-  <div class="backdrop-blur-md p-6 rounded-xl border border-white/10 bg-slate-800/70 shadow-2xl max-w-[400px] mx-auto text-zinc-100 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_30px_rgba(0,0,0,0.2)]">
-    <h3 class="mb-6 pb-2 border-b border-white/10 text-zinc-100 font-bold text-lg">为歌曲 "{{ song?.title }}" 创建排期</h3>
+  <div
+    class="backdrop-blur-md p-6 rounded-xl border border-white/10 bg-slate-800/70 shadow-2xl max-w-[400px] mx-auto text-zinc-100 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_30px_rgba(0,0,0,0.2)]"
+  >
+    <h3 class="mb-6 pb-2 border-b border-white/10 text-zinc-100 font-bold text-lg">
+      为歌曲 "{{ song?.title }}" 创建排期
+    </h3>
 
     <form @submit.prevent="handleSubmit">
       <div class="mb-4">
         <label class="block mb-2 font-medium text-zinc-100" for="playDate">播放日期</label>
         <input
-            id="playDate"
-            v-model="playDate"
-            class="w-full p-3 border border-white/10 rounded-lg text-base bg-[#0f172a99] text-zinc-100 outline-none transition-colors duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.25)]"
-            required
-            type="date"
-        />
+          id="playDate"
+          v-model="playDate"
+          class="w-full p-3 border border-white/10 rounded-lg text-base bg-[#0f172a99] text-zinc-100 outline-none transition-colors duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.25)]"
+          required
+          type="date"
+        >
       </div>
 
       <!-- 播出时段选择 -->
       <div v-if="playTimeEnabled" class="mb-4">
         <CustomSelect
-            v-model="playTimeId"
-            :options="playTimeOptions"
-            label="播出时段"
-            placeholder="未指定"
-            class-name="w-full"
+          v-model="playTimeId"
+          :options="playTimeOptions"
+          label="播出时段"
+          placeholder="未指定"
+          class-name="w-full"
         />
-        
-        <div v-if="song?.preferredPlayTime" class="mt-3 p-3 bg-white/5 rounded-lg text-sm flex items-start gap-2">
+
+        <div
+          v-if="song?.preferredPlayTime"
+          class="mt-3 p-3 bg-white/5 rounded-lg text-sm flex items-start gap-2"
+        >
           <div class="text-base">💡</div>
           <div>
             用户期望的播出时段:
@@ -43,16 +50,16 @@
       </div>
 
       <div class="flex justify-between gap-4 mt-6">
-        <button 
-          class="flex-1 p-3 border border-white/10 rounded-lg text-base cursor-pointer transition-all duration-200 bg-white/10 text-zinc-100 hover:bg-white/15" 
-          type="button" 
+        <button
+          class="flex-1 p-3 border border-white/10 rounded-lg text-base cursor-pointer transition-all duration-200 bg-white/10 text-zinc-100 hover:bg-white/15"
+          type="button"
           @click="$emit('cancel')"
         >
           取消
         </button>
-        <button 
-          :disabled="loading" 
-          class="flex-1 p-3 border-none rounded-lg text-base cursor-pointer transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-px disabled:bg-indigo-500/50 disabled:cursor-not-allowed disabled:transform-none" 
+        <button
+          :disabled="loading"
+          class="flex-1 p-3 border-none rounded-lg text-base cursor-pointer transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-px disabled:bg-indigo-500/50 disabled:cursor-not-allowed disabled:transform-none"
           type="submit"
         >
           {{ loading ? '创建中...' : '创建排期' }}
@@ -89,16 +96,16 @@ const { playTimeEnabled } = useSongs()
 // 转换播出时段为 CustomSelect 选项格式
 const playTimeOptions = computed(() => {
   const options = [{ label: '未指定', value: '' }]
-  
+
   if (playTimes.value && playTimes.value.length > 0) {
-    playTimes.value.forEach(pt => {
+    playTimes.value.forEach((pt) => {
       options.push({
         label: `${pt.name} (${pt.startTime} - ${pt.endTime})`,
         value: pt.id
       })
     })
   }
-  
+
   return options
 })
 
@@ -121,7 +128,7 @@ const fetchPlayTimes = async () => {
     if (response.ok) {
       const data = await response.json()
       // 只显示启用的播放时段
-      playTimes.value = data.filter(pt => pt.enabled)
+      playTimes.value = data.filter((pt) => pt.enabled)
     }
   } catch (err) {
     console.error('获取播出时段失败:', err)
@@ -130,18 +137,18 @@ const fetchPlayTimes = async () => {
 
 // 格式化播出时段时间范围
 const formatPlayTimeRange = (playTime) => {
-  if (!playTime) return '';
+  if (!playTime) return ''
 
   if (playTime.startTime && playTime.endTime) {
-    return `${playTime.startTime} - ${playTime.endTime}`;
+    return `${playTime.startTime} - ${playTime.endTime}`
   } else if (playTime.startTime) {
-    return `${playTime.startTime} 开始`;
+    return `${playTime.startTime} 开始`
   } else if (playTime.endTime) {
-    return `${playTime.endTime} 结束`;
+    return `${playTime.endTime} 结束`
   }
 
-  return '不限时间';
-};
+  return '不限时间'
+}
 
 const handleSubmit = () => {
   error.value = ''

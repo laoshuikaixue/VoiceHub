@@ -2,7 +2,7 @@ services:
   voicehub:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
       - JWT_SECRET=your-jwt-secret-here
@@ -23,7 +23,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - '5432:5432'
     restart: unless-stopped
 
 volumes:

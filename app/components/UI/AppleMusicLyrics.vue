@@ -4,23 +4,27 @@
     <div v-if="!isLoading && !error && currentLyrics.length" class="lyrics-wrapper">
       <div ref="lyricContainer" class="custom-lyric-player">
         <div
-            v-for="(line, index) in currentLyrics"
-            :key="index"
-            :class="[
+          v-for="(line, index) in currentLyrics"
+          :key="index"
+          :class="[
             'lyric-line',
-            { 
-              'active': index === currentLyricIndex,
-              'passed': index < currentLyricIndex,
-              'upcoming': index > currentLyricIndex
+            {
+              active: index === currentLyricIndex,
+              passed: index < currentLyricIndex,
+              upcoming: index > currentLyricIndex
             }
           ]"
-            :style="getLyricLineStyle(index)"
-            @click="handleLineClick(line, index)"
+          :style="getLyricLineStyle(index)"
+          @click="handleLineClick(line, index)"
         >
           <div class="main-lyric">{{ line.content || '' }}</div>
           <div
-              v-if="showTranslation && translationLyrics[index]?.content && translationLyrics[index].content !== '//'"
-              class="translation-lyric"
+            v-if="
+              showTranslation &&
+              translationLyrics[index]?.content &&
+              translationLyrics[index].content !== '//'
+            "
+            class="translation-lyric"
           >
             {{ translationLyrics[index].content }}
           </div>
@@ -29,7 +33,7 @@
     </div>
 
     <div v-else-if="isLoading" class="placeholder">
-      <div class="loading-spinner"></div>
+      <div class="loading-spinner" />
       <p>歌词加载中...</p>
     </div>
 
@@ -44,33 +48,33 @@
 </template>
 
 <script setup>
-import {nextTick, ref, watch} from 'vue'
+import { nextTick, ref, watch } from 'vue'
 
 const props = defineProps({
   // 歌词数据
-  currentLyrics: {type: Array, default: () => []},
-  translationLyrics: {type: Array, default: () => []},
-  wordByWordLyrics: {type: Array, default: () => []},
+  currentLyrics: { type: Array, default: () => [] },
+  translationLyrics: { type: Array, default: () => [] },
+  wordByWordLyrics: { type: Array, default: () => [] },
 
   // 播放状态
-  currentTime: {type: Number, default: 0},
-  currentLyricIndex: {type: Number, default: -1},
-  isLoading: {type: Boolean, default: false},
-  error: {type: String, default: ''},
+  currentTime: { type: Number, default: 0 },
+  currentLyricIndex: { type: Number, default: -1 },
+  isLoading: { type: Boolean, default: false },
+  error: { type: String, default: '' },
 
   // 样式配置
-  height: {type: String, default: '400px'},
-  fontSize: {type: Number, default: 18},
-  lineHeight: {type: Number, default: 1.6},
-  activeLineColor: {type: String, default: '#ffffff'},
-  inactiveLineColor: {type: String, default: 'rgba(255, 255, 255, 0.6)'},
-  backgroundColor: {type: String, default: 'transparent'},
+  height: { type: String, default: '400px' },
+  fontSize: { type: Number, default: 18 },
+  lineHeight: { type: Number, default: 1.6 },
+  activeLineColor: { type: String, default: '#ffffff' },
+  inactiveLineColor: { type: String, default: 'rgba(255, 255, 255, 0.6)' },
+  backgroundColor: { type: String, default: 'transparent' },
 
   // 交互配置
-  allowSeek: {type: Boolean, default: true},
+  allowSeek: { type: Boolean, default: true },
 
   // 显示选项
-  showTranslation: {type: Boolean, default: false}
+  showTranslation: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['seek'])
@@ -93,35 +97,38 @@ const getLyricLineStyle = (index) => {
     fontSize: `${props.fontSize}px`,
     lineHeight: props.lineHeight,
     color: isActive ? props.activeLineColor : props.inactiveLineColor,
-    opacity: isPassed ? 0.4 : (isActive ? 1 : 0.7),
+    opacity: isPassed ? 0.4 : isActive ? 1 : 0.7,
     transform: isActive ? 'scale(1.05)' : 'scale(1)',
     fontWeight: isActive ? '600' : '400'
   }
 }
 
 // 自动滚动到当前歌词
-watch(() => props.currentLyricIndex, (newIndex) => {
-  if (newIndex >= 0 && lyricContainer.value) {
-    nextTick(() => {
-      const container = lyricContainer.value
-      const activeLine = container.querySelector('.lyric-line.active')
+watch(
+  () => props.currentLyricIndex,
+  (newIndex) => {
+    if (newIndex >= 0 && lyricContainer.value) {
+      nextTick(() => {
+        const container = lyricContainer.value
+        const activeLine = container.querySelector('.lyric-line.active')
 
-      if (activeLine) {
-        const containerHeight = container.clientHeight
-        const lineTop = activeLine.offsetTop
-        const lineHeight = activeLine.clientHeight
+        if (activeLine) {
+          const containerHeight = container.clientHeight
+          const lineTop = activeLine.offsetTop
+          const lineHeight = activeLine.clientHeight
 
-        // 计算滚动位置，让当前歌词居中显示
-        const scrollTop = lineTop - (containerHeight / 2) + (lineHeight / 2)
+          // 计算滚动位置，让当前歌词居中显示
+          const scrollTop = lineTop - containerHeight / 2 + lineHeight / 2
 
-        container.scrollTo({
-          top: scrollTop,
-          behavior: 'smooth'
-        })
-      }
-    })
+          container.scrollTo({
+            top: scrollTop,
+            behavior: 'smooth'
+          })
+        }
+      })
+    }
   }
-})
+)
 </script>
 
 <style scoped>

@@ -5,23 +5,27 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
 
 interface CidRes {
-  code: number;
-  message: string;
+  code: number
+  message: string
   data: {
-    pages: [{
-      cid: string;
-    }];
-  };
+    pages: [
+      {
+        cid: string
+      }
+    ]
+  }
 }
 
 interface NoRefererPlayUrlRes {
-  code: number;
-  message: string;
+  code: number
+  message: string
   data: {
-    durl: [{
-      url: string;
-    }];
-  };
+    durl: [
+      {
+        url: string
+      }
+    ]
+  }
 }
 
 export default defineEventHandler(async (event) => {
@@ -37,49 +41,50 @@ export default defineEventHandler(async (event) => {
   }
 
   const headers = {
-    Cookie: "buvid3=0",
-    Referer: "https://www.bilibili.com/",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    Cookie: 'buvid3=0',
+    Referer: 'https://www.bilibili.com/',
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
   }
 
   try {
-    let finalCid = cid;
+    let finalCid = cid
 
     if (!finalCid) {
-      const target_url = "https://api.bilibili.com/x/web-interface/view";
+      const target_url = 'https://api.bilibili.com/x/web-interface/view'
       const resp1 = await $fetch<CidRes>(target_url, {
-        method: "GET",
+        method: 'GET',
         params: { bvid },
         headers
-      });
+      })
 
       if (!resp1?.data?.pages?.[0]?.cid) {
-          throw new Error('Failed to get CID')
+        throw new Error('Failed to get CID')
       }
 
-      finalCid = resp1.data.pages[0].cid;
+      finalCid = resp1.data.pages[0].cid
     }
 
     // 使用 platform=html5 参数绕过防盗链验证
-    const target_url2 = "https://api.bilibili.com/x/player/playurl";
+    const target_url2 = 'https://api.bilibili.com/x/player/playurl'
 
     const resp2 = await $fetch<NoRefererPlayUrlRes>(target_url2, {
-      method: "GET",
+      method: 'GET',
       params: {
         fnval: 1,
-        platform: "html5",
+        platform: 'html5',
         high_quality: 1,
         bvid,
-        cid: finalCid,
+        cid: finalCid
       },
       headers
-    });
+    })
 
     if (resp2.data?.durl?.length > 0) {
-      const url = resp2.data.durl[0].url;
-      return { url, pay: false };
+      const url = resp2.data.durl[0].url
+      return { url, pay: false }
     } else {
-      throw new Error("获取歌曲链接失败");
+      throw new Error('获取歌曲链接失败')
     }
   } catch (error: any) {
     throw createError({

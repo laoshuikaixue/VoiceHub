@@ -1,40 +1,60 @@
 <template>
   <Transition name="fade">
-    <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" @click="closeDialog">
+    <div
+      v-if="show"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      @click="closeDialog"
+    >
       <Transition name="scale">
-        <div v-if="show" class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]" @click.stop>
-          
+        <div
+          v-if="show"
+          class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+          @click.stop
+        >
           <!-- Header -->
           <div class="flex items-center justify-between p-4 border-b border-zinc-800 shrink-0">
             <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">下载歌曲</h3>
-            <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="closeDialog">
+            <button
+              class="text-zinc-500 hover:text-zinc-300 transition-colors"
+              @click="closeDialog"
+            >
               <CloseIcon class="w-5 h-5" />
             </button>
           </div>
 
           <!-- 内容区域 -->
           <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-            
             <!-- 音质选择 -->
             <section class="space-y-3">
-              <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em] px-1">选择音质</label>
+              <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em] px-1"
+                >选择音质</label
+              >
               <div class="grid grid-cols-2 gap-2">
                 <button
                   v-for="option in extendedQualityOptions"
                   :key="option.value"
-                  @click="selectedQuality = option.value"
                   class="flex flex-col p-4 rounded-2xl border text-left transition-all relative overflow-hidden group"
                   :class="[
-                    selectedQuality === option.value 
-                      ? 'bg-blue-600/10 border-blue-500 shadow-sm' 
+                    selectedQuality === option.value
+                      ? 'bg-blue-600/10 border-blue-500 shadow-sm'
                       : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
                   ]"
+                  @click="selectedQuality = option.value"
                 >
                   <div class="flex items-center justify-between mb-1 relative z-10">
-                    <span class="text-xs font-bold transition-colors" :class="selectedQuality === option.value ? 'text-blue-400' : 'text-zinc-200'">{{ option.label }}</span>
-                    <div v-if="selectedQuality === option.value" class="w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                    <span
+                      class="text-xs font-bold transition-colors"
+                      :class="selectedQuality === option.value ? 'text-blue-400' : 'text-zinc-200'"
+                      >{{ option.label }}</span
+                    >
+                    <div
+                      v-if="selectedQuality === option.value"
+                      class="w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                    />
                   </div>
-                  <span class="text-[10px] text-zinc-500 relative z-10">{{ option.description }}</span>
+                  <span class="text-[10px] text-zinc-500 relative z-10">{{
+                    option.description
+                  }}</span>
                 </button>
               </div>
             </section>
@@ -44,32 +64,33 @@
               <section v-if="selectedSongs.size > 1" class="space-y-3 overflow-hidden">
                 <div class="flex items-center gap-2 px-1">
                   <Settings2 class="w-3 h-3 text-zinc-500" />
-                  <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em]">高级选项</label>
+                  <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em]"
+                    >高级选项</label
+                  >
                 </div>
-                
+
                 <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-4">
                   <!-- 合并开关 -->
                   <div class="flex items-center justify-between">
-                     <div class="flex flex-col">
-                       <span class="text-xs font-bold text-zinc-200">合并为一个文件</span>
-                       <span class="text-[10px] text-zinc-500">将选中歌曲按顺序合并为单个音频</span>
-                     </div>
-                     <button 
-                       @click="mergeSongs = !mergeSongs"
-                       class="w-10 h-6 rounded-full transition-colors relative"
-                       :class="mergeSongs ? 'bg-blue-600' : 'bg-zinc-700'"
-                     >
-                       <div 
-                         class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform"
-                         :class="mergeSongs ? 'translate-x-4' : 'translate-x-0'"
-                       ></div>
-                     </button>
+                    <div class="flex flex-col">
+                      <span class="text-xs font-bold text-zinc-200">合并为一个文件</span>
+                      <span class="text-[10px] text-zinc-500">将选中歌曲按顺序合并为单个音频</span>
+                    </div>
+                    <button
+                      class="w-10 h-6 rounded-full transition-colors relative"
+                      :class="mergeSongs ? 'bg-blue-600' : 'bg-zinc-700'"
+                      @click="mergeSongs = !mergeSongs"
+                    >
+                      <div
+                        class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform"
+                        :class="mergeSongs ? 'translate-x-4' : 'translate-x-0'"
+                      />
+                    </button>
                   </div>
 
                   <!-- 合并设置区域 -->
                   <Transition name="expand">
                     <div v-if="mergeSongs" class="space-y-4 pt-4 border-t border-zinc-800/50">
-                      
                       <!-- 导出格式选择 -->
                       <div class="space-y-2">
                         <div class="flex items-center gap-2">
@@ -77,17 +98,25 @@
                           <span class="text-xs font-bold text-zinc-200">导出格式</span>
                         </div>
                         <div class="flex gap-2">
-                          <button 
-                            @click="exportFormat = 'mp3'"
+                          <button
                             class="flex-1 py-1.5 px-3 rounded-lg border text-[10px] font-bold transition-all"
-                            :class="exportFormat === 'mp3' ? 'bg-blue-600/10 border-blue-500 text-blue-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'"
+                            :class="
+                              exportFormat === 'mp3'
+                                ? 'bg-blue-600/10 border-blue-500 text-blue-400'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                            "
+                            @click="exportFormat = 'mp3'"
                           >
                             MP3
                           </button>
-                          <button 
-                            @click="exportFormat = 'wav'"
+                          <button
                             class="flex-1 py-1.5 px-3 rounded-lg border text-[10px] font-bold transition-all"
-                            :class="exportFormat === 'wav' ? 'bg-blue-600/10 border-blue-500 text-blue-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'"
+                            :class="
+                              exportFormat === 'wav'
+                                ? 'bg-blue-600/10 border-blue-500 text-blue-400'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                            "
+                            @click="exportFormat = 'wav'"
                           >
                             WAV
                           </button>
@@ -101,76 +130,96 @@
                             <Edit3 class="w-3 h-3 text-zinc-500" />
                             <span class="text-xs font-bold text-zinc-200">自定义文件名</span>
                           </div>
-                          <button 
-                            @click="saveFilenamePreset"
+                          <button
                             class="text-[10px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
-                            :class="{'opacity-50 cursor-not-allowed': !customFilename}"
+                            :class="{ 'opacity-50 cursor-not-allowed': !customFilename }"
                             title="保存为默认预设"
+                            @click="saveFilenamePreset"
                           >
                             <Save class="w-3 h-3" />
                             {{ showPresetSaved ? '已保存!' : '保存预设' }}
                           </button>
                         </div>
                         <div class="relative">
-                          <input 
-                            type="text" 
+                          <input
                             v-model="customFilename"
-                            placeholder="例如: 第XX期 - {songs}" 
+                            type="text"
+                            placeholder="例如: 第XX期 - {songs}"
                             class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/50 transition-colors pr-8"
-                          />
+                          >
                           <!-- 快速插入占位符按钮 -->
                           <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                            <button 
-                              @click="insertPlaceholder('{songs}')"
+                            <button
                               class="px-1.5 py-0.5 rounded bg-zinc-800 text-[9px] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
                               title="插入所有歌名"
+                              @click="insertPlaceholder('{songs}')"
                             >
                               {songs}
                             </button>
-                            <button 
-                              @click="insertPlaceholder('{date}')"
+                            <button
                               class="px-1.5 py-0.5 rounded bg-zinc-800 text-[9px] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
                               title="插入当前日期"
+                              @click="insertPlaceholder('{date}')"
                             >
                               {date}
                             </button>
                           </div>
                         </div>
                         <p class="text-[9px] text-zinc-600">
-                          可用占位符: <code class="bg-zinc-800 px-1 rounded text-zinc-400 cursor-pointer hover:text-blue-400" @click="insertPlaceholder('{songs}')">{songs}</code> (所有歌名), <code class="bg-zinc-800 px-1 rounded text-zinc-400 cursor-pointer hover:text-blue-400" @click="insertPlaceholder('{date}')">{date}</code> (日期)
+                          可用占位符:
+                          <code
+                            class="bg-zinc-800 px-1 rounded text-zinc-400 cursor-pointer hover:text-blue-400"
+                            @click="insertPlaceholder('{songs}')"
+                            >{songs}</code
+                          >
+                          (所有歌名),
+                          <code
+                            class="bg-zinc-800 px-1 rounded text-zinc-400 cursor-pointer hover:text-blue-400"
+                            @click="insertPlaceholder('{date}')"
+                            >{date}</code
+                          >
+                          (日期)
                         </p>
                       </div>
 
                       <!-- 标准化选项 (仅在合并模式或需要时显示，这里允许单独使用) -->
-                      <div class="flex items-center justify-between pt-3 border-t border-zinc-800/50">
-                         <div class="flex flex-col">
-                           <div class="flex items-center gap-2">
-                             <span class="text-xs font-bold text-zinc-200">统一音量 (标准化)</span>
-                             <span v-if="normalizeAudio" class="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">Peak {{ targetDb }}dB</span>
-                           </div>
-                           <span class="text-[10px] text-zinc-500">将所有音频峰值调整至统一标准</span>
-                         </div>
-                         <div class="flex items-center gap-3">
-                           <button 
-                             v-if="normalizeAudio"
-                             @click="saveDbPreset"
-                             class="text-[10px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
-                             title="保存当前音量设置为默认"
-                           >
-                             <Save class="w-3 h-3" />
-                             {{ showDbPresetSaved ? '已保存!' : '保存预设' }}
-                           </button>
-                           <button 
-                             @click="normalizeAudio = !normalizeAudio"
-                             class="w-10 h-6 rounded-full transition-colors relative"
-                             :class="normalizeAudio ? 'bg-blue-600' : 'bg-zinc-700'"
-                           >
-                             <div 
-                               class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform"
-                               :class="normalizeAudio ? 'translate-x-4' : 'translate-x-0'"
-                             ></div>
-                           </button>
-                         </div>
+                      <div
+                        class="flex items-center justify-between pt-3 border-t border-zinc-800/50"
+                      >
+                        <div class="flex flex-col">
+                          <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-zinc-200">统一音量 (标准化)</span>
+                            <span
+                              v-if="normalizeAudio"
+                              class="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20"
+                              >Peak {{ targetDb }}dB</span
+                            >
+                          </div>
+                          <span class="text-[10px] text-zinc-500"
+                            >将所有音频峰值调整至统一标准</span
+                          >
+                        </div>
+                        <div class="flex items-center gap-3">
+                          <button
+                            v-if="normalizeAudio"
+                            class="text-[10px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
+                            title="保存当前音量设置为默认"
+                            @click="saveDbPreset"
+                          >
+                            <Save class="w-3 h-3" />
+                            {{ showDbPresetSaved ? '已保存!' : '保存预设' }}
+                          </button>
+                          <button
+                            class="w-10 h-6 rounded-full transition-colors relative"
+                            :class="normalizeAudio ? 'bg-blue-600' : 'bg-zinc-700'"
+                            @click="normalizeAudio = !normalizeAudio"
+                          >
+                            <div
+                              class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform"
+                              :class="normalizeAudio ? 'translate-x-4' : 'translate-x-0'"
+                            />
+                          </button>
+                        </div>
                       </div>
 
                       <!-- 目标分贝设置 -->
@@ -178,15 +227,17 @@
                         <div v-if="normalizeAudio" class="pt-2">
                           <div class="flex items-center gap-3">
                             <Volume2 class="w-4 h-4 text-zinc-500" />
-                            <input 
-                              type="range" 
-                              v-model.number="targetDb" 
-                              min="-10" 
-                              max="0" 
+                            <input
+                              v-model.number="targetDb"
+                              type="range"
+                              min="-10"
+                              max="0"
                               step="0.5"
                               class="flex-1 h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
                             >
-                            <span class="text-xs font-mono text-zinc-300 w-12 text-right">{{ targetDb }} dB</span>
+                            <span class="text-xs font-mono text-zinc-300 w-12 text-right"
+                              >{{ targetDb }} dB</span
+                            >
                           </div>
                         </div>
                       </Transition>
@@ -200,89 +251,117 @@
             <section class="space-y-3">
               <div class="flex items-center justify-between px-1">
                 <div class="flex items-center gap-3">
-                  <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em]">歌曲列表</label>
-                  <div v-if="estimatedTotalDuration.count > 0" class="flex items-center gap-1.5 text-[10px] text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                  <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em]"
+                    >歌曲列表</label
+                  >
+                  <div
+                    v-if="estimatedTotalDuration.count > 0"
+                    class="flex items-center gap-1.5 text-[10px] text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20"
+                  >
                     <Clock class="w-3 h-3" />
                     <span>预估总时长: {{ formatDuration(estimatedTotalDuration.total) }}</span>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
-                  <button 
+                  <button
                     v-if="selectedSongs.size > 0"
-                    @click="preloadSelectedSongs"
                     class="text-[10px] font-bold text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
                     title="预下载选中歌曲到浏览器缓存"
+                    @click="preloadSelectedSongs"
                   >
                     <DownloadCloud class="w-3 h-3" />
                     预下载选中
                   </button>
-                  <button 
-                    @click="toggleSelectAll"
+                  <button
                     class="text-[10px] font-bold text-blue-500/80 hover:text-blue-400 transition-colors"
+                    @click="toggleSelectAll"
                   >
                     {{ isAllSelected ? '取消全选' : '全选' }}
                   </button>
                 </div>
               </div>
-              
-              <div class="bg-zinc-950/50 border border-zinc-800/50 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar">
+
+              <div
+                class="bg-zinc-950/50 border border-zinc-800/50 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
+              >
                 <div
                   v-for="song in songs"
                   :key="song.id"
                   class="w-full flex items-center gap-3 p-3.5 hover:bg-zinc-800/30 transition-all text-left border-b border-zinc-800/30 last:border-0 group relative"
                 >
                   <!-- 预下载进度条背景 -->
-                  <div 
-                    v-if="preloadedSongs.has(song.song.id) && preloadedSongs.get(song.song.id).loading"
+                  <div
+                    v-if="
+                      preloadedSongs.has(song.song.id) && preloadedSongs.get(song.song.id).loading
+                    "
                     class="absolute bottom-0 left-0 h-0.5 bg-blue-500/50 transition-all duration-300 ease-out"
                     :style="{ width: `${preloadedSongs.get(song.song.id).progress}%` }"
-                  ></div>
+                  />
 
-                  <button 
-                    @click="toggleSongSelection(song.song.id)"
+                  <button
                     class="flex items-center justify-center shrink-0 w-4 h-4 rounded border transition-all"
                     :class="[
-                      selectedSongs.has(song.song.id) ? 'bg-blue-600 border-blue-600 shadow-sm' : 'bg-zinc-900 border-zinc-800 group-hover:border-zinc-700'
+                      selectedSongs.has(song.song.id)
+                        ? 'bg-blue-600 border-blue-600 shadow-sm'
+                        : 'bg-zinc-900 border-zinc-800 group-hover:border-zinc-700'
                     ]"
+                    @click="toggleSongSelection(song.song.id)"
                   >
-                    <Check v-if="selectedSongs.has(song.song.id)" class="w-2.5 h-2.5 text-white font-bold" stroke-width="3" />
+                    <Check
+                      v-if="selectedSongs.has(song.song.id)"
+                      class="w-2.5 h-2.5 text-white font-bold"
+                      stroke-width="3"
+                    />
                   </button>
-                  
-                  <div class="flex-1 min-w-0 flex flex-col cursor-pointer" @click="toggleSongSelection(song.song.id)">
+
+                  <div
+                    class="flex-1 min-w-0 flex flex-col cursor-pointer"
+                    @click="toggleSongSelection(song.song.id)"
+                  >
                     <div class="flex items-center gap-2">
                       <p class="text-xs font-bold text-zinc-300 truncate">{{ song.song.title }}</p>
                       <!-- 预下载标记 -->
-                      <div v-if="preloadedSongs.has(song.song.id) && !preloadedSongs.get(song.song.id).loading" class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/10 border border-green-500/20">
+                      <div
+                        v-if="
+                          preloadedSongs.has(song.song.id) &&
+                          !preloadedSongs.get(song.song.id).loading
+                        "
+                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/10 border border-green-500/20"
+                      >
                         <Check class="w-2 h-2 text-green-400" />
-                        <span class="text-[9px] font-mono text-green-400">{{ formatDuration(preloadedSongs.get(song.song.id).duration) }}</span>
+                        <span class="text-[9px] font-mono text-green-400">{{
+                          formatDuration(preloadedSongs.get(song.song.id).duration)
+                        }}</span>
                       </div>
                     </div>
                     <p class="text-[10px] text-zinc-500 truncate">{{ song.song.artist }}</p>
                   </div>
-                  
+
                   <div class="flex items-center gap-3">
-                     <div class="text-[9px] font-mono text-zinc-600 uppercase">{{ getPlatformShortName(song.song.musicPlatform) }}</div>
-                     
-                     <!-- 单个预下载/删除按钮 -->
-                     <button 
-                       v-if="preloadedSongs.has(song.song.id)"
-                       @click.stop="removePreloaded(song.song.id)"
-                       class="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-600 hover:text-red-400 transition-colors"
-                       title="删除缓存"
-                     >
-                       <Trash2 class="w-3.5 h-3.5" />
-                     </button>
-                     <button 
-                       v-else
-                       @click.stop="preloadSong(song.song)"
-                       class="p-1.5 rounded-lg hover:bg-blue-500/10 text-zinc-600 hover:text-blue-400 transition-colors"
-                       title="预下载此歌曲"
-                     >
-                       <DownloadCloud class="w-3.5 h-3.5" />
-                     </button>
+                    <div class="text-[9px] font-mono text-zinc-600 uppercase">
+                      {{ getPlatformShortName(song.song.musicPlatform) }}
+                    </div>
+
+                    <!-- 单个预下载/删除按钮 -->
+                    <button
+                      v-if="preloadedSongs.has(song.song.id)"
+                      class="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-600 hover:text-red-400 transition-colors"
+                      title="删除缓存"
+                      @click.stop="removePreloaded(song.song.id)"
+                    >
+                      <Trash2 class="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      v-else
+                      class="p-1.5 rounded-lg hover:bg-blue-500/10 text-zinc-600 hover:text-blue-400 transition-colors"
+                      title="预下载此歌曲"
+                      @click.stop="preloadSong(song.song)"
+                    >
+                      <DownloadCloud class="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-                
+
                 <div v-if="songs.length === 0" class="p-8 text-center text-zinc-600 text-[10px]">
                   暂无歌曲
                 </div>
@@ -290,77 +369,111 @@
             </section>
 
             <!-- 下载进度 -->
-            <section v-if="downloading || downloadedCount > 0" class="space-y-3 pt-4 border-t border-zinc-800/50">
-               <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider">
-                 <span class="text-zinc-400">{{ mergeSongs ? '处理进度' : '下载进度' }}</span>
-                 <span class="text-blue-400">{{ downloadedCount }} / {{ totalCount }}</span>
-               </div>
-               <div class="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50 relative">
-                 <div 
-                   class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300 ease-out relative overflow-hidden" 
-                   :style="{ width: `${totalCount > 0 ? (downloadedCount / totalCount) * 100 : 0}%` }"
-                 >
-                   <div class="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite] -skew-x-12"></div>
-                 </div>
-               </div>
-               <div class="text-[10px] text-zinc-500 truncate">
-                 <template v-if="downloading">
-                   <span v-if="processingStatus" class="text-blue-400 animate-pulse">{{ processingStatus }}</span>
-                   <span v-else>{{ currentDownloadSong ? `正在下载: ${currentDownloadSong}` : '准备中...' }}</span>
-                 </template>
-                 <template v-else>
-                   {{ downloadErrors.length > 0 ? '下载完成，部分失败' : '下载完成' }}
-                 </template>
-               </div>
-               
-               <!-- 错误列表 -->
-               <div v-if="downloadErrors.length > 0" class="bg-red-500/5 border border-red-500/10 rounded-xl p-3 space-y-2">
-                 <div class="text-[10px] font-bold text-red-400 flex items-center gap-2">
-                   <AlertTriangle class="w-3 h-3" />
-                   下载失败 ({{ downloadErrors.length }})
-                 </div>
-                 <div class="max-h-[60px] overflow-y-auto custom-scrollbar space-y-1">
-                   <div v-for="error in downloadErrors" :key="error.id" class="text-[9px] text-red-500/70 truncate">
-                     {{ error.title }} - {{ error.error }}
-                   </div>
-                 </div>
-               </div>
+            <section
+              v-if="downloading || downloadedCount > 0"
+              class="space-y-3 pt-4 border-t border-zinc-800/50"
+            >
+              <div
+                class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider"
+              >
+                <span class="text-zinc-400">{{ mergeSongs ? '处理进度' : '下载进度' }}</span>
+                <span class="text-blue-400">{{ downloadedCount }} / {{ totalCount }}</span>
+              </div>
+              <div
+                class="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50 relative"
+              >
+                <div
+                  class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300 ease-out relative overflow-hidden"
+                  :style="{
+                    width: `${totalCount > 0 ? (downloadedCount / totalCount) * 100 : 0}%`
+                  }"
+                >
+                  <div
+                    class="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite] -skew-x-12"
+                  />
+                </div>
+              </div>
+              <div class="text-[10px] text-zinc-500 truncate">
+                <template v-if="downloading">
+                  <span v-if="processingStatus" class="text-blue-400 animate-pulse">{{
+                    processingStatus
+                  }}</span>
+                  <span v-else>{{
+                    currentDownloadSong ? `正在下载: ${currentDownloadSong}` : '准备中...'
+                  }}</span>
+                </template>
+                <template v-else>
+                  {{ downloadErrors.length > 0 ? '下载完成，部分失败' : '下载完成' }}
+                </template>
+              </div>
+
+              <!-- 错误列表 -->
+              <div
+                v-if="downloadErrors.length > 0"
+                class="bg-red-500/5 border border-red-500/10 rounded-xl p-3 space-y-2"
+              >
+                <div class="text-[10px] font-bold text-red-400 flex items-center gap-2">
+                  <AlertTriangle class="w-3 h-3" />
+                  下载失败 ({{ downloadErrors.length }})
+                </div>
+                <div class="max-h-[60px] overflow-y-auto custom-scrollbar space-y-1">
+                  <div
+                    v-for="error in downloadErrors"
+                    :key="error.id"
+                    class="text-[9px] text-red-500/70 truncate"
+                  >
+                    {{ error.title }} - {{ error.error }}
+                  </div>
+                </div>
+              </div>
             </section>
           </div>
 
           <!-- 底部按钮 -->
-          <div class="p-4 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between shrink-0">
-             <div class="text-[11px] font-black text-zinc-500 uppercase tracking-widest">
-                已选择 <span class="text-blue-400">{{ selectedSongs.size }}</span> 首歌曲
-             </div>
-             <div class="flex items-center gap-2">
-               <button 
-                 @click="closeDialog" 
-                 class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-wider"
-                 :disabled="downloading"
-               >
-                 取消
-               </button>
-               <button 
-                 v-if="!downloading && downloadedCount > 0"
-                 @click="closeDialog"
-                 class="px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl border border-zinc-700 transition-all uppercase tracking-wider"
-               >
-                 关闭
-               </button>
-               <button 
-                 v-else
-                 @click="startDownload"
-                 :disabled="selectedSongs.size === 0 || downloading"
-                 class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-wider flex items-center gap-2"
-               >
-                 <Download v-if="!downloading" class="w-3.5 h-3.5" />
-                 <span v-else class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                 {{ downloading ? (mergeSongs ? '处理中...' : '下载中...') : (mergeSongs ? '开始处理' : '开始下载') }}
-               </button>
-             </div>
+          <div
+            class="p-4 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between shrink-0"
+          >
+            <div class="text-[11px] font-black text-zinc-500 uppercase tracking-widest">
+              已选择 <span class="text-blue-400">{{ selectedSongs.size }}</span> 首歌曲
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-wider"
+                :disabled="downloading"
+                @click="closeDialog"
+              >
+                取消
+              </button>
+              <button
+                v-if="!downloading && downloadedCount > 0"
+                class="px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl border border-zinc-700 transition-all uppercase tracking-wider"
+                @click="closeDialog"
+              >
+                关闭
+              </button>
+              <button
+                v-else
+                :disabled="selectedSongs.size === 0 || downloading"
+                class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-wider flex items-center gap-2"
+                @click="startDownload"
+              >
+                <Download v-if="!downloading" class="w-3.5 h-3.5" />
+                <span
+                  v-else
+                  class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                />
+                {{
+                  downloading
+                    ? mergeSongs
+                      ? '处理中...'
+                      : '下载中...'
+                    : mergeSongs
+                      ? '开始处理'
+                      : '开始下载'
+                }}
+              </button>
+            </div>
           </div>
-
         </div>
       </Transition>
     </div>
@@ -371,7 +484,20 @@
 import { computed, ref, watch, onMounted, reactive } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { getMusicUrl } from '~/utils/musicUrl'
-import { X as CloseIcon, Check, Download, AlertTriangle, Settings2, Volume2, Edit3, Save, Music, DownloadCloud, Trash2, Clock } from 'lucide-vue-next'
+import {
+  X as CloseIcon,
+  Check,
+  Download,
+  AlertTriangle,
+  Settings2,
+  Volume2,
+  Edit3,
+  Save,
+  Music,
+  DownloadCloud,
+  Trash2,
+  Clock
+} from 'lucide-vue-next'
 import { Mp3Encoder } from '@breezystack/lamejs'
 
 const props = defineProps({
@@ -412,7 +538,7 @@ const qualityDescriptions = {
 // 扩展音质选项，添加描述
 const extendedQualityOptions = computed(() => {
   const options = getQualityOptions('netease')
-  return options.map(opt => ({
+  return options.map((opt) => ({
     ...opt,
     description: qualityDescriptions[opt.value] || '标准音质'
   }))
@@ -439,11 +565,16 @@ const preloadedSongs = reactive(new Map()) // songId -> { blob, duration, loadin
 // 获取平台简写
 const getPlatformShortName = (platform) => {
   switch (platform) {
-    case 'netease': return 'WY'
-    case 'netease-podcast': return 'DJ'
-    case 'tencent': return 'QQ'
-    case 'bilibili': return 'BL'
-    default: return 'OT'
+    case 'netease':
+      return 'WY'
+    case 'netease-podcast':
+      return 'DJ'
+    case 'tencent':
+      return 'QQ'
+    case 'bilibili':
+      return 'BL'
+    default:
+      return 'OT'
   }
 }
 
@@ -458,30 +589,30 @@ const formatDuration = (seconds) => {
 // 预下载单个歌曲
 const preloadSong = async (song) => {
   if (preloadedSongs.has(song.id) && !preloadedSongs.get(song.id).loading) return
-  
+
   preloadedSongs.set(song.id, { loading: true, progress: 0 })
-  
+
   try {
     const url = await getMusicUrlForDownload(song, selectedQuality.value)
-    
+
     // 使用 fetch 获取并追踪进度
     const response = await fetch(url)
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-    
+
     const contentLength = response.headers.get('content-length')
     const total = contentLength ? parseInt(contentLength, 10) : 0
     let loaded = 0
-    
+
     const reader = response.body.getReader()
     const chunks = []
-    
+
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
-      
+
       chunks.push(value)
       loaded += value.length
-      
+
       if (total) {
         // 更新进度
         const progress = (loaded / total) * 100
@@ -491,9 +622,9 @@ const preloadSong = async (song) => {
         }
       }
     }
-    
+
     const blob = new Blob(chunks, { type: 'audio/mpeg' }) // 假设是音频，具体类型可能需要根据响应头判断
-    
+
     // 获取时长
     const duration = await new Promise((resolve) => {
       const audio = new Audio(URL.createObjectURL(blob))
@@ -503,7 +634,7 @@ const preloadSong = async (song) => {
       }
       audio.onerror = () => resolve(0)
     })
-    
+
     preloadedSongs.set(song.id, {
       blob,
       duration,
@@ -522,9 +653,11 @@ const preloadSong = async (song) => {
 // 批量预下载选中歌曲
 const preloadSelectedSongs = async () => {
   if (selectedSongs.value.size === 0) return
-  
-  const songsToLoad = props.songs.filter(s => selectedSongs.value.has(s.song.id) && !preloadedSongs.has(s.song.id))
-  
+
+  const songsToLoad = props.songs.filter(
+    (s) => selectedSongs.value.has(s.song.id) && !preloadedSongs.has(s.song.id)
+  )
+
   for (const songItem of songsToLoad) {
     await preloadSong(songItem.song)
   }
@@ -539,7 +672,7 @@ const removePreloaded = (songId) => {
 const estimatedTotalDuration = computed(() => {
   let total = 0
   let count = 0
-  selectedSongs.value.forEach(id => {
+  selectedSongs.value.forEach((id) => {
     const data = preloadedSongs.get(id)
     if (data && data.duration) {
       total += data.duration
@@ -554,7 +687,7 @@ const toggleSelectAll = () => {
   if (isAllSelected.value) {
     selectedSongs.value = new Set()
   } else {
-    selectedSongs.value = new Set(props.songs.map(song => song.song.id))
+    selectedSongs.value = new Set(props.songs.map((song) => song.song.id))
   }
 }
 
@@ -577,7 +710,10 @@ const closeDialog = () => {
 const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
   try {
     // 检查是否为播客内容
-    const isPodcast = song.musicPlatform === 'netease-podcast' || song.sourceInfo?.type === 'voice' || (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
+    const isPodcast =
+      song.musicPlatform === 'netease-podcast' ||
+      song.sourceInfo?.type === 'voice' ||
+      (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
     const options = isPodcast ? { unblock: false } : {}
 
     // 直接调用统一的getMusicUrl方法，它会自动处理playUrl优先级
@@ -592,7 +728,7 @@ const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
     // 如果是第一次失败且有音乐平台信息，则自动重试一次
     if (retryCount === 0 && song.musicPlatform && song.musicId) {
       console.log(`正在重试获取音乐链接: ${song.musicPlatform}, ${song.musicId}`)
-      await new Promise(resolve => setTimeout(resolve, 1000)) // 等待1秒后重试
+      await new Promise((resolve) => setTimeout(resolve, 1000)) // 等待1秒后重试
       return getMusicUrlForDownload(song, quality, 1)
     }
 
@@ -625,19 +761,19 @@ const saveFile = (blob, filename) => {
 const processAndMergeAudio = async (selectedSongsList) => {
   const audioContext = new (window.AudioContext || window.webkitAudioContext)()
   const audioBuffers = []
-  
+
   try {
     // 1. 下载并解码所有音频
     for (let i = 0; i < selectedSongsList.length; i++) {
       const songItem = selectedSongsList[i]
       const song = songItem.song
-      
+
       currentDownloadSong.value = `${song.artist} - ${song.title}`
       processingStatus.value = `正在下载 (${i + 1}/${selectedSongsList.length}): ${song.title}`
-      
+
       try {
         let arrayBuffer
-        
+
         // 检查是否有预下载缓存
         if (preloadedSongs.has(song.id) && !preloadedSongs.get(song.id).loading) {
           console.log(`使用预下载缓存: ${song.title}`)
@@ -648,16 +784,16 @@ const processAndMergeAudio = async (selectedSongsList) => {
           const blob = await downloadAsBlob(audioUrl)
           arrayBuffer = await blob.arrayBuffer()
         }
-        
+
         processingStatus.value = `正在解码: ${song.title}`
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-        
+
         // 标准化处理
         if (normalizeAudio.value) {
           processingStatus.value = `正在标准化: ${song.title}`
           normalizeBuffer(audioBuffer, targetDb.value)
         }
-        
+
         audioBuffers.push(audioBuffer)
         downloadedCount.value++
       } catch (error) {
@@ -675,19 +811,19 @@ const processAndMergeAudio = async (selectedSongsList) => {
 
     // 2. 合并音频
     processingStatus.value = '正在合并音频...'
-    await new Promise(r => setTimeout(r, 100)) // UI update
-    
+    await new Promise((r) => setTimeout(r, 100)) // UI update
+
     const totalLength = audioBuffers.reduce((acc, buf) => acc + buf.length, 0)
     const numberOfChannels = 2 // 强制立体声
     const sampleRate = audioBuffers[0].sampleRate // 使用第一个音频的采样率
-    
+
     const mergedBuffer = audioContext.createBuffer(numberOfChannels, totalLength, sampleRate)
-    
+
     let offset = 0
     for (const buffer of audioBuffers) {
       for (let channel = 0; channel < numberOfChannels; channel++) {
         const mergedChannelData = mergedBuffer.getChannelData(channel)
-        
+
         // 如果源音频是单声道，复制到两个声道；如果是立体声，对应复制
         if (buffer.numberOfChannels === 1) {
           mergedChannelData.set(buffer.getChannelData(0), offset)
@@ -703,12 +839,13 @@ const processAndMergeAudio = async (selectedSongsList) => {
     }
 
     // 3. 编码/导出
-    processingStatus.value = exportFormat.value === 'mp3' ? '正在编码 MP3 (可能需要一些时间)...' : '正在生成 WAV...'
-    await new Promise(r => setTimeout(r, 100))
-    
+    processingStatus.value =
+      exportFormat.value === 'mp3' ? '正在编码 MP3 (可能需要一些时间)...' : '正在生成 WAV...'
+    await new Promise((r) => setTimeout(r, 100))
+
     let resultBlob
     let extension
-    
+
     if (exportFormat.value === 'mp3') {
       resultBlob = await encodeToMp3(mergedBuffer)
       extension = 'mp3'
@@ -716,22 +853,22 @@ const processAndMergeAudio = async (selectedSongsList) => {
       resultBlob = encodeToWav(mergedBuffer)
       extension = 'wav'
     }
-    
+
     // 4. 下载合并后的文件
     let filename
     if (customFilename.value && customFilename.value.trim()) {
       filename = customFilename.value.trim()
-      
+
       // 替换占位符
       const dateStr = new Date().toISOString().split('T')[0]
-      const allSongsStr = selectedSongsList.map(item => item.song.title).join(' ')
-      
+      const allSongsStr = selectedSongsList.map((item) => item.song.title).join(' ')
+
       filename = filename.replace(/{date}/g, dateStr)
       filename = filename.replace(/{songs}/g, allSongsStr)
-      
+
       // 移除非法字符
       filename = filename.replace(/[<>:"/\\|?*]/g, '_')
-      
+
       // 确保后缀正确
       const extRegex = new RegExp(`\\.${extension}$`, 'i')
       if (!extRegex.test(filename)) {
@@ -740,23 +877,22 @@ const processAndMergeAudio = async (selectedSongsList) => {
         if (filename.toLowerCase().endsWith('.mp3')) {
           filename = filename.slice(0, -4) + '.' + extension
         } else if (filename.toLowerCase().endsWith('.wav')) {
-           filename = filename.slice(0, -4) + '.' + extension
+          filename = filename.slice(0, -4) + '.' + extension
         } else {
-           filename += '.' + extension
+          filename += '.' + extension
         }
       }
     } else {
       const dateStr = new Date().toISOString().split('T')[0]
       filename = `排期合并_${dateStr}_${selectedSongsList.length}首.${extension}`
     }
-    
+
     // 更新状态显示为最终文件名
     processingStatus.value = `处理完成: ${filename}`
     // 清除当前下载歌曲显示，避免误导
     currentDownloadSong.value = ''
-    
+
     saveFile(resultBlob, filename)
-    
   } catch (error) {
     console.error('合并过程出错:', error)
     if (window.$showNotification) {
@@ -772,7 +908,7 @@ const processAndMergeAudio = async (selectedSongsList) => {
 const normalizeBuffer = (buffer, targetDbValue) => {
   const targetGain = Math.pow(10, targetDbValue / 20)
   let maxPeak = 0
-  
+
   // 寻找峰值
   for (let c = 0; c < buffer.numberOfChannels; c++) {
     const data = buffer.getChannelData(c)
@@ -781,14 +917,14 @@ const normalizeBuffer = (buffer, targetDbValue) => {
       if (abs > maxPeak) maxPeak = abs
     }
   }
-  
+
   if (maxPeak === 0) return
-  
+
   // 计算增益并应用
   const gain = targetGain / maxPeak
-  // 如果当前峰值已经小于目标（且不想放大噪音），可以限制 gain <= 1? 
+  // 如果当前峰值已经小于目标（且不想放大噪音），可以限制 gain <= 1?
   // 但"标准化"通常意味着放大或缩小到目标。这里我们直接应用。
-  
+
   for (let c = 0; c < buffer.numberOfChannels; c++) {
     const data = buffer.getChannelData(c)
     for (let i = 0; i < data.length; i++) {
@@ -804,68 +940,68 @@ const encodeToMp3 = async (buffer) => {
       const channels = 2
       const sampleRate = buffer.sampleRate
       const kbps = 128 // 128kbps 标准音质
-      
+
       const mp3encoder = new Mp3Encoder(channels, sampleRate, kbps)
       const mp3Data = []
-      
+
       const leftData = buffer.getChannelData(0)
       const rightData = buffer.getChannelData(1) // 之前合并时已确保是双声道
-      
+
       const sampleBlockSize = 1152 // MP3 frame size
       const totalSamples = leftData.length
-      
+
       let processed = 0
-      
+
       const processChunk = () => {
         // 使用时间片处理：每次运行最多 50ms，以保证UI不卡顿的同时最大化吞吐量
         // 这比固定样本数快得多，因为它减少了 setTimeout 的调用次数
         const startTime = performance.now()
         const timeSlice = 50 // ms
-        
+
         while (processed < totalSamples) {
           // 每次处理一个较小的基本块 (例如 10 帧 = 11520 样本)
           // 保持小块是为了频繁检查时间，防止单个循环过长
-          const chunkSamples = 11520 
+          const chunkSamples = 11520
           const end = Math.min(processed + chunkSamples, totalSamples)
-          
+
           const leftChunk = new Int16Array(end - processed)
           const rightChunk = new Int16Array(end - processed)
-          
+
           for (let i = 0; i < end - processed; i++) {
             // Float32 -> Int16
             const idx = processed + i
-            
+
             // Clamp and scale
             let l = leftData[idx]
             let r = rightData[idx]
-            
+
             // 简单的 clamping 优化
             if (l > 1) l = 1
             else if (l < -1) l = -1
-            
+
             if (r > 1) r = 1
             else if (r < -1) r = -1
-            
-            leftChunk[i] = l < 0 ? l * 0x8000 : l * 0x7FFF
-            rightChunk[i] = r < 0 ? r * 0x8000 : r * 0x7FFF
+
+            leftChunk[i] = l < 0 ? l * 0x8000 : l * 0x7fff
+            rightChunk[i] = r < 0 ? r * 0x8000 : r * 0x7fff
           }
-          
+
           const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk)
           if (mp3buf.length > 0) {
             mp3Data.push(mp3buf)
           }
-          
+
           processed = end
-          
+
           // 检查时间片
           if (performance.now() - startTime > timeSlice) {
             // 时间片用完，更新进度并让出主线程
-            processingStatus.value = `正在编码 MP3: ${Math.round(processed / totalSamples * 100)}%`
+            processingStatus.value = `正在编码 MP3: ${Math.round((processed / totalSamples) * 100)}%`
             setTimeout(processChunk, 0)
             return
           }
         }
-        
+
         // 全部处理完成
         const mp3buf = mp3encoder.flush()
         if (mp3buf.length > 0) {
@@ -873,9 +1009,8 @@ const encodeToMp3 = async (buffer) => {
         }
         resolve(new Blob(mp3Data, { type: 'audio/mp3' }))
       }
-      
+
       processChunk()
-      
     } catch (e) {
       reject(e)
     }
@@ -888,24 +1023,24 @@ const encodeToWav = (buffer) => {
   const sampleRate = buffer.sampleRate
   const format = 1 // PCM
   const bitDepth = 16
-  
+
   let result
   if (numChannels === 2) {
     result = interleave(buffer.getChannelData(0), buffer.getChannelData(1))
   } else {
     result = buffer.getChannelData(0)
   }
-  
+
   return encodeWAV(result, numChannels, sampleRate, format, bitDepth)
 }
 
 const interleave = (inputL, inputR) => {
   const length = inputL.length + inputR.length
   const result = new Float32Array(length)
-  
+
   let index = 0
   let inputIndex = 0
-  
+
   while (index < length) {
     result[index++] = inputL[inputIndex]
     result[index++] = inputR[inputIndex]
@@ -917,10 +1052,10 @@ const interleave = (inputL, inputR) => {
 const encodeWAV = (samples, numChannels, sampleRate, format, bitDepth) => {
   const bytesPerSample = bitDepth / 8
   const blockAlign = numChannels * bytesPerSample
-  
+
   const buffer = new ArrayBuffer(44 + samples.length * bytesPerSample)
   const view = new DataView(buffer)
-  
+
   /* RIFF identifier */
   writeString(view, 0, 'RIFF')
   /* RIFF chunk length */
@@ -947,20 +1082,20 @@ const encodeWAV = (samples, numChannels, sampleRate, format, bitDepth) => {
   writeString(view, 36, 'data')
   /* data chunk length */
   view.setUint32(40, samples.length * bytesPerSample, true)
-  
+
   if (bitDepth === 16) {
     floatTo16BitPCM(view, 44, samples)
   } else {
     floatTo32BitPCM(view, 44, samples)
   }
-  
+
   return new Blob([view], { type: 'audio/wav' })
 }
 
 const floatTo16BitPCM = (output, offset, input) => {
   for (let i = 0; i < input.length; i++, offset += 2) {
     const s = Math.max(-1, Math.min(1, input[i]))
-    output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true)
+    output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
   }
 }
 
@@ -986,18 +1121,18 @@ const startDownload = async () => {
   downloadErrors.value = []
   processingStatus.value = ''
 
-  const selectedSongsList = props.songs.filter(song => selectedSongs.value.has(song.song.id))
+  const selectedSongsList = props.songs.filter((song) => selectedSongs.value.has(song.song.id))
   totalCount.value = selectedSongsList.length
-  
+
   // 检查是否为合并模式
   if (mergeSongs.value) {
     await processAndMergeAudio(selectedSongsList)
-    
+
     // 合并模式完成后
     if (downloadErrors.value.length === 0) {
       // 清除预下载缓存
       preloadedSongs.clear()
-      
+
       setTimeout(() => {
         downloading.value = false
         closeDialog()
@@ -1024,13 +1159,11 @@ const startDownload = async () => {
       else if (audioUrl.includes('.wav')) extension = 'wav'
       else if (audioUrl.includes('.ogg')) extension = 'ogg'
 
-      const filename = `${song.artist} - ${song.title}.${extension}`
-          .replace(/[<>:"/\\|?*]/g, '_') // 替换不合法的文件名字符
+      const filename = `${song.artist} - ${song.title}.${extension}`.replace(/[<>:"/\\|?*]/g, '_') // 替换不合法的文件名字符
 
       // 下载文件 (复用 downloadAsBlob 和 saveFile)
       const blob = await downloadAsBlob(audioUrl)
       saveFile(blob, filename)
-
     } catch (error) {
       console.error(`下载失败: ${song.title}`, error)
       downloadErrors.value.push({
@@ -1045,9 +1178,8 @@ const startDownload = async () => {
     }
 
     // 添加延迟避免请求过于频繁
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500))
   }
-
 
   currentDownloadSong.value = ''
 
@@ -1057,7 +1189,10 @@ const startDownload = async () => {
     if (downloadErrors.value.length === 0) {
       window.$showNotification(`成功下载 ${successCount} 首歌曲`, 'success')
     } else {
-      window.$showNotification(`下载完成，成功 ${successCount} 首，失败 ${downloadErrors.value.length} 首`, 'warning')
+      window.$showNotification(
+        `下载完成，成功 ${successCount} 首，失败 ${downloadErrors.value.length} 首`,
+        'warning'
+      )
     }
   }
 
@@ -1073,32 +1208,35 @@ const startDownload = async () => {
 }
 
 // 监听显示状态变化，重置状态
-watch(() => props.show, (newShow) => {
-  if (newShow) {
-    selectedSongs.value = new Set(props.songs.map(song => song.song.id))
-    // 如果没有正在下载，重置状态
-    if (!downloading.value) {
-      downloadedCount.value = 0
-      totalCount.value = 0
-      currentDownloadSong.value = ''
-      downloadErrors.value = []
-    }
-    selectedQuality.value = getQuality('netease')
-    
-    // 加载自定义文件名预设
-    const savedPreset = localStorage.getItem('voicehub_filename_preset')
-    if (savedPreset) {
-      customFilename.value = savedPreset
-    }
-    
-    // 加载音量标准化预设
-    const savedDbPreset = localStorage.getItem('voicehub_db_preset')
-    if (savedDbPreset) {
-      targetDb.value = parseFloat(savedDbPreset)
-      normalizeAudio.value = true // 自动开启标准化
+watch(
+  () => props.show,
+  (newShow) => {
+    if (newShow) {
+      selectedSongs.value = new Set(props.songs.map((song) => song.song.id))
+      // 如果没有正在下载，重置状态
+      if (!downloading.value) {
+        downloadedCount.value = 0
+        totalCount.value = 0
+        currentDownloadSong.value = ''
+        downloadErrors.value = []
+      }
+      selectedQuality.value = getQuality('netease')
+
+      // 加载自定义文件名预设
+      const savedPreset = localStorage.getItem('voicehub_filename_preset')
+      if (savedPreset) {
+        customFilename.value = savedPreset
+      }
+
+      // 加载音量标准化预设
+      const savedDbPreset = localStorage.getItem('voicehub_db_preset')
+      if (savedDbPreset) {
+        targetDb.value = parseFloat(savedDbPreset)
+        normalizeAudio.value = true // 自动开启标准化
+      }
     }
   }
-})
+)
 
 // 插入占位符
 const insertPlaceholder = (placeholder) => {
@@ -1108,10 +1246,10 @@ const insertPlaceholder = (placeholder) => {
 // 保存文件名预设
 const saveFilenamePreset = () => {
   if (!customFilename.value) return
-  
+
   localStorage.setItem('voicehub_filename_preset', customFilename.value)
   showPresetSaved.value = true
-  
+
   setTimeout(() => {
     showPresetSaved.value = false
   }, 2000)
@@ -1121,7 +1259,7 @@ const saveFilenamePreset = () => {
 const saveDbPreset = () => {
   localStorage.setItem('voicehub_db_preset', targetDb.value.toString())
   showDbPresetSaved.value = true
-  
+
   setTimeout(() => {
     showDbPresetSaved.value = false
   }, 2000)
@@ -1155,7 +1293,9 @@ const saveDbPreset = () => {
 
 .scale-enter-active,
 .scale-leave-active {
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .scale-enter-from,
@@ -1182,7 +1322,11 @@ const saveDbPreset = () => {
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
 }
 </style>

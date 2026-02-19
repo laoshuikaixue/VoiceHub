@@ -3,16 +3,23 @@
     <slot v-if="!hasError" />
 
     <!-- 错误状态 -->
-    <div v-else class="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-zinc-900/30 border border-dashed border-zinc-800 rounded-3xl animate-in fade-in zoom-in duration-300">
+    <div
+      v-else
+      class="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-zinc-900/30 border border-dashed border-zinc-800 rounded-3xl animate-in fade-in zoom-in duration-300"
+    >
       <div class="relative mb-6">
-        <div class="absolute inset-0 blur-2xl bg-red-500/10 rounded-full"></div>
-        <div class="relative flex items-center justify-center w-16 h-16 bg-zinc-950 border border-red-500/30 rounded-2xl text-red-500 shadow-xl shadow-black/40">
+        <div class="absolute inset-0 blur-2xl bg-red-500/10 rounded-full" />
+        <div
+          class="relative flex items-center justify-center w-16 h-16 bg-zinc-950 border border-red-500/30 rounded-2xl text-red-500 shadow-xl shadow-black/40"
+        >
           <AlertCircle :size="32" stroke-width="1.5" />
         </div>
       </div>
 
       <h3 class="text-xl font-black text-zinc-100 tracking-tight mb-2">{{ errorTitle }}</h3>
-      <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest max-w-xs mb-8">{{ errorMessage }}</p>
+      <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest max-w-xs mb-8">
+        {{ errorMessage }}
+      </p>
 
       <div class="flex flex-wrap items-center justify-center gap-4">
         <button
@@ -45,10 +52,15 @@
         <div v-if="showErrorDetails" class="mt-8 w-full max-w-2xl text-left">
           <div class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl">
             <div class="flex items-center gap-2 mb-3">
-              <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">系统调试信息</span>
+              <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                >系统调试信息</span
+              >
             </div>
-            <pre class="text-[10px] font-mono text-zinc-500 leading-relaxed overflow-x-auto p-4 bg-black/30 rounded-xl whitespace-pre-wrap break-all">{{ errorDetails }}</pre>
+            <pre
+              class="text-[10px] font-mono text-zinc-500 leading-relaxed overflow-x-auto p-4 bg-black/30 rounded-xl whitespace-pre-wrap break-all"
+              >{{ errorDetails }}</pre
+            >
           </div>
         </div>
       </transition>

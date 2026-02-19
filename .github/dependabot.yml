@@ -6,83 +6,83 @@
 version: 2
 updates:
   # Enable version updates for npm
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "saturday"
-      time: "09:00"
-      timezone: "Asia/Shanghai"
+      interval: 'weekly'
+      day: 'saturday'
+      time: '09:00'
+      timezone: 'Asia/Shanghai'
     open-pull-requests-limit: 10
     commit-message:
-      prefix: "chore"
-      prefix-development: "chore"
-      include: "scope"
+      prefix: 'chore'
+      prefix-development: 'chore'
+      include: 'scope'
     labels:
-      - "dependencies"
-      - "automated"
-      - "chore"
+      - 'dependencies'
+      - 'automated'
+      - 'chore'
     allow:
-      - dependency-type: "direct"
-      - dependency-type: "indirect"
+      - dependency-type: 'direct'
+      - dependency-type: 'indirect'
     ignore:
       # 忽略主要版本更新，避免破坏性变更
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
     groups:
       # 将所有非重大（minor/patch）更新合并到一个 PR
       npm-minor-patch:
         applies-to: version-updates
         patterns:
-          - "*"
+          - '*'
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
 
   # Enable version updates for Docker
-  - package-ecosystem: "docker"
-    directory: "/"
+  - package-ecosystem: 'docker'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "saturday"
-      time: "09:00"
-      timezone: "Asia/Shanghai"
+      interval: 'weekly'
+      day: 'saturday'
+      time: '09:00'
+      timezone: 'Asia/Shanghai'
     open-pull-requests-limit: 5
     reviewers:
-      - "laoshuikaixue"
+      - 'laoshuikaixue'
     assignees:
-      - "laoshuikaixue"
+      - 'laoshuikaixue'
     commit-message:
-      prefix: "chore"
-      include: "scope"
+      prefix: 'chore'
+      include: 'scope'
     labels:
-      - "dependencies"
-      - "automated"
-      - "chore"
+      - 'dependencies'
+      - 'automated'
+      - 'chore'
     groups:
       docker-all:
         applies-to: version-updates
         patterns:
-          - "*"
+          - '*'
 
   # Enable version updates for GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "saturday"
-      time: "09:00"
-      timezone: "Asia/Shanghai"
+      interval: 'weekly'
+      day: 'saturday'
+      time: '09:00'
+      timezone: 'Asia/Shanghai'
     open-pull-requests-limit: 5
     commit-message:
-      prefix: "chore"
-      include: "scope"
+      prefix: 'chore'
+      include: 'scope'
     labels:
-      - "dependencies"
-      - "automated"
-      - "chore"
+      - 'dependencies'
+      - 'automated'
+      - 'chore'
     groups:
       gha-all:
         applies-to: version-updates
         patterns:
-          - "*"
+          - '*'

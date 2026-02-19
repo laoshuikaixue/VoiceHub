@@ -7,43 +7,36 @@
         <!-- 移动端日期导航按钮 -->
         <div class="mobile-date-nav">
           <div class="nav-capsule">
-            <button
-                :disabled="currentDateIndex === 0"
-                class="nav-btn prev"
-                @click="previousDate"
-            >
-              <Icon :size="18" name="chevron-left"/>
+            <button :disabled="currentDateIndex === 0" class="nav-btn prev" @click="previousDate">
+              <Icon :size="18" name="chevron-left" />
             </button>
-            <div
-                class="current-date-display"
-                @click="toggleDatePicker"
-            >
-              <span class="date-text" v-html="currentDateFormatted"></span>
-              <Icon :size="12" class="dropdown-icon" name="chevron-down"/>
+            <div class="current-date-display" @click="toggleDatePicker">
+              <span class="date-text" v-html="currentDateFormatted" />
+              <Icon :size="12" class="dropdown-icon" name="chevron-down" />
             </div>
             <button
-                :disabled="currentDateIndex >= availableDates.length - 1"
-                class="nav-btn next"
-                @click="nextDate"
+              :disabled="currentDateIndex >= availableDates.length - 1"
+              class="nav-btn next"
+              @click="nextDate"
             >
-              <Icon :size="18" name="chevron-right"/>
+              <Icon :size="18" name="chevron-right" />
             </button>
           </div>
           <button
-              v-if="isNeteaseLoggedIn"
-              class="mobile-action-btn"
-              type="button"
-              @click="handleAddToPlaylistClick"
-              title="添加到歌单"
+            v-if="isNeteaseLoggedIn"
+            class="mobile-action-btn"
+            type="button"
+            title="添加到歌单"
+            @click="handleAddToPlaylistClick"
           >
-            <Icon :size="20" color="#ffffff" name="music"/>
+            <Icon :size="20" color="#ffffff" name="music" />
           </button>
         </div>
 
         <!-- 移动端日期选择弹窗 -->
         <Transition name="date-picker-fade">
           <div v-if="showDatePicker" class="date-picker-modal">
-            <div class="date-picker-overlay" @click="showDatePicker = false"></div>
+            <div class="date-picker-overlay" @click="showDatePicker = false" />
             <div class="date-picker-content">
               <div class="date-picker-header">
                 <h3>选择日期</h3>
@@ -51,18 +44,15 @@
               </div>
               <div class="date-picker-list">
                 <div
-                    v-for="(date, index) in availableDates"
-                    :key="date"
-                    v-ripple
-                    :class="['date-picker-item', { 'active': currentDateIndex === index }]"
-                    @click="selectDateAndClose(index)"
-                    v-html="formatDate(date, false)"
-                >
-                </div>
+                  v-for="(date, index) in availableDates"
+                  :key="date"
+                  v-ripple
+                  :class="['date-picker-item', { active: currentDateIndex === index }]"
+                  @click="selectDateAndClose(index)"
+                  v-html="formatDate(date, false)"
+                />
 
-                <div v-if="availableDates.length === 0" class="empty-dates">
-                  暂无排期日期
-                </div>
+                <div v-if="availableDates.length === 0" class="empty-dates">暂无排期日期</div>
               </div>
             </div>
           </div>
@@ -71,48 +61,43 @@
         <!-- 桌面端日期列表 -->
         <div class="date-list">
           <div
-              v-for="(date, index) in availableDates"
-              :key="date"
-              v-ripple
-              :class="['date-item', { 'active': currentDateIndex === index }]"
-              @click="selectDate(index)"
-              v-html="formatDate(date)"
-          >
-          </div>
+            v-for="(date, index) in availableDates"
+            :key="date"
+            v-ripple
+            :class="['date-item', { active: currentDateIndex === index }]"
+            @click="selectDate(index)"
+            v-html="formatDate(date)"
+          />
 
-          <div v-if="availableDates.length === 0" class="empty-dates">
-            暂无排期日期
-          </div>
+          <div v-if="availableDates.length === 0" class="empty-dates">暂无排期日期</div>
         </div>
         <!-- 添加滚动指示器 -->
         <div class="scroll-indicator-container">
-          <div class="scroll-indicator"></div>
+          <div class="scroll-indicator" />
         </div>
       </div>
 
       <!-- 分隔线 - 添加径向渐变效果 -->
-      <div class="vertical-divider"></div>
+      <div class="vertical-divider" />
 
       <!-- 右侧排期内容 -->
       <div class="schedule-content">
         <div class="schedule-header">
-          <h2 class="current-date" v-html="currentDateFormatted"></h2>
+          <h2 class="current-date" v-html="currentDateFormatted" />
           <button
-              v-if="isNeteaseLoggedIn"
-              class="add-playlist-btn"
-              type="button"
-              @click="handleAddToPlaylistClick"
+            v-if="isNeteaseLoggedIn"
+            class="add-playlist-btn"
+            type="button"
+            @click="handleAddToPlaylistClick"
           >
-            <Icon :size="18" color="#ffffff" name="music"/>
+            <Icon :size="18" color="#ffffff" name="music" />
             <span>添加到歌单</span>
           </button>
         </div>
 
         <!-- 使用Transition组件包裹内容 -->
         <Transition mode="out-in" name="schedule-fade">
-          <div v-if="loading" key="loading" class="loading">
-            加载中...
-          </div>
+          <div v-if="loading" key="loading" class="loading">加载中...</div>
 
           <div v-else-if="error" key="error" class="error">
             {{ error }}
@@ -133,13 +118,21 @@
           <div v-else :key="currentDate" class="schedule-items">
             <!-- 按播出时段分组显示 -->
             <template v-if="schedulesByPlayTime && Object.keys(schedulesByPlayTime).length > 0">
-              <div v-for="(schedules, playTimeId) in schedulesByPlayTime" :key="playTimeId" class="playtime-group">
+              <div
+                v-for="(schedules, playTimeId) in schedulesByPlayTime"
+                :key="playTimeId"
+                class="playtime-group"
+              >
                 <div v-if="shouldShowPlayTimeHeader(playTimeId)" class="playtime-header">
                   <h4 v-if="playTimeId === 'null'">未指定时段</h4>
                   <h4 v-else-if="getPlayTimeById(playTimeId)">
                     {{ getPlayTimeById(playTimeId).name }}
-                    <span v-if="getPlayTimeById(playTimeId).startTime || getPlayTimeById(playTimeId).endTime"
-                          class="playtime-time">
+                    <span
+                      v-if="
+                        getPlayTimeById(playTimeId).startTime || getPlayTimeById(playTimeId).endTime
+                      "
+                      class="playtime-time"
+                    >
                       ({{ formatPlayTimeRange(getPlayTimeById(playTimeId)) }})
                     </span>
                   </h4>
@@ -147,61 +140,117 @@
 
                 <div class="song-cards">
                   <div
-                      v-for="schedule in schedules"
-                      :key="schedule.id"
-                      :class="{ 
-                        'played': schedule.song.played && schedule.song.replayRequestCount === 0,
-                        'playing': isCurrentPlaying(schedule.song.id)
-                      }"
-                      class="song-card"
+                    v-for="schedule in schedules"
+                    :key="schedule.id"
+                    :class="{
+                      played: schedule.song.played && schedule.song.replayRequestCount === 0,
+                      playing: isCurrentPlaying(schedule.song.id)
+                    }"
+                    class="song-card"
                   >
                     <div class="song-card-main">
                       <!-- 歌曲封面 -->
                       <div class="song-cover" @click="togglePlaySong(schedule.song)">
                         <template v-if="schedule.song.cover">
                           <img
-                              :alt="schedule.song.title"
-                              :src="convertToHttps(schedule.song.cover)"
-                              class="cover-image"
-                              referrerpolicy="no-referrer"
-                              @error="handleImageError($event, schedule.song)"
-                          />
+                            :alt="schedule.song.title"
+                            :src="convertToHttps(schedule.song.cover)"
+                            class="cover-image"
+                            referrerpolicy="no-referrer"
+                            @error="handleImageError($event, schedule.song)"
+                          >
                         </template>
                         <div v-else class="text-cover">
                           {{ getFirstChar(schedule.song.title) }}
                         </div>
                         <!-- 播放按钮 (仅桌面端显示) -->
-                        <div v-if="(schedule.song.musicPlatform && schedule.song.musicId) || schedule.song.playUrl"
-                             class="play-button-overlay">
-                          <button :title="isCurrentPlaying(schedule.song.id) ? '暂停' : '播放'" class="play-button">
-                            <Icon v-if="isCurrentPlaying(schedule.song.id)" :size="16" color="white" name="pause"/>
-                            <Icon v-else :size="16" color="white" name="play"/>
+                        <div
+                          v-if="
+                            (schedule.song.musicPlatform && schedule.song.musicId) ||
+                            schedule.song.playUrl
+                          "
+                          class="play-button-overlay"
+                        >
+                          <button
+                            :title="isCurrentPlaying(schedule.song.id) ? '暂停' : '播放'"
+                            class="play-button"
+                          >
+                            <Icon
+                              v-if="isCurrentPlaying(schedule.song.id)"
+                              :size="16"
+                              color="white"
+                              name="pause"
+                            />
+                            <Icon v-else :size="16" color="white" name="play" />
                           </button>
                         </div>
                       </div>
 
                       <div class="song-info">
-                        <h3 :title="schedule.song.title + ' - ' + schedule.song.artist" class="song-title">
-                          <span class="title-text">{{ schedule.song.title }} - {{ schedule.song.artist }}</span>
+                        <h3
+                          :title="schedule.song.title + ' - ' + schedule.song.artist"
+                          class="song-title"
+                        >
+                          <span class="title-text"
+                            >{{ schedule.song.title }} - {{ schedule.song.artist }}</span
+                          >
                           <!-- 重播标识 -->
-                          <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge" title="重播歌曲">
+                          <span
+                            v-if="schedule.song.replayRequestCount > 0"
+                            class="replay-badge"
+                            title="重播歌曲"
+                          >
                             <Icon name="repeat" :size="14" />
                           </span>
                         </h3>
                         <div class="song-meta">
                           <span
-                              v-if="schedule.song.replayRequestCount > 0"
-                              :title="'重播申请人：' + (schedule.song.replayRequesters || []).map(r => r.displayName || r.name).join('、')"
-                              class="requester replay-requester">
-                            申请人：{{ (schedule.song.replayRequesters || [])[0] ? ((schedule.song.replayRequesters[0].displayName || schedule.song.replayRequesters[0].name) + (schedule.song.replayRequestCount > 1 ? '...' : '')) : '未知' }}
+                            v-if="schedule.song.replayRequestCount > 0"
+                            :title="
+                              '重播申请人：' +
+                              (schedule.song.replayRequesters || [])
+                                .map((r) => r.displayName || r.name)
+                                .join('、')
+                            "
+                            class="requester replay-requester"
+                          >
+                            申请人：{{
+                              (schedule.song.replayRequesters || [])[0]
+                                ? (schedule.song.replayRequesters[0].displayName ||
+                                    schedule.song.replayRequesters[0].name) +
+                                  (schedule.song.replayRequestCount > 1 ? '...' : '')
+                                : '未知'
+                            }}
                           </span>
                           <span
-                              v-else
-                              :title="(schedule.song.collaborators && schedule.song.collaborators.length > 0 ? '主投稿人: ' : '投稿人: ') + schedule.song.requester + (schedule.song.collaborators && schedule.song.collaborators.length ? '\n联合投稿: ' + schedule.song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
-                              class="requester">
+                            v-else
+                            :title="
+                              (schedule.song.collaborators && schedule.song.collaborators.length > 0
+                                ? '主投稿人: '
+                                : '投稿人: ') +
+                              schedule.song.requester +
+                              (schedule.song.collaborators && schedule.song.collaborators.length
+                                ? '\n联合投稿: ' +
+                                  schedule.song.collaborators
+                                    .map((c) => c.displayName || c.name)
+                                    .join(', ')
+                                : '')
+                            "
+                            class="requester"
+                          >
                             投稿人：{{ schedule.song.requester }}
-                            <span v-if="schedule.song.collaborators && schedule.song.collaborators.length > 0">
-                               & {{ schedule.song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
+                            <span
+                              v-if="
+                                schedule.song.collaborators &&
+                                schedule.song.collaborators.length > 0
+                              "
+                            >
+                              &
+                              {{
+                                schedule.song.collaborators
+                                  .map((c) => c.displayName || c.name)
+                                  .join(' & ')
+                              }}
                             </span>
                           </span>
                         </div>
@@ -210,8 +259,14 @@
                       <!-- 人数展示 -->
                       <div class="action-area">
                         <div class="vote-count">
-                          <span class="count">{{ schedule.song.replayRequestCount > 0 ? schedule.song.replayRequestCount : schedule.song.voteCount }}</span>
-                          <span class="label">{{ schedule.song.replayRequestCount > 0 ? '重播' : '热度' }}</span>
+                          <span class="count">{{
+                            schedule.song.replayRequestCount > 0
+                              ? schedule.song.replayRequestCount
+                              : schedule.song.voteCount
+                          }}</span>
+                          <span class="label">{{
+                            schedule.song.replayRequestCount > 0 ? '重播' : '热度'
+                          }}</span>
                         </div>
                       </div>
                     </div>
@@ -227,29 +282,38 @@
 
   <Teleport to="body">
     <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0 scale-95"
-        enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100 scale-100"
-        leave-to-class="opacity-0 scale-95"
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
     >
-      <div v-if="showPlaylistModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" @click.self="closePlaylistModal">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div
+        v-if="showPlaylistModal"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+        @click.self="closePlaylistModal"
+      >
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-        <div class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" @click.stop>
+        <div
+          class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          @click.stop
+        >
           <!-- 头部 -->
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+              <div
+                class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+              >
                 <Icon name="music" :size="24" />
               </div>
               <h3 class="text-xl font-black text-zinc-100 tracking-tight">添加到歌单</h3>
             </div>
             <button
-                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
-                type="button"
-                @click="closePlaylistModal"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+              type="button"
+              @click="closePlaylistModal"
             >
               <Icon name="x" :size="20" />
             </button>
@@ -257,15 +321,20 @@
 
           <!-- 主体 -->
           <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
-            <div v-if="!isNeteaseLoggedIn" class="flex flex-col items-center justify-center py-20 text-center">
-              <div class="w-20 h-20 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-6">
+            <div
+              v-if="!isNeteaseLoggedIn"
+              class="flex flex-col items-center justify-center py-20 text-center"
+            >
+              <div
+                class="w-20 h-20 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-6"
+              >
                 <Icon name="music" :size="40" class="text-zinc-500 opacity-20" />
               </div>
               <p class="text-zinc-400 font-medium mb-8">需要登录网易云音乐账号才能管理歌单</p>
               <button
-                  class="px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black transition-all active:scale-95 shadow-xl shadow-blue-900/20"
-                  type="button"
-                  @click="openLoginFromPlaylist"
+                class="px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black transition-all active:scale-95 shadow-xl shadow-blue-900/20"
+                type="button"
+                @click="openLoginFromPlaylist"
               >
                 立即登录
               </button>
@@ -273,13 +342,26 @@
 
             <div v-else class="space-y-8">
               <!-- 用户信息栏 -->
-              <div v-if="neteaseUser" class="flex items-center p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-2xl">
-                <div class="w-12 h-12 rounded-xl overflow-hidden bg-zinc-800 mr-4 ring-2 ring-zinc-700/50">
-                  <img v-if="neteaseUser.avatarUrl" :src="neteaseUser.avatarUrl" alt="avatar" class="w-full h-full object-cover">
+              <div
+                v-if="neteaseUser"
+                class="flex items-center p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-2xl"
+              >
+                <div
+                  class="w-12 h-12 rounded-xl overflow-hidden bg-zinc-800 mr-4 ring-2 ring-zinc-700/50"
+                >
+                  <img
+                    v-if="neteaseUser.avatarUrl"
+                    :src="neteaseUser.avatarUrl"
+                    alt="avatar"
+                    class="w-full h-full object-cover"
+                  >
                   <Icon v-else name="user" :size="24" class="w-full h-full p-3 text-zinc-500" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <span class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-0.5">当前账号</span>
+                  <span
+                    class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-0.5"
+                    >当前账号</span
+                  >
                   <span class="block font-bold text-zinc-100 truncate">
                     {{ neteaseUser.nickname || neteaseUser.userName || '网易云用户' }}
                   </span>
@@ -290,33 +372,39 @@
               <div class="space-y-6">
                 <!-- 选择歌单 -->
                 <div class="space-y-3">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">选择目标歌单</label>
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                    >选择目标歌单</label
+                  >
                   <div class="flex gap-3">
                     <CustomSelect
-                        v-model="selectedPlaylistId"
-                        :options="formattedPlaylists"
-                        label-key="displayName"
-                        value-key="id"
-                        placeholder="请选择歌单"
-                        class="flex-1"
+                      v-model="selectedPlaylistId"
+                      :options="formattedPlaylists"
+                      label-key="displayName"
+                      value-key="id"
+                      placeholder="请选择歌单"
+                      class="flex-1"
                     />
                     <button
-                        :disabled="playlistsLoading"
-                        class="w-10 h-[38px] flex items-center justify-center rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 transition-all disabled:opacity-50"
-                        title="刷新歌单列表"
-                        type="button"
-                        @click="reloadPlaylists"
+                      :disabled="playlistsLoading"
+                      class="w-10 h-[38px] flex items-center justify-center rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 transition-all disabled:opacity-50"
+                      title="刷新歌单列表"
+                      type="button"
+                      @click="reloadPlaylists"
                     >
-                      <Icon name="refresh" :size="16" :class="{ 'animate-spin': playlistsLoading }" />
+                      <Icon
+                        name="refresh"
+                        :size="16"
+                        :class="{ 'animate-spin': playlistsLoading }"
+                      />
                     </button>
                   </div>
 
                   <div v-if="selectedPlaylistId" class="px-1 pt-1">
                     <button
-                        :disabled="playlistActionLoading"
-                        class="text-[10px] font-black text-red-400/60 hover:text-red-400 flex items-center gap-1.5 transition-colors uppercase tracking-wider"
-                        type="button"
-                        @click="handleDeletePlaylist"
+                      :disabled="playlistActionLoading"
+                      class="text-[10px] font-black text-red-400/60 hover:text-red-400 flex items-center gap-1.5 transition-colors uppercase tracking-wider"
+                      type="button"
+                      @click="handleDeletePlaylist"
                     >
                       <Icon name="trash" :size="14" />
                       删除当前歌单
@@ -326,41 +414,49 @@
 
                 <div class="relative py-2 flex items-center justify-center">
                   <div class="absolute inset-0 flex items-center px-8">
-                    <div class="w-full border-t border-zinc-800/30"></div>
+                    <div class="w-full border-t border-zinc-800/30" />
                   </div>
-                  <span class="relative px-4 bg-zinc-900 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">或</span>
+                  <span
+                    class="relative px-4 bg-zinc-900 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]"
+                    >或</span
+                  >
                 </div>
 
                 <!-- 创建新歌单 -->
                 <div class="space-y-4">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">创建新歌单</label>
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                    >创建新歌单</label
+                  >
                   <div class="flex gap-3">
                     <input
-                        v-model="newPlaylistName"
-                        class="flex-1 px-5 py-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
-                        placeholder="输入新歌单名称"
-                        type="text"
-                    />
+                      v-model="newPlaylistName"
+                      class="flex-1 px-5 py-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
+                      placeholder="输入新歌单名称"
+                      type="text"
+                    >
                     <button
-                        :disabled="!newPlaylistName.trim() || playlistActionLoading"
-                        class="px-8 py-3.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
-                        type="button"
-                        @click="handleCreatePlaylist"
+                      :disabled="!newPlaylistName.trim() || playlistActionLoading"
+                      class="px-8 py-3.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
+                      type="button"
+                      @click="handleCreatePlaylist"
                     >
                       {{ playlistActionLoading ? '...' : '新建' }}
                     </button>
                   </div>
                   <label class="flex items-center gap-3 cursor-pointer group w-fit ml-1">
                     <div class="relative">
-                      <input
-                          v-model="newPlaylistPrivacy"
-                          class="sr-only peer"
-                          type="checkbox"
-                      >
-                      <div class="w-9 h-5 bg-zinc-800 rounded-full border border-zinc-700 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-all"></div>
-                      <div class="absolute left-1 top-1 w-3 h-3 bg-zinc-500 rounded-full transition-all peer-checked:left-5 peer-checked:bg-white"></div>
+                      <input v-model="newPlaylistPrivacy" class="sr-only peer" type="checkbox" >
+                      <div
+                        class="w-9 h-5 bg-zinc-800 rounded-full border border-zinc-700 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-all"
+                      />
+                      <div
+                        class="absolute left-1 top-1 w-3 h-3 bg-zinc-500 rounded-full transition-all peer-checked:left-5 peer-checked:bg-white"
+                      />
                     </div>
-                    <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors">设为隐私歌单</span>
+                    <span
+                      class="text-[10px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors"
+                      >设为隐私歌单</span
+                    >
                   </label>
                 </div>
               </div>
@@ -370,38 +466,58 @@
                 <div class="flex items-center justify-between px-1">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                     选择歌曲
-                    <span class="ml-2 px-2 py-0.5 rounded-md bg-blue-600/10 text-blue-500 text-[9px]">{{ selectedSongIds.length }} / {{ neteaseSongs.length }}</span>
+                    <span
+                      class="ml-2 px-2 py-0.5 rounded-md bg-blue-600/10 text-blue-500 text-[9px]"
+                      >{{ selectedSongIds.length }} / {{ neteaseSongs.length }}</span
+                    >
                   </label>
                   <div class="flex gap-4">
-                    <button class="text-[10px] font-black text-zinc-400 hover:text-blue-500 uppercase tracking-wider transition-colors" type="button" @click="selectAllNeteaseSongs">全选</button>
-                    <button class="text-[10px] font-black text-zinc-400 hover:text-red-400 uppercase tracking-wider transition-colors" type="button" @click="clearSelectedSongs">清空</button>
+                    <button
+                      class="text-[10px] font-black text-zinc-400 hover:text-blue-500 uppercase tracking-wider transition-colors"
+                      type="button"
+                      @click="selectAllNeteaseSongs"
+                    >
+                      全选
+                    </button>
+                    <button
+                      class="text-[10px] font-black text-zinc-400 hover:text-red-400 uppercase tracking-wider transition-colors"
+                      type="button"
+                      @click="clearSelectedSongs"
+                    >
+                      清空
+                    </button>
                   </div>
                 </div>
 
-                <div v-if="neteaseSongs.length === 0" class="flex flex-col items-center justify-center py-12 bg-zinc-950/30 border border-dashed border-zinc-800 rounded-3xl text-zinc-600">
+                <div
+                  v-if="neteaseSongs.length === 0"
+                  class="flex flex-col items-center justify-center py-12 bg-zinc-950/30 border border-dashed border-zinc-800 rounded-3xl text-zinc-600"
+                >
                   <Icon name="music" :size="32" class="mb-3 opacity-20" />
-                  <p class="text-[10px] font-black uppercase tracking-widest">当前日期没有来自网易云的歌曲</p>
+                  <p class="text-[10px] font-black uppercase tracking-widest">
+                    当前日期没有来自网易云的歌曲
+                  </p>
                 </div>
 
                 <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
-                      v-for="song in neteaseSongs"
-                      :key="song.id"
-                      :class="[
-                        'group flex items-center p-3.5 rounded-xl border transition-all cursor-pointer',
-                        isSongSelected(song.id)
-                          ? 'bg-blue-600/10 border-blue-500/30 shadow-lg'
-                          : 'bg-zinc-950 border-transparent hover:border-zinc-800'
-                      ]"
-                      @click="toggleSongSelection(song.id)"
+                    v-for="song in neteaseSongs"
+                    :key="song.id"
+                    :class="[
+                      'group flex items-center p-3.5 rounded-xl border transition-all cursor-pointer',
+                      isSongSelected(song.id)
+                        ? 'bg-blue-600/10 border-blue-500/30 shadow-lg'
+                        : 'bg-zinc-950 border-transparent hover:border-zinc-800'
+                    ]"
+                    @click="toggleSongSelection(song.id)"
                   >
                     <div
-                        :class="[
-                          'w-5 h-5 rounded-lg border-2 flex items-center justify-center mr-3.5 transition-all',
-                          isSongSelected(song.id)
-                            ? 'bg-blue-600 border-blue-600 text-white'
-                            : 'border-zinc-800 group-hover:border-zinc-700'
-                        ]"
+                      :class="[
+                        'w-5 h-5 rounded-lg border-2 flex items-center justify-center mr-3.5 transition-all',
+                        isSongSelected(song.id)
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'border-zinc-800 group-hover:border-zinc-700'
+                      ]"
                     >
                       <Icon v-if="isSongSelected(song.id)" name="check" :size="12" />
                     </div>
@@ -409,7 +525,9 @@
                       <div class="text-sm font-bold truncate text-zinc-100">
                         {{ song.title }}
                       </div>
-                      <div class="text-[10px] font-black uppercase tracking-widest truncate mt-0.5 text-zinc-500">
+                      <div
+                        class="text-[10px] font-black uppercase tracking-widest truncate mt-0.5 text-zinc-500"
+                      >
                         {{ song.artist }}
                       </div>
                     </div>
@@ -423,17 +541,19 @@
           <div v-if="isNeteaseLoggedIn" class="p-8 pt-0">
             <div class="flex gap-3">
               <button
-                  class="flex-1 px-6 py-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
-                  type="button"
-                  @click="closePlaylistModal"
+                class="flex-1 px-6 py-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
+                type="button"
+                @click="closePlaylistModal"
               >
                 取消
               </button>
               <button
-                  :disabled="!selectedPlaylistId || selectedSongIds.length === 0 || playlistActionLoading"
-                  class="flex-[2] px-6 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 uppercase tracking-widest"
-                  type="button"
-                  @click="handleAddSongsToPlaylist"
+                :disabled="
+                  !selectedPlaylistId || selectedSongIds.length === 0 || playlistActionLoading
+                "
+                class="flex-[2] px-6 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 uppercase tracking-widest"
+                type="button"
+                @click="handleAddSongsToPlaylist"
               >
                 <Icon v-if="playlistActionLoading" name="loader" :size="16" class="animate-spin" />
                 <Icon v-else name="plus" :size="16" />
@@ -448,39 +568,44 @@
 
   <Teleport to="body">
     <ConfirmDialog
-        :loading="playlistActionLoading"
-        :message="confirmDialog.message"
-        :show="confirmDialog.show"
-        :title="confirmDialog.title"
-        :type="confirmDialog.type"
-        @cancel="closeConfirmDialog"
-        @close="closeConfirmDialog"
-        @confirm="handleConfirmAction"
+      :loading="playlistActionLoading"
+      :message="confirmDialog.message"
+      :show="confirmDialog.show"
+      :title="confirmDialog.title"
+      :type="confirmDialog.type"
+      @cancel="closeConfirmDialog"
+      @close="closeConfirmDialog"
+      @confirm="handleConfirmAction"
     />
   </Teleport>
 
   <Teleport to="body">
     <NeteaseLoginModal
-        v-if="showLoginModal"
-        :show="showLoginModal"
-        @close="showLoginModal = false"
-        @login-success="handleLoginSuccess"
+      v-if="showLoginModal"
+      :show="showLoginModal"
+      @close="showLoginModal = false"
+      @login-success="handleLoginSuccess"
     />
   </Teleport>
 </template>
 
 <script setup>
-import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Music, X, User, RefreshCw, Trash2, Check, Plus, Loader2 } from 'lucide-vue-next'
-import {useSongs} from '~/composables/useSongs'
-import {useAudioPlayer} from '~/composables/useAudioPlayer'
-import {useMusicSources} from '~/composables/useMusicSources'
+import { useSongs } from '~/composables/useSongs'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useMusicSources } from '~/composables/useMusicSources'
 import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import {convertToHttps} from '~/utils/url'
+import { convertToHttps } from '~/utils/url'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
-import {addSongsToPlaylist, createPlaylist, deletePlaylist, getUserPlaylists} from '~/utils/neteaseApi'
+import {
+  addSongsToPlaylist,
+  createPlaylist,
+  deletePlaylist,
+  getUserPlaylists
+} from '~/utils/neteaseApi'
 
 const props = defineProps({
   schedules: {
@@ -501,7 +626,7 @@ const props = defineProps({
 const audioPlayer = useAudioPlayer()
 
 // 获取播放时段启用状态
-const {playTimeEnabled} = useSongs()
+const { playTimeEnabled } = useSongs()
 
 // 确保schedules不为null
 const safeSchedules = computed(() => props.schedules || [])
@@ -516,7 +641,7 @@ const neteaseCookie = ref('')
 const playlists = ref([])
 const playlistsLoading = ref(false)
 const formattedPlaylists = computed(() => {
-  return playlists.value.map(pl => ({
+  return playlists.value.map((pl) => ({
     ...pl,
     displayName: `${pl.name} (${pl.trackCount}首)`
   }))
@@ -547,7 +672,7 @@ const safeGroupedSchedules = computed(() => {
     return {}
   }
 
-  safeSchedules.value.forEach(schedule => {
+  safeSchedules.value.forEach((schedule) => {
     if (!schedule || !schedule.playDate) return
 
     try {
@@ -566,9 +691,11 @@ const safeGroupedSchedules = computed(() => {
 
   // 按日期排序
   const sortedGroups = {}
-  Object.keys(groups).sort().forEach(date => {
-    sortedGroups[date] = groups[date]
-  })
+  Object.keys(groups)
+    .sort()
+    .forEach((date) => {
+      sortedGroups[date] = groups[date]
+    })
 
   return sortedGroups
 })
@@ -587,20 +714,24 @@ const currentDate = computed(() => {
 })
 
 // 当日期列表变化时切换到今天日期
-watch(availableDates, (newDates) => {
-  if (newDates.length > 0) {
-    // 如果已经初始化过且有上次选中的日期，尝试保持
-    if (isInitialized.value && lastSelectedDate.value) {
-      const index = newDates.indexOf(lastSelectedDate.value)
-      if (index !== -1) {
-        currentDateIndex.value = index
-        return
+watch(
+  availableDates,
+  (newDates) => {
+    if (newDates.length > 0) {
+      // 如果已经初始化过且有上次选中的日期，尝试保持
+      if (isInitialized.value && lastSelectedDate.value) {
+        const index = newDates.indexOf(lastSelectedDate.value)
+        if (index !== -1) {
+          currentDateIndex.value = index
+          return
+        }
       }
+      // 否则（首次加载或选中日期不存在），执行自动跳转逻辑
+      findAndSelectTodayOrClosestDate()
     }
-    // 否则（首次加载或选中日期不存在），执行自动跳转逻辑
-    findAndSelectTodayOrClosestDate()
-  }
-}, {immediate: false})
+  },
+  { immediate: false }
+)
 
 // 自动滚动到指定日期项的函数
 const scrollToDateItem = async (index) => {
@@ -648,9 +779,9 @@ const findAndSelectTodayOrClosestDate = async () => {
     availableDates.value.forEach((dateStr, index) => {
       const dateParts = dateStr.split('-')
       const date = new Date(
-          parseInt(dateParts[0]),
-          parseInt(dateParts[1]) - 1,
-          parseInt(dateParts[2])
+        parseInt(dateParts[0]),
+        parseInt(dateParts[1]) - 1,
+        parseInt(dateParts[2])
       )
       const diff = date.getTime() - todayTime
 
@@ -672,9 +803,9 @@ const findAndSelectTodayOrClosestDate = async () => {
       availableDates.value.forEach((dateStr, index) => {
         const dateParts = dateStr.split('-')
         const date = new Date(
-            parseInt(dateParts[0]),
-            parseInt(dateParts[1]) - 1,
-            parseInt(dateParts[2])
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2])
         )
         const diff = todayTime - date.getTime()
 
@@ -690,7 +821,7 @@ const findAndSelectTodayOrClosestDate = async () => {
     }
   } else {
     // 移动端保持原有逻辑：优先选择今天
-    const todayIndex = availableDates.value.findIndex(date => date === todayStr)
+    const todayIndex = availableDates.value.findIndex((date) => date === todayStr)
 
     if (todayIndex >= 0) {
       // 如果找到今天的日期，则选择它
@@ -704,9 +835,9 @@ const findAndSelectTodayOrClosestDate = async () => {
       availableDates.value.forEach((dateStr, index) => {
         const dateParts = dateStr.split('-')
         const date = new Date(
-            parseInt(dateParts[0]),
-            parseInt(dateParts[1]) - 1,
-            parseInt(dateParts[2])
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2])
         )
         const diff = Math.abs(date.getTime() - todayTime)
 
@@ -822,7 +953,8 @@ const scrollToSelectedDateInModal = () => {
   const listCenter = listRect.height / 2
   const itemCenter = itemRect.height / 2
   const downwardOffset = 280
-  const scrollTop = modalList.scrollTop + (itemRect.top - listRect.top) - listCenter + itemCenter + downwardOffset
+  const scrollTop =
+    modalList.scrollTop + (itemRect.top - listRect.top) - listCenter + itemCenter + downwardOffset
 
   // 确保滚动位置不会超出边界
   const maxScrollTop = modalList.scrollHeight - modalList.clientHeight
@@ -900,7 +1032,6 @@ const handleResize = () => {
     }
   }, 100)
 }
-
 
 // 监听窗口大小变化
 onMounted(async () => {
@@ -1001,7 +1132,7 @@ const reloadPlaylists = async () => {
   if (!uid) return
   playlistsLoading.value = true
   try {
-    const {code, message, body} = await getUserPlaylists(uid, neteaseCookie.value)
+    const { code, message, body } = await getUserPlaylists(uid, neteaseCookie.value)
     const list = body && Array.isArray(body.playlist) ? body.playlist : []
     if (code === 200 && Array.isArray(list)) {
       playlists.value = list
@@ -1029,7 +1160,11 @@ const handleCreatePlaylist = async () => {
   if (!isNeteaseLoggedIn.value || !neteaseCookie.value) return
   playlistActionLoading.value = true
   try {
-    const {code, message, body} = await createPlaylist(name, newPlaylistPrivacy.value, neteaseCookie.value)
+    const { code, message, body } = await createPlaylist(
+      name,
+      newPlaylistPrivacy.value,
+      neteaseCookie.value
+    )
     if (code === 200) {
       const createdId = body && (body.id || (body.playlist && body.playlist.id))
       if (window.$showNotification) {
@@ -1067,13 +1202,19 @@ const handleDeletePlaylist = async () => {
     onConfirm: async () => {
       playlistActionLoading.value = true
       try {
-        const {code, message} = await deletePlaylist(selectedPlaylistId.value, neteaseCookie.value)
+        const { code, message } = await deletePlaylist(
+          selectedPlaylistId.value,
+          neteaseCookie.value
+        )
         if (code === 200) {
           if (window.$showNotification) {
             window.$showNotification('歌单删除成功', 'success')
           }
           await reloadPlaylists()
-          if (!playlists.value.find((pl) => pl.id === selectedPlaylistId.value) && playlists.value.length > 0) {
+          if (
+            !playlists.value.find((pl) => pl.id === selectedPlaylistId.value) &&
+            playlists.value.length > 0
+          ) {
             selectedPlaylistId.value = playlists.value[0].id
           }
           closeConfirmDialog()
@@ -1136,9 +1277,9 @@ const handleAddSongsToPlaylist = async () => {
   if (!selectedPlaylistId.value) return
   if (!isNeteaseLoggedIn.value || !neteaseCookie.value) return
   const tracks = neteaseSongs.value
-      .filter((song) => selectedSongIds.value.includes(song.id))
-      .map((song) => song.musicId)
-      .filter((id) => !!id)
+    .filter((song) => selectedSongIds.value.includes(song.id))
+    .map((song) => song.musicId)
+    .filter((id) => !!id)
   if (!tracks.length) {
     if (window.$showNotification) {
       window.$showNotification('请先选择要添加的歌曲', 'warning')
@@ -1147,7 +1288,11 @@ const handleAddSongsToPlaylist = async () => {
   }
   playlistActionLoading.value = true
   try {
-    const {code, message} = await addSongsToPlaylist(selectedPlaylistId.value, tracks, neteaseCookie.value)
+    const { code, message } = await addSongsToPlaylist(
+      selectedPlaylistId.value,
+      tracks,
+      neteaseCookie.value
+    )
     if (code === 200) {
       if (window.$showNotification) {
         window.$showNotification(`成功添加 ${tracks.length} 首歌曲到歌单`, 'success')
@@ -1167,7 +1312,6 @@ const handleAddSongsToPlaylist = async () => {
     playlistActionLoading.value = false
   }
 }
-
 
 // 切换歌曲播放/暂停
 const togglePlaySong = async (song) => {
@@ -1238,11 +1382,11 @@ const togglePlaySong = async (song) => {
 
           // 找到当前歌曲在播放列表中的索引
           songIndex = playlist.findIndex((s) => s.id === song.id)
-          if (songIndex === -1) songIndex = 0
+          if (songIndex === -1)
+            songIndex = 0
 
-          // 后台预取后续歌曲的播放链接（不阻塞当前播放）
-          ;
-          (async () => {
+            // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+          ;(async () => {
             for (let i = songIndex + 1; i < playlist.length; i++) {
               const s = playlist[i]
               if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
@@ -1290,7 +1434,7 @@ const getCurrentTimeSlot = (song) => {
     if (schedules.some((schedule) => schedule.song.id === song.id)) {
       return {
         id: playTimeId,
-        songs: schedules.map(schedule => schedule.song)
+        songs: schedules.map((schedule) => schedule.song)
       }
     }
   }
@@ -1299,7 +1443,7 @@ const getCurrentTimeSlot = (song) => {
 
 // 动态获取音乐URL
 const getMusicUrl = async (song) => {
-  const {musicPlatform: platform, musicId, playUrl, sourceInfo} = song
+  const { musicPlatform: platform, musicId, playUrl, sourceInfo } = song
 
   // 如果有自定义播放链接，优先使用
   if (playUrl && playUrl.trim()) {
@@ -1312,63 +1456,65 @@ const getMusicUrl = async (song) => {
     throw new Error('歌曲缺少音乐平台或音乐ID信息，无法获取播放链接')
   }
 
-  const {getQuality} = useAudioQuality()
-  const {getSongUrl} = useMusicSources()
+  const { getQuality } = useAudioQuality()
+  const { getSongUrl } = useMusicSources()
 
-  try {
-    const quality = getQuality(platform)
+  const quality = getQuality(platform)
 
-    // 使用统一组件的音源选择逻辑
-    console.log(`[ScheduleList] 使用统一音源选择逻辑获取播放链接: platform=${platform}, musicId=${musicId}`)
+  // 使用统一组件的音源选择逻辑
+  console.log(
+    `[ScheduleList] 使用统一音源选择逻辑获取播放链接: platform=${platform}, musicId=${musicId}`
+  )
 
-    // 检查是否为播客内容
-    const isPodcast = platform === 'netease-podcast' || sourceInfo?.type === 'voice' || sourceInfo?.source === 'netease-backup' && sourceInfo?.type === 'voice'
+  // 检查是否为播客内容
+  const isPodcast =
+    platform === 'netease-podcast' ||
+    sourceInfo?.type === 'voice' ||
+    (sourceInfo?.source === 'netease-backup' && sourceInfo?.type === 'voice')
 
-    // 如果是播客内容，强制 unblock=false
-    const options = isPodcast ? {unblock: false} : {}
+  // 如果是播客内容，强制 unblock=false
+  const options = isPodcast ? { unblock: false } : {}
 
-    const result = await getSongUrl(musicId, quality, platform, undefined, options)
-    if (result?.success && result.url) {
-      console.log('[ScheduleList] 统一音源选择获取音乐URL成功')
-      return result.url
-    }
-    console.warn('[ScheduleList] 统一音源选择未返回有效链接，回退到直接调用 vkeys')
-
-    // 回退到 vkeys
-    let apiUrl
-    if (platform === 'netease') {
-      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
-    } else if (platform === 'tencent') {
-      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
-    } else {
-      throw new Error('不支持的音乐平台')
-    }
-
-    const response = await fetch(apiUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    })
-
-    if (!response.ok) {
-      throw new Error('vkeys API请求失败')
-    }
-
-    const data = await response.json()
-    if (data.code === 200 && data.data && data.data.url) {
-      // 将HTTP URL改为HTTPS
-      let url = data.data.url
-      if (url.startsWith('http://')) {
-        url = url.replace('http://', 'https://')
-      }
-      console.log('[ScheduleList] vkeys API获取音乐URL成功')
-      return url
-    }
-
-    throw new Error('所有音源都无法获取音乐播放链接')
-  } catch (error) {
-    throw error
+  const result = await getSongUrl(musicId, quality, platform, undefined, options)
+  if (result?.success && result.url) {
+    console.log('[ScheduleList] 统一音源选择获取音乐URL成功')
+    return result.url
   }
+  console.warn('[ScheduleList] 统一音源选择未返回有效链接，回退到直接调用 vkeys')
+
+  // 回退到 vkeys
+  let apiUrl
+  if (platform === 'netease') {
+    apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
+  } else if (platform === 'tencent') {
+    apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
+  } else {
+    throw new Error('不支持的音乐平台')
+  }
+
+  const response = await fetch(apiUrl, {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+  })
+
+  if (!response.ok) {
+    throw new Error('vkeys API请求失败')
+  }
+
+  const data = await response.json()
+  if (data.code === 200 && data.data && data.data.url) {
+    // 将HTTP URL改为HTTPS
+    let url = data.data.url
+    if (url.startsWith('http://')) {
+      url = url.replace('http://', 'https://')
+    }
+    console.log('[ScheduleList] vkeys API获取音乐URL成功')
+    return url
+  }
+
+  throw new Error('所有音源都无法获取音乐播放链接')
 }
 
 // 判断当前是否正在播放指定ID的歌曲
@@ -1381,9 +1527,9 @@ const formatPlayTime = (schedule) => {
   try {
     // 根据歌曲播放状态显示不同文本
     if (schedule.song && schedule.song.played) {
-      return "已播放"
+      return '已播放'
     } else {
-      return "已排期"
+      return '已排期'
     }
   } catch (e) {
     return '时间未定'
@@ -1393,111 +1539,116 @@ const formatPlayTime = (schedule) => {
 // 按播出时段分组的排期
 const schedulesByPlayTime = computed(() => {
   if (!currentDateSchedules.value || currentDateSchedules.value.length === 0) {
-    return null;
+    return null
   }
 
-  const grouped = {};
+  const grouped = {}
 
   // 先对排期按时段和序号排序
   const sortedSchedules = [...currentDateSchedules.value].sort((a, b) => {
     // 先按时段分组，确保转换为字符串
-    const playTimeIdA = a.playTimeId !== null && a.playTimeId !== undefined ? String(a.playTimeId) : 'null';
-    const playTimeIdB = b.playTimeId !== null && b.playTimeId !== undefined ? String(b.playTimeId) : 'null';
+    const playTimeIdA =
+      a.playTimeId !== null && a.playTimeId !== undefined ? String(a.playTimeId) : 'null'
+    const playTimeIdB =
+      b.playTimeId !== null && b.playTimeId !== undefined ? String(b.playTimeId) : 'null'
 
     if (playTimeIdA !== playTimeIdB) {
       // 未指定时段排在最后
-      if (playTimeIdA === 'null') return 1;
-      if (playTimeIdB === 'null') return -1;
+      if (playTimeIdA === 'null') return 1
+      if (playTimeIdB === 'null') return -1
       // 使用数字比较而不是字符串比较
-      return parseInt(playTimeIdA) - parseInt(playTimeIdB);
+      return parseInt(playTimeIdA) - parseInt(playTimeIdB)
     }
 
     // 时段相同则按序号排序
-    return a.sequence - b.sequence;
-  });
+    return a.sequence - b.sequence
+  })
 
   // 分组
   for (const schedule of sortedSchedules) {
     // 确保正确处理播放时段ID
-    const playTimeId = schedule.playTimeId !== null && schedule.playTimeId !== undefined ? String(schedule.playTimeId) : 'null';
+    const playTimeId =
+      schedule.playTimeId !== null && schedule.playTimeId !== undefined
+        ? String(schedule.playTimeId)
+        : 'null'
 
     if (!grouped[playTimeId]) {
-      grouped[playTimeId] = [];
+      grouped[playTimeId] = []
     }
 
-    grouped[playTimeId].push(schedule);
+    grouped[playTimeId].push(schedule)
   }
 
-  return grouped;
-});
+  return grouped
+})
 
 // 根据ID获取播出时段信息
 const getPlayTimeById = (id) => {
-  if (id === 'null') return null;
+  if (id === 'null') return null
 
   try {
-    const numId = parseInt(id);
-    if (isNaN(numId)) return null;
+    const numId = parseInt(id)
+    if (isNaN(numId)) return null
 
     // 从排期中查找
     for (const schedule of currentDateSchedules.value) {
       // 确保正确比较
       if (schedule.playTimeId === numId && schedule.playTime) {
-        return schedule.playTime;
+        return schedule.playTime
       }
     }
   } catch (err) {
     // 无需在此处记录错误
   }
 
-  return null;
-};
+  return null
+}
 
 // 格式化播出时段时间范围
 const formatPlayTimeRange = (playTime) => {
-  if (!playTime) return '';
+  if (!playTime) return ''
 
   if (playTime.startTime && playTime.endTime) {
-    return `${playTime.startTime} - ${playTime.endTime}`;
+    return `${playTime.startTime} - ${playTime.endTime}`
   } else if (playTime.startTime) {
-    return `${playTime.startTime} 开始`;
+    return `${playTime.startTime} 开始`
   } else if (playTime.endTime) {
-    return `${playTime.endTime} 结束`;
+    return `${playTime.endTime} 结束`
   }
 
-  return '不限时间';
-};
+  return '不限时间'
+}
 
 // 判断是否显示播放时段标题
 const shouldShowPlayTimeHeader = (playTimeId) => {
   // 如果播放时段功能未启用且是未指定时段，则不显示
   if (!playTimeEnabled.value && playTimeId === 'null') {
-    return false;
+    return false
   }
-  return true; // 显示其他所有时段
-};
+  return true // 显示其他所有时段
+}
 
 // 波纹效果指令
 const vRipple = {
   mounted(el) {
-    el.addEventListener('click', e => {
-      const rect = el.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+    el.addEventListener('click', (e) => {
+      const rect = el.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
 
-      const ripple = document.createElement('span');
-      ripple.className = 'ripple-effect';
-      ripple.style.left = `${x}px`;
-      ripple.style.top = `${y}px`;
+      const ripple = document.createElement('span')
+      ripple.className = 'ripple-effect'
+      ripple.style.left = `${x}px`
+      ripple.style.top = `${y}px`
 
-      el.appendChild(ripple);
+      el.appendChild(ripple)
 
       setTimeout(() => {
-        ripple.remove();
-      }, 600); // 与CSS动画时间一致
-    });
+        ripple.remove()
+      }, 600) // 与CSS动画时间一致
+    })
   }
-};
+}
 </script>
 
 <style scoped>
@@ -1528,7 +1679,7 @@ const vRipple = {
 }
 
 .semester-label {
-  color: #FFFFFF;
+  color: #ffffff;
   font-size: 15px;
   font-weight: 500;
   margin-right: 0.75rem;
@@ -1540,7 +1691,7 @@ const vRipple = {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 8px;
-  color: #FFFFFF;
+  color: #ffffff;
   padding: 0.6rem 1rem;
   font-size: 14px;
   font-weight: 500;
@@ -1560,14 +1711,16 @@ const vRipple = {
 
 .semester-select:focus {
   outline: none;
-  border-color: #0B5AFE;
-  box-shadow: 0 0 0 3px rgba(11, 90, 254, 0.3), 0 4px 12px rgba(11, 90, 254, 0.2);
+  border-color: #0b5afe;
+  box-shadow:
+    0 0 0 3px rgba(11, 90, 254, 0.3),
+    0 4px 12px rgba(11, 90, 254, 0.2);
   transform: translateY(-1px);
 }
 
 .semester-select option {
-  background: #1A1D24;
-  color: #FFFFFF;
+  background: #1a1d24;
+  color: #ffffff;
   padding: 0.5rem;
 }
 
@@ -1621,18 +1774,18 @@ const vRipple = {
 }
 
 .date-item:hover {
-  background: #21242D;
+  background: #21242d;
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .date-item.active {
-  background: #21242D;
-  color: #FFFFFF;
+  background: #21242d;
+  color: #ffffff;
   font-weight: 600;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(11, 90, 254, 0.2);
-  border-left: 3px solid #0B5AFE;
+  border-left: 3px solid #0b5afe;
 }
 
 .empty-dates {
@@ -1658,10 +1811,10 @@ const vRipple = {
 .vertical-divider {
   width: 2px;
   background: linear-gradient(
-      180deg,
-      rgba(217, 217, 217, 0) 0%,
-      rgba(217, 217, 217, 0.5) 50%,
-      rgba(217, 217, 217, 0) 100%
+    180deg,
+    rgba(217, 217, 217, 0) 0%,
+    rgba(217, 217, 217, 0.5) 50%,
+    rgba(217, 217, 217, 0) 100%
   );
   margin: 0 1.5rem;
   position: relative;
@@ -1693,7 +1846,7 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 20px;
-  color: #FFFFFF;
+  color: #ffffff;
   margin: 0;
 }
 
@@ -1702,7 +1855,7 @@ const vRipple = {
   padding: 3rem;
   text-align: center;
   border-radius: 10px;
-  background: #21242D;
+  background: #21242d;
   margin: 1rem 0;
   color: rgba(255, 255, 255, 0.6);
   display: flex;
@@ -1712,14 +1865,14 @@ const vRipple = {
 }
 
 .loading::before {
-  content: "";
+  content: '';
   display: block;
   width: 40px;
   height: 40px;
   margin-bottom: 1rem;
   border-radius: 50%;
   border: 3px solid rgba(11, 90, 254, 0.2);
-  border-top-color: #0B5AFE;
+  border-top-color: #0b5afe;
   animation: spin 1s linear infinite;
 }
 
@@ -1732,11 +1885,12 @@ const vRipple = {
   }
 }
 
-.error, .empty {
+.error,
+.empty {
   padding: 2rem;
   text-align: center;
   border-radius: 10px;
-  background: #21242D;
+  background: #21242d;
   margin: 1rem 0;
   color: rgba(255, 255, 255, 0.6);
 }
@@ -1786,7 +1940,7 @@ const vRipple = {
 .song-card {
   width: 320px;
   flex-shrink: 0;
-  background: #21242D;
+  background: #21242d;
   border-radius: 10px;
   overflow: hidden;
   position: relative;
@@ -2075,7 +2229,8 @@ const vRipple = {
   flex: 1;
 }
 
-.custom-select, .custom-input {
+.custom-select,
+.custom-input {
   width: 100%;
   background: #141418;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -2101,7 +2256,8 @@ const vRipple = {
   color: rgba(255, 255, 255, 0.4);
 }
 
-.custom-select:focus, .custom-input:focus {
+.custom-select:focus,
+.custom-input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -2170,7 +2326,8 @@ const vRipple = {
   font-size: 12px;
 }
 
-.divider::before, .divider::after {
+.divider::before,
+.divider::after {
   content: '';
   flex: 1;
   height: 1px;
@@ -2363,7 +2520,9 @@ const vRipple = {
   gap: 1rem;
 }
 
-.btn-primary, .btn-secondary, .btn-ghost {
+.btn-primary,
+.btn-secondary,
+.btn-ghost {
   padding: 0.6rem 1.25rem;
   border-radius: 10px;
   font-size: 14px;
@@ -2536,7 +2695,6 @@ const vRipple = {
   }
 }
 
-
 .song-card-main {
   padding: 1rem;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
@@ -2546,7 +2704,6 @@ const vRipple = {
   align-items: center; /* 垂直居中 */
   gap: 15px; /* 元素之间的间隔 */
 }
-
 
 /* 歌曲封面样式 */
 .song-cover {
@@ -2575,8 +2732,8 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0043F8 0%, #0075F8 100%);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #0043f8 0%, #0075f8 100%);
+  color: #ffffff;
   font-size: 28px;
   font-weight: bold;
   font-family: 'MiSans', sans-serif;
@@ -2639,7 +2796,7 @@ const vRipple = {
   font-weight: 600;
   font-size: 16px;
   letter-spacing: 0.04em;
-  color: #FFFFFF;
+  color: #ffffff;
   margin-bottom: 0.5rem;
   display: flex;
   align-items: flex-start;
@@ -2665,7 +2822,7 @@ const vRipple = {
   background: rgba(11, 90, 254, 0.15);
   border: 1px solid rgba(11, 90, 254, 0.3);
   border-radius: 4px;
-  color: #0B5AFE;
+  color: #0b5afe;
   font-size: 12px;
   font-weight: 500;
   flex-shrink: 0;
@@ -2724,20 +2881,21 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 20px;
-  color: #0B5AFE;
-  text-shadow: 0px 20px 30px rgba(0, 114, 248, 0.5),
-  0px 8px 15px rgba(0, 114, 248, 0.5),
-  0px 4px 10px rgba(0, 179, 248, 0.3),
-  0px 2px 10px rgba(0, 179, 248, 0.2),
-  inset 3px 3px 10px rgba(255, 255, 255, 0.4),
-  inset -1px -1px 15px rgba(255, 255, 255, 0.4);
+  color: #0b5afe;
+  text-shadow:
+    0px 20px 30px rgba(0, 114, 248, 0.5),
+    0px 8px 15px rgba(0, 114, 248, 0.5),
+    0px 4px 10px rgba(0, 179, 248, 0.3),
+    0px 2px 10px rgba(0, 179, 248, 0.2),
+    inset 3px 3px 10px rgba(255, 255, 255, 0.4),
+    inset -1px -1px 15px rgba(255, 255, 255, 0.4);
 }
 
 .vote-count .label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 12px;
-  color: #FFFFFF;
+  color: #ffffff;
   opacity: 0.4;
 }
 
@@ -2811,7 +2969,7 @@ const vRipple = {
 
   .nav-btn:active:not(:disabled) {
     background: rgba(255, 255, 255, 0.1);
-    color: #0B5AFE;
+    color: #0b5afe;
   }
 
   .nav-btn:disabled {
@@ -2832,14 +2990,16 @@ const vRipple = {
   .date-text {
     font-size: 15px;
     font-weight: 600;
-    color: #FFFFFF;
+    color: #ffffff;
     white-space: nowrap;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2), 0 0 20px rgba(11, 90, 254, 0.15);
+    text-shadow:
+      0 0 10px rgba(255, 255, 255, 0.2),
+      0 0 20px rgba(11, 90, 254, 0.15);
   }
 
   .dropdown-icon {
     opacity: 0.5;
-    color: #FFFFFF;
+    color: #ffffff;
   }
 
   .mobile-action-btn {
@@ -2848,7 +3008,7 @@ const vRipple = {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0B5AFE 0%, #0043F8 100%);
+    background: linear-gradient(135deg, #0b5afe 0%, #0043f8 100%);
     border: none;
     border-radius: 16px;
     box-shadow: 0 4px 15px rgba(11, 90, 254, 0.4);
@@ -2862,7 +3022,9 @@ const vRipple = {
   }
 
   /* 移除旧样式 */
-  .date-nav-btn, .current-date-mobile, .mobile-add-playlist-btn {
+  .date-nav-btn,
+  .current-date-mobile,
+  .mobile-add-playlist-btn {
     display: none;
   }
 
@@ -2950,7 +3112,7 @@ const vRipple = {
   }
 
   .song-card.playing .song-title {
-    color: #0B5AFE;
+    color: #0b5afe;
     text-shadow: 0 0 10px rgba(11, 90, 254, 0.4);
   }
 
@@ -3027,7 +3189,7 @@ const vRipple = {
     font-weight: 600;
     margin-bottom: 2px;
     line-height: 1.4;
-    color: #FFFFFF;
+    color: #ffffff;
     letter-spacing: 0.01em;
   }
 
@@ -3041,7 +3203,7 @@ const vRipple = {
   .vote-count .count {
     font-size: 22px;
     font-weight: 800;
-    color: #0B5AFE;
+    color: #0b5afe;
     font-family: 'MiSans-Bold', sans-serif;
     line-height: 1;
   }
@@ -3054,7 +3216,9 @@ const vRipple = {
   }
 
   /* 加载和空状态 - 无边框 */
-  .loading, .error, .empty {
+  .loading,
+  .error,
+  .empty {
     padding: 40px 20px;
     width: 100%;
     background: transparent;
@@ -3125,7 +3289,7 @@ const vRipple = {
   .date-picker-item.active {
     background: rgba(11, 90, 254, 0.15);
     border-left: none;
-    color: #0B5AFE;
+    color: #0b5afe;
   }
 }
 
@@ -3180,7 +3344,9 @@ const vRipple = {
 /* 添加日期切换过渡动画 */
 .schedule-fade-enter-active,
 .schedule-fade-leave-active {
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
 }
 
 .schedule-fade-enter-from {
@@ -3271,7 +3437,7 @@ const vRipple = {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  background: #21242D;
+  background: #21242d;
   border-radius: 10px;
   padding: 0.75rem 1rem;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
@@ -3284,7 +3450,7 @@ const vRipple = {
 .date-nav-btn {
   background: rgba(11, 90, 254, 0.1);
   border: 1px solid rgba(11, 90, 254, 0.2);
-  color: #FFFFFF;
+  color: #ffffff;
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -3308,7 +3474,7 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: #FFFFFF;
+  color: #ffffff;
   text-align: center;
   flex: 1;
   white-space: pre-line;
@@ -3318,7 +3484,7 @@ const vRipple = {
 }
 
 .current-date-mobile:after {
-  content: "▼";
+  content: '▼';
   font-size: 10px;
   opacity: 0.7;
   margin-left: 5px;
@@ -3327,7 +3493,7 @@ const vRipple = {
 }
 
 .current-date-mobile:hover {
-  color: #0B5AFE;
+  color: #0b5afe;
 }
 
 /* 日期选择器弹窗样式 */
@@ -3358,7 +3524,7 @@ const vRipple = {
   width: 85%;
   max-width: 350px;
   max-height: 70vh;
-  background: #1A1D24;
+  background: #1a1d24;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -3417,7 +3583,7 @@ const vRipple = {
 
 .date-picker-item.active {
   background: rgba(11, 90, 254, 0.2);
-  border-left: 3px solid #0B5AFE;
+  border-left: 3px solid #0b5afe;
 }
 
 /* 过渡动画 */

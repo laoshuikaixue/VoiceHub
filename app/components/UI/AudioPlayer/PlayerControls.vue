@@ -4,45 +4,49 @@
       <div class="control-with-progress">
         <!-- 上一首按钮 -->
         <button
-            :disabled="!hasPrevious"
-            :title="hasPrevious ? '上一首' : '没有上一首'"
-            class="control-btn prev-btn"
-            @click="$emit('previous')"
+          :disabled="!hasPrevious"
+          :title="hasPrevious ? '上一首' : '没有上一首'"
+          class="control-btn prev-btn"
+          @click="$emit('previous')"
         >
-          <Icon :size="18" color="white" name="skip-back"/>
+          <Icon :size="18" color="white" name="skip-back" />
         </button>
 
         <!-- 播放/暂停按钮 -->
-        <button :disabled="hasError || isLoadingTrack" class="control-btn play-pause-btn" @click="$emit('togglePlay')">
-          <div v-if="isLoadingTrack" class="loading-spinner"></div>
-          <Icon v-else-if="isPlaying" :size="18" color="white" name="pause"/>
-          <Icon v-else :size="18" color="white" name="play"/>
+        <button
+          :disabled="hasError || isLoadingTrack"
+          class="control-btn play-pause-btn"
+          @click="$emit('togglePlay')"
+        >
+          <div v-if="isLoadingTrack" class="loading-spinner" />
+          <Icon v-else-if="isPlaying" :size="18" color="white" name="pause" />
+          <Icon v-else :size="18" color="white" name="play" />
         </button>
 
         <!-- 下一首按钮 -->
         <button
-            :disabled="!hasNext"
-            :title="hasNext ? '下一首' : '没有下一首'"
-            class="control-btn next-btn"
-            @click="$emit('next')"
+          :disabled="!hasNext"
+          :title="hasNext ? '下一首' : '没有下一首'"
+          class="control-btn next-btn"
+          @click="$emit('next')"
         >
-          <Icon :size="18" color="white" name="skip-forward"/>
+          <Icon :size="18" color="white" name="skip-forward" />
         </button>
 
         <div class="progress-container-wrapper">
           <div
-              ref="progressBar"
-              class="progress-bar"
-              @click="handleProgressClick"
-              @mousedown="handleProgressMouseDown"
-              @touchstart="handleProgressTouchStart"
+            ref="progressBar"
+            class="progress-bar"
+            @click="handleProgressClick"
+            @mousedown="handleProgressMouseDown"
+            @touchstart="handleProgressTouchStart"
           >
             <div
-                :class="{ 'dragging': isDragging }"
-                :style="{ '--progress-width': `${progress}%` }"
-                class="progress"
+              :class="{ dragging: isDragging }"
+              :style="{ '--progress-width': `${progress}%` }"
+              class="progress"
             >
-              <div :class="{ 'dragging': isDragging }" class="progress-thumb"></div>
+              <div :class="{ dragging: isDragging }" class="progress-thumb" />
             </div>
           </div>
         </div>
@@ -57,7 +61,7 @@
 </template>
 
 <script setup>
-import {ref} from 'vue'
+import { ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 
 const props = defineProps({
@@ -267,7 +271,9 @@ defineExpose({
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   opacity: 0;
-  transition: opacity 0.2s ease, transform 0.1s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
   will-change: opacity, transform;
   pointer-events: none;
 }
