@@ -1,4 +1,4 @@
-import { H3Event, getRequestHeader, getRequestHost, getRequestProtocol } from 'h3'
+import { H3Event, getRequestHeader, getRequestHost, getRequestProtocol, createError } from 'h3'
 
 function parseAllowedOrigins(): string[] {
   const env = process.env.WEBAUTHN_ORIGIN
@@ -30,7 +30,7 @@ export function getWebAuthnConfig(event: H3Event) {
       origin = requestOrigin
     } else {
       console.error(`WebAuthn origin 不在允许列表中: ${requestOrigin}`)
-      throw new Error(`不被允许的 Origin: ${requestOrigin}`)
+      throw createError({ statusCode: 403, message: `不被允许的 Origin: ${requestOrigin}` })
     }
   } else {
     origin = requestOrigin
