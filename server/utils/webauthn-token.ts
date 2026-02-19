@@ -1,7 +1,13 @@
-import { createError, getCookie, setCookie, deleteCookie, type H3Event } from 'h3'
+import { getCookie, setCookie, deleteCookie, type H3Event } from 'h3'
 import { JWTEnhanced } from './jwt-enhanced'
 
 const COOKIE_NAME = 'webauthn_challenge'
+
+interface WebAuthnChallengePayload {
+  challenge: string
+  userId: string
+  type: string
+}
 
 export function setWebAuthnChallenge(event: H3Event, challenge: string, userId: string) {
   const token = JWTEnhanced.sign({
@@ -24,10 +30,10 @@ export function getWebAuthnChallenge(event: H3Event): { challenge: string; userI
   if (!token) return null
 
   try {
-    const payload = JWTEnhanced.verify(token) as any
+    const payload = JWTEnhanced.verify(token) as WebAuthnChallengePayload
     if (payload.type !== 'webauthn_challenge') return null
     return { challenge: payload.challenge, userId: payload.userId }
-  } catch (e) {
+  } catch {
     return null
   }
 }

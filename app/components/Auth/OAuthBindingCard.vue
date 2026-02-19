@@ -196,21 +196,6 @@
   </div>
 </template>
 
-<style scoped>
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.3s ease-in-out;
-  max-height: 500px;
-  opacity: 1;
-}
-
-.expand-enter-from,
-.expand-leave-to {
-  max-height: 0;
-  opacity: 0;
-}
-</style>
-
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { Loader2, Shield, Fingerprint, ChevronDown } from 'lucide-vue-next'
@@ -343,14 +328,15 @@ const handleWebAuthnRegister = async () => {
     
     showToast('设备添加成功', 'success')
     await fetchIdentities()
-  } catch (e: unknown) {
-    console.error(e)
+  } catch (e) {
+    const error = e as unknown
+    console.error(error)
     let message = '添加设备失败'
-    if (e instanceof Error) {
-      message = e.message
-    } else if (typeof e === 'object' && e !== null) {
+    if (error instanceof Error) {
+      message = error.message
+    } else if (typeof error === 'object' && error !== null) {
       // 尝试从 API 错误对象中提取 message
-      const err = e as any
+      const err = error as { data?: { message?: string }, message?: string }
       message = err.data?.message || err.message || message
     }
     showToast(message, 'error')
@@ -363,3 +349,18 @@ onMounted(() => {
   fetchIdentities()
 })
 </script>
+
+<style scoped>
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease-in-out;
+  max-height: 500px;
+  opacity: 1;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+</style>

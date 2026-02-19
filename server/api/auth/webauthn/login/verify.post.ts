@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
   let credentialData
   try {
     credentialData = JSON.parse(identity.providerUsername)
-  } catch (e) {
+  } catch {
     throw createError({ statusCode: 500, message: '凭证数据损坏' })
   }
 

@@ -130,8 +130,8 @@
       <button 
         type="button" 
         class="webauthn-btn" 
-        @click="handleWebAuthnLogin" 
-        :disabled="loading"
+        :disabled="loading" 
+        @click="handleWebAuthnLogin"
       >
         <Fingerprint :size="20" class="webauthn-icon" />
         <span>使用 Windows Hello / Passkey 登录</span>
@@ -237,10 +237,11 @@ const handleWebAuthnLogin = async () => {
       await auth.initAuth()
       await navigateTo(verification.redirect || '/')
     }
-  } catch (err: unknown) {
-    console.error('WebAuthn login error:', err)
+  } catch (err) {
+    const error = err as unknown
+    console.error('WebAuthn login error:', error)
     // 简单的类型守卫
-    const errorObj = err as any
+    const errorObj = error as { data?: { message?: string }, message?: string }
     error.value = errorObj.data?.message || errorObj.message || 'Passkey 登录失败'
   } finally {
     loading.value = false
