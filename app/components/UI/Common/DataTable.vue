@@ -1,12 +1,23 @@
 <template>
   <div class="space-y-4">
     <!-- 表格工具栏 -->
-    <div v-if="showToolbar" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-1">
+    <div
+      v-if="showToolbar"
+      class="flex flex-col sm:flex-row items-center justify-between gap-4 px-1"
+    >
       <div class="flex items-center gap-3">
         <slot name="toolbar-left">
-          <div v-if="selectedRows.length > 0" class="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 rounded-lg">
-            <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">已选择 {{ selectedRows.length }} 项</span>
-            <button @click="$emit('clear-selection')" class="p-0.5 text-blue-400 hover:text-blue-300 transition-colors">
+          <div
+            v-if="selectedRows.length > 0"
+            class="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 rounded-lg"
+          >
+            <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest"
+              >已选择 {{ selectedRows.length }} 项</span
+            >
+            <button
+              class="p-0.5 text-blue-400 hover:text-blue-300 transition-colors"
+              @click="$emit('clear-selection')"
+            >
               <X :size="12" />
             </button>
           </div>
@@ -17,8 +28,8 @@
           <button
             v-if="refreshable"
             :disabled="loading"
-            @click="$emit('refresh')"
             class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-50"
+            @click="$emit('refresh')"
           >
             <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
             <span>刷新数据</span>
@@ -28,11 +39,20 @@
     </div>
 
     <!-- 表格主容器 -->
-    <div class="relative bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl shadow-black/20">
+    <div
+      class="relative bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl shadow-black/20"
+    >
       <!-- 加载状态 -->
-      <div v-if="loading" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-zinc-950/60 backdrop-blur-[2px] animate-in fade-in duration-300">
-        <div class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-        <span class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{{ loadingText }}</span>
+      <div
+        v-if="loading"
+        class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-zinc-950/60 backdrop-blur-[2px] animate-in fade-in duration-300"
+      >
+        <div
+          class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"
+        />
+        <span class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{{
+          loadingText
+        }}</span>
       </div>
 
       <!-- 桌面端表格 -->
@@ -44,19 +64,25 @@
                 <input
                   type="checkbox"
                   :checked="isAllSelected"
-                  @change="toggleSelectAll"
                   class="w-4 h-4 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
-                />
+                  @change="toggleSelectAll"
+                >
               </th>
               <th
                 v-for="column in columns"
                 :key="column.key"
-                :class="[column.class, 'p-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest']"
+                :class="[
+                  column.class,
+                  'p-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest'
+                ]"
                 :style="{ width: column.width }"
               >
                 {{ column.title }}
               </th>
-              <th v-if="hasActions" class="p-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right">
+              <th
+                v-if="hasActions"
+                class="p-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right"
+              >
                 操作
               </th>
             </tr>
@@ -67,7 +93,9 @@
                 <slot name="empty">
                   <div class="flex flex-col items-center gap-3 text-zinc-700">
                     <Database :size="40" stroke-width="1" />
-                    <span class="text-[10px] font-black uppercase tracking-widest">暂无数据内容</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest"
+                      >暂无数据内容</span
+                    >
                   </div>
                 </slot>
               </td>
@@ -83,26 +111,37 @@
                 <input
                   type="checkbox"
                   :checked="selectedRows.includes(getRowKey(row, index))"
-                  @change="toggleSelectRow(getRowKey(row, index))"
                   class="w-4 h-4 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
-                />
+                  @change="toggleSelectRow(getRowKey(row, index))"
+                >
               </td>
               <td
                 v-for="column in columns"
                 :key="column.key"
                 :class="[column.class, 'p-4 text-xs font-bold text-zinc-300']"
               >
-                <slot :name="`cell-${column.key}`" :row="row" :index="index" :value="getNestedValue(row, column.key)">
+                <slot
+                  :name="`cell-${column.key}`"
+                  :row="row"
+                  :index="index"
+                  :value="getNestedValue(row, column.key)"
+                >
                   {{ formatCellValue(getNestedValue(row, column.key), column) }}
                 </slot>
               </td>
               <td v-if="hasActions" class="p-4 text-right" @click.stop>
                 <div class="flex items-center justify-end gap-1">
                   <slot name="actions" :row="row" :index="index">
-                    <button class="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all" title="编辑">
+                    <button
+                      class="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all"
+                      title="编辑"
+                    >
                       <Edit2 :size="14" />
                     </button>
-                    <button class="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all" title="删除">
+                    <button
+                      class="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                      title="删除"
+                    >
                       <Trash2 :size="14" />
                     </button>
                   </slot>
@@ -136,20 +175,26 @@
                 <input
                   type="checkbox"
                   :checked="selectedRows.includes(getRowKey(row, index))"
-                  @change="toggleSelectRow(getRowKey(row, index))"
                   class="w-4 h-4 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
-                />
+                  @change="toggleSelectRow(getRowKey(row, index))"
+                >
               </div>
               <slot name="mobile-primary" :row="row" :index="index">
-                <span class="text-sm font-black text-zinc-100">{{ formatCellValue(getNestedValue(row, columns[0]?.key), columns[0]) }}</span>
+                <span class="text-sm font-black text-zinc-100">{{
+                  formatCellValue(getNestedValue(row, columns[0]?.key), columns[0])
+                }}</span>
               </slot>
             </div>
             <div v-if="hasActions" class="flex items-center gap-1" @click.stop>
               <slot name="actions" :row="row" :index="index">
-                <button class="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all">
+                <button
+                  class="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all"
+                >
                   <Edit2 :size="14" />
                 </button>
-                <button class="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all">
+                <button
+                  class="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                >
                   <Trash2 :size="14" />
                 </button>
               </slot>
@@ -157,9 +202,16 @@
           </div>
           <div class="grid grid-cols-2 gap-y-3 gap-x-4">
             <div v-for="column in columns.slice(1)" :key="column.key" class="space-y-1">
-              <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest block">{{ column.title }}</span>
+              <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest block">{{
+                column.title
+              }}</span>
               <div class="text-xs font-bold text-zinc-400">
-                <slot :name="`cell-${column.key}`" :row="row" :index="index" :value="getNestedValue(row, column.key)">
+                <slot
+                  :name="`cell-${column.key}`"
+                  :row="row"
+                  :index="index"
+                  :value="getNestedValue(row, column.key)"
+                >
                   {{ formatCellValue(getNestedValue(row, column.key), column) }}
                 </slot>
               </div>
@@ -174,8 +226,12 @@
 <script setup>
 import { computed } from 'vue'
 import {
-  X, RefreshCw, Database,
-  Edit2, Trash2, ChevronRight,
+  X,
+  RefreshCw,
+  Database,
+  Edit2,
+  Trash2,
+  ChevronRight,
   MoreHorizontal
 } from 'lucide-vue-next'
 
@@ -193,12 +249,7 @@ const props = defineProps({
   rowClickable: { type: Boolean, default: false }
 })
 
-const emit = defineEmits([
-  'update:selectedRows',
-  'row-click',
-  'refresh',
-  'clear-selection'
-])
+const emit = defineEmits(['update:selectedRows', 'row-click', 'refresh', 'clear-selection'])
 
 const totalColumns = computed(() => {
   let count = props.columns.length
@@ -209,7 +260,7 @@ const totalColumns = computed(() => {
 
 const isAllSelected = computed(() => {
   if (props.data.length === 0) return false
-  return props.data.every(row => props.selectedRows.includes(getRowKey(row)))
+  return props.data.every((row) => props.selectedRows.includes(getRowKey(row)))
 })
 
 const getRowKey = (row, index) => {
@@ -231,14 +282,14 @@ const formatCellValue = (value, column) => {
 const toggleSelectAll = (event) => {
   const checked = event.target.checked
   const newSelectedRows = checked
-    ? [...new Set([...props.selectedRows, ...props.data.map(row => getRowKey(row))])]
-    : props.selectedRows.filter(id => !props.data.map(row => getRowKey(row)).includes(id))
+    ? [...new Set([...props.selectedRows, ...props.data.map((row) => getRowKey(row))])]
+    : props.selectedRows.filter((id) => !props.data.map((row) => getRowKey(row)).includes(id))
   emit('update:selectedRows', newSelectedRows)
 }
 
 const toggleSelectRow = (key) => {
   const newSelectedRows = props.selectedRows.includes(key)
-    ? props.selectedRows.filter(id => id !== key)
+    ? props.selectedRows.filter((id) => id !== key)
     : [...props.selectedRows, key]
   emit('update:selectedRows', newSelectedRows)
 }

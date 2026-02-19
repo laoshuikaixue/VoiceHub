@@ -2,7 +2,7 @@ services:
   voicehub:
     image: ghcr.io/laoshuikaixue/voicehub:latest
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
       - JWT_SECRET=your-jwt-secret-here
@@ -24,7 +24,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - '5432:5432'
     restart: unless-stopped
 
   redis:
@@ -36,7 +36,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - '6379:6379'
     restart: unless-stopped
 
 volumes:

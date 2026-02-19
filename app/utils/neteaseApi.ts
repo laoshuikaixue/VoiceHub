@@ -8,17 +8,18 @@ export const normalizeNeteaseResponse = (data) => {
       body: undefined
     }
   }
-  
+
   // 检查是否已经是标准格式 { code: 200, data: ... }
   if (data.code === 200 && data.data) {
-     return {
-         code: data.code,
-         message: data.message || '',
-         body: data.data // 将 data 字段映射为 body
-     }
+    return {
+      code: data.code,
+      message: data.message || '',
+      body: data.data // 将 data 字段映射为 body
+    }
   }
 
-  const body = Object.prototype.hasOwnProperty.call(data, 'body') && data.body && typeof data.body === 'object'
+  const body =
+    Object.prototype.hasOwnProperty.call(data, 'body') && data.body && typeof data.body === 'object'
       ? data.body
       : data
   const code = typeof body.code === 'number' ? body.code : undefined
@@ -41,7 +42,7 @@ export const fetchNetease = async (endpoint, params = {}, cookie) => {
     query.append('cookie', cookie)
   }
   query.append('timestamp', Date.now().toString())
-  
+
   const url = `${BASE_URL}${endpoint}?${query.toString()}`
   const response = await fetch(url)
   const raw = await response.json()

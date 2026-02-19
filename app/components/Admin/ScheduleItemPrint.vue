@@ -9,18 +9,18 @@
       <!-- 歌曲封面 -->
       <div v-if="settings.showCover" class="cover-section">
         <img
-            v-if="schedule.song.cover"
-            :alt="schedule.song.title"
-            :src="convertToHttps(schedule.song.cover)"
-            class="song-cover"
-            referrerpolicy="no-referrer"
-            @error="handleImageError"
-        />
+          v-if="schedule.song.cover"
+          :alt="schedule.song.title"
+          :src="convertToHttps(schedule.song.cover)"
+          class="song-cover"
+          referrerpolicy="no-referrer"
+          @error="handleImageError"
+        >
         <div v-else class="cover-placeholder">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 1v6m0 6v6"/>
-            <path d="m21 12-6-3-6 3-6-3"/>
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 1v6m0 6v6" />
+            <path d="m21 12-6-3-6 3-6-3" />
           </svg>
         </div>
       </div>
@@ -30,9 +30,7 @@
         <div v-if="settings.showTitle" class="song-title">
           {{ schedule.song.title }}
           <!-- 重播标识 -->
-          <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge-print">
-            重播
-          </span>
+          <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge-print"> 重播 </span>
         </div>
         <div v-if="settings.showArtist" class="song-artist">
           {{ schedule.song.artist }}
@@ -45,7 +43,7 @@
         <span class="value">
           {{ schedule.song.requester }}
           <span v-if="schedule.song.collaborators && schedule.song.collaborators.length > 0">
-             & {{ schedule.song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
+            & {{ schedule.song.collaborators.map((c) => c.displayName || c.name).join(' & ') }}
           </span>
         </span>
       </div>
@@ -54,7 +52,11 @@
       <div v-if="settings.showVotes" class="votes-info">
         <span v-if="schedule.song.replayRequestCount > 0" class="label">申请重播：</span>
         <span v-else class="label">热度：</span>
-        <span class="value">{{ schedule.song.replayRequestCount > 0 ? schedule.song.replayRequestCount + '人' : (schedule.song.voteCount || 0) }}</span>
+        <span class="value">{{
+          schedule.song.replayRequestCount > 0
+            ? schedule.song.replayRequestCount + '人'
+            : schedule.song.voteCount || 0
+        }}</span>
       </div>
 
       <!-- 播出时段 -->
@@ -72,8 +74,8 @@
 </template>
 
 <script setup>
-import {defineProps} from 'vue'
-import {convertToHttps} from '~/utils/url'
+import { defineProps } from 'vue'
+import { convertToHttps } from '~/utils/url'
 
 // 定义props
 const props = defineProps({

@@ -3,6 +3,7 @@
 这是一个使用Nuxt 4全栈框架开发的现代化校园广播站点歌管理系统。系统提供完整的点歌、投票、排期管理、通知推送、数据分析、权限控制和数据库管理功能，支持多角色权限管理和灵活的系统配置。
 
 ## 项目截图
+
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fef6970e-95eb-4cab-a11f-db4e71fc87b5" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f76e912c-1263-424b-b379-72321de205f7" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/b5de5880-6635-4698-9fd9-dbea9642f06a" />
@@ -12,6 +13,7 @@
 ## 主要功能
 
 ### 🎵 核心功能
+
 - **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐、QQ音乐和哔哩哔哩搜索，可选择期望播出时段
 - **多平台登录支持**：
   - **网易云音乐登录**：支持扫码登录，登录后可搜索个人歌单、收藏及播客电台内容
@@ -28,11 +30,13 @@
 - **歌曲重播功能**：支持用户对已播放过的歌曲发起重播申请，支持查看申请记录和撤回申请
 
 ### 👥 用户管理
+
 - **用户管理**：管理员添加用户，支持按年级班级分类
 - **权限控制**：多级权限管理，支持普通用户、管理员、超级管理员
 - **黑名单管理**：支持歌曲和艺术家黑名单，自动过滤不当内容
 
 ### 📅 排期管理
+
 - **排期管理**：管理员可以通过拖拽界面进行歌曲排期和顺序管理
 - **排期草稿**：支持保存排期草稿功能，允许管理员分步完成排期安排
   - 草稿状态不影响公开展示，可随时修改和完善
@@ -43,6 +47,7 @@
 - **公开展示**：公开展示歌曲播放排期，按日期分组展示
 
 ### 🔔 通知系统
+
 - **实时通知**：歌曲被选中、投票和系统通知
 - **通知设置**：用户可自定义通知偏好，支持独立页面设置
 - **批量通知**：管理员可向特定用户群体发送通知
@@ -50,12 +55,14 @@
 - **验证码验证**：安全的验证码验证机制，支持动态样式反馈
 
 ### 💾 数据管理
+
 - **数据库备份**：完整的数据库备份和恢复功能
 - **数据库重置**：支持安全的数据库重置操作，可选择性保留用户数据或完全重置
 - **文件导入导出**：支持备份文件的上传、下载和管理
 - **数据库自检**：自动数据库验证和修复机制，确保系统稳定性
 
 ### 🎨 用户体验
+
 - **现代UI**：响应式设计，深色主题，流畅的动画效果
 - **玻璃态设计**：现代化的视觉效果和交互体验
 - **交互反馈**：hover效果，点击反馈，状态变化动画
@@ -64,6 +71,7 @@
 ## 技术栈
 
 ### 前端技术
+
 - **Nuxt 4**：Vue.js全栈框架，提供SSR和SPA支持
 - **Vue 3**：响应式前端框架，使用Composition API
 - **TypeScript**：类型安全的JavaScript，提供完整的类型定义
@@ -71,6 +79,7 @@
 - **Vue Router**：前端路由管理
 
 ### 后端技术
+
 - **Nuxt Server API**：服务端API路由，支持中间件和认证
 - **Drizzle ORM**：现代化数据库ORM，提供类型安全的数据库操作和高性能查询
 - **Neon Database**：Serverless PostgreSQL数据库，支持自动启停和无缝扩展
@@ -83,6 +92,7 @@
 ## 系统架构
 
 系统采用了现代化的 Serverless 全栈架构：
+
 - **前端**：使用 Nuxt 4 + Vue 3 组合式API构建响应式用户界面
 - **后端**：使用 Nuxt Server API 构建 RESTful API 服务
 - **数据库**：使用 Drizzle ORM + Neon Database，提供类型安全和高性能的数据库操作
@@ -101,14 +111,16 @@
 [![Deploy to EdgeOne Pages](https://cdnstatic.tencentcs.com/edgeone/pages/deploy.svg)](https://edgeone.ai/pages/new?repository-url=https://github.com/laoshuikaixue/VoiceHub&env=DATABASE_URL,JWT_SECRET&env-description=%E9%9C%80%E8%A6%81%E9%85%8D%E7%BD%AE%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%B0%E5%9D%80%E3%80%81JWT%E5%AF%86%E9%92%A5)
 
 在部署过程中，需要输入必要的环境变量：
+
 1. `DATABASE_URL`：PostgreSQL数据库连接地址
 2. `JWT_SECRET`：JWT令牌签名密钥
 
 ### Claw 部署
+
 [![Claw](https://ap-southeast-1.run.claw.cloud/logo.svg)](https://ap-southeast-1.run.claw.cloud/)
 
 1. **点击部署按钮**：选择上方的 Claw 部署按钮
-2. **打开应用程序启动板**：打开  App Launchpad （应用程序启动板）
+2. **打开应用程序启动板**：打开 App Launchpad （应用程序启动板）
 3. **创建应用**：选 Create App （创建应用）
 4. **相关配置**：
    ```
@@ -133,28 +145,32 @@ VoiceHub 支持通过 Docker 进行容器化部署，提供了多种部署方式
 这是最简单的部署方式，会自动创建应用和数据库容器。
 
 1. 克隆项目
+
 ```bash
 git clone https://github.com/laoshuikaixue/VoiceHub.git
 cd VoiceHub
 ```
 
 2. 修改 docker-compose.yml 中的环境变量
+
 ```yaml
 environment:
   - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
-  - JWT_SECRET=your-jwt-secret-here  # 请修改为强随机字符串
+  - JWT_SECRET=your-jwt-secret-here # 请修改为强随机字符串
   - NODE_ENV=production
 ```
 
 3. 启动服务
+
 ```bash
 docker-compose up -d
 ```
 
 4. 访问应用
-打开浏览器访问 http://localhost:3000
+   打开浏览器访问 http://localhost:3000
 
 默认管理员账号：
+
 - 用户名：admin
 - 密码：admin123
 
@@ -163,6 +179,7 @@ docker-compose up -d
 如果你已有 PostgreSQL 数据库，可以直接使用预构建的镜像。
 
 使用 GitHub 镜像源：
+
 ```bash
 docker run -d \
   -p 3000:3000 \
@@ -174,6 +191,7 @@ docker run -d \
 ```
 
 使用南京大学镜像源：
+
 ```bash
 docker run -d \
   -p 3000:3000 \
@@ -208,6 +226,7 @@ docker run -d \
 ### 本地开发部署
 
 #### 前提条件
+
 - Node.js 20+
 - PostgreSQL 数据库（推荐使用 Neon）
 - Redis 数据库（可选，暂不推荐）
@@ -215,12 +234,14 @@ docker run -d \
 #### 快速开始
 
 1. 克隆项目
+
 ```bash
 git clone https://github.com/laoshuikaixue/VoiceHub.git
 cd VoiceHub
 ```
 
 2. 安装依赖
+
 ```bash
 npm install
 ```
@@ -228,11 +249,13 @@ npm install
 3. 配置环境变量
 
 复制 `.env.example` 文件并重命名为 `.env`：
+
 ```bash
 cp .env.example .env
 ```
 
 编辑 `.env` 文件，配置必需的环境变量：
+
 ```env
 # 数据库连接地址（必填）
 DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
@@ -247,6 +270,7 @@ NODE_ENV=development
 4. 初始化数据库
 
 首次运行需要初始化数据库结构：
+
 ```bash
 # 生成数据库迁移文件
 npm run db:generate
@@ -256,6 +280,7 @@ npm run db:migrate
 ```
 
 或使用一键部署命令（推荐）：
+
 ```bash
 npm run deploy
 ```
@@ -263,15 +288,18 @@ npm run deploy
 5. 创建管理员账户
 
 系统会在首次部署时自动创建管理员账户。如需手动创建：
+
 ```bash
 npm run create-admin
 ```
 
 默认管理员账户：
+
 - 用户名：admin
 - 密码：admin123
 
 6. 启动开发服务器
+
 ```bash
 npm run dev
 ```
@@ -281,11 +309,13 @@ npm run dev
 ### 生产环境部署
 
 1. 构建生产版本
+
 ```bash
 npm run build
 ```
 
 2. 启动生产服务器
+
 ```bash
 npm start
 ```
@@ -319,58 +349,70 @@ npm run safe-migrate
 ## 系统配置
 
 ### 站点配置管理
+
 VoiceHub 提供了完整的站点配置管理功能，支持通过管理后台动态配置系统参数：
 
 #### 基本信息配置
+
 - **站点标题**：自定义系统显示名称
 - **站点描述**：系统功能描述和介绍
 - **站点Logo**：支持上传自定义Logo图片
 
 #### 播放时段管理
+
 - **多时段支持**：支持配置多个播放时段（如午间、晚间）
 - **时段名称**：自定义时段显示名称
 - **开始/结束时间**：精确到分钟的时间控制
 - **时段排序**：支持拖拽调整时段显示顺序
 
 #### 通知系统配置
+
 - **通知开关**：控制系统通知功能的启用状态
 - **通知类型**：配置不同类型通知的发送规则
 - **通知模板**：自定义通知消息的格式和内容
 
 ### 数据库备份与恢复
+
 系统提供了完整的数据备份和恢复解决方案：
 
 #### 备份功能
+
 - **完整备份**：包含所有数据表的完整系统备份
 - **用户数据备份**：仅备份用户相关数据（用户、歌曲、投票等）
 - **增量备份**：支持基于时间的增量备份策略
 
 #### 恢复功能
+
 - **合并模式**：将备份数据与现有数据合并，保留现有数据
 - **替换模式**：完全替换现有数据（谨慎使用）
 - **数据验证**：恢复前自动验证备份文件完整性
 
 ### 权限与角色管理
+
 VoiceHub 实现了细粒度的权限控制系统：
 
 #### 角色类型
+
 - **超级管理员 (SUPER_ADMIN)**：拥有所有系统权限，包括用户管理、系统配置、数据库管理等
 - **管理员 (ADMIN)**：拥有日常管理权限，如用户管理、排期管理、歌曲管理、系统配置等
 - **歌曲管理员 (SONG_ADMIN)**：专门负责歌曲相关管理，包括排期管理、歌曲管理、打印排期等
 - **普通用户 (USER)**：基本的点歌、投票和查看权限
 
 #### 权限分类
+
 - **内容管理权限**：排期管理、歌曲管理、打印排期等
 - **用户管理权限**：创建、编辑、删除用户账户
 - **系统管理权限**：通知管理、播放时间管理、学期管理、黑名单管理、站点配置、数据库管理等
 
 #### 权限继承与分配
+
 - **SUPER_ADMIN**：拥有所有权限
 - **ADMIN**：拥有除数据库管理外的所有权限
 - **SONG_ADMIN**：拥有内容管理相关权限（排期、歌曲、打印）
 - **USER**：仅拥有基本的点歌和查看权限
 
 #### 权限验证
+
 - 前端基于角色动态显示界面元素和菜单
 - 后端API进行严格的权限验证
 - 支持页面级和功能级的权限控制
@@ -812,6 +854,7 @@ VoiceHub/
 ### 目录说明
 
 #### 核心目录 (app/)
+
 - **`app/components/`**: Vue组件库，按功能模块组织
   - **`Admin/`**: 管理后台组件（排期、用户、数据分析等）
   - **`Admin_Backup/`**: 管理组件备份目录
@@ -828,6 +871,7 @@ VoiceHub/
 - **`app/drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
 
 #### 配置目录 (app/)
+
 - **`app/assets/css/`**: 样式文件，支持CSS变量和主题
 - **`app/plugins/`**: Nuxt插件，扩展框架功能
 - **`app/middleware/`**: 中间件，处理路由和认证
@@ -837,6 +881,7 @@ VoiceHub/
   - **`musicSdk/`**: 音乐平台SDK工具
 
 #### 服务端目录 (server/)
+
 - **`server/api/`**: 服务端API，RESTful接口设计
   - **`admin/`**: 管理员专用API（用户、排期、统计等）
   - **`auth/`**: 认证相关API
@@ -851,12 +896,14 @@ VoiceHub/
   - **`musicSdk/`**: 音乐平台SDK服务端工具
 
 #### 静态资源
+
 - **`app/public/`**: 静态文件
 - **`app/public/images/`**: 图片资源，包含Logo和图标文件
 
 ## 使用说明
 
 ### 普通用户
+
 1. 访问主页，查看当前排期
 2. 注册/登录账号
 3. 在仪表盘中点歌或给喜欢的歌曲投票
@@ -875,6 +922,7 @@ VoiceHub/
 5. 查看通知中心获取歌曲状态更新
 
 ### 管理员
+
 1. 使用管理员账号登录（默认账号：admin，密码：admin123）
 2. 进入管理后台，选择相应功能标签
 3. **排期管理**：可以看到左侧"待排歌曲"和右侧"播放顺序"
@@ -937,6 +985,7 @@ VoiceHub/
 项目使用 Drizzle ORM 作为数据库 ORM，配合 Neon Database 提供现代化的数据库解决方案。
 
 #### 核心文件结构
+
 - **`drizzle.config.ts`** - Drizzle ORM 主配置文件
 - **`app/drizzle/db.ts`** - 数据库连接和客户端配置
 - **`app/drizzle/schema.ts`** - 数据库表结构定义（TypeScript 类型安全）
@@ -949,11 +998,13 @@ VoiceHub/
 #### 自动初始化（推荐）
 
 使用部署脚本自动完成数据库初始化：
+
 ```bash
 npm run deploy
 ```
 
 该命令会：
+
 1. 检查环境变量配置
 2. 安装依赖
 3. 执行数据库迁移
@@ -965,27 +1016,33 @@ npm run deploy
 如需手动管理数据库：
 
 1. 生成迁移文件
+
 ```bash
 npm run db:generate
 ```
 
 2. 执行数据库迁移
+
 ```bash
 npm run db:migrate
 ```
 
 3. 推送模式变更到数据库（开发环境）
+
 ```bash
 npm run db:push
 ```
 
 4. 启动 Drizzle Studio（数据库管理界面）
+
 ```bash
 npm run db:studio
 ```
+
 访问 https://local.drizzle.studio 查看和管理数据库
 
 5. 清空数据库并创建管理员
+
 ```bash
 npm run clear-db
 ```
@@ -1023,6 +1080,7 @@ psql -h localhost -U username -d database_name < backup.sql
 ```
 
 ### 备份文件格式
+
 - **完整备份**：包含所有数据表的 JSON 格式文件
 - **用户备份**：仅包含用户相关数据
 - **元数据**：包含创建时间、创建者、表信息等
@@ -1069,25 +1127,25 @@ VoiceHub 采用策略模式（Strategy Pattern）实现了灵活的 OAuth 扩展
 
 ```typescript
 export interface OAuthStrategy {
-    /**
-     * 获取授权跳转 URL
-     * @param redirectUri 回调地址（通常是 /api/auth/[provider]/callback）
-     * @param state 包含安全校验信息的加密字符串
-     */
-    getAuthorizeUrl(redirectUri: string, state: string): string
+  /**
+   * 获取授权跳转 URL
+   * @param redirectUri 回调地址（通常是 /api/auth/[provider]/callback）
+   * @param state 包含安全校验信息的加密字符串
+   */
+  getAuthorizeUrl(redirectUri: string, state: string): string
 
-    /**
-     * 使用 code 换取 access_token
-     * @param code 授权码
-     * @param redirectUri 回调地址
-     */
-    exchangeToken(code: string, redirectUri: string): Promise<string>
+  /**
+   * 使用 code 换取 access_token
+   * @param code 授权码
+   * @param redirectUri 回调地址
+   */
+  exchangeToken(code: string, redirectUri: string): Promise<string>
 
-    /**
-     * 获取用户信息
-     * @param accessToken 访问令牌
-     */
-    getUserInfo(accessToken: string): Promise<OAuthUserInfo>
+  /**
+   * 获取用户信息
+   * @param accessToken 访问令牌
+   */
+  getUserInfo(accessToken: string): Promise<OAuthUserInfo>
 }
 ```
 
@@ -1096,23 +1154,23 @@ export interface OAuthStrategy {
 ```typescript
 // server/utils/oauth-strategies.ts
 const googleStrategy: OAuthStrategy = {
-    getAuthorizeUrl(redirectUri, state) {
-        const clientId = process.env.GOOGLE_CLIENT_ID
-        // Google 授权端点
-        return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&state=${encodeURIComponent(state)}`
-    },
+  getAuthorizeUrl(redirectUri, state) {
+    const clientId = process.env.GOOGLE_CLIENT_ID
+    // Google 授权端点
+    return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&state=${encodeURIComponent(state)}`
+  },
 
-    async exchangeToken(code, redirectUri) {
-        // ... 实现 Google 的 Token 交换逻辑
-        // 通常是发送 POST 请求到 https://oauth2.googleapis.com/token
-    },
+  async exchangeToken(code, redirectUri) {
+    // ... 实现 Google 的 Token 交换逻辑
+    // 通常是发送 POST 请求到 https://oauth2.googleapis.com/token
+  },
 
-    async getUserInfo(accessToken) {
-        // ... 实现获取 Google 用户信息的逻辑
-        // 通常是发送 GET 请求到 https://www.googleapis.com/oauth2/v3/userinfo
-        // 需返回统一的 OAuthUserInfo 格式：
-        // { id, username, email, name, avatar }
-    }
+  async getUserInfo(accessToken) {
+    // ... 实现获取 Google 用户信息的逻辑
+    // 通常是发送 GET 请求到 https://www.googleapis.com/oauth2/v3/userinfo
+    // 需返回统一的 OAuthUserInfo 格式：
+    // { id, username, email, name, avatar }
+  }
 }
 ```
 
@@ -1122,10 +1180,10 @@ const googleStrategy: OAuthStrategy = {
 
 ```typescript
 const strategies: Record<string, OAuthStrategy> = {
-    github: githubStrategy,
-    casdoor: casdoorStrategy,
-    google: googleStrategy, // <--- 注册新平台
-    // ... 其他平台
+  github: githubStrategy,
+  casdoor: casdoorStrategy,
+  google: googleStrategy // <--- 注册新平台
+  // ... 其他平台
 }
 ```
 
@@ -1169,7 +1227,7 @@ CASDOOR_CLIENT_SECRET="your-client-secret"         # 应用 Client Secret
 
 1.  在 `app/components/Auth/Providers` 目录下创建一个以 Provider 名称（首字母大写）命名的文件夹，例如 `Google`。
 2.  在该文件夹内创建一个 `Icon.vue` 组件，放入对应的 SVG 图标代码。
-    *   建议 SVG 大小设置为 `w-5 h-5` 以保持样式统一。
+    - 建议 SVG 大小设置为 `w-5 h-5` 以保持样式统一。
 3.  系统会自动检测并加载该图标，无需额外配置。
 
 例如：`app/components/Auth/Providers/Google/Icon.vue`
@@ -1205,7 +1263,7 @@ const displayName3 = getProviderDisplayName('google') // 返回 "Google" (默认
 在 `<script setup>` 中，添加用于获取特定提供商身份信息的计算属性：
 
 ```javascript
-const googleIdentity = computed(() => identities.value.find(i => i.provider === 'google'))
+const googleIdentity = computed(() => identities.value.find((i) => i.provider === 'google'))
 ```
 
 **2. 添加卡片模板**
@@ -1226,7 +1284,7 @@ const googleIdentity = computed(() => identities.value.find(i => i.provider === 
       <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
     </div>
   </div>
-  
+
   <button
       v-if="googleIdentity"
       class="..."
@@ -1253,11 +1311,18 @@ const googleIdentity = computed(() => identities.value.find(i => i.provider === 
 ```javascript
 const confirmUnbind = (provider) => {
   let providerName = ''
-  switch(provider) {
-    case 'github': providerName = 'GitHub'; break;
-    case 'casdoor': providerName = 'Casdoor'; break;
-    case 'google': providerName = 'Google'; break; // <--- 添加这一行
-    default: providerName = provider;
+  switch (provider) {
+    case 'github':
+      providerName = 'GitHub'
+      break
+    case 'casdoor':
+      providerName = 'Casdoor'
+      break
+    case 'google':
+      providerName = 'Google'
+      break // <--- 添加这一行
+    default:
+      providerName = provider
   }
   // ...
 }
@@ -1329,7 +1394,7 @@ export interface MusicSource {
 if (source.id === 'my-new-source') {
   // 构建API请求URL
   url = `${source.baseUrl}/search?q=${encodeURIComponent(params.keywords)}&limit=${params.limit || 30}`
-  
+
   // 定义响应数据转换函数
   transformResponse = (data: any) => transformMyNewSourceResponse(data)
 }
@@ -1344,7 +1409,7 @@ const transformMyNewSourceResponse = (response: any): any[] => {
   if (!response || !response.data) {
     throw new Error('API响应数据为空')
   }
-  
+
   return response.data.map((song: any) => ({
     id: song.songId,
     title: song.songName,
@@ -1366,14 +1431,17 @@ const transformMyNewSourceResponse = (response: any): any[] => {
 #### 音源配置说明
 
 ##### 优先级设置
+
 - **priority**: 数字越小优先级越高
 - 系统会按优先级顺序尝试音源
 
 ##### 超时配置
+
 - **timeout**: 单个请求的超时时间（毫秒）
 - 建议设置为5000-10000ms
 
 ##### 请求头配置
+
 - **headers**: 自定义HTTP请求头
 - 常用于设置User-Agent、Authorization等
 
@@ -1402,6 +1470,7 @@ const transformMyNewSourceResponse = (response: any): any[] => {
 ```
 
 **注意**：为了确保歌曲重复匹配判断的准确性，所有音源返回的歌手信息都应使用 `/` 作为分隔符。例如：
+
 - 单个歌手：`"周深"`
 - 多个歌手：`"颜人中/VaVa娃娃"`
 
@@ -1417,24 +1486,26 @@ const transformResponse = (response: any): any[] => {
   if (response.code !== 200) {
     throw new Error(`API错误: ${response.message} (code: ${response.code})`)
   }
-  
+
   // 检查数据存在性
   if (!response.data || !Array.isArray(response.data)) {
     throw new Error('API响应数据格式错误')
   }
-  
+
   // 转换数据
-  return response.data.map((item: any) => {
-    // 验证必要字段
-    if (!item.id || !item.title) {
-      console.warn('跳过无效歌曲数据:', item)
-      return null
-    }
-    
-    return {
-      // ... 转换逻辑
-    }
-  }).filter(Boolean) // 过滤掉null值
+  return response.data
+    .map((item: any) => {
+      // 验证必要字段
+      if (!item.id || !item.title) {
+        console.warn('跳过无效歌曲数据:', item)
+        return null
+      }
+
+      return {
+        // ... 转换逻辑
+      }
+    })
+    .filter(Boolean) // 过滤掉null值
 }
 ```
 
@@ -1443,6 +1514,7 @@ const transformResponse = (response: any): any[] => {
 系统内置了自动故障转移机制：
 
 ##### 工作原理
+
 1. **按优先级尝试**：系统按priority从小到大的顺序尝试音源
 2. **错误检测**：当音源请求失败时，自动记录错误并尝试下一个音源
 3. **状态监控**：实时监控各音源的可用性和响应时间
@@ -1452,11 +1524,13 @@ const transformResponse = (response: any): any[] => {
 
 ```typescript
 export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
-  primarySource: 'vkeys',        // 主音源ID
-  enableFailover: true,          // 启用故障转移
-  timeout: 10000,               // 默认超时时间
-  retryAttempts: 2,             // 重试次数
-  sources: [/* 音源列表 */]
+  primarySource: 'vkeys', // 主音源ID
+  enableFailover: true, // 启用故障转移
+  timeout: 10000, // 默认超时时间
+  retryAttempts: 2, // 重试次数
+  sources: [
+    /* 音源列表 */
+  ]
 }
 ```
 
@@ -1497,40 +1571,42 @@ if (source.id === 'music-api') {
 ```typescript
 const transformMusicApiResponse = (response: any): any[] => {
   console.log('[transformMusicApiResponse] 开始转换数据:', response)
-  
+
   if (!response || response.status !== 'success') {
     throw new Error(`MusicAPI错误: ${response.message || '未知错误'}`)
   }
-  
+
   if (!response.results || !Array.isArray(response.results)) {
     throw new Error('MusicAPI响应数据格式错误')
   }
-  
-  return response.results.map((song: any) => {
-    if (!song.id || !song.name) {
-      console.warn('[transformMusicApiResponse] 跳过无效歌曲:', song)
-      return null
-    }
-    
-    return {
-      id: song.id,
-      title: song.name,
-      artist: song.artists?.map((a: any) => a.name).join('/') || '未知艺术家',
-      cover: song.album?.cover_url,
-      album: song.album?.name,
-      duration: song.duration_ms ? Math.floor(song.duration_ms / 1000) : undefined,
-      musicPlatform: 'musicapi',
-      musicId: song.id.toString(),
-      sourceInfo: {
-        source: 'music-api',
-        originalId: song.id.toString(),
-        fetchedAt: new Date(),
-        // 保存额外信息供后续使用
-        popularity: song.popularity,
-        explicit: song.explicit
+
+  return response.results
+    .map((song: any) => {
+      if (!song.id || !song.name) {
+        console.warn('[transformMusicApiResponse] 跳过无效歌曲:', song)
+        return null
       }
-    }
-  }).filter(Boolean)
+
+      return {
+        id: song.id,
+        title: song.name,
+        artist: song.artists?.map((a: any) => a.name).join('/') || '未知艺术家',
+        cover: song.album?.cover_url,
+        album: song.album?.name,
+        duration: song.duration_ms ? Math.floor(song.duration_ms / 1000) : undefined,
+        musicPlatform: 'musicapi',
+        musicId: song.id.toString(),
+        sourceInfo: {
+          source: 'music-api',
+          originalId: song.id.toString(),
+          fetchedAt: new Date(),
+          // 保存额外信息供后续使用
+          popularity: song.popularity,
+          explicit: song.explicit
+        }
+      }
+    })
+    .filter(Boolean)
 }
 ```
 
@@ -1539,16 +1615,19 @@ const transformMusicApiResponse = (response: any): any[] => {
 VoiceHub是一个开源的校园广播站点歌管理系统，本项目：
 
 **不提供音乐内容**：
+
 - 本系统不存储、不提供任何音乐文件
 - 不提供音乐下载、上传或分享服务
 - 所有音乐内容均来自第三方音乐平台
 
 **第三方API使用**：
+
 - 本系统仅使用第三方API实现音乐搜索和获取播放链接等功能
 - 音乐内容的版权归原音乐平台和版权方所有
 - 用户播放的音乐内容受相应音乐平台的服务条款约束
 
 **法律声明**：
+
 - 如有版权方认为本系统侵犯了其权益，请联系我们，我们将积极配合处理
 - 本系统开发者不承担因使用第三方音乐服务而产生的任何法律责任
 - 用户使用本系统即表示理解并同意上述条款

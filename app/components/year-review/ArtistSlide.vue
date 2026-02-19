@@ -1,23 +1,21 @@
 <template>
-  <div class="slide-container" v-if="data.topArtist">
+  <div v-if="data.topArtist" class="slide-container">
     <!-- Background Gradients -->
-    <div class="bg-overlay"></div>
-    <div class="animated-bg"></div>
+    <div class="bg-overlay" />
+    <div class="animated-bg" />
 
     <Transition name="entry" appear>
-      <div class="content" v-show="active">
+      <div v-show="active" class="content">
         <div class="label">特别偏爱</div>
 
         <p class="text-intro">你的年度歌手是</p>
 
         <div class="artist-container">
-           <div class="artist-bg-blur"></div>
-           <h2 class="artist-name">{{ data.topArtist }}</h2>
+          <div class="artist-bg-blur" />
+          <h2 class="artist-name">{{ data.topArtist }}</h2>
         </div>
 
-        <p class="text-desc">
-           Ta 的声音似乎特别吸引你，<br/>陪伴了你无数个日夜。
-        </p>
+        <p class="text-desc">Ta 的声音似乎特别吸引你，<br >陪伴了你无数个日夜。</p>
       </div>
     </Transition>
   </div>
@@ -131,7 +129,12 @@ defineProps({
 }
 
 @media (max-width: 768px) {
-  .artist-name { font-size: 3rem; }
-  .text-intro { font-size: 1.25rem; margin-bottom: 2rem; }
+  .artist-name {
+    font-size: 3rem;
+  }
+  .text-intro {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+  }
 }
 </style>

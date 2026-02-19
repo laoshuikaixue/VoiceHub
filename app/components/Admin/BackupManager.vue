@@ -11,15 +11,19 @@
       <div class="action-card">
         <div class="action-icon">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7,10 12,15 17,10"/>
-            <line x1="12" x2="12" y1="15" y2="3"/>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7,10 12,15 17,10" />
+            <line x1="12" x2="12" y1="15" y2="3" />
           </svg>
         </div>
         <div class="card-content">
           <h4>导出备份</h4>
           <p>创建数据库备份文件</p>
-          <button :disabled="createLoading" class="action-btn primary" @click="showCreateModal = true">
+          <button
+            :disabled="createLoading"
+            class="action-btn primary"
+            @click="showCreateModal = true"
+          >
             <span v-if="createLoading">导出中...</span>
             <span v-else>开始导出</span>
           </button>
@@ -29,15 +33,19 @@
       <div class="action-card">
         <div class="action-icon">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17,8 12,3 7,8"/>
-            <line x1="12" x2="12" y1="3" y2="15"/>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17,8 12,3 7,8" />
+            <line x1="12" x2="12" y1="3" y2="15" />
           </svg>
         </div>
         <div class="card-content">
           <h4>导入备份</h4>
           <p>从备份文件恢复数据</p>
-          <button :disabled="uploadLoading" class="action-btn secondary" @click="showUploadModal = true">
+          <button
+            :disabled="uploadLoading"
+            class="action-btn secondary"
+            @click="showUploadModal = true"
+          >
             <span v-if="uploadLoading">导入中...</span>
             <span v-else>选择文件</span>
           </button>
@@ -52,8 +60,8 @@
           <h3>创建数据库备份</h3>
           <button class="close-btn" @click="showCreateModal = false">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" x2="6" y1="6" y2="18"/>
-              <line x1="6" x2="18" y1="6" y2="18"/>
+              <line x1="18" x2="6" y1="6" y2="18" />
+              <line x1="6" x2="18" y1="6" y2="18" />
             </svg>
           </button>
         </div>
@@ -62,12 +70,12 @@
             <label>备份类型</label>
             <div class="radio-group">
               <label class="radio-option">
-                <input v-model="createForm.tables" type="radio" value="all"/>
+                <input v-model="createForm.tables" type="radio" value="all" >
                 <span>完整备份（推荐）</span>
                 <small>备份所有数据表</small>
               </label>
               <label class="radio-option">
-                <input v-model="createForm.tables" type="radio" value="users"/>
+                <input v-model="createForm.tables" type="radio" value="users" >
                 <span>仅用户数据</span>
                 <small>只备份用户相关数据</small>
               </label>
@@ -75,7 +83,7 @@
           </div>
           <div class="form-group">
             <label class="checkbox-option">
-              <input v-model="createForm.includeSystemData" type="checkbox"/>
+              <input v-model="createForm.includeSystemData" type="checkbox" >
               <span>包含系统设置</span>
               <small>包含系统配置和设置数据</small>
             </label>
@@ -98,39 +106,42 @@
           <h3>导入备份文件</h3>
           <button class="close-btn" @click="showUploadModal = false">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" x2="6" y1="6" y2="18"/>
-              <line x1="6" x2="18" y1="6" y2="18"/>
+              <line x1="18" x2="6" y1="6" y2="18" />
+              <line x1="6" x2="18" y1="6" y2="18" />
             </svg>
           </button>
         </div>
         <div class="modal-body">
           <div class="upload-section">
-            <div :class="{ 'drag-over': isDragOver }" class="upload-area"
-                 @click="$refs.fileInput.click()"
-                 @dragleave="isDragOver = false"
-                 @drop="handleDrop"
-                 @dragover.prevent="isDragOver = true">
+            <div
+              :class="{ 'drag-over': isDragOver }"
+              class="upload-area"
+              @click="$refs.fileInput.click()"
+              @dragleave="isDragOver = false"
+              @drop="handleDrop"
+              @dragover.prevent="isDragOver = true"
+            >
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17,8 12,3 7,8"/>
-                <line x1="12" x2="12" y1="3" y2="15"/>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17,8 12,3 7,8" />
+                <line x1="12" x2="12" y1="3" y2="15" />
               </svg>
               <h4>选择或拖拽备份文件</h4>
               <p>支持 .json 格式的备份文件，最大 100MB</p>
               <input
-                  ref="fileInput"
-                  accept=".json,application/json"
-                  style="display: none"
-                  type="file"
-                  @change="handleFileSelect"
-              />
+                ref="fileInput"
+                accept=".json,application/json"
+                style="display: none"
+                type="file"
+                @change="handleFileSelect"
+              >
             </div>
 
             <div v-if="selectedFile" class="selected-file">
               <div class="file-info">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14,2 14,8 20,8" />
                 </svg>
                 <div class="file-details">
                   <span class="file-name">{{ selectedFile.name }}</span>
@@ -139,8 +150,8 @@
               </div>
               <button class="remove-file-btn" @click="selectedFile = null">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <line x1="18" x2="6" y1="6" y2="18"/>
-                  <line x1="6" x2="18" y1="6" y2="18"/>
+                  <line x1="18" x2="6" y1="6" y2="18" />
+                  <line x1="6" x2="18" y1="6" y2="18" />
                 </svg>
               </button>
             </div>
@@ -150,12 +161,12 @@
             <label>恢复模式</label>
             <div class="radio-group">
               <label class="radio-option">
-                <input v-model="restoreForm.mode" type="radio" value="merge"/>
+                <input v-model="restoreForm.mode" type="radio" value="merge" >
                 <span>合并模式（推荐）</span>
                 <small>更新现有记录，添加新记录</small>
               </label>
               <label class="radio-option">
-                <input v-model="restoreForm.mode" type="radio" value="replace"/>
+                <input v-model="restoreForm.mode" type="radio" value="replace" >
                 <span>替换模式</span>
                 <small>先清空数据，然后导入备份</small>
               </label>
@@ -164,7 +175,7 @@
 
           <div v-if="restoreForm.mode === 'replace'" class="form-group">
             <label class="checkbox-option danger">
-              <input v-model="restoreForm.clearExisting" type="checkbox"/>
+              <input v-model="restoreForm.clearExisting" type="checkbox" >
               <span>我确认要清空现有数据</span>
               <small>此操作不可逆，请谨慎操作</small>
             </label>
@@ -172,9 +183,11 @@
 
           <div class="warning-box">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" x2="12" y1="9" y2="13"/>
-              <line x1="12" x2="12.01" y1="17" y2="17"/>
+              <path
+                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+              />
+              <line x1="12" x2="12" y1="9" y2="13" />
+              <line x1="12" x2="12.01" y1="17" y2="17" />
             </svg>
             <div>
               <h4>注意</h4>
@@ -185,9 +198,13 @@
         <div class="modal-footer">
           <button class="action-btn secondary" @click="showUploadModal = false">取消</button>
           <button
-              :disabled="!selectedFile || uploadLoading || (restoreForm.mode === 'replace' && !restoreForm.clearExisting)"
-              class="action-btn primary"
-              @click="uploadFile"
+            :disabled="
+              !selectedFile ||
+              uploadLoading ||
+              (restoreForm.mode === 'replace' && !restoreForm.clearExisting)
+            "
+            class="action-btn primary"
+            @click="uploadFile"
           >
             <span v-if="uploadLoading">导入中...</span>
             <span v-else>开始导入</span>
@@ -199,8 +216,8 @@
 </template>
 
 <script setup>
-import {ref} from 'vue'
-import {useAuth} from '~/composables/useAuth'
+import { ref } from 'vue'
+import { useAuth } from '~/composables/useAuth'
 
 // 响应式数据
 const createLoading = ref(false)
@@ -236,7 +253,7 @@ const createBackup = async () => {
     console.log('服务器响应:', response)
 
     if (response.success && response.backup) {
-      const {backup} = response
+      const { backup } = response
 
       // 强制进行浏览器下载
       let dataToDownload
@@ -287,9 +304,12 @@ const createBackup = async () => {
 
         try {
           // 使用 $fetch 进行认证请求，然后创建下载
-          const response = await $fetch(`/api/admin/backup/download?filename=${encodeURIComponent(backup.filename)}`, {
-            method: 'GET'
-          })
+          const response = await $fetch(
+            `/api/admin/backup/download?filename=${encodeURIComponent(backup.filename)}`,
+            {
+              method: 'GET'
+            }
+          )
 
           // 创建 Blob 并下载
           const blob = new Blob([response], {
@@ -388,16 +408,22 @@ const uploadFile = async () => {
       // 关闭模态框并重置表单
       showUploadModal.value = false
       selectedFile.value = null
-      restoreForm.value = {mode: 'merge', clearExisting: false}
+      restoreForm.value = { mode: 'merge', clearExisting: false }
 
       // 显示成功通知
       if (window.$showNotification) {
-        window.$showNotification(`备份恢复成功！处理了 ${response.details?.tablesProcessed || 0} 个表，恢复了 ${response.details?.recordsRestored || 0} 条记录`, 'success')
+        window.$showNotification(
+          `备份恢复成功！处理了 ${response.details?.tablesProcessed || 0} 个表，恢复了 ${response.details?.recordsRestored || 0} 条记录`,
+          'success'
+        )
 
         // 如果有错误，显示警告
         if (response.details?.errors && response.details.errors.length > 0) {
           setTimeout(() => {
-            window.$showNotification(`恢复过程中发生了 ${response.details.errors.length} 个错误`, 'warning')
+            window.$showNotification(
+              `恢复过程中发生了 ${response.details.errors.length} 个错误`,
+              'warning'
+            )
           }, 1000)
         }
 
@@ -409,7 +435,7 @@ const uploadFile = async () => {
 
       // 清除认证状态并重定向到首页
       setTimeout(() => {
-        const {logout} = useAuth()
+        const { logout } = useAuth()
         if (logout) {
           logout()
         }
@@ -443,8 +469,6 @@ const formatFileSize = (bytes) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
-
-
 </script>
 
 <style scoped>
@@ -647,18 +671,21 @@ const formatFileSize = (bytes) => {
   transition: width 0.3s ease;
 }
 
-.progress-details, .progress-errors {
+.progress-details,
+.progress-errors {
   margin-top: 20px;
 }
 
-.progress-details h5, .progress-errors h5 {
+.progress-details h5,
+.progress-errors h5 {
   margin: 0 0 10px 0;
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
 }
 
-.details-list, .errors-list {
+.details-list,
+.errors-list {
   max-height: 150px;
   overflow-y: auto;
   border: 1px solid #505050;
@@ -779,8 +806,8 @@ const formatFileSize = (bytes) => {
   background: #383838;
 }
 
-.radio-option input[type="radio"],
-.checkbox-option input[type="checkbox"] {
+.radio-option input[type='radio'],
+.checkbox-option input[type='checkbox'] {
   width: 1.25rem;
   height: 1.25rem;
   margin: 0;
@@ -1223,8 +1250,8 @@ const formatFileSize = (bytes) => {
     gap: 0.75rem;
   }
 
-  .radio-option input[type="radio"],
-  .checkbox-option input[type="checkbox"] {
+  .radio-option input[type='radio'],
+  .checkbox-option input[type='checkbox'] {
     width: 1.125rem;
     height: 1.125rem;
   }

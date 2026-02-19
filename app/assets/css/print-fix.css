@@ -36,7 +36,8 @@
   }
 
   /* 确保页面容器宽度正确 */
-  html, body {
+  html,
+  body {
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
@@ -164,12 +165,12 @@
     box-sizing: border-box !important;
     color: #000 !important;
   }
-  
+
   /* 学校Logo */
   .school-logo-print {
     object-fit: contain !important;
   }
-  
+
   .logo {
     object-fit: contain !important;
   }

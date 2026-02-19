@@ -6,78 +6,116 @@
       <p v-else>登录您的VoiceHub账户</p>
     </div>
 
-    <form :class="['auth-form', { 'has-error': !!error } ]" @submit.prevent="handleLogin">
+    <form :class="['auth-form', { 'has-error': !!error }]" @submit.prevent="handleLogin">
       <div class="form-group">
         <label for="username">账号名</label>
         <div class="input-wrapper">
-          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
+          <svg
+            class="input-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
           </svg>
           <input
-              id="username"
-              v-model="username"
-              :class="{ 'input-error': error }"
-              placeholder="请输入账号名"
-              required
-              type="text"
-              @input="error = ''"
-          />
+            id="username"
+            v-model="username"
+            :class="{ 'input-error': error }"
+            placeholder="请输入账号名"
+            required
+            type="text"
+            @input="error = ''"
+          >
         </div>
       </div>
 
       <div class="form-group">
         <label for="password">密码</label>
         <div class="input-wrapper">
-          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
-            <circle cx="12" cy="16" r="1"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          <svg
+            class="input-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
+            <circle cx="12" cy="16" r="1" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
           <input
-              id="password"
-              v-model="password"
-              :class="{ 'input-error': error }"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="请输入密码"
-              required
-              @input="error = ''"
-          />
-          <button
-              class="password-toggle"
-              type="button"
-              @click="showPassword = !showPassword"
+            id="password"
+            v-model="password"
+            :class="{ 'input-error': error }"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="请输入密码"
+            required
+            @input="error = ''"
           >
-            <svg v-if="showPassword" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <button class="password-toggle" type="button" @click="showPassword = !showPassword">
+            <svg
+              v-if="showPassword"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
               <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" x2="23" y1="1" y2="23"/>
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+              />
+              <line x1="1" x2="23" y1="1" y2="23" />
             </svg>
             <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
             </svg>
           </button>
         </div>
       </div>
 
       <div v-if="error" class="error-container">
-        <svg class="error-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" x2="12" y1="8" y2="12"/>
-          <line x1="12" x2="12.01" y1="16" y2="16"/>
+        <svg
+          class="error-icon"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" x2="12" y1="8" y2="12" />
+          <line x1="12" x2="12.01" y1="16" y2="16" />
         </svg>
         <span class="error-message">{{ error }}</span>
       </div>
 
       <button :disabled="loading" class="submit-btn" type="submit">
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416"
-                  stroke-dashoffset="31.416"
-                  stroke-linecap="round" stroke-width="2">
-            <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite"
-                     values="0 31.416;15.708 15.708;0 31.416"/>
-            <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite" values="0;-15.708;-31.416"/>
+          <circle
+            cx="12"
+            cy="12"
+            fill="none"
+            r="10"
+            stroke="currentColor"
+            stroke-dasharray="31.416"
+            stroke-dashoffset="31.416"
+            stroke-linecap="round"
+            stroke-width="2"
+          >
+            <animate
+              attributeName="stroke-dasharray"
+              dur="2s"
+              repeatCount="indefinite"
+              values="0 31.416;15.708 15.708;0 31.416"
+            />
+            <animate
+              attributeName="stroke-dashoffset"
+              dur="2s"
+              repeatCount="indefinite"
+              values="0;-15.708;-31.416"
+            />
           </circle>
         </svg>
         <span v-if="loading">{{ isBindMode ? '绑定中...' : '登录中...' }}</span>
@@ -88,17 +126,15 @@
     <AuthOAuthButtons v-if="!isBindMode" />
 
     <div class="form-footer">
-      <p class="help-text">
-        不同VoiceHub平台的账号不互通
-      </p>
+      <p class="help-text">不同VoiceHub平台的账号不互通</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref, computed} from 'vue'
-import {useAuth} from '~/composables/useAuth'
-import {getProviderDisplayName} from '~/utils/oauth'
+import { ref, computed } from 'vue'
+import { useAuth } from '~/composables/useAuth'
+import { getProviderDisplayName } from '~/utils/oauth'
 
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
@@ -134,7 +170,7 @@ const handleLogin = async () => {
           password: password.value
         }
       })
-      
+
       // 绑定成功后刷新认证状态
       await auth.initAuth()
       await navigateTo('/')
@@ -149,7 +185,8 @@ const handleLogin = async () => {
       }
     }
   } catch (err) {
-    error.value = err.message || (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
+    error.value =
+      err.message || (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
     // 密码错误时清空密码字段
     if (error.value.includes('密码') || error.value.includes('错误')) {
       password.value = ''
@@ -231,7 +268,9 @@ const handleLogin = async () => {
   border-radius: 2px;
   opacity: 0;
   transform: scaleX(0.2);
-  transition: transform var(--transition-normal), opacity var(--transition-normal);
+  transition:
+    transform var(--transition-normal),
+    opacity var(--transition-normal);
 }
 
 .input-wrapper:focus-within::after {
@@ -256,7 +295,9 @@ const handleLogin = async () => {
   border-radius: var(--radius-lg);
   color: var(--input-text);
   font-size: 16px;
-  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+  transition:
+    border-color var(--transition-normal),
+    box-shadow var(--transition-normal);
 }
 
 .input-wrapper input::placeholder {
@@ -292,7 +333,9 @@ const handleLogin = async () => {
   border: none;
   color: var(--text-quaternary);
   cursor: pointer;
-  transition: color 0.2s ease, transform var(--transition-fast);
+  transition:
+    color 0.2s ease,
+    transform var(--transition-fast);
   z-index: 1;
 }
 
@@ -372,7 +415,10 @@ const handleLogin = async () => {
   font-size: 16px;
   font-weight: var(--font-semibold);
   cursor: pointer;
-  transition: background var(--transition-normal), box-shadow var(--transition-normal), transform var(--transition-fast);
+  transition:
+    background var(--transition-normal),
+    box-shadow var(--transition-normal),
+    transform var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;

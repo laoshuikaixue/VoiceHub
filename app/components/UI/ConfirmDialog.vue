@@ -8,15 +8,19 @@
       leave-from-class="opacity-100 scale-100"
       leave-to-class="opacity-0 scale-95"
     >
-      <div v-if="show" class="fixed inset-0 z-[2000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" @click="handleOverlayClick">
-        <div 
-          class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden" 
+      <div
+        v-if="show"
+        class="fixed inset-0 z-[2000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        @click="handleOverlayClick"
+      >
+        <div
+          class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden"
           @click.stop
         >
           <!-- 内容 -->
           <div class="flex flex-col items-center p-8 text-center">
             <!-- 图标 -->
-            <div 
+            <div
               class="w-20 h-20 rounded-[2rem] flex items-center justify-center mb-6 transition-colors border"
               :class="iconClasses"
             >
@@ -33,18 +37,18 @@
 
             <!-- 操作按钮 -->
             <div class="flex gap-3 w-full">
-              <button 
-                @click="handleCancel" 
+              <button
                 class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="loading"
+                @click="handleCancel"
               >
                 {{ cancelText }}
               </button>
-              <button 
-                @click="handleConfirm" 
+              <button
                 class="flex-[2] px-6 py-4 text-white text-xs font-black rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="confirmBtnClasses"
                 :disabled="loading"
+                @click="handleConfirm"
               >
                 <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
                 {{ loading ? '处理中...' : confirmText }}
@@ -77,7 +81,7 @@ const props = defineProps({
   type: {
     type: String,
     default: 'warning', // 'warning' (警告), 'danger' (危险), 'info' (信息), 'success' (成功)
-    validator: value => ['warning', 'danger', 'info', 'success'].includes(value)
+    validator: (value) => ['warning', 'danger', 'info', 'success'].includes(value)
   },
   confirmText: {
     type: String,
@@ -117,17 +121,21 @@ const handleOverlayClick = () => {
 
 const iconName = computed(() => {
   switch (props.type) {
-    case 'danger': return 'alert-circle'
-    case 'success': return 'success'
-    case 'info': return 'info'
-    case 'warning': 
-    default: return 'alert-triangle'
+    case 'danger':
+      return 'alert-circle'
+    case 'success':
+      return 'success'
+    case 'info':
+      return 'info'
+    case 'warning':
+    default:
+      return 'alert-triangle'
   }
 })
 
 const iconClasses = computed(() => {
   switch (props.type) {
-    case 'danger': 
+    case 'danger':
       return 'bg-red-500/10 text-red-500 border-red-500/20 shadow-red-900/5'
     case 'success':
       return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-emerald-900/5'
@@ -154,5 +162,4 @@ const confirmBtnClasses = computed(() => {
 })
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

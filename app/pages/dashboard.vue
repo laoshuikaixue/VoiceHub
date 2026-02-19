@@ -1,11 +1,7 @@
 <template>
   <div>
     <ClientOnly>
-      <div
-          class="admin-layout"
-          @touchend="handleTouchEnd"
-          @touchstart="handleTouchStart"
-      >
+      <div class="admin-layout" @touchend="handleTouchEnd" @touchstart="handleTouchStart">
         <!-- 左侧导航栏 -->
         <AdminSidebar
           :is-open="sidebarOpen"
@@ -19,19 +15,23 @@
         />
 
         <!-- 移动端侧边栏遮罩 -->
-        <div 
-          v-if="sidebarOpen" 
+        <div
+          v-if="sidebarOpen"
           class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
           @click="closeSidebar"
-        ></div>
+        />
 
         <!-- 主内容区域 -->
-        <main class="flex-1 flex flex-col h-screen overflow-hidden lg:ml-64 relative bg-[#09090b] text-zinc-100">
-          <header class="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-zinc-800 bg-zinc-950/60 backdrop-blur-xl z-30">
+        <main
+          class="flex-1 flex flex-col h-screen overflow-hidden lg:ml-64 relative bg-[#09090b] text-zinc-100"
+        >
+          <header
+            class="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-zinc-800 bg-zinc-950/60 backdrop-blur-xl z-30"
+          >
             <div class="flex items-center gap-3">
               <button
-                @click="toggleSidebar"
                 class="lg:hidden p-2 text-zinc-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                @click="toggleSidebar"
               >
                 <Menu :size="20" />
               </button>
@@ -45,90 +45,132 @@
           <div class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8">
             <!-- 移动端返回顶部按钮 -->
             <button
-                v-if="showBackToTop"
-                aria-label="返回顶部"
-                class="fixed bottom-8 right-8 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all z-50"
-                @click="scrollToTop"
+              v-if="showBackToTop"
+              aria-label="返回顶部"
+              class="fixed bottom-8 right-8 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all z-50"
+              @click="scrollToTop"
             >
               <ChevronUp :size="24" />
             </button>
 
             <!-- 数据概览 -->
-            <div v-if="activeTab === 'overview' && permissions.canAccessPage('overview')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminOverviewDashboard @navigate="handleNavigate"/>
+            <div
+              v-if="activeTab === 'overview' && permissions.canAccessPage('overview')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminOverviewDashboard @navigate="handleNavigate" />
             </div>
 
             <!-- 歌曲管理 -->
-            <div v-if="activeTab === 'songs' && permissions.canAccessPage('songs')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminSongManagement/>
+            <div
+              v-if="activeTab === 'songs' && permissions.canAccessPage('songs')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminSongManagement />
             </div>
 
             <!-- 排期管理 -->
-            <div v-if="activeTab === 'schedule' && permissions.canAccessPage('schedule')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminScheduleManager/>
+            <div
+              v-if="activeTab === 'schedule' && permissions.canAccessPage('schedule')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminScheduleManager />
             </div>
 
             <!-- 打印排期 -->
-            <div v-if="activeTab === 'print' && permissions.canAccessPage('print')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminSchedulePrinter/>
+            <div
+              v-if="activeTab === 'print' && permissions.canAccessPage('print')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminSchedulePrinter />
             </div>
 
             <!-- 数据分析 -->
-            <div v-if="activeTab === 'data-analysis' && permissions.canAccessPage('data-analysis')"
-                 class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminDataAnalysisPanel/>
+            <div
+              v-if="activeTab === 'data-analysis' && permissions.canAccessPage('data-analysis')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminDataAnalysisPanel />
             </div>
 
             <!-- 用户管理 -->
-            <div v-if="activeTab === 'users' && permissions.canAccessPage('users')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminUserManager/>
+            <div
+              v-if="activeTab === 'users' && permissions.canAccessPage('users')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminUserManager />
             </div>
 
             <!-- 消息管理 -->
-            <div v-if="activeTab === 'notifications' && permissions.canAccessPage('notifications')"
-                 class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminNotificationSender/>
+            <div
+              v-if="activeTab === 'notifications' && permissions.canAccessPage('notifications')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminNotificationSender />
             </div>
 
             <!-- SMTP邮件配置 -->
-            <div v-if="activeTab === 'smtp-config' && permissions.canAccessPage('smtp-config')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminSmtpManager/>
+            <div
+              v-if="activeTab === 'smtp-config' && permissions.canAccessPage('smtp-config')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminSmtpManager />
             </div>
 
             <!-- 播出时段 -->
-            <div v-if="activeTab === 'playtimes' && permissions.canAccessPage('playtimes')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminPlayTimeManager/>
+            <div
+              v-if="activeTab === 'playtimes' && permissions.canAccessPage('playtimes')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminPlayTimeManager />
             </div>
 
             <!-- 投稿管理 -->
-            <div v-if="activeTab === 'request-times' && permissions.canAccessPage('request-times')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminRequestTimeManager/>
+            <div
+              v-if="activeTab === 'request-times' && permissions.canAccessPage('request-times')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminRequestTimeManager />
             </div>
 
             <!-- 学期管理 -->
-            <div v-if="activeTab === 'semesters' && permissions.canAccessPage('semesters')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminSemesterManager/>
+            <div
+              v-if="activeTab === 'semesters' && permissions.canAccessPage('semesters')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminSemesterManager />
             </div>
 
             <!-- 黑名单管理 -->
-            <div v-if="activeTab === 'blacklist' && permissions.canAccessPage('blacklist')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminBlacklistManager/>
+            <div
+              v-if="activeTab === 'blacklist' && permissions.canAccessPage('blacklist')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminBlacklistManager />
             </div>
 
             <!-- 站点配置 -->
-            <div v-if="activeTab === 'site-config' && permissions.canAccessPage('site-config')"
-                 class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminSiteConfigManager/>
+            <div
+              v-if="activeTab === 'site-config' && permissions.canAccessPage('site-config')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminSiteConfigManager />
             </div>
 
             <!-- 数据库操作 -->
-            <div v-if="activeTab === 'database' && permissions.canAccessPage('database')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminDatabaseManager/>
+            <div
+              v-if="activeTab === 'database' && permissions.canAccessPage('database')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminDatabaseManager />
             </div>
 
             <!-- API密钥管理 -->
-            <div v-if="activeTab === 'api-keys' && permissions.canAccessPage('api-keys')" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <LazyAdminApiKeyManager/>
+            <div
+              v-if="activeTab === 'api-keys' && permissions.canAccessPage('api-keys')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminApiKeyManager />
             </div>
           </div>
         </main>
@@ -138,15 +180,15 @@
 </template>
 
 <script setup>
-import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Menu, ChevronUp } from 'lucide-vue-next'
-import {useAuth} from '~/composables/useAuth'
+import { useAuth } from '~/composables/useAuth'
 import logo from '~/public/images/logo.svg'
-import {usePermissions} from '~/composables/usePermissions'
-import {useSiteConfig} from '~/composables/useSiteConfig'
+import { usePermissions } from '~/composables/usePermissions'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 
 // 使用站点配置
-const {siteTitle, initSiteConfig} = useSiteConfig()
+const { siteTitle, initSiteConfig } = useSiteConfig()
 
 // 导入组件
 
@@ -195,25 +237,32 @@ const dynamicTitle = computed(() => {
 })
 
 // 监听activeTab变化，更新页面标题
-watch(activeTab, () => {
-  if (typeof document !== 'undefined') {
-    document.title = dynamicTitle.value
-  }
-}, {immediate: true})
+watch(
+  activeTab,
+  () => {
+    if (typeof document !== 'undefined') {
+      document.title = dynamicTitle.value
+    }
+  },
+  { immediate: true }
+)
 
 // 监听siteTitle变化，更新页面标题
-watch(() => siteTitle?.value, () => {
-  if (typeof document !== 'undefined') {
-    document.title = dynamicTitle.value
+watch(
+  () => siteTitle?.value,
+  () => {
+    if (typeof document !== 'undefined') {
+      document.title = dynamicTitle.value
+    }
   }
-})
+)
 
 const getRoleDisplayName = (role) => {
   const roleNames = {
-    'USER': '普通用户',
-    'SONG_ADMIN': '歌曲管理员',
-    'ADMIN': '超级管理员',
-    'SUPER_ADMIN': '超级管理员'
+    USER: '普通用户',
+    SONG_ADMIN: '歌曲管理员',
+    ADMIN: '超级管理员',
+    SUPER_ADMIN: '超级管理员'
   }
   return roleNames[role] || role
 }
@@ -252,7 +301,7 @@ const handleResize = () => {
 
 // 返回顶部功能
 const scrollToTop = () => {
-  window.scrollTo({top: 0, behavior: 'smooth'})
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 // 监听滚动事件

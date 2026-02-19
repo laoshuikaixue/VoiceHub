@@ -1,17 +1,21 @@
 <template>
-  <Transition name="fade" mode="out-in">
-    <div
-      class="lyric-am"
-      :class="{
-        'align-right': settings.lyricAlignRight.value,
-      }"
-      :style="{
-        '--amll-lp-color': 'rgb(var(--main-cover-color, 239 239 239))',
-        '--amll-lp-hover-bg-color': 'rgba(255,255,255,0.08)',
-        '--amll-lyric-left-padding': settings.lyricAlignRight.value ? '' : `${settings.lyricHorizontalOffset.value}px`,
-        '--amll-lyric-right-padding': settings.lyricAlignRight.value ? `${settings.lyricHorizontalOffset.value}px` : '',
-      }"
-    >
+  <div
+    class="lyric-am"
+    :class="{
+      'align-right': settings.lyricAlignRight.value
+    }"
+    :style="{
+      '--amll-lp-color': 'rgb(var(--main-cover-color, 239 239 239))',
+      '--amll-lp-hover-bg-color': 'rgba(255,255,255,0.08)',
+      '--amll-lyric-left-padding': settings.lyricAlignRight.value
+        ? ''
+        : `${settings.lyricHorizontalOffset.value}px`,
+      '--amll-lyric-right-padding': settings.lyricAlignRight.value
+        ? `${settings.lyricHorizontalOffset.value}px`
+        : ''
+    }"
+  >
+    <Transition name="fade" mode="out-in">
       <div v-if="lyricManager.loading.value" class="lyric-message-container">
         <Icon name="loader" :size="32" class="spin-animation" />
         <div class="message-text">歌词加载中...</div>
@@ -27,74 +31,74 @@
       <LyricPlayer
         v-else
         ref="lyricPlayerRef"
-        :lyricLines="lyricLines"
-        :currentTime="currentTime * 1000"
+        :lyric-lines="lyricLines"
+        :current-time="currentTime * 1000"
         :playing="audioPlayer.getPlayingStatus().value"
-        :enableSpring="settings.useAMSpring.value"
-        :enableScale="settings.useAMSpring.value"
-        :alignPosition="settings.lyricsScrollOffset.value"
-        :alignAnchor="settings.lyricsScrollOffset.value > 0.4 ? 'center' : 'top'"
-        :enableBlur="settings.lyricsBlur.value"
-        :hidePassedLines="settings.hidePassedLines.value"
-        :wordFadeWidth="settings.wordFadeWidth.value"
+        :enable-spring="settings.useAMSpring.value"
+        :enable-scale="settings.useAMSpring.value"
+        :align-position="settings.lyricsScrollOffset.value"
+        :align-anchor="settings.lyricsScrollOffset.value > 0.4 ? 'center' : 'top'"
+        :enable-blur="settings.lyricsBlur.value"
+        :hide-passed-lines="settings.hidePassedLines.value"
+        :word-fade-width="settings.wordFadeWidth.value"
         :style="{
           '--display-count-down-show': settings.countDownShow.value ? 'flex' : 'none',
           '--amll-lp-font-size': `${settings.lyricFontSize.value}px`,
           'font-weight': settings.lyricFontWeight.value,
-          'font-family': settings.LyricFont.value !== 'follow' ? settings.LyricFont.value : '',
+          'font-family': settings.LyricFont.value !== 'follow' ? settings.LyricFont.value : ''
         }"
         class="am-lyric"
         @line-click="jumpSeek"
       />
-    </div>
-  </Transition>
+    </Transition>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import LyricPlayer, { type LyricPlayerRef } from '~/components/AMLL/LyricPlayer.vue';
-import Icon from '~/components/UI/Icon.vue';
-import { useLyricManager } from '~/composables/useLyricManager';
-import { useLyricSettings } from '~/composables/useLyricSettings';
-import { useAudioPlayer } from '~/composables/useAudioPlayer';
-import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl';
-import type { LyricLineMouseEvent } from '@applemusic-like-lyrics/core';
-import { cloneDeep } from 'lodash-es';
+import { ref, computed } from 'vue'
+import LyricPlayer, { type LyricPlayerRef } from '~/components/AMLL/LyricPlayer.vue'
+import Icon from '~/components/UI/Icon.vue'
+import { useLyricManager } from '~/composables/useLyricManager'
+import { useLyricSettings } from '~/composables/useLyricSettings'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
+import type { LyricLineMouseEvent } from '@applemusic-like-lyrics/core'
+import { cloneDeep } from 'lodash-es'
 
 const props = defineProps({
   currentTime: {
     type: Number,
-    default: 0,
-  },
-});
+    default: 0
+  }
+})
 
-const lyricManager = useLyricManager();
-const settings = useLyricSettings();
-const audioPlayer = useAudioPlayer();
-const audioPlayerControl = useAudioPlayerControl();
+const lyricManager = useLyricManager()
+const settings = useLyricSettings()
+const audioPlayer = useAudioPlayer()
+const audioPlayerControl = useAudioPlayerControl()
 
-const lyricPlayerRef = ref<LyricPlayerRef | null>(null);
+const lyricPlayerRef = ref<LyricPlayerRef | null>(null)
 
 const lyricLines = computed(() => {
-    // 使用 cloneDeep 剥离 Vue 响应式代理，防止 structuredClone 错误
-    return cloneDeep(lyricManager.lyrics.value);
-});
+  // 使用 cloneDeep 剥离 Vue 响应式代理，防止 structuredClone 错误
+  return cloneDeep(lyricManager.lyrics.value)
+})
 
 // 进度跳转
 const jumpSeek = (line: LyricLineMouseEvent) => {
   // 移除焦点，防止组件内部焦点导致键盘事件异常
   if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
+    document.activeElement.blur()
   }
 
-  const lineContent = line.line.getLine();
-  if (!lineContent?.startTime) return;
-  const time = lineContent.startTime;
-  const offsetMs = settings.lyricOffset.value;
-  const targetTime = (time - offsetMs) / 1000;
+  const lineContent = line.line.getLine()
+  if (!lineContent?.startTime) return
+  const time = lineContent.startTime
+  const offsetMs = settings.lyricOffset.value
+  const targetTime = (time - offsetMs) / 1000
 
-  audioPlayerControl.seekAndPlay(targetTime);
-};
+  audioPlayerControl.seekAndPlay(targetTime)
+}
 </script>
 
 <style scoped>
@@ -161,7 +165,7 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
   }
 }
 
-:deep(.am-lyric div[class*="lyricMainLine"] span) {
+:deep(.am-lyric div[class*='lyricMainLine'] span) {
   text-align: start;
 }
 
@@ -175,7 +179,7 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
   color: var(--amll-lp-color, #efefef);
   gap: 16px;
   opacity: 0.8;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .message-text {
@@ -191,7 +195,11 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

@@ -1,14 +1,17 @@
 <template>
-  <div class="relative" :class="className" ref="containerRef">
-    <div 
-      @click="toggleDropdown"
+  <div ref="containerRef" class="relative" :class="className">
+    <div
       class="flex items-center gap-2 px-3 py-2 bg-zinc-950 border rounded-lg transition-all cursor-pointer select-none"
       :class="[
-        isOpen ? 'border-blue-500/50 bg-blue-600/5 shadow-lg' : 'border-zinc-800 hover:border-zinc-700'
+        isOpen
+          ? 'border-blue-500/50 bg-blue-600/5 shadow-lg'
+          : 'border-zinc-800 hover:border-zinc-700'
       ]"
+      @click="toggleDropdown"
     >
       <div class="flex flex-col flex-1 min-w-0">
-        <span v-if="label" 
+        <span
+          v-if="label"
           class="text-[8px] font-black uppercase tracking-widest leading-none mb-0.5 transition-colors"
           :class="isOpen ? 'text-blue-400' : 'text-zinc-600'"
         >
@@ -30,7 +33,7 @@
         leave-from-class="transform scale-100 opacity-100"
         leave-to-class="transform scale-95 opacity-0"
       >
-        <div 
+        <div
           v-if="isOpen"
           ref="dropdownRef"
           :style="dropdownStyle"
@@ -40,11 +43,13 @@
             <button
               v-for="option in normalizedOptions"
               :key="option.value"
-              @click="selectOption(option)"
               class="w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="[
-                isSelected(option) ? 'bg-blue-600/10 text-blue-400' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'
+                isSelected(option)
+                  ? 'bg-blue-600/10 text-blue-400'
+                  : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'
               ]"
+              @click="selectOption(option)"
             >
               <span class="truncate">{{ option.label }}</span>
               <Icon v-if="isSelected(option)" name="check" :size="12" class="shrink-0" />
@@ -91,7 +96,7 @@ const dropdownStyle = ref({})
 
 // 规范化选项为 { label, value } 格式
 const normalizedOptions = computed(() => {
-  return props.options.map(option => {
+  return props.options.map((option) => {
     if (typeof option === 'object' && option !== null) {
       return {
         label: option[props.labelKey] || option.label,
@@ -105,8 +110,12 @@ const normalizedOptions = computed(() => {
 
 // 获取当前显示标签
 const displayLabel = computed(() => {
-  const selected = normalizedOptions.value.find(opt => opt.value === props.modelValue)
-  return selected ? selected.label : (props.modelValue && typeof props.modelValue !== 'object' ? props.modelValue : props.placeholder)
+  const selected = normalizedOptions.value.find((opt) => opt.value === props.modelValue)
+  return selected
+    ? selected.label
+    : props.modelValue && typeof props.modelValue !== 'object'
+      ? props.modelValue
+      : props.placeholder
 })
 
 const isSelected = (option) => {
@@ -117,14 +126,14 @@ const updatePosition = () => {
   if (!isOpen.value || !containerRef.value) return
 
   const rect = containerRef.value.getBoundingClientRect()
-  
+
   // 简单的位置计算，默认向下弹出
   // 检查底部空间
   const windowHeight = window.innerHeight
   const spaceBelow = windowHeight - rect.bottom
-  
-  let top = rect.bottom + 4
-  
+
+  const top = rect.bottom + 4
+
   // 如果底部空间不足且顶部空间充足，则向上弹出
   if (spaceBelow < 220 && rect.top > 220) {
     // 暂时保持向下，或者使用 fixed 定位让它尽量可见
@@ -158,7 +167,7 @@ const handleClickOutside = (event) => {
   // 检查点击是否在容器内部或者下拉框内部
   const isClickInContainer = containerRef.value && containerRef.value.contains(event.target)
   const isClickInDropdown = dropdownRef.value && dropdownRef.value.contains(event.target)
-  
+
   if (!isClickInContainer && !isClickInDropdown) {
     isOpen.value = false
   }

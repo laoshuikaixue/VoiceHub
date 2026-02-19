@@ -8,42 +8,42 @@
             <Icon name="search" :size="18" />
           </div>
           <input
-              v-model="searchQuery"
-              class="mobile-search-input"
-              placeholder="搜索点播记录..."
-              type="text"
-          />
+            v-model="searchQuery"
+            class="mobile-search-input"
+            placeholder="搜索点播记录..."
+            type="text"
+          >
         </div>
 
         <div class="mobile-tabs">
           <button
-              v-ripple
-              :class="{ 'active': activeTab === 'all' }"
-              class="mobile-tab-btn"
-              @click="setActiveTab('all')"
+            v-ripple
+            :class="{ active: activeTab === 'all' }"
+            class="mobile-tab-btn"
+            @click="setActiveTab('all')"
           >
             全部投稿
-            <div v-if="activeTab === 'all'" class="active-indicator"></div>
+            <div v-if="activeTab === 'all'" class="active-indicator" />
           </button>
           <button
-              v-if="isAuthenticated"
-              v-ripple
-              :class="{ 'active': activeTab === 'mine' }"
-              class="mobile-tab-btn"
-              @click="setActiveTab('mine')"
+            v-if="isAuthenticated"
+            v-ripple
+            :class="{ active: activeTab === 'mine' }"
+            class="mobile-tab-btn"
+            @click="setActiveTab('mine')"
           >
             我的投稿
-            <div v-if="activeTab === 'mine'" class="active-indicator"></div>
+            <div v-if="activeTab === 'mine'" class="active-indicator" />
           </button>
           <button
-              v-if="isAuthenticated"
-              v-ripple
-              :class="{ 'active': activeTab === 'replays' }"
-              class="mobile-tab-btn"
-              @click="setActiveTab('replays')"
+            v-if="isAuthenticated"
+            v-ripple
+            :class="{ active: activeTab === 'replays' }"
+            class="mobile-tab-btn"
+            @click="setActiveTab('replays')"
           >
             我的重播
-            <div v-if="activeTab === 'replays'" class="active-indicator"></div>
+            <div v-if="activeTab === 'replays'" class="active-indicator" />
           </button>
         </div>
       </div>
@@ -52,28 +52,28 @@
       <div class="desktop-header-content desktop-only">
         <div class="tab-controls">
           <button
-              v-ripple
-              :class="{ 'active': activeTab === 'all' }"
-              class="tab-button"
-              @click="setActiveTab('all')"
+            v-ripple
+            :class="{ active: activeTab === 'all' }"
+            class="tab-button"
+            @click="setActiveTab('all')"
           >
             全部投稿
           </button>
           <button
-              v-if="isAuthenticated"
-              v-ripple
-              :class="{ 'active': activeTab === 'mine' }"
-              class="tab-button"
-              @click="setActiveTab('mine')"
+            v-if="isAuthenticated"
+            v-ripple
+            :class="{ active: activeTab === 'mine' }"
+            class="tab-button"
+            @click="setActiveTab('mine')"
           >
             我的投稿
           </button>
           <button
-              v-if="isAuthenticated"
-              v-ripple
-              :class="{ 'active': activeTab === 'replays' }"
-              class="tab-button"
-              @click="setActiveTab('replays')"
+            v-if="isAuthenticated"
+            v-ripple
+            :class="{ active: activeTab === 'replays' }"
+            class="tab-button"
+            @click="setActiveTab('replays')"
           >
             我的重播
           </button>
@@ -82,64 +82,82 @@
         <div class="search-actions">
           <div class="search-box">
             <input
-                v-model="searchQuery"
-                class="search-input"
-                placeholder="输入想要搜索的歌曲"
-                type="text"
-            />
+              v-model="searchQuery"
+              class="search-input"
+              placeholder="输入想要搜索的歌曲"
+              type="text"
+            >
             <span class="search-icon">🔍</span>
           </div>
 
-        <!-- 学期选择器 -->
-        <div v-if="availableSemesters.length > 1" class="semester-selector-compact">
-          <button
+          <!-- 学期选择器 -->
+          <div v-if="availableSemesters.length > 1" class="semester-selector-compact">
+            <button
               :title="'当前学期: ' + selectedSemester"
               class="semester-toggle-btn"
               @click="showSemesterDropdown = !showSemesterDropdown"
-          >
-            <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                 stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/>
-            </svg>
-          </button>
+            >
+              <svg
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" />
+              </svg>
+            </button>
 
-          <div v-if="showSemesterDropdown" class="semester-dropdown">
-            <div
+            <div v-if="showSemesterDropdown" class="semester-dropdown">
+              <div
                 v-for="semester in availableSemesters"
                 :key="semester"
-                :class="{ 'active': selectedSemester === semester }"
+                :class="{ active: selectedSemester === semester }"
                 class="semester-option"
                 @click="onSemesterChange(semester)"
-            >
-              {{ semester }}
+              >
+                {{ semester }}
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- 添加刷新按钮 - 使用SVG图标 -->
-        <button
+          <!-- 添加刷新按钮 - 使用SVG图标 -->
+          <button
             :disabled="loading"
             :title="loading ? '正在刷新...' : '刷新歌曲列表'"
             class="refresh-button"
             @click="handleRefresh"
-        >
-          <svg :class="{ 'rotating': loading }" class="refresh-icon" fill="none" height="16"
-               stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"
-               width="16"
-               xmlns="http://www.w3.org/2000/svg">
-            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-          </svg>
-        </button>
+          >
+            <svg
+              :class="{ rotating: loading }"
+              class="refresh-icon"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
-    </div> <!-- desktop-header-content -->
+      <!-- desktop-header-content -->
     </div>
-
 
     <!-- 使用Transition组件包裹所有内容 -->
     <Transition mode="out-in" name="tab-switch">
-      <div v-if="loading" :key="'loading'" class="loading">
-        加载中...
-      </div>
+      <div v-if="loading" :key="'loading'" class="loading">加载中...</div>
 
       <div v-else-if="error" :key="'error'" class="error">
         {{ error }}
@@ -147,29 +165,27 @@
 
       <div v-else-if="displayedSongs.length === 0" :key="'empty-' + activeTab" class="empty">
         {{
-          activeTab === 'mine' ? '您还没有投稿歌曲，马上去点歌吧！' :
-              activeTab === 'replays' ? '您还没有申请重播的歌曲，去看看已经播放过的歌吧！' :
-                  '暂无歌曲，马上去点歌吧！'
+          activeTab === 'mine'
+            ? '您还没有投稿歌曲，马上去点歌吧！'
+            : activeTab === 'replays'
+              ? '您还没有申请重播的歌曲，去看看已经播放过的歌吧！'
+              : '暂无歌曲，马上去点歌吧！'
         }}
       </div>
 
       <div v-else :key="'songs-' + activeTab" class="songs-container">
-        <TransitionGroup
-            class="song-cards"
-            name="page"
-            tag="div"
-        >
+        <TransitionGroup class="song-cards" name="page" tag="div">
           <div
-              v-for="song in paginatedSongs"
-              :key="song.id"
-              :class="{ 
-                'played': song.played, 
-                'scheduled': song.scheduled, 
-                'focused': isSongFocused(song.id),
-                'playing': isCurrentPlaying(song.id)
-              }"
-              class="song-card"
-              @click="handleSongCardClick(song)"
+            v-for="song in paginatedSongs"
+            :key="song.id"
+            :class="{
+              played: song.played,
+              scheduled: song.scheduled,
+              focused: isSongFocused(song.id),
+              playing: isCurrentPlaying(song.id)
+            }"
+            class="song-card"
+            @click="handleSongCardClick(song)"
           >
             <!-- 歌曲卡片主体 -->
             <div class="song-card-main">
@@ -177,61 +193,86 @@
               <div class="song-cover" @click.stop="togglePlaySong(song)">
                 <template v-if="song.cover">
                   <img
-                      :alt="song.title"
-                      :src="convertToHttps(song.cover)"
-                      class="cover-image"
-                      referrerpolicy="no-referrer"
-                      @error="handleImageError($event, song)"
-                  />
+                    :alt="song.title"
+                    :src="convertToHttps(song.cover)"
+                    class="cover-image"
+                    referrerpolicy="no-referrer"
+                    @error="handleImageError($event, song)"
+                  >
                 </template>
                 <div v-else class="text-cover">
                   {{ getFirstChar(song.title) }}
                 </div>
                 <!-- 添加播放按钮 (仅桌面端显示) -->
-                <div v-if="(song.musicPlatform && song.musicId) || song.playUrl" class="play-button-overlay">
+                <div
+                  v-if="(song.musicPlatform && song.musicId) || song.playUrl"
+                  class="play-button-overlay"
+                >
                   <button :title="isCurrentPlaying(song.id) ? '暂停' : '播放'" class="play-button">
-                    <Icon v-if="isCurrentPlaying(song.id)" :size="16" color="white" name="pause"/>
-                    <Icon v-else :size="16" color="white" name="play"/>
+                    <Icon v-if="isCurrentPlaying(song.id)" :size="16" color="white" name="pause" />
+                    <Icon v-else :size="16" color="white" name="play" />
                   </button>
                 </div>
               </div>
 
               <div class="song-info">
                 <h3 :title="song.title + ' - ' + song.artist" class="song-title">
-                  <marquee-text :activated="isSongFocused(song.id)" :text="`${song.title} - ${song.artist}`"/>
+                  <marquee-text
+                    :activated="isSongFocused(song.id)"
+                    :text="`${song.title} - ${song.artist}`"
+                  />
                   <span
-                      v-if="song.played"
-                      :title="song.scheduleDate ? `播放日期：${formatScheduleDate(song.scheduleDate)}` : '已播放'"
-                      class="played-tag"
+                    v-if="song.played"
+                    :title="
+                      song.scheduleDate
+                        ? `播放日期：${formatScheduleDate(song.scheduleDate)}`
+                        : '已播放'
+                    "
+                    class="played-tag"
                   >
                     已播放
                   </span>
                   <span
-                      v-else-if="song.scheduled"
-                      :title="song.scheduleDate ? `排期日期：${formatScheduleDate(song.scheduleDate)}` : '已排期'"
-                      class="scheduled-tag"
+                    v-else-if="song.scheduled"
+                    :title="
+                      song.scheduleDate
+                        ? `排期日期：${formatScheduleDate(song.scheduleDate)}`
+                        : '已排期'
+                    "
+                    class="scheduled-tag"
                   >
                     已排期
                   </span>
-                  <span
-                      v-else-if="song.isReplay"
-                      title="重播歌曲"
-                      class="replay-tag"
-                  >
-                    重播
-                  </span>
+                  <span v-else-if="song.isReplay" title="重播歌曲" class="replay-tag"> 重播 </span>
                 </h3>
                 <div class="song-meta">
                   <span
-                      :title="(song.collaborators && song.collaborators.length ? '主投稿人: ' : '投稿人: ') + song.requester + (song.collaborators && song.collaborators.length ? '\n联合投稿: ' + song.collaborators.map(c => c.displayName || c.name).join(', ') : '')"
-                      class="requester">
+                    :title="
+                      (song.collaborators && song.collaborators.length
+                        ? '主投稿人: '
+                        : '投稿人: ') +
+                      song.requester +
+                      (song.collaborators && song.collaborators.length
+                        ? '\n联合投稿: ' +
+                          song.collaborators.map((c) => c.displayName || c.name).join(', ')
+                        : '')
+                    "
+                    class="requester"
+                  >
                     <template v-if="song.isReplay">
-                      重播申请 ({{ song.replayRequestCount || 0 }})：{{ song.replayRequesters ? song.replayRequesters.map(r => r.name).slice(0, 3).join(', ') + (song.replayRequesters.length > 3 ? '...' : '') : '' }}
+                      重播申请 ({{ song.replayRequestCount || 0 }})：{{
+                        song.replayRequesters
+                          ? song.replayRequesters
+                              .map((r) => r.name)
+                              .slice(0, 3)
+                              .join(', ') + (song.replayRequesters.length > 3 ? '...' : '')
+                          : ''
+                      }}
                     </template>
                     <template v-else>
                       投稿人：{{ song.requester }}
                       <span v-if="song.collaborators && song.collaborators.length > 0">
-                         & {{ song.collaborators.map(c => c.displayName || c.name).join(' & ') }}
+                        & {{ song.collaborators.map((c) => c.displayName || c.name).join(' & ') }}
                       </span>
                     </template>
                   </span>
@@ -249,13 +290,26 @@
                 <!-- 点赞按钮 -->
                 <div class="like-button-wrapper">
                   <button
-                      :class="{ 'liked': song.voted, 'disabled': song.played || song.scheduled || isMySong(song) || voteInProgress }"
-                      :disabled="song.played || song.scheduled || voteInProgress"
-                      :title="song.played ? '已播放的歌曲不能点赞' : song.scheduled ? '已排期的歌曲不能点赞' : isMySong(song) ? '不允许自己给自己点赞' : (song.voted ? '点击取消点赞' : '点赞')"
-                      class="like-button"
-                      @click.stop="handleVote(song)"
+                    :class="{
+                      liked: song.voted,
+                      disabled: song.played || song.scheduled || isMySong(song) || voteInProgress
+                    }"
+                    :disabled="song.played || song.scheduled || voteInProgress"
+                    :title="
+                      song.played
+                        ? '已播放的歌曲不能点赞'
+                        : song.scheduled
+                          ? '已排期的歌曲不能点赞'
+                          : isMySong(song)
+                            ? '不允许自己给自己点赞'
+                            : song.voted
+                              ? '点击取消点赞'
+                              : '点赞'
+                    "
+                    class="like-button"
+                    @click.stop="handleVote(song)"
                   >
-                    <img alt="点赞" class="like-icon" :src="thumbsUp"/>
+                    <img alt="点赞" class="like-icon" :src="thumbsUp" >
                   </button>
                 </div>
               </div>
@@ -263,17 +317,15 @@
 
             <!-- 投稿时间和撤销按钮 -->
             <div class="submission-footer">
-              <div class="submission-time">
-                投稿时间：{{ song.requestedAt }}
-              </div>
+              <div class="submission-time">投稿时间：{{ song.requestedAt }}</div>
 
               <!-- 如果是自己的投稿或联合投稿，显示撤回/退出按钮 -->
               <button
-                  v-if="(isMySong(song) || isCollaborator(song)) && !song.played && !song.scheduled"
-                  :disabled="actionInProgress"
-                  :title="isMySong(song) ? '撤回投稿' : '退出联合投稿'"
-                  class="withdraw-button"
-                  @click.stop="handleWithdraw(song)"
+                v-if="(isMySong(song) || isCollaborator(song)) && !song.played && !song.scheduled"
+                :disabled="actionInProgress"
+                :title="isMySong(song) ? '撤回投稿' : '退出联合投稿'"
+                class="withdraw-button"
+                @click.stop="handleWithdraw(song)"
               >
                 撤销
               </button>
@@ -281,20 +333,20 @@
               <!-- 申请/取消重播按钮 -->
               <template v-if="song.played && isAuthenticated">
                 <button
-                    v-if="shouldShowCancelButton(song)"
-                    :disabled="actionInProgress"
-                    class="withdraw-button replay-cancel-btn"
-                    title="撤回重播申请"
-                    @click.stop="handleCancelReplay(song)"
+                  v-if="shouldShowCancelButton(song)"
+                  :disabled="actionInProgress"
+                  class="withdraw-button replay-cancel-btn"
+                  title="撤回重播申请"
+                  @click.stop="handleCancelReplay(song)"
                 >
                   撤回申请
                 </button>
                 <button
-                    v-else-if="enableReplayRequests && shouldShowRequestButton(song)"
-                    :disabled="isReplayButtonDisabled(song)"
-                    class="withdraw-button replay-request-btn"
-                    :title="getReplayButtonTitle(song)"
-                    @click.stop="handleRequestReplay(song)"
+                  v-else-if="enableReplayRequests && shouldShowRequestButton(song)"
+                  :disabled="isReplayButtonDisabled(song)"
+                  class="withdraw-button replay-request-btn"
+                  :title="getReplayButtonTitle(song)"
+                  @click.stop="handleRequestReplay(song)"
                 >
                   {{ getReplayButtonText(song) }}
                 </button>
@@ -308,54 +360,52 @@
           <!-- 桌面端分页 -->
           <div class="pagination desktop-only">
             <button
-                :disabled="currentPage === 1"
-                class="page-button"
-                @click="goToPage(currentPage - 1)"
+              :disabled="currentPage === 1"
+              class="page-button"
+              @click="goToPage(currentPage - 1)"
             >
               上一页
             </button>
 
             <div class="page-numbers">
               <button
-                  v-for="page in displayedPageNumbers"
-                  :key="page"
-                  :class="['page-number', { active: currentPage === page }]"
-                  @click="goToPage(page)"
+                v-for="page in displayedPageNumbers"
+                :key="page"
+                :class="['page-number', { active: currentPage === page }]"
+                @click="goToPage(page)"
               >
                 {{ page }}
               </button>
             </div>
 
             <button
-                :disabled="currentPage === totalPages"
-                class="page-button"
-                @click="goToPage(currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              class="page-button"
+              @click="goToPage(currentPage + 1)"
             >
               下一页
             </button>
 
-            <div class="page-info">
-              {{ currentPage }} / {{ totalPages }} 页
-            </div>
+            <div class="page-info">{{ currentPage }} / {{ totalPages }} 页</div>
 
             <!-- 自定义跳转控件 -->
             <div class="page-jump">
               <span class="jump-label">跳转至</span>
               <input
-                  v-model.number="jumpPageInput"
-                  :max="totalPages"
-                  :min="1"
-                  :placeholder="'1-' + totalPages"
-                  class="jump-input"
-                  type="number"
-                  @input="validateJumpInput"
-                  @keyup.enter="handleJumpToPage"
-              />
+                v-model.number="jumpPageInput"
+                :max="totalPages"
+                :min="1"
+                :placeholder="'1-' + totalPages"
+                class="jump-input"
+                type="number"
+                @input="validateJumpInput"
+                @keyup.enter="handleJumpToPage"
+              >
               <button
-                  :disabled="!isValidJumpPage"
-                  class="jump-button"
-                  title="跳转到指定页面"
-                  @click="handleJumpToPage"
+                :disabled="!isValidJumpPage"
+                class="jump-button"
+                title="跳转到指定页面"
+                @click="handleJumpToPage"
               >
                 跳转
               </button>
@@ -365,31 +415,31 @@
           <!-- 移动端分页 -->
           <div class="pagination-mobile mobile-only">
             <button
-                :disabled="currentPage === 1"
-                class="page-nav-btn prev"
-                @click="goToPage(currentPage - 1)"
+              :disabled="currentPage === 1"
+              class="page-nav-btn prev"
+              @click="goToPage(currentPage - 1)"
             >
               <Icon name="chevron-left" :size="20" />
             </button>
 
             <div class="page-selector">
               <input
-                  v-model.number="jumpPageInput"
-                  type="number"
-                  class="mobile-page-input"
-                  :placeholder="currentPage"
-                  @focus="jumpPageInput = currentPage"
-                  @blur="handleJumpToPage"
-                  @keyup.enter="handleJumpToPage"
-              />
+                v-model.number="jumpPageInput"
+                type="number"
+                class="mobile-page-input"
+                :placeholder="currentPage"
+                @focus="jumpPageInput = currentPage"
+                @blur="handleJumpToPage"
+                @keyup.enter="handleJumpToPage"
+              >
               <span class="divider">/</span>
               <span class="total">{{ totalPages }}</span>
             </div>
 
             <button
-                :disabled="currentPage === totalPages"
-                class="page-nav-btn next"
-                @click="goToPage(currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              class="page-nav-btn next"
+              @click="goToPage(currentPage + 1)"
             >
               <Icon name="chevron-right" :size="20" />
             </button>
@@ -398,13 +448,13 @@
 
         <!-- 确认对话框 -->
         <ConfirmDialog
-            :show="confirmDialog.show"
-            :title="confirmDialog.title"
-            :message="confirmDialog.message"
-            :type="confirmDialog.type"
-            :loading="actionInProgress"
-            @confirm="confirmAction"
-            @cancel="cancelConfirm"
+          :show="confirmDialog.show"
+          :title="confirmDialog.title"
+          :message="confirmDialog.message"
+          :type="confirmDialog.type"
+          :loading="actionInProgress"
+          @confirm="confirmAction"
+          @cancel="cancelConfirm"
         />
       </div>
     </Transition>
@@ -412,19 +462,23 @@
 </template>
 
 <script setup>
-import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
-import {useAuth} from '~/composables/useAuth'
-import {useAudioPlayer} from '~/composables/useAudioPlayer'
-import {useSemesters} from '~/composables/useSemesters'
-import {useMusicSources} from '~/composables/useMusicSources'
-import {useAudioQuality} from '~/composables/useAudioQuality'
-import {useSongs} from '~/composables/useSongs'
-import {useSiteConfig} from '~/composables/useSiteConfig'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useAuth } from '~/composables/useAuth'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useSemesters } from '~/composables/useSemesters'
+import { useMusicSources } from '~/composables/useMusicSources'
+import { useAudioQuality } from '~/composables/useAudioQuality'
+import { useSongs } from '~/composables/useSongs'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 import Icon from '~/components/UI/Icon.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import {convertToHttps} from '~/utils/url'
+import { convertToHttps } from '~/utils/url'
 import thumbsUp from '~/public/images/thumbs-up.svg'
+
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
 
 const props = defineProps({
   songs: {
@@ -445,7 +499,14 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['vote', 'withdraw', 'cancelReplay', 'requestReplay', 'refresh', 'semester-change'])
+const emit = defineEmits([
+  'vote',
+  'withdraw',
+  'cancelReplay',
+  'requestReplay',
+  'refresh',
+  'semester-change'
+])
 const voteInProgress = ref(false)
 const actionInProgress = ref(false)
 const sortBy = ref('popularity')
@@ -453,7 +514,7 @@ const sortOrder = ref('desc') // 'desc' for newest first, 'asc' for oldest first
 const searchQuery = ref('') // 搜索查询
 const activeTab = ref('all') // 默认显示全部投稿
 const auth = useAuth()
-const {enableReplayRequests} = useSiteConfig()
+const { enableReplayRequests } = useSiteConfig()
 const isAuthenticated = computed(() => auth && auth.isAuthenticated && auth.isAuthenticated.value)
 
 // 焦点状态管理
@@ -476,14 +537,14 @@ const isSongFocused = (songId) => {
 }
 
 // 学期相关
-const {fetchCurrentSemester, currentSemester, semesterUpdateEvent} = useSemesters()
+const { fetchCurrentSemester, currentSemester, semesterUpdateEvent } = useSemesters()
 const availableSemesters = ref([])
 const selectedSemester = ref('')
 const showSemesterDropdown = ref(false)
 
 // 获取完整歌曲数据源
 const songsComposable = useSongs()
-const {playTimeEnabled} = useSongs()
+const { playTimeEnabled } = useSongs()
 const allSongsData = computed(() => songsComposable?.visibleSongs?.value || [])
 
 // 音频播放相关
@@ -508,7 +569,7 @@ const isUserManuallySelected = ref(false)
 
 // 切换活动标签
 const setActiveTab = (tab) => {
-  if (activeTab.value === tab) return; // 如果点击的是当前标签，不执行切换
+  if (activeTab.value === tab) return // 如果点击的是当前标签，不执行切换
   activeTab.value = tab
   currentPage.value = 1 // 重置为第一页
 }
@@ -521,7 +582,6 @@ const checkMobile = () => {
 // 处理学期过滤变化事件
 const handleSemesterFilterChange = (event) => {
   const newSemester = event.detail.semester
-
 
   // 更新选中的学期
   selectedSemester.value = newSemester
@@ -571,7 +631,6 @@ onMounted(async () => {
 
     // 初始化完成后，尝试执行一次默认选择，确保正确的初始状态
     await selectDefaultSemester()
-
   } catch (error) {
     console.error('组件初始化失败:', error)
   } finally {
@@ -586,12 +645,16 @@ onUnmounted(() => {
 })
 
 // 监听歌曲数据变化，更新学期信息
-watch(() => props.songs, () => {
-  // 只有在组件完全初始化后且不在获取学期信息时才处理数据更新
-  if (isComponentInitialized.value && !isDataLoading.value && !isFetchingSemesters.value) {
-    fetchAvailableSemesters()
-  }
-}, {deep: true})
+watch(
+  () => props.songs,
+  () => {
+    // 只有在组件完全初始化后且不在获取学期信息时才处理数据更新
+    if (isComponentInitialized.value && !isDataLoading.value && !isFetchingSemesters.value) {
+      fetchAvailableSemesters()
+    }
+  },
+  { deep: true }
+)
 
 // 监听学期更新事件
 watch(semesterUpdateEvent, async () => {
@@ -607,16 +670,21 @@ watch(searchQuery, () => {
 })
 
 // 监听allSongsData变化，当数据真正加载完成时重新获取学期信息
-watch(allSongsData, (newData) => {
-  // 只有在组件完全初始化后且数据真正有内容时才处理
-  if (isComponentInitialized.value && newData && newData.length > 0 && !isFetchingSemesters.value) {
-    fetchAvailableSemesters()
-  }
-}, {deep: true})
-
-import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
+watch(
+  allSongsData,
+  (newData) => {
+    // 只有在组件完全初始化后且数据真正有内容时才处理
+    if (
+      isComponentInitialized.value &&
+      newData &&
+      newData.length > 0 &&
+      !isFetchingSemesters.value
+    ) {
+      fetchAvailableSemesters()
+    }
+  },
+  { deep: true }
+)
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -665,7 +733,7 @@ const isMySong = (song) => {
 const isCollaborator = (song) => {
   if (!auth || !auth.user || !auth.user.value) return false
   if (!song.collaborators || !Array.isArray(song.collaborators)) return false
-  return song.collaborators.some(c => c.id === auth.user.value.id)
+  return song.collaborators.some((c) => c.id === auth.user.value.id)
 }
 
 // 应用过滤器和搜索
@@ -676,20 +744,21 @@ const displayedSongs = computed(() => {
 
   // 应用学期过滤器
   if (selectedSemester.value) {
-    result = result.filter(song => song.semester === selectedSemester.value)
+    result = result.filter((song) => song.semester === selectedSemester.value)
   }
 
   // 应用标签过滤器
   if (activeTab.value === 'mine') {
-    result = result.filter(song => isMySong(song))
+    result = result.filter((song) => isMySong(song))
   } else if (activeTab.value === 'replays') {
-    result = result.filter(song => song.replayRequested)
+    result = result.filter((song) => song.replayRequested)
   }
 
   // 应用搜索过滤器
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase().trim()
-    result = result.filter(song =>
+    result = result.filter(
+      (song) =>
         song.title.toLowerCase().includes(query) ||
         song.artist.toLowerCase().includes(query) ||
         (song.requester && song.requester.toLowerCase().includes(query))
@@ -697,9 +766,9 @@ const displayedSongs = computed(() => {
   }
 
   // 按状态分组：未排期、已排期、已播放
-  const unscheduledSongs = result.filter(song => !song.played && !song.scheduled)
-  const scheduledSongs = result.filter(song => !song.played && song.scheduled)
-  const playedSongs = result.filter(song => song.played)
+  const unscheduledSongs = result.filter((song) => !song.played && !song.scheduled)
+  const scheduledSongs = result.filter((song) => !song.played && song.scheduled)
+  const playedSongs = result.filter((song) => song.played)
 
   // 对每个分组内部进行排序
   const sortSongs = (songs) => {
@@ -723,11 +792,7 @@ const displayedSongs = computed(() => {
   }
 
   // 返回按顺序排列的歌曲：未排期 → 已排期 → 已播放
-  return [
-    ...sortSongs(unscheduledSongs),
-    ...sortSongs(scheduledSongs),
-    ...sortSongs(playedSongs)
-  ]
+  return [...sortSongs(unscheduledSongs), ...sortSongs(scheduledSongs), ...sortSongs(playedSongs)]
 })
 
 // 计算总页数
@@ -795,7 +860,11 @@ const validateJumpInput = () => {
 // 处理跳转到指定页面
 const handleJumpToPage = () => {
   // 如果输入为空，直接返回，不触发提示
-  if (jumpPageInput.value === '' || jumpPageInput.value === null || jumpPageInput.value === undefined) {
+  if (
+    jumpPageInput.value === '' ||
+    jumpPageInput.value === null ||
+    jumpPageInput.value === undefined
+  ) {
     isValidJumpPage.value = false
     return
   }
@@ -845,7 +914,7 @@ const handleVote = async (song) => {
   try {
     if (song.voted) {
       // 如果已投票，则调用撤销投票
-      emit('vote', {...song, unvote: true})
+      emit('vote', { ...song, unvote: true })
     } else {
       // 正常投票
       emit('vote', song)
@@ -910,12 +979,12 @@ const handleRequestReplay = (song) => {
 const getReplayButtonText = (song) => {
   if (actionInProgress.value) return '处理中...'
   if (!song) return '申请重播'
-  
+
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
     return '非本学期'
   }
-  
+
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     // 如果在冷却期内
@@ -925,27 +994,27 @@ const getReplayButtonText = (song) => {
     // 冷却期已过
     return '申请重播'
   }
-  
+
   if (song.replayRequestStatus === 'FULFILLED') {
     return '已重播'
   }
-  
+
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
     return '撤回申请'
   }
-  
+
   return '申请重播'
 }
 
 // 获取重播按钮标题（tooltip）
 const getReplayButtonTitle = (song) => {
   if (!song) return '申请重播'
-  
+
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
     return '只能申请重播当前学期的歌曲'
   }
-  
+
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
@@ -953,27 +1022,27 @@ const getReplayButtonTitle = (song) => {
     }
     return '申请重播'
   }
-  
+
   if (song.replayRequestStatus === 'FULFILLED') {
     return '该歌曲已重播'
   }
-  
+
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
     return '撤回重播申请'
   }
-  
+
   return '申请重播'
 }
 
 // 检查重播按钮是否应该禁用
 const isReplayButtonDisabled = (song) => {
   if (actionInProgress.value || !song) return true
-  
+
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
     return true
   }
-  
+
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     // 如果在冷却期内，禁用按钮
@@ -983,11 +1052,11 @@ const isReplayButtonDisabled = (song) => {
     // 冷却期已过，允许重新申请
     return false
   }
-  
+
   if (song.replayRequestStatus === 'FULFILLED') {
     return true
   }
-  
+
   // PENDING 状态时不禁用，因为可以撤回
   return false
 }
@@ -1014,7 +1083,7 @@ const handleRefresh = () => {
 
 // 确认执行操作
 const confirmAction = async () => {
-  const {action, data} = confirmDialog.value
+  const { action, data } = confirmDialog.value
 
   actionInProgress.value = true
   try {
@@ -1049,13 +1118,12 @@ const getFirstChar = (title) => {
   return title.trim().charAt(0)
 }
 
-
 // 播放歌曲的辅助函数，处理 URL 获取和播放列表构建
 // 提取此函数以避免在 togglePlaySong 中重复相同的错误处理逻辑
 const playSongWithUrlFetching = async (song) => {
   try {
     const url = await getMusicUrl(song)
-    
+
     // 对于哔哩哔哩视频，即使没有 URL 也允许播放
     if (!url && song.musicPlatform !== 'bilibili') {
       if (window.$showNotification) {
@@ -1063,17 +1131,17 @@ const playSongWithUrlFetching = async (song) => {
       }
       return
     }
-    
+
     const playableSong = {
       ...song,
       musicUrl: url || null
     }
-    
+
     // 构建播放列表并设置当前歌曲索引
     const playlist = await buildPlayablePlaylist(song)
-    const currentIndex = playlist.findIndex(item => item.id === song.id)
+    const currentIndex = playlist.findIndex((item) => item.id === song.id)
     audioPlayer.playSong(playableSong, playlist, currentIndex)
-    
+
     // 后台预取后续歌曲的播放链接（不阻塞当前播放）
     ;(async () => {
       for (let i = currentIndex + 1; i < playlist.length; i++) {
@@ -1096,7 +1164,7 @@ const playSongWithUrlFetching = async (song) => {
         musicUrl: null
       }
       const playlist = await buildPlayablePlaylist(song)
-      const currentIndex = playlist.findIndex(item => item.id === song.id)
+      const currentIndex = playlist.findIndex((item) => item.id === song.id)
       audioPlayer.playSong(playableSong, playlist, currentIndex)
     } else {
       if (window.$showNotification) {
@@ -1119,7 +1187,10 @@ const togglePlaySong = async (song) => {
   if (audioPlayer.isCurrentSong(song.id) && !audioPlayer.getPlayingStatus().value) {
     // 检查当前全局歌曲是否有URL
     const currentGlobalSong = audioPlayer.getCurrentSong().value
-    if (currentGlobalSong && (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'bilibili')) {
+    if (
+      currentGlobalSong &&
+      (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'bilibili')
+    ) {
       // 如果有URL或者是哔哩哔哩视频，直接恢复播放
       audioPlayer.playSong(currentGlobalSong)
     } else {
@@ -1140,20 +1211,20 @@ const togglePlaySong = async (song) => {
 // 构建可播放的播放列表
 const buildPlayablePlaylist = async (currentSong) => {
   // 获取当前显示的歌曲列表（已经过滤和排序）
-  const songsToProcess = paginatedSongs.value.filter(song =>
-      ((song.musicPlatform && song.musicId) || song.playUrl) && song.id !== currentSong.id
+  const songsToProcess = paginatedSongs.value.filter(
+    (song) => ((song.musicPlatform && song.musicId) || song.playUrl) && song.id !== currentSong.id
   )
 
   // 将当前歌曲添加到列表中正确的位置
   const allSongs = [...paginatedSongs.value]
 
   // 只返回有播放信息的歌曲，保持原有顺序
-  return allSongs.filter(song => (song.musicPlatform && song.musicId) || song.playUrl)
+  return allSongs.filter((song) => (song.musicPlatform && song.musicId) || song.playUrl)
 }
 
 // 动态获取音乐URL
 const getMusicUrl = async (song) => {
-  const {musicPlatform: platform, musicId, playUrl, sourceInfo} = song
+  const { musicPlatform: platform, musicId, playUrl, sourceInfo } = song
 
   // 如果有自定义播放链接，优先使用
   if (playUrl && playUrl.trim()) {
@@ -1166,61 +1237,63 @@ const getMusicUrl = async (song) => {
     throw new Error('歌曲缺少音乐平台或音乐ID信息，无法获取播放链接')
   }
 
-  const {getQuality} = useAudioQuality()
-  const {getSongUrl} = useMusicSources()
+  const { getQuality } = useAudioQuality()
+  const { getSongUrl } = useMusicSources()
 
-  try {
-    const quality = getQuality(platform)
+  const quality = getQuality(platform)
 
-    // 使用统一组件的音源选择逻辑
-    console.log(`[SongList] 使用统一音源选择逻辑获取播放链接: platform=${platform}, musicId=${musicId}`)
+  // 使用统一组件的音源选择逻辑
+  console.log(
+    `[SongList] 使用统一音源选择逻辑获取播放链接: platform=${platform}, musicId=${musicId}`
+  )
 
-    // 检查是否为播客内容
-    const isPodcast = platform === 'netease-podcast' || sourceInfo?.type === 'voice' || sourceInfo?.source === 'netease-backup' && sourceInfo?.type === 'voice'
+  // 检查是否为播客内容
+  const isPodcast =
+    platform === 'netease-podcast' ||
+    sourceInfo?.type === 'voice' ||
+    (sourceInfo?.source === 'netease-backup' && sourceInfo?.type === 'voice')
 
-    // 如果是播客内容，强制 unblock=false
-    const options = isPodcast ? {unblock: false} : {}
+  // 如果是播客内容，强制 unblock=false
+  const options = isPodcast ? { unblock: false } : {}
 
-    const result = await getSongUrl(musicId, quality, platform, undefined, options)
-    if (result.success && result.url) {
-      console.log('[SongList] 统一音源选择获取音乐URL成功')
-      return result.url
-    }
-    console.warn('[SongList] 统一音源选择未返回有效链接，回退到直接调用 vkeys')
-
-    // 回退到 vkeys
-    let apiUrl
-    if (platform === 'netease') {
-      apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
-    } else if (platform === 'tencent') {
-      apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
-    } else {
-      throw new Error('不支持的音乐平台')
-    }
-
-    const response = await fetch(apiUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    })
-    if (!response.ok) {
-      throw new Error('获取音乐URL失败')
-    }
-
-    const data = await response.json()
-    if (data.code === 200 && data.data && data.data.url) {
-      // 将HTTP URL改为HTTPS
-      let url = data.data.url
-      if (url.startsWith('http://')) {
-        url = url.replace('http://', 'https://')
-      }
-      return url
-    }
-
-    throw new Error('vkeys返回成功但未获取到音乐URL')
-  } catch (error) {
-    throw error
+  const result = await getSongUrl(musicId, quality, platform, undefined, options)
+  if (result.success && result.url) {
+    console.log('[SongList] 统一音源选择获取音乐URL成功')
+    return result.url
   }
+  console.warn('[SongList] 统一音源选择未返回有效链接，回退到直接调用 vkeys')
+
+  // 回退到 vkeys
+  let apiUrl
+  if (platform === 'netease') {
+    apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
+  } else if (platform === 'tencent') {
+    apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
+  } else {
+    throw new Error('不支持的音乐平台')
+  }
+
+  const response = await fetch(apiUrl, {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+  })
+  if (!response.ok) {
+    throw new Error('获取音乐URL失败')
+  }
+
+  const data = await response.json()
+  if (data.code === 200 && data.data && data.data.url) {
+    // 将HTTP URL改为HTTPS
+    let url = data.data.url
+    if (url.startsWith('http://')) {
+      url = url.replace('http://', 'https://')
+    }
+    return url
+  }
+
+  throw new Error('vkeys返回成功但未获取到音乐URL')
 }
 
 // 判断当前是否正在播放指定ID的歌曲
@@ -1283,6 +1356,7 @@ const containsCorruptedText = (text) => {
   }
 
   // 检查控制字符（除了常见的空白字符）
+  // eslint-disable-next-line no-control-regex
   const controlCharRegex = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/
   if (controlCharRegex.test(text)) {
     return true
@@ -1301,17 +1375,20 @@ const containsCorruptedText = (text) => {
 const cleanCorruptedText = (text) => {
   if (!text || typeof text !== 'string') return ''
 
-  return text
+  return (
+    text
       // 移除Unicode替换字符
       .replace(/\uFFFD/g, '')
       .replace(/�/g, '')
       // 移除控制字符（保留常见空白字符）
+      // eslint-disable-next-line no-control-regex
       .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
       // 移除孤立代理对字符
       .replace(/[\uD800-\uDFFF]/g, '')
       // 规范化Unicode字符
       .normalize('NFC')
       .trim()
+  )
 }
 
 // 学期相关函数
@@ -1353,15 +1430,15 @@ const fetchAvailableSemesters = async () => {
     }
 
     // 从完整歌曲数据中提取学期信息，并过滤乱码
-    const rawSemesters = [...new Set(completeSongs.map(song => song.semester).filter(Boolean))]
+    const rawSemesters = [...new Set(completeSongs.map((song) => song.semester).filter(Boolean))]
     const cleanSemesters = rawSemesters
-        .filter(semester => !containsCorruptedText(semester))
-        .map(semester => cleanCorruptedText(semester))
-        .filter(semester => semester.length > 0)
+      .filter((semester) => !containsCorruptedText(semester))
+      .map((semester) => cleanCorruptedText(semester))
+      .filter((semester) => semester.length > 0)
 
     // 统计每个学期的歌曲数量，只保留有数据的学期
     const semesterStats = {}
-    completeSongs.forEach(song => {
+    completeSongs.forEach((song) => {
       if (song.semester && !containsCorruptedText(song.semester)) {
         const cleanSemester = cleanCorruptedText(song.semester)
         if (cleanSemester) {
@@ -1372,15 +1449,19 @@ const fetchAvailableSemesters = async () => {
 
     // 只保留有数据的学期，按时间倒序排列
     const semestersWithData = Object.keys(semesterStats)
-        .filter(semester => semesterStats[semester] > 0)
-        .sort().reverse()
+      .filter((semester) => semesterStats[semester] > 0)
+      .sort()
+      .reverse()
 
     // 统计有数据的学期
 
     // 如果用户手动选择了学期，确保该学期保留在可用学期列表中
-    let finalSemesters = [...semestersWithData]
-    if (isUserManuallySelected.value && selectedSemester.value &&
-        !finalSemesters.includes(selectedSemester.value)) {
+    const finalSemesters = [...semestersWithData]
+    if (
+      isUserManuallySelected.value &&
+      selectedSemester.value &&
+      !finalSemesters.includes(selectedSemester.value)
+    ) {
       // 将用户选择的学期添加到列表中，保持时间倒序
       finalSemesters.push(selectedSemester.value)
       finalSemesters.sort().reverse()
@@ -1391,7 +1472,10 @@ const fetchAvailableSemesters = async () => {
 
     // 缓存学期信息到sessionStorage
     try {
-      sessionStorage.setItem('voicehub_available_semesters', JSON.stringify(availableSemesters.value))
+      sessionStorage.setItem(
+        'voicehub_available_semesters',
+        JSON.stringify(availableSemesters.value)
+      )
     } catch (error) {
       console.warn('无法缓存学期信息:', error)
     }
@@ -1403,7 +1487,6 @@ const fetchAvailableSemesters = async () => {
 
     // 执行学期选择逻辑
     await selectDefaultSemester()
-
   } catch (error) {
     console.error('获取学期信息失败:', error)
     semesterError.value = '获取学期信息失败，请刷新页面重试'
@@ -1447,15 +1530,15 @@ const selectDefaultSemester = async () => {
       if (cleanCurrentSemester && availableSemesters.value.includes(cleanCurrentSemester)) {
         // 如果当前没有选中任何学期，或者虽然有选中但不是用户手动指定的（可能是上次缓存的），强制切回当前学期
         if (!selectedSemester.value || !isUserManuallySelected.value) {
-           selectedSemester.value = cleanCurrentSemester
+          selectedSemester.value = cleanCurrentSemester
 
-           // 更新缓存
-           try {
-             sessionStorage.setItem('voicehub_selected_semester', cleanCurrentSemester)
-           } catch (error) {
-             console.warn('无法保存学期选择:', error)
-           }
-           return
+          // 更新缓存
+          try {
+            sessionStorage.setItem('voicehub_selected_semester', cleanCurrentSemester)
+          } catch (error) {
+            console.warn('无法保存学期选择:', error)
+          }
+          return
         }
       }
     }
@@ -1541,7 +1624,6 @@ const onSemesterChange = (semester) => {
     return
   }
 
-
   // 标记为用户手动选择
   isUserManuallySelected.value = true
 
@@ -1597,24 +1679,24 @@ function debounce(func, wait) {
 // 波纹效果指令
 const vRipple = {
   mounted(el) {
-    el.addEventListener('click', e => {
-      const rect = el.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+    el.addEventListener('click', (e) => {
+      const rect = el.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
 
-      const ripple = document.createElement('span');
-      ripple.className = 'ripple-effect';
-      ripple.style.left = `${x}px`;
-      ripple.style.top = `${y}px`;
+      const ripple = document.createElement('span')
+      ripple.className = 'ripple-effect'
+      ripple.style.left = `${x}px`
+      ripple.style.top = `${y}px`
 
-      el.appendChild(ripple);
+      el.appendChild(ripple)
 
       setTimeout(() => {
-        ripple.remove();
-      }, 600); // 与CSS动画时间一致
-    });
+        ripple.remove()
+      }, 600) // 与CSS动画时间一致
+    })
   }
-};
+}
 </script>
 
 <style scoped>
@@ -1755,7 +1837,9 @@ const vRipple = {
 /* 标签切换动画 */
 .tab-switch-enter-active,
 .tab-switch-leave-active {
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
 }
 
 .tab-switch-enter-from {
@@ -1791,8 +1875,8 @@ const vRipple = {
 }
 
 .tab-button.active {
-  color: #FFFFFF;
-  border-bottom-color: #0B5AFE;
+  color: #ffffff;
+  border-bottom-color: #0b5afe;
   transform: none;
   box-shadow: none;
   background-color: transparent;
@@ -1840,7 +1924,7 @@ const vRipple = {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: #21242D;
+  background: #21242d;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
   cursor: pointer;
@@ -1851,17 +1935,17 @@ const vRipple = {
 }
 
 .semester-toggle-btn:hover {
-  background: #2A2E38;
+  background: #2a2e38;
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  color: #0B5AFE;
+  color: #0b5afe;
 }
 
 .semester-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: #1A1D24;
+  background: #1a1d24;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -1885,12 +1969,12 @@ const vRipple = {
 
 .semester-option:hover {
   background: rgba(11, 90, 254, 0.1);
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .semester-option.active {
   background: rgba(11, 90, 254, 0.2);
-  color: #0B5AFE;
+  color: #0b5afe;
   font-weight: 600;
 }
 
@@ -1900,8 +1984,8 @@ const vRipple = {
 }
 
 .search-input {
-  background: #040E15;
-  border: 1px solid #242F38;
+  background: #040e15;
+  border: 1px solid #242f38;
   border-radius: 8px;
   padding: 0.5rem 1rem;
   padding-right: 2.5rem;
@@ -1914,7 +1998,7 @@ const vRipple = {
 
 .search-input:focus {
   outline: none;
-  border-color: #0B5AFE;
+  border-color: #0b5afe;
 }
 
 .search-icon {
@@ -1931,7 +2015,7 @@ const vRipple = {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: #21242D;
+  background: #21242d;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
   cursor: pointer;
@@ -1940,7 +2024,7 @@ const vRipple = {
 }
 
 .refresh-button:hover {
-  background: #2A2E38;
+  background: #2a2e38;
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -1987,14 +2071,14 @@ const vRipple = {
 }
 
 .loading::before {
-  content: "";
+  content: '';
   display: block;
   width: 40px;
   height: 40px;
   margin-bottom: 1rem;
   border-radius: 50%;
   border: 3px solid rgba(11, 90, 254, 0.2);
-  border-top-color: #0B5AFE;
+  border-top-color: #0b5afe;
   animation: spin 1s linear infinite;
 }
 
@@ -2034,7 +2118,7 @@ const vRipple = {
 
 .song-card-main {
   padding: 1rem 0 1rem 1rem; /* 移除右侧内边距，保留左侧、上下内边距 */
-  background: #21242D;
+  background: #21242d;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   position: relative;
   height: 100px; /* 减小卡片高度 */
@@ -2082,8 +2166,8 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0043F8 0%, #0075F8 100%);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #0043f8 0%, #0075f8 100%);
+  color: #ffffff;
   font-size: 28px;
   font-weight: bold;
   font-family: 'MiSans-Demibold', sans-serif;
@@ -2145,7 +2229,7 @@ const vRipple = {
   font-weight: 600;
   font-size: 16px;
   letter-spacing: 0.04em;
-  color: #FFFFFF;
+  color: #ffffff;
   margin-bottom: 0.5rem;
   width: 100%; /* 确保标题占满整个容器宽度 */
   display: flex;
@@ -2207,20 +2291,21 @@ const vRipple = {
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 20px;
-  color: #0B5AFE;
-  text-shadow: 0px 20px 30px rgba(0, 114, 248, 0.5),
-  0px 8px 15px rgba(0, 114, 248, 0.5),
-  0px 4px 10px rgba(0, 179, 248, 0.3),
-  0px 2px 10px rgba(0, 179, 248, 0.2),
-  inset 3px 3px 10px rgba(255, 255, 255, 0.4),
-  inset -1px -1px 15px rgba(255, 255, 255, 0.4);
+  color: #0b5afe;
+  text-shadow:
+    0px 20px 30px rgba(0, 114, 248, 0.5),
+    0px 8px 15px rgba(0, 114, 248, 0.5),
+    0px 4px 10px rgba(0, 179, 248, 0.3),
+    0px 2px 10px rgba(0, 179, 248, 0.2),
+    inset 3px 3px 10px rgba(255, 255, 255, 0.4),
+    inset -1px -1px 15px rgba(255, 255, 255, 0.4);
 }
 
 .vote-count .label {
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 12px;
-  color: #FFFFFF;
+  color: #ffffff;
   opacity: 0.4;
 }
 
@@ -2236,7 +2321,7 @@ const vRipple = {
   justify-content: center;
   width: 48px;
   height: 45px;
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
   cursor: pointer;
@@ -2244,8 +2329,8 @@ const vRipple = {
 }
 
 .like-button.liked {
-  background: #1A1D24;
-  border-color: #242F38;
+  background: #1a1d24;
+  border-color: #242f38;
   background-image: none;
 }
 
@@ -2314,7 +2399,7 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #21242D;
+  background: #21242d;
   border-radius: 0 0 10px 10px;
   padding: 0.5rem 1rem;
   width: 95%;
@@ -2333,14 +2418,14 @@ const vRipple = {
 }
 
 .withdraw-button {
-  background: linear-gradient(180deg, #FF2F2F 0%, #FF654D 100%);
+  background: linear-gradient(180deg, #ff2f2f 0%, #ff654d 100%);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
   padding: 0.25rem 0.75rem;
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 12px;
-  color: #FFFFFF;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.3s ease;
   height: 27px;
@@ -2353,12 +2438,12 @@ const vRipple = {
 }
 
 .replay-cancel-btn {
-  background: linear-gradient(180deg, #0B5AFE 0%, #3D7FFF 100%);
+  background: linear-gradient(180deg, #0b5afe 0%, #3d7fff 100%);
   min-width: 75px;
 }
 
 .replay-request-btn {
-  background: linear-gradient(180deg, #0B5AFE 0%, #3D7FFF 100%);
+  background: linear-gradient(180deg, #0b5afe 0%, #3d7fff 100%);
   min-width: 75px;
 }
 
@@ -2386,20 +2471,21 @@ button:disabled {
   gap: 0.5rem;
 }
 
-.page-button, .page-number {
+.page-button,
+.page-number {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
-  color: #FFFFFF;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .page-number.active {
-  background: #0B5AFE;
-  border-color: #0B5AFE;
+  background: #0b5afe;
+  border-color: #0b5afe;
 }
 
 .page-info {
@@ -2428,7 +2514,7 @@ button:disabled {
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
-  color: #FFFFFF;
+  color: #ffffff;
   width: 60px;
   text-align: center;
   transition: all 0.2s ease;
@@ -2436,7 +2522,7 @@ button:disabled {
 
 .jump-input:focus {
   outline: none;
-  border-color: #0B5AFE;
+  border-color: #0b5afe;
   background: rgba(255, 255, 255, 0.15);
 }
 
@@ -2451,7 +2537,7 @@ button:disabled {
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
-  color: #FFFFFF;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -2521,7 +2607,7 @@ button:disabled {
 
   .tab-button.active {
     background: rgba(11, 90, 254, 0.15);
-    color: #0B5AFE;
+    color: #0b5afe;
     border-bottom: none;
     box-shadow: none;
   }
@@ -2632,7 +2718,7 @@ button:disabled {
   }
 
   .song-card.playing .song-title {
-    color: #0B5AFE;
+    color: #0b5afe;
     text-shadow: 0 0 10px rgba(11, 90, 254, 0.3);
   }
 
@@ -2643,11 +2729,11 @@ button:disabled {
   }
 
   .song-card.played {
-      opacity: 0.8;
-      filter: grayscale(0.35);
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.1);
-    }
+    opacity: 0.8;
+    filter: grayscale(0.35);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
 
   .song-card-main {
     height: auto;
@@ -2689,7 +2775,7 @@ button:disabled {
     font-weight: 700;
     margin-bottom: 4px;
     line-height: 1.2;
-    color: #FFFFFF;
+    color: #ffffff;
     letter-spacing: 0.01em;
   }
 
@@ -2780,7 +2866,9 @@ button:disabled {
   }
 
   /* 加载和空状态 */
-  .loading, .error, .empty {
+  .loading,
+  .error,
+  .empty {
     padding: 40px 20px;
     background: transparent;
     border-radius: 0;
@@ -2801,7 +2889,8 @@ button:disabled {
     padding-bottom: 16px;
   }
 
-  .page-button, .page-number {
+  .page-button,
+  .page-number {
     background: rgba(255, 255, 255, 0.04);
     border: none;
     border-radius: 8px;
@@ -2811,7 +2900,7 @@ button:disabled {
 
   .page-number.active {
     background: rgba(11, 90, 254, 0.15);
-    color: #0B5AFE;
+    color: #0b5afe;
   }
 
   .page-info {
@@ -2955,7 +3044,7 @@ button:disabled {
 
   .mobile-page-input:focus {
     outline: none;
-    color: #0B5AFE;
+    color: #0b5afe;
   }
 
   .page-selector .divider {

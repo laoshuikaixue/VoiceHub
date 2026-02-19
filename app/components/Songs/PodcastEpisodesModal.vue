@@ -1,21 +1,30 @@
 <template>
   <Teleport to="body">
     <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0 scale-95"
-        enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100 scale-100"
-        leave-to-class="opacity-0 scale-95"
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
     >
-      <div v-if="show" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" @click.self="close">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div
+        v-if="show"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+        @click.self="close"
+      >
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-        <div class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" @click.stop>
+        <div
+          class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          @click.stop
+        >
           <!-- 头部 -->
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4 min-w-0">
-              <div class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500 flex-shrink-0">
+              <div
+                class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500 flex-shrink-0"
+              >
                 <Icon name="mic" :size="24" />
               </div>
               <h3 class="text-xl font-black text-zinc-100 tracking-tight truncate">
@@ -23,8 +32,8 @@
               </h3>
             </div>
             <button
-                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
-                @click="close"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
+              @click="close"
             >
               <Icon name="x" :size="20" />
             </button>
@@ -32,26 +41,39 @@
 
           <!-- 主体 -->
           <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
-            <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-zinc-500">
+            <div
+              v-if="loading"
+              class="flex flex-col items-center justify-center py-20 text-zinc-500"
+            >
               <Icon name="refresh" :size="48" class="animate-spin mb-4 text-blue-500" />
               <p class="font-black uppercase tracking-widest text-[10px]">加载节目中...</p>
             </div>
 
-            <div v-else-if="error" class="flex flex-col items-center justify-center py-20 text-center px-8">
-              <div class="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-4">
+            <div
+              v-else-if="error"
+              class="flex flex-col items-center justify-center py-20 text-center px-8"
+            >
+              <div
+                class="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-4"
+              >
                 <Icon name="alert-triangle" :size="32" />
               </div>
               <p class="text-sm text-zinc-400 mb-6">{{ error }}</p>
               <button
-                  class="px-8 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
-                  @click="fetchPrograms(false)"
+                class="px-8 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+                @click="fetchPrograms(false)"
               >
                 重试
               </button>
             </div>
 
-            <div v-else-if="programs.length === 0" class="flex flex-col items-center justify-center py-12 text-zinc-500">
-              <div class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4">
+            <div
+              v-else-if="programs.length === 0"
+              class="flex flex-col items-center justify-center py-12 text-zinc-500"
+            >
+              <div
+                class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4"
+              >
                 <Icon name="mic" :size="32" class="opacity-20" />
               </div>
               <p class="text-sm font-bold uppercase tracking-widest">暂无节目</p>
@@ -59,15 +81,27 @@
 
             <div v-else class="program-list space-y-3">
               <div
-                  v-for="program in programs"
-                  :key="program.id"
-                  class="group flex items-center p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-3xl hover:bg-zinc-800/50 hover:border-zinc-700 transition-all"
+                v-for="program in programs"
+                :key="program.id"
+                class="group flex items-center p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-3xl hover:bg-zinc-800/50 hover:border-zinc-700 transition-all"
               >
                 <!-- 封面与播放叠加层 -->
-                <div class="relative w-14 h-14 rounded-2xl overflow-hidden bg-zinc-800 mr-4 flex-shrink-0 group/cover cursor-pointer" @click.stop="playProgram(program)">
-                  <img :src="convertToHttps(program.coverUrl || program.mainSong?.album?.picUrl)" alt="cover" class="w-full h-full object-cover" loading="lazy" />
-                  <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/cover:opacity-100 transition-opacity">
-                    <div class="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                <div
+                  class="relative w-14 h-14 rounded-2xl overflow-hidden bg-zinc-800 mr-4 flex-shrink-0 group/cover cursor-pointer"
+                  @click.stop="playProgram(program)"
+                >
+                  <img
+                    :src="convertToHttps(program.coverUrl || program.mainSong?.album?.picUrl)"
+                    alt="cover"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  >
+                  <div
+                    class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/cover:opacity-100 transition-opacity"
+                  >
+                    <div
+                      class="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center"
+                    >
                       <Icon name="play" :size="16" class="text-white fill-current" />
                     </div>
                   </div>
@@ -75,19 +109,23 @@
 
                 <!-- 节目信息 -->
                 <div class="flex-1 min-w-0">
-                  <h4 class="font-bold text-zinc-100 truncate group-hover:text-white transition-colors">
+                  <h4
+                    class="font-bold text-zinc-100 truncate group-hover:text-white transition-colors"
+                  >
                     {{ program.name }}
                   </h4>
-                  <div class="flex items-center gap-3 mt-1 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                  <div
+                    class="flex items-center gap-3 mt-1 text-[10px] text-zinc-500 font-bold uppercase tracking-wider"
+                  >
                     <span class="flex items-center">
                       {{ formatDate(program.createTime) }}
                     </span>
                     <span class="flex items-center">
-                      <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40"></span>
+                      <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
                       {{ formatDuration(program.duration) }}
                     </span>
                     <span class="flex items-center">
-                      <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40"></span>
+                      <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
                       🎧 {{ formatCount(program.listenerCount) }}
                     </span>
                   </div>
@@ -95,58 +133,66 @@
 
                 <!-- 操作按钮 -->
                 <div class="ml-4 shrink-0 flex items-center gap-3">
-                  <div v-if="songsLoadingForSimilar" class="text-[10px] font-black text-zinc-600 animate-pulse uppercase tracking-widest">
+                  <div
+                    v-if="songsLoadingForSimilar"
+                    class="text-[10px] font-black text-zinc-600 animate-pulse uppercase tracking-widest"
+                  >
                     处理中...
                   </div>
                   <div v-else-if="getSimilarSong(program)" class="flex flex-col items-end gap-1.5">
                     <span
-                        v-if="getSimilarSong(program)?.played"
-                        class="px-2 py-0.5 rounded-md bg-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-wider"
+                      v-if="getSimilarSong(program)?.played"
+                      class="px-2 py-0.5 rounded-md bg-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-wider"
                     >
                       已播放
                     </span>
                     <span
-                        v-else-if="getSimilarSong(program)?.scheduled"
-                        class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-wider"
+                      v-else-if="getSimilarSong(program)?.scheduled"
+                      class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-wider"
                     >
                       已排期
                     </span>
                     <span
-                        v-else
-                        class="px-2 py-0.5 rounded-md bg-zinc-700/50 text-zinc-500 text-[10px] font-black uppercase tracking-wider"
+                      v-else
+                      class="px-2 py-0.5 rounded-md bg-zinc-700/50 text-zinc-500 text-[10px] font-black uppercase tracking-wider"
                     >
                       已存在
                     </span>
 
                     <div class="flex gap-2">
                       <button
-                          v-if="getSimilarSong(program)?.played && isSuperAdmin"
-                          :disabled="submitting"
-                          class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
-                          @click.stop="selectProgram(program)"
+                        v-if="getSimilarSong(program)?.played && isSuperAdmin"
+                        :disabled="submitting"
+                        class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
+                        @click.stop="selectProgram(program)"
                       >
                         {{ submitting && selectedProgramId === program.id ? '...' : '继续投稿' }}
                       </button>
                       <button
-                          v-else
-                          class="px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-widest"
-                          :class="[
-                            getSimilarSong(program)?.voted
-                              ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                              : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 border border-zinc-700/50 hover:border-zinc-600'
-                          ]"
-                          :disabled="getSimilarSong(program)?.played || getSimilarSong(program)?.scheduled || getSimilarSong(program)?.voted || submitting"
-                          @click.stop="handleLikeFromProgram(getSimilarSong(program))"
+                        v-else
+                        class="px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-widest"
+                        :class="[
+                          getSimilarSong(program)?.voted
+                            ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 border border-zinc-700/50 hover:border-zinc-600'
+                        ]"
+                        :disabled="
+                          getSimilarSong(program)?.played ||
+                          getSimilarSong(program)?.scheduled ||
+                          getSimilarSong(program)?.voted ||
+                          submitting
+                        "
+                        @click.stop="handleLikeFromProgram(getSimilarSong(program))"
                       >
                         {{ getSimilarSong(program)?.voted ? '已点赞' : '点赞' }}
                       </button>
                     </div>
                   </div>
                   <button
-                      v-else
-                      :disabled="submitting"
-                      class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
-                      @click="selectProgram(program)"
+                    v-else
+                    :disabled="submitting"
+                    class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                    @click="selectProgram(program)"
                   >
                     {{ submitting && selectedProgramId === program.id ? '提交中...' : '选择投稿' }}
                   </button>
@@ -155,9 +201,9 @@
 
               <div v-if="hasMore" class="pt-6 pb-2 flex justify-center">
                 <button
-                    :disabled="loadingMore"
-                    class="px-8 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest"
-                    @click="loadMore"
+                  :disabled="loadingMore"
+                  class="px-8 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest"
+                  @click="loadMore"
                 >
                   <Icon v-if="loadingMore" name="loader" :size="16" class="animate-spin" />
                   {{ loadingMore ? '加载中...' : '加载更多' }}
@@ -193,7 +239,7 @@ const musicSources = useMusicSources()
 const songService = useSongs()
 const auth = useAuth()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
-const {currentSemester, fetchCurrentSemester} = useSemesters()
+const { currentSemester, fetchCurrentSemester } = useSemesters()
 
 const programs = ref([])
 const loading = ref(false)
@@ -209,11 +255,11 @@ const songsLoadingForSimilar = ref(false)
 const normalizeString = (str) => {
   if (!str) return ''
   return str
-      .toLowerCase()
-      .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
-      .replace(/[&＆]/g, 'and')
-      .replace(/[feat\.?|ft\.?]/gi, '')
-      .trim()
+    .toLowerCase()
+    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
+    .replace(/[&＆]/g, 'and')
+    .replace(/[feat\.?|ft\.?]/gi, '')
+    .trim()
 }
 
 // 检查是否已存在相似歌曲
@@ -233,7 +279,7 @@ const getSimilarSong = (program) => {
   // 如果没有获取到当前学期信息，暂时不进行检查，避免误报
   if (!currentSemesterName) return null
 
-  return songService.songs.value.find(song => {
+  return songService.songs.value.find((song) => {
     const songTitle = normalizeString(song.title)
     const songArtist = normalizeString(song.artist)
     const titleMatch = songTitle === normalizedTitle && songArtist === normalizedArtist
@@ -353,37 +399,44 @@ const playProgram = (program) => {
   emit('play', song)
 }
 
-watch(() => props.show, async (val) => {
-  if (val) {
-    // 确保当前学期已加载，用于正确检查歌曲状态
-    if (!currentSemester.value) {
-      await fetchCurrentSemester()
-    }
-    
-    submitting.value = false
-    selectedProgramId.value = null
-    if (auth.isAuthenticated.value && (!songService.songs.value || songService.songs.value.length === 0)) {
-      const currentSemesterName = currentSemester.value?.name
-      songsLoadingForSimilar.value = true
-      songService.fetchSongs(true, currentSemesterName)
-          .catch(err => {
+watch(
+  () => props.show,
+  async (val) => {
+    if (val) {
+      // 确保当前学期已加载，用于正确检查歌曲状态
+      if (!currentSemester.value) {
+        await fetchCurrentSemester()
+      }
+
+      submitting.value = false
+      selectedProgramId.value = null
+      if (
+        auth.isAuthenticated.value &&
+        (!songService.songs.value || songService.songs.value.length === 0)
+      ) {
+        const currentSemesterName = currentSemester.value?.name
+        songsLoadingForSimilar.value = true
+        songService
+          .fetchSongs(true, currentSemesterName)
+          .catch((err) => {
             console.error('加载歌曲列表失败:', err)
           })
           .finally(() => {
             songsLoadingForSimilar.value = false
           })
+      } else {
+        songsLoadingForSimilar.value = false
+      }
+      fetchPrograms()
     } else {
+      programs.value = []
+      offset.value = 0
+      submitting.value = false
+      selectedProgramId.value = null
       songsLoadingForSimilar.value = false
     }
-    fetchPrograms()
-  } else {
-    programs.value = []
-    offset.value = 0
-    submitting.value = false
-    selectedProgramId.value = null
-    songsLoadingForSimilar.value = false
   }
-})
+)
 
 const formatDate = (timestamp) => {
   if (!timestamp) return ''

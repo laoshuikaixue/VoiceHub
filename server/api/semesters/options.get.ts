@@ -12,13 +12,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const list = await db.select({
-    id: semesters.id,
-    name: semesters.name,
-    isActive: semesters.isActive
-  })
-  .from(semesters)
-  .orderBy(desc(semesters.createdAt))
+  const list = await db
+    .select({
+      id: semesters.id,
+      name: semesters.name,
+      isActive: semesters.isActive
+    })
+    .from(semesters)
+    .orderBy(desc(semesters.createdAt))
 
   return {
     success: true,

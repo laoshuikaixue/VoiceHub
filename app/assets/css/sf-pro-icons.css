@@ -3,7 +3,12 @@
 
 /* SF Symbols 图标类 */
 .sf-symbol {
-  font-family: 'SF Pro Icons', 'SF Symbols', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'SF Pro Icons',
+    'SF Symbols',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   font-weight: 500;
   font-style: normal;
   font-variant: normal;
@@ -19,7 +24,15 @@
 
 /* SF Pro 文本类 */
 .sf-pro {
-  font-family: 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    'SF Pro',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

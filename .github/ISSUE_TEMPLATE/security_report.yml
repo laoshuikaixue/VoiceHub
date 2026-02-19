@@ -1,7 +1,7 @@
 name: 🔒 安全问题报告
 description: 报告VoiceHub系统中的安全漏洞或安全相关问题
-title: "[Security]: "
-labels: ["security", "高优先级"]
+title: '[Security]: '
+labels: ['security', '高优先级']
 assignees: []
 body:
   - type: markdown
@@ -9,7 +9,7 @@ body:
       value: |
         ⚠️ **重要提醒**：如果您发现了严重的安全漏洞，请不要在公开的Issue中详细描述。
         请发送邮件至 `contact@lao-shui.top` 。
-        
+
         感谢您帮助我们保护VoiceHub系统的安全！
 
   - type: dropdown
@@ -92,7 +92,7 @@ body:
         - 发现问题的环境
         - 触发条件
         - 观察到的异常行为
-        
+
         注意：请不要提供完整的攻击代码或详细攻击步骤
     validations:
       required: false

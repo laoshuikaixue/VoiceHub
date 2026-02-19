@@ -1,8 +1,8 @@
 <template>
-  <div class="share-card" ref="shareCardRef">
+  <div ref="shareCardRef" class="share-card">
     <div class="card-background">
-      <div class="gradient-overlay"></div>
-      <div class="noise-overlay"></div>
+      <div class="gradient-overlay" />
+      <div class="noise-overlay" />
     </div>
 
     <div class="card-content">
@@ -33,7 +33,7 @@
 
       <div class="footer">
         <div class="footer-text">用音乐记录每一刻</div>
-        <div class="footer-line"></div>
+        <div class="footer-line" />
       </div>
     </div>
   </div>
@@ -74,7 +74,7 @@ defineExpose({
 .gradient-overlay {
   position: absolute;
   inset: 0;
-  background: 
+  background:
     radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 80% 70%, rgba(244, 114, 182, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 60%);

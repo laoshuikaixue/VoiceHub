@@ -2,76 +2,88 @@
   <Teleport to="body">
     <Transition :name="isMobile ? 'mobile-flow' : 'modal-animation'">
       <div
-          v-if="isVisible"
-          class="lyrics-modal-overlay"
-          tabindex="-1"
-          style="--main-cover-color: 255, 255, 255;"
-          @click="handleOverlayClick"
+        v-if="isVisible"
+        class="lyrics-modal-overlay"
+        tabindex="-1"
+        style="--main-cover-color: 255, 255, 255"
+        @click="handleOverlayClick"
       >
-        <div ref="fullscreenContainer" :class="{ leaving: isExiting }" class="lyrics-fullscreen-container">
+        <div
+          ref="fullscreenContainer"
+          :class="{ leaving: isExiting }"
+          class="lyrics-fullscreen-container"
+        >
           <!-- 动态背景 -->
           <div ref="backgroundContainer" class="background-layer">
             <div
-                v-if="backgroundConfig.type === 'gradient'"
-                :class="{ 'dynamic': backgroundConfig.dynamic }"
-                class="gradient-background"
-            ></div>
+              v-if="backgroundConfig.type === 'gradient'"
+              :class="{ dynamic: backgroundConfig.dynamic }"
+              class="gradient-background"
+            />
             <div
-                v-else-if="backgroundConfig.type === 'cover' && currentSong?.cover"
-                ref="coverBlurContainer"
-                :style="{ backgroundImage: `url(${convertToHttps(currentSong.cover)})` }"
-                class="cover-background"
-            >
-            </div>
+              v-else-if="backgroundConfig.type === 'cover' && currentSong?.cover"
+              ref="coverBlurContainer"
+              :style="{ backgroundImage: `url(${convertToHttps(currentSong.cover)})` }"
+              class="cover-background"
+            />
             <!-- 叠加暗化层，提升白色背景下歌词对比度 -->
-            <div class="background-overlay"></div>
+            <div class="background-overlay" />
           </div>
 
           <!-- 关闭按钮 -->
           <button class="close-button" @click="closeModal">
-            <Icon :name="isMobile ? 'chevron-down' : 'x'" size="24"/>
+            <Icon :name="isMobile ? 'chevron-down' : 'x'" size="24" />
           </button>
 
           <!-- 频谱可视化 (左侧边缘) -->
-          <canvas v-if="!isMobile" ref="spectrumCanvas" class="spectrum-visualizer" width="100" height="800"></canvas>
+          <canvas
+            v-if="!isMobile"
+            ref="spectrumCanvas"
+            class="spectrum-visualizer"
+            width="100"
+            height="800"
+          />
 
           <!-- 移动端浮动封面 (跨页动画) -->
-          <div 
-            v-if="isMobile && currentSong?.cover" 
+          <div
+            v-if="isMobile && currentSong?.cover"
             ref="mobileFloatingCoverRef"
             class="mobile-floating-cover"
           >
-            <img 
-              :src="convertToHttps(currentSong.cover)" 
-              class="cover-image" 
+            <img
+              :src="convertToHttps(currentSong.cover)"
+              class="cover-image"
               referrerpolicy="no-referrer"
-            />
+            >
           </div>
 
           <!-- 主内容区域 -->
-          <div 
-            class="main-content" 
+          <div
             ref="mainContent"
+            class="main-content"
             :style="{ zIndex: isMobile && showQualitySettings ? 101 : undefined }"
             @scroll="onMainContentScroll"
-            @click="handleOverlayClick" 
+            @click="handleOverlayClick"
           >
             <!-- 左侧区域：封面和歌曲信息 -->
             <div class="left-column">
               <!-- 桌面端显示，移动端隐藏(透明占位) -->
-              <div class="album-cover-wrapper" :style="{ opacity: isMobile ? 0 : 1, pointerEvents: isMobile ? 'none' : 'auto' }">
+              <div
+                class="album-cover-wrapper"
+                :style="{ opacity: isMobile ? 0 : 1, pointerEvents: isMobile ? 'none' : 'auto' }"
+              >
                 <div class="song-cover-container">
-                  <div class="song-cover shadow-cover" :class="{ 'playing': isPlaying }">
+                  <div class="song-cover shadow-cover" :class="{ playing: isPlaying }">
                     <img
-                        v-if="currentSong?.cover"
-                        :alt="currentSong.title"
-                        :src="convertToHttps(currentSong.cover)"
-                        class="cover-image"
-                        referrerpolicy="no-referrer"
-                        @error="handleCoverError"
-                    />
+                      v-if="currentSong?.cover"
+                      :alt="currentSong.title"
+                      :src="convertToHttps(currentSong.cover)"
+                      class="cover-image"
+                      referrerpolicy="no-referrer"
+                      @error="handleCoverError"
+                    >
                     <div v-else class="default-cover">
-                      <Icon name="music" size="64"/>
+                      <Icon name="music" size="64" />
                     </div>
                   </div>
                 </div>
@@ -83,10 +95,10 @@
                     {{ currentSong?.title || '未知歌曲' }}
                   </h1>
                   <p class="song-artist">{{ currentSong?.artist || '未知艺术家' }}</p>
-                  
+
                   <!-- 音质标识 (歌手名下方) -->
-                  <div 
-                    v-if="currentSong?.musicPlatform" 
+                  <div
+                    v-if="currentSong?.musicPlatform"
                     class="mobile-quality-badge"
                     @click.stop="showQualitySettings = !showQualitySettings"
                   >
@@ -94,7 +106,7 @@
 
                     <!-- 音质切换菜单 -->
                     <div v-if="showQualitySettings" class="badge-quality-menu" @click.stop>
-                      <div 
+                      <div
                         v-for="option in currentPlatformOptions"
                         :key="option.value"
                         class="badge-quality-option"
@@ -113,12 +125,13 @@
             <div class="right-column">
               <!-- 移动端顶部迷你信息栏 -->
               <div v-if="isMobile" class="mobile-lyric-header">
-                <div class="header-spacer"></div> <!-- 为缩小后的封面留白 -->
+                <div class="header-spacer" />
+                <!-- 为缩小后的封面留白 -->
                 <div ref="pageTwoInfoRef" class="mini-song-info">
-                   <div class="mini-text-col">
-                      <span class="mini-title">{{ currentSong?.title }}</span>
-                      <span class="mini-artist">{{ currentSong?.artist }}</span>
-                   </div>
+                  <div class="mini-text-col">
+                    <span class="mini-title">{{ currentSong?.title }}</span>
+                    <span class="mini-artist">{{ currentSong?.artist }}</span>
+                  </div>
                 </div>
               </div>
 
@@ -130,93 +143,82 @@
                   <DefaultLyric v-else :current-time="currentTime" />
                 </div>
               </div>
-              
+
               <!-- 歌词设置工具栏 -->
               <div class="lyric-toolbar">
-                 <Popover placement="top-end" :offset="12">
-                   <template #trigger>
-                     <div class="toolbar-btn" title="歌词设置">
-                        <Icon name="settings" size="20" />
-                     </div>
-                   </template>
-                   <template #content>
-                     <div class="lyric-settings-content">
-                        <div class="setting-item switch">
-                           <span class="label">AM 风格歌词</span>
-                           <input type="checkbox" v-model="lyricSettings.useAMLyrics.value" />
+                <Popover placement="top-end" :offset="12">
+                  <template #trigger>
+                    <div class="toolbar-btn" title="歌词设置">
+                      <Icon name="settings" size="20" />
+                    </div>
+                  </template>
+                  <template #content>
+                    <div class="lyric-settings-content">
+                      <div class="setting-item switch">
+                        <span class="label">AM 风格歌词</span>
+                        <input v-model="lyricSettings.useAMLyrics.value" type="checkbox" >
+                      </div>
+                      <div class="setting-item">
+                        <span class="label">字体大小</span>
+                        <div class="control">
+                          <button @click="lyricSettings.lyricFontSize.value -= 2">-</button>
+                          <span>{{ lyricSettings.lyricFontSize.value }}</span>
+                          <button @click="lyricSettings.lyricFontSize.value += 2">+</button>
                         </div>
-                        <div class="setting-item">
-                           <span class="label">字体大小</span>
-                           <div class="control">
-                              <button @click="lyricSettings.lyricFontSize.value -= 2">-</button>
-                              <span>{{ lyricSettings.lyricFontSize.value }}</span>
-                              <button @click="lyricSettings.lyricFontSize.value += 2">+</button>
-                           </div>
+                      </div>
+                      <div class="setting-item">
+                        <span class="label">歌词偏移 (ms)</span>
+                        <div class="control">
+                          <button @click="lyricSettings.lyricOffset.value -= 100">-</button>
+                          <span>{{ lyricSettings.lyricOffset.value }}</span>
+                          <button @click="lyricSettings.lyricOffset.value += 100">+</button>
                         </div>
-                        <div class="setting-item">
-                           <span class="label">歌词偏移 (ms)</span>
-                           <div class="control">
-                              <button @click="lyricSettings.lyricOffset.value -= 100">-</button>
-                              <span>{{ lyricSettings.lyricOffset.value }}</span>
-                              <button @click="lyricSettings.lyricOffset.value += 100">+</button>
-                           </div>
-                        </div>
-                        <div class="setting-item switch" v-if="!lyricSettings.useAMLyrics.value">
-                           <span class="label">显示翻译</span>
-                           <input type="checkbox" v-model="lyricSettings.showTranslation.value" />
-                        </div>
-                        <div class="setting-item switch" v-if="!lyricSettings.useAMLyrics.value">
-                           <span class="label">显示罗马音</span>
-                           <input type="checkbox" v-model="lyricSettings.showRoma.value" />
-                        </div>
-                        <div class="setting-item switch" v-if="!lyricSettings.useAMLyrics.value">
-                           <span class="label">逐字歌词 (YRC)</span>
-                           <input type="checkbox" v-model="lyricSettings.showYrc.value" />
-                        </div>
-                     </div>
-                   </template>
-                 </Popover>
+                      </div>
+                      <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
+                        <span class="label">显示翻译</span>
+                        <input v-model="lyricSettings.showTranslation.value" type="checkbox" >
+                      </div>
+                      <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
+                        <span class="label">显示罗马音</span>
+                        <input v-model="lyricSettings.showRoma.value" type="checkbox" >
+                      </div>
+                      <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
+                        <span class="label">逐字歌词 (YRC)</span>
+                        <input v-model="lyricSettings.showYrc.value" type="checkbox" >
+                      </div>
+                    </div>
+                  </template>
+                </Popover>
               </div>
             </div>
           </div>
 
           <!-- 移动端分页指示器 -->
           <div class="mobile-pagination-dots">
-            <span 
-              class="dot" 
+            <span
+              class="dot"
               :class="{ active: currentMobilePage === 0 }"
               @click="scrollToPage(0)"
-            ></span>
-            <span 
-              class="dot" 
+            />
+            <span
+              class="dot"
               :class="{ active: currentMobilePage === 1 }"
               @click="scrollToPage(1)"
-            ></span>
+            />
           </div>
 
           <!-- 播放控制栏 -->
           <div class="playback-controls">
             <div class="control-buttons">
-              <button
-                  :disabled="!hasPrevious"
-                  class="control-btn"
-                  @click="previousSong"
-              >
-                <Icon name="skip-back" size="24"/>
+              <button :disabled="!hasPrevious" class="control-btn" @click="previousSong">
+                <Icon name="skip-back" size="24" />
               </button>
-              <button
-                  class="play-pause-btn"
-                  @click="togglePlayPause"
-              >
-                <div v-if="isLoadingTrack" class="loading-spinner"></div>
-                <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="32"/>
+              <button class="play-pause-btn" @click="togglePlayPause">
+                <div v-if="isLoadingTrack" class="loading-spinner" />
+                <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="32" />
               </button>
-              <button
-                  :disabled="!hasNext"
-                  class="control-btn"
-                  @click="nextSong"
-              >
-                <Icon name="skip-forward" size="24"/>
+              <button :disabled="!hasNext" class="control-btn" @click="nextSong">
+                <Icon name="skip-forward" size="24" />
               </button>
             </div>
 
@@ -224,26 +226,19 @@
             <div class="progress-section">
               <span class="time-display">{{ formatTime(currentTime) }}</span>
               <div
-                  ref="progressBar"
-                  class="progress-bar"
-                  @click="handleProgressClick"
-                  @mousedown="handleProgressMouseDown"
-                  @touchend="handleProgressTouchEnd"
-                  @touchmove="handleProgressTouchMove"
-                  @touchstart="handleProgressTouchStart"
+                ref="progressBar"
+                class="progress-bar"
+                @click="handleProgressClick"
+                @mousedown="handleProgressMouseDown"
+                @touchend="handleProgressTouchEnd"
+                @touchmove="handleProgressTouchMove"
+                @touchstart="handleProgressTouchStart"
               >
-                <div
-                    :style="{ width: `${progressPercentage}%` }"
-                    class="progress-fill"
-                ></div>
-                <div
-                    :style="{ left: `${progressPercentage}%` }"
-                    class="progress-thumb"
-                ></div>
+                <div :style="{ width: `${progressPercentage}%` }" class="progress-fill" />
+                <div :style="{ left: `${progressPercentage}%` }" class="progress-thumb" />
               </div>
               <span class="time-display">{{ formatTime(duration) }}</span>
             </div>
-
           </div>
         </div>
       </div>
@@ -252,16 +247,16 @@
 </template>
 
 <script setup>
-import {computed, nextTick, onUnmounted, ref, watch, onMounted} from 'vue'
-import {useAudioPlayer} from '~/composables/useAudioPlayer'
-import {useAudioPlayerControl} from '~/composables/useAudioPlayerControl'
-import {useLyricSettings} from '~/composables/useLyricSettings'
-import {useBackgroundRenderer} from '~/composables/useBackgroundRenderer'
+import { computed, nextTick, onUnmounted, ref, watch, onMounted } from 'vue'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
+import { useLyricSettings } from '~/composables/useLyricSettings'
+import { useBackgroundRenderer } from '~/composables/useBackgroundRenderer'
 import Icon from '~/components/UI/Icon.vue'
-import {useAudioQuality} from '~/composables/useAudioQuality'
-import {useAudioPlayerEnhanced} from '~/composables/useAudioPlayerEnhanced'
-import {useAudioVisualizer} from '~/composables/useAudioVisualizer'
-import {convertToHttps} from '~/utils/url'
+import { useAudioQuality } from '~/composables/useAudioQuality'
+import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
+import { useAudioVisualizer } from '~/composables/useAudioVisualizer'
+import { convertToHttps } from '~/utils/url'
 import AMLyric from '~/components/Player/PlayerLyric/AMLyric.vue'
 import DefaultLyric from '~/components/Player/PlayerLyric/DefaultLyric.vue'
 import Popover from '~/components/UI/Common/Popover.vue'
@@ -315,7 +310,7 @@ const isPlaying = computed(() => audioPlayer.getPlayingStatus().value)
 const isLoadingTrack = computed(() => audioPlayerControl.isLoadingTrack.value)
 const currentTime = computed(() => audioPlayer.getCurrentPosition().value)
 const duration = computed(() => audioPlayer.getDuration().value)
-const {getQuality, getQualityLabel, getQualityOptions, saveQuality} = useAudioQuality()
+const { getQuality, getQualityLabel, getQualityOptions, saveQuality } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
 
 const currentQualityText = computed(() => {
@@ -327,13 +322,17 @@ const currentQualityText = computed(() => {
 })
 
 // 监听音质变化，强制更新显示
-watch(() => {
-  const platform = currentSong.value?.musicPlatform
-  return platform ? getQuality(platform) : null
-}, () => {
-  // 触发响应式更新
-  nextTick()
-}, {deep: true})
+watch(
+  () => {
+    const platform = currentSong.value?.musicPlatform
+    return platform ? getQuality(platform) : null
+  },
+  () => {
+    // 触发响应式更新
+    nextTick()
+  },
+  { deep: true }
+)
 
 const currentPlatformOptions = computed(() => {
   const platform = currentSong.value?.musicPlatform
@@ -365,7 +364,7 @@ const selectQuality = async (qualityValue) => {
     }
 
     if (audioPlayer.updateCurrentSong) {
-        audioPlayer.updateCurrentSong(updatedSong)
+      audioPlayer.updateCurrentSong(updatedSong)
     }
 
     showQualitySettings.value = false
@@ -395,15 +394,15 @@ const updateLayoutCache = () => {
   if (typeof window === 'undefined') return
   const w = window.innerWidth
   const h = window.innerHeight
-  
+
   const startSize = 280
   const startTop = h * 0.15
   const realStartLeft = (w - startSize) / 2
-  
+
   const endSize = 48
-  const endTop = 50 
+  const endTop = 50
   const endLeft = 24
-  
+
   cachedLayout = {
     width: w,
     height: h,
@@ -417,25 +416,25 @@ const updateLayoutCache = () => {
   }
 
   if (mobileFloatingCoverRef.value) {
-      const el = mobileFloatingCoverRef.value
-      el.style.width = `${startSize}px`
-      el.style.height = `${startSize}px`
-      el.style.top = `${startTop}px`
-      el.style.left = `${realStartLeft}px`
-      el.style.transformOrigin = '0 0'
-      el.style.zIndex = '100'
-      el.style.borderRadius = '12px'
-      el.style.boxShadow = '0 16px 36px rgba(0,0,0,0.4)'
-      // 确保硬件加速
-      el.style.transform = 'translate3d(0, 0, 0)'
-      el.style.willChange = 'transform, border-radius'
+    const el = mobileFloatingCoverRef.value
+    el.style.width = `${startSize}px`
+    el.style.height = `${startSize}px`
+    el.style.top = `${startTop}px`
+    el.style.left = `${realStartLeft}px`
+    el.style.transformOrigin = '0 0'
+    el.style.zIndex = '100'
+    el.style.borderRadius = '12px'
+    el.style.boxShadow = '0 16px 36px rgba(0,0,0,0.4)'
+    // 确保硬件加速
+    el.style.transform = 'translate3d(0, 0, 0)'
+    el.style.willChange = 'transform, border-radius'
   }
 
   if (isMobile.value) {
-     requestAnimationFrame(() => {
-        const p = currentScrollProgress || 0
-        updateMobileAnimations(p * cachedLayout.contentWidth, cachedLayout.contentWidth)
-     })
+    requestAnimationFrame(() => {
+      const p = currentScrollProgress || 0
+      updateMobileAnimations(p * cachedLayout.contentWidth, cachedLayout.contentWidth)
+    })
   }
 }
 
@@ -450,7 +449,7 @@ const updateMobileState = () => {
         nextTick(updateLayoutCache)
       }
     } else if (newIsMobile) {
-        updateLayoutCache()
+      updateLayoutCache()
     }
   }
 }
@@ -462,22 +461,19 @@ const updateMobileAnimations = (scrollLeft, width) => {
   if (p < 0) p = 0
   if (p > 1) p = 1
   currentScrollProgress = p
-  
+
   if (mobileFloatingCoverRef.value) {
-    const { 
-      totalTranslateX, totalTranslateY, 
-      targetScale 
-    } = cachedLayout
+    const { totalTranslateX, totalTranslateY, targetScale } = cachedLayout
 
     const currentScale = 1 + (targetScale - 1) * p
     const currentTranslateX = totalTranslateX * p
     const currentTranslateY = totalTranslateY * p
 
     const el = mobileFloatingCoverRef.value
-    
-    const targetVisualRadius = 12 - (6 * p) 
+
+    const targetVisualRadius = 12 - 6 * p
     const radius = targetVisualRadius / currentScale
-    
+
     // 使用 transform 和 will-change 优化性能
     el.style.transform = `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale})`
     el.style.borderRadius = `${radius}px`
@@ -489,7 +485,7 @@ const updateMobileAnimations = (scrollLeft, width) => {
     const el = pageOneInfoRef.value
     const opacity = Math.max(0, 1 - p * 2.5)
     const translateY = p * -20
-    
+
     // 使用 transform 优化性能
     el.style.opacity = String(opacity)
     el.style.transform = `translate3d(0, ${translateY}px, 0)`
@@ -499,7 +495,7 @@ const updateMobileAnimations = (scrollLeft, width) => {
     const el = pageTwoInfoRef.value
     const opacity = Math.max(0, (p - 0.6) * 2.5)
     const translateY = (1 - p) * 10
-    
+
     // 使用 transform 优化性能
     el.style.opacity = String(opacity)
     el.style.transform = `translate3d(0, ${translateY}px, 0)`
@@ -509,19 +505,19 @@ const updateMobileAnimations = (scrollLeft, width) => {
 
 const onMainContentScroll = (event) => {
   if (!isMobile.value) return
-  
+
   const el = event.target
   const scrollLeft = el.scrollLeft
   if (!cachedLayout.contentWidth) {
     updateLayoutCache()
   }
   const width = cachedLayout.contentWidth || el.clientWidth
-  
+
   const newPage = Math.round(scrollLeft / width)
   if (currentMobilePage.value !== newPage) {
     currentMobilePage.value = newPage
   }
-  
+
   // 使用 requestAnimationFrame 优化性能，避免频繁更新
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId)
@@ -599,7 +595,7 @@ const handleKeydown = (event) => {
     case ' ':
       // 如果焦点在按钮上，忽略此自定义处理，让原生按钮点击生效，防止重复触发
       if (document.activeElement && document.activeElement.tagName.toLowerCase() === 'button') {
-          return;
+        return
       }
       event.preventDefault()
       togglePlayPause()
@@ -650,7 +646,7 @@ const handleProgressTouchStart = (event) => {
   isDragging.value = true
   dragStartX.value = event.touches[0].clientX
   dragStartTime.value = currentTime.value
-  document.addEventListener('touchmove', handleProgressTouchMove, {passive: false})
+  document.addEventListener('touchmove', handleProgressTouchMove, { passive: false })
 }
 
 const handleProgressTouchEnd = () => {
@@ -804,80 +800,84 @@ const restorePageScroll = () => {
 }
 
 watch(
-    () => props.isVisible,
-    async (visible) => {
-      if (visible) {
-        disablePageScroll()
+  () => props.isVisible,
+  async (visible) => {
+    if (visible) {
+      disablePageScroll()
 
+      await nextTick()
+
+      if (backgroundContainer.value) {
+        await backgroundRenderer.initializeBackground(backgroundContainer.value)
+
+        if (coverBlurContainer.value && backgroundConfig.value.type === 'cover') {
+          backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
+        }
+
+        backgroundRenderer.startRender()
+      }
+
+      if (currentSong.value && currentSong.value.cover) {
+        backgroundRenderer.setCoverBackground(currentSong.value.cover)
+      }
+
+      // 歌词由 LyricManager 自动监听 currentTrack 变化并获取，这里不需要手动 fetch
+      // 但如果首次打开且没有歌词，可以触发一次检查（Manager 已有 immediate watch）
+
+      if (isPlaying.value) {
+        startProgressTimer()
+      }
+
+      document.addEventListener('keydown', handleKeydown)
+      window.addEventListener('resize', handleResize)
+      window.addEventListener('resize', updateMobileState)
+
+      updateMobileState()
+
+      if (isMobile.value) {
+        // 重置移动端状态
+        currentMobilePage.value = 0
+        scrollProgress.value = 0
+        currentScrollProgress = 0
+
+        // 等待DOM更新后滚动到第一页并重置动画状态
         await nextTick()
-
-        if (backgroundContainer.value) {
-          await backgroundRenderer.initializeBackground(backgroundContainer.value)
-
-          if (coverBlurContainer.value && backgroundConfig.value.type === 'cover') {
-            backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
-          }
-
-          backgroundRenderer.startRender()
+        if (mainContent.value) {
+          mainContent.value.scrollLeft = 0
         }
 
-        if (currentSong.value && currentSong.value.cover) {
-          backgroundRenderer.setCoverBackground(currentSong.value.cover)
-        }
+        // 更新布局缓存并重置动画状态
+        updateLayoutCache()
 
-        // 歌词由 LyricManager 自动监听 currentTrack 变化并获取，这里不需要手动 fetch
-        // 但如果首次打开且没有歌词，可以触发一次检查（Manager 已有 immediate watch）
+        // 强制更新动画到初始状态
+        updateMobileAnimations(0, cachedLayout.contentWidth || window.innerWidth)
+      }
+    } else {
+      restorePageScroll()
+      stopProgressTimer()
+      backgroundRenderer.dispose()
+      document.removeEventListener('keydown', handleKeydown)
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('resize', updateMobileState)
 
-        if (isPlaying.value) {
-          startProgressTimer()
-        }
-
-        document.addEventListener('keydown', handleKeydown)
-        window.addEventListener('resize', handleResize)
-        window.addEventListener('resize', updateMobileState)
-        
-        updateMobileState()
-
-        if (isMobile.value) {
-          // 重置移动端状态
-          currentMobilePage.value = 0
-          scrollProgress.value = 0
-          currentScrollProgress = 0
-          
-          // 等待DOM更新后滚动到第一页并重置动画状态
-          await nextTick()
-          if (mainContent.value) {
-            mainContent.value.scrollLeft = 0
-          }
-          
-          // 更新布局缓存并重置动画状态
-          updateLayoutCache()
-          
-          // 强制更新动画到初始状态
-          updateMobileAnimations(0, cachedLayout.contentWidth || window.innerWidth)
-        }
-      } else {
-        restorePageScroll()
-        stopProgressTimer()
-        backgroundRenderer.dispose()
-        document.removeEventListener('keydown', handleKeydown)
-        window.removeEventListener('resize', handleResize)
-        window.removeEventListener('resize', updateMobileState)
-        
-        // 清理动画帧
-        if (animationFrameId) {
-          cancelAnimationFrame(animationFrameId)
-          animationFrameId = null
-        }
+      // 清理动画帧
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+        animationFrameId = null
       }
     }
+  }
 )
 
-watch(backgroundConfig, async (newConfig) => {
-  if (props.isVisible) {
-    await backgroundRenderer.updateConfig(newConfig)
-  }
-}, {deep: true})
+watch(
+  backgroundConfig,
+  async (newConfig) => {
+    if (props.isVisible) {
+      await backgroundRenderer.updateConfig(newConfig)
+    }
+  },
+  { deep: true }
+)
 
 watch(currentSong, async (newSong) => {
   if (!props.isVisible || !newSong) return
@@ -909,70 +909,73 @@ const startAnimationLoop = () => {
 
 const drawSpectrum = () => {
   if (!spectrumCanvas.value || !audioVisualizer.isInitialized.value) return
-  
+
   const canvas = spectrumCanvas.value
   const ctx = canvas.getContext('2d')
   const width = canvas.width
   const height = canvas.height
-  
+
   const data = audioVisualizer.getFrequencyData()
   if (data.length === 0) return
 
   ctx.clearRect(0, 0, width, height)
-  
+
   const barCount = 40
   const barHeight = height / barCount / 1.5
   const gap = 4
-  const usableHeight = height - (barCount * gap)
+  const usableHeight = height - barCount * gap
   const blockH = usableHeight / barCount
-  
-  const step = Math.floor(data.length / 2 / barCount) 
-  
+
+  const step = Math.floor(data.length / 2 / barCount)
+
   ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
-  
+
   for (let i = 0; i < barCount; i++) {
-     const dataIndex = i * step
-     const value = data[dataIndex] || 0
-     
-     const percent = value / 255
-     const barW = width * percent * 0.8
-     
-     const y = height - (i * (blockH + gap)) - 100
-     if (y < 0) break
-     
-     ctx.fillStyle = `rgba(255, 255, 255, ${0.2 + percent * 0.5})`
-     
-     ctx.beginPath()
-     ctx.roundRect(0, y, Math.max(4, barW), blockH, 4)
-     ctx.fill()
+    const dataIndex = i * step
+    const value = data[dataIndex] || 0
+
+    const percent = value / 255
+    const barW = width * percent * 0.8
+
+    const y = height - i * (blockH + gap) - 100
+    if (y < 0) break
+
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.2 + percent * 0.5})`
+
+    ctx.beginPath()
+    ctx.roundRect(0, y, Math.max(4, barW), blockH, 4)
+    ctx.fill()
   }
 }
 
-watch(() => props.isVisible, async (visible) => {
-  if (visible) {
-    if (isMobile.value) {
-      history.pushState({ modal: 'lyrics' }, '')
-      hasPushedHistory.value = true
-      window.addEventListener('popstate', handlePopState)
-    }
-    
-    const audioElements = document.querySelectorAll('audio')
-    for (const audio of audioElements) {
+watch(
+  () => props.isVisible,
+  async (visible) => {
+    if (visible) {
+      if (isMobile.value) {
+        history.pushState({ modal: 'lyrics' }, '')
+        hasPushedHistory.value = true
+        window.addEventListener('popstate', handlePopState)
+      }
+
+      const audioElements = document.querySelectorAll('audio')
+      for (const audio of audioElements) {
         if (audio.src) {
-            audioVisualizer.initialize(audio)
-            break
+          audioVisualizer.initialize(audio)
+          break
         }
+      }
+
+      startAnimationLoop()
+    } else {
+      if (hasPushedHistory.value) {
+        history.back()
+        hasPushedHistory.value = false
+      }
+      window.removeEventListener('popstate', handlePopState)
     }
-    
-    startAnimationLoop()
-  } else {
-    if (hasPushedHistory.value) {
-      history.back()
-      hasPushedHistory.value = false
-    }
-    window.removeEventListener('popstate', handlePopState)
   }
-})
+)
 
 onUnmounted(() => {
   stopProgressTimer()
@@ -981,13 +984,13 @@ onUnmounted(() => {
   document.removeEventListener('mouseup', handleProgressMouseUp)
   document.removeEventListener('touchmove', handleProgressTouchMove)
   document.body.style.overflow = ''
-  
+
   // 清理动画帧
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId)
     animationFrameId = null
   }
-  
+
   // 清理定时器
   if (resizeTimer.value) {
     clearTimeout(resizeTimer.value)
@@ -1019,7 +1022,7 @@ onUnmounted(() => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  font-family: "SF Pro Display", "PingFang SC", system-ui, sans-serif;
+  font-family: 'SF Pro Display', 'PingFang SC', system-ui, sans-serif;
 }
 
 /* 背景 */
@@ -1044,9 +1047,15 @@ onUnmounted(() => {
 }
 
 @keyframes gradientFlow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .cover-background {
@@ -1062,7 +1071,7 @@ onUnmounted(() => {
 .background-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 100%);
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
   z-index: 1;
 }
 
@@ -1159,7 +1168,9 @@ onUnmounted(() => {
   overflow: hidden;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
   transform: scale(0.85);
-  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.6s ease;
+  transition:
+    transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.6s ease;
   position: relative;
 }
 
@@ -1232,7 +1243,13 @@ onUnmounted(() => {
   justify-content: center;
   position: relative;
   mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
 }
 
 .lyrics-display-area {
@@ -1308,7 +1325,7 @@ onUnmounted(() => {
   transform: translate(-50%, -50%) scale(0);
   transition: transform 0.1s ease;
   pointer-events: none;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .progress-bar:hover .progress-thumb {
@@ -1373,7 +1390,9 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 歌词工具栏 */
@@ -1446,7 +1465,7 @@ onUnmounted(() => {
   border-radius: 4px;
 }
 
-.setting-item input[type="checkbox"] {
+.setting-item input[type='checkbox'] {
   width: 16px;
   height: 16px;
   accent-color: #fa2d48;
@@ -1467,7 +1486,7 @@ onUnmounted(() => {
   border-radius: 12px;
   padding: 4px;
   min-width: 100px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.4);
   z-index: 99999; /* 提高层级 */
   display: flex;
@@ -1523,10 +1542,10 @@ onUnmounted(() => {
 }
 
 .badge-quality-option.active {
-  color: #007AFF; /* 蓝色字 */
+  color: #007aff; /* 蓝色字 */
   background: #ffffff;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .mobile-pagination-dots {
@@ -1557,31 +1576,31 @@ onUnmounted(() => {
 }
 
 .mobile-quality-badge {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px 10px;
-    margin-top: 12px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 6px;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.2s ease;
-    user-select: none; /* 禁止选择 */
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
-  }
-  
-  .mobile-quality-badge:active {
-    background: rgba(255, 255, 255, 0.25);
-    transform: scale(0.96);
-  }
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  user-select: none; /* 禁止选择 */
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+}
+
+.mobile-quality-badge:active {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(0.96);
+}
 
 /* 响应式 */
 @media (max-width: 1024px) {
@@ -1604,7 +1623,7 @@ onUnmounted(() => {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }
-  
+
   .main-content::-webkit-scrollbar {
     display: none;
   }
@@ -1655,7 +1674,13 @@ onUnmounted(() => {
     height: 100%;
     overflow: hidden; /* 移除 auto，交给 AMLyric 内部滚动 */
     mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 15%,
+      black 85%,
+      transparent 100%
+    );
   }
 
   .album-cover-wrapper {
@@ -1693,11 +1718,11 @@ onUnmounted(() => {
     -webkit-box-orient: vertical;
     text-overflow: ellipsis;
   }
-  
+
   .song-artist {
     font-size: 1.3rem;
   }
-  
+
   .mobile-pagination-dots {
     display: flex;
   }
@@ -1720,7 +1745,7 @@ onUnmounted(() => {
     width: 100%;
     padding: 1rem 1.5rem calc(0.5rem + env(safe-area-inset-bottom));
     gap: 1rem;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(30px);
     box-sizing: border-box;
@@ -1736,7 +1761,7 @@ onUnmounted(() => {
     width: 100%;
     padding: 0 1rem;
   }
-  
+
   .badge-quality-menu {
     top: auto;
     bottom: 100%;
@@ -1750,7 +1775,7 @@ onUnmounted(() => {
     bottom: 180px;
     right: 1.5rem;
   }
-  
+
   .mobile-lyric-header {
     position: absolute;
     top: 50px;
@@ -1798,7 +1823,7 @@ onUnmounted(() => {
     overflow: hidden;
     text-overflow: ellipsis;
     letter-spacing: -0.01em;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     line-height: 1.2;
     display: block;
     width: 100%;
@@ -1822,7 +1847,7 @@ onUnmounted(() => {
     width: 260px;
     height: 260px;
   }
-  
+
   .song-title {
     font-size: 1.8rem;
   }

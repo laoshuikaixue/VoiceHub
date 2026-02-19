@@ -2,47 +2,35 @@
   <div class="notification-container">
     <TransitionGroup class="notification-list" name="notification-list" tag="div">
       <div
-          v-for="notification in notifications"
-          :key="notification.id"
-          :class="{
-          'success': notification.type === 'success',
-          'error': notification.type === 'error',
-          'info': notification.type === 'info'
+        v-for="notification in notifications"
+        :key="notification.id"
+        :class="{
+          success: notification.type === 'success',
+          error: notification.type === 'error',
+          info: notification.type === 'info'
         }"
-          class="notification-item"
+        class="notification-item"
       >
         <div class="notification-icon">
-          <Icon
-              v-if="notification.type === 'success'"
-              :size="16"
-              name="success"
-          />
-          <Icon
-              v-else-if="notification.type === 'error'"
-              :size="16"
-              name="error"
-          />
-          <Icon
-              v-else
-              :size="16"
-              name="info"
-          />
+          <Icon v-if="notification.type === 'success'" :size="16" name="success" />
+          <Icon v-else-if="notification.type === 'error'" :size="16" name="error" />
+          <Icon v-else :size="16" name="info" />
         </div>
         <div class="notification-content">
           {{ notification.message }}
         </div>
         <button class="notification-close" @click="removeToast(notification.id)">
-          <Icon :size="16" name="close"/>
+          <Icon :size="16" name="close" />
         </button>
 
         <!-- 进度条 -->
         <div class="notification-progress">
           <div
-              :style="{
+            :style="{
               animationDuration: `${notification.duration}ms`
             }"
-              class="notification-progress-bar"
-          ></div>
+            class="notification-progress-bar"
+          />
         </div>
       </div>
     </TransitionGroup>
@@ -50,7 +38,7 @@
 </template>
 
 <script setup>
-import {onMounted, ref, watch} from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import Icon from './Icon.vue'
 import { useToast } from '~/composables/useToast'
 
@@ -65,7 +53,7 @@ onMounted(() => {
     const { showToast } = useToast()
     showToast(message, type, duration)
   }
-  
+
   window.$clearNotifications = () => {
     notifications.value = []
   }
@@ -94,8 +82,8 @@ onMounted(() => {
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  background: #21242D;
-  color: #FFFFFF;
+  background: #21242d;
+  color: #ffffff;
   max-width: 400px;
   min-width: 300px;
   font-family: 'MiSans', sans-serif;
@@ -114,7 +102,7 @@ onMounted(() => {
 }
 
 .notification-item.info {
-  border-left: 4px solid #0B5AFE;
+  border-left: 4px solid #0b5afe;
 }
 
 .notification-icon {
@@ -142,7 +130,7 @@ onMounted(() => {
 
 .info .notification-icon {
   background: rgba(11, 90, 254, 0.2);
-  color: #0B5AFE;
+  color: #0b5afe;
 }
 
 .notification-content {
@@ -170,7 +158,7 @@ onMounted(() => {
 }
 
 .notification-close:hover {
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 /* 进度条 */
@@ -199,7 +187,7 @@ onMounted(() => {
 }
 
 .info .notification-progress-bar {
-  background-color: #0B5AFE;
+  background-color: #0b5afe;
 }
 
 @keyframes progress-shrink {

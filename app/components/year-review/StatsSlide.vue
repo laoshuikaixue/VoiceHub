@@ -1,24 +1,24 @@
 <template>
   <div class="slide-container">
-    <div class="bg-gradient"></div>
-    
+    <div class="bg-gradient" />
+
     <Transition name="entry" appear>
-      <div class="content" v-show="active">
+      <div v-show="active" class="content">
         <div class="label">音乐足迹</div>
-        
+
         <p class="text-intro">这一年，你一共发起了</p>
-        
+
         <div class="number-container">
-           <span class="big-number">{{ data.totalRequests.toLocaleString() }}</span>
-           <span class="suffix">次点歌</span>
+          <span class="big-number">{{ data.totalRequests.toLocaleString() }}</span>
+          <span class="suffix">次点歌</span>
         </div>
 
         <div class="sub-stats">
           <div v-if="data.playedRequests > 0" class="sub-content">
-             <p class="text-base">
-               其中有 <span class="highlight-green">{{ data.playedRequests }}</span> 首
-             </p>
-             <p class="text-sub">在广播站被播出，传递给了更多人</p>
+            <p class="text-base">
+              其中有 <span class="highlight-green">{{ data.playedRequests }}</span> 首
+            </p>
+            <p class="text-sub">在广播站被播出，传递给了更多人</p>
           </div>
           <p v-else class="text-sub">期待你的歌曲早日被播出</p>
         </div>
@@ -49,7 +49,12 @@ defineProps({
 .bg-gradient {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at top right, rgba(30, 58, 138, 0.4), transparent, transparent);
+  background: radial-gradient(
+    ellipse at top right,
+    rgba(30, 58, 138, 0.4),
+    transparent,
+    transparent
+  );
 }
 
 .content {
@@ -138,9 +143,17 @@ defineProps({
     align-items: center;
     gap: 0;
   }
-  
-  .big-number { font-size: 7rem; }
-  .text-intro { font-size: 1.25rem; }
-  .suffix { font-size: 1.25rem; margin-top: 0.5rem; margin-left: 0; }
+
+  .big-number {
+    font-size: 7rem;
+  }
+  .text-intro {
+    font-size: 1.25rem;
+  }
+  .suffix {
+    font-size: 1.25rem;
+    margin-top: 0.5rem;
+    margin-left: 0;
+  }
 }
 </style>

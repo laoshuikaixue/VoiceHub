@@ -6,10 +6,10 @@
     </div>
     <div class="progress-bar">
       <div
-          :class="{ 'indeterminate': indeterminate }"
-          :style="{ width: `${percentage}%` }"
-          class="progress-fill"
-      ></div>
+        :class="{ indeterminate: indeterminate }"
+        :style="{ width: `${percentage}%` }"
+        class="progress-fill"
+      />
     </div>
     <div v-if="subMessage" class="progress-sub-message">{{ subMessage }}</div>
   </div>
@@ -89,4 +89,4 @@ defineProps({
     transform: translateX(300%);
   }
 }
-</style> 
+</style>

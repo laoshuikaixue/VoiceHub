@@ -5,12 +5,15 @@
       <p class="text-zinc-500 text-xs font-medium">加载中...</p>
     </div>
 
-    <div v-else-if="error" class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-between">
+    <div
+      v-else-if="error"
+      class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-between"
+    >
       <div class="flex items-center gap-3">
         <AlertCircle :size="16" class="text-rose-500" />
         <span class="text-xs text-rose-500 font-medium">{{ error }}</span>
       </div>
-      <button 
+      <button
         class="px-3 py-1 bg-rose-500 text-white text-[10px] font-black uppercase rounded-lg hover:bg-rose-400 transition-all"
         @click="fetchSettings"
       >
@@ -64,10 +67,15 @@
         </div>
       </div>
 
-      <div v-if="localSettings.songVotedNotify" class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-2xl space-y-3">
+      <div
+        v-if="localSettings.songVotedNotify"
+        class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-2xl space-y-3"
+      >
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-black text-zinc-500 uppercase tracking-widest">投票通知阈值</h3>
-          <span class="text-xs font-bold text-blue-500">每获得 {{ localSettings.songVotedThreshold }} 票通知一次</span>
+          <span class="text-xs font-bold text-blue-500"
+            >每获得 {{ localSettings.songVotedThreshold }} 票通知一次</span
+          >
         </div>
         <input
           v-model.number="localSettings.songVotedThreshold"
@@ -105,7 +113,9 @@
             <h3 class="text-sm font-bold text-zinc-200">通知刷新间隔</h3>
             <p class="text-[11px] text-zinc-500 mt-0.5">设置通知自动刷新的时间间隔</p>
           </div>
-          <span class="text-xs font-bold text-blue-500">{{ formatRefreshInterval(localSettings.refreshInterval) }}</span>
+          <span class="text-xs font-bold text-blue-500">{{
+            formatRefreshInterval(localSettings.refreshInterval)
+          }}</span>
         </div>
         <input
           v-model.number="localSettings.refreshInterval"
@@ -136,7 +146,8 @@ const error = computed(() => notificationsService.error.value)
 const settings = computed(() => notificationsService.settings.value)
 
 // 样式类
-const itemClass = "flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all"
+const itemClass =
+  'flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all'
 
 // 本地设置，用于双向绑定
 const localSettings = ref({
@@ -149,18 +160,22 @@ const localSettings = ref({
 })
 
 // 监听设置变化
-watch(settings, (newSettings) => {
-  if (newSettings) {
-    localSettings.value = {
-      songSelectedNotify: newSettings.songSelectedNotify,
-      songPlayedNotify: newSettings.songPlayedNotify,
-      songVotedNotify: newSettings.songVotedNotify,
-      songVotedThreshold: newSettings.songVotedThreshold || 1,
-      systemNotify: newSettings.systemNotify,
-      refreshInterval: newSettings.refreshInterval || 60
+watch(
+  settings,
+  (newSettings) => {
+    if (newSettings) {
+      localSettings.value = {
+        songSelectedNotify: newSettings.songSelectedNotify,
+        songPlayedNotify: newSettings.songPlayedNotify,
+        songVotedNotify: newSettings.songVotedNotify,
+        songVotedThreshold: newSettings.songVotedThreshold || 1,
+        systemNotify: newSettings.systemNotify,
+        refreshInterval: newSettings.refreshInterval || 60
+      }
     }
-  }
-}, { immediate: true })
+  },
+  { immediate: true }
+)
 
 // 初始化
 onMounted(async () => {
@@ -184,15 +199,13 @@ const formatRefreshInterval = (seconds) => {
   } else {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
-    return remainingSeconds > 0
-      ? `${minutes}分${remainingSeconds}秒`
-      : `${minutes}分钟`
+    return remainingSeconds > 0 ? `${minutes}分${remainingSeconds}秒` : `${minutes}分钟`
   }
 }
 </script>
 
 <style scoped>
-input[type="range"]::-webkit-slider-thumb {
+input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 18px;
   height: 18px;
@@ -202,7 +215,7 @@ input[type="range"]::-webkit-slider-thumb {
   transition: all 0.2s ease;
 }
 
-input[type="range"]::-moz-range-thumb {
+input[type='range']::-moz-range-thumb {
   width: 18px;
   height: 18px;
   background: #2563eb;
@@ -212,7 +225,7 @@ input[type="range"]::-moz-range-thumb {
   transition: all 0.2s ease;
 }
 
-input[type="range"]::-webkit-slider-thumb:hover {
+input[type='range']::-webkit-slider-thumb:hover {
   transform: scale(1.1);
 }
 </style>

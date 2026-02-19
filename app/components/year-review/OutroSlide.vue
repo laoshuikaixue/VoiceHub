@@ -1,25 +1,37 @@
 <template>
   <div class="slide-container">
-    <div class="bg-gradient"></div>
-    
+    <div class="bg-gradient" />
+
     <Transition name="entry" appear>
-      <div class="content" v-show="active">
+      <div v-show="active" class="content">
         <div class="label">未来可期</div>
-        
+
         <div class="year-container">
-           <h2 class="year-next">{{ data.year + 1 }}</h2>
-           <div class="year-underline"></div>
+          <h2 class="year-next">{{ data.year + 1 }}</h2>
+          <div class="year-underline" />
         </div>
 
         <p class="text-intro">愿音乐继续陪伴你的每一天</p>
-        
+
         <div class="action-buttons">
           <NuxtLink to="/" class="btn-primary group">
-             <div class="btn-bg"></div>
-             <span class="btn-content">
-               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-               返回首页
-             </span>
+            <div class="btn-bg" />
+            <span class="btn-content">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+              返回首页
+            </span>
           </NuxtLink>
         </div>
       </div>
@@ -181,11 +193,18 @@ defineEmits(['share'])
 }
 
 @media (min-width: 640px) {
-  .btn-primary, .btn-secondary { width: auto; }
+  .btn-primary,
+  .btn-secondary {
+    width: auto;
+  }
 }
 
 @media (max-width: 768px) {
-  .year-next { font-size: 4rem; }
-  .text-intro { font-size: 1rem; }
+  .year-next {
+    font-size: 4rem;
+  }
+  .text-intro {
+    font-size: 1rem;
+  }
 }
 </style>

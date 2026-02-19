@@ -23,13 +23,14 @@ export default defineEventHandler(async (event) => {
   }
 
   // 获取当前活跃学期
-  const activeSemester = await db.select()
+  const activeSemester = await db
+    .select()
     .from(semesters)
     .where(eq(semesters.isActive, true))
     .limit(1)
-    .then(res => res[0])
+    .then((res) => res[0])
 
-  let currentSemesterName = activeSemester?.name
+  const currentSemesterName = activeSemester?.name
 
   if (!currentSemesterName) {
     throw createError({
@@ -39,7 +40,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // 获取原始歌曲数据，确保只能获取自己投稿的歌曲，并按创建时间排序
-  const originalSongs = await db.select()
+  const originalSongs = await db
+    .select()
     .from(songs)
     .where(
       and(
@@ -54,17 +56,23 @@ export default defineEventHandler(async (event) => {
   }
 
   // 获取黑名单
-  const blacklistItems = await db.select().from(songBlacklists).where(eq(songBlacklists.isActive, true))
+  const blacklistItems = await db
+    .select()
+    .from(songBlacklists)
+    .where(eq(songBlacklists.isActive, true))
 
   // 获取当前学期已存在的歌曲，用于排重
-  const existingSongs = await db.select({
-    title: songs.title,
-    artist: songs.artist
-  })
-  .from(songs)
-  .where(eq(songs.semester, currentSemesterName))
+  const existingSongs = await db
+    .select({
+      title: songs.title,
+      artist: songs.artist
+    })
+    .from(songs)
+    .where(eq(songs.semester, currentSemesterName))
 
-  const existingSet = new Set(existingSongs.map(s => `${s.title.toLowerCase().trim()}|${s.artist.toLowerCase().trim()}`))
+  const existingSet = new Set(
+    existingSongs.map((s) => `${s.title.toLowerCase().trim()}|${s.artist.toLowerCase().trim()}`)
+  )
 
   const results = {
     total: originalSongs.length,
@@ -73,11 +81,11 @@ export default defineEventHandler(async (event) => {
     details: [] as string[]
   }
 
-  const songsToInsert: typeof songs.$inferInsert[] = []
+  const songsToInsert: (typeof songs.$inferInsert)[] = []
 
   for (const song of originalSongs) {
     const songKey = `${song.title.toLowerCase().trim()}|${song.artist.toLowerCase().trim()}`
-    
+
     // 1. 检查是否重复
     if (existingSet.has(songKey)) {
       results.failed++
@@ -128,7 +136,7 @@ export default defineEventHandler(async (event) => {
       createdAt: new Date(),
       updatedAt: new Date()
     })
-    
+
     // 将即将插入的歌曲也加入判重集合，防止同一次请求中有重复歌曲
     existingSet.add(songKey)
   }

@@ -1,21 +1,30 @@
 <template>
-  <div 
+  <div
     class="relative overflow-hidden p-6 bg-zinc-900 border border-zinc-800 rounded-xl group hover:border-blue-500/30 transition-all duration-300 shadow-xl shadow-black/20"
     :class="{ 'opacity-60 grayscale cursor-wait': isLoading }"
   >
     <!-- 背景装饰 -->
-    <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-600/5 blur-3xl rounded-full group-hover:bg-blue-600/10 transition-colors"></div>
-    
+    <div
+      class="absolute -right-4 -top-4 w-24 h-24 bg-blue-600/5 blur-3xl rounded-full group-hover:bg-blue-600/10 transition-colors"
+    />
+
     <div class="flex items-start justify-between relative z-10">
       <div class="space-y-4 flex-1">
         <div class="flex items-center gap-2">
-          <div 
+          <div
             class="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 group-hover:border-blue-500/30 group-hover:bg-blue-600/5 transition-all duration-300"
             :class="iconClass"
           >
-            <component :is="iconComponent" :size="18" class="text-zinc-400 group-hover:text-blue-400 transition-colors" />
+            <component
+              :is="iconComponent"
+              :size="18"
+              class="text-zinc-400 group-hover:text-blue-400 transition-colors"
+            />
           </div>
-          <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest group-hover:text-zinc-500 transition-colors">{{ label }}</span>
+          <span
+            class="text-[10px] font-black text-zinc-600 uppercase tracking-widest group-hover:text-zinc-500 transition-colors"
+            >{{ label }}</span
+          >
         </div>
 
         <div class="space-y-1">
@@ -23,14 +32,23 @@
             <h3 class="text-3xl font-black text-zinc-100 tracking-tight">
               {{ formattedValue }}
             </h3>
-            <div v-if="change !== undefined" :class="changeClass" class="flex items-center gap-0.5 text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md border">
+            <div
+              v-if="change !== undefined"
+              :class="changeClass"
+              class="flex items-center gap-0.5 text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md border"
+            >
               <TrendingUp v-if="change > 0" :size="10" />
               <TrendingDown v-else-if="change < 0" :size="10" />
               <Minus v-else :size="10" />
               <span>{{ Math.abs(change) }}%</span>
             </div>
           </div>
-          <p v-if="subtitle" class="text-[10px] font-bold text-zinc-600 group-hover:text-zinc-500 transition-colors">{{ subtitle }}</p>
+          <p
+            v-if="subtitle"
+            class="text-[10px] font-bold text-zinc-600 group-hover:text-zinc-500 transition-colors"
+          >
+            {{ subtitle }}
+          </p>
         </div>
       </div>
 
@@ -51,19 +69,35 @@
     </div>
 
     <!-- 加载动画 -->
-    <div v-if="isLoading" class="absolute inset-0 flex items-center justify-center bg-zinc-900/40 backdrop-blur-[1px]">
-      <div class="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+    <div
+      v-if="isLoading"
+      class="absolute inset-0 flex items-center justify-center bg-zinc-900/40 backdrop-blur-[1px]"
+    >
+      <div
+        class="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { 
-  Users, Music, Calendar, Heart, Bell, 
-  TrendingUp, TrendingDown, Minus, 
-  Database, ShieldCheck, Mail, Zap, 
-  Clock, BarChart3, MessageSquare
+import {
+  Users,
+  Music,
+  Calendar,
+  Heart,
+  Bell,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Database,
+  ShieldCheck,
+  Mail,
+  Zap,
+  Clock,
+  BarChart3,
+  MessageSquare
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -154,5 +188,4 @@ const trendColor = computed(() => {
 })
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

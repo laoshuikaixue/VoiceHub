@@ -9,12 +9,14 @@
 无论使用何种部署方式，升级前请先备份数据库。
 
 ### 1.1 使用管理后台备份（推荐）
+
 1. 登录管理员后台
 2. 进入"数据库管理"页面
 3. 点击"创建备份" -> 选择"完整备份"
 4. 待备份完成后，下载备份文件到本地保存
 
 ### 1.2 使用命令行备份
+
 也可以使用 PostgreSQL 命令行工具：
 
 ```bash
@@ -34,20 +36,23 @@ pg_dump -h localhost -U your_username -d voicehub > backup_$(date +%Y%m%d).sql
 如果您使用 `docker-compose.yml` 部署：
 
 1. **拉取最新代码**
+
    ```bash
    git pull
    ```
 
 2. **拉取/构建最新镜像**
+
    ```bash
    # 如果使用预构建镜像
    docker-compose pull
-   
+
    # 如果是本地构建
    docker-compose build --no-cache
    ```
 
 3. **重启服务**
+
    ```bash
    # 这会自动应用数据库迁移
    docker-compose up -d
@@ -64,12 +69,14 @@ pg_dump -h localhost -U your_username -d voicehub > backup_$(date +%Y%m%d).sql
 如果您直接使用 `docker run` 命令：
 
 1. **停止并删除旧容器**
+
    ```bash
    docker stop voicehub
    docker rm voicehub
    ```
 
 2. **拉取最新镜像**
+
    ```bash
    docker pull ghcr.io/laoshuikaixue/voicehub:latest
    # 或
@@ -136,6 +143,7 @@ npm run db:migrate
 ```
 
 **迁移说明**：
+
 - `db-sync.js` 脚本会自动检测数据库状态并选择合适的迁移方式
 - 空数据库会执行完整迁移
 - 已有数据的数据库会使用 push 方式同步结构

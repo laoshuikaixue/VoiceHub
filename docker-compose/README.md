@@ -4,9 +4,9 @@
 
 根据镜像构建方式与缓存依赖需求，配置文件分类如下：
 
-| 部署场景 \ 镜像来源 | 本地构建 | GitHub 官方预构建 | GitHub 官方（南京大学镜像加速） |
-|:---:|:---:|:---:|:---:|
-| **标准版（无 Redis）** | [docker-compose.yml](/docker-compose/docker-compose.yml) | [docker-compose-prebuild-github.yml](/docker-compose/docker-compose-prebuild-github.yml) | [docker-compose-prebuild-nju.yml](/docker-compose/docker-compose-prebuild-nju.yml) |
+|  部署场景 \ 镜像来源   |                               本地构建                               |                                          GitHub 官方预构建                                           |                                GitHub 官方（南京大学镜像加速）                                 |
+| :--------------------: | :------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------: |
+| **标准版（无 Redis）** |       [docker-compose.yml](/docker-compose/docker-compose.yml)       |       [docker-compose-prebuild-github.yml](/docker-compose/docker-compose-prebuild-github.yml)       |       [docker-compose-prebuild-nju.yml](/docker-compose/docker-compose-prebuild-nju.yml)       |
 | **含 Redis（不推荐）** | [docker-compose-redis.yml](/docker-compose/docker-compose-redis.yml) | [docker-compose-prebuild-github-redis.yml](/docker-compose/docker-compose-prebuild-github-redis.yml) | [docker-compose-prebuild-nju-redis.yml](/docker-compose/docker-compose-prebuild-nju-redis.yml) |
 
 ### 版本选择建议

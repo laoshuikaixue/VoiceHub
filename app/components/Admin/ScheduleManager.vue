@@ -4,41 +4,59 @@
     <div class="relative bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-1 overflow-hidden">
       <div class="flex items-center" @touchstart.stop>
         <button
-            :disabled="isFirstDateVisible"
-            class="p-2 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
-            @click="scrollDates('left')"
+          :disabled="isFirstDateVisible"
+          class="p-2 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
+          @click="scrollDates('left')"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <polyline points="15,18 9,12 15,6"/>
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <polyline points="15,18 9,12 15,6" />
           </svg>
         </button>
 
-        <div ref="dateSelector" class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 scroll-smooth overscroll-x-contain" style="overscroll-behavior-x: contain; touch-action: pan-x;">
+        <div
+          ref="dateSelector"
+          class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 scroll-smooth overscroll-x-contain"
+          style="overscroll-behavior-x: contain; touch-action: pan-x"
+        >
           <button
-              v-for="date in availableDates"
-              :key="date.value"
-              :data-date="date.value"
-              :class="[
-                'flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg transition-all duration-200 border',
-                selectedDate === date.value
-                  ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 hover:border-zinc-700'
-              ]"
-              @click="selectedDate = date.value"
+            v-for="date in availableDates"
+            :key="date.value"
+            :data-date="date.value"
+            :class="[
+              'flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg transition-all duration-200 border',
+              selectedDate === date.value
+                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 hover:border-zinc-700'
+            ]"
+            @click="selectedDate = date.value"
           >
-            <span class="text-[10px] font-bold uppercase tracking-wider opacity-80">{{ date.weekday }}</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider opacity-80">{{
+              date.weekday
+            }}</span>
             <span class="text-lg font-black leading-none my-0.5">{{ date.day }}</span>
             <span class="text-[9px] font-bold opacity-60">{{ date.month }}月</span>
           </button>
         </div>
 
         <button
-            :disabled="isLastDateVisible"
-            class="p-2 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
-            @click="scrollDates('right')"
+          :disabled="isLastDateVisible"
+          class="p-2 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
+          @click="scrollDates('right')"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <polyline points="9,18 15,12 9,6"/>
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <polyline points="9,18 15,12 9,6" />
           </svg>
         </button>
 
@@ -46,12 +64,12 @@
         <div class="flex items-center border-l border-zinc-800 ml-1 pl-1">
           <!-- 定位到今天 -->
           <button
-             class="p-2 text-zinc-500 hover:text-emerald-400 transition-colors"
-             title="跳转到今天"
-             @click="scrollToToday"
-           >
-             <CircleDot class="w-5 h-5" />
-           </button>
+            class="p-2 text-zinc-500 hover:text-emerald-400 transition-colors"
+            title="跳转到今天"
+            @click="scrollToToday"
+          >
+            <CircleDot class="w-5 h-5" />
+          </button>
 
           <!-- 手动日期选择按钮 -->
           <button
@@ -66,35 +84,57 @@
     </div>
 
     <!-- 手动日期选择弹窗 -->
-    <div v-if="showManualDatePicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden" @click.stop>
+    <div
+      v-if="showManualDatePicker"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    >
+      <div
+        class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
+        @click.stop
+      >
         <div class="flex items-center justify-between p-4 border-b border-zinc-800">
           <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">选择日期</h3>
-          <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="showManualDatePicker = false">
+          <button
+            class="text-zinc-500 hover:text-zinc-300 transition-colors"
+            @click="showManualDatePicker = false"
+          >
             <CloseIcon class="w-5 h-5" />
           </button>
         </div>
         <div class="p-6 space-y-6">
           <input
-              v-model="manualSelectedDate"
-              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors"
-              type="date"
-          />
+            v-model="manualSelectedDate"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors"
+            type="date"
+          >
           <div class="flex gap-3">
-            <button class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider" @click="showManualDatePicker = false">取消</button>
-            <button class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-colors uppercase tracking-wider" @click="confirmManualDate">确认</button>
+            <button
+              class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
+              @click="showManualDatePicker = false"
+            >
+              取消
+            </button>
+            <button
+              class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-colors uppercase tracking-wider"
+              @click="confirmManualDate"
+            >
+              确认
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 播出时段选择器 (如果启用) -->
-    <div v-if="playTimeEnabled" class="flex items-center gap-3 bg-zinc-900/30 border border-zinc-800 rounded-lg p-3">
+    <div
+      v-if="playTimeEnabled"
+      class="flex items-center gap-3 bg-zinc-900/30 border border-zinc-800 rounded-lg p-3"
+    >
       <CustomSelect
         v-model="selectedPlayTime"
         label="播出时段"
         :options="playTimeOptions"
-        className="w-full"
+        class-name="w-full"
       />
     </div>
 
@@ -104,20 +144,38 @@
     </div>
 
     <div v-else>
-      <div class="lg:hidden sticky -top-4 -mx-4 -mt-4 z-20 flex p-1 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 shadow-xl mb-4 pt-4">
+      <div
+        class="lg:hidden sticky -top-4 -mx-4 -mt-4 z-20 flex p-1 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 shadow-xl mb-4 pt-4"
+      >
         <button
+          :class="[
+            'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all',
+            mobileTab === 'pending' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500'
+          ]"
           @click="mobileTab = 'pending'"
-          :class="['flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all', mobileTab === 'pending' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500']"
         >
           <ListMusic class="w-4 h-4" />
-          <span class="flex items-center gap-1.5">待排歌曲 <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{ filteredUnscheduledSongs.length }}</span></span>
+          <span class="flex items-center gap-1.5"
+            >待排歌曲
+            <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{
+              filteredUnscheduledSongs.length
+            }}</span></span
+          >
         </button>
         <button
+          :class="[
+            'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all',
+            mobileTab === 'scheduled' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500'
+          ]"
           @click="mobileTab = 'scheduled'"
-          :class="['flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all', mobileTab === 'scheduled' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500']"
         >
           <PlaySquare class="w-4 h-4" />
-          <span class="flex items-center gap-1.5">播放列表 <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{ localScheduledSongs.length }}</span></span>
+          <span class="flex items-center gap-1.5"
+            >播放列表
+            <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{
+              localScheduledSongs.length
+            }}</span></span
+          >
         </button>
       </div>
 
@@ -125,19 +183,35 @@
         <!-- 左侧：待排歌曲（待排库） -->
         <div
           v-show="mobileTab === 'pending' || isDesktop"
-          :class="['lg:col-span-4 flex flex-col space-y-2', mobileTab === 'scheduled' ? 'hidden lg:flex' : 'flex']"
+          :class="[
+            'lg:col-span-4 flex flex-col space-y-2',
+            mobileTab === 'scheduled' ? 'hidden lg:flex' : 'flex'
+          ]"
           @dragover.prevent="handleDraggableDragOver"
           @dragleave="handleDraggableDragLeave"
           @drop.stop.prevent="handleReturnToDraggable"
         >
           <div class="flex items-center justify-between px-1">
-            <h3 class="hidden lg:block text-lg font-black tracking-tight text-zinc-100 uppercase">待排歌曲</h3>
-            <div class="flex w-full lg:w-auto gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800">
+            <h3 class="hidden lg:block text-lg font-black tracking-tight text-zinc-100 uppercase">
+              待排歌曲
+            </h3>
+            <div
+              class="flex w-full lg:w-auto gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800"
+            >
               <button
-                v-for="tab in [{ id: 'normal', label: '普通投稿' }, { id: 'replay', label: '重播申请' }, { id: 'all', label: '所有' }]"
+                v-for="tab in [
+                  { id: 'normal', label: '普通投稿' },
+                  { id: 'replay', label: '重播申请' },
+                  { id: 'all', label: '所有' }
+                ]"
                 :key="tab.id"
+                :class="[
+                  'flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                  activeTab === tab.id
+                    ? 'bg-zinc-800 text-blue-400 shadow-md border border-blue-500/20'
+                    : 'text-zinc-600 hover:text-zinc-400'
+                ]"
                 @click="activeTab = tab.id"
-                :class="['flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all', activeTab === tab.id ? 'bg-zinc-800 text-blue-400 shadow-md border border-blue-500/20' : 'text-zinc-600 hover:text-zinc-400']"
               >
                 {{ tab.label }}
               </button>
@@ -146,27 +220,40 @@
 
           <!-- 筛选区 - 移动端折叠 -->
           <div class="bg-zinc-900/40 border border-zinc-800 rounded-2xl shadow-xl">
-            <div class="p-4 flex items-center justify-between lg:hidden border-b border-zinc-800/50 rounded-t-2xl" @click="mobileFiltersOpen = !mobileFiltersOpen">
+            <div
+              class="p-4 flex items-center justify-between lg:hidden border-b border-zinc-800/50 rounded-t-2xl"
+              @click="mobileFiltersOpen = !mobileFiltersOpen"
+            >
               <div class="flex items-center gap-2 text-zinc-400">
                 <Filter class="w-3.5 h-3.5" />
                 <span class="text-[11px] font-black uppercase tracking-widest">检索与筛选</span>
               </div>
-              <ChevronRight :class="['w-3.5 h-3.5 text-zinc-700 transition-transform duration-300', mobileFiltersOpen ? 'rotate-90' : '']" />
+              <ChevronRight
+                :class="[
+                  'w-3.5 h-3.5 text-zinc-700 transition-transform duration-300',
+                  mobileFiltersOpen ? 'rotate-90' : ''
+                ]"
+              />
             </div>
 
-            <div v-show="mobileFiltersOpen || isDesktop" class="p-3 space-y-2 transition-all duration-300 ease-in-out rounded-b-2xl">
+            <div
+              v-show="mobileFiltersOpen || isDesktop"
+              class="p-3 space-y-2 transition-all duration-300 ease-in-out rounded-b-2xl"
+            >
               <div class="relative">
-                <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700 w-3.5 h-3.5" />
+                <Search
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700 w-3.5 h-3.5"
+                />
                 <input
                   v-model="searchQuery"
                   type="text"
                   placeholder="搜索歌曲、艺术家..."
                   class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
-                />
+                >
                 <button
-                    v-if="searchQuery"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400"
-                    @click="searchQuery = ''"
+                  v-if="searchQuery"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400"
+                  @click="searchQuery = ''"
                 >
                   <CloseIcon class="w-3.5 h-3.5" />
                 </button>
@@ -181,40 +268,39 @@
                   @change="onSemesterChange"
                 />
                 <div class="grid grid-cols-2 gap-2">
-                  <CustomSelect
-                    v-model="selectedGrade"
-                    label="年级"
-                    :options="availableGrades"
-                  />
-                  <CustomSelect
-                    v-model="songSortOption"
-                    label="排序"
-                    :options="sortOptions"
-                  />
+                  <CustomSelect v-model="selectedGrade" label="年级" :options="availableGrades" />
+                  <CustomSelect v-model="songSortOption" label="排序" :options="sortOptions" />
                 </div>
               </div>
             </div>
           </div>
 
           <div
-            :class="['draggable-songs flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200', isDraggableOver ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800/80 bg-zinc-900/20']"
+            :class="[
+              'draggable-songs flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200',
+              isDraggableOver
+                ? 'border-blue-500 bg-blue-500/5'
+                : 'border-zinc-800/80 bg-zinc-900/20'
+            ]"
           >
             <div class="space-y-2">
               <div
-                  v-for="song in filteredUnscheduledSongs"
-                  :key="song.id"
-                  class="draggable-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none"
-                  draggable="true"
-                  @dragend="dragEnd"
-                  @dragstart="dragStart($event, song)"
-                  @touchend="handleTouchEnd"
-                  @touchmove="handleTouchMove"
-                  @touchstart="handleTouchStart($event, song, 'song')"
+                v-for="song in filteredUnscheduledSongs"
+                :key="song.id"
+                class="draggable-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none"
+                draggable="true"
+                @dragend="dragEnd"
+                @dragstart="dragStart($event, song)"
+                @touchend="handleTouchEnd"
+                @touchmove="handleTouchMove"
+                @touchstart="handleTouchStart($event, song, 'song')"
               >
                 <!-- 歌曲卡片内容 -->
                 <div class="flex items-center gap-3">
                   <!-- 封面图片 -->
-                  <div class="relative w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50">
+                  <div
+                    class="relative w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50"
+                  >
                     <img
                       v-if="song.cover"
                       :src="convertToHttps(song.cover)"
@@ -222,16 +308,19 @@
                       referrerpolicy="no-referrer"
                       loading="lazy"
                       alt=""
-                    />
-                    <div v-else class="w-full h-full flex items-center justify-center text-zinc-600">
+                    >
+                    <div
+                      v-else
+                      class="w-full h-full flex items-center justify-center text-zinc-600"
+                    >
                       <Music2 class="w-6 h-6 opacity-50" />
                     </div>
                   </div>
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                     <h4 class="font-bold text-zinc-100 text-sm truncate">
-                      <button 
-                        v-if="song.musicPlatform === 'bilibili'" 
+                      <button
+                        v-if="song.musicPlatform === 'bilibili'"
                         class="text-zinc-100 hover:text-blue-400 hover:underline flex items-center gap-1 transition-colors w-full text-left"
                         @click.stop="openBilibiliPreview(song)"
                       >
@@ -245,7 +334,10 @@
                       <span>{{ song.requester }}</span>
                       <span v-if="song.requesterGrade" class="text-zinc-600">|</span>
                       <span v-if="song.requesterGrade">{{ song.requesterGrade }}</span>
-                      <span v-if="song.preferredPlayTimeId" class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap">
+                      <span
+                        v-if="song.preferredPlayTimeId"
+                        class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
+                      >
                         期望: {{ getPlayTimeName(song.preferredPlayTimeId) }}
                       </span>
                     </div>
@@ -253,9 +345,12 @@
 
                   <div class="flex items-center gap-2">
                     <!-- 普通模式：投票数 -->
-                    <div v-if="activeTab !== 'replay'" class="flex items-center gap-1 text-[10px] font-bold text-zinc-500 bg-zinc-950/50 px-2 py-1 rounded-md border border-zinc-800/50">
-                       <Heart class="w-3 h-3 text-red-500/50" />
-                       {{ song.voteCount || 0 }}
+                    <div
+                      v-if="activeTab !== 'replay'"
+                      class="flex items-center gap-1 text-[10px] font-bold text-zinc-500 bg-zinc-950/50 px-2 py-1 rounded-md border border-zinc-800/50"
+                    >
+                      <Heart class="w-3 h-3 text-red-500/50" />
+                      {{ song.voteCount || 0 }}
                     </div>
 
                     <!-- 重播模式：查看按钮 -->
@@ -271,8 +366,8 @@
                     <button
                       v-if="activeTab === 'replay'"
                       class="lg:hidden p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors"
-                      @click.stop="rejectReplayRequest(song.id)"
                       title="拒绝申请"
+                      @click.stop="rejectReplayRequest(song.id)"
                     >
                       <CloseIcon class="w-3.5 h-3.5" />
                     </button>
@@ -286,15 +381,20 @@
                     </button>
 
                     <!-- 菜单按钮 -->
-                    <div class="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400 transition-colors">
-                       <MoreVertical class="w-4 h-4" />
+                    <div
+                      class="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400 transition-colors"
+                    >
+                      <MoreVertical class="w-4 h-4" />
                     </div>
                   </div>
                 </div>
               </div>
 
               <!-- 空状态 -->
-              <div v-if="filteredUnscheduledSongs.length === 0" class="h-[300px] flex flex-col items-center justify-center text-zinc-800">
+              <div
+                v-if="filteredUnscheduledSongs.length === 0"
+                class="h-[300px] flex flex-col items-center justify-center text-zinc-800"
+              >
                 <div v-if="searchQuery" class="flex flex-col items-center">
                   <Search class="w-8 h-8 mb-2 opacity-20" />
                   <p class="text-[10px] font-black uppercase tracking-widest">未找到匹配的歌曲</p>
@@ -307,22 +407,27 @@
             </div>
 
             <!-- 分页 -->
-            <div v-if="totalPages > 1" class="mt-4 flex items-center justify-between pt-4 border-t border-zinc-800/50">
-               <button
-                 :disabled="currentPage === 1"
-                 @click="prevPage"
-                 class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 disabled:opacity-30 transition-colors"
-               >
-                 <ArrowLeft class="w-4 h-4" />
-               </button>
-               <span class="text-[10px] font-bold text-zinc-600">{{ currentPage }} / {{ totalPages }}</span>
-               <button
-                 :disabled="currentPage === totalPages"
-                 @click="nextPage"
-                 class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 disabled:opacity-30 transition-colors"
-               >
-                 <ArrowRight class="w-4 h-4" />
-               </button>
+            <div
+              v-if="totalPages > 1"
+              class="mt-4 flex items-center justify-between pt-4 border-t border-zinc-800/50"
+            >
+              <button
+                :disabled="currentPage === 1"
+                class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 disabled:opacity-30 transition-colors"
+                @click="prevPage"
+              >
+                <ArrowLeft class="w-4 h-4" />
+              </button>
+              <span class="text-[10px] font-bold text-zinc-600"
+                >{{ currentPage }} / {{ totalPages }}</span
+              >
+              <button
+                :disabled="currentPage === totalPages"
+                class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 disabled:opacity-30 transition-colors"
+                @click="nextPage"
+              >
+                <ArrowRight class="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -330,49 +435,67 @@
         <!-- 右侧：播放列表（播放顺序） -->
         <div
           v-show="mobileTab === 'scheduled' || isDesktop"
-          :class="['lg:col-span-8 flex flex-col space-y-4', mobileTab === 'pending' ? 'hidden lg:flex' : 'flex']"
+          :class="[
+            'lg:col-span-8 flex flex-col space-y-4',
+            mobileTab === 'pending' ? 'hidden lg:flex' : 'flex'
+          ]"
         >
-          <div class="hidden lg:flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-1">
+          <div
+            class="hidden lg:flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-1"
+          >
             <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">播放顺序</h3>
-            <div class="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl">
+            <div
+              class="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl"
+            >
               <div class="flex gap-1">
                 <button
-                  @click="saveDraft"
-                  :disabled="!hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts"
+                  :disabled="
+                    !hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts
+                  "
                   class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="saveDraft"
                 >
                   <Save class="w-3.5 h-3.5" />
-                  <span class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700">保存草稿</span>
+                  <span
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
+                    >保存草稿</span
+                  >
                 </button>
                 <button
-                  @click="openDownloadDialog"
                   :disabled="localScheduledSongs.length === 0"
                   class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="openDownloadDialog"
                 >
                   <Download class="w-3.5 h-3.5" />
-                  <span class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700">下载歌曲</span>
+                  <span
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
+                    >下载歌曲</span
+                  >
                 </button>
                 <button
-                  @click="markAllAsPlayed"
                   :disabled="localScheduledSongs.length === 0"
                   class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-emerald-500 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="markAllAsPlayed"
                 >
                   <CheckCircle2 class="w-3.5 h-3.5" />
-                  <span class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700">全部已播放</span>
+                  <span
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
+                    >全部已播放</span
+                  >
                 </button>
               </div>
               <div class="h-6 w-[1px] bg-zinc-800 mx-1" />
               <button
-                @click="publishSchedule"
                 :disabled="!canPublish"
                 class="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-[10px] font-black rounded-xl border border-emerald-500/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                @click="publishSchedule"
               >
                 <Send class="w-3 h-3" /> 发布排期
               </button>
               <button
-                @click="saveSequence"
                 :disabled="!hasChanges"
                 class="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                @click="saveSequence"
               >
                 <FileBadge class="w-3.5 h-3.5" /> 保存并发布
               </button>
@@ -381,106 +504,156 @@
 
           <div
             ref="sequenceList"
-            :class="['sequence-list flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200', isSequenceOver ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800/80 bg-zinc-900/20']"
+            :class="[
+              'sequence-list flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200',
+              isSequenceOver ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800/80 bg-zinc-900/20'
+            ]"
             @dragleave="handleSequenceDragLeave"
             @dragover.prevent="handleDragOver"
             @dragenter.prevent="isSequenceOver = true"
             @drop.stop.prevent="dropToSequence"
           >
-            <div v-if="localScheduledSongs.length === 0" class="flex flex-col items-center justify-center h-full py-12 text-zinc-800">
+            <div
+              v-if="localScheduledSongs.length === 0"
+              class="flex flex-col items-center justify-center h-full py-12 text-zinc-800"
+            >
               <PlaySquare class="w-8 h-8 mb-4 opacity-20" />
               <p class="text-[10px] font-black uppercase tracking-widest">请从待排库中添加歌曲</p>
             </div>
 
-            <TransitionGroup
-                class="space-y-2"
-                name="schedule-list"
-                tag="div"
-            >
+            <TransitionGroup class="space-y-2" name="schedule-list" tag="div">
               <div
-                  v-for="(schedule, index) in localScheduledSongs"
-                  :key="schedule.id"
-                  :class="['scheduled-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none', dragOverIndex === index ? 'border-t-2 border-t-blue-500' : '', schedule.isDraft ? 'border-amber-500/30 bg-amber-500/5' : '']"
-                  :data-schedule-id="schedule.id"
-                  draggable="true"
-                  @dragend="dragEnd"
-                  @dragleave="handleDragLeave"
-                  @dragstart="dragScheduleStart($event, schedule)"
-                  @touchend="handleTouchEnd"
-                  @touchmove="handleTouchMove"
-                  @touchstart="handleTouchStart($event, schedule, 'schedule')"
-                  @dragover.prevent
-                  @dragenter.prevent="handleDragEnter($event, index)"
-                  @drop.stop.prevent="dropReorder($event, index)"
+                v-for="(schedule, index) in localScheduledSongs"
+                :key="schedule.id"
+                :class="[
+                  'scheduled-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none',
+                  dragOverIndex === index ? 'border-t-2 border-t-blue-500' : '',
+                  schedule.isDraft ? 'border-amber-500/30 bg-amber-500/5' : ''
+                ]"
+                :data-schedule-id="schedule.id"
+                draggable="true"
+                @dragend="dragEnd"
+                @dragleave="handleDragLeave"
+                @dragstart="dragScheduleStart($event, schedule)"
+                @touchend="handleTouchEnd"
+                @touchmove="handleTouchMove"
+                @touchstart="handleTouchStart($event, schedule, 'schedule')"
+                @dragover.prevent
+                @dragenter.prevent="handleDragEnter($event, index)"
+                @drop.stop.prevent="dropReorder($event, index)"
               >
                 <div class="flex items-center gap-3">
-                   <div class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-zinc-950/50 border border-zinc-800 text-zinc-500 font-black text-xs flex-shrink-0">
-                     <span class="text-[8px] text-zinc-600 uppercase leading-none mb-0.5">POS</span>
-                     <span class="text-sm text-zinc-300 leading-none">{{ index + 1 < 10 ? '0' + (index + 1) : index + 1 }}</span>
-                   </div>
+                  <div
+                    class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-zinc-950/50 border border-zinc-800 text-zinc-500 font-black text-xs flex-shrink-0"
+                  >
+                    <span class="text-[8px] text-zinc-600 uppercase leading-none mb-0.5">POS</span>
+                    <span class="text-sm text-zinc-300 leading-none">{{
+                      index + 1 < 10 ? '0' + (index + 1) : index + 1
+                    }}</span>
+                  </div>
 
-                   <!-- 封面图片 -->
-                   <div class="relative w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50">
-                      <img
-                        v-if="schedule.song.cover"
-                        :src="convertToHttps(schedule.song.cover)"
-                        class="w-full h-full object-cover"
-                        referrerpolicy="no-referrer"
-                        loading="lazy"
-                        alt=""
-                      />
-                      <div v-else class="w-full h-full flex items-center justify-center text-zinc-600">
-                        <Music2 class="w-5 h-5 opacity-50" />
-                      </div>
-                   </div>
+                  <!-- 封面图片 -->
+                  <div
+                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50"
+                  >
+                    <img
+                      v-if="schedule.song.cover"
+                      :src="convertToHttps(schedule.song.cover)"
+                      class="w-full h-full object-cover"
+                      referrerpolicy="no-referrer"
+                      loading="lazy"
+                      alt=""
+                    >
+                    <div
+                      v-else
+                      class="w-full h-full flex items-center justify-center text-zinc-600"
+                    >
+                      <Music2 class="w-5 h-5 opacity-50" />
+                    </div>
+                  </div>
 
-                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                     <div class="flex items-center gap-2">
-                       <h4 class="font-bold text-zinc-200 text-sm truncate">{{ schedule.song.title }}</h4>
-                       <!-- 重播标识 -->
-                       <span v-if="schedule.song.replayRequestCount > 0" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider flex items-center gap-1" title="重播歌曲">
-                         <Icon name="repeat" :size="10" />
-                         重播
-                       </span>
-                       <span v-if="schedule.isDraft" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">草稿</span>
-                     </div>
-                     <div class="text-xs text-zinc-500 truncate">{{ schedule.song.artist }}</div>
-                     <div class="text-[10px] text-zinc-600 truncate flex items-center gap-1">
-                        <!-- 显示申请人或投稿人 -->
-                        <span v-if="schedule.song.replayRequestCount > 0" :title="'重播申请人：' + (schedule.song.replayRequesters || []).map(r => r.displayName || r.name).join('、')">
-                          申请人: {{ (schedule.song.replayRequesters || []).slice(0, 2).map(r => r.displayName || r.name).join('、') }}{{ schedule.song.replayRequestCount > 2 ? ' 等' + schedule.song.replayRequestCount + '人' : '' }}
-                        </span>
-                        <span v-else>{{ schedule.song.requester }}</span>
-                        <span v-if="schedule.song.requesterGrade" class="text-zinc-700">|</span>
-                        <span v-if="schedule.song.requesterGrade">{{ schedule.song.requesterGrade }}</span>
-                        <span v-if="schedule.song.preferredPlayTimeId" class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap">
-                          期望: {{ getPlayTimeName(schedule.song.preferredPlayTimeId) }}
-                        </span>
-                     </div>
-                   </div>
-
-                   <div class="flex items-center gap-2">
-                     <button
+                  <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+                    <div class="flex items-center gap-2">
+                      <h4 class="font-bold text-zinc-200 text-sm truncate">
+                        {{ schedule.song.title }}
+                      </h4>
+                      <!-- 重播标识 -->
+                      <span
+                        v-if="schedule.song.replayRequestCount > 0"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider flex items-center gap-1"
+                        title="重播歌曲"
+                      >
+                        <Icon name="repeat" :size="10" />
+                        重播
+                      </span>
+                      <span
                         v-if="schedule.isDraft"
-                        class="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 transition-colors"
-                        title="发布此草稿"
-                        @click="publishSingleDraft(schedule)"
-                     >
-                       <Send class="w-3.5 h-3.5" />
-                     </button>
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider"
+                        >草稿</span
+                      >
+                    </div>
+                    <div class="text-xs text-zinc-500 truncate">{{ schedule.song.artist }}</div>
+                    <div class="text-[10px] text-zinc-600 truncate flex items-center gap-1">
+                      <!-- 显示申请人或投稿人 -->
+                      <span
+                        v-if="schedule.song.replayRequestCount > 0"
+                        :title="
+                          '重播申请人：' +
+                          (schedule.song.replayRequesters || [])
+                            .map((r) => r.displayName || r.name)
+                            .join('、')
+                        "
+                      >
+                        申请人:
+                        {{
+                          (schedule.song.replayRequesters || [])
+                            .slice(0, 2)
+                            .map((r) => r.displayName || r.name)
+                            .join('、')
+                        }}{{
+                          schedule.song.replayRequestCount > 2
+                            ? ' 等' + schedule.song.replayRequestCount + '人'
+                            : ''
+                        }}
+                      </span>
+                      <span v-else>{{ schedule.song.requester }}</span>
+                      <span v-if="schedule.song.requesterGrade" class="text-zinc-700">|</span>
+                      <span v-if="schedule.song.requesterGrade">{{
+                        schedule.song.requesterGrade
+                      }}</span>
+                      <span
+                        v-if="schedule.song.preferredPlayTimeId"
+                        class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
+                      >
+                        期望: {{ getPlayTimeName(schedule.song.preferredPlayTimeId) }}
+                      </span>
+                    </div>
+                  </div>
 
-                     <!-- 移动端删除按钮 -->
-                     <button
-                       class="lg:hidden p-2 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500/30 active:scale-95 transition-all flex-shrink-0"
-                       @click.stop="removeSongFromSchedule(schedule)"
-                     >
-                       <Minus class="w-5 h-5" />
-                     </button>
+                  <div class="flex items-center gap-2">
+                    <button
+                      v-if="schedule.isDraft"
+                      class="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 transition-colors"
+                      title="发布此草稿"
+                      @click="publishSingleDraft(schedule)"
+                    >
+                      <Send class="w-3.5 h-3.5" />
+                    </button>
 
-                     <div class="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400 transition-colors">
-                       <MoreVertical class="w-4 h-4" />
-                     </div>
-                   </div>
+                    <!-- 移动端删除按钮 -->
+                    <button
+                      class="lg:hidden p-2 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500/30 active:scale-95 transition-all flex-shrink-0"
+                      @click.stop="removeSongFromSchedule(schedule)"
+                    >
+                      <Minus class="w-5 h-5" />
+                    </button>
+
+                    <div
+                      class="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400 transition-colors"
+                    >
+                      <MoreVertical class="w-4 h-4" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </TransitionGroup>
@@ -489,26 +662,41 @@
       </div>
 
       <!-- 移动端底部操作栏 -->
-      <div class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800 flex items-center gap-3 pb-6">
+      <div
+        class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800 flex items-center gap-3 pb-6"
+      >
         <!-- 次要操作栏 (图标按钮) -->
-        <button @click="openDownloadDialog" class="p-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+        <button
+          class="p-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+          @click="openDownloadDialog"
+        >
           <Download class="w-5 h-5" />
         </button>
-        <button @click="saveDraft" class="p-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+        <button
+          class="p-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+          @click="saveDraft"
+        >
           <Save class="w-5 h-5" />
         </button>
-        <button @click="markAllAsPlayed" class="p-3 bg-zinc-900 border border-zinc-800 text-emerald-500 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+        <button
+          class="p-3 bg-zinc-900 border border-zinc-800 text-emerald-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+          @click="markAllAsPlayed"
+        >
           <CheckCircle2 class="w-5 h-5" />
         </button>
-        <button @click="publishSchedule" class="p-3 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all" title="仅发布排期">
+        <button
+          class="p-3 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+          title="仅发布排期"
+          @click="publishSchedule"
+        >
           <Send class="w-5 h-5" />
         </button>
 
         <!-- 主要操作 -->
         <button
-          @click="saveSequence"
           :disabled="!hasChanges"
           class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          @click="saveSequence"
         >
           <FileBadge class="w-4 h-4" /> 保存并发布
         </button>
@@ -518,61 +706,86 @@
 
   <!-- 确认对话框 -->
   <ConfirmDialog
-      :confirm-text="confirmDialogConfirmText"
-      :loading="loading"
-      :message="confirmDialogMessage"
-      :show="showConfirmDialog"
-      :title="confirmDialogTitle"
-      :type="confirmDialogType"
-      cancel-text="取消"
-      @close="showConfirmDialog = false"
-      @confirm="handleConfirm"
+    :confirm-text="confirmDialogConfirmText"
+    :loading="loading"
+    :message="confirmDialogMessage"
+    :show="showConfirmDialog"
+    :title="confirmDialogTitle"
+    :type="confirmDialogType"
+    cancel-text="取消"
+    @close="showConfirmDialog = false"
+    @confirm="handleConfirm"
   />
 
   <!-- 下载对话框 -->
   <SongDownloadDialog
-      :show="showDownloadDialog"
-      :songs="localScheduledSongs"
-      @close="showDownloadDialog = false"
+    :show="showDownloadDialog"
+    :songs="localScheduledSongs"
+    @close="showDownloadDialog = false"
   />
 
   <!-- 重播申请详情弹窗 -->
-  <div v-if="showReplayModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" @click="closeReplayModal">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" @click.stop>
+  <div
+    v-if="showReplayModal"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    @click="closeReplayModal"
+  >
+    <div
+      class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+      @click.stop
+    >
       <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ replayModalTitle }} - 重播申请详情</h3>
+        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">
+          {{ replayModalTitle }} - 重播申请详情
+        </h3>
         <div class="flex items-center gap-3">
           <button
             class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-xs font-bold transition-colors"
-            @click="rejectReplayRequest(replayModalSongId); closeReplayModal()"
+            @click="
+              rejectReplayRequest(replayModalSongId);
+              closeReplayModal()
+            "
           >
             拒绝申请
           </button>
-          <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="closeReplayModal">
+          <button
+            class="text-zinc-500 hover:text-zinc-300 transition-colors"
+            @click="closeReplayModal"
+          >
             <CloseIcon class="w-5 h-5" />
           </button>
         </div>
       </div>
       <div class="p-0 overflow-y-auto max-h-[60vh]">
         <div class="divide-y divide-zinc-800/50">
-          <div v-for="(req, idx) in replayModalRequests" :key="idx" class="flex items-center justify-between p-4 group">
+          <div
+            v-for="(req, idx) in replayModalRequests"
+            :key="idx"
+            class="flex items-center justify-between p-4 group"
+          >
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-blue-400 transition-colors">
+              <div
+                class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-blue-400 transition-colors"
+              >
                 <User class="w-3.5 h-3.5" />
               </div>
               <div class="flex flex-col">
                 <span class="text-sm font-bold text-zinc-200">{{ req.name }}</span>
-                <span v-if="req.grade" class="text-[10px] text-zinc-500">{{ req.grade }}{{ req.class ? ` ${req.class}` : '' }}</span>
+                <span v-if="req.grade" class="text-[10px] text-zinc-500"
+                  >{{ req.grade }}{{ req.class ? ` ${req.class}` : '' }}</span
+                >
               </div>
             </div>
-            <div class="flex items-center gap-1.5 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+            <div
+              class="flex items-center gap-1.5 text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+            >
               <Clock class="w-2.5 h-2.5" />
               {{ formatDate(req.createdAt) }}
             </div>
           </div>
           <div v-if="replayModalRequests.length === 0" class="py-10 text-center text-zinc-700">
-             <Info class="w-6 h-6 mx-auto mb-2 opacity-20" />
-             <p class="text-xs font-bold uppercase tracking-widest">暂无详细申请记录</p>
+            <Info class="w-6 h-6 mx-auto mb-2 opacity-20" />
+            <p class="text-xs font-bold uppercase tracking-widest">暂无详细申请记录</p>
           </div>
         </div>
       </div>
@@ -591,11 +804,31 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import {
-  Search, Save, Send, CheckCircle2, Download,
-  FileBadge, PlaySquare, ChevronDown, ListMusic,
-  Filter, Info, Clock, User, AlertTriangle, X as CloseIcon,
-  ChevronRight, MoreVertical, Calendar as CalendarIcon,
-  ArrowLeft, ArrowRight, Music2, Heart, Plus, Minus, CircleDot,
+  Search,
+  Save,
+  Send,
+  CheckCircle2,
+  Download,
+  FileBadge,
+  PlaySquare,
+  ChevronDown,
+  ListMusic,
+  Filter,
+  Info,
+  Clock,
+  User,
+  AlertTriangle,
+  X as CloseIcon,
+  ChevronRight,
+  MoreVertical,
+  Calendar as CalendarIcon,
+  ArrowLeft,
+  ArrowRight,
+  Music2,
+  Heart,
+  Plus,
+  Minus,
+  CircleDot,
   ExternalLink
 } from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
@@ -662,8 +895,8 @@ const draggedSchedule = ref(null)
 
 // 触摸拖拽状态
 const touchDragData = ref(null)
-const touchStartPos = ref({x: 0, y: 0})
-const touchCurrentPos = ref({x: 0, y: 0})
+const touchStartPos = ref({ x: 0, y: 0 })
+const touchCurrentPos = ref({ x: 0, y: 0 })
 const isDragging = ref(false)
 const isLongPressing = ref(false)
 const dragElement = ref(null)
@@ -695,7 +928,7 @@ const scheduledSongIds = ref(new Set())
 
 // 计算是否有未发布的草稿
 const hasUnpublishedDrafts = computed(() => {
-  return localScheduledSongs.value.some(schedule => schedule.isDraft)
+  return localScheduledSongs.value.some((schedule) => schedule.isDraft)
 })
 
 // 计算是否有变化或有未发布的草稿
@@ -716,7 +949,7 @@ const selectedPlayTime = ref('')
 const playTimeOptions = computed(() => {
   const options = [{ label: '未选择时段 (全天)', value: '' }]
   if (playTimes.value) {
-    playTimes.value.forEach(pt => {
+    playTimes.value.forEach((pt) => {
       let label = pt.name
       if (pt.startTime || pt.endTime) {
         label += ` (${formatPlayTimeRange(pt)})`
@@ -800,7 +1033,7 @@ const availableGrades = computed(() => {
   if (!songs.value) return ['全部']
 
   const grades = new Set()
-  songs.value.forEach(song => {
+  songs.value.forEach((song) => {
     if (song.requesterGrade) {
       grades.add(song.requesterGrade)
     }
@@ -816,10 +1049,10 @@ const allUnscheduledSongs = computed(() => {
   const sourceData = activeTab.value === 'replay' ? replayRequests.value : songs.value
   if (!sourceData) return []
 
-  let unscheduledSongs = sourceData.filter(song => {
+  let unscheduledSongs = sourceData.filter((song) => {
     // 检查是否已在当前显示的排期列表中（当前日期、当前时段）
-    const isScheduledInCurrentView = localScheduledSongs.value.some(s =>
-      (s.song && s.song.id === song.id) || s.songId === song.id
+    const isScheduledInCurrentView = localScheduledSongs.value.some(
+      (s) => (s.song && s.song.id === song.id) || s.songId === song.id
     )
 
     if (isScheduledInCurrentView) return false
@@ -836,21 +1069,22 @@ const allUnscheduledSongs = computed(() => {
   // 搜索过滤
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    unscheduledSongs = unscheduledSongs.filter(song => {
+    unscheduledSongs = unscheduledSongs.filter((song) => {
       const title = (song.title || '').toLowerCase()
       const artist = (song.artist || '').toLowerCase()
       const requester = (song.requester || '').toLowerCase()
 
-      return title.includes(query) ||
-          artist.includes(query) ||
-          requester.includes(query)
+      return title.includes(query) || artist.includes(query) || requester.includes(query)
     })
   }
 
   // 年级过滤 (针对普通投稿和所有歌曲)
-  if ((activeTab.value === 'normal' || activeTab.value === 'all') && selectedGrade.value !== '全部') {
-    unscheduledSongs = unscheduledSongs.filter(song =>
-      song.requesterGrade === selectedGrade.value
+  if (
+    (activeTab.value === 'normal' || activeTab.value === 'all') &&
+    selectedGrade.value !== '全部'
+  ) {
+    unscheduledSongs = unscheduledSongs.filter(
+      (song) => song.requesterGrade === selectedGrade.value
     )
   }
 
@@ -990,7 +1224,7 @@ const updateScrollButtonState = () => {
     dateRange.value.start -= 7
     nextTick(() => {
       const newScrollWidth = dateSelector.value.scrollWidth
-      dateSelector.value.scrollLeft += (newScrollWidth - oldScrollWidth)
+      dateSelector.value.scrollLeft += newScrollWidth - oldScrollWidth
     })
   }
 
@@ -1036,11 +1270,11 @@ onMounted(async () => {
   // 添加事件监听器
   nextTick(() => {
     if (dateSelector.value) {
-      dateSelector.value.addEventListener('wheel', handleDateSelectorWheel, {passive: false})
+      dateSelector.value.addEventListener('wheel', handleDateSelectorWheel, { passive: false })
       dateSelector.value.addEventListener('scroll', updateScrollButtonState)
     }
     updateScrollButtonState()
-    
+
     // 再次确认滚动位置（防止布局偏移）
     scrollToDateElement('auto')
   })
@@ -1254,7 +1488,7 @@ const formatPlayTimeRange = (playTime) => {
 // 获取播出时段名称
 const getPlayTimeName = (playTimeId) => {
   if (!playTimeId || !playTimes.value) return ''
-  const playTime = playTimes.value.find(pt => pt.id === playTimeId)
+  const playTime = playTimes.value.find((pt) => pt.id === playTimeId)
   return playTime ? playTime.name : ''
 }
 
@@ -1265,9 +1499,7 @@ const loadSemesters = async () => {
     await semesterService.fetchCurrentSemester()
 
     // 构建学期列表，包含"全部"选项和各个学期
-    const semesterList = [
-      {id: 'all', name: '全部', isCurrent: false}
-    ]
+    const semesterList = [{ id: 'all', name: '全部', isCurrent: false }]
 
     // 添加当前学期（如果存在）
     if (semesterService.currentSemester.value) {
@@ -1280,8 +1512,11 @@ const loadSemesters = async () => {
 
     // 添加其他学期
     if (semesterService.semesters.value) {
-      semesterService.semesters.value.forEach(semester => {
-        if (!semesterService.currentSemester.value || semester.name !== semesterService.currentSemester.value.name) {
+      semesterService.semesters.value.forEach((semester) => {
+        if (
+          !semesterService.currentSemester.value ||
+          semester.name !== semesterService.currentSemester.value.name
+        ) {
           semesterList.push({
             id: semester.id,
             name: semester.name,
@@ -1317,14 +1552,14 @@ const updateLocalScheduledSongs = () => {
   console.log('草稿数量:', drafts.value.length)
 
   // 获取已发布的排期
-  let todaySchedules = publicSchedules.value.filter(s => {
+  const todaySchedules = publicSchedules.value.filter((s) => {
     if (!s.playDate) return false
     const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
     return scheduleDateStr === selectedDate.value
   })
 
   // 获取草稿排期
-  let todayDrafts = drafts.value.filter(draft => {
+  const todayDrafts = drafts.value.filter((draft) => {
     if (!draft.playDate) return false
     const draftDateStr = new Date(draft.playDate).toISOString().split('T')[0]
     return draftDateStr === selectedDate.value
@@ -1338,23 +1573,21 @@ const updateLocalScheduledSongs = () => {
 
   // 如果选择了特定播出时段，进行过滤
   if (selectedPlayTime.value) {
-    allSchedules = allSchedules.filter(s =>
-        s.playTimeId === parseInt(selectedPlayTime.value)
-    )
+    allSchedules = allSchedules.filter((s) => s.playTimeId === parseInt(selectedPlayTime.value))
   }
 
   // 按 sequence 字段排序
   allSchedules.sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
 
-  localScheduledSongs.value = allSchedules.map(s => ({...s}))
+  localScheduledSongs.value = allSchedules.map((s) => ({ ...s }))
 
   console.log('最终显示排期数量:', localScheduledSongs.value.length)
 
   // 更新已排期歌曲ID集合（包括草稿）
   scheduledSongIds.value = new Set(
-      [...publicSchedules.value, ...drafts.value]
-          .filter(s => s.song && s.song.id)
-          .map(s => s.song.id)
+    [...publicSchedules.value, ...drafts.value]
+      .filter((s) => s.song && s.song.id)
+      .map((s) => s.song.id)
   )
 }
 
@@ -1365,10 +1598,13 @@ watch(selectedPlayTime, () => {
 
 // 拖拽方法
 const dragStart = (event, song) => {
-  event.dataTransfer.setData('text/plain', JSON.stringify({
-    type: 'add-to-schedule',
-    songId: song.id
-  }))
+  event.dataTransfer.setData(
+    'text/plain',
+    JSON.stringify({
+      type: 'add-to-schedule',
+      songId: song.id
+    })
+  )
 
   setTimeout(() => {
     event.target.classList.add('opacity-50')
@@ -1376,12 +1612,15 @@ const dragStart = (event, song) => {
 }
 
 const dragScheduleStart = (event, schedule) => {
-  event.dataTransfer.setData('text/plain', JSON.stringify({
-    type: 'reorder-schedule',
-    scheduleId: schedule.id
-  }))
+  event.dataTransfer.setData(
+    'text/plain',
+    JSON.stringify({
+      type: 'reorder-schedule',
+      scheduleId: schedule.id
+    })
+  )
 
-  draggedSchedule.value = {...schedule}
+  draggedSchedule.value = { ...schedule }
 
   setTimeout(() => {
     event.target.classList.add('opacity-50')
@@ -1441,14 +1680,14 @@ const dropToSequence = async (event) => {
     if (dragData.type === 'add-to-schedule') {
       const songId = parseInt(dragData.songId)
       // 尝试在普通歌曲列表和重播申请列表中查找
-      let song = songs.value.find(s => s.id === songId)
+      let song = songs.value.find((s) => s.id === songId)
       if (!song) {
-        song = replayRequests.value.find(s => s.id === songId)
+        song = replayRequests.value.find((s) => s.id === songId)
       }
 
       if (!song) return
 
-      const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
+      const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === songId)
       if (existingIndex !== -1) return
 
       const newSchedule = {
@@ -1481,7 +1720,7 @@ const dropReorder = async (event, dropIndex) => {
 
     if (dragData.type === 'reorder-schedule' && draggedSchedule.value) {
       const scheduleId = parseInt(dragData.scheduleId)
-      const draggedIndex = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
+      const draggedIndex = localScheduledSongs.value.findIndex((s) => s.id === scheduleId)
 
       if (draggedIndex === -1 || draggedIndex === dropIndex) return
 
@@ -1499,14 +1738,14 @@ const dropReorder = async (event, dropIndex) => {
       // 处理从左侧拖到特定位置
       const songId = parseInt(dragData.songId)
       // 尝试在普通歌曲列表和重播申请列表中查找
-      let song = songs.value.find(s => s.id === songId)
+      let song = songs.value.find((s) => s.id === songId)
       if (!song) {
-        song = replayRequests.value.find(s => s.id === songId)
+        song = replayRequests.value.find((s) => s.id === songId)
       }
 
       if (!song) return
 
-      const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === songId)
+      const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === songId)
       if (existingIndex !== -1) return
 
       const newSchedule = {
@@ -1538,7 +1777,7 @@ const dropReorder = async (event, dropIndex) => {
 
 // 添加歌曲到排期（点击方式）
 const addSongToSchedule = (song) => {
-  const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === song.id)
+  const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === song.id)
   if (existingIndex !== -1) return
 
   const newSchedule = {
@@ -1559,7 +1798,7 @@ const addSongToSchedule = (song) => {
 
 // 从排期移除歌曲（点击方式）
 const removeSongFromSchedule = (schedule) => {
-  const index = localScheduledSongs.value.findIndex(s => s.id === schedule.id)
+  const index = localScheduledSongs.value.findIndex((s) => s.id === schedule.id)
 
   if (index !== -1) {
     const removed = localScheduledSongs.value.splice(index, 1)[0]
@@ -1589,7 +1828,7 @@ const handleReturnToDraggable = async (event) => {
     if (dragData.type === 'reorder-schedule') {
       // 从播放列表拖回待排列表（移除）
       const scheduleId = parseInt(dragData.scheduleId)
-      const index = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
+      const index = localScheduledSongs.value.findIndex((s) => s.id === scheduleId)
 
       if (index !== -1) {
         const removed = localScheduledSongs.value.splice(index, 1)[0]
@@ -1626,7 +1865,7 @@ const markAllAsPlayed = async () => {
   confirmAction.value = async () => {
     loading.value = true
     try {
-      const songIds = localScheduledSongs.value.map(s => s.song.id)
+      const songIds = localScheduledSongs.value.map((s) => s.song.id)
 
       await $fetch('/api/admin/songs/mark-played', {
         method: 'POST',
@@ -1670,7 +1909,7 @@ const loadDrafts = async () => {
     const response = await $fetch('/api/admin/schedule/full', {
       ...auth.getAuthConfig(),
       query: {
-        includeDrafts: 'only'  // 只获取草稿
+        includeDrafts: 'only' // 只获取草稿
       }
     })
 
@@ -1695,7 +1934,7 @@ const saveDraft = async () => {
 
   try {
     // 删除当天指定播出时段的所有排期和草稿
-    const existingSchedules = [...publicSchedules.value, ...drafts.value].filter(s => {
+    const existingSchedules = [...publicSchedules.value, ...drafts.value].filter((s) => {
       if (!s.playDate) return false
       const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
       const isTargetDate = scheduleDateStr === selectedDate.value
@@ -1711,7 +1950,7 @@ const saveDraft = async () => {
       try {
         await $fetch(`/api/admin/schedule/remove`, {
           method: 'POST',
-          body: {scheduleId: schedule.id},
+          body: { scheduleId: schedule.id },
           ...auth.getAuthConfig()
         })
       } catch (deleteError) {
@@ -1780,7 +2019,7 @@ const publishSchedule = async () => {
       confirmDialogType.value = 'warning'
       confirmDialogConfirmText.value = '发布排期'
     }
-    
+
     confirmAction.value = async () => {
       await publishScheduleConfirmed()
     }
@@ -1858,7 +2097,7 @@ const publishSingleDraftConfirmed = async (draft) => {
   try {
     await $fetch('/api/admin/schedule/publish', {
       method: 'POST',
-      body: {scheduleId: draft.id},
+      body: { scheduleId: draft.id },
       ...auth.getAuthConfig()
     })
 
@@ -1890,10 +2129,10 @@ const handleTouchStart = (event, item, type) => {
   // 在所有设备上启用触摸拖拽，但桌面端优先使用原生拖拽
 
   const touch = event.touches[0]
-  touchStartPos.value = {x: touch.clientX, y: touch.clientY}
-  touchCurrentPos.value = {x: touch.clientX, y: touch.clientY}
+  touchStartPos.value = { x: touch.clientX, y: touch.clientY }
+  touchCurrentPos.value = { x: touch.clientX, y: touch.clientY }
   touchStartTime.value = Date.now()
-  touchDragData.value = {item, type}
+  touchDragData.value = { item, type }
 
   // 重置状态
   isDragging.value = false
@@ -1934,7 +2173,7 @@ const handleTouchMove = (event) => {
   if (!touchDragData.value) return
 
   const touch = event.touches[0]
-  touchCurrentPos.value = {x: touch.clientX, y: touch.clientY}
+  touchCurrentPos.value = { x: touch.clientX, y: touch.clientY }
 
   const deltaX = Math.abs(touch.clientX - touchStartPos.value.x)
   const deltaY = Math.abs(touch.clientY - touchStartPos.value.y)
@@ -1985,7 +2224,7 @@ const updateDragPosition = (x, y) => {
   if (!elementBelow) return
 
   // 清除之前的高亮
-  document.querySelectorAll('.border-blue-500').forEach(el => {
+  document.querySelectorAll('.border-blue-500').forEach((el) => {
     // 仅移除通过拖拽添加的高亮，避免移除原本的样式
     if (el.dataset.dragHighlight) {
       el.classList.remove('border-blue-500', 'bg-blue-500/10')
@@ -2022,7 +2261,7 @@ const updateDragPosition = (x, y) => {
 
 // 清除拖拽位置指示
 const clearDragPosition = () => {
-  document.querySelectorAll('.border-blue-500').forEach(el => {
+  document.querySelectorAll('.border-blue-500').forEach((el) => {
     if (el.dataset.dragHighlight) {
       el.classList.remove('border-blue-500', 'bg-blue-500/10')
       delete el.dataset.dragHighlight
@@ -2099,14 +2338,14 @@ const handleTouchEnd = (event) => {
 
 const handleTouchDropToSequence = async (targetElement) => {
   const song = touchDragData.value.item
-  const existingIndex = localScheduledSongs.value.findIndex(s => s.song.id === song.id)
+  const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === song.id)
   if (existingIndex !== -1) return
 
   let insertIndex = localScheduledSongs.value.length
 
   if (targetElement) {
     const scheduleId = parseInt(targetElement.dataset.scheduleId)
-    const targetIndex = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
+    const targetIndex = localScheduledSongs.value.findIndex((s) => s.id === scheduleId)
     if (targetIndex !== -1) {
       insertIndex = targetIndex
     }
@@ -2136,8 +2375,8 @@ const handleTouchDropToSequence = async (targetElement) => {
 const handleTouchReorder = async (targetElement) => {
   const draggedSchedule = touchDragData.value.item
   const scheduleId = parseInt(targetElement.dataset.scheduleId)
-  const draggedIndex = localScheduledSongs.value.findIndex(s => s.id === draggedSchedule.id)
-  const dropIndex = localScheduledSongs.value.findIndex(s => s.id === scheduleId)
+  const draggedIndex = localScheduledSongs.value.findIndex((s) => s.id === draggedSchedule.id)
+  const dropIndex = localScheduledSongs.value.findIndex((s) => s.id === scheduleId)
 
   if (draggedIndex === -1 || dropIndex === -1 || draggedIndex === dropIndex) return
 
@@ -2155,7 +2394,7 @@ const handleTouchReorder = async (targetElement) => {
 
 const handleTouchReturnToDraggable = async () => {
   const draggedSchedule = touchDragData.value.item
-  const index = localScheduledSongs.value.findIndex(s => s.id === draggedSchedule.id)
+  const index = localScheduledSongs.value.findIndex((s) => s.id === draggedSchedule.id)
 
   if (index !== -1) {
     const removed = localScheduledSongs.value.splice(index, 1)[0]
@@ -2177,11 +2416,11 @@ const handleTouchReturnToDraggable = async () => {
 <style scoped>
 /* 隐藏滚动条但保留功能 */
 .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* 列表过渡动画 */

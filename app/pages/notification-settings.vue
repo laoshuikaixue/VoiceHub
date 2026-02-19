@@ -1,32 +1,32 @@
 <template>
   <div class="min-h-screen bg-zinc-950 text-zinc-200 pb-24">
     <!-- 顶部导航栏 -->
-    <div class="sticky top-0 z-30 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-900/50 px-4 py-4 mb-8">
+    <div
+      class="sticky top-0 z-30 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-900/50 px-4 py-4 mb-8"
+    >
       <div class="max-w-[1000px] mx-auto flex items-center justify-between">
         <div class="flex items-center gap-4">
-          <button 
-            @click="goBack"
+          <button
             class="p-2 hover:bg-zinc-900 rounded-xl transition-all text-zinc-400 hover:text-zinc-100"
+            @click="goBack"
           >
             <ArrowLeft :size="20" />
           </button>
           <div>
             <h1 class="text-xl font-black text-zinc-100 tracking-tight">消息设置</h1>
-            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-widest mt-0.5">Notification Settings</p>
+            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-widest mt-0.5">
+              Notification Settings
+            </p>
           </div>
         </div>
-        
+
         <button
-          @click="saveSettings"
           :disabled="loading || saving"
           class="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
+          @click="saveSettings"
         >
-          <template v-if="saving">
-            <Loader2 :size="14" class="animate-spin" /> 保存中...
-          </template>
-          <template v-else>
-            <Save :size="14" /> 保存设置
-          </template>
+          <template v-if="saving"> <Loader2 :size="14" class="animate-spin" /> 保存中... </template>
+          <template v-else> <Save :size="14" /> 保存设置 </template>
         </button>
       </div>
     </div>
@@ -144,7 +144,9 @@
                   step="30"
                   class="w-24 h-1.5 bg-zinc-800 rounded-full appearance-none accent-blue-600 cursor-pointer"
                 >
-                <span class="text-[11px] font-bold text-blue-500 min-w-[40px] text-right">{{ localSettings.refreshInterval }}s</span>
+                <span class="text-[11px] font-bold text-blue-500 min-w-[40px] text-right"
+                  >{{ localSettings.refreshInterval }}s</span
+                >
               </div>
             </div>
           </div>
@@ -171,15 +173,26 @@
                 </div>
                 <h3 class="text-sm font-bold text-zinc-200">邮箱消息通知</h3>
               </div>
-              
+
               <div class="space-y-4">
                 <div v-if="userEmail" class="p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">当前绑定邮箱</p>
+                      <p
+                        class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1"
+                      >
+                        当前绑定邮箱
+                      </p>
                       <p class="text-sm font-medium text-zinc-200">{{ userEmail }}</p>
                     </div>
-                    <div :class="['px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider', emailVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500']">
+                    <div
+                      :class="[
+                        'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider',
+                        emailVerified
+                          ? 'bg-emerald-500/10 text-emerald-500'
+                          : 'bg-amber-500/10 text-amber-500'
+                      ]"
+                    >
                       {{ emailVerified ? '已验证' : '待验证' }}
                     </div>
                   </div>
@@ -197,9 +210,9 @@
                       class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500/30 w-full sm:w-auto"
                     >
                     <button
-                      @click="bindEmail"
                       :disabled="!newEmail || bindingEmail"
                       class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition-all disabled:opacity-50 whitespace-nowrap"
+                      @click="bindEmail"
                     >
                       {{ bindingEmail ? '请稍候...' : '立即绑定' }}
                     </button>
@@ -208,40 +221,50 @@
 
                 <!-- 待验证状态 -->
                 <div v-else-if="!emailVerified" class="space-y-4 pt-2">
-                  <div class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3">
+                  <div
+                    class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3"
+                  >
                     <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
                     <p class="text-[11px] text-zinc-500 leading-relaxed">
                       验证码已发送至您的邮箱，请在 5 分钟内完成验证。若未收到邮件，请检查垃圾箱。
                     </p>
                   </div>
-                  
+
                   <div class="space-y-3">
                     <input
                       v-model="emailCode"
                       type="text"
                       maxlength="6"
                       placeholder="输入 6 位数字验证码"
-                      :class="['w-full bg-zinc-950 border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all', emailCodeError ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-zinc-800 focus:border-blue-500/30']"
+                      :class="[
+                        'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
+                        emailCodeError
+                          ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                          : 'border-zinc-800 focus:border-blue-500/30'
+                      ]"
                       @input="handleEmailCodeInput"
                       @keydown="handleEmailCodeKeydown"
                     >
                     <div class="grid grid-cols-2 gap-2">
                       <button
-                        @click="verifyEmailCode"
                         :disabled="bindingEmail || emailCode.length !== 6"
                         class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
+                        @click="verifyEmailCode"
                       >
                         {{ bindingEmail ? '验证中...' : '确认验证' }}
                       </button>
                       <button
-                        @click="resendVerificationEmail"
                         :disabled="resendingEmail"
                         class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                        @click="resendVerificationEmail"
                       >
                         {{ resendingEmail ? '发送中...' : '重新发送' }}
                       </button>
                     </div>
-                    <button @click="changeEmail" class="w-full py-2 text-zinc-600 hover:text-zinc-400 text-[10px] font-black uppercase tracking-widest transition-all">
+                    <button
+                      class="w-full py-2 text-zinc-600 hover:text-zinc-400 text-[10px] font-black uppercase tracking-widest transition-all"
+                      @click="changeEmail"
+                    >
                       更换邮箱地址
                     </button>
                   </div>
@@ -250,15 +273,15 @@
                 <!-- 已验证状态 -->
                 <div v-else class="flex gap-2 pt-2">
                   <button
-                    @click="changeEmail"
                     class="flex-1 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
+                    @click="changeEmail"
                   >
                     更换邮箱
                   </button>
                   <button
-                    @click="unbindEmail"
                     :disabled="unbindingEmail"
                     class="flex-1 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all"
+                    @click="unbindEmail"
                   >
                     {{ unbindingEmail ? '正在解绑...' : '解绑邮箱' }}
                   </button>
@@ -278,13 +301,24 @@
               </div>
 
               <div class="space-y-4">
-                <div v-if="localSettings.meowUserId" class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                <div
+                  v-if="localSettings.meowUserId"
+                  class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl"
+                >
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-[10px] text-blue-500/60 font-black uppercase tracking-widest mb-1">当前绑定 ID</p>
-                      <p class="text-sm font-black text-blue-500 tracking-tight">{{ localSettings.meowUserId }}</p>
+                      <p
+                        class="text-[10px] text-blue-500/60 font-black uppercase tracking-widest mb-1"
+                      >
+                        当前绑定 ID
+                      </p>
+                      <p class="text-sm font-black text-blue-500 tracking-tight">
+                        {{ localSettings.meowUserId }}
+                      </p>
                     </div>
-                    <div class="px-2 py-0.5 bg-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider">
+                    <div
+                      class="px-2 py-0.5 bg-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider"
+                    >
                       已连接
                     </div>
                   </div>
@@ -292,8 +326,10 @@
 
                 <!-- 未绑定状态 -->
                 <div v-if="!localSettings.meowUserId" class="space-y-3">
-                  <p class="text-xs text-zinc-500">通过 MeoW 客户端接收更及时的系统通知和歌曲状态变更提醒。</p>
-                  
+                  <p class="text-xs text-zinc-500">
+                    通过 MeoW 客户端接收更及时的系统通知和歌曲状态变更提醒。
+                  </p>
+
                   <!-- 第一步：输入用户ID -->
                   <div v-if="!verificationSent" class="flex flex-col sm:flex-row gap-2">
                     <input
@@ -304,9 +340,9 @@
                       class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500/30 w-full sm:w-auto"
                     >
                     <button
-                      @click="sendVerificationCode"
                       :disabled="!meowUserId || binding"
                       class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-blue-900/20 whitespace-nowrap"
+                      @click="sendVerificationCode"
                     >
                       {{ binding ? '发送中...' : '发送验证码' }}
                     </button>
@@ -314,35 +350,44 @@
 
                   <!-- 第二步：输入验证码 -->
                   <div v-else class="space-y-4">
-                    <div class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3">
+                    <div
+                      class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3"
+                    >
                       <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
                       <p class="text-[11px] text-zinc-500 leading-relaxed">
-                        验证码已发送至 MeoW ID: <span class="font-bold text-zinc-200">{{ meowUserId }}</span>，请在客户端查收。
+                        验证码已发送至 MeoW ID:
+                        <span class="font-bold text-zinc-200">{{ meowUserId }}</span
+                        >，请在客户端查收。
                       </p>
                     </div>
-                    
+
                     <div class="space-y-3">
                       <input
                         v-model="verificationCode"
                         type="text"
                         maxlength="6"
                         placeholder="输入 6 位验证码"
-                        :class="['w-full bg-zinc-950 border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all', verificationCodeError ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-zinc-800 focus:border-blue-500/30']"
+                        :class="[
+                          'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
+                          verificationCodeError
+                            ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                            : 'border-zinc-800 focus:border-blue-500/30'
+                        ]"
                         @input="handleVerificationCodeInput"
                         @keydown="handleVerificationCodeKeydown"
                       >
                       <div class="grid grid-cols-2 gap-2">
                         <button
-                          @click="verifyAndBind"
                           :disabled="binding || verificationCode.length !== 6"
                           class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
+                          @click="verifyAndBind"
                         >
                           {{ binding ? '验证中...' : '确认绑定' }}
                         </button>
                         <button
-                          @click="cancelVerification"
                           :disabled="binding"
                           class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                          @click="cancelVerification"
                         >
                           取消
                         </button>
@@ -354,8 +399,8 @@
                 <!-- 已绑定状态 -->
                 <div v-else class="pt-2">
                   <button
-                    @click="showUnbindConfirm"
                     class="w-full py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all"
+                    @click="showUnbindConfirm"
                   >
                     解除 MeoW 账号绑定
                   </button>
@@ -383,9 +428,21 @@
 <script setup>
 import { nextTick, onMounted, ref } from 'vue'
 import {
-  Bell, Mail, Link, MessageSquare, Clock, ArrowLeft,
-  Save, Shield, Trash2, User, ExternalLink, CheckCircle2,
-  AlertCircle, Loader2, Smartphone
+  Bell,
+  Mail,
+  Link,
+  MessageSquare,
+  Clock,
+  ArrowLeft,
+  Save,
+  Shield,
+  Trash2,
+  User,
+  ExternalLink,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Smartphone
 } from 'lucide-vue-next'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
@@ -395,9 +452,11 @@ const { siteTitle, smtpEnabled, initSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
 
 // 样式类常量
-const sectionClass = "bg-zinc-900/40 border border-zinc-900 rounded-3xl p-6 md:p-8 shadow-2xl"
-const cardClass = "bg-zinc-950/40 border border-zinc-800/50 rounded-2xl p-5 transition-all hover:border-zinc-700/50"
-const itemClass = "flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all group"
+const sectionClass = 'bg-zinc-900/40 border border-zinc-900 rounded-3xl p-6 md:p-8 shadow-2xl'
+const cardClass =
+  'bg-zinc-950/40 border border-zinc-800/50 rounded-2xl p-5 transition-all hover:border-zinc-700/50'
+const itemClass =
+  'flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all group'
 
 // 页面状态
 const loading = ref(true)
@@ -412,7 +471,7 @@ const localSettings = ref({
   songVotedThreshold: 5,
   systemNotify: true,
   refreshInterval: 60,
-  meowUserId: '',
+  meowUserId: ''
 })
 
 // MeoW 绑定相关
@@ -438,10 +497,9 @@ const confirmDialog = ref({
   message: '',
   type: 'warning',
   loading: false,
-  onConfirm: () => { },
-  onCancel: () => { }
+  onConfirm: () => {},
+  onCancel: () => {}
 })
-
 
 // 通知显示函数
 const showNotification = (message, type = 'info') => {
@@ -458,7 +516,7 @@ const goBack = () => {
 // 页面初始化
 onMounted(async () => {
   await initSiteConfig()
-  
+
   // 设置页面标题
   if (typeof document !== 'undefined' && siteTitle.value) {
     document.title = `通知设置 | ${siteTitle.value}`
@@ -497,7 +555,7 @@ const loadSettings = async () => {
         songVotedThreshold: response.data.songVotedThreshold || 5,
         systemNotify: response.data.systemNotify || true,
         refreshInterval: response.data.refreshInterval || 60,
-        meowUserId: response.data.meowUserId || '',
+        meowUserId: response.data.meowUserId || ''
       }
 
       userEmail.value = response.data.userEmail || ''
@@ -593,7 +651,9 @@ const showUnbindConfirm = () => {
     type: 'danger',
     loading: false,
     onConfirm: performUnbind,
-    onCancel: () => { showConfirmDialog.value = false }
+    onCancel: () => {
+      showConfirmDialog.value = false
+    }
   }
   showConfirmDialog.value = true
 }
@@ -698,7 +758,9 @@ const changeEmail = () => {
     type: 'warning',
     loading: false,
     onConfirm: performChangeEmail,
-    onCancel: () => { showConfirmDialog.value = false }
+    onCancel: () => {
+      showConfirmDialog.value = false
+    }
   }
   showConfirmDialog.value = true
 }
@@ -738,7 +800,9 @@ const unbindEmail = async () => {
     type: 'warning',
     loading: false,
     onConfirm: performEmailUnbind,
-    onCancel: () => { showConfirmDialog.value = false }
+    onCancel: () => {
+      showConfirmDialog.value = false
+    }
   }
   showConfirmDialog.value = true
 }
@@ -784,18 +848,25 @@ const saveSettings = async () => {
 </script>
 
 <style scoped>
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-input[type="number"] {
+input[type='number'] {
   -moz-appearance: textfield;
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
 }
 </style>

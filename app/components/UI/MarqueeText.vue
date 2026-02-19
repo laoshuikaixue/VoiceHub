@@ -8,94 +8,103 @@
 </template>
 
 <script setup>
-import {nextTick, onMounted, onUnmounted, ref, watch} from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps({
   text: {
     type: String,
-    required: true,
+    required: true
   },
   speed: {
     type: Number,
-    default: 40, // pixels per second
+    default: 40 // pixels per second
   },
   activated: {
     type: Boolean,
-    default: true, // 默认为true保持向后兼容性
-  },
-});
+    default: true // 默认为true保持向后兼容性
+  }
+})
 
-const containerEl = ref(null);
-const contentEl = ref(null);
-const scrolling = ref(false);
-const isMobile = ref(false);
-let mql = null;
+const containerEl = ref(null)
+const contentEl = ref(null)
+const scrolling = ref(false)
+const isMobile = ref(false)
+let mql = null
 
 const checkOverflow = async () => {
-  if (!containerEl.value || !contentEl.value) return;
+  if (!containerEl.value || !contentEl.value) return
 
   // Reset scrolling to measure a single item's width.
-  scrolling.value = false;
-  await nextTick();
+  scrolling.value = false
+  await nextTick()
 
   if (!isMobile.value || !props.activated) {
-    return; // No scrolling on desktop or when not activated.
+    return // No scrolling on desktop or when not activated.
   }
 
-  const containerWidth = containerEl.value.offsetWidth;
-  const contentWidth = contentEl.value.scrollWidth;
+  const containerWidth = containerEl.value.offsetWidth
+  const contentWidth = contentEl.value.scrollWidth
 
   if (contentWidth > containerWidth) {
-    scrolling.value = true;
-    await nextTick(); // Wait for the second span to render.
+    scrolling.value = true
+    await nextTick() // Wait for the second span to render.
 
     // The animation scrolls by 50% of the total width.
     // This distance is equivalent to the width of the first span (including its padding).
-    const scrollDistance = contentEl.value.firstElementChild.offsetWidth;
-    const animationDuration = scrollDistance / props.speed;
-    contentEl.value.style.setProperty('--duration', `${animationDuration}s`);
+    const scrollDistance = contentEl.value.firstElementChild.offsetWidth
+    const animationDuration = scrollDistance / props.speed
+    contentEl.value.style.setProperty('--duration', `${animationDuration}s`)
   }
-};
+}
 
 const handleScreenChange = () => {
   if (mql) {
-    isMobile.value = mql.matches;
+    isMobile.value = mql.matches
   }
-  checkOverflow();
-};
+  checkOverflow()
+}
 
 onMounted(() => {
-  mql = window.matchMedia('(max-width: 768px)');
+  mql = window.matchMedia('(max-width: 768px)')
 
-  const observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) {
-      handleScreenChange(); // Initial check once visible.
-      observer.disconnect();
-    }
-  }, {threshold: 0.01});
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting) {
+        handleScreenChange() // Initial check once visible.
+        observer.disconnect()
+      }
+    },
+    { threshold: 0.01 }
+  )
 
   if (containerEl.value) {
-    observer.observe(containerEl.value);
+    observer.observe(containerEl.value)
   }
 
-  mql.addEventListener('change', handleScreenChange);
-  window.addEventListener('resize', handleScreenChange);
-});
+  mql.addEventListener('change', handleScreenChange)
+  window.addEventListener('resize', handleScreenChange)
+})
 
 onUnmounted(() => {
   if (mql) {
-    mql.removeEventListener('change', handleScreenChange);
+    mql.removeEventListener('change', handleScreenChange)
   }
-  window.removeEventListener('resize', handleScreenChange);
-});
+  window.removeEventListener('resize', handleScreenChange)
+})
 
-watch(() => props.text, () => {
-  checkOverflow();
-});
+watch(
+  () => props.text,
+  () => {
+    checkOverflow()
+  }
+)
 
-watch(() => props.activated, () => {
-  checkOverflow();
-});
+watch(
+  () => props.activated,
+  () => {
+    checkOverflow()
+  }
+)
 </script>
 
 <style scoped>

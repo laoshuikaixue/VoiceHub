@@ -1,206 +1,212 @@
-import {db} from '~/drizzle/db'
-import {requestTimes} from '~/drizzle/schema'
-import {and, eq, ne} from 'drizzle-orm'
+import { db } from '~/drizzle/db'
+import { requestTimes } from '~/drizzle/schema'
+import { and, eq, ne } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
-    const user = event.context.user
+  const user = event.context.user
 
-    if (!user) {
+  if (!user) {
+    throw createError({
+      statusCode: 401,
+      message: '未授权访问'
+    })
+  }
+
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    throw createError({
+      statusCode: 403,
+      message: '只有管理员才能访问投稿开放时段'
+    })
+  }
+
+  const id = parseInt(event.context.params?.id || '0')
+
+  if (!id) {
+    throw createError({
+      statusCode: 400,
+      message: '投稿开放时段ID不正确'
+    })
+  }
+
+  const method = event.method
+
+  if (method === 'GET') {
+    try {
+      const requestTimeResult = await db
+        .select()
+        .from(requestTimes)
+        .where(eq(requestTimes.id, id))
+        .limit(1)
+      const requestTime = requestTimeResult[0]
+
+      if (!requestTime) {
         throw createError({
-            statusCode: 401,
-            message: '未授权访问'
+          statusCode: 404,
+          message: '找不到指定的投稿开放时段'
         })
+      }
+
+      return requestTime
+    } catch (error) {
+      console.error('获取投稿开放时段失败:', error)
+      throw createError({
+        statusCode: 500,
+        message: '获取投稿开放时段失败'
+      })
+    }
+  } else if (method === 'PUT') {
+    const body = await readBody(event)
+
+    if (!body.name) {
+      throw createError({
+        statusCode: 400,
+        message: '时段名称不能为空'
+      })
     }
 
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-        throw createError({
-            statusCode: 403,
-            message: '只有管理员才能访问投稿开放时段'
-        })
+    if (body.startTime && body.endTime && body.startTime >= body.endTime) {
+      throw createError({
+        statusCode: 400,
+        message: '开始时间必须早于结束时间'
+      })
     }
 
-    const id = parseInt(event.context.params?.id || '0')
+    try {
+      const existingRequestTimeResult = await db
+        .select()
+        .from(requestTimes)
+        .where(and(eq(requestTimes.name, body.name), ne(requestTimes.id, id)))
+        .limit(1)
+      const existingRequestTime = existingRequestTimeResult[0]
 
-    if (!id) {
+      if (existingRequestTime) {
         throw createError({
+          statusCode: 400,
+          message: '投稿开放时段名称已存在，请使用其他名称'
+        })
+      }
+
+      const updatedRequestTimeResult = await db
+        .update(requestTimes)
+        .set({
+          name: body.name,
+          startTime: body.startTime || null,
+          endTime: body.endTime || null,
+          description: body.description ?? null,
+          enabled: body.enabled !== undefined ? body.enabled : true,
+          expected: body.expected ?? 0
+        })
+        .where(eq(requestTimes.id, id))
+        .returning()
+      const updatedRequestTime = updatedRequestTimeResult[0]
+
+      try {
+        const { cache } = await import('~~/server/utils/cache-helpers')
+        await cache.deletePattern('schedules:*')
+        console.log('[Cache] 排期缓存已清除（播放时间更新）')
+      } catch (cacheError) {
+        console.warn('[Cache] 清除缓存失败:', cacheError)
+      }
+
+      return updatedRequestTime
+    } catch (error: any) {
+      console.error('更新投稿开放时段失败:', error)
+
+      if (error.statusCode) {
+        throw error
+      }
+
+      throw createError({
+        statusCode: 500,
+        message: '更新投稿开放时段失败'
+      })
+    }
+  } else if (method === 'PATCH') {
+    const body = await readBody(event)
+
+    try {
+      if (body.name !== undefined) {
+        const existingRequestTimeResult = await db
+          .select()
+          .from(requestTimes)
+          .where(and(eq(requestTimes.name, body.name), ne(requestTimes.id, id)))
+          .limit(1)
+        const existingRequestTime = existingRequestTimeResult[0]
+
+        if (existingRequestTime) {
+          throw createError({
             statusCode: 400,
-            message: '投稿开放时段ID不正确'
-        })
+            message: '投稿开放时段名称已存在，请使用其他名称'
+          })
+        }
+      }
+
+      const updateData: any = {}
+      if (body.name !== undefined) updateData.name = body.name
+      if (body.startTime !== undefined) updateData.startTime = body.startTime
+      if (body.endTime !== undefined) updateData.endTime = body.endTime
+      if (body.description !== undefined) updateData.description = body.description
+      if (body.enabled !== undefined) updateData.enabled = body.enabled
+      if (body.expected !== undefined) updateData.expected = body.expected || 0
+
+      const updatedRequestTimeResult = await db
+        .update(requestTimes)
+        .set(updateData)
+        .where(eq(requestTimes.id, id))
+        .returning()
+      const updatedRequestTime = updatedRequestTimeResult[0]
+
+      try {
+        const { cache } = await import('~~/server/utils/cache-helpers')
+        await cache.deletePattern('schedules:*')
+        console.log('[Cache] 排期缓存已清除（播放时间部分更新）')
+      } catch (cacheError) {
+        console.warn('[Cache] 清除缓存失败:', cacheError)
+      }
+
+      return updatedRequestTime
+    } catch (error: any) {
+      console.error('部分更新投稿开放时段失败:', error)
+
+      if (error.statusCode) {
+        throw error
+      }
+
+      throw createError({
+        statusCode: 500,
+        message: '部分更新投稿开放时段失败'
+      })
     }
+  } else if (method === 'DELETE') {
+    try {
+      const deletedRequestTimeResult = await db
+        .delete(requestTimes)
+        .where(eq(requestTimes.id, id))
+        .returning()
+      const deletedRequestTime = deletedRequestTimeResult[0]
 
-    const method = event.method
+      try {
+        const { cache } = await import('~~/server/utils/cache-helpers')
+        await cache.deletePattern('schedules:*')
+        console.log('[Cache] 缓存已清除（播放时间删除）')
+      } catch (cacheError) {
+        console.warn('[Cache] 清除缓存失败:', cacheError)
+      }
 
-    if (method === 'GET') {
-        try {
-            const requestTimeResult = await db.select().from(requestTimes).where(eq(requestTimes.id, id)).limit(1)
-            const requestTime = requestTimeResult[0]
-
-            if (!requestTime) {
-                throw createError({
-                    statusCode: 404,
-                    message: '找不到指定的投稿开放时段'
-                })
-            }
-
-            return requestTime
-        } catch (error) {
-            console.error('获取投稿开放时段失败:', error)
-            throw createError({
-                statusCode: 500,
-                message: '获取投稿开放时段失败'
-            })
-        }
-    } else if (method === 'PUT') {
-        const body = await readBody(event)
-
-        if (!body.name) {
-            throw createError({
-                statusCode: 400,
-                message: '时段名称不能为空'
-            })
-        }
-
-        if (body.startTime && body.endTime && body.startTime >= body.endTime) {
-            throw createError({
-                statusCode: 400,
-                message: '开始时间必须早于结束时间'
-            })
-        }
-
-        try {
-            const existingRequestTimeResult = await db.select().from(requestTimes)
-                .where(and(
-                    eq(requestTimes.name, body.name),
-                    ne(requestTimes.id, id)
-                )).limit(1)
-            const existingRequestTime = existingRequestTimeResult[0]
-
-            if (existingRequestTime) {
-                throw createError({
-                    statusCode: 400,
-                    message: '投稿开放时段名称已存在，请使用其他名称'
-                })
-            }
-
-            const updatedRequestTimeResult = await db.update(requestTimes)
-                .set({
-                    name: body.name,
-                    startTime: body.startTime || null,
-                    endTime: body.endTime || null,
-                    description: body.description ?? null,
-                    enabled: body.enabled !== undefined ? body.enabled : true,
-                    expected: body.expected ?? 0,
-                })
-                .where(eq(requestTimes.id, id))
-                .returning()
-            const updatedRequestTime = updatedRequestTimeResult[0]
-
-            try {
-                const {cache} = await import('~~/server/utils/cache-helpers')
-                await cache.deletePattern('schedules:*')
-                console.log('[Cache] 排期缓存已清除（播放时间更新）')
-            } catch (cacheError) {
-                console.warn('[Cache] 清除缓存失败:', cacheError)
-            }
-
-            return updatedRequestTime
-        } catch (error: any) {
-            console.error('更新投稿开放时段失败:', error)
-
-            if (error.statusCode) {
-                throw error
-            }
-
-            throw createError({
-                statusCode: 500,
-                message: '更新投稿开放时段失败'
-            })
-        }
-    } else if (method === 'PATCH') {
-        const body = await readBody(event)
-
-        try {
-            if (body.name !== undefined) {
-                const existingRequestTimeResult = await db.select().from(requestTimes)
-                    .where(and(
-                        eq(requestTimes.name, body.name),
-                        ne(requestTimes.id, id)
-                    )).limit(1)
-                const existingRequestTime = existingRequestTimeResult[0]
-
-                if (existingRequestTime) {
-                    throw createError({
-                        statusCode: 400,
-                        message: '投稿开放时段名称已存在，请使用其他名称'
-                    })
-                }
-            }
-
-            const updateData: any = {}
-            if (body.name !== undefined) updateData.name = body.name
-            if (body.startTime !== undefined) updateData.startTime = body.startTime
-            if (body.endTime !== undefined) updateData.endTime = body.endTime
-            if (body.description !== undefined) updateData.description = body.description
-            if (body.enabled !== undefined) updateData.enabled = body.enabled
-            if (body.expected !== undefined) updateData.expected = body.expected || 0
-
-            const updatedRequestTimeResult = await db.update(requestTimes)
-                .set(updateData)
-                .where(eq(requestTimes.id, id))
-                .returning()
-            const updatedRequestTime = updatedRequestTimeResult[0]
-
-            try {
-                const {cache} = await import('~~/server/utils/cache-helpers')
-                await cache.deletePattern('schedules:*')
-                console.log('[Cache] 排期缓存已清除（播放时间部分更新）')
-            } catch (cacheError) {
-                console.warn('[Cache] 清除缓存失败:', cacheError)
-            }
-
-            return updatedRequestTime
-        } catch (error: any) {
-            console.error('部分更新投稿开放时段失败:', error)
-
-            if (error.statusCode) {
-                throw error
-            }
-
-            throw createError({
-                statusCode: 500,
-                message: '部分更新投稿开放时段失败'
-            })
-        }
-    } else if (method === 'DELETE') {
-        try {
-            const deletedRequestTimeResult = await db.delete(requestTimes)
-                .where(eq(requestTimes.id, id))
-                .returning()
-            const deletedRequestTime = deletedRequestTimeResult[0]
-
-            try {
-                const {cache} = await import('~~/server/utils/cache-helpers')
-                await cache.deletePattern('schedules:*')
-                console.log('[Cache] 缓存已清除（播放时间删除）')
-            } catch (cacheError) {
-                console.warn('[Cache] 清除缓存失败:', cacheError)
-            }
-
-            return {
-                message: '投稿开放时段已成功删除',
-            }
-        } catch (error) {
-            console.error('删除投稿开放时段失败:', error)
-            throw createError({
-                statusCode: 500,
-                message: '删除投稿开放时段失败'
-            })
-        }
-    } else {
-        throw createError({
-            statusCode: 405,
-            message: '不支持的请求方法'
-        })
+      return {
+        message: '投稿开放时段已成功删除'
+      }
+    } catch (error) {
+      console.error('删除投稿开放时段失败:', error)
+      throw createError({
+        statusCode: 500,
+        message: '删除投稿开放时段失败'
+      })
     }
+  } else {
+    throw createError({
+      statusCode: 405,
+      message: '不支持的请求方法'
+    })
+  }
 })
-

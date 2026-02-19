@@ -5,7 +5,7 @@ export interface ParsedBilibiliId {
 
 export function parseBilibiliId(id: string | number): ParsedBilibiliId {
   const idStr = String(id)
-  
+
   if (idStr.includes(':')) {
     const parts = idStr.split(':')
     return {
@@ -13,7 +13,7 @@ export function parseBilibiliId(id: string | number): ParsedBilibiliId {
       cid: parts[1]
     }
   }
-  
+
   return {
     bvid: idStr
   }
@@ -27,11 +27,11 @@ export async function getBilibiliTrackUrl(id: string, cid?: string) {
     }
     const data = await $fetch('/api/bilibili/playurl', {
       params
-    });
-    return data;
+    })
+    return data
   } catch (error) {
-    console.error("Bilibili track url error:", error);
-    throw error;
+    console.error('Bilibili track url error:', error)
+    throw error
   }
 }
 
@@ -39,10 +39,10 @@ export async function searchBilibili(keyword: string) {
   try {
     const data = await $fetch<any[]>('/api/bilibili/search', {
       params: { keyword }
-    });
-    return data || [];
+    })
+    return data || []
   } catch (error) {
-    console.error("Bilibili search error:", error);
-    return [];
+    console.error('Bilibili search error:', error)
+    return []
   }
 }

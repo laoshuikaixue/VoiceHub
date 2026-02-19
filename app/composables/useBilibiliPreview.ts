@@ -11,7 +11,7 @@ export function useBilibiliPreview() {
 
   const openBilibiliPreview = (song: any) => {
     if (!song.musicId) return
-    
+
     const parts = song.musicId.split(':')
     previewBvid.value = parts[0]
     previewPage.value = parts.length >= 3 ? parseInt(parts[2]) || 1 : 1

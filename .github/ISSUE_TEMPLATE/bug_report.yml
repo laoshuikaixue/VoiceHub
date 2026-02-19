@@ -1,7 +1,7 @@
 name: 🐛 问题反馈
 description: 报告VoiceHub系统中的问题或错误
-title: "[Bug]: "
-labels: ["bug", "需要确认"]
+title: '[Bug]: '
+labels: ['bug', '需要确认']
 assignees: []
 body:
   - type: markdown
