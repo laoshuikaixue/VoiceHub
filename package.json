@@ -60,7 +60,7 @@
     "jspdf": "^3.0.4",
     "jszip": "^3.10.1",
     "lodash-es": "^4.17.23",
-    "lucide-vue-next": "^0.564.0",
+    "lucide-vue-next": "^0.574.0",
     "multer": "^2.0.2",
     "nodemailer": "^6.10.1",
     "nuxt": "^4.3.0",
