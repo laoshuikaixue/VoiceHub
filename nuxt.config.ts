@@ -11,7 +11,7 @@ export default defineNuxtConfig({
   },
   srcDir: 'app/',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss'],
+  modules: ['@nuxtjs/tailwindcss', '@nuxt/eslint'],
 
   // 引入全局CSS
   css: [

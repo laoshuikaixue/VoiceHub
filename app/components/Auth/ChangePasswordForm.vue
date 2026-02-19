@@ -63,7 +63,7 @@
             placeholder="请输入新密码"
             required
             @input="
-              error = ''
+              error = '';
               validatePassword()
             "
           >

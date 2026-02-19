@@ -24,9 +24,9 @@
     "vercel-build": "node scripts/deploy.js",
     "netlify-build": "node scripts/netlify-build.js",
     "check-deploy": "node scripts/check-deploy.js",
-    "postinstall": "node scripts/postinstall.js",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "postinstall": "nuxt prepare && node scripts/postinstall.js",
+    "lint": "nuxt prepare && eslint .",
+    "lint:fix": "nuxt prepare && eslint . --fix",
     "format": "prettier --write ."
   },
   "dependencies": {
@@ -83,6 +83,7 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.1",
-    "eslint": "^9.39.2"
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1"
   }
 }
