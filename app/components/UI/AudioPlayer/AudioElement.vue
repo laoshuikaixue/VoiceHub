@@ -63,8 +63,6 @@ watch(() => props.song, (newSong, oldSong) => {
       
       // 立即触发错误事件
       emit('error', error)
-      
-      console.log('[AudioElement] 哔哩哔哩视频没有音频URL，已触发错误事件')
     })
   }
 }, { immediate: true })

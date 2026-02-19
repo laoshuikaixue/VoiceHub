@@ -42,7 +42,7 @@
                 :src="iframeUrl"
                 class="w-full h-full border-none"
                 allowfullscreen="true"
-                sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts"
+                sandbox="allow-top-navigation-by-user-activation allow-same-origin allow-forms allow-scripts"
                 referrerpolicy="no-referrer"
             ></iframe>
             <div v-else class="w-full h-full flex items-center justify-center text-zinc-500">

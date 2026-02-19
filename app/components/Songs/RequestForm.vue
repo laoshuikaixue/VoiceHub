@@ -1231,11 +1231,9 @@ const voteForSimilar = async (song) => {
     song.voteCount = (song.voteCount || 0) + 1
 
     // 投票成功后刷新歌曲列表
-    setTimeout(() => {
-      songService.refreshSongsSilent().catch(err => {
-        console.error('刷新歌曲列表失败', err)
-      })
-    }, 500)
+    await songService.refreshSongsSilent().catch(err => {
+      console.error('刷新歌曲列表失败', err)
+    })
 
     // 清除表单并隐藏提示
     title.value = ''
@@ -1271,31 +1269,38 @@ const openSimilarEpisodesModal = (group) => {
     title: group.title,
     artist: group.artist,
     cover: group.cover,
-    pages: group.episodes.map((episode, index) => {
-      // 从 musicId 中提取 cid 和 page
-      const parts = episode.musicId ? episode.musicId.split(':') : []
-      const cid = parts[1] || ''
-      const page = parts[2] ? parseInt(parts[2]) : (index + 1)
-      
-      // 从标题中提取剧集名称
-      const episodeTitle = episode.title && episode.title.includes(' - ') 
-        ? episode.title.split(' - ').slice(1).join(' - ')
-        : episode.title || `第${index + 1}集`
-      
-      return {
-        cid,
-        page,
-        part: episodeTitle,
-        duration: episode.duration || 0,
-        // 直接使用 episode 的完整信息
-        songId: episode.id,
-        played: episode.played || false,
-        scheduled: episode.scheduled || false,
-        voted: episode.voted || false,
-        voteCount: episode.voteCount || 0,
-        requesterId: episode.requesterId
-      }
-    })
+    pages: [...group.episodes]
+      // 先按照 musicId 中的分P号排序，确保顺序正确
+      .sort((a, b) => {
+        const pageA = a.musicId?.split(':')[2] ? parseInt(a.musicId.split(':')[2], 10) : 0
+        const pageB = b.musicId?.split(':')[2] ? parseInt(b.musicId.split(':')[2], 10) : 0
+        return pageA - pageB
+      })
+      .map((episode, index) => {
+        // 从 musicId 中提取 cid 和 page
+        const parts = episode.musicId ? episode.musicId.split(':') : []
+        const cid = parts[1] || ''
+        const page = parts[2] ? parseInt(parts[2]) : (index + 1)
+        
+        // 从标题中提取剧集名称
+        const episodeTitle = episode.title && episode.title.includes(' - ') 
+          ? episode.title.split(' - ').slice(1).join(' - ')
+          : episode.title || `第${index + 1}集`
+        
+        return {
+          cid,
+          page,
+          part: episodeTitle,
+          duration: episode.duration || 0,
+          // 直接使用 episode 的完整信息
+          songId: episode.id,
+          played: episode.played || false,
+          scheduled: episode.scheduled || false,
+          voted: episode.voted || false,
+          voteCount: episode.voteCount || 0,
+          requesterId: episode.requesterId
+        }
+      })
   }
   
   selectedBilibiliVideo.value = videoData
@@ -1326,11 +1331,9 @@ const handleEpisodeVote = async (episode) => {
     episode.voteCount = (episode.voteCount || 0) + 1
     
     // 刷新歌曲列表
-    setTimeout(() => {
-      songService.refreshSongsSilent().catch(err => {
-        console.error('刷新歌曲列表失败', err)
-      })
-    }, 500)
+    await songService.refreshSongsSilent().catch(err => {
+      console.error('刷新歌曲列表失败', err)
+    })
   } catch (err) {
     if (window.$showNotification) {
       window.$showNotification(err.message || '点赞失败', 'error')

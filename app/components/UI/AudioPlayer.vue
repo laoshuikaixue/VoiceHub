@@ -476,12 +476,8 @@ const handleLoaded = async () => {
 }
 
 const handleError = async (error) => {
-  console.log('[AudioPlayer] handleError 被调用:', error)
-  
   // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
   if (props.song?.musicPlatform === 'bilibili') {
-    console.log('[AudioPlayer] 检测到哔哩哔哩视频错误，显示 iframe 预览提示')
-    
     // 手动设置错误状态，替代 control.onError(error) 以避免通用提示
     control.hasError.value = true
     control.isPlaying.value = false
@@ -593,7 +589,6 @@ const ensureAudioPlayerRef = () => {
 
   // 确保 control 有正确的音频播放器引用
   if (!control.audioPlayer.value || control.audioPlayer.value !== audioPlayer.value) {
-    console.log('[AudioPlayer] 更新音频播放器引用到 control')
     control.setAudioPlayerRef(audioPlayer.value)
   }
 
