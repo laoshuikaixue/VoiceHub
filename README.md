@@ -1336,19 +1336,6 @@ const confirmUnbind = (provider) => {
 }
 ```
 
-### WebAuthn 扩展
-
-WebAuthn 功能基于 `@simplewebauthn/server` 和 `@simplewebauthn/browser` 实现。
-
-- **服务端**：
-  - `server/api/auth/webauthn/register/options.get.ts`: 生成注册 Challenge
-  - `server/api/auth/webauthn/register/verify.post.ts`: 验证注册签名并保存公钥
-  - `server/api/auth/webauthn/login/options.get.ts`: 生成登录 Challenge
-  - `server/api/auth/webauthn/login/verify.post.ts`: 验证登录签名并颁发 Token
-- **前端**：
-  - `app/composables/useWebAuthn.ts`: 封装 WebAuthn 注册和登录逻辑
-  - `app/components/Auth/OAuthBindingCard.vue`: 设备管理界面
-
 ---
 
 ### 音源扩展开发指南

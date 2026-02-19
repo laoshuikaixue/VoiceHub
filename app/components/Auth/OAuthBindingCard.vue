@@ -168,7 +168,7 @@
               <div class="flex flex-col">
                 <span class="text-xs font-medium text-zinc-300">{{ cred.providerUsername }}</span>
                 <span class="text-[10px] text-zinc-600"
-                  >添加于 {{ new Date(cred.createdAt).toLocaleDateString() }}</span
+                  >添加于 {{ new Date(cred.createdAt).toLocaleString() }}</span
                 >
               </div>
               <button
