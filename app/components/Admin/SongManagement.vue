@@ -660,6 +660,7 @@ import { useAdmin } from '~/composables/useAdmin'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useSemesters } from '~/composables/useSemesters'
+import { useBilibiliPreview } from '~/composables/useBilibiliPreview'
 import { validateUrl, getBilibiliUrl, convertToHttps } from '~/utils/url'
 import BilibiliIframeModal from '~/components/UI/BilibiliIframeModal.vue'
 
@@ -674,19 +675,7 @@ const currentPage = ref(1)
 const pageSize = ref(20)
 
 // 哔哩哔哩预览相关
-const showBilibiliPreview = ref(false)
-const previewBvid = ref('')
-const previewPage = ref(1)
-
-// 打开哔哩哔哩预览
-const openBilibiliPreview = (song) => {
-  if (!song.musicId) return
-  
-  const parts = song.musicId.split(':')
-  previewBvid.value = parts[0]
-  previewPage.value = parts.length >= 3 ? parseInt(parts[2]) || 1 : 1
-  showBilibiliPreview.value = true
-}
+const { showBilibiliPreview, previewBvid, previewPage, openBilibiliPreview } = useBilibiliPreview()
 
 // 学期相关
 const selectedSemester = ref('all')

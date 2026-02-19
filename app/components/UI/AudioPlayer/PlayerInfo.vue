@@ -66,6 +66,7 @@ const openLyrics = () => {
 .cover-container {
   width: 48px;
   height: 48px;
+  aspect-ratio: 1;
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
@@ -127,6 +128,13 @@ const openLyrics = () => {
 }
 
 .text-cover {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   font-size: 18px;
   font-weight: bold;

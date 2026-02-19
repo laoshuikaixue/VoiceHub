@@ -603,6 +603,7 @@ import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import BilibiliIframeModal from '~/components/UI/BilibiliIframeModal.vue'
+import { useBilibiliPreview } from '~/composables/useBilibiliPreview'
 import { convertToHttps, getBilibiliUrl } from '~/utils/url'
 
 // 响应式数据
@@ -617,19 +618,7 @@ const mobileTab = ref('pending')
 const mobileFiltersOpen = ref(false)
 
 // 哔哩哔哩预览相关
-const showBilibiliPreview = ref(false)
-const previewBvid = ref('')
-const previewPage = ref(1)
-
-// 打开哔哩哔哩预览
-const openBilibiliPreview = (song) => {
-  if (!song.musicId) return
-  
-  const parts = song.musicId.split(':')
-  previewBvid.value = parts[0]
-  previewPage.value = parts.length >= 3 ? parseInt(parts[2]) || 1 : 1
-  showBilibiliPreview.value = true
-}
+const { showBilibiliPreview, previewBvid, previewPage, openBilibiliPreview } = useBilibiliPreview()
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)

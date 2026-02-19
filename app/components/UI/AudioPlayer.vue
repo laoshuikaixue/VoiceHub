@@ -486,6 +486,9 @@ const handleError = async (error) => {
     control.hasError.value = true
     control.isPlaying.value = false
     
+    // 同步全局播放状态，确保全局状态与本地状态一致
+    sync.syncPlayStateToGlobal(false, props.song)
+    
     if (window.$showNotification) {
       window.$showNotification(
           isMobile.value
@@ -1312,6 +1315,7 @@ const getFirstChar = (text) => {
 .music-widget.mobile-player-bar .cover-container {
   width: 44px;
   height: 44px;
+  aspect-ratio: 1;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -1471,6 +1475,7 @@ const getFirstChar = (text) => {
 .cover-container {
   width: 42px;
   height: 42px;
+  aspect-ratio: 1;
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
@@ -1486,6 +1491,7 @@ const getFirstChar = (text) => {
 .text-cover {
   width: 100%;
   height: 100%;
+  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;

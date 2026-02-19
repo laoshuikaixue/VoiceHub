@@ -1050,6 +1050,62 @@ const getFirstChar = (title) => {
 }
 
 
+// 播放歌曲的辅助函数，处理 URL 获取和播放列表构建
+// 提取此函数以避免在 togglePlaySong 中重复相同的错误处理逻辑
+const playSongWithUrlFetching = async (song) => {
+  try {
+    const url = await getMusicUrl(song)
+    
+    // 对于哔哩哔哩视频，即使没有 URL 也允许播放
+    if (!url && song.musicPlatform !== 'bilibili') {
+      if (window.$showNotification) {
+        window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
+      }
+      return
+    }
+    
+    const playableSong = {
+      ...song,
+      musicUrl: url || null
+    }
+    
+    // 构建播放列表并设置当前歌曲索引
+    const playlist = await buildPlayablePlaylist(song)
+    const currentIndex = playlist.findIndex(item => item.id === song.id)
+    audioPlayer.playSong(playableSong, playlist, currentIndex)
+    
+    // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+    ;(async () => {
+      for (let i = currentIndex + 1; i < playlist.length; i++) {
+        const s = playlist[i]
+        if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
+          try {
+            s.musicUrl = await getMusicUrl(s)
+          } catch (error) {
+            console.warn(`后台预取失败: ${s.title}`, error)
+            s.musicUrl = null
+          }
+        }
+      }
+    })()
+  } catch (error) {
+    // 对于哔哩哔哩视频，即使获取失败也允许播放
+    if (song.musicPlatform === 'bilibili') {
+      const playableSong = {
+        ...song,
+        musicUrl: null
+      }
+      const playlist = await buildPlayablePlaylist(song)
+      const currentIndex = playlist.findIndex(item => item.id === song.id)
+      audioPlayer.playSong(playableSong, playlist, currentIndex)
+    } else {
+      if (window.$showNotification) {
+        window.$showNotification('获取音乐播放链接失败', 'error')
+      }
+    }
+  }
+}
+
 // 切换歌曲播放/暂停
 const togglePlaySong = async (song) => {
   // 检查是否为当前歌曲且正在播放
@@ -1069,55 +1125,7 @@ const togglePlaySong = async (song) => {
     } else {
       // 如果没有URL，重新获取
       if ((song.musicPlatform && song.musicId) || song.playUrl) {
-        try {
-          const url = await getMusicUrl(song)
-          
-          // 对于哔哩哔哩视频，即使没有 URL 也允许播放
-          if (!url && song.musicPlatform !== 'bilibili') {
-            if (window.$showNotification) {
-              window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
-            }
-            return
-          }
-          
-          const playableSong = {
-            ...song,
-            musicUrl: url || null
-          }
-          // 构建播放列表并设置当前歌曲索引
-          const playlist = await buildPlayablePlaylist(song)
-          const currentIndex = playlist.findIndex(item => item.id === song.id)
-          audioPlayer.playSong(playableSong, playlist, currentIndex)
-          // 后台预取后续歌曲的播放链接（不阻塞当前播放）
-          ;(async () => {
-            for (let i = currentIndex + 1; i < playlist.length; i++) {
-              const s = playlist[i]
-              if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
-                try {
-                  s.musicUrl = await getMusicUrl(s)
-                } catch (error) {
-                  console.warn(`后台预取失败: ${s.title}`, error)
-                  s.musicUrl = null
-                }
-              }
-            }
-          })()
-        } catch (error) {
-          // 对于哔哩哔哩视频，即使获取失败也允许播放
-          if (song.musicPlatform === 'bilibili') {
-            const playableSong = {
-              ...song,
-              musicUrl: null
-            }
-            const playlist = await buildPlayablePlaylist(song)
-            const currentIndex = playlist.findIndex(item => item.id === song.id)
-            audioPlayer.playSong(playableSong, playlist, currentIndex)
-          } else {
-            if (window.$showNotification) {
-              window.$showNotification('获取音乐播放链接失败', 'error')
-            }
-          }
-        }
+        await playSongWithUrlFetching(song)
       }
     }
     return
@@ -1125,57 +1133,7 @@ const togglePlaySong = async (song) => {
 
   // 如果有平台和ID信息或playUrl，动态获取URL
   if ((song.musicPlatform && song.musicId) || song.playUrl) {
-    try {
-      const url = await getMusicUrl(song)
-      
-      // 对于哔哩哔哩视频，即使没有 URL 也允许播放（会显示 iframe 预览）
-      if (!url && song.musicPlatform !== 'bilibili') {
-        if (window.$showNotification) {
-          window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
-        }
-        return
-      }
-      
-      const playableSong = {
-        ...song,
-        musicUrl: url || null // 哔哩哔哩可能没有 URL
-      }
-      
-      // 构建播放列表并设置当前歌曲索引
-      const playlist = await buildPlayablePlaylist(song)
-      const currentIndex = playlist.findIndex(item => item.id === song.id)
-      audioPlayer.playSong(playableSong, playlist, currentIndex)
-
-      // 后台预取后续歌曲的播放链接（不阻塞当前播放）
-      ;(async () => {
-        for (let i = currentIndex + 1; i < playlist.length; i++) {
-          const s = playlist[i]
-          if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
-            try {
-              s.musicUrl = await getMusicUrl(s)
-            } catch (error) {
-              console.warn(`后台预取失败: ${s.title}`, error)
-              s.musicUrl = null
-            }
-          }
-        }
-      })()
-    } catch (error) {
-      // 对于哔哩哔哩视频，即使获取失败也允许播放
-      if (song.musicPlatform === 'bilibili') {
-        const playableSong = {
-          ...song,
-          musicUrl: null
-        }
-        const playlist = await buildPlayablePlaylist(song)
-        const currentIndex = playlist.findIndex(item => item.id === song.id)
-        audioPlayer.playSong(playableSong, playlist, currentIndex)
-      } else {
-        if (window.$showNotification) {
-          window.$showNotification('获取音乐播放链接失败', 'error')
-        }
-      }
-    }
+    await playSongWithUrlFetching(song)
   }
 }
 
@@ -2101,6 +2059,7 @@ const vRipple = {
 .song-cover {
   width: 55px;
   height: 55px;
+  aspect-ratio: 1;
   flex-shrink: 0;
   position: relative;
   border-radius: 6px;
@@ -2119,6 +2078,7 @@ const vRipple = {
 .text-cover {
   width: 100%;
   height: 100%;
+  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2708,6 +2668,7 @@ button:disabled {
   .song-cover {
     width: 60px;
     height: 60px;
+    aspect-ratio: 1;
     border-radius: 14px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
@@ -2898,6 +2859,7 @@ button:disabled {
   .song-cover {
     width: 44px;
     height: 44px;
+    aspect-ratio: 1;
     border-radius: 8px;
   }
 

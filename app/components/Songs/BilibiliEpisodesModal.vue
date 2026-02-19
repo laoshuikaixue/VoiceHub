@@ -189,8 +189,6 @@ const selectedEpisodeCid = ref(null)
 // 计算已投稿状态
 const submittedCount = computed(() => props.submittedEpisodes.length)
 const totalEpisodes = computed(() => props.episodes.length)
-const hasSubmittedEpisodes = computed(() => submittedCount.value > 0)
-const allEpisodesSubmitted = computed(() => submittedCount.value === totalEpisodes.value)
 
 const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60)
@@ -256,25 +254,9 @@ const getEpisodeStatus = (episode) => {
 const isMyEpisode = (episode) => {
   if (!props.currentUserId) return false
   
-  // 直接使用 episode 中的 requesterId
-  if (episode.requesterId) {
-    return episode.requesterId === props.currentUserId
-  }
-  
-  // 如果没有 requesterId，从 submittedEpisodes 中查找
-  const submittedSong = props.submittedEpisodes.find(song => {
-    if (!song.musicId) return false
-    const cid = song.musicId.includes(':') ? song.musicId.split(':')[1] : null
-    return cid === String(episode.cid)
-  })
-  
-  if (submittedSong) {
-    // 缓存 requesterId 到 episode 中，避免重复查找
-    episode.requesterId = submittedSong.requesterId
-    return submittedSong.requesterId === props.currentUserId
-  }
-  
-  return false
+  // 使用 getEpisodeStatus 获取统一的状态信息，避免直接修改 props
+  const status = getEpisodeStatus(episode)
+  return status.requesterId === props.currentUserId
 }
 
 const togglePlay = (episode) => {
@@ -308,32 +290,10 @@ const voteEpisode = (episode) => {
     return
   }
   
-  // 如果没有 songId，尝试从 submittedEpisodes 中查找
-  let songId = episode.songId
-  let submittedSong = null
+  // 使用 getEpisodeStatus 获取统一的状态信息，避免重复查找
+  const { songId, voted } = getEpisodeStatus(episode)
   
-  if (!songId) {
-    submittedSong = props.submittedEpisodes.find(song => {
-      if (!song.musicId) return false
-      const cid = song.musicId.includes(':') ? song.musicId.split(':')[1] : null
-      return cid === String(episode.cid)
-    })
-    
-    if (submittedSong) {
-      songId = submittedSong.id
-      // 更新 episode 的信息
-      episode.songId = songId
-      episode.voted = submittedSong.voted || false
-      episode.requesterId = submittedSong.requesterId
-    }
-  }
-  
-  // 检查是否已投票
-  if (episode.voted || (submittedSong && submittedSong.voted)) {
-    return
-  }
-  
-  if (!songId) {
+  if (!songId || voted) {
     return
   }
   
