@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
       const currentCounter = Number(counter || 0)
 
       // 防重放攻击：检查计数器是否递增
-      if (newCounter <= currentCounter) {
+      if (currentCounter > 0 && newCounter <= currentCounter) {
         console.error('WebAuthn 计数器未递增:', { currentCounter, newCounter, credentialID })
         throw createError({ statusCode: 400, message: '认证无效：凭证计数器未递增' })
       }
