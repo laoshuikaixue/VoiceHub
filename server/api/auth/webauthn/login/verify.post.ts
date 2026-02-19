@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Challenge 已失效' })
   }
 
-  // 根据 credentialID 查找用户
+  // 通过 credentialID 查找对应的用户身份
   const credentialID = body.id
   if (!credentialID) {
     throw createError({ statusCode: 400, message: '缺少 Credential ID' })
@@ -28,12 +28,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '未找到该 Passkey 关联的账号' })
   }
 
-  // 检查用户状态
+  // 检查用户账号状态
   if (identity.user.status !== 'active') {
     throw createError({ statusCode: 403, message: '账号已被禁用或注销' })
   }
 
-  // 解析存储的 JSON 数据
+  // 解析存储的凭证数据
   let credentialData
   try {
     credentialData = JSON.parse(identity.providerUsername)
@@ -43,15 +43,14 @@ export default defineEventHandler(async (event) => {
 
   const { publicKey, counter } = credentialData
   
-  // 检查 publicKey 是否存在
+  // 验证公钥存在
   if (!publicKey) {
      throw createError({ statusCode: 500, message: '凭证数据缺失 publicKey' })
   }
 
   const { rpID, origin } = getWebAuthnConfig(event)
 
-  // 构造 WebAuthnCredential 对象
-  // 注意：id 必须是 Base64URL 字符串，publicKey 必须是 Uint8Array
+  // 构造 WebAuthn 凭证对象
   const credential = {
     id: credentialID,
     publicKey: Buffer.from(publicKey, 'base64url'),
@@ -69,8 +68,15 @@ export default defineEventHandler(async (event) => {
     })
 
     if (verification.verified) {
-      // 更新 counter
       const newCounter = verification.authenticationInfo.newCounter
+      const currentCounter = Number(counter || 0)
+
+      // 防重放攻击：检查计数器是否递增
+      if (newCounter <= currentCounter) {
+        console.error('WebAuthn 计数器未递增:', { currentCounter, newCounter, credentialID })
+        throw createError({ statusCode: 400, message: '认证无效：凭证计数器未递增' })
+      }
+
       credentialData.counter = newCounter
       
       await db.update(userIdentities)
@@ -94,6 +100,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error('WebAuthn 登录验证失败:', error)
-    throw createError({ statusCode: 400, message: error.message || '验证失败' })
+    const message = error instanceof Error ? error.message : '验证失败'
+    throw createError({ statusCode: 400, message })
   }
 })

@@ -8,12 +8,10 @@ export default defineEventHandler(async (event) => {
   const options = await generateAuthenticationOptions({
     rpID,
     userVerification: 'preferred',
-    // 允许任何凭证（Discoverable Credentials）
     allowCredentials: [], 
   })
 
-  // 存储 Challenge
-  setWebAuthnChallenge(event, options.challenge, 'unknown')
+  setWebAuthnChallenge(event, options.challenge, 'authentication')
 
   return options
 })

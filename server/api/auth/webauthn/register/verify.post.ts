@@ -3,6 +3,15 @@ import { getWebAuthnChallenge, clearWebAuthnChallenge } from '~~/server/utils/we
 import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
 import { db, userIdentities } from '~/drizzle/db'
 
+const VALID_TRANSPORTS = ['internal', 'hybrid', 'usb', 'nfc', 'ble']
+
+function sanitizeTransports(transports: unknown): string[] {
+  if (!Array.isArray(transports)) return []
+  return transports.filter((t): t is string => 
+    typeof t === 'string' && VALID_TRANSPORTS.includes(t)
+  )
+}
+
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
@@ -29,16 +38,14 @@ export default defineEventHandler(async (event) => {
     if (verification.verified && verification.registrationInfo) {
       const { credential } = verification.registrationInfo
       
-      // 适配新版 @simplewebauthn/server 返回结构
-      // credential.id 是 Base64URL 字符串
-      // credential.publicKey 是 Uint8Array
+      // 提取凭证数据
       const { id: credentialID, publicKey: credentialPublicKey, counter, transports } = credential
 
       if (!credentialID || !credentialPublicKey) {
-        throw new Error('Registration info missing credentialID or credentialPublicKey')
+        throw new Error('注册信息缺少凭证 ID 或公钥')
       }
 
-      // credentialID 已经是 Base64URL 字符串
+      // 转换为 Base64URL 格式存储
       const credentialIDBase64 = credentialID
       const publicKeyBase64 = Buffer.from(credentialPublicKey).toString('base64url')
 
@@ -46,18 +53,15 @@ export default defineEventHandler(async (event) => {
         throw new Error('生成的公钥为空，注册失败')
       }
 
-      // 存储 WebAuthn 凭证
-      // provider: 'webauthn'
-      // providerUserId: Credential ID (Unique)
-      // providerUsername: JSON 包含 { label, publicKey, counter, transports }
-      
+      // 构造凭证数据
       const credentialData = {
         label: body.label || 'WebAuthn 设备',
         publicKey: publicKeyBase64,
-        counter: Number(counter), // 确保存储为数字
-        transports: transports || []
+        counter: Number(counter),
+        transports: sanitizeTransports(transports)
       }
 
+      // 存储到数据库
       await db.insert(userIdentities).values({
         userId: user.id,
         provider: 'webauthn',
@@ -73,6 +77,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error('WebAuthn 验证失败:', error)
-    throw createError({ statusCode: 400, message: error.message || '验证失败' })
+    const message = error instanceof Error ? error.message : '验证失败'
+    throw createError({ statusCode: 400, message })
   }
 })

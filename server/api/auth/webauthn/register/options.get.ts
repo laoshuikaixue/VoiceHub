@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: '未授权访问' })
   }
 
-  // 检查已绑定的 WebAuthn 设备
+  // 获取该用户已绑定的 WebAuthn 凭证
   const existingCredentials = await db.query.userIdentities.findMany({
     where: and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'webauthn')),
     columns: {
@@ -18,10 +18,11 @@ export default defineEventHandler(async (event) => {
     }
   })
 
+  // 防止重复注册相同凭证
   const excludeCredentials = existingCredentials.map(cred => ({
     id: cred.providerUserId,
     type: 'public-key' as const,
-    transports: ['internal'] // 可选
+    transports: ['internal']
   }))
 
   const { rpID } = getWebAuthnConfig(event)
@@ -41,8 +42,8 @@ export default defineEventHandler(async (event) => {
     },
   })
 
-  // 存储 Challenge
-  setWebAuthnChallenge(event, options.challenge, user.id)
+  // 存储注册挑战到 Cookie
+  setWebAuthnChallenge(event, options.challenge, user.id.toString())
 
   return options
 })

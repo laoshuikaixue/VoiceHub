@@ -119,6 +119,7 @@
 
       <!-- WebAuthn / Passkey -->
       <div 
+        v-if="isWebAuthnSupported || webauthnIdentities.length > 0"
         :class="[
           itemClass, 
           webauthnIdentities.length > 0 ? 'cursor-pointer hover:bg-zinc-900/70' : ''
@@ -148,6 +149,7 @@
         </div>
 
         <button
+          v-if="isWebAuthnSupported"
           class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
           @click.stop="handleWebAuthnRegister"
@@ -168,7 +170,15 @@
               <div class="flex flex-col">
                 <span class="text-xs font-medium text-zinc-300">{{ cred.providerUsername }}</span>
                 <span class="text-[10px] text-zinc-600"
-                  >添加于 {{ new Date(cred.createdAt).toLocaleString() }}</span
+                  >添加于 {{ new Date(cred.createdAt).toLocaleString('zh-CN', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit', 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit',
+                    hour12: false
+                  }) }}</span
                 >
               </div>
               <button
@@ -202,13 +212,14 @@ import { Loader2, Shield, Fingerprint, ChevronDown } from 'lucide-vue-next'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
-import { startRegistration } from '@simplewebauthn/browser'
+import { startRegistration, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 
 const config = useRuntimeConfig()
 const { showToast } = useToast()
 const identities = ref([])
 const loading = ref(true)
 const actionLoading = ref(false)
+const isWebAuthnSupported = ref(false)
 
 const isWebAuthnExpanded = ref(false)
 const toggleWebAuthnList = () => {
@@ -304,6 +315,11 @@ const handleUnbind = async (provider, id = null) => {
 }
 
 const handleWebAuthnRegister = async () => {
+  if (!isWebAuthnSupported.value) {
+    showToast('您的浏览器不支持 Windows Hello / Passkey', 'error')
+    return
+  }
+
   actionLoading.value = true
   try {
     const options = await $fetch('/api/auth/webauthn/register/options')
@@ -346,6 +362,7 @@ const handleWebAuthnRegister = async () => {
 }
 
 onMounted(() => {
+  isWebAuthnSupported.value = browserSupportsWebAuthn()
   fetchIdentities()
 })
 </script>

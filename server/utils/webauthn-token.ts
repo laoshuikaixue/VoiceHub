@@ -14,13 +14,13 @@ export function setWebAuthnChallenge(event: H3Event, challenge: string, userId: 
     challenge,
     userId,
     type: 'webauthn_challenge'
-  }, { expiresIn: '5m' }) // 5分钟有效期
+  }, { expiresIn: '3m' })
 
   setCookie(event, COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 300,
+    maxAge: 180,
     path: '/'
   })
 }

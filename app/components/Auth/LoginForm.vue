@@ -123,7 +123,7 @@
       </button>
     </form>
 
-    <div v-if="!isBindMode" class="webauthn-section">
+    <div v-if="!isBindMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
         <span>或</span>
       </div>
@@ -147,10 +147,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { getProviderDisplayName } from '~/utils/oauth'
-import { startAuthentication } from '@simplewebauthn/browser'
+import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { Fingerprint } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -166,8 +166,13 @@ const password = ref('')
 const error = ref('')
 const loading = ref(false)
 const showPassword = ref(false)
+const isWebAuthnSupported = ref(false)
 
 const auth = useAuth()
+
+onMounted(() => {
+  isWebAuthnSupported.value = browserSupportsWebAuthn()
+})
 
 const handleLogin = async () => {
   if (!username.value || !password.value) {
