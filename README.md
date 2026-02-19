@@ -710,9 +710,10 @@ VoiceHub/
 │   │   │   │   ├── login/     # 登录验证
 │   │   │   │   │   ├── options.get.ts    # 获取登录 Challenge
 │   │   │   │   │   └── verify.post.ts    # 验证登录签名
-│   │   │   │   └── register/  # 设备注册
-│   │   │   │       ├── options.get.ts    # 获取注册 Challenge
-│   │   │   │       └── verify.post.ts    # 验证注册签名
+│   │   │   │   ├── register/  # 设备注册
+│   │   │   │   │   ├── options.get.ts    # 获取注册 Challenge
+│   │   │   │   │   └── verify.post.ts    # 验证注册签名
+│   │   │   │   └── rename.post.ts    # 重命名设备
 │   │   │   ├── change-password.post.ts # 修改密码
 │   │   │   ├── login.post.ts        # 用户登录
 │   │   │   ├── logout.post.ts       # 用户登出

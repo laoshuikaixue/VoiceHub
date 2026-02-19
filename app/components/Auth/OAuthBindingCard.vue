@@ -167,8 +167,30 @@
               :key="cred.id"
               class="flex items-center justify-between p-3 bg-zinc-950/20 border border-zinc-900 rounded-xl group/item"
             >
-              <div class="flex flex-col">
-                <span class="text-xs font-medium text-zinc-300">{{ cred.providerUsername }}</span>
+              <div class="flex flex-col flex-1 mr-4">
+                <div v-if="editingId === cred.id" class="flex items-center gap-2 mb-1">
+                  <input
+                    v-model="editingName"
+                    type="text"
+                    class="bg-zinc-900 border border-zinc-700 rounded px-2 py-0.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 w-full"
+                    :disabled="isRenaming"
+                    @keyup.enter="saveEditing(cred.id)"
+                    @keyup.esc="cancelEditing"
+                    @click.stop
+                    ref="editInput"
+                  />
+                </div>
+                <div v-else class="flex items-center gap-2 mb-0.5">
+                  <span class="text-xs font-medium text-zinc-300">{{ cred.providerUsername }}</span>
+                  <button 
+                    class="text-zinc-500 hover:text-zinc-300 opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5"
+                    @click.stop="startEditing(cred)"
+                    title="重命名"
+                  >
+                    <Pencil :size="12" />
+                  </button>
+                </div>
+                
                 <span class="text-[10px] text-zinc-600"
                   >添加于 {{ new Date(cred.createdAt).toLocaleString('zh-CN', { 
                     year: 'numeric', 
@@ -181,12 +203,34 @@
                   }) }}</span
                 >
               </div>
-              <button
-                class="text-xs text-rose-500 hover:text-rose-400 font-medium px-2 py-1 opacity-0 group-hover/item:opacity-100 transition-opacity"
-                @click="confirmUnbindWebAuthn(cred)"
-              >
-                移除
-              </button>
+
+              <div class="flex items-center gap-1">
+                <template v-if="editingId === cred.id">
+                  <button
+                    class="text-zinc-400 hover:text-green-400 transition-colors p-1"
+                    :disabled="isRenaming"
+                    @click.stop="saveEditing(cred.id)"
+                    title="保存"
+                  >
+                    <Check :size="14" />
+                  </button>
+                  <button
+                    class="text-zinc-400 hover:text-zinc-200 transition-colors p-1"
+                    :disabled="isRenaming"
+                    @click.stop="cancelEditing"
+                    title="取消"
+                  >
+                    <X :size="14" />
+                  </button>
+                </template>
+                <button
+                  v-else
+                  class="text-xs text-rose-500 hover:text-rose-400 font-medium px-2 py-1 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                  @click="confirmUnbindWebAuthn(cred)"
+                >
+                  移除
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -207,8 +251,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { Loader2, Shield, Fingerprint, ChevronDown } from 'lucide-vue-next'
+import { ref, onMounted, computed, nextTick } from 'vue'
+import { Loader2, Shield, Fingerprint, ChevronDown, Pencil, Check, X } from 'lucide-vue-next'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
@@ -220,6 +264,51 @@ const identities = ref([])
 const loading = ref(true)
 const actionLoading = ref(false)
 const isWebAuthnSupported = ref(false)
+
+// 编辑相关
+const editingId = ref<string | null>(null)
+const editingName = ref('')
+const isRenaming = ref(false)
+const editInput = ref<HTMLInputElement | null>(null)
+
+const startEditing = async (cred: any) => {
+  editingId.value = cred.id
+  editingName.value = cred.providerUsername
+  // 聚焦输入框
+  await nextTick()
+  if (editInput.value) {
+    // 如果是 v-for 中的 ref，它可能是一个数组
+    const input = Array.isArray(editInput.value) ? editInput.value[0] : editInput.value
+    input?.focus()
+  }
+}
+
+const cancelEditing = () => {
+  editingId.value = null
+  editingName.value = ''
+}
+
+const saveEditing = async (id: string) => {
+  if (!editingName.value.trim()) {
+    showToast('设备名称不能为空', 'error')
+    return
+  }
+  
+  isRenaming.value = true
+  try {
+    await $fetch('/api/auth/webauthn/rename', {
+      method: 'POST',
+      body: { id, name: editingName.value }
+    })
+    showToast('设备名称修改成功', 'success')
+    await fetchIdentities()
+    cancelEditing()
+  } catch (e: any) {
+    showToast(e.data?.message || '修改失败', 'error')
+  } finally {
+    isRenaming.value = false
+  }
+}
 
 const isWebAuthnExpanded = ref(false)
 const toggleWebAuthnList = () => {
