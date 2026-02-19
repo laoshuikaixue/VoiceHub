@@ -38,7 +38,6 @@ export default defineEventHandler(async (event) => {
     authenticatorSelection: {
       residentKey: 'required',
       userVerification: 'preferred',
-      authenticatorAttachment: 'platform',
     },
   })
 
