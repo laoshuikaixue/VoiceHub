@@ -742,7 +742,7 @@
           <button
             class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-xs font-bold transition-colors"
             @click="
-              rejectReplayRequest(replayModalSongId)
+              rejectReplayRequest(replayModalSongId);
               closeReplayModal()
             "
           >
