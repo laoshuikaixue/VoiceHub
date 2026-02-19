@@ -552,7 +552,8 @@ VoiceHub/
 │   │   ├── useSemesters.ts     # 学期管理hooks
 │   │   ├── useSiteConfig.js    # 站点配置hooks
 │   │   ├── useSongs.ts         # 歌曲管理hooks
-│   │   └── useToast.ts         # Toast提示hooks
+│   │   ├── useToast.ts         # Toast提示hooks
+│   │   └── useWebAuthn.ts      # WebAuthn 认证 hooks
 │   ├── drizzle/               # 数据库相关
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
@@ -705,6 +706,13 @@ VoiceHub/
 │   │   │       ├── index.ts         # 用户管理
 │   │   │       └── status-logs.get.ts # 用户状态日志
 │   │   ├── auth/           # 认证API
+│   │   │   ├── webauthn/      # WebAuthn 相关 API
+│   │   │   │   ├── login/     # 登录验证
+│   │   │   │   │   ├── options.get.ts    # 获取登录 Challenge
+│   │   │   │   │   └── verify.post.ts    # 验证登录签名
+│   │   │   │   └── register/  # 设备注册
+│   │   │   │       ├── options.get.ts    # 获取注册 Challenge
+│   │   │   │       └── verify.post.ts    # 验证注册签名
 │   │   │   ├── change-password.post.ts # 修改密码
 │   │   │   ├── login.post.ts        # 用户登录
 │   │   │   ├── logout.post.ts       # 用户登出
