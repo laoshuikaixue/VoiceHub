@@ -14,16 +14,28 @@ export default defineEventHandler(async (event) => {
   const existingCredentials = await db.query.userIdentities.findMany({
     where: and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'webauthn')),
     columns: {
-      providerUserId: true
+      providerUserId: true,
+      providerUsername: true
     }
   })
 
-  // 防止重复注册相同凭证
-  const excludeCredentials = existingCredentials.map(cred => ({
-    id: cred.providerUserId,
-    type: 'public-key' as const,
-    transports: ['internal']
-  }))
+  // 防止重复注册相同凭证，使用存储的实际 transports 信息
+  const excludeCredentials = existingCredentials.map(cred => {
+    let transports: string[] | undefined
+    try {
+      if (cred.providerUsername) {
+        const data = JSON.parse(cred.providerUsername)
+        transports = data.transports
+      }
+    } catch (e) {
+      console.error('解析 WebAuthn 凭证数据失败:', e)
+    }
+    return {
+      id: cred.providerUserId,
+      type: 'public-key' as const,
+      transports
+    }
+  })
 
   const { rpID } = getWebAuthnConfig(event)
   const rpName = 'VoiceHub'

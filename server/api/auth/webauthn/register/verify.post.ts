@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const challengeData = getWebAuthnChallenge(event)
 
-  if (!challengeData || challengeData.userId !== user.id) {
+  if (!challengeData || challengeData.userId !== user.id.toString()) {
     throw createError({ statusCode: 400, message: 'Challenge 已失效或不匹配' })
   }
 
