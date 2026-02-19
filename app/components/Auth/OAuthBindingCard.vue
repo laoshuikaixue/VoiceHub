@@ -345,16 +345,10 @@ const handleWebAuthnRegister = async () => {
     showToast('设备添加成功', 'success')
     await fetchIdentities()
   } catch (e) {
-    const error = e
-    console.error(error)
-    let message = '添加设备失败'
-    if (error instanceof Error) {
-      message = error.message
-    } else if (typeof error === 'object' && error !== null) {
-      // 尝试从 API 错误对象中提取 message
-      const err = error as { data?: { message?: string }, message?: string }
-      message = err.data?.message || err.message || message
-    }
+    console.error('WebAuthn 注册错误:', e)
+    const apiError = e as { data?: { message?: string }; message?: string }
+    const err = e as Error
+    const message = apiError.data?.message || err.message || '添加设备失败'
     showToast(message, 'error')
   } finally {
     actionLoading.value = false

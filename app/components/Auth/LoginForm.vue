@@ -242,12 +242,10 @@ const handleWebAuthnLogin = async () => {
       await auth.initAuth()
       await navigateTo(verification.redirect || '/')
     }
-  } catch (err) {
-    const error = err
-    console.error('WebAuthn login error:', error)
-    // 简单的类型守卫
-    const errorObj = error as { data?: { message?: string }, message?: string }
-    error.value = errorObj.data?.message || errorObj.message || 'Passkey 登录失败'
+  } catch (e) {
+    console.error('WebAuthn login error:', e)
+    const apiError = e as { data?: { message?: string }, message?: string }
+    error.value = apiError.data?.message || apiError.message || 'Passkey 登录失败'
   } finally {
     loading.value = false
   }

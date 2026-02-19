@@ -29,6 +29,10 @@ export function getWebAuthnConfig(event: H3Event) {
     if (isOriginAllowed(requestOrigin, allowedOrigins)) {
       origin = requestOrigin
     } else {
+      if (process.env.NODE_ENV === 'production') {
+        console.error(`WebAuthn origin 不在允许列表中: ${requestOrigin}`)
+        throw new Error(`不被允许的 Origin: ${requestOrigin}`)
+      }
       console.warn(`WebAuthn origin 不在允许列表中: ${requestOrigin}，使用第一个允许的域名: ${allowedOrigins[0]}`)
       origin = allowedOrigins[0]
     }
