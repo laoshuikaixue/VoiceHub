@@ -196,7 +196,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { Loader2, Shield, Fingerprint, ChevronDown } from 'lucide-vue-next'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
@@ -329,7 +329,7 @@ const handleWebAuthnRegister = async () => {
     showToast('设备添加成功', 'success')
     await fetchIdentities()
   } catch (e) {
-    const error = e as unknown
+    const error = e
     console.error(error)
     let message = '添加设备失败'
     if (error instanceof Error) {

@@ -238,7 +238,7 @@ const handleWebAuthnLogin = async () => {
       await navigateTo(verification.redirect || '/')
     }
   } catch (err) {
-    const error = err as unknown
+    const error = err
     console.error('WebAuthn login error:', error)
     // 简单的类型守卫
     const errorObj = error as { data?: { message?: string }, message?: string }
