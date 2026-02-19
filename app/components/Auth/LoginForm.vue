@@ -123,6 +123,21 @@
       </button>
     </form>
 
+    <div v-if="!isBindMode" class="webauthn-section">
+      <div class="divider">
+        <span>或</span>
+      </div>
+      <button 
+        type="button" 
+        class="webauthn-btn" 
+        @click="handleWebAuthnLogin" 
+        :disabled="loading"
+      >
+        <Fingerprint :size="20" class="webauthn-icon" />
+        <span>使用 Windows Hello / Passkey 登录</span>
+      </button>
+    </div>
+
     <AuthOAuthButtons v-if="!isBindMode" />
 
     <div class="form-footer">
@@ -135,6 +150,8 @@
 import { ref, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { getProviderDisplayName } from '~/utils/oauth'
+import { startAuthentication } from '@simplewebauthn/browser'
+import { Fingerprint } from 'lucide-vue-next'
 
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
@@ -191,6 +208,38 @@ const handleLogin = async () => {
     if (error.value.includes('密码') || error.value.includes('错误')) {
       password.value = ''
     }
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleWebAuthnLogin = async () => {
+  loading.value = true
+  error.value = ''
+  
+  try {
+    // 1. 获取登录选项
+    const options = await $fetch('/api/auth/webauthn/login/options', {
+      method: 'POST'
+    })
+
+    // 2. 调用浏览器 WebAuthn API
+    const credential = await startAuthentication(options)
+
+    // 3. 验证登录
+    const verification = await $fetch('/api/auth/webauthn/login/verify', {
+      method: 'POST',
+      body: credential
+    })
+
+    if (verification.success) {
+      // 登录成功
+      await auth.initAuth()
+      await navigateTo(verification.redirect || '/')
+    }
+  } catch (err: any) {
+    console.error('WebAuthn login error:', err)
+    error.value = err.data?.message || err.message || 'Passkey 登录失败'
   } finally {
     loading.value = false
   }
@@ -471,6 +520,62 @@ const handleLogin = async () => {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   color: var(--primary);
   font-size: 11px;
+}
+
+.webauthn-section {
+  width: 100%;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: var(--text-quaternary);
+  font-size: 12px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--input-border);
+}
+
+.divider span {
+  padding: 0 10px;
+}
+
+.webauthn-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-lg);
+  font-size: 15px;
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.webauthn-btn:hover:not(:disabled) {
+  background: var(--surface-tertiary);
+  border-color: var(--input-border-focus);
+}
+
+.webauthn-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.webauthn-icon {
+  width: 20px;
+  height: 20px;
 }
 
 /* 响应式设计 */

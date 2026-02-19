@@ -1,0 +1,37 @@
+import { createError, getCookie, setCookie, deleteCookie } from 'h3'
+import { JWTEnhanced } from './jwt-enhanced'
+
+const COOKIE_NAME = 'webauthn_challenge'
+
+export function setWebAuthnChallenge(event: any, challenge: string, userId: string) {
+  const token = JWTEnhanced.sign({
+    challenge,
+    userId,
+    type: 'webauthn_challenge'
+  }, { expiresIn: '5m' }) // 5分钟有效期
+
+  setCookie(event, COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 300,
+    path: '/'
+  })
+}
+
+export function getWebAuthnChallenge(event: any): { challenge: string; userId: string } | null {
+  const token = getCookie(event, COOKIE_NAME)
+  if (!token) return null
+
+  try {
+    const payload = JWTEnhanced.verify(token) as any
+    if (payload.type !== 'webauthn_challenge') return null
+    return { challenge: payload.challenge, userId: payload.userId }
+  } catch (e) {
+    return null
+  }
+}
+
+export function clearWebAuthnChallenge(event: any) {
+  deleteCookie(event, COOKIE_NAME)
+}

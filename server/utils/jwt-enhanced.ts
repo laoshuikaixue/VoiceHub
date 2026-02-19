@@ -18,6 +18,26 @@ export class JWTEnhanced {
   private static readonly REFRESH_THRESHOLD = 24 * 60 * 60 // 24小时（秒），剩余时间少于此值时自动续期
 
   /**
+   * 通用签名方法
+   */
+  static sign(payload: object, options?: jwt.SignOptions): string {
+    if (!this.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is not set')
+    }
+    return jwt.sign(payload, this.JWT_SECRET, options)
+  }
+
+  /**
+   * 通用验证方法
+   */
+  static verify(token: string): any {
+    if (!this.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is not set')
+    }
+    return jwt.verify(token, this.JWT_SECRET)
+  }
+
+  /**
    * 生成JWT token
    */
   static generateToken(userId: number, role: string): string {

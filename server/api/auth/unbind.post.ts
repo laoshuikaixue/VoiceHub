@@ -7,18 +7,23 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { provider } = body
+  const { provider, id } = body
 
   if (!provider) {
     throw createError({ statusCode: 400, message: '缺少提供商参数' })
   }
 
-  // 阻止解绑唯一的登录方式（可选，但如果不能保证有密码登录则是最佳实践）
-  // 在本系统中，密码登录总是可用的，所以解绑是安全的。
-
-  await db
-    .delete(userIdentities)
-    .where(and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, provider)))
+  // 如果提供了 ID，按 ID 解绑
+  if (id) {
+    await db
+      .delete(userIdentities)
+      .where(and(eq(userIdentities.id, id), eq(userIdentities.userId, user.id)))
+  } else {
+    // 否则解绑该 Provider 下的所有绑定
+    await db
+      .delete(userIdentities)
+      .where(and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, provider)))
+  }
 
   return { success: true }
 })

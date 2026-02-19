@@ -32,7 +32,8 @@ export default defineEventHandler(async (event) => {
     '/api/bilibili/', // 哔哩哔哩相关API
     '/api/native-api/', // Native Music 集成API
     '/api/system/location', // 系统位置检测API
-    '/api/open/' // 开放API路径，由api-auth中间件处理认证
+    '/api/open/', // 开放API路径，由api-auth中间件处理认证
+    '/api/auth/webauthn/login' // WebAuthn 登录接口
   ]
 
   // 公共路径跳过认证检查
@@ -58,7 +59,8 @@ export default defineEventHandler(async (event) => {
       // login, bind, verify 已经在 publicApiPaths 中处理，这里列出是为了完整性或防止意外匹配
       'login',
       'bind',
-      'verify'
+      'verify',
+      'webauthn'
     ]
 
     if (provider && !nonOAuthEndpoints.includes(provider)) {
