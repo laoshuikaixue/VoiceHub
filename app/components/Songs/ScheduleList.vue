@@ -2552,6 +2552,7 @@ const vRipple = {
 .song-cover {
   width: 55px;
   height: 55px;
+  aspect-ratio: 1;
   flex-shrink: 0;
   position: relative;
   border-radius: 6px;
@@ -2570,6 +2571,7 @@ const vRipple = {
 .text-cover {
   width: 100%;
   height: 100%;
+  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2992,6 +2994,7 @@ const vRipple = {
   .song-cover {
     width: 48px;
     height: 48px;
+    aspect-ratio: 1;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
@@ -3152,6 +3155,7 @@ const vRipple = {
   .song-cover {
     width: 44px;
     height: 44px;
+    aspect-ratio: 1;
     border-radius: 8px;
   }
 

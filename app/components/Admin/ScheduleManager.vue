@@ -230,16 +230,14 @@
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                     <h4 class="font-bold text-zinc-100 text-sm truncate">
-                      <a 
+                      <button 
                         v-if="song.musicPlatform === 'bilibili'" 
-                        :href="getBilibiliUrl(song)" 
-                        target="_blank" 
-                        class="text-zinc-100 hover:text-blue-400 hover:underline flex items-center gap-1 transition-colors w-full"
-                        @click.stop
+                        class="text-zinc-100 hover:text-blue-400 hover:underline flex items-center gap-1 transition-colors w-full text-left"
+                        @click.stop="openBilibiliPreview(song)"
                       >
                         <span class="truncate">{{ song.title }}</span>
                         <ExternalLink class="w-3 h-3 opacity-70 flex-shrink-0" />
-                      </a>
+                      </button>
                       <span v-else>{{ song.title }}</span>
                     </h4>
                     <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
@@ -580,6 +578,14 @@
       </div>
     </div>
   </div>
+
+  <!-- 哔哩哔哩 iframe 预览弹窗 -->
+  <BilibiliIframeModal
+    :show="showBilibiliPreview"
+    :bvid="previewBvid"
+    :page="previewPage"
+    @close="showBilibiliPreview = false"
+  />
 </template>
 
 <script setup>
@@ -596,6 +602,8 @@ import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
+import BilibiliIframeModal from '~/components/UI/BilibiliIframeModal.vue'
+import { useBilibiliPreview } from '~/composables/useBilibiliPreview'
 import { convertToHttps, getBilibiliUrl } from '~/utils/url'
 
 // 响应式数据
@@ -608,6 +616,9 @@ const selectedGrade = ref('全部')
 const activeTab = ref('normal')
 const mobileTab = ref('pending')
 const mobileFiltersOpen = ref(false)
+
+// 哔哩哔哩预览相关
+const { showBilibiliPreview, previewBvid, previewPage, openBilibiliPreview } = useBilibiliPreview()
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)

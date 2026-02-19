@@ -6,7 +6,7 @@
 
     <Transition name="player-animation">
       <div v-show="visible" class="music-widget" :class="{ 'mobile-player-bar': isMobile }" @click="handlePlayerClick">
-        <!-- 移动端顶部进度条 (仅移动端，支持拖动) -->
+        <!-- 移动端顶部进度条 -->
         <div v-if="isMobile"
              class="mobile-top-progress"
              @click.stop="handleSeekToPosition"
@@ -34,7 +34,7 @@
             <p class="song-artist">{{ activeSong?.artist || '未知艺术家' }}</p>
           </div>
 
-          <!-- 移动端播放控制 (仅移动端) -->
+          <!-- 移动端播放控制 -->
           <div v-if="isMobile" class="mobile-controls">
             <button class="mobile-control-btn" @click.stop="handleTogglePlay">
               <div v-if="control.isLoadingTrack.value" class="loading-spinner-small"></div>
@@ -206,6 +206,16 @@
           @close="showFullscreenLyrics = false"
       />
     </ClientOnly>
+
+    <!-- 哔哩哔哩 iframe 预览模态 -->
+    <ClientOnly>
+      <BilibiliIframeModal
+          :show="showBilibiliIframe"
+          :bvid="activeSong?.musicId?.split(':')[0]"
+          :page="activeSong?.musicId?.split(':')[2] ? parseInt(activeSong.musicId.split(':')[2]) : 1"
+          @close="showBilibiliIframe = false"
+      />
+    </ClientOnly>
   </div>
 </template>
 
@@ -214,6 +224,7 @@ import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
 import AppleMusicLyrics from './AppleMusicLyrics.vue'
 import LyricsModal from './LyricsModal.vue'
 import AudioElement from './AudioPlayer/AudioElement.vue'
+import BilibiliIframeModal from './BilibiliIframeModal.vue'
 import Icon from './Icon.vue'
 import {useAudioPlayerControl} from '~/composables/useAudioPlayerControl'
 import {useAudioPlayerSync} from '~/composables/useAudioPlayerSync'
@@ -261,6 +272,7 @@ const showFullscreenLyrics = ref(false)
 const showQualitySettings = ref(false)
 const coverError = ref(false)
 const useAppleMusicStyle = ref(true) // 默认使用Apple Music风格
+const showBilibiliIframe = ref(false) // 显示哔哩哔哩 iframe 预览
 
 // 时长显示模式：'remaining' 显示剩余时长，'total' 显示总时长
 const timeDisplayMode = ref('remaining')
@@ -464,6 +476,30 @@ const handleLoaded = async () => {
 }
 
 const handleError = async (error) => {
+  // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
+  if (props.song?.musicPlatform === 'bilibili') {
+    // 手动设置错误状态，替代 control.onError(error) 以避免通用提示
+    control.hasError.value = true
+    control.isPlaying.value = false
+    
+    // 同步全局播放状态，确保全局状态与本地状态一致
+    sync.syncPlayStateToGlobal(false, props.song)
+    
+    if (window.$showNotification) {
+      window.$showNotification(
+          isMobile.value
+              ? '哔哩哔哩视频播放失败，点击封面以预览'
+              : '哔哩哔哩视频播放失败，点击视频图标以预览',
+          'warning'
+      )
+    }
+    
+    // 不自动关闭播放器，让用户可以点击视频图标
+    // 但要停止加载状态
+    control.isLoadingTrack.value = false
+    return
+  }
+
   control.onError(error)
 
   // 使用增强的错误处理逻辑
@@ -553,7 +589,6 @@ const ensureAudioPlayerRef = () => {
 
   // 确保 control 有正确的音频播放器引用
   if (!control.audioPlayer.value || control.audioPlayer.value !== audioPlayer.value) {
-    console.log('[AudioPlayer] 更新音频播放器引用到 control')
     control.setAudioPlayerRef(audioPlayer.value)
   }
 
@@ -743,6 +778,13 @@ const openBilibiliVideo = () => {
   const song = activeSong.value
   if (!song) return
 
+  // 如果播放器有错误，显示 iframe 预览
+  if (control.hasError.value) {
+    showBilibiliIframe.value = true
+    return
+  }
+
+  // 否则在新窗口打开
   const url = getBilibiliUrl(song)
   if (url && url !== '#') {
     window.open(url, '_blank')
@@ -1268,6 +1310,7 @@ const getFirstChar = (text) => {
 .music-widget.mobile-player-bar .cover-container {
   width: 44px;
   height: 44px;
+  aspect-ratio: 1;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -1427,6 +1470,7 @@ const getFirstChar = (text) => {
 .cover-container {
   width: 42px;
   height: 42px;
+  aspect-ratio: 1;
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
@@ -1442,6 +1486,7 @@ const getFirstChar = (text) => {
 .text-cover {
   width: 100%;
   height: 100%;
+  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;

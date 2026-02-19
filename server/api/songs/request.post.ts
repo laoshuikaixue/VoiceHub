@@ -52,32 +52,73 @@ export default defineEventHandler(async (event) => {
         const normalizedTitle = normalizeForMatch(body.title)
         const normalizedArtist = normalizeForMatch(body.artist)
 
-        // 检查是否已有完全相同的歌曲（标准化后完全匹配，仅限当前学期）
+        // 获取当前学期
         const currentSemester = await getCurrentSemesterName()
-        const allSongs = await db.select({
-            id: songs.id,
-            title: songs.title,
-            artist: songs.artist,
-            semester: songs.semester,
-            played: songs.played
-        }).from(songs).where(eq(songs.semester, currentSemester))
 
-        const matchingSongs = allSongs.filter(song => {
-            const songTitle = normalizeForMatch(song.title)
-            const songArtist = normalizeForMatch(song.artist)
-            return songTitle === normalizedTitle && songArtist === normalizedArtist
-        })
+        // 对于哔哩哔哩平台，如果有 musicId，使用 musicId 进行精确匹配
+        if (body.musicPlatform === 'bilibili' && body.musicId) {
+            // 构建完整的 musicId（包含分P信息）
+            let fullMusicId = String(body.musicId)
+            const bvId = fullMusicId.split(':')[0]
+            
+            if (body.bilibiliCid) {
+                const musicIdParts = [bvId, body.bilibiliCid]
+                if (body.bilibiliPage && Number(body.bilibiliPage) > 1) {
+                    musicIdParts.push(String(body.bilibiliPage))
+                }
+                fullMusicId = musicIdParts.join(':')
+            }
 
-        if (matchingSongs.length > 0) {
-        const isSuperAdmin = user.role === 'SUPER_ADMIN'
-        const hasUnplayedDuplicate = matchingSongs.some(s => !s.played)
-        if (!isSuperAdmin || hasUnplayedDuplicate) {
-            throw createError({
-                statusCode: 400,
-                message: `《${body.title}》已经在列表中，不能重复投稿`
+            // 检查是否已有相同 musicId 的歌曲
+            const existingSongs = await db.select({
+                id: songs.id,
+                musicId: songs.musicId,
+                played: songs.played
+            }).from(songs).where(
+                and(
+                    eq(songs.semester, currentSemester),
+                    eq(songs.musicPlatform, 'bilibili'),
+                    eq(songs.musicId, fullMusicId)
+                )
+            )
+
+            if (existingSongs.length > 0) {
+                const isSuperAdmin = user.role === 'SUPER_ADMIN'
+                const hasUnplayedDuplicate = existingSongs.some(s => !s.played)
+                if (!isSuperAdmin || hasUnplayedDuplicate) {
+                    throw createError({
+                        statusCode: 400,
+                        message: `《${body.title}》已经在列表中，不能重复投稿`
+                    })
+                }
+            }
+        } else {
+            // 对于其他平台，使用标题和艺术家进行匹配
+            const allSongs = await db.select({
+                id: songs.id,
+                title: songs.title,
+                artist: songs.artist,
+                semester: songs.semester,
+                played: songs.played
+            }).from(songs).where(eq(songs.semester, currentSemester))
+
+            const matchingSongs = allSongs.filter(song => {
+                const songTitle = normalizeForMatch(song.title)
+                const songArtist = normalizeForMatch(song.artist)
+                return songTitle === normalizedTitle && songArtist === normalizedArtist
             })
+
+            if (matchingSongs.length > 0) {
+                const isSuperAdmin = user.role === 'SUPER_ADMIN'
+                const hasUnplayedDuplicate = matchingSongs.some(s => !s.played)
+                if (!isSuperAdmin || hasUnplayedDuplicate) {
+                    throw createError({
+                        statusCode: 400,
+                        message: `《${body.title}》已经在列表中，不能重复投稿`
+                    })
+                }
+            }
         }
-    }
 
     // 检查投稿限额（管理员不受限制）
     const systemSettingsResult = await db.select().from(systemSettings).limit(1)

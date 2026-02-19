@@ -472,6 +472,7 @@ VoiceHub/
 │   │   │   │   └── StatCard.vue       # 统计卡片组件
 │   │   │   ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件
 │   │   │   ├── AudioPlayer.vue        # 主音频播放器组件
+│   │   │   ├── BilibiliframeModal.vue # Bilibili视频预览弹窗
 │   │   │   ├── ConfirmDialog.vue      # 确认对话框
 │   │   │   ├── Icon.vue               # 图标组件
 │   │   │   ├── LyricsModal.vue        # 全屏歌词模态框组件
@@ -492,6 +493,7 @@ VoiceHub/
 │   │   ├── useAudioVisualizer.ts # 音频可视化hooks
 │   │   ├── useAuth.ts          # 认证功能hooks
 │   │   ├── useBackgroundRenderer.ts # 背景渲染hooks
+│   │   ├── useBilibiliPreview.ts # Bilibili视频预览hooks
 │   │   ├── useErrorHandler.ts  # 错误处理hooks
 │   │   ├── useLyricManager.ts  # 歌词管理hooks
 │   │   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks

@@ -93,24 +93,58 @@
                     <Icon :name="isCurrentEpisode(episode) && isPlaying ? 'pause' : 'play'" :size="16" />
                   </button>
 
-                  <!-- 已投稿标签 -->
-                  <div
-                      v-if="isEpisodeSubmitted(episode)"
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-zinc-800 text-zinc-500 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
-                  >
-                    已投稿
-                  </div>
-
-                  <!-- 选择投稿按钮 -->
-                  <button
-                      v-else
-                      :disabled="submitting"
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
-                      @click.stop="selectEpisode(episode)"
-                  >
-                    <span v-if="submitting && selectedEpisodeCid === episode.cid">提交中...</span>
-                    <span v-else><span class="hidden sm:inline">选择</span>投稿</span>
-                  </button>
+                  <template v-if="getEpisodeStatus(episode).played">
+                    <!-- 已播放标签 -->
+                    <div class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest">
+                      已播放
+                    </div>
+                  </template>
+                  
+                  <template v-else-if="getEpisodeStatus(episode).scheduled">
+                    <!-- 已排期标签 -->
+                    <div class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest">
+                      已排期
+                    </div>
+                  </template>
+                  
+                  <template v-else-if="getEpisodeStatus(episode).submitted">
+                    <div class="flex flex-col gap-2 items-center">
+                      <!-- 已投稿标签 -->
+                      <div class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-zinc-800 text-zinc-500 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest">
+                        已投稿
+                      </div>
+                      
+                      <!-- 点赞按钮（非自己投稿） -->
+                      <button
+                          v-if="!isMyEpisode(episode)"
+                          :disabled="getEpisodeStatus(episode).voted || submitting"
+                          :class="[
+                            'w-full px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest transition-all active:scale-95',
+                            getEpisodeStatus(episode).voted 
+                              ? 'bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed' 
+                              : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-500'
+                          ]"
+                          @click.stop="voteEpisode(episode)"
+                      >
+                        <span class="flex items-center justify-center gap-1">
+                          <Icon name="heart" :size="12" :class="getEpisodeStatus(episode).voted ? 'fill-current' : ''" />
+                          <span>{{ getEpisodeStatus(episode).voted ? '已点赞' : '点赞' }}</span>
+                        </span>
+                      </button>
+                    </div>
+                  </template>
+                  
+                  <template v-else>
+                    <!-- 选择投稿按钮（未投稿） -->
+                    <button
+                        :disabled="submitting"
+                        class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                        @click.stop="selectEpisode(episode)"
+                    >
+                      <span v-if="submitting && selectedEpisodeCid === episode.cid">提交中...</span>
+                      <span v-else><span class="hidden sm:inline">选择</span>投稿</span>
+                    </button>
+                  </template>
                 </div>
               </div>
             </div>
@@ -122,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 
@@ -136,10 +170,14 @@ const props = defineProps({
   submittedEpisodes: {
     type: Array,
     default: () => []
+  },
+  currentUserId: {
+    type: Number,
+    default: null
   }
 })
 
-const emit = defineEmits(['close', 'submit', 'play'])
+const emit = defineEmits(['close', 'submit', 'play', 'vote'])
 
 const { getCurrentSong, getPlayingStatus, pauseSong } = useAudioPlayer()
 const currentSong = getCurrentSong()
@@ -147,6 +185,10 @@ const isPlaying = getPlayingStatus()
 
 const submitting = ref(false)
 const selectedEpisodeCid = ref(null)
+
+// 计算已投稿状态
+const submittedCount = computed(() => props.submittedEpisodes.length)
+const totalEpisodes = computed(() => props.episodes.length)
 
 const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60)
@@ -180,6 +222,43 @@ const isEpisodeSubmitted = (episode) => {
   })
 }
 
+// 获取 episode 的完整状态（包括 voted）
+const getEpisodeStatus = (episode) => {
+  const submittedSong = props.submittedEpisodes.find(song => {
+    if (!song.musicId) return false
+    const cid = song.musicId.includes(':') ? song.musicId.split(':')[1] : null
+    return cid === String(episode.cid)
+  })
+  
+  if (submittedSong) {
+    return {
+      submitted: true,
+      voted: submittedSong.voted || false,
+      songId: submittedSong.id,
+      requesterId: submittedSong.requesterId,
+      played: submittedSong.played || false,
+      scheduled: submittedSong.scheduled || false
+    }
+  }
+  
+  return {
+    submitted: false,
+    voted: false,
+    songId: null,
+    requesterId: null,
+    played: episode.played || false,
+    scheduled: episode.scheduled || false
+  }
+}
+
+const isMyEpisode = (episode) => {
+  if (!props.currentUserId) return false
+  
+  // 使用 getEpisodeStatus 获取统一的状态信息，避免直接修改 props
+  const status = getEpisodeStatus(episode)
+  return status.requesterId === props.currentUserId
+}
+
 const togglePlay = (episode) => {
   if (isCurrentEpisode(episode) && isPlaying.value) {
     pauseSong()
@@ -204,6 +283,21 @@ const selectEpisode = (episode) => {
   submitting.value = true
   selectedEpisodeCid.value = episode.cid
   emit('submit', episode)
+}
+
+const voteEpisode = (episode) => {
+  if (submitting.value) {
+    return
+  }
+  
+  // 使用 getEpisodeStatus 获取统一的状态信息，避免重复查找
+  const { songId, voted } = getEpisodeStatus(episode)
+  
+  if (!songId || voted) {
+    return
+  }
+  
+  emit('vote', { ...episode, songId })
 }
 
 const close = () => {
