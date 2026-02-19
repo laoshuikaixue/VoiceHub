@@ -2,7 +2,6 @@ import { verifyRegistrationResponse } from '@simplewebauthn/server'
 import { getWebAuthnChallenge, clearWebAuthnChallenge } from '~~/server/utils/webauthn-token'
 import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
 import { db, eq, and, userIdentities } from '~/drizzle/db'
-import { isoBase64URL } from '@simplewebauthn/server/helpers'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

@@ -1,9 +1,9 @@
-import { createError, getCookie, setCookie, deleteCookie } from 'h3'
+import { createError, getCookie, setCookie, deleteCookie, type H3Event } from 'h3'
 import { JWTEnhanced } from './jwt-enhanced'
 
 const COOKIE_NAME = 'webauthn_challenge'
 
-export function setWebAuthnChallenge(event: any, challenge: string, userId: string) {
+export function setWebAuthnChallenge(event: H3Event, challenge: string, userId: string) {
   const token = JWTEnhanced.sign({
     challenge,
     userId,
@@ -19,7 +19,7 @@ export function setWebAuthnChallenge(event: any, challenge: string, userId: stri
   })
 }
 
-export function getWebAuthnChallenge(event: any): { challenge: string; userId: string } | null {
+export function getWebAuthnChallenge(event: H3Event): { challenge: string; userId: string } | null {
   const token = getCookie(event, COOKIE_NAME)
   if (!token) return null
 
@@ -32,6 +32,6 @@ export function getWebAuthnChallenge(event: any): { challenge: string; userId: s
   }
 }
 
-export function clearWebAuthnChallenge(event: any) {
+export function clearWebAuthnChallenge(event: H3Event) {
   deleteCookie(event, COOKIE_NAME)
 }

@@ -343,9 +343,17 @@ const handleWebAuthnRegister = async () => {
     
     showToast('设备添加成功', 'success')
     await fetchIdentities()
-  } catch (e) {
+  } catch (e: unknown) {
     console.error(e)
-    showToast(e.message || '添加设备失败', 'error')
+    let message = '添加设备失败'
+    if (e instanceof Error) {
+      message = e.message
+    } else if (typeof e === 'object' && e !== null) {
+      // 尝试从 API 错误对象中提取 message
+      const err = e as any
+      message = err.data?.message || err.message || message
+    }
+    showToast(message, 'error')
   } finally {
     actionLoading.value = false
   }

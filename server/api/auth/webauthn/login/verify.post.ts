@@ -2,7 +2,6 @@ import { verifyAuthenticationResponse } from '@simplewebauthn/server'
 import { getWebAuthnChallenge, clearWebAuthnChallenge } from '~~/server/utils/webauthn-token'
 import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
 import { db, eq, and, userIdentities } from '~/drizzle/db'
-import { isoBase64URL } from '@simplewebauthn/server/helpers'
 import { createError, defineEventHandler, setCookie } from 'h3'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 
@@ -27,6 +26,11 @@ export default defineEventHandler(async (event) => {
 
   if (!identity) {
     throw createError({ statusCode: 400, message: '未找到该 Passkey 关联的账号' })
+  }
+
+  // 检查用户状态
+  if (identity.user.status !== 'active') {
+    throw createError({ statusCode: 403, message: '账号已被禁用或注销' })
   }
 
   // 解析存储的 JSON 数据

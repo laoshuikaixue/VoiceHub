@@ -237,9 +237,11 @@ const handleWebAuthnLogin = async () => {
       await auth.initAuth()
       await navigateTo(verification.redirect || '/')
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('WebAuthn login error:', err)
-    error.value = err.data?.message || err.message || 'Passkey 登录失败'
+    // 简单的类型守卫
+    const errorObj = err as any
+    error.value = errorObj.data?.message || errorObj.message || 'Passkey 登录失败'
   } finally {
     loading.value = false
   }
