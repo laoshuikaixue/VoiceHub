@@ -3,8 +3,11 @@
     <div class="rules-section desktop-only-rules">
       <h2 class="section-title">投稿须知</h2>
       <div class="rules-content-desktop">
-        <div v-if="submissionGuidelines" class="guidelines-content"
-             v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+        <div
+          v-if="submissionGuidelines"
+          class="guidelines-content"
+          v-html="submissionGuidelines.replace(/\n/g, '<br>')"
+        />
         <div v-else class="default-guidelines">
           <p>1. 投稿时无需加入书名号</p>
           <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
@@ -12,7 +15,10 @@
           <p>4. 点播的歌曲将由管理员进行审核</p>
           <p>5. 审核通过后将安排在播放时段播出</p>
           <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
-          <p>7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。</p>
+          <p>
+            7.
+            本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。
+          </p>
           <p>8. 最终解释权归广播站所有</p>
         </div>
       </div>
@@ -25,16 +31,24 @@
         投稿须知
       </h3>
       <div class="rules-content">
-        <div v-if="submissionGuidelines" class="guidelines-content"
-             v-html="submissionGuidelines.replace(/\n/g, '<br>')"></div>
+        <div
+          v-if="submissionGuidelines"
+          class="guidelines-content"
+          v-html="submissionGuidelines.replace(/\n/g, '<br>')"
+        />
         <div v-else class="default-guidelines">
           <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
           <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
           <div class="rule-item"><span>3.</span> 禁止投递含有违规内容的歌曲</div>
           <div class="rule-item"><span>4.</span> 点播的歌曲将由管理员进行审核</div>
           <div class="rule-item"><span>5.</span> 审核通过后将安排在播放时段播出</div>
-          <div class="rule-item"><span>6.</span> 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</div>
-          <div class="rule-item"><span>7.</span> 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。</div>
+          <div class="rule-item">
+            <span>6.</span> 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出
+          </div>
+          <div class="rule-item">
+            <span>7.</span>
+            本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。
+          </div>
           <div class="rule-item"><span>8.</span> 最终解释权归广播站所有</div>
         </div>
       </div>
@@ -49,19 +63,29 @@
             <div class="search-label">歌曲搜索</div>
             <div class="search-input-group">
               <input
-                  id="title"
-                  v-model="title"
-                  class="search-input"
-                  placeholder="请输入歌曲名称"
-                  required
-                  type="text"
-                  @input="checkSimilarSongs"
-              />
-              <button :disabled="loading || searching || !title.trim()" class="search-button" type="submit">
+                id="title"
+                v-model="title"
+                class="search-input"
+                placeholder="请输入歌曲名称"
+                required
+                type="text"
+                @input="checkSimilarSongs"
+              >
+              <button
+                :disabled="loading || searching || !title.trim()"
+                class="search-button"
+                type="submit"
+              >
                 {{ loading || searching ? '处理中...' : '搜索' }}
               </button>
             </div>
-            <button v-if="showImportSemesterBtn" class="import-semester-btn" type="button" @click="showImportSongsModal = true" title="从往期导入">
+            <button
+              v-if="showImportSemesterBtn"
+              class="import-semester-btn"
+              type="button"
+              title="从往期导入"
+              @click="showImportSongsModal = true"
+            >
               <Icon :size="16" name="history" />
               <span class="btn-text">从往期导入</span>
             </button>
@@ -73,12 +97,20 @@
             <div class="collaborators-list">
               <div v-for="user in collaborators" :key="user.id" class="collaborator-tag">
                 <span class="collaborator-name">{{ user.name }}</span>
-                <button class="remove-collaborator" type="button" @click="removeCollaborator(user.id)">
-                  <Icon :size="12" name="close"/>
+                <button
+                  class="remove-collaborator"
+                  type="button"
+                  @click="removeCollaborator(user.id)"
+                >
+                  <Icon :size="12" name="close" />
                 </button>
               </div>
-              <button class="add-collaborator-btn" type="button" @click="showUserSearchModal = true">
-                <Icon :size="14" name="plus"/>
+              <button
+                class="add-collaborator-btn"
+                type="button"
+                @click="showUserSearchModal = true"
+              >
+                <Icon :size="14" name="plus" />
                 添加
               </button>
             </div>
@@ -88,9 +120,15 @@
         <!-- 搜索结果容器 -->
         <div class="search-results-container">
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
-          <div v-if="user && submissionStatus && submissionStatus.limitEnabled" class="submission-status-horizontal">
+          <div
+            v-if="user && submissionStatus && submissionStatus.limitEnabled"
+            class="submission-status-horizontal"
+          >
             <!-- 超级管理员提示 -->
-            <div v-if="user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN')" class="admin-notice-horizontal">
+            <div
+              v-if="user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN')"
+              class="admin-notice-horizontal"
+            >
               <span class="admin-icon">👑</span>
               <span class="admin-text">您是管理员，不受投稿限制</span>
             </div>
@@ -99,35 +137,54 @@
             <div v-else-if="submissionStatus.submissionClosed" class="submission-closed-notice">
               <span class="closed-icon">🚫</span>
               <span class="closed-text">
-                {{ submissionStatus.timeLimitationEnabled && !submissionStatus.currentTimePeriod ? '当前不在投稿开放时段' : '投稿功能已关闭' }}
+                {{
+                  submissionStatus.timeLimitationEnabled && !submissionStatus.currentTimePeriod
+                    ? '当前不在投稿开放时段'
+                    : '投稿功能已关闭'
+                }}
               </span>
             </div>
 
             <!-- 投稿状态内容 -->
             <div v-else class="status-content-horizontal">
               <!-- 当前时段信息 -->
-              <div v-if="submissionStatus.timeLimitationEnabled && submissionStatus.currentTimePeriod" class="status-item-horizontal">
+              <div
+                v-if="submissionStatus.timeLimitationEnabled && submissionStatus.currentTimePeriod"
+                class="status-item-horizontal"
+              >
                 <span class="status-label">当前时段：</span>
                 <span class="status-value">{{ submissionStatus.currentTimePeriod.name }}</span>
-                <span v-if="submissionStatus.currentTimePeriod.expected > 0" class="status-remaining">
-                  (已接纳 {{ submissionStatus.currentTimePeriod.accepted }} / {{ submissionStatus.currentTimePeriod.expected }})
+                <span
+                  v-if="submissionStatus.currentTimePeriod.expected > 0"
+                  class="status-remaining"
+                >
+                  (已接纳 {{ submissionStatus.currentTimePeriod.accepted }} /
+                  {{ submissionStatus.currentTimePeriod.expected }})
                 </span>
               </div>
 
               <div v-if="submissionStatus.dailyLimit" class="status-item-horizontal">
                 <span class="status-label">今日投稿：</span>
-                <span class="status-value">{{ submissionStatus.dailyUsed }} / {{ submissionStatus.dailyLimit }}</span>
-                <span class="status-remaining">剩余 {{
-                    Math.max(0, submissionStatus.dailyLimit - submissionStatus.dailyUsed)
-                  }}</span>
+                <span class="status-value"
+                  >{{ submissionStatus.dailyUsed }} / {{ submissionStatus.dailyLimit }}</span
+                >
+                <span class="status-remaining"
+                  >剩余
+                  {{ Math.max(0, submissionStatus.dailyLimit - submissionStatus.dailyUsed) }}</span
+                >
               </div>
 
               <div v-if="submissionStatus.weeklyLimit" class="status-item-horizontal">
                 <span class="status-label">本周投稿：</span>
-                <span class="status-value">{{ submissionStatus.weeklyUsed }} / {{ submissionStatus.weeklyLimit }}</span>
-                <span class="status-remaining">剩余 {{
+                <span class="status-value"
+                  >{{ submissionStatus.weeklyUsed }} / {{ submissionStatus.weeklyLimit }}</span
+                >
+                <span class="status-remaining"
+                  >剩余
+                  {{
                     Math.max(0, submissionStatus.weeklyLimit - submissionStatus.weeklyUsed)
-                  }}</span>
+                  }}</span
+                >
               </div>
             </div>
           </div>
@@ -136,23 +193,23 @@
           <div class="platform-selection-container">
             <div class="platform-selection">
               <button
-                  :class="['platform-btn', { active: platform === 'netease' }]"
-                  type="button"
-                  @click="switchPlatform('netease')"
+                :class="['platform-btn', { active: platform === 'netease' }]"
+                type="button"
+                @click="switchPlatform('netease')"
               >
                 网易云音乐
               </button>
               <button
-                  :class="['platform-btn', { active: platform === 'tencent' }]"
-                  type="button"
-                  @click="switchPlatform('tencent')"
+                :class="['platform-btn', { active: platform === 'tencent' }]"
+                type="button"
+                @click="switchPlatform('tencent')"
               >
                 QQ音乐
               </button>
               <button
-                  :class="['platform-btn', { active: platform === 'bilibili' }]"
-                  type="button"
-                  @click="switchPlatform('bilibili')"
+                :class="['platform-btn', { active: platform === 'bilibili' }]"
+                type="button"
+                @click="switchPlatform('bilibili')"
               >
                 哔哩哔哩
               </button>
@@ -162,17 +219,27 @@
             <div v-if="platform === 'netease'" class="netease-options">
               <div class="netease-header">
                 <div class="netease-badge">
-                  <span class="netease-dot"></span>
+                  <span class="netease-dot"/>
                   <span class="netease-title">网易云音乐账号</span>
                 </div>
                 <div class="header-actions">
-                  <button v-if="isNeteaseLoggedIn" class="header-btn" title="导出Cookie数据" type="button"
-                          @click="handleExportData">
-                    <Icon :size="14" name="download"/>
+                  <button
+                    v-if="isNeteaseLoggedIn"
+                    class="header-btn"
+                    title="导出Cookie数据"
+                    type="button"
+                    @click="handleExportData"
+                  >
+                    <Icon :size="14" name="download" />
                     导出
                   </button>
-                  <button v-if="isNeteaseLoggedIn" class="logout-btn" type="button" @click="handleLogoutNetease">
-                    <Icon :size="14" name="logout"/>
+                  <button
+                    v-if="isNeteaseLoggedIn"
+                    class="logout-btn"
+                    type="button"
+                    @click="handleLogoutNetease"
+                  >
+                    <Icon :size="14" name="logout" />
                     退出
                   </button>
                 </div>
@@ -181,7 +248,7 @@
               <!-- 加载中状态 -->
               <div v-if="checkingNeteaseLogin" class="netease-loading-state">
                 <div class="loading-content">
-                  <div class="loading-spinner"></div>
+                  <div class="loading-spinner"/>
                   <span class="loading-text">刷新中</span>
                 </div>
               </div>
@@ -197,7 +264,7 @@
                     立即登录
                   </button>
                   <button class="import-btn" type="button" @click="handleImportClick">
-                    <Icon :size="14" name="upload"/>
+                    <Icon :size="14" name="upload" />
                     导入数据
                   </button>
                 </div>
@@ -207,29 +274,41 @@
               <div v-else class="user-status">
                 <div class="user-compact-row">
                   <div class="user-profile">
-                    <img v-if="neteaseUser?.avatarUrl" :src="convertToHttps(neteaseUser.avatarUrl)" alt="avatar"
-                         class="user-avatar"/>
+                    <img
+                      v-if="neteaseUser?.avatarUrl"
+                      :src="convertToHttps(neteaseUser.avatarUrl)"
+                      alt="avatar"
+                      class="user-avatar"
+                    >
                     <span class="user-name">{{ neteaseUser?.nickname || '已登录' }}</span>
                   </div>
 
                   <div class="search-type-switch">
                     <label :class="['radio-label', { active: searchType === 1 }]">
-                      <input v-model="searchType" :value="1" type="radio"> 单曲
+                      <input v-model="searchType" :value="1" type="radio" > 单曲
                     </label>
                     <label :class="['radio-label', { active: searchType === 1009 }]">
-                      <input v-model="searchType" :value="1009" type="radio"> 播客
+                      <input v-model="searchType" :value="1009" type="radio" > 播客
                     </label>
                   </div>
 
                   <div class="user-actions-row">
-                    <button class="action-btn-compact" title="最近播放" type="button"
-                            @click="showRecentSongsModal = true">
-                      <Icon :size="14" name="history"/>
+                    <button
+                      class="action-btn-compact"
+                      title="最近播放"
+                      type="button"
+                      @click="showRecentSongsModal = true"
+                    >
+                      <Icon :size="14" name="history" />
                       <span>最近播放</span>
                     </button>
-                    <button class="action-btn-compact" title="从歌单投稿" type="button"
-                            @click="showPlaylistModal = true">
-                      <Icon :size="14" name="playlist"/>
+                    <button
+                      class="action-btn-compact"
+                      title="从歌单投稿"
+                      type="button"
+                      @click="showPlaylistModal = true"
+                    >
+                      <Icon :size="14" name="playlist" />
                       <span>从歌单投稿</span>
                     </button>
                   </div>
@@ -241,7 +320,7 @@
           <div class="results-content">
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
-              <div class="loading-spinner"></div>
+              <div class="loading-spinner"/>
               <p class="loading-text">处理中...</p>
             </div>
 
@@ -250,17 +329,20 @@
               <div v-if="searchResults.length > 0 && !searching" key="results" class="results-list">
                 <TransitionGroup class="results-grid" name="result-item" tag="div">
                   <div
-                      v-for="(result, index) in searchResults"
-                      :key="`${platform}-${result.id || index}`"
-                      class="result-item group"
+                    v-for="(result, index) in searchResults"
+                    :key="`${platform}-${result.id || index}`"
+                    class="result-item group"
                   >
-                    <div class="result-cover" @click.stop="isBilibiliMultiP(result) ? submitSong(result) : playSong(result)">
-                      <img 
-                        :src="convertToHttps(result.cover)" 
-                        alt="封面" 
+                    <div
+                      class="result-cover"
+                      @click.stop="isBilibiliMultiP(result) ? submitSong(result) : playSong(result)"
+                    >
+                      <img
+                        :src="convertToHttps(result.cover)"
+                        alt="封面"
                         class="cover-img"
                         referrerpolicy="no-referrer"
-                      />
+                      >
                       <div v-if="!isBilibiliMultiP(result)" class="play-overlay-container">
                         <div class="play-button-wrapper">
                           <Icon name="play" :size="20" class="play-icon" />
@@ -282,17 +364,28 @@
                       >
                         <Icon name="cloud-upload" :size="18" />
                       </button>
-                      
+
                       <!-- 多P视频的特殊处理 -->
-                      <div v-if="isBilibiliMultiP(result) && getBilibiliEpisodeStatus(result)?.allSubmitted" class="similar-song-info">
+                      <div
+                        v-if="
+                          isBilibiliMultiP(result) && getBilibiliEpisodeStatus(result)?.allSubmitted
+                        "
+                        class="similar-song-info"
+                      >
                         <span class="similar-text">所有剧集已存在</span>
                       </div>
-                      <div v-else-if="isBilibiliMultiP(result) && getBilibiliEpisodeStatus(result)?.partialSubmitted" class="similar-song-info">
+                      <div
+                        v-else-if="
+                          isBilibiliMultiP(result) &&
+                          getBilibiliEpisodeStatus(result)?.partialSubmitted
+                        "
+                        class="similar-song-info"
+                      >
                         <span class="similar-text">部分剧集已存在</span>
                         <button
-                            :disabled="submitting"
-                            class="select-btn"
-                            @click.stop.prevent="submitSong(result)"
+                          :disabled="submitting"
+                          class="select-btn"
+                          @click.stop.prevent="submitSong(result)"
                         >
                           选择剧集
                         </button>
@@ -300,71 +393,113 @@
                       <!-- 检查是否已存在相似歌曲 -->
                       <div v-else-if="getSimilarSong(result)" class="similar-song-info">
                         <!-- 根据歌曲状态显示不同的文本 -->
-                        <span v-if="getSimilarSong(result)?.played" class="similar-text status-played">
-                          {{ isSuperAdmin ? '歌曲已播放' : (enableReplayRequests ? '歌曲已播放' : '歌曲已播放') }}
+                        <span
+                          v-if="getSimilarSong(result)?.played"
+                          class="similar-text status-played"
+                        >
+                          {{
+                            isSuperAdmin
+                              ? '歌曲已播放'
+                              : enableReplayRequests
+                                ? '歌曲已播放'
+                                : '歌曲已播放'
+                          }}
                         </span>
-                        <span v-else-if="getSimilarSong(result)?.scheduled"
-                              class="similar-text status-scheduled">歌曲已排期</span>
+                        <span
+                          v-else-if="getSimilarSong(result)?.scheduled"
+                          class="similar-text status-scheduled"
+                          >歌曲已排期</span
+                        >
                         <span v-else class="similar-text">歌曲已存在</span>
 
                         <!-- 超级管理员对已播放的相似歌曲：显示继续投稿 -->
                         <button
-                            v-if="getSimilarSong(result)?.played && isSuperAdmin"
-                            :disabled="submitting"
-                            class="select-btn"
-                            @click.stop.prevent="submitSong(result, { forceResubmit: true })"
+                          v-if="getSimilarSong(result)?.played && isSuperAdmin"
+                          :disabled="submitting"
+                          class="select-btn"
+                          @click.stop.prevent="submitSong(result, { forceResubmit: true })"
                         >
                           继续投稿
                         </button>
 
                         <!-- 开启重播申请且非管理员对已播放的相似歌曲：显示申请重播 -->
                         <button
-                    v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
-                    :disabled="isReplayButtonDisabled(getSimilarSong(result))"
-                    :title="getReplayButtonTitle(getSimilarSong(result))"
-                    class="replay-btn"
-                    @click.stop.prevent="handleRequestReplay(getSimilarSong(result))"
-                >
+                          v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
+                          :disabled="isReplayButtonDisabled(getSimilarSong(result))"
+                          :title="getReplayButtonTitle(getSimilarSong(result))"
+                          class="replay-btn"
+                          @click.stop.prevent="handleRequestReplay(getSimilarSong(result))"
+                        >
                           {{ getReplayButtonText(getSimilarSong(result)) }}
                         </button>
 
                         <!-- 其他用户：显示点赞按钮，根据状态设置不同样式 -->
                         <button
-                            v-else
-                            :class="{
-                            'disabled': getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled || getSimilarSong(result)?.voted || submitting
+                          v-else
+                          :class="{
+                            disabled:
+                              getSimilarSong(result)?.played ||
+                              getSimilarSong(result)?.scheduled ||
+                              getSimilarSong(result)?.voted ||
+                              submitting
                           }"
-                            :disabled="getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled || getSimilarSong(result)?.voted || submitting"
-                            :title="
-                            getSimilarSong(result)?.played ? '已播放的歌曲不能点赞' :
-                            getSimilarSong(result)?.scheduled ? '已排期的歌曲不能点赞' :
-                            getSimilarSong(result)?.voted ? '已点赞' : '点赞'
+                          :disabled="
+                            getSimilarSong(result)?.played ||
+                            getSimilarSong(result)?.scheduled ||
+                            getSimilarSong(result)?.voted ||
+                            submitting
                           "
-                            class="like-btn"
-                            @click.stop.prevent="getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled ? null : handleLikeFromSearch(getSimilarSong(result), result)"
+                          :title="
+                            getSimilarSong(result)?.played
+                              ? '已播放的歌曲不能点赞'
+                              : getSimilarSong(result)?.scheduled
+                                ? '已排期的歌曲不能点赞'
+                                : getSimilarSong(result)?.voted
+                                  ? '已点赞'
+                                  : '点赞'
+                          "
+                          class="like-btn"
+                          @click.stop.prevent="
+                            getSimilarSong(result)?.played || getSimilarSong(result)?.scheduled
+                              ? null
+                              : handleLikeFromSearch(getSimilarSong(result), result)
+                          "
                         >
-                          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <svg
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                          >
                             <path
-                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                            />
                           </svg>
                           {{
-                            getSimilarSong(result)?.played ? '已播放' :
-                                getSimilarSong(result)?.scheduled ? '已排期' :
-                                    getSimilarSong(result)?.voted ? '已点赞' : '点赞'
+                            getSimilarSong(result)?.played
+                              ? '已播放'
+                              : getSimilarSong(result)?.scheduled
+                                ? '已排期'
+                                : getSimilarSong(result)?.voted
+                                  ? '已点赞'
+                                  : '点赞'
                           }}
                         </button>
                       </div>
                       <button
-                          v-else
-                          :disabled="submitting"
-                          class="select-btn"
-                          @click.stop.prevent="submitSong(result)"
+                        v-else
+                        :disabled="submitting"
+                        class="select-btn"
+                        @click.stop.prevent="submitSong(result)"
                       >
                         {{
-                          submitting ? '处理中...' : (
-                            (platform === 'netease' && searchType === 1009) ? '选择节目' :
-                            (isBilibiliMultiP(result) ? '选择剧集' : '选择投稿')
-                          )
+                          submitting
+                            ? '处理中...'
+                            : platform === 'netease' && searchType === 1009
+                              ? '选择节目'
+                              : isBilibiliMultiP(result)
+                                ? '选择剧集'
+                                : '选择投稿'
                         }}
                       </button>
                     </div>
@@ -373,11 +508,7 @@
 
                 <!-- 手动输入按钮 -->
                 <div class="no-results-action">
-                  <button
-                      class="manual-submit-btn"
-                      type="button"
-                      @click="showManualModal = true"
-                  >
+                  <button class="manual-submit-btn" type="button" @click="showManualModal = true">
                     以上没有我想要的歌曲，手动输入提交
                   </button>
                 </div>
@@ -388,11 +519,7 @@
                 <div class="empty-icon">🔍</div>
                 <p class="empty-text">未找到相关歌曲</p>
                 <p class="empty-hint">试试其他关键词或切换平台</p>
-                <button
-                    class="manual-submit-btn"
-                    type="button"
-                    @click="showManualModal = true"
-                >
+                <button class="manual-submit-btn" type="button" @click="showManualModal = true">
                   手动输入提交
                 </button>
               </div>
@@ -400,7 +527,7 @@
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img alt="搜索歌曲" class="search-svg" :src="searchIcon"/>
+                  <img alt="搜索歌曲" class="search-svg" :src="searchIcon" >
                 </div>
               </div>
             </Transition>
@@ -408,18 +535,15 @@
         </div>
 
         <!-- 播出时段选择 -->
-        <div
-            v-if="playTimeSelectionEnabled && playTimes.length > 0"
-            class="form-group"
-        >
+        <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
           <div class="input-wrapper">
             <CustomSelect
-                v-model="preferredPlayTimeId"
-                :options="formattedPlayTimes"
-                label="期望播出时段"
-                label-key="displayName"
-                value-key="id"
-                placeholder="选择时段"
+              v-model="preferredPlayTimeId"
+              :options="formattedPlayTimes"
+              label="期望播出时段"
+              label-key="displayName"
+              value-key="id"
+              placeholder="选择时段"
             />
           </div>
         </div>
@@ -428,82 +552,112 @@
       <div v-if="groupedSimilarSongs.length > 0" class="similar-song-alert">
         <div class="alert-header">
           <div class="alert-header-left">
-            <Icon :size="16" class="alert-icon" name="warning"/>
+            <Icon :size="16" class="alert-icon" name="warning" />
             <span class="alert-title">发现可能相似的歌曲</span>
           </div>
           <!-- 宽屏时显示在右上角的继续投稿按钮 -->
-          <button :disabled="submitting" class="ignore-btn desktop-continue-btn" type="button" @click="ignoreSimilar">
+          <button
+            :disabled="submitting"
+            class="ignore-btn desktop-continue-btn"
+            type="button"
+            @click="ignoreSimilar"
+          >
             继续投稿
           </button>
         </div>
         <div class="similar-songs-list">
           <!-- 遍历分组后的相似歌曲 -->
-          <div v-for="group in groupedSimilarSongs" :key="group.isSingle ? group.song.id : group.bvid" class="similar-song-item">
+          <div
+            v-for="group in groupedSimilarSongs"
+            :key="group.isSingle ? group.song.id : group.bvid"
+            class="similar-song-item"
+          >
             <!-- 单个歌曲（非哔哩哔哩多P） -->
             <template v-if="group.isSingle">
               <div class="song-info">
                 <p class="song-title">
                   《{{ group.song.title }} - {{ group.song.artist }}》
                   <span v-if="group.song.played" class="song-status status-played">已播放</span>
-                  <span v-else-if="group.song.scheduled" class="song-status status-scheduled">已排期</span>
+                  <span v-else-if="group.song.scheduled" class="song-status status-scheduled"
+                    >已排期</span
+                  >
                 </p>
                 <!-- 根据歌曲状态显示不同的提示 -->
                 <p v-if="group.song.played" class="alert-hint">
                   {{
-                    isSuperAdmin ? '该歌曲已播放，您可以继续投稿' : (enableReplayRequests ? '该歌曲已播放' : '该歌曲已播放，无法进行投票操作')
+                    isSuperAdmin
+                      ? '该歌曲已播放，您可以继续投稿'
+                      : enableReplayRequests
+                        ? '该歌曲已播放'
+                        : '该歌曲已播放，无法进行投票操作'
                   }}
                 </p>
-                <p v-else-if="group.song.scheduled" class="alert-hint">该歌曲已排期，无法进行投票操作</p>
-                <p v-else-if="!group.song.voted" class="alert-hint">该歌曲已在列表中，是否要投票支持？</p>
+                <p v-else-if="group.song.scheduled" class="alert-hint">
+                  该歌曲已排期，无法进行投票操作
+                </p>
+                <p v-else-if="!group.song.voted" class="alert-hint">
+                  该歌曲已在列表中，是否要投票支持？
+                </p>
                 <p v-else-if="group.song.voted" class="voted-status">
-                  <Icon :size="14" name="success" style="margin-right: 4px;"/>
+                  <Icon :size="14" name="success" style="margin-right: 4px" />
                   您已为此歌曲投票
                 </p>
               </div>
               <!-- 只有在歌曲未排期、未播放且未投票时才显示投票按钮 -->
-              <div v-if="!group.song.voted && !group.song.played && !group.song.scheduled" class="song-actions">
+              <div
+                v-if="!group.song.voted && !group.song.played && !group.song.scheduled"
+                class="song-actions"
+              >
                 <button
-                    :disabled="voting || submitting"
-                    class="vote-btn small"
-                    type="button"
-                    @click="voteForSimilar(group.song)"
+                  :disabled="voting || submitting"
+                  class="vote-btn small"
+                  type="button"
+                  @click="voteForSimilar(group.song)"
                 >
                   {{ voting ? '投票中...' : '投票支持' }}
                 </button>
               </div>
               <!-- 如果歌曲已播放且开启了重播申请（超级管理员不显示） -->
-              <div v-if="group.song.played && enableReplayRequests && !isSuperAdmin && group.song.semester === currentSemester?.name" class="song-actions">
+              <div
+                v-if="
+                  group.song.played &&
+                  enableReplayRequests &&
+                  !isSuperAdmin &&
+                  group.song.semester === currentSemester?.name
+                "
+                class="song-actions"
+              >
                 <button
-                    :disabled="isReplayButtonDisabled(group.song)"
-                    :title="getReplayButtonTitle(group.song)"
-                    class="replay-btn small"
-                    type="button"
-                    @click="handleRequestReplay(group.song)"
+                  :disabled="isReplayButtonDisabled(group.song)"
+                  :title="getReplayButtonTitle(group.song)"
+                  class="replay-btn small"
+                  type="button"
+                  @click="handleRequestReplay(group.song)"
                 >
                   {{ getReplayButtonText(group.song) }}
                 </button>
               </div>
             </template>
-            
+
             <!-- 哔哩哔哩多P合集 -->
             <template v-else>
               <div class="song-info">
                 <p class="song-title">
                   《{{ group.title }} - {{ group.artist }}》
                   <span v-if="group.allPlayed" class="song-status status-played">全部已播放</span>
-                  <span v-else-if="group.allScheduled" class="song-status status-scheduled">全部已排期</span>
+                  <span v-else-if="group.allScheduled" class="song-status status-scheduled"
+                    >全部已排期</span
+                  >
                   <span v-else class="song-status">{{ group.episodes.length }} 个剧集</span>
                 </p>
-                <p class="alert-hint">
-                  该合集有 {{ group.episodes.length }} 个剧集在列表中
-                </p>
+                <p class="alert-hint">该合集有 {{ group.episodes.length }} 个剧集在列表中</p>
               </div>
               <div class="song-actions">
                 <button
-                    :disabled="submitting"
-                    class="vote-btn small"
-                    type="button"
-                    @click.stop="openSimilarEpisodesModal(group)"
+                  :disabled="submitting"
+                  class="vote-btn small"
+                  type="button"
+                  @click.stop="openSimilarEpisodesModal(group)"
                 >
                   查看详情
                 </button>
@@ -513,12 +667,16 @@
         </div>
         <!-- 移动端时显示在底部的继续投稿按钮 -->
         <div class="alert-actions mobile-continue-actions">
-          <button :disabled="submitting" class="ignore-btn mobile-continue-btn" type="button" @click="ignoreSimilar">
+          <button
+            :disabled="submitting"
+            class="ignore-btn mobile-continue-btn"
+            type="button"
+            @click="ignoreSimilar"
+          >
             继续投稿
           </button>
         </div>
       </div>
-
     </div>
 
     <!-- 历史学期导入弹窗 -->
@@ -530,95 +688,102 @@
 
     <!-- 网易云音乐登录弹窗 -->
     <NeteaseLoginModal
-        :show="showLoginModal"
-        @close="showLoginModal = false"
-        @login-success="handleLoginSuccess"
+      :show="showLoginModal"
+      @close="showLoginModal = false"
+      @login-success="handleLoginSuccess"
     />
 
     <!-- 播客节目列表弹窗 -->
     <PodcastEpisodesModal
-        ref="podcastModalRef"
-        :cookie="podcastCookie"
-        :radio-id="selectedPodcastId"
-        :radio-name="selectedPodcastName"
-        :show="showPodcastModal"
-        @close="showPodcastModal = false"
-        @play="handlePodcastPlay"
-        @submit="handlePodcastSubmit"
+      ref="podcastModalRef"
+      :cookie="podcastCookie"
+      :radio-id="selectedPodcastId"
+      :radio-name="selectedPodcastName"
+      :show="showPodcastModal"
+      @close="showPodcastModal = false"
+      @play="handlePodcastPlay"
+      @submit="handlePodcastSubmit"
     />
 
     <!-- Bilibili 剧集选择弹窗 -->
     <BilibiliEpisodesModal
-        ref="bilibiliModalRef"
-        :show="showBilibiliEpisodesModal"
-        :video="selectedBilibiliVideo"
-        :episodes="bilibiliEpisodes"
-        :submitted-episodes="getBilibiliEpisodeStatus(selectedBilibiliVideo)?.submittedEpisodes || []"
-        :current-user-id="user?.id"
-        @close="showBilibiliEpisodesModal = false"
-        @play="handleBilibiliEpisodePlay"
-        @submit="handleBilibiliEpisodeSelect"
-        @vote="handleEpisodeVote"
+      ref="bilibiliModalRef"
+      :show="showBilibiliEpisodesModal"
+      :video="selectedBilibiliVideo"
+      :episodes="bilibiliEpisodes"
+      :submitted-episodes="getBilibiliEpisodeStatus(selectedBilibiliVideo)?.submittedEpisodes || []"
+      :current-user-id="user?.id"
+      @close="showBilibiliEpisodesModal = false"
+      @play="handleBilibiliEpisodePlay"
+      @submit="handleBilibiliEpisodeSelect"
+      @vote="handleEpisodeVote"
     />
 
     <!-- 上传到网易云音乐弹窗 -->
     <NeteaseUploadDialog
-        :show="showUploadDialog"
-        :song="selectedUploadSong"
-        @close="showUploadDialog = false"
-        @show-login="handleShowLogin"
+      :show="showUploadDialog"
+      :song="selectedUploadSong"
+      @close="showUploadDialog = false"
+      @show-login="handleShowLogin"
     />
 
     <!-- 最近播放歌曲弹窗 -->
     <RecentSongsModal
-        ref="recentSongsModalRef"
-        :cookie="neteaseCookie"
-        :show="showRecentSongsModal"
-        @close="showRecentSongsModal = false"
-        @play="handleRecentSongPlay"
-        @submit="handleRecentSongSubmit"
+      ref="recentSongsModalRef"
+      :cookie="neteaseCookie"
+      :show="showRecentSongsModal"
+      @close="showRecentSongsModal = false"
+      @play="handleRecentSongPlay"
+      @submit="handleRecentSongSubmit"
     />
 
     <!-- 歌单选择弹窗 -->
     <PlaylistSelectionModal
-        ref="playlistModalRef"
-        :cookie="neteaseCookie"
-        :show="showPlaylistModal"
-        :uid="neteaseUser?.userId || neteaseUser?.id"
-        @close="showPlaylistModal = false"
-        @play="handlePlaylistPlay"
-        @submit="handlePlaylistSubmit"
+      ref="playlistModalRef"
+      :cookie="neteaseCookie"
+      :show="showPlaylistModal"
+      :uid="neteaseUser?.userId || neteaseUser?.id"
+      @close="showPlaylistModal = false"
+      @play="handlePlaylistPlay"
+      @submit="handlePlaylistSubmit"
     />
 
     <!-- 用户搜索弹窗 -->
     <UserSearchModal
-        v-model:show="showUserSearchModal"
-        :exclude-ids="[user?.id, ...collaborators.map(u => u.id)]"
-        :multiple="true"
-        title="添加联合投稿人"
-        @select="handleUserSelect"
+      v-model:show="showUserSearchModal"
+      :exclude-ids="[user?.id, ...collaborators.map((u) => u.id)]"
+      :multiple="true"
+      title="添加联合投稿人"
+      @select="handleUserSelect"
     />
 
     <!-- 手动输入弹窗 -->
     <Teleport to="body">
       <Transition
-          enter-active-class="transition duration-300 ease-out"
-          enter-from-class="opacity-0 scale-95"
-          enter-to-class="opacity-100 scale-100"
-          leave-active-class="transition duration-200 ease-in"
-          leave-from-class="opacity-100 scale-100"
-          leave-to-class="opacity-0 scale-95"
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
       >
-        <div v-if="showManualModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" @click.self="showManualModal = false">
-          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div
+          v-if="showManualModal"
+          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+          @click.self="showManualModal = false"
+        >
+          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
 
-          <div class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" @click.stop>
+          <div
+            class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            @click.stop
+          >
             <!-- Header -->
             <div class="flex items-center justify-between p-8 pb-4">
               <h3 class="text-xl font-black text-zinc-100 tracking-tight">手动输入歌曲信息</h3>
               <button
-                  class="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
-                  @click="showManualModal = false"
+                class="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+                @click="showManualModal = false"
               >
                 <X class="w-5 h-5" />
               </button>
@@ -629,14 +794,17 @@
               <div class="manual-form-fields space-y-6">
                 <!-- 歌曲名称 -->
                 <div class="form-field space-y-2">
-                  <label class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌曲名称</label>
+                  <label
+                    class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1"
+                    >歌曲名称</label
+                  >
                   <div class="input-container relative group">
                     <input
-                        :value="title"
-                        class="w-full px-6 py-4 bg-zinc-800/30 border border-zinc-800 rounded-2xl text-zinc-400 font-bold focus:outline-none cursor-not-allowed transition-all"
-                        readonly
-                        type="text"
-                    />
+                      :value="title"
+                      class="w-full px-6 py-4 bg-zinc-800/30 border border-zinc-800 rounded-2xl text-zinc-400 font-bold focus:outline-none cursor-not-allowed transition-all"
+                      readonly
+                      type="text"
+                    >
                     <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
                       <Lock class="w-4 h-4 text-zinc-600" />
                     </div>
@@ -645,44 +813,59 @@
 
                 <!-- 歌手名称 -->
                 <div class="form-field space-y-2">
-                  <label for="modal-artist" class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌手名称</label>
+                  <label
+                    for="modal-artist"
+                    class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1"
+                    >歌手名称</label
+                  >
                   <div class="input-container relative group">
                     <input
-                        id="modal-artist"
-                        v-model="manualArtist"
-                        class="w-full px-6 py-4 bg-zinc-800/50 border border-zinc-700/50 rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-700 focus:bg-zinc-800 transition-all"
-                        placeholder="请输入歌手名称"
-                        required
-                        type="text"
-                    />
+                      id="modal-artist"
+                      v-model="manualArtist"
+                      class="w-full px-6 py-4 bg-zinc-800/50 border border-zinc-700/50 rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-700 focus:bg-zinc-800 transition-all"
+                      placeholder="请输入歌手名称"
+                      required
+                      type="text"
+                    >
                   </div>
                 </div>
 
                 <!-- 歌曲封面地址 -->
                 <div class="form-field space-y-2">
-                  <label for="modal-cover" class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">歌曲封面地址（选填）</label>
+                  <label
+                    for="modal-cover"
+                    class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1"
+                    >歌曲封面地址（选填）</label
+                  >
                   <div class="input-container relative group">
                     <input
-                        id="modal-cover"
-                        v-model="manualCover"
-                        :class="[
-                          'w-full px-6 py-4 bg-zinc-800/50 border rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
-                          manualCover && !coverValidation.valid ? 'border-red-500/50 focus:ring-red-500/20' : 'border-zinc-700/50 focus:ring-zinc-700 focus:bg-zinc-800'
-                        ]"
-                        placeholder="请输入歌曲封面图片URL"
-                        type="url"
-                    />
-                    <div v-if="coverValidation.validating" class="absolute inset-y-0 right-4 flex items-center">
+                      id="modal-cover"
+                      v-model="manualCover"
+                      :class="[
+                        'w-full px-6 py-4 bg-zinc-800/50 border rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
+                        manualCover && !coverValidation.valid
+                          ? 'border-red-500/50 focus:ring-red-500/20'
+                          : 'border-zinc-700/50 focus:ring-zinc-700 focus:bg-zinc-800'
+                      ]"
+                      placeholder="请输入歌曲封面图片URL"
+                      type="url"
+                    >
+                    <div
+                      v-if="coverValidation.validating"
+                      class="absolute inset-y-0 right-4 flex items-center"
+                    >
                       <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
                     </div>
                   </div>
                   <Transition
-                      enter-active-class="transition duration-200 ease-out"
-                      enter-from-class="opacity-0 -translate-y-1"
-                      enter-to-class="opacity-100 translate-y-0"
+                    enter-active-class="transition duration-200 ease-out"
+                    enter-from-class="opacity-0 -translate-y-1"
+                    enter-to-class="opacity-100 translate-y-0"
                   >
                     <div v-if="manualCover && !coverValidation.validating" class="px-1">
-                      <p v-if="!coverValidation.valid" class="text-xs font-bold text-red-400">{{ coverValidation.error }}</p>
+                      <p v-if="!coverValidation.valid" class="text-xs font-bold text-red-400">
+                        {{ coverValidation.error }}
+                      </p>
                       <p v-else class="text-xs font-bold text-emerald-400 flex items-center">
                         <Check class="w-3 h-3 mr-1" /> URL有效
                       </p>
@@ -692,29 +875,40 @@
 
                 <!-- 播放地址 -->
                 <div class="form-field space-y-2">
-                  <label for="modal-play-url" class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1">播放地址（选填）</label>
+                  <label
+                    for="modal-play-url"
+                    class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1"
+                    >播放地址（选填）</label
+                  >
                   <div class="input-container relative group">
                     <input
-                        id="modal-play-url"
-                        v-model="manualPlayUrl"
-                        :class="[
-                          'w-full px-6 py-4 bg-zinc-800/50 border rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
-                          manualPlayUrl && !playUrlValidation.valid ? 'border-red-500/50 focus:ring-red-500/20' : 'border-zinc-700/50 focus:ring-zinc-700 focus:bg-zinc-800'
-                        ]"
-                        placeholder="请输入歌曲播放URL"
-                        type="url"
-                    />
-                    <div v-if="playUrlValidation.validating" class="absolute inset-y-0 right-4 flex items-center">
+                      id="modal-play-url"
+                      v-model="manualPlayUrl"
+                      :class="[
+                        'w-full px-6 py-4 bg-zinc-800/50 border rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
+                        manualPlayUrl && !playUrlValidation.valid
+                          ? 'border-red-500/50 focus:ring-red-500/20'
+                          : 'border-zinc-700/50 focus:ring-zinc-700 focus:bg-zinc-800'
+                      ]"
+                      placeholder="请输入歌曲播放URL"
+                      type="url"
+                    >
+                    <div
+                      v-if="playUrlValidation.validating"
+                      class="absolute inset-y-0 right-4 flex items-center"
+                    >
                       <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
                     </div>
                   </div>
                   <Transition
-                      enter-active-class="transition duration-200 ease-out"
-                      enter-from-class="opacity-0 -translate-y-1"
-                      enter-to-class="opacity-100 translate-y-0"
+                    enter-active-class="transition duration-200 ease-out"
+                    enter-from-class="opacity-0 -translate-y-1"
+                    enter-to-class="opacity-100 translate-y-0"
                   >
                     <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1">
-                      <p v-if="!playUrlValidation.valid" class="text-xs font-bold text-red-400">{{ playUrlValidation.error }}</p>
+                      <p v-if="!playUrlValidation.valid" class="text-xs font-bold text-red-400">
+                        {{ playUrlValidation.error }}
+                      </p>
                       <p v-else class="text-xs font-bold text-emerald-400 flex items-center">
                         <Check class="w-3 h-3 mr-1" /> URL有效
                       </p>
@@ -728,17 +922,17 @@
             <div class="p-8 pt-0">
               <div class="flex gap-3">
                 <button
-                    class="flex-1 px-6 py-4 rounded-2xl bg-zinc-800 text-zinc-300 font-bold hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
-                    type="button"
-                    @click="showManualModal = false"
+                  class="flex-1 px-6 py-4 rounded-2xl bg-zinc-800 text-zinc-300 font-bold hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
+                  type="button"
+                  @click="showManualModal = false"
                 >
                   取消
                 </button>
                 <button
-                    :disabled="!canSubmitManualForm || submitting"
-                    class="flex-[2] px-6 py-4 rounded-2xl bg-zinc-100 text-zinc-900 font-black hover:bg-white disabled:opacity-50 disabled:hover:bg-zinc-100 disabled:active:scale-100 transition-all active:scale-95"
-                    type="button"
-                    @click="handleManualSubmit"
+                  :disabled="!canSubmitManualForm || submitting"
+                  class="flex-[2] px-6 py-4 rounded-2xl bg-zinc-100 text-zinc-900 font-black hover:bg-white disabled:opacity-50 disabled:hover:bg-zinc-100 disabled:active:scale-100 transition-all active:scale-95"
+                  type="button"
+                  @click="handleManualSubmit"
                 >
                   {{ submitting ? '提交中...' : '确认提交' }}
                 </button>
@@ -750,29 +944,29 @@
     </Teleport>
     <!-- 隐藏的文件输入框 -->
     <input
-        ref="fileInput"
-        accept=".json"
-        style="display: none"
-        type="file"
-        @change="handleImportData"
-    />
+      ref="fileInput"
+      accept=".json"
+      style="display: none"
+      type="file"
+      @change="handleImportData"
+    >
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import searchIcon from '~/public/images/search.svg'
-import {X, Lock, Loader2, Check} from 'lucide-vue-next'
-import {useSongs} from '~/composables/useSongs'
-import {useAudioPlayer} from '~/composables/useAudioPlayer'
-import {useSiteConfig} from '~/composables/useSiteConfig'
-import {useAuth} from '~/composables/useAuth'
-import {useSemesters} from '~/composables/useSemesters'
-import {useMusicSources} from '~/composables/useMusicSources'
+import { X, Lock, Loader2, Check } from 'lucide-vue-next'
+import { useSongs } from '~/composables/useSongs'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useAuth } from '~/composables/useAuth'
+import { useSemesters } from '~/composables/useSemesters'
+import { useMusicSources } from '~/composables/useMusicSources'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '../UI/Icon.vue'
-import {convertToHttps, validateUrl} from '~/utils/url'
-import {getLoginStatus} from '~/utils/neteaseApi'
+import { convertToHttps, validateUrl } from '~/utils/url'
+import { getLoginStatus } from '~/utils/neteaseApi'
 
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
@@ -786,14 +980,14 @@ import NeteaseUploadDialog from './NeteaseUploadDialog.vue'
 const props = defineProps({
   loading: {
     type: Boolean,
-    default: false,
-  },
+    default: false
+  }
 })
 
 const emit = defineEmits(['request', 'vote'])
 
 // 站点配置
-const {guidelines: submissionGuidelines, initSiteConfig, enableReplayRequests} = useSiteConfig()
+const { guidelines: submissionGuidelines, initSiteConfig, enableReplayRequests } = useSiteConfig()
 
 // 用户认证
 const auth = useAuth()
@@ -801,7 +995,7 @@ const user = computed(() => auth.user.value)
 const isSuperAdmin = computed(() => user.value?.role === 'SUPER_ADMIN')
 
 // 学期管理
-const {fetchCurrentSemester, currentSemester, fetchSemesterOptions, semesters} = useSemesters()
+const { fetchCurrentSemester, currentSemester, fetchSemesterOptions, semesters } = useSemesters()
 
 // 是否显示“从往期导入”按钮：只有在有多个学期的情况下才显示
 const showImportSemesterBtn = computed(() => semesters.value && semesters.value.length > 1)
@@ -820,12 +1014,12 @@ const similarSongs = ref([])
 // 按 BV 号分组相似歌曲（每个合集只显示一次）
 const groupedSimilarSongs = computed(() => {
   const groups = new Map()
-  
+
   for (const song of similarSongs.value) {
     // 检查是否是哔哩哔哩视频
     if (song.musicPlatform === 'bilibili' && song.musicId) {
       const bvid = song.musicId.includes(':') ? song.musicId.split(':')[0] : song.musicId
-      
+
       if (!groups.has(bvid)) {
         // 创建新的分组
         groups.set(bvid, {
@@ -839,10 +1033,10 @@ const groupedSimilarSongs = computed(() => {
           hasVoted: false
         })
       }
-      
+
       const group = groups.get(bvid)
       group.episodes.push(song)
-      
+
       // 更新状态
       if (!song.played) group.allPlayed = false
       if (!song.scheduled) group.allScheduled = false
@@ -858,7 +1052,7 @@ const groupedSimilarSongs = computed(() => {
       }
     }
   }
-  
+
   return Array.from(groups.values())
 })
 const showImportSongsModal = ref(false)
@@ -900,12 +1094,7 @@ const searchAbortController = ref(null)
 
 // 音源管理器
 const musicSources = useMusicSources()
-const {
-  currentSource,
-  sourceStatus,
-  sourceStatusSummary,
-  currentSourceInfo
-} = musicSources
+const { currentSource, sourceStatus, sourceStatusSummary, currentSourceInfo } = musicSources
 const searchError = ref('')
 
 // 手动输入相关
@@ -924,15 +1113,15 @@ const showUploadDialog = ref(false)
 const selectedUploadSong = ref(null)
 
 // URL验证相关
-const coverValidation = ref({valid: true, error: '', validating: false})
-const playUrlValidation = ref({valid: true, error: '', validating: false})
+const coverValidation = ref({ valid: true, error: '', validating: false })
+const playUrlValidation = ref({ valid: true, error: '', validating: false })
 
 // 网易云音乐登录检查状态
 const checkingNeteaseLogin = ref(false)
 
 const handleImportSuccess = async () => {
   // 不自动关闭弹窗，等待用户在结果页点击完成
-  // showImportSongsModal.value = false 
+  // showImportSongsModal.value = false
   // 刷新歌曲列表以便检查相似歌曲
   try {
     await songService.fetchSongs(true, currentSemester.value?.name, false, true)
@@ -944,17 +1133,17 @@ const handleImportSuccess = async () => {
 const handleUserSelect = (users) => {
   if (Array.isArray(users)) {
     // 过滤掉已存在的
-    const newUsers = users.filter(u => !collaborators.value.some(c => c.id === u.id))
+    const newUsers = users.filter((u) => !collaborators.value.some((c) => c.id === u.id))
     collaborators.value.push(...newUsers)
   } else if (users) {
-    if (!collaborators.value.some(c => c.id === users.id)) {
+    if (!collaborators.value.some((c) => c.id === users.id)) {
       collaborators.value.push(users)
     }
   }
 }
 
 const removeCollaborator = (userId) => {
-  collaborators.value = collaborators.value.filter(c => c.id !== userId)
+  collaborators.value = collaborators.value.filter((c) => c.id !== userId)
 }
 
 // 获取播出时段
@@ -977,7 +1166,7 @@ const fetchPlayTimes = async () => {
 const fileInput = ref(null)
 
 const checkNeteaseLoginStatus = async () => {
-  if (process.client) {
+  if (import.meta.client) {
     const cookie = localStorage.getItem('netease_cookie')
     // const userStr = localStorage.getItem('netease_user')
     if (cookie) {
@@ -1014,7 +1203,7 @@ const handleExportData = () => {
     user: neteaseUser.value,
     timestamp: Date.now()
   }
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'})
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -1082,7 +1271,7 @@ const handleLoginSuccess = (data) => {
   neteaseUser.value = data.user
   isNeteaseLoggedIn.value = true
 
-  if (process.client) {
+  if (import.meta.client) {
     localStorage.setItem('netease_cookie', data.cookie)
     localStorage.setItem('netease_user', JSON.stringify(data.user))
   }
@@ -1094,36 +1283,36 @@ const handleLogoutNetease = () => {
   isNeteaseLoggedIn.value = false
   searchType.value = 1
 
-  if (process.client) {
+  if (import.meta.client) {
     localStorage.removeItem('netease_cookie')
     localStorage.removeItem('netease_user')
   }
 }
 
 watch(
-    () => searchType.value,
-    () => {
-      if (platform.value !== 'netease') return
+  () => searchType.value,
+  () => {
+    if (platform.value !== 'netease') return
 
-      // 记录当前状态，判断是否需要重新搜索
-      // 如果已经有搜索结果(hasSearched)或正在搜索中(searching)，且有关键词，则应该重新搜索
-      const shouldResearch = title.value.trim() && (hasSearched.value || searching.value)
+    // 记录当前状态，判断是否需要重新搜索
+    // 如果已经有搜索结果(hasSearched)或正在搜索中(searching)，且有关键词，则应该重新搜索
+    const shouldResearch = title.value.trim() && (hasSearched.value || searching.value)
 
-      // 如果有正在进行的搜索请求，立即取消
-      if (searchAbortController.value) {
-        searchAbortController.value.abort()
-        searchAbortController.value = null
-        searching.value = false
-      }
-
-      // 清空之前的搜索结果，避免显示错误的类型结果
-      searchResults.value = []
-
-      // 自动重新搜索
-      if (shouldResearch) {
-        handleSearch()
-      }
+    // 如果有正在进行的搜索请求，立即取消
+    if (searchAbortController.value) {
+      searchAbortController.value.abort()
+      searchAbortController.value = null
+      searching.value = false
     }
+
+    // 清空之前的搜索结果，避免显示错误的类型结果
+    searchResults.value = []
+
+    // 自动重新搜索
+    if (shouldResearch) {
+      handleSearch()
+    }
+  }
 )
 
 onMounted(async () => {
@@ -1132,10 +1321,7 @@ onMounted(async () => {
   initSiteConfig()
   fetchSubmissionStatus()
   // 获取当前学期和所有学期选项
-  await Promise.all([
-    fetchCurrentSemester(),
-    fetchSemesterOptions()
-  ])
+  await Promise.all([fetchCurrentSemester(), fetchSemesterOptions()])
   // 只有在用户已登录时才加载歌曲列表以便检查相似歌曲
   if (auth.isAuthenticated.value) {
     try {
@@ -1154,11 +1340,9 @@ const enabledPlayTimes = computed(() => {
 })
 
 const formattedPlayTimes = computed(() => {
-  return enabledPlayTimes.value.map(pt => ({
+  return enabledPlayTimes.value.map((pt) => ({
     ...pt,
-    displayName: pt.startTime || pt.endTime
-        ? `${pt.name} (${formatPlayTimeRange(pt)})`
-        : pt.name
+    displayName: pt.startTime || pt.endTime ? `${pt.name} (${formatPlayTimeRange(pt)})` : pt.name
   }))
 })
 
@@ -1179,37 +1363,34 @@ const formatPlayTimeRange = (playTime) => {
 
 // 监听歌曲服务中的相似歌曲
 watch(
-    () => songService.similarSongFound.value,
-    (newVal) => {
-      // 保持兼容性，如果有相似歌曲，将其放入数组
-      if (newVal) {
-        similarSongs.value = [newVal]
-      } else {
-        similarSongs.value = []
-      }
+  () => songService.similarSongFound.value,
+  (newVal) => {
+    // 保持兼容性，如果有相似歌曲，将其放入数组
+    if (newVal) {
+      similarSongs.value = [newVal]
+    } else {
+      similarSongs.value = []
     }
+  }
 )
 
 // 监听用户状态变化，当用户登录后重新获取投稿状态
 watch(
-    () => user.value,
-    (newUser) => {
-      if (newUser) {
-        fetchSubmissionStatus()
-      } else {
-        submissionStatus.value = null
-      }
+  () => user.value,
+  (newUser) => {
+    if (newUser) {
+      fetchSubmissionStatus()
+    } else {
+      submissionStatus.value = null
     }
+  }
 )
 
 // 检查相似歌曲
 const checkSimilarSongs = async () => {
   if (title.value.trim().length > 2) {
     console.log('检查相似歌曲:', title.value, artist.value)
-    const similar = await songService.checkSimilarSongs(
-        title.value.trim(),
-        artist.value.trim()
-    )
+    const similar = await songService.checkSimilarSongs(title.value.trim(), artist.value.trim())
     console.log('相似歌曲结果:', similar, songService.similarSongFound.value)
     similarSongs.value = similar
   } else {
@@ -1231,7 +1412,7 @@ const voteForSimilar = async (song) => {
     song.voteCount = (song.voteCount || 0) + 1
 
     // 投票成功后刷新歌曲列表
-    await songService.refreshSongsSilent().catch(err => {
+    await songService.refreshSongsSilent().catch((err) => {
       console.error('刷新歌曲列表失败', err)
     })
 
@@ -1262,7 +1443,7 @@ const openSimilarEpisodesModal = (group) => {
     }
     return
   }
-  
+
   // 构造一个类似搜索结果的对象
   const videoData = {
     id: group.bvid,
@@ -1272,21 +1453,30 @@ const openSimilarEpisodesModal = (group) => {
     pages: [...group.episodes]
       // 先按照 musicId 中的分P号排序，确保顺序正确
       .sort((a, b) => {
-        const pageA = a.musicId?.split(':')[2] ? parseInt(a.musicId.split(':')[2], 10) : 0
-        const pageB = b.musicId?.split(':')[2] ? parseInt(b.musicId.split(':')[2], 10) : 0
-        return pageA - pageB
+        // 提取页码的辅助函数，处理各种边界情况
+        const getPageNumber = (musicId) => {
+          if (!musicId) return 1
+          const parts = musicId.split(':')
+          if (parts.length > 2) {
+            const page = parseInt(parts[2], 10)
+            if (!isNaN(page)) return page
+          }
+          return 1 // 如果没有分页信息，默认为P1
+        }
+        return getPageNumber(a.musicId) - getPageNumber(b.musicId)
       })
       .map((episode, index) => {
         // 从 musicId 中提取 cid 和 page
         const parts = episode.musicId ? episode.musicId.split(':') : []
         const cid = parts[1] || ''
-        const page = parts[2] ? parseInt(parts[2]) : (index + 1)
-        
+        const page = parts[2] ? parseInt(parts[2]) : index + 1
+
         // 从标题中提取剧集名称
-        const episodeTitle = episode.title && episode.title.includes(' - ') 
-          ? episode.title.split(' - ').slice(1).join(' - ')
-          : episode.title || `第${index + 1}集`
-        
+        const episodeTitle =
+          episode.title && episode.title.includes(' - ')
+            ? episode.title.split(' - ').slice(1).join(' - ')
+            : episode.title || `第${index + 1}集`
+
         return {
           cid,
           page,
@@ -1302,7 +1492,7 @@ const openSimilarEpisodesModal = (group) => {
         }
       })
   }
-  
+
   selectedBilibiliVideo.value = videoData
   bilibiliEpisodes.value = videoData.pages
   showBilibiliEpisodesModal.value = true
@@ -1316,22 +1506,22 @@ const handleEpisodeVote = async (episode) => {
     }
     return
   }
-  
+
   if (episode.voted) {
     return
   }
-  
+
   voting.value = true
-  
+
   try {
     await songService.voteSong(episode.songId)
-    
+
     // 只有在后端成功返回后才更新前端状态
     episode.voted = true
     episode.voteCount = (episode.voteCount || 0) + 1
-    
+
     // 刷新歌曲列表
-    await songService.refreshSongsSilent().catch(err => {
+    await songService.refreshSongsSilent().catch((err) => {
       console.error('刷新歌曲列表失败', err)
     })
   } catch (err) {
@@ -1343,16 +1533,15 @@ const handleEpisodeVote = async (episode) => {
   }
 }
 
-
 // 检查搜索结果是否已存在完全匹配的歌曲
 // 标准化字符串（与useSongs中的逻辑保持一致）
 const normalizeString = (str) => {
   return str
-      .toLowerCase()
-      .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
-      .replace(/[&＆]/g, 'and')
-      .replace(/[feat\.?|ft\.?]/gi, '')
-      .trim()
+    .toLowerCase()
+    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
+    .replace(/[&＆]/g, 'and')
+    .replace(/[feat\.?|ft\.?]/gi, '')
+    .trim()
 }
 
 const getSimilarSong = (result) => {
@@ -1373,7 +1562,7 @@ const getSimilarSong = (result) => {
   const currentSemesterName = currentSemester.value?.name
 
   // 检查完全匹配的歌曲（标准化后），只检查当前学期的歌曲
-  return songService.songs.value.find(song => {
+  return songService.songs.value.find((song) => {
     const songTitle = normalizeString(song.title)
     const songArtist = normalizeString(song.artist)
     const titleMatch = songTitle === normalizedTitle && songArtist === normalizedArtist
@@ -1506,7 +1695,8 @@ const handleSearch = async () => {
         singer: item.artist || item.singer,
         // 保存实际的平台来源信息
         actualSource: results.source,
-        actualMusicPlatform: item.musicPlatform || (results.source === 'netease-backup' ? 'netease' : results.source)
+        actualMusicPlatform:
+          item.musicPlatform || (results.source === 'netease-backup' ? 'netease' : results.source)
       }))
 
       console.log('搜索成功，找到', results.data.length, '首歌曲')
@@ -1576,7 +1766,7 @@ const getAudioUrl = async (result) => {
         const songId = result.musicId || result.id
         if (!songId) throw new Error('缺少歌曲ID参数')
 
-        const {getQuality} = useAudioQuality()
+        const { getQuality } = useAudioQuality()
         const quality = getQuality(platform.value) || 8
         const urlResult = await musicSources.getSongUrl(songId, quality, 'tencent')
 
@@ -1586,10 +1776,10 @@ const getAudioUrl = async (result) => {
 
           // 更新搜索结果中的对应项
           const index = searchResults.value.findIndex(
-              (item) => (item.musicId || item.id) === (result.musicId || result.id)
+            (item) => (item.musicId || item.id) === (result.musicId || result.id)
           )
           if (index !== -1) {
-            searchResults.value[index] = {...result}
+            searchResults.value[index] = { ...result }
           }
           return result
         } else {
@@ -1612,7 +1802,7 @@ const getAudioUrl = async (result) => {
             const songId = result.musicId || result.id
             if (!songId) throw new Error('缺少歌曲ID参数')
 
-            const {getQuality} = useAudioQuality()
+            const { getQuality } = useAudioQuality()
             const quality = getQuality(platform.value) || 8
             const urlResult = await musicSources.getSongUrl(songId, quality, platform.value)
 
@@ -1628,7 +1818,7 @@ const getAudioUrl = async (result) => {
           }
         } else if (platform.value === 'netease') {
           try {
-            const {getQuality} = useAudioQuality()
+            const { getQuality } = useAudioQuality()
             const quality = getQuality(platform.value)
             const songDetail = await musicSources.getSongDetail({
               ids: [result.musicId || result.id],
@@ -1648,7 +1838,7 @@ const getAudioUrl = async (result) => {
 
           // 如果getSongDetail失败，尝试网易云备用源
           try {
-            const {getQuality} = useAudioQuality()
+            const { getQuality } = useAudioQuality()
             const quality = getQuality(platform.value)
             const songId = result.musicId || result.id
 
@@ -1671,7 +1861,7 @@ const getAudioUrl = async (result) => {
     // 对于网易云备用源，直接调用getSongUrl获取播放链接
     if (sourceType === 'netease-backup') {
       const targetPlatform = 'netease'
-      const {getQuality} = useAudioQuality()
+      const { getQuality } = useAudioQuality()
       const quality = getQuality(targetPlatform)
       const songId = result.musicId || result.id
 
@@ -1680,11 +1870,11 @@ const getAudioUrl = async (result) => {
 
       try {
         const urlResult = await musicSources.getSongUrl(
-            songId,
-            quality,
-            targetPlatform,
-            neteaseCookie.value,
-            {unblock: !isPodcast} // 播客内容 unblock=false，普通歌曲 unblock=true
+          songId,
+          quality,
+          targetPlatform,
+          neteaseCookie.value,
+          { unblock: !isPodcast } // 播客内容 unblock=false，普通歌曲 unblock=true
         )
 
         if (urlResult && urlResult.success && urlResult.url) {
@@ -1694,10 +1884,10 @@ const getAudioUrl = async (result) => {
 
           // 更新搜索结果中的对应项
           const index = searchResults.value.findIndex(
-              (item) => (item.musicId || item.id) === (result.musicId || result.id)
+            (item) => (item.musicId || item.id) === (result.musicId || result.id)
           )
           if (index !== -1) {
-            searchResults.value[index] = {...result}
+            searchResults.value[index] = { ...result }
           }
         } else {
           // 未能获取到有效的歌曲URL
@@ -1725,7 +1915,7 @@ const playSong = async (result) => {
   }
 
   // 对于非哔哩哔哩平台，如果没有URL则提示错误
-  if (!result.url && result.musicPlatform !== 'bilibili' && platform.value !== 'bilibili') {
+  if (!result.url && result.musicPlatform !== 'bilibili') {
     error.value = '该歌曲无法播放，可能是付费内容'
     if (window.$showNotification) {
       window.$showNotification('该歌曲无法播放，可能是付费内容', 'error')
@@ -1754,14 +1944,14 @@ const playSong = async (result) => {
     musicUrl: result.url || null, // 哔哩哔哩可能没有音频URL
     musicPlatform: result.musicPlatform || platform.value,
     musicId: finalMusicId,
-    bilibiliCid: result.bilibiliCid, // 确保传递 cid
+    bilibiliCid: result.bilibiliCid // 确保传递 cid
   }
 
   console.log('[RequestForm] 准备播放歌曲:', song)
 
   // 使用全局播放器播放歌曲
   const playResult = audioPlayer.playSong(song)
-  
+
   if (!playResult) {
     console.error('[RequestForm] 播放器返回 false，播放失败')
     if (window.$showNotification) {
@@ -1775,7 +1965,7 @@ const playSong = async (result) => {
   // 如果有音乐平台信息，请求歌词
   if (song.musicPlatform && song.musicId) {
     try {
-      const {useLyrics} = await import('~/composables/useLyrics')
+      const { useLyrics } = await import('~/composables/useLyrics')
       const lyrics = useLyrics()
       // 请求歌词（对于bilibili，传递原始的bvid，不包含cid）
       const lyricMusicId = result.bilibiliCid ? result.musicId : song.musicId
@@ -1821,11 +2011,11 @@ const selectResult = async (result) => {
 const openUploadDialog = (result) => {
   console.log('QQ音乐搜索结果 - 完整对象:', result)
   console.log('QQ音乐搜索结果 - 所有键:', Object.keys(result))
-  
+
   // 转换QQ音乐搜索结果为上传对话框需要的格式
   // 直接传递整个 result 对象，让上传对话框自己提取需要的字段
   selectedUploadSong.value = result
-  
+
   console.log('准备上传的歌曲数据:', selectedUploadSong.value)
   showUploadDialog.value = true
 }
@@ -1842,7 +2032,12 @@ const submitSong = async (result, options = {}) => {
   if (submitting.value) return
 
   // 如果是播客/电台模式，且是在网易云平台下，且不是具体的单集提交
-  if (platform.value === 'netease' && searchType.value === 1009 && !options.isPodcastEpisode && !options.isDirectSubmit) {
+  if (
+    platform.value === 'netease' &&
+    searchType.value === 1009 &&
+    !options.isPodcastEpisode &&
+    !options.isDirectSubmit
+  ) {
     console.log('打开播客节目列表:', result)
     // 打开播客节目列表弹窗
     selectedPodcastId.value = result.id || result.musicId
@@ -1853,7 +2048,12 @@ const submitSong = async (result, options = {}) => {
   }
 
   // 如果是 Bilibili 平台，且有多个剧集，且不是具体的剧集提交
-  if (platform.value === 'bilibili' && result.pages && result.pages.length > 1 && !options.isBilibiliEpisode) {
+  if (
+    platform.value === 'bilibili' &&
+    result.pages &&
+    result.pages.length > 1 &&
+    !options.isBilibiliEpisode
+  ) {
     console.log('打开 Bilibili 剧集列表:', result)
     selectedBilibiliVideo.value = result
     bilibiliEpisodes.value = result.pages
@@ -1893,32 +2093,40 @@ const submitSong = async (result, options = {}) => {
       }
 
       // 检查是否已有相同 musicId 的歌曲
-      const existingSong = songService.songs.value.find(song =>
-        song.musicPlatform === 'bilibili' &&
-        song.musicId === fullMusicId
+      const existingSong = songService.songs.value.find(
+        (song) => song.musicPlatform === 'bilibili' && song.musicId === fullMusicId
       )
 
       if (existingSong) {
-        const allowOverride = options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
+        const allowOverride =
+          options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
         if (!allowOverride) {
           if (window.$showNotification) {
-            window.$showNotification('这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！', 'warning')
+            window.$showNotification(
+              '这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！',
+              'warning'
+            )
           }
           return
         }
       }
     } else {
       // 对于其他平台，使用标题和艺术家进行匹配
-      const existingSong = songService.songs.value.find(song =>
-        song.title.toLowerCase() === songTitle.toLowerCase() &&
-        song.artist.toLowerCase() === songArtist.toLowerCase()
+      const existingSong = songService.songs.value.find(
+        (song) =>
+          song.title.toLowerCase() === songTitle.toLowerCase() &&
+          song.artist.toLowerCase() === songArtist.toLowerCase()
       )
-      
+
       if (existingSong) {
-        const allowOverride = options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
+        const allowOverride =
+          options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
         if (!allowOverride) {
           if (window.$showNotification) {
-            window.$showNotification('这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！', 'warning')
+            window.$showNotification(
+              '这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！',
+              'warning'
+            )
           }
           return
         }
@@ -1945,7 +2153,7 @@ const submitSong = async (result, options = {}) => {
     })
 
     if (blacklistCheck.isBlocked) {
-      const reasons = blacklistCheck.reasons.map(r => r.reason).join('; ')
+      const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
       error.value = `该歌曲无法点歌: ${reasons}`
       if (window.$showNotification) {
         window.$showNotification(error.value, 'error')
@@ -1967,14 +2175,14 @@ const submitSong = async (result, options = {}) => {
   // 处理 Bilibili 分 P 信息
   let bilibiliCid = result.bilibiliCid
   let bilibiliPage = result.bilibiliPage || null
-  
+
   if (options.isBilibiliEpisode && options.episode) {
-      bilibiliCid = options.episode.cid
-      bilibiliPage = options.episode.page
-      // 追加分P标题
-      if (options.episode.part && !title.value.includes(options.episode.part)) {
-           title.value += ` - ${options.episode.part}`
-      }
+    bilibiliCid = options.episode.cid
+    bilibiliPage = options.episode.page
+    // 追加分P标题
+    if (options.episode.part && !title.value.includes(options.episode.part)) {
+      title.value += ` - ${options.episode.part}`
+    }
   }
 
   try {
@@ -1982,13 +2190,11 @@ const submitSong = async (result, options = {}) => {
     const songData = {
       title: title.value,
       artist: artist.value,
-      preferredPlayTimeId: preferredPlayTimeId.value
-          ? parseInt(preferredPlayTimeId.value)
-          : null,
+      preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
       cover: selectedCover.value,
       musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
-      collaborators: collaborators.value.map(u => u.id),
+      collaborators: collaborators.value.map((u) => u.id),
       bilibiliCid: bilibiliCid || null,
       bilibiliPage: bilibiliPage
     }
@@ -2032,13 +2238,11 @@ const handleSubmit = async () => {
     const songData = {
       title: title.value,
       artist: artist.value,
-      preferredPlayTimeId: preferredPlayTimeId.value
-          ? parseInt(preferredPlayTimeId.value)
-          : null,
+      preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
       cover: selectedCover.value,
       musicPlatform: platform.value,
       musicId: null, // 手动输入时没有musicId
-      collaborators: collaborators.value.map(u => u.id)
+      collaborators: collaborators.value.map((u) => u.id)
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -2066,7 +2270,7 @@ const getBilibiliEpisodeStatus = (result) => {
   const currentSemesterName = currentSemester.value?.name
   const bvid = result.id
 
-  const submittedEpisodes = songService.songs.value.filter(song => {
+  const submittedEpisodes = songService.songs.value.filter((song) => {
     if (song.musicPlatform !== 'bilibili') return false
     if (!song.musicId) return false
 
@@ -2151,7 +2355,7 @@ const playlistModalRef = ref(null)
 
 // 处理播客单集提交
 const handlePodcastSubmit = async (song) => {
-  const success = await submitSong(song, {isPodcastEpisode: true})
+  const success = await submitSong(song, { isPodcastEpisode: true })
   if (success) {
     showPodcastModal.value = false
   } else {
@@ -2170,7 +2374,7 @@ const handlePodcastPlay = async (song) => {
 
 // 处理最近播放歌曲提交
 const handleRecentSongSubmit = async (song) => {
-  const success = await submitSong(song, {isPodcastEpisode: false, isDirectSubmit: true})
+  const success = await submitSong(song, { isPodcastEpisode: false, isDirectSubmit: true })
   if (success) {
     showRecentSongsModal.value = false
   } else {
@@ -2188,7 +2392,7 @@ const handleRecentSongPlay = async (song) => {
 
 // 处理歌单歌曲提交
 const handlePlaylistSubmit = async (song) => {
-  const success = await submitSong(song, {isPodcastEpisode: false, isDirectSubmit: true})
+  const success = await submitSong(song, { isPodcastEpisode: false, isDirectSubmit: true })
   if (success) {
     showPlaylistModal.value = false
   } else {
@@ -2203,7 +2407,6 @@ const handlePlaylistSubmit = async (song) => {
 const handlePlaylistPlay = async (song) => {
   await playSong(song)
 }
-
 
 // 手动输入相关方法
 const handleManualSubmit = async () => {
@@ -2256,7 +2459,7 @@ const handleManualSubmit = async () => {
     })
 
     if (blacklistCheck.isBlocked) {
-      const reasons = blacklistCheck.reasons.map(r => r.reason).join('; ')
+      const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
       error.value = `该歌曲无法点歌: ${reasons}`
       if (window.$showNotification) {
         window.$showNotification(error.value, 'error')
@@ -2268,13 +2471,11 @@ const handleManualSubmit = async () => {
     const songData = {
       title: title.value,
       artist: manualArtist.value,
-      preferredPlayTimeId: preferredPlayTimeId.value
-          ? parseInt(preferredPlayTimeId.value)
-          : null,
+      preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
       cover: manualCover.value || '',
       playUrl: manualPlayUrl.value || '',
       musicPlatform: platform.value,
-      musicId: null, // 手动输入时没有musicId
+      musicId: null // 手动输入时没有musicId
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -2329,12 +2530,12 @@ const handleRequestReplay = async (song) => {
 const getReplayButtonText = (song) => {
   if (requestingReplay.value) return '申请中...'
   if (!song) return '申请重播'
-  
+
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
     return '非本学期'
   }
-  
+
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     // 如果在冷却期内
@@ -2344,27 +2545,27 @@ const getReplayButtonText = (song) => {
     // 冷却期已过
     return '申请重播'
   }
-  
+
   if (song.replayRequestStatus === 'FULFILLED') {
     return '已重播'
   }
-  
+
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
     return '已申请重播'
   }
-  
+
   return '申请重播'
 }
 
 // 获取重播按钮标题（tooltip）
 const getReplayButtonTitle = (song) => {
   if (!song) return '申请重播'
-  
+
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
     return '只能申请重播当前学期的歌曲'
   }
-  
+
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
@@ -2372,27 +2573,27 @@ const getReplayButtonTitle = (song) => {
     }
     return '申请重播'
   }
-  
+
   if (song.replayRequestStatus === 'FULFILLED') {
     return '该歌曲已重播'
   }
-  
+
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
     return '该歌曲已申请过重播'
   }
-  
+
   return '申请重播'
 }
 
 // 检查重播按钮是否应该禁用
 const isReplayButtonDisabled = (song) => {
   if (requestingReplay.value || !song) return true
-  
+
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
     return true
   }
-  
+
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     // 如果在冷却期内，禁用按钮
@@ -2402,15 +2603,15 @@ const isReplayButtonDisabled = (song) => {
     // 冷却期已过，允许重新申请
     return false
   }
-  
+
   if (song.replayRequestStatus === 'FULFILLED') {
     return true
   }
-  
+
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
     return true
   }
-  
+
   return false
 }
 
@@ -2430,8 +2631,8 @@ const resetForm = () => {
   hasSearched.value = false
   collaborators.value = []
   // 重置URL验证状态
-  coverValidation.value = {valid: true, error: '', validating: false}
-  playUrlValidation.value = {valid: true, error: '', validating: false}
+  coverValidation.value = { valid: true, error: '', validating: false }
+  playUrlValidation.value = { valid: true, error: '', validating: false }
 }
 
 // 停止播放
@@ -2460,11 +2661,11 @@ const fetchSubmissionStatus = async () => {
 const checkSubmissionLimit = () => {
   // 超级管理员不受投稿限制
   if (user.value && (user.value.role === 'SUPER_ADMIN' || user.value.role === 'ADMIN')) {
-    return {canSubmit: true, message: ''}
+    return { canSubmit: true, message: '' }
   }
 
   if (!submissionStatus.value || !submissionStatus.value.limitEnabled) {
-    return {canSubmit: true, message: ''}
+    return { canSubmit: true, message: '' }
   }
 
   // 检查投稿是否已关闭
@@ -2481,7 +2682,7 @@ const checkSubmissionLimit = () => {
 
   // 检查投稿时段名额限制
   if (submissionStatus.value.timeLimitationEnabled && submissionStatus.value.currentTimePeriod) {
-    const {expected, accepted} = submissionStatus.value.currentTimePeriod
+    const { expected, accepted } = submissionStatus.value.currentTimePeriod
     if (expected > 0 && accepted >= expected) {
       return {
         canSubmit: false,
@@ -2490,7 +2691,7 @@ const checkSubmissionLimit = () => {
     }
   }
 
-  const {dailyLimit, weeklyLimit, dailyUsed, weeklyUsed} = submissionStatus.value
+  const { dailyLimit, weeklyLimit, dailyUsed, weeklyUsed } = submissionStatus.value
 
   // 检查日限额
   if (dailyLimit && dailyUsed >= dailyLimit) {
@@ -2508,13 +2709,13 @@ const checkSubmissionLimit = () => {
     }
   }
 
-  return {canSubmit: true, message: ''}
+  return { canSubmit: true, message: '' }
 }
 
 // URL验证函数
 const validateCoverUrl = async (url) => {
   if (!url) {
-    coverValidation.value = {valid: true, error: '', validating: false}
+    coverValidation.value = { valid: true, error: '', validating: false }
     return
   }
 
@@ -2529,7 +2730,7 @@ const validateCoverUrl = async (url) => {
 
 const validatePlayUrl = async (url) => {
   if (!url) {
-    playUrlValidation.value = {valid: true, error: '', validating: false}
+    playUrlValidation.value = { valid: true, error: '', validating: false }
     return
   }
 
@@ -2551,7 +2752,7 @@ watch(manualCover, (newUrl) => {
       validateCoverUrl(newUrl)
     }, 1000)
   } else {
-    coverValidation.value = {valid: true, error: '', validating: false}
+    coverValidation.value = { valid: true, error: '', validating: false }
   }
 })
 
@@ -2563,7 +2764,7 @@ watch(manualPlayUrl, (newUrl) => {
       validatePlayUrl(newUrl)
     }, 1000)
   } else {
-    playUrlValidation.value = {valid: true, error: '', validating: false}
+    playUrlValidation.value = { valid: true, error: '', validating: false }
   }
 })
 
@@ -2581,7 +2782,10 @@ const canSubmitManualForm = computed(() => {
   }
 
   // 如果输入了播放URL，必须验证通过且不在验证中
-  if (manualPlayUrl.value && (!playUrlValidation.value.valid || playUrlValidation.value.validating)) {
+  if (
+    manualPlayUrl.value &&
+    (!playUrlValidation.value.valid || playUrlValidation.value.validating)
+  ) {
     return false
   }
 
@@ -2719,7 +2923,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 15px;
-  color: #FFFFFF;
+  color: #ffffff;
   white-space: nowrap;
   flex-shrink: 0; /* 防止标签被压缩 */
 }
@@ -2732,8 +2936,8 @@ defineExpose({
 }
 
 .search-input {
-  background: #040E15;
-  border: 1px solid #242F38;
+  background: #040e15;
+  border: 1px solid #242f38;
   border-radius: 8px;
   padding: 0.6rem 0.85rem;
   font-family: 'MiSans', sans-serif;
@@ -2746,15 +2950,15 @@ defineExpose({
 
 .search-input:focus {
   outline: none;
-  border-color: #0B5AFE;
+  border-color: #0b5afe;
 }
 
 .search-button {
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
-  color: #FFFFFF;
+  color: #ffffff;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
@@ -2788,7 +2992,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: #FFFFFF;
+  color: #ffffff;
   white-space: nowrap;
   flex-shrink: 0; /* 防止标签被压缩 */
 }
@@ -2869,7 +3073,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 13px;
-  color: #FFD700;
+  color: #ffd700;
 }
 
 .submission-closed-notice {
@@ -2887,7 +3091,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 13px;
-  color: #FF6B6B;
+  color: #ff6b6b;
 }
 
 .status-content-horizontal {
@@ -2908,14 +3112,14 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 13px;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .status-item-horizontal .status-value {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 13px;
-  color: #0B5AFE;
+  color: #0b5afe;
 }
 
 .status-item-horizontal .status-remaining {
@@ -3293,9 +3497,9 @@ defineExpose({
 }
 
 .platform-btn.active {
-  background: linear-gradient(180deg, #0043F8 0%, #0075F8 100%);
+  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
   border-color: rgba(255, 255, 255, 0.16);
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .platform-btn:hover:not(.active) {
@@ -3407,7 +3611,8 @@ defineExpose({
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -3465,7 +3670,7 @@ defineExpose({
   width: 40px;
   height: 40px;
   border: 3px solid rgba(11, 90, 254, 0.2);
-  border-top-color: #0B5AFE;
+  border-top-color: #0b5afe;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -3548,7 +3753,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 15px;
-  color: #FFFFFF;
+  color: #ffffff;
   margin: 0;
 }
 
@@ -3594,7 +3799,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
-  color: #FFFFFF;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -3716,7 +3921,8 @@ defineExpose({
   flex-shrink: 0;
 }
 
-.vote-btn.small, .replay-btn.small {
+.vote-btn.small,
+.replay-btn.small {
   padding: 0.3rem 0.6rem;
   font-size: 12px;
 }
@@ -3906,7 +4112,7 @@ defineExpose({
 
 .modal-header h3 {
   margin: 0;
-  color: #FFFFFF;
+  color: #ffffff;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 18px;
@@ -3931,7 +4137,7 @@ defineExpose({
 
 .close-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
+  color: #ffffff;
   transform: rotate(90deg);
 }
 
@@ -3977,9 +4183,9 @@ defineExpose({
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #0043F8 0%, #0075F8 100%);
+  background: linear-gradient(135deg, #0043f8 0%, #0075f8 100%);
   border-color: rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
+  color: #ffffff;
   box-shadow: 0 4px 12px rgba(0, 67, 248, 0.3);
 }
 
@@ -4131,7 +4337,6 @@ defineExpose({
   font-size: 11px;
   margin: 0.15rem 0;
 }
-
 
 .result-actions {
   display: flex;
@@ -4552,7 +4757,8 @@ defineExpose({
     gap: 0.5rem;
   }
 
-  .login-btn, .import-btn {
+  .login-btn,
+  .import-btn {
     flex: 1;
     justify-content: center;
     padding: 0.5rem 0.4rem;
@@ -4634,8 +4840,8 @@ defineExpose({
   }
 
   .platform-btn.active {
-    background: #0B5AFE;
-    color: #FFFFFF;
+    background: #0b5afe;
+    color: #ffffff;
     box-shadow: 0 2px 8px rgba(11, 90, 254, 0.3);
   }
 
@@ -4826,7 +5032,7 @@ defineExpose({
     /* 优化触摸滚动体验 */
     overscroll-behavior: contain; /* 防止滚动穿透 */
   }
-  
+
   /* 当没有搜索结果时，移除滚动容器的高度限制 */
   .initial-state,
   .empty-state,
