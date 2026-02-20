@@ -348,6 +348,7 @@ elif [[ "$SERVICE_CHOICE" == "2" ]]; then
     echo -e "${BLUE}Node 路径: $NODE_PATH${NC}"
     
     # 创建 systemd 服务文件
+    CURRENT_USER=$(whoami)
     sudo tee /etc/systemd/system/voicehub.service > /dev/null << EOF
 [Unit]
 Description=VoiceHub - 校园广播站点歌系统
@@ -356,8 +357,8 @@ Wants=postgresql.service
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
+User=$CURRENT_USER
+Group=$CURRENT_USER
 WorkingDirectory=$PROJECT_DIR
 Environment=NODE_ENV=production
 ExecStart=$NODE_PATH $PROJECT_DIR/.output/server/index.mjs
@@ -368,18 +369,13 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-    # 修改项目目录权限，使 www-data 可以读取，但保持用户所有权
+    # 修改项目目录权限
     echo -e "${BLUE}正在设置项目目录权限...${NC}"
     # 使用 find 分别设置目录和文件的权限
     # 目录设置为 755 (rwxr-xr-x) - 所有用户可读可进入
     sudo find "$PROJECT_DIR" -type d -exec chmod 755 {} \;
     # 文件设置为 644 (rw-r--r--) - 所有用户可读
     sudo find "$PROJECT_DIR" -type f -exec chmod 644 {} \;
-    # .env 文件需要 www-data 可读（服务需要读取环境变量）
-    if [[ -f "$PROJECT_DIR/.env" ]]; then
-        sudo chown root:www-data "$PROJECT_DIR/.env"
-        sudo chmod 640 "$PROJECT_DIR/.env"
-    fi
     
     # 重新加载 systemd
     sudo systemctl daemon-reload
@@ -410,7 +406,7 @@ echo -e "${YELLOW}配置 voicehub 命令快捷方式...${NC}"
 echo ""
 
 # 复制 main.sh 到项目目录
-ln -sf "$PROJECT_DIR/sh/main.sh" "$PROJECT_DIR/voicehub.sh"
+ln -sf "$(readlink -f "$PROJECT_DIR/sh/main.sh")" "$PROJECT_DIR/voicehub.sh"
 chmod +x "$PROJECT_DIR/voicehub.sh"
 
 # 创建 /usr/local/bin/voicehub 软链接
