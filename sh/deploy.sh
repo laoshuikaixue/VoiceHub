@@ -377,10 +377,11 @@ EOF
     
     # 修改项目目录权限，使 www-data 可以读取，但保持用户所有权
     echo -e "${BLUE}正在设置项目目录权限...${NC}"
-    # 设置目录为755 (rwxr-xr-x) - 所有用户可读可执行
-    sudo chmod -R 755 "$PROJECT_DIR"
-    # 设置文件为644 (rw-r--r--) - 所有用户可读
-    sudo chmod -R 644 "$PROJECT_DIR"/*
+    # 使用 find 分别设置目录和文件的权限
+    # 目录设置为 755 (rwxr-xr-x) - 所有用户可读可进入
+    sudo find "$PROJECT_DIR" -type d -exec chmod 755 {} \;
+    # 文件设置为 644 (rw-r--r--) - 所有用户可读
+    sudo find "$PROJECT_DIR" -type f -exec chmod 644 {} \;
     # 确保日志目录可写
     sudo chown -R www-data:www-data "$PROJECT_DIR/logs"
     sudo chmod -R 755 "$PROJECT_DIR/logs"
