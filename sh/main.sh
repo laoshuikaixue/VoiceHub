@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # VoiceHub 日常维护管理脚本
-# 支持快捷重装、查看状态、开启、更新、停止、重装依赖、重新编译
+# 支持上下键选择菜单
 
 set -e
 
@@ -10,34 +10,11 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # 默认安装目录
 PROJECT_DIR="/opt/voicehub"
-
-# 帮助信息
-show_help() {
-    echo -e "${BLUE}VoiceHub 管理脚本${NC}"
-    echo ""
-    echo "用法: voicehub <命令>"
-    echo ""
-    echo "命令:"
-    echo "  status     查看服务状态"
-    echo "  start      启动服务"
-    echo "  stop       停止服务"
-    echo "  restart    重启服务"
-    echo "  update     更新代码并重启"
-    echo "  reinstall  重新安装（代码更新+依赖+编译+重启）"
-    echo "  deps       重装依赖"
-    echo "  build      重新编译"
-    echo "  logs       查看日志"
-    echo "  help       显示帮助信息"
-    echo ""
-    echo "示例:"
-    echo "  voicehub status    # 查看状态"
-    echo "  voicehub restart   # 重启服务"
-    echo "  voicehub update    # 更新并重启"
-}
 
 # 检查项目目录
 check_project() {
@@ -77,7 +54,6 @@ cmd_start() {
         sudo systemctl start voicehub
         echo -e "${GREEN}✓ systemctl 服务已启动${NC}"
     else
-        # 尝试自动启动
         if [[ -f "$PROJECT_DIR/ecosystem.config.js" ]]; then
             pm2 start ecosystem.config.js
             echo -e "${GREEN}✓ PM2 服务已启动${NC}"
@@ -127,22 +103,18 @@ cmd_update() {
     echo -e "${BLUE}========================================${NC}"
     echo ""
     
-    # Git Pull
     echo -e "${YELLOW}[1/3] 更新代码...${NC}"
     git pull origin main
     echo -e "${GREEN}✓ 代码更新完成${NC}"
     
-    # npm install
     echo -e "${YELLOW}[2/3] 更新依赖...${NC}"
     npm install
     echo -e "${GREEN}✓ 依赖更新完成${NC}"
     
-    # npm run build
     echo -e "${YELLOW}[3/3] 重新构建...${NC}"
     npm run build
     echo -e "${GREEN}✓ 构建完成${NC}"
     
-    # 重启服务
     cmd_restart
     
     echo ""
@@ -172,7 +144,7 @@ cmd_build() {
     echo -e "${GREEN}✓ 编译完成${NC}"
 }
 
-# 重新安装（更新+依赖+编译+重启）
+# 重新安装
 cmd_reinstall() {
     check_project
     echo -e "${BLUE}========================================${NC}"
@@ -180,26 +152,21 @@ cmd_reinstall() {
     echo -e "${BLUE}========================================${NC}"
     echo ""
     
-    # 停止服务
     cmd_stop
     
-    # Git Pull
     echo -e "${YELLOW}[1/4] 更新代码...${NC}"
     git pull origin main
     echo -e "${GREEN}✓ 代码更新完成${NC}"
     
-    # 重装依赖
     echo -e "${YELLOW}[2/4] 重装依赖...${NC}"
     rm -rf node_modules
     npm install
     echo -e "${GREEN}✓ 依赖重装完成${NC}"
     
-    # 重新编译
     echo -e "${YELLOW}[3/4] 重新编译...${NC}"
     npm run build
     echo -e "${GREEN}✓ 编译完成${NC}"
     
-    # 启动服务
     echo -e "${YELLOW}[4/4] 启动服务...${NC}"
     cmd_start
     
@@ -223,42 +190,199 @@ cmd_logs() {
     fi
 }
 
-# 主命令处理
-case "$1" in
-    status)
-        cmd_status
-        ;;
-    start)
-        cmd_start
-        ;;
-    stop)
-        cmd_stop
-        ;;
-    restart)
-        cmd_restart
-        ;;
-    update)
-        cmd_update
-        ;;
-    reinstall)
-        cmd_reinstall
-        ;;
-    deps)
-        cmd_deps
-        ;;
-    build)
-        cmd_build
-        ;;
-    logs)
-        cmd_logs
-        ;;
-    help|--help|-h)
-        show_help
-        ;;
-    *)
-        echo -e "${RED}未知命令: $1${NC}"
+# 交互式菜单
+show_menu() {
+    # 菜单选项
+    local options=(
+        "查看服务状态"
+        "启动服务"
+        "停止服务"
+        "重启服务"
+        "更新"
+        "重新安装"
+        "重装依赖"
+        "重新编译"
+        "查看日志"
+        "退出"
+    )
+    
+    local selected=0
+    local total=${#options[@]}
+    
+    # 打印菜单
+    print_menu() {
+        clear
+        echo -e "${BLUE}========================================${NC}"
+        echo -e "${BLUE}       VoiceHub 管理面板${NC}"
+        echo -e "${BLUE}========================================${NC}"
         echo ""
-        show_help
-        exit 1
-        ;;
-esac
+        
+        for i in "${!options[@]}"; do
+            if [[ $i -eq $selected ]]; then
+                echo -e "${GREEN}► ${options[$i]}${NC}"
+            else
+                echo -e "  ${options[$i]}"
+            fi
+        done
+        
+        echo ""
+        echo -e "${YELLOW}使用 ↑↓ 选择，Enter 确认${NC}"
+    }
+    
+    # 读取单个字符（支持方向键）
+    read_key() {
+        local key
+        IFS= read -rsn1 key
+        if [[ $key == $'\e' ]]; then
+            IFS= read -rsn1 key
+            if [[ $key == '[' ]]; then
+                IFS= read -rsn1 key
+                echo "$key"
+            fi
+        else
+            echo "$key"
+        fi
+    }
+    
+    # 主循环
+    while true; do
+        print_menu
+        
+        local key=$(read_key)
+        
+        case "$key" in
+            A) # 上
+                ((selected--))
+                if [[ $selected -lt 0 ]]; then
+                    selected=$((total - 1))
+                fi
+                ;;
+            B) # 下
+                ((selected++))
+                if [[ $selected -ge $total ]]; then
+                    selected=0
+                fi
+                ;;
+            "") # Enter
+                break
+                ;;
+        esac
+    done
+    
+    echo ""
+    
+    # 执行选择的操作
+    case $selected in
+        0)
+            cmd_status
+            ;;
+        1)
+            cmd_start
+            ;;
+        2)
+            cmd_stop
+            ;;
+        3)
+            cmd_restart
+            ;;
+        4)
+            cmd_update
+            ;;
+        5)
+            cmd_reinstall
+            ;;
+        6)
+            cmd_deps
+            ;;
+        7)
+            cmd_build
+            ;;
+        8)
+            cmd_logs
+            ;;
+        9)
+            echo -e "${CYAN}退出${NC}"
+            exit 0
+            ;;
+    esac
+}
+
+# 检查是否有交互式终端
+if [[ ! -t 0 ]]; then
+    # 非交互模式，显示帮助
+    echo -e "${BLUE}VoiceHub 管理脚本${NC}"
+    echo ""
+    echo "用法: voicehub"
+    echo ""
+    echo "运行脚本后使用上下键选择操作"
+    echo ""
+    echo "或在非交互环境中使用以下命令："
+    echo "  bash $0 status    # 查看状态"
+    echo "  bash $0 start    # 启动服务"
+    echo "  bash $0 stop     # 停止服务"
+    echo "  bash $0 restart  # 重启服务"
+    echo "  bash $0 update   # 更新代码"
+    echo "  bash $0 reinstall # 重新安装"
+    echo "  bash $0 deps     # 重装依赖"
+    echo "  bash $0 build    # 重新编译"
+    echo "  bash $0 logs     # 查看日志"
+    exit 0
+fi
+
+# 如果有参数，直接执行对应命令
+if [[ -n "$1" ]]; then
+    case "$1" in
+        status)
+            cmd_status
+            ;;
+        start)
+            cmd_start
+            ;;
+        stop)
+            cmd_stop
+            ;;
+        restart)
+            cmd_restart
+            ;;
+        update)
+            cmd_update
+            ;;
+        reinstall)
+            cmd_reinstall
+            ;;
+        deps)
+            cmd_deps
+            ;;
+        build)
+            cmd_build
+            ;;
+        logs)
+            cmd_logs
+            ;;
+        help|--help|-h)
+            echo -e "${BLUE}VoiceHub 管理脚本${NC}"
+            echo ""
+            echo "用法: voicehub"
+            echo ""
+            echo "直接运行脚本可使用交互式菜单（上下键选择）"
+            echo ""
+            echo "或使用以下命令："
+            echo "  voicehub status     # 查看状态"
+            echo "  voicehub start      # 启动服务"
+            echo "  voicehub stop       # 停止服务"
+            echo "  voicehub restart    # 重启服务"
+            echo "  voicehub update     # 更新代码"
+            echo "  voicehub reinstall  # 重新安装"
+            echo "  voicehub deps       # 重装依赖"
+            echo "  voicehub build      # 重新编译"
+            echo "  voicehub logs       # 查看日志"
+            ;;
+        *)
+            echo -e "${RED}未知命令: $1${NC}"
+            exit 1
+            ;;
+    esac
+else
+    # 无参数，显示交互式菜单
+    show_menu
+fi
