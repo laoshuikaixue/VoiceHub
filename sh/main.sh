@@ -245,9 +245,9 @@ show_menu() {
         echo -e "${YELLOW}使用 ↑↓ 选择，Enter 确认${NC}"
     }
     
-    # 读取键盘输入
-    local key
-    
+    # 临时关闭 set -e，防止 read 超时或非零返回导致脚本退出
+    set +e
+
     while true; do
         print_menu
         
@@ -256,7 +256,8 @@ show_menu() {
         
         # 检查是否是转义序列 (方向键)
         if [[ "$key" == $'\x1b' ]]; then
-            read -rsn2 -t 0.01 chars
+            # 使用 || true 防止超时导致 set -e 触发（虽然已关闭，但保持习惯）
+            read -rsn2 -t 0.01 chars || true
             key="$key$chars"
         fi
 
@@ -278,6 +279,9 @@ show_menu() {
                 ;;
         esac
     done
+    
+    # 恢复 set -e
+    set -e
     
     echo ""
     
