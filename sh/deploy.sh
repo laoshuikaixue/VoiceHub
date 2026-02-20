@@ -375,9 +375,20 @@ EOF
     # 创建日志目录
     sudo mkdir -p "$PROJECT_DIR/logs"
     
-    # 修改项目目录所有者为 www-data
-    echo -e "${BLUE}正在修改项目目录所有者...${NC}"
-    sudo chown -R www-data:www-data "$PROJECT_DIR"
+    # 修改项目目录权限，使 www-data 可以读取，但保持用户所有权
+    echo -e "${BLUE}正在设置项目目录权限...${NC}"
+    # 设置目录为755 (rwxr-xr-x) - 所有用户可读可执行
+    sudo chmod -R 755 "$PROJECT_DIR"
+    # 设置文件为644 (rw-r--r--) - 所有用户可读
+    sudo chmod -R 644 "$PROJECT_DIR"/*
+    # 确保日志目录可写
+    sudo chown -R www-data:www-data "$PROJECT_DIR/logs"
+    sudo chmod -R 755 "$PROJECT_DIR/logs"
+    # .env 文件需要 www-data 可读（服务需要读取环境变量）
+    if [[ -f "$PROJECT_DIR/.env" ]]; then
+        sudo chown root:www-data "$PROJECT_DIR/.env"
+        sudo chmod 640 "$PROJECT_DIR/.env"
+    fi
     
     # 重新加载 systemd
     sudo systemctl daemon-reload
