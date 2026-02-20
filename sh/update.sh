@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# 确保以 bash 运行
+if [ -z "$BASH_VERSION" ]; then
+    exec bash "$0" "$@"
+fi
+
 # VoiceHub 更新脚本
 # 用于更新已部署的 VoiceHub 项目
 

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# 确保以 bash 运行
+if [ -z "$BASH_VERSION" ]; then
+    exec bash "$0" "$@"
+fi
+
 # VoiceHub 一键部署脚本
 # 支持 Ubuntu/Debian 系统
 

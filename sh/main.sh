@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# 确保以 bash 运行
+if [ -z "$BASH_VERSION" ]; then
+    exec bash "$0" "$@"
+fi
+
 # VoiceHub 日常维护管理脚本
 # 支持上下键选择菜单
 
