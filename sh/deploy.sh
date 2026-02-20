@@ -115,8 +115,6 @@ if [[ -d "$PROJECT_DIR" ]]; then
         echo -e "${GREEN}✓ 项目已更新${NC}"
     fi
 else
-    # 创建父目录
-    PARENT_DIR=$(dirname "$PROJECT_DIR")
     sudo mkdir -p "$PROJECT_DIR"
     sudo chown -R $(whoami) "$PROJECT_DIR"
     
@@ -420,7 +418,7 @@ echo -e "${YELLOW}配置 voicehub 命令快捷方式...${NC}"
 echo ""
 
 # 复制 main.sh 到项目目录
-cp "$PROJECT_DIR/sh/main.sh" "$PROJECT_DIR/voicehub.sh"
+ln -sf "$PROJECT_DIR/sh/main.sh" "$PROJECT_DIR/voicehub.sh"
 chmod +x "$PROJECT_DIR/voicehub.sh"
 
 # 创建 /usr/local/bin/voicehub 软链接
