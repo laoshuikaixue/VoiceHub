@@ -271,15 +271,22 @@ echo -e "${GREEN}✓ 依赖安装完成${NC}"
 echo ""
 
 # ============================================
-# 步骤 7: npm run build
+# 步骤 7: 部署 (数据库迁移 + 构建)
 # ============================================
-echo -e "${YELLOW}[7/9] 构建项目...${NC}"
-echo -e "执行: npm run build"
+echo -e "${YELLOW}[7/9] 执行部署脚本...${NC}"
+echo -e "执行: npm run deploy"
 echo ""
 
-npm run build
+# 尝试执行 npm run deploy (包含数据库迁移、管理员创建、构建)
+if npm run deploy; then
+    echo -e "${GREEN}✓ 部署脚本执行成功${NC}"
+else
+    echo -e "${RED}部署脚本执行失败，尝试仅执行构建...${NC}"
+    echo -e "${YELLOW}注意: 数据库迁移可能未完成，请检查日志${NC}"
+    npm run build
+fi
 
-echo -e "${GREEN}✓ 项目构建完成${NC}"
+echo -e "${GREEN}✓ 项目准备完成${NC}"
 echo ""
 
 # ============================================
@@ -473,7 +480,4 @@ else
     echo -e "${BLUE}启动命令: npm run dev (开发) 或 npm run start (生产)${NC}"
 fi
 
-echo ""
-echo -e "${YELLOW}提示: 如需创建管理员账户，请运行:${NC}"
-echo -e "${YELLOW}  cd $PROJECT_DIR && npm run create-admin${NC}"
 echo ""
