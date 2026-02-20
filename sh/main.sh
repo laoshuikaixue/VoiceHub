@@ -124,9 +124,8 @@ cmd_update() {
     echo ""
     
     echo -e "${YELLOW}[1/3] 更新代码...${NC}"
-    git fetch origin main
     git stash
-    git reset --hard origin/main
+    git pull origin main
     echo -e "${GREEN}✓ 代码更新完成${NC}"
     
     echo -e "${YELLOW}[2/3] 更新依赖...${NC}"
