@@ -33,7 +33,7 @@ check_project() {
 
 # 检测服务管理器类型
 detect_service_manager() {
-    if [[ -f "$PROJECT_DIR/ecosystem.config.js" ]]; then
+    if [[ -f "$PROJECT_DIR/ecosystem.config.cjs" || -f "$PROJECT_DIR/ecosystem.config.js" ]]; then
         echo "pm2"
     elif [[ -f "/etc/systemd/system/voicehub.service" ]]; then
         echo "systemd"
@@ -72,7 +72,11 @@ cmd_start() {
     local service_type=$(detect_service_manager)
     
     if [[ "$service_type" == "pm2" ]]; then
-        pm2 start ecosystem.config.js
+        if [[ -f "ecosystem.config.cjs" ]]; then
+            pm2 start ecosystem.config.cjs
+        else
+            pm2 start ecosystem.config.js
+        fi
         echo -e "${GREEN}✓ PM2 服务已启动${NC}"
     elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl start voicehub

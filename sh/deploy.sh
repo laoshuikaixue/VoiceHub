@@ -174,7 +174,7 @@ if [[ "$NEED_CONFIG" == "true" ]]; then
     echo "DATABASE_URL=\"$DATABASE_URL\"" >> "$PROJECT_DIR/.env"
     
     # JWT_SECRET (必填)
-    read -p "请输入 JWT_SECRET (JWT密钥，建议至少32位): " JWT_SECRET
+    read -p "请输入 JWT_SECRET (JWT密钥，建议至少32位字符): " JWT_SECRET
     while [[ -z "$JWT_SECRET" ]]; do
         echo -e "${RED}JWT_SECRET 是必填项，不能为空${NC}"
         read -p "请输入 JWT_SECRET: " JWT_SECRET
@@ -299,9 +299,9 @@ if [[ "$SERVICE_CHOICE" == "1" ]]; then
     # 创建日志目录
     mkdir -p "$PROJECT_DIR/logs"
     
-    # 生成 ecosystem.config.js
-    echo -e "${YELLOW}正在生成 ecosystem.config.js...${NC}"
-    cat > "$PROJECT_DIR/ecosystem.config.js" << EOF
+    # 生成 ecosystem.config.cjs
+    echo -e "${YELLOW}正在生成 ecosystem.config.cjs...${NC}"
+    cat > "$PROJECT_DIR/ecosystem.config.cjs" << EOF
 module.exports = {
   apps: [{
     name: 'voicehub',
@@ -319,7 +319,7 @@ EOF
     # 启动服务
     cd "$PROJECT_DIR"
     echo -e "${YELLOW}正在启动 VoiceHub 服务...${NC}"
-    pm2 start ecosystem.config.js
+    pm2 start ecosystem.config.cjs
     pm2 save
     echo -e "${YELLOW}正在设置 PM2 开机自起...${NC}"
     PM2_CMD=$(pm2 startup 2>&1 | grep -E '^sudo ' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'); [ -n "$PM2_CMD" ] && eval "$PM2_CMD" && pm2 save || echo "Failed to setup PM2 startup"
