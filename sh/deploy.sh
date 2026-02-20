@@ -24,7 +24,7 @@ echo ""
 # ============================================
 # 步骤 1: 检查系统是否为 Ubuntu 或 Debian
 # ============================================
-echo -e "${YELLOW}[1/7] 检查系统类型...${NC}"
+echo -e "${YELLOW}[1/9] 检查系统类型...${NC}"
 
 if [[ -f /etc/os-release ]]; then
     . /etc/os-release
@@ -49,7 +49,7 @@ echo ""
 # ============================================
 # 步骤 2: 检查并安装 Node.js 22+
 # ============================================
-echo -e "${YELLOW}[2/7] 检查 Node.js 版本...${NC}"
+echo -e "${YELLOW}[2/9] 检查 Node.js 版本...${NC}"
 
 # 检查是否已安装 node
 if command -v node &> /dev/null; then
@@ -84,7 +84,7 @@ echo ""
 # ============================================
 # 步骤 3: 询问是否切换 npm 国内源
 # ============================================
-echo -e "${YELLOW}[3/7] npm 镜像源配置${NC}"
+echo -e "${YELLOW}[3/9] npm 镜像源配置${NC}"
 echo -e "是否需要将 npm 切换为国内淘宝源？"
 echo -e "${BLUE}  y - 使用淘宝镜像 (https://registry.npmmirror.com)${NC}"
 echo -e "${BLUE}  n - 使用官方源 (https://registry.npmjs.org)${NC}"
@@ -103,7 +103,7 @@ echo ""
 # ============================================
 # 步骤 4: Git Clone 项目
 # ============================================
-echo -e "${YELLOW}[4/7] 克隆项目...${NC}"
+echo -e "${YELLOW}[4/9] 克隆项目...${NC}"
 
 if [[ -d "$PROJECT_DIR" ]]; then
     echo -e "${YELLOW}项目目录已存在: $PROJECT_DIR${NC}"
@@ -129,7 +129,7 @@ echo ""
 # ============================================
 # 步骤 5: 配置 .env 文件
 # ============================================
-echo -e "${YELLOW}[5/7] 配置环境变量...${NC}"
+echo -e "${YELLOW}[5/9] 配置环境变量...${NC}"
 
 if [[ -f "$PROJECT_DIR/.env" ]]; then
     read -p ".env 文件已存在，是否重新配置? (y/n): " REBUILD_ENV
@@ -244,7 +244,7 @@ echo ""
 # ============================================
 # 步骤 6: npm install
 # ============================================
-echo -e "${YELLOW}[6/7] 安装项目依赖...${NC}"
+echo -e "${YELLOW}[6/9] 安装项目依赖...${NC}"
 echo -e "执行: npm install"
 echo ""
 
@@ -257,7 +257,7 @@ echo ""
 # ============================================
 # 步骤 7: npm run build
 # ============================================
-echo -e "${YELLOW}[7/7] 构建项目...${NC}"
+echo -e "${YELLOW}[7/9] 构建项目...${NC}"
 echo -e "执行: npm run build"
 echo ""
 
@@ -363,16 +363,11 @@ Environment=NODE_ENV=production
 ExecStart=$NODE_PATH $PROJECT_DIR/.output/server/index.mjs
 Restart=always
 RestartSec=10
-StandardOutput=append:$PROJECT_DIR/logs/voicehub.log
-StandardError=append:$PROJECT_DIR/logs/voicehub-error.log
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-    # 创建日志目录
-    sudo mkdir -p "$PROJECT_DIR/logs"
-    
     # 修改项目目录权限，使 www-data 可以读取，但保持用户所有权
     echo -e "${BLUE}正在设置项目目录权限...${NC}"
     # 使用 find 分别设置目录和文件的权限
@@ -380,9 +375,6 @@ EOF
     sudo find "$PROJECT_DIR" -type d -exec chmod 755 {} \;
     # 文件设置为 644 (rw-r--r--) - 所有用户可读
     sudo find "$PROJECT_DIR" -type f -exec chmod 644 {} \;
-    # 确保日志目录可写
-    sudo chown -R www-data:www-data "$PROJECT_DIR/logs"
-    sudo chmod -R 755 "$PROJECT_DIR/logs"
     # .env 文件需要 www-data 可读（服务需要读取环境变量）
     if [[ -f "$PROJECT_DIR/.env" ]]; then
         sudo chown root:www-data "$PROJECT_DIR/.env"
@@ -402,7 +394,7 @@ EOF
     echo ""
     echo -e "${BLUE}常用命令:${NC}"
     echo -e "  sudo systemctl status voicehub - 查看状态"
-    echo -e "  sudo journalctl -u voicehub -u -f   - 查看日志"
+    echo -e "  sudo journalctl -u voicehub -f   - 查看日志"
     echo -e "  sudo systemctl restart voicehub - 重启服务"
     echo -e "  sudo systemctl stop voicehub    - 停止服务"
 else
