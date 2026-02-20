@@ -223,6 +223,32 @@ docker run -d \
   voicehub
 ```
 
+### Linux 服务器部署
+
+本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
+
+**一键部署命令：**
+
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/deploy.sh)
+```
+
+**更新部署：**
+项目更新时，可使用更新脚本快速更新：
+
+```bash
+# 一键更新命令
+bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/update.sh)
+```
+
+**日常管理：**
+部署完成后，可使用 `voicehub` 命令进行日常管理（需在部署时安装）
+
+如未安装命令，可使用：
+```bash
+bash /opt/voicehub/voicehub.sh <命令>
+```
+
 ### 本地开发部署
 
 #### 前提条件
