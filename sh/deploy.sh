@@ -125,8 +125,8 @@ if [[ -d "$PROJECT_DIR" ]]; then
 else
     # 创建父目录
     PARENT_DIR=$(dirname "$PROJECT_DIR")
-    sudo mkdir -p "$PARENT_DIR"
-    sudo chown $(whoami) "$PARENT_DIR"
+    sudo mkdir -p "$PROJECT_DIR"
+    sudo chown -R $(whoami) "$PROJECT_DIR"
     
     echo -e "正在克隆项目到: $PROJECT_DIR"
     git clone "$REPO_URL" "$PROJECT_DIR"
@@ -195,8 +195,8 @@ if [[ "$NEED_CONFIG" == "true" ]]; then
     
     # WEBAUTHN_RP_ID (可选)
     read -p "请输入 WEBAUTHN_RP_ID (WebAuthn依赖方ID，可直接回车跳过): " WEBAUTHN_RP_ID
-    if [[ -n "$WEBAUTHN_RP_ID" ]]; then
-        echo "WEBAUTHN_RP_ID=$WEBAUTHN_RP_ID" >> "$PROJECT_DIR/.env"
+    if [[ -n "$WEBAUTHN_RP_ID" ]]; then  
+        echo "WEBAUTHN_RP_ID=\"$WEBAUTHN_RP_ID\"" >> "$PROJECT_DIR/.env"  
     fi
     
     # WEBAUTHN_ORIGIN (可选)
@@ -373,6 +373,7 @@ EOF
 
     # 创建日志目录
     sudo mkdir -p "$PROJECT_DIR/logs"
+    sudo chown -R www-data:www-data "$PROJECT_DIR/logs"  
     
     # 重新加载 systemd
     sudo systemctl daemon-reload
