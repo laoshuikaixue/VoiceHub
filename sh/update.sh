@@ -55,6 +55,7 @@ echo -e "执行: git fetch && git reset --hard origin/main"
 echo ""
 
 git fetch origin main
+git stash
 git reset --hard origin/main
 
 echo -e "${GREEN}✓ 代码更新完成${NC}"

@@ -111,6 +111,7 @@ if [[ -d "$PROJECT_DIR" ]]; then
     if [[ "$UPDATE_PROJECT" == "y" || "$UPDATE_PROJECT" == "Y" ]]; then
         cd "$PROJECT_DIR"
         git fetch origin main
+        git stash
         git reset --hard origin/main
         echo -e "${GREEN}✓ 项目已更新${NC}"
     fi
@@ -352,8 +353,7 @@ elif [[ "$SERVICE_CHOICE" == "2" ]]; then
     sudo tee /etc/systemd/system/voicehub.service > /dev/null << EOF
 [Unit]
 Description=VoiceHub - 校园广播站点歌系统
-After=network.target postgresql.service
-Wants=postgresql.service
+After=network.target
 
 [Service]
 Type=simple
@@ -373,9 +373,9 @@ EOF
     echo -e "${BLUE}正在设置项目目录权限...${NC}"
     # 使用 find 分别设置目录和文件的权限
     # 目录设置为 755 (rwxr-xr-x) - 所有用户可读可进入
-    sudo find "$PROJECT_DIR" -type d -exec chmod 755 {} \;
+    sudo find "$PROJECT_DIR" -type d -exec chmod 755 {} +
     # 文件设置为 644 (rw-r--r--) - 所有用户可读
-    sudo find "$PROJECT_DIR" -type f -exec chmod 644 {} \;
+    sudo find "$PROJECT_DIR" -type f -exec chmod 644 {} +
     
     # 重新加载 systemd
     sudo systemctl daemon-reload

@@ -125,6 +125,7 @@ cmd_update() {
     
     echo -e "${YELLOW}[1/3] 更新代码...${NC}"
     git fetch origin main
+    git stash
     git reset --hard origin/main
     echo -e "${GREEN}✓ 代码更新完成${NC}"
     
@@ -177,6 +178,7 @@ cmd_reinstall() {
     
     echo -e "${YELLOW}[1/4] 更新代码...${NC}"
     git fetch origin main
+    git stash
     git reset --hard origin/main
     echo -e "${GREEN}✓ 代码更新完成${NC}"
     
