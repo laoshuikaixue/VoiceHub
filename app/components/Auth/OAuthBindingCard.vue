@@ -119,7 +119,7 @@
 
       <!-- WebAuthn / Passkey -->
       <div 
-        v-if="isWebAuthnSupported || webauthnIdentities.length > 0"
+        v-if="isWebAuthnSupported || webauthnIdentities.length > 0 || !isSecureContext"
         :class="[
           itemClass, 
           webauthnIdentities.length > 0 ? 'cursor-pointer hover:bg-zinc-900/70' : ''
@@ -156,6 +156,10 @@
         >
           {{ actionLoading ? '处理中...' : '添加设备' }}
         </button>
+        <div v-else-if="!isSecureContext" class="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20">
+          <AlertTriangle :size="12" />
+          <span class="text-[10px] font-medium">需要 HTTPS 环境</span>
+        </div>
       </div>
 
       <!-- WebAuthn 设备列表 -->
@@ -252,7 +256,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick } from 'vue'
-import { Loader2, Shield, Fingerprint, ChevronDown, Pencil, Check, X } from 'lucide-vue-next'
+import { Loader2, Shield, Fingerprint, ChevronDown, Pencil, Check, X, AlertTriangle } from 'lucide-vue-next'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
@@ -264,6 +268,7 @@ const identities = ref([])
 const loading = ref(true)
 const actionLoading = ref(false)
 const isWebAuthnSupported = ref(false)
+const isSecureContext = ref(true)
 
 // 编辑相关
 const editingId = ref<string | null>(null)
@@ -342,7 +347,7 @@ const fetchIdentities = async () => {
     loading.value = true
     identities.value = await $fetch('/api/auth/identities')
   } catch (e) {
-    console.error('Failed to fetch identities', e)
+    console.error('获取绑定信息失败', e)
   } finally {
     loading.value = false
   }
@@ -444,9 +449,23 @@ const handleWebAuthnRegister = async () => {
   }
 }
 
-onMounted(() => {
-  isWebAuthnSupported.value = browserSupportsWebAuthn()
+onMounted(async () => {
   fetchIdentities()
+  
+  isSecureContext.value = window.isSecureContext
+
+  const isApiSupported = browserSupportsWebAuthn()
+  let isPlatformAuthenticatorAvailable = false
+
+  if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
+    try {
+      isPlatformAuthenticatorAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+    } catch (e) {
+      console.warn('WebAuthn 平台认证器检查失败:', e)
+    }
+  }
+
+  isWebAuthnSupported.value = isApiSupported && isPlatformAuthenticatorAvailable
 })
 </script>
 

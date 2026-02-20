@@ -170,8 +170,20 @@ const isWebAuthnSupported = ref(false)
 
 const auth = useAuth()
 
-onMounted(() => {
-  isWebAuthnSupported.value = browserSupportsWebAuthn()
+onMounted(async () => {
+  const isApiSupported = browserSupportsWebAuthn()
+  let isPlatformAuthenticatorAvailable = false
+
+  if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
+    try {
+      isPlatformAuthenticatorAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+    } catch (e) {
+      console.warn('WebAuthn 平台认证器检查失败:', e)
+    }
+  }
+
+  // 仅在 API 支持且存在平台认证器（如指纹、人脸、Windows Hello）时启用
+  isWebAuthnSupported.value = isApiSupported && isPlatformAuthenticatorAvailable
 })
 
 const handleLogin = async () => {
@@ -243,7 +255,7 @@ const handleWebAuthnLogin = async () => {
       await navigateTo(verification.redirect || '/')
     }
   } catch (e) {
-    console.error('WebAuthn login error:', e)
+    console.error('WebAuthn 登录错误:', e)
     const apiError = e as { data?: { message?: string }, message?: string }
     error.value = apiError.data?.message || apiError.message || 'Passkey 登录失败'
   } finally {
