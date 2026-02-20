@@ -289,9 +289,7 @@ const startEditing = async (cred: WebAuthnCredential) => {
   // 聚焦输入框
   await nextTick()
   if (editInput.value) {
-    // 如果是 v-for 中的 ref，它可能是一个数组
-    const input = Array.isArray(editInput.value) ? editInput.value[0] : editInput.value
-    input?.focus()
+    (editInput.value as HTMLInputElement)?.focus()
   }
 }
 
@@ -303,6 +301,11 @@ const cancelEditing = () => {
 const saveEditing = async (id: string) => {
   if (!editingName.value.trim()) {
     showToast('设备名称不能为空', 'error')
+    return
+  }
+  
+  if (editingName.value.trim().length > 50) {
+    showToast('设备名称过长 (最大50个字符)', 'error')
     return
   }
   

@@ -6,9 +6,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: '未授权访问' })
   }
 
-  const body = await readBody(event)
-  const { id } = body
-  const name = typeof body.name === 'string' ? body.name.trim() : ''
+  interface RenameRequestBody {
+    id: string
+    name: string
+  }
+  const body = await readBody<RenameRequestBody>(event)
+  const { id, name: rawName } = body
+  const name = typeof rawName === 'string' ? rawName.trim() : ''
 
   if (!id || !name) {
     throw createError({ statusCode: 400, message: '参数错误' })
