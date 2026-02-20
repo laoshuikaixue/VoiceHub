@@ -291,34 +291,20 @@ if [[ "$SERVICE_CHOICE" == "1" ]]; then
         echo -e "${GREEN}✓ PM2 已安装${NC}"
     fi
     
-    # 创建 PM2 启动脚本
-    cat > "$PROJECT_DIR/ecosystem.config.js" << 'EOF'
-module.exports = {
-  apps: [{
-    name: 'voicehub',
-    script: '.output/server/index.mjs',
-    cwd: __dirname,
-    instances: 1,
-    exec_mode: 'cluster',
-    env: {
-      NODE_ENV: 'production'
-    },
-    error_file: './logs/voicehub-error.log',
-    out_file: './logs/voicehub-out.log',
-    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-    autorestart: true,
-    max_restarts: 10,
-    min_uptime: '10s'
-  }]
-}
-EOF
-
     # 创建日志目录
     mkdir -p "$PROJECT_DIR/logs"
     
-    # 启动服务
+    # 直接启动服务
     cd "$PROJECT_DIR"
-    pm2 start ecosystem.config.js
+    echo -e "${YELLOW}正在启动 VoiceHub 服务...${NC}"
+    pm2 start .output/server/index.mjs \
+        --name voicehub \
+        --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
+        --error logs/voicehub-error.log \
+        --output logs/voicehub-out.log \
+        --autorestart true \
+        --max-restarts 10 \
+        --min-uptime 10s
     pm2 save
     
     # 设置开机自启
@@ -333,8 +319,9 @@ EOF
     echo -e "${BLUE}常用命令:${NC}"
     echo -e "  pm2 status        - 查看状态"
     echo -e "  pm2 logs voicehub - 查看日志"
-    echo -e "  pm2 restart      - 重启服务"
-    echo -e "  pm2 stop         - 停止服务"
+    echo -e "  pm2 restart voicehub - 重启服务"
+    echo -e "  pm2 stop voicehub    - 停止服务"
+fi
 
 elif [[ "$SERVICE_CHOICE" == "2" ]]; then
     # Systemctl 管理
