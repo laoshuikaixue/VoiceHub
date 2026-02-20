@@ -301,17 +301,12 @@ if [[ "$SERVICE_CHOICE" == "1" ]]; then
         --name voicehub \
         --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
         --error logs/voicehub-error.log \
-        --output logs/voicehub-out.log \
-        --autorestart true \
-        --max-restarts 10 \
-        --min-uptime 10s
+        --output logs/voicehub-out.log 
     pm2 save
-    
-    # 设置开机自启
-    echo -e "${BLUE}正在配置开机自启...${NC}"
-    STARTUP_CMD=$(sudo env PATH=$PATH:/usr/local/bin pm2 startup | tail -1)
-    eval "$STARTUP_CMD"
-    
+    echo -e "${YELLOW}正在设置 PM2 开机自起...${NC}"
+    PM2_CMD=$(pm2 startup 2>&1 | grep -E '^sudo ' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'); [ -n "$PM2_CMD" ] && eval "$PM2_CMD" && pm2 save || echo "Failed to setup PM2 startup"
+    echo -e "${GREEN}✓ PM2 已开机自起${NC}"
+
     echo -e "${GREEN}✓ PM2 配置完成${NC}"
     echo ""
     echo -e "${GREEN}✓ VoiceHub 服务已启动${NC}"
@@ -321,7 +316,6 @@ if [[ "$SERVICE_CHOICE" == "1" ]]; then
     echo -e "  pm2 logs voicehub - 查看日志"
     echo -e "  pm2 restart voicehub - 重启服务"
     echo -e "  pm2 stop voicehub    - 停止服务"
-fi
 
 elif [[ "$SERVICE_CHOICE" == "2" ]]; then
     # Systemctl 管理
@@ -392,9 +386,7 @@ echo ""
 echo -e "${YELLOW}配置 voicehub 命令快捷方式...${NC}"
 echo ""
 
-# 复制 main.sh 到项目目录
-ln -sf "$(readlink -f "$PROJECT_DIR/sh/main.sh")" "$PROJECT_DIR/voicehub.sh"
-chmod +x "$PROJECT_DIR/voicehub.sh"
+chmod +x "$PROJECT_DIR/sh/main.sh"
 
 # 创建 /usr/local/bin/voicehub 软链接
 echo -e "${BLUE}是否安装 voicehub 命令到系统？(输入 y 安装)${NC}"
@@ -402,7 +394,7 @@ read -p "请选择 (y/n): " INSTALL_CMD
 
 if [[ "$INSTALL_CMD" == "y" || "$INSTALL_CMD" == "Y" ]]; then
     # 创建软链接
-    sudo ln -sf "$PROJECT_DIR/voicehub.sh" /usr/local/bin/voicehub
+    sudo ln -sf "$PROJECT_DIR/sh/main.sh" /usr/local/bin/voicehub
     echo -e "${GREEN}✓ voicehub 命令已安装${NC}"
     echo ""
     echo -e "${BLUE}现在可以使用以下命令管理 VoiceHub:${NC}"
