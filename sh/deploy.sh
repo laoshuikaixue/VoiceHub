@@ -129,6 +129,16 @@ else
     echo -e "${GREEN}✓ 项目克隆完成${NC}"
 fi
 
+# [开发调试] 如果远程仓库还没合并 sh 目录，尝试从本地拷贝
+if [[ ! -d "$PROJECT_DIR/sh" ]]; then
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    if [[ -f "$SCRIPT_DIR/main.sh" ]]; then
+        echo -e "${YELLOW}提示: 正在从本地拷贝 sh 脚本到项目目录...${NC}"
+        mkdir -p "$PROJECT_DIR/sh"
+        cp "$SCRIPT_DIR/"*.sh "$PROJECT_DIR/sh/"
+    fi
+fi
+
 cd "$PROJECT_DIR"
 echo ""
 
