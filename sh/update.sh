@@ -62,6 +62,14 @@ echo ""
 git stash
 git pull origin main
 
+# 恢复脚本执行权限
+if [[ -f "$PROJECT_DIR/sh/main.sh" ]]; then
+    chmod +x "$PROJECT_DIR/sh/main.sh"
+fi
+if [[ -f "$PROJECT_DIR/sh/update.sh" ]]; then
+    chmod +x "$PROJECT_DIR/sh/update.sh"
+fi
+
 echo -e "${GREEN}✓ 代码更新完成${NC}"
 echo ""
 
