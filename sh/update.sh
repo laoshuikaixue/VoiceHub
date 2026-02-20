@@ -15,6 +15,17 @@ NC='\033[0m' # No Color
 # 默认安装目录
 PROJECT_DIR="/opt/voicehub"
 
+# 检测服务管理器类型
+detect_service_manager() {
+    if [[ -f "$PROJECT_DIR/ecosystem.config.js" ]]; then
+        echo "pm2"
+    elif [[ -f "/etc/systemd/system/voicehub.service" ]]; then
+        echo "systemd"
+    else
+        echo "none"
+    fi
+}
+
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}       VoiceHub 更新脚本${NC}"
 echo -e "${BLUE}========================================${NC}"
@@ -40,10 +51,11 @@ echo ""
 # 步骤 2: Git Pull 更新代码
 # ============================================
 echo -e "${YELLOW}[2/6] 更新代码...${NC}"
-echo -e "执行: git pull origin main"
+echo -e "执行: git fetch && git reset --hard origin/main"
 echo ""
 
-git pull origin main
+git fetch origin main
+git reset --hard origin/main
 
 echo -e "${GREEN}✓ 代码更新完成${NC}"
 echo ""
@@ -78,21 +90,19 @@ echo ""
 echo -e "${YELLOW}[5/6] 重启服务...${NC}"
 echo ""
 
-# 检查 PM2 是否在运行
-if command -v pm2 &> /dev/null && pm2 list | grep -q "voicehub"; then
+service_type=$(detect_service_manager)
+
+if [[ "$service_type" == "pm2" ]]; then
     echo -e "${BLUE}检测到 PM2 服务，正在重启...${NC}"
     pm2 restart voicehub
     echo -e "${GREEN}✓ PM2 服务已重启${NC}"
-# 检查 systemctl 是否在运行
-elif sudo systemctl is-active --quiet voicehub 2>/dev/null; then
+elif [[ "$service_type" == "systemd" ]]; then
     echo -e "${BLUE}检测到 systemctl 服务，正在重启...${NC}"
     sudo systemctl restart voicehub
     echo -e "${GREEN}✓ systemctl 服务已重启${NC}"
 else
-    echo -e "${YELLOW}⚠ 未检测到运行中的服务${NC}"
-    echo -e "${YELLOW}请手动启动服务:${NC}"
-    echo -e "  PM2:   pm2 start ecosystem.config.js"
-    echo -e "  systemctl: sudo systemctl start voicehub"
+    echo -e "${YELLOW}⚠ 未检测到服务配置${NC}"
+    echo -e "${YELLOW}请先运行部署脚本配置服务${NC}"
 fi
 
 echo ""
@@ -103,10 +113,12 @@ echo ""
 echo -e "${YELLOW}[6/6] 服务状态...${NC}"
 echo ""
 
-if command -v pm2 &> /dev/null && pm2 list | grep -q "voicehub"; then
-    pm2 status voicehub
-elif sudo systemctl is-active --quiet voicehub 2>/dev/null; then
+if [[ "$service_type" == "pm2" ]]; then
+    pm2 list | grep voicehub
+elif [[ "$service_type" == "systemd" ]]; then
     sudo systemctl status voicehub
+else
+    echo -e "${YELLOW}未检测到服务配置${NC}"
 fi
 
 echo ""

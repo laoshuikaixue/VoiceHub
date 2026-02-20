@@ -26,19 +26,36 @@ check_project() {
     cd "$PROJECT_DIR"
 }
 
+# 检测服务管理器类型
+detect_service_manager() {
+    if [[ -f "$PROJECT_DIR/ecosystem.config.js" ]]; then
+        echo "pm2"
+    elif [[ -f "/etc/systemd/system/voicehub.service" ]]; then
+        echo "systemd"
+    else
+        echo "none"
+    fi
+}
+
 # 查看状态
 cmd_status() {
     check_project
     echo -e "${BLUE}检查服务状态...${NC}"
     
-    if command -v pm2 &> /dev/null && pm2 list | grep -q "voicehub"; then
-        echo -e "${GREEN}PM2 服务状态:${NC}"
-        pm2 list | grep voicehub
-    elif sudo systemctl is-active --quiet voicehub 2>/dev/null; then
+    local service_type=$(detect_service_manager)
+    
+    if [[ "$service_type" == "pm2" ]]; then
+        if command -v pm2 &> /dev/null && pm2 list | grep -q "voicehub"; then
+            echo -e "${GREEN}PM2 服务状态:${NC}"
+            pm2 list | grep voicehub
+        else
+            echo -e "${YELLOW}PM2 服务未运行${NC}"
+        fi
+    elif [[ "$service_type" == "systemd" ]]; then
         echo -e "${GREEN}systemctl 服务状态:${NC}"
         sudo systemctl status voicehub
     else
-        echo -e "${YELLOW}服务未运行${NC}"
+        echo -e "${YELLOW}未检测到服务配置${NC}"
     fi
 }
 
@@ -47,19 +64,17 @@ cmd_start() {
     check_project
     echo -e "${BLUE}启动服务...${NC}"
     
-    if command -v pm2 &> /dev/null && pm2 list | grep -q "voicehub"; then
-        pm2 start voicehub
+    local service_type=$(detect_service_manager)
+    
+    if [[ "$service_type" == "pm2" ]]; then
+        pm2 start ecosystem.config.js
         echo -e "${GREEN}✓ PM2 服务已启动${NC}"
-    elif sudo systemctl is-active --quiet voicehub 2>/dev/null; then
+    elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl start voicehub
         echo -e "${GREEN}✓ systemctl 服务已启动${NC}"
     else
-        if [[ -f "$PROJECT_DIR/ecosystem.config.js" ]]; then
-            pm2 start ecosystem.config.js
-            echo -e "${GREEN}✓ PM2 服务已启动${NC}"
-        else
-            echo -e "${YELLOW}未找到服务配置，请手动启动${NC}"
-        fi
+        echo -e "${YELLOW}未找到服务配置，请先运行部署脚本配置服务${NC}"
+        exit 1
     fi
 }
 
@@ -68,14 +83,16 @@ cmd_stop() {
     check_project
     echo -e "${BLUE}停止服务...${NC}"
     
-    if command -v pm2 &> /dev/null && pm2 list | grep -q "voicehub"; then
+    local service_type=$(detect_service_manager)
+    
+    if [[ "$service_type" == "pm2" ]]; then
         pm2 stop voicehub
         echo -e "${GREEN}✓ PM2 服务已停止${NC}"
-    elif sudo systemctl is-active --quiet voicehub 2>/dev/null; then
+    elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl stop voicehub
         echo -e "${GREEN}✓ systemctl 服务已停止${NC}"
     else
-        echo -e "${YELLOW}服务未运行${NC}"
+        echo -e "${YELLOW}未找到服务配置${NC}"
     fi
 }
 
@@ -84,14 +101,17 @@ cmd_restart() {
     check_project
     echo -e "${BLUE}重启服务...${NC}"
     
-    if command -v pm2 &> /dev/null && pm2 list | grep -q "voicehub"; then
+    local service_type=$(detect_service_manager)
+    
+    if [[ "$service_type" == "pm2" ]]; then
         pm2 restart voicehub
         echo -e "${GREEN}✓ PM2 服务已重启${NC}"
-    elif sudo systemctl is-active --quiet voicehub 2>/dev/null; then
+    elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl restart voicehub
         echo -e "${GREEN}✓ systemctl 服务已重启${NC}"
     else
-        cmd_start
+        echo -e "${YELLOW}未找到服务配置，请先运行部署脚本配置服务${NC}"
+        exit 1
     fi
 }
 
@@ -104,7 +124,8 @@ cmd_update() {
     echo ""
     
     echo -e "${YELLOW}[1/3] 更新代码...${NC}"
-    git pull origin main
+    git fetch origin main
+    git reset --hard origin/main
     echo -e "${GREEN}✓ 代码更新完成${NC}"
     
     echo -e "${YELLOW}[2/3] 更新依赖...${NC}"
@@ -155,7 +176,8 @@ cmd_reinstall() {
     cmd_stop
     
     echo -e "${YELLOW}[1/4] 更新代码...${NC}"
-    git pull origin main
+    git fetch origin main
+    git reset --hard origin/main
     echo -e "${GREEN}✓ 代码更新完成${NC}"
     
     echo -e "${YELLOW}[2/4] 重装依赖...${NC}"
@@ -180,12 +202,14 @@ cmd_reinstall() {
 cmd_logs() {
     check_project
     
-    if command -v pm2 &> /dev/null && pm2 list | grep -q "voicehub"; then
+    local service_type=$(detect_service_manager)
+    
+    if [[ "$service_type" == "pm2" ]]; then
         pm2 logs voicehub
-    elif sudo systemctl is-active --quiet voicehub 2>/dev/null; then
+    elif [[ "$service_type" == "systemd" ]]; then
         sudo journalctl -u voicehub -f
     else
-        echo -e "${YELLOW}服务未运行，无法查看日志${NC}"
+        echo -e "${YELLOW}未找到服务配置，无法查看日志${NC}"
         exit 1
     fi
 }

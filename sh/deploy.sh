@@ -110,7 +110,8 @@ if [[ -d "$PROJECT_DIR" ]]; then
     read -p "是否更新现有项目? (y/n): " UPDATE_PROJECT
     if [[ "$UPDATE_PROJECT" == "y" || "$UPDATE_PROJECT" == "Y" ]]; then
         cd "$PROJECT_DIR"
-        git pull origin main
+        git fetch origin main
+        git reset --hard origin/main
         echo -e "${GREEN}✓ 项目已更新${NC}"
     fi
 else
@@ -179,7 +180,7 @@ if [[ "$NEED_CONFIG" == "true" ]]; then
     # NODE_ENV
     read -p "请输入 NODE_ENV (development/production，默认 production): " NODE_ENV
     NODE_ENV=${NODE_ENV:-production}
-    echo "NODE_ENV=$NODE_ENV" >> "$PROJECT_DIR/.env"
+    echo "NODE_ENV=\"$NODE_ENV\"" >> "$PROJECT_DIR/.env"
     
     echo "" >> "$PROJECT_DIR/.env"
     echo "# WebAuthn 配置 (可选)" >> "$PROJECT_DIR/.env"
@@ -193,7 +194,7 @@ if [[ "$NEED_CONFIG" == "true" ]]; then
     # WEBAUTHN_ORIGIN (可选)
     read -p "请输入 WEBAUTHN_ORIGIN (允许的Origin列表，可直接回车跳过): " WEBAUTHN_ORIGIN
     if [[ -n "$WEBAUTHN_ORIGIN" ]]; then
-        echo "WEBAUTHN_ORIGIN=$WEBAUTHN_ORIGIN" >> "$PROJECT_DIR/.env"
+        echo "WEBAUTHN_ORIGIN=\"$WEBAUTHN_ORIGIN\"" >> "$PROJECT_DIR/.env"
     fi
     
     echo "" >> "$PROJECT_DIR/.env"
@@ -208,27 +209,27 @@ if [[ "$NEED_CONFIG" == "true" ]]; then
     # OAUTH_STATE_SECRET (可选)
     read -p "请输入 OAUTH_STATE_SECRET (OAuth state加密密钥，可直接回车跳过): " OAUTH_STATE_SECRET
     if [[ -n "$OAUTH_STATE_SECRET" ]]; then
-        echo "OAUTH_STATE_SECRET=$OAUTH_STATE_SECRET" >> "$PROJECT_DIR/.env"
+        echo "OAUTH_STATE_SECRET=\"$OAUTH_STATE_SECRET\"" >> "$PROJECT_DIR/.env"
     fi
     
     # GitHub OAuth (可选)
     read -p "请输入 GITHUB_CLIENT_ID (GitHub OAuth Client ID，可直接回车跳过): " GITHUB_CLIENT_ID
     if [[ -n "$GITHUB_CLIENT_ID" ]]; then
-        echo "GITHUB_CLIENT_ID=$GITHUB_CLIENT_ID" >> "$PROJECT_DIR/.env"
+        echo "GITHUB_CLIENT_ID=\"$GITHUB_CLIENT_ID\"" >> "$PROJECT_DIR/.env"
     fi
     read -p "请输入 GITHUB_CLIENT_SECRET (GitHub OAuth Client Secret，可直接回车跳过): " GITHUB_CLIENT_SECRET
     if [[ -n "$GITHUB_CLIENT_SECRET" ]]; then
-        echo "GITHUB_CLIENT_SECRET=$GITHUB_CLIENT_SECRET" >> "$PROJECT_DIR/.env"
+        echo "GITHUB_CLIENT_SECRET=\"$GITHUB_CLIENT_SECRET\"" >> "$PROJECT_DIR/.env"
     fi
     
     # Google OAuth (可选)
     read -p "请输入 GOOGLE_CLIENT_ID (Google OAuth Client ID，可直接回车跳过): " GOOGLE_CLIENT_ID
     if [[ -n "$GOOGLE_CLIENT_ID" ]]; then
-        echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> "$PROJECT_DIR/.env"
+        echo "GOOGLE_CLIENT_ID=\"$GOOGLE_CLIENT_ID\"" >> "$PROJECT_DIR/.env"
     fi
     read -p "请输入 GOOGLE_CLIENT_SECRET (Google OAuth Client Secret，可直接回车跳过): " GOOGLE_CLIENT_SECRET
     if [[ -n "$GOOGLE_CLIENT_SECRET" ]]; then
-        echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> "$PROJECT_DIR/.env"
+        echo "GOOGLE_CLIENT_SECRET=\"$GOOGLE_CLIENT_SECRET\"" >> "$PROJECT_DIR/.env"
     fi
     
     # Redis (可选)
@@ -268,7 +269,7 @@ echo -e "${GREEN}✓ 项目构建完成${NC}"
 echo ""
 
 # ============================================
-# 步骤 9: 配置服务管理 (pm2 或 systemctl)
+# 步骤 8: 配置服务管理 (pm2 或 systemctl)
 # ============================================
 echo -e "${YELLOW}配置服务管理...${NC}"
 echo ""
@@ -322,8 +323,9 @@ EOF
     pm2 save
     
     # 设置开机自启
-    sudo pm2 startup
-    sudo env PATH=$PATH:/usr/local/bin pm2 resurrect
+    echo -e "${BLUE}正在配置开机自启...${NC}"
+    STARTUP_CMD=$(sudo env PATH=$PATH:/usr/local/bin pm2 startup | tail -1)
+    eval "$STARTUP_CMD"
     
     echo -e "${GREEN}✓ PM2 配置完成${NC}"
     echo ""
@@ -339,6 +341,14 @@ elif [[ "$SERVICE_CHOICE" == "2" ]]; then
     # Systemctl 管理
     echo -e "${YELLOW}正在配置 systemctl...${NC}"
     
+    # 动态获取 node 路径
+    NODE_PATH=$(which node)
+    if [[ -z "$NODE_PATH" ]]; then
+        echo -e "${RED}错误: 无法找到 node 可执行文件${NC}"
+        exit 1
+    fi
+    echo -e "${BLUE}Node 路径: $NODE_PATH${NC}"
+    
     # 创建 systemd 服务文件
     sudo tee /etc/systemd/system/voicehub.service > /dev/null << EOF
 [Unit]
@@ -352,7 +362,7 @@ User=www-data
 Group=www-data
 WorkingDirectory=$PROJECT_DIR
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/node $PROJECT_DIR/.output/server/index.mjs
+ExecStart=$NODE_PATH $PROJECT_DIR/.output/server/index.mjs
 Restart=always
 RestartSec=10
 StandardOutput=append:$PROJECT_DIR/logs/voicehub.log
@@ -364,7 +374,10 @@ EOF
 
     # 创建日志目录
     sudo mkdir -p "$PROJECT_DIR/logs"
-    sudo chown -R www-data:www-data "$PROJECT_DIR/logs"  
+    
+    # 修改项目目录所有者为 www-data
+    echo -e "${BLUE}正在修改项目目录所有者...${NC}"
+    sudo chown -R www-data:www-data "$PROJECT_DIR"
     
     # 重新加载 systemd
     sudo systemctl daemon-reload
@@ -389,7 +402,7 @@ fi
 echo ""
 
 # ============================================
-# 步骤 10: 安装 voicehub 命令快捷方式
+# 步骤 9: 安装 voicehub 命令快捷方式
 # ============================================
 echo -e "${YELLOW}配置 voicehub 命令快捷方式...${NC}"
 echo ""
@@ -434,7 +447,26 @@ echo -e "${GREEN}       部署完成！${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 echo -e "${BLUE}项目目录: $PROJECT_DIR${NC}"
-echo -e "${BLUE}启动命令: npm run dev (开发) 或 npm run start (生产)${NC}"
+echo ""
+
+if [[ "$SERVICE_CHOICE" == "1" ]]; then
+    echo -e "${BLUE}服务管理: PM2${NC}"
+    echo -e "${YELLOW}常用命令:${NC}"
+    echo -e "  pm2 status        - 查看状态"
+    echo -e "  pm2 logs voicehub - 查看日志"
+    echo -e "  pm2 restart voicehub - 重启服务"
+    echo -e "  pm2 stop voicehub    - 停止服务"
+elif [[ "$SERVICE_CHOICE" == "2" ]]; then
+    echo -e "${BLUE}服务管理: systemd${NC}"
+    echo -e "${YELLOW}常用命令:${NC}"
+    echo -e "  sudo systemctl status voicehub - 查看状态"
+    echo -e "  sudo journalctl -u voicehub -f   - 查看日志"
+    echo -e "  sudo systemctl restart voicehub  - 重启服务"
+    echo -e "  sudo systemctl stop voicehub     - 停止服务"
+else
+    echo -e "${BLUE}启动命令: npm run dev (开发) 或 npm run start (生产)${NC}"
+fi
+
 echo ""
 echo -e "${YELLOW}提示: 如需创建管理员账户，请运行:${NC}"
 echo -e "${YELLOW}  cd $PROJECT_DIR && npm run create-admin${NC}"
