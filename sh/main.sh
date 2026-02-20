@@ -245,35 +245,29 @@ show_menu() {
         echo -e "${YELLOW}使用 ↑↓ 选择，Enter 确认${NC}"
     }
     
-    # 读取单个字符（支持方向键）
-    read_key() {
-        local key
-        IFS= read -rsn1 key
-        if [[ $key == $'\e' ]]; then
-            IFS= read -rsn1 key
-            if [[ $key == '[' ]]; then
-                IFS= read -rsn1 key
-                echo "$key"
-            fi
-        else
-            echo "$key"
-        fi
-    }
+    # 读取键盘输入
+    local key
     
-    # 主循环
     while true; do
         print_menu
         
-        local key=$(read_key)
+        # 读取 1 个字符
+        read -rsn1 key
         
+        # 检查是否是转义序列 (方向键)
+        if [[ "$key" == $'\x1b' ]]; then
+            read -rsn2 -t 0.01 chars
+            key="$key$chars"
+        fi
+
         case "$key" in
-            A) # 上
+            $'\x1b[A'|$'\x1bOA'|k|K) # 上
                 ((selected--))
                 if [[ $selected -lt 0 ]]; then
                     selected=$((total - 1))
                 fi
                 ;;
-            B) # 下
+            $'\x1b[B'|$'\x1bOB'|j|J) # 下
                 ((selected++))
                 if [[ $selected -ge $total ]]; then
                     selected=0
