@@ -1,4 +1,4 @@
-import { db, eq, and, userIdentities } from '~/drizzle/db'
+import { db, eq, and, userIdentities, sql } from '~/drizzle/db'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -31,11 +31,11 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const data = JSON.parse(identity.providerUsername)
-    data.label = name
-    
+    // 使用 jsonb_set 原子更新 label，避免覆盖 concurrent login 产生的 counter 更新
     await db.update(userIdentities)
-      .set({ providerUsername: JSON.stringify(data) })
+      .set({ 
+        providerUsername: sql`jsonb_set(${userIdentities.providerUsername}::jsonb, '{label}', ${JSON.stringify(name)}::jsonb)::text` 
+      })
       .where(eq(userIdentities.id, id))
 
     return { success: true }
