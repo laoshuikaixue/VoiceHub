@@ -244,11 +244,6 @@ bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh
 **日常管理：**
 部署完成后，可使用 `voicehub` 命令进行日常管理（需在部署时安装）
 
-如未安装命令，可使用：
-```bash
-bash /opt/voicehub/voicehub.sh <命令>
-```
-
 ### 本地开发部署
 
 #### 前提条件
