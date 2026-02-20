@@ -294,14 +294,27 @@ if [[ "$SERVICE_CHOICE" == "1" ]]; then
     # 创建日志目录
     mkdir -p "$PROJECT_DIR/logs"
     
-    # 直接启动服务
+    # 生成 ecosystem.config.js
+    echo -e "${YELLOW}正在生成 ecosystem.config.js...${NC}"
+    cat > "$PROJECT_DIR/ecosystem.config.js" << EOF
+module.exports = {
+  apps: [{
+    name: 'voicehub',
+    script: '.output/server/index.mjs',
+    env: {
+      NODE_ENV: 'production'
+    },
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    error_file: 'logs/voicehub-error.log',
+    out_file: 'logs/voicehub-out.log'
+  }]
+}
+EOF
+
+    # 启动服务
     cd "$PROJECT_DIR"
     echo -e "${YELLOW}正在启动 VoiceHub 服务...${NC}"
-    pm2 start .output/server/index.mjs \
-        --name voicehub \
-        --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
-        --error logs/voicehub-error.log \
-        --output logs/voicehub-out.log 
+    pm2 start ecosystem.config.js
     pm2 save
     echo -e "${YELLOW}正在设置 PM2 开机自起...${NC}"
     PM2_CMD=$(pm2 startup 2>&1 | grep -E '^sudo ' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'); [ -n "$PM2_CMD" ] && eval "$PM2_CMD" && pm2 save || echo "Failed to setup PM2 startup"
@@ -387,6 +400,7 @@ echo -e "${YELLOW}配置 voicehub 命令快捷方式...${NC}"
 echo ""
 
 chmod +x "$PROJECT_DIR/sh/main.sh"
+chmod +x "$PROJECT_DIR/sh/update.sh"
 
 # 创建 /usr/local/bin/voicehub 软链接
 echo -e "${BLUE}是否安装 voicehub 命令到系统？(输入 y 安装)${NC}"

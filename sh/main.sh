@@ -118,30 +118,12 @@ cmd_restart() {
 # 更新
 cmd_update() {
     check_project
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}       VoiceHub 更新${NC}"
-    echo -e "${BLUE}========================================${NC}"
-    echo ""
-    
-    echo -e "${YELLOW}[1/3] 更新代码...${NC}"
-    git stash
-    git pull origin main
-    echo -e "${GREEN}✓ 代码更新完成${NC}"
-    
-    echo -e "${YELLOW}[2/3] 更新依赖...${NC}"
-    npm install
-    echo -e "${GREEN}✓ 依赖更新完成${NC}"
-    
-    echo -e "${YELLOW}[3/3] 重新构建...${NC}"
-    npm run build
-    echo -e "${GREEN}✓ 构建完成${NC}"
-    
-    cmd_restart
-    
-    echo ""
-    echo -e "${GREEN}========================================${NC}"
-    echo -e "${GREEN}       更新完成！${NC}"
-    echo -e "${GREEN}========================================${NC}"
+    if [[ -f "$PROJECT_DIR/sh/update.sh" ]]; then
+        bash "$PROJECT_DIR/sh/update.sh"
+    else
+        echo -e "${RED}错误: 找不到更新脚本 $PROJECT_DIR/sh/update.sh${NC}"
+        exit 1
+    fi
 }
 
 # 重装依赖
