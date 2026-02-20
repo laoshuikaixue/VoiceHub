@@ -24,7 +24,7 @@ echo ""
 # ============================================
 # 步骤 1: 检查系统是否为 Ubuntu 或 Debian
 # ============================================
-echo -e "${YELLOW}[1/8] 检查系统类型...${NC}"
+echo -e "${YELLOW}[1/7] 检查系统类型...${NC}"
 
 if [[ -f /etc/os-release ]]; then
     . /etc/os-release
@@ -43,22 +43,13 @@ fi
 
 echo -e "${GREEN}✓ 检测到系统: $OS $VER${NC}"
 echo ""
-
-# ============================================
-# 步骤 2: 选择安装目录
-# ============================================
-echo -e "${YELLOW}[2/8] 选择安装目录...${NC}"
-read -p "请输入安装目录 (默认: $PROJECT_DIR): " INPUT_DIR
-if [[ -n "$INPUT_DIR" ]]; then
-    PROJECT_DIR="$INPUT_DIR"
-fi
-echo -e "${GREEN}✓ 安装目录: $PROJECT_DIR${NC}"
+echo -e "${BLUE}安装目录: $PROJECT_DIR${NC}"
 echo ""
 
 # ============================================
-# 步骤 3: 检查并安装 Node.js 22+
+# 步骤 2: 检查并安装 Node.js 22+
 # ============================================
-echo -e "${YELLOW}[3/8] 检查 Node.js 版本...${NC}"
+echo -e "${YELLOW}[2/7] 检查 Node.js 版本...${NC}"
 
 # 检查是否已安装 node
 if command -v node &> /dev/null; then
@@ -91,9 +82,9 @@ fi
 echo ""
 
 # ============================================
-# 步骤 4: 询问是否切换 npm 国内源
+# 步骤 3: 询问是否切换 npm 国内源
 # ============================================
-echo -e "${YELLOW}[4/8] npm 镜像源配置${NC}"
+echo -e "${YELLOW}[3/7] npm 镜像源配置${NC}"
 echo -e "是否需要将 npm 切换为国内淘宝源？"
 echo -e "${BLUE}  y - 使用淘宝镜像 (https://registry.npmmirror.com)${NC}"
 echo -e "${BLUE}  n - 使用官方源 (https://registry.npmjs.org)${NC}"
@@ -110,9 +101,9 @@ fi
 echo ""
 
 # ============================================
-# 步骤 5: Git Clone 项目
+# 步骤 4: Git Clone 项目
 # ============================================
-echo -e "${YELLOW}[5/8] 克隆项目...${NC}"
+echo -e "${YELLOW}[4/7] 克隆项目...${NC}"
 
 if [[ -d "$PROJECT_DIR" ]]; then
     echo -e "${YELLOW}项目目录已存在: $PROJECT_DIR${NC}"
@@ -137,9 +128,9 @@ cd "$PROJECT_DIR"
 echo ""
 
 # ============================================
-# 步骤 6: 配置 .env 文件
+# 步骤 5: 配置 .env 文件
 # ============================================
-echo -e "${YELLOW}[6/8] 配置环境变量...${NC}"
+echo -e "${YELLOW}[5/7] 配置环境变量...${NC}"
 
 if [[ -f "$PROJECT_DIR/.env" ]]; then
     read -p ".env 文件已存在，是否重新配置? (y/n): " REBUILD_ENV
@@ -252,9 +243,9 @@ fi
 echo ""
 
 # ============================================
-# 步骤 7: npm install
+# 步骤 6: npm install
 # ============================================
-echo -e "${YELLOW}[7/8] 安装项目依赖...${NC}"
+echo -e "${YELLOW}[6/7] 安装项目依赖...${NC}"
 echo -e "执行: npm install"
 echo ""
 
@@ -265,9 +256,9 @@ echo -e "${GREEN}✓ 依赖安装完成${NC}"
 echo ""
 
 # ============================================
-# 步骤 8: npm run build
+# 步骤 7: npm run build
 # ============================================
-echo -e "${YELLOW}[8/8] 构建项目...${NC}"
+echo -e "${YELLOW}[7/7] 构建项目...${NC}"
 echo -e "执行: npm run build"
 echo ""
 
