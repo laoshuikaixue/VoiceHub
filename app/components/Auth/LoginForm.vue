@@ -182,8 +182,8 @@ onMounted(async () => {
     }
   }
 
-  // 仅在 API 支持且存在平台认证器（如指纹、人脸、Windows Hello）时启用
-  isWebAuthnSupported.value = isApiSupported && isPlatformAuthenticatorAvailable
+  // 兼容外部安全密钥（如 YubiKey），即使没有内置平台认证器也允许尝试
+  isWebAuthnSupported.value = isApiSupported
 })
 
 const handleLogin = async () => {

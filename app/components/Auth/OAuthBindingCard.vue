@@ -276,7 +276,14 @@ const editingName = ref('')
 const isRenaming = ref(false)
 const editInput = ref<HTMLInputElement | null>(null)
 
-const startEditing = async (cred: any) => {
+interface WebAuthnCredential {
+  id: string
+  providerUsername: string
+  createdAt: string
+  [key: string]: any
+}
+
+const startEditing = async (cred: WebAuthnCredential) => {
   editingId.value = cred.id
   editingName.value = cred.providerUsername
   // 聚焦输入框
@@ -465,7 +472,8 @@ onMounted(async () => {
     }
   }
 
-  isWebAuthnSupported.value = isApiSupported && isPlatformAuthenticatorAvailable
+  // 兼容外部安全密钥（如 YubiKey），即使没有内置平台认证器也允许尝试
+  isWebAuthnSupported.value = isApiSupported
 })
 </script>
 

@@ -7,7 +7,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { id, name } = body
+  const { id } = body
+  const name = typeof body.name === 'string' ? body.name.trim() : ''
 
   if (!id || !name) {
     throw createError({ statusCode: 400, message: '参数错误' })
