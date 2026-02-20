@@ -119,7 +119,7 @@
 
       <!-- WebAuthn / Passkey -->
       <div 
-        v-if="isWebAuthnSupported || webauthnIdentities.length > 0"
+        v-if="isWebAuthnSupported || webauthnIdentities.length > 0 || !isSecureContext"
         :class="[
           itemClass, 
           webauthnIdentities.length > 0 ? 'cursor-pointer hover:bg-zinc-900/70' : ''
@@ -156,6 +156,10 @@
         >
           {{ actionLoading ? '处理中...' : '添加设备' }}
         </button>
+        <div v-else-if="!isSecureContext" class="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20">
+          <AlertTriangle :size="12" />
+          <span class="text-[10px] font-medium">需要 HTTPS 环境</span>
+        </div>
       </div>
 
       <!-- WebAuthn 设备列表 -->
@@ -167,8 +171,30 @@
               :key="cred.id"
               class="flex items-center justify-between p-3 bg-zinc-950/20 border border-zinc-900 rounded-xl group/item"
             >
-              <div class="flex flex-col">
-                <span class="text-xs font-medium text-zinc-300">{{ cred.providerUsername }}</span>
+              <div class="flex flex-col flex-1 mr-4">
+                <div v-if="editingId === cred.id" class="flex items-center gap-2 mb-1">
+                  <input
+                    v-model="editingName"
+                    type="text"
+                    class="bg-zinc-900 border border-zinc-700 rounded px-2 py-0.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 w-full"
+                    :disabled="isRenaming"
+                    @keyup.enter="saveEditing(cred.id)"
+                    @keyup.esc="cancelEditing"
+                    @click.stop
+                    ref="editInput"
+                  />
+                </div>
+                <div v-else class="flex items-center gap-2 mb-0.5">
+                  <span class="text-xs font-medium text-zinc-300">{{ cred.providerUsername }}</span>
+                  <button 
+                    class="text-zinc-500 hover:text-zinc-300 opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5"
+                    @click.stop="startEditing(cred)"
+                    title="重命名"
+                  >
+                    <Pencil :size="12" />
+                  </button>
+                </div>
+                
                 <span class="text-[10px] text-zinc-600"
                   >添加于 {{ new Date(cred.createdAt).toLocaleString('zh-CN', { 
                     year: 'numeric', 
@@ -181,12 +207,34 @@
                   }) }}</span
                 >
               </div>
-              <button
-                class="text-xs text-rose-500 hover:text-rose-400 font-medium px-2 py-1 opacity-0 group-hover/item:opacity-100 transition-opacity"
-                @click="confirmUnbindWebAuthn(cred)"
-              >
-                移除
-              </button>
+
+              <div class="flex items-center gap-1">
+                <template v-if="editingId === cred.id">
+                  <button
+                    class="text-zinc-400 hover:text-green-400 transition-colors p-1"
+                    :disabled="isRenaming"
+                    @click.stop="saveEditing(cred.id)"
+                    title="保存"
+                  >
+                    <Check :size="14" />
+                  </button>
+                  <button
+                    class="text-zinc-400 hover:text-zinc-200 transition-colors p-1"
+                    :disabled="isRenaming"
+                    @click.stop="cancelEditing"
+                    title="取消"
+                  >
+                    <X :size="14" />
+                  </button>
+                </template>
+                <button
+                  v-else
+                  class="text-xs text-rose-500 hover:text-rose-400 font-medium px-2 py-1 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                  @click="confirmUnbindWebAuthn(cred)"
+                >
+                  移除
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -207,8 +255,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { Loader2, Shield, Fingerprint, ChevronDown } from 'lucide-vue-next'
+import { ref, onMounted, computed, nextTick } from 'vue'
+import { Loader2, Shield, Fingerprint, ChevronDown, Pencil, Check, X, AlertTriangle } from 'lucide-vue-next'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
@@ -220,6 +268,62 @@ const identities = ref([])
 const loading = ref(true)
 const actionLoading = ref(false)
 const isWebAuthnSupported = ref(false)
+const isSecureContext = ref(true)
+
+// 编辑相关
+const editingId = ref<string | null>(null)
+const editingName = ref('')
+const isRenaming = ref(false)
+const editInput = ref<HTMLInputElement | null>(null)
+
+interface WebAuthnCredential {
+  id: string
+  providerUsername: string
+  createdAt: string
+  [key: string]: any
+}
+
+const startEditing = async (cred: WebAuthnCredential) => {
+  editingId.value = cred.id
+  editingName.value = cred.providerUsername
+  // 聚焦输入框
+  await nextTick()
+  if (editInput.value) {
+    (editInput.value as HTMLInputElement)?.focus()
+  }
+}
+
+const cancelEditing = () => {
+  editingId.value = null
+  editingName.value = ''
+}
+
+const saveEditing = async (id: string) => {
+  if (!editingName.value.trim()) {
+    showToast('设备名称不能为空', 'error')
+    return
+  }
+  
+  if (editingName.value.trim().length > 50) {
+    showToast('设备名称过长 (最大50个字符)', 'error')
+    return
+  }
+  
+  isRenaming.value = true
+  try {
+    await $fetch('/api/auth/webauthn/rename', {
+      method: 'POST',
+      body: { id, name: editingName.value }
+    })
+    showToast('设备名称修改成功', 'success')
+    await fetchIdentities()
+    cancelEditing()
+  } catch (e: any) {
+    showToast(e.data?.message || '修改失败', 'error')
+  } finally {
+    isRenaming.value = false
+  }
+}
 
 const isWebAuthnExpanded = ref(false)
 const toggleWebAuthnList = () => {
@@ -253,7 +357,7 @@ const fetchIdentities = async () => {
     loading.value = true
     identities.value = await $fetch('/api/auth/identities')
   } catch (e) {
-    console.error('Failed to fetch identities', e)
+    console.error('获取绑定信息失败', e)
   } finally {
     loading.value = false
   }
@@ -355,9 +459,24 @@ const handleWebAuthnRegister = async () => {
   }
 }
 
-onMounted(() => {
-  isWebAuthnSupported.value = browserSupportsWebAuthn()
+onMounted(async () => {
   fetchIdentities()
+  
+  isSecureContext.value = window.isSecureContext
+
+  const isApiSupported = browserSupportsWebAuthn()
+  let isPlatformAuthenticatorAvailable = false
+
+  if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
+    try {
+      isPlatformAuthenticatorAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+    } catch (e) {
+      console.warn('WebAuthn 平台认证器检查失败:', e)
+    }
+  }
+
+  // 兼容外部安全密钥（如 YubiKey），即使没有内置平台认证器也允许尝试
+  isWebAuthnSupported.value = isApiSupported
 })
 </script>
 
