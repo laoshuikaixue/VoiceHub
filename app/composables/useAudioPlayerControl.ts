@@ -83,7 +83,10 @@ export const useAudioPlayerControl = () => {
   }
 
   const pause = (): boolean => {
-    if (!audioPlayer.value) return false
+    if (!audioPlayer.value) {
+      console.warn('[AudioPlayerControl] pause called but audioPlayer is null')
+      return false
+    }
 
     try {
       audioPlayer.value.pause()
