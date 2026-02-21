@@ -946,6 +946,15 @@ watch(
   { immediate: true }
 )
 
+// 监听音频播放器元素变化，确保 control 始终持有最新的引用
+watch(
+  audioPlayer,
+  (newPlayer) => {
+    control.setAudioPlayerRef(newPlayer || null)
+  },
+  { immediate: true }
+)
+
 const isMobile = ref(false)
 
 // 检查是否为移动端
