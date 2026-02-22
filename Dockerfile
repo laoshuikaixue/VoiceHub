@@ -50,7 +50,7 @@ ENV NODE_ENV=production \
     NPM_CONFIG_UPDATE_NOTIFIER=false
 
 # 暴露端口
-EXPOSE 3000
+EXPOSE $PORT
 
 # 启动命令：先执行数据库迁移，再启动应用
 CMD ["sh", "-c", "node scripts/deploy.js && node .output/server/index.mjs"]
