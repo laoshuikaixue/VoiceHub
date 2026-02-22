@@ -1551,7 +1551,7 @@ onUnmounted(() => {
 .mobile-pagination-dots {
     display: none;
     position: absolute;
-    bottom: calc(150px + env(safe-area-inset-bottom)); /* 根据控制栏高度调整 */
+    bottom: calc(110px + env(safe-area-inset-bottom)); /* 根据控制栏高度调整 */
     left: 50%;
     transform: translateX(-50%);
     gap: 8px;
@@ -1655,7 +1655,7 @@ onUnmounted(() => {
     width: 100vw;
     height: 100%;
     scroll-snap-align: start;
-    padding: 100px 1.5rem calc(180px + env(safe-area-inset-bottom));
+    padding: 100px 1.5rem calc(130px + env(safe-area-inset-bottom));
     overflow-y: hidden;
     box-sizing: border-box;
     mask-image: none;
@@ -1772,7 +1772,7 @@ onUnmounted(() => {
   }
 
   .lyric-toolbar {
-    bottom: calc(180px + env(safe-area-inset-bottom));
+    bottom: calc(130px + env(safe-area-inset-bottom));
     right: 1.5rem;
   }
 
