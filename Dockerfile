@@ -1,5 +1,13 @@
+# 支持: linux/amd64, linux/arm64, linux/arm/v7
+
+# 默认使用 node:24-alpine (amd64/arm64)
+ARG BASE_IMAGE=node:24-alpine
+
+# ==========================================
 # 第一阶段：构建阶段
-FROM node:24-alpine AS builder
+# ==========================================
+FROM ${BASE_IMAGE} AS builder
+
 WORKDIR /app
 
 # 复制依赖文件和 scripts 目录
@@ -15,8 +23,18 @@ COPY . .
 # 构建应用
 RUN npm run build
 
+# ==========================================
 # 第二阶段：运行阶段
-FROM node:24-alpine
+# ==========================================
+# 预定义各架构的运行时镜像
+FROM node:24-alpine AS runtime-amd64
+FROM node:24-alpine AS runtime-arm64
+FROM arm32v7/node:22-alpine AS runtime-armv7
+
+# 根据 TARGETARCH 选择对应的运行时镜像
+# arm64 和 amd64 使用 node:24-alpine
+# arm/v7 使用 arm32v7/node:22-alpine
+FROM runtime-${TARGETARCH} AS runtime
 
 USER root
 WORKDIR /app
@@ -35,7 +53,8 @@ ENV NODE_ENV=production \
     NPM_CONFIG_UPDATE_NOTIFIER=false
 
 # 暴露端口
-EXPOSE $PORT
+EXPOSE 3000
 
 # 启动命令：先执行数据库迁移，再启动应用
-CMD ["sh", "-c", "node scripts/deploy.js && node .output/server/index.mjs"]
+# 使用 exec 形式
+CMD ["node", "scripts/deploy.js"]
