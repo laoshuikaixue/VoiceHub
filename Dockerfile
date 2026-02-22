@@ -7,7 +7,7 @@
 FROM node:24-alpine AS builder-amd64
 FROM node:24-alpine AS builder-arm64
 FROM arm32v7/node:22-alpine AS builder-arm
-FROM s390x/node:24-alpine AS builder-s390x
+# FROM s390x/node:24-alpine AS builder-s390x
 # FROM ppc64le/node:24-slim AS builder-ppc64le
 
 # 根据 TARGETARCH 选择对应的构建镜像
@@ -35,7 +35,7 @@ RUN npm run build
 FROM node:24-alpine AS runtime-amd64
 FROM node:24-alpine AS runtime-arm64
 FROM arm32v7/node:22-alpine AS runtime-arm
-FROM s390x/node:24-alpine AS runtime-s390x
+# FROM s390x/node:24-alpine AS runtime-s390x
 # FROM ppc64le/node:24-slim AS runtime-ppc64le
 
 # 根据 TARGETARCH 选择对应的运行时镜像
