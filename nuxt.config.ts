@@ -10,6 +10,10 @@ export default defineNuxtConfig({
     compatibilityVersion: 4
   },
   srcDir: 'app/',
+  
+  // 桌面模式：关闭SSR
+  ssr: process.env.NUXT_DESKTOP !== 'true',
+  
   devtools: { enabled: true },
   modules: [
     '@nuxtjs/tailwindcss',
@@ -53,6 +57,16 @@ export default defineNuxtConfig({
 
   // 配置环境变量
   app: {
+    // 桌面模式使用相对路径和 Hash 路由
+    baseURL: process.env.NUXT_DESKTOP === 'true' ? './' : '/',
+    buildAssetsDir: process.env.NUXT_DESKTOP === 'true' ? 'assets' : '_nuxt',
+    
+    router: process.env.NUXT_DESKTOP === 'true' ? {
+      options: {
+        hashMode: true
+      }
+    } : undefined,
+    
     pageTransition: { name: 'page', mode: 'out-in' },
     layoutTransition: { name: 'layout', mode: 'out-in' },
     head: {
@@ -123,11 +137,13 @@ export default defineNuxtConfig({
 
   // 服务器端配置
   nitro: {
-    preset: process.env.VERCEL
-      ? 'vercel'
-      : process.env.NETLIFY
-        ? 'netlify'
-        : process.env.NITRO_PRESET || 'node-server',
+    preset: process.env.NUXT_DESKTOP === 'true' 
+      ? 'static'
+      : process.env.VERCEL
+        ? 'vercel'
+        : process.env.NETLIFY
+          ? 'netlify'
+          : process.env.NITRO_PRESET || 'node-server',
     // 增强错误处理和稳定性
     experimental: {
       wasm: true,

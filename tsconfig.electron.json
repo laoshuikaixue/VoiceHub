@@ -1,0 +1,12 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "compilerOptions": {
+    "composite": true,
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "include": [
+    "electron/**/*.ts",
+    "electron/**/*.d.ts"
+  ]
+}

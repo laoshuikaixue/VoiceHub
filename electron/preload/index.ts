@@ -1,0 +1,57 @@
+import { contextBridge, ipcRenderer } from 'electron'
+
+// 暴露给渲染进程的API
+const electronAPI = {
+  // 存储相关
+  getApiUrl: () => ipcRenderer.invoke('get-api-url'),
+  setApiUrl: (url: string) => ipcRenderer.invoke('set-api-url', url),
+  getPreferences: () => ipcRenderer.invoke('get-preferences'),
+  setPreferences: (preferences: any) => ipcRenderer.invoke('set-preferences', preferences),
+  getSchedules: () => ipcRenderer.invoke('get-schedules'),
+  setSchedules: (schedules: any[]) => ipcRenderer.invoke('set-schedules', schedules),
+  getConfigPath: () => ipcRenderer.invoke('get-config-path'),
+  getLastSyncTime: () => ipcRenderer.invoke('get-last-sync-time'),
+  
+  // 桌面歌词
+  toggleDesktopLyric: (show: boolean) => ipcRenderer.invoke('toggle-desktop-lyric', show),
+  updateLyric: (lyric: string, progress?: number) => ipcRenderer.invoke('update-lyric', lyric, progress),
+  
+  // 定时播放
+  syncSchedule: () => ipcRenderer.invoke('sync-schedule'),
+  reloadSchedules: () => ipcRenderer.invoke('reload-schedules'),
+  
+  // 窗口控制
+  windowMinimize: () => ipcRenderer.invoke('window-minimize'),
+  windowMaximize: () => ipcRenderer.invoke('window-maximize'),
+  windowClose: () => ipcRenderer.invoke('window-close'),
+  
+  // 监听来自主进程的消息
+  onTrayPlayPause: (callback: () => void) => {
+    ipcRenderer.on('tray-play-pause', callback)
+  },
+  onTrayPrevious: (callback: () => void) => {
+    ipcRenderer.on('tray-previous', callback)
+  },
+  onTrayNext: (callback: () => void) => {
+    ipcRenderer.on('tray-next', callback)
+  },
+  onToggleDesktopLyric: (callback: (checked: boolean) => void) => {
+    ipcRenderer.on('toggle-desktop-lyric', (_, checked) => callback(checked))
+  },
+  onLyricUpdate: (callback: (data: { lyric: string; progress?: number }) => void) => {
+    ipcRenderer.on('lyric-update', (_, data) => callback(data))
+  },
+  onLyricStyleUpdate: (callback: (data: { fontSize: number; opacity: number }) => void) => {
+    ipcRenderer.on('lyric-style-update', (_, data) => callback(data))
+  },
+  
+  // 平台信息
+  platform: process.platform,
+  isElectron: true
+}
+
+// 在渲染进程中暴露API
+contextBridge.exposeInMainWorld('electron', electronAPI)
+
+// TypeScript类型定义
+export type ElectronAPI = typeof electronAPI

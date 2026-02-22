@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceHub 桌面客户端</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #app {
+      width: 100%;
+      height: 100%;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <iframe src="http://localhost:3001" id="nuxt-frame"></iframe>
+  </div>
+  <script>
+    // 监听 Nuxt 应用加载
+    const frame = document.getElementById('nuxt-frame');
+    frame.addEventListener('load', () => {
+      console.log('[Desktop] Nuxt app loaded');
+    });
+  </script>
+</body>
+</html>

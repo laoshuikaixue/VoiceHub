@@ -1,0 +1,9 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "compilerOptions": {
+    "outDir": "../../out/main"
+  },
+  "include": [
+    "**/*.ts"
+  ]
+}
