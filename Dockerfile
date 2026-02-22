@@ -1,4 +1,4 @@
-# 支持: linux/amd64, linux/arm64, linux/arm/v7，linux/s390x
+# 支持: linux/amd64, linux/arm64, linux/arm/v7
 
 # ==========================================
 # 第一阶段：构建阶段
