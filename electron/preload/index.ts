@@ -12,10 +12,6 @@ const electronAPI = {
   getConfigPath: () => ipcRenderer.invoke('get-config-path'),
   getLastSyncTime: () => ipcRenderer.invoke('get-last-sync-time'),
   
-  // 桌面歌词
-  toggleDesktopLyric: (show: boolean) => ipcRenderer.invoke('toggle-desktop-lyric', show),
-  updateLyric: (lyric: string, progress?: number) => ipcRenderer.invoke('update-lyric', lyric, progress),
-  
   // 定时播放
   syncSchedule: () => ipcRenderer.invoke('sync-schedule'),
   reloadSchedules: () => ipcRenderer.invoke('reload-schedules'),
@@ -34,15 +30,6 @@ const electronAPI = {
   },
   onTrayNext: (callback: () => void) => {
     ipcRenderer.on('tray-next', callback)
-  },
-  onToggleDesktopLyric: (callback: (checked: boolean) => void) => {
-    ipcRenderer.on('toggle-desktop-lyric', (_, checked) => callback(checked))
-  },
-  onLyricUpdate: (callback: (data: { lyric: string; progress?: number }) => void) => {
-    ipcRenderer.on('lyric-update', (_, data) => callback(data))
-  },
-  onLyricStyleUpdate: (callback: (data: { fontSize: number; opacity: number }) => void) => {
-    ipcRenderer.on('lyric-style-update', (_, data) => callback(data))
   },
   
   // 平台信息

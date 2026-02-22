@@ -1,6 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { getStore } from '../store/index.js'
-import { createLyricWindow, closeLyricWindow, updateLyric, updateLyricStyle } from '../windows/lyric-window.js'
 
 export function initIPC() {
   const store = getStore()
@@ -29,37 +28,12 @@ export function initIPC() {
     const current = store.get('preferences')
     const updated = { ...current, ...preferences }
     store.set('preferences', updated)
-    
-    // 如果歌词样式改变，更新歌词窗口
-    if (preferences.lyricFontSize || preferences.lyricOpacity) {
-      updateLyricStyle(
-        updated.lyricFontSize || 48,
-        updated.lyricOpacity || 0.9
-      )
-    }
-    
     return { success: true }
   })
 
   // 获取配置文件路径
   ipcMain.handle('get-config-path', () => {
     return store.path
-  })
-
-  // 桌面歌词控制
-  ipcMain.handle('toggle-desktop-lyric', (_, show: boolean) => {
-    if (show) {
-      createLyricWindow()
-    } else {
-      closeLyricWindow()
-    }
-    return { success: true }
-  })
-
-  // 更新歌词
-  ipcMain.handle('update-lyric', (_, lyric: string, progress?: number) => {
-    updateLyric(lyric, progress)
-    return { success: true }
   })
 
   // 定时播放控制

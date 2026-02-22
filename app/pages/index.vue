@@ -197,23 +197,12 @@
                 <!-- 标题和设置按钮 -->
                 <div class="notification-header">
                   <h2 class="notification-title">通知中心</h2>
-                  <button class="settings-icon" @click="toggleNotificationSettings">
-                    <svg
-                      fill="none"
-                      height="20"
-                      stroke="currentColor"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      viewBox="0 0 24 24"
-                      width="20"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <circle cx="12" cy="12" r="3" />
-                      <path
-                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-                      />
-                    </svg>
+                  <button
+                    class="settings-btn-simple"
+                    @click="toggleNotificationSettings"
+                    title="通知设置"
+                  >
+                    <Icon name="settings" :size="20" />
                   </button>
                 </div>
 
@@ -526,6 +515,20 @@
       <SiteFooter />
     </div>
 
+    <!-- 桌面端设置按钮 - 浮动在右侧中间 -->
+    <ClientOnly>
+      <Teleport to="body">
+        <button
+          v-if="isDesktopClient"
+          class="desktop-settings-fab"
+          title="桌面客户端设置"
+          @click="navigateToDesktopSettings"
+        >
+          <Icon name="settings" :size="24" />
+        </button>
+      </Teleport>
+    </ClientOnly>
+
     <!-- 规则弹窗 -->
     <Teleport to="body">
       <Transition
@@ -646,6 +649,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useDesktopAPI } from '~/composables/useDesktopAPI'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 获取运行时配置
@@ -1570,6 +1574,21 @@ if (
 ) {
   const count = notificationsService.unreadCount.value
   unreadNotificationCount.value = count
+}
+
+// 桌面客户端检测 - 使用 useDesktopAPI
+const { isDesktop: isDesktopClient } = useDesktopAPI()
+
+// 调试：监听 isDesktopClient 变化
+watch(isDesktopClient, (value) => {
+  console.log('[Desktop Detection] isDesktopClient:', value)
+  console.log('[Desktop Detection] window.electron:', typeof window !== 'undefined' ? !!window.electron : 'undefined')
+}, { immediate: true })
+
+// 导航到桌面设置页面
+const navigateToDesktopSettings = () => {
+  console.log('[Desktop] Navigating to desktop settings')
+  router.push('/desktop-settings')
 }
 </script>
 
@@ -3555,5 +3574,51 @@ if (
 .login-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0, 67, 248, 0.3);
+}
+
+/* 桌面设置浮动按钮 (FAB) */
+.desktop-settings-fab {
+  position: fixed;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  opacity: 0.6;
+}
+
+.desktop-settings-fab:hover {
+  transform: translateY(-50%) scale(1.1);
+  opacity: 1;
+}
+
+.desktop-settings-fab:active {
+  transform: translateY(-50%) scale(0.95);
+  transition: all 0.1s;
+}
+
+.desktop-settings-fab .lucide {
+  transition: transform 0.5s ease;
+}
+
+.desktop-settings-fab:hover .lucide {
+  transform: rotate(90deg);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .desktop-settings-fab {
+    right: 20px;
+  }
 }
 </style>

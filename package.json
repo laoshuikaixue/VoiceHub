@@ -66,6 +66,7 @@
     "dotenv": "^17.3.1",
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",
+    "electron-log": "^5.4.3",
     "formidable": "^3.5.4",
     "gl-matrix": "^4.0.0-beta.2",
     "html-to-image": "^1.11.13",
