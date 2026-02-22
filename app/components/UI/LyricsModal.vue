@@ -1549,15 +1549,15 @@ onUnmounted(() => {
 }
 
 .mobile-pagination-dots {
-  display: none;
-  position: absolute;
-  bottom: 150px; /* 根据控制栏高度调整 */
-  left: 50%;
-  transform: translateX(-50%);
-  gap: 8px;
-  z-index: 30;
-  pointer-events: none;
-}
+    display: none;
+    position: absolute;
+    bottom: calc(150px + env(safe-area-inset-bottom)); /* 根据控制栏高度调整 */
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 8px;
+    z-index: 30;
+    pointer-events: none;
+  }
 
 .dot {
   width: 8px;
@@ -1655,7 +1655,7 @@ onUnmounted(() => {
     width: 100vw;
     height: 100%;
     scroll-snap-align: start;
-    padding: 100px 1.5rem 180px;
+    padding: 100px 1.5rem calc(180px + env(safe-area-inset-bottom));
     overflow-y: hidden;
     box-sizing: border-box;
     mask-image: none;
@@ -1772,7 +1772,7 @@ onUnmounted(() => {
   }
 
   .lyric-toolbar {
-    bottom: 180px;
+    bottom: calc(180px + env(safe-area-inset-bottom));
     right: 1.5rem;
   }
 
