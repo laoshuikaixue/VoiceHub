@@ -3,7 +3,13 @@
 # ==========================================
 # 第一阶段：构建阶段
 # ==========================================
-FROM node:24-alpine AS builder
+# 预定义各架构的构建镜像
+FROM node:24-alpine AS builder-amd64
+FROM node:24-alpine AS builder-arm64
+FROM arm32v7/node:22-alpine AS builder-arm
+
+# 根据 TARGETARCH 选择对应的构建镜像
+FROM builder-${TARGETARCH} AS builder
 
 WORKDIR /app
 
@@ -29,8 +35,6 @@ FROM node:24-alpine AS runtime-arm64
 FROM arm32v7/node:22-alpine AS runtime-arm
 
 # 根据 TARGETARCH 选择对应的运行时镜像
-# arm64 和 amd64 使用 node:24-alpine
-# arm/v7 使用 arm32v7/node:22-alpine
 FROM runtime-${TARGETARCH} AS runtime
 
 USER root
