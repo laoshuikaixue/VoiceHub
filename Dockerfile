@@ -1,12 +1,9 @@
 # 支持: linux/amd64, linux/arm64, linux/arm/v7
 
-# 默认使用 node:24-alpine (amd64/arm64)
-ARG BASE_IMAGE=node:24-alpine
-
 # ==========================================
 # 第一阶段：构建阶段
 # ==========================================
-FROM ${BASE_IMAGE} AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -29,7 +26,7 @@ RUN npm run build
 # 预定义各架构的运行时镜像
 FROM node:24-alpine AS runtime-amd64
 FROM node:24-alpine AS runtime-arm64
-FROM arm32v7/node:22-alpine AS runtime-armv7
+FROM arm32v7/node:22-alpine AS runtime-arm
 
 # 根据 TARGETARCH 选择对应的运行时镜像
 # arm64 和 amd64 使用 node:24-alpine
