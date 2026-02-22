@@ -56,5 +56,4 @@ ENV NODE_ENV=production \
 EXPOSE 3000
 
 # 启动命令：先执行数据库迁移，再启动应用
-# 使用 exec 形式
-CMD ["node", "scripts/deploy.js"]
+CMD ["sh", "-c", "node scripts/deploy.js && node .output/server/index.mjs"]
