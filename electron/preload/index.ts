@@ -15,13 +15,23 @@ const electronAPI = {
   // 定时播放
   syncSchedule: () => ipcRenderer.invoke('sync-schedule'),
   reloadSchedules: () => ipcRenderer.invoke('reload-schedules'),
+  getDailySchedule: () => ipcRenderer.invoke('get-daily-schedule'),
   
   // 窗口控制
   windowMinimize: () => ipcRenderer.invoke('window-minimize'),
   windowMaximize: () => ipcRenderer.invoke('window-maximize'),
   windowClose: () => ipcRenderer.invoke('window-close'),
-  
+
   // 监听来自主进程的消息
+  onScheduleStatusUpdate: (callback: (event: any, data: any) => void) => {
+    ipcRenderer.on('schedule-status-update', callback)
+  },
+  onExecuteDailyTask: (callback: (event: any, task: any) => void) => {
+    ipcRenderer.on('execute-daily-task', callback)
+  },
+  onExecuteScheduledTask: (callback: (event: any, task: any) => void) => {
+    ipcRenderer.on('execute-scheduled-task', callback)
+  },
   onTrayPlayPause: (callback: () => void) => {
     ipcRenderer.on('tray-play-pause', callback)
   },

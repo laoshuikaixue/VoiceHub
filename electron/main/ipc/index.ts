@@ -53,6 +53,11 @@ export function initIPC() {
     return store.get('schedules')
   })
 
+  // 获取每日排期
+  ipcMain.handle('get-daily-schedule', () => {
+    return store.get('dailySchedule')
+  })
+
   // 设置播放计划
   ipcMain.handle('set-schedules', (_, schedules: any[]) => {
     store.set('schedules', schedules)

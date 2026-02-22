@@ -22,6 +22,20 @@ interface StoreSchema {
     songId?: string
     action: 'play' | 'pause' | 'stop'
   }>
+  dailySchedule: {
+    date: string
+    items: Array<{
+      id: string
+      songId: string
+      title: string
+      artist: string
+      cover?: string
+      playUrl?: string
+      localPath?: string
+      startTime: string
+      status: 'pending' | 'downloading' | 'ready' | 'error'
+    }>
+  }
   // 上次同步时间
   lastSyncTime?: number
   // 窗口状态
@@ -47,6 +61,10 @@ const store = new Store<StoreSchema>({
       autoSyncSchedule: true
     },
     schedules: [],
+    dailySchedule: {
+      date: '',
+      items: []
+    },
     windowBounds: {
       width: 1280,
       height: 800

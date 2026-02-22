@@ -22,9 +22,9 @@
         </div>
 
         <button
-          :disabled="!apiUrl"
+          :disabled="!hasChanges && !!originalApiUrl"
           class="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="saveApiUrl"
+          @click="saveAllConfig"
         >
           <template v-if="saving"> <Loader2 :size="14" class="animate-spin" /> 保存中... </template>
           <template v-else> <Save :size="14" /> 保存配置 </template>
@@ -130,7 +130,6 @@
                     v-model="preferences.autoStart"
                     type="checkbox"
                     class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                    @change="savePreferences"
                   >
                 </div>
               </div>
@@ -146,7 +145,6 @@
                     v-model="preferences.minimizeToTray"
                     type="checkbox"
                     class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                    @change="savePreferences"
                   >
                 </div>
               </div>
@@ -162,7 +160,6 @@
                     v-model="preferences.closeToTray"
                     type="checkbox"
                     class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                    @change="savePreferences"
                   >
                 </div>
               </div>
@@ -193,7 +190,6 @@
                     v-model="preferences.enableScheduledPlay"
                     type="checkbox"
                     class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                    @change="savePreferences"
                   >
                 </div>
               </div>
@@ -209,7 +205,6 @@
                     v-model="preferences.autoSyncSchedule"
                     type="checkbox"
                     class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                    @change="savePreferences"
                   >
                 </div>
               </div>
@@ -235,6 +230,41 @@
           </section>
         </div>
       </div>
+
+      <!-- 今日排期 -->
+      <section v-if="dailySchedule && dailySchedule.items && dailySchedule.items.length > 0" :class="[sectionClass, 'mt-6']">
+        <div class="flex items-center gap-3 border-b border-zinc-800/50 pb-5 mb-6">
+          <div class="p-2.5 bg-orange-500/10 rounded-xl">
+            <ListMusic :size="20" class="text-orange-500" />
+          </div>
+          <div>
+            <h2 class="text-base font-black text-zinc-100">今日排期</h2>
+            <p class="text-xs text-zinc-500 mt-0.5">{{ dailySchedule.date }} ({{ dailySchedule.items.length }} 首歌曲)</p>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div v-for="item in dailySchedule.items" :key="item.id" :class="itemClass">
+            <div class="flex items-center gap-4 flex-1 overflow-hidden">
+              <span class="text-xs font-mono text-zinc-500 w-12 shrink-0">{{ item.startTime }}</span>
+              <div class="w-8 h-8 rounded bg-zinc-800 bg-cover bg-center shrink-0" :style="{ backgroundImage: `url(${item.cover || '/images/default-cover.png'})` }"></div>
+              <div class="min-w-0">
+                <div class="text-sm font-bold text-zinc-200 truncate">{{ item.title }}</div>
+                <div class="text-xs text-zinc-500 truncate">{{ item.artist }}</div>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2 shrink-0">
+              <span v-if="item.status === 'ready'" class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] rounded border border-emerald-500/20">已缓存</span>
+              <span v-else-if="item.status === 'downloading'" class="px-2 py-0.5 bg-blue-500/10 text-blue-500 text-[10px] rounded border border-blue-500/20 flex items-center gap-1">
+                <Loader2 :size="10" class="animate-spin" /> 下载中
+              </span>
+              <span v-else-if="item.status === 'error'" class="px-2 py-0.5 bg-rose-500/10 text-rose-500 text-[10px] rounded border border-rose-500/20">错误</span>
+              <span v-else class="px-2 py-0.5 bg-zinc-500/10 text-zinc-500 text-[10px] rounded border border-zinc-500/20">等待</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -250,7 +280,8 @@ import {
   RefreshCw, 
   CheckCircle2, 
   AlertCircle,
-  Loader2
+  Loader2,
+  ListMusic
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -269,6 +300,8 @@ const lastSyncTime = ref('')
 const saving = ref(false)
 const testing = ref(false)
 const syncing = ref(false)
+const dailySchedule = ref<any>(null)
+const currentPlayingId = ref<string | null>(null)
 
 const preferences = ref({
   autoStart: false,
@@ -278,8 +311,38 @@ const preferences = ref({
   autoSyncSchedule: true
 })
 
+const originalPreferences = ref<any>(null)
+const originalApiUrl = ref('')
+
+const hasChanges = computed(() => {
+  if (!originalPreferences.value) return false
+  const prefsChanged = JSON.stringify(preferences.value) !== JSON.stringify(originalPreferences.value)
+  const urlChanged = apiUrl.value !== originalApiUrl.value
+  return prefsChanged || urlChanged
+})
+
+// 按时段分组的排期
+const groupedSchedules = computed(() => {
+  if (!dailySchedule.value || !dailySchedule.value.items) return []
+  
+  const groups: Record<string, any> = {}
+  
+  dailySchedule.value.items.forEach((item: any) => {
+    const time = item.startTime
+    if (!groups[time]) {
+      groups[time] = {
+        time,
+        items: []
+      }
+    }
+    groups[time].items.push(item)
+  })
+  
+  return Object.values(groups).sort((a: any, b: any) => a.time.localeCompare(b.time))
+})
+
 const statusColorClass = computed(() => {
-  if (!connectionStatus.value) return ''
+  if (!connectionStatus.value) return null
   switch (connectionStatus.value.type) {
     case 'success': return 'text-emerald-500'
     case 'error': return 'text-rose-500'
@@ -288,9 +351,54 @@ const statusColorClass = computed(() => {
   }
 })
 
+// 监听 API URL 变化
+watch(() => apiBaseUrl.value, (val) => {
+  if (val && !apiUrl.value) {
+    apiUrl.value = val
+    originalApiUrl.value = val
+  }
+}, { immediate: true })
+
+const loadDailySchedule = async () => {
+  if (window.electron) {
+    dailySchedule.value = await window.electron.getDailySchedule()
+  }
+}
+
+const loadLastSyncTime = async () => {
+  if (window.electron) {
+    const time = await window.electron.getLastSyncTime()
+    if (time) {
+      lastSyncTime.value = new Date(time).toLocaleString()
+    } else {
+      lastSyncTime.value = '从未同步'
+    }
+  }
+}
+
+const syncScheduleNow = async () => {
+  if (!apiUrl.value) return
+  
+  syncing.value = true
+  try {
+    if (window.electron) {
+      await window.electron.syncSchedule()
+      await loadDailySchedule()
+      await loadLastSyncTime()
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    syncing.value = false
+  }
+}
+
 onMounted(async () => {
   // 加载当前API地址
-  apiUrl.value = apiBaseUrl.value
+  if (apiBaseUrl.value) {
+    apiUrl.value = apiBaseUrl.value
+    originalApiUrl.value = apiBaseUrl.value
+  }
 
   // 加载平台信息
   if (window.electron) {
@@ -301,12 +409,31 @@ onMounted(async () => {
     if (path) {
       configPath.value = path
     }
+
+    // 加载每日排期
+    loadDailySchedule()
+
+    // 监听排期状态更新
+    window.electron.onScheduleStatusUpdate((_event: any, { id, status }: any) => {
+      if (dailySchedule.value) {
+        const item = dailySchedule.value.items.find((i: any) => i.id === id)
+        if (item) {
+          item.status = status
+        }
+      }
+    })
+
+    // 监听播放事件以更新UI状态
+    window.electron.onExecuteDailyTask((_event: any, task: any) => {
+      currentPlayingId.value = task.id
+    })
   }
 
   // 加载用户偏好
   const prefs = await getPreferences()
   if (prefs) {
     preferences.value = { ...preferences.value, ...prefs }
+    originalPreferences.value = JSON.parse(JSON.stringify(preferences.value))
   }
 
   // 加载上次同步时间
@@ -314,44 +441,54 @@ onMounted(async () => {
 })
 
 const goBack = () => {
+  if (hasChanges.value) {
+    if (!confirm('您有未保存的更改，确定要离开吗？')) return
+  }
   router.back()
 }
 
-const saveApiUrl = async () => {
+const saveAllConfig = async () => {
   if (!apiUrl.value) return
   
   saving.value = true
   try {
-    const result = await setApiUrl(apiUrl.value)
-    if (result?.success) {
-      // 更新运行时配置
-      const { $updateDesktopApiUrl } = useNuxtApp()
-      if ($updateDesktopApiUrl) {
-        $updateDesktopApiUrl(apiUrl.value)
-      }
+    // 1. 保存偏好设置
+    await savePrefs(preferences.value)
+    originalPreferences.value = JSON.parse(JSON.stringify(preferences.value))
 
-      connectionStatus.value = {
-        type: 'success',
-        message: '配置已保存'
+    // 2. 保存 API URL (如果有变化)
+    if (apiUrl.value !== originalApiUrl.value) {
+      const result = await setApiUrl(apiUrl.value)
+      if (result?.success) {
+        const { $updateDesktopApiUrl } = useNuxtApp()
+        if ($updateDesktopApiUrl) {
+          $updateDesktopApiUrl(apiUrl.value)
+        }
+        originalApiUrl.value = apiUrl.value
+      } else {
+        throw new Error('API URL保存失败')
       }
-      setTimeout(() => {
-        connectionStatus.value = null
-      }, 3000)
-    } else {
-      connectionStatus.value = {
-        type: 'error',
-        message: '保存失败，请检查权限'
-      }
+    }
+
+    connectionStatus.value = {
+      type: 'success',
+      message: '所有配置已保存'
+    }
+    setTimeout(() => {
+      connectionStatus.value = null
+    }, 3000)
+  } catch (e) {
+    connectionStatus.value = {
+      type: 'error',
+      message: '保存失败: ' + String(e)
     }
   } finally {
     saving.value = false
   }
 }
 
-const savePreferences = async () => {
-  await savePrefs(preferences.value)
-}
-
+// 移除单独的 saveApiUrl 和 savePreferences，统一使用 saveAllConfig
+// 保留 testConnection
 const testConnection = async () => {
   testing.value = true
   connectionStatus.value = {
@@ -400,22 +537,6 @@ const testConnection = async () => {
   }
 }
 
-// 模拟加载上次同步时间
-const loadLastSyncTime = () => {
-  const time = localStorage.getItem('last_schedule_sync')
-  if (time) {
-    lastSyncTime.value = new Date(Number(time)).toLocaleString()
-  }
-}
-
-const syncScheduleNow = async () => {
-  syncing.value = true
-  // 模拟同步延迟
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  localStorage.setItem('last_schedule_sync', Date.now().toString())
-  loadLastSyncTime()
-  syncing.value = false
-}
 </script>
 
 <style scoped>

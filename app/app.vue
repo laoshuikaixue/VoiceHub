@@ -173,6 +173,27 @@ onMounted(async () => {
 
   // 初始化鸿蒙系统控制事件监听
   setupHarmonyOSListeners()
+
+  // 初始化桌面端排期监听
+  if (window.electron) {
+    window.electron.onExecuteDailyTask((_event, task) => {
+      console.log('[App] Received scheduled task:', task)
+      
+      const song = {
+        id: Number(task.songId),
+        title: task.title,
+        artist: task.artist,
+        cover: task.cover,
+        musicUrl: task.url,
+        playUrl: task.playUrl,
+        musicPlatform: 'local',
+        musicId: task.songId
+      }
+      
+      // 强制播放
+      audioPlayer.playSong(song)
+    })
+  }
 })
 
 // 使用计算属性确保安全地访问auth对象

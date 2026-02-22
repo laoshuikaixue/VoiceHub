@@ -65,6 +65,7 @@ export default defineEventHandler(async (event) => {
               artist: schedule.song.artist,
               semester: schedule.song.semester,
               cover: schedule.song.cover,
+              playUrl: schedule.song.playUrl,
               musicPlatform: schedule.song.musicPlatform,
               musicId: schedule.song.musicId
             },
