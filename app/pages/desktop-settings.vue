@@ -226,6 +226,54 @@
                   </button>
                 </div>
               </div>
+
+              <!-- 本地任务配置 -->
+              <div :class="sectionClass" class="mt-4 !p-4 border-dashed border-zinc-800/50 bg-zinc-900/20">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">本地定时任务</h3>
+                  <button 
+                    @click="addLocalSchedule"
+                    class="p-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 rounded-lg transition-colors"
+                    title="添加任务"
+                  >
+                    <Plus :size="14" />
+                  </button>
+                </div>
+                
+                <div class="space-y-2">
+                  <div v-if="localSchedules.length === 0" class="text-center py-4">
+                    <p class="text-[10px] text-zinc-600">暂无本地定时任务</p>
+                  </div>
+                  
+                  <div v-for="(schedule, index) in localSchedules" :key="schedule.id" class="flex items-center gap-2 p-2 bg-zinc-950 rounded-xl border border-zinc-800/50">
+                    <input 
+                      v-model="schedule.time" 
+                      type="time" 
+                      class="bg-transparent text-xs font-mono text-zinc-300 focus:outline-none border border-zinc-800 rounded px-1 py-0.5 w-16 text-center"
+                      @change="updateLocalSchedule"
+                    >
+                    
+                    <div class="flex-1"></div>
+
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        v-model="schedule.enabled" 
+                        class="sr-only peer"
+                        @change="updateLocalSchedule"
+                      >
+                      <div class="w-7 h-4 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-400 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:after:bg-white"></div>
+                    </label>
+
+                    <button 
+                      @click="removeLocalSchedule(index)"
+                      class="p-1.5 text-zinc-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 :size="12" />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
         </div>
@@ -255,7 +303,11 @@
             </div>
             
             <div class="flex items-center gap-2 shrink-0">
-              <span v-if="item.status === 'ready'" class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] rounded border border-emerald-500/20">已缓存</span>
+              <span v-if="currentPlayingId === item.id" class="px-2 py-0.5 bg-emerald-500 text-zinc-950 text-[10px] font-bold rounded flex items-center gap-1">
+                <PlayCircle :size="10" class="animate-pulse" /> 正在播放
+              </span>
+              <span v-else-if="isPlayed(item)" class="px-2 py-0.5 bg-zinc-500/10 text-zinc-500 text-[10px] rounded border border-zinc-500/20">已播放</span>
+              <span v-else-if="item.status === 'ready'" class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] rounded border border-emerald-500/20">已缓存</span>
               <span v-else-if="item.status === 'downloading'" class="px-2 py-0.5 bg-blue-500/10 text-blue-500 text-[10px] rounded border border-blue-500/20 flex items-center gap-1">
                 <Loader2 :size="10" class="animate-spin" /> 下载中
               </span>
@@ -281,7 +333,10 @@ import {
   CheckCircle2, 
   AlertCircle,
   Loader2,
-  ListMusic
+  ListMusic,
+  Plus,
+  Trash2,
+  PlayCircle
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -302,6 +357,7 @@ const testing = ref(false)
 const syncing = ref(false)
 const dailySchedule = ref<any>(null)
 const currentPlayingId = ref<string | null>(null)
+const localSchedules = ref<any[]>([])
 
 const preferences = ref({
   autoStart: false,
@@ -365,6 +421,51 @@ const loadDailySchedule = async () => {
   }
 }
 
+const loadLocalSchedules = async () => {
+  if (window.electron) {
+    localSchedules.value = await window.electron.getSchedules() || []
+  }
+}
+
+const saveLocalSchedules = async () => {
+  if (window.electron) {
+    await window.electron.setSchedules(JSON.parse(JSON.stringify(localSchedules.value)))
+    await window.electron.reloadSchedules()
+  }
+}
+
+const addLocalSchedule = async () => {
+  const newSchedule = {
+    id: Date.now().toString(),
+    time: '08:00',
+    action: 'play',
+    enabled: true
+  }
+  localSchedules.value.push(newSchedule)
+  await saveLocalSchedules()
+}
+
+const removeLocalSchedule = async (index: number) => {
+  localSchedules.value.splice(index, 1)
+  await saveLocalSchedules()
+}
+
+const updateLocalSchedule = async () => {
+  await saveLocalSchedules()
+}
+
+const isPlayed = (item: any) => {
+  if (currentPlayingId.value === item.id) return false
+  if (!item.startTime) return false
+  
+  const now = new Date()
+  const [hours, minutes] = item.startTime.split(':').map(Number)
+  const itemTime = new Date()
+  itemTime.setHours(hours, minutes, 0, 0)
+  
+  return now > itemTime
+}
+
 const loadLastSyncTime = async () => {
   if (window.electron) {
     const time = await window.electron.getLastSyncTime()
@@ -412,6 +513,8 @@ onMounted(async () => {
 
     // 加载每日排期
     loadDailySchedule()
+    // 加载本地排期
+    loadLocalSchedules()
 
     // 监听排期状态更新
     window.electron.onScheduleStatusUpdate((_event: any, { id, status }: any) => {
