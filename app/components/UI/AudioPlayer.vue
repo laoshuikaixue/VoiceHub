@@ -1179,15 +1179,32 @@ onMounted(async () => {
 
   // 暴露播放器实例到全局（鸿蒙环境）
   if (sync.isHarmonyOS()) {
-    window.voiceHubPlayerInstance = {
+    // 使用 Object.assign 避免覆盖可能已存在的方法
+    window.voiceHubPlayerInstance = Object.assign(window.voiceHubPlayerInstance || {}, {
       play: () => control.play(),
       pause: () => control.pause(),
       stop: () => control.stop(),
       seek: (time) => control.seek(time),
       getCurrentTime: () => control.currentTime.value,
       getDuration: () => control.duration.value,
-      isPlaying: () => control.isPlaying.value
-    }
+      isPlaying: () => control.isPlaying.value,
+      // 添加 setPlayMode 方法以支持鸿蒙系统控制
+      setPlayMode: (mode) => {
+        let targetMode = 'off'
+        if (typeof mode === 'number') {
+          // HarmonyOS: 0=SEQUENCE, 1=SINGLE, 2=LIST, 3=SHUFFLE
+          if (mode === 1) targetMode = 'loopOne'
+          else if (mode === 2) targetMode = 'order' // LIST -> order
+          else if (mode === 3) targetMode = 'order' // SHUFFLE -> order
+          else targetMode = 'off' // SEQUENCE -> off
+        } else if (typeof mode === 'string') {
+          if (['off', 'order', 'loopOne'].includes(mode)) {
+            targetMode = mode
+          }
+        }
+        control.setPlayMode(targetMode)
+      }
+    })
   }
 
   // 添加点击外部区域关闭音质设置的事件监听器
