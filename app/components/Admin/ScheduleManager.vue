@@ -34,7 +34,7 @@
                 ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20'
                 : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 hover:border-zinc-700'
             ]"
-            @click="selectedDate = date.value"
+            @click="handleDateSelect(date.value)"
           >
             <span class="text-[10px] font-bold uppercase tracking-wider opacity-80">{{
               date.weekday
@@ -131,10 +131,11 @@
       class="flex items-center gap-3 bg-zinc-900/30 border border-zinc-800 rounded-lg p-3"
     >
       <CustomSelect
-        v-model="selectedPlayTime"
+        :model-value="selectedPlayTime"
         label="播出时段"
         :options="playTimeOptions"
         class-name="w-full"
+        @update:model-value="handlePlayTimeSelect"
       />
     </div>
 
@@ -260,12 +261,12 @@
               </div>
               <div class="grid grid-cols-1 gap-2">
                 <CustomSelect
-                  v-model="selectedSemester"
+                  :model-value="selectedSemester"
                   label="当前学期"
                   :options="availableSemesters"
                   label-key="name"
                   value-key="name"
-                  @change="onSemesterChange"
+                  @update:model-value="handleSemesterSelect"
                 />
                 <div class="grid grid-cols-2 gap-2">
                   <CustomSelect v-model="selectedGrade" label="年级" :options="availableGrades" />
@@ -794,7 +795,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch, inject } from 'vue'
 import {
   Search,
   Save,
@@ -1238,8 +1239,82 @@ const handleConfirm = async () => {
   confirmAction.value = null
 }
 
+// 监听浏览器刷新/关闭事件
+const handleBeforeUnload = (e) => {
+  if (hasChanges.value) {
+    e.preventDefault()
+    e.returnValue = ''
+    return ''
+  }
+}
+
+// 监听路由离开事件
+onBeforeRouteLeave((to, from, next) => {
+  if (hasChanges.value) {
+    const answer = window.confirm('您有未保存的排期修改，确定要离开吗？')
+    if (answer) {
+      next()
+    } else {
+      next(false)
+    }
+  } else {
+    next()
+  }
+})
+
+// 处理日期选择
+const handleDateSelect = (dateValue) => {
+  if (selectedDate.value === dateValue) return
+
+  if (hasChanges.value) {
+    if (!window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
+      return
+    }
+  }
+  selectedDate.value = dateValue
+}
+
+// 处理播出时段选择
+const handlePlayTimeSelect = (value) => {
+  if (selectedPlayTime.value === value) return
+
+  if (hasChanges.value) {
+    if (!window.confirm('您有未保存的排期修改，切换时段将丢失这些修改，确定要继续吗？')) {
+      return
+    }
+  }
+  selectedPlayTime.value = value
+}
+
+// 处理学期选择
+const handleSemesterSelect = async (value) => {
+  if (selectedSemester.value === value) return
+
+  if (hasChanges.value) {
+    if (!window.confirm('您有未保存的排期修改，切换学期将丢失这些修改，确定要继续吗？')) {
+      return
+    }
+  }
+  selectedSemester.value = value
+  await onSemesterChange()
+}
+
 // 初始化
+let unregisterBeforeNavigate = null
+const registerBeforeNavigate = inject('registerBeforeNavigate', null)
+
 onMounted(async () => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+
+  if (registerBeforeNavigate) {
+    unregisterBeforeNavigate = registerBeforeNavigate(() => {
+      if (hasChanges.value) {
+        return window.confirm('您有未保存的排期修改，切换页面将丢失这些修改，确定要继续吗？')
+      }
+      return true
+    })
+  }
+
   songsService = useSongs()
   adminService = useAdmin()
   auth = useAuth()
@@ -1283,6 +1358,12 @@ const scrollToDateElement = (behavior = 'smooth') => {
 
 // 清理事件监听器
 onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+
+  if (unregisterBeforeNavigate) {
+    unregisterBeforeNavigate()
+  }
+
   if (dateSelector.value) {
     dateSelector.value.removeEventListener('wheel', handleDateSelectorWheel)
     dateSelector.value.removeEventListener('scroll', updateScrollButtonState)
@@ -1299,6 +1380,17 @@ const openManualDatePicker = () => {
 // 确认手动日期选择
 const confirmManualDate = () => {
   if (manualSelectedDate.value) {
+    if (selectedDate.value === manualSelectedDate.value) {
+      showManualDatePicker.value = false
+      return
+    }
+
+    if (hasChanges.value) {
+      if (!window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
+        return
+      }
+    }
+
     selectedDate.value = manualSelectedDate.value
     showManualDatePicker.value = false
 
@@ -1312,6 +1404,14 @@ const confirmManualDate = () => {
 // 定位到今天
 const scrollToToday = () => {
   const todayStr = new Date().toISOString().split('T')[0]
+  if (selectedDate.value === todayStr) return
+
+  if (hasChanges.value) {
+    if (!window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
+      return
+    }
+  }
+
   selectedDate.value = todayStr
 
   // 确保今天在范围内
