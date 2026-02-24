@@ -578,6 +578,7 @@ VoiceHub/
 │   │   ├── useRequestDedup.ts  # 请求去重hooks
 │   │   ├── useSemesters.ts     # 学期管理hooks
 │   │   ├── useSiteConfig.js    # 站点配置hooks
+│   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
 │   │   ├── useSongs.ts         # 歌曲管理hooks
 │   │   ├── useToast.ts         # Toast提示hooks
 │   │   └── useWebAuthn.ts      # WebAuthn 认证 hooks

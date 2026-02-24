@@ -72,6 +72,17 @@
           class-name="flex-1 lg:w-32 min-w-[100px]"
         />
 
+        <!-- 排序 -->
+        <CustomSelect
+          v-model="currentSort"
+          :options="sortOptions"
+          label="排序"
+          placeholder="排序方式"
+          label-key="label"
+          value-key="value"
+          class-name="flex-1 lg:w-40 min-w-[140px]"
+        />
+
         <button
           class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-600 hover:text-blue-400 transition-all shadow-sm"
           @click="loadUsers(1)"
@@ -1358,10 +1369,31 @@ const users = ref([])
 const searchQuery = ref('')
 const roleFilter = ref('')
 const statusFilter = ref('')
+const sortBy = ref('id')
+const sortOrder = ref('asc')
 const currentPage = ref(1)
 const pageSize = ref(50)
 const totalUsers = ref(0)
 const totalPages = ref(1)
+
+const sortOptions = [
+  { label: '默认排序 (ID)', value: 'id-asc' },
+  { label: '名称 (A-Z)', value: 'name-asc' },
+  { label: '名称 (Z-A)', value: 'name-desc' },
+  { label: '最近登录', value: 'lastLogin-desc' },
+  { label: '最早登录', value: 'lastLogin-asc' },
+  { label: '最近注册', value: 'createdAt-desc' },
+  { label: '最早注册', value: 'createdAt-asc' }
+]
+
+const currentSort = computed({
+  get: () => `${sortBy.value}-${sortOrder.value}`,
+  set: (val) => {
+    const [field, order] = val.split('-')
+    sortBy.value = field
+    sortOrder.value = order
+  }
+})
 
 // 硬编码角色定义
 const allRoles = [
@@ -1489,7 +1521,7 @@ const paginatedUsers = computed(() => {
 
 // 监听搜索和过滤条件变化
 watch(
-  [searchQuery, roleFilter, statusFilter],
+  [searchQuery, roleFilter, statusFilter, sortBy, sortOrder],
   () => {
     currentPage.value = 1
     loadUsers(1, pageSize.value)
@@ -1846,7 +1878,9 @@ const loadUsers = async (page = 1, limit = 100) => {
         limit: limit.toString(),
         search: searchQuery.value || undefined,
         role: roleFilter.value || undefined,
-        status: statusFilter.value || undefined
+        status: statusFilter.value || undefined,
+        sortBy: sortBy.value,
+        sortOrder: sortOrder.value
       },
       ...auth.getAuthConfig()
     })

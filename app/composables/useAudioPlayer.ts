@@ -1,6 +1,6 @@
 import { computed, readonly, ref } from 'vue'
 
-interface PlayableSong {
+export interface PlayableSong {
   id: number
   title: string
   artist: string

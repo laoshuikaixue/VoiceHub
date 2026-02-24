@@ -201,9 +201,10 @@
           <div class="col-span-12 lg:col-span-4 flex items-center gap-4">
             <div
               :class="[
-                'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-zinc-800/40 border-zinc-700/30 group-hover:border-zinc-600',
+                'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-zinc-800/40 border-zinc-700/30 group-hover:border-zinc-600 cursor-pointer hover:opacity-80',
                 selectedSongs.includes(song.id) ? 'border-blue-500/50' : ''
               ]"
+              @click.stop="playSong(song)"
             >
               <img
                 v-if="song.cover"
@@ -222,14 +223,12 @@
                     : 'text-zinc-100 group-hover:text-blue-400'
                 ]"
               >
-                <button
+                <span
                   v-if="song.musicPlatform === 'bilibili'"
-                  class="flex items-center gap-1 hover:underline text-left"
-                  @click.stop="openBilibiliPreview(song)"
+                  class="flex items-center gap-1 text-left"
                 >
                   {{ song.title }}
-                  <ExternalLink :size="12" class="opacity-50" />
-                </button>
+                </span>
                 <span v-else>{{ song.title }}</span>
               </h4>
               <p class="text-xs text-zinc-500 font-medium truncate mt-0.5">{{ song.artist }}</p>
@@ -824,14 +823,6 @@
       </div>
     </Transition>
   </div>
-
-  <!-- 哔哩哔哩 iframe 预览弹窗 -->
-  <BilibiliIframeModal
-    :show="showBilibiliPreview"
-    :bvid="previewBvid"
-    :page="previewPage"
-    @close="showBilibiliPreview = false"
-  />
 </template>
 
 <script setup>
@@ -863,9 +854,8 @@ import { useAdmin } from '~/composables/useAdmin'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useSemesters } from '~/composables/useSemesters'
-import { useBilibiliPreview } from '~/composables/useBilibiliPreview'
-import { validateUrl, getBilibiliUrl, convertToHttps } from '~/utils/url'
-import BilibiliIframeModal from '~/components/UI/BilibiliIframeModal.vue'
+import { useSongPlayer } from '~/composables/useSongPlayer'
+import { validateUrl, convertToHttps } from '~/utils/url'
 
 // 响应式数据
 const { showToast: showNotification } = useToast()
@@ -877,8 +867,8 @@ const selectedSongs = ref([])
 const currentPage = ref(1)
 const pageSize = ref(20)
 
-// 哔哩哔哩预览相关
-const { showBilibiliPreview, previewBvid, previewPage, openBilibiliPreview } = useBilibiliPreview()
+// 音频播放器
+const { playSong } = useSongPlayer()
 
 // 学期相关
 const selectedSemester = ref('all')
@@ -1762,6 +1752,7 @@ const handleClickOutside = (event) => {
     showEditCollaboratorDropdown.value = false
   }
 }
+
 
 // 监听器
 watch([searchQuery, statusFilter, sortOption, selectedSemester], () => {
