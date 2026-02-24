@@ -1,13 +1,13 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { and, asc, count, eq, ilike, or } from 'drizzle-orm'
+import { and, asc, desc, count, eq, ilike, or, sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
     // 获取查询参数
     const query = getQuery(event)
-    const { grade, class: className, search, page = '1', limit = '50', role, status } = query
+    const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc' } = query
 
     // 构建筛选条件
     const whereConditions = []
@@ -55,10 +55,25 @@ export default defineEventHandler(async (event) => {
     const totalResult = await db.select({ count: count() }).from(users).where(whereClause)
     const total = totalResult[0].count
 
+    // 排序逻辑
+    let orderByClause = asc(users.id)
+    if (sortBy === 'name') {
+      orderByClause = sortOrder === 'desc' ? desc(users.name) : asc(users.name)
+    } else if (sortBy === 'lastLogin') {
+      // 确保未登录用户（NULL）排在最后
+      orderByClause = sortOrder === 'desc' 
+        ? sql`${users.lastLogin} DESC NULLS LAST` 
+        : asc(users.lastLogin)
+    } else if (sortBy === 'createdAt') {
+      orderByClause = sortOrder === 'desc' ? desc(users.createdAt) : asc(users.createdAt)
+    } else if (sortBy === 'id') {
+      orderByClause = sortOrder === 'desc' ? desc(users.id) : asc(users.id)
+    }
+
     // 获取用户列表
     const usersList = await db.query.users.findMany({
       where: whereClause,
-      orderBy: asc(users.id),
+      orderBy: orderByClause,
       limit: limitNum,
       offset: skip,
       columns: {

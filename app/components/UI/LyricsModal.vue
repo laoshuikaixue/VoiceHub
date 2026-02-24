@@ -1772,8 +1772,20 @@ onUnmounted(() => {
   }
 
   .lyric-toolbar {
-    bottom: calc(130px + env(safe-area-inset-bottom));
-    right: 1.5rem;
+    bottom: calc(96px + env(safe-area-inset-bottom)); /* 与分页点垂直对齐 */
+    right: auto;
+    left: 50%;
+    transform: translateX(40px); /* 位于分页点右侧 */
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .toolbar-btn {
+    width: 32px;
+    height: 32px;
+    background: transparent; /* 移除背景使其更融入 */
   }
 
   .mobile-lyric-header {

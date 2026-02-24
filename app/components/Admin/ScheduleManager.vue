@@ -299,7 +299,8 @@
                 <div class="flex items-center gap-3">
                   <!-- 封面图片 -->
                   <div
-                    class="relative w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50"
+                    class="relative w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50 cursor-pointer hover:opacity-80 transition-opacity"
+                    @click.stop="playSong(song)"
                   >
                     <img
                       v-if="song.cover"
@@ -319,14 +320,12 @@
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                     <h4 class="font-bold text-zinc-100 text-sm truncate">
-                      <button
+                      <span
                         v-if="song.musicPlatform === 'bilibili'"
-                        class="text-zinc-100 hover:text-blue-400 hover:underline flex items-center gap-1 transition-colors w-full text-left"
-                        @click.stop="openBilibiliPreview(song)"
+                        class="text-zinc-100 flex items-center gap-1 w-full text-left"
                       >
                         <span class="truncate">{{ song.title }}</span>
-                        <ExternalLink class="w-3 h-3 opacity-70 flex-shrink-0" />
-                      </button>
+                      </span>
                       <span v-else>{{ song.title }}</span>
                     </h4>
                     <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
@@ -554,7 +553,8 @@
 
                   <!-- 封面图片 -->
                   <div
-                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50"
+                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50 cursor-pointer hover:opacity-80 transition-opacity"
+                    @click.stop="playSong(schedule.song)"
                   >
                     <img
                       v-if="schedule.song.cover"
@@ -791,14 +791,6 @@
       </div>
     </div>
   </div>
-
-  <!-- 哔哩哔哩 iframe 预览弹窗 -->
-  <BilibiliIframeModal
-    :show="showBilibiliPreview"
-    :bvid="previewBvid"
-    :page="previewPage"
-    @close="showBilibiliPreview = false"
-  />
 </template>
 
 <script setup>
@@ -835,9 +827,9 @@ import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
-import BilibiliIframeModal from '~/components/UI/BilibiliIframeModal.vue'
-import { useBilibiliPreview } from '~/composables/useBilibiliPreview'
-import { convertToHttps, getBilibiliUrl } from '~/utils/url'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { convertToHttps } from '~/utils/url'
+import { getMusicUrl } from '~/utils/musicUrl'
 
 // 响应式数据
 const selectedDate = ref(new Date().toISOString().split('T')[0])
@@ -851,7 +843,45 @@ const mobileTab = ref('pending')
 const mobileFiltersOpen = ref(false)
 
 // 哔哩哔哩预览相关
-const { showBilibiliPreview, previewBvid, previewPage, openBilibiliPreview } = useBilibiliPreview()
+const audioPlayer = useAudioPlayer()
+
+const playSong = async (song) => {
+  // 如果是当前正在播放的歌曲，则暂停
+  if (audioPlayer.isCurrentSong(song.id) && audioPlayer.getPlayingStatus().value) {
+    audioPlayer.pauseSong()
+    return
+  }
+
+  // 如果是当前歌曲但暂停了，则恢复播放
+  if (audioPlayer.isCurrentSong(song.id) && !audioPlayer.getPlayingStatus().value) {
+    // 检查当前全局歌曲是否有URL
+    const currentGlobalSong = audioPlayer.getCurrentSong().value
+    if (currentGlobalSong && (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'bilibili')) {
+      audioPlayer.playSong(currentGlobalSong)
+      return
+    }
+  }
+
+  try {
+    let url = null
+    // 哔哩哔哩不需要获取 URL，播放器会处理
+    if (song.musicPlatform !== 'bilibili') {
+        url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
+    }
+    
+    const playableSong = {
+      ...song,
+      musicUrl: url
+    }
+    
+    audioPlayer.playSong(playableSong)
+  } catch (error) {
+    console.error('播放失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('播放失败: ' + error.message, 'error')
+    }
+  }
+}
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
