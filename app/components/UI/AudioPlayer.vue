@@ -131,7 +131,7 @@
                 title="上一首"
                 @click="handlePrevious"
               >
-                <Icon name="skip-back" size="20" />
+                <Icon name="skip-back" size="26" />
               </span>
 
               <!-- 播放/暂停 -->
@@ -153,7 +153,7 @@
                 title="下一首"
                 @click="handleNext"
               >
-                <Icon name="skip-forward" size="20" />
+                <Icon name="skip-forward" size="26" />
               </span>
             </div>
 
@@ -574,8 +574,11 @@ const handleError = async (error) => {
 
 const handleEnded = () => {
   control.onEnded()
-  // 歌曲播放完成时关闭全屏歌词模态
-  showFullscreenLyrics.value = false
+  // 只有在播放模式为 'off' 时才关闭全屏歌词模态
+  // 单曲循环和列表播放模式下应该保持歌词页面打开
+  if (control.playMode.value === 'off') {
+    showFullscreenLyrics.value = false
+  }
   emit('ended')
 }
 
@@ -2117,11 +2120,14 @@ const getFirstChar = (text) => {
 
 /* 控制按钮 */
 .control-btn {
-  line-height: 29px;
+  line-height: 1;
   font-size: 24px;
   color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .control-btn:hover {

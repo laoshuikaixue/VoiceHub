@@ -9,7 +9,7 @@
           class="control-btn prev-btn"
           @click="$emit('previous')"
         >
-          <Icon :size="18" color="white" name="skip-back" />
+          <Icon :size="24" color="white" name="skip-back" />
         </button>
 
         <!-- 播放/暂停按钮 -->
@@ -30,7 +30,7 @@
           class="control-btn next-btn"
           @click="$emit('next')"
         >
-          <Icon :size="18" color="white" name="skip-forward" />
+          <Icon :size="24" color="white" name="skip-forward" />
         </button>
 
         <div class="progress-container-wrapper">

@@ -26,6 +26,9 @@ const isLoadingTrack = ref(false)
 const progressBarRef = ref<HTMLElement | null>(null)
 const hasUserInteracted = ref(false)
 
+// 播放模式: 'off' (播放完退出) | 'order' (顺序播放) | 'loopOne' (单曲循环)
+const playMode = ref<'off' | 'order' | 'loopOne'>('off')
+
 // 共享歌词实例
 const lyrics = useLyrics()
 
@@ -652,9 +655,39 @@ export const useAudioPlayerControl = () => {
   }
 
   const onEnded = () => {
-    isPlaying.value = false
-    progress.value = 0
-    currentTime.value = 0
+    // 根据播放模式处理播放结束事件
+    if (playMode.value === 'loopOne') {
+      // 单曲循环：重新播放当前歌曲
+      if (audioPlayer.value) {
+        audioPlayer.value.currentTime = 0
+        // 使用 Promise 处理播放，避免自动播放策略问题
+        const playPromise = audioPlayer.value.play()
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            console.error('单曲循环播放失败:', error)
+            // 如果自动播放失败，更新播放状态
+            isPlaying.value = false
+          })
+        }
+      }
+    } else if (playMode.value === 'order') {
+      // 顺序播放：播放下一首
+      // 如果没有下一首（列表结束），useAudioPlayer.playNext 会返回 false，此时自然停止
+      const hasNext = globalAudioPlayer.hasNext.value
+      if (hasNext) {
+        globalAudioPlayer.playNext()
+      } else {
+        // 列表播放结束，停止播放
+        isPlaying.value = false
+        progress.value = 0
+        currentTime.value = 0
+      }
+    } else {
+      // 默认/播放完退出 (off)：停止播放
+      isPlaying.value = false
+      progress.value = 0
+      currentTime.value = 0
+    }
   }
 
   const onLoadStart = () => {
@@ -765,6 +798,7 @@ export const useAudioPlayerControl = () => {
     isLoadingTrack,
     progressBarRef,
     hasUserInteracted,
+    playMode, // 暴露播放模式
 
     // 基本控制
     play,
