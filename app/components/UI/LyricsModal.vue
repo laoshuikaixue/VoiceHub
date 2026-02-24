@@ -1551,11 +1551,11 @@ onUnmounted(() => {
 .mobile-pagination-dots {
     display: none;
     position: absolute;
-    bottom: calc(110px + env(safe-area-inset-bottom)); /* 根据控制栏高度调整 */
+    bottom: calc(130px + env(safe-area-inset-bottom)); /* 根据控制栏高度调整 */
     left: 50%;
     transform: translateX(-50%);
     gap: 8px;
-    z-index: 30;
+    z-index: 70;
     pointer-events: none;
   }
 
@@ -1622,6 +1622,7 @@ onUnmounted(() => {
     /* 优化滚动性能 */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
+    z-index: 70; /* 确保子元素（如设置按钮）在播控栏之上 */
   }
 
   .main-content::-webkit-scrollbar {
@@ -1772,20 +1773,17 @@ onUnmounted(() => {
   }
 
   .lyric-toolbar {
-    bottom: calc(96px + env(safe-area-inset-bottom)); /* 与分页点垂直对齐 */
-    right: auto;
-    left: 50%;
-    transform: translateX(40px); /* 位于分页点右侧 */
-    width: 32px;
-    height: 32px;
-    align-items: center;
-    justify-content: center;
+    bottom: calc(130px + env(safe-area-inset-bottom));
+    right: 1.5rem;
+    left: auto;
+    transform: none;
+    z-index: 100;
   }
 
   .toolbar-btn {
-    width: 32px;
-    height: 32px;
-    background: transparent; /* 移除背景使其更融入 */
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .mobile-lyric-header {
