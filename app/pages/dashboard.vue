@@ -180,7 +180,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { Menu, ChevronUp } from 'lucide-vue-next'
 import { useAuth } from '~/composables/useAuth'
 import logo from '~/public/images/logo.svg'
@@ -202,6 +202,19 @@ const activeTab = ref('overview')
 const currentUser = ref(null)
 const sidebarOpen = ref(false)
 const showBackToTop = ref(false)
+const beforeNavigateHooks = ref([])
+
+// 提供注册导航拦截钩子的方法
+const registerBeforeNavigate = (hook) => {
+  beforeNavigateHooks.value.push(hook)
+  return () => {
+    const index = beforeNavigateHooks.value.indexOf(hook)
+    if (index > -1) {
+      beforeNavigateHooks.value.splice(index, 1)
+    }
+  }
+}
+provide('registerBeforeNavigate', registerBeforeNavigate)
 
 // 服务
 let auth = null
@@ -275,7 +288,14 @@ const handleLogout = async () => {
 }
 
 // 导航方法
-const handleNavigate = (tab) => {
+const handleNavigate = async (tab) => {
+  if (activeTab.value === tab) return
+
+  // 检查是否有拦截
+  for (const hook of beforeNavigateHooks.value) {
+    if (!(await hook(tab))) return
+  }
+
   activeTab.value = tab
   // 移动端点击导航后关闭侧边栏
   if (window.innerWidth <= 768) {
