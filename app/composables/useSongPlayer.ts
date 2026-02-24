@@ -1,20 +1,22 @@
 import { getMusicUrl } from '~/utils/musicUrl'
-import { useAudioPlayer } from './useAudioPlayer'
+import { useAudioPlayer, type PlayableSong } from './useAudioPlayer'
 import { useToast } from './useToast'
+import type { Song } from '~/types'
 
 export const useSongPlayer = () => {
   const audioPlayer = useAudioPlayer()
   const { showToast } = useToast()
 
-  const playSong = async (song: any) => {
-    // 如果是当前正在播放的歌曲，则暂停
-    if (audioPlayer.isCurrentSong(song.id) && audioPlayer.getPlayingStatus().value) {
-      audioPlayer.pauseSong()
-      return
-    }
-
-    // 如果是当前歌曲但暂停了，则恢复播放
-    if (audioPlayer.isCurrentSong(song.id) && !audioPlayer.getPlayingStatus().value) {
+  const playSong = async (song: Song | PlayableSong) => {
+    // 如果是当前选中的歌曲
+    if (audioPlayer.isCurrentSong(song.id)) {
+      // 如果正在播放，则暂停
+      if (audioPlayer.getPlayingStatus().value) {
+        audioPlayer.pauseSong()
+        return
+      }
+      
+      // 如果是当前歌曲但暂停了，则恢复播放
       const currentGlobalSong = audioPlayer.getCurrentSong().value
       if (currentGlobalSong && (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'bilibili')) {
         audioPlayer.playSong(currentGlobalSong)
@@ -29,7 +31,7 @@ export const useSongPlayer = () => {
         url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
       }
 
-      const playableSong = {
+      const playableSong: PlayableSong = {
         ...song,
         musicUrl: url
       }
@@ -37,7 +39,8 @@ export const useSongPlayer = () => {
       audioPlayer.playSong(playableSong, [playableSong])
     } catch (error: any) {
       console.error('播放失败:', error)
-      showToast('播放失败: ' + (error.message || error), 'error')
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      showToast('播放失败: ' + errorMessage, 'error')
     }
   }
 

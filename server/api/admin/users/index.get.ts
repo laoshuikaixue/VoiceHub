@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
       // 确保未登录用户（NULL）排在最后
       orderByClause = sortOrder === 'desc' 
         ? sql`${users.lastLogin} DESC NULLS LAST` 
-        : asc(users.lastLogin)
+        : asc(users.lastLogin).nullsFirst()
     } else if (sortBy === 'createdAt') {
       orderByClause = sortOrder === 'desc' ? desc(users.createdAt) : asc(users.createdAt)
     } else {
