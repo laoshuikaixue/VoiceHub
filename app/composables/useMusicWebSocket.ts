@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, readonly } from 'vue'
 
 interface MusicState {
   songId?: number

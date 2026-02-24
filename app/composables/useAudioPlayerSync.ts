@@ -136,7 +136,10 @@ export const useAudioPlayerSync = () => {
         // 这意味着用户希望看到列表图标而不是循环图标，或者反之。
         // HarmonyOS 的 SEQUENCE 图标通常是直箭头，LIST 图标是循环箭头。
         // 如果用户想要 "单独的列表" (Sequence)，则应该映射为 0。
-        loopMode = 0; // SEQUENCE
+        // 修正：用户说 "鸿蒙的播控组件中现在列表播放和默认的图标是一样的"。
+        // 之前我把 'order' 映射为 0，'off' 也映射为 0。所以它们一样。
+        // 为了区分，必须把 'order' 映射为 2 (LIST)，显示列表循环图标。
+        loopMode = 2; // LIST
       }
 
       const playlistState = {
@@ -575,11 +578,49 @@ export const useAudioPlayerSync = () => {
     window.addEventListener('harmonyos-next', handleHarmonyOSNext)
     window.addEventListener('harmonyos-previous', handleHarmonyOSPrevious)
     window.addEventListener('harmonyos-seek', handleHarmonyOSSeek as EventListener)
-    window.addEventListener(
-      'harmonyos-position-update',
+    window.addEventListener('harmonyos-position-update',
       handleHarmonyOSPositionUpdate as EventListener
     )
     window.addEventListener('harmonyos-set-loop-mode', handleHarmonyOSSetLoopMode as EventListener)
+
+    // 增强：直接暴露方法给 window.voiceHubPlayer，确保 Index.ets 可以直接调用
+    if (typeof window !== 'undefined') {
+      // 确保对象存在
+      window.voiceHubPlayer = window.voiceHubPlayer || {};
+      
+      // 添加/覆盖控制方法
+      // 注意：我们不覆盖 onPlayStateChanged 和 onSongChanged，因为它们可能是由 Index.ets 注入的
+      // 我们只添加控制方法，这样 Index.ets 可以直接调用它们
+      const methodsToAdd = {
+        play: handleHarmonyOSPlay,
+        pause: handleHarmonyOSPause,
+        stop: handleHarmonyOSStop,
+        next: handleHarmonyOSNext, // Index.ets 使用 next()
+        playNext: handleHarmonyOSNext, // 兼容性
+        previous: handleHarmonyOSPrevious, // Index.ets 使用 previous()
+        playPrevious: handleHarmonyOSPrevious, // 兼容性
+        seek: (time: number) => callbacks.onSeek(time),
+        setLoopMode: (mode: number | string) => {
+          // 模拟事件对象调用处理函数
+          const event = { detail: { mode } } as CustomEvent;
+          handleHarmonyOSSetLoopMode(event);
+        }
+      };
+
+      Object.assign(window.voiceHubPlayer, methodsToAdd);
+      
+      // 同时也尝试暴露给 voiceHubPlayerInstance (Index.ets 的备用方案)
+      if (window.voiceHubPlayerInstance) {
+         Object.assign(window.voiceHubPlayerInstance, {
+           setPlayMode: (mode: number | string) => {
+              const event = { detail: { mode } } as CustomEvent;
+              handleHarmonyOSSetLoopMode(event);
+           }
+         });
+      }
+      
+      console.log('VoiceHub: HarmonyOS direct control methods attached');
+    }
   }
 
   // 清理鸿蒙系统控制事件
