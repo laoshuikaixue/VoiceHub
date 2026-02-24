@@ -7,14 +7,14 @@ import { parseBilibiliId } from '~/utils/bilibiliSource'
  * @param platform 音乐平台 ('netease' | 'tencent')
  * @param musicId 音乐ID
  * @param playUrl 用户提供的播放链接（可选）
- * @param options 额外选项，例如 { unblock: boolean }
+ * @param options 额外选项，例如 { unblock: boolean, quality: number }
  * @returns Promise<string | null> 返回播放URL或null
  */
 export async function getMusicUrl(
   platform: string,
   musicId: string | number,
   playUrl?: string,
-  options?: { unblock?: boolean }
+  options?: { unblock?: boolean; quality?: number }
 ): Promise<string | null> {
   // 如果用户提供了播放链接，优先使用
   if (playUrl && playUrl.trim()) {
@@ -36,7 +36,9 @@ export async function getMusicUrl(
   const { getQuality } = useAudioQuality()
   const { getSongUrl } = useMusicSources()
 
-  const quality = getQuality(platform)
+  // 优先使用 options 中的 quality，否则使用全局设置
+  const quality =
+    options?.quality !== undefined ? options.quality : getQuality(platform)
 
   let finalMusicId = musicId
   let bilibiliCid: string | undefined

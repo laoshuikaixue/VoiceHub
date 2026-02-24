@@ -413,6 +413,7 @@ export const useAudioPlayerControl = () => {
     playUrl: string | null = null,
     options?: {
       unblock?: boolean
+      quality?: number
     }
   ): Promise<string | null> => {
     try {

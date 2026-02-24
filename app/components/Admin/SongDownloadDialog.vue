@@ -714,7 +714,10 @@ const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
       song.musicPlatform === 'netease-podcast' ||
       song.sourceInfo?.type === 'voice' ||
       (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
-    const options = isPodcast ? { unblock: false } : {}
+    const options = {
+      unblock: isPodcast ? false : undefined,
+      quality: quality
+    }
 
     // 直接调用统一的getMusicUrl方法，它会自动处理playUrl优先级
     const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl, options)

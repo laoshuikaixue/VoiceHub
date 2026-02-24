@@ -1037,19 +1037,27 @@ export const useMusicSources = () => {
           } else {
             // 网易云备用API
             let level = 'exhigh'
-            try {
-              const { getQuality } = await import('./useAudioQuality')
-              const neteaseQuality = getQuality('netease')
-              level = mapQualityToLevel(neteaseQuality)
-            } catch (error) {
-              // 无法获取音质设置，使用默认音质
+
+            // 优先使用传入的 quality 参数
+            if (quality !== undefined && quality !== null) {
+              level = mapQualityToLevel(Number(quality))
+            } else {
+              // 否则回退到全局设置
+              try {
+                const { getQuality } = await import('./useAudioQuality')
+                const neteaseQuality = getQuality('netease')
+                level = mapQualityToLevel(neteaseQuality)
+              } catch (error) {
+                // 无法获取音质设置，使用默认音质
+              }
             }
 
             // 如果提供了cookie，添加到请求参数中
             const params: any = {
               id: idParam,
               level: level,
-              unblock: options?.unblock ?? true
+              // 如果用户已登录（有cookie），默认不启用 unblock（false），否则启用（true）
+              unblock: options?.unblock ?? (!cookie)
             }
             if (cookie) {
               params.cookie = cookie

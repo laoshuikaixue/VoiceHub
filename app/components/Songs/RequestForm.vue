@@ -1874,7 +1874,7 @@ const getAudioUrl = async (result) => {
           quality,
           targetPlatform,
           neteaseCookie.value,
-          { unblock: !isPodcast } // 播客内容 unblock=false，普通歌曲 unblock=true
+          { unblock: isPodcast ? false : undefined } // 播客内容 unblock=false，普通歌曲使用默认逻辑（登录则false，未登录则true）
         )
 
         if (urlResult && urlResult.success && urlResult.url) {
