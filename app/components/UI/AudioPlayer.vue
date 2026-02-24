@@ -941,7 +941,8 @@ watch(
     () => sync.globalAudioPlayer.hasNext.value,
     () => sync.globalAudioPlayer.hasPrevious.value,
     () => sync.globalAudioPlayer.getCurrentPlaylistIndex().value,
-    () => sync.globalAudioPlayer.getCurrentPlaylist().value
+    () => sync.globalAudioPlayer.getCurrentPlaylist().value,
+    () => control.playMode.value
   ],
   () => {
     sync.notifyPlaylistState()

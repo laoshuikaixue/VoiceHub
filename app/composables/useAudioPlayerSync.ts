@@ -1,11 +1,13 @@
 import { ref } from 'vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useMusicWebSocket } from '~/composables/useMusicWebSocket'
 import { useAuth } from '~/composables/useAuth'
 import { useLyrics } from '~/composables/useLyrics'
 
 export const useAudioPlayerSync = () => {
   const globalAudioPlayer = useAudioPlayer()
+  const control = useAudioPlayerControl()
   const musicWebSocket = useMusicWebSocket()
   const lyrics = useLyrics()
 
@@ -112,11 +114,21 @@ export const useAudioPlayerSync = () => {
       const hasNext = globalAudioPlayer.hasNext.value
       const hasPrevious = globalAudioPlayer.hasPrevious.value
 
+      // 映射播放模式
+      // HarmonyOS: 0=SEQUENCE, 1=SINGLE, 2=LIST, 3=SHUFFLE
+      let loopMode = 0; // SEQUENCE
+      if (control.playMode.value === 'loopOne') {
+        loopMode = 1; // SINGLE
+      } else if (control.playMode.value === 'order') {
+        loopMode = 2; // LIST
+      }
+
       const playlistState = {
         currentIndex: currentIndex,
         playlistLength: playlist ? playlist.length : 0,
         hasNext: hasNext,
-        hasPrevious: hasPrevious
+        hasPrevious: hasPrevious,
+        loopMode: loopMode
       }
 
       // 播放列表状态更新（减少日志输出）
@@ -480,6 +492,15 @@ export const useAudioPlayerSync = () => {
       }
     }
 
+    const handleHarmonyOSSetLoopMode = (event: CustomEvent) => {
+      const mode = event.detail?.mode;
+      if (mode) {
+        control.setPlayMode(mode);
+        // 立即通知状态更新
+        notifyPlaylistState();
+      }
+    }
+
     // 保存处理函数引用以便清理
     harmonyOSHandlers = {
       handleHarmonyOSPlay,
@@ -488,7 +509,8 @@ export const useAudioPlayerSync = () => {
       handleHarmonyOSNext,
       handleHarmonyOSPrevious,
       handleHarmonyOSSeek,
-      handleHarmonyOSPositionUpdate
+      handleHarmonyOSPositionUpdate,
+      handleHarmonyOSSetLoopMode
     }
 
     // 添加事件监听器
@@ -502,6 +524,7 @@ export const useAudioPlayerSync = () => {
       'harmonyos-position-update',
       handleHarmonyOSPositionUpdate as EventListener
     )
+    window.addEventListener('harmonyos-set-loop-mode', handleHarmonyOSSetLoopMode as EventListener)
   }
 
   // 清理鸿蒙系统控制事件
@@ -534,6 +557,10 @@ export const useAudioPlayerSync = () => {
       window.removeEventListener(
         'harmonyos-position-update',
         harmonyOSHandlers.handleHarmonyOSPositionUpdate as EventListener
+      )
+      window.removeEventListener(
+        'harmonyos-set-loop-mode',
+        harmonyOSHandlers.handleHarmonyOSSetLoopMode as EventListener
       )
       harmonyOSHandlers = null
     }

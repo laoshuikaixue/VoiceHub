@@ -782,6 +782,15 @@ export const useAudioPlayerControl = () => {
     }
   }
 
+  // 设置播放模式
+  const setPlayMode = (mode: 'off' | 'order' | 'loopOne') => {
+    if (['off', 'order', 'loopOne'].includes(mode)) {
+      playMode.value = mode
+      return true
+    }
+    return false
+  }
+
   return {
     // 状态
     audioPlayer,
@@ -802,6 +811,7 @@ export const useAudioPlayerControl = () => {
 
     // 基本控制
     play,
+    setPlayMode, // 暴露设置播放模式方法
     pause,
     stop,
     seek,
