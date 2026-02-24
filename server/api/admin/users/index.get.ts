@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
     const total = totalResult[0].count
 
     // 排序逻辑
-    let orderByClause = asc(users.id)
+    let orderByClause
     if (sortBy === 'name') {
       orderByClause = sortOrder === 'desc' ? desc(users.name) : asc(users.name)
     } else if (sortBy === 'lastLogin') {
@@ -66,7 +66,8 @@ export default defineEventHandler(async (event) => {
         : asc(users.lastLogin)
     } else if (sortBy === 'createdAt') {
       orderByClause = sortOrder === 'desc' ? desc(users.createdAt) : asc(users.createdAt)
-    } else if (sortBy === 'id') {
+    } else {
+      // 默认按 id 排序
       orderByClause = sortOrder === 'desc' ? desc(users.id) : asc(users.id)
     }
 

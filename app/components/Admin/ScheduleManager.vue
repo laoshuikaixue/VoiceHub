@@ -827,9 +827,8 @@ import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
-import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useSongPlayer } from '~/composables/useSongPlayer'
 import { convertToHttps } from '~/utils/url'
-import { getMusicUrl } from '~/utils/musicUrl'
 
 // 响应式数据
 const selectedDate = ref(new Date().toISOString().split('T')[0])
@@ -842,46 +841,8 @@ const activeTab = ref('normal')
 const mobileTab = ref('pending')
 const mobileFiltersOpen = ref(false)
 
-// 哔哩哔哩预览相关
-const audioPlayer = useAudioPlayer()
-
-const playSong = async (song) => {
-  // 如果是当前正在播放的歌曲，则暂停
-  if (audioPlayer.isCurrentSong(song.id) && audioPlayer.getPlayingStatus().value) {
-    audioPlayer.pauseSong()
-    return
-  }
-
-  // 如果是当前歌曲但暂停了，则恢复播放
-  if (audioPlayer.isCurrentSong(song.id) && !audioPlayer.getPlayingStatus().value) {
-    // 检查当前全局歌曲是否有URL
-    const currentGlobalSong = audioPlayer.getCurrentSong().value
-    if (currentGlobalSong && (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'bilibili')) {
-      audioPlayer.playSong(currentGlobalSong)
-      return
-    }
-  }
-
-  try {
-    let url = null
-    // 哔哩哔哩不需要获取 URL，播放器会处理
-    if (song.musicPlatform !== 'bilibili') {
-        url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
-    }
-    
-    const playableSong = {
-      ...song,
-      musicUrl: url
-    }
-    
-    audioPlayer.playSong(playableSong)
-  } catch (error) {
-    console.error('播放失败:', error)
-    if (window.$showNotification) {
-      window.$showNotification('播放失败: ' + error.message, 'error')
-    }
-  }
-}
+// 音频播放器
+const { playSong } = useSongPlayer()
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
