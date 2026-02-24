@@ -131,7 +131,7 @@
                 title="上一首"
                 @click="handlePrevious"
               >
-                <Icon name="skip-back" size="20" />
+                <Icon name="skip-back" size="26" />
               </span>
 
               <!-- 播放/暂停 -->
@@ -153,7 +153,7 @@
                 title="下一首"
                 @click="handleNext"
               >
-                <Icon name="skip-forward" size="20" />
+                <Icon name="skip-forward" size="26" />
               </span>
             </div>
 
@@ -2120,11 +2120,14 @@ const getFirstChar = (text) => {
 
 /* 控制按钮 */
 .control-btn {
-  line-height: 29px;
+  line-height: 1;
   font-size: 24px;
   color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .control-btn:hover {
