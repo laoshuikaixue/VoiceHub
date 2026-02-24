@@ -208,17 +208,39 @@
           </div>
 
           <!-- 播放控制栏 -->
-          <div class="playback-controls">
+          <div
+            class="playback-controls"
+            :class="{ 'mobile-hidden': isMobile && currentMobilePage === 1 }"
+            @touchstart.stop
+            @touchmove.stop
+            @touchend.stop
+          >
             <div class="control-buttons">
+              <button
+                v-if="isMobile"
+                class="control-btn secondary-btn"
+                :class="{ active: playMode === 'order' }"
+                @click="togglePlayMode('order')"
+              >
+                <Icon name="order" size="20" />
+              </button>
               <button :disabled="!hasPrevious" class="control-btn" @click="previousSong">
-                <Icon name="skip-back" size="24" />
+                <Icon name="skip-back" size="28" />
               </button>
               <button class="play-pause-btn" @click="togglePlayPause">
                 <div v-if="isLoadingTrack" class="loading-spinner" />
                 <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="32" />
               </button>
               <button :disabled="!hasNext" class="control-btn" @click="nextSong">
-                <Icon name="skip-forward" size="24" />
+                <Icon name="skip-forward" size="28" />
+              </button>
+              <button
+                v-if="isMobile"
+                class="control-btn secondary-btn"
+                :class="{ active: playMode === 'loopOne' }"
+                @click="togglePlayMode('loopOne')"
+              >
+                <Icon name="repeat-one" size="20" />
               </button>
             </div>
 
@@ -307,6 +329,7 @@ const resizeTimer = ref(null)
 // 播放状态
 const currentSong = computed(() => audioPlayer.getCurrentSong().value)
 const isPlaying = computed(() => audioPlayer.getPlayingStatus().value)
+const playMode = computed(() => audioPlayerControl.playMode.value)
 const isLoadingTrack = computed(() => audioPlayerControl.isLoadingTrack.value)
 const currentTime = computed(() => audioPlayer.getCurrentPosition().value)
 const duration = computed(() => audioPlayer.getDuration().value)
@@ -623,6 +646,14 @@ const nextSong = () => {
   audioPlayer.playNext()
 }
 
+const togglePlayMode = (mode) => {
+  if (audioPlayerControl.playMode.value === mode) {
+    audioPlayerControl.playMode.value = 'off'
+  } else {
+    audioPlayerControl.playMode.value = mode
+  }
+}
+
 const handleProgressClick = (event) => {
   if (!progressBar.value || isDragging.value) return
 
@@ -643,6 +674,8 @@ const handleProgressClick = (event) => {
 }
 
 const handleProgressTouchStart = (event) => {
+  // 阻止冒泡，防止触发外层滚动（如翻页）
+  event.stopPropagation()
   isDragging.value = true
   dragStartX.value = event.touches[0].clientX
   dragStartTime.value = currentTime.value
@@ -1549,30 +1582,34 @@ onUnmounted(() => {
 }
 
 .mobile-pagination-dots {
-    display: none;
-    position: absolute;
-    bottom: calc(130px + env(safe-area-inset-bottom)); /* 根据控制栏高度调整 */
-    left: 50%;
-    transform: translateX(-50%);
-    gap: 8px;
-    z-index: 70;
-    pointer-events: none;
-  }
+  display: none; /* 默认隐藏 */
+  position: absolute;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  gap: 6px;
+  z-index: 100;
+  pointer-events: none;
+  align-items: center;
+  justify-content: center;
+}
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.3);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: auto;
 }
 
 .dot.active {
+  width: 20px;
+  height: 5px;
+  border-radius: 3px;
   background: #ffffff;
-  transform: scale(1.2);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
 .mobile-quality-badge {
@@ -1656,7 +1693,7 @@ onUnmounted(() => {
     width: 100vw;
     height: 100%;
     scroll-snap-align: start;
-    padding: 100px 1.5rem calc(130px + env(safe-area-inset-bottom));
+    padding: 100px 1.5rem 80px;
     overflow-y: hidden;
     box-sizing: border-box;
     mask-image: none;
@@ -1725,7 +1762,7 @@ onUnmounted(() => {
   }
 
   .mobile-pagination-dots {
-    display: flex;
+    display: flex; /* 仅在移动端显示 */
   }
 
   .close-button {
@@ -1744,23 +1781,102 @@ onUnmounted(() => {
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: 1rem 1.5rem calc(0.5rem + env(safe-area-inset-bottom));
-    gap: 1rem;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
+    padding: 2rem 1.5rem calc(2.5rem + env(safe-area-inset-bottom));
+    gap: 2rem;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     box-sizing: border-box;
-    z-index: 60;
+    z-index: 80; /* 提高层级，确保高于 .main-content (70) */
+    display: flex;
+    flex-direction: column-reverse;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 让容器本身拦截点击，避免穿透到 .main-content 触发滚动 */
+    pointer-events: auto;
+  }
+
+  .playback-controls > * {
+    /* 子元素保持正常点击 */
+    pointer-events: auto;
+  }
+
+  .playback-controls.mobile-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(40px) scale(0.95);
+    filter: blur(10px);
   }
 
   .progress-section {
     gap: 0.8rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .progress-fill {
+    background: #ffffff;
+  }
+
+  .progress-thumb {
+    width: 10px;
+    height: 10px;
+    display: none; /* 移动端通常不需要 thumb，或者很小 */
+  }
+
+  .time-display {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
   }
 
   .control-buttons {
     justify-content: space-between;
     width: 100%;
-    padding: 0 1rem;
+    padding: 0;
+    gap: 0;
+  }
+
+  .control-btn {
+    color: rgba(255, 255, 255, 0.6);
+    /* 增加点击区域 */
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .secondary-btn {
+    opacity: 0.4;
+    transition: all 0.2s;
+  }
+
+  .secondary-btn.active {
+    opacity: 1;
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  }
+
+  .play-pause-btn {
+    background: rgba(255, 255, 255, 0.1);
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 确保 z-index 高于可能覆盖的层 */
+    position: relative;
+    z-index: 10;
+  }
+
+  .play-pause-btn:active {
+    transform: scale(0.92);
+    background: rgba(255, 255, 255, 0.2);
   }
 
   .badge-quality-menu {

@@ -574,8 +574,11 @@ const handleError = async (error) => {
 
 const handleEnded = () => {
   control.onEnded()
-  // 歌曲播放完成时关闭全屏歌词模态
-  showFullscreenLyrics.value = false
+  // 只有在播放模式为 'off' 时才关闭全屏歌词模态
+  // 单曲循环和列表播放模式下应该保持歌词页面打开
+  if (control.playMode.value === 'off') {
+    showFullscreenLyrics.value = false
+  }
   emit('ended')
 }
 

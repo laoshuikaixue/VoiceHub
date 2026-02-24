@@ -87,12 +87,19 @@ const handlePlayerClose = () => {
 
 // 处理播放结束事件
 const handlePlayerEnded = () => {
-  // 播放完成后直接停止播放器
-  audioPlayer.stopSong()
-  // 延迟隐藏播放器
-  setTimeout(() => {
-    isPlayerVisible.value = false
-  }, 500)
+  // 不在这里处理播放结束逻辑
+  // 播放结束的逻辑已经在 useAudioPlayerControl.ts 的 onEnded 中处理
+  // 包括单曲循环、列表播放等模式
+  // 只有在播放模式为 'off' 时才需要隐藏播放器
+  const audioPlayerControl = useAudioPlayerControl()
+  if (audioPlayerControl.playMode.value === 'off') {
+    // 播放完成后停止播放器
+    audioPlayer.stopSong()
+    // 延迟隐藏播放器
+    setTimeout(() => {
+      isPlayerVisible.value = false
+    }, 500)
+  }
 }
 
 // 使用onMounted确保只在客户端初始化认证

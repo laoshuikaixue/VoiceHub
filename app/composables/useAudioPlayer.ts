@@ -66,6 +66,7 @@ export function useAudioPlayer() {
     currentSong.value = song
     isPlaying.value = true
     currentPosition.value = 0
+    duration.value = 0 // 重置时长，等待新歌曲加载后更新
     return true
   }
 
@@ -102,6 +103,7 @@ export function useAudioPlayer() {
         currentPlaylistIndex.value = nextIndex
         currentSong.value = nextSong
         currentPosition.value = 0
+        duration.value = 0 // 重置时长
         isPlaying.value = true
         return true
       }
@@ -130,6 +132,7 @@ export function useAudioPlayer() {
             currentPlaylistIndex.value = nextIndex
             currentSong.value = nextSong
             currentPosition.value = 0
+            duration.value = 0 // 重置时长
             isPlaying.value = true
             return true
           } else {
@@ -171,6 +174,7 @@ export function useAudioPlayer() {
         currentPlaylistIndex.value = prevIndex
         currentSong.value = prevSong
         currentPosition.value = 0
+        duration.value = 0 // 重置时长
         isPlaying.value = true
         return true
       }
@@ -199,6 +203,7 @@ export function useAudioPlayer() {
             currentPlaylistIndex.value = prevIndex
             currentSong.value = prevSong
             currentPosition.value = 0
+            duration.value = 0 // 重置时长
             isPlaying.value = true
             return true
           } else {
