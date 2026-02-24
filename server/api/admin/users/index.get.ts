@@ -58,12 +58,15 @@ export default defineEventHandler(async (event) => {
     // 排序逻辑
     let orderByClause
     if (sortBy === 'name') {
-      orderByClause = sortOrder === 'desc' ? desc(users.name) : asc(users.name)
+      // 对中文名进行拼音排序 (使用 GBK 编码转换 hack，适用于大多数常见汉字)
+      orderByClause = sortOrder === 'desc' 
+        ? sql`convert_to(${users.name}, 'GBK') DESC` 
+        : sql`convert_to(${users.name}, 'GBK') ASC`
     } else if (sortBy === 'lastLogin') {
       // 确保未登录用户（NULL）排在最后
       orderByClause = sortOrder === 'desc' 
         ? sql`${users.lastLogin} DESC NULLS LAST` 
-        : asc(users.lastLogin).nullsFirst()
+        : asc(users.lastLogin)
     } else if (sortBy === 'createdAt') {
       orderByClause = sortOrder === 'desc' ? desc(users.createdAt) : asc(users.createdAt)
     } else {
