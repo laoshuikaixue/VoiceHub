@@ -10,6 +10,7 @@ export interface User {
   forcePasswordChange?: boolean
   passwordChangedAt?: Date | null
   avatar?: string | null
+  has2FA?: boolean
 }
 
 export interface Song {

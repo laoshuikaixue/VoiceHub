@@ -33,6 +33,17 @@
               <p class="text-sm text-zinc-500 leading-relaxed font-medium">
                 {{ message }}
               </p>
+              
+              <!-- 可选的输入框 -->
+              <div v-if="showInput" class="pt-4 w-full">
+                <input
+                  v-model="inputValue"
+                  :type="inputType"
+                  :placeholder="inputPlaceholder"
+                  class="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
+                  @keyup.enter="handleConfirm"
+                />
+              </div>
             </div>
 
             <!-- 操作按钮 -->
@@ -47,7 +58,7 @@
               <button
                 class="flex-[2] px-6 py-4 text-white text-xs font-black rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="confirmBtnClasses"
-                :disabled="loading"
+                :disabled="loading || (showInput && !inputValue)"
                 @click="handleConfirm"
               >
                 <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
@@ -62,7 +73,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Icon from './Icon.vue'
 
 const props = defineProps({
@@ -80,7 +91,7 @@ const props = defineProps({
   },
   type: {
     type: String,
-    default: 'warning', // 'warning' (警告), 'danger' (危险), 'info' (信息), 'success' (成功)
+    default: 'warning',
     validator: (value) => ['warning', 'danger', 'info', 'success'].includes(value)
   },
   confirmText: {
@@ -98,13 +109,37 @@ const props = defineProps({
   closeOnOverlay: {
     type: Boolean,
     default: true
+  },
+  showInput: {
+    type: Boolean,
+    default: false
+  },
+  inputType: {
+    type: String,
+    default: 'text'
+  },
+  inputPlaceholder: {
+    type: String,
+    default: ''
   }
 })
 
 const emit = defineEmits(['confirm', 'cancel', 'close', 'update:show'])
 
+const inputValue = ref('')
+
+watch(() => props.show, (newVal) => {
+  if (newVal) {
+    inputValue.value = ''
+  }
+})
+
 const handleConfirm = () => {
-  emit('confirm')
+  if (props.showInput) {
+    emit('confirm', inputValue.value)
+  } else {
+    emit('confirm')
+  }
 }
 
 const handleCancel = () => {

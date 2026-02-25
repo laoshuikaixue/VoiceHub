@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt'
-import { db, eq, users } from '~/drizzle/db'
+import { db, eq, users, userIdentities, and } from '~/drizzle/db'
 import { JWTEnhanced } from '../../utils/jwt-enhanced'
 import {
   getAccountLockRemainingTime,
@@ -105,6 +105,20 @@ export default defineEventHandler(async (event) => {
         statusCode: 401,
         message: '密码不正确'
       })
+    }
+
+    // 检查是否开启2FA
+    const totpIdentity = await db.query.userIdentities.findFirst({
+      where: and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'totp'))
+    })
+
+    if (totpIdentity) {
+      return {
+        success: true,
+        requires2FA: true,
+        userId: user.id,
+        methods: ['totp', 'email']
+      }
     }
 
     // 检查用户状态

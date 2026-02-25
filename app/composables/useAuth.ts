@@ -21,13 +21,17 @@ export const useAuth = () => {
       return null
     }
 
-    // 已认证跳过，但仍返回用户信息
+    // 如果已认证，直接返回缓存的用户信息
     if (isAuthenticated.value && user.value) {
       return user.value
     }
 
     try {
-      const data = await $fetch<{ user: User }>('/api/auth/verify')
+      const data = await $fetch<{ user: User }>('/api/auth/verify', {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
 
       if (data && data.user) {
         user.value = data.user
@@ -39,17 +43,49 @@ export const useAuth = () => {
         clearAuthState()
         return null
       }
-    } catch (error) {
-      console.log('用户未认证或认证已过期')
-      clearAuthState()
+    } catch (error: any) {
+      const hadAuth = isAuthenticated.value
+      
+      // 只有当之前是已认证状态，且接口明确返回401（Token无效/过期），才进行清理和跳转
+      if (hadAuth && error.statusCode === 401) {
+         clearAuthState()
+         // Token失效，重定向到登录页
+         await navigateTo('/auth/login?error=SessionExpired')
+      } else if (!hadAuth && error.statusCode === 401) {
+        // 未登录状态下的 401，仅确保状态清理，不跳转
+        clearAuthState()
+      }
       return null
     }
   }
 
   const login = async (username: string, password: string) => {
-    const response = await $fetch<{ success: boolean; user: User }>('/api/auth/login', {
+    const response = await $fetch<any>('/api/auth/login', {
       method: 'POST',
       body: { username, password }
+    })
+
+    if (response.success) {
+      if (response.requires2FA) {
+        return response
+      }
+
+      if (response.user) {
+        token.value = 'cookie-based'
+        user.value = response.user
+        isAuthenticated.value = true
+        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(response.user.role)
+        return response
+      }
+    }
+
+    throw new Error('登录响应格式错误')
+  }
+
+  const verify2FA = async (userId: number, code: string, type: 'totp' | 'email') => {
+    const response = await $fetch<{ success: boolean; user: User }>('/api/auth/2fa/verify', {
+      method: 'POST',
+      body: { userId, code, type }
     })
 
     if (response.success && response.user) {
@@ -58,9 +94,8 @@ export const useAuth = () => {
       isAuthenticated.value = true
       isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(response.user.role)
       return response
-    } else {
-      throw new Error('登录响应格式错误')
     }
+    throw new Error('验证失败')
   }
 
   const changePassword = async (currentPassword: string, newPassword: string) => {
@@ -140,6 +175,7 @@ export const useAuth = () => {
     isAdmin,
     loading,
     login,
+    verify2FA,
     logout,
     changePassword,
     setInitialPassword,
