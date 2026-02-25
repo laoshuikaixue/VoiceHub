@@ -1053,6 +1053,43 @@ onMounted(async () => {
     }
   })
 
+  // 初始化 Media Session 控制 (Web SMTC)
+  if (mediaSession.isSupported.value) {
+    mediaSession.setActionHandlers({
+      onPlay: () => {
+        if (!control.isPlaying.value) {
+          handleTogglePlay()
+        }
+      },
+      onPause: () => {
+        if (control.isPlaying.value) {
+          handleTogglePlay()
+        }
+      },
+      onStop: stopPlaying,
+      onPreviousTrack: handlePrevious,
+      onNextTrack: handleNext,
+      onSeekBackward: (details) => {
+        const seekOffset = details.seekOffset || 10
+        const newTime = Math.max(control.currentTime.value - seekOffset, 0)
+        control.seek(newTime)
+        sync.updateGlobalPosition(newTime, control.duration.value)
+      },
+      onSeekForward: (details) => {
+        const seekOffset = details.seekOffset || 10
+        const newTime = Math.min(control.currentTime.value + seekOffset, control.duration.value)
+        control.seek(newTime)
+        sync.updateGlobalPosition(newTime, control.duration.value)
+      },
+      onSeekTo: (details) => {
+        if (details.seekTime !== undefined && details.seekTime !== null) {
+          control.seek(details.seekTime)
+          sync.updateGlobalPosition(details.seekTime, control.duration.value)
+        }
+      }
+    })
+  }
+
   // 暴露播放器实例到全局（鸿蒙环境）
   if (sync.isHarmonyOS()) {
     window.voiceHubPlayerInstance = window.voiceHubPlayerInstance || {};
