@@ -134,6 +134,16 @@ export default defineEventHandler(async (event) => {
 
     // 用户不存在时token无效
     if (!user) {
+      const isSecure =
+        getRequestURL(event).protocol === 'https:' ||
+        getRequestHeader(event, 'x-forwarded-proto') === 'https'
+      setCookie(event, 'auth-token', '', {
+        httpOnly: true,
+        secure: isSecure,
+        sameSite: 'lax',
+        maxAge: 0,
+        path: '/'
+      })
       return sendError(
         event,
         createError({
@@ -147,6 +157,17 @@ export default defineEventHandler(async (event) => {
     if (user.passwordChangedAt && decoded.iat) {
       const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
       if (decoded.iat < passwordChangedTime) {
+        const isSecure =
+          getRequestURL(event).protocol === 'https:' ||
+          getRequestHeader(event, 'x-forwarded-proto') === 'https'
+        setCookie(event, 'auth-token', '', {
+          httpOnly: true,
+          secure: isSecure,
+          sameSite: 'lax',
+          maxAge: 0,
+          path: '/'
+        })
+
         return sendError(
           event,
           createError({
