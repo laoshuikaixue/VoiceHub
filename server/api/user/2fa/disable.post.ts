@@ -24,7 +24,8 @@ export default defineEventHandler(async (event) => {
 
   const isPasswordValid = await bcrypt.compare(password, dbUser.password)
   if (!isPasswordValid) {
-    throw createError({ statusCode: 401, message: '密码错误' })
+    // 密码错误不应返回 401，否则会触发全局登出
+    throw createError({ statusCode: 403, message: '密码错误' })
   }
   
   // 删除TOTP记录
