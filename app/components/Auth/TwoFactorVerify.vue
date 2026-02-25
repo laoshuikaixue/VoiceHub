@@ -139,7 +139,7 @@ const cooldown = ref(0)
 const error = ref('')
 const inputRef = ref<HTMLInputElement | null>(null)
 
-let timer: any
+let timer: NodeJS.Timeout | undefined
 
 onUnmounted(() => {
   if (timer) {

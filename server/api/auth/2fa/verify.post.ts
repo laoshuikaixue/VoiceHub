@@ -8,14 +8,14 @@ import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { userId, code, type, token } = body
+  const { code, type, token } = body
 
   if (!code || !type) {
     throw createError({ statusCode: 400, message: '缺少必要参数' })
   }
 
   // 验证预认证临时令牌
-  let targetUserId = userId
+  let targetUserId: number
 
   if (token) {
     try {
