@@ -11,6 +11,10 @@ export default defineNuxtConfig({
   },
   srcDir: 'app/',
   devtools: { enabled: true },
+  devServer: {
+    host: '0.0.0.0', // 允许局域网访问
+    port: 3000
+  },
   modules: [
     '@nuxtjs/tailwindcss',
     ...(process.env.NODE_ENV === 'development' || process.env.npm_lifecycle_event?.includes('lint')

@@ -1,11 +1,13 @@
 import { ref } from 'vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useMusicWebSocket } from '~/composables/useMusicWebSocket'
 import { useAuth } from '~/composables/useAuth'
 import { useLyrics } from '~/composables/useLyrics'
 
 export const useAudioPlayerSync = () => {
   const globalAudioPlayer = useAudioPlayer()
+  const control = useAudioPlayerControl()
   const musicWebSocket = useMusicWebSocket()
   const lyrics = useLyrics()
 
@@ -46,6 +48,15 @@ export const useAudioPlayerSync = () => {
         }
       }
 
+      // 映射播放模式
+      // HarmonyOS: 0=SEQUENCE, 1=SINGLE, 2=LIST, 3=SHUFFLE
+      let loopMode = 0; // SEQUENCE ('off')
+      if (control.playMode.value === 'loopOne') {
+        loopMode = 1; // SINGLE
+      } else if (control.playMode.value === 'order') {
+        loopMode = 2; // LIST
+      }
+
       const songInfo = {
         title: extraData.title || song.title || '',
         artist: extraData.artist || song.artist || '',
@@ -53,7 +64,8 @@ export const useAudioPlayerSync = () => {
         cover: extraData.artwork || coverUrl,
         duration: extraData.duration !== undefined ? extraData.duration : 0,
         position: extraData.position !== undefined ? extraData.position : 0,
-        lyrics: lyrics || '' // 添加歌词字段
+        lyrics: lyrics || '',
+        loopMode: loopMode
       }
 
       // 只有在鸿蒙环境中才调用相关API
@@ -61,17 +73,20 @@ export const useAudioPlayerSync = () => {
         if (action === 'play') {
           window.voiceHubPlayer.onPlayStateChanged(true, {
             position: songInfo.position,
-            duration: songInfo.duration
+            duration: songInfo.duration,
+            loopMode: songInfo.loopMode
           })
         } else if (action === 'pause') {
           window.voiceHubPlayer.onPlayStateChanged(false, {
             position: songInfo.position,
-            duration: songInfo.duration
+            duration: songInfo.duration,
+            loopMode: songInfo.loopMode
           })
         } else if (action === 'stop') {
           window.voiceHubPlayer.onPlayStateChanged(false, {
             position: 0,
-            duration: songInfo.duration
+            duration: songInfo.duration,
+            loopMode: songInfo.loopMode
           })
         } else if (action === 'progress') {
           // 进度更新时，只更新位置，不改变播放状态
@@ -80,7 +95,8 @@ export const useAudioPlayerSync = () => {
           } else {
             window.voiceHubPlayer.onPlayStateChanged(true, {
               position: songInfo.position,
-              duration: songInfo.duration
+              duration: songInfo.duration,
+              loopMode: songInfo.loopMode
             })
           }
         } else if (action === 'metadata') {
@@ -93,7 +109,8 @@ export const useAudioPlayerSync = () => {
         } else if (action === 'seek') {
           window.voiceHubPlayer.onPlayStateChanged(true, {
             position: songInfo.position,
-            duration: songInfo.duration
+            duration: songInfo.duration,
+            loopMode: songInfo.loopMode
           })
         }
       }
@@ -112,11 +129,23 @@ export const useAudioPlayerSync = () => {
       const hasNext = globalAudioPlayer.hasNext.value
       const hasPrevious = globalAudioPlayer.hasPrevious.value
 
+      // 映射播放模式
+      // HarmonyOS: 0=SEQUENCE, 1=SINGLE, 2=LIST, 3=SHUFFLE
+      let loopMode = 0; // SEQUENCE ('off')
+      
+      if (control.playMode.value === 'loopOne') {
+        loopMode = 1; // SINGLE
+      } else if (control.playMode.value === 'order') {
+        // 为了区分，把 'order' 映射为 2 (LIST)，显示列表循环图标。
+        loopMode = 2; // LIST
+      }
+
       const playlistState = {
         currentIndex: currentIndex,
         playlistLength: playlist ? playlist.length : 0,
         hasNext: hasNext,
-        hasPrevious: hasPrevious
+        hasPrevious: hasPrevious,
+        loopMode: loopMode
       }
 
       // 播放列表状态更新（减少日志输出）
@@ -169,9 +198,18 @@ export const useAudioPlayerSync = () => {
         window.voiceHubPlayer &&
         window.voiceHubPlayer.onPlayStateChanged
       ) {
+        // 获取当前循环模式
+        let loopMode = 0;
+        if (control.playMode.value === 'loopOne') {
+          loopMode = 1;
+        } else if (control.playMode.value === 'order') {
+          loopMode = 2;
+        }
+
         window.voiceHubPlayer.onPlayStateChanged(isPlaying, {
           position: currentTime,
-          duration: duration
+          duration: duration,
+          loopMode: loopMode
         })
       }
     }
@@ -480,6 +518,40 @@ export const useAudioPlayerSync = () => {
       }
     }
 
+    const handleHarmonyOSSetLoopMode = (event: CustomEvent) => {
+      const mode = event.detail?.mode;
+      
+      // 处理数字模式（HarmonyOS原生值）或字符串模式
+      // HarmonyOS: 0=SEQUENCE, 1=SINGLE, 2=LIST, 3=SHUFFLE
+      // Web: 'off', 'loopOne', 'order'
+      let targetMode: 'off' | 'order' | 'loopOne' | null = null;
+      
+      if (typeof mode === 'number') {
+         if (mode === 1) { // SINGLE
+           targetMode = 'loopOne';
+         } else if (mode === 2) { // LIST
+           // 映射为列表模式
+           targetMode = 'order';
+         } else if (mode === 0) { // SEQUENCE
+           targetMode = 'off';
+         } else if (mode === 3) { // SHUFFLE
+           targetMode = 'order';
+         }
+       } else if (typeof mode === 'string') {
+         if (['off', 'order', 'loopOne'].includes(mode)) {
+           targetMode = mode as 'off' | 'order' | 'loopOne';
+         } else if (mode === 'shuffle') {
+           targetMode = 'order';
+         }
+       }
+      
+      if (targetMode) {
+        control.setPlayMode(targetMode);
+        // 立即通知状态更新
+        notifyPlaylistState();
+      }
+    }
+
     // 保存处理函数引用以便清理
     harmonyOSHandlers = {
       handleHarmonyOSPlay,
@@ -488,7 +560,8 @@ export const useAudioPlayerSync = () => {
       handleHarmonyOSNext,
       handleHarmonyOSPrevious,
       handleHarmonyOSSeek,
-      handleHarmonyOSPositionUpdate
+      handleHarmonyOSPositionUpdate,
+      handleHarmonyOSSetLoopMode
     }
 
     // 添加事件监听器
@@ -498,10 +571,49 @@ export const useAudioPlayerSync = () => {
     window.addEventListener('harmonyos-next', handleHarmonyOSNext)
     window.addEventListener('harmonyos-previous', handleHarmonyOSPrevious)
     window.addEventListener('harmonyos-seek', handleHarmonyOSSeek as EventListener)
-    window.addEventListener(
-      'harmonyos-position-update',
+    window.addEventListener('harmonyos-position-update',
       handleHarmonyOSPositionUpdate as EventListener
     )
+    window.addEventListener('harmonyos-set-loop-mode', handleHarmonyOSSetLoopMode as EventListener)
+
+    // 增强：直接暴露方法给 window.voiceHubPlayer，确保 Index.ets 可以直接调用
+    if (typeof window !== 'undefined') {
+      // 确保对象存在
+      window.voiceHubPlayer = window.voiceHubPlayer || {};
+      
+      // 添加/覆盖控制方法
+      // 注意：我们不覆盖 onPlayStateChanged 和 onSongChanged，因为它们可能是由 Index.ets 注入的
+      // 我们只添加控制方法，这样 Index.ets 可以直接调用它们
+      const methodsToAdd = {
+        play: handleHarmonyOSPlay,
+        pause: handleHarmonyOSPause,
+        stop: handleHarmonyOSStop,
+        next: handleHarmonyOSNext, // Index.ets 使用 next()
+        playNext: handleHarmonyOSNext, // 兼容性
+        previous: handleHarmonyOSPrevious, // Index.ets 使用 previous()
+        playPrevious: handleHarmonyOSPrevious, // 兼容性
+        seek: (time: number) => callbacks.onSeek(time),
+        setLoopMode: (mode: number | string) => {
+          // 模拟事件对象调用处理函数
+          const event = { detail: { mode } } as CustomEvent;
+          handleHarmonyOSSetLoopMode(event);
+        }
+      };
+
+      Object.assign(window.voiceHubPlayer, methodsToAdd);
+      
+      // 同时也尝试暴露给 voiceHubPlayerInstance (Index.ets 的备用方案)
+      if (window.voiceHubPlayerInstance) {
+         Object.assign(window.voiceHubPlayerInstance, {
+           setPlayMode: (mode: number | string) => {
+              const event = { detail: { mode } } as CustomEvent;
+              handleHarmonyOSSetLoopMode(event);
+           }
+         });
+      }
+      
+      console.log('VoiceHub: HarmonyOS direct control methods attached');
+    }
   }
 
   // 清理鸿蒙系统控制事件
@@ -534,6 +646,10 @@ export const useAudioPlayerSync = () => {
       window.removeEventListener(
         'harmonyos-position-update',
         harmonyOSHandlers.handleHarmonyOSPositionUpdate as EventListener
+      )
+      window.removeEventListener(
+        'harmonyos-set-loop-mode',
+        harmonyOSHandlers.handleHarmonyOSSetLoopMode as EventListener
       )
       harmonyOSHandlers = null
     }

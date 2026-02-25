@@ -941,7 +941,8 @@ watch(
     () => sync.globalAudioPlayer.hasNext.value,
     () => sync.globalAudioPlayer.hasPrevious.value,
     () => sync.globalAudioPlayer.getCurrentPlaylistIndex().value,
-    () => sync.globalAudioPlayer.getCurrentPlaylist().value
+    () => sync.globalAudioPlayer.getCurrentPlaylist().value,
+    () => control.playMode.value
   ],
   () => {
     sync.notifyPlaylistState()
@@ -988,6 +989,102 @@ onMounted(async () => {
   // 移动端检查
   checkMobile()
   window.addEventListener('resize', checkMobile)
+
+  // 尽早初始化鸿蒙系统控制事件，确保事件监听器在页面加载完成后立即生效
+  // 这里的回调函数即使在 audioPlayer 引用未就绪时被调用，也应该有基本的容错处理
+  sync.initializeHarmonyOSControls({
+    onPlay: () => {
+      isSyncingFromGlobal.value = true
+      // 如果此时 control 未完全初始化，尝试延迟执行或忽略
+      if (control.audioPlayer.value) {
+        control.play()
+      } else {
+        console.warn('[AudioPlayer] Play command received before player ready')
+      }
+      nextTick(() => {
+        isSyncingFromGlobal.value = false
+      })
+    },
+    onPause: () => {
+      isSyncingFromGlobal.value = true
+      if (control.audioPlayer.value) {
+        control.pause()
+      }
+      nextTick(() => {
+        isSyncingFromGlobal.value = false
+      })
+    },
+    onStop: () => {
+      isSyncingFromGlobal.value = true
+      control.stop()
+      sync.syncStopToGlobal()
+
+      // 通知鸿蒙侧清理元数据
+      if (sync.isHarmonyOS()) {
+        sync.notifyHarmonyOS(
+          'metadata',
+          {},
+          {
+            title: '',
+            artist: '',
+            album: '',
+            cover: '',
+            duration: 0,
+            position: 0
+          },
+          ''
+        )
+      }
+
+      nextTick(() => {
+        isSyncingFromGlobal.value = false
+      })
+    },
+    onNext: handleNext,
+    onPrevious: handlePrevious,
+    onSeek: (time) => {
+      control.seek(time)
+      sync.updateGlobalPosition(time, control.duration.value)
+    },
+    onPositionUpdate: (time) => {
+      // 使用强制更新位置方法，确保UI同步
+      control.forceUpdatePosition(time)
+      sync.updateGlobalPosition(time, control.duration.value)
+    }
+  })
+
+  // 暴露播放器实例到全局（鸿蒙环境）
+  if (sync.isHarmonyOS()) {
+    window.voiceHubPlayerInstance = window.voiceHubPlayerInstance || {};
+    
+    // 使用 Object.assign 避免覆盖可能已存在的方法，但要确保 setPlayMode 被添加
+    Object.assign(window.voiceHubPlayerInstance, {
+      play: () => control.play(),
+      pause: () => control.pause(),
+      stop: () => control.stop(),
+      seek: (time) => control.seek(time),
+      getCurrentTime: () => control.currentTime.value,
+      getDuration: () => control.duration.value,
+      isPlaying: () => control.isPlaying.value,
+      setPlayMode: (mode) => {
+        let targetMode = 'off';
+        if (typeof mode === 'number') {
+          // HarmonyOS: 0=SEQUENCE, 1=SINGLE, 2=LIST, 3=SHUFFLE
+          if (mode === 1) targetMode = 'loopOne';
+          else if (mode === 2) targetMode = 'order'; // LIST -> order
+          else if (mode === 3) targetMode = 'order'; // SHUFFLE -> order
+          else targetMode = 'off'; // SEQUENCE -> off
+        } else if (typeof mode === 'string') {
+          // 假设传入的字符串模式已经是合法的内部模式
+          targetMode = mode;
+        }
+        control.setPlayMode(targetMode);
+        
+        // 立即通知状态更新
+        sync.notifyPlaylistState();
+      }
+    });
+  }
 
   // 等待子组件挂载完成
   await nextTick()
@@ -1078,114 +1175,6 @@ onMounted(async () => {
         document.addEventListener('touchstart', handleUserInteraction, { once: true })
         document.addEventListener('keydown', handleUserInteraction, { once: true })
       }
-    }
-  }
-
-  // 初始化鸿蒙系统控制事件
-  sync.initializeHarmonyOSControls({
-    onPlay: () => {
-      isSyncingFromGlobal.value = true
-      control.play()
-      nextTick(() => {
-        isSyncingFromGlobal.value = false
-      })
-    },
-    onPause: () => {
-      isSyncingFromGlobal.value = true
-      control.pause()
-      nextTick(() => {
-        isSyncingFromGlobal.value = false
-      })
-    },
-    onStop: () => {
-      isSyncingFromGlobal.value = true
-      control.stop()
-      sync.syncStopToGlobal()
-
-      // 通知鸿蒙侧清理元数据
-      if (sync.isHarmonyOS()) {
-        sync.notifyHarmonyOS(
-          'metadata',
-          {},
-          {
-            title: '',
-            artist: '',
-            album: '',
-            cover: '',
-            duration: 0,
-            position: 0
-          },
-          ''
-        )
-      }
-
-      nextTick(() => {
-        isSyncingFromGlobal.value = false
-      })
-    },
-    onNext: handleNext,
-    onPrevious: handlePrevious,
-    onSeek: (time) => {
-      control.seek(time)
-      sync.updateGlobalPosition(time, control.duration.value)
-    },
-    onPositionUpdate: (time) => {
-      // 使用强制更新位置方法，确保UI同步
-      control.forceUpdatePosition(time)
-      sync.updateGlobalPosition(time, control.duration.value)
-    }
-  })
-
-  // 初始化 Media Session API (SMTC支持)
-  if (mediaSession.isSupported.value) {
-    mediaSession.initialize(props.song, {
-      onPlay: async () => {
-        await control.play()
-      },
-      onPause: () => {
-        control.pause()
-      },
-      onStop: () => {
-        control.stop()
-        sync.syncStopToGlobal()
-      },
-      onPreviousTrack: () => {
-        handlePrevious()
-      },
-      onNextTrack: () => {
-        handleNext()
-      },
-      onSeekTo: (details) => {
-        if (details.seekTime !== undefined) {
-          control.seek(details.seekTime)
-          sync.updateGlobalPosition(details.seekTime, control.duration.value)
-        }
-      },
-      onSeekBackward: (details) => {
-        const seekOffset = details.seekOffset || 10 // 默认后退10秒
-        const newTime = Math.max(0, control.currentTime.value - seekOffset)
-        control.seek(newTime)
-        sync.updateGlobalPosition(newTime, control.duration.value)
-      },
-      onSeekForward: (details) => {
-        const seekOffset = details.seekOffset || 10 // 默认前进10秒
-        const newTime = Math.min(control.duration.value, control.currentTime.value + seekOffset)
-        control.seek(newTime)
-        sync.updateGlobalPosition(newTime, control.duration.value)
-      }
-    })
-  }
-
-  // 暴露播放器实例到全局（鸿蒙环境）
-  if (sync.isHarmonyOS()) {
-    window.voiceHubPlayerInstance = {
-      play: () => control.play(),
-      pause: () => control.pause(),
-      stop: () => control.stop(),
-      seek: (time) => control.seek(time),
-      getCurrentTime: () => control.currentTime.value,
-      getDuration: () => control.duration.value,
-      isPlaying: () => control.isPlaying.value
     }
   }
 
