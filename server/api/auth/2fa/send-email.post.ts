@@ -52,6 +52,22 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '邮箱地址不匹配' })
   }
 
+  // 检查是否在冷却时间内
+  const existingCode = twoFactorCodes.get(userId)
+  if (existingCode && existingCode.expiresAt > Date.now()) {
+    // 5 * 60 * 1000 = 300000ms
+    const totalDuration = 5 * 60 * 1000
+    const timePassed = totalDuration - (existingCode.expiresAt - Date.now())
+    
+    if (timePassed < 60 * 1000) { // 60秒冷却
+      const remainingSeconds = Math.ceil((60000 - timePassed) / 1000)
+      throw createError({ 
+        statusCode: 429, 
+        message: `操作过于频繁，请等待 ${remainingSeconds} 秒后再试` 
+      })
+    }
+  }
+
   const code = randomInt(100000, 999999).toString()
   twoFactorCodes.set(userId, { 
     code, 
