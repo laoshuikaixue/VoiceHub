@@ -734,6 +734,9 @@ VoiceHub/
 │   │   │       ├── index.ts         # 用户管理
 │   │   │       └── status-logs.get.ts # 用户状态日志
 │   │   ├── auth/           # 认证API
+│   │   │   ├── 2fa/             # 2FA验证API
+│   │   │   │   ├── send-email.post.ts # 发送2FA验证邮件
+│   │   │   │   └── verify.post.ts     # 验证2FA代码
 │   │   │   ├── webauthn/      # WebAuthn 相关 API
 │   │   │   │   ├── login/     # 登录验证
 │   │   │   │   │   ├── options.get.ts    # 获取登录 Challenge
@@ -812,6 +815,10 @@ VoiceHub/
 │   │   │   ├── reconnect.post.ts    # 重连数据库
 │   │   │   └── status.get.ts        # 系统状态
 │   │   ├── user/           # 用户相关API
+│   │   │   ├── 2fa/             # 2FA管理API
+│   │   │   │   ├── disable.post.ts  # 关闭双重认证
+│   │   │   │   ├── enable.post.ts   # 开启双重认证
+│   │   │   │   └── generate.post.ts # 生成双重认证密钥
 │   │   │   ├── email/               # 用户邮箱管理
 │   │   │   │   ├── bind.post.ts     # 绑定邮箱
 │   │   │   │   ├── resend-verification.post.ts # 重发验证邮件
