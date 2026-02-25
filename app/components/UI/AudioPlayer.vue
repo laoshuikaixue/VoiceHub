@@ -1075,9 +1075,8 @@ onMounted(async () => {
           else if (mode === 3) targetMode = 'order'; // SHUFFLE -> order
           else targetMode = 'off'; // SEQUENCE -> off
         } else if (typeof mode === 'string') {
-          if (['off', 'order', 'loopOne'].includes(mode)) {
-            targetMode = mode;
-          }
+          // 假设传入的字符串模式已经是合法的内部模式
+          targetMode = mode;
         }
         control.setPlayMode(targetMode);
         

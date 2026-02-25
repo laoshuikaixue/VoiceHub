@@ -131,29 +131,12 @@ export const useAudioPlayerSync = () => {
 
       // 映射播放模式
       // HarmonyOS: 0=SEQUENCE, 1=SINGLE, 2=LIST, 3=SHUFFLE
-      // 0=Sequence (顺序播放) -> 'off'
-      // 1=Single (单曲循环) -> 'loopOne'
-      // 2=List (列表循环) -> 'order'
       let loopMode = 0; // SEQUENCE ('off')
       
       if (control.playMode.value === 'loopOne') {
         loopMode = 1; // SINGLE
       } else if (control.playMode.value === 'order') {
-        // 用户反馈：列表播放应该有单独的列表，但现在显示循环图标(2)。
-        // 如果 'order' 是列表循环，那么 2 是正确的。
-        // 如果 'order' 是顺序播放（不循环），那么应该是 0。
-        // 根据 control.onEnded 的实现，'order' 是顺序播放直到结束（不循环回到开头）。
-        // 所以 'order' 应该映射为 0 (SEQUENCE)，但这样会和 'off' 冲突。
-        // 为了区分，我们将 'order' 映射为 2 (LIST)，这符合 "List Play" 的直觉（即使目前实现是不循环的），
-        // 并在未来实现真正的列表循环。
-        // 暂时保持 2，或者根据用户要求改为 0。
-        // 用户说："现在列表播放鸿蒙侧显示的图标是循环 应该有单独的列表吧？"
-        // 这意味着用户希望看到列表图标而不是循环图标，或者反之。
-        // HarmonyOS 的 SEQUENCE 图标通常是直箭头，LIST 图标是循环箭头。
-        // 如果用户想要 "单独的列表" (Sequence)，则应该映射为 0。
-        // 修正：用户说 "鸿蒙的播控组件中现在列表播放和默认的图标是一样的"。
-        // 之前我把 'order' 映射为 0，'off' 也映射为 0。所以它们一样。
-        // 为了区分，必须把 'order' 映射为 2 (LIST)，显示列表循环图标。
+        // 为了区分，把 'order' 映射为 2 (LIST)，显示列表循环图标。
         loopMode = 2; // LIST
       }
 
