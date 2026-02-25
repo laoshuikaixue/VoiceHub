@@ -69,7 +69,8 @@ export async function verifyAdminAuth(event: any): Promise<AuthResult> {
         id: users.id,
         username: users.username,
         name: users.name,
-        role: users.role
+        role: users.role,
+        passwordChangedAt: users.passwordChangedAt
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
@@ -81,6 +82,17 @@ export async function verifyAdminAuth(event: any): Promise<AuthResult> {
       return {
         success: false,
         message: '用户不存在'
+      }
+    }
+
+    // 检查token是否在密码修改之前签发（强制旧token失效）
+    if (user.passwordChangedAt && decoded.iat) {
+      const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
+      if (decoded.iat < passwordChangedTime) {
+        return {
+          success: false,
+          message: '密码已修改，请重新登录'
+        }
       }
     }
 
@@ -180,7 +192,8 @@ export async function verifyUserAuth(event: any): Promise<AuthResult> {
         id: users.id,
         username: users.username,
         name: users.name,
-        role: users.role
+        role: users.role,
+        passwordChangedAt: users.passwordChangedAt
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
@@ -192,6 +205,17 @@ export async function verifyUserAuth(event: any): Promise<AuthResult> {
       return {
         success: false,
         message: '用户不存在'
+      }
+    }
+
+    // 检查token是否在密码修改之前签发（强制旧token失效）
+    if (user.passwordChangedAt && decoded.iat) {
+      const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
+      if (decoded.iat < passwordChangedTime) {
+        return {
+          success: false,
+          message: '密码已修改，请重新登录'
+        }
       }
     }
 

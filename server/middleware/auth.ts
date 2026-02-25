@@ -123,7 +123,8 @@ export default defineEventHandler(async (event) => {
         name: users.name,
         grade: users.grade,
         class: users.class,
-        role: users.role
+        role: users.role,
+        passwordChangedAt: users.passwordChangedAt
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
@@ -140,6 +141,21 @@ export default defineEventHandler(async (event) => {
           message: '用户不存在，请重新登录'
         })
       )
+    }
+
+    // 检查token是否在密码修改之前签发（强制旧token失效）
+    if (user.passwordChangedAt && decoded.iat) {
+      const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
+      if (decoded.iat < passwordChangedTime) {
+        return sendError(
+          event,
+          createError({
+            statusCode: 401,
+            message: '密码已修改，请重新登录',
+            data: { invalidToken: true, passwordChanged: true }
+          })
+        )
+      }
     }
 
     event.context.user = user
