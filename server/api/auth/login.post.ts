@@ -79,7 +79,9 @@ export default defineEventHandler(async (event) => {
         lastLogin: users.lastLogin,
         lastLoginIp: users.lastLoginIp,
         passwordChangedAt: users.passwordChangedAt,
-        status: users.status
+        status: users.status,
+        email: users.email,
+        emailVerified: users.emailVerified
       })
       .from(users)
       .where(eq(users.username, body.username))
@@ -131,13 +133,27 @@ export default defineEventHandler(async (event) => {
         userId: user.id,
         type: 'pre-auth',
         scope: '2fa_pending'
-      }, { expiresIn: '5m' }) // 5分钟有效期
+      }, { expiresIn: '5m' }) // 动态构建验证方式列表
+      const methods = ['totp']
+      let maskedEmail = ''
+      
+      if (user.email && user.emailVerified) {
+        methods.push('email')
+        // 生成脱敏邮箱提示
+        const [local, domain] = user.email.split('@')
+        if (local && domain) {
+          maskedEmail = local.length <= 2 
+            ? `***@${domain}` 
+            : `${local.slice(0, 2)}****@${domain}`
+        }
+      }
 
       return {
         success: true,
         requires2FA: true,
         userId: user.id,
-        methods: ['totp', 'email'],
+        methods,
+        maskedEmail,
         tempToken
       }
     }

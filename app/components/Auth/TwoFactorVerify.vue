@@ -22,8 +22,28 @@
           </div>
 
           <div class="space-y-4">
+            <!-- 邮箱输入 (仅 Email 模式) -->
+            <div v-if="method === 'email'" class="space-y-2">
+              <label class="block text-sm text-zinc-400">
+                请补全您的邮箱以接收验证码
+                <span v-if="maskedEmail" class="block text-xs text-zinc-500 mt-1">
+                  提示: {{ maskedEmail }}
+                </span>
+              </label>
+              <div class="relative">
+                <input
+                  v-model="emailInput"
+                  type="email"
+                  placeholder="请输入完整邮箱地址"
+                  class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  :disabled="emailSent && cooldown > 0"
+                  @keyup.enter="!emailSent && sendEmailCode()"
+                />
+              </div>
+            </div>
+
             <!-- 验证码输入 -->
-            <div>
+            <div v-if="method === 'totp' || emailSent">
               <div class="relative">
                 <input
                   v-model="code"
@@ -42,10 +62,10 @@
               <button
                 type="button"
                 @click="sendEmailCode"
-                :disabled="cooldown > 0 || sending"
+                :disabled="cooldown > 0 || sending || !emailInput"
                 class="text-sm text-blue-500 hover:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {{ cooldown > 0 ? `${cooldown}秒后重新发送` : '发送验证码' }}
+                {{ cooldown > 0 ? `${cooldown}秒后重新发送` : (emailSent ? '重新发送验证码' : '发送验证码') }}
               </button>
             </div>
 
@@ -94,6 +114,7 @@ const props = defineProps<{
   show: boolean
   userId: number
   availableMethods?: string[]
+  maskedEmail?: string
   tempToken?: string
 }>()
 
@@ -110,6 +131,8 @@ const methods = computed(() => props.availableMethods || ['totp', 'email'])
 const hasMultipleMethods = computed(() => methods.value.length > 1)
 
 const code = ref('')
+const emailInput = ref('')
+const emailSent = ref(false)
 const loading = ref(false)
 const sending = ref(false)
 const cooldown = ref(0)
@@ -127,10 +150,20 @@ onUnmounted(() => {
 
 const toggleMethod = () => {
   method.value = method.value === 'totp' ? 'email' : 'totp'
+  // 切换回 totp 时清空邮箱输入
+  if (method.value === 'totp') {
+    emailInput.value = ''
+    emailSent.value = false
+  }
 }
 
 const sendEmailCode = async () => {
   try {
+    if (!emailInput.value) {
+      error.value = '请输入您的邮箱地址'
+      return
+    }
+
     sending.value = true
     error.value = ''
     
@@ -138,11 +171,13 @@ const sendEmailCode = async () => {
       method: 'POST',
       body: { 
         userId: props.userId,
-        token: props.tempToken
+        token: props.tempToken,
+        email: emailInput.value
       }
     })
 
     showToast('验证码已发送', 'success')
+    emailSent.value = true
     cooldown.value = 60
     timer = setInterval(() => {
       cooldown.value--
@@ -151,6 +186,9 @@ const sendEmailCode = async () => {
         timer = undefined
       }
     }, 1000)
+    
+    // 发送成功后自动聚焦验证码输入框
+    nextTick(() => inputRef.value?.focus())
   } catch (err: any) {
     error.value = err.data?.message || err.message || '发送失败'
   } finally {

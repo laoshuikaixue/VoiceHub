@@ -7,7 +7,7 @@ import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { randomInt } from 'crypto'
 
 export default defineEventHandler(async (event) => {
-  const { userId: reqUserId, token } = await readBody(event)
+  const { userId: reqUserId, token, email } = await readBody(event)
 
   // 必须提供预认证令牌
   if (!token) {
@@ -34,6 +34,7 @@ export default defineEventHandler(async (event) => {
   const userResult = await db.select({
       id: users.id,
       email: users.email,
+      emailVerified: users.emailVerified,
       name: users.name
     })
     .from(users)
@@ -41,8 +42,14 @@ export default defineEventHandler(async (event) => {
     .limit(1)
 
   const user = userResult[0]
-  if (!user || !user.email) {
+  // 增加 emailVerified 校验
+  if (!user || !user.email || !user.emailVerified) {
     throw createError({ statusCode: 400, message: '用户不存在或未绑定邮箱' })
+  }
+
+  // 校验用户输入的邮箱是否匹配
+  if (!email || email.trim().toLowerCase() !== user.email.toLowerCase()) {
+    throw createError({ statusCode: 400, message: '邮箱地址不匹配' })
   }
 
   const code = randomInt(100000, 999999).toString()

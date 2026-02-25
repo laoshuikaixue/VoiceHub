@@ -148,6 +148,7 @@
       :show="show2FA"
       :user-id="userId2FA"
       :available-methods="methods2FA"
+      :masked-email="maskedEmail2FA"
       :temp-token="tempToken2FA"
       @success="handle2FASuccess"
       @cancel="show2FA = false"
@@ -180,6 +181,7 @@ const show2FA = ref(false)
 const userId2FA = ref(0)
 const methods2FA = ref<string[]>([])
 const tempToken2FA = ref('')
+const maskedEmail2FA = ref('')
 
 const auth = useAuth()
 
@@ -236,6 +238,7 @@ const handleLogin = async () => {
         userId2FA.value = response.userId
         methods2FA.value = response.methods
         tempToken2FA.value = response.tempToken
+        maskedEmail2FA.value = response.maskedEmail || ''
         show2FA.value = true
         return
       }
