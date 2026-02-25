@@ -509,7 +509,9 @@ VoiceHub/
 │   │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   │   ├── LoginForm.vue         # 登录表单
 │   │   │   ├── OAuthBindingCard.vue  # OAuth绑定卡片
-│   │   │   └── OAuthButtons.vue      # OAuth登录按钮组
+│   │   │   ├── OAuthButtons.vue      # OAuth登录按钮组
+│   │   │   ├── TwoFactorSetup.vue    # 双重认证设置组件
+│   │   │   └── TwoFactorVerify.vue   # 双重认证验证组件
 │   │   ├── Common/            # 通用组件
 │   │   │   └── UserSearchModal.vue   # 用户搜索弹窗
 │   │   ├── Notifications/     # 通知系统组件
@@ -739,16 +741,22 @@ VoiceHub/
 │   │   │   │   └── verify.post.ts     # 验证2FA代码
 │   │   │   ├── webauthn/      # WebAuthn 相关 API
 │   │   │   │   ├── login/     # 登录验证
-│   │   │   │   │   ├── options.get.ts    # 获取登录 Challenge
+│   │   │   │   │   ├── options.post.ts   # 获取登录 Challenge
 │   │   │   │   │   └── verify.post.ts    # 验证登录签名
 │   │   │   │   ├── register/  # 设备注册
 │   │   │   │   │   ├── options.get.ts    # 获取注册 Challenge
 │   │   │   │   │   └── verify.post.ts    # 验证注册签名
 │   │   │   │   └── rename.post.ts    # 重命名设备
+│   │   │   ├── [provider]/           # OAuth提供商路由
+│   │   │   │   ├── callback.get.ts   # OAuth回调处理
+│   │   │   │   └── index.get.ts      # OAuth授权跳转
+│   │   │   ├── bind.post.ts          # 绑定社交账号
 │   │   │   ├── change-password.post.ts # 修改密码
+│   │   │   ├── identities.get.ts     # 获取已绑定身份列表
 │   │   │   ├── login.post.ts        # 用户登录
 │   │   │   ├── logout.post.ts       # 用户登出
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
+│   │   │   ├── unbind.post.ts        # 解绑社交账号
 │   │   │   └── verify.get.ts        # 验证Token并获取用户信息
 │   │   ├── bilibili/       # Bilibili相关API
 │   │   │   ├── playurl.get.ts       # 获取播放链接
@@ -868,7 +876,8 @@ VoiceHub/
 │   │   ├── open-api-cache.ts # 开放API缓存
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── redis.ts        # Redis连接和操作工具
-│   │   └── siteUtils.ts    # 站点工具函数
+│   │   ├── siteUtils.ts    # 站点工具函数
+│   │   └── twoFactorStore.ts # 双重认证存储工具
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
