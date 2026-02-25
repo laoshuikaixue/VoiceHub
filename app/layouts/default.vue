@@ -2,12 +2,14 @@
   <div class="app-layout">
     <slot />
     <SiteFooter />
+    <SpeedInsights />
   </div>
 </template>
 
 <script setup>
 import { onMounted } from 'vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { SpeedInsights } from "@vercel/speed-insights/nuxt"
 
 const { initSiteConfig } = useSiteConfig()
 
