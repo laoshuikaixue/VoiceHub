@@ -33,10 +33,10 @@ export const useErrorHandler = () => {
 
         throw error
       } else {
-        // 不在登录页面，显示错误提示
-        console.log('检测到401错误，显示认证错误提示')
+        // 不在登录页面，清除认证状态并跳转到登录页
+        console.log('检测到401错误，清除认证状态并跳转到登录页')
 
-        let errorMessage = '认证失败，请检查您的登录状态'
+        let errorMessage = '认证失败，请重新登录'
 
         if (error?.data?.message) {
           errorMessage = error.data.message
@@ -46,8 +46,23 @@ export const useErrorHandler = () => {
 
         console.log('认证错误:', errorMessage)
 
-        // 不执行强制登出
-        console.log('401错误已处理，用户可继续使用或手动重新登录')
+        // 清除认证状态
+        const auth = useAuth()
+        auth.user.value = null
+        auth.token.value = null
+        auth.isAuthenticated.value = false
+        auth.isAdmin.value = false
+
+        // 显示错误提示
+        if (import.meta.client) {
+          const toast = useToast()
+          toast.error(errorMessage)
+        }
+
+        // 跳转到登录页
+        if (import.meta.client) {
+          await navigateTo('/login')
+        }
       }
     } finally {
       // 延迟重置防抖标志
