@@ -523,21 +523,9 @@ export const useAudioPlayerSync = () => {
          if (mode === 1) { // SINGLE
            targetMode = 'loopOne';
          } else if (mode === 2) { // LIST
-           // 如果我们将 'order' 映射为 0 (Sequence)，那么这里收到 2 (List) 时也应该映射为 'order'，
-           // 因为 Web 端 'order' 暂时承担了列表播放的角色。
-           // 但如果 Web 端 'order' 是不循环的，那么 List (循环) 映射到 'order' (不循环) 会有歧义。
-           // 不过为了响应用户的点击，我们需要一个映射。
+           // 映射为列表模式
            targetMode = 'order';
          } else if (mode === 0) { // SEQUENCE
-           // 用户期望单独的列表播放图标，通常 'off' 对应 Sequence
-           // 如果 Web 端 'order' 也是 Sequence 行为，那么这里可以映射为 'order' 或 'off'
-           // 为了区分，我们将 0 映射为 'off' (默认)，2 映射为 'order'。
-           // 但如果我们把 'order' 通报给系统为 0，那么系统显示 0。
-           // 当用户点击 0 -> 1，Web 变 'loopOne'。
-           // 当用户点击 1 -> 2，Web 变 'order' (如果 2->order)。
-           // Web 变 'order' 后，通报给系统 0。系统图标变回 0。
-           // 这样用户点击 List Loop (2)，系统闪一下 2 然后变回 0 (Sequence)。
-           // 这符合 Web 端 'order' 实际是不循环的行为。
            targetMode = 'off';
          } else if (mode === 3) { // SHUFFLE
            targetMode = 'order';
@@ -546,13 +534,11 @@ export const useAudioPlayerSync = () => {
          if (['off', 'order', 'loopOne'].includes(mode)) {
            targetMode = mode as 'off' | 'order' | 'loopOne';
          } else if (mode === 'shuffle') {
-           // 处理 Index.ets 可能传递的 'shuffle' 字符串
            targetMode = 'order';
          }
        }
       
       if (targetMode) {
-        console.log(`HarmonyOS set loop mode: ${mode} -> ${targetMode}`);
         control.setPlayMode(targetMode);
         // 立即通知状态更新
         notifyPlaylistState();
