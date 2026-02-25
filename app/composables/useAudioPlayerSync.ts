@@ -48,6 +48,15 @@ export const useAudioPlayerSync = () => {
         }
       }
 
+      // 映射播放模式
+      // HarmonyOS: 0=SEQUENCE, 1=SINGLE, 2=LIST, 3=SHUFFLE
+      let loopMode = 0; // SEQUENCE ('off')
+      if (control.playMode.value === 'loopOne') {
+        loopMode = 1; // SINGLE
+      } else if (control.playMode.value === 'order') {
+        loopMode = 2; // LIST
+      }
+
       const songInfo = {
         title: extraData.title || song.title || '',
         artist: extraData.artist || song.artist || '',
@@ -55,7 +64,8 @@ export const useAudioPlayerSync = () => {
         cover: extraData.artwork || coverUrl,
         duration: extraData.duration !== undefined ? extraData.duration : 0,
         position: extraData.position !== undefined ? extraData.position : 0,
-        lyrics: lyrics || '' // 添加歌词字段
+        lyrics: lyrics || '',
+        loopMode: loopMode
       }
 
       // 只有在鸿蒙环境中才调用相关API
@@ -63,17 +73,20 @@ export const useAudioPlayerSync = () => {
         if (action === 'play') {
           window.voiceHubPlayer.onPlayStateChanged(true, {
             position: songInfo.position,
-            duration: songInfo.duration
+            duration: songInfo.duration,
+            loopMode: songInfo.loopMode
           })
         } else if (action === 'pause') {
           window.voiceHubPlayer.onPlayStateChanged(false, {
             position: songInfo.position,
-            duration: songInfo.duration
+            duration: songInfo.duration,
+            loopMode: songInfo.loopMode
           })
         } else if (action === 'stop') {
           window.voiceHubPlayer.onPlayStateChanged(false, {
             position: 0,
-            duration: songInfo.duration
+            duration: songInfo.duration,
+            loopMode: songInfo.loopMode
           })
         } else if (action === 'progress') {
           // 进度更新时，只更新位置，不改变播放状态
@@ -82,7 +95,8 @@ export const useAudioPlayerSync = () => {
           } else {
             window.voiceHubPlayer.onPlayStateChanged(true, {
               position: songInfo.position,
-              duration: songInfo.duration
+              duration: songInfo.duration,
+              loopMode: songInfo.loopMode
             })
           }
         } else if (action === 'metadata') {
@@ -95,7 +109,8 @@ export const useAudioPlayerSync = () => {
         } else if (action === 'seek') {
           window.voiceHubPlayer.onPlayStateChanged(true, {
             position: songInfo.position,
-            duration: songInfo.duration
+            duration: songInfo.duration,
+            loopMode: songInfo.loopMode
           })
         }
       }
@@ -200,9 +215,18 @@ export const useAudioPlayerSync = () => {
         window.voiceHubPlayer &&
         window.voiceHubPlayer.onPlayStateChanged
       ) {
+        // 获取当前循环模式
+        let loopMode = 0;
+        if (control.playMode.value === 'loopOne') {
+          loopMode = 1;
+        } else if (control.playMode.value === 'order') {
+          loopMode = 2;
+        }
+
         window.voiceHubPlayer.onPlayStateChanged(isPlaying, {
           position: currentTime,
-          duration: duration
+          duration: duration,
+          loopMode: loopMode
         })
       }
     }
