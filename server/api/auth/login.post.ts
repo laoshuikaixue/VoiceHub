@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
-import { db, eq, users } from '~/drizzle/db'
-import { JWTEnhanced } from '../../utils/jwt-enhanced'
+import { db, eq, users, userIdentities, and } from '~/drizzle/db'
+import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import {
   getAccountLockRemainingTime,
   getIPBlockRemainingTime,
@@ -79,7 +79,9 @@ export default defineEventHandler(async (event) => {
         lastLogin: users.lastLogin,
         lastLoginIp: users.lastLoginIp,
         passwordChangedAt: users.passwordChangedAt,
-        status: users.status
+        status: users.status,
+        email: users.email,
+        emailVerified: users.emailVerified
       })
       .from(users)
       .where(eq(users.username, body.username))
@@ -107,12 +109,53 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 检查用户状态
+    // 检查用户状态 (移到2FA之前，防止已注销用户进行2FA验证)
     if (user.status === 'withdrawn') {
       throw createError({
         statusCode: 403,
-        message: '账户已停用，无法登录系统。如有疑问请联系管理员。'
+        message: '该账号已注销'
       })
+    } else if (user.status === 'banned') {
+      throw createError({
+        statusCode: 403,
+        message: '该账号已被封禁'
+      })
+    }
+
+    // 检查是否开启2FA
+    const totpIdentity = await db.query.userIdentities.findFirst({
+      where: and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'totp'))
+    })
+
+    if (totpIdentity) {
+      // 生成预认证临时令牌
+      const tempToken = JWTEnhanced.sign({
+        userId: user.id,
+        type: 'pre-auth',
+        scope: '2fa_pending'
+      }, { expiresIn: '5m' }) // 动态构建验证方式列表
+      const methods = ['totp']
+      let maskedEmail = ''
+      
+      if (user.email && user.emailVerified) {
+        methods.push('email')
+        // 生成脱敏邮箱提示
+        const [local, domain] = user.email.split('@')
+        if (local && domain) {
+          maskedEmail = local.length <= 2 
+            ? `***@${domain}` 
+            : `${local.slice(0, 2)}****@${domain}`
+        }
+      }
+
+      return {
+        success: true,
+        requires2FA: true,
+        userId: user.id,
+        methods,
+        maskedEmail,
+        tempToken
+      }
     }
 
     recordLoginSuccess(body.username, clientIp)

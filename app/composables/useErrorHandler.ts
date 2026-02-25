@@ -1,3 +1,5 @@
+import { useAuth } from './useAuth'
+
 // 防抖机制
 let isHandling401 = false
 const lastHandle401Time = 0
@@ -34,6 +36,17 @@ export const useErrorHandler = () => {
         throw error
       } else {
         // 不在登录页面，清除认证状态并跳转到登录页
+        
+        // 检查是否已认证
+        const auth = useAuth()
+        const wasAuthenticated = auth.isAuthenticated.value
+        
+        // 如果之前未认证（如首次访问），则不显示错误提示
+        if (!wasAuthenticated) {
+           console.log('未认证状态下收到401，忽略提示')
+           return
+        }
+
         console.log('检测到401错误，清除认证状态并跳转到登录页')
 
         let errorMessage = '认证失败，请重新登录'
@@ -47,7 +60,6 @@ export const useErrorHandler = () => {
         console.log('认证错误:', errorMessage)
 
         // 清除认证状态
-        const auth = useAuth()
         auth.user.value = null
         auth.token.value = null
         auth.isAuthenticated.value = false

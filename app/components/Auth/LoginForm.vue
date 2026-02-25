@@ -143,6 +143,16 @@
     <div class="form-footer">
       <p class="help-text">不同VoiceHub平台的账号不互通</p>
     </div>
+
+    <AuthTwoFactorVerify
+      :show="show2FA"
+      :user-id="userId2FA"
+      :available-methods="methods2FA"
+      :masked-email="maskedEmail2FA"
+      :temp-token="tempToken2FA"
+      @success="handle2FASuccess"
+      @cancel="show2FA = false"
+    />
   </div>
 </template>
 
@@ -167,8 +177,21 @@ const error = ref('')
 const loading = ref(false)
 const showPassword = ref(false)
 const isWebAuthnSupported = ref(false)
+const show2FA = ref(false)
+const userId2FA = ref(0)
+const methods2FA = ref<string[]>([])
+const tempToken2FA = ref('')
+const maskedEmail2FA = ref('')
 
 const auth = useAuth()
+
+const handle2FASuccess = async () => {
+  if (auth.isAdmin.value) {
+    await navigateTo('/dashboard')
+  } else {
+    await navigateTo('/')
+  }
+}
 
 onMounted(async () => {
   const isApiSupported = browserSupportsWebAuthn()
@@ -209,7 +232,16 @@ const handleLogin = async () => {
       await auth.initAuth()
       await navigateTo('/')
     } else {
-      await auth.login(username.value, password.value)
+      const response = await auth.login(username.value, password.value)
+
+      if (response.requires2FA) {
+        userId2FA.value = response.userId
+        methods2FA.value = response.methods
+        tempToken2FA.value = response.tempToken
+        maskedEmail2FA.value = response.maskedEmail || ''
+        show2FA.value = true
+        return
+      }
 
       // 登录成功后跳转
       if (auth.isAdmin.value) {

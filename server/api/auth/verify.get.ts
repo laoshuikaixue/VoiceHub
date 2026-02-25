@@ -40,25 +40,29 @@ export default defineEventHandler(async (event) => {
       })
 
       if (cachedUser) {
-        // 为缓存的用户数据添加requirePasswordChange字段
-        const userWithRequirePasswordChange = {
+        // 为缓存的用户数据添加字段
+        const userWithDetails = {
           id: cachedUser.id,
           username: cachedUser.username,
           name: cachedUser.name,
           grade: cachedUser.grade,
           class: cachedUser.class,
           role: cachedUser.role,
-          requirePasswordChange: cachedUser.forcePasswordChange || !cachedUser.passwordChangedAt
+          requirePasswordChange: cachedUser.forcePasswordChange || !cachedUser.passwordChangedAt,
+          has2FA: cachedUser.identities?.some((id: any) => id.provider === 'totp') || false,
+          avatar: cachedUser.identities?.find((id: any) => id.provider === 'github')?.providerUsername
+            ? `https://github.com/${cachedUser.identities.find((id: any) => id.provider === 'github').providerUsername}.png`
+            : null
         }
         return {
-          user: userWithRequirePasswordChange,
+          user: userWithDetails,
           valid: true
         }
       }
     }
 
     // 缓存未命中或Redis不可用，从数据库获取用户信息
-    // 同时查询 OAuth 绑定信息以获取 GitHub 头像
+    // 同时查询所有身份绑定信息
     const userResult = await db.query.users.findFirst({
       where: eq(users.id, userId),
       columns: {
@@ -76,8 +80,7 @@ export default defineEventHandler(async (event) => {
           columns: {
             provider: true,
             providerUsername: true
-          },
-          where: (identities, { eq }) => eq(identities.provider, 'github')
+          }
         }
       }
     })
@@ -92,6 +95,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 构建返回的用户对象，只包含需要的字段
+    const githubIdentity = dbUser.identities?.find((id: any) => id.provider === 'github')
     const user = {
       id: dbUser.id,
       username: dbUser.username,
@@ -100,9 +104,10 @@ export default defineEventHandler(async (event) => {
       class: dbUser.class,
       role: dbUser.role,
       requirePasswordChange: dbUser.forcePasswordChange || !dbUser.passwordChangedAt,
+      has2FA: dbUser.identities?.some((id: any) => id.provider === 'totp') || false,
       // 动态生成 GitHub 头像 URL
-      avatar: dbUser.identities?.[0]?.providerUsername
-        ? `https://github.com/${dbUser.identities[0].providerUsername}.png`
+      avatar: githubIdentity?.providerUsername
+        ? `https://github.com/${githubIdentity.providerUsername}.png`
         : null
     }
 
