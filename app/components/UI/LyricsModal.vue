@@ -217,7 +217,6 @@
           >
             <div class="control-buttons">
               <button
-                v-if="isMobile"
                 class="control-btn secondary-btn"
                 :class="{ active: playMode === 'order' }"
                 @click="togglePlayMode('order')"
@@ -235,7 +234,6 @@
                 <Icon name="skip-forward" size="28" />
               </button>
               <button
-                v-if="isMobile"
                 class="control-btn secondary-btn"
                 :class="{ active: playMode === 'loopOne' }"
                 @click="togglePlayMode('loopOne')"
@@ -1396,6 +1394,17 @@ onUnmounted(() => {
   transform: none;
 }
 
+.secondary-btn {
+  opacity: 0.4;
+  transition: all 0.2s;
+}
+
+.secondary-btn.active {
+  opacity: 1;
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
 .play-pause-btn {
   background: transparent;
   color: white;
@@ -1848,17 +1857,6 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .secondary-btn {
-    opacity: 0.4;
-    transition: all 0.2s;
-  }
-
-  .secondary-btn.active {
-    opacity: 1;
-    color: #ffffff;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
   }
 
   .play-pause-btn {
