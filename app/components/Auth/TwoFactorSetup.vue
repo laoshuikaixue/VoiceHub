@@ -117,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { ShieldCheck, X, Copy, Loader2 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 

@@ -1,6 +1,15 @@
 import { navigateTo, useState } from '#app'
 import type { User } from '~/types'
 
+interface LoginResponse {
+  success: boolean
+  user?: User
+  requires2FA?: boolean
+  userId?: number
+  methods?: string[]
+  tempToken?: string // 预认证临时令牌
+}
+
 export const useAuth = () => {
   const user = useState<User | null>('user', () => null)
   const token = useState<string | null>('token', () => null)
@@ -13,6 +22,13 @@ export const useAuth = () => {
     token.value = null
     isAuthenticated.value = false
     isAdmin.value = false
+  }
+
+  const setAuthState = (loggedInUser: User) => {
+    token.value = 'cookie-based'
+    user.value = loggedInUser
+    isAuthenticated.value = true
+    isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(loggedInUser.role)
   }
 
   const initAuth = async () => {
@@ -50,7 +66,7 @@ export const useAuth = () => {
       if (hadAuth && error.statusCode === 401) {
          clearAuthState()
          // Token失效，重定向到登录页
-         await navigateTo('/auth/login?error=SessionExpired')
+         await navigateTo('/login?error=SessionExpired')
       } else if (!hadAuth && error.statusCode === 401) {
         // 未登录状态下的 401，仅确保状态清理，不跳转
         clearAuthState()
@@ -60,7 +76,7 @@ export const useAuth = () => {
   }
 
   const login = async (username: string, password: string) => {
-    const response = await $fetch<any>('/api/auth/login', {
+    const response = await $fetch<LoginResponse>('/api/auth/login', {
       method: 'POST',
       body: { username, password }
     })
@@ -71,10 +87,7 @@ export const useAuth = () => {
       }
 
       if (response.user) {
-        token.value = 'cookie-based'
-        user.value = response.user
-        isAuthenticated.value = true
-        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(response.user.role)
+        setAuthState(response.user)
         return response
       }
     }
@@ -82,17 +95,14 @@ export const useAuth = () => {
     throw new Error('登录响应格式错误')
   }
 
-  const verify2FA = async (userId: number, code: string, type: 'totp' | 'email') => {
+  const verify2FA = async (userId: number, code: string, type: 'totp' | 'email', tempToken?: string) => {
     const response = await $fetch<{ success: boolean; user: User }>('/api/auth/2fa/verify', {
       method: 'POST',
-      body: { userId, code, type }
+      body: { userId, code, type, token: tempToken }
     })
 
     if (response.success && response.user) {
-      token.value = 'cookie-based'
-      user.value = response.user
-      isAuthenticated.value = true
-      isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(response.user.role)
+      setAuthState(response.user)
       return response
     }
     throw new Error('验证失败')

@@ -95,6 +95,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 构建返回的用户对象，只包含需要的字段
+    const githubIdentity = dbUser.identities?.find((id: any) => id.provider === 'github')
     const user = {
       id: dbUser.id,
       username: dbUser.username,
@@ -105,8 +106,8 @@ export default defineEventHandler(async (event) => {
       requirePasswordChange: dbUser.forcePasswordChange || !dbUser.passwordChangedAt,
       has2FA: dbUser.identities?.some((id: any) => id.provider === 'totp') || false,
       // 动态生成 GitHub 头像 URL
-      avatar: dbUser.identities?.find((id: any) => id.provider === 'github')?.providerUsername
-        ? `https://github.com/${dbUser.identities.find((id: any) => id.provider === 'github').providerUsername}.png`
+      avatar: githubIdentity?.providerUsername
+        ? `https://github.com/${githubIdentity.providerUsername}.png`
         : null
     }
 

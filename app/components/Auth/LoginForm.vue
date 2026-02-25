@@ -148,6 +148,7 @@
       :show="show2FA"
       :user-id="userId2FA"
       :available-methods="methods2FA"
+      :temp-token="tempToken2FA"
       @success="handle2FASuccess"
       @cancel="show2FA = false"
     />
@@ -178,6 +179,7 @@ const isWebAuthnSupported = ref(false)
 const show2FA = ref(false)
 const userId2FA = ref(0)
 const methods2FA = ref<string[]>([])
+const tempToken2FA = ref('')
 
 const auth = useAuth()
 
@@ -233,6 +235,7 @@ const handleLogin = async () => {
       if (response.requires2FA) {
         userId2FA.value = response.userId
         methods2FA.value = response.methods
+        tempToken2FA.value = response.tempToken
         show2FA.value = true
         return
       }

@@ -94,6 +94,7 @@ const props = defineProps<{
   show: boolean
   userId: number
   availableMethods?: string[]
+  tempToken?: string
 }>()
 
 const emit = defineEmits<{
@@ -103,9 +104,9 @@ const emit = defineEmits<{
 
 const { showToast } = useToast()
 // 默认优先使用 TOTP，如果没有则使用 Email
-const defaultMethod = props.availableMethods?.includes('totp') ? 'totp' : 'email'
-const method = ref(defaultMethod)
-const methods = ref(props.availableMethods || ['totp', 'email'])
+const defaultMethod = computed(() => props.availableMethods?.includes('totp') ? 'totp' : 'email')
+const method = ref(defaultMethod.value)
+const methods = computed(() => props.availableMethods || ['totp', 'email'])
 const hasMultipleMethods = computed(() => methods.value.length > 1)
 
 const code = ref('')
@@ -115,7 +116,7 @@ const cooldown = ref(0)
 const error = ref('')
 const inputRef = ref<HTMLInputElement | null>(null)
 
-let timer: NodeJS.Timeout
+let timer: any
 
 const toggleMethod = () => {
   method.value = method.value === 'totp' ? 'email' : 'totp'
@@ -152,7 +153,7 @@ const handleVerify = async () => {
     error.value = ''
     
     const { verify2FA } = useAuth()
-    const response = await verify2FA(props.userId, code.value, method.value as 'totp' | 'email')
+    const response = await verify2FA(props.userId, code.value, method.value as 'totp' | 'email', props.tempToken)
     
     emit('success', response)
   } catch (err: any) {
@@ -174,7 +175,7 @@ watch(method, () => {
 watch(() => props.show, (newVal) => {
   if (newVal) {
     // 每次重新打开时重置为默认方式（优先 TOTP）
-    method.value = defaultMethod
+    method.value = defaultMethod.value
     nextTick(() => inputRef.value?.focus())
   }
 })
