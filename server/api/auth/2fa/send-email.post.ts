@@ -4,6 +4,7 @@ import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { randomInt } from 'crypto'
 
 export default defineEventHandler(async (event) => {
   const { userId: reqUserId, token } = await readBody(event)
@@ -44,8 +45,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '用户不存在或未绑定邮箱' })
   }
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString()
-  twoFactorCodes.set(userId, { code, expiresAt: Date.now() + 5 * 60 * 1000 })
+  const code = randomInt(100000, 999999).toString()
+  twoFactorCodes.set(userId, { 
+    code, 
+    expiresAt: Date.now() + 5 * 60 * 1000,
+    attempts: 0 
+  })
 
   const clientIP = getClientIP(event)
 

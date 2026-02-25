@@ -1,2 +1,6 @@
 
-export const twoFactorCodes = new Map<number, { code: string; expiresAt: number }>()
+export const twoFactorCodes = new Map<number, { 
+  code: string; 
+  expiresAt: number; 
+  attempts: number 
+}>()

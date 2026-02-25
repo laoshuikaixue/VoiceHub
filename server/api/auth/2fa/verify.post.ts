@@ -14,10 +14,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '缺少必要参数' })
   }
 
-  // 安全增强：验证预认证临时令牌
-  // 如果提供了 token，优先使用 token 解析 userId，并验证其合法性
-  // 如果未提供 token (旧客户端兼容)，则降级检查 userId，但建议强制要求 token
-  
+  // 验证预认证临时令牌
   let targetUserId = userId
 
   if (token) {
@@ -31,7 +28,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
     }
   } else {
-    // 强制要求 Token 以修复安全漏洞 P1
+    // 强制要求 Token
     throw createError({ statusCode: 400, message: '缺少预认证令牌，请重新登录' })
   }
 
@@ -52,23 +49,39 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '未开启TOTP验证' })
     }
     verified = authenticator.check(code, identity.providerUserId)
+    
+    if (!verified) {
+      throw createError({ statusCode: 400, message: '动态验证码错误' })
+    }
   } else if (type === 'email') {
     const stored = twoFactorCodes.get(targetUserId)
-    if (stored && stored.code === code && stored.expiresAt > Date.now()) {
+    
+    if (!stored) {
+      throw createError({ statusCode: 400, message: '验证码已过期或不存在' })
+    }
+
+    if (stored.expiresAt <= Date.now()) {
+      twoFactorCodes.delete(targetUserId)
+      throw createError({ statusCode: 400, message: '验证码已过期' })
+    }
+
+    // 检查尝试次数
+    if (stored.attempts >= 5) {
+      twoFactorCodes.delete(targetUserId)
+      throw createError({ statusCode: 400, message: '验证尝试次数过多，请重新获取' })
+    }
+
+    if (stored.code === code) {
       verified = true
       twoFactorCodes.delete(targetUserId) // 验证成功后删除
     } else {
-       if (stored && stored.expiresAt <= Date.now()) {
-          twoFactorCodes.delete(targetUserId)
-          throw createError({ statusCode: 400, message: '验证码已过期' })
-       }
+      // 增加尝试次数
+      stored.attempts++
+      twoFactorCodes.set(targetUserId, stored)
+      throw createError({ statusCode: 400, message: `验证码错误，剩余尝试次数：${5 - stored.attempts}` })
     }
   } else {
     throw createError({ statusCode: 400, message: '不支持的验证类型' })
-  }
-
-  if (!verified) {
-    throw createError({ statusCode: 401, message: '验证码错误' })
   }
 
   // 验证通过，更新登录信息
