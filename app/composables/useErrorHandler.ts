@@ -53,6 +53,17 @@ export const useErrorHandler = () => {
         auth.isAuthenticated.value = false
         auth.isAdmin.value = false
 
+        // 清除 cookie
+        if (import.meta.client) {
+          // 删除 auth-token cookie
+          document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax'
+          
+          // 如果是 HTTPS，也尝试删除 secure cookie
+          if (window.location.protocol === 'https:') {
+            document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure'
+          }
+        }
+
         // 显示错误提示
         if (import.meta.client) {
           const toast = useToast()
