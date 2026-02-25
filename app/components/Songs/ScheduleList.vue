@@ -594,6 +594,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Music, X, User, RefreshCw, Trash2, Check, Plus, Loader2 } from 'lucide-vue-next'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useMusicSources } from '~/composables/useMusicSources'
 import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
@@ -624,6 +625,7 @@ const props = defineProps({
 
 // 音频播放相关 - 使用全局音频播放器
 const audioPlayer = useAudioPlayer()
+const { getQuality, checkNeteaseLoginStatus: updateGlobalNeteaseStatus } = useAudioQuality()
 
 // 获取播放时段启用状态
 const { playTimeEnabled } = useSongs()
@@ -1074,6 +1076,8 @@ const checkNeteaseLoginStatus = () => {
   if (cookie) {
     neteaseCookie.value = cookie
     isNeteaseLoggedIn.value = true
+    // 同步全局网易云登录状态
+    updateGlobalNeteaseStatus()
     if (userStr) {
       try {
         neteaseUser.value = JSON.parse(userStr)
@@ -1085,6 +1089,8 @@ const checkNeteaseLoginStatus = () => {
     neteaseCookie.value = ''
     neteaseUser.value = null
     isNeteaseLoggedIn.value = false
+    // 同步全局网易云登录状态
+    updateGlobalNeteaseStatus()
   }
 }
 
@@ -1095,6 +1101,8 @@ const handleLoginSuccess = (data) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('netease_cookie', data.cookie)
     localStorage.setItem('netease_user', JSON.stringify(data.user))
+    // 更新全局网易云登录状态，通知其他组件（如AudioPlayer）
+    updateGlobalNeteaseStatus()
   }
   showLoginModal.value = false
   if (showPlaylistModal.value) {
@@ -1456,7 +1464,6 @@ const getMusicUrl = async (song) => {
     throw new Error('歌曲缺少音乐平台或音乐ID信息，无法获取播放链接')
   }
 
-  const { getQuality } = useAudioQuality()
   const { getSongUrl } = useMusicSources()
 
   const quality = getQuality(platform)

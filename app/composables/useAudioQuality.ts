@@ -28,8 +28,18 @@ const DEFAULT_QUALITY = {
 
 // 全局音质状态，确保所有组件共享同一个状态
 let globalAudioQuality: any = null
+// 网易云登录状态，全局共享
+const isNeteaseLoggedIn = ref(false)
+let isLoginStatusInitialized = false
 
 export function useAudioQuality() {
+  // 检查网易云登录状态
+  const checkNeteaseLoginStatus = () => {
+    if (typeof window === 'undefined') return
+    const cookie = localStorage.getItem('netease_cookie')
+    isNeteaseLoggedIn.value = !!cookie
+  }
+
   // 从localStorage读取音质设置
   const getStoredQuality = () => {
     try {
@@ -58,6 +68,17 @@ export function useAudioQuality() {
     )
   }
 
+  // 初始化登录状态监听
+  if (!isLoginStatusInitialized && typeof window !== 'undefined') {
+    checkNeteaseLoginStatus()
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'netease_cookie') {
+        checkNeteaseLoginStatus()
+      }
+    })
+    isLoginStatusInitialized = true
+  }
+
   const audioQuality = globalAudioQuality
 
   // 保存音质设置到localStorage
@@ -72,6 +93,12 @@ export function useAudioQuality() {
     if (platform === 'netease-podcast') {
       platform = 'netease'
     }
+
+    // 如果是网易云且未登录，强制返回 HQ 极高音质 (exhigh)
+    if (platform === 'netease' && !isNeteaseLoggedIn.value) {
+      return 4 // exhigh
+    }
+
     return audioQuality.value[platform] || DEFAULT_QUALITY[platform]
   }
 
@@ -81,6 +108,13 @@ export function useAudioQuality() {
     if (platform === 'netease-podcast') {
       platform = 'netease'
     }
+
+    // 如果是网易云且未登录，只返回默认选项（HQ 极高音质）
+    if (platform === 'netease' && !isNeteaseLoggedIn.value) {
+      // 修改为"默认"标签，实际值为 4 (exhigh)
+      return [{ value: 4, label: '默认', description: '未登录状态默认音质' }]
+    }
+
     return QUALITY_OPTIONS[platform] || []
   }
 
@@ -108,8 +142,8 @@ export function useAudioQuality() {
 
   // 计算属性：当前音质设置的可读文本
   const currentQualityText = computed(() => {
-    const netease = getQualityLabel('netease', audioQuality.value.netease)
-    const tencent = getQualityLabel('tencent', audioQuality.value.tencent)
+    const netease = getQualityLabel('netease', getQuality('netease'))
+    const tencent = getQualityLabel('tencent', getQuality('tencent'))
     return {
       netease,
       tencent
@@ -125,6 +159,8 @@ export function useAudioQuality() {
     getQualityDescription,
     currentQualityText,
     QUALITY_OPTIONS,
-    DEFAULT_QUALITY
+    DEFAULT_QUALITY,
+    checkNeteaseLoginStatus,
+    isNeteaseLoggedIn: readonly(isNeteaseLoggedIn)
   }
 }

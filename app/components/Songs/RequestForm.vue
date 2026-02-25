@@ -963,6 +963,7 @@ import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
 import { useMusicSources } from '~/composables/useMusicSources'
+import { useAudioQuality } from '~/composables/useAudioQuality'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
@@ -1095,6 +1096,7 @@ const searchAbortController = ref(null)
 // 音源管理器
 const musicSources = useMusicSources()
 const { currentSource, sourceStatus, sourceStatusSummary, currentSourceInfo } = musicSources
+const { checkNeteaseLoginStatus: updateGlobalNeteaseStatus } = useAudioQuality()
 const searchError = ref('')
 
 // 手动输入相关
@@ -1179,6 +1181,8 @@ const checkNeteaseLoginStatus = async () => {
           isNeteaseLoggedIn.value = true
           neteaseUser.value = dataObj.profile || dataObj.account
           localStorage.setItem('netease_user', JSON.stringify(neteaseUser.value))
+          // 同步全局网易云登录状态
+          updateGlobalNeteaseStatus()
         } else {
           // 登录失效
           handleLogoutNetease()
@@ -1192,6 +1196,9 @@ const checkNeteaseLoginStatus = async () => {
       } finally {
         checkingNeteaseLogin.value = false
       }
+    } else {
+      // 同步全局网易云登录状态
+      updateGlobalNeteaseStatus()
     }
   }
 }
@@ -1200,7 +1207,6 @@ const handleExportData = () => {
   if (!neteaseCookie.value) return
   const data = {
     cookie: neteaseCookie.value,
-    user: neteaseUser.value,
     timestamp: Date.now()
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -1274,6 +1280,7 @@ const handleLoginSuccess = (data) => {
   if (import.meta.client) {
     localStorage.setItem('netease_cookie', data.cookie)
     localStorage.setItem('netease_user', JSON.stringify(data.user))
+    updateGlobalNeteaseStatus()
   }
 }
 
@@ -1286,6 +1293,7 @@ const handleLogoutNetease = () => {
   if (import.meta.client) {
     localStorage.removeItem('netease_cookie')
     localStorage.removeItem('netease_user')
+    updateGlobalNeteaseStatus()
   }
 }
 
