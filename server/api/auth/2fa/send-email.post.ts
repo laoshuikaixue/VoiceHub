@@ -3,12 +3,30 @@ import { twoFactorCodes } from '~~/server/utils/twoFactorStore'
 import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
-export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const userId = body.userId
+import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 
-  if (!userId) {
-     throw createError({ statusCode: 400, message: '缺少用户ID' })
+export default defineEventHandler(async (event) => {
+  const { userId: reqUserId, token } = await readBody(event)
+
+  // 必须提供预认证令牌
+  if (!token) {
+    throw createError({ statusCode: 400, message: '缺少预认证令牌' })
+  }
+
+  let userId: number
+  try {
+    const decoded = JWTEnhanced.verify(token) as any
+    if (decoded.type !== 'pre-auth' || decoded.scope !== '2fa_pending') {
+      throw new Error('无效的预认证令牌')
+    }
+    userId = decoded.userId
+  } catch (e) {
+    throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
+  }
+
+  // 校验 userId 是否匹配
+  if (!reqUserId || Number(reqUserId) !== userId) {
+     throw createError({ statusCode: 403, message: '非法操作：用户ID不匹配' })
   }
 
   // 获取用户邮箱

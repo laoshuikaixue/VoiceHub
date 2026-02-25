@@ -158,7 +158,7 @@ const startSetup = async () => {
       verificationCode.value = ''
     }
   } catch (err: any) {
-    showToast(err.message || '获取验证码失败', 'error')
+    showToast(err.data?.message || err.message || '获取验证码失败', 'error')
   } finally {
     loading.value = false
   }
@@ -199,7 +199,7 @@ const enable2FA = async () => {
     isEnabled.value = true
     cancelSetup()
   } catch (err: any) {
-    showToast(err.message || '验证失败', 'error')
+    showToast(err.data?.message || err.message || '验证失败', 'error')
   } finally {
     loading.value = false
   }

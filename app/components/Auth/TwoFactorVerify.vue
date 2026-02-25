@@ -86,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue'
+import { ref, watch, nextTick, computed, onUnmounted } from 'vue'
 import { Loader2, AlertCircle } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 
@@ -118,6 +118,13 @@ const inputRef = ref<HTMLInputElement | null>(null)
 
 let timer: any
 
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer)
+    timer = undefined
+  }
+})
+
 const toggleMethod = () => {
   method.value = method.value === 'totp' ? 'email' : 'totp'
 }
@@ -129,17 +136,23 @@ const sendEmailCode = async () => {
     
     await $fetch('/api/auth/2fa/send-email', {
       method: 'POST',
-      body: { userId: props.userId }
+      body: { 
+        userId: props.userId,
+        token: props.tempToken
+      }
     })
 
     showToast('验证码已发送', 'success')
     cooldown.value = 60
     timer = setInterval(() => {
       cooldown.value--
-      if (cooldown.value <= 0) clearInterval(timer)
+      if (cooldown.value <= 0) {
+        clearInterval(timer)
+        timer = undefined
+      }
     }, 1000)
   } catch (err: any) {
-    error.value = err.message || '发送失败'
+    error.value = err.data?.message || err.message || '发送失败'
   } finally {
     sending.value = false
   }
@@ -157,7 +170,7 @@ const handleVerify = async () => {
     
     emit('success', response)
   } catch (err: any) {
-    error.value = err.message || '验证失败'
+    error.value = err.data?.message || err.message || '验证失败'
     code.value = '' // 出错清空
   } finally {
     loading.value = false
