@@ -1181,6 +1181,8 @@ const checkNeteaseLoginStatus = async () => {
           isNeteaseLoggedIn.value = true
           neteaseUser.value = dataObj.profile || dataObj.account
           localStorage.setItem('netease_user', JSON.stringify(neteaseUser.value))
+          // 同步全局网易云登录状态
+          updateGlobalNeteaseStatus()
         } else {
           // 登录失效
           handleLogoutNetease()
@@ -1194,6 +1196,9 @@ const checkNeteaseLoginStatus = async () => {
       } finally {
         checkingNeteaseLogin.value = false
       }
+    } else {
+      // 同步全局网易云登录状态
+      updateGlobalNeteaseStatus()
     }
   }
 }

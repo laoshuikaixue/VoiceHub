@@ -1076,6 +1076,8 @@ const checkNeteaseLoginStatus = () => {
   if (cookie) {
     neteaseCookie.value = cookie
     isNeteaseLoggedIn.value = true
+    // 同步全局网易云登录状态
+    updateGlobalNeteaseStatus()
     if (userStr) {
       try {
         neteaseUser.value = JSON.parse(userStr)
@@ -1087,6 +1089,8 @@ const checkNeteaseLoginStatus = () => {
     neteaseCookie.value = ''
     neteaseUser.value = null
     isNeteaseLoggedIn.value = false
+    // 同步全局网易云登录状态
+    updateGlobalNeteaseStatus()
   }
 }
 
