@@ -47,6 +47,28 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // 检查学期
+    const currentSemesterResult = await db
+      .select()
+      .from(semesters)
+      .where(eq(semesters.isActive, true))
+      .limit(1)
+    const currentSemester = currentSemesterResult[0]
+
+    if (!currentSemester) {
+      throw createError({
+        statusCode: 400,
+        message: '未设置活跃学期，无法进行投票操作'
+      })
+    }
+
+    if (song.semester !== currentSemester.name) {
+      throw createError({
+        statusCode: 400,
+        message: '非活跃学期，无法进行投票操作'
+      })
+    }
+
     // 检查歌曲是否已播放
     if (song.played) {
       throw createError({

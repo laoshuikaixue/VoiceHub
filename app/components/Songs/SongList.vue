@@ -292,20 +292,10 @@
                   <button
                     :class="{
                       liked: song.voted,
-                      disabled: song.played || song.scheduled || isMySong(song) || voteInProgress
+                      disabled: isVoteButtonDisabled(song)
                     }"
-                    :disabled="song.played || song.scheduled || voteInProgress"
-                    :title="
-                      song.played
-                        ? '已播放的歌曲不能点赞'
-                        : song.scheduled
-                          ? '已排期的歌曲不能点赞'
-                          : isMySong(song)
-                            ? '不允许自己给自己点赞'
-                            : song.voted
-                              ? '点击取消点赞'
-                              : '点赞'
-                    "
+                    :disabled="isVoteButtonDisabled(song)"
+                    :title="getVoteButtonTitle(song)"
                     class="like-button"
                     @click.stop="handleVote(song)"
                   >
@@ -889,11 +879,66 @@ const handleJumpToPage = () => {
 }
 
 // 处理投票
+// 检查点赞按钮是否应该禁用
+const isVoteButtonDisabled = (song) => {
+  if (voteInProgress.value || !song) return true
+
+  // 检查学期
+  if (!currentSemester.value || song.semester !== currentSemester.value.name) {
+    return true
+  }
+
+  // 检查状态
+  if (song.played || song.scheduled) {
+    return true
+  }
+
+  // 检查是否是自己的歌曲
+  if (isMySong(song)) {
+    return true
+  }
+
+  return false
+}
+
+// 获取点赞按钮标题（tooltip）
+const getVoteButtonTitle = (song) => {
+  if (!song) return '点赞'
+
+  // 检查学期
+  if (!currentSemester.value || song.semester !== currentSemester.value.name) {
+    return '非活跃学期'
+  }
+
+  // 检查状态
+  if (song.played) {
+    return '已播放的歌曲不能点赞'
+  }
+  if (song.scheduled) {
+    return '已排期的歌曲不能点赞'
+  }
+
+  // 检查是否是自己的歌曲
+  if (isMySong(song)) {
+    return '不允许自己给自己点赞'
+  }
+
+  return song.voted ? '点击取消点赞' : '点赞'
+}
+
 const handleVote = async (song) => {
   // 检查用户是否登录
   if (!isAuthenticated.value) {
     if (window.$showNotification) {
       window.$showNotification('请先登录后再点赞', 'error')
+    }
+    return
+  }
+
+  // 检查学期
+  if (!currentSemester.value || song.semester !== currentSemester.value.name) {
+    if (window.$showNotification) {
+      window.$showNotification('非活跃学期', 'error')
     }
     return
   }
