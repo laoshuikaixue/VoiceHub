@@ -877,6 +877,7 @@ VoiceHub/
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── redis.ts        # Redis连接和操作工具
 │   │   ├── siteUtils.ts    # 站点工具函数
+│   │   ├── studentMask.ts  # 学生隐私工具
 │   │   └── twoFactorStore.ts # 双重认证存储工具
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
