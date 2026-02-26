@@ -475,7 +475,6 @@ import MarqueeText from '~/components/UI/MarqueeText.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
-import { getMusicUrl } from '~/utils/musicUrl'
 import thumbsUp from '~/public/images/thumbs-up.svg'
 
 import dayjs from 'dayjs'

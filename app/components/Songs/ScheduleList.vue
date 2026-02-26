@@ -601,7 +601,6 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
-import { getMusicUrl } from '~/utils/musicUrl'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import {
   addSongsToPlaylist,

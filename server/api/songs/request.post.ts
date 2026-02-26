@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
         .where(
           and(
             eq(songs.semester, currentSemester),
-            sql`${songs.musicPlatform} = 'bilibili' OR ${songs.musicId} LIKE 'BV%' OR ${songs.musicId} LIKE 'av%'`,
+            eq(songs.musicPlatform, 'bilibili'),
             eq(songs.musicId, fullMusicId)
           )
         )

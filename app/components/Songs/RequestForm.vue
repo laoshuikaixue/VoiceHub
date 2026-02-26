@@ -968,7 +968,6 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
-import { getMusicUrl } from '~/utils/musicUrl'
 import { getLoginStatus } from '~/utils/neteaseApi'
 
 import ImportSongsModal from './ImportSongsModal.vue'
