@@ -13,8 +13,43 @@ import {
 import { and, asc, count, desc, eq, inArray, like, or } from 'drizzle-orm'
 import { cacheService } from '~~/server/services/cacheService'
 import { formatDateTime } from '~/utils/timeUtils'
-import { maskStudentName } from '~~/server/utils/siteUtils'
+import { maskSongsInfo, MaskableSong, MaskableUser } from '~~/server/utils/studentMask'
 import crypto from 'crypto'
+
+interface SongResponse {
+  id: number
+  title: string
+  artist: string
+  requester: string
+  requesterId?: number
+  collaborators: any[]
+  voteCount: number
+  played: boolean
+  playedAt: Date | null
+  semester: string | null
+  createdAt: Date
+  updatedAt: Date
+  requestedAt: string
+  scheduled: boolean
+  cover: string | null
+  musicPlatform: string | null
+  musicId: string | null
+  playUrl: string | null
+  requesterGrade: string | null
+  requesterClass: string | null
+  replayRequested: boolean
+  replayRequestCount: number
+  isReplay: boolean
+  replayRequesters: any[]
+  voted?: boolean
+  preferredPlayTimeId?: number | null
+  preferredPlayTime?: any
+  scheduleDate?: string
+  schedulePlayed?: boolean
+  replayRequestStatus?: string
+  replayRequestUpdatedAt?: Date | string
+  replayRequestCooldownRemaining?: number
+}
 
 export default defineEventHandler(async (event) => {
   try {
@@ -132,27 +167,9 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // 如果需要隐藏学生信息且用户不是管理员，则模糊化姓名
+      // 如果需要隐藏学生信息且用户不是管理员，则对歌曲列表进行脱敏
       if (shouldHideStudentInfo && !isAdmin && cachedData.data?.songs) {
-        cachedData.data.songs.forEach((song: any) => {
-          if (song.requester) {
-            song.requester = maskStudentName(song.requester)
-          }
-          if (song.collaborators) {
-            song.collaborators.forEach((c: any) => {
-              if (c.name) c.name = maskStudentName(c.name)
-              if (c.displayName) c.displayName = maskStudentName(c.displayName)
-            })
-          }
-          if (song.replayRequesters) {
-            song.replayRequesters.forEach((r: any) => {
-              if (r.name) r.name = maskStudentName(r.name)
-            })
-          }
-          // 同时隐藏年级和班级
-          song.requesterGrade = null
-          song.requesterClass = null
-        })
+        maskSongsInfo(cachedData.data.songs)
       }
 
       return cachedData
@@ -436,44 +453,29 @@ export default defineEventHandler(async (event) => {
     }
 
     // 转换数据格式
-    const formattedSongs = songsData.map((song) => {
+    const formattedSongs: SongResponse[] = songsData.map((song) => {
       // 处理投稿人姓名
-      let requesterName = formatDisplayName(song.requester)
-
-      // 如果需要隐藏学生信息且用户不是管理员，则模糊化姓名
-      if (shouldHideStudentInfo && !isAdmin) {
-        requesterName = maskStudentName(requesterName)
-      }
+      const requesterName = formatDisplayName(song.requester)
 
       // 处理联合投稿人
       const collaborators = collaboratorsMap.get(song.id) || []
-      const formattedCollaborators = collaborators.map((c: any) => {
-        let name = c.name
-        let displayName = formatDisplayName(c)
-
-        if (shouldHideStudentInfo && !isAdmin) {
-          name = maskStudentName(name)
-          displayName = maskStudentName(displayName)
-        }
-
-        return {
-          id: c.id,
-          name: name,
-          displayName: displayName,
-          grade: shouldHideStudentInfo && !isAdmin ? null : c.grade,
-          class: shouldHideStudentInfo && !isAdmin ? null : c.class
-        }
-      })
+      const formattedCollaborators = collaborators.map((c: MaskableUser) => ({
+        id: c.id,
+        name: c.name,
+        displayName: formatDisplayName(c),
+        grade: c.grade,
+        class: c.class
+      }))
 
       // 处理重播申请人
-      const replayRequesters = replayRequestersMap.get(song.id) || []
-      const formattedReplayRequesters = replayRequesters.map((r: any) => ({
+      const replayRequesters = (replayRequestersMap.get(song.id) || []) as MaskableUser[]
+      const formattedReplayRequesters = replayRequesters.map((r: MaskableUser) => ({
         ...r,
-        name: shouldHideStudentInfo && !isAdmin ? maskStudentName(r.name) : r.name
+        displayName: r.name // 这里简化处理，因为 replayRequesters 之前没包含更多信息
       }))
 
       // 创建基本歌曲对象
-      const songObject: any = {
+      const songObject: SongResponse = {
         id: song.id,
         title: song.title,
         artist: song.artist,
@@ -492,8 +494,8 @@ export default defineEventHandler(async (event) => {
         musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
         musicId: song.musicId || null, // 添加音乐ID字段
         playUrl: song.playUrl || null, // 添加播放地址字段
-        requesterGrade: shouldHideStudentInfo && !isAdmin ? null : (song.requester?.grade || null), // 添加投稿人年级
-        requesterClass: shouldHideStudentInfo && !isAdmin ? null : (song.requester?.class || null), // 添加投稿人班级
+        requesterGrade: song.requester?.grade || null, // 添加投稿人年级
+        requesterClass: song.requester?.class || null, // 添加投稿人班级
         replayRequested: userReplayRequestedSongs.has(song.id), // 添加是否已被申请重播的标志
         replayRequestCount: replayRequestCounts.get(song.id) || 0,
         isReplay: (replayRequestCounts.get(song.id) || 0) > 0,
@@ -553,6 +555,11 @@ export default defineEventHandler(async (event) => {
 
       return songObject
     })
+
+    // 如果需要隐藏学生信息且用户不是管理员，则对格式化后的歌曲列表进行脱敏
+    if (shouldHideStudentInfo && !isAdmin) {
+      maskSongsInfo(formattedSongs)
+    }
 
     // 如果按投票数排序，需要重新排序
     if (sortBy === 'votes') {

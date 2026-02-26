@@ -15,7 +15,7 @@ import { and, count, desc, eq, inArray } from 'drizzle-orm'
 import { cacheService } from '~~/server/services/cacheService'
 import { executeRedisCommand, isRedisReady } from '../../utils/redis'
 import { formatDateTime } from '~/utils/timeUtils'
-import { maskStudentName } from '../../utils/siteUtils'
+import { maskPublicScheduleData, PublicScheduleItem } from '../../utils/studentMask'
 
 import { verifyUserAuth } from '../../utils/auth'
 
@@ -58,33 +58,13 @@ export default defineEventHandler(async (event) => {
 
         const data = await client.get(cacheKey)
         if (data) {
-          const parsedData = JSON.parse(data)
+          const parsedData = JSON.parse(data) as PublicScheduleItem[]
           console.log(`[Cache] 公共排期Redis缓存命中: ${cacheKey}，数量: ${parsedData.length}`)
           // 深拷贝数据以避免修改缓存的原始数据
-          const resultData = JSON.parse(JSON.stringify(parsedData))
-          // 如果需要隐藏学生信息且用户不是管理员，则模糊化姓名
+          const resultData = JSON.parse(JSON.stringify(parsedData)) as PublicScheduleItem[]
+          // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
           if (shouldHideStudentInfo && !isAdmin) {
-            resultData.forEach((item: any) => {
-              if (item.song?.requester) {
-                item.song.requester = maskStudentName(item.song.requester)
-              }
-              if (item.song?.collaborators) {
-                item.song.collaborators.forEach((c: any) => {
-                  if (c.name) c.name = maskStudentName(c.name)
-                  if (c.displayName) c.displayName = maskStudentName(c.displayName)
-                  c.grade = null
-                  c.class = null
-                })
-              }
-              if (item.song?.replayRequesters) {
-                item.song.replayRequesters.forEach((r: any) => {
-                  if (r.name) r.name = maskStudentName(r.name)
-                  if (r.displayName) r.displayName = maskStudentName(r.displayName)
-                  r.grade = null
-                  r.class = null
-                })
-              }
-            })
+            maskPublicScheduleData(resultData)
           }
           return resultData
         }
@@ -126,30 +106,10 @@ export default defineEventHandler(async (event) => {
       }
 
       // 深拷贝数据以避免修改缓存的原始数据
-      const resultData = JSON.parse(JSON.stringify(filteredSchedules))
-      // 如果需要隐藏学生信息且用户不是管理员，则模糊化姓名
+      const resultData = JSON.parse(JSON.stringify(filteredSchedules)) as PublicScheduleItem[]
+      // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
       if (shouldHideStudentInfo && !isAdmin) {
-        resultData.forEach((item: any) => {
-          if (item.song?.requester) {
-            item.song.requester = maskStudentName(item.song.requester)
-          }
-          if (item.song?.collaborators) {
-            item.song.collaborators.forEach((c: any) => {
-              if (c.name) c.name = maskStudentName(c.name)
-              if (c.displayName) c.displayName = maskStudentName(c.displayName)
-              c.grade = null
-              c.class = null
-            })
-          }
-          if (item.song?.replayRequesters) {
-            item.song.replayRequesters.forEach((r: any) => {
-              if (r.name) r.name = maskStudentName(r.name)
-              if (r.displayName) r.displayName = maskStudentName(r.displayName)
-              r.grade = null
-              r.class = null
-            })
-          }
-        })
+        maskPublicScheduleData(resultData)
       }
 
       return resultData
@@ -463,31 +423,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // 深拷贝数据以避免修改缓存的原始数据
-    const resultToReturn = JSON.parse(JSON.stringify(finalResult || allSchedulesResult))
+    const resultToReturn = JSON.parse(JSON.stringify(finalResult || allSchedulesResult)) as PublicScheduleItem[]
 
-    // 如果需要隐藏学生信息且用户不是管理员，则模糊化姓名
+    // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
     if (shouldHideStudentInfo && !isAdmin && resultToReturn) {
-      resultToReturn.forEach((item: any) => {
-        if (item.song?.requester) {
-          item.song.requester = maskStudentName(item.song.requester)
-        }
-        if (item.song?.collaborators) {
-          item.song.collaborators.forEach((c: any) => {
-            if (c.name) c.name = maskStudentName(c.name)
-            if (c.displayName) c.displayName = maskStudentName(c.displayName)
-            c.grade = null
-            c.class = null
-          })
-        }
-        if (item.song?.replayRequesters) {
-          item.song.replayRequesters.forEach((r: any) => {
-            if (r.name) r.name = maskStudentName(r.name)
-            if (r.displayName) r.displayName = maskStudentName(r.displayName)
-            r.grade = null
-            r.class = null
-          })
-        }
-      })
+      maskPublicScheduleData(resultToReturn)
     }
 
     return resultToReturn
