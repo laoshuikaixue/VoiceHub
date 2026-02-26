@@ -1703,6 +1703,8 @@ const handleSearch = async () => {
         singer: item.artist || item.singer,
         // 保存实际的平台来源信息
         actualSource: results.source,
+        musicPlatform:
+          item.musicPlatform || (results.source === 'netease-backup' ? 'netease' : results.source),
         actualMusicPlatform:
           item.musicPlatform || (results.source === 'netease-backup' ? 'netease' : results.source)
       }))

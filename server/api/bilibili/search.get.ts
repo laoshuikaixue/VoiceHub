@@ -67,6 +67,7 @@ function bi_convert_song(song_info: SongInfo, pages?: VideoPage[]) {
     title: htmlDecode(song_info.title),
     artist: htmlDecode(song_info.author),
     source: 'bilibili',
+    musicPlatform: 'bilibili',
     cover: imgUrl,
     duration,
     album: 'Bilibili Video',
