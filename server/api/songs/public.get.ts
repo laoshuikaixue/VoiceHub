@@ -15,20 +15,9 @@ import { and, count, desc, eq, inArray } from 'drizzle-orm'
 import { cacheService } from '~~/server/services/cacheService'
 import { executeRedisCommand, isRedisReady } from '../../utils/redis'
 import { formatDateTime } from '~/utils/timeUtils'
+import { maskStudentName } from '../../utils/siteUtils'
 
-// 姓名模糊化函数
-function maskStudentName(name: string): string {
-  if (!name) return name
-
-  const length = name.length
-  if (length === 1) {
-    return '*'
-  } else if (length === 2) {
-    return name[0] + '*'
-  } else {
-    return name[0] + '*'.repeat(length - 1)
-  }
-}
+import { verifyUserAuth } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -37,20 +26,10 @@ export default defineEventHandler(async (event) => {
     const semester = query.semester as string
     const bypassCache = query.bypass_cache === 'true'
 
-    // 检查用户是否已登录
-    const token =
-      getCookie(event, 'auth-token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
-    let isLoggedIn = false
-
-    if (token) {
-      try {
-        jwt.verify(token, process.env.JWT_SECRET!)
-        isLoggedIn = true
-      } catch (error) {
-        // Token 无效，用户未登录
-        isLoggedIn = false
-      }
-    }
+    // 检查用户是否已登录并获取角色
+    const authResult = await verifyUserAuth(event)
+    const isLoggedIn = authResult.success
+    const isAdmin = isLoggedIn && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(authResult.user?.role)
 
     // 获取系统设置
     const systemSettingsData = await db
@@ -83,11 +62,27 @@ export default defineEventHandler(async (event) => {
           console.log(`[Cache] 公共排期Redis缓存命中: ${cacheKey}，数量: ${parsedData.length}`)
           // 深拷贝数据以避免修改缓存的原始数据
           const resultData = JSON.parse(JSON.stringify(parsedData))
-          // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
-          if (shouldHideStudentInfo && !isLoggedIn) {
+          // 如果需要隐藏学生信息且用户不是管理员，则模糊化姓名
+          if (shouldHideStudentInfo && !isAdmin) {
             resultData.forEach((item: any) => {
               if (item.song?.requester) {
                 item.song.requester = maskStudentName(item.song.requester)
+              }
+              if (item.song?.collaborators) {
+                item.song.collaborators.forEach((c: any) => {
+                  if (c.name) c.name = maskStudentName(c.name)
+                  if (c.displayName) c.displayName = maskStudentName(c.displayName)
+                  c.grade = null
+                  c.class = null
+                })
+              }
+              if (item.song?.replayRequesters) {
+                item.song.replayRequesters.forEach((r: any) => {
+                  if (r.name) r.name = maskStudentName(r.name)
+                  if (r.displayName) r.displayName = maskStudentName(r.displayName)
+                  r.grade = null
+                  r.class = null
+                })
               }
             })
           }
@@ -132,11 +127,27 @@ export default defineEventHandler(async (event) => {
 
       // 深拷贝数据以避免修改缓存的原始数据
       const resultData = JSON.parse(JSON.stringify(filteredSchedules))
-      // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
-      if (shouldHideStudentInfo && !isLoggedIn) {
+      // 如果需要隐藏学生信息且用户不是管理员，则模糊化姓名
+      if (shouldHideStudentInfo && !isAdmin) {
         resultData.forEach((item: any) => {
           if (item.song?.requester) {
             item.song.requester = maskStudentName(item.song.requester)
+          }
+          if (item.song?.collaborators) {
+            item.song.collaborators.forEach((c: any) => {
+              if (c.name) c.name = maskStudentName(c.name)
+              if (c.displayName) c.displayName = maskStudentName(c.displayName)
+              c.grade = null
+              c.class = null
+            })
+          }
+          if (item.song?.replayRequesters) {
+            item.song.replayRequesters.forEach((r: any) => {
+              if (r.name) r.name = maskStudentName(r.name)
+              if (r.displayName) r.displayName = maskStudentName(r.displayName)
+              r.grade = null
+              r.class = null
+            })
           }
         })
       }
@@ -454,11 +465,27 @@ export default defineEventHandler(async (event) => {
     // 深拷贝数据以避免修改缓存的原始数据
     const resultToReturn = JSON.parse(JSON.stringify(finalResult || allSchedulesResult))
 
-    // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
-    if (shouldHideStudentInfo && !isLoggedIn && resultToReturn) {
+    // 如果需要隐藏学生信息且用户不是管理员，则模糊化姓名
+    if (shouldHideStudentInfo && !isAdmin && resultToReturn) {
       resultToReturn.forEach((item: any) => {
         if (item.song?.requester) {
           item.song.requester = maskStudentName(item.song.requester)
+        }
+        if (item.song?.collaborators) {
+          item.song.collaborators.forEach((c: any) => {
+            if (c.name) c.name = maskStudentName(c.name)
+            if (c.displayName) c.displayName = maskStudentName(c.displayName)
+            c.grade = null
+            c.class = null
+          })
+        }
+        if (item.song?.replayRequesters) {
+          item.song.replayRequesters.forEach((r: any) => {
+            if (r.name) r.name = maskStudentName(r.name)
+            if (r.displayName) r.displayName = maskStudentName(r.displayName)
+            r.grade = null
+            r.class = null
+          })
         }
       })
     }

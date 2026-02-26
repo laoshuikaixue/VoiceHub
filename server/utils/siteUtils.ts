@@ -14,3 +14,13 @@ export async function getSiteTitle(): Promise<string> {
     return 'VoiceHub'
   }
 }
+
+/**
+ * 姓名脱敏函数，统一返回三个星号
+ * @param name 原始姓名
+ * @returns 脱敏后的姓名
+ */
+export function maskStudentName(name: string): string {
+  if (!name) return name
+  return '***'
+}

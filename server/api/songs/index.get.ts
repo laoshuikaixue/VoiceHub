@@ -6,12 +6,14 @@ import {
   songCollaborators,
   songReplayRequests,
   songs,
+  systemSettings,
   users,
   votes
 } from '~/drizzle/schema'
 import { and, asc, count, desc, eq, inArray, like, or } from 'drizzle-orm'
 import { cacheService } from '~~/server/services/cacheService'
 import { formatDateTime } from '~/utils/timeUtils'
+import { maskStudentName } from '~~/server/utils/siteUtils'
 import crypto from 'crypto'
 
 export default defineEventHandler(async (event) => {
@@ -28,12 +30,22 @@ export default defineEventHandler(async (event) => {
 
     // 获取用户身份
     const user = event.context.user || null
+    const isAdmin = user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)
     console.log('[Songs API] 用户认证状态:', {
       hasUser: !!user,
       userId: user?.id,
       userName: user?.name,
-      userRole: user?.role
+      userRole: user?.role,
+      isAdmin
     })
+
+    // 获取系统设置
+    const systemSettingsData = await db
+      .select()
+      .from(systemSettings)
+      .limit(1)
+      .then((result) => result[0])
+    const shouldHideStudentInfo = systemSettingsData?.hideStudentInfo ?? true
 
     // 构建缓存键（基于查询参数，但不包含用户ID以提高缓存命中率）
     const queryParams = {
@@ -117,6 +129,29 @@ export default defineEventHandler(async (event) => {
                 remainingTime > 0 ? Math.ceil(remainingTime / (60 * 60 * 1000)) : 0
             }
           }
+        })
+      }
+
+      // 如果需要隐藏学生信息且用户不是管理员，则模糊化姓名
+      if (shouldHideStudentInfo && !isAdmin && cachedData.data?.songs) {
+        cachedData.data.songs.forEach((song: any) => {
+          if (song.requester) {
+            song.requester = maskStudentName(song.requester)
+          }
+          if (song.collaborators) {
+            song.collaborators.forEach((c: any) => {
+              if (c.name) c.name = maskStudentName(c.name)
+              if (c.displayName) c.displayName = maskStudentName(c.displayName)
+            })
+          }
+          if (song.replayRequesters) {
+            song.replayRequesters.forEach((r: any) => {
+              if (r.name) r.name = maskStudentName(r.name)
+            })
+          }
+          // 同时隐藏年级和班级
+          song.requesterGrade = null
+          song.requesterClass = null
         })
       }
 
@@ -403,16 +438,38 @@ export default defineEventHandler(async (event) => {
     // 转换数据格式
     const formattedSongs = songsData.map((song) => {
       // 处理投稿人姓名
-      const requesterName = formatDisplayName(song.requester)
+      let requesterName = formatDisplayName(song.requester)
+
+      // 如果需要隐藏学生信息且用户不是管理员，则模糊化姓名
+      if (shouldHideStudentInfo && !isAdmin) {
+        requesterName = maskStudentName(requesterName)
+      }
 
       // 处理联合投稿人
       const collaborators = collaboratorsMap.get(song.id) || []
-      const formattedCollaborators = collaborators.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        displayName: formatDisplayName(c),
-        grade: c.grade,
-        class: c.class
+      const formattedCollaborators = collaborators.map((c: any) => {
+        let name = c.name
+        let displayName = formatDisplayName(c)
+
+        if (shouldHideStudentInfo && !isAdmin) {
+          name = maskStudentName(name)
+          displayName = maskStudentName(displayName)
+        }
+
+        return {
+          id: c.id,
+          name: name,
+          displayName: displayName,
+          grade: shouldHideStudentInfo && !isAdmin ? null : c.grade,
+          class: shouldHideStudentInfo && !isAdmin ? null : c.class
+        }
+      })
+
+      // 处理重播申请人
+      const replayRequesters = replayRequestersMap.get(song.id) || []
+      const formattedReplayRequesters = replayRequesters.map((r: any) => ({
+        ...r,
+        name: shouldHideStudentInfo && !isAdmin ? maskStudentName(r.name) : r.name
       }))
 
       // 创建基本歌曲对象
@@ -435,12 +492,12 @@ export default defineEventHandler(async (event) => {
         musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
         musicId: song.musicId || null, // 添加音乐ID字段
         playUrl: song.playUrl || null, // 添加播放地址字段
-        requesterGrade: song.requester?.grade || null, // 添加投稿人年级
-        requesterClass: song.requester?.class || null, // 添加投稿人班级
+        requesterGrade: shouldHideStudentInfo && !isAdmin ? null : (song.requester?.grade || null), // 添加投稿人年级
+        requesterClass: shouldHideStudentInfo && !isAdmin ? null : (song.requester?.class || null), // 添加投稿人班级
         replayRequested: userReplayRequestedSongs.has(song.id), // 添加是否已被申请重播的标志
         replayRequestCount: replayRequestCounts.get(song.id) || 0,
         isReplay: (replayRequestCounts.get(song.id) || 0) > 0,
-        replayRequesters: replayRequestersMap.get(song.id) || []
+        replayRequesters: formattedReplayRequesters
       }
 
       // 添加用户的重播申请详细状态
