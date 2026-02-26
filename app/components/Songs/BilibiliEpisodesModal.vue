@@ -232,7 +232,13 @@ const formatDuration = (seconds) => {
 
 const isCurrentEpisode = (episode) => {
   if (!currentSong.value) return false
-  if (currentSong.value.musicPlatform !== 'bilibili') return false
+  
+  const isBilibili =
+    currentSong.value.musicPlatform === 'bilibili' ||
+    String(currentSong.value.musicId).startsWith('BV') ||
+    String(currentSong.value.musicId).startsWith('av')
+
+  if (!isBilibili) return false
 
   // 检查 CID
   if (

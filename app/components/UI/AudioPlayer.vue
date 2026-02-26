@@ -513,7 +513,18 @@ const handleLoaded = async () => {
 
 const handleError = async (error) => {
   // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
-  if (props.song?.musicPlatform === 'bilibili') {
+  if (activeSong.value?.musicPlatform === 'bilibili') {
+    // 如果是播放列表模式，且不是手动单曲播放模式，则自动跳过
+    if (props.isPlaylistMode && control.playMode.value !== 'off') {
+      console.log('[AudioPlayer] 哔哩哔哩视频播放失败，处于列表播放模式，自动跳过')
+      if (window.$showNotification) {
+        window.$showNotification('哔哩哔哩视频播放失败，自动跳过', 'warning')
+      }
+      handleNext()
+      return
+    }
+
+    // 否则显示预览提示
     // 手动设置错误状态，替代 control.onError(error) 以避免通用提示
     control.hasError.value = true
     control.isPlaying.value = false

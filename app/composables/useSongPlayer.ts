@@ -27,7 +27,12 @@ export const useSongPlayer = () => {
     try {
       let url = null
       // 哔哩哔哩不需要获取 URL，播放器会处理
-      if (song.musicPlatform !== 'bilibili') {
+      const isBilibili =
+        song.musicPlatform === 'bilibili' ||
+        String(song.musicId).startsWith('BV') ||
+        String(song.musicId).startsWith('av')
+
+      if (!isBilibili) {
         url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
       }
 

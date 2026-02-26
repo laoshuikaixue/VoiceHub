@@ -30,7 +30,12 @@ export function useAudioPlayer() {
   // 播放歌曲
   const playSong = (song: PlayableSong, playlist?: PlayableSong[], playlistIndex?: number) => {
     // 对于哔哩哔哩视频，允许没有 musicUrl（会显示 iframe 预览）
-    if (!song.musicUrl && song.musicPlatform !== 'bilibili') {
+    const isBilibili =
+      song.musicPlatform === 'bilibili' ||
+      String(song.musicId).startsWith('BV') ||
+      String(song.musicId).startsWith('av')
+
+    if (!song.musicUrl && !isBilibili) {
       console.error('歌曲没有可播放的URL')
       return false
     }
