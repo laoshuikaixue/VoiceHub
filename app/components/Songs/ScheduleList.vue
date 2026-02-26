@@ -600,6 +600,8 @@ import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { convertToHttps } from '~/utils/url'
+import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { getMusicUrl } from '~/utils/musicUrl'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import {
   addSongsToPlaylist,
@@ -1336,7 +1338,7 @@ const togglePlaySong = async (song) => {
     const currentGlobalSong = audioPlayer.getCurrentSong().value
     if (
       currentGlobalSong &&
-      (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'bilibili')
+      (currentGlobalSong.musicUrl || isBilibiliSong(currentGlobalSong))
     ) {
       // 如果有URL或者是哔哩哔哩视频，直接恢复播放
       audioPlayer.playSong(currentGlobalSong)
@@ -1345,7 +1347,7 @@ const togglePlaySong = async (song) => {
       if ((song.musicPlatform && song.musicId) || song.playUrl) {
         try {
           const url = await getMusicUrl(song)
-          if (url || song.musicPlatform === 'bilibili') {
+          if (url || isBilibiliSong(song)) {
             const playableSong = {
               ...song,
               musicUrl: url || null
@@ -1371,7 +1373,7 @@ const togglePlaySong = async (song) => {
   if ((song.musicPlatform && song.musicId) || song.playUrl) {
     try {
       const url = await getMusicUrl(song)
-      if (url || song.musicPlatform === 'bilibili') {
+      if (url || isBilibiliSong(song)) {
         // 构建当前时段的播放列表
         const currentTimeSlot = getCurrentTimeSlot(song)
         let playlist = []

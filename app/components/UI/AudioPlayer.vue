@@ -28,7 +28,7 @@
             class="cover-container"
             @click.stop="
               isMobile
-                ? activeSong?.musicPlatform === 'bilibili'
+                ? isBilibiliSong(activeSong)
                   ? openBilibiliVideo()
                   : toggleLyrics()
                 : null
@@ -111,7 +111,7 @@
           <div class="controls-frame">
             <!-- 左侧歌词按钮 -->
             <span
-              v-if="activeSong?.musicPlatform === 'bilibili'"
+              v-if="isBilibiliSong(activeSong)"
               class="lyrics-btn music-icon"
               title="观看视频"
               @click="openBilibiliVideo"
@@ -246,6 +246,7 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useMediaSession } from '~/composables/useMediaSession'
 import { getBilibiliUrl } from '~/utils/url'
+import { isBilibiliSong } from '~/utils/bilibiliSource'
 
 // 添加 router 导入
 const router = useRouter()
@@ -513,7 +514,7 @@ const handleLoaded = async () => {
 
 const handleError = async (error) => {
   // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
-  if (activeSong.value?.musicPlatform === 'bilibili') {
+  if (isBilibiliSong(activeSong.value)) {
     // 如果是播放列表模式，且不是手动单曲播放模式，则自动跳过
     if (props.isPlaylistMode && control.playMode.value !== 'off') {
       console.log('[AudioPlayer] 哔哩哔哩视频播放失败，处于列表播放模式，自动跳过')

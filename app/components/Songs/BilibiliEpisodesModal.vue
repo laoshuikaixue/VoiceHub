@@ -193,6 +193,7 @@
 import { ref, computed } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { isBilibiliSong } from '~/utils/bilibiliSource'
 
 const props = defineProps({
   show: Boolean,
@@ -233,12 +234,7 @@ const formatDuration = (seconds) => {
 const isCurrentEpisode = (episode) => {
   if (!currentSong.value) return false
   
-  const isBilibili =
-    currentSong.value.musicPlatform === 'bilibili' ||
-    String(currentSong.value.musicId).startsWith('BV') ||
-    String(currentSong.value.musicId).startsWith('av')
-
-  if (!isBilibili) return false
+  if (!isBilibiliSong(currentSong.value)) return false
 
   // 检查 CID
   if (

@@ -55,8 +55,14 @@ export default defineEventHandler(async (event) => {
     // 获取当前学期
     const currentSemester = await getCurrentSemesterName()
 
+    // 哔哩哔哩平台判定逻辑
+    const isBilibili =
+      body.musicPlatform === 'bilibili' ||
+      String(body.musicId || '').startsWith('BV') ||
+      String(body.musicId || '').startsWith('av')
+
     // 对于哔哩哔哩平台，如果有 musicId，使用 musicId 进行精确匹配
-    if (body.musicPlatform === 'bilibili' && body.musicId) {
+    if (isBilibili && body.musicId) {
       // 构建完整的 musicId（包含分P信息）
       let fullMusicId = String(body.musicId)
       const bvId = fullMusicId.split(':')[0]
@@ -80,7 +86,7 @@ export default defineEventHandler(async (event) => {
         .where(
           and(
             eq(songs.semester, currentSemester),
-            eq(songs.musicPlatform, 'bilibili'),
+            sql`${songs.musicPlatform} = 'bilibili' OR ${songs.musicId} LIKE 'BV%' OR ${songs.musicId} LIKE 'av%'`,
             eq(songs.musicId, fullMusicId)
           )
         )
@@ -323,7 +329,7 @@ export default defineEventHandler(async (event) => {
       let finalMusicId = body.musicId ? String(body.musicId) : null
 
       // 如果是 Bilibili 平台，处理 musicId 格式
-      if (body.musicPlatform === 'bilibili') {
+      if (isBilibili) {
         const bvId = finalMusicId?.split(':')[0]
         if (bvId) {
           const musicIdParts = [bvId]
@@ -346,7 +352,7 @@ export default defineEventHandler(async (event) => {
           preferredPlayTimeId: preferredPlayTime?.id || null,
           semester: currentSemester, // 使用外部获取的学期名称
           cover: body.cover || null,
-          musicPlatform: body.musicPlatform || null,
+          musicPlatform: isBilibili ? 'bilibili' : (body.musicPlatform || null),
           musicId: finalMusicId,
           playUrl: body.playUrl || null,
           hitRequestId: hitRequestTime?.id || null

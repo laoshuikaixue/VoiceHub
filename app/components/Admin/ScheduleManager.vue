@@ -322,7 +322,7 @@
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                     <h4 class="font-bold text-zinc-100 text-sm truncate">
                       <span
-                        v-if="song.musicPlatform === 'bilibili'"
+                        v-if="isBilibiliSong(song)"
                         class="text-zinc-100 flex items-center gap-1 w-full text-left"
                       >
                         <span class="truncate">{{ song.title }}</span>
@@ -829,6 +829,7 @@ import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
+import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { convertToHttps } from '~/utils/url'
 
 // 响应式数据

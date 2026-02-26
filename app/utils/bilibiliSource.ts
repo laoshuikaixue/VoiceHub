@@ -19,6 +19,24 @@ export function parseBilibiliId(id: string | number): ParsedBilibiliId {
   }
 }
 
+/**
+ * 判断是否为哔哩哔哩歌曲
+ * @param song 歌曲对象
+ * @returns boolean
+ */
+export function isBilibiliSong(song: any): boolean {
+  if (!song) return false
+  
+  const musicPlatform = song.musicPlatform || song.actualMusicPlatform || ''
+  const musicId = String(song.musicId || song.id || '')
+  
+  return (
+    musicPlatform === 'bilibili' ||
+    musicId.startsWith('BV') ||
+    musicId.startsWith('av')
+  )
+}
+
 export async function getBilibiliTrackUrl(id: string, cid?: string) {
   try {
     const params: any = { id }
