@@ -8,6 +8,12 @@ import path from 'path'
 // 加载环境变量（从项目根目录）
 config({ path: path.resolve(process.cwd(), '.env') })
 
+// 如果设置了 PREBUILT=true，则自动跳过安装和构建
+if (process.env.PREBUILT === 'true') {
+  process.env.SKIP_INSTALL = 'true'
+  process.env.SKIP_BUILD = 'true'
+}
+
 // 颜色输出函数
 const colors = {
   reset: '\x1b[0m',
@@ -92,11 +98,34 @@ async function deploy() {
     checkEnvironment()
 
     // 1. 安装依赖
-    logStep('📦', '安装依赖...')
-    if (!safeExec('npm install')) {
-      throw new Error('依赖安装失败')
+    if (process.env.SKIP_INSTALL === 'true') {
+      logStep('📦', '跳过依赖安装 (SKIP_INSTALL=true)...')
+    } else {
+      logStep('📦', '安装依赖...')
+      let installed = false
+
+      // 优先尝试 npm ci
+      if (fileExists('package-lock.json')) {
+        log('尝试使用 npm ci 安装...', 'cyan')
+        if (safeExec('npm ci')) {
+          installed = true
+          logSuccess('依赖安装完成 (npm ci)')
+        } else {
+          logWarning('npm ci 安装失败，准备回退到 npm install...')
+        }
+      } else {
+        logWarning('未检测到 package-lock.json，跳过 npm ci，直接使用 npm install...')
+      }
+
+      // 如果 npm ci 没运行或失败，使用 npm install
+      if (!installed) {
+        log('正在使用 npm install 安装...', 'cyan')
+        if (!safeExec('npm install')) {
+          throw new Error('依赖安装失败')
+        }
+        logSuccess('依赖安装完成 (npm install)')
+      }
     }
-    logSuccess('依赖安装完成')
 
     // 2. 检查 Drizzle 配置
     if (

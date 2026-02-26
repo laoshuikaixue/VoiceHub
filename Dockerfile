@@ -55,7 +55,8 @@ COPY --from=builder /app/scripts ./scripts
 # 环境变量配置
 ENV NODE_ENV=production \
     PORT=3000 \
-    NPM_CONFIG_UPDATE_NOTIFIER=false
+    NPM_CONFIG_UPDATE_NOTIFIER=false \
+    PREBUILT=true
 
 # 暴露端口
 EXPOSE $PORT

@@ -9,7 +9,7 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4
   },
-  srcDir: 'app/',
+  srcDir: 'app',
   devtools: { enabled: true },
   devServer: {
     host: '0.0.0.0', // 允许局域网访问
