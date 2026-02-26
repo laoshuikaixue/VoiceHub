@@ -15,20 +15,9 @@ import { and, count, desc, eq, inArray } from 'drizzle-orm'
 import { cacheService } from '~~/server/services/cacheService'
 import { executeRedisCommand, isRedisReady } from '../../utils/redis'
 import { formatDateTime } from '~/utils/timeUtils'
+import { maskPublicScheduleData, PublicScheduleItem } from '../../utils/studentMask'
 
-// 姓名模糊化函数
-function maskStudentName(name: string): string {
-  if (!name) return name
-
-  const length = name.length
-  if (length === 1) {
-    return '*'
-  } else if (length === 2) {
-    return name[0] + '*'
-  } else {
-    return name[0] + '*'.repeat(length - 1)
-  }
-}
+import { verifyUserAuth } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -37,20 +26,10 @@ export default defineEventHandler(async (event) => {
     const semester = query.semester as string
     const bypassCache = query.bypass_cache === 'true'
 
-    // 检查用户是否已登录
-    const token =
-      getCookie(event, 'auth-token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
-    let isLoggedIn = false
-
-    if (token) {
-      try {
-        jwt.verify(token, process.env.JWT_SECRET!)
-        isLoggedIn = true
-      } catch (error) {
-        // Token 无效，用户未登录
-        isLoggedIn = false
-      }
-    }
+    // 检查用户是否已登录并获取角色
+    const authResult = await verifyUserAuth(event)
+    const isLoggedIn = authResult.success
+    const isAdmin = isLoggedIn && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(authResult.user?.role)
 
     // 获取系统设置
     const systemSettingsData = await db
@@ -79,17 +58,13 @@ export default defineEventHandler(async (event) => {
 
         const data = await client.get(cacheKey)
         if (data) {
-          const parsedData = JSON.parse(data)
+          const parsedData = JSON.parse(data) as PublicScheduleItem[]
           console.log(`[Cache] 公共排期Redis缓存命中: ${cacheKey}，数量: ${parsedData.length}`)
           // 深拷贝数据以避免修改缓存的原始数据
-          const resultData = JSON.parse(JSON.stringify(parsedData))
-          // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
-          if (shouldHideStudentInfo && !isLoggedIn) {
-            resultData.forEach((item: any) => {
-              if (item.song?.requester) {
-                item.song.requester = maskStudentName(item.song.requester)
-              }
-            })
+          const resultData = JSON.parse(JSON.stringify(parsedData)) as PublicScheduleItem[]
+          // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
+          if (shouldHideStudentInfo && !isAdmin) {
+            maskPublicScheduleData(resultData)
           }
           return resultData
         }
@@ -131,14 +106,10 @@ export default defineEventHandler(async (event) => {
       }
 
       // 深拷贝数据以避免修改缓存的原始数据
-      const resultData = JSON.parse(JSON.stringify(filteredSchedules))
-      // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
-      if (shouldHideStudentInfo && !isLoggedIn) {
-        resultData.forEach((item: any) => {
-          if (item.song?.requester) {
-            item.song.requester = maskStudentName(item.song.requester)
-          }
-        })
+      const resultData = JSON.parse(JSON.stringify(filteredSchedules)) as PublicScheduleItem[]
+      // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
+      if (shouldHideStudentInfo && !isAdmin) {
+        maskPublicScheduleData(resultData)
       }
 
       return resultData
@@ -452,15 +423,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // 深拷贝数据以避免修改缓存的原始数据
-    const resultToReturn = JSON.parse(JSON.stringify(finalResult || allSchedulesResult))
+    const resultToReturn = JSON.parse(JSON.stringify(finalResult || allSchedulesResult)) as PublicScheduleItem[]
 
-    // 如果需要隐藏学生信息且用户未登录，则模糊化姓名
-    if (shouldHideStudentInfo && !isLoggedIn && resultToReturn) {
-      resultToReturn.forEach((item: any) => {
-        if (item.song?.requester) {
-          item.song.requester = maskStudentName(item.song.requester)
-        }
-      })
+    // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
+    if (shouldHideStudentInfo && !isAdmin && resultToReturn) {
+      maskPublicScheduleData(resultToReturn)
     }
 
     return resultToReturn

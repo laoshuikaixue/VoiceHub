@@ -6,13 +6,50 @@ import {
   songCollaborators,
   songReplayRequests,
   songs,
+  systemSettings,
   users,
   votes
 } from '~/drizzle/schema'
 import { and, asc, count, desc, eq, inArray, like, or } from 'drizzle-orm'
 import { cacheService } from '~~/server/services/cacheService'
 import { formatDateTime } from '~/utils/timeUtils'
+import { maskSongsInfo, MaskableSong, MaskableUser } from '~~/server/utils/studentMask'
 import crypto from 'crypto'
+
+interface SongResponse {
+  id: number
+  title: string
+  artist: string
+  requester: string
+  requesterId?: number
+  collaborators: any[]
+  voteCount: number
+  played: boolean
+  playedAt: Date | null
+  semester: string | null
+  createdAt: Date
+  updatedAt: Date
+  requestedAt: string
+  scheduled: boolean
+  cover: string | null
+  musicPlatform: string | null
+  musicId: string | null
+  playUrl: string | null
+  requesterGrade: string | null
+  requesterClass: string | null
+  replayRequested: boolean
+  replayRequestCount: number
+  isReplay: boolean
+  replayRequesters: any[]
+  voted?: boolean
+  preferredPlayTimeId?: number | null
+  preferredPlayTime?: any
+  scheduleDate?: string
+  schedulePlayed?: boolean
+  replayRequestStatus?: string
+  replayRequestUpdatedAt?: Date | string
+  replayRequestCooldownRemaining?: number
+}
 
 export default defineEventHandler(async (event) => {
   try {
@@ -28,12 +65,22 @@ export default defineEventHandler(async (event) => {
 
     // 获取用户身份
     const user = event.context.user || null
+    const isAdmin = user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)
     console.log('[Songs API] 用户认证状态:', {
       hasUser: !!user,
       userId: user?.id,
       userName: user?.name,
-      userRole: user?.role
+      userRole: user?.role,
+      isAdmin
     })
+
+    // 获取系统设置
+    const systemSettingsData = await db
+      .select()
+      .from(systemSettings)
+      .limit(1)
+      .then((result) => result[0])
+    const shouldHideStudentInfo = systemSettingsData?.hideStudentInfo ?? true
 
     // 构建缓存键（基于查询参数，但不包含用户ID以提高缓存命中率）
     const queryParams = {
@@ -118,6 +165,11 @@ export default defineEventHandler(async (event) => {
             }
           }
         })
+      }
+
+      // 如果需要隐藏学生信息且用户不是管理员，则对歌曲列表进行脱敏
+      if (shouldHideStudentInfo && !isAdmin && cachedData.data?.songs) {
+        maskSongsInfo(cachedData.data.songs)
       }
 
       return cachedData
@@ -401,13 +453,13 @@ export default defineEventHandler(async (event) => {
     }
 
     // 转换数据格式
-    const formattedSongs = songsData.map((song) => {
+    const formattedSongs: SongResponse[] = songsData.map((song) => {
       // 处理投稿人姓名
       const requesterName = formatDisplayName(song.requester)
 
       // 处理联合投稿人
       const collaborators = collaboratorsMap.get(song.id) || []
-      const formattedCollaborators = collaborators.map((c: any) => ({
+      const formattedCollaborators = collaborators.map((c: MaskableUser) => ({
         id: c.id,
         name: c.name,
         displayName: formatDisplayName(c),
@@ -415,8 +467,15 @@ export default defineEventHandler(async (event) => {
         class: c.class
       }))
 
+      // 处理重播申请人
+      const replayRequesters = (replayRequestersMap.get(song.id) || []) as MaskableUser[]
+      const formattedReplayRequesters = replayRequesters.map((r: MaskableUser) => ({
+        ...r,
+        displayName: r.name // 这里简化处理，因为 replayRequesters 之前没包含更多信息
+      }))
+
       // 创建基本歌曲对象
-      const songObject: any = {
+      const songObject: SongResponse = {
         id: song.id,
         title: song.title,
         artist: song.artist,
@@ -440,7 +499,7 @@ export default defineEventHandler(async (event) => {
         replayRequested: userReplayRequestedSongs.has(song.id), // 添加是否已被申请重播的标志
         replayRequestCount: replayRequestCounts.get(song.id) || 0,
         isReplay: (replayRequestCounts.get(song.id) || 0) > 0,
-        replayRequesters: replayRequestersMap.get(song.id) || []
+        replayRequesters: formattedReplayRequesters
       }
 
       // 添加用户的重播申请详细状态
@@ -496,6 +555,11 @@ export default defineEventHandler(async (event) => {
 
       return songObject
     })
+
+    // 如果需要隐藏学生信息且用户不是管理员，则对格式化后的歌曲列表进行脱敏
+    if (shouldHideStudentInfo && !isAdmin) {
+      maskSongsInfo(formattedSongs)
+    }
 
     // 如果按投票数排序，需要重新排序
     if (sortBy === 'votes') {
