@@ -8,6 +8,12 @@ import path from 'path'
 // 加载环境变量（从项目根目录）
 config({ path: path.resolve(process.cwd(), '.env') })
 
+// 如果设置了 PREBUILT=true，则自动跳过安装和构建
+if (process.env.PREBUILT === 'true') {
+  process.env.SKIP_INSTALL = 'true'
+  process.env.SKIP_BUILD = 'true'
+}
+
 // 颜色输出函数
 const colors = {
   reset: '\x1b[0m',
