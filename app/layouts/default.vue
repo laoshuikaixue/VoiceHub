@@ -9,7 +9,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
-import { SpeedInsights } from "@vercel/speed-insights/nuxt"
+import { SpeedInsights } from '@vercel/speed-insights/vue'
 
 const { initSiteConfig } = useSiteConfig()
 
