@@ -91,12 +91,17 @@ async function deploy() {
     // 0. 检查环境（必须通过）
     checkEnvironment()
 
-    // 1. 安装依赖
-    logStep('📦', '安装依赖...')
-    if (!safeExec('npm install')) {
-      throw new Error('依赖安装失败')
+    // 1. 安装依赖 (如果 node_modules 不存在)
+    logStep('📦', '检查依赖...')
+    if (!fileExists('node_modules')) {
+      log('未检测到 node_modules，正在安装依赖...', 'yellow')
+      if (!safeExec('npm install')) {
+        throw new Error('依赖安装失败')
+      }
+      logSuccess('依赖安装完成')
+    } else {
+      logSuccess('依赖已存在，跳过安装')
     }
-    logSuccess('依赖安装完成')
 
     // 2. 检查 Drizzle 配置
     if (
