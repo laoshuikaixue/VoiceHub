@@ -1002,37 +1002,34 @@ onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
 
-  // 尽早初始化鸿蒙系统控制事件，确保事件监听器在页面加载完成后立即生效
-  // 这里的回调函数即使在 audioPlayer 引用未就绪时被调用，也应该有基本的容错处理
-  sync.initializeHarmonyOSControls({
-    onPlay: () => {
-      isSyncingFromGlobal.value = true
-      // 如果此时 control 未完全初始化，尝试延迟执行或忽略
-      if (control.audioPlayer.value) {
-        control.play()
-      } else {
-        console.warn('[AudioPlayer] Play command received before player ready')
-      }
-      nextTick(() => {
-        isSyncingFromGlobal.value = false
-      })
-    },
-    onPause: () => {
-      isSyncingFromGlobal.value = true
-      if (control.audioPlayer.value) {
-        control.pause()
-      }
-      nextTick(() => {
-        isSyncingFromGlobal.value = false
-      })
-    },
-    onStop: () => {
-      isSyncingFromGlobal.value = true
-      control.stop()
-      sync.syncStopToGlobal()
+  // 尽早初始化鸿蒙系统控制事件
+  if (sync.isHarmonyOS()) {
+    sync.initializeHarmonyOSControls({
+      onPlay: () => {
+        isSyncingFromGlobal.value = true
+        if (control.audioPlayer.value) {
+          control.play()
+        } else {
+          console.warn('[AudioPlayer] Play command received before player ready')
+        }
+        nextTick(() => {
+          isSyncingFromGlobal.value = false
+        })
+      },
+      onPause: () => {
+        isSyncingFromGlobal.value = true
+        if (control.audioPlayer.value) {
+          control.pause()
+        }
+        nextTick(() => {
+          isSyncingFromGlobal.value = false
+        })
+      },
+      onStop: () => {
+        isSyncingFromGlobal.value = true
+        control.stop()
+        sync.syncStopToGlobal()
 
-      // 通知鸿蒙侧清理元数据
-      if (sync.isHarmonyOS()) {
         sync.notifyHarmonyOS(
           'metadata',
           {},
@@ -1046,24 +1043,23 @@ onMounted(async () => {
           },
           ''
         )
-      }
 
-      nextTick(() => {
-        isSyncingFromGlobal.value = false
-      })
-    },
-    onNext: handleNext,
-    onPrevious: handlePrevious,
-    onSeek: (time) => {
-      control.seek(time)
-      sync.updateGlobalPosition(time, control.duration.value)
-    },
-    onPositionUpdate: (time) => {
-      // 使用强制更新位置方法，确保UI同步
-      control.forceUpdatePosition(time)
-      sync.updateGlobalPosition(time, control.duration.value)
-    }
-  })
+        nextTick(() => {
+          isSyncingFromGlobal.value = false
+        })
+      },
+      onNext: handleNext,
+      onPrevious: handlePrevious,
+      onSeek: (time) => {
+        control.seek(time)
+        sync.updateGlobalPosition(time, control.duration.value)
+      },
+      onPositionUpdate: (time) => {
+        control.forceUpdatePosition(time)
+        sync.updateGlobalPosition(time, control.duration.value)
+      }
+    })
+  }
 
   // 初始化 Media Session 控制 (Web SMTC)
   if (mediaSession.isSupported.value) {
