@@ -1,4 +1,5 @@
 import { getMusicUrl } from '~/utils/musicUrl'
+import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { useAudioPlayer, type PlayableSong } from './useAudioPlayer'
 import { useToast } from './useToast'
 import type { Song } from '~/types'
@@ -18,7 +19,7 @@ export const useSongPlayer = () => {
       
       // 如果是当前歌曲但暂停了，则恢复播放
       const currentGlobalSong = audioPlayer.getCurrentSong().value
-      if (currentGlobalSong && (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'bilibili')) {
+      if (currentGlobalSong && (currentGlobalSong.musicUrl || isBilibiliSong(currentGlobalSong))) {
         audioPlayer.playSong(currentGlobalSong)
         return
       }
@@ -27,7 +28,7 @@ export const useSongPlayer = () => {
     try {
       let url = null
       // 哔哩哔哩不需要获取 URL，播放器会处理
-      if (song.musicPlatform !== 'bilibili') {
+      if (!isBilibiliSong(song)) {
         url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
       }
 

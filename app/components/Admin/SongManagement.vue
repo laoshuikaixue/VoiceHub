@@ -224,7 +224,7 @@
                 ]"
               >
                 <span
-                  v-if="song.musicPlatform === 'bilibili'"
+                  v-if="isBilibiliSong(song)"
                   class="flex items-center gap-1 text-left"
                 >
                   {{ song.title }}
@@ -855,6 +855,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useSemesters } from '~/composables/useSemesters'
 import { useSongPlayer } from '~/composables/useSongPlayer'
+import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { validateUrl, convertToHttps } from '~/utils/url'
 
 // 响应式数据

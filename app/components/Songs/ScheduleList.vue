@@ -600,6 +600,7 @@ import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { convertToHttps } from '~/utils/url'
+import { isBilibiliSong } from '~/utils/bilibiliSource'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import {
   addSongsToPlaylist,
@@ -1334,18 +1335,21 @@ const togglePlaySong = async (song) => {
   if (audioPlayer.isCurrentSong(song.id) && !audioPlayer.getPlayingStatus().value) {
     // 检查当前全局歌曲是否有URL
     const currentGlobalSong = audioPlayer.getCurrentSong().value
-    if (currentGlobalSong && currentGlobalSong.musicUrl) {
-      // 如果有URL，直接恢复播放
+    if (
+      currentGlobalSong &&
+      (currentGlobalSong.musicUrl || isBilibiliSong(currentGlobalSong))
+    ) {
+      // 如果有URL或者是哔哩哔哩视频，直接恢复播放
       audioPlayer.playSong(currentGlobalSong)
     } else {
       // 如果没有URL，重新获取
       if ((song.musicPlatform && song.musicId) || song.playUrl) {
         try {
           const url = await getMusicUrl(song)
-          if (url) {
+          if (url || isBilibiliSong(song)) {
             const playableSong = {
               ...song,
-              musicUrl: url
+              musicUrl: url || null
             }
             audioPlayer.playSong(playableSong)
           } else {
@@ -1368,7 +1372,7 @@ const togglePlaySong = async (song) => {
   if ((song.musicPlatform && song.musicId) || song.playUrl) {
     try {
       const url = await getMusicUrl(song)
-      if (url) {
+      if (url || isBilibiliSong(song)) {
         // 构建当前时段的播放列表
         const currentTimeSlot = getCurrentTimeSlot(song)
         let playlist = []
@@ -1390,10 +1394,9 @@ const togglePlaySong = async (song) => {
 
           // 找到当前歌曲在播放列表中的索引
           songIndex = playlist.findIndex((s) => s.id === song.id)
-          if (songIndex === -1)
-            songIndex = 0
+          if (songIndex === -1) songIndex = 0
 
-            // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+          // 后台预取后续歌曲的播放链接（不阻塞当前播放）
           ;(async () => {
             for (let i = songIndex + 1; i < playlist.length; i++) {
               const s = playlist[i]
@@ -1411,7 +1414,7 @@ const togglePlaySong = async (song) => {
 
         const playableSong = {
           ...song,
-          musicUrl: url
+          musicUrl: url || null
         }
 
         // 更新播放列表中当前歌曲的URL

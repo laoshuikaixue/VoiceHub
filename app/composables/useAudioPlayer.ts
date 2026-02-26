@@ -1,4 +1,5 @@
 import { computed, readonly, ref } from 'vue'
+import { isBilibiliSong } from '~/utils/bilibiliSource'
 
 export interface PlayableSong {
   id: number
@@ -30,7 +31,7 @@ export function useAudioPlayer() {
   // 播放歌曲
   const playSong = (song: PlayableSong, playlist?: PlayableSong[], playlistIndex?: number) => {
     // 对于哔哩哔哩视频，允许没有 musicUrl（会显示 iframe 预览）
-    if (!song.musicUrl && song.musicPlatform !== 'bilibili') {
+    if (!song.musicUrl && !isBilibiliSong(song)) {
       console.error('歌曲没有可播放的URL')
       return false
     }

@@ -967,6 +967,7 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
+import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 
 import ImportSongsModal from './ImportSongsModal.vue'
@@ -1018,7 +1019,7 @@ const groupedSimilarSongs = computed(() => {
 
   for (const song of similarSongs.value) {
     // 检查是否是哔哩哔哩视频
-    if (song.musicPlatform === 'bilibili' && song.musicId) {
+    if (isBilibiliSong(song) && song.musicId) {
       const bvid = song.musicId.includes(':') ? song.musicId.split(':')[0] : song.musicId
 
       if (!groups.has(bvid)) {
@@ -1752,7 +1753,7 @@ const getAudioUrl = async (result) => {
     const sourceType = result.sourceInfo?.source || result.actualSource || ''
 
     // 哔哩哔哩
-    if (sourceType === 'bilibili' || result.musicPlatform === 'bilibili') {
+    if (sourceType === 'bilibili' || isBilibiliSong(result)) {
       try {
         const songId = result.musicId || result.id
         if (!songId) throw new Error('缺少歌曲ID参数')
@@ -1925,7 +1926,7 @@ const playSong = async (result) => {
   }
 
   // 对于非哔哩哔哩平台，如果没有URL则提示错误
-  if (!result.url && result.musicPlatform !== 'bilibili') {
+  if (!result.url && !isBilibiliSong(result)) {
     error.value = '该歌曲无法播放，可能是付费内容'
     if (window.$showNotification) {
       window.$showNotification('该歌曲无法播放，可能是付费内容', 'error')
@@ -1934,7 +1935,7 @@ const playSong = async (result) => {
   }
 
   let finalMusicId = result.musicId ? String(result.musicId) : null
-  if (result.musicPlatform === 'bilibili' && result.bilibiliCid) {
+  if (isBilibiliSong(result) && result.bilibiliCid) {
     finalMusicId = `${result.musicId}:${result.bilibiliCid}`
     // 如果有分P信息，也添加到 musicId
     if (result.bilibiliPage || result.page) {
@@ -2104,7 +2105,7 @@ const submitSong = async (result, options = {}) => {
 
       // 检查是否已有相同 musicId 的歌曲
       const existingSong = songService.songs.value.find(
-        (song) => song.musicPlatform === 'bilibili' && song.musicId === fullMusicId
+        (song) => isBilibiliSong(song) && song.musicId === fullMusicId
       )
 
       if (existingSong) {

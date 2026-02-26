@@ -21,12 +21,20 @@ export const useAudioPlayerSync = () => {
 
   // 检测是否在鸿蒙环境
   const isHarmonyOS = () => {
-    return (
-      typeof window !== 'undefined' &&
-      (window.navigator.userAgent.includes('HarmonyOS') ||
-        window.harmonyOSBridge ||
-        window.voiceHubPlayer)
-    )
+    if (typeof window === 'undefined') return false
+    
+    // 1. UA 检测（最可靠的初始检测）
+    if (window.navigator.userAgent.includes('HarmonyOS')) return true
+    
+    // 2. 桥接对象检测
+    if (window.harmonyOSBridge) return true
+    
+    // 3. 播放器对象检测（确保是原生注入的，即包含特定的原生方法）
+    if (window.voiceHubPlayer && typeof window.voiceHubPlayer.onPlayStateChanged === 'function') {
+      return true
+    }
+    
+    return false
   }
 
   // 通知鸿蒙应用播放状态变化（改进事件驱动机制）
@@ -484,6 +492,9 @@ export const useAudioPlayerSync = () => {
     onSeek: (time: number) => void
     onPositionUpdate?: (time: number) => void
   }) => {
+    // 只有在检测到鸿蒙环境时才初始化
+    if (!isHarmonyOS()) return
+
     const handleHarmonyOSPlay = () => {
       callbacks.onPlay()
     }

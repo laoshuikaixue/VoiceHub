@@ -474,6 +474,7 @@ import Icon from '~/components/UI/Icon.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { convertToHttps } from '~/utils/url'
+import { isBilibiliSong } from '~/utils/bilibiliSource'
 import thumbsUp from '~/public/images/thumbs-up.svg'
 
 import dayjs from 'dayjs'
@@ -1125,7 +1126,7 @@ const playSongWithUrlFetching = async (song) => {
     const url = await getMusicUrl(song)
 
     // 对于哔哩哔哩视频，即使没有 URL 也允许播放
-    if (!url && song.musicPlatform !== 'bilibili') {
+    if (!url && !isBilibiliSong(song)) {
       if (window.$showNotification) {
         window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
       }
@@ -1158,7 +1159,7 @@ const playSongWithUrlFetching = async (song) => {
     })()
   } catch (error) {
     // 对于哔哩哔哩视频，即使获取失败也允许播放
-    if (song.musicPlatform === 'bilibili') {
+    if (isBilibiliSong(song)) {
       const playableSong = {
         ...song,
         musicUrl: null
@@ -1189,7 +1190,7 @@ const togglePlaySong = async (song) => {
     const currentGlobalSong = audioPlayer.getCurrentSong().value
     if (
       currentGlobalSong &&
-      (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'bilibili')
+      (currentGlobalSong.musicUrl || isBilibiliSong(currentGlobalSong))
     ) {
       // 如果有URL或者是哔哩哔哩视频，直接恢复播放
       audioPlayer.playSong(currentGlobalSong)
