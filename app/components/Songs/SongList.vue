@@ -893,6 +893,11 @@ const isVoteButtonDisabled = (song) => {
     return true
   }
 
+  // 检查是否是自己的歌曲
+  if (isMySong(song)) {
+    return true
+  }
+
   return false
 }
 
