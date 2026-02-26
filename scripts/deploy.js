@@ -91,16 +91,34 @@ async function deploy() {
     // 0. 检查环境（必须通过）
     checkEnvironment()
 
-    // 1. 安装依赖 (如果 node_modules 不存在)
-    logStep('📦', '检查依赖...')
-    if (!fileExists('node_modules')) {
-      log('未检测到 node_modules，正在安装依赖...', 'yellow')
-      if (!safeExec('npm install')) {
-        throw new Error('依赖安装失败')
-      }
-      logSuccess('依赖安装完成')
+    // 1. 安装依赖
+    if (process.env.SKIP_INSTALL === 'true') {
+      logStep('📦', '跳过依赖安装 (SKIP_INSTALL=true)...')
     } else {
-      logSuccess('依赖已存在，跳过安装')
+      logStep('📦', '安装依赖...')
+      let installed = false
+
+      // 优先尝试 npm ci
+      if (fileExists('package-lock.json')) {
+        log('尝试使用 npm ci 安装...', 'cyan')
+        if (safeExec('npm ci')) {
+          installed = true
+          logSuccess('依赖安装完成 (npm ci)')
+        } else {
+          logWarning('npm ci 安装失败，准备回退到 npm install...')
+        }
+      } else {
+        logWarning('未检测到 package-lock.json，跳过 npm ci，直接使用 npm install...')
+      }
+
+      // 如果 npm ci 没运行或失败，使用 npm install
+      if (!installed) {
+        log('正在使用 npm install 安装...', 'cyan')
+        if (!safeExec('npm install')) {
+          throw new Error('依赖安装失败')
+        }
+        logSuccess('依赖安装完成 (npm install)')
+      }
     }
 
     // 2. 检查 Drizzle 配置
