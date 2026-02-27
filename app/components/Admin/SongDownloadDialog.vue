@@ -201,9 +201,8 @@
                         </div>
                         <div class="flex items-center gap-3">
                           <button
-                            v-if="normalizeAudio"
                             class="text-[10px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
-                            title="保存当前音量设置为默认"
+                            title="保存当前音量设置(包括开启状态)为默认"
                             @click="saveDbPreset"
                           >
                             <Save class="w-3 h-3" />
@@ -1312,10 +1311,23 @@ watch(
         customFilename.value = savedPreset
       }
 
-      const savedDbPreset = localStorage.getItem('voicehub_db_preset')
-      if (savedDbPreset) {
-        targetDb.value = parseFloat(savedDbPreset)
-        normalizeAudio.value = true
+      const savedDbPresetV2 = localStorage.getItem('voicehub_db_preset_v2')
+      if (savedDbPresetV2) {
+        try {
+          const preset = JSON.parse(savedDbPresetV2)
+          normalizeAudio.value = preset.enabled
+          targetDb.value = preset.targetDb
+        } catch (e) {
+          // 兼容旧版或解析失败
+          normalizeAudio.value = false
+        }
+      } else {
+        // 兼容旧版单个数值
+        const savedDbPreset = localStorage.getItem('voicehub_db_preset')
+        if (savedDbPreset) {
+          targetDb.value = parseFloat(savedDbPreset)
+          normalizeAudio.value = true
+        }
       }
     }
   }
@@ -1339,7 +1351,11 @@ const saveFilenamePreset = () => {
 
 // 保存音量预设
 const saveDbPreset = () => {
-  localStorage.setItem('voicehub_db_preset', targetDb.value.toString())
+  const preset = {
+    enabled: normalizeAudio.value,
+    targetDb: targetDb.value
+  }
+  localStorage.setItem('voicehub_db_preset_v2', JSON.stringify(preset))
   showDbPresetSaved.value = true
 
   setTimeout(() => {
