@@ -386,32 +386,13 @@
     </div>
 
     <!-- 分页 -->
-    <div v-if="totalPages > 1" class="flex items-center justify-between px-2 pt-4">
-      <span class="text-[10px] font-black text-zinc-700 uppercase tracking-[0.2em]">
-        第 {{ currentPage }} 页 · 共 {{ totalPages }} 页 (共 {{ totalUsers }} 个用户)
-      </span>
-      <div class="flex gap-2">
-        <button
-          :disabled="currentPage === 1"
-          class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 disabled:opacity-20"
-          @click="goToPage(currentPage - 1)"
-        >
-          <ChevronLeft :size="18" />
-        </button>
-        <button
-          class="w-10 h-10 rounded-lg bg-blue-600 text-white text-xs font-black shadow-lg shadow-blue-900/20"
-        >
-          {{ currentPage }}
-        </button>
-        <button
-          :disabled="currentPage === totalPages"
-          class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 disabled:opacity-20"
-          @click="goToPage(currentPage + 1)"
-        >
-          <ChevronRight :size="18" />
-        </button>
-      </div>
-    </div>
+    <Pagination
+      v-model:current-page="currentPage"
+      :total-pages="totalPages"
+      :total-items="totalUsers"
+      item-name="个用户"
+      @change="loadUsers"
+    />
 
     <!-- 添加/编辑用户模态框 -->
     <Transition
@@ -1266,28 +1247,11 @@
                   </div>
 
                   <!-- 分页 -->
-                  <div
-                    v-if="statusLogsPagination.totalPages > 1"
-                    class="flex items-center justify-between bg-zinc-950/30 p-3 rounded-2xl border border-zinc-800/30"
-                  >
-                    <button
-                      :disabled="!statusLogsPagination.hasPrevPage"
-                      class="p-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 text-zinc-300 rounded-xl transition-all"
-                      @click="loadStatusLogsPage(statusLogsPagination.page - 1)"
-                    >
-                      <ChevronLeft :size="16" />
-                    </button>
-                    <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                      第 {{ statusLogsPagination.page }} / {{ statusLogsPagination.totalPages }} 页
-                    </span>
-                    <button
-                      :disabled="!statusLogsPagination.hasNextPage"
-                      class="p-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 text-zinc-300 rounded-xl transition-all"
-                      @click="loadStatusLogsPage(statusLogsPagination.page + 1)"
-                    >
-                      <ChevronRight :size="16" />
-                    </button>
-                  </div>
+                  <Pagination
+                    v-model:current-page="statusLogsPagination.page"
+                    :total-pages="statusLogsPagination.totalPages"
+                    @change="loadStatusLogsPage"
+                  />
                 </div>
               </div>
             </div>
@@ -1359,6 +1323,7 @@ import {
   Briefcase
 } from 'lucide-vue-next'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
@@ -1583,12 +1548,6 @@ const getStatusDisplayName = (status) => {
     withdrawn: '退学'
   }
   return names[status] || '正常'
-}
-
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
-    currentPage.value = page
-  }
 }
 
 const editUser = (user) => {

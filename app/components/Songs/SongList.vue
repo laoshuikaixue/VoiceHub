@@ -346,95 +346,12 @@
         </TransitionGroup>
 
         <!-- 分页控件 -->
-        <div v-if="totalPages > 1" class="pagination-wrapper">
-          <!-- 桌面端分页 -->
-          <div class="pagination desktop-only">
-            <button
-              :disabled="currentPage === 1"
-              class="page-button"
-              @click="goToPage(currentPage - 1)"
-            >
-              上一页
-            </button>
-
-            <div class="page-numbers">
-              <button
-                v-for="page in displayedPageNumbers"
-                :key="page"
-                :class="['page-number', { active: currentPage === page }]"
-                @click="goToPage(page)"
-              >
-                {{ page }}
-              </button>
-            </div>
-
-            <button
-              :disabled="currentPage === totalPages"
-              class="page-button"
-              @click="goToPage(currentPage + 1)"
-            >
-              下一页
-            </button>
-
-            <div class="page-info">{{ currentPage }} / {{ totalPages }} 页</div>
-
-            <!-- 自定义跳转控件 -->
-            <div class="page-jump">
-              <span class="jump-label">跳转至</span>
-              <input
-                v-model.number="jumpPageInput"
-                :max="totalPages"
-                :min="1"
-                :placeholder="'1-' + totalPages"
-                class="jump-input"
-                type="number"
-                @input="validateJumpInput"
-                @keyup.enter="handleJumpToPage"
-              >
-              <button
-                :disabled="!isValidJumpPage"
-                class="jump-button"
-                title="跳转到指定页面"
-                @click="handleJumpToPage"
-              >
-                跳转
-              </button>
-            </div>
-          </div>
-
-          <!-- 移动端分页 -->
-          <div class="pagination-mobile mobile-only">
-            <button
-              :disabled="currentPage === 1"
-              class="page-nav-btn prev"
-              @click="goToPage(currentPage - 1)"
-            >
-              <Icon name="chevron-left" :size="20" />
-            </button>
-
-            <div class="page-selector">
-              <input
-                v-model.number="jumpPageInput"
-                type="number"
-                class="mobile-page-input"
-                :placeholder="currentPage"
-                @focus="jumpPageInput = currentPage"
-                @blur="handleJumpToPage"
-                @keyup.enter="handleJumpToPage"
-              >
-              <span class="divider">/</span>
-              <span class="total">{{ totalPages }}</span>
-            </div>
-
-            <button
-              :disabled="currentPage === totalPages"
-              class="page-nav-btn next"
-              @click="goToPage(currentPage + 1)"
-            >
-              <Icon name="chevron-right" :size="20" />
-            </button>
-          </div>
-        </div>
+        <Pagination
+          v-model:current-page="currentPage"
+          :total-pages="totalPages"
+          :total-items="displayedSongs.length"
+          item-name="首歌曲"
+        />
 
         <!-- 确认对话框 -->
         <ConfirmDialog
@@ -461,6 +378,7 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useSongs } from '~/composables/useSongs'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import Icon from '~/components/UI/Icon.vue'
+import Pagination from '~/components/UI/Common/Pagination.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { convertToHttps } from '~/utils/url'
@@ -545,10 +463,6 @@ const audioPlayer = useAudioPlayer()
 const currentPage = ref(1)
 const pageSize = ref(12) // 每页显示12首歌曲，适合横向布局
 const isMobile = ref(false)
-
-// 自定义跳转相关
-const jumpPageInput = ref('')
-const isValidJumpPage = ref(false)
 
 // 组件初始化状态
 const isComponentInitialized = ref(false)
@@ -799,85 +713,6 @@ const paginatedSongs = computed(() => {
 })
 
 // 计算分页显示的页码
-const displayedPageNumbers = computed(() => {
-  const result = []
-  const totalPagesToShow = 5
-
-  if (totalPages.value <= totalPagesToShow) {
-    // 如果总页数小于等于要显示的页数，则显示所有页码
-    for (let i = 1; i <= totalPages.value; i++) {
-      result.push(i)
-    }
-  } else {
-    // 否则，显示当前页附近的页码
-    const leftOffset = Math.floor(totalPagesToShow / 2)
-    const rightOffset = totalPagesToShow - leftOffset - 1
-
-    let start = currentPage.value - leftOffset
-    let end = currentPage.value + rightOffset
-
-    // 调整起始和结束页码，确保它们在有效范围内
-    if (start < 1) {
-      end = end + (1 - start)
-      start = 1
-    }
-
-    if (end > totalPages.value) {
-      start = Math.max(1, start - (end - totalPages.value))
-      end = totalPages.value
-    }
-
-    for (let i = start; i <= end; i++) {
-      result.push(i)
-    }
-  }
-
-  return result
-})
-
-// 前往指定页
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-  }
-}
-
-// 验证跳转输入
-const validateJumpInput = () => {
-  const page = parseInt(jumpPageInput.value)
-  isValidJumpPage.value = !isNaN(page) && page >= 1 && page <= totalPages.value
-}
-
-// 处理跳转到指定页面
-const handleJumpToPage = () => {
-  // 如果输入为空，直接返回，不触发提示
-  if (
-    jumpPageInput.value === '' ||
-    jumpPageInput.value === null ||
-    jumpPageInput.value === undefined
-  ) {
-    isValidJumpPage.value = false
-    return
-  }
-
-  const page = parseInt(jumpPageInput.value)
-  if (!isNaN(page) && page >= 1 && page <= totalPages.value) {
-    if (page !== currentPage.value) {
-      goToPage(page)
-    }
-    jumpPageInput.value = '' // 跳转成功后清空输入框
-    isValidJumpPage.value = false
-  } else {
-    // 只有在输入不为空且确实无效时才给出提示
-    if (window.$showNotification) {
-      window.$showNotification(`请输入有效的页码 (1-${totalPages.value})`, 'error')
-    }
-    // 清空无效输入，避免重复提示
-    jumpPageInput.value = ''
-    isValidJumpPage.value = false
-  }
-}
-
 // 处理投票
 // 检查点赞按钮是否应该禁用
 const isVoteButtonDisabled = (song) => {
