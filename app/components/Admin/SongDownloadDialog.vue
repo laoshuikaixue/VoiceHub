@@ -622,7 +622,8 @@ const preloadSong = async (song) => {
       }
     }
 
-    const blob = new Blob(chunks, { type: 'audio/mpeg' })
+    const contentType = response.headers.get('content-type') || 'audio/mpeg'
+    const blob = new Blob(chunks, { type: contentType })
 
     // 解析音频时长
     const duration = await new Promise((resolve) => {
@@ -828,7 +829,8 @@ const processAndMergeAudio = async (selectedSongsList) => {
               }
             }
             
-            const blob = new Blob(chunks, { type: 'audio/mpeg' }) // 假设类型
+            const contentType = response.headers.get('content-type') || 'audio/mpeg'
+            const blob = new Blob(chunks, { type: contentType })
             arrayBuffer = await blob.arrayBuffer()
             activeDownloads.set(song.id, 100)
           }
@@ -905,7 +907,7 @@ const processAndMergeAudio = async (selectedSongsList) => {
         filename = customFilename.value.trim()
 
         // 处理文件名占位符
-        const dateStr = new Date().toISOString().split('T')[0]
+        const dateStr = new Date().toLocaleDateString('sv-SE')
         const allSongsStr = selectedSongsList.map((item) => item.song.title).join(' ')
 
         filename = filename.replace(/{date}/g, dateStr)
@@ -926,7 +928,7 @@ const processAndMergeAudio = async (selectedSongsList) => {
           }
         }
       } else {
-        const dateStr = new Date().toISOString().split('T')[0]
+        const dateStr = new Date().toLocaleDateString('sv-SE')
         filename = `排期合并_${dateStr}_${selectedSongsList.length}首.${ext}`
       }
       return filename
