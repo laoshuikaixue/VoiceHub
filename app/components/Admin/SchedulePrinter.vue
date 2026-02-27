@@ -1,6 +1,6 @@
 <template>
   <div
-    class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+    class="flex flex-col space-y-8 p-4 md:p-8 pb-12 lg:pb-8 lg:h-full animate-in fade-in slide-in-from-bottom-4 duration-500"
   >
     <div class="flex flex-col space-y-2">
       <h2 class="text-2xl font-bold tracking-tight text-zinc-100">打印排期</h2>
@@ -25,11 +25,11 @@
       <p class="text-zinc-500 mt-2">您没有打印排期的权限，请联系管理员获取相应权限。</p>
     </div>
 
-    <div v-else class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
+    <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:flex-1 lg:min-h-0">
       <!-- 设置面板 -->
-      <div class="lg:col-span-4 flex flex-col gap-6">
+      <div class="lg:col-span-4 flex flex-col gap-6 min-h-0 h-auto lg:h-full">
         <div
-          class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-full"
+          class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-auto lg:h-full"
         >
           <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100">
             <Layout class="w-4 h-4 text-blue-500" /> 打印设置
@@ -221,7 +221,7 @@
       </div>
 
       <!-- 预览区域 -->
-      <div class="lg:col-span-8 flex flex-col gap-4 min-h-0">
+      <div class="lg:col-span-8 flex flex-col gap-4 h-[700px] lg:h-full mb-8 lg:mb-0">
         <div
           class="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg"
         >
@@ -254,7 +254,7 @@
                 `paper-${settings.paperSize.toLowerCase()}`,
                 `orientation-${settings.orientation}`
               ]"
-              class="preview-content m-auto shrink-0"
+              class="preview-content mx-auto shrink-0"
             >
               <div class="print-page">
                 <!-- 页面头部 -->
@@ -532,8 +532,8 @@ const formatDateRange = () => {
 // 设置日期范围
 const setDateRange = (type) => {
   const today = new Date()
-  const start = new Date()
-  const end = new Date()
+  const start = new Date(today)
+  const end = new Date(today)
 
   if (type === 'today') {
     // start and end are already today
@@ -541,20 +541,34 @@ const setDateRange = (type) => {
     start.setDate(today.getDate() + 1)
     end.setDate(today.getDate() + 1)
   } else if (type === 'thisWeek') {
-    const day = today.getDay() || 7 // Sunday is 0, make it 7 for easier math if we want Mon-Sun
-    // Assuming Monday start
+    const day = today.getDay() // Sunday is 0, Monday is 1...
+    // 假设周一为一周的开始
     const diffToMon = day === 0 ? 6 : day - 1
     start.setDate(today.getDate() - diffToMon)
+    
+    // 重新创建一个日期对象来计算结束日期，避免引用问题
+    end.setTime(start.getTime())
     end.setDate(start.getDate() + 6)
   } else if (type === 'nextWeek') {
-    const day = today.getDay() || 7
+    const day = today.getDay()
     const diffToMon = day === 0 ? 6 : day - 1
     start.setDate(today.getDate() - diffToMon + 7)
+    
+    // 重新创建一个日期对象来计算结束日期
+    end.setTime(start.getTime())
     end.setDate(start.getDate() + 6)
   }
 
-  settings.value.startDate = start.toISOString().split('T')[0]
-  settings.value.endDate = end.toISOString().split('T')[0]
+  // 转换为本地日期的 YYYY-MM-DD 格式，避免时区导致的日期偏差
+  const formatDateStr = (date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  settings.value.startDate = formatDateStr(start)
+  settings.value.endDate = formatDateStr(end)
 }
 
 // 格式化播出时段显示文本
@@ -1347,8 +1361,6 @@ watch(
 /* 预览区域和打印样式的核心CSS - 保持原生CSS以确保精确控制 */
 
 .preview-content {
-  overflow-y: hidden;
-  overflow-x: hidden;
   background: #ffffff;
   padding: 0;
   position: relative;
@@ -1561,46 +1573,46 @@ watch(
 /* 纸张大小 - 固定尺寸预览 */
 .paper-a4 {
   width: 800px;
-  height: 1132px;
+  min-height: 1132px;
   flex-shrink: 0;
 }
 
 .paper-a4.orientation-landscape {
   width: 1132px;
-  height: 800px;
+  min-height: 800px;
 }
 
 .paper-a3 {
   width: 1132px;
-  height: 1600px;
+  min-height: 1600px;
   flex-shrink: 0;
 }
 
 .paper-a3.orientation-landscape {
   width: 1600px;
-  height: 1132px;
+  min-height: 1132px;
 }
 
 .paper-letter {
   width: 800px;
-  height: 1034px;
+  min-height: 1034px;
   flex-shrink: 0;
 }
 
 .paper-letter.orientation-landscape {
   width: 1034px;
-  height: 800px;
+  min-height: 800px;
 }
 
 .paper-legal {
   width: 800px;
-  height: 1318px;
+  min-height: 1318px;
   flex-shrink: 0;
 }
 
 .paper-legal.orientation-landscape {
   width: 1318px;
-  height: 800px;
+  min-height: 800px;
 }
 
 /* 横向布局调整 */
