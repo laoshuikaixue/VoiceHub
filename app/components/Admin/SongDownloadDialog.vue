@@ -658,9 +658,25 @@ const preloadSelectedSongs = async () => {
     (s) => selectedSongs.value.has(s.song.id) && !preloadedSongs.has(s.song.id)
   )
 
-  for (const songItem of songsToLoad) {
-    await preloadSong(songItem.song)
+  // 并发下载，一次3个
+  const concurrency = 3
+  const queue = [...songsToLoad]
+  const workers = []
+
+  const worker = async () => {
+    while (queue.length > 0) {
+      const songItem = queue.shift()
+      if (songItem) {
+        await preloadSong(songItem.song)
+      }
+    }
   }
+
+  for (let i = 0; i < Math.min(concurrency, songsToLoad.length); i++) {
+    workers.push(worker())
+  }
+
+  await Promise.all(workers)
 }
 
 // 删除预下载缓存
