@@ -781,46 +781,67 @@ const processAndMergeAudio = async (selectedSongsList) => {
 
   try {
     // 1. 下载并解码所有音频
-    for (let i = 0; i < selectedSongsList.length; i++) {
-      const songItem = selectedSongsList[i]
-      const song = songItem.song
+    const concurrency = 3
+    const queue = selectedSongsList.map((item, index) => ({ item, index }))
+    const results = new Array(selectedSongsList.length).fill(null)
+    const workers = []
 
-      currentDownloadSong.value = `${song.artist} - ${song.title}`
-      processingStatus.value = `正在下载 (${i + 1}/${selectedSongsList.length}): ${song.title}`
+    const worker = async () => {
+      while (queue.length > 0) {
+        const { item: songItem, index } = queue.shift()
+        const song = songItem.song
 
-      try {
-        let arrayBuffer
+        currentDownloadSong.value = `${song.artist} - ${song.title}`
+        processingStatus.value = `正在处理 (${downloadedCount.value + 1}/${selectedSongsList.length}): ${song.title}`
 
-        // 检查是否有预下载缓存
-        if (preloadedSongs.has(song.id) && !preloadedSongs.get(song.id).loading) {
-          console.log(`使用预下载缓存: ${song.title}`)
-          const cached = preloadedSongs.get(song.id)
-          arrayBuffer = await cached.blob.arrayBuffer()
-        } else {
-          const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
-          const blob = await downloadAsBlob(audioUrl)
-          arrayBuffer = await blob.arrayBuffer()
+        try {
+          let arrayBuffer
+
+          // 检查是否有预下载缓存
+          if (preloadedSongs.has(song.id) && !preloadedSongs.get(song.id).loading) {
+            console.log(`使用预下载缓存: ${song.title}`)
+            const cached = preloadedSongs.get(song.id)
+            arrayBuffer = await cached.blob.arrayBuffer()
+          } else {
+            const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
+            const blob = await downloadAsBlob(audioUrl)
+            arrayBuffer = await blob.arrayBuffer()
+          }
+
+          processingStatus.value = `正在解码: ${song.title}`
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+
+          // 标准化处理
+          if (normalizeAudio.value) {
+            processingStatus.value = `正在标准化: ${song.title}`
+            normalizeBuffer(audioBuffer, targetDb.value)
+          }
+
+          results[index] = audioBuffer
+        } catch (error) {
+          console.error(`处理失败: ${song.title}`, error)
+          downloadErrors.value.push({
+            id: song.id,
+            title: song.title,
+            artist: song.artist,
+            error: error.message
+          })
+        } finally {
+          downloadedCount.value++
         }
+      }
+    }
 
-        processingStatus.value = `正在解码: ${song.title}`
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+    for (let i = 0; i < Math.min(concurrency, selectedSongsList.length); i++) {
+      workers.push(worker())
+    }
 
-        // 标准化处理
-        if (normalizeAudio.value) {
-          processingStatus.value = `正在标准化: ${song.title}`
-          normalizeBuffer(audioBuffer, targetDb.value)
-        }
+    await Promise.all(workers)
 
-        audioBuffers.push(audioBuffer)
-        downloadedCount.value++
-      } catch (error) {
-        console.error(`处理失败: ${song.title}`, error)
-        downloadErrors.value.push({
-          id: song.id,
-          title: song.title,
-          artist: song.artist,
-          error: error.message
-        })
+    // 过滤掉失败的任务
+    for (const buffer of results) {
+      if (buffer) {
+        audioBuffers.push(buffer)
       }
     }
 
@@ -1161,42 +1182,52 @@ const startDownload = async () => {
   }
 
   // 普通下载模式
-  for (const songItem of selectedSongsList) {
-    const song = songItem.song
-    currentDownloadSong.value = `${song.artist} - ${song.title}`
+  const concurrency = 3
+  const queue = [...selectedSongsList]
+  const workers = []
 
-    try {
-      // 获取音频URL
-      const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
+  const worker = async () => {
+    while (queue.length > 0) {
+      const songItem = queue.shift()
+      const song = songItem.song
+      currentDownloadSong.value = `${song.artist} - ${song.title}`
 
-      // 生成文件名：歌手名 - 歌曲名.ext
-      let extension = 'mp3'
-      if (audioUrl.includes('.m4a')) extension = 'm4a'
-      else if (audioUrl.includes('.flac')) extension = 'flac'
-      else if (audioUrl.includes('.wav')) extension = 'wav'
-      else if (audioUrl.includes('.ogg')) extension = 'ogg'
+      try {
+        // 获取音频URL
+        const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
 
-      const filename = `${song.artist} - ${song.title}.${extension}`.replace(/[<>:"/\\|?*]/g, '_') // 替换不合法的文件名字符
+        // 生成文件名：歌手名 - 歌曲名.ext
+        let extension = 'mp3'
+        if (audioUrl.includes('.m4a')) extension = 'm4a'
+        else if (audioUrl.includes('.flac')) extension = 'flac'
+        else if (audioUrl.includes('.wav')) extension = 'wav'
+        else if (audioUrl.includes('.ogg')) extension = 'ogg'
 
-      // 下载文件 (复用 downloadAsBlob 和 saveFile)
-      const blob = await downloadAsBlob(audioUrl)
-      saveFile(blob, filename)
-    } catch (error) {
-      console.error(`下载失败: ${song.title}`, error)
-      downloadErrors.value.push({
-        id: song.id,
-        title: song.title,
-        artist: song.artist,
-        error: error.message
-      })
-    } finally {
-      // 无论成功失败，都更新进度
-      downloadedCount.value++
+        const filename = `${song.artist} - ${song.title}.${extension}`.replace(/[<>:"/\\|?*]/g, '_') // 替换不合法的文件名字符
+
+        // 下载文件 (复用 downloadAsBlob 和 saveFile)
+        const blob = await downloadAsBlob(audioUrl)
+        saveFile(blob, filename)
+      } catch (error) {
+        console.error(`下载失败: ${song.title}`, error)
+        downloadErrors.value.push({
+          id: song.id,
+          title: song.title,
+          artist: song.artist,
+          error: error.message
+        })
+      } finally {
+        // 无论成功失败，都更新进度
+        downloadedCount.value++
+      }
     }
-
-    // 添加延迟避免请求过于频繁
-    await new Promise((resolve) => setTimeout(resolve, 500))
   }
+
+  for (let i = 0; i < Math.min(concurrency, selectedSongsList.length); i++) {
+    workers.push(worker())
+  }
+
+  await Promise.all(workers)
 
   currentDownloadSong.value = ''
 
