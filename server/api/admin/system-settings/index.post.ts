@@ -110,6 +110,19 @@ export default defineEventHandler(async (event) => {
       updateData.weeklySubmissionLimit = body.weeklySubmissionLimit
     }
 
+    if (body.monthlySubmissionLimit !== undefined) {
+      if (
+        body.monthlySubmissionLimit !== null &&
+        (!Number.isInteger(body.monthlySubmissionLimit) || body.monthlySubmissionLimit < 0)
+      ) {
+        throw createError({
+          statusCode: 400,
+          message: 'monthlySubmissionLimit 必须是非负整数或null'
+        })
+      }
+      updateData.monthlySubmissionLimit = body.monthlySubmissionLimit
+    }
+
     if (body.showBlacklistKeywords !== undefined) {
       if (typeof body.showBlacklistKeywords !== 'boolean') {
         throw createError({
@@ -204,17 +217,17 @@ export default defineEventHandler(async (event) => {
       updateData.smtpFromName = body.smtpFromName
     }
 
-    // 验证每日和每周限额二选一逻辑
-    if (
-      body.enableSubmissionLimit &&
-      body.dailySubmissionLimit !== undefined &&
-      body.weeklySubmissionLimit !== undefined &&
-      body.dailySubmissionLimit !== null &&
-      body.weeklySubmissionLimit !== null
-    ) {
+    // 验证每日、每周和每月限额三选一逻辑
+    const limitSettings = [
+      body.dailySubmissionLimit,
+      body.weeklySubmissionLimit,
+      body.monthlySubmissionLimit
+    ].filter((limit) => limit !== undefined && limit !== null)
+
+    if (body.enableSubmissionLimit && limitSettings.length > 1) {
       throw createError({
         statusCode: 400,
-        message: '每日限额和每周限额只能选择其中一种，另一种必须设置为空'
+        message: '每日限额、每周限额和每月限额只能选择其中一种，其他必须设置为空'
       })
     }
 
@@ -248,6 +261,7 @@ export default defineEventHandler(async (event) => {
           enableSubmissionLimit: updateData.enableSubmissionLimit ?? false,
           dailySubmissionLimit: updateData.dailySubmissionLimit ?? null,
           weeklySubmissionLimit: updateData.weeklySubmissionLimit ?? null,
+          monthlySubmissionLimit: updateData.monthlySubmissionLimit ?? null,
           showBlacklistKeywords: updateData.showBlacklistKeywords ?? false,
           enableReplayRequests: updateData.enableReplayRequests ?? false,
           enableRequestTimeLimitation: updateData.enableRequestTimeLimitation ?? false,

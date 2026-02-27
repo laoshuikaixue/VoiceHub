@@ -172,7 +172,7 @@
             </div>
 
             <div v-if="formData.enableSubmissionLimit" class="space-y-4">
-              <div class="grid grid-cols-2 gap-2 p-1 bg-zinc-950 border border-zinc-800 rounded-xl">
+              <div class="grid grid-cols-3 gap-2 p-1 bg-zinc-950 border border-zinc-800 rounded-xl">
                 <button
                   :class="[
                     'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
@@ -195,11 +195,22 @@
                 >
                   每周限额
                 </button>
+                <button
+                  :class="[
+                    'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    currentLimitType === 'monthly'
+                      ? 'bg-zinc-800 text-blue-400 shadow-sm'
+                      : 'text-zinc-600 hover:text-zinc-400'
+                  ]"
+                  @click="handleLimitTypeChange('monthly')"
+                >
+                  每月限额
+                </button>
               </div>
 
               <div>
                 <label :class="labelClass"
-                  >{{ currentLimitType === 'daily' ? '单日' : '单周' }}投稿上限</label
+                  >{{ currentLimitType === 'daily' ? '单日' : (currentLimitType === 'weekly' ? '单周' : '单月') }}投稿上限</label
                 >
                 <div class="relative">
                   <input
@@ -327,6 +338,7 @@ const formData = ref({
   enableSubmissionLimit: false,
   dailySubmissionLimit: 5,
   weeklySubmissionLimit: null,
+  monthlySubmissionLimit: null,
   showBlacklistKeywords: false,
   hideStudentInfo: true
 })
@@ -335,17 +347,21 @@ const originalData = ref({})
 
 // 当前限额类型和值的快捷访问
 const currentLimitType = computed(() => {
+  if (formData.value.monthlySubmissionLimit !== null) return 'monthly'
   return formData.value.weeklySubmissionLimit !== null ? 'weekly' : 'daily'
 })
 
 const currentLimitValue = computed({
   get: () => {
+    if (currentLimitType.value === 'monthly') return formData.value.monthlySubmissionLimit
     return currentLimitType.value === 'daily'
       ? formData.value.dailySubmissionLimit
       : formData.value.weeklySubmissionLimit
   },
   set: (val) => {
-    if (currentLimitType.value === 'daily') {
+    if (currentLimitType.value === 'monthly') {
+      formData.value.monthlySubmissionLimit = val
+    } else if (currentLimitType.value === 'daily') {
       formData.value.dailySubmissionLimit = val
     } else {
       formData.value.weeklySubmissionLimit = val
@@ -377,6 +393,7 @@ const loadConfig = async () => {
       enableSubmissionLimit: !!data.enableSubmissionLimit,
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,
       weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
+      monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true
     }
@@ -404,7 +421,9 @@ const saveConfig = async () => {
       dailySubmissionLimit:
         currentLimitType.value === 'daily' ? formData.value.dailySubmissionLimit : null,
       weeklySubmissionLimit:
-        currentLimitType.value === 'weekly' ? formData.value.weeklySubmissionLimit : null
+        currentLimitType.value === 'weekly' ? formData.value.weeklySubmissionLimit : null,
+      monthlySubmissionLimit:
+        currentLimitType.value === 'monthly' ? formData.value.monthlySubmissionLimit : null
     }
 
     const response = await fetch('/api/admin/system-settings', {
@@ -433,16 +452,23 @@ const saveConfig = async () => {
 
 // 处理限额类型变化
 const handleLimitTypeChange = (type) => {
-  if (type === 'daily') {
-    formData.value.weeklySubmissionLimit = null
-    if (formData.value.dailySubmissionLimit === null) {
-      formData.value.dailySubmissionLimit = 5
+  const limits = {
+    daily: { key: 'dailySubmissionLimit', default: 5 },
+    weekly: { key: 'weeklySubmissionLimit', default: 20 },
+    monthly: { key: 'monthlySubmissionLimit', default: 50 }
+  }
+
+  // 将非当前类型的限额设为 null
+  Object.keys(limits).forEach((limitType) => {
+    if (limitType !== type) {
+      formData.value[limits[limitType].key] = null
     }
-  } else {
-    formData.value.dailySubmissionLimit = null
-    if (formData.value.weeklySubmissionLimit === null) {
-      formData.value.weeklySubmissionLimit = 20
-    }
+  })
+
+  // 如果当前类型的限额为 null，则设置默认值
+  const targetLimit = limits[type]
+  if (formData.value[targetLimit.key] === null) {
+    formData.value[targetLimit.key] = targetLimit.default
   }
 }
 

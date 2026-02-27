@@ -186,6 +186,19 @@
                   }}</span
                 >
               </div>
+
+              <div v-if="submissionStatus.monthlyLimit" class="status-item-horizontal">
+                <span class="status-label">本月投稿：</span>
+                <span class="status-value"
+                  >{{ submissionStatus.monthlyUsed }} / {{ submissionStatus.monthlyLimit }}</span
+                >
+                <span class="status-remaining"
+                  >剩余
+                  {{
+                    Math.max(0, submissionStatus.monthlyLimit - submissionStatus.monthlyUsed)
+                  }}</span
+                >
+              </div>
             </div>
           </div>
 
@@ -2702,7 +2715,8 @@ const checkSubmissionLimit = () => {
     }
   }
 
-  const { dailyLimit, weeklyLimit, dailyUsed, weeklyUsed } = submissionStatus.value
+  const { dailyLimit, weeklyLimit, monthlyLimit, dailyUsed, weeklyUsed, monthlyUsed } =
+    submissionStatus.value
 
   // 检查日限额
   if (dailyLimit && dailyUsed >= dailyLimit) {
@@ -2717,6 +2731,14 @@ const checkSubmissionLimit = () => {
     return {
       canSubmit: false,
       message: `本周投稿已达上限 (${weeklyUsed}/${weeklyLimit})`
+    }
+  }
+
+  // 检查月限额
+  if (monthlyLimit && monthlyUsed >= monthlyLimit) {
+    return {
+      canSubmit: false,
+      message: `本月投稿已达上限 (${monthlyUsed}/${monthlyLimit})`
     }
   }
 

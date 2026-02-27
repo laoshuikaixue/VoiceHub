@@ -136,6 +136,7 @@ export const systemSettings = pgTable('SystemSettings', {
   enableSubmissionLimit: boolean('enableSubmissionLimit').default(false).notNull(),
   dailySubmissionLimit: integer('dailySubmissionLimit'),
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
+  monthlySubmissionLimit: integer('monthlySubmissionLimit'),
   showBlacklistKeywords: boolean('showBlacklistKeywords').default(false).notNull(),
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
   // SMTP 邮件配置

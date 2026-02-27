@@ -139,3 +139,19 @@ export function getBeijingEndOfWeek(date?: Date): Date {
   const startOfWeek = dayjs(getBeijingStartOfWeek(date)).tz(BEIJING_TIMEZONE)
   return startOfWeek.add(6, 'day').endOf('day').toDate()
 }
+
+/**
+ * 获取“北京时间本月开始”对应的真实 UTC 时间
+ */
+export function getBeijingStartOfMonth(date?: Date): Date {
+  const target = date ? dayjs(date).tz(BEIJING_TIMEZONE) : dayjs().tz(BEIJING_TIMEZONE)
+  return target.startOf('month').toDate()
+}
+
+/**
+ * 获取“北京时间本月结束”对应的真实 UTC 时间
+ */
+export function getBeijingEndOfMonth(date?: Date): Date {
+  const target = date ? dayjs(date).tz(BEIJING_TIMEZONE) : dayjs().tz(BEIJING_TIMEZONE)
+  return target.endOf('month').toDate()
+}
