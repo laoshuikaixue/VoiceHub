@@ -907,7 +907,7 @@ const processAndMergeAudio = async (selectedSongsList) => {
         filename = customFilename.value.trim()
 
         // 处理文件名占位符
-        const dateStr = new Date().toLocaleDateString('sv-SE')
+        const dateStr = new Date().toISOString().split('T')[0]
         const allSongsStr = selectedSongsList.map((item) => item.song.title).join(' ')
 
         filename = filename.replace(/{date}/g, dateStr)
@@ -998,7 +998,7 @@ const normalizeBuffer = (buffer, targetDbValue) => {
   }
 }
 
-// MP3 编码 (WASM - 更快的编码速度)
+// MP3 编码 (WASM)
 const encodeToMp3 = async (buffer) => {
   try {
     processingStatus.value = '正在初始化 MP3 编码器...'
@@ -1050,8 +1050,9 @@ const encodeToMp3 = async (buffer) => {
 
           // 扩展输出缓冲区（如果需要）
           if (mp3Data.length + offset > outBuffer.length) {
-            const newBuffer = new Uint8Array(outBuffer.length * 2)
-            newBuffer.set(outBuffer)
+            const newSize = Math.max(outBuffer.length * 2, offset + mp3Data.length)
+            const newBuffer = new Uint8Array(newSize)
+            newBuffer.set(outBuffer.subarray(0, offset))
             outBuffer = newBuffer
           }
 
@@ -1301,6 +1302,7 @@ watch(
         totalCount.value = 0
         currentDownloadSong.value = ''
         downloadErrors.value = []
+        activeDownloads.clear()
       }
       selectedQuality.value = getQuality('netease')
 
