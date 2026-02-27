@@ -13,8 +13,10 @@ import { createCollaborationInvitationNotification } from '~~/server/services/no
 import {
   getBeijingEndOfDay,
   getBeijingEndOfWeek,
+  getBeijingEndOfMonth,
   getBeijingStartOfDay,
   getBeijingStartOfWeek,
+  getBeijingStartOfMonth,
   getBeijingTimeISOString
 } from '~/utils/timeUtils'
 
@@ -183,10 +185,11 @@ export default defineEventHandler(async (event) => {
     if (systemSettingsData?.enableSubmissionLimit && !isAdmin) {
       const dailyLimit = systemSettingsData.dailySubmissionLimit
       const weeklyLimit = systemSettingsData.weeklySubmissionLimit
+      const monthlyLimit = systemSettingsData.monthlySubmissionLimit
 
-      // 确定生效的限额类型（二选一逻辑）
-      let effectiveLimit = null
-      let limitType = null
+      // 确定生效的限额类型（三选一逻辑）
+      let effectiveLimit: number | null = null
+      let limitType: 'daily' | 'weekly' | 'monthly' | null = null
 
       if (dailyLimit !== null && dailyLimit !== undefined) {
         effectiveLimit = dailyLimit
@@ -194,6 +197,9 @@ export default defineEventHandler(async (event) => {
       } else if (weeklyLimit !== null && weeklyLimit !== undefined) {
         effectiveLimit = weeklyLimit
         limitType = 'weekly'
+      } else if (monthlyLimit !== null && monthlyLimit !== undefined) {
+        effectiveLimit = monthlyLimit
+        limitType = 'monthly'
       }
 
       // 如果生效的限额为0，则关闭投稿
@@ -252,6 +258,29 @@ export default defineEventHandler(async (event) => {
             throw createError({
               statusCode: 400,
               message: `每周投稿限额为${effectiveLimit}首，您本周已达到限额`
+            })
+          }
+        } else if (limitType === 'monthly') {
+          // 检查每月限额（按北京时间计算）
+          const startOfMonth = getBeijingStartOfMonth()
+          const endOfMonth = getBeijingEndOfMonth()
+
+          const monthlySongs = await db
+            .select()
+            .from(songs)
+            .where(
+              and(
+                eq(songs.requesterId, user.id),
+                gte(songs.createdAt, startOfMonth),
+                lte(songs.createdAt, endOfMonth)
+              )
+            )
+          currentCount = monthlySongs.length
+
+          if (currentCount >= effectiveLimit) {
+            throw createError({
+              statusCode: 400,
+              message: `每月投稿限额为${effectiveLimit}首，您本月已达到限额`
             })
           }
         }

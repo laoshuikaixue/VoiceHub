@@ -1,7 +1,15 @@
 import { db } from '~/drizzle/db'
 import { requestTimes, songs, systemSettings } from '~/drizzle/schema'
 import { and, count, eq, gt, gte, lt, lte } from 'drizzle-orm'
-import { getBeijingTimeISOString } from '~/utils/timeUtils'
+import {
+  getBeijingEndOfDay,
+  getBeijingEndOfWeek,
+  getBeijingEndOfMonth,
+  getBeijingStartOfDay,
+  getBeijingStartOfWeek,
+  getBeijingStartOfMonth,
+  getBeijingTimeISOString
+} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -27,10 +35,13 @@ export default defineEventHandler(async (event) => {
       limitEnabled: systemSettingsData?.enableSubmissionLimit || false,
       dailyLimit: null,
       weeklyLimit: null,
+      monthlyLimit: null,
       dailyUsed: 0,
       weeklyUsed: 0,
+      monthlyUsed: 0,
       dailyRemaining: null,
       weeklyRemaining: null,
+      monthlyRemaining: null,
       submissionClosed: false,
       timeLimitationEnabled: systemSettingsData?.enableRequestTimeLimitation || false,
       currentTimePeriod: null
@@ -64,12 +75,13 @@ export default defineEventHandler(async (event) => {
       return status
     }
 
-    // 确定生效的限额类型（二选一逻辑）
+    // 确定生效的限额类型（三选一逻辑）
     const dailyLimit = systemSettingsData.dailySubmissionLimit
     const weeklyLimit = systemSettingsData.weeklySubmissionLimit
+    const monthlyLimit = systemSettingsData.monthlySubmissionLimit
 
-    let effectiveLimit = null
-    let limitType = null
+    let effectiveLimit: number | null = null
+    let limitType: 'daily' | 'weekly' | 'monthly' | null = null
 
     if (dailyLimit !== null && dailyLimit !== undefined) {
       effectiveLimit = dailyLimit
@@ -77,27 +89,31 @@ export default defineEventHandler(async (event) => {
     } else if (weeklyLimit !== null && weeklyLimit !== undefined) {
       effectiveLimit = weeklyLimit
       limitType = 'weekly'
+    } else if (monthlyLimit !== null && monthlyLimit !== undefined) {
+      effectiveLimit = monthlyLimit
+      limitType = 'monthly'
     }
 
     // 检查是否设置了限额为0（关闭投稿）
     if (effectiveLimit === 0) {
       status.dailyLimit = limitType === 'daily' ? effectiveLimit : null
       status.weeklyLimit = limitType === 'weekly' ? effectiveLimit : null
+      status.monthlyLimit = limitType === 'monthly' ? effectiveLimit : null
       status.dailyRemaining = 0
       status.weeklyRemaining = 0
+      status.monthlyRemaining = 0
       status.submissionClosed = !isAdmin // 管理员不受投稿关闭限制
       return status
     }
 
-    const now = new Date()
-
     // 只计算生效的限额类型的使用量
     let dailyUsed = 0
     let weeklyUsed = 0
+    let monthlyUsed = 0
 
-    if (limitType === 'daily' && effectiveLimit > 0) {
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+    if (limitType === 'daily' && effectiveLimit && effectiveLimit > 0) {
+      const startOfDay = getBeijingStartOfDay()
+      const endOfDay = getBeijingEndOfDay()
 
       const dailyUsedResult = await db
         .select({ count: count() })
@@ -106,19 +122,14 @@ export default defineEventHandler(async (event) => {
           and(
             eq(songs.requesterId, user.id),
             gte(songs.createdAt, startOfDay),
-            lt(songs.createdAt, endOfDay)
+            lte(songs.createdAt, endOfDay)
           )
         )
 
       dailyUsed = dailyUsedResult[0]?.count || 0
-    } else if (limitType === 'weekly' && effectiveLimit > 0) {
-      const startOfWeek = new Date(now)
-      const dayOfWeek = now.getDay()
-      const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 周一为一周开始
-      startOfWeek.setDate(now.getDate() - daysToSubtract)
-      startOfWeek.setHours(0, 0, 0, 0)
-
-      const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
+    } else if (limitType === 'weekly' && effectiveLimit && effectiveLimit > 0) {
+      const startOfWeek = getBeijingStartOfWeek()
+      const endOfWeek = getBeijingEndOfWeek()
 
       const weeklyUsedResult = await db
         .select({ count: count() })
@@ -127,21 +138,41 @@ export default defineEventHandler(async (event) => {
           and(
             eq(songs.requesterId, user.id),
             gte(songs.createdAt, startOfWeek),
-            lt(songs.createdAt, endOfWeek)
+            lte(songs.createdAt, endOfWeek)
           )
         )
 
       weeklyUsed = weeklyUsedResult[0]?.count || 0
+    } else if (limitType === 'monthly' && effectiveLimit && effectiveLimit > 0) {
+      const startOfMonth = getBeijingStartOfMonth()
+      const endOfMonth = getBeijingEndOfMonth()
+
+      const monthlyUsedResult = await db
+        .select({ count: count() })
+        .from(songs)
+        .where(
+          and(
+            eq(songs.requesterId, user.id),
+            gte(songs.createdAt, startOfMonth),
+            lte(songs.createdAt, endOfMonth)
+          )
+        )
+
+      monthlyUsed = monthlyUsedResult[0]?.count || 0
     }
 
     status.dailyLimit = limitType === 'daily' ? effectiveLimit : null
     status.weeklyLimit = limitType === 'weekly' ? effectiveLimit : null
+    status.monthlyLimit = limitType === 'monthly' ? effectiveLimit : null
     status.dailyUsed = dailyUsed
     status.weeklyUsed = weeklyUsed
+    status.monthlyUsed = monthlyUsed
     status.dailyRemaining =
       limitType === 'daily' && effectiveLimit ? Math.max(0, effectiveLimit - dailyUsed) : null
     status.weeklyRemaining =
       limitType === 'weekly' && effectiveLimit ? Math.max(0, effectiveLimit - weeklyUsed) : null
+    status.monthlyRemaining =
+      limitType === 'monthly' && effectiveLimit ? Math.max(0, effectiveLimit - monthlyUsed) : null
 
     return status
   } catch (error) {

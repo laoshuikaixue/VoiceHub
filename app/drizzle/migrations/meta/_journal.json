@@ -71,6 +71,13 @@
       "when": 1770895837437,
       "tag": "20260212113037_add_user_identities_table",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1772187630689,
+      "tag": "20260227102030_add_monthly_submission_limit",
+      "breakpoints": true
     }
   ]
 }

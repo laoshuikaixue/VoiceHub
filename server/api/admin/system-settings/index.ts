@@ -49,6 +49,7 @@ export default defineEventHandler(async (event) => {
           enableSubmissionLimit: false,
           dailySubmissionLimit: null,
           weeklySubmissionLimit: null,
+          monthlySubmissionLimit: null,
           showBlacklistKeywords: false
         })
         .returning()
