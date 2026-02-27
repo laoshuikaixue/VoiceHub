@@ -1220,43 +1220,87 @@ const startDownload = async () => {
   const concurrency = 3
   const queue = [...selectedSongsList]
   const workers = []
+  let activeWorkers = 0
 
   const worker = async () => {
     while (queue.length > 0) {
       const songItem = queue.shift()
+      if (!songItem) break
+      
       const song = songItem.song
-      currentDownloadSong.value = `${song.artist} - ${song.title}`
+      activeWorkers++
+      currentDownloadSong.value = `${song.artist} - ${song.title} (${activeWorkers}/${concurrency} 活动)`
 
       try {
+        // 1. 获取音频 URL
         const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
 
-        // 生成文件名
-        let extension = 'mp3'
-        if (audioUrl.includes('.m4a')) extension = 'm4a'
-        else if (audioUrl.includes('.flac')) extension = 'flac'
-        else if (audioUrl.includes('.wav')) extension = 'wav'
-        else if (audioUrl.includes('.ogg')) extension = 'ogg'
+        // 2. 下载音频
+        processingStatus.value = `下载中: ${song.title}`
+        const response = await fetch(audioUrl)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
-        const filename = `${song.artist} - ${song.title}.${extension}`.replace(/[<>:"/\\|?*]/g, '_')
+        const total = parseInt(response.headers.get('content-length') || '0')
+        const reader = response.body.getReader()
+        const chunks = []
+        let loaded = 0
 
-        // 执行下载
-        const blob = await downloadAsBlob(audioUrl)
-        saveFile(blob, filename)
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          chunks.push(value)
+          loaded += value.length
+
+          if (total) {
+            const percent = Math.round((loaded / total) * 100)
+            activeDownloads.set(song.id, { stage: 'download', progress: percent })
+          }
+        }
+
+        const contentType = response.headers.get('content-type') || 'audio/mpeg'
+        const blob = new Blob(chunks, { type: contentType })
+
+        // 3. 解码音频
+        activeDownloads.set(song.id, { stage: 'decode', progress: 0 })
+        processingStatus.value = `解码中: ${song.title}`
+        
+        const arrayBuffer = await blob.arrayBuffer()
+        const audioContext = new AudioContext()
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+
+        // 4. 编码为 MP3
+        activeDownloads.set(song.id, { stage: 'encode', progress: 0 })
+        processingStatus.value = `编码中: ${song.title}`
+        
+        const mp3Blob = await encodeToMp3(audioBuffer)
+
+        // 5. 保存文件
+        activeDownloads.set(song.id, { stage: 'save', progress: 100 })
+        const filename = `${song.artist} - ${song.title}.mp3`.replace(/[<>:"/\\|?*]/g, '_')
+        saveFile(mp3Blob, filename)
+
+        activeDownloads.delete(song.id)
       } catch (error) {
-        console.error(`下载失败: ${song.title}`, error)
+        console.error(`处理失败: ${song.title}`, error)
         downloadErrors.value.push({
           id: song.id,
           title: song.title,
           artist: song.artist,
           error: error.message
         })
+        activeDownloads.delete(song.id)
       } finally {
-        // 更新进度
+        activeWorkers--
         downloadedCount.value++
+        currentDownloadSong.value = queue.length > 0 
+          ? `剩余 ${queue.length} 首` 
+          : '处理完成'
       }
     }
   }
 
+  // 启动并发工作线程
   for (let i = 0; i < Math.min(concurrency, selectedSongsList.length); i++) {
     workers.push(worker())
   }
@@ -1264,6 +1308,7 @@ const startDownload = async () => {
   await Promise.all(workers)
 
   currentDownloadSong.value = ''
+  processingStatus.value = ''
 
   // 下载完成通知
   if (window.$showNotification) {
@@ -1311,22 +1356,33 @@ watch(
         customFilename.value = savedPreset
       }
 
-      const savedDbPresetV2 = localStorage.getItem('voicehub_db_preset_v2')
-      if (savedDbPresetV2) {
+      const savedDbPreset = localStorage.getItem('voicehub_db_preset')
+      if (savedDbPreset) {
         try {
-          const preset = JSON.parse(savedDbPresetV2)
-          normalizeAudio.value = preset.enabled
-          targetDb.value = preset.targetDb
+          // 尝试解析为 JSON 对象 (新格式)
+          const preset = JSON.parse(savedDbPreset)
+          // 确保是对象且包含属性
+          if (typeof preset === 'object' && preset !== null && 'enabled' in preset) {
+            normalizeAudio.value = preset.enabled
+            targetDb.value = preset.targetDb
+          } else {
+            // 可能是旧格式的单个数值，或者是其他异常数据
+            throw new Error('Invalid format')
+          }
         } catch (e) {
-          // 兼容旧版或解析失败
-          normalizeAudio.value = false
-        }
-      } else {
-        // 兼容旧版单个数值
-        const savedDbPreset = localStorage.getItem('voicehub_db_preset')
-        if (savedDbPreset) {
-          targetDb.value = parseFloat(savedDbPreset)
-          normalizeAudio.value = true
+          // 解析失败，说明是旧版纯数值格式
+          const val = parseFloat(savedDbPreset)
+          if (!isNaN(val)) {
+            targetDb.value = val
+            normalizeAudio.value = true // 旧版默认开启
+            
+            // 顺便更新为新格式
+            const newPreset = {
+              enabled: true,
+              targetDb: val
+            }
+            localStorage.setItem('voicehub_db_preset', JSON.stringify(newPreset))
+          }
         }
       }
     }
@@ -1355,7 +1411,7 @@ const saveDbPreset = () => {
     enabled: normalizeAudio.value,
     targetDb: targetDb.value
   }
-  localStorage.setItem('voicehub_db_preset_v2', JSON.stringify(preset))
+  localStorage.setItem('voicehub_db_preset', JSON.stringify(preset))
   showDbPresetSaved.value = true
 
   setTimeout(() => {
