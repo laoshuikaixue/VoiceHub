@@ -42,7 +42,9 @@
             </div>
           </header>
 
-          <div class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8">
+          <div
+            class="flex-1 custom-scrollbar p-4 md:p-8 overflow-y-auto"
+          >
             <!-- 移动端返回顶部按钮 -->
             <button
               v-if="showBackToTop"
@@ -72,7 +74,7 @@
             <!-- 排期管理 -->
             <div
               v-if="activeTab === 'schedule' && permissions.canAccessPage('schedule')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full"
             >
               <LazyAdminScheduleManager />
             </div>
@@ -80,7 +82,7 @@
             <!-- 打印排期 -->
             <div
               v-if="activeTab === 'print' && permissions.canAccessPage('print')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full"
             >
               <LazyAdminSchedulePrinter />
             </div>
