@@ -792,7 +792,7 @@ const processAndMergeAudio = async (selectedSongsList) => {
         const song = songItem.song
 
         currentDownloadSong.value = `${song.artist} - ${song.title}`
-        processingStatus.value = `正在处理 (${downloadedCount.value + 1}/${selectedSongsList.length}): ${song.title}`
+        processingStatus.value = `正在处理: ${song.title}`
 
         try {
           let arrayBuffer
