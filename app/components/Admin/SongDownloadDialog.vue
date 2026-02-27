@@ -296,7 +296,12 @@
                     "
                     class="absolute bottom-0 left-0 h-0.5 bg-blue-500/50 transition-all duration-300 ease-out"
                     :style="{
-                      width: `${activeDownloads.get(song.song.id) || (preloadedSongs.get(song.song.id)?.progress || 0)}%`
+                      width: `${
+                        (typeof activeDownloads.get(song.song.id) === 'number' 
+                          ? activeDownloads.get(song.song.id) 
+                          : activeDownloads.get(song.song.id)?.progress) || 
+                        (preloadedSongs.get(song.song.id)?.progress || 0)
+                      }%`
                     }"
                   />
 
@@ -747,6 +752,34 @@ const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
   }
 }
 
+// 通用的音频下载函数
+const fetchAudioWithProgress = async (audioUrl, songId, songTitle) => {
+  const response = await fetch(audioUrl)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+  const total = parseInt(response.headers.get('content-length') || '0')
+  const reader = response.body.getReader()
+  const chunks = []
+  let loaded = 0
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    chunks.push(value)
+    loaded += value.length
+
+    if (total) {
+      const percent = Math.round((loaded / total) * 100)
+      processingStatus.value = `正在下载: ${songTitle} (${percent}%)`
+      activeDownloads.set(songId, percent)
+    }
+  }
+
+  const contentType = response.headers.get('content-type') || 'audio/mpeg'
+  return new Blob(chunks, { type: contentType })
+}
+
 // 获取 Blob 数据
 const downloadAsBlob = async (url) => {
   const response = await fetch(url)
@@ -800,36 +833,8 @@ const processAndMergeAudio = async (selectedSongsList) => {
           } else {
             const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
             
-            // 使用 fetch 下载并追踪进度
-            const response = await fetch(audioUrl)
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
-            const contentLength = response.headers.get('content-length')
-            const total = contentLength ? parseInt(contentLength, 10) : 0
-            let loaded = 0
-            
-            activeDownloads.set(song.id, 0)
-
-            const reader = response.body.getReader()
-            const chunks = []
-
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
-
-              chunks.push(value)
-              loaded += value.length
-
-              if (total) {
-                // 更新处理进度文本
-                const percent = Math.round((loaded / total) * 100)
-                processingStatus.value = `正在下载: ${song.title} (${percent}%)`
-                activeDownloads.set(song.id, percent)
-              }
-            }
-            
-            const contentType = response.headers.get('content-type') || 'audio/mpeg'
-            const blob = new Blob(chunks, { type: contentType })
+            // 使用公共下载函数
+            const blob = await fetchAudioWithProgress(audioUrl, song.id, song.title)
             arrayBuffer = await blob.arrayBuffer()
             activeDownloads.set(song.id, 100)
           }
@@ -1238,50 +1243,21 @@ const startDownload = async () => {
         // 1. 获取音频 URL
         const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
 
-        // 2. 下载音频
+        // 2. 下载音频（使用公共函数）
         processingStatus.value = `下载中: ${song.title}`
-        const response = await fetch(audioUrl)
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const blob = await fetchAudioWithProgress(audioUrl, song.id, song.title)
 
-        const total = parseInt(response.headers.get('content-length') || '0')
-        const reader = response.body.getReader()
-        const chunks = []
-        let loaded = 0
+        // 3. 确定文件扩展名
+        let extension = 'mp3'
+        const contentType = blob.type
+        if (contentType.includes('m4a') || audioUrl.includes('.m4a')) extension = 'm4a'
+        else if (contentType.includes('flac') || audioUrl.includes('.flac')) extension = 'flac'
+        else if (contentType.includes('wav') || audioUrl.includes('.wav')) extension = 'wav'
+        else if (contentType.includes('ogg') || audioUrl.includes('.ogg')) extension = 'ogg'
 
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          chunks.push(value)
-          loaded += value.length
-
-          if (total) {
-            const percent = Math.round((loaded / total) * 100)
-            activeDownloads.set(song.id, { stage: 'download', progress: percent })
-          }
-        }
-
-        const contentType = response.headers.get('content-type') || 'audio/mpeg'
-        const blob = new Blob(chunks, { type: contentType })
-
-        // 3. 解码音频
-        activeDownloads.set(song.id, { stage: 'decode', progress: 0 })
-        processingStatus.value = `解码中: ${song.title}`
-        
-        const arrayBuffer = await blob.arrayBuffer()
-        const audioContext = new AudioContext()
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-
-        // 4. 编码为 MP3
-        activeDownloads.set(song.id, { stage: 'encode', progress: 0 })
-        processingStatus.value = `编码中: ${song.title}`
-        
-        const mp3Blob = await encodeToMp3(audioBuffer)
-
-        // 5. 保存文件
-        activeDownloads.set(song.id, { stage: 'save', progress: 100 })
-        const filename = `${song.artist} - ${song.title}.mp3`.replace(/[<>:"/\\|?*]/g, '_')
-        saveFile(mp3Blob, filename)
+        // 4. 保存文件（保留原始格式）
+        const filename = `${song.artist} - ${song.title}.${extension}`.replace(/[<>:"/\\|?*]/g, '_')
+        saveFile(blob, filename)
 
         activeDownloads.delete(song.id)
       } catch (error) {
