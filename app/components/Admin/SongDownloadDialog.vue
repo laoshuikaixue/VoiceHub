@@ -1189,6 +1189,9 @@ const writeString = (view, offset, string) => {
 const startDownload = async () => {
   if (selectedSongs.value.size === 0) return
 
+  // 保存音质选择偏好
+  localStorage.setItem('voicehub_quality_preset', selectedQuality.value)
+
   downloading.value = true
   downloadedCount.value = 0
   downloadErrors.value = []
@@ -1348,7 +1351,20 @@ watch(
         downloadErrors.value = []
         activeDownloads.clear()
       }
-      selectedQuality.value = getQuality('netease')
+      // 优先使用上次保存的音质偏好，否则使用默认值
+      const savedQuality = localStorage.getItem('voicehub_quality_preset')
+      if (savedQuality) {
+        // 检查保存的音质是否在当前可用选项中
+        const isQualityAvailable = extendedQualityOptions.value.some(opt => opt.value === savedQuality)
+        if (isQualityAvailable) {
+          selectedQuality.value = savedQuality
+        } else {
+          // 如果不可用，回退到第一个可用选项
+          selectedQuality.value = extendedQualityOptions.value[0]?.value || getQuality('netease')
+        }
+      } else {
+        selectedQuality.value = getQuality('netease')
+      }
 
       // 加载预设
       const savedPreset = localStorage.getItem('voicehub_filename_preset')
