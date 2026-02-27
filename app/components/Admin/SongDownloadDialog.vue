@@ -533,11 +533,12 @@ const exportFormat = ref('mp3')
 // const saveIntermediateWav = ref(false) // 已移除
 
 const qualityDescriptions = {
-  standard: '节省流量',
-  higher: '高品质体验',
-  exhigh: '极高音质',
-  lossless: '母带级音质',
-  hires: '极点解析'
+  2: '节省流量',
+  3: '高品质体验',
+  4: '极高音质',
+  5: '无损音质',
+  6: 'Hi-Res无损',
+  9: '超清母带'
 }
 
 // 生成带描述的音质选项
@@ -1330,10 +1331,11 @@ watch(
       // 优先使用上次保存的音质偏好，否则使用默认值
       const savedQuality = localStorage.getItem('voicehub_quality_preset')
       if (savedQuality) {
+        const qualityNum = Number(savedQuality)
         // 检查保存的音质是否在当前可用选项中
-        const isQualityAvailable = extendedQualityOptions.value.some(opt => opt.value === savedQuality)
+        const isQualityAvailable = extendedQualityOptions.value.some(opt => opt.value === qualityNum)
         if (isQualityAvailable) {
-          selectedQuality.value = savedQuality
+          selectedQuality.value = qualityNum
         } else {
           // 如果不可用，回退到第一个可用选项
           selectedQuality.value = extendedQualityOptions.value[0]?.value || getQuality('netease')
