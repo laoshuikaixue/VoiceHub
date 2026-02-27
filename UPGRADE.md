@@ -41,24 +41,15 @@ pg_dump -h localhost -U your_username -d voicehub > backup_$(date +%Y%m%d).sql
    git pull
    ```
 
-2. **拉取/构建最新镜像**
+2. **重建并重启服务**
 
    ```bash
-   # 如果使用预构建镜像
-   docker-compose pull
-
-   # 如果是本地构建
-   docker-compose build --no-cache
+   docker-compose up -d --build
    ```
 
-3. **重启服务**
+   > **注意**：由于默认配置使用本地构建，单纯使用 `pull` 命令无效。必须添加 `--build` 参数以确保应用代码变更。
 
-   ```bash
-   # 这会自动应用数据库迁移
-   docker-compose up -d
-   ```
-
-4. **验证升级**
+3. **验证升级**
    ```bash
    docker-compose logs -f voicehub
    ```
