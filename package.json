@@ -79,6 +79,7 @@
     "vite-plugin-wasm": "^3.5.0",
     "vue": "^3.5.26",
     "vue-router": "^4.6.4",
+    "wasm-media-encoders": "^0.7.0",
     "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
