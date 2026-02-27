@@ -43,12 +43,7 @@
           </header>
 
           <div
-            class="flex-1 custom-scrollbar"
-            :class="[
-              activeTab === 'print' || activeTab === 'schedule'
-                ? 'min-h-full lg:min-h-0 lg:h-0 overflow-y-auto lg:overflow-hidden flex flex-col'
-                : 'overflow-y-auto p-4 md:p-8'
-            ]"
+            class="flex-1 custom-scrollbar p-4 md:p-8 overflow-y-auto"
           >
             <!-- 移动端返回顶部按钮 -->
             <button

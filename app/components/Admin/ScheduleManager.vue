@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 p-4 md:p-8 pb-24 lg:pb-8">
+  <div class="space-y-6 pb-24 md:pb-8">
     <!-- 日期选择器 -->
     <div class="relative bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-1 overflow-hidden">
       <div class="flex items-center" @touchstart.stop>

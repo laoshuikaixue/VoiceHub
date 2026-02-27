@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col space-y-8 p-4 md:p-8 pb-12 lg:pb-8 lg:h-full animate-in fade-in slide-in-from-bottom-4 duration-500"
+    class="flex flex-col space-y-8 pb-12 lg:pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500"
   >
     <div class="flex flex-col space-y-2">
       <h2 class="text-2xl font-bold tracking-tight text-zinc-100">打印排期</h2>
@@ -25,17 +25,17 @@
       <p class="text-zinc-500 mt-2">您没有打印排期的权限，请联系管理员获取相应权限。</p>
     </div>
 
-    <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:flex-1 lg:min-h-0">
+    <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-8 h-auto">
       <!-- 设置面板 -->
-      <div class="lg:col-span-4 flex flex-col gap-6 min-h-0 h-auto lg:h-full">
+      <div class="lg:col-span-4 flex flex-col gap-6 h-auto">
         <div
-          class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-auto lg:h-full"
+          class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-auto"
         >
-          <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100">
+          <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100 shrink-0">
             <Layout class="w-4 h-4 text-blue-500" /> 打印设置
           </h3>
 
-          <div class="space-y-5 overflow-y-auto custom-scrollbar pr-2 flex-1">
+          <div class="space-y-5 pr-2">
             <!-- 纸张大小 -->
             <div class="space-y-2">
               <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
@@ -221,7 +221,7 @@
       </div>
 
       <!-- 预览区域 -->
-      <div class="lg:col-span-8 flex flex-col gap-4 h-[700px] lg:h-full mb-8 lg:mb-0">
+      <div class="lg:col-span-8 flex flex-col gap-4 h-[700px] lg:h-0 lg:min-h-full mb-8 lg:mb-0">
         <div
           class="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg"
         >
@@ -545,7 +545,7 @@ const setDateRange = (type) => {
     // 假设周一为一周的开始
     const diffToMon = day === 0 ? 6 : day - 1
     start.setDate(today.getDate() - diffToMon)
-    
+
     // 重新创建一个日期对象来计算结束日期，避免引用问题
     end.setTime(start.getTime())
     end.setDate(start.getDate() + 6)
@@ -553,7 +553,7 @@ const setDateRange = (type) => {
     const day = today.getDay()
     const diffToMon = day === 0 ? 6 : day - 1
     start.setDate(today.getDate() - diffToMon + 7)
-    
+
     // 重新创建一个日期对象来计算结束日期
     end.setTime(start.getTime())
     end.setDate(start.getDate() + 6)
