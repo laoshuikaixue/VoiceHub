@@ -452,24 +452,23 @@ const saveConfig = async () => {
 
 // 处理限额类型变化
 const handleLimitTypeChange = (type) => {
-  if (type === 'daily') {
-    formData.value.weeklySubmissionLimit = null
-    formData.value.monthlySubmissionLimit = null
-    if (formData.value.dailySubmissionLimit === null) {
-      formData.value.dailySubmissionLimit = 5
+  const limits = {
+    daily: { key: 'dailySubmissionLimit', default: 5 },
+    weekly: { key: 'weeklySubmissionLimit', default: 20 },
+    monthly: { key: 'monthlySubmissionLimit', default: 50 }
+  }
+
+  // 将非当前类型的限额设为 null
+  Object.keys(limits).forEach((limitType) => {
+    if (limitType !== type) {
+      formData.value[limits[limitType].key] = null
     }
-  } else if (type === 'weekly') {
-    formData.value.dailySubmissionLimit = null
-    formData.value.monthlySubmissionLimit = null
-    if (formData.value.weeklySubmissionLimit === null) {
-      formData.value.weeklySubmissionLimit = 20
-    }
-  } else {
-    formData.value.dailySubmissionLimit = null
-    formData.value.weeklySubmissionLimit = null
-    if (formData.value.monthlySubmissionLimit === null) {
-      formData.value.monthlySubmissionLimit = 50
-    }
+  })
+
+  // 如果当前类型的限额为 null，则设置默认值
+  const targetLimit = limits[type]
+  if (formData.value[targetLimit.key] === null) {
+    formData.value[targetLimit.key] = targetLimit.default
   }
 }
 
