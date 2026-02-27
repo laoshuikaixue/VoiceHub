@@ -407,28 +407,12 @@
             </div>
 
             <!-- 分页 -->
-            <div
-              v-if="totalPages > 1"
-              class="mt-4 flex items-center justify-between pt-4 border-t border-zinc-800/50"
-            >
-              <button
-                :disabled="currentPage === 1"
-                class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 disabled:opacity-30 transition-colors"
-                @click="prevPage"
-              >
-                <ArrowLeft class="w-4 h-4" />
-              </button>
-              <span class="text-[10px] font-bold text-zinc-600"
-                >{{ currentPage }} / {{ totalPages }}</span
-              >
-              <button
-                :disabled="currentPage === totalPages"
-                class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 disabled:opacity-30 transition-colors"
-                @click="nextPage"
-              >
-                <ArrowRight class="w-4 h-4" />
-              </button>
-            </div>
+            <Pagination
+              v-model:current-page="currentPage"
+              :total-pages="totalPages"
+              :total-items="allUnscheduledSongs.length"
+              item-name="首待排歌曲"
+            />
           </div>
         </div>
 
@@ -826,6 +810,7 @@ import {
 } from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
+import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
@@ -1116,32 +1101,6 @@ const totalPages = computed(() => {
   return Math.ceil(allUnscheduledSongs.value.length / pageSize.value)
 })
 
-// 计算显示的页码数组
-const displayedPageNumbers = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const count = 5
-
-  if (total <= count) {
-    return Array.from({ length: total }, (_, i) => i + 1)
-  }
-
-  let start = current - 2
-  let end = current + 2
-
-  if (start < 1) {
-    start = 1
-    end = count
-  }
-
-  if (end > total) {
-    end = total
-    start = total - count + 1
-  }
-
-  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
-})
-
 // 桌面端检测
 const isDesktop = ref(true)
 
@@ -1424,25 +1383,6 @@ const scrollToToday = () => {
   nextTick(() => {
     scrollToDateElement('smooth')
   })
-}
-
-// 分页控制方法
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-  }
-}
-
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-  }
-}
-
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-  }
 }
 
 // 监听日期变化

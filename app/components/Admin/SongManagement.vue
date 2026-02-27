@@ -329,56 +329,12 @@
     </div>
 
     <!-- 分页区域 -->
-    <div v-if="totalPages > 1" class="flex items-center justify-between px-2">
-      <div class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
-        第 {{ currentPage }} 页 / 共 {{ totalPages }} 页
-      </div>
-      <div class="flex items-center gap-2">
-        <button
-          :disabled="currentPage === 1"
-          class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
-          @click="currentPage = 1"
-        >
-          <ChevronsLeft :size="16" />
-        </button>
-        <button
-          :disabled="currentPage === 1"
-          class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
-          @click="currentPage--"
-        >
-          <ChevronLeft :size="16" />
-        </button>
-        <div class="flex items-center gap-1 mx-2">
-          <button
-            v-for="p in displayedPages"
-            :key="p"
-            :class="[
-              'w-8 h-8 rounded-xl text-xs font-bold transition-all',
-              currentPage === p
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
-                : 'text-zinc-500 hover:text-zinc-300'
-            ]"
-            @click="currentPage = p"
-          >
-            {{ p }}
-          </button>
-        </div>
-        <button
-          :disabled="currentPage === totalPages"
-          class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
-          @click="currentPage++"
-        >
-          <ChevronRight :size="16" />
-        </button>
-        <button
-          :disabled="currentPage === totalPages"
-          class="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-30 rounded-xl transition-all"
-          @click="currentPage = totalPages"
-        >
-          <ChevronsRight :size="16" />
-        </button>
-      </div>
-    </div>
+    <Pagination
+      v-model:current-page="currentPage"
+      :total-pages="totalPages"
+      :total-items="filteredSongs.length"
+      item-name="首歌曲"
+    />
 
     <!-- Modals (模态框) -->
     <!-- 确认删除对话框 -->
@@ -830,6 +786,7 @@ import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
+import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import {
   Search,
@@ -1059,33 +1016,6 @@ const totalPages = computed(() => {
 })
 
 // 显示的分页按钮
-const displayedPages = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const pages = []
-
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i)
-  } else {
-    if (current <= 4) {
-      for (let i = 1; i <= 5; i++) pages.push(i)
-      pages.push('...')
-      pages.push(total)
-    } else if (current >= total - 3) {
-      pages.push(1)
-      pages.push('...')
-      for (let i = total - 4; i <= total; i++) pages.push(i)
-    } else {
-      pages.push(1)
-      pages.push('...')
-      for (let i = current - 1; i <= current + 1; i++) pages.push(i)
-      pages.push('...')
-      pages.push(total)
-    }
-  }
-  return pages.filter((p) => typeof p === 'number')
-})
-
 const playedCount = computed(() => {
   return songs.value.filter((song) => song.played).length
 })

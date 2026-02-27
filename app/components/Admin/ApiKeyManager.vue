@@ -178,29 +178,13 @@
     </div>
 
     <!-- 分页 -->
-    <div v-if="pagination.totalPages > 1" class="flex justify-center mt-8">
-      <div
-        class="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800/60 p-1.5 rounded-2xl"
-      >
-        <button
-          :disabled="pagination.page <= 1"
-          class="p-2 text-zinc-500 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          @click="changePage(pagination.page - 1)"
-        >
-          <ChevronLeft :size="18" />
-        </button>
-        <div class="px-4 text-[11px] font-black text-zinc-500 uppercase tracking-widest">
-          第 {{ pagination.page }} 页 / 共 {{ pagination.totalPages }} 页
-        </div>
-        <button
-          :disabled="pagination.page >= pagination.totalPages"
-          class="p-2 text-zinc-500 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          @click="changePage(pagination.page + 1)"
-        >
-          <ChevronRight :size="18" />
-        </button>
-      </div>
-    </div>
+    <Pagination
+      v-model:current-page="pagination.page"
+      :total-pages="pagination.totalPages"
+      :total-items="pagination.total"
+      item-name="个API密钥"
+      @change="loadApiKeys"
+    />
 
     <!-- 模态框组 -->
     <Transition name="modal">
@@ -537,25 +521,11 @@
                 <h5 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">
                   最近调用日志
                 </h5>
-                <div class="flex items-center gap-1">
-                  <button
-                    :disabled="logsPagination.page <= 1"
-                    class="p-1 text-zinc-600 hover:text-zinc-300 disabled:opacity-30 transition-colors"
-                    @click="loadApiLogs(logsPagination.page - 1)"
-                  >
-                    <ChevronLeft :size="14" />
-                  </button>
-                  <span class="text-[9px] font-black text-zinc-600"
-                    >{{ logsPagination.page }} / {{ logsPagination.totalPages }}</span
-                  >
-                  <button
-                    :disabled="logsPagination.page >= logsPagination.totalPages"
-                    class="p-1 text-zinc-600 hover:text-zinc-300 disabled:opacity-30 transition-colors"
-                    @click="loadApiLogs(logsPagination.page + 1)"
-                  >
-                    <ChevronRight :size="14" />
-                  </button>
-                </div>
+                <Pagination
+                  v-model:current-page="logsPagination.page"
+                  :total-pages="logsPagination.totalPages"
+                  @change="loadApiLogs"
+                />
               </div>
 
               <div class="space-y-2">
@@ -649,6 +619,7 @@ import {
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 响应式数据
