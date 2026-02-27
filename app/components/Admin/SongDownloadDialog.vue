@@ -666,9 +666,7 @@ const preloadSelectedSongs = async () => {
   const worker = async () => {
     while (queue.length > 0) {
       const songItem = queue.shift()
-      if (songItem) {
-        await preloadSong(songItem.song)
-      }
+      await preloadSong(songItem.song)
     }
   }
 
