@@ -501,7 +501,7 @@ import {
   Trash2,
   Clock
 } from 'lucide-vue-next'
-import { Mp3Encoder } from '@breezystack/lamejs'
+import { createMp3Encoder } from 'wasm-media-encoders'
 
 const props = defineProps({
   show: {
@@ -998,84 +998,107 @@ const normalizeBuffer = (buffer, targetDbValue) => {
   }
 }
 
-// MP3 编码 (lamejs)
+// MP3 编码 (WASM - 更快的编码速度)
 const encodeToMp3 = async (buffer) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const channels = 2
-      const sampleRate = buffer.sampleRate
-      const kbps = 128 // 128kbps
+  try {
+    processingStatus.value = '正在初始化 MP3 编码器...'
+    
+    // 创建 WASM 编码器
+    const encoder = await createMp3Encoder()
+    
+    // 获取实际声道数
+    const channels = buffer.numberOfChannels
+    
+    // 配置编码器 - 使用 CBR 固定码率以确保时长准确
+    encoder.configure({
+      sampleRate: buffer.sampleRate,
+      channels: channels,
+      bitrate: 192, // CBR 192kbps
+      outputSampleRate: buffer.sampleRate
+    })
 
-      const mp3encoder = new Mp3Encoder(channels, sampleRate, kbps)
-      const mp3Data = []
+    // 根据声道数获取数据
+    const leftData = buffer.getChannelData(0)
+    const rightData = channels > 1 ? buffer.getChannelData(1) : leftData
+    const totalSamples = leftData.length
 
-      const leftData = buffer.getChannelData(0)
-      const rightData = buffer.getChannelData(1)
+    // 用于存储所有编码数据
+    let outBuffer = new Uint8Array(1024 * 1024) // 初始 1MB
+    let offset = 0
 
-      const totalSamples = leftData.length
+    // 分块处理以更新进度
+    const chunkSize = buffer.sampleRate * 2 // 每次处理 2 秒音频
+    let processed = 0
 
-      let processed = 0
-
-      const processChunk = () => {
-        // 时间片处理 (100ms) 避免阻塞 UI
+    const processChunk = () => {
+      return new Promise((resolve) => {
         const startTime = performance.now()
-        const timeSlice = 100 // ms
+        const timeSlice = 50 // 50ms 时间片
 
         while (processed < totalSamples) {
-          // 每次处理约 1 秒音频
-          const chunkSamples = 11520 * 4
-          const end = Math.min(processed + chunkSamples, totalSamples)
+          const end = Math.min(processed + chunkSize, totalSamples)
+          const size = end - processed
 
-          const leftChunk = new Int16Array(end - processed)
-          const rightChunk = new Int16Array(end - processed)
+          // 提取当前块的数据
+          const leftChunk = leftData.slice(processed, end)
+          const rightChunk = rightData.slice(processed, end)
 
-          for (let i = 0; i < end - processed; i++) {
-            // 格式转换: Float32 -> Int16
-            const idx = processed + i
+          // WASM 编码 - 根据声道数传入数据
+          const mp3Data = channels === 1 
+            ? encoder.encode([leftChunk])
+            : encoder.encode([leftChunk, rightChunk])
 
-            // 限制范围
-            let l = leftData[idx]
-            let r = rightData[idx]
-
-            if (l > 1) l = 1
-            else if (l < -1) l = -1
-
-            if (r > 1) r = 1
-            else if (r < -1) r = -1
-
-            leftChunk[i] = l < 0 ? l * 0x8000 : l * 0x7fff
-            rightChunk[i] = r < 0 ? r * 0x8000 : r * 0x7fff
+          // 扩展输出缓冲区（如果需要）
+          if (mp3Data.length + offset > outBuffer.length) {
+            const newBuffer = new Uint8Array(outBuffer.length * 2)
+            newBuffer.set(outBuffer)
+            outBuffer = newBuffer
           }
 
-          const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk)
-          if (mp3buf.length > 0) {
-            mp3Data.push(mp3buf)
-          }
+          // 复制编码数据（必须复制，因为 WASM 拥有原始数据）
+          outBuffer.set(mp3Data, offset)
+          offset += mp3Data.length
 
           processed = end
 
-          // 检查时间片是否耗尽
+          // 更新进度
+          const progress = Math.round((processed / totalSamples) * 100)
+          processingStatus.value = `正在编码 MP3: ${progress}%`
+
+          // 检查时间片
           if (performance.now() - startTime > timeSlice) {
-            // 更新进度并让出主线程
-            processingStatus.value = `正在编码 MP3: ${Math.round((processed / totalSamples) * 100)}%`
-            setTimeout(processChunk, 0)
+            setTimeout(() => resolve(processChunk()), 0)
             return
           }
         }
 
-        // 编码完成
-        const mp3buf = mp3encoder.flush()
-        if (mp3buf.length > 0) {
-          mp3Data.push(mp3buf)
-        }
-        resolve(new Blob(mp3Data, { type: 'audio/mp3' }))
-      }
-
-      processChunk()
-    } catch (e) {
-      reject(e)
+        resolve()
+      })
     }
-  })
+
+    // 处理所有块
+    await processChunk()
+
+    // 完成编码
+    processingStatus.value = '正在完成编码...'
+    const finalData = encoder.finalize()
+    
+    if (finalData.length > 0) {
+      if (finalData.length + offset > outBuffer.length) {
+        const newBuffer = new Uint8Array(offset + finalData.length)
+        newBuffer.set(outBuffer.subarray(0, offset))
+        outBuffer = newBuffer
+      }
+      outBuffer.set(finalData, offset)
+      offset += finalData.length
+    }
+
+    // 返回最终的 Blob
+    return new Blob([outBuffer.subarray(0, offset)], { type: 'audio/mp3' })
+  } catch (e) {
+    console.error('MP3 编码失败:', e)
+    throw e
+  }
 }
 
 // WAV 编码
