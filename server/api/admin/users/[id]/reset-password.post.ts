@@ -1,7 +1,4 @@
-import bcrypt from 'bcrypt'
-import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import { updateUserPassword } from '~~/server/services/userService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -41,38 +38,9 @@ export default defineEventHandler(async (event) => {
         message: '禁止在用户管理中重置自己的密码'
       })
     }
-    // 查询用户是否存在
-    const userExistsResult = await db.select().from(users).where(eq(users.id, id)).limit(1)
-    const userExists = userExistsResult[0]
-
-    if (!userExists) {
-      throw createError({
-        statusCode: 404,
-        message: '用户不存在'
-      })
-    }
-
-    // 加密新密码
-    const hashedPassword = await bcrypt.hash(body.newPassword, 10)
-
-    // 更新密码，清空passwordChangedAt字段，强制用户下次登录时修改密码
-    await db
-      .update(users)
-      .set({
-        password: hashedPassword,
-        passwordChangedAt: null, // 清空密码修改时间，强制用户修改密码
-        forcePasswordChange: true // 强制用户修改密码
-      })
-      .where(eq(users.id, id))
-
-    // 清除该用户的认证缓存（密码已重置）
-    try {
-      const { cache } = await import('~~/server/utils/cache-helpers')
-      await cache.delete(`auth:user:${id}`)
-      console.log(`[Cache] 用户认证缓存已清除（密码重置）: ${id}`)
-    } catch (cacheError) {
-      console.warn('[Cache] 清除用户认证缓存失败:', cacheError)
-    }
+    
+    // 使用统一服务重置密码 (forceReset = true)
+    await updateUserPassword(id, body.newPassword, true)
 
     return {
       success: true,

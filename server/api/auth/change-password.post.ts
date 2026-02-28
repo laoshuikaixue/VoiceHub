@@ -3,7 +3,7 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
-import { getBeijingTime } from '~/utils/timeUtils'
+import { updateUserPassword } from '../../services/userService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
@@ -68,29 +68,12 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 加密新密码
-    const hashedNewPassword = await bcrypt.hash(body.newPassword, 12)
-
     // 更新密码
-    await db
-      .update(users)
-      .set({
-        password: hashedNewPassword,
-        passwordChangedAt: getBeijingTime()
-      })
-      .where(eq(users.id, user.id))
+    await updateUserPassword(user.id, body.newPassword)
 
     // 记录成功的密码修改
-    recordLoginSuccess(userDetails.username)
-
-    // 清除用户认证缓存（密码已变更）
-    try {
-      const { cache } = await import('~~/server/utils/cache-helpers')
-      await cache.delete(`auth:user:${user.id}`)
-      console.log(`[Cache] 用户认证缓存已清除（密码修改）: ${user.id}`)
-    } catch (cacheError) {
-      console.warn('[Cache] 清除用户认证缓存失败:', cacheError)
-    }
+    const clientIp = getClientIP(event)
+    recordLoginSuccess(userDetails.username, clientIp)
 
     return {
       success: true,
