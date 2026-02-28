@@ -285,42 +285,7 @@ export class SmtpService {
       const result = await this.transporter!.sendMail(mailOptions)
       console.log(`邮件发送成功: ${result.messageId}`)
       return true
-    } catch (error: any) {
-      console.error('发送邮件初次尝试失败:', {
-        code: error.code,
-        response: error.response,
-        responseCode: error.responseCode,
-        configFrom: this.smtpConfig.fromEmail,
-        authUser: this.smtpConfig.auth?.user
-      })
-
-      // 自动重试机制：如果是因为发件人地址不匹配导致的553/501错误，尝试使用认证用户作为发件人
-      // 注意：放宽条件，只要是553/501且有认证用户，就尝试重试，不再判断fromEmail是否已一致（避免大小写等隐式差异）
-      if (
-        (error.responseCode === 553 || error.responseCode === 501) &&
-        this.smtpConfig.auth?.user
-      ) {
-        console.warn(
-          `SMTP发件人地址不匹配 (${error.responseCode})，正在尝试使用认证用户重试发送...`
-        )
-        try {
-          const retryMailOptions = {
-            ...mailOptions,
-            from: {
-              name: this.smtpConfig.fromName,
-              address: this.smtpConfig.auth.user
-            }
-          }
-          const result = await this.transporter!.sendMail(retryMailOptions)
-          console.log(`重试发送成功: ${result.messageId}`)
-          return true
-        } catch (retryError) {
-          console.error('重试发送失败:', retryError)
-          // 如果重试也失败，抛出原始错误
-          throw error
-        }
-      }
-
+    } catch (error) {
       console.error('发送邮件失败:', error)
       throw error
     }
