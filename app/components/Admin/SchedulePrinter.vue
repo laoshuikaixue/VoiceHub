@@ -389,7 +389,7 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
-import logoPng from '~/public/images/logo.png'
+import logoPng from '~~/public/images/logo.png'
 
 // 权限检查
 const { canPrintSchedule } = usePermissions()

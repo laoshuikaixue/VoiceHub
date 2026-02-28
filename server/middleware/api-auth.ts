@@ -55,8 +55,6 @@ export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
   const pathname = url.pathname
 
-  console.log(`[API Auth Middleware] 处理请求: ${pathname}`)
-
   // 只处理开放API路由 (/api/open/*)
   if (!pathname.startsWith('/api/open/')) {
     return

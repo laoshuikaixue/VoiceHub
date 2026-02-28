@@ -11,7 +11,7 @@ export default defineNuxtConfig({
   },
   srcDir: 'app',
   dir: {
-    public: 'public'
+    public: '../public'
   },
   devtools: { enabled: true },
   devServer: {
@@ -85,7 +85,7 @@ export default defineNuxtConfig({
         { name: 'format-detection', content: 'telephone=no' }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico?v=2' },
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
         // 优先加载常规字体，确保页面快速显示
         {
           rel: 'preload',
