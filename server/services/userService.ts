@@ -31,8 +31,8 @@ export async function updateUserPassword(
 
   // 3. 清除用户认证缓存
   try {
-    const { cache } = await import('~~/server/utils/cache-helpers')
-    await cache.delete(`auth:user:${userId}`)
+    const { userCache } = await import('~~/server/utils/cache-helpers')
+    await userCache.clearAuth(String(userId))
     console.log(`[Cache] 用户认证缓存已清除（密码修改）: ${userId}`)
   } catch (cacheError) {
     console.warn('[Cache] 清除用户认证缓存失败:', cacheError)
