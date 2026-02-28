@@ -10,8 +10,9 @@ export default defineNuxtConfig({
     compatibilityVersion: 4
   },
   srcDir: 'app',
+  serverDir: fileURLToPath(new URL('./server', import.meta.url)),
   dir: {
-    public: '../public'
+    public: fileURLToPath(new URL('./public', import.meta.url))
   },
   devtools: { enabled: true },
   devServer: {
