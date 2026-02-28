@@ -256,32 +256,32 @@ export class SmtpService {
       throw new Error('SMTP配置未初始化或无效')
     }
 
-    try {
-      // 如果提供了IP地址，在邮件内容中添加IP信息
-      let finalHtml = htmlContent
-      if (ipAddress) {
-        const formattedIP = formatIPForEmail(ipAddress)
-        // 在邮件末尾添加IP信息
-        finalHtml = htmlContent.replace(
-          /(<p[^>]*style="[^"]*text-align: center[^"]*"[^>]*>.*?此邮件由系统自动发送，请勿回复。.*?<\/p>)/s,
-          `$1`.replace(
-            '此邮件由系统自动发送，请勿回复。',
-            `此邮件由系统自动发送，请勿回复。<br><br>This email was requested from: ${formattedIP}`
-          )
+    // 如果提供了IP地址，在邮件内容中添加IP信息
+    let finalHtml = htmlContent
+    if (ipAddress) {
+      const formattedIP = formatIPForEmail(ipAddress)
+      // 在邮件末尾添加IP信息
+      finalHtml = htmlContent.replace(
+        /(<p[^>]*style="[^"]*text-align: center[^"]*"[^>]*>.*?此邮件由系统自动发送，请勿回复。.*?<\/p>)/s,
+        `$1`.replace(
+          '此邮件由系统自动发送，请勿回复。',
+          `此邮件由系统自动发送，请勿回复。<br><br>This email was requested from: ${formattedIP}`
         )
-      }
+      )
+    }
 
-      const mailOptions = {
-        from: {
-          name: this.smtpConfig.fromName,
-          address: this.smtpConfig.fromEmail
-        },
-        to,
-        subject,
-        html: finalHtml,
-        text: textContent || finalHtml.replace(/<[^>]*>/g, '') // 简单的HTML转文本
-      }
+    const mailOptions = {
+      from: {
+        name: this.smtpConfig.fromName,
+        address: this.smtpConfig.fromEmail
+      },
+      to,
+      subject,
+      html: finalHtml,
+      text: textContent || finalHtml.replace(/<[^>]*>/g, '') // 简单的HTML转文本
+    }
 
+    try {
       const result = await this.transporter!.sendMail(mailOptions)
       console.log(`邮件发送成功: ${result.messageId}`)
       return true
