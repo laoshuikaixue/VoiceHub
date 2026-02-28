@@ -52,6 +52,12 @@ export default defineEventHandler(async (event) => {
     const originalTransporter = smtpService.transporter
 
     try {
+      // 如果密码是掩码，则使用原始配置中的密码
+      const testPassword =
+        body.smtpPassword === '****************'
+          ? originalConfig?.auth?.pass || body.smtpPassword
+          : body.smtpPassword
+
       // 设置测试配置
       smtpService.smtpConfig = {
         host: body.smtpHost,
@@ -59,7 +65,7 @@ export default defineEventHandler(async (event) => {
         secure: body.smtpSecure || false,
         auth: {
           user: body.smtpUsername,
-          pass: body.smtpPassword
+          pass: testPassword
         },
         fromEmail: body.smtpFromEmail || body.smtpUsername,
         fromName: body.smtpFromName || '校园广播站'
