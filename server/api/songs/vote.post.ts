@@ -1,5 +1,5 @@
 import { db } from '~/drizzle/db'
-import { schedules, songs, votes } from '~/drizzle/schema'
+import { schedules, semesters, songs, votes } from '~/drizzle/schema'
 import { and, count, eq } from 'drizzle-orm'
 import { createSongVotedNotification } from '../../services/notificationService'
 import {
