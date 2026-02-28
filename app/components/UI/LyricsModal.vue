@@ -62,7 +62,6 @@
             ref="mainContent"
             class="main-content"
             :style="{ zIndex: isMobile && showQualitySettings ? 101 : undefined }"
-            @scroll="onMainContentScroll"
             @click="handleOverlayClick"
           >
             <!-- 左侧区域：封面和歌曲信息 -->
@@ -489,14 +488,20 @@ const updateMobileAnimations = (scrollLeft, width) => {
 
     const el = mobileFloatingCoverRef.value
 
-    const targetVisualRadius = 12 - 6 * p
-    const radius = targetVisualRadius / currentScale
-
-    // 使用 transform 和 will-change 优化性能
-    el.style.transform = `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale})`
-    el.style.borderRadius = `${radius}px`
-    el.style.opacity = '1'
-    el.style.pointerEvents = p > 0.8 ? 'none' : 'auto'
+    // 移除 borderRadius 动态计算，使用固定值以提升性能
+    const transform = `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale})`
+    const shouldDisablePointer = p > 0.8
+    
+    // 只修改 transform 和必要的属性
+    if (el.style.transform !== transform) {
+      el.style.transform = transform
+      el.style.webkitTransform = transform
+    }
+    
+    const newPointerEvents = shouldDisablePointer ? 'none' : 'auto'
+    if (el.style.pointerEvents !== newPointerEvents) {
+      el.style.pointerEvents = newPointerEvents
+    }
   }
 
   if (pageOneInfoRef.value) {
@@ -504,9 +509,14 @@ const updateMobileAnimations = (scrollLeft, width) => {
     const opacity = Math.max(0, 1 - p * 2.5)
     const translateY = p * -20
 
-    // 使用 transform 优化性能
-    el.style.opacity = String(opacity)
-    el.style.transform = `translate3d(0, ${translateY}px, 0)`
+    const transform = `translate3d(0, ${translateY}px, 0)`
+    if (el.style.transform !== transform) {
+      el.style.transform = transform
+      el.style.webkitTransform = transform
+    }
+    if (el.style.opacity !== String(opacity)) {
+      el.style.opacity = String(opacity)
+    }
   }
 
   if (pageTwoInfoRef.value) {
@@ -514,10 +524,19 @@ const updateMobileAnimations = (scrollLeft, width) => {
     const opacity = Math.max(0, (p - 0.6) * 2.5)
     const translateY = (1 - p) * 10
 
-    // 使用 transform 优化性能
-    el.style.opacity = String(opacity)
-    el.style.transform = `translate3d(0, ${translateY}px, 0)`
-    el.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none'
+    const transform = `translate3d(0, ${translateY}px, 0)`
+    if (el.style.transform !== transform) {
+      el.style.transform = transform
+      el.style.webkitTransform = transform
+    }
+    if (el.style.opacity !== String(opacity)) {
+      el.style.opacity = String(opacity)
+    }
+    
+    const newPointerEvents = opacity > 0.5 ? 'auto' : 'none'
+    if (el.style.pointerEvents !== newPointerEvents) {
+      el.style.pointerEvents = newPointerEvents
+    }
   }
 }
 
@@ -537,11 +556,14 @@ const onMainContentScroll = (event) => {
   }
 
   // 使用 requestAnimationFrame 优化性能，避免频繁更新
+  // 如果已经有待处理的动画帧，取消它以避免堆积
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId)
   }
+  
   animationFrameId = requestAnimationFrame(() => {
     updateMobileAnimations(scrollLeft, width)
+    animationFrameId = null
   })
 }
 
@@ -860,6 +882,11 @@ watch(
       window.addEventListener('resize', handleResize)
       window.addEventListener('resize', updateMobileState)
 
+      // 添加被动滚动监听器以提升移动端性能
+      if (mainContent.value) {
+        mainContent.value.addEventListener('scroll', onMainContentScroll, { passive: true })
+      }
+
       updateMobileState()
 
       if (isMobile.value) {
@@ -887,6 +914,11 @@ watch(
       document.removeEventListener('keydown', handleKeydown)
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('resize', updateMobileState)
+
+      // 移除滚动监听器
+      if (mainContent.value) {
+        mainContent.value.removeEventListener('scroll', onMainContentScroll)
+      }
 
       // 清理动画帧
       if (animationFrameId) {
@@ -2032,7 +2064,7 @@ onUnmounted(() => {
   position: absolute;
   overflow: hidden;
   pointer-events: none;
-  will-change: transform, border-radius;
+  will-change: transform, opacity;
   /* 启用硬件加速 */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
@@ -2040,6 +2072,8 @@ onUnmounted(() => {
   -webkit-backface-visibility: hidden;
   perspective: 1000px;
   -webkit-perspective: 1000px;
+  /* 固定圆角，避免动态计算导致的性能问题 */
+  border-radius: 12px;
 }
 
 .mobile-floating-cover img {
@@ -2049,5 +2083,7 @@ onUnmounted(() => {
   /* 优化图片渲染 */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 </style>
