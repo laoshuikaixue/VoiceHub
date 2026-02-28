@@ -43,25 +43,32 @@ export default defineEventHandler(async (event) => {
     }
 
     // 过滤敏感字段，只返回公开配置
-    const publicSettings = {
-      siteTitle: settings.siteTitle,
-      siteLogoUrl: settings.siteLogoUrl,
-      schoolLogoHomeUrl: settings.schoolLogoHomeUrl,
-      schoolLogoPrintUrl: settings.schoolLogoPrintUrl,
-      siteDescription: settings.siteDescription,
-      submissionGuidelines: settings.submissionGuidelines,
-      icpNumber: settings.icpNumber,
-      enablePlayTimeSelection: settings.enablePlayTimeSelection,
-      enableSubmissionLimit: settings.enableSubmissionLimit,
-      dailySubmissionLimit: settings.dailySubmissionLimit,
-      weeklySubmissionLimit: settings.weeklySubmissionLimit,
-      monthlySubmissionLimit: settings.monthlySubmissionLimit,
-      showBlacklistKeywords: settings.showBlacklistKeywords,
-      hideStudentInfo: settings.hideStudentInfo,
-      enableReplayRequests: settings.enableReplayRequests,
-      enableRequestTimeLimitation: settings.enableRequestTimeLimitation,
-      forceBlockAllRequests: settings.forceBlockAllRequests
-    }
+    const publicFields = [
+      'siteTitle',
+      'siteLogoUrl',
+      'schoolLogoHomeUrl',
+      'schoolLogoPrintUrl',
+      'siteDescription',
+      'submissionGuidelines',
+      'icpNumber',
+      'enablePlayTimeSelection',
+      'enableSubmissionLimit',
+      'dailySubmissionLimit',
+      'weeklySubmissionLimit',
+      'monthlySubmissionLimit',
+      'showBlacklistKeywords',
+      'hideStudentInfo',
+      'enableReplayRequests',
+      'enableRequestTimeLimitation',
+      'forceBlockAllRequests'
+    ]
+
+    const publicSettings = publicFields.reduce((acc: any, key) => {
+      if (settings && key in settings) {
+        acc[key] = (settings as any)[key]
+      }
+      return acc
+    }, {})
 
     // 将结果缓存到Redis（如果可用）- 永久缓存
     if (settings && isRedisReady()) {
