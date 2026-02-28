@@ -211,11 +211,8 @@
           <div
             class="playback-controls"
             :class="{ 'mobile-hidden': isMobile && currentMobilePage === 1 }"
-            @touchstart.stop
-            @touchmove.stop
-            @touchend.stop
           >
-            <div class="control-buttons">
+            <div class="control-buttons" @touchstart.stop @touchmove.stop @touchend.stop>
               <button
                 class="control-btn secondary-btn"
                 :class="{ active: playMode === 'order' }"
@@ -243,7 +240,7 @@
             </div>
 
             <!-- 进度条 -->
-            <div class="progress-section">
+            <div class="progress-section" @touchstart.stop @touchmove.stop @touchend.stop>
               <span class="time-display">{{ formatTime(currentTime) }}</span>
               <div
                 ref="progressBar"
@@ -1658,7 +1655,7 @@ onUnmounted(() => {
     gap: 0;
     width: 100vw;
     height: 100%;
-    overflow-x: auto;
+    overflow-x: scroll;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
@@ -1668,6 +1665,10 @@ onUnmounted(() => {
     /* 优化滚动性能 */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
+    /* Safari 特定修复 */
+    -webkit-scroll-snap-type: x mandatory;
+    /* 移动端必须启用 pointer-events 才能滚动 */
+    pointer-events: auto;
     z-index: 70; /* 确保子元素（如设置按钮）在播控栏之上 */
   }
 
@@ -1694,6 +1695,10 @@ onUnmounted(() => {
     will-change: transform;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
+    /* Safari 触摸优化 */
+    -webkit-scroll-snap-align: start;
+    /* 确保可以接收触摸事件用于滑动 */
+    pointer-events: auto;
   }
 
   .right-column {
@@ -1714,6 +1719,10 @@ onUnmounted(() => {
     will-change: transform;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
+    /* Safari 触摸优化 */
+    -webkit-scroll-snap-align: start;
+    /* 确保可以接收触摸事件用于滑动 */
+    pointer-events: auto;
   }
 
   .lyrics-display-area {
@@ -1800,13 +1809,27 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column-reverse;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    /* 让容器本身拦截点击，避免穿透到 .main-content 触发滚动 */
-    pointer-events: auto;
+    /* 容器本身不拦截事件，允许滑动穿透 */
+    pointer-events: none;
   }
 
   .playback-controls > * {
-    /* 子元素保持正常点击 */
+    /* 子元素（按钮和进度条）拦截点击 */
     pointer-events: auto;
+  }
+
+  .playback-controls.mobile-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(40px) scale(0.95);
+    filter: blur(10px);
+    /* 完全隐藏，不可见也不可交互 */
+    visibility: hidden;
+  }
+
+  .playback-controls.mobile-hidden > * {
+    /* 隐藏时子元素也不可交互 */
+    pointer-events: none;
   }
 
   .playback-controls.mobile-hidden {
