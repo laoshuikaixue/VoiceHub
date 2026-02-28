@@ -1697,6 +1697,8 @@ onUnmounted(() => {
     -webkit-transform: translateZ(0);
     /* Safari 触摸优化 */
     -webkit-scroll-snap-align: start;
+    /* 确保可以接收触摸事件用于滑动 */
+    pointer-events: auto;
   }
 
   .right-column {
@@ -1719,6 +1721,8 @@ onUnmounted(() => {
     -webkit-transform: translateZ(0);
     /* Safari 触摸优化 */
     -webkit-scroll-snap-align: start;
+    /* 确保可以接收触摸事件用于滑动 */
+    pointer-events: auto;
   }
 
   .lyrics-display-area {
@@ -1812,6 +1816,20 @@ onUnmounted(() => {
   .playback-controls > * {
     /* 子元素（按钮和进度条）拦截点击 */
     pointer-events: auto;
+  }
+
+  .playback-controls.mobile-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(40px) scale(0.95);
+    filter: blur(10px);
+    /* 完全隐藏，不可见也不可交互 */
+    visibility: hidden;
+  }
+
+  .playback-controls.mobile-hidden > * {
+    /* 隐藏时子元素也不可交互 */
+    pointer-events: none;
   }
 
   .playback-controls.mobile-hidden {
