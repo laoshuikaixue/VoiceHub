@@ -968,7 +968,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import searchIcon from '~/public/images/search.svg'
+import searchIcon from '~~/public/images/search.svg'
 import { X, Lock, Loader2, Check } from 'lucide-vue-next'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'

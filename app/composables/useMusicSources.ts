@@ -55,69 +55,6 @@ export const useMusicSources = () => {
       // Meting API 返回歌曲信息数组
       if (Array.isArray(response) && response.length > 0) {
         const songInfo = response[0]
-        /**
-         * 获取电台/播客节目列表
-         */
-        const getDjPrograms = async (
-          radioId: string | number,
-          limit: number = 20,
-          offset: number = 0,
-          cookie?: string
-        ): Promise<{
-          success: boolean
-          programs: any[]
-          count: number
-          more: boolean
-          error?: string
-        }> => {
-          const enabledSources = getEnabledSources()
-          // 优先使用网易云备用源
-          const neteaseSources = enabledSources.filter((source) =>
-            source.id.includes('netease-backup')
-          )
-
-          // 如果没有找到网易云备用源，尝试其他可能支持的源（虽然目前只有备用源支持此接口）
-          if (neteaseSources.length === 0) {
-            return {
-              success: false,
-              programs: [],
-              count: 0,
-              more: false,
-              error: '未找到可用的网易云音源'
-            }
-          }
-
-          // 尝试所有网易云源
-          for (const source of neteaseSources) {
-            try {
-              let cookieParam = ''
-              if (cookie) {
-                cookieParam = `&cookie=${encodeURIComponent(cookie)}`
-              }
-
-              const url = `${source.baseUrl}/dj/program?rid=${radioId}&limit=${limit}&offset=${offset}&unblock=false${cookieParam}`
-              console.log(`[getDjPrograms] Requesting: ${url}`)
-
-              const response: any = await $fetch(url, {
-                timeout: source.timeout || 8000
-              })
-
-              if (response.code === 200) {
-                return {
-                  success: true,
-                  programs: response.programs || [],
-                  count: response.count || 0,
-                  more: response.more || false
-                }
-              }
-            } catch (e: any) {
-              console.warn(`[getDjPrograms] Source ${source.id} failed:`, e.message)
-            }
-          }
-
-          return { success: false, programs: [], count: 0, more: false, error: '获取节目列表失败' }
-        }
-
         return {
           success: true,
           data: {

@@ -91,7 +91,7 @@
 <script setup>
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
 import { ref } from 'vue'
-import logo from '~/public/images/logo.svg'
+import logo from '~~/public/images/logo.svg'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()

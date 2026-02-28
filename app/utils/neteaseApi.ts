@@ -1,6 +1,6 @@
 const BASE_URL = 'https://api.voicehub.lao-shui.top'
 
-export const normalizeNeteaseResponse = (data) => {
+export function normalizeNeteaseResponse(data) {
   if (!data || typeof data !== 'object') {
     return {
       code: undefined,
@@ -31,7 +31,7 @@ export const normalizeNeteaseResponse = (data) => {
   }
 }
 
-export const fetchNetease = async (endpoint, params = {}, cookie) => {
+export async function fetchNetease(endpoint, params = {}, cookie) {
   const query = new URLSearchParams()
   for (const key in params) {
     if (params[key] !== undefined && params[key] !== null) {
@@ -49,11 +49,11 @@ export const fetchNetease = async (endpoint, params = {}, cookie) => {
   return normalizeNeteaseResponse(raw)
 }
 
-export const getUserPlaylists = async (uid, cookie) => {
+export async function getUserPlaylists(uid, cookie) {
   return fetchNetease('/user/playlist', { uid, limit: 100 }, cookie)
 }
 
-export const createPlaylist = async (name, isPrivate, cookie) => {
+export async function createPlaylist(name, isPrivate, cookie) {
   const params = { name }
   if (isPrivate) {
     params.privacy = 10
@@ -61,22 +61,22 @@ export const createPlaylist = async (name, isPrivate, cookie) => {
   return fetchNetease('/playlist/create', params, cookie)
 }
 
-export const deletePlaylist = async (id, cookie) => {
+export async function deletePlaylist(id, cookie) {
   return fetchNetease('/playlist/delete', { id }, cookie)
 }
 
-export const addSongsToPlaylist = async (pid, tracks, cookie) => {
+export async function addSongsToPlaylist(pid, tracks, cookie) {
   return fetchNetease('/playlist/tracks', { op: 'add', pid, tracks: tracks.join(',') }, cookie)
 }
 
-export const getPlaylistTracks = async (id, limit = 1000, offset = 0, cookie) => {
+export async function getPlaylistTracks(id, limit = 1000, offset = 0, cookie) {
   return fetchNetease('/playlist/track/all', { id, limit, offset }, cookie)
 }
 
-export const getRecentSongs = async (limit = 100, cookie) => {
+export async function getRecentSongs(limit = 100, cookie) {
   return fetchNetease('/record/recent/song', { limit }, cookie)
 }
 
-export const getLoginStatus = async (cookie) => {
+export async function getLoginStatus(cookie) {
   return fetchNetease('/login/status', {}, cookie)
 }

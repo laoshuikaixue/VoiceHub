@@ -134,7 +134,7 @@ import {
   Database,
   Lock
 } from 'lucide-vue-next'
-import logo from '~/public/images/logo.png'
+import logo from '~~/public/images/logo.png'
 
 const avatarError = ref(false)
 

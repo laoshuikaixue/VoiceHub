@@ -185,7 +185,7 @@
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { Menu, ChevronUp } from 'lucide-vue-next'
 import { useAuth } from '~/composables/useAuth'
-import logo from '~/public/images/logo.svg'
+import logo from '~~/public/images/logo.svg'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 
