@@ -205,7 +205,7 @@ export default defineEventHandler(async (event) => {
       updateData.smtpUsername = body.smtpUsername
     }
 
-    if (body.smtpPassword !== undefined) {
+    if (body.smtpPassword !== undefined && body.smtpPassword !== '****************') {
       updateData.smtpPassword = body.smtpPassword
     }
 

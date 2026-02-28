@@ -63,6 +63,11 @@ export default defineEventHandler(async (event) => {
       console.warn('缓存系统设置失败:', cacheError)
     }
 
+    // 隐藏敏感字段
+    if (settings.smtpPassword) {
+      settings.smtpPassword = '****************'
+    }
+
     return settings
   } catch (error) {
     console.error('获取系统设置失败:', error)
