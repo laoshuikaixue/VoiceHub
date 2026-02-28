@@ -489,16 +489,13 @@ const updateMobileAnimations = (scrollLeft, width) => {
 
     const el = mobileFloatingCoverRef.value
 
-    // 简化 borderRadius 计算，使用固定值而非动态计算
-    // 移动端性能优化：borderRadius 的动态计算非常消耗性能
-    const radius = p < 0.5 ? 12 : 6
+    const targetVisualRadius = 12 - 6 * p
+    const radius = targetVisualRadius / currentScale
 
-    // 直接设置 transform，避免中间变量
+    // 使用 transform 和 will-change 优化性能
     el.style.transform = `translate3d(${currentTranslateX}px, ${currentTranslateY}px, 0) scale(${currentScale})`
-    // 只在关键帧更新 borderRadius，减少重绘
-    if (!isScrolling || p === 0 || p === 1) {
-      el.style.borderRadius = `${radius}px`
-    }
+    el.style.borderRadius = `${radius}px`
+    el.style.opacity = '1'
     el.style.pointerEvents = p > 0.8 ? 'none' : 'auto'
   }
 
@@ -507,6 +504,7 @@ const updateMobileAnimations = (scrollLeft, width) => {
     const opacity = Math.max(0, 1 - p * 2.5)
     const translateY = p * -20
 
+    // 使用 transform 优化性能
     el.style.opacity = String(opacity)
     el.style.transform = `translate3d(0, ${translateY}px, 0)`
   }
@@ -516,54 +514,29 @@ const updateMobileAnimations = (scrollLeft, width) => {
     const opacity = Math.max(0, (p - 0.6) * 2.5)
     const translateY = (1 - p) * 10
 
+    // 使用 transform 优化性能
     el.style.opacity = String(opacity)
     el.style.transform = `translate3d(0, ${translateY}px, 0)`
     el.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none'
   }
 }
 
-let scrollTimeout = null
-let lastScrollLeft = 0
-let isScrolling = false
-
 const onMainContentScroll = (event) => {
   if (!isMobile.value) return
 
   const el = event.target
   const scrollLeft = el.scrollLeft
-  
-  // 标记正在滚动
-  if (!isScrolling) {
-    isScrolling = true
-    // 滚动开始时，移除 will-change 以外的过渡效果
-    if (mobileFloatingCoverRef.value) {
-      mobileFloatingCoverRef.value.style.transition = 'none'
-    }
-  }
-  
-  // 如果滚动距离变化很小，跳过更新（降低更新频率）
-  if (Math.abs(scrollLeft - lastScrollLeft) < 2) return
-  lastScrollLeft = scrollLeft
-
   if (!cachedLayout.contentWidth) {
     updateLayoutCache()
   }
   const width = cachedLayout.contentWidth || el.clientWidth
 
-  // 使用节流优化页面切换检测
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout)
+  const newPage = Math.round(scrollLeft / width)
+  if (currentMobilePage.value !== newPage) {
+    currentMobilePage.value = newPage
   }
-  scrollTimeout = setTimeout(() => {
-    const newPage = Math.round(scrollLeft / width)
-    if (currentMobilePage.value !== newPage) {
-      currentMobilePage.value = newPage
-    }
-    // 滚动结束
-    isScrolling = false
-  }, 150)
 
-  // 使用 requestAnimationFrame 优化性能
+  // 使用 requestAnimationFrame 优化性能，避免频繁更新
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId)
   }
@@ -2059,8 +2032,7 @@ onUnmounted(() => {
   position: absolute;
   overflow: hidden;
   pointer-events: none;
-  /* 使用 CSS 而非 JS 控制的属性，提升性能 */
-  will-change: transform;
+  will-change: transform, border-radius;
   /* 启用硬件加速 */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
@@ -2068,8 +2040,6 @@ onUnmounted(() => {
   -webkit-backface-visibility: hidden;
   perspective: 1000px;
   -webkit-perspective: 1000px;
-  /* 使用 contain 优化渲染 */
-  contain: layout style paint;
 }
 
 .mobile-floating-cover img {
@@ -2079,7 +2049,5 @@ onUnmounted(() => {
   /* 优化图片渲染 */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
-  /* 使用 contain 优化 */
-  contain: layout style paint;
 }
 </style>
