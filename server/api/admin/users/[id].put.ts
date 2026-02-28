@@ -2,7 +2,7 @@ import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import bcrypt from 'bcrypt'
+import { updateUserPassword } from '~~/server/services/userService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -136,12 +136,12 @@ export default defineEventHandler(async (event) => {
       updateData.statusChangedBy = user.id
     }
 
-    // 如果提供了密码，则加密并更新
+    // 如果提供了密码，则使用统一服务更新密码
     if (password) {
-      updateData.password = await bcrypt.hash(password, 10)
+      await updateUserPassword(parseInt(userId), password, true)
     }
 
-    // 更新用户
+    // 更新用户其他信息
     const updatedUser = await db
       .update(users)
       .set(updateData)

@@ -856,7 +856,8 @@ VoiceHub/
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── securityService.ts # 安全服务
-│   │   └── smtpService.ts  # SMTP邮件服务
+│   │   ├── smtpService.ts  # SMTP邮件服务
+│   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
 │   │   ├── __tests__/      # 工具函数测试目录
 │   │   ├── musicSdk/       # 音乐SDK工具
