@@ -290,8 +290,8 @@ export default defineEventHandler(async (event) => {
 
     // 清除系统设置缓存
     try {
-      const { cache } = await import('~~/server/utils/cache-helpers')
-      await cache.delete('system:config')
+      const { CacheService } = await import('~~/server/services/cacheService')
+      await CacheService.getInstance().clearSystemSettingsCache()
       console.log('[Cache] 系统设置缓存已清除（更新系统设置）')
     } catch (cacheError) {
       console.warn('清除系统设置缓存失败:', cacheError)
