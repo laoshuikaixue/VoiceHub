@@ -91,6 +91,20 @@
             </div>
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                >发件人邮箱 (From Email)</label
+              >
+              <input
+                v-model="config.smtpFromEmail"
+                type="text"
+                :placeholder="config.smtpUsername || 'your-email@example.com'"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+              >
+              <p class="text-[9px] text-zinc-500 px-1 italic">
+                通常与发件人账号一致，部分服务商强制要求一致。
+              </p>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
                 >授权码 / 密码</label
               >
               <input
