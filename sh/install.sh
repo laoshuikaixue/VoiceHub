@@ -320,29 +320,6 @@ fi
 echo ""
 
 # ============================================
-# 配置 voicehub 命令快捷方式
-# ============================================
-echo -e "${YELLOW}配置 voicehub 命令快捷方式...${NC}"
-echo ""
-
-chmod +x "$PROJECT_DIR/sh/main.sh"
-chmod +x "$PROJECT_DIR/sh/update.sh"
-
-# 创建 /usr/local/bin/voicehub 软链接
-echo -e "${BLUE}是否安装 voicehub 命令到系统？(输入 y 安装)${NC}"
-read -p "请选择 (y/n): " INSTALL_CMD
-
-if [[ "$INSTALL_CMD" == "y" || "$INSTALL_CMD" == "Y" ]]; then
-    # 创建软链接
-    sudo ln -sf "$PROJECT_DIR/sh/main.sh" /usr/local/bin/voicehub
-    echo -e "${GREEN}✓ voicehub 命令已安装${NC}"
-else
-    echo -e "${YELLOW}跳过命令安装${NC}"
-fi
-
-echo ""
-
-# ============================================
 # 部署完成
 # ============================================
 echo -e "${GREEN}========================================${NC}"
