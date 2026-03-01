@@ -21,6 +21,15 @@ NC='\033[0m' # No Color
 # 默认安装目录
 PROJECT_DIR="/opt/voicehub"
 
+# 尝试动态获取项目目录（如果脚本在项目内的 sh 目录）
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [[ "$(basename "$SCRIPT_DIR")" == "sh" ]]; then
+    DETECTED_DIR="$(dirname "$SCRIPT_DIR")"
+    if [[ -f "$DETECTED_DIR/package.json" ]]; then
+        PROJECT_DIR="$DETECTED_DIR"
+    fi
+fi
+
 # 检查项目目录
 check_project() {
     if [[ ! -d "$PROJECT_DIR" ]]; then
