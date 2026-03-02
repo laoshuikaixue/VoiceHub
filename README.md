@@ -674,7 +674,6 @@ VoiceHub/
 │   │   │   │   ├── index.post.ts    # 创建/更新邮件模板
 │   │   │   │   └── preview.post.ts  # 预览邮件模板
 │   │   │   ├── fix-sequence.post.ts # 修复数据库序列
-│   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
 │   │   │   ├── notifications/       # 管理员通知API
 │   │   │   │   └── send.post.ts     # 发送通知
 │   │   │   ├── play-times/          # 播放时间管理API
@@ -706,6 +705,7 @@ VoiceHub/
 │   │   │   │   └── test-email.post.ts # 发送测试邮件
 │   │   │   ├── songs/               # 管理员歌曲管理API
 │   │   │   │   ├── delete.post.ts   # 删除歌曲
+│   │   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
 │   │   │   │   └── reject.post.ts  # 驳回歌曲
 │   │   │   ├── stats.get.ts         # 统计数据
 │   │   │   ├── activities.get.ts    # 活动管理API
