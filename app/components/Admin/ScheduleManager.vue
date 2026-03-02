@@ -1463,11 +1463,14 @@ const loadData = async () => {
   try {
     // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
     const semester = selectedSemester.value === '全部' ? undefined : selectedSemester.value
+    
+    // 播放列表应该始终显示当前学期的歌曲（或者全部，如果未设置当前学期），不受待排歌曲学期选择的影响
+    const playlistSemester = semesterService?.currentSemester?.value?.name
 
     // 并行加载数据
     await Promise.all([
       songsService.fetchSongs(false, semester, false, true),
-      songsService.fetchPublicSchedules(false, semester, false, true),
+      songsService.fetchPublicSchedules(false, playlistSemester, false, true),
       loadPlayTimes(),
       loadDrafts(), // 加载草稿列表
       fetchReplayRequests() // 加载重播申请
