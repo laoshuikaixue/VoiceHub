@@ -804,7 +804,16 @@ const saveFile = (blob, filename) => {
 
 // 音频合并核心逻辑
 const processAndMergeAudio = async (selectedSongsList) => {
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext
+  let audioContext
+  try {
+    // 尝试指定采样率以避免不必要的高采样率处理
+    audioContext = new AudioContextClass({ sampleRate: 44100 })
+  } catch (e) {
+    // 降级处理
+    audioContext = new AudioContextClass()
+  }
+  
   const audioBuffers = []
 
   try {
@@ -939,9 +948,31 @@ const processAndMergeAudio = async (selectedSongsList) => {
       return filename
     }
 
-    // 3. 编码与导出
+    // 3. 重采样与编码
     
-    // 移除优先导出 WAV 的逻辑
+    // 如果采样率超过 48kHz，进行重采样以兼容 MP3 编码器
+    let finalBuffer = mergedBuffer
+    if (finalBuffer.sampleRate > 48000) {
+      processingStatus.value = '正在重采样音频...'
+      const targetRate = 48000
+      
+      try {
+        const OfflineContextClass = window.OfflineAudioContext || window.webkitOfflineAudioContext
+        const offlineCtx = new OfflineContextClass(
+          finalBuffer.numberOfChannels,
+          Math.ceil(finalBuffer.duration * targetRate),
+          targetRate
+        )
+        const source = offlineCtx.createBufferSource()
+        source.buffer = finalBuffer
+        source.connect(offlineCtx.destination)
+        source.start(0)
+        finalBuffer = await offlineCtx.startRendering()
+      } catch (e) {
+        console.error('重采样失败:', e)
+        // 如果重采样失败，继续尝试使用原始 buffer
+      }
+    }
 
     processingStatus.value =
       exportFormat.value === 'mp3' ? '正在编码 MP3 (可能需要一些时间)...' : '正在生成 WAV...'
@@ -951,10 +982,10 @@ const processAndMergeAudio = async (selectedSongsList) => {
     let extension
 
     if (exportFormat.value === 'mp3') {
-      resultBlob = await encodeToMp3(mergedBuffer)
+      resultBlob = await encodeToMp3(finalBuffer)
       extension = 'mp3'
     } else {
-      resultBlob = encodeToWav(mergedBuffer)
+      resultBlob = encodeToWav(finalBuffer)
       extension = 'wav'
     }
 
@@ -1103,6 +1134,9 @@ const encodeToMp3 = async (buffer) => {
     return new Blob([outBuffer.subarray(0, offset)], { type: 'audio/mp3' })
   } catch (e) {
     console.error('MP3 编码失败:', e)
+    if (e.message && e.message.includes('Invalid output sample rate')) {
+      throw new Error(`MP3 编码不支持当前采样率 (${buffer.sampleRate}Hz)，已尝试重采样但失败。`)
+    }
     throw e
   }
 }
