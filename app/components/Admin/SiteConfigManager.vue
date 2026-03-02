@@ -124,7 +124,7 @@
         <h3
           class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
         >
-          <FileText :size="16" class="text-emerald-500" /> 投稿须知 (Markdown)
+          <FileText :size="16" class="text-emerald-500" /> 投稿须知
         </h3>
         <textarea
           v-model="formData.submissionGuidelines"
