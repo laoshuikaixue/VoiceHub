@@ -48,83 +48,87 @@ export default defineEventHandler(async (event) => {
   // 构建更新条件：只更新状态不符合预期的歌曲
   // 如果是标记为已播放(!isUnmark)，则只更新 played = false 的歌曲
   // 如果是撤回(isUnmark)，则只更新 played = true 的歌曲
-  let condition = inArray(songs.id, songIds)
-  if (!isUnmark) {
-    condition = and(condition, eq(songs.played, false))
-  } else {
-    condition = and(condition, eq(songs.played, true))
+  const condition = !isUnmark
+    ? and(inArray(songs.id, songIds), eq(songs.played, false))
+    : and(inArray(songs.id, songIds), eq(songs.played, true))
+
+  // 使用事务确保数据一致性
+  const { updatedSongsResult, updatedSongIds } = await db.transaction(async (tx) => {
+    // 更新歌曲状态
+    const updatedSongsResult = await tx
+      .update(songs)
+      .set({
+        played: !isUnmark,
+        playedAt: isUnmark ? null : getBeijingTime()
+      })
+      .where(condition)
+      .returning()
+
+    // 获取实际更新的歌曲ID列表
+    const updatedSongIds = updatedSongsResult.map(s => s.id)
+
+    if (updatedSongIds.length > 0) {
+      // 如果是标记为已播放，更新相关的重播申请状态为 FULFILLED
+      if (!isUnmark) {
+        const updatedRequests = await tx
+          .update(songReplayRequests)
+          .set({
+            status: 'FULFILLED',
+            updatedAt: new Date()
+          })
+          .where(
+            and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, 'PENDING'))
+          )
+          .returning()
+
+        if (updatedRequests.length > 0) {
+          console.log(`将 ${updatedRequests.length} 个重播申请状态更新为 FULFILLED（歌曲已播放）`)
+        }
+      }
+      // 如果是撤回已播放状态，将 FULFILLED 的重播申请恢复为 PENDING
+      else {
+        const restoredRequests = await tx
+          .update(songReplayRequests)
+          .set({
+            status: 'PENDING',
+            updatedAt: new Date()
+          })
+          .where(
+            and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, 'FULFILLED'))
+          )
+          .returning()
+
+        if (restoredRequests.length > 0) {
+          console.log(`将 ${restoredRequests.length} 个重播申请状态恢复为 PENDING（撤回已播放）`)
+        }
+      }
+    }
+
+    return { updatedSongsResult, updatedSongIds }
+  })
+
+  // 清除歌曲和排期相关缓存
+  try {
+    const cacheService = CacheService.getInstance()
+    await cacheService.clearSongsCache()
+    await cacheService.clearSchedulesCache()
+  } catch (error) {
+    console.error('清除缓存失败:', error)
   }
 
-  // 更新歌曲状态
-  const updatedSongsResult = await db
-    .update(songs)
-    .set({
-      played: !isUnmark,
-      playedAt: isUnmark ? null : getBeijingTime()
-    })
-    .where(condition)
-    .returning()
+  // 如果是标记为已播放，则异步发送通知（不阻塞响应）
+  if (!isUnmark && updatedSongIds.length > 0) {
+    // 获取客户端IP地址
+    const clientIP = getClientIP(event)
 
-  // 获取实际更新的歌曲ID列表
-  const updatedSongIds = updatedSongsResult.map(s => s.id)
-
-  if (updatedSongIds.length > 0) {
-    // 如果是标记为已播放，更新相关的重播申请状态为 FULFILLED
-    if (!isUnmark) {
-      const updatedRequests = await db
-        .update(songReplayRequests)
-        .set({
-          status: 'FULFILLED',
-          updatedAt: new Date()
-        })
-        .where(
-          and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, 'PENDING'))
-        )
-        .returning()
-
-      if (updatedRequests.length > 0) {
-        console.log(`将 ${updatedRequests.length} 个重播申请状态更新为 FULFILLED（歌曲已播放）`)
-      }
-    }
-    // 如果是撤回已播放状态，将 FULFILLED 的重播申请恢复为 PENDING
-    else {
-      const restoredRequests = await db
-        .update(songReplayRequests)
-        .set({
-          status: 'PENDING',
-          updatedAt: new Date()
-        })
-        .where(
-          and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, 'FULFILLED'))
-        )
-        .returning()
-
-      if (restoredRequests.length > 0) {
-        console.log(`将 ${restoredRequests.length} 个重播申请状态恢复为 PENDING（撤回已播放）`)
-      }
-    }
-
-    // 清除歌曲相关缓存
-    try {
-      const cacheService = CacheService.getInstance()
-      await cacheService.clearSongsCache()
-    } catch (error) {
-      console.error('清除歌曲缓存失败:', error)
-    }
-
-    // 如果是标记为已播放，则发送通知
-    if (!isUnmark) {
-      // 获取客户端IP地址
-      const clientIP = getClientIP(event)
-
-      // 为每个更新的歌曲发送通知
-      // 使用 Promise.allSettled 确保一个失败不会影响其他
-      await Promise.allSettled(updatedSongIds.map(songId => 
+    // 异步发送通知，不等待完成
+    setImmediate(() => {
+      Promise.allSettled(updatedSongIds.map(songId => 
         createSongPlayedNotification(songId, clientIP).catch((err) => {
           console.error(`发送歌曲(${songId})已播放通知失败:`, err)
         })
       ))
-    }
+    })
   }
 
   return {
