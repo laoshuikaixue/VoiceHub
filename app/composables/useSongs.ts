@@ -644,7 +644,7 @@ export const useSongs = () => {
       // 使用认证配置
       const authConfig = getAuthConfig()
 
-      const data = await $fetch('/api/admin/mark-played', {
+      const data = await $fetch('/api/admin/songs/mark-played', {
         method: 'POST',
         body: { songId },
         ...authConfig
@@ -679,7 +679,7 @@ export const useSongs = () => {
       // 使用认证配置
       const authConfig = getAuthConfig()
 
-      const data = await $fetch('/api/admin/mark-played', {
+      const data = await $fetch('/api/admin/songs/mark-played', {
         method: 'POST',
         body: { songId, unmark: true },
         ...authConfig

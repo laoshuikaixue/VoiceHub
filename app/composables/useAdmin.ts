@@ -122,7 +122,7 @@ export const useAdmin = () => {
     try {
       const authConfig = getAuthConfig()
 
-      const data = await $fetch('/api/admin/mark-played', {
+      const data = await $fetch('/api/admin/songs/mark-played', {
         method: 'POST',
         body: { songId },
         ...authConfig
