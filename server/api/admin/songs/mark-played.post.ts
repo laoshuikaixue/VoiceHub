@@ -68,39 +68,26 @@ export default defineEventHandler(async (event) => {
     const updatedSongIds = updatedSongsResult.map(s => s.id)
 
     if (updatedSongIds.length > 0) {
-      // 如果是标记为已播放，更新相关的重播申请状态为 FULFILLED
-      if (!isUnmark) {
-        const updatedRequests = await tx
-          .update(songReplayRequests)
-          .set({
-            status: 'FULFILLED',
-            updatedAt: new Date()
-          })
-          .where(
-            and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, 'PENDING'))
-          )
-          .returning()
+      // 根据操作类型更新重播申请状态
+      const targetStatus = !isUnmark ? 'PENDING' : 'FULFILLED'
+      const newStatus = !isUnmark ? 'FULFILLED' : 'PENDING'
 
-        if (updatedRequests.length > 0) {
-          console.log(`将 ${updatedRequests.length} 个重播申请状态更新为 FULFILLED（歌曲已播放）`)
-        }
-      }
-      // 如果是撤回已播放状态，将 FULFILLED 的重播申请恢复为 PENDING
-      else {
-        const restoredRequests = await tx
-          .update(songReplayRequests)
-          .set({
-            status: 'PENDING',
-            updatedAt: new Date()
-          })
-          .where(
-            and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, 'FULFILLED'))
-          )
-          .returning()
+      const updatedRequests = await tx
+        .update(songReplayRequests)
+        .set({
+          status: newStatus,
+          updatedAt: new Date()
+        })
+        .where(
+          and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, targetStatus))
+        )
+        .returning()
 
-        if (restoredRequests.length > 0) {
-          console.log(`将 ${restoredRequests.length} 个重播申请状态恢复为 PENDING（撤回已播放）`)
-        }
+      if (updatedRequests.length > 0) {
+        const logMessage = !isUnmark
+          ? `将 ${updatedRequests.length} 个重播申请状态更新为 FULFILLED（歌曲已播放）`
+          : `将 ${updatedRequests.length} 个重播申请状态恢复为 PENDING（撤回已播放）`
+        console.log(logMessage)
       }
     }
 

@@ -1465,8 +1465,7 @@ const loadData = async () => {
     const semester = selectedSemester.value === '全部' ? undefined : selectedSemester.value
     
     // 播放列表应该始终显示当前学期的歌曲（或者全部，如果未设置当前学期），不受待排歌曲学期选择的影响
-    const currentSemesterName = semesterService?.currentSemester?.value?.name
-    const playlistSemester = currentSemesterName || undefined
+    const playlistSemester = semesterService?.currentSemester?.value?.name
 
     // 并行加载数据
     await Promise.all([
