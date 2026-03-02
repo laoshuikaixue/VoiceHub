@@ -7,7 +7,7 @@
 
 <div align="center">
 
-[交流群](https://qm.qq.com/cgi-bin/qm/qr?k=5DV4vGlqn82YaNi7a3xW4zjmS8ZUr6cz&jump_from=webapi&authKey=axAl02PMsIVVAwrXij0YUUrOrUTeLpqLipu5XcTvyBUOzeWaOnicBB+fmBwNJs5S) | [使用学校收集表](https://laoshuikaixue.feishu.cn/share/base/form/shrcniUKakpNYP6KH7qrU20qq5e)
+[交流群](https://qm.qq.com/cgi-bin/qm/qr?k=5DV4vGlqn82YaNi7a3xW4zjmS8ZUr6cz&jump_from=webapi&authKey=axAl02PMsIVVAwrXij0YUUrOrUTeLpqLipu5XcTvyBUOzeWaOnicBB+fmBwNJs5S) | [使用学校收集表](https://laoshuikaixue.feishu.cn/share/base/form/shrcniUKakpNYP6KH7qrU20qq5e) | [项目宣传片](https://www.bilibili.com/video/BV1B9ArzMEkA)
 
 </div>
 
@@ -677,7 +677,6 @@ VoiceHub/
 │   │   │   │   ├── index.post.ts    # 创建/更新邮件模板
 │   │   │   │   └── preview.post.ts  # 预览邮件模板
 │   │   │   ├── fix-sequence.post.ts # 修复数据库序列
-│   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
 │   │   │   ├── notifications/       # 管理员通知API
 │   │   │   │   └── send.post.ts     # 发送通知
 │   │   │   ├── play-times/          # 播放时间管理API
@@ -709,6 +708,7 @@ VoiceHub/
 │   │   │   │   └── test-email.post.ts # 发送测试邮件
 │   │   │   ├── songs/               # 管理员歌曲管理API
 │   │   │   │   ├── delete.post.ts   # 删除歌曲
+│   │   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
 │   │   │   │   └── reject.post.ts  # 驳回歌曲
 │   │   │   ├── stats.get.ts         # 统计数据
 │   │   │   ├── activities.get.ts    # 活动管理API
