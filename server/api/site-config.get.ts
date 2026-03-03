@@ -3,40 +3,43 @@ import { systemSettings } from '~/drizzle/schema'
 import { cacheService } from '../services/cacheService'
 import { isRedisReady } from '../utils/redis'
 
+// 过滤敏感字段，只返回公开配置
+const publicFields = [
+  'siteTitle',
+  'siteLogoUrl',
+  'schoolLogoHomeUrl',
+  'schoolLogoPrintUrl',
+  'siteDescription',
+  'submissionGuidelines',
+  'icpNumber',
+  'enablePlayTimeSelection',
+  'enableSubmissionLimit',
+  'dailySubmissionLimit',
+  'weeklySubmissionLimit',
+  'monthlySubmissionLimit',
+  'showBlacklistKeywords',
+  'hideStudentInfo',
+  'enableReplayRequests',
+  'enableRequestTimeLimitation',
+  'forceBlockAllRequests',
+  'smtpEnabled'
+]
+
+const filterPublicSettings = (data: any) => {
+  if (!data) {
+    return {}
+  }
+  const result: Record<string, any> = {}
+  for (const key of publicFields) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      result[key] = data[key]
+    }
+  }
+  return result
+}
+
 export default defineEventHandler(async (event) => {
   try {
-    // 过滤敏感字段，只返回公开配置
-    const publicFields = [
-      'siteTitle',
-      'siteLogoUrl',
-      'schoolLogoHomeUrl',
-      'schoolLogoPrintUrl',
-      'siteDescription',
-      'submissionGuidelines',
-      'icpNumber',
-      'enablePlayTimeSelection',
-      'enableSubmissionLimit',
-      'dailySubmissionLimit',
-      'weeklySubmissionLimit',
-      'monthlySubmissionLimit',
-      'showBlacklistKeywords',
-      'hideStudentInfo',
-      'enableReplayRequests',
-      'enableRequestTimeLimitation',
-      'forceBlockAllRequests',
-      'smtpEnabled'
-    ]
-
-    const filterPublicSettings = (data: any) => {
-      if (!data) return {}
-      return publicFields.reduce((acc: any, key) => {
-        if (key in data) {
-          acc[key] = (data as any)[key]
-        }
-        return acc
-      }, {})
-    }
-
     // 优先从Redis缓存获取系统设置
     if (isRedisReady()) {
       const cachedSettings = await cacheService.getSystemSettings()
