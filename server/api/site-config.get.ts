@@ -5,12 +5,44 @@ import { isRedisReady } from '../utils/redis'
 
 export default defineEventHandler(async (event) => {
   try {
+    // 过滤敏感字段，只返回公开配置
+    const publicFields = [
+      'siteTitle',
+      'siteLogoUrl',
+      'schoolLogoHomeUrl',
+      'schoolLogoPrintUrl',
+      'siteDescription',
+      'submissionGuidelines',
+      'icpNumber',
+      'enablePlayTimeSelection',
+      'enableSubmissionLimit',
+      'dailySubmissionLimit',
+      'weeklySubmissionLimit',
+      'monthlySubmissionLimit',
+      'showBlacklistKeywords',
+      'hideStudentInfo',
+      'enableReplayRequests',
+      'enableRequestTimeLimitation',
+      'forceBlockAllRequests',
+      'smtpEnabled'
+    ]
+
+    const filterPublicSettings = (data: any) => {
+      if (!data) return {}
+      return publicFields.reduce((acc: any, key) => {
+        if (key in data) {
+          acc[key] = (data as any)[key]
+        }
+        return acc
+      }, {})
+    }
+
     // 优先从Redis缓存获取系统设置
     if (isRedisReady()) {
       const cachedSettings = await cacheService.getSystemSettings()
       if (cachedSettings) {
         console.log('[API] 系统设置缓存命中')
-        return cachedSettings
+        return filterPublicSettings(cachedSettings)
       }
     }
 
@@ -42,33 +74,7 @@ export default defineEventHandler(async (event) => {
       settings = newSettings[0]
     }
 
-    // 过滤敏感字段，只返回公开配置
-    const publicFields = [
-      'siteTitle',
-      'siteLogoUrl',
-      'schoolLogoHomeUrl',
-      'schoolLogoPrintUrl',
-      'siteDescription',
-      'submissionGuidelines',
-      'icpNumber',
-      'enablePlayTimeSelection',
-      'enableSubmissionLimit',
-      'dailySubmissionLimit',
-      'weeklySubmissionLimit',
-      'monthlySubmissionLimit',
-      'showBlacklistKeywords',
-      'hideStudentInfo',
-      'enableReplayRequests',
-      'enableRequestTimeLimitation',
-      'forceBlockAllRequests'
-    ]
-
-    const publicSettings = publicFields.reduce((acc: any, key) => {
-      if (settings && key in settings) {
-        acc[key] = (settings as any)[key]
-      }
-      return acc
-    }, {})
+    const publicSettings = filterPublicSettings(settings)
 
     // 将结果缓存到Redis（如果可用）- 永久缓存
     if (settings && isRedisReady()) {
