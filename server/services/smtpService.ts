@@ -172,14 +172,20 @@ export class SmtpService {
       const settings = settingsResult[0]
 
       if (!settings) {
+        this.smtpConfig = null
+        this.transporter = null
         return false
       }
 
       if (!settings.smtpEnabled) {
+        this.smtpConfig = null
+        this.transporter = null
         return false
       }
 
       if (!settings.smtpHost) {
+        this.smtpConfig = null
+        this.transporter = null
         return false
       }
 
@@ -236,6 +242,7 @@ export class SmtpService {
       return true
     } catch (error) {
       console.error('初始化SMTP配置失败:', error instanceof Error ? error.message : '未知错误')
+      this.smtpConfig = null
       this.transporter = null
       return false
     }

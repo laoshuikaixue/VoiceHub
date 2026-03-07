@@ -774,6 +774,15 @@ const restoreBackup = async () => {
       }
     }
 
+    restoreProgress.value = '正在修复数据表序列...'
+    const sequenceResult = await $fetch('/api/admin/fix-sequence', {
+      method: 'POST',
+      body: { table: 'all' }
+    })
+    if (!sequenceResult.success) {
+      throw new Error(sequenceResult.message || sequenceResult.error || '序列修复失败')
+    }
+
     const shouldFinalizeTempUser =
       restoreForm.value.mode === 'replace' &&
       restoreForm.value.overwriteSuperAdmin &&
