@@ -171,19 +171,7 @@ export class SmtpService {
       const settingsResult = await db.select().from(systemSettings).limit(1)
       const settings = settingsResult[0]
 
-      if (!settings) {
-        this.smtpConfig = null
-        this.transporter = null
-        return false
-      }
-
-      if (!settings.smtpEnabled) {
-        this.smtpConfig = null
-        this.transporter = null
-        return false
-      }
-
-      if (!settings.smtpHost) {
+      if (!settings || !settings.smtpEnabled || !settings.smtpHost) {
         this.smtpConfig = null
         this.transporter = null
         return false
