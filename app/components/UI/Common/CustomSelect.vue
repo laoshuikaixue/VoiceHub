@@ -68,6 +68,7 @@ import Icon from '~/components/UI/Icon.vue'
 const props = defineProps({
   label: String,
   modelValue: [String, Number, Object],
+  value: [String, Number, Object],
   options: {
     type: Array,
     required: true
@@ -87,12 +88,18 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'change'])
+const emit = defineEmits(['update:modelValue', 'update:value', 'change'])
 
 const isOpen = ref(false)
 const containerRef = ref(null)
 const dropdownRef = ref(null)
 const dropdownStyle = ref({})
+
+// 统一获取当前值
+const currentValue = computed(() => {
+  if (props.modelValue !== undefined) return props.modelValue
+  return props.value
+})
 
 // 规范化选项为 { label, value } 格式
 const normalizedOptions = computed(() => {
@@ -110,16 +117,16 @@ const normalizedOptions = computed(() => {
 
 // 获取当前显示标签
 const displayLabel = computed(() => {
-  const selected = normalizedOptions.value.find((opt) => opt.value === props.modelValue)
+  const selected = normalizedOptions.value.find((opt) => opt.value === currentValue.value)
   return selected
     ? selected.label
-    : props.modelValue && typeof props.modelValue !== 'object'
-      ? props.modelValue
+    : currentValue.value && typeof currentValue.value !== 'object'
+      ? currentValue.value
       : props.placeholder
 })
 
 const isSelected = (option) => {
-  return option.value === props.modelValue
+  return option.value === currentValue.value
 }
 
 const updatePosition = () => {
@@ -159,6 +166,7 @@ const toggleDropdown = async () => {
 
 const selectOption = (option) => {
   emit('update:modelValue', option.value)
+  emit('update:value', option.value)
   emit('change', option.value)
   isOpen.value = false
 }

@@ -312,7 +312,7 @@
               >选择目标表</label
             >
             <CustomSelect
-              v-model:value="sequenceForm.table"
+              v-model="sequenceForm.table"
               :options="tableOptions"
               class="w-full"
             />
