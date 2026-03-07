@@ -1061,6 +1061,11 @@ const preprocessImages = async (element) => {
       } catch (error) {
         console.warn('处理图片失败:', img.src, error)
         img.src = TRANSPARENT_PIXEL
+        if (img.classList.contains('song-cover')) {
+          const placeholder = img.parentElement?.querySelector('.cover-placeholder')
+          if (placeholder) placeholder.classList.add('show')
+          img.style.display = 'none'
+        }
       }
     }
 
