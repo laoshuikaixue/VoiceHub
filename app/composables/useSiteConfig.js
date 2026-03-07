@@ -17,7 +17,8 @@ const siteConfig = ref({
   schoolLogoPrintUrl: '',
   siteDescription: '',
   submissionGuidelines: '',
-  icpNumber: ''
+  icpNumber: '',
+  gonganNumber: ''
 })
 
 const isLoaded = ref(false)
@@ -51,6 +52,7 @@ export const useSiteConfig = () => {
         siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
         submissionGuidelines: defaultSubmissionGuidelines,
         icpNumber: '',
+        gonganNumber: '',
         enableReplayRequests: false
       }
       isLoaded.value = true
@@ -71,6 +73,7 @@ export const useSiteConfig = () => {
     () => siteConfig.value.submissionGuidelines || defaultSubmissionGuidelines
   )
   const icp = computed(() => siteConfig.value.icpNumber || '')
+  const gonganNumber = computed(() => siteConfig.value.gonganNumber || '')
   const enableReplayRequests = computed(() => siteConfig.value.enableReplayRequests || false)
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
 
@@ -98,6 +101,7 @@ export const useSiteConfig = () => {
     description,
     guidelines,
     icp,
+    gonganNumber,
     enableReplayRequests,
     smtpEnabled,
     fetchSiteConfig,

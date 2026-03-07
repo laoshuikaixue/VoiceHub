@@ -583,6 +583,7 @@ export default defineEventHandler(async (event) => {
               'siteDescription',
               'submissionGuidelines',
               'icpNumber',
+              'gonganNumber',
               'enableSubmissionLimit',
               'dailySubmissionLimit',
               'weeklySubmissionLimit',

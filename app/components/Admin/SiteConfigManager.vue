@@ -68,6 +68,15 @@
             >
           </div>
           <div>
+            <label :class="labelClass">公安联网备案号</label>
+            <input
+              v-model="formData.gonganNumber"
+              type="text"
+              placeholder="请输入公安备案号 (如：陕公网安备61011302001964号)"
+              :class="inputClass"
+            >
+          </div>
+          <div>
             <label :class="labelClass">站点描述</label>
             <textarea
               v-model="formData.siteDescription"
@@ -334,6 +343,7 @@ const formData = ref({
   siteDescription: '',
   submissionGuidelines: '',
   icpNumber: '',
+  gonganNumber: '',
   enableReplayRequests: false,
   enableSubmissionLimit: false,
   dailySubmissionLimit: 5,
@@ -389,6 +399,7 @@ const loadConfig = async () => {
       siteDescription: data.siteDescription || '',
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
       icpNumber: data.icpNumber || '',
+      gonganNumber: data.gonganNumber || '',
       enableReplayRequests: !!data.enableReplayRequests,
       enableSubmissionLimit: !!data.enableSubmissionLimit,
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,

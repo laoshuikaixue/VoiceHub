@@ -133,6 +133,7 @@ export const systemSettings = pgTable('SystemSettings', {
   siteDescription: text('siteDescription'),
   submissionGuidelines: text('submissionGuidelines'),
   icpNumber: text('icpNumber'),
+  gonganNumber: text('gonganNumber'),
   enableSubmissionLimit: boolean('enableSubmissionLimit').default(false).notNull(),
   dailySubmissionLimit: integer('dailySubmissionLimit'),
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
