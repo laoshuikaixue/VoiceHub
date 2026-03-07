@@ -44,17 +44,50 @@ export default defineEventHandler(async (event) => {
 
   try {
     const body = await readBody(event)
+    const finalizeTempUser = body?.finalizeTempUser === true
     const overwriteSuperAdmin = body?.overwriteSuperAdmin === true
     const hasSuperAdminInBackup = body?.hasSuperAdminInBackup === true
     const shouldOverwriteSuperAdmin = overwriteSuperAdmin && hasSuperAdminInBackup
 
+    if (finalizeTempUser) {
+      const currentUserId = Number(user.id)
+      const currentUserApiKeys = await db
+        .select({ id: apiKeys.id })
+        .from(apiKeys)
+        .where(eq(apiKeys.createdByUserId, currentUserId))
+      const currentUserApiKeyIds = currentUserApiKeys.map((item) => item.id)
+
+      if (currentUserApiKeyIds.length > 0) {
+        await db.delete(apiLogs).where(inArray(apiLogs.apiKeyId, currentUserApiKeyIds))
+        await db
+          .delete(apiKeyPermissions)
+          .where(inArray(apiKeyPermissions.apiKeyId, currentUserApiKeyIds))
+      }
+
+      await db.delete(apiKeys).where(eq(apiKeys.createdByUserId, currentUserId))
+      await db.delete(notifications).where(eq(notifications.userId, currentUserId))
+      await db.delete(notificationSettings).where(eq(notificationSettings.userId, currentUserId))
+      await db.delete(userStatusLogs).where(eq(userStatusLogs.userId, currentUserId))
+      await db.delete(userIdentities).where(eq(userIdentities.userId, currentUserId))
+      await db.delete(users).where(eq(users.id, currentUserId))
+
+      return {
+        success: true,
+        message: '临时管理员账户已清理',
+        finalized: true
+      }
+    }
+
     let preservedSuperAdminIds: number[] = []
+    let temporaryPreservedUserId: number | null = null
     if (!shouldOverwriteSuperAdmin) {
       const preservedUsers = await db
         .select({ id: users.id })
         .from(users)
         .where(or(eq(users.role, 'SUPER_ADMIN'), eq(users.id, 1)))
       preservedSuperAdminIds = preservedUsers.map((item) => item.id)
+    } else {
+      temporaryPreservedUserId = Number(user.id)
     }
 
     console.log('清空现有数据...')
@@ -79,7 +112,11 @@ export default defineEventHandler(async (event) => {
       await db.delete(semesters)
       await db.delete(requestTimes)
       await db.delete(systemSettings)
-      await db.delete(users)
+      if (temporaryPreservedUserId) {
+        await db.delete(users).where(notInArray(users.id, [temporaryPreservedUserId]))
+      } else {
+        await db.delete(users)
+      }
     } else {
       const preservedApiKeys = await db
         .select({ id: apiKeys.id })
@@ -125,7 +162,8 @@ export default defineEventHandler(async (event) => {
       success: true,
       message: '数据已清空',
       shouldOverwriteSuperAdmin,
-      preservedSuperAdminIds
+      preservedSuperAdminIds,
+      temporaryPreservedUserId
     }
   } catch (error) {
     console.error('清空数据失败:', error)

@@ -684,7 +684,7 @@ const restoreBackup = async () => {
     let backupData
     try {
       backupData = JSON.parse(fileContent)
-    } catch (e) {
+    } catch {
       throw new Error('无法解析备份文件，文件格式不正确')
     }
 
@@ -694,40 +694,8 @@ const restoreBackup = async () => {
       restoreForm.value.overwriteSuperAdmin = false
     }
 
-    const shouldUseSingleRestore =
-      restoreForm.value.mode === 'replace' &&
-      restoreForm.value.overwriteSuperAdmin &&
-      fileHasSuperAdmin
-
-    if (shouldUseSingleRestore) {
-      restoreProgress.value = '正在执行完整恢复...'
-      const formData = new FormData()
-      formData.append('file', selectedFile.value)
-      formData.append('mode', 'replace')
-      formData.append('clearExisting', 'true')
-      formData.append('overwriteSuperAdmin', 'true')
-
-      const response = await $fetch('/api/admin/backup/restore', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (!response.success) throw new Error(response.message || '恢复失败')
-
-      showNotification('数据库恢复成功，正在重新登录', 'success')
-      activeModal.value = 'none'
-      setTimeout(() => {
-        if (auth.logout) {
-          auth.logout()
-        }
-        localStorage.removeItem('auth-token')
-        localStorage.removeItem('user-info')
-        window.location.href = '/'
-      }, 1200)
-      return
-    }
-
     let preservedSuperAdminIds = []
+    let temporaryPreservedUserId = null
 
     if (restoreForm.value.mode === 'replace') {
       restoreProgress.value = '正在清空现有数据...'
@@ -740,6 +708,7 @@ const restoreBackup = async () => {
       })
       if (!clearResult.success) throw new Error(clearResult.message || '清空数据失败')
       preservedSuperAdminIds = clearResult.preservedSuperAdminIds || []
+      temporaryPreservedUserId = clearResult.temporaryPreservedUserId || null
     }
 
     const tableOrder = [
@@ -802,6 +771,39 @@ const restoreBackup = async () => {
         }
         totalProcessed += chunk.length
       }
+    }
+
+    const shouldFinalizeTempUser =
+      restoreForm.value.mode === 'replace' &&
+      restoreForm.value.overwriteSuperAdmin &&
+      fileHasSuperAdmin &&
+      temporaryPreservedUserId
+
+    if (shouldFinalizeTempUser) {
+      const restoredUserIds = Object.values(mappings.users).map((id) => Number(id))
+      if (!restoredUserIds.includes(Number(temporaryPreservedUserId))) {
+        restoreProgress.value = '正在完成管理员替换...'
+        await $fetch('/api/admin/backup/clear', {
+          method: 'POST',
+          body: {
+            finalizeTempUser: true
+          }
+        })
+      }
+    }
+
+    if (shouldFinalizeTempUser) {
+      showNotification('数据库恢复成功，正在重新登录', 'success')
+      activeModal.value = 'none'
+      setTimeout(() => {
+        if (auth.logout) {
+          auth.logout()
+        }
+        localStorage.removeItem('auth-token')
+        localStorage.removeItem('user-info')
+        window.location.href = '/'
+      }, 1200)
+      return
     }
 
     showNotification('数据库恢复成功', 'success')
