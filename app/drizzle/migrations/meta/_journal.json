@@ -85,6 +85,13 @@
       "when": 1772889825480,
       "tag": "20260307132345_add_gongan_filing",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1772890398452,
+      "tag": "20260307133318_remove_gongan_link",
+      "breakpoints": true
     }
   ]
 }

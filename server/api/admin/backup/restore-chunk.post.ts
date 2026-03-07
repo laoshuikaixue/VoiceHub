@@ -584,7 +584,6 @@ export default defineEventHandler(async (event) => {
               'submissionGuidelines',
               'icpNumber',
               'gonganNumber',
-              'gonganLink',
               'enableSubmissionLimit',
               'dailySubmissionLimit',
               'weeklySubmissionLimit',

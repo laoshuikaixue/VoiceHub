@@ -18,8 +18,7 @@ const siteConfig = ref({
   siteDescription: '',
   submissionGuidelines: '',
   icpNumber: '',
-  gonganNumber: '',
-  gonganLink: ''
+  gonganNumber: ''
 })
 
 const isLoaded = ref(false)
@@ -54,7 +53,6 @@ export const useSiteConfig = () => {
         submissionGuidelines: defaultSubmissionGuidelines,
         icpNumber: '',
         gonganNumber: '',
-        gonganLink: '',
         enableReplayRequests: false
       }
       isLoaded.value = true
@@ -76,7 +74,6 @@ export const useSiteConfig = () => {
   )
   const icp = computed(() => siteConfig.value.icpNumber || '')
   const gonganNumber = computed(() => siteConfig.value.gonganNumber || '')
-  const gonganLink = computed(() => siteConfig.value.gonganLink || '')
   const enableReplayRequests = computed(() => siteConfig.value.enableReplayRequests || false)
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
 
@@ -105,7 +102,6 @@ export const useSiteConfig = () => {
     guidelines,
     icp,
     gonganNumber,
-    gonganLink,
     enableReplayRequests,
     smtpEnabled,
     fetchSiteConfig,

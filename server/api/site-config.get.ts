@@ -13,7 +13,6 @@ const publicFields = [
   'submissionGuidelines',
   'icpNumber',
   'gonganNumber',
-  'gonganLink',
   'enablePlayTimeSelection',
   'enableSubmissionLimit',
   'dailySubmissionLimit',

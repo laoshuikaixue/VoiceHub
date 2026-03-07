@@ -149,7 +149,6 @@ export const systemSettings = pgTable("SystemSettings", {
 	enableReplayRequests: boolean().default(false).notNull(),
 	monthlySubmissionLimit: integer(),
 	gonganNumber: text(),
-	gonganLink: text(),
 });
 
 export const vote = pgTable("Vote", {

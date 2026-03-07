@@ -78,10 +78,6 @@ export default defineEventHandler(async (event) => {
       updateData.gonganNumber = body.gonganNumber
     }
 
-    if (body.gonganLink !== undefined) {
-      updateData.gonganLink = body.gonganLink
-    }
-
     if (body.enableSubmissionLimit !== undefined) {
       if (typeof body.enableSubmissionLimit !== 'boolean') {
         throw createError({
@@ -267,7 +263,6 @@ export default defineEventHandler(async (event) => {
 8. 最终解释权归广播站所有`,
           icpNumber: updateData.icpNumber ?? null,
           gonganNumber: updateData.gonganNumber ?? null,
-          gonganLink: updateData.gonganLink ?? null,
           enableSubmissionLimit: updateData.enableSubmissionLimit ?? false,
           dailySubmissionLimit: updateData.dailySubmissionLimit ?? null,
           weeklySubmissionLimit: updateData.weeklySubmissionLimit ?? null,

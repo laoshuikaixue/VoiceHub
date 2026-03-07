@@ -67,25 +67,14 @@
               :class="inputClass"
             >
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label :class="labelClass">公安联网备案号</label>
-              <input
-                v-model="formData.gonganNumber"
-                type="text"
-                placeholder="请输入公安备案号"
-                :class="inputClass"
-              >
-            </div>
-            <div>
-              <label :class="labelClass">公安联网备案链接</label>
-              <input
-                v-model="formData.gonganLink"
-                type="text"
-                placeholder="请输入公安备案跳转链接"
-                :class="inputClass"
-              >
-            </div>
+          <div>
+            <label :class="labelClass">公安联网备案号</label>
+            <input
+              v-model="formData.gonganNumber"
+              type="text"
+              placeholder="请输入公安备案号 (如：陕公网安备61011302001964号)"
+              :class="inputClass"
+            >
           </div>
           <div>
             <label :class="labelClass">站点描述</label>
@@ -355,7 +344,6 @@ const formData = ref({
   submissionGuidelines: '',
   icpNumber: '',
   gonganNumber: '',
-  gonganLink: '',
   enableReplayRequests: false,
   enableSubmissionLimit: false,
   dailySubmissionLimit: 5,
@@ -412,7 +400,6 @@ const loadConfig = async () => {
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
       icpNumber: data.icpNumber || '',
       gonganNumber: data.gonganNumber || '',
-      gonganLink: data.gonganLink || '',
       enableReplayRequests: !!data.enableReplayRequests,
       enableSubmissionLimit: !!data.enableSubmissionLimit,
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,
