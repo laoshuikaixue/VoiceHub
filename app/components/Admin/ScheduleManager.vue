@@ -332,8 +332,15 @@
                     <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
                     <div class="text-[10px] text-zinc-500 truncate flex items-center gap-1">
                       <span>{{ song.requester }}</span>
-                      <span v-if="song.requesterGrade" class="text-zinc-600">|</span>
-                      <span v-if="song.requesterGrade">{{ song.requesterGrade }}</span>
+                      <span
+                        v-if="song.requesterGrade || song.grade"
+                        class="text-zinc-600"
+                        >|</span
+                      >
+                      <span v-if="song.requesterGrade || song.grade">
+                        {{ song.requesterGrade || song.grade }}
+                        {{ song.requesterClass || song.class }}
+                      </span>
                       <span
                         v-if="song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
@@ -602,10 +609,15 @@
                         }}
                       </span>
                       <span v-else>{{ schedule.song.requester }}</span>
-                      <span v-if="schedule.song.requesterGrade" class="text-zinc-700">|</span>
-                      <span v-if="schedule.song.requesterGrade">{{
-                        schedule.song.requesterGrade
-                      }}</span>
+                      <span
+                        v-if="schedule.song.requesterGrade || schedule.song.grade"
+                        class="text-zinc-700"
+                        >|</span
+                      >
+                      <span v-if="schedule.song.requesterGrade || schedule.song.grade">
+                        {{ schedule.song.requesterGrade || schedule.song.grade }}
+                        {{ schedule.song.requesterClass || schedule.song.class }}
+                      </span>
                       <span
                         v-if="schedule.song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"

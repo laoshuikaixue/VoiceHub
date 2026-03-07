@@ -100,7 +100,9 @@ export const useSongs = () => {
           const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
 
           // API请求
-          return await $fetch(url)
+          return await $fetch(url, {
+            ...getAuthConfig()
+          })
         },
         requestParams
       )
@@ -189,7 +191,9 @@ export const useSongs = () => {
           }
           const url = `/api/songs/public${params.toString() ? '?' + params.toString() : ''}`
 
-          const response = await $fetch(url)
+          const response = await $fetch(url, {
+            ...getAuthConfig()
+          })
           return response
         },
         requestParams
