@@ -586,8 +586,21 @@ export default defineEventHandler(async (event) => {
               'enableSubmissionLimit',
               'dailySubmissionLimit',
               'weeklySubmissionLimit',
+              'monthlySubmissionLimit',
               'showBlacklistKeywords',
-              'hideStudentInfo'
+              'hideStudentInfo',
+              'enableReplayRequests',
+              'enableRequestTimeLimitation',
+              'requestTimeLimitation',
+              'forceBlockAllRequests',
+              'smtpEnabled',
+              'smtpHost',
+              'smtpPort',
+              'smtpSecure',
+              'smtpUsername',
+              'smtpPassword',
+              'smtpFromEmail',
+              'smtpFromName'
             ]
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]

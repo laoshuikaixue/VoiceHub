@@ -994,9 +994,21 @@ export default defineEventHandler(async (event) => {
                           'enableSubmissionLimit',
                           'dailySubmissionLimit',
                           'weeklySubmissionLimit',
+                          'monthlySubmissionLimit',
                           'showBlacklistKeywords',
                           'enableRequestTimeLimitation',
-                          'forceBlockAllRequests'
+                          'requestTimeLimitation',
+                          'forceBlockAllRequests',
+                          'enableReplayRequests',
+                          'hideStudentInfo',
+                          'smtpEnabled',
+                          'smtpHost',
+                          'smtpPort',
+                          'smtpSecure',
+                          'smtpUsername',
+                          'smtpPassword',
+                          'smtpFromEmail',
+                          'smtpFromName'
                         ]
 
                         // 只添加备份数据中存在的字段

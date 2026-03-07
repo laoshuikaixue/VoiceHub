@@ -613,17 +613,23 @@ const handleFileDrop = async (event) => {
 const createBackup = async () => {
   createLoading.value = true
   try {
+    let tables = 'all'
+    if (createForm.value.includeUsers && createForm.value.includeSongs) {
+      tables = 'all'
+    } else if (createForm.value.includeUsers) {
+      tables = 'users'
+    } else if (createForm.value.includeSongs) {
+      tables = 'songs'
+    } else if (createForm.value.includeSystemData) {
+      tables = ['systemSettings']
+    } else {
+      throw new Error('请至少选择一项备份内容')
+    }
+
     const response = await $fetch('/api/admin/backup/export', {
       method: 'POST',
       body: {
-        tables:
-          createForm.value.includeUsers && createForm.value.includeSongs
-            ? 'all'
-            : createForm.value.includeUsers
-              ? 'users'
-              : createForm.value.includeSongs
-                ? 'songs'
-                : 'all',
+        tables,
         includeSystemData: createForm.value.includeSystemData
       }
     })
