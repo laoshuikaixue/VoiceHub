@@ -74,6 +74,14 @@ export default defineEventHandler(async (event) => {
       updateData.icpNumber = body.icpNumber
     }
 
+    if (body.gonganNumber !== undefined) {
+      updateData.gonganNumber = body.gonganNumber
+    }
+
+    if (body.gonganLink !== undefined) {
+      updateData.gonganLink = body.gonganLink
+    }
+
     if (body.enableSubmissionLimit !== undefined) {
       if (typeof body.enableSubmissionLimit !== 'boolean') {
         throw createError({
@@ -258,6 +266,8 @@ export default defineEventHandler(async (event) => {
 7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。
 8. 最终解释权归广播站所有`,
           icpNumber: updateData.icpNumber ?? null,
+          gonganNumber: updateData.gonganNumber ?? null,
+          gonganLink: updateData.gonganLink ?? null,
           enableSubmissionLimit: updateData.enableSubmissionLimit ?? false,
           dailySubmissionLimit: updateData.dailySubmissionLimit ?? null,
           weeklySubmissionLimit: updateData.weeklySubmissionLimit ?? null,

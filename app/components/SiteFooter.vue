@@ -11,6 +11,16 @@
           {{ icpNumber }}
         </a>
       </span>
+      <span v-if="gonganNumber" class="footer-item">
+        <a
+          :href="gonganLink || 'https://beian.mps.gov.cn/'"
+          class="icp-link"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          {{ gonganNumber }}
+        </a>
+      </span>
       <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }}</span>
       <span v-else class="footer-item">© {{ currentYear }} {{ copyrightOwner }}</span>
       <span class="footer-item">Worker in {{ responseTime }}ms</span>
@@ -42,7 +52,7 @@ import { getCopyrightOwner, getSystemName, getRepoUrl } from '@/utils/core/secur
 import packageJson from '~~/package.json'
 
 // 使用 useSiteConfig composable 获取配置
-const { siteTitle, icp: icpNumber } = useSiteConfig()
+const { siteTitle, icp: icpNumber, gonganNumber, gonganLink } = useSiteConfig()
 const config = useRuntimeConfig()
 const isNetlify = config.public.isNetlify
 
