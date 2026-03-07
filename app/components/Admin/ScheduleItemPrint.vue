@@ -68,7 +68,7 @@ import { defineProps } from 'vue'
 import { convertToHttps } from '~/utils/url'
 
 // 定义props
-const props = defineProps({
+defineProps({
   schedule: {
     type: Object,
     required: true
