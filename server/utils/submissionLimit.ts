@@ -1,5 +1,5 @@
 import { db, songs } from '~/drizzle/db'
-import { and, eq, gte, lte } from 'drizzle-orm'
+import { and, eq, gte, lte, count } from 'drizzle-orm'
 import {
   getBeijingEndOfDay,
   getBeijingEndOfWeek,
@@ -17,22 +17,29 @@ export type LimitType = 'daily' | 'weekly' | 'monthly'
  * @returns { start: Date, end: Date }
  */
 export function getTimeRange(type: LimitType) {
-  if (type === 'daily') {
-    return {
-      start: getBeijingStartOfDay(),
-      end: getBeijingEndOfDay()
-    }
-  }
-  if (type === 'weekly') {
-    return {
-      start: getBeijingStartOfWeek(),
-      end: getBeijingEndOfWeek()
-    }
-  }
-  // monthly
-  return {
-    start: getBeijingStartOfMonth(),
-    end: getBeijingEndOfMonth()
+  switch (type) {
+    case 'daily':
+      return {
+        start: getBeijingStartOfDay(),
+        end: getBeijingEndOfDay()
+      }
+    case 'weekly':
+      return {
+        start: getBeijingStartOfWeek(),
+        end: getBeijingEndOfWeek()
+      }
+    case 'monthly':
+      return {
+        start: getBeijingStartOfMonth(),
+        end: getBeijingEndOfMonth()
+      }
+    default:
+      // 如果有其他类型或作为兜底，可以返回 daily 或抛出异常
+      // 这里的类型是 LimitType，理论上不会走到 default，但为了健壮性
+      return {
+        start: getBeijingStartOfDay(),
+        end: getBeijingEndOfDay()
+      }
   }
 }
 
@@ -52,8 +59,8 @@ export async function isLimitReached(
 ): Promise<boolean> {
   const { start, end } = getTimeRange(type)
 
-  const rows = await dbOrTx
-    .select({ id: songs.id })
+  const [result] = await dbOrTx
+    .select({ count: count() })
     .from(songs)
     .where(
       and(
@@ -63,5 +70,5 @@ export async function isLimitReached(
       )
     )
 
-  return rows.length >= limit
+  return result.count >= limit
 }

@@ -11,7 +11,6 @@ import {
 import { and, eq, gt, gte, lt, lte, sql } from 'drizzle-orm'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
-import { isLimitReached } from '~/server/utils/submissionLimit'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -204,17 +203,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // 如果有生效的限额且大于0，检查使用量
-      if (effectiveLimit && effectiveLimit > 0 && limitType) {
-        if (await isLimitReached(db, user.id, limitType, effectiveLimit)) {
-          const labelMap: Record<string, string> = { daily: '每日', weekly: '每周', monthly: '每月' }
-          const timeMap: Record<string, string> = { daily: '今日', weekly: '本周', monthly: '本月' }
-
-          throw createError({
-            statusCode: 400,
-            message: `${labelMap[limitType]}投稿限额为${effectiveLimit}首，您${timeMap[limitType]}已达到限额`
-          })
-        }
-      }
+      // 注意：这里仅作初步检查，严格检查在事务内进行
     }
 
     // 检查期望的播出时段是否存在
@@ -249,6 +238,25 @@ export default defineEventHandler(async (event) => {
 
     // 创建歌曲和更新状态（使用事务）
     const song = await db.transaction(async (tx) => {
+      // 检查投稿限额（在事务内进行，防止并发绕过限制）
+      if (
+        systemSettingsData?.enableSubmissionLimit &&
+        !isAdmin &&
+        effectiveLimit &&
+        effectiveLimit > 0 &&
+        limitType
+      ) {
+        if (await isLimitReached(tx, user.id, limitType, effectiveLimit)) {
+          const labelMap: Record<string, string> = { daily: '每日', weekly: '每周', monthly: '每月' }
+          const timeMap: Record<string, string> = { daily: '今日', weekly: '本周', monthly: '本月' }
+
+          throw createError({
+            statusCode: 400,
+            message: `${labelMap[limitType]}投稿限额为${effectiveLimit}首，您${timeMap[limitType]}已达到限额`
+          })
+        }
+      }
+
       // 如果有时段限制，再次检查并更新已接纳数量
       if (hitRequestTime) {
         const latestRequestTimeResult = await tx
