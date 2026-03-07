@@ -730,7 +730,8 @@ const restoreBackup = async () => {
       users: {},
       songs: {},
       meta: {
-        preservedSuperAdminIds
+        preservedSuperAdminIds,
+        temporaryPreservedUserId
       }
     }
     const CHUNK_SIZE = 50

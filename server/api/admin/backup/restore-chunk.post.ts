@@ -60,6 +60,9 @@ export default defineEventHandler(async (event) => {
   const preservedSuperAdminIds = new Set(
     (mappings?.meta?.preservedSuperAdminIds || []).map((id) => Number(id))
   )
+  const temporaryPreservedUserId = mappings?.meta?.temporaryPreservedUserId
+    ? Number(mappings.meta.temporaryPreservedUserId)
+    : null
   const shouldOverwriteSuperAdmin = overwriteSuperAdmin && hasSuperAdminInBackup
 
   const newMappings = {
@@ -179,6 +182,19 @@ export default defineEventHandler(async (event) => {
                 stats.created++
               }
             } else {
+              if (
+                shouldOverwriteSuperAdmin &&
+                temporaryPreservedUserId &&
+                Number(record.id) === temporaryPreservedUserId
+              ) {
+                createdUser = (await tx.insert(users).values(buildUserData(true)).returning())[0]
+                stats.created++
+                if (record.id && createdUser?.id) {
+                  newMappings.users[record.id] = createdUser.id
+                }
+                break
+              }
+
               const isBackupSuperAdminRecord =
                 record.role === 'SUPER_ADMIN' || preservedSuperAdminIds.has(Number(record.id))
               if (!shouldOverwriteSuperAdmin && isBackupSuperAdminRecord) {
