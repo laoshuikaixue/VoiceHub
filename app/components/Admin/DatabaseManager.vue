@@ -435,12 +435,13 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Download, Upload, RotateCw, Trash2, AlertCircle, FileJson, X } from 'lucide-vue-next'
+import { Download, Upload, RotateCw, Trash2, AlertCircle, X } from 'lucide-vue-next'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'
 
 const { showToast: showNotification } = useToast()
+const auth = useAuth()
 
 // 状态
 const activeModal = ref('none')
@@ -691,6 +692,39 @@ const restoreBackup = async () => {
     const fileHasSuperAdmin = hasSuperAdminInBackup.value
     if (!fileHasSuperAdmin) {
       restoreForm.value.overwriteSuperAdmin = false
+    }
+
+    const shouldUseSingleRestore =
+      restoreForm.value.mode === 'replace' &&
+      restoreForm.value.overwriteSuperAdmin &&
+      fileHasSuperAdmin
+
+    if (shouldUseSingleRestore) {
+      restoreProgress.value = '正在执行完整恢复...'
+      const formData = new FormData()
+      formData.append('file', selectedFile.value)
+      formData.append('mode', 'replace')
+      formData.append('clearExisting', 'true')
+      formData.append('overwriteSuperAdmin', 'true')
+
+      const response = await $fetch('/api/admin/backup/restore', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.success) throw new Error(response.message || '恢复失败')
+
+      showNotification('数据库恢复成功，正在重新登录', 'success')
+      activeModal.value = 'none'
+      setTimeout(() => {
+        if (auth.logout) {
+          auth.logout()
+        }
+        localStorage.removeItem('auth-token')
+        localStorage.removeItem('user-info')
+        window.location.href = '/'
+      }, 1200)
+      return
     }
 
     let preservedSuperAdminIds = []
