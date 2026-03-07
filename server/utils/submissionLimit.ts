@@ -18,11 +18,6 @@ export type LimitType = 'daily' | 'weekly' | 'monthly'
  */
 export function getTimeRange(type: LimitType) {
   switch (type) {
-    case 'daily':
-      return {
-        start: getBeijingStartOfDay(),
-        end: getBeijingEndOfDay()
-      }
     case 'weekly':
       return {
         start: getBeijingStartOfWeek(),
@@ -33,9 +28,9 @@ export function getTimeRange(type: LimitType) {
         start: getBeijingStartOfMonth(),
         end: getBeijingEndOfMonth()
       }
+    case 'daily':
     default:
-      // 如果有其他类型或作为兜底，可以返回 daily 或抛出异常
-      // 这里的类型是 LimitType，理论上不会走到 default，但为了健壮性
+      // 'daily' 是默认情况，为保证健壮性处理任何意外值。
       return {
         start: getBeijingStartOfDay(),
         end: getBeijingEndOfDay()
