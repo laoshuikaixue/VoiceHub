@@ -135,8 +135,6 @@ export default defineNuxtConfig({
       ? 'vercel'
       : process.env.NETLIFY
         ? 'netlify'
-        : process.env.AWS_BRANCH || process.env.AWS_APP_ID
-          ? 'aws-amplify'
         : process.env.NITRO_PRESET || 'node-server',
     // 增强错误处理和稳定性
     experimental: {
