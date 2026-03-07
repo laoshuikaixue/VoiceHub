@@ -42,6 +42,8 @@
         <span class="label">投稿人：</span>
         <span class="value">
           {{ schedule.song.requester }}
+          <span v-if="schedule.song.requesterGrade" class="text-zinc-400 mx-1">|</span>
+          <span v-if="schedule.song.requesterGrade" class="text-zinc-500">{{ schedule.song.requesterGrade }}</span>
           <span v-if="schedule.song.collaborators && schedule.song.collaborators.length > 0">
             & {{ schedule.song.collaborators.map((c) => c.displayName || c.name).join(' & ') }}
           </span>

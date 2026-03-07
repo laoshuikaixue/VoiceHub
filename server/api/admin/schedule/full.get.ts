@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
       })
       .from(schedules)
       .innerJoin(songs, eq(schedules.songId, songs.id))
-      .innerJoin(users, eq(songs.requesterId, users.id))
+      .leftJoin(users, eq(songs.requesterId, users.id))
       .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
       .where(whereCondition)
       .orderBy(asc(schedules.playDate), asc(schedules.sequence), asc(schedules.createdAt))

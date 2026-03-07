@@ -372,6 +372,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRuntimeConfig } from '#app'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useAuth } from '~/composables/useAuth'
 import { convertToHttps } from '~/utils/url'
 import { toPng, toBlob } from 'html-to-image'
 import { jsPDF } from 'jspdf'
@@ -393,6 +394,9 @@ import logoPng from '~~/public/images/logo.png'
 
 // 权限检查
 const { canPrintSchedule } = usePermissions()
+
+// 认证信息
+const { getAuthConfig } = useAuth()
 
 // 站点配置
 const { siteTitle, schoolLogoPrintUrl, initSiteConfig } = useSiteConfig()
@@ -690,7 +694,9 @@ const loadSchedules = async () => {
   loading.value = true
   try {
     // 添加 bypass_cache=true 参数，确保获取最新的排期数据
-    const data = await $fetch('/api/songs/public?bypass_cache=true')
+    const data = await $fetch('/api/songs/public?bypass_cache=true', {
+      ...getAuthConfig()
+    })
     // API直接返回排期数组，不是包装在schedules属性中
     schedules.value = Array.isArray(data) ? data : []
 
