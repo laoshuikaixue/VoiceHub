@@ -174,14 +174,14 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // 确定生效的限额类型（三选一逻辑）
+    let effectiveLimit: number | null = null
+    let limitType: 'daily' | 'weekly' | 'monthly' | null = null
+
     if (systemSettingsData?.enableSubmissionLimit && !isAdmin) {
       const dailyLimit = systemSettingsData.dailySubmissionLimit
       const weeklyLimit = systemSettingsData.weeklySubmissionLimit
       const monthlyLimit = systemSettingsData.monthlySubmissionLimit
-
-      // 确定生效的限额类型（三选一逻辑）
-      let effectiveLimit: number | null = null
-      let limitType: 'daily' | 'weekly' | 'monthly' | null = null
 
       if (dailyLimit !== null && dailyLimit !== undefined) {
         effectiveLimit = dailyLimit
