@@ -36,6 +36,13 @@ export default defineEventHandler(async (event) => {
     hasSuperAdminInBackup = false
   } = body
 
+  if (overwriteSuperAdmin && user.role !== 'SUPER_ADMIN') {
+    throw createError({
+      statusCode: 403,
+      statusMessage: '仅超级管理员可以覆盖超级管理员账号数据'
+    })
+  }
+
   if (!tableName || !records || !Array.isArray(records)) {
     throw createError({
       statusCode: 400,

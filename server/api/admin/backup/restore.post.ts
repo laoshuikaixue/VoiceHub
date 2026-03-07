@@ -25,7 +25,7 @@ import {
 import { promises as fs } from 'fs'
 import path from 'path'
 import { CacheService } from '../../../services/cacheService'
-import { and, eq, inArray, notInArray, or } from 'drizzle-orm'
+import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -141,6 +141,12 @@ export default defineEventHandler(async (event) => {
 
     const backupUsers = Array.isArray(backupData.data?.users) ? backupData.data.users : []
     const hasSuperAdminInBackup = backupUsers.some((record) => record?.role === 'SUPER_ADMIN')
+    if (overwriteSuperAdmin && user.role !== 'SUPER_ADMIN') {
+      throw createError({
+        statusCode: 403,
+        statusMessage: '仅超级管理员可以覆盖超级管理员账号数据'
+      })
+    }
     const shouldOverwriteSuperAdmin =
       mode === 'replace' && clearExisting && overwriteSuperAdmin && hasSuperAdminInBackup
     const preservedSuperAdminIds = new Set<number>()
@@ -200,7 +206,9 @@ export default defineEventHandler(async (event) => {
           const preservedApiKeyIds = preservedApiKeys.map((item) => item.id)
 
           if (preservedApiKeyIds.length > 0) {
-            await db.delete(apiLogs).where(notInArray(apiLogs.apiKeyId, preservedApiKeyIds))
+            await db
+              .delete(apiLogs)
+              .where(or(isNull(apiLogs.apiKeyId), notInArray(apiLogs.apiKeyId, preservedApiKeyIds)))
             await db
               .delete(apiKeyPermissions)
               .where(notInArray(apiKeyPermissions.apiKeyId, preservedApiKeyIds))

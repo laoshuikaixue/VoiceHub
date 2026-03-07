@@ -150,11 +150,7 @@
               </div>
               <button
                 class="remove-file-btn"
-                @click="
-                  selectedFile = null
-                  hasSuperAdminInBackup = false
-                  restoreForm.overwriteSuperAdmin = false
-                "
+                @click="clearSelectedFile"
               >
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <line x1="18" x2="6" y1="6" y2="18" />
@@ -252,11 +248,12 @@ const createForm = ref({
   includeSystemData: true
 })
 
-const restoreForm = ref({
+const getDefaultRestoreForm = () => ({
   mode: 'merge',
   clearExisting: false,
   overwriteSuperAdmin: false
 })
+const restoreForm = ref(getDefaultRestoreForm())
 
 // 创建备份
 const createBackup = async () => {
@@ -398,10 +395,20 @@ const parseBackupSuperAdmin = async (file) => {
     if (!hasSuperAdminInBackup.value) {
       restoreForm.value.overwriteSuperAdmin = false
     }
-  } catch {
+  } catch (error) {
     hasSuperAdminInBackup.value = false
     restoreForm.value.overwriteSuperAdmin = false
+    if (window.$showNotification) {
+      window.$showNotification('无法解析备份文件，请检查文件格式是否正确。', 'error')
+    }
+    console.error('解析备份文件失败:', error)
   }
+}
+
+const clearSelectedFile = () => {
+  selectedFile.value = null
+  hasSuperAdminInBackup.value = false
+  restoreForm.value.overwriteSuperAdmin = false
 }
 
 const handleFileSelect = async (event) => {
@@ -445,9 +452,8 @@ const uploadFile = async () => {
     if (response.success) {
       // 关闭模态框并重置表单
       showUploadModal.value = false
-      selectedFile.value = null
-      hasSuperAdminInBackup.value = false
-      restoreForm.value = { mode: 'merge', clearExisting: false, overwriteSuperAdmin: false }
+      clearSelectedFile()
+      restoreForm.value = getDefaultRestoreForm()
 
       // 显示成功通知
       if (window.$showNotification) {

@@ -580,9 +580,11 @@ const parseBackupSuperAdmin = async (file) => {
     if (!hasSuperAdminInBackup.value) {
       restoreForm.value.overwriteSuperAdmin = false
     }
-  } catch {
+  } catch (error) {
     hasSuperAdminInBackup.value = false
     restoreForm.value.overwriteSuperAdmin = false
+    showNotification('无法解析备份文件，请检查文件格式是否正确。', 'error')
+    console.error('解析备份文件失败:', error)
   }
 }
 
@@ -686,9 +688,7 @@ const restoreBackup = async () => {
     }
 
     if (!backupData.data) throw new Error('备份文件缺少数据部分')
-    const backupUsers = Array.isArray(backupData.data.users) ? backupData.data.users : []
-    const fileHasSuperAdmin = backupUsers.some((item) => item?.role === 'SUPER_ADMIN')
-    hasSuperAdminInBackup.value = fileHasSuperAdmin
+    const fileHasSuperAdmin = hasSuperAdminInBackup.value
     if (!fileHasSuperAdmin) {
       restoreForm.value.overwriteSuperAdmin = false
     }
