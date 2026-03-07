@@ -59,16 +59,6 @@
         }}</span>
       </div>
 
-      <!-- 播出时段 -->
-      <div v-if="settings.showPlayTime && schedule.playTime" class="playtime-info">
-        <span class="label">时段：</span>
-        <span class="value">
-          {{ schedule.playTime.name }}
-          <span v-if="schedule.playTime.startTime && schedule.playTime.endTime" class="time-range">
-            ({{ schedule.playTime.startTime }}-{{ schedule.playTime.endTime }})
-          </span>
-        </span>
-      </div>
     </div>
   </div>
 </template>
@@ -195,8 +185,7 @@ const handleImageError = (event) => {
 }
 
 .requester-info,
-.votes-info,
-.playtime-info {
+.votes-info {
   display: flex;
   align-items: center;
   font-size: 12px;
@@ -211,11 +200,6 @@ const handleImageError = (event) => {
 
 .value {
   color: #333;
-}
-
-.time-range {
-  color: #999;
-  font-size: 11px;
 }
 
 /* 打印样式 */
