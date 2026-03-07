@@ -4,12 +4,17 @@ import {
   apiKeyPermissions,
   apiKeys,
   apiLogs,
+  collaborationLogs,
+  emailTemplates,
   notifications,
   notificationSettings,
   playTimes,
+  requestTimes,
   schedules,
   semesters,
   songBlacklists,
+  songCollaborators,
+  songReplayRequests,
   songs,
   systemSettings,
   userIdentities,
@@ -17,7 +22,7 @@ import {
   userStatusLogs,
   votes
 } from '~/drizzle/schema'
-import { eq, inArray, notInArray, or } from 'drizzle-orm'
+import { eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -60,14 +65,19 @@ export default defineEventHandler(async (event) => {
       await db.delete(apiKeys)
       await db.delete(notifications)
       await db.delete(notificationSettings)
+      await db.delete(collaborationLogs)
+      await db.delete(songCollaborators)
+      await db.delete(songReplayRequests)
       await db.delete(schedules)
       await db.delete(votes)
       await db.delete(userStatusLogs)
+      await db.delete(emailTemplates)
       await db.delete(songBlacklists)
       await db.delete(userIdentities)
       await db.delete(songs)
       await db.delete(playTimes)
       await db.delete(semesters)
+      await db.delete(requestTimes)
       await db.delete(systemSettings)
       await db.delete(users)
     } else {
@@ -78,7 +88,9 @@ export default defineEventHandler(async (event) => {
       const preservedApiKeyIds = preservedApiKeys.map((item) => item.id)
 
       if (preservedApiKeyIds.length > 0) {
-        await db.delete(apiLogs).where(notInArray(apiLogs.apiKeyId, preservedApiKeyIds))
+        await db
+          .delete(apiLogs)
+          .where(or(isNull(apiLogs.apiKeyId), notInArray(apiLogs.apiKeyId, preservedApiKeyIds)))
         await db
           .delete(apiKeyPermissions)
           .where(notInArray(apiKeyPermissions.apiKeyId, preservedApiKeyIds))
@@ -91,14 +103,19 @@ export default defineEventHandler(async (event) => {
       await db
         .delete(notificationSettings)
         .where(notInArray(notificationSettings.userId, preservedSuperAdminIds))
+      await db.delete(collaborationLogs)
+      await db.delete(songCollaborators)
+      await db.delete(songReplayRequests)
       await db.delete(schedules)
       await db.delete(votes)
       await db.delete(userStatusLogs).where(notInArray(userStatusLogs.userId, preservedSuperAdminIds))
+      await db.delete(emailTemplates)
       await db.delete(songBlacklists)
       await db.delete(userIdentities).where(notInArray(userIdentities.userId, preservedSuperAdminIds))
       await db.delete(songs)
       await db.delete(playTimes)
       await db.delete(semesters)
+      await db.delete(requestTimes)
       await db.delete(systemSettings)
       await db.delete(users).where(notInArray(users.id, preservedSuperAdminIds))
     }

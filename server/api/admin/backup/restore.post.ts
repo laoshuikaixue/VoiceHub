@@ -104,15 +104,23 @@ export default defineEventHandler(async (event) => {
         })
       }
 
+      const safeFilename = path.basename(filename)
+      if (safeFilename !== filename) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: '备份文件名不合法'
+        })
+      }
+
       mode = bodyMode
       clearExisting = bodyClearExisting
       overwriteSuperAdmin = bodyOverwriteSuperAdmin
 
-      console.log(`开始恢复数据库备份: ${filename}`)
+      console.log(`开始恢复数据库备份: ${safeFilename}`)
 
       // 读取备份文件
       const backupDir = path.join(process.cwd(), 'backups')
-      const filepath = path.join(backupDir, filename)
+      const filepath = path.join(backupDir, safeFilename)
 
       try {
         const fileContent = await fs.readFile(filepath, 'utf8')
