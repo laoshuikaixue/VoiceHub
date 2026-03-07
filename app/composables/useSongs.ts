@@ -140,6 +140,8 @@ export const useSongs = () => {
             title: schedule.song.title,
             artist: schedule.song.artist,
             requester: schedule.song.requester,
+            requesterGrade: schedule.song.requesterGrade || null,
+            requesterClass: schedule.song.requesterClass || null,
             requesterId: 0, // 默认值，公共API不提供这个信息
             voteCount: schedule.song.voteCount,
             played: schedule.song.played || false,

@@ -329,6 +329,8 @@ export default defineEventHandler(async (event) => {
           artist: schedule.songArtist,
           requester: requesterName,
           requesterId: schedule.songRequesterId,
+          requesterGrade: schedule.requesterGrade || null,
+          requesterClass: schedule.requesterClass || null,
           collaborators: formattedCollaborators,
           voteCount: voteCountMap.get(schedule.songId) || 0,
           played: schedule.songPlayed || false,

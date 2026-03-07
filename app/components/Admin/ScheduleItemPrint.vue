@@ -16,7 +16,7 @@
           referrerpolicy="no-referrer"
           @error="handleImageError"
         >
-        <div v-else class="cover-placeholder">
+        <div class="cover-placeholder" :class="{ 'show': !schedule.song.cover }">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3" />
             <path d="M12 1v6m0 6v6" />
@@ -134,10 +134,14 @@ const handleImageError = (event) => {
   height: 100%;
   background: #f5f5f5;
   border-radius: 4px;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   color: #999;
+}
+
+.cover-placeholder.show {
+  display: flex;
 }
 
 .cover-placeholder svg {
