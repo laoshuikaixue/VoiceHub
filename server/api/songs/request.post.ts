@@ -10,15 +10,8 @@ import {
 } from '~/drizzle/db'
 import { and, eq, gt, gte, lt, lte, sql } from 'drizzle-orm'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
-import {
-  getBeijingEndOfDay,
-  getBeijingEndOfWeek,
-  getBeijingEndOfMonth,
-  getBeijingStartOfDay,
-  getBeijingStartOfWeek,
-  getBeijingStartOfMonth,
-  getBeijingTimeISOString
-} from '~/utils/timeUtils'
+import { getBeijingTimeISOString } from '~/utils/timeUtils'
+import { isLimitReached } from '~/server/utils/submissionLimit'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -211,78 +204,15 @@ export default defineEventHandler(async (event) => {
       }
 
       // 如果有生效的限额且大于0，检查使用量
-      if (effectiveLimit && effectiveLimit > 0) {
-        let currentCount = 0
+      if (effectiveLimit && effectiveLimit > 0 && limitType) {
+        if (await isLimitReached(db, user.id, limitType, effectiveLimit)) {
+          const labelMap: Record<string, string> = { daily: '每日', weekly: '每周', monthly: '每月' }
+          const timeMap: Record<string, string> = { daily: '今日', weekly: '本周', monthly: '本月' }
 
-        if (limitType === 'daily') {
-          // 检查每日限额（按北京时间计算）
-          const startOfDay = getBeijingStartOfDay()
-          const endOfDay = getBeijingEndOfDay()
-
-          const dailySongs = await db
-            .select()
-            .from(songs)
-            .where(
-              and(
-                eq(songs.requesterId, user.id),
-                gte(songs.createdAt, startOfDay),
-                lte(songs.createdAt, endOfDay)
-              )
-            )
-          currentCount = dailySongs.length
-
-          if (currentCount >= effectiveLimit) {
-            throw createError({
-              statusCode: 400,
-              message: `每日投稿限额为${effectiveLimit}首，您今日已达到限额`
-            })
-          }
-        } else if (limitType === 'weekly') {
-          // 检查每周限额（按北京时间计算）
-          const startOfWeek = getBeijingStartOfWeek()
-          const endOfWeek = getBeijingEndOfWeek()
-
-          const weeklySongs = await db
-            .select()
-            .from(songs)
-            .where(
-              and(
-                eq(songs.requesterId, user.id),
-                gte(songs.createdAt, startOfWeek),
-                lte(songs.createdAt, endOfWeek)
-              )
-            )
-          currentCount = weeklySongs.length
-
-          if (currentCount >= effectiveLimit) {
-            throw createError({
-              statusCode: 400,
-              message: `每周投稿限额为${effectiveLimit}首，您本周已达到限额`
-            })
-          }
-        } else if (limitType === 'monthly') {
-          // 检查每月限额（按北京时间计算）
-          const startOfMonth = getBeijingStartOfMonth()
-          const endOfMonth = getBeijingEndOfMonth()
-
-          const monthlySongs = await db
-            .select()
-            .from(songs)
-            .where(
-              and(
-                eq(songs.requesterId, user.id),
-                gte(songs.createdAt, startOfMonth),
-                lte(songs.createdAt, endOfMonth)
-              )
-            )
-          currentCount = monthlySongs.length
-
-          if (currentCount >= effectiveLimit) {
-            throw createError({
-              statusCode: 400,
-              message: `每月投稿限额为${effectiveLimit}首，您本月已达到限额`
-            })
-          }
+          throw createError({
+            statusCode: 400,
+            message: `${labelMap[limitType]}投稿限额为${effectiveLimit}首，您${timeMap[limitType]}已达到限额`
+          })
         }
       }
     }
