@@ -1364,15 +1364,14 @@ const confirmManualDate = () => {
 // 定位到今天
 const scrollToToday = () => {
   const todayStr = new Date().toISOString().split('T')[0]
-  if (selectedDate.value === todayStr) return
+  const isAlreadyToday = selectedDate.value === todayStr
 
-  if (hasChanges.value) {
-    if (!window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
+  if (!isAlreadyToday) {
+    if (hasChanges.value && !window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
       return
     }
+    selectedDate.value = todayStr
   }
-
-  selectedDate.value = todayStr
 
   // 确保今天在范围内
   if (dateRange.value.start > 0 || dateRange.value.end < 0) {
