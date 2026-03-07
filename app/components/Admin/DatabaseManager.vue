@@ -783,6 +783,14 @@ const restoreBackup = async () => {
       throw new Error(sequenceResult.message || sequenceResult.error || '序列修复失败')
     }
 
+    restoreProgress.value = '正在重载SMTP配置...'
+    const smtpReloadResult = await $fetch('/api/admin/smtp/reload', {
+      method: 'POST'
+    })
+    if (!smtpReloadResult.success) {
+      throw new Error(smtpReloadResult.message || 'SMTP配置重载失败')
+    }
+
     const shouldFinalizeTempUser =
       restoreForm.value.mode === 'replace' &&
       restoreForm.value.overwriteSuperAdmin &&
