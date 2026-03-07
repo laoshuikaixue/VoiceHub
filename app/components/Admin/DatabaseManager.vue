@@ -791,9 +791,6 @@ const restoreBackup = async () => {
           }
         })
       }
-    }
-
-    if (shouldFinalizeTempUser) {
       showNotification('数据库恢复成功，正在重新登录', 'success')
       activeModal.value = 'none'
       setTimeout(() => {

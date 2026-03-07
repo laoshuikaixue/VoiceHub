@@ -493,6 +493,18 @@ export default defineEventHandler(async (event) => {
                               .limit(1)
 
                             if (existingUserWithUsername.length > 0) {
+                              const targetUser = existingUserWithUsername[0]
+                              const isProtectedTargetUser =
+                                targetUser.role === 'SUPER_ADMIN' ||
+                                preservedSuperAdminIds.has(Number(targetUser.id))
+                              if (!shouldOverwriteSuperAdmin && isProtectedTargetUser) {
+                                userIdMapping.set(record.id, targetUser.id)
+                                restoreResults.details.warnings.push(
+                                  `已保留受保护账户 ${targetUser.username || `#${targetUser.id}`}`
+                                )
+                                break
+                              }
+
                               // 用户名已存在（如保留的admin），更新该用户，并建立映射
                               console.warn(
                                 `用户 ${record.username} (ID ${record.id}) 的用户名已存在于 ID ${existingUserWithUsername[0].id}，将合并数据`
@@ -556,7 +568,6 @@ export default defineEventHandler(async (event) => {
                         }
 
                         if (
-                          mode !== 'merge' &&
                           !shouldOverwriteSuperAdmin &&
                           preservedSuperAdminIds.has(Number(validIdentityUserId))
                         ) {
