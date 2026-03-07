@@ -29,6 +29,8 @@ export interface Song {
   musicPlatform?: string | null // 音乐平台（netease, tencent等）
   musicId?: string | null // 平台上的歌曲ID
   playUrl?: string | null // 播放地址URL
+  requesterGrade?: string | null
+  requesterClass?: string | null
   createdAt: string
   voted?: boolean
   scheduled?: boolean // 是否已排期
@@ -46,6 +48,8 @@ export interface Schedule {
     title: string
     artist: string
     requester: string
+    requesterGrade?: string | null
+    requesterClass?: string | null
     voteCount: number
     played?: boolean
     cover?: string | null

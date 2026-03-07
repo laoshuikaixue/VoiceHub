@@ -1040,6 +1040,8 @@ const downloadImageAsBase64 = async (url) => {
 
 // 预处理所有图片
 const preprocessImages = async (element) => {
+  const TRANSPARENT_PIXEL =
+    'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
   const images = element.querySelectorAll('img')
   const imagePromises = Array.from(images).map(async (img) => {
     if (img.src && !img.src.startsWith('data:')) {
@@ -1047,9 +1049,23 @@ const preprocessImages = async (element) => {
         const base64 = await downloadImageAsBase64(img.src)
         if (base64) {
           img.src = base64
+        } else {
+          // 如果代理下载失败，使用透明像素并尝试显示占位图，防止 html-to-image 报错
+          img.src = TRANSPARENT_PIXEL
+          if (img.classList.contains('song-cover')) {
+            const placeholder = img.parentElement?.querySelector('.cover-placeholder')
+            if (placeholder) placeholder.classList.add('show')
+            img.style.display = 'none'
+          }
         }
       } catch (error) {
         console.warn('处理图片失败:', img.src, error)
+        img.src = TRANSPARENT_PIXEL
+        if (img.classList.contains('song-cover')) {
+          const placeholder = img.parentElement?.querySelector('.cover-placeholder')
+          if (placeholder) placeholder.classList.add('show')
+          img.style.display = 'none'
+        }
       }
     }
 
