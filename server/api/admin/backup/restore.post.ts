@@ -25,6 +25,7 @@ import {
 import { promises as fs } from 'fs'
 import path from 'path'
 import { CacheService } from '../../../services/cacheService'
+import { SmtpService } from '../../../services/smtpService'
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
@@ -993,9 +994,21 @@ export default defineEventHandler(async (event) => {
                           'enableSubmissionLimit',
                           'dailySubmissionLimit',
                           'weeklySubmissionLimit',
+                          'monthlySubmissionLimit',
                           'showBlacklistKeywords',
                           'enableRequestTimeLimitation',
-                          'forceBlockAllRequests'
+                          'requestTimeLimitation',
+                          'forceBlockAllRequests',
+                          'enableReplayRequests',
+                          'hideStudentInfo',
+                          'smtpEnabled',
+                          'smtpHost',
+                          'smtpPort',
+                          'smtpSecure',
+                          'smtpUsername',
+                          'smtpPassword',
+                          'smtpFromEmail',
+                          'smtpFromName'
                         ]
 
                         // 只添加备份数据中存在的字段
@@ -2164,6 +2177,20 @@ export default defineEventHandler(async (event) => {
       console.warn('清除缓存失败:', cacheError)
       restoreResults.details.warnings = restoreResults.details.warnings || []
       restoreResults.details.warnings.push('清除缓存失败')
+    }
+
+    try {
+      const smtpService = SmtpService.getInstance()
+      const initialized = await smtpService.initializeSmtpConfig()
+      if (!initialized) {
+        restoreResults.details.warnings = restoreResults.details.warnings || []
+        restoreResults.details.warnings.push('SMTP未启用或配置不完整，SMTP实例已重置')
+      }
+      console.log('数据恢复后SMTP配置已重载')
+    } catch (smtpError) {
+      console.warn('重载SMTP配置失败:', smtpError)
+      restoreResults.details.warnings = restoreResults.details.warnings || []
+      restoreResults.details.warnings.push('重载SMTP配置失败')
     }
 
     return restoreResults

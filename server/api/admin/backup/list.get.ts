@@ -61,6 +61,10 @@ export default defineEventHandler(async (event) => {
         file.endsWith('.json') &&
         (file.startsWith('database-backup-') ||
           file.startsWith('users-backup-') ||
+          file.startsWith('users-system-backup-') ||
+          file.startsWith('songs-backup-') ||
+          file.startsWith('songs-system-backup-') ||
+          file.startsWith('system-settings-backup-') ||
           file.startsWith('uploaded-'))
     )
 
@@ -100,8 +104,15 @@ export default defineEventHandler(async (event) => {
         let type = 'users' // 默认为用户备份
         if (filename.startsWith('database-backup-')) {
           type = 'full'
-        } else if (filename.startsWith('users-backup-')) {
+        } else if (
+          filename.startsWith('users-backup-') ||
+          filename.startsWith('users-system-backup-')
+        ) {
           type = 'users'
+        } else if (filename.startsWith('songs-backup-') || filename.startsWith('songs-system-backup-')) {
+          type = 'songs'
+        } else if (filename.startsWith('system-settings-backup-')) {
+          type = 'system'
         } else if (filename.startsWith('uploaded-')) {
           // 对于上传的文件，根据元数据判断类型
           if (metadata) {

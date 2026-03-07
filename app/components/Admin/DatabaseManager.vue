@@ -613,17 +613,23 @@ const handleFileDrop = async (event) => {
 const createBackup = async () => {
   createLoading.value = true
   try {
+    let tables = 'all'
+    if (createForm.value.includeUsers && createForm.value.includeSongs) {
+      tables = 'all'
+    } else if (createForm.value.includeUsers) {
+      tables = 'users'
+    } else if (createForm.value.includeSongs) {
+      tables = 'songs'
+    } else if (createForm.value.includeSystemData) {
+      tables = ['systemSettings']
+    } else {
+      throw new Error('请至少选择一项备份内容')
+    }
+
     const response = await $fetch('/api/admin/backup/export', {
       method: 'POST',
       body: {
-        tables:
-          createForm.value.includeUsers && createForm.value.includeSongs
-            ? 'all'
-            : createForm.value.includeUsers
-              ? 'users'
-              : createForm.value.includeSongs
-                ? 'songs'
-                : 'all',
+        tables,
         includeSystemData: createForm.value.includeSystemData
       }
     })
@@ -772,6 +778,23 @@ const restoreBackup = async () => {
         }
         totalProcessed += chunk.length
       }
+    }
+
+    restoreProgress.value = '正在修复数据表序列...'
+    const sequenceResult = await $fetch('/api/admin/fix-sequence', {
+      method: 'POST',
+      body: { table: 'all' }
+    })
+    if (!sequenceResult.success) {
+      throw new Error(sequenceResult.message || sequenceResult.error || '序列修复失败')
+    }
+
+    restoreProgress.value = '正在重载SMTP配置...'
+    const smtpReloadResult = await $fetch('/api/admin/smtp/reload', {
+      method: 'POST'
+    })
+    if (!smtpReloadResult.success) {
+      throw new Error(smtpReloadResult.message || 'SMTP配置重载失败')
     }
 
     const shouldFinalizeTempUser =

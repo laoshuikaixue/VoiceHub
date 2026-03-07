@@ -297,6 +297,14 @@ export default defineEventHandler(async (event) => {
       console.warn('清除系统设置缓存失败:', cacheError)
     }
 
+    try {
+      const { SmtpService } = await import('~~/server/services/smtpService')
+      await SmtpService.getInstance().initializeSmtpConfig()
+      console.log('[SMTP] SMTP配置已重新加载（更新系统设置）')
+    } catch (smtpError) {
+      console.warn('[SMTP] SMTP配置重载失败:', smtpError)
+    }
+
     return settings
   } catch (error) {
     console.error('更新系统设置失败:', error)

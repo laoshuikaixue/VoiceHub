@@ -10,6 +10,14 @@
       </div>
       <div class="flex items-center gap-3">
         <button
+          class="flex items-center gap-2 px-6 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50"
+          :disabled="reloading"
+          @click="reloadSmtpConfig"
+        >
+          <RotateCw :size="14" :class="reloading ? 'animate-spin' : ''" />
+          {{ reloading ? '重载中...' : '重载SMTP' }}
+        </button>
+        <button
           class="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
           :disabled="saving"
           @click="saveConfig"
@@ -196,7 +204,7 @@ import { onMounted, ref } from 'vue'
 import { useToast } from '~/composables/useToast'
 import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import { Server, Save, Check, Send, CheckCircle, XCircle } from 'lucide-vue-next'
+import { Server, Save, Check, Send, CheckCircle, XCircle, RotateCw } from 'lucide-vue-next'
 
 const { showToast: showNotification } = useToast()
 
@@ -215,6 +223,7 @@ const config = ref({
 const testEmail = ref('')
 const testing = ref(false)
 const saving = ref(false)
+const reloading = ref(false)
 const testResult = ref(null)
 const originalConfig = ref({})
 
@@ -274,6 +283,24 @@ const resetConfig = () => {
   config.value = { ...originalConfig.value }
   testResult.value = null
   showNotification('配置已重置', 'info')
+}
+
+const reloadSmtpConfig = async () => {
+  reloading.value = true
+  try {
+    const response = await $fetch('/api/admin/smtp/reload', {
+      method: 'POST'
+    })
+    if (!response.success) {
+      throw new Error(response.message || 'SMTP重载失败')
+    }
+    showNotification(response.message || 'SMTP配置已重载', 'success')
+  } catch (error) {
+    console.error('重载SMTP配置失败:', error)
+    showNotification(error.data?.message || error.message || '重载SMTP配置失败', 'error')
+  } finally {
+    reloading.value = false
+  }
 }
 
 // 测试连接
