@@ -243,6 +243,25 @@
           </div>
 
           <div
+            v-if="restoreForm.mode === 'replace' && hasSuperAdminInBackup"
+            class="p-4 bg-zinc-950 border border-zinc-800 rounded-xl"
+          >
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input
+                v-model="restoreForm.overwriteSuperAdmin"
+                type="checkbox"
+                class="mt-0.5 accent-emerald-500"
+              >
+              <div>
+                <p class="text-xs font-bold text-zinc-200">覆盖备份中的超级管理员账号数据</p>
+                <p class="text-[10px] text-zinc-500 mt-1">
+                  关闭时将保留当前超级管理员账号及其第三方绑定、2FA等关联数据
+                </p>
+              </div>
+            </label>
+          </div>
+
+          <div
             class="p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3"
           >
             <AlertCircle class="text-amber-500 shrink-0 mt-0.5 w-4 h-4" />
@@ -432,6 +451,7 @@ const resetLoading = ref(false)
 const selectedFile = ref(null)
 const resetConfirmText = ref('')
 const restoreProgress = ref('')
+const hasSuperAdminInBackup = ref(false)
 const CONFIRM_CODE = 'CONFIRM-DATABASE-RESET-OPERATION'
 
 // 卡片配置
@@ -498,7 +518,8 @@ const createForm = ref({
 })
 
 const restoreForm = ref({
-  mode: 'merge'
+  mode: 'merge',
+  overwriteSuperAdmin: false
 })
 
 const sequenceForm = ref({
@@ -550,19 +571,36 @@ const openModal = (id) => {
 }
 
 // 文件处理
-const handleFileSelect = (event) => {
+const parseBackupSuperAdmin = async (file) => {
+  try {
+    const fileContent = await file.text()
+    const backupData = JSON.parse(fileContent)
+    const users = Array.isArray(backupData?.data?.users) ? backupData.data.users : []
+    hasSuperAdminInBackup.value = users.some((item) => item?.role === 'SUPER_ADMIN')
+    if (!hasSuperAdminInBackup.value) {
+      restoreForm.value.overwriteSuperAdmin = false
+    }
+  } catch {
+    hasSuperAdminInBackup.value = false
+    restoreForm.value.overwriteSuperAdmin = false
+  }
+}
+
+const handleFileSelect = async (event) => {
   const file = event.target.files[0]
   if (file && file.type === 'application/json') {
     selectedFile.value = file
+    await parseBackupSuperAdmin(file)
   } else {
     showNotification('请选择有效的JSON备份文件', 'error')
   }
 }
 
-const handleFileDrop = (event) => {
+const handleFileDrop = async (event) => {
   const file = event.dataTransfer.files[0]
   if (file && file.type === 'application/json') {
     selectedFile.value = file
+    await parseBackupSuperAdmin(file)
   } else {
     showNotification('请选择有效的JSON备份文件', 'error')
   }
@@ -648,15 +686,31 @@ const restoreBackup = async () => {
     }
 
     if (!backupData.data) throw new Error('备份文件缺少数据部分')
+    const backupUsers = Array.isArray(backupData.data.users) ? backupData.data.users : []
+    const fileHasSuperAdmin = backupUsers.some((item) => item?.role === 'SUPER_ADMIN')
+    hasSuperAdminInBackup.value = fileHasSuperAdmin
+    if (!fileHasSuperAdmin) {
+      restoreForm.value.overwriteSuperAdmin = false
+    }
+
+    let preservedSuperAdminIds = []
 
     if (restoreForm.value.mode === 'replace') {
       restoreProgress.value = '正在清空现有数据...'
-      const clearResult = await $fetch('/api/admin/backup/clear', { method: 'POST' })
+      const clearResult = await $fetch('/api/admin/backup/clear', {
+        method: 'POST',
+        body: {
+          overwriteSuperAdmin: restoreForm.value.overwriteSuperAdmin,
+          hasSuperAdminInBackup: fileHasSuperAdmin
+        }
+      })
       if (!clearResult.success) throw new Error(clearResult.message || '清空数据失败')
+      preservedSuperAdminIds = clearResult.preservedSuperAdminIds || []
     }
 
     const tableOrder = [
       'users',
+      'userIdentities',
       'systemSettings',
       'semesters',
       'playTimes',
@@ -669,7 +723,13 @@ const restoreBackup = async () => {
       'userStatusLogs'
     ]
 
-    const mappings = { users: {}, songs: {} }
+    const mappings = {
+      users: {},
+      songs: {},
+      meta: {
+        preservedSuperAdminIds
+      }
+    }
     const CHUNK_SIZE = 50
     let totalProcessed = 0
     let totalRecords = 0
@@ -695,7 +755,9 @@ const restoreBackup = async () => {
             tableName,
             records: chunk,
             mappings,
-            mode: restoreForm.value.mode
+            mode: restoreForm.value.mode,
+            overwriteSuperAdmin: restoreForm.value.overwriteSuperAdmin,
+            hasSuperAdminInBackup: fileHasSuperAdmin
           }
         })
 

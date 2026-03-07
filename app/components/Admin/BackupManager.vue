@@ -148,7 +148,14 @@
                   <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
                 </div>
               </div>
-              <button class="remove-file-btn" @click="selectedFile = null">
+              <button
+                class="remove-file-btn"
+                @click="
+                  selectedFile = null
+                  hasSuperAdminInBackup = false
+                  restoreForm.overwriteSuperAdmin = false
+                "
+              >
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <line x1="18" x2="6" y1="6" y2="18" />
                   <line x1="6" x2="18" y1="6" y2="18" />
@@ -178,6 +185,17 @@
               <input v-model="restoreForm.clearExisting" type="checkbox" >
               <span>我确认要清空现有数据</span>
               <small>此操作不可逆，请谨慎操作</small>
+            </label>
+          </div>
+
+          <div
+            v-if="restoreForm.mode === 'replace' && hasSuperAdminInBackup"
+            class="form-group"
+          >
+            <label class="checkbox-option">
+              <input v-model="restoreForm.overwriteSuperAdmin" type="checkbox" >
+              <span>覆盖备份中的超级管理员账号数据</span>
+              <small>关闭时将保留当前超级管理员及其第三方绑定、2FA相关数据</small>
             </label>
           </div>
 
@@ -226,6 +244,7 @@ const showCreateModal = ref(false)
 const showUploadModal = ref(false)
 const selectedFile = ref(null)
 const isDragOver = ref(false)
+const hasSuperAdminInBackup = ref(false)
 
 // 表单数据
 const createForm = ref({
@@ -235,7 +254,8 @@ const createForm = ref({
 
 const restoreForm = ref({
   mode: 'merge',
-  clearExisting: false
+  clearExisting: false,
+  overwriteSuperAdmin: false
 })
 
 // 创建备份
@@ -369,21 +389,38 @@ const createBackup = async () => {
 }
 
 // 文件选择处理
-const handleFileSelect = (event) => {
+const parseBackupSuperAdmin = async (file) => {
+  try {
+    const text = await file.text()
+    const backupData = JSON.parse(text)
+    const users = Array.isArray(backupData?.data?.users) ? backupData.data.users : []
+    hasSuperAdminInBackup.value = users.some((item) => item?.role === 'SUPER_ADMIN')
+    if (!hasSuperAdminInBackup.value) {
+      restoreForm.value.overwriteSuperAdmin = false
+    }
+  } catch {
+    hasSuperAdminInBackup.value = false
+    restoreForm.value.overwriteSuperAdmin = false
+  }
+}
+
+const handleFileSelect = async (event) => {
   const file = event.target.files[0]
   if (file) {
     selectedFile.value = file
+    await parseBackupSuperAdmin(file)
   }
 }
 
 // 拖拽处理
-const handleDrop = (event) => {
+const handleDrop = async (event) => {
   event.preventDefault()
   isDragOver.value = false
 
   const files = event.dataTransfer.files
   if (files.length > 0) {
     selectedFile.value = files[0]
+    await parseBackupSuperAdmin(files[0])
   }
 }
 
@@ -398,6 +435,7 @@ const uploadFile = async () => {
     formData.append('file', selectedFile.value)
     formData.append('mode', restoreForm.value.mode)
     formData.append('clearExisting', restoreForm.value.clearExisting)
+    formData.append('overwriteSuperAdmin', restoreForm.value.overwriteSuperAdmin)
 
     const response = await $fetch('/api/admin/backup/restore', {
       method: 'POST',
@@ -408,7 +446,8 @@ const uploadFile = async () => {
       // 关闭模态框并重置表单
       showUploadModal.value = false
       selectedFile.value = null
-      restoreForm.value = { mode: 'merge', clearExisting: false }
+      hasSuperAdminInBackup.value = false
+      restoreForm.value = { mode: 'merge', clearExisting: false, overwriteSuperAdmin: false }
 
       // 显示成功通知
       if (window.$showNotification) {
