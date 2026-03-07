@@ -25,7 +25,7 @@ import {
 import { promises as fs } from 'fs'
 import path from 'path'
 import { CacheService } from '../../../services/cacheService'
-import { and, eq, ne } from 'drizzle-orm'
+import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -41,6 +41,7 @@ export default defineEventHandler(async (event) => {
     let backupData
     let mode = 'merge'
     let clearExisting = false
+    let overwriteSuperAdmin = false
 
     // 检查是否是文件上传
     const contentType = event.node.req.headers['content-type']
@@ -64,6 +65,8 @@ export default defineEventHandler(async (event) => {
           mode = field.data.toString()
         } else if (field.name === 'clearExisting' && field.data) {
           clearExisting = field.data.toString() === 'true'
+        } else if (field.name === 'overwriteSuperAdmin' && field.data) {
+          overwriteSuperAdmin = field.data.toString() === 'true'
         }
       }
 
@@ -87,7 +90,12 @@ export default defineEventHandler(async (event) => {
     } else {
       // 处理传统的文件名方式（向后兼容）
       const body = await readBody(event)
-      const { filename, mode: bodyMode = 'merge', clearExisting: bodyClearExisting = false } = body
+      const {
+        filename,
+        mode: bodyMode = 'merge',
+        clearExisting: bodyClearExisting = false,
+        overwriteSuperAdmin: bodyOverwriteSuperAdmin = false
+      } = body
 
       if (!filename) {
         throw createError({
@@ -96,14 +104,23 @@ export default defineEventHandler(async (event) => {
         })
       }
 
+      const safeFilename = path.basename(filename)
+      if (safeFilename !== filename) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: '备份文件名不合法'
+        })
+      }
+
       mode = bodyMode
       clearExisting = bodyClearExisting
+      overwriteSuperAdmin = bodyOverwriteSuperAdmin
 
-      console.log(`开始恢复数据库备份: ${filename}`)
+      console.log(`开始恢复数据库备份: ${safeFilename}`)
 
       // 读取备份文件
       const backupDir = path.join(process.cwd(), 'backups')
-      const filepath = path.join(backupDir, filename)
+      const filepath = path.join(backupDir, safeFilename)
 
       try {
         const fileContent = await fs.readFile(filepath, 'utf8')
@@ -130,6 +147,18 @@ export default defineEventHandler(async (event) => {
     console.log(`- 创建者: ${backupData.metadata.creator}`)
     console.log(`- 总记录数: ${backupData.metadata.totalRecords}`)
 
+    const backupUsers = Array.isArray(backupData.data?.users) ? backupData.data.users : []
+    const hasSuperAdminInBackup = backupUsers.some((record) => record?.role === 'SUPER_ADMIN')
+    if (overwriteSuperAdmin && user.role !== 'SUPER_ADMIN') {
+      throw createError({
+        statusCode: 403,
+        statusMessage: '仅超级管理员可以覆盖超级管理员账号数据'
+      })
+    }
+    const shouldOverwriteSuperAdmin =
+      mode === 'replace' && clearExisting && overwriteSuperAdmin && hasSuperAdminInBackup
+    const preservedSuperAdminIds = new Set<number>()
+
     const restoreResults = {
       success: true,
       message: '数据恢复完成',
@@ -145,27 +174,88 @@ export default defineEventHandler(async (event) => {
     if (clearExisting) {
       console.log('清空现有数据...')
       try {
-        // 按照外键依赖顺序删除数据
-        await db.delete(apiLogs)
-        await db.delete(apiKeyPermissions)
-        await db.delete(apiKeys)
-        await db.delete(notifications)
-        await db.delete(notificationSettings)
-        await db.delete(collaborationLogs)
-        await db.delete(songCollaborators)
-        await db.delete(songReplayRequests)
-        await db.delete(schedules)
-        await db.delete(votes)
-        await db.delete(songs)
-        await db.delete(songBlacklists)
-        await db.delete(userStatusLogs)
-        await db.delete(emailTemplates)
-        await db.delete(userIdentities)
-        await db.delete(users).where(ne(users.role, 'SUPER_ADMIN'))
-        await db.delete(playTimes)
-        await db.delete(semesters)
-        await db.delete(requestTimes)
-        await db.delete(systemSettings)
+        if (shouldOverwriteSuperAdmin) {
+          await db.delete(apiLogs)
+          await db.delete(apiKeyPermissions)
+          await db.delete(apiKeys)
+          await db.delete(notifications)
+          await db.delete(notificationSettings)
+          await db.delete(collaborationLogs)
+          await db.delete(songCollaborators)
+          await db.delete(songReplayRequests)
+          await db.delete(schedules)
+          await db.delete(votes)
+          await db.delete(songs)
+          await db.delete(songBlacklists)
+          await db.delete(userStatusLogs)
+          await db.delete(emailTemplates)
+          await db.delete(userIdentities)
+          await db.delete(users)
+          await db.delete(playTimes)
+          await db.delete(semesters)
+          await db.delete(requestTimes)
+          await db.delete(systemSettings)
+        } else {
+          const preservedUsers = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(or(eq(users.role, 'SUPER_ADMIN'), eq(users.id, 1)))
+          preservedUsers.forEach((item) => preservedSuperAdminIds.add(item.id))
+          const preservedUserIdList = [...preservedSuperAdminIds]
+
+          const preservedApiKeys = await db
+            .select({ id: apiKeys.id })
+            .from(apiKeys)
+            .where(
+              preservedUserIdList.length > 0
+                ? inArray(apiKeys.createdByUserId, preservedUserIdList)
+                : eq(apiKeys.createdByUserId, -1)
+            )
+          const preservedApiKeyIds = preservedApiKeys.map((item) => item.id)
+
+          if (preservedApiKeyIds.length > 0) {
+            await db
+              .delete(apiLogs)
+              .where(or(isNull(apiLogs.apiKeyId), notInArray(apiLogs.apiKeyId, preservedApiKeyIds)))
+            await db
+              .delete(apiKeyPermissions)
+              .where(notInArray(apiKeyPermissions.apiKeyId, preservedApiKeyIds))
+          } else {
+            await db.delete(apiLogs)
+            await db.delete(apiKeyPermissions)
+          }
+
+          if (preservedUserIdList.length > 0) {
+            await db.delete(apiKeys).where(notInArray(apiKeys.createdByUserId, preservedUserIdList))
+            await db.delete(notifications).where(notInArray(notifications.userId, preservedUserIdList))
+            await db
+              .delete(notificationSettings)
+              .where(notInArray(notificationSettings.userId, preservedUserIdList))
+            await db.delete(userStatusLogs).where(notInArray(userStatusLogs.userId, preservedUserIdList))
+            await db.delete(userIdentities).where(notInArray(userIdentities.userId, preservedUserIdList))
+            await db.delete(users).where(notInArray(users.id, preservedUserIdList))
+          } else {
+            await db.delete(apiKeys)
+            await db.delete(notifications)
+            await db.delete(notificationSettings)
+            await db.delete(userStatusLogs)
+            await db.delete(userIdentities)
+            await db.delete(users)
+          }
+
+          await db.delete(collaborationLogs)
+          await db.delete(songCollaborators)
+          await db.delete(songReplayRequests)
+          await db.delete(schedules)
+          await db.delete(votes)
+          await db.delete(songs)
+          await db.delete(songBlacklists)
+          await db.delete(emailTemplates)
+          await db.delete(playTimes)
+          await db.delete(semesters)
+          await db.delete(requestTimes)
+          await db.delete(systemSettings)
+        }
         console.log('✅ 现有数据已清空')
       } catch (error) {
         console.error('清空数据失败:', error)
@@ -243,13 +333,24 @@ export default defineEventHandler(async (event) => {
                             'grade',
                             'class',
                             'role',
+                            'email',
+                            'emailVerified',
                             'lastLoginIp',
+                            'forcePasswordChange',
                             'meowNickname',
-                            'forcePasswordChange'
+                            'status',
+                            'statusChangedBy'
                           ]
 
                           // 处理日期字段
-                          const dateFields = ['lastLogin', 'passwordChangedAt', 'meowBoundAt']
+                          const dateFields = [
+                            'createdAt',
+                            'updatedAt',
+                            'lastLogin',
+                            'passwordChangedAt',
+                            'meowBoundAt',
+                            'statusChangedAt'
+                          ]
 
                           // 添加基本字段
                           userFields.forEach((field) => {
@@ -346,6 +447,25 @@ export default defineEventHandler(async (event) => {
                             }
                           }
                         } else {
+                          const isBackupSuperAdminRecord =
+                            record.role === 'SUPER_ADMIN' || preservedSuperAdminIds.has(Number(record.id))
+                          if (!shouldOverwriteSuperAdmin && isBackupSuperAdminRecord) {
+                            if (record.id) {
+                              const existingProtectedUser = await tx
+                                .select({ id: users.id })
+                                .from(users)
+                                .where(eq(users.id, record.id))
+                                .limit(1)
+                              if (existingProtectedUser.length > 0) {
+                                userIdMapping.set(record.id, existingProtectedUser[0].id)
+                              }
+                            }
+                            restoreResults.details.warnings.push(
+                              `已保留超级管理员账户 ${record.username || `#${record.id}`}`
+                            )
+                            break
+                          }
+
                           // 完全恢复模式，检查ID是否已存在
                           const existingUserWithId = await tx
                             .select()
@@ -360,7 +480,7 @@ export default defineEventHandler(async (event) => {
                             )
                             const result = await tx
                               .update(users)
-                              .set(buildUserData(false)) // 不包含密码，避免覆盖现有密码
+                              .set(buildUserData(true))
                               .where(eq(users.id, record.id))
                               .returning({ id: users.id })
                             createdUser = result[0]
@@ -373,13 +493,25 @@ export default defineEventHandler(async (event) => {
                               .limit(1)
 
                             if (existingUserWithUsername.length > 0) {
+                              const targetUser = existingUserWithUsername[0]
+                              const isProtectedTargetUser =
+                                targetUser.role === 'SUPER_ADMIN' ||
+                                preservedSuperAdminIds.has(Number(targetUser.id))
+                              if (!shouldOverwriteSuperAdmin && isProtectedTargetUser) {
+                                userIdMapping.set(record.id, targetUser.id)
+                                restoreResults.details.warnings.push(
+                                  `已保留受保护账户 ${targetUser.username || `#${targetUser.id}`}`
+                                )
+                                break
+                              }
+
                               // 用户名已存在（如保留的admin），更新该用户，并建立映射
                               console.warn(
                                 `用户 ${record.username} (ID ${record.id}) 的用户名已存在于 ID ${existingUserWithUsername[0].id}，将合并数据`
                               )
                               const result = await tx
                                 .update(users)
-                                .set(buildUserData(false))
+                                .set(buildUserData(true))
                                 .where(eq(users.id, existingUserWithUsername[0].id))
                                 .returning({ id: users.id })
                               createdUser = result[0]
@@ -433,6 +565,13 @@ export default defineEventHandler(async (event) => {
                           providerUserId: record.providerUserId,
                           providerUsername: record.providerUsername,
                           createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+                        }
+
+                        if (
+                          !shouldOverwriteSuperAdmin &&
+                          preservedSuperAdminIds.has(Number(validIdentityUserId))
+                        ) {
+                          break
                         }
 
                         if (mode === 'merge') {
