@@ -737,6 +737,9 @@ VoiceHub/
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       ├── index.ts         # 用户管理
 │   │   │       └── status-logs.get.ts # 用户状态日志
+│   │   ├── api-enhanced/          # 网易云音乐API
+│   │   │   └── netease/           # 网易云增强接口代理
+│   │   │       └── [...path].ts   # 转发网易云API请求
 │   │   ├── auth/           # 认证API
 │   │   │   ├── 2fa/             # 2FA验证API
 │   │   │   │   ├── send-email.post.ts # 发送2FA验证邮件
