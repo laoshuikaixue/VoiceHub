@@ -20,7 +20,19 @@ COPY package*.json ./
 COPY scripts ./scripts
 
 # 安装所有依赖
-RUN npm ci || npm install
+RUN set -eux; \
+    npm config set fund false; \
+    npm config set audit false; \
+    npm config set fetch-retries 5; \
+    npm config set fetch-retry-mintimeout 20000; \
+    npm config set fetch-retry-maxtimeout 120000; \
+    npm ci --no-audit --no-fund || ( \
+      rm -rf node_modules; \
+      npm install --no-audit --no-fund --legacy-peer-deps || ( \
+        npm config set registry https://registry.npmmirror.com; \
+        npm install --no-audit --no-fund --legacy-peer-deps \
+      ) \
+    )
 
 # 复制所有源代码
 COPY . .
