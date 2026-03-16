@@ -122,7 +122,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
     {
       id: 'netease-backup-1',
       name: 'NeteaseCloudMusicApi',
-      baseUrl: 'https://api.voicehub.lao-shui.top:443',
+      baseUrl: '/api/api-enhanced/netease',
       priority: 1,
       enabled: true,
       timeout: 8000,

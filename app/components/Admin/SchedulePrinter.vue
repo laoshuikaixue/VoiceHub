@@ -372,6 +372,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRuntimeConfig } from '#app'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useAuth } from '~/composables/useAuth'
 import { convertToHttps } from '~/utils/url'
 import { toPng, toBlob } from 'html-to-image'
 import { jsPDF } from 'jspdf'
@@ -393,6 +394,9 @@ import logoPng from '~~/public/images/logo.png'
 
 // 权限检查
 const { canPrintSchedule } = usePermissions()
+
+// 认证信息
+const { getAuthConfig } = useAuth()
 
 // 站点配置
 const { siteTitle, schoolLogoPrintUrl, initSiteConfig } = useSiteConfig()
@@ -690,7 +694,9 @@ const loadSchedules = async () => {
   loading.value = true
   try {
     // 添加 bypass_cache=true 参数，确保获取最新的排期数据
-    const data = await $fetch('/api/songs/public?bypass_cache=true')
+    const data = await $fetch('/api/songs/public?bypass_cache=true', {
+      ...getAuthConfig()
+    })
     // API直接返回排期数组，不是包装在schedules属性中
     schedules.value = Array.isArray(data) ? data : []
 
@@ -1040,6 +1046,8 @@ const downloadImageAsBase64 = async (url) => {
 
 // 预处理所有图片
 const preprocessImages = async (element) => {
+  const TRANSPARENT_PIXEL =
+    'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
   const images = element.querySelectorAll('img')
   const imagePromises = Array.from(images).map(async (img) => {
     if (img.src && !img.src.startsWith('data:')) {
@@ -1047,9 +1055,23 @@ const preprocessImages = async (element) => {
         const base64 = await downloadImageAsBase64(img.src)
         if (base64) {
           img.src = base64
+        } else {
+          // 如果代理下载失败，使用透明像素并尝试显示占位图，防止 html-to-image 报错
+          img.src = TRANSPARENT_PIXEL
+          if (img.classList.contains('song-cover')) {
+            const placeholder = img.parentElement?.querySelector('.cover-placeholder')
+            if (placeholder) placeholder.classList.add('show')
+            img.style.display = 'none'
+          }
         }
       } catch (error) {
         console.warn('处理图片失败:', img.src, error)
+        img.src = TRANSPARENT_PIXEL
+        if (img.classList.contains('song-cover')) {
+          const placeholder = img.parentElement?.querySelector('.cover-placeholder')
+          if (placeholder) placeholder.classList.add('show')
+          img.style.display = 'none'
+        }
       }
     }
 

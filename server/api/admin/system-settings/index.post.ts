@@ -74,6 +74,10 @@ export default defineEventHandler(async (event) => {
       updateData.icpNumber = body.icpNumber
     }
 
+    if (body.gonganNumber !== undefined) {
+      updateData.gonganNumber = body.gonganNumber
+    }
+
     if (body.enableSubmissionLimit !== undefined) {
       if (typeof body.enableSubmissionLimit !== 'boolean') {
         throw createError({
@@ -258,6 +262,7 @@ export default defineEventHandler(async (event) => {
 7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。
 8. 最终解释权归广播站所有`,
           icpNumber: updateData.icpNumber ?? null,
+          gonganNumber: updateData.gonganNumber ?? null,
           enableSubmissionLimit: updateData.enableSubmissionLimit ?? false,
           dailySubmissionLimit: updateData.dailySubmissionLimit ?? null,
           weeklySubmissionLimit: updateData.weeklySubmissionLimit ?? null,
@@ -295,6 +300,14 @@ export default defineEventHandler(async (event) => {
       console.log('[Cache] 系统设置缓存已清除（更新系统设置）')
     } catch (cacheError) {
       console.warn('清除系统设置缓存失败:', cacheError)
+    }
+
+    try {
+      const { SmtpService } = await import('~~/server/services/smtpService')
+      await SmtpService.getInstance().initializeSmtpConfig()
+      console.log('[SMTP] SMTP配置已重新加载（更新系统设置）')
+    } catch (smtpError) {
+      console.warn('[SMTP] SMTP配置重载失败:', smtpError)
     }
 
     return settings

@@ -378,6 +378,8 @@ export default defineEventHandler(async (event) => {
           title: schedule.song.title,
           artist: schedule.song.artist,
           requester: requesterName,
+          requesterGrade: schedule.requester?.grade || null,
+          requesterClass: schedule.requester?.class || null,
           collaborators: formattedCollaborators, // 添加联合投稿人
           voteCount: voteCounts.get(schedule.song.id) || 0,
           played: schedule.song.played || false,

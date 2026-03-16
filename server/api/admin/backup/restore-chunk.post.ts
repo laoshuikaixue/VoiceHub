@@ -9,6 +9,7 @@ import {
   songBlacklists,
   songs,
   systemSettings,
+  userIdentities,
   users,
   userStatusLogs,
   votes
@@ -26,7 +27,21 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { tableName, records, mappings, mode = 'merge' } = body
+  const {
+    tableName,
+    records,
+    mappings,
+    mode = 'merge',
+    overwriteSuperAdmin = false,
+    hasSuperAdminInBackup = false
+  } = body
+
+  if (overwriteSuperAdmin && user.role !== 'SUPER_ADMIN') {
+    throw createError({
+      statusCode: 403,
+      statusMessage: '仅超级管理员可以覆盖超级管理员账号数据'
+    })
+  }
 
   if (!tableName || !records || !Array.isArray(records)) {
     throw createError({
@@ -42,6 +57,13 @@ export default defineEventHandler(async (event) => {
   const songIdMapping = new Map(
     Object.entries(mappings?.songs || {}).map(([k, v]) => [Number(k), Number(v)])
   )
+  const preservedSuperAdminIds = new Set(
+    (mappings?.meta?.preservedSuperAdminIds || []).map((id) => Number(id))
+  )
+  const temporaryPreservedUserId = mappings?.meta?.temporaryPreservedUserId
+    ? Number(mappings.meta.temporaryPreservedUserId)
+    : null
+  const shouldOverwriteSuperAdmin = overwriteSuperAdmin && hasSuperAdminInBackup
 
   const newMappings = {
     users: {},
@@ -71,11 +93,22 @@ export default defineEventHandler(async (event) => {
                 'grade',
                 'class',
                 'role',
+                'email',
+                'emailVerified',
                 'lastLoginIp',
                 'meowNickname',
-                'forcePasswordChange'
+                'forcePasswordChange',
+                'status',
+                'statusChangedBy'
               ]
-              const dateFields = ['lastLogin', 'passwordChangedAt', 'meowBoundAt']
+              const dateFields = [
+                'createdAt',
+                'updatedAt',
+                'lastLogin',
+                'passwordChangedAt',
+                'meowBoundAt',
+                'statusChangedAt'
+              ]
 
               userFields.forEach((field) => {
                 if (record.hasOwnProperty(field)) {
@@ -149,6 +182,34 @@ export default defineEventHandler(async (event) => {
                 stats.created++
               }
             } else {
+              if (
+                shouldOverwriteSuperAdmin &&
+                temporaryPreservedUserId &&
+                Number(record.id) === temporaryPreservedUserId
+              ) {
+                createdUser = (await tx.insert(users).values(buildUserData(true)).returning())[0]
+                stats.created++
+                if (record.id && createdUser?.id) {
+                  newMappings.users[record.id] = createdUser.id
+                }
+                break
+              }
+
+              const isBackupSuperAdminRecord =
+                record.role === 'SUPER_ADMIN' || preservedSuperAdminIds.has(Number(record.id))
+              if (!shouldOverwriteSuperAdmin && isBackupSuperAdminRecord) {
+                if (record.id) {
+                  const existingUserWithId = await tx.query.users.findFirst({
+                    where: eq(users.id, record.id)
+                  })
+                  if (existingUserWithId) {
+                    newMappings.users[record.id] = existingUserWithId.id
+                  }
+                }
+                stats.updated++
+                break
+              }
+
               const existingUserWithId = await tx.query.users.findFirst({
                 where: eq(users.id, record.id)
               })
@@ -157,7 +218,7 @@ export default defineEventHandler(async (event) => {
                 createdUser = (
                   await tx
                     .update(users)
-                    .set(buildUserData(false))
+                    .set(buildUserData(true))
                     .where(eq(users.id, record.id))
                     .returning()
                 )[0]
@@ -178,6 +239,72 @@ export default defineEventHandler(async (event) => {
 
             if (record.id && createdUser.id) {
               newMappings.users[record.id] = createdUser.id
+            }
+            break
+          }
+
+          case 'userIdentities': {
+            let validIdentityUserId = record.userId
+            if (record.userId) {
+              const mappedUserId = userIdMapping.get(record.userId)
+              if (mappedUserId) {
+                validIdentityUserId = mappedUserId
+              } else {
+                const userExists = await tx.query.users.findFirst({
+                  where: eq(users.id, record.userId)
+                })
+                if (!userExists) {
+                  console.warn(`身份关联记录的用户ID ${record.userId} 不存在，跳过`)
+                  return
+                }
+              }
+            } else {
+              return
+            }
+
+            const identityData = {
+              userId: validIdentityUserId,
+              provider: record.provider,
+              providerUserId: record.providerUserId,
+              providerUsername: record.providerUsername,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+
+            if (!shouldOverwriteSuperAdmin && preservedSuperAdminIds.has(Number(validIdentityUserId))) {
+              stats.updated++
+              break
+            }
+
+            if (mode === 'merge') {
+              await tx
+                .insert(userIdentities)
+                .values(identityData)
+                .onConflictDoUpdate({
+                  target: [userIdentities.provider, userIdentities.providerUserId],
+                  set: identityData
+                })
+              stats.updated++
+            } else if (record.id) {
+              const existingIdentityWithId = await tx.query.userIdentities.findFirst({
+                where: eq(userIdentities.id, record.id)
+              })
+
+              if (existingIdentityWithId) {
+                await tx
+                  .update(userIdentities)
+                  .set(identityData)
+                  .where(eq(userIdentities.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(userIdentities).values({
+                  ...identityData,
+                  id: record.id
+                })
+                stats.created++
+              }
+            } else {
+              await tx.insert(userIdentities).values(identityData)
+              stats.created++
             }
             break
           }
@@ -456,11 +583,25 @@ export default defineEventHandler(async (event) => {
               'siteDescription',
               'submissionGuidelines',
               'icpNumber',
+              'gonganNumber',
               'enableSubmissionLimit',
               'dailySubmissionLimit',
               'weeklySubmissionLimit',
+              'monthlySubmissionLimit',
               'showBlacklistKeywords',
-              'hideStudentInfo'
+              'hideStudentInfo',
+              'enableReplayRequests',
+              'enableRequestTimeLimitation',
+              'requestTimeLimitation',
+              'forceBlockAllRequests',
+              'smtpEnabled',
+              'smtpHost',
+              'smtpPort',
+              'smtpSecure',
+              'smtpUsername',
+              'smtpPassword',
+              'smtpFromEmail',
+              'smtpFromName'
             ]
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]

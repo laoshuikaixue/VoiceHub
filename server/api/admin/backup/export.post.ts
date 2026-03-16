@@ -41,17 +41,14 @@ export default defineEventHandler(async (event) => {
 
     console.log('开始创建数据库备份...')
 
-    // 根据备份类型生成描述
-    const backupTypeDesc = tables === 'users' ? '用户数据备份' : '完整数据库备份'
-
     // 创建备份数据对象
     const backupData = {
       metadata: {
         version: '1.0',
         timestamp: new Date().toISOString(),
         creator: user.username,
-        description: `${backupTypeDesc} - ${new Date().toLocaleString('zh-CN')}`,
-        backupType: tables === 'users' ? 'users' : 'full',
+        description: '',
+        backupType: 'custom',
         tables: [],
         totalRecords: 0
       },
@@ -375,6 +372,30 @@ export default defineEventHandler(async (event) => {
       tablesToProcess = [tables]
     }
 
+    if (
+      includeSystemData &&
+      tablesToBackup.systemSettings &&
+      !tablesToProcess.includes('systemSettings')
+    ) {
+      tablesToProcess.push('systemSettings')
+    }
+
+    if (tablesToProcess.length === 1 && tablesToProcess[0] === 'systemSettings') {
+      backupData.metadata.backupType = 'system'
+      backupData.metadata.description = `系统配置备份 - ${new Date().toLocaleString('zh-CN')}`
+    } else if (tables === 'users') {
+      backupData.metadata.backupType = 'users'
+      backupData.metadata.description = `用户数据备份 - ${new Date().toLocaleString('zh-CN')}`
+    } else if (tables === 'all') {
+      backupData.metadata.backupType = 'full'
+      backupData.metadata.description = `完整数据库备份 - ${new Date().toLocaleString('zh-CN')}`
+    } else if (tables === 'songs') {
+      backupData.metadata.backupType = 'songs'
+      backupData.metadata.description = `歌曲数据备份 - ${new Date().toLocaleString('zh-CN')}`
+    } else {
+      backupData.metadata.description = `自定义数据库备份 - ${new Date().toLocaleString('zh-CN')}`
+    }
+
     let totalRecords = 0
 
     for (const tableName of tablesToProcess) {
@@ -432,6 +453,10 @@ export default defineEventHandler(async (event) => {
 
     if (tables === 'users') {
       filePrefix = includeSystemData ? 'users-system-backup' : 'users-backup'
+    } else if (tablesToProcess.length === 1 && tablesToProcess[0] === 'systemSettings') {
+      filePrefix = 'system-settings-backup'
+    } else if (tables === 'songs') {
+      filePrefix = includeSystemData ? 'songs-system-backup' : 'songs-backup'
     }
 
     const filename = `${filePrefix}-${timestamp}.json`

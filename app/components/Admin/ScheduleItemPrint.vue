@@ -16,7 +16,7 @@
           referrerpolicy="no-referrer"
           @error="handleImageError"
         >
-        <div v-else class="cover-placeholder">
+        <div class="cover-placeholder" :class="{ 'show': !schedule.song.cover }">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3" />
             <path d="M12 1v6m0 6v6" />
@@ -59,16 +59,6 @@
         }}</span>
       </div>
 
-      <!-- 播出时段 -->
-      <div v-if="settings.showPlayTime && schedule.playTime" class="playtime-info">
-        <span class="label">时段：</span>
-        <span class="value">
-          {{ schedule.playTime.name }}
-          <span v-if="schedule.playTime.startTime && schedule.playTime.endTime" class="time-range">
-            ({{ schedule.playTime.startTime }}-{{ schedule.playTime.endTime }})
-          </span>
-        </span>
-      </div>
     </div>
   </div>
 </template>
@@ -78,7 +68,7 @@ import { defineProps } from 'vue'
 import { convertToHttps } from '~/utils/url'
 
 // 定义props
-const props = defineProps({
+defineProps({
   schedule: {
     type: Object,
     required: true
@@ -144,10 +134,14 @@ const handleImageError = (event) => {
   height: 100%;
   background: #f5f5f5;
   border-radius: 4px;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   color: #999;
+}
+
+.cover-placeholder.show {
+  display: flex;
 }
 
 .cover-placeholder svg {
@@ -195,8 +189,7 @@ const handleImageError = (event) => {
 }
 
 .requester-info,
-.votes-info,
-.playtime-info {
+.votes-info {
   display: flex;
   align-items: center;
   font-size: 12px;
@@ -211,11 +204,6 @@ const handleImageError = (event) => {
 
 .value {
   color: #333;
-}
-
-.time-range {
-  color: #999;
-  font-size: 11px;
 }
 
 /* 打印样式 */

@@ -332,8 +332,15 @@
                     <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
                     <div class="text-[10px] text-zinc-500 truncate flex items-center gap-1">
                       <span>{{ song.requester }}</span>
-                      <span v-if="song.requesterGrade" class="text-zinc-600">|</span>
-                      <span v-if="song.requesterGrade">{{ song.requesterGrade }}</span>
+                      <span
+                        v-if="song.requesterGrade || song.grade"
+                        class="text-zinc-600"
+                        >|</span
+                      >
+                      <span v-if="song.requesterGrade || song.grade">
+                        {{ song.requesterGrade || song.grade }}
+                        {{ song.requesterClass || song.class }}
+                      </span>
                       <span
                         v-if="song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
@@ -602,10 +609,15 @@
                         }}
                       </span>
                       <span v-else>{{ schedule.song.requester }}</span>
-                      <span v-if="schedule.song.requesterGrade" class="text-zinc-700">|</span>
-                      <span v-if="schedule.song.requesterGrade">{{
-                        schedule.song.requesterGrade
-                      }}</span>
+                      <span
+                        v-if="schedule.song.requesterGrade || schedule.song.grade"
+                        class="text-zinc-700"
+                        >|</span
+                      >
+                      <span v-if="schedule.song.requesterGrade || schedule.song.grade">
+                        {{ schedule.song.requesterGrade || schedule.song.grade }}
+                        {{ schedule.song.requesterClass || schedule.song.class }}
+                      </span>
                       <span
                         v-if="schedule.song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
@@ -1364,15 +1376,14 @@ const confirmManualDate = () => {
 // 定位到今天
 const scrollToToday = () => {
   const todayStr = new Date().toISOString().split('T')[0]
-  if (selectedDate.value === todayStr) return
+  const isAlreadyToday = selectedDate.value === todayStr
 
-  if (hasChanges.value) {
-    if (!window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
+  if (!isAlreadyToday) {
+    if (hasChanges.value && !window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
       return
     }
+    selectedDate.value = todayStr
   }
-
-  selectedDate.value = todayStr
 
   // 确保今天在范围内
   if (dateRange.value.start > 0 || dateRange.value.end < 0) {
@@ -1463,11 +1474,14 @@ const loadData = async () => {
   try {
     // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
     const semester = selectedSemester.value === '全部' ? undefined : selectedSemester.value
+    
+    // 播放列表应该始终显示当前学期的歌曲（或者全部，如果未设置当前学期），不受待排歌曲学期选择的影响
+    const playlistSemester = semesterService?.currentSemester?.value?.name
 
     // 并行加载数据
     await Promise.all([
       songsService.fetchSongs(false, semester, false, true),
-      songsService.fetchPublicSchedules(false, semester, false, true),
+      songsService.fetchPublicSchedules(false, playlistSemester, false, true),
       loadPlayTimes(),
       loadDrafts(), // 加载草稿列表
       fetchReplayRequests() // 加载重播申请

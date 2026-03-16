@@ -160,7 +160,7 @@ import CryptoJS from 'crypto-js'
 
 interface Props {
   show: boolean
-  song: any // QQ音乐歌曲对象
+  song: any // 来源歌曲对象
 }
 
 const props = defineProps<Props>()
@@ -177,10 +177,10 @@ const emit = defineEmits<{
 
 const { success: showSuccess, error: showError } = useToast()
 
-// 音质选项 (QQ音乐)
+// 音质选项
 const qualityOptions = QUALITY_OPTIONS.tencent
 
-const selectedQuality = ref(8) // 默认HQ高音质
+const selectedQuality = ref(8) // 默认高音质
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const uploadStatus = ref('')
@@ -230,16 +230,12 @@ const getNeteaseCookie = () => {
 const getQQMusicUrl = async (strMediaMid: string, quality: number): Promise<string> => {
   uploadStatus.value = '获取下载链接'
 
-  // console.log('获取QQ音乐链接，参数:', { strMediaMid, quality })
-
   if (!strMediaMid) {
     throw new Error('缺少歌曲ID (strMediaMid)')
   }
 
   // 使用vkeys API获取QQ音乐链接
   const apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${strMediaMid}&quality=${quality}`
-
-  // console.log('请求URL:', apiUrl)
 
   const response = await fetch(apiUrl, {
     headers: {
@@ -252,11 +248,9 @@ const getQQMusicUrl = async (strMediaMid: string, quality: number): Promise<stri
   }
 
   const data = await response.json()
-  // console.log('API响应:', data)
-
   if (data.code === 200 && data.data && data.data.url) {
     let url = data.data.url
-    // 将HTTP URL改为HTTPS
+    // 统一改为安全协议链接
     if (url.startsWith('http://')) {
       url = url.replace('http://', 'https://')
     }
@@ -266,31 +260,26 @@ const getQQMusicUrl = async (strMediaMid: string, quality: number): Promise<stri
   throw new Error('无法获取有效的播放链接')
 }
 
-// 检测音频文件类型 (通过文件头Magic Number)
+// 通过文件头识别音频格式
 const detectAudioType = async (blob: Blob): Promise<string | null> => {
   const arr = new Uint8Array(await blob.slice(0, 12).arrayBuffer())
 
-  // FLAC: 66 4C 61 43
   if (arr[0] === 0x66 && arr[1] === 0x4c && arr[2] === 0x61 && arr[3] === 0x43) {
     return 'flac'
   }
 
-  // ID3v2 (MP3): 49 44 33
   if (arr[0] === 0x49 && arr[1] === 0x44 && arr[2] === 0x33) {
     return 'mp3'
   }
 
-  // MP3 (No ID3, Frame Sync): FF Fx
   if (arr[0] === 0xff && (arr[1] & 0xe0) === 0xe0) {
     return 'mp3'
   }
 
-  // Ogg: 4F 67 67 53
   if (arr[0] === 0x4f && arr[1] === 0x67 && arr[2] === 0x67 && arr[3] === 0x53) {
     return 'ogg'
   }
 
-  // WAV: RIFF ... WAVE
   if (
     arr[0] === 0x52 &&
     arr[1] === 0x49 &&
@@ -304,9 +293,6 @@ const detectAudioType = async (blob: Blob): Promise<string | null> => {
     return 'wav'
   }
 
-  // M4A (ftyp M4A): ... ftypM4A
-  // Usually starts at offset 4: 66 74 79 70 4D 34 41 20
-  // We check for ftyp at index 4 and M4A at index 8
   if (
     arr[4] === 0x66 &&
     arr[5] === 0x74 &&
@@ -363,7 +349,7 @@ const downloadAudio = async (url: string): Promise<{ blob: Blob; ext: string }> 
   let ext = await detectAudioType(blob)
 
   if (!ext) {
-    // 降级：通过Content-Type判断
+    // 回退：按响应类型判断
     if (contentType) {
       switch (true) {
         case contentType.includes('audio/flac') || contentType.includes('application/x-flac'):
@@ -382,12 +368,12 @@ const downloadAudio = async (url: string): Promise<{ blob: Blob; ext: string }> 
     }
   }
 
-  // 再次降级：通过URL判断
+  // 回退：按链接后缀判断
   if (!ext) {
     if (url.includes('.flac')) {
       ext = 'flac'
     } else {
-      ext = 'mp3' // 最终默认为mp3
+      ext = 'mp3' // 默认使用常规格式
     }
   }
 
@@ -398,15 +384,13 @@ const downloadAudio = async (url: string): Promise<{ blob: Blob; ext: string }> 
 // 上传到网易云音乐
 const uploadToNetease = async (audioBlob: Blob, filename: string) => {
   uploadStatus.value = '正在计算文件指纹'
-  // uploadProgress.value = 0 // 移除重置，保持进度连续
-
   const arrayBuffer = await audioBlob.arrayBuffer()
   const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer)
   const md5 = CryptoJS.MD5(wordArray).toString()
   const fileSize = audioBlob.size
   const cookie = getNeteaseCookie()
 
-  const baseApiUrl = 'https://api.voicehub.lao-shui.top'
+  const baseApiUrl = '/api/api-enhanced/netease'
 
   // 获取文件扩展名
   const ext = filename.split('.').pop()?.toLowerCase() || 'mp3'
@@ -421,11 +405,10 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
 
   const contentType = contentTypeMap[ext] || 'audio/mpeg'
 
-  // 1. 获取上传凭证
+  // 获取上传凭证
   uploadStatus.value = '正在获取上传凭证'
   const tokenUrl = `${baseApiUrl}/cloud/upload/token?time=${Date.now()}`
 
-  // 使用POST请求，适配 api-enhanced-2 接口
   const tokenRes = await fetch(tokenUrl, {
     method: 'POST',
     headers: {
@@ -448,17 +431,17 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
   const { needUpload, uploadUrl, uploadToken, objectKey, resourceId, songId } = tokenData.data
 
   if (needUpload) {
-    // 2. 上传文件到NOS
+    // 上传到对象存储
     uploadStatus.value = '正在上传到网易云音乐'
 
-    // 使用 XMLHttpRequest 上传以获取进度
+    // 使用上传事件获取进度
     await new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()
 
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
           const percent = Math.floor((e.loaded / e.total) * 100)
-          // 这里的进度是上传文件的进度，占总进度的 45% (50% -> 95%)
+          // 上传阶段进度映射到 50%~95%
           uploadProgress.value = 50 + Math.floor(percent * 0.45)
         }
       })
@@ -486,7 +469,7 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
     uploadStatus.value = '文件已存在，秒传成功'
   }
 
-  // 3. 完成上传（导入/发布）
+  // 完成上传并写入云盘信息
   uploadStatus.value = '正在保存云盘信息'
 
   const completeUrl = `${baseApiUrl}/cloud/upload/complete?time=${Date.now()}`
@@ -535,9 +518,7 @@ const startUpload = async () => {
   uploadMessage.value = ''
 
   try {
-    // console.log('开始上传，歌曲信息:', props.song)
-
-    // 获取歌曲ID，尝试所有可能的字段
+    // 兼容不同来源的歌曲标识字段
     const musicId =
       props.song.strMediaMid ||
       props.song.songmid ||
@@ -551,9 +532,7 @@ const startUpload = async () => {
       throw new Error('无法获取歌曲ID，请重试')
     }
 
-    // console.log('使用的音乐ID:', musicId)
-
-    // 1. 获取QQ音乐下载链接
+    // 获取来源歌曲下载链接
     uploadMessage.value = '正在从QQ音乐获取音频链接...'
 
     const musicUrl = await getQQMusicUrl(musicId, selectedQuality.value)
@@ -562,18 +541,15 @@ const startUpload = async () => {
       throw new Error('无法获取音乐播放链接')
     }
 
-    // console.log('获取到的播放链接:', musicUrl)
-
-    // 2. 下载音频文件
+    // 下载音频文件
     uploadMessage.value = '正在下载音频文件...'
     const { blob: audioBlob, ext } = await downloadAudio(musicUrl)
 
-    // 3. 上传到网易云音乐
+    // 上传到网易云音乐云盘
     uploadMessage.value = '正在上传到网易云音乐云盘...'
     const filename = `${artistName.value} - ${songName.value}.${ext}`
     await uploadToNetease(audioBlob, filename)
 
-    // 4. 完成
     uploadProgress.value = 100
     uploadStatus.value = '上传完成'
     uploadMessage.value = '歌曲已成功上传到您的网易云音乐云盘'
@@ -582,7 +558,7 @@ const startUpload = async () => {
 
     emit('upload-success')
 
-    // 延迟关闭对话框
+    // 成功后延迟关闭对话框
     setTimeout(() => {
       closeDialog()
     }, 1500)

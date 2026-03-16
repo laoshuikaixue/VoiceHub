@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
       })
       .from(schedules)
       .innerJoin(songs, eq(schedules.songId, songs.id))
-      .innerJoin(users, eq(songs.requesterId, users.id))
+      .leftJoin(users, eq(songs.requesterId, users.id))
       .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
       .where(whereCondition)
       .orderBy(asc(schedules.playDate), asc(schedules.sequence), asc(schedules.createdAt))
@@ -329,6 +329,8 @@ export default defineEventHandler(async (event) => {
           artist: schedule.songArtist,
           requester: requesterName,
           requesterId: schedule.songRequesterId,
+          requesterGrade: schedule.requesterGrade || null,
+          requesterClass: schedule.requesterClass || null,
           collaborators: formattedCollaborators,
           voteCount: voteCountMap.get(schedule.songId) || 0,
           played: schedule.songPlayed || false,

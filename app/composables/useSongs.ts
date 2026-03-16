@@ -100,7 +100,9 @@ export const useSongs = () => {
           const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
 
           // API请求
-          return await $fetch(url)
+          return await $fetch(url, {
+            ...getAuthConfig()
+          })
         },
         requestParams
       )
@@ -140,6 +142,8 @@ export const useSongs = () => {
             title: schedule.song.title,
             artist: schedule.song.artist,
             requester: schedule.song.requester,
+            requesterGrade: schedule.song.requesterGrade || null,
+            requesterClass: schedule.song.requesterClass || null,
             requesterId: 0, // 默认值，公共API不提供这个信息
             voteCount: schedule.song.voteCount,
             played: schedule.song.played || false,
@@ -187,7 +191,9 @@ export const useSongs = () => {
           }
           const url = `/api/songs/public${params.toString() ? '?' + params.toString() : ''}`
 
-          const response = await $fetch(url)
+          const response = await $fetch(url, {
+            ...getAuthConfig()
+          })
           return response
         },
         requestParams
@@ -644,7 +650,7 @@ export const useSongs = () => {
       // 使用认证配置
       const authConfig = getAuthConfig()
 
-      const data = await $fetch('/api/admin/mark-played', {
+      const data = await $fetch('/api/admin/songs/mark-played', {
         method: 'POST',
         body: { songId },
         ...authConfig
@@ -679,7 +685,7 @@ export const useSongs = () => {
       // 使用认证配置
       const authConfig = getAuthConfig()
 
-      const data = await $fetch('/api/admin/mark-played', {
+      const data = await $fetch('/api/admin/songs/mark-played', {
         method: 'POST',
         body: { songId, unmark: true },
         ...authConfig

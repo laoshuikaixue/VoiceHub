@@ -4,7 +4,7 @@
 
 <div align="center">
 
-[交流群](https://qm.qq.com/cgi-bin/qm/qr?k=5DV4vGlqn82YaNi7a3xW4zjmS8ZUr6cz&jump_from=webapi&authKey=axAl02PMsIVVAwrXij0YUUrOrUTeLpqLipu5XcTvyBUOzeWaOnicBB+fmBwNJs5S) | [使用学校收集表](https://laoshuikaixue.feishu.cn/share/base/form/shrcniUKakpNYP6KH7qrU20qq5e)
+[交流群](https://qm.qq.com/cgi-bin/qm/qr?k=5DV4vGlqn82YaNi7a3xW4zjmS8ZUr6cz&jump_from=webapi&authKey=axAl02PMsIVVAwrXij0YUUrOrUTeLpqLipu5XcTvyBUOzeWaOnicBB+fmBwNJs5S) | [使用学校收集表](https://laoshuikaixue.feishu.cn/share/base/form/shrcniUKakpNYP6KH7qrU20qq5e) | [项目宣传片](https://www.bilibili.com/video/BV1B9ArzMEkA)
 
 </div>
 
@@ -674,7 +674,6 @@ VoiceHub/
 │   │   │   │   ├── index.post.ts    # 创建/更新邮件模板
 │   │   │   │   └── preview.post.ts  # 预览邮件模板
 │   │   │   ├── fix-sequence.post.ts # 修复数据库序列
-│   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
 │   │   │   ├── notifications/       # 管理员通知API
 │   │   │   │   └── send.post.ts     # 发送通知
 │   │   │   ├── play-times/          # 播放时间管理API
@@ -702,10 +701,12 @@ VoiceHub/
 │   │   │   │   ├── index.post.ts    # 创建学期
 │   │   │   │   └── set-active.post.ts # 设置活跃学期
 │   │   │   ├── smtp/                # SMTP邮件服务API
+│   │   │   │   ├── reload.post.ts   # 重新加载SMTP配置
 │   │   │   │   ├── test-connection.post.ts # 测试SMTP连接
 │   │   │   │   └── test-email.post.ts # 发送测试邮件
 │   │   │   ├── songs/               # 管理员歌曲管理API
 │   │   │   │   ├── delete.post.ts   # 删除歌曲
+│   │   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
 │   │   │   │   └── reject.post.ts  # 驳回歌曲
 │   │   │   ├── stats.get.ts         # 统计数据
 │   │   │   ├── activities.get.ts    # 活动管理API
@@ -736,6 +737,9 @@ VoiceHub/
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       ├── index.ts         # 用户管理
 │   │   │       └── status-logs.get.ts # 用户状态日志
+│   │   ├── api-enhanced/          # 网易云音乐API
+│   │   │   └── netease/           # 网易云增强接口代理
+│   │   │       └── [...path].ts   # 转发网易云API请求
 │   │   ├── auth/           # 认证API
 │   │   │   ├── 2fa/             # 2FA验证API
 │   │   │   │   ├── send-email.post.ts # 发送2FA验证邮件
@@ -880,6 +884,7 @@ VoiceHub/
 │   │   ├── redis.ts        # Redis连接和操作工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
+│   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   └── twoFactorStore.ts # 双重认证存储工具
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义

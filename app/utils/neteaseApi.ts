@@ -1,4 +1,4 @@
-const BASE_URL = 'https://api.voicehub.lao-shui.top'
+const BASE_URL = '/api/api-enhanced/netease'
 
 export function normalizeNeteaseResponse(data) {
   if (!data || typeof data !== 'object') {
@@ -9,12 +9,12 @@ export function normalizeNeteaseResponse(data) {
     }
   }
 
-  // 检查是否已经是标准格式 { code: 200, data: ... }
+  // 已是标准响应结构时直接返回
   if (data.code === 200 && data.data) {
     return {
       code: data.code,
       message: data.message || '',
-      body: data.data // 将 data 字段映射为 body
+      body: data.data // 统一映射到 body
     }
   }
 

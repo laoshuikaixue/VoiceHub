@@ -3,6 +3,42 @@ import { systemSettings } from '~/drizzle/schema'
 import { cacheService } from '../services/cacheService'
 import { isRedisReady } from '../utils/redis'
 
+// 过滤敏感字段，只返回公开配置
+const publicFields = [
+  'siteTitle',
+  'siteLogoUrl',
+  'schoolLogoHomeUrl',
+  'schoolLogoPrintUrl',
+  'siteDescription',
+  'submissionGuidelines',
+  'icpNumber',
+  'gonganNumber',
+  'enablePlayTimeSelection',
+  'enableSubmissionLimit',
+  'dailySubmissionLimit',
+  'weeklySubmissionLimit',
+  'monthlySubmissionLimit',
+  'showBlacklistKeywords',
+  'hideStudentInfo',
+  'enableReplayRequests',
+  'enableRequestTimeLimitation',
+  'forceBlockAllRequests',
+  'smtpEnabled'
+]
+
+const filterPublicSettings = (data: any) => {
+  if (!data) {
+    return {}
+  }
+  const result: Record<string, any> = {}
+  for (const key of publicFields) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      result[key] = data[key]
+    }
+  }
+  return result
+}
+
 export default defineEventHandler(async (event) => {
   try {
     // 优先从Redis缓存获取系统设置
@@ -10,7 +46,7 @@ export default defineEventHandler(async (event) => {
       const cachedSettings = await cacheService.getSystemSettings()
       if (cachedSettings) {
         console.log('[API] 系统设置缓存命中')
-        return cachedSettings
+        return filterPublicSettings(cachedSettings)
       }
     }
 
@@ -42,33 +78,7 @@ export default defineEventHandler(async (event) => {
       settings = newSettings[0]
     }
 
-    // 过滤敏感字段，只返回公开配置
-    const publicFields = [
-      'siteTitle',
-      'siteLogoUrl',
-      'schoolLogoHomeUrl',
-      'schoolLogoPrintUrl',
-      'siteDescription',
-      'submissionGuidelines',
-      'icpNumber',
-      'enablePlayTimeSelection',
-      'enableSubmissionLimit',
-      'dailySubmissionLimit',
-      'weeklySubmissionLimit',
-      'monthlySubmissionLimit',
-      'showBlacklistKeywords',
-      'hideStudentInfo',
-      'enableReplayRequests',
-      'enableRequestTimeLimitation',
-      'forceBlockAllRequests'
-    ]
-
-    const publicSettings = publicFields.reduce((acc: any, key) => {
-      if (settings && key in settings) {
-        acc[key] = (settings as any)[key]
-      }
-      return acc
-    }, {})
+    const publicSettings = filterPublicSettings(settings)
 
     // 将结果缓存到Redis（如果可用）- 永久缓存
     if (settings && isRedisReady()) {

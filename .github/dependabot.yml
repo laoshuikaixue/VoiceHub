@@ -59,6 +59,8 @@ updates:
       - 'dependencies'
       - 'automated'
       - 'chore'
+    ignore:
+      - dependency-name: '*node*'
     groups:
       docker-all:
         applies-to: version-updates
