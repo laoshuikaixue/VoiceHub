@@ -476,7 +476,7 @@
                 </button>
                 <button
                   class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-purple-400 rounded-xl transition-all group relative"
-                  @click="moveCurrentDateSchedules"
+                  @click="openMoveDateDialog"
                 >
                   <ArrowRight class="w-3.5 h-3.5" />
                   <span
@@ -693,7 +693,7 @@
         </button>
         <button
           class="p-3 bg-zinc-900 border border-zinc-800 text-purple-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
-          @click="moveCurrentDateSchedules"
+          @click="openMoveDateDialog"
         >
           <ArrowRight class="w-5 h-5" />
         </button>
@@ -736,6 +736,48 @@
     :songs="localScheduledSongs"
     @close="showDownloadDialog = false"
   />
+
+  <div
+    v-if="showMoveDateDialog"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+  >
+    <div
+      class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
+      @click.stop
+    >
+      <div class="flex items-center justify-between p-4 border-b border-zinc-800">
+        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">迁移排期日期</h3>
+        <button
+          class="text-zinc-500 hover:text-zinc-300 transition-colors"
+          @click="showMoveDateDialog = false"
+        >
+          <CloseIcon class="w-5 h-5" />
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="text-xs text-zinc-500">当前日期：{{ selectedDate }}</div>
+        <input
+          v-model="moveTargetDate"
+          class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-purple-500 transition-colors"
+          type="date"
+        >
+        <div class="flex gap-3">
+          <button
+            class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
+            @click="showMoveDateDialog = false"
+          >
+            取消
+          </button>
+          <button
+            class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-purple-900/20 transition-colors uppercase tracking-wider"
+            @click="confirmMoveDate"
+          >
+            下一步
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- 重播申请详情弹窗 -->
   <div
@@ -878,6 +920,8 @@ const showReplayModal = ref(false)
 const replayModalTitle = ref('')
 const replayModalRequests = ref([])
 const replayModalSongId = ref(null)
+const showMoveDateDialog = ref(false)
+const moveTargetDate = ref('')
 
 const openReplayModal = (song) => {
   replayModalTitle.value = song.title
@@ -1963,7 +2007,7 @@ const saveSequence = async () => {
   }
 }
 
-const moveCurrentDateSchedules = async () => {
+const openMoveDateDialog = () => {
   if (hasChanges.value) {
     if (window.$showNotification) {
       window.$showNotification('请先保存当前未发布修改后再执行迁移', 'warning')
@@ -1971,21 +2015,20 @@ const moveCurrentDateSchedules = async () => {
     return
   }
 
-  const targetDateInput = window.prompt('请输入目标日期（YYYY-MM-DD）', selectedDate.value)
-  if (targetDateInput === null) return
+  moveTargetDate.value = selectedDate.value
+  showMoveDateDialog.value = true
+}
 
-  const targetDate = targetDateInput.trim()
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
-    if (window.$showNotification) {
-      window.$showNotification('日期格式无效，请使用 YYYY-MM-DD', 'error')
-    }
-    return
-  }
+const confirmMoveDate = async () => {
+  const targetDate = moveTargetDate.value.trim()
 
   const targetDateTime = new Date(`${targetDate}T00:00:00.000Z`)
-  if (Number.isNaN(targetDateTime.getTime()) || targetDateTime.toISOString().split('T')[0] !== targetDate) {
+  if (
+    Number.isNaN(targetDateTime.getTime()) ||
+    targetDateTime.toISOString().split('T')[0] !== targetDate
+  ) {
     if (window.$showNotification) {
-      window.$showNotification('目标日期无效，请重新输入', 'error')
+      window.$showNotification('目标日期无效，请使用 YYYY-MM-DD 格式并确保日期有效', 'error')
     }
     return
   }
@@ -2014,6 +2057,7 @@ const moveCurrentDateSchedules = async () => {
   confirmDialogMessage.value = `确定将 ${sourceDate} 的 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`
   confirmDialogType.value = 'warning'
   confirmDialogConfirmText.value = '确认迁移'
+  showMoveDateDialog.value = false
 
   confirmAction.value = async () => {
     loading.value = true
@@ -2041,8 +2085,9 @@ const moveCurrentDateSchedules = async () => {
     } catch (error) {
       console.error('迁移排期日期失败:', error)
       if (window.$showNotification) {
+        const backendMessage = error.data?.message || error.data?.statusMessage || error.message
         window.$showNotification(
-          '迁移失败: ' + (error.data?.message || error.message || '未知错误'),
+          '迁移失败: ' + (backendMessage || '未知错误'),
           'error'
         )
       }
