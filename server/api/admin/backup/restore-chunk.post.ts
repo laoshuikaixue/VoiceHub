@@ -591,6 +591,7 @@ export default defineEventHandler(async (event) => {
               'showBlacklistKeywords',
               'hideStudentInfo',
               'enableReplayRequests',
+              'enableCollaborativeSubmission',
               'enableRequestTimeLimitation',
               'requestTimeLimitation',
               'forceBlockAllRequests',

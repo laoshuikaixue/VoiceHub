@@ -152,6 +152,7 @@ export const systemSettings = pgTable('SystemSettings', {
   enableRequestTimeLimitation: boolean('enableRequestTimeLimitation').default(false).notNull(),
   forceBlockAllRequests: boolean().default(false).notNull(),
   enableReplayRequests: boolean('enableReplayRequests').default(false).notNull(),
+  enableCollaborativeSubmission: boolean('enableCollaborativeSubmission').default(true).notNull(),
 });
 
 // 歌曲黑名单表
