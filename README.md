@@ -852,6 +852,7 @@ VoiceHub/
 │   ├── error.ts            # 全局错误处理
 │   ├── middleware/         # 服务端中间件
 │   │   ├── api-auth.ts     # API认证中间件
+│   │   ├── api-cors.ts     # API跨域中间件
 │   │   └── auth.ts         # 认证中间件
 │   ├── plugins/            # 服务端插件
 │   │   └── error-handler.ts # 错误处理插件
