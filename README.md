@@ -691,6 +691,7 @@ VoiceHub/
 │   │   │   │   ├── bulk-publish.post.ts # 批量发布排期
 │   │   │   │   ├── draft.post.ts    # 保存排期草稿
 │   │   │   │   ├── full.get.ts      # 获取完整排期数据（包含草稿）
+│   │   │   │   ├── move-date.post.ts # 排期日期迁移
 │   │   │   │   ├── publish.post.ts  # 发布排期草稿
 │   │   │   │   ├── remove.post.ts   # 移除排期
 │   │   │   │   └── sequence.post.ts # 更新排期顺序

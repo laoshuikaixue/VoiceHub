@@ -474,6 +474,16 @@
                     >全部已播放</span
                   >
                 </button>
+                <button
+                  class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-purple-400 rounded-xl transition-all group relative"
+                  @click="moveCurrentDateSchedules"
+                >
+                  <ArrowRight class="w-3.5 h-3.5" />
+                  <span
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
+                    >迁移日期</span
+                  >
+                </button>
               </div>
               <div class="h-6 w-[1px] bg-zinc-800 mx-1" />
               <button
@@ -680,6 +690,12 @@
           @click="markAllAsPlayed"
         >
           <CheckCircle2 class="w-5 h-5" />
+        </button>
+        <button
+          class="p-3 bg-zinc-900 border border-zinc-800 text-purple-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+          @click="moveCurrentDateSchedules"
+        >
+          <ArrowRight class="w-5 h-5" />
         </button>
         <button
           class="p-3 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
@@ -1945,6 +1961,97 @@ const saveSequence = async () => {
   } catch (err) {
     console.error('保存并发布失败:', err)
   }
+}
+
+const moveCurrentDateSchedules = async () => {
+  if (hasChanges.value) {
+    if (window.$showNotification) {
+      window.$showNotification('请先保存当前未发布修改后再执行迁移', 'warning')
+    }
+    return
+  }
+
+  const targetDateInput = window.prompt('请输入目标日期（YYYY-MM-DD）', selectedDate.value)
+  if (targetDateInput === null) return
+
+  const targetDate = targetDateInput.trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+    if (window.$showNotification) {
+      window.$showNotification('日期格式无效，请使用 YYYY-MM-DD', 'error')
+    }
+    return
+  }
+
+  const targetDateTime = new Date(`${targetDate}T00:00:00.000Z`)
+  if (Number.isNaN(targetDateTime.getTime()) || targetDateTime.toISOString().split('T')[0] !== targetDate) {
+    if (window.$showNotification) {
+      window.$showNotification('目标日期无效，请重新输入', 'error')
+    }
+    return
+  }
+
+  if (targetDate === selectedDate.value) {
+    if (window.$showNotification) {
+      window.$showNotification('目标日期不能与当前日期相同', 'warning')
+    }
+    return
+  }
+
+  const sourceDate = selectedDate.value
+  const sourceSchedules = [...publicSchedules.value, ...drafts.value].filter((schedule) => {
+    if (!schedule.playDate) return false
+    return new Date(schedule.playDate).toISOString().split('T')[0] === sourceDate
+  })
+
+  if (sourceSchedules.length === 0) {
+    if (window.$showNotification) {
+      window.$showNotification('当前日期没有可迁移的歌曲', 'warning')
+    }
+    return
+  }
+
+  confirmDialogTitle.value = '迁移排期日期'
+  confirmDialogMessage.value = `确定将 ${sourceDate} 的 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`
+  confirmDialogType.value = 'warning'
+  confirmDialogConfirmText.value = '确认迁移'
+
+  confirmAction.value = async () => {
+    loading.value = true
+    try {
+      const result = await $fetch('/api/admin/schedule/move-date', {
+        method: 'POST',
+        body: {
+          fromDate: sourceDate,
+          toDate: targetDate
+        },
+        ...auth.getAuthConfig()
+      })
+
+      await loadData()
+      updateLocalScheduledSongs()
+
+      if (window.$showNotification) {
+        window.$showNotification(
+          result?.movedCount > 0
+            ? `已迁移 ${result.movedCount} 首歌曲到 ${targetDate}`
+            : '当前日期没有可迁移的歌曲',
+          result?.movedCount > 0 ? 'success' : 'warning'
+        )
+      }
+    } catch (error) {
+      console.error('迁移排期日期失败:', error)
+      if (window.$showNotification) {
+        window.$showNotification(
+          '迁移失败: ' + (error.data?.message || error.message || '未知错误'),
+          'error'
+        )
+      }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  showConfirmDialog.value = true
 }
 
 // 草稿相关方法
