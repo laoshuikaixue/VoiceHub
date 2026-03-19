@@ -92,7 +92,7 @@
           </div>
 
           <!-- 联合投稿人区域 -->
-          <div v-if="user" class="collaborators-section">
+          <div v-if="user && enableCollaborativeSubmission" class="collaborators-section">
             <div class="section-label">联合投稿</div>
             <div class="collaborators-list">
               <div v-for="user in collaborators" :key="user.id" class="collaborator-tag">
@@ -763,6 +763,7 @@
 
     <!-- 用户搜索弹窗 -->
     <UserSearchModal
+      v-if="enableCollaborativeSubmission"
       v-model:show="showUserSearchModal"
       :exclude-ids="[user?.id, ...collaborators.map((u) => u.id)]"
       :multiple="true"
@@ -1002,7 +1003,12 @@ const props = defineProps({
 const emit = defineEmits(['request', 'vote'])
 
 // 站点配置
-const { guidelines: submissionGuidelines, initSiteConfig, enableReplayRequests } = useSiteConfig()
+const {
+  guidelines: submissionGuidelines,
+  initSiteConfig,
+  enableReplayRequests,
+  enableCollaborativeSubmission
+} = useSiteConfig()
 
 // 用户认证
 const auth = useAuth()
@@ -1407,6 +1413,13 @@ watch(
     }
   }
 )
+
+watch(enableCollaborativeSubmission, (enabled) => {
+  if (!enabled) {
+    showUserSearchModal.value = false
+    collaborators.value = []
+  }
+})
 
 // 检查相似歌曲
 const checkSimilarSongs = async () => {

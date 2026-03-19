@@ -123,6 +123,7 @@ export interface SystemSettings {
   enableRequestTimeLimitation?: boolean
   forceBlockAllRequests?: boolean
   enableReplayRequests?: boolean
+  enableCollaborativeSubmission?: boolean
 }
 
 export interface RequestTime {

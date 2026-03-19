@@ -1001,6 +1001,7 @@ export default defineEventHandler(async (event) => {
                           'requestTimeLimitation',
                           'forceBlockAllRequests',
                           'enableReplayRequests',
+                          'enableCollaborativeSubmission',
                           'hideStudentInfo',
                           'smtpEnabled',
                           'smtpHost',
