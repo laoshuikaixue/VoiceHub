@@ -672,38 +672,41 @@
       <div
         class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800 flex items-center gap-3 pb-6"
       >
-        <!-- 次要操作栏 (图标按钮) -->
-        <button
-          class="p-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
-          @click="openDownloadDialog"
-        >
-          <Download class="w-5 h-5" />
-        </button>
-        <button
-          class="p-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
-          @click="saveDraft"
-        >
-          <Save class="w-5 h-5" />
-        </button>
-        <button
-          class="p-3 bg-zinc-900 border border-zinc-800 text-emerald-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
-          @click="markAllAsPlayed"
-        >
-          <CheckCircle2 class="w-5 h-5" />
-        </button>
-        <button
-          class="p-3 bg-zinc-900 border border-zinc-800 text-purple-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
-          @click="openMoveDateDialog"
-        >
-          <ArrowRight class="w-5 h-5" />
-        </button>
-        <button
-          class="p-3 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
-          title="仅发布排期"
-          @click="publishSchedule"
-        >
-          <Send class="w-5 h-5" />
-        </button>
+        <div class="w-[148px] overflow-x-auto scrollbar-hide">
+          <div class="flex items-center gap-2 w-max">
+            <button
+              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              @click="openDownloadDialog"
+            >
+              <Download class="w-5 h-5" />
+            </button>
+            <button
+              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              @click="saveDraft"
+            >
+              <Save class="w-5 h-5" />
+            </button>
+            <button
+              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-emerald-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              @click="markAllAsPlayed"
+            >
+              <CheckCircle2 class="w-5 h-5" />
+            </button>
+            <button
+              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-purple-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              @click="openMoveDateDialog"
+            >
+              <ArrowRight class="w-5 h-5" />
+            </button>
+            <button
+              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              title="仅发布排期"
+              @click="publishSchedule"
+            >
+              <Send class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
         <!-- 主要操作 -->
         <button
@@ -1534,7 +1537,7 @@ const loadData = async () => {
   try {
     // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
     const semester = selectedSemester.value === '全部' ? undefined : selectedSemester.value
-    
+
     // 播放列表应该始终显示当前学期的歌曲（或者全部，如果未设置当前学期），不受待排歌曲学期选择的影响
     const playlistSemester = semesterService?.currentSemester?.value?.name
 
@@ -2054,7 +2057,7 @@ const confirmMoveDate = async () => {
   }
 
   confirmDialogTitle.value = '迁移排期日期'
-  confirmDialogMessage.value = `确定将 ${sourceDate} 的 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`
+  confirmDialogMessage.value = `确定将 ${sourceDate} 的所有 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`
   confirmDialogType.value = 'warning'
   confirmDialogConfirmText.value = '确认迁移'
   showMoveDateDialog.value = false
