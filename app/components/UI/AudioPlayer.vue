@@ -244,7 +244,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import AppleMusicLyrics from './AppleMusicLyrics.vue'
 import LyricsModal from './LyricsModal.vue'
