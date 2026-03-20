@@ -823,7 +823,7 @@
             <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between shrink-0">
               <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
-                  <Icon name="edit-3" :size="24" />
+                  <Icon name="edit" :size="24" />
                 </div>
                 <h3 class="text-xl font-black text-zinc-100 tracking-tight">手动输入歌曲信息</h3>
               </div>
