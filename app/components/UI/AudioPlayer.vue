@@ -397,16 +397,16 @@ const openFallbackLinkForFailedSong = () => {
   const fallbackUrl = resolveFallbackUrl()
   if (!fallbackUrl) return false
 
+  lastOpenedFallbackSongId.value = song.id
+
   const openedWindow = window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
   if (!openedWindow) {
-    lastOpenedFallbackSongId.value = song.id
     fallbackOpenDialogUrl.value = fallbackUrl
     fallbackOpenDialogMessage.value = '播放地址不可直接播放，是否在新标签页打开原始链接？'
     showFallbackOpenDialog.value = true
     return false
   }
 
-  lastOpenedFallbackSongId.value = song.id
   if (window.$showNotification) {
     window.$showNotification('播放地址不可直接播放，已为你打开原始链接', 'warning')
   }
