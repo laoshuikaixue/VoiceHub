@@ -812,20 +812,23 @@
       >
         <div
           v-if="showManualModal"
-          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/80 backdrop-blur-sm"
           @click.self="showManualModal = false"
         >
-          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
           <div
-            class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
             @click.stop
           >
             <!-- Header -->
-            <div class="flex items-center justify-between p-8 pb-4">
-              <h3 class="text-xl font-black text-zinc-100 tracking-tight">手动输入歌曲信息</h3>
+            <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                  <Icon name="edit-3" :size="24" />
+                </div>
+                <h3 class="text-xl font-black text-zinc-100 tracking-tight">手动输入歌曲信息</h3>
+              </div>
               <button
-                class="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
                 @click="showManualModal = false"
               >
                 <X class="w-5 h-5" />
@@ -833,18 +836,15 @@
             </div>
 
             <!-- Body -->
-            <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
-              <div class="manual-form-fields space-y-6">
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+              <div class="grid grid-cols-1 gap-6">
                 <!-- 歌曲名称 -->
-                <div class="form-field space-y-2">
-                  <label
-                    class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >歌曲名称</label
-                  >
-                  <div class="input-container relative group">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">歌曲名称</label>
+                  <div class="relative group">
                     <input
                       :value="title"
-                      class="w-full px-6 py-4 bg-zinc-800/30 border border-zinc-800 rounded-2xl text-zinc-400 font-bold focus:outline-none cursor-not-allowed transition-all"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-400 font-bold focus:outline-none cursor-not-allowed transition-all"
                       readonly
                       type="text"
                     >
@@ -855,48 +855,35 @@
                 </div>
 
                 <!-- 歌手名称 -->
-                <div class="form-field space-y-2">
-                  <label
-                    for="modal-artist"
-                    class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >歌手名称</label
+                <div class="space-y-2">
+                  <label for="modal-artist" class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">歌手名称</label>
+                  <input
+                    id="modal-artist"
+                    v-model="manualArtist"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
+                    placeholder="请输入歌手名称"
+                    required
+                    type="text"
                   >
-                  <div class="input-container relative group">
-                    <input
-                      id="modal-artist"
-                      v-model="manualArtist"
-                      class="w-full px-6 py-4 bg-zinc-800/50 border border-zinc-700/50 rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-700 focus:bg-zinc-800 transition-all"
-                      placeholder="请输入歌手名称"
-                      required
-                      type="text"
-                    >
-                  </div>
                 </div>
 
                 <!-- 歌曲封面地址 -->
-                <div class="form-field space-y-2">
-                  <label
-                    for="modal-cover"
-                    class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >歌曲封面地址（选填）</label
-                  >
-                  <div class="input-container relative group">
+                <div class="space-y-2">
+                  <label for="modal-cover" class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">歌曲封面地址（选填）</label>
+                  <div class="relative group">
                     <input
                       id="modal-cover"
                       v-model="manualCover"
                       :class="[
-                        'w-full px-6 py-4 bg-zinc-800/50 border rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
+                        'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none transition-all',
                         manualCover && !coverValidation.valid
-                          ? 'border-red-500/50 focus:ring-red-500/20'
-                          : 'border-zinc-700/50 focus:ring-zinc-700 focus:bg-zinc-800'
+                          ? 'border-red-500/50 focus:border-red-500/50'
+                          : 'border-zinc-800 focus:border-blue-500/30'
                       ]"
                       placeholder="请输入歌曲封面图片URL"
                       type="url"
                     >
-                    <div
-                      v-if="coverValidation.validating"
-                      class="absolute inset-y-0 right-4 flex items-center"
-                    >
+                    <div v-if="coverValidation.validating" class="absolute inset-y-0 right-4 flex items-center">
                       <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
                     </div>
                   </div>
@@ -905,41 +892,34 @@
                     enter-from-class="opacity-0 -translate-y-1"
                     enter-to-class="opacity-100 translate-y-0"
                   >
-                    <div v-if="manualCover && !coverValidation.validating" class="px-1">
-                      <p v-if="!coverValidation.valid" class="text-xs font-bold text-red-400">
-                        {{ coverValidation.error }}
+                    <div v-if="manualCover && !coverValidation.validating" class="px-1 pt-1">
+                      <p v-if="!coverValidation.valid" class="text-[10px] font-bold text-red-500/80 flex items-center gap-1">
+                        <X class="w-3 h-3" /> {{ coverValidation.error }}
                       </p>
-                      <p v-else class="text-xs font-bold text-emerald-400 flex items-center">
-                        <Check class="w-3 h-3 mr-1" /> URL有效
+                      <p v-else class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1">
+                        <Check class="w-3 h-3" /> URL有效
                       </p>
                     </div>
                   </Transition>
                 </div>
 
                 <!-- 播放地址 -->
-                <div class="form-field space-y-2">
-                  <label
-                    for="modal-play-url"
-                    class="field-label text-sm font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >播放地址（选填）</label
-                  >
-                  <div class="input-container relative group">
+                <div class="space-y-2">
+                  <label for="modal-play-url" class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">播放地址（选填）</label>
+                  <div class="relative group">
                     <input
                       id="modal-play-url"
                       v-model="manualPlayUrl"
                       :class="[
-                        'w-full px-6 py-4 bg-zinc-800/50 border rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
+                        'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none transition-all',
                         manualPlayUrl && !playUrlValidation.valid
-                          ? 'border-red-500/50 focus:ring-red-500/20'
-                          : 'border-zinc-700/50 focus:ring-zinc-700 focus:bg-zinc-800'
+                          ? 'border-red-500/50 focus:border-red-500/50'
+                          : 'border-zinc-800 focus:border-blue-500/30'
                       ]"
                       placeholder="请输入歌曲播放URL"
                       type="url"
                     >
-                    <div
-                      v-if="playUrlValidation.validating"
-                      class="absolute inset-y-0 right-4 flex items-center"
-                    >
+                    <div v-if="playUrlValidation.validating" class="absolute inset-y-0 right-4 flex items-center">
                       <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
                     </div>
                   </div>
@@ -948,12 +928,12 @@
                     enter-from-class="opacity-0 -translate-y-1"
                     enter-to-class="opacity-100 translate-y-0"
                   >
-                    <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1">
-                      <p v-if="!playUrlValidation.valid" class="text-xs font-bold text-red-400">
-                        {{ playUrlValidation.error }}
+                    <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1 pt-1">
+                      <p v-if="!playUrlValidation.valid" class="text-[10px] font-bold text-red-500/80 flex items-center gap-1">
+                        <X class="w-3 h-3" /> {{ playUrlValidation.error }}
                       </p>
-                      <p v-else class="text-xs font-bold text-emerald-400 flex items-center">
-                        <Check class="w-3 h-3 mr-1" /> URL有效
+                      <p v-else class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1">
+                        <Check class="w-3 h-3" /> URL有效
                       </p>
                     </div>
                   </Transition>
@@ -962,24 +942,22 @@
             </div>
 
             <!-- Footer -->
-            <div class="p-8 pt-0">
-              <div class="flex gap-3">
-                <button
-                  class="flex-1 px-6 py-4 rounded-2xl bg-zinc-800 text-zinc-300 font-bold hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
-                  type="button"
-                  @click="showManualModal = false"
-                >
-                  取消
-                </button>
-                <button
-                  :disabled="!canSubmitManualForm || submitting"
-                  class="flex-[2] px-6 py-4 rounded-2xl bg-zinc-100 text-zinc-900 font-black hover:bg-white disabled:opacity-50 disabled:hover:bg-zinc-100 disabled:active:scale-100 transition-all active:scale-95"
-                  type="button"
-                  @click="handleManualSubmit"
-                >
-                  {{ submitting ? '提交中...' : '确认提交' }}
-                </button>
-              </div>
+            <div class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end shrink-0">
+              <button
+                class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-all"
+                type="button"
+                @click="showManualModal = false"
+              >
+                取消
+              </button>
+              <button
+                :disabled="!canSubmitManualForm || submitting"
+                class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
+                type="button"
+                @click="handleManualSubmit"
+              >
+                {{ submitting ? '提交中...' : '确认提交' }}
+              </button>
             </div>
           </div>
         </div>
