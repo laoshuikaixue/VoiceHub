@@ -495,6 +495,7 @@ VoiceHub/
 │   │   │   ├── SmtpManager.vue        # SMTP邮件服务管理
 │   │   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
 │   │   │   ├── SongManagement.vue     # 歌曲管理
+│   │   │   ├── SubmissionRemarkDialog.vue # 投稿备注弹窗
 │   │   │   ├── UserManager.vue        # 用户管理
 │   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
 │   │   │   └── VotersModal.vue        # 投票人员查看弹窗

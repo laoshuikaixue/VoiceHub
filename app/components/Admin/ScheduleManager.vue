@@ -320,15 +320,25 @@
                   </div>
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <h4 class="font-bold text-zinc-100 text-sm truncate">
-                      <span
-                        v-if="isBilibiliSong(song)"
-                        class="text-zinc-100 flex items-center gap-1 w-full text-left"
+                    <div class="flex items-center gap-2">
+                      <h4 class="font-bold text-zinc-100 text-sm truncate">
+                        <span
+                          v-if="isBilibiliSong(song)"
+                          class="text-zinc-100 flex items-center gap-1 w-full text-left"
+                        >
+                          <span class="truncate">{{ song.title }}</span>
+                        </span>
+                        <span v-else>{{ song.title }}</span>
+                      </h4>
+                      <button
+                        v-if="song.hasSubmissionNote && song.submissionNote"
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
+                        title="查看备注留言"
+                        @click.stop="openSubmissionRemark(song)"
                       >
-                        <span class="truncate">{{ song.title }}</span>
-                      </span>
-                      <span v-else>{{ song.title }}</span>
-                    </h4>
+                        <MessageSquare :size="12" />
+                      </button>
+                    </div>
                     <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
                     <div class="text-[10px] text-zinc-500 truncate flex items-center gap-1">
                       <span>{{ song.requester }}</span>
@@ -579,6 +589,14 @@
                       <h4 class="font-bold text-zinc-200 text-sm truncate">
                         {{ schedule.song.title }}
                       </h4>
+                      <button
+                        v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
+                        title="查看备注留言"
+                        @click.stop="openSubmissionRemark(schedule.song)"
+                      >
+                        <MessageSquare :size="12" />
+                      </button>
                       <!-- 重播标识 -->
                       <span
                         v-if="schedule.song.replayRequestCount > 0"
@@ -849,6 +867,14 @@
       </div>
     </div>
   </div>
+
+  <SubmissionRemarkDialog
+    :show="submissionRemarkDialog.show"
+    :song-title="submissionRemarkDialog.songTitle"
+    :content="submissionRemarkDialog.content"
+    :is-public="submissionRemarkDialog.isPublic"
+    @close="submissionRemarkDialog.show = false"
+  />
 </template>
 
 <script setup>
@@ -879,9 +905,11 @@ import {
   Plus,
   Minus,
   CircleDot,
-  ExternalLink
+  ExternalLink,
+  MessageSquare
 } from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
+import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -925,6 +953,12 @@ const replayModalRequests = ref([])
 const replayModalSongId = ref(null)
 const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
+const submissionRemarkDialog = ref({
+  show: false,
+  songTitle: '',
+  content: '',
+  isPublic: true
+})
 
 const openReplayModal = (song) => {
   replayModalTitle.value = song.title
@@ -938,6 +972,16 @@ const closeReplayModal = () => {
   replayModalTitle.value = ''
   replayModalRequests.value = []
   replayModalSongId.value = null
+}
+
+const openSubmissionRemark = (song) => {
+  if (!song?.submissionNote) return
+  submissionRemarkDialog.value = {
+    show: true,
+    songTitle: `${song.title} - ${song.artist}`,
+    content: song.submissionNote,
+    isPublic: song.submissionNotePublic === true
+  }
 }
 
 // 拖拽状态
