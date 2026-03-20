@@ -22,6 +22,8 @@ const colors = {
   yellow: '\x1b[33m',
   cyan: '\x1b[36m'
 }
+const BUILD_MEMORY_MB = 6144
+const DEFAULT_NODE_OPTIONS = `--max-old-space-size=${BUILD_MEMORY_MB}`
 
 function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`)
@@ -174,7 +176,7 @@ async function deploy() {
       logStep('🔨', '构建应用...')
       const buildEnv = {
         ...process.env,
-        NODE_OPTIONS: process.env.NODE_OPTIONS || '--max-old-space-size=6144'
+        NODE_OPTIONS: process.env.NODE_OPTIONS || DEFAULT_NODE_OPTIONS
       }
       if (!safeExec('npx nuxt build', { env: buildEnv })) {
         throw new Error('应用构建失败')

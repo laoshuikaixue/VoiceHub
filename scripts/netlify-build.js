@@ -11,6 +11,8 @@ const colors = {
   yellow: '\x1b[33m',
   cyan: '\x1b[36m'
 }
+const BUILD_MEMORY_MB = 6144
+const DEFAULT_NODE_OPTIONS = `--max-old-space-size=${BUILD_MEMORY_MB}`
 
 function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`)
@@ -71,12 +73,27 @@ async function netlifyBuild() {
 
     // 3. 安装依赖
     logStep('📦', '安装依赖...')
+    let installed = false
     if (fileExists('node_modules')) {
       safeExec('rm -rf node_modules')
     }
 
-    if (!safeExec('npm ci')) {
-      throw new Error('依赖安装失败')
+    if (fileExists('package-lock.json')) {
+      if (safeExec('npm ci')) {
+        installed = true
+        logSuccess('依赖安装完成 (npm ci)')
+      } else {
+        logWarning('npm ci 安装失败，准备回退到 npm install...')
+      }
+    } else {
+      logWarning('未检测到 package-lock.json，跳过 npm ci，直接使用 npm install...')
+    }
+
+    if (!installed) {
+      if (!safeExec('npm install')) {
+        throw new Error('依赖安装失败')
+      }
+      logSuccess('依赖安装完成 (npm install)')
     }
 
     // 验证 Drizzle 依赖
@@ -85,8 +102,6 @@ async function netlifyBuild() {
         throw new Error('Drizzle 依赖安装失败')
       }
     }
-    logSuccess('依赖安装完成')
-
     // 4. 检查 Drizzle 配置
     if (!fileExists('drizzle.config.ts') || !fileExists('app/drizzle/schema.ts')) {
       throw new Error('Drizzle 配置文件不完整')
@@ -120,7 +135,7 @@ async function netlifyBuild() {
     logStep('🔨', '构建应用...')
     const buildEnv = {
       ...process.env,
-      NODE_OPTIONS: process.env.NODE_OPTIONS || '--max-old-space-size=6144'
+      NODE_OPTIONS: process.env.NODE_OPTIONS || DEFAULT_NODE_OPTIONS
     }
     if (!safeExec('npx nuxt build', { env: buildEnv })) {
       throw new Error('构建失败')
