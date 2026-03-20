@@ -230,6 +230,17 @@
         @close="showBilibiliIframe = false"
       />
     </ClientOnly>
+
+    <ConfirmDialog
+      :show="showFallbackOpenDialog"
+      title="打开投稿链接"
+      :message="fallbackOpenDialogMessage"
+      type="info"
+      confirm-text="立即打开"
+      cancel-text="稍后处理"
+      @confirm="handleFallbackDialogConfirm"
+      @close="showFallbackOpenDialog = false"
+    />
   </div>
 </template>
 
@@ -240,6 +251,7 @@ import LyricsModal from './LyricsModal.vue'
 import AudioElement from './AudioPlayer/AudioElement.vue'
 import BilibiliIframeModal from './BilibiliIframeModal.vue'
 import Icon from './Icon.vue'
+import ConfirmDialog from './ConfirmDialog.vue'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useAudioPlayerSync } from '~/composables/useAudioPlayerSync'
 import { useAudioQuality } from '~/composables/useAudioQuality'
@@ -295,6 +307,10 @@ const timeDisplayMode = ref('remaining')
 // 同步标记，避免双向触发
 const isSyncingFromGlobal = ref(false)
 const isMounted = ref(false)
+const lastOpenedFallbackSongId = ref<string | number | null>(null)
+const showFallbackOpenDialog = ref(false)
+const fallbackOpenDialogUrl = ref('')
+const fallbackOpenDialogMessage = ref('播放地址不可直接播放，是否在新标签页打开原始链接？')
 
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
@@ -339,6 +355,93 @@ const activeSong = computed(() => props.song ?? lastSong.value)
 
 // 控制可见性：父级仍传入歌曲且未处于关闭或已关闭状态
 const visible = computed(() => !!props.song && !isClosing.value && !isClosed.value)
+
+const normalizeHttpUrl = (url: string | null | undefined) => {
+  if (!url || typeof url !== 'string') return null
+  const trimmed = url.trim()
+  if (!trimmed) return null
+
+  try {
+    const parsed = new URL(trimmed)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null
+    }
+    return parsed.href
+  } catch {
+    return null
+  }
+}
+
+const resolveFallbackUrl = () => {
+  const song = activeSong.value
+  if (!song) return null
+
+  const playUrl = normalizeHttpUrl(song.playUrl)
+  if (playUrl) return playUrl
+
+  if (isBilibiliSong(song)) {
+    const bilibiliUrl = getBilibiliUrl(song)
+    if (bilibiliUrl && bilibiliUrl !== '#') {
+      return bilibiliUrl
+    }
+  }
+
+  return null
+}
+
+const openFallbackLinkForFailedSong = () => {
+  const song = activeSong.value
+  if (!song?.id) return false
+  if (lastOpenedFallbackSongId.value === song.id) return false
+
+  const fallbackUrl = resolveFallbackUrl()
+  if (!fallbackUrl) return false
+
+  const openedWindow = window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
+  if (!openedWindow) {
+    lastOpenedFallbackSongId.value = song.id
+    fallbackOpenDialogUrl.value = fallbackUrl
+    fallbackOpenDialogMessage.value = '播放地址不可直接播放，是否在新标签页打开原始链接？'
+    showFallbackOpenDialog.value = true
+    return false
+  }
+
+  lastOpenedFallbackSongId.value = song.id
+  if (window.$showNotification) {
+    window.$showNotification('播放地址不可直接播放，已为你打开原始链接', 'warning')
+  }
+  return true
+}
+
+const handleFallbackDialogConfirm = () => {
+  if (!fallbackOpenDialogUrl.value) {
+    showFallbackOpenDialog.value = false
+    return
+  }
+
+  const openedWindow = window.open(fallbackOpenDialogUrl.value, '_blank', 'noopener,noreferrer')
+  if (!openedWindow) {
+    if (window.$showNotification) {
+      window.$showNotification('浏览器拦截了新标签页，请允许弹窗后重试', 'warning')
+    }
+    return
+  }
+
+  showFallbackOpenDialog.value = false
+  fallbackOpenDialogUrl.value = ''
+  if (window.$showNotification) {
+    window.$showNotification('已为你打开原始链接', 'success')
+  }
+}
+
+watch(
+  () => activeSong.value?.id,
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      lastOpenedFallbackSongId.value = null
+    }
+  }
+)
 
 // 音频事件处理器
 const handleTimeUpdate = () => {
@@ -513,6 +616,8 @@ const handleLoaded = async () => {
 }
 
 const handleError = async (error) => {
+  openFallbackLinkForFailedSong()
+
   // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
   if (isBilibiliSong(activeSong.value)) {
     // 如果是播放列表模式，且不是手动单曲播放模式，则自动跳过
