@@ -217,7 +217,7 @@
             <div class="min-w-0">
               <h4
                 :class="[
-                  'font-bold truncate transition-colors',
+                  'font-bold transition-colors flex items-center',
                   selectedSongs.includes(song.id)
                     ? 'text-blue-400'
                     : 'text-zinc-100 group-hover:text-blue-400'
@@ -225,11 +225,19 @@
               >
                 <span
                   v-if="isBilibiliSong(song)"
-                  class="flex items-center gap-1 text-left"
+                  class="truncate flex items-center gap-1 text-left"
                 >
                   {{ song.title }}
                 </span>
-                <span v-else>{{ song.title }}</span>
+                <span v-else class="truncate">{{ song.title }}</span>
+                <button
+                  v-if="song.hasSubmissionNote && song.submissionNote"
+                  class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all"
+                  title="查看备注留言"
+                  @click.stop="openSubmissionRemark(song)"
+                >
+                  <MessageSquare :size="12" />
+                </button>
               </h4>
               <p class="text-xs text-zinc-500 font-medium truncate mt-0.5">{{ song.artist }}</p>
               <span
@@ -349,6 +357,56 @@
       @confirm="confirmDelete"
       @close="showDeleteDialog = false"
     />
+
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="submissionRemarkDialog.show"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm"
+        @click="submissionRemarkDialog.show = false"
+      >
+        <div
+          class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden"
+          @click.stop
+        >
+          <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
+            <h3 class="text-xl font-black text-zinc-100">投稿备注留言</h3>
+            <button
+              class="text-zinc-500 hover:text-zinc-300 transition-colors"
+              @click="submissionRemarkDialog.show = false"
+            >
+              <X :size="20" />
+            </button>
+          </div>
+          <div class="p-8 space-y-4">
+            <div class="flex items-center gap-3">
+              <p class="text-xs text-zinc-500 font-medium">{{ submissionRemarkDialog.songTitle }}</p>
+              <span
+                :class="[
+                  'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border',
+                  submissionRemarkDialog.isPublic
+                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                ]"
+              >
+                {{ submissionRemarkDialog.isPublic ? '公开备注' : '仅管理员可见' }}
+              </span>
+            </div>
+            <div class="bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-4">
+              <p class="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">
+                {{ submissionRemarkDialog.content }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- 驳回歌曲对话框 -->
     <Transition
@@ -804,7 +862,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  ExternalLink
+  ExternalLink,
+  MessageSquare
 } from 'lucide-vue-next'
 import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
@@ -862,6 +921,12 @@ const selectedSongId = ref(null)
 // 下载对话框相关
 const showDownloadDialog = ref(false)
 const selectedSongsForDownload = ref([])
+const submissionRemarkDialog = ref({
+  show: false,
+  songTitle: '',
+  content: '',
+  isPublic: false
+})
 
 // 驳回歌曲相关
 const showRejectDialog = ref(false)
@@ -1077,6 +1142,16 @@ const getStatusText = (song) => {
   if (song.played) return '已播放'
   if (song.scheduled) return '待播放'
   return '未排期'
+}
+
+const openSubmissionRemark = (song) => {
+  if (!song?.submissionNote) return
+  submissionRemarkDialog.value = {
+    show: true,
+    songTitle: `${song.title} - ${song.artist}`,
+    content: song.submissionNote,
+    isPublic: song.submissionNotePublic === true
+  }
 }
 
 const toggleSelectAll = () => {

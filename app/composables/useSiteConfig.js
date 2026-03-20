@@ -54,7 +54,8 @@ export const useSiteConfig = () => {
         icpNumber: '',
         gonganNumber: '',
         enableReplayRequests: false,
-        enableCollaborativeSubmission: true
+        enableCollaborativeSubmission: true,
+        enableSubmissionRemarks: false
       }
       isLoaded.value = true
     } finally {
@@ -79,6 +80,7 @@ export const useSiteConfig = () => {
   const enableCollaborativeSubmission = computed(
     () => siteConfig.value.enableCollaborativeSubmission !== false
   )
+  const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
 
   // 初始化配置（仅在客户端执行）
@@ -108,6 +110,7 @@ export const useSiteConfig = () => {
     gonganNumber,
     enableReplayRequests,
     enableCollaborativeSubmission,
+    enableSubmissionRemarks,
     smtpEnabled,
     fetchSiteConfig,
     initSiteConfig,

@@ -52,7 +52,8 @@ export default defineEventHandler(async (event) => {
           weeklySubmissionLimit: null,
           monthlySubmissionLimit: null,
           showBlacklistKeywords: false,
-          enableCollaborativeSubmission: true
+          enableCollaborativeSubmission: true,
+          enableSubmissionRemarks: false
         })
         .returning()
       settings = newSettingsResult[0]

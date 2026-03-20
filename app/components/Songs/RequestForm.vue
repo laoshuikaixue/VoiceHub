@@ -560,6 +560,35 @@
             />
           </div>
         </div>
+
+        <div v-if="enableSubmissionRemarks" class="form-group">
+          <div class="input-wrapper">
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-[12px] font-bold text-zinc-300">投稿备注留言</label>
+              <label class="custom-checkbox-wrapper">
+                <input
+                  v-model="submissionNotePublic"
+                  type="checkbox"
+                  class="custom-checkbox-input"
+                >
+                <span class="custom-checkbox-box">
+                  <svg class="custom-checkbox-icon" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="custom-checkbox-text">公开给已登录用户</span>
+              </label>
+            </div>
+            <textarea
+              v-model="submissionNote"
+              maxlength="300"
+              class="w-full min-h-[96px] rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
+            />
+            <div class="mt-2 flex justify-end text-[11px] text-zinc-500">
+              <span>{{ submissionNote.length }}/300</span>
+            </div>
+          </div>
+        </div>
       </form>
 
       <div v-if="groupedSimilarSongs.length > 0" class="similar-song-alert">
@@ -1007,7 +1036,8 @@ const {
   guidelines: submissionGuidelines,
   initSiteConfig,
   enableReplayRequests,
-  enableCollaborativeSubmission
+  enableCollaborativeSubmission,
+  enableSubmissionRemarks
 } = useSiteConfig()
 
 // 用户认证
@@ -1025,6 +1055,8 @@ const title = ref('')
 const artist = ref('')
 const platform = ref('netease') // 默认使用网易云音乐
 const preferredPlayTimeId = ref('')
+const submissionNote = ref('')
+const submissionNotePublic = ref(true)
 const error = ref('')
 const success = ref('')
 const submitting = ref(false)
@@ -1418,6 +1450,13 @@ watch(enableCollaborativeSubmission, (enabled) => {
   if (!enabled) {
     showUserSearchModal.value = false
     collaborators.value = []
+  }
+})
+
+watch(enableSubmissionRemarks, (enabled) => {
+  if (!enabled) {
+    submissionNote.value = ''
+    submissionNotePublic.value = true
   }
 })
 
@@ -2231,6 +2270,8 @@ const submitSong = async (result, options = {}) => {
       cover: selectedCover.value,
       musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
+      submissionNote: submissionNote.value.trim() || null,
+      submissionNotePublic: submissionNotePublic.value,
       collaborators: collaborators.value.map((u) => u.id),
       bilibiliCid: bilibiliCid || null,
       bilibiliPage: bilibiliPage
@@ -2279,6 +2320,8 @@ const handleSubmit = async () => {
       cover: selectedCover.value,
       musicPlatform: platform.value,
       musicId: null, // 手动输入时没有musicId
+      submissionNote: submissionNote.value.trim() || null,
+      submissionNotePublic: submissionNotePublic.value,
       collaborators: collaborators.value.map((u) => u.id)
     }
 
@@ -2512,7 +2555,9 @@ const handleManualSubmit = async () => {
       cover: manualCover.value || '',
       playUrl: manualPlayUrl.value || '',
       musicPlatform: platform.value,
-      musicId: null // 手动输入时没有musicId
+      musicId: null, // 手动输入时没有musicId
+      submissionNote: submissionNote.value.trim() || null,
+      submissionNotePublic: submissionNotePublic.value
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -2667,6 +2712,8 @@ const resetForm = () => {
   manualPlayUrl.value = ''
   hasSearched.value = false
   collaborators.value = []
+  submissionNote.value = ''
+  submissionNotePublic.value = true
   // 重置URL验证状态
   coverValidation.value = { valid: true, error: '', validating: false }
   playUrlValidation.value = { valid: true, error: '', validating: false }
@@ -3093,6 +3140,64 @@ defineExpose({
 .add-collaborator-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
+}
+
+/* 自定义复选框样式 */
+.custom-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.custom-checkbox-input {
+  display: none;
+}
+
+.custom-checkbox-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid #3f3f46;
+  background: rgba(24, 24, 27, 0.5);
+  transition: all 0.2s ease;
+}
+
+.custom-checkbox-icon {
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: white;
+}
+
+.custom-checkbox-input:checked + .custom-checkbox-box {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.custom-checkbox-input:checked + .custom-checkbox-box .custom-checkbox-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.custom-checkbox-text {
+  font-size: 11px;
+  color: #9ca3af;
+  transition: color 0.2s ease;
+}
+
+.custom-checkbox-input:checked ~ .custom-checkbox-text {
+  color: #d1d5db;
+}
+
+.custom-checkbox-wrapper:hover .custom-checkbox-box {
+  border-color: #60a5fa;
 }
 
 /* 横向投稿状态样式 */
