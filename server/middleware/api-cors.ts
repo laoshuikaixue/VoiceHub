@@ -1,0 +1,51 @@
+export default defineEventHandler((event) => {
+  const pathname = getRequestURL(event).pathname
+  
+  // 只处理特定的内部API路由，防止站外调用
+  const isProtectedApi = pathname.startsWith('/api/api-enhanced/netease') || 
+                         pathname.startsWith('/api/native-api')
+                         
+  if (!isProtectedApi) {
+    return
+  }
+
+  // CORS 限制：禁止站外网站调用
+  const origin = getHeader(event, 'origin')
+  const referer = getHeader(event, 'referer')
+  const sourceUrl = origin || referer
+
+  if (sourceUrl) {
+    try {
+      const url = new URL(sourceUrl)
+      // 获取当前请求的 hostname
+      const requestHostname = getRequestURL(event).hostname
+      
+      // 如果来源域与当前域不一致，则拒绝请求
+      if (url.hostname !== requestHostname) {
+        console.warn(`[CORS Middleware] 拦截跨域请求: 来源 ${url.hostname}, 期望 ${requestHostname}, 路径 ${pathname}`)
+        throw createError({
+          statusCode: 403,
+          message: 'Forbidden: 内部API不允许跨域请求'
+        })
+      }
+    } catch (e: any) {
+      // 如果是我们主动抛出的403错误，则重新抛出
+      if (e?.statusCode === 403) {
+        throw e
+      }
+      // 对于其他错误（如无效的URL），这是一个错误的请求
+      console.warn(`[CORS Middleware] 无效的来源 URL: ${sourceUrl}`, e)
+      throw createError({
+        statusCode: 400,
+        message: 'Bad Request: Origin或Referer头无效'
+      })
+    }
+  } else {
+    // 拦截没有来源信息的受保护API请求
+    console.warn(`[CORS Middleware] 拦截无Origin/Referer头的请求: 路径 ${pathname}`)
+    throw createError({
+      statusCode: 403,
+      message: 'Forbidden: 访问此API必须提供Origin或Referer头'
+    })
+  }
+})
