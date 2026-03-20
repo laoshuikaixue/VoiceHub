@@ -39,7 +39,7 @@
               <button
                 v-if="permissions.canAccessPage(item.permissionId || item.id)"
                 :class="[
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-bold transition-all group border',
+                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-bold transition-all group border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 focus-visible:ring-inset',
                   activeTab === item.id
                     ? 'bg-blue-600/10 text-blue-400 border-blue-500/20'
                     : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 border-transparent'
