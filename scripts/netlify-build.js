@@ -118,7 +118,11 @@ async function netlifyBuild() {
 
     // 7. 构建应用
     logStep('🔨', '构建应用...')
-    if (!safeExec('npx nuxt build')) {
+    const buildEnv = {
+      ...process.env,
+      NODE_OPTIONS: process.env.NODE_OPTIONS || '--max-old-space-size=6144'
+    }
+    if (!safeExec('npx nuxt build', { env: buildEnv })) {
       throw new Error('构建失败')
     }
     logSuccess('构建完成')
