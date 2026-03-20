@@ -389,13 +389,13 @@ const resolveFallbackUrl = () => {
   return null
 }
 
-const openFallbackLinkForFailedSong = () => {
+const openFallbackLinkForFailedSong = (): 'none' | 'dialog' | 'opened' => {
   const song = activeSong.value
-  if (!song?.id) return false
-  if (lastOpenedFallbackSongId.value === song.id) return false
+  if (!song?.id) return 'none'
+  if (lastOpenedFallbackSongId.value === song.id) return 'none'
 
   const fallbackUrl = resolveFallbackUrl()
-  if (!fallbackUrl) return false
+  if (!fallbackUrl) return 'none'
 
   lastOpenedFallbackSongId.value = song.id
 
@@ -404,13 +404,13 @@ const openFallbackLinkForFailedSong = () => {
     fallbackOpenDialogUrl.value = fallbackUrl
     fallbackOpenDialogMessage.value = '播放地址不可直接播放，是否在新标签页打开原始链接？'
     showFallbackOpenDialog.value = true
-    return false
+    return 'dialog'
   }
 
   if (window.$showNotification) {
     window.$showNotification('播放地址不可直接播放，已为你打开原始链接', 'warning')
   }
-  return true
+  return 'opened'
 }
 
 const handleFallbackDialogConfirm = () => {
@@ -616,8 +616,6 @@ const handleLoaded = async () => {
 }
 
 const handleError = async (error) => {
-  openFallbackLinkForFailedSong()
-
   // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
   if (isBilibiliSong(activeSong.value)) {
     // 如果是播放列表模式，且不是手动单曲播放模式，则自动跳过
@@ -650,6 +648,15 @@ const handleError = async (error) => {
     // 不自动关闭播放器，让用户可以点击视频图标
     // 但要停止加载状态
     control.isLoadingTrack.value = false
+    return
+  }
+
+  const fallbackResult = openFallbackLinkForFailedSong()
+  if (fallbackResult !== 'none') {
+    control.hasError.value = true
+    control.isPlaying.value = false
+    control.isLoadingTrack.value = false
+    sync.syncPlayStateToGlobal(false, props.song)
     return
   }
 
