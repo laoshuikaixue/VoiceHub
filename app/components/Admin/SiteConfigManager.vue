@@ -169,6 +169,20 @@
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
+              <p class="text-xs font-bold text-zinc-200">启用投稿备注留言</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户在投稿时附加公开或仅管理员可见的备注</p>
+            </div>
+            <input
+              v-model="formData.enableSubmissionRemarks"
+              type="checkbox"
+              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+            >
+          </div>
+
+          <div
+            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+          >
+            <div>
               <p class="text-xs font-bold text-zinc-200">启用重播申请</p>
               <p class="text-[10px] text-zinc-500 mt-0.5">允许用户对本学期已播放过的歌曲再次申请</p>
             </div>
@@ -359,6 +373,7 @@ const formData = ref({
   icpNumber: '',
   gonganNumber: '',
   enableCollaborativeSubmission: true,
+  enableSubmissionRemarks: false,
   enableReplayRequests: false,
   enableSubmissionLimit: false,
   dailySubmissionLimit: 5,
@@ -416,6 +431,7 @@ const loadConfig = async () => {
       icpNumber: data.icpNumber || '',
       gonganNumber: data.gonganNumber || '',
       enableCollaborativeSubmission: data.enableCollaborativeSubmission !== false,
+      enableSubmissionRemarks: !!data.enableSubmissionRemarks,
       enableReplayRequests: !!data.enableReplayRequests,
       enableSubmissionLimit: !!data.enableSubmissionLimit,
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,

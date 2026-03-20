@@ -217,7 +217,7 @@
             <div class="min-w-0">
               <h4
                 :class="[
-                  'font-bold truncate transition-colors',
+                  'font-bold transition-colors flex items-center',
                   selectedSongs.includes(song.id)
                     ? 'text-blue-400'
                     : 'text-zinc-100 group-hover:text-blue-400'
@@ -225,11 +225,19 @@
               >
                 <span
                   v-if="isBilibiliSong(song)"
-                  class="flex items-center gap-1 text-left"
+                  class="truncate flex items-center gap-1 text-left"
                 >
                   {{ song.title }}
                 </span>
-                <span v-else>{{ song.title }}</span>
+                <span v-else class="truncate">{{ song.title }}</span>
+                <button
+                  v-if="song.hasSubmissionNote && song.submissionNote"
+                  class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all"
+                  title="查看备注留言"
+                  @click.stop="openSubmissionRemark(song)"
+                >
+                  <MessageSquare :size="12" />
+                </button>
               </h4>
               <p class="text-xs text-zinc-500 font-medium truncate mt-0.5">{{ song.artist }}</p>
               <span
@@ -348,6 +356,14 @@
       cancel-text="取消"
       @confirm="confirmDelete"
       @close="showDeleteDialog = false"
+    />
+
+    <SubmissionRemarkDialog
+      :show="submissionRemarkDialog.show"
+      :song-title="submissionRemarkDialog.songTitle"
+      :content="submissionRemarkDialog.content"
+      :is-public="submissionRemarkDialog.isPublic"
+      @close="submissionRemarkDialog.show = false"
     />
 
     <!-- 驳回歌曲对话框 -->
@@ -786,6 +802,7 @@ import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
+import SubmissionRemarkDialog from '~/components/Admin/SubmissionRemarkDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import {
@@ -804,7 +821,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  ExternalLink
+  ExternalLink,
+  MessageSquare
 } from 'lucide-vue-next'
 import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
@@ -862,6 +880,12 @@ const selectedSongId = ref(null)
 // 下载对话框相关
 const showDownloadDialog = ref(false)
 const selectedSongsForDownload = ref([])
+const submissionRemarkDialog = ref({
+  show: false,
+  songTitle: '',
+  content: '',
+  isPublic: false
+})
 
 // 驳回歌曲相关
 const showRejectDialog = ref(false)
@@ -1077,6 +1101,16 @@ const getStatusText = (song) => {
   if (song.played) return '已播放'
   if (song.scheduled) return '待播放'
   return '未排期'
+}
+
+const openSubmissionRemark = (song) => {
+  if (!song?.submissionNote) return
+  submissionRemarkDialog.value = {
+    show: true,
+    songTitle: `${song.title} - ${song.artist}`,
+    content: song.submissionNote,
+    isPublic: song.submissionNotePublic === true
+  }
 }
 
 const toggleSelectAll = () => {

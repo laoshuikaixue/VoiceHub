@@ -31,6 +31,9 @@ export interface Song {
   playUrl?: string | null // 播放地址URL
   requesterGrade?: string | null
   requesterClass?: string | null
+  hasSubmissionNote?: boolean
+  submissionNote?: string | null
+  submissionNotePublic?: boolean
   createdAt: string
   voted?: boolean
   scheduled?: boolean // 是否已排期
@@ -124,6 +127,7 @@ export interface SystemSettings {
   forceBlockAllRequests?: boolean
   enableReplayRequests?: boolean
   enableCollaborativeSubmission?: boolean
+  enableSubmissionRemarks?: boolean
 }
 
 export interface RequestTime {
