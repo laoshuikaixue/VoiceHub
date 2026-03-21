@@ -488,7 +488,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted, reactive } from 'vue'
+import { computed, ref, watch, reactive, onUnmounted } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { getMusicUrl } from '~/utils/musicUrl'
 import {
@@ -505,7 +505,6 @@ import {
   Trash2,
   Clock
 } from 'lucide-vue-next'
-import { createMp3Encoder } from 'wasm-media-encoders'
 
 const props = defineProps({
   show: {
@@ -567,6 +566,9 @@ const downloadErrors = ref([])
 const preloadedSongs = reactive(new Map())
 // 当前活动下载进度映射 (songId -> progress)
 const activeDownloads = reactive(new Map())
+const activeEncoderWorker = ref(null)
+const DOWNLOAD_CONCURRENCY = 3
+const MERGE_DECODE_CONCURRENCY = 2
 
 const getPlatformShortName = (platform) => {
   switch (platform) {
@@ -802,23 +804,139 @@ const saveFile = (blob, filename) => {
   window.URL.revokeObjectURL(objectUrl)
 }
 
-// 音频合并核心逻辑
+const terminateActiveEncoderWorker = () => {
+  if (activeEncoderWorker.value) {
+    activeEncoderWorker.value.terminate()
+    activeEncoderWorker.value = null
+  }
+}
+
+const buildMergedFilename = (selectedSongsList, ext) => {
+  let filename
+  if (customFilename.value && customFilename.value.trim()) {
+    filename = customFilename.value.trim()
+    const dateStr = new Date().toISOString().split('T')[0]
+    const allSongsStr = selectedSongsList.map((item) => item.song.title).join(' ')
+    filename = filename.replace(/{date}/g, dateStr)
+    filename = filename.replace(/{songs}/g, allSongsStr)
+    filename = filename.replace(/[<>:"/\\|?*]/g, '_')
+    const extRegex = new RegExp(`\\.${ext}$`, 'i')
+    if (!extRegex.test(filename)) {
+      if (filename.toLowerCase().endsWith('.mp3') || filename.toLowerCase().endsWith('.wav')) {
+        filename = filename.replace(/\.(mp3|wav)$/i, `.${ext}`)
+      } else {
+        filename += `.${ext}`
+      }
+    }
+  } else {
+    const dateStr = new Date().toLocaleDateString('sv-SE')
+    filename = `排期合并_${dateStr}_${selectedSongsList.length}首.${ext}`
+  }
+  return filename
+}
+
+const formatWorkerProgress = (stage, value) => {
+  if (stage === 'prepare') {
+    processingStatus.value = `正在预处理音频: ${value}%`
+    return
+  }
+  if (stage === 'merge') {
+    processingStatus.value = `正在合并音频: ${value}%`
+    return
+  }
+  processingStatus.value = `正在编码 ${exportFormat.value.toUpperCase()}: ${value}%`
+}
+
+const encodeWithWorker = async (tracks, format) => {
+  terminateActiveEncoderWorker()
+  const worker = new Worker(new URL('../../workers/audioEncoderWorker.js', import.meta.url), {
+    type: 'module'
+  })
+  activeEncoderWorker.value = worker
+  return await new Promise((resolve, reject) => {
+    worker.onmessage = (event) => {
+      const { type, stage, value, blob, message } = event.data || {}
+      if (type === 'progress') {
+        formatWorkerProgress(stage, value)
+        return
+      }
+      if (type === 'error') {
+        terminateActiveEncoderWorker()
+        reject(new Error(message || '编码失败'))
+        return
+      }
+      if (type === 'done') {
+        terminateActiveEncoderWorker()
+        resolve(blob)
+      }
+    }
+    worker.onerror = (event) => {
+      terminateActiveEncoderWorker()
+      reject(new Error(event.message || '编码 Worker 运行失败'))
+    }
+    const transferables = []
+    const payloadTracks = tracks.map((track) => {
+      transferables.push(track.left.buffer, track.right.buffer)
+      return {
+        id: track.id,
+        title: track.title,
+        sampleRate: track.sampleRate,
+        left: track.left.buffer,
+        right: track.right.buffer
+      }
+    })
+    worker.postMessage(
+      {
+        cmd: 'encode',
+        tracks: payloadTracks,
+        format,
+        normalize: normalizeAudio.value,
+        targetDb: targetDb.value
+      },
+      transferables
+    )
+  })
+}
+
+const decodeSongTrack = async (song, audioContext) => {
+  let arrayBuffer
+  if (preloadedSongs.has(song.id) && !preloadedSongs.get(song.id).loading) {
+    const cached = preloadedSongs.get(song.id)
+    arrayBuffer = await cached.blob.arrayBuffer()
+    activeDownloads.set(song.id, 100)
+  } else {
+    const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
+    const blob = await fetchAudioWithProgress(audioUrl, song.id, song.title)
+    arrayBuffer = await blob.arrayBuffer()
+    activeDownloads.set(song.id, 100)
+  }
+  processingStatus.value = `正在解码: ${song.title}`
+  const decoded = await audioContext.decodeAudioData(arrayBuffer)
+  const left = new Float32Array(decoded.getChannelData(0))
+  const right =
+    decoded.numberOfChannels > 1
+      ? new Float32Array(decoded.getChannelData(1))
+      : new Float32Array(decoded.getChannelData(0))
+  return {
+    id: song.id,
+    title: song.title,
+    sampleRate: decoded.sampleRate,
+    left,
+    right
+  }
+}
+
 const processAndMergeAudio = async (selectedSongsList) => {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext
   let audioContext
   try {
-    // 尝试指定采样率以避免不必要的高采样率处理
     audioContext = new AudioContextClass({ sampleRate: 44100 })
   } catch (e) {
-    // 降级处理
     audioContext = new AudioContextClass()
   }
-  
-  const audioBuffers = []
 
   try {
-    // 1. 并发下载并解码
-    const concurrency = 3
+    const concurrency = MERGE_DECODE_CONCURRENCY
     const queue = selectedSongsList.map((item, index) => ({ item, index }))
     const results = new Array(selectedSongsList.length).fill(null)
     const workers = []
@@ -829,36 +947,10 @@ const processAndMergeAudio = async (selectedSongsList) => {
         const song = songItem.song
 
         currentDownloadSong.value = `${song.artist} - ${song.title}`
-        processingStatus.value = `正在处理: ${song.title}`
+        processingStatus.value = `正在准备: ${song.title}`
 
         try {
-          let arrayBuffer
-
-          // 优先使用预下载缓存
-          if (preloadedSongs.has(song.id) && !preloadedSongs.get(song.id).loading) {
-            console.log(`使用预下载缓存: ${song.title}`)
-            const cached = preloadedSongs.get(song.id)
-            arrayBuffer = await cached.blob.arrayBuffer()
-            activeDownloads.set(song.id, 100)
-          } else {
-            const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
-            
-            // 使用公共下载函数
-            const blob = await fetchAudioWithProgress(audioUrl, song.id, song.title)
-            arrayBuffer = await blob.arrayBuffer()
-            activeDownloads.set(song.id, 100)
-          }
-
-          processingStatus.value = `正在解码: ${song.title}`
-          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-
-          // 音量标准化处理
-          if (normalizeAudio.value) {
-            processingStatus.value = `正在标准化: ${song.title}`
-            normalizeBuffer(audioBuffer, targetDb.value)
-          }
-
-          results[index] = audioBuffer
+          results[index] = await decodeSongTrack(song, audioContext)
         } catch (error) {
           console.error(`处理失败: ${song.title}`, error)
           downloadErrors.value.push({
@@ -879,349 +971,29 @@ const processAndMergeAudio = async (selectedSongsList) => {
 
     await Promise.all(workers)
 
-    for (const buffer of results) {
-      if (buffer) {
-        audioBuffers.push(buffer)
-      }
-    }
+    const tracks = results.filter(Boolean)
 
-    if (audioBuffers.length === 0) throw new Error('没有成功处理的音频')
+    if (tracks.length === 0) throw new Error('没有成功处理的音频')
 
-    // 2. 合并音频 Buffer
-    processingStatus.value = '正在合并音频...'
-    await new Promise((r) => setTimeout(r, 100))
+    processingStatus.value = '正在准备编码...'
+    await new Promise((resolve) => setTimeout(resolve, 50))
 
-    const totalLength = audioBuffers.reduce((acc, buf) => acc + buf.length, 0)
-    const numberOfChannels = 2 // 强制双声道
-    const sampleRate = audioBuffers[0].sampleRate // 使用首个音频采样率
-
-    const mergedBuffer = audioContext.createBuffer(numberOfChannels, totalLength, sampleRate)
-
-    let offset = 0
-    for (const buffer of audioBuffers) {
-      for (let channel = 0; channel < numberOfChannels; channel++) {
-        const mergedChannelData = mergedBuffer.getChannelData(channel)
-
-        // 声道映射处理
-        if (buffer.numberOfChannels === 1) {
-          mergedChannelData.set(buffer.getChannelData(0), offset)
-        } else if (channel < buffer.numberOfChannels) {
-          mergedChannelData.set(buffer.getChannelData(channel), offset)
-        } else {
-          mergedChannelData.set(buffer.getChannelData(0), offset)
-        }
-      }
-      offset += buffer.length
-    }
-
-    // 生成文件名
-    const getFilename = (ext) => {
-      let filename
-      if (customFilename.value && customFilename.value.trim()) {
-        filename = customFilename.value.trim()
-
-        // 处理文件名占位符
-        const dateStr = new Date().toISOString().split('T')[0]
-        const allSongsStr = selectedSongsList.map((item) => item.song.title).join(' ')
-
-        filename = filename.replace(/{date}/g, dateStr)
-        filename = filename.replace(/{songs}/g, allSongsStr)
-
-        // 移除非法字符
-        filename = filename.replace(/[<>:"/\\|?*]/g, '_')
-
-        // 修正文件后缀
-        const extRegex = new RegExp(`\\.${ext}$`, 'i')
-        if (!extRegex.test(filename)) {
-          if (filename.toLowerCase().endsWith('.mp3')) {
-            filename = filename.slice(0, -4) + '.' + ext
-          } else if (filename.toLowerCase().endsWith('.wav')) {
-            filename = filename.slice(0, -4) + '.' + ext
-          } else {
-            filename += '.' + ext
-          }
-        }
-      } else {
-        const dateStr = new Date().toLocaleDateString('sv-SE')
-        filename = `排期合并_${dateStr}_${selectedSongsList.length}首.${ext}`
-      }
-      return filename
-    }
-
-    // 3. 重采样与编码
-    
-    // 如果采样率超过 48kHz，进行重采样以兼容 MP3 编码器
-    let finalBuffer = mergedBuffer
-    if (finalBuffer.sampleRate > 48000) {
-      processingStatus.value = '正在重采样音频...'
-      const targetRate = 48000
-      
-      try {
-        const OfflineContextClass = window.OfflineAudioContext || window.webkitOfflineAudioContext
-        const offlineCtx = new OfflineContextClass(
-          finalBuffer.numberOfChannels,
-          Math.ceil(finalBuffer.duration * targetRate),
-          targetRate
-        )
-        const source = offlineCtx.createBufferSource()
-        source.buffer = finalBuffer
-        source.connect(offlineCtx.destination)
-        source.start(0)
-        finalBuffer = await offlineCtx.startRendering()
-      } catch (e) {
-        console.error('重采样失败:', e)
-        // 如果重采样失败，继续尝试使用原始 buffer
-      }
-    }
-
-    processingStatus.value =
-      exportFormat.value === 'mp3' ? '正在编码 MP3 (可能需要一些时间)...' : '正在生成 WAV...'
-    await new Promise((r) => setTimeout(r, 100))
-
-    let resultBlob
-    let extension
-
-    if (exportFormat.value === 'mp3') {
-      resultBlob = await encodeToMp3(finalBuffer)
-      extension = 'mp3'
-    } else {
-      resultBlob = encodeToWav(finalBuffer)
-      extension = 'wav'
-    }
-
-    // 4. 最终下载
-    const filename = getFilename(extension)
-
-    processingStatus.value = `处理完成: ${filename}`
-    currentDownloadSong.value = ''
+    const extension = exportFormat.value === 'wav' ? 'wav' : 'mp3'
+    const resultBlob = await encodeWithWorker(tracks, extension)
+    const filename = buildMergedFilename(selectedSongsList, extension)
 
     saveFile(resultBlob, filename)
+    processingStatus.value = `处理完成: ${filename}`
+    currentDownloadSong.value = ''
   } catch (error) {
     console.error('合并过程出错:', error)
     if (window.$showNotification) {
       window.$showNotification('合并失败: ' + error.message, 'error')
     }
   } finally {
+    terminateActiveEncoderWorker()
     audioContext.close()
     processingStatus.value = ''
-  }
-}
-
-// 音量标准化处理
-const normalizeBuffer = (buffer, targetDbValue) => {
-  const targetGain = Math.pow(10, targetDbValue / 20)
-  let maxPeak = 0
-
-  // 计算最大峰值
-  for (let c = 0; c < buffer.numberOfChannels; c++) {
-    const data = buffer.getChannelData(c)
-    for (let i = 0; i < data.length; i++) {
-      const abs = Math.abs(data[i])
-      if (abs > maxPeak) maxPeak = abs
-    }
-  }
-
-  if (maxPeak === 0) return
-
-  // 应用增益
-  const gain = targetGain / maxPeak
-
-  for (let c = 0; c < buffer.numberOfChannels; c++) {
-    const data = buffer.getChannelData(c)
-    for (let i = 0; i < data.length; i++) {
-      data[i] *= gain
-    }
-  }
-}
-
-// MP3 编码 (WASM)
-const encodeToMp3 = async (buffer) => {
-  try {
-    processingStatus.value = '正在初始化 MP3 编码器...'
-    
-    // 创建 WASM 编码器
-    const encoder = await createMp3Encoder()
-    
-    // 获取实际声道数
-    const channels = buffer.numberOfChannels
-    
-    // 配置编码器 - 使用 CBR 固定码率以确保时长准确
-    encoder.configure({
-      sampleRate: buffer.sampleRate,
-      channels: channels,
-      bitrate: 192, // CBR 192kbps
-      outputSampleRate: buffer.sampleRate
-    })
-
-    // 根据声道数获取数据
-    const leftData = buffer.getChannelData(0)
-    const rightData = channels > 1 ? buffer.getChannelData(1) : leftData
-    const totalSamples = leftData.length
-
-    // 用于存储所有编码数据
-    let outBuffer = new Uint8Array(1024 * 1024) // 初始 1MB
-    let offset = 0
-
-    // 分块处理以更新进度
-    const chunkSize = buffer.sampleRate * 2 // 每次处理 2 秒音频
-    let processed = 0
-
-    const processChunk = () => {
-      return new Promise((resolve) => {
-        const startTime = performance.now()
-        const timeSlice = 50 // 50ms 时间片
-
-        while (processed < totalSamples) {
-          const end = Math.min(processed + chunkSize, totalSamples)
-          const size = end - processed
-
-          // 提取当前块的数据
-          const leftChunk = leftData.slice(processed, end)
-          const rightChunk = rightData.slice(processed, end)
-
-          // WASM 编码 - 根据声道数传入数据
-          const mp3Data = channels === 1 
-            ? encoder.encode([leftChunk])
-            : encoder.encode([leftChunk, rightChunk])
-
-          // 扩展输出缓冲区（如果需要）
-          if (mp3Data.length + offset > outBuffer.length) {
-            const newSize = Math.max(outBuffer.length * 2, offset + mp3Data.length)
-            const newBuffer = new Uint8Array(newSize)
-            newBuffer.set(outBuffer.subarray(0, offset))
-            outBuffer = newBuffer
-          }
-
-          // 复制编码数据（必须复制，因为 WASM 拥有原始数据）
-          outBuffer.set(mp3Data, offset)
-          offset += mp3Data.length
-
-          processed = end
-
-          // 更新进度
-          const progress = Math.round((processed / totalSamples) * 100)
-          processingStatus.value = `正在编码 MP3: ${progress}%`
-
-          // 检查时间片
-          if (performance.now() - startTime > timeSlice) {
-            setTimeout(() => resolve(processChunk()), 0)
-            return
-          }
-        }
-
-        resolve()
-      })
-    }
-
-    // 处理所有块
-    await processChunk()
-
-    // 完成编码
-    processingStatus.value = '正在完成编码...'
-    const finalData = encoder.finalize()
-    
-    if (finalData.length > 0) {
-      if (finalData.length + offset > outBuffer.length) {
-        const newBuffer = new Uint8Array(offset + finalData.length)
-        newBuffer.set(outBuffer.subarray(0, offset))
-        outBuffer = newBuffer
-      }
-      outBuffer.set(finalData, offset)
-      offset += finalData.length
-    }
-
-    // 返回最终的 Blob
-    return new Blob([outBuffer.subarray(0, offset)], { type: 'audio/mp3' })
-  } catch (e) {
-    console.error('MP3 编码失败:', e)
-    if (e.message && e.message.includes('Invalid output sample rate')) {
-      throw new Error(`MP3 编码不支持当前采样率 (${buffer.sampleRate}Hz)，已尝试重采样但失败。`)
-    }
-    throw e
-  }
-}
-
-// WAV 编码
-const encodeToWav = (buffer) => {
-  const numChannels = buffer.numberOfChannels
-  const sampleRate = buffer.sampleRate
-  const format = 1 // PCM
-  const bitDepth = 16
-
-  let result
-  if (numChannels === 2) {
-    result = interleave(buffer.getChannelData(0), buffer.getChannelData(1))
-  } else {
-    result = buffer.getChannelData(0)
-  }
-
-  return encodeWAV(result, numChannels, sampleRate, format, bitDepth)
-}
-
-const interleave = (inputL, inputR) => {
-  const length = inputL.length + inputR.length
-  const result = new Float32Array(length)
-
-  let index = 0
-  let inputIndex = 0
-
-  while (index < length) {
-    result[index++] = inputL[inputIndex]
-    result[index++] = inputR[inputIndex]
-    inputIndex++
-  }
-  return result
-}
-
-const encodeWAV = (samples, numChannels, sampleRate, format, bitDepth) => {
-  const bytesPerSample = bitDepth / 8
-  const blockAlign = numChannels * bytesPerSample
-
-  const buffer = new ArrayBuffer(44 + samples.length * bytesPerSample)
-  const view = new DataView(buffer)
-
-  // RIFF 头信息
-  writeString(view, 0, 'RIFF')
-  view.setUint32(4, 36 + samples.length * bytesPerSample, true)
-  writeString(view, 8, 'WAVE')
-  // 格式块
-  writeString(view, 12, 'fmt ')
-  view.setUint32(16, 16, true)
-  view.setUint16(20, format, true)
-  view.setUint16(22, numChannels, true)
-  view.setUint32(24, sampleRate, true)
-  view.setUint32(28, sampleRate * blockAlign, true)
-  view.setUint16(32, blockAlign, true)
-  view.setUint16(34, bitDepth, true)
-  writeString(view, 36, 'data')
-  view.setUint32(40, samples.length * bytesPerSample, true)
-
-  if (bitDepth === 16) {
-    floatTo16BitPCM(view, 44, samples)
-  } else {
-    floatTo32BitPCM(view, 44, samples)
-  }
-
-  return new Blob([view], { type: 'audio/wav' })
-}
-
-const floatTo16BitPCM = (output, offset, input) => {
-  for (let i = 0; i < input.length; i++, offset += 2) {
-    const s = Math.max(-1, Math.min(1, input[i]))
-    output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
-  }
-}
-
-const floatTo32BitPCM = (output, offset, input) => {
-  for (let i = 0; i < input.length; i++, offset += 4) {
-    const s = Math.max(-1, Math.min(1, input[i]))
-    output.setFloat32(offset, s, true)
-  }
-}
-
-const writeString = (view, offset, string) => {
-  for (let i = 0; i < string.length; i++) {
-    view.setUint8(offset + i, string.charCodeAt(i))
   }
 }
 
@@ -1260,7 +1032,7 @@ const startDownload = async () => {
   }
 
   // 普通批量下载模式
-  const concurrency = 3
+  const concurrency = DOWNLOAD_CONCURRENCY
   const queue = [...selectedSongsList]
   const workers = []
   let activeWorkers = 0
@@ -1446,6 +1218,10 @@ const saveDbPreset = () => {
     showDbPresetSaved.value = false
   }, 2000)
 }
+
+onUnmounted(() => {
+  terminateActiveEncoderWorker()
+})
 </script>
 
 <style scoped>
