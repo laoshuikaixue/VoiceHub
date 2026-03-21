@@ -1,0 +1,99 @@
+name: Notify Feishu on Events
+
+on:
+  issues:
+    types: [opened, closed, reopened]
+  discussion:
+    types: [created, closed, reopened]
+  pull_request:
+    types: [opened, closed, reopened]
+  pull_request_review:
+    types: [submitted]
+  push:
+    branches: [main]
+  release:
+    types: [deleted, released]
+
+jobs:
+  notify-feishu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Send notification to Feishu
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          REPOSITORY: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+          # Issues
+          ISSUE_URL: ${{ github.event.issue.html_url || 'N/A' }}
+          ISSUE_TITLE: ${{ github.event.issue.title || 'N/A' }}
+          ISSUE_BODY: ${{ github.event.issue.body || '' }}
+          ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ', ') }}
+          # PR
+          PR_URL: ${{ github.event.pull_request.html_url || 'N/A' }}
+          # Discussion
+          DISCUSSION_URL: ${{ github.event.discussion.html_url || 'N/A' }}
+          DISCUSSION_TITLE: ${{ github.event.discussion.title || '未命名' }}
+          DISCUSSION_CATEGORY: ${{ github.event.discussion.category.name || '未分类' }}
+          # Push
+          PUSH_BRANCH: ${{ github.ref_name }}
+          PUSH_COMMIT_SHA: ${{ github.sha }}
+          PUSH_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          PUSH_COMPARE_URL: ${{ github.event.compare }}
+          # Release
+          RELEASE_TAG: ${{ github.event.release.tag_name || 'N/A' }}
+          RELEASE_NAME: ${{ github.event.release.name || '未命名' }}
+          RELEASE_URL: ${{ github.event.release.html_url || 'N/A' }}
+          # 通用
+          MESSAGE_TITLE: ${{ secrets.FEISHU_MESSAGE_TITLE || '【GitHub 事件通知】' }}
+        run: |
+          NEWLINE=$'\n'
+          
+          EVENT_URL="N/A"
+          DETAIL_CONTENT=""
+          EVENT_ACTION_DISPLAY="${EVENT_ACTION:-推送代码}"
+
+          if [ "$EVENT_NAME" = "issues" ]; then
+            EVENT_URL=$ISSUE_URL
+            LABELS="${ISSUE_LABELS:-无}"
+            DETAIL_CONTENT="标题：$ISSUE_TITLE${NEWLINE}标签：$LABELS"
+            
+            CATEGORY=$(echo "$ISSUE_BODY" | awk '/### 功能类别/{f=1;next} /### /{f=0} f' | sed '/^$/d' | tr -d '\r' | head -10)
+            CATEGORY="${CATEGORY:-未填写}"
+            SUMMARY=$(echo "$ISSUE_BODY" | awk '/### 功能概述/{f=1;next} /### /{f=0} f' | sed '/^$/d' | tr -d '\r' | head -10)
+            SUMMARY="${SUMMARY:-未填写}"
+            PRIORITY=$(echo "$ISSUE_BODY" | awk '/### 优先级/{f=1;next} /### /{f=0} f' | sed '/^$/d' | tr -d '\r' | head -10)
+            PRIORITY="${PRIORITY:-未填写}"
+            
+            DETAIL_CONTENT="${DETAIL_CONTENT}${NEWLINE}🔹 功能类别：$CATEGORY${NEWLINE}🔹 功能概述：$SUMMARY${NEWLINE}🔹 优先级：$PRIORITY"
+
+          elif [ "$EVENT_NAME" = "discussion" ]; then
+            EVENT_URL=$DISCUSSION_URL
+            DETAIL_CONTENT="标题：$DISCUSSION_TITLE${NEWLINE}分类：$DISCUSSION_CATEGORY"
+
+          elif [ "$EVENT_NAME" = "push" ]; then
+            EVENT_URL=$PUSH_COMPARE_URL
+            SHORT_SHA=${PUSH_COMMIT_SHA:0:7}
+            TRUNCATED_MSG=$(echo "$PUSH_COMMIT_MESSAGE" | head -n1 | cut -c1-100)
+            DETAIL_CONTENT="分支：$PUSH_BRANCH${NEWLINE}提交哈希：$SHORT_SHA${NEWLINE}提交信息：$TRUNCATED_MSG"
+          
+          elif [ "$EVENT_NAME" = "release" ]; then
+            EVENT_URL=$RELEASE_URL
+            DETAIL_CONTENT="标签：$RELEASE_TAG${NEWLINE}名称：$RELEASE_NAME"
+          fi
+
+          MESSAGE_CONTENT="${MESSAGE_TITLE}${NEWLINE}仓库：$REPOSITORY${NEWLINE}事件类型：$EVENT_NAME${NEWLINE}操作：$EVENT_ACTION_DISPLAY${NEWLINE}触发人：$ACTOR${NEWLINE}链接：$EVENT_URL"
+          if [ -n "$DETAIL_CONTENT" ]; then
+            MESSAGE_CONTENT="$MESSAGE_CONTENT${NEWLINE}$DETAIL_CONTENT"
+          fi
+
+          ESCAPED_CONTENT=$(echo "$MESSAGE_CONTENT" | sed 's/"/\\"/g' | tr '\n' '|')
+          ESCAPED_CONTENT=${ESCAPED_CONTENT//|/\\n}
+          MESSAGE="{\"msg_type\":\"text\",\"content\":{\"text\":\"$ESCAPED_CONTENT\"}}"
+          
+          curl -X POST -H "Content-Type: application/json" -d "$MESSAGE" "$FEISHU_WEBHOOK_URL"
+        shell: bash
