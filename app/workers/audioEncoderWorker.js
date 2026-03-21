@@ -124,7 +124,10 @@ self.onmessage = async (event) => {
   const payload = event.data
   if (payload?.cmd !== 'encode' || !payload.tracks?.length) return
   try {
-    const baseSampleRate = payload.tracks[0].sampleRate
+    let baseSampleRate = payload.tracks[0].sampleRate
+    if (payload.format === 'mp3' && baseSampleRate > 48000) {
+      baseSampleRate = 48000
+    }
     const normalizedTracks = payload.tracks.map((track, index) => {
       let left = new Float32Array(track.left)
       let right = new Float32Array(track.right)
