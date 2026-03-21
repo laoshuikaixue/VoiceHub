@@ -773,6 +773,8 @@ export const useMusicSources = () => {
         }
       }
 
+      const hasNeteaseLogin = !!cookie
+
       // 定义音源尝试顺序
       const sourcesToTry: Array<{ source: MusicSource; type: 'netease' | 'tencent' | 'bilibili' }> =
         []
@@ -794,16 +796,24 @@ export const useMusicSources = () => {
           sourcesToTry.push({ source: v2, type: 'tencent' })
         }
       } else {
-        // 网易云音乐平台（默认）：优先使用netease-backup系列，然后vkeys，最后其他
-
+        // 网易云音乐平台（默认）：未登录优先 vkeys，已登录优先 netease-backup
         const neteaseSource = enabledSources.find((source) => source.id.includes('netease-backup'))
-        if (neteaseSource) {
-          sourcesToTry.push({ source: neteaseSource, type: 'netease' })
-        }
-
         const vkeysSource = enabledSources.find((source) => source.id === 'vkeys')
-        if (vkeysSource) {
-          sourcesToTry.push({ source: vkeysSource, type: 'netease' })
+
+        if (hasNeteaseLogin) {
+          if (neteaseSource) {
+            sourcesToTry.push({ source: neteaseSource, type: 'netease' })
+          }
+          if (vkeysSource) {
+            sourcesToTry.push({ source: vkeysSource, type: 'netease' })
+          }
+        } else {
+          if (vkeysSource) {
+            sourcesToTry.push({ source: vkeysSource, type: 'netease' })
+          }
+          if (neteaseSource) {
+            sourcesToTry.push({ source: neteaseSource, type: 'netease' })
+          }
         }
 
         // 添加 Meting API 备用源
