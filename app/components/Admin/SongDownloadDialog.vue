@@ -568,7 +568,7 @@ const preloadedSongs = reactive(new Map())
 const activeDownloads = reactive(new Map())
 const activeEncoderWorker = ref(null)
 const DOWNLOAD_CONCURRENCY = 3
-const MERGE_DECODE_CONCURRENCY = 2
+const MERGE_DECODE_CONCURRENCY = 3
 
 const getPlatformShortName = (platform) => {
   switch (platform) {
@@ -980,6 +980,7 @@ const processAndMergeAudio = async (selectedSongsList) => {
 
     const extension = exportFormat.value === 'wav' ? 'wav' : 'mp3'
     const resultBlob = await encodeWithWorker(tracks, extension)
+    downloadedCount.value = totalCount.value
     const filename = buildMergedFilename(selectedSongsList, extension)
 
     saveFile(resultBlob, filename)
@@ -1010,10 +1011,9 @@ const startDownload = async () => {
   processingStatus.value = ''
 
   const selectedSongsList = props.songs.filter((song) => selectedSongs.value.has(song.song.id))
-  totalCount.value = selectedSongsList.length
-
   // 合并模式分支
   if (mergeSongs.value) {
+    totalCount.value = selectedSongsList.length + 1
     await processAndMergeAudio(selectedSongsList)
 
     // 合并完成处理
@@ -1030,6 +1030,7 @@ const startDownload = async () => {
     }
     return
   }
+  totalCount.value = selectedSongsList.length
 
   // 普通批量下载模式
   const concurrency = DOWNLOAD_CONCURRENCY
