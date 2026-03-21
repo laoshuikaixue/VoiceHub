@@ -478,8 +478,10 @@ export default defineEventHandler(async (event) => {
         ...r,
         displayName: r.name // 这里简化处理，因为 replayRequesters 之前没包含更多信息
       }))
+      const isRequester = Boolean(user && song.requester?.id === user.id)
       const canViewSubmissionNote =
-        Boolean(song.submissionNote) && (Boolean(isAdmin) || (Boolean(user) && song.submissionNotePublic))
+        Boolean(song.submissionNote) &&
+        (Boolean(isAdmin) || isRequester || (Boolean(user) && song.submissionNotePublic))
 
       // 创建基本歌曲对象
       const songObject: SongResponse = {
