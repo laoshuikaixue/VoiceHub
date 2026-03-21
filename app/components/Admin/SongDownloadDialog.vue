@@ -822,8 +822,9 @@ const buildMergedFilename = (selectedSongsList, ext) => {
     filename = filename.replace(/[<>:"/\\|?*]/g, '_')
     const extRegex = new RegExp(`\\.${ext}$`, 'i')
     if (!extRegex.test(filename)) {
-      if (filename.toLowerCase().endsWith('.mp3') || filename.toLowerCase().endsWith('.wav')) {
-        filename = filename.replace(/\.(mp3|wav)$/i, `.${ext}`)
+      const knownExtensions = /\.(mp3|wav|flac|m4a|ogg|aac|wma|alac|aiff|ape)$/i
+      if (knownExtensions.test(filename)) {
+        filename = filename.replace(knownExtensions, `.${ext}`)
       } else {
         filename += `.${ext}`
       }

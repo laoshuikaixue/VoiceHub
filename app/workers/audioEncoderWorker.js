@@ -124,7 +124,7 @@ self.onmessage = async (event) => {
   const payload = event.data
   if (payload?.cmd !== 'encode' || !payload.tracks?.length) return
   try {
-    let baseSampleRate = payload.tracks[0].sampleRate
+    let baseSampleRate = Math.max(...payload.tracks.map((track) => track.sampleRate))
     if (payload.format === 'mp3' && baseSampleRate > 48000) {
       baseSampleRate = 48000
     }
