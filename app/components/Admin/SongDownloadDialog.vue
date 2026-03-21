@@ -811,18 +811,11 @@ const terminateActiveEncoderWorker = () => {
   }
 }
 
-const getLocalDateString = (date = new Date()) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 const buildMergedFilename = (selectedSongsList, ext) => {
   let filename
   if (customFilename.value && customFilename.value.trim()) {
     filename = customFilename.value.trim()
-    const dateStr = getLocalDateString()
+    const dateStr = new Date().toLocaleDateString('sv-SE')
     const allSongsStr = selectedSongsList.map((item) => item.song.title).join(' ')
     filename = filename.replace(/{date}/g, dateStr)
     filename = filename.replace(/{songs}/g, allSongsStr)
@@ -836,7 +829,7 @@ const buildMergedFilename = (selectedSongsList, ext) => {
       }
     }
   } else {
-    const dateStr = getLocalDateString()
+    const dateStr = new Date().toLocaleDateString('sv-SE')
     filename = `排期合并_${dateStr}_${selectedSongsList.length}首.${ext}`
   }
   return filename
