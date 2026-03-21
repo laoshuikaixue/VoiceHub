@@ -21,6 +21,8 @@ const publicFields = [
   'showBlacklistKeywords',
   'hideStudentInfo',
   'enableReplayRequests',
+  'enableCollaborativeSubmission',
+  'enableSubmissionRemarks',
   'enableRequestTimeLimitation',
   'forceBlockAllRequests',
   'smtpEnabled'
@@ -71,7 +73,9 @@ export default defineEventHandler(async (event) => {
           dailySubmissionLimit: null,
           weeklySubmissionLimit: null,
           showBlacklistKeywords: false,
-          hideStudentInfo: true
+          hideStudentInfo: true,
+          enableCollaborativeSubmission: true,
+          enableSubmissionRemarks: false
         })
         .returning()
 

@@ -423,6 +423,8 @@ export const useSongs = () => {
     cover?: string | null
     musicPlatform?: string | null
     musicId?: string | null
+    submissionNote?: string | null
+    submissionNotePublic?: boolean
   }) => {
     if (!isAuthenticated.value) {
       showNotification('需要登录才能点歌', 'error')

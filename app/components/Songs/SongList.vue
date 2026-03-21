@@ -244,6 +244,14 @@
                     已排期
                   </span>
                   <span v-else-if="song.isReplay" title="重播歌曲" class="replay-tag"> 重播 </span>
+                  <button
+                    v-if="song.hasSubmissionNote && song.submissionNote"
+                    class="submission-note-trigger"
+                    title="查看备注留言"
+                    @click.stop="openSubmissionNote(song)"
+                  >
+                    <Icon :size="14" name="message-circle" />
+                  </button>
                 </h3>
                 <div class="song-meta">
                   <span
@@ -363,6 +371,41 @@
           @confirm="confirmAction"
           @cancel="cancelConfirm"
         />
+
+        <Teleport to="body">
+          <Transition
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="opacity-0"
+            enter-to-class="opacity-100"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+          >
+            <div
+              v-if="submissionNoteDialog.show"
+              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              @click="closeSubmissionNote"
+            >
+              <div class="submission-note-modal" @click.stop>
+                <div class="submission-note-header">
+                  <h4>投稿备注留言</h4>
+                  <button @click="closeSubmissionNote">
+                    <Icon :size="14" name="close" />
+                  </button>
+                </div>
+                <div class="submission-note-meta">
+                  <span class="song-title-tag">{{ submissionNoteDialog.songTitle }}</span>
+                  <span :class="['visibility-tag', submissionNoteDialog.isPublic ? 'visibility-public' : 'visibility-private']">
+                    {{ submissionNoteDialog.isPublic ? '公开备注' : '仅管理员可见' }}
+                  </span>
+                </div>
+                <div class="submission-note-content-box">
+                  <p class="submission-note-content">{{ submissionNoteDialog.note }}</p>
+                </div>
+              </div>
+            </div>
+          </Transition>
+        </Teleport>
       </div>
     </Transition>
   </div>
@@ -604,6 +647,12 @@ const confirmDialog = ref({
   type: 'warning', // 'warning', 'danger', 'info', 'success'
   action: '',
   data: null
+})
+const submissionNoteDialog = ref({
+  show: false,
+  songTitle: '',
+  note: '',
+  isPublic: false
 })
 
 // 格式化日期为 X年X月X日
@@ -980,6 +1029,20 @@ const confirmAction = async () => {
 // 取消确认
 const cancelConfirm = () => {
   confirmDialog.value.show = false
+}
+
+const openSubmissionNote = (song) => {
+  if (!song?.submissionNote) return
+  submissionNoteDialog.value = {
+    show: true,
+    songTitle: `${song.title} - ${song.artist}`,
+    note: song.submissionNote,
+    isPublic: song.submissionNotePublic === true
+  }
+}
+
+const closeSubmissionNote = () => {
+  submissionNoteDialog.value.show = false
 }
 
 // 处理图片加载错误
@@ -2997,5 +3060,120 @@ button:disabled {
 
 .page-move {
   transition: transform 0.4s ease;
+}
+
+.submission-note-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.08);
+  color: #60a5fa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
+}
+
+.submission-note-trigger:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 6px 12px rgba(96, 165, 250, 0.15);
+}
+
+.submission-note-modal {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(24, 24, 27, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  color: #f3f4f6;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.submission-note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.submission-note-header h4 {
+  font-size: 16px;
+  font-weight: 800;
+  color: #f4f4f5;
+}
+
+.submission-note-header button {
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submission-note-header button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f4f4f5;
+}
+
+.submission-note-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.song-title-tag {
+  font-size: 12px;
+  color: #a1a1aa;
+  font-weight: 500;
+}
+
+.visibility-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.visibility-public {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.visibility-private {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.submission-note-content-box {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.submission-note-content {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 14px;
+  color: #e4e4e7;
 }
 </style>

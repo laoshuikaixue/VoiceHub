@@ -92,6 +92,20 @@
       "when": 1772890398452,
       "tag": "20260307133318_remove_gongan_link",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1773923154561,
+      "tag": "20260319122554_add_collaborative_submission_toggle",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1773927000000,
+      "tag": "20260319133000_add_submission_remarks",
+      "breakpoints": true
     }
   ]
 }

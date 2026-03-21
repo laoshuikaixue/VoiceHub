@@ -495,6 +495,7 @@ VoiceHub/
 │   │   │   ├── SmtpManager.vue        # SMTP邮件服务管理
 │   │   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
 │   │   │   ├── SongManagement.vue     # 歌曲管理
+│   │   │   ├── SubmissionRemarkDialog.vue # 投稿备注弹窗
 │   │   │   ├── UserManager.vue        # 用户管理
 │   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
 │   │   │   └── VotersModal.vue        # 投票人员查看弹窗
@@ -691,6 +692,7 @@ VoiceHub/
 │   │   │   │   ├── bulk-publish.post.ts # 批量发布排期
 │   │   │   │   ├── draft.post.ts    # 保存排期草稿
 │   │   │   │   ├── full.get.ts      # 获取完整排期数据（包含草稿）
+│   │   │   │   ├── move-date.post.ts # 排期日期迁移
 │   │   │   │   ├── publish.post.ts  # 发布排期草稿
 │   │   │   │   ├── remove.post.ts   # 移除排期
 │   │   │   │   └── sequence.post.ts # 更新排期顺序
@@ -851,6 +853,7 @@ VoiceHub/
 │   ├── error.ts            # 全局错误处理
 │   ├── middleware/         # 服务端中间件
 │   │   ├── api-auth.ts     # API认证中间件
+│   │   ├── api-cors.ts     # API跨域中间件
 │   │   └── auth.ts         # 认证中间件
 │   ├── plugins/            # 服务端插件
 │   │   └── error-handler.ts # 错误处理插件

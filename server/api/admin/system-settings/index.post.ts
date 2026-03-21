@@ -147,6 +147,26 @@ export default defineEventHandler(async (event) => {
       updateData.enableReplayRequests = body.enableReplayRequests
     }
 
+    if (body.enableCollaborativeSubmission !== undefined) {
+      if (typeof body.enableCollaborativeSubmission !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enableCollaborativeSubmission 必须是布尔值'
+        })
+      }
+      updateData.enableCollaborativeSubmission = body.enableCollaborativeSubmission
+    }
+
+    if (body.enableSubmissionRemarks !== undefined) {
+      if (typeof body.enableSubmissionRemarks !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enableSubmissionRemarks 必须是布尔值'
+        })
+      }
+      updateData.enableSubmissionRemarks = body.enableSubmissionRemarks
+    }
+
     if (body.enableRequestTimeLimitation !== undefined) {
       if (typeof body.enableRequestTimeLimitation !== 'boolean') {
         throw createError({
@@ -269,6 +289,8 @@ export default defineEventHandler(async (event) => {
           monthlySubmissionLimit: updateData.monthlySubmissionLimit ?? null,
           showBlacklistKeywords: updateData.showBlacklistKeywords ?? false,
           enableReplayRequests: updateData.enableReplayRequests ?? false,
+          enableCollaborativeSubmission: updateData.enableCollaborativeSubmission ?? true,
+          enableSubmissionRemarks: updateData.enableSubmissionRemarks ?? false,
           enableRequestTimeLimitation: updateData.enableRequestTimeLimitation ?? false,
           requestTimeLimitation: updateData.requestTimeLimitation ?? null,
           forceBlockAllRequests: updateData.forceBlockAllRequests ?? false,

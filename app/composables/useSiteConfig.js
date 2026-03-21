@@ -53,7 +53,9 @@ export const useSiteConfig = () => {
         submissionGuidelines: defaultSubmissionGuidelines,
         icpNumber: '',
         gonganNumber: '',
-        enableReplayRequests: false
+        enableReplayRequests: false,
+        enableCollaborativeSubmission: true,
+        enableSubmissionRemarks: false
       }
       isLoaded.value = true
     } finally {
@@ -75,6 +77,10 @@ export const useSiteConfig = () => {
   const icp = computed(() => siteConfig.value.icpNumber || '')
   const gonganNumber = computed(() => siteConfig.value.gonganNumber || '')
   const enableReplayRequests = computed(() => siteConfig.value.enableReplayRequests || false)
+  const enableCollaborativeSubmission = computed(
+    () => siteConfig.value.enableCollaborativeSubmission !== false
+  )
+  const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
 
   // 初始化配置（仅在客户端执行）
@@ -103,6 +109,8 @@ export const useSiteConfig = () => {
     icp,
     gonganNumber,
     enableReplayRequests,
+    enableCollaborativeSubmission,
+    enableSubmissionRemarks,
     smtpEnabled,
     fetchSiteConfig,
     initSiteConfig,

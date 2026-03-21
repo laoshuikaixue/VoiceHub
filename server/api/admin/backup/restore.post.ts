@@ -735,7 +735,9 @@ export default defineEventHandler(async (event) => {
                           'semester',
                           'cover',
                           'musicPlatform',
-                          'musicId'
+                          'musicId',
+                          'submissionNote',
+                          'submissionNotePublic'
                         ]
                         songFields.forEach((field) => {
                           if (record.hasOwnProperty(field)) {
@@ -1001,6 +1003,8 @@ export default defineEventHandler(async (event) => {
                           'requestTimeLimitation',
                           'forceBlockAllRequests',
                           'enableReplayRequests',
+                          'enableCollaborativeSubmission',
+                          'enableSubmissionRemarks',
                           'hideStudentInfo',
                           'smtpEnabled',
                           'smtpHost',

@@ -234,6 +234,18 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    const rawSubmissionNote = typeof body.submissionNote === 'string' ? body.submissionNote.trim() : ''
+    if (rawSubmissionNote.length > 300) {
+      throw createError({
+        statusCode: 400,
+        message: '备注留言不能超过300个字符'
+      })
+    }
+    const submissionNote =
+      systemSettingsData?.enableSubmissionRemarks && rawSubmissionNote ? rawSubmissionNote : null
+    const submissionNotePublic =
+      submissionNote !== null ? body.submissionNotePublic !== false : false
+
     // 准备发送通知的列表
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 
@@ -323,6 +335,8 @@ export default defineEventHandler(async (event) => {
           musicPlatform: isBilibili ? 'bilibili' : (body.musicPlatform || null),
           musicId: finalMusicId,
           playUrl: body.playUrl || null,
+          submissionNote,
+          submissionNotePublic,
           hitRequestId: hitRequestTime?.id || null
         })
         .returning()

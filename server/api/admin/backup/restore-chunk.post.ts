@@ -403,7 +403,16 @@ export default defineEventHandler(async (event) => {
               played: record.hasOwnProperty('played') ? record.played : false
             }
 
-            const songFields = ['title', 'artist', 'semester', 'cover', 'musicPlatform', 'musicId']
+            const songFields = [
+              'title',
+              'artist',
+              'semester',
+              'cover',
+              'musicPlatform',
+              'musicId',
+              'submissionNote',
+              'submissionNotePublic'
+            ]
             songFields.forEach((field) => {
               if (record.hasOwnProperty(field)) {
                 songData[field] = record[field]
@@ -591,6 +600,8 @@ export default defineEventHandler(async (event) => {
               'showBlacklistKeywords',
               'hideStudentInfo',
               'enableReplayRequests',
+              'enableCollaborativeSubmission',
+              'enableSubmissionRemarks',
               'enableRequestTimeLimitation',
               'requestTimeLimitation',
               'forceBlockAllRequests',

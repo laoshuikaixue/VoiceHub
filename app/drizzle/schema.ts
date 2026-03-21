@@ -59,6 +59,8 @@ export const songs = pgTable('Song', {
   playUrl: text('playUrl'),
   musicPlatform: text('musicPlatform'),
   musicId: text('musicId'),
+  submissionNote: text('submissionNote'),
+  submissionNotePublic: boolean('submissionNotePublic').default(false).notNull(),
   hitRequestId: integer(),
 });
 
@@ -152,6 +154,8 @@ export const systemSettings = pgTable('SystemSettings', {
   enableRequestTimeLimitation: boolean('enableRequestTimeLimitation').default(false).notNull(),
   forceBlockAllRequests: boolean().default(false).notNull(),
   enableReplayRequests: boolean('enableReplayRequests').default(false).notNull(),
+  enableCollaborativeSubmission: boolean('enableCollaborativeSubmission').default(true).notNull(),
+  enableSubmissionRemarks: boolean('enableSubmissionRemarks').default(false).notNull(),
 });
 
 // 歌曲黑名单表
