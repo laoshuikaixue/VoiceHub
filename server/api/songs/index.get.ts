@@ -85,13 +85,13 @@ export default defineEventHandler(async (event) => {
       .then((result) => result[0])
     const shouldHideStudentInfo = systemSettingsData?.hideStudentInfo ?? true
 
-    // 构建缓存键（基于查询参数，但不包含用户ID以提高缓存命中率）
+    // 构建缓存键
     const queryParams = {
       search: search || '',
       semester: semester || '',
       grade: grade || '',
       scope: scope || '',
-      userId: scope === 'mine' ? user?.id : undefined, // 如果 scope 为 mine，则将 userId 包含在缓存键中
+      userId: user?.id, // 登录用户按用户维度隔离缓存，避免私有字段串读
       sortBy,
       sortOrder
     }
@@ -478,8 +478,11 @@ export default defineEventHandler(async (event) => {
         ...r,
         displayName: r.name // 这里简化处理，因为 replayRequesters 之前没包含更多信息
       }))
+      const isRequester = Boolean(user && song.requester?.id === user.id)
       const canViewSubmissionNote =
-        Boolean(song.submissionNote) && (Boolean(isAdmin) || (Boolean(user) && song.submissionNotePublic))
+        Boolean(song.submissionNote) &&
+        Boolean(user) &&
+        (Boolean(isAdmin) || isRequester || song.submissionNotePublic)
 
       // 创建基本歌曲对象
       const songObject: SongResponse = {

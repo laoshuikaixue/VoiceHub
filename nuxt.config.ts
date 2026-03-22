@@ -14,7 +14,7 @@ export default defineNuxtConfig({
   dir: {
     public: fileURLToPath(new URL('./public', import.meta.url))
   },
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV === 'development' },
   devServer: {
     host: '0.0.0.0', // 允许局域网访问
     port: 3000
@@ -121,7 +121,7 @@ export default defineNuxtConfig({
   },
 
   features: {
-    inlineStyles: true
+    inlineStyles: false
   },
 
   // TypeScript配置
@@ -254,6 +254,21 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: ['drizzle-orm'],
       exclude: ['@applemusic-like-lyrics/vue', '@applemusic-like-lyrics/lyric']
+    },
+    build: {
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return
+            if (id.includes('lucide-vue-next')) return 'icons'
+            if (id.includes('@pixi')) return 'pixi'
+            if (id.includes('@applemusic-like-lyrics')) return 'lyric-engine'
+            if (id.includes('drizzle-orm') || id.includes('postgres')) return 'database'
+            if (id.includes('xlsx') || id.includes('jspdf') || id.includes('jszip')) return 'office'
+          }
+        }
+      }
     },
     // 添加 WASM 支持配置
     assetsInclude: ['**/*.wasm'],
