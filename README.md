@@ -889,6 +889,8 @@ VoiceHub/
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   └── twoFactorStore.ts # 双重认证存储工具
+│   ├── workers/            # 服务端工作进程
+│   │   └── audioEncoderWorker.js # 音频编码工作进程
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
