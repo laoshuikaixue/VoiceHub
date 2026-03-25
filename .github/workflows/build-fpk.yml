@@ -52,41 +52,17 @@ jobs:
           EOF
           sed -i 's/^[[:space:]]*//' voicehub/manifest
 
-      - name: 写入 docker-compose.yaml
+      - name: 从仓库读取 docker-compose-prebuild-nju.yml 并写入
         run: |
-          cat > voicehub/app/docker/docker-compose.yaml <<'COMPOSE'
-          services:
-            voicehub:
-              image: ghcr.io/laoshuikaixue/voicehub:latest
-              container_name: voicehub
-              ports:
-                - "${TRIM_SERVICE_PORT:-3000}:3000"
-              environment:
-                - DATABASE_URL=postgresql://voicehub:voicehub@postgres:5432/voicehub
-                - JWT_SECRET=${TRIM_PKGVAR:-voicehub-default-secret}
-                - NODE_ENV=production
-              depends_on:
-                postgres:
-                  condition: service_healthy
-              restart: unless-stopped
-
-            postgres:
-              image: postgres:15-alpine
-              container_name: voicehub-postgres
-              environment:
-                - POSTGRES_USER=voicehub
-                - POSTGRES_PASSWORD=voicehub
-                - POSTGRES_DB=voicehub
-              volumes:
-                - ${TRIM_APPDATA:-./shares}/data/postgres:/var/lib/postgresql/data
-              healthcheck:
-                test: ["CMD-SHELL", "pg_isready -U voicehub -d voicehub"]
-                interval: 5s
-                timeout: 5s
-                retries: 5
-              restart: unless-stopped
-          COMPOSE
-          sed -i 's/^[[:space:]]*//' voicehub/app/docker/docker-compose.yaml
+          # 从项目根目录读取仓库内的 compose 文件
+          SRC_COMPOSE="docker-compose/docker-compose-prebuild-nju.yml"
+          # 目标路径
+          DST_COMPOSE="voicehub/app/docker/docker-compose.yaml"
+          
+          # 复制内容（保留原有格式）
+          cat "$SRC_COMPOSE" > "$DST_COMPOSE"
+          
+          echo "✅ 已从仓库读取: $SRC_COMPOSE 并写入目标: $DST_COMPOSE"
 
       - name: 写入 cmd/main
         run: |
