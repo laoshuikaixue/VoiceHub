@@ -547,6 +547,31 @@ export async function createSongRejectedNotification(
   }
 }
 
+export async function createSubmissionNoteClearedNotification(
+  userIds: number[],
+  songInfo: { title: string; artist: string },
+  reason?: string,
+  ipAddress?: string
+) {
+  try {
+    const uniqueUserIds = [...new Set(userIds.filter((userId) => Number.isInteger(userId) && userId > 0))]
+
+    if (uniqueUserIds.length === 0) {
+      return []
+    }
+
+    const title = '歌曲备注已被管理员清空'
+    const content = reason?.trim()
+      ? `您投稿歌曲《${songInfo.title} - ${songInfo.artist}》的备注已被管理员清空。原因：${reason.trim()}`
+      : `您投稿歌曲《${songInfo.title} - ${songInfo.artist}》的备注已被管理员清空。`
+
+    return await createBatchSystemNotifications(uniqueUserIds, title, content, ipAddress)
+  } catch (error) {
+    console.error('创建歌曲备注清空通知失败:', error)
+    return []
+  }
+}
+
 /**
  * 创建系统通知
  */
