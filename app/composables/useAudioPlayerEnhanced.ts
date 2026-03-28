@@ -39,28 +39,21 @@ export const useAudioPlayerEnhanced = () => {
     platform,
     musicId,
     qualityOrPlayUrl,
-    options?: { unblock?: boolean }
+    options?: { unblock?: boolean; quality?: number }
   ) => {
     try {
-      let previousQuality
-      // 如果传入的是音质值，临时切换音质以用统一逻辑获取URL
-      if (typeof qualityOrPlayUrl === 'number') {
-        previousQuality = getQuality(platform)
-        saveQuality(platform, qualityOrPlayUrl)
-      }
+      const requestOptions =
+        typeof qualityOrPlayUrl === 'number'
+          ? { ...options, quality: qualityOrPlayUrl }
+          : options
 
       const { getMusicUrl: coreGetMusicUrl } = await import('~/utils/musicUrl')
       const url = await coreGetMusicUrl(
         platform,
         musicId,
         typeof qualityOrPlayUrl === 'string' ? qualityOrPlayUrl : undefined,
-        options
+        requestOptions
       )
-
-      // 如果失败且我们临时切换过音质，恢复原音质设置
-      if (!url && typeof qualityOrPlayUrl === 'number' && previousQuality !== undefined) {
-        saveQuality(platform, previousQuality)
-      }
 
       if (url) {
         return { success: true, url }
