@@ -20,6 +20,7 @@ NC='\033[0m' # No Color
 # 项目配置
 REPO_URL="https://github.com/laoshuikaixue/VoiceHub.git"
 PROJECT_DIR="/opt/voicehub"
+PNPM_VERSION="10.29.3"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}       VoiceHub 一键部署脚本${NC}"
@@ -84,23 +85,29 @@ if [[ "$NODE_NEED_INSTALL" == "true" ]]; then
     echo -e "${GREEN}✓ Node.js 安装完成: $(node -v)${NC}"
 fi
 
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+mkdir -p "$PNPM_HOME"
+export PATH="$PNPM_HOME:$PATH"
+corepack enable
+corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
 echo ""
 
 # ============================================
-# 步骤 3: 询问是否切换 npm 国内源
+# 步骤 3: 询问是否切换 pnpm 国内源
 # ============================================
-echo -e "${YELLOW}[3/9] npm 镜像源配置${NC}"
-echo -e "是否需要将 npm 切换为国内淘宝源？"
+echo -e "${YELLOW}[3/9] pnpm 镜像源配置${NC}"
+echo -e "是否需要将 pnpm 切换为国内淘宝源？"
 echo -e "${BLUE}  y - 使用淘宝镜像 (https://registry.npmmirror.com)${NC}"
 echo -e "${BLUE}  n - 使用官方源 (https://registry.npmjs.org)${NC}"
 read -p "请选择 (y/n): " USE_TAOBAO
 
 if [[ "$USE_TAOBAO" == "y" || "$USE_TAOBAO" == "Y" ]]; then
-    npm config set registry https://registry.npmmirror.com
+    pnpm config set registry https://registry.npmmirror.com
     echo -e "${GREEN}✓ 已切换为淘宝镜像源${NC}"
 else
-    npm config set registry https://registry.npmjs.org
-    echo -e "${GREEN}✓ 已使用官方 npm 源${NC}"
+    pnpm config set registry https://registry.npmjs.org
+    echo -e "${GREEN}✓ 已使用官方 pnpm 源${NC}"
 fi
 
 echo ""
@@ -258,14 +265,14 @@ fi
 echo ""
 
 # ============================================
-# 步骤 6: npm install
+# 步骤 6: pnpm install
 # ============================================
 echo -e "${YELLOW}[6/9] 安装项目依赖...${NC}"
-echo -e "执行: npm install"
+echo -e "执行: pnpm install --frozen-lockfile"
 echo ""
 
 cd "$PROJECT_DIR"
-npm install
+pnpm install --frozen-lockfile || pnpm install
 
 echo -e "${GREEN}✓ 依赖安装完成${NC}"
 echo ""
@@ -274,16 +281,16 @@ echo ""
 # 步骤 7: 部署 (数据库迁移 + 构建)
 # ============================================
 echo -e "${YELLOW}[7/9] 执行部署脚本...${NC}"
-echo -e "执行: npm run deploy"
+echo -e "执行: pnpm run deploy"
 echo ""
 
-# 尝试执行 npm run deploy (包含数据库迁移、管理员创建、构建)
-if npm run deploy; then
+# 尝试执行 pnpm run deploy (包含数据库迁移、管理员创建、构建)
+if pnpm run deploy; then
     echo -e "${GREEN}✓ 部署脚本执行成功${NC}"
 else
     echo -e "${RED}部署脚本执行失败，尝试仅执行构建...${NC}"
     echo -e "${YELLOW}注意: 数据库迁移可能未完成，请检查日志${NC}"
-    npm run build
+    pnpm run build
 fi
 
 echo -e "${GREEN}✓ 项目准备完成${NC}"
@@ -307,7 +314,7 @@ if [[ "$SERVICE_CHOICE" == "1" ]]; then
     # 检查并安装 pm2
     if ! command -v pm2 &> /dev/null; then
         echo -e "${YELLOW}正在安装 PM2...${NC}"
-        sudo npm install -g pm2
+        pnpm add -g pm2
         echo -e "${GREEN}✓ PM2 安装完成${NC}"
     else
         echo -e "${GREEN}✓ PM2 已安装${NC}"
@@ -477,7 +484,7 @@ elif [[ "$SERVICE_CHOICE" == "2" ]]; then
     echo -e "  sudo systemctl restart voicehub  - 重启服务"
     echo -e "  sudo systemctl stop voicehub     - 停止服务"
 else
-    echo -e "${BLUE}启动命令: npm run dev (开发) 或 npm run start (生产)${NC}"
+    echo -e "${BLUE}启动命令: pnpm run dev (开发) 或 pnpm run start (生产)${NC}"
 fi
 
 echo ""

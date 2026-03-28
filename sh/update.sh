@@ -74,13 +74,13 @@ echo -e "${GREEN}✓ 代码更新完成${NC}"
 echo ""
 
 # ============================================
-# 步骤 3: npm install 更新依赖
+# 步骤 3: pnpm install 更新依赖
 # ============================================
 echo -e "${YELLOW}[3/6] 更新依赖...${NC}"
-echo -e "执行: npm install"
+echo -e "执行: pnpm install --frozen-lockfile"
 echo ""
 
-npm install
+pnpm install --frozen-lockfile || pnpm install
 
 echo -e "${GREEN}✓ 依赖更新完成${NC}"
 echo ""
@@ -89,16 +89,16 @@ echo ""
 # 步骤 4: 重新部署
 # ============================================
 echo -e "${YELLOW}[4/6] 重新部署项目...${NC}"
-echo -e "执行: npm run deploy"
+echo -e "执行: pnpm run deploy"
 echo ""
 
-# 尝试执行 npm run deploy (包含数据库迁移、管理员创建、构建)
-if npm run deploy; then
+# 尝试执行 pnpm run deploy (包含数据库迁移、管理员创建、构建)
+if pnpm run deploy; then
     echo -e "${GREEN}✓ 部署更新脚本执行成功${NC}"
 else
     echo -e "${RED}部署更新脚本执行失败，尝试仅执行构建...${NC}"
     echo -e "${YELLOW}注意: 数据库迁移可能未完成，请检查日志${NC}"
-    npm run build
+    pnpm run build
 fi
 
 echo -e "${GREEN}✓ 项目更新构建完成${NC}"

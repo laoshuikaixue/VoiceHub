@@ -3,23 +3,24 @@
   "version": "1.5.6.5",
   "description": "校园广播站点歌管理系统 - 基于数据库存储的现代化点歌、排期和播放管理平台",
   "private": true,
+  "packageManager": "pnpm@10.29.3",
   "type": "module",
   "scripts": {
-    "build": "npx --node-options=--max-old-space-size=6144 nuxt build",
+    "build": "node --max-old-space-size=6144 ./node_modules/nuxt/bin/nuxt.mjs build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
-    "db:migrate": "npx drizzle-kit migrate",
-    "db:generate": "npx drizzle-kit generate --name=auto-migration",
-    "db:push": "npx drizzle-kit push --force",
-    "db:studio": "npx drizzle-kit studio",
-    "db:drop": "npx drizzle-kit drop",
-    "db:check": "npx drizzle-kit check",
-    "setup": "npm install && npm run db:migrate",
-    "create-admin": "npx tsx scripts/create-admin.js",
-    "clear-db": "npx tsx scripts/clear-database.js",
-    "safe-migrate": "npx tsx scripts/safe-migrate.js",
+    "db:migrate": "pnpm exec drizzle-kit migrate",
+    "db:generate": "pnpm exec drizzle-kit generate --name=auto-migration",
+    "db:push": "pnpm exec drizzle-kit push --force",
+    "db:studio": "pnpm exec drizzle-kit studio",
+    "db:drop": "pnpm exec drizzle-kit drop",
+    "db:check": "pnpm exec drizzle-kit check",
+    "setup": "pnpm install --frozen-lockfile && pnpm run db:migrate",
+    "create-admin": "pnpm exec tsx scripts/create-admin.js",
+    "clear-db": "pnpm exec tsx scripts/clear-database.js",
+    "safe-migrate": "pnpm exec tsx scripts/safe-migrate.js",
     "deploy": "node scripts/deploy.js",
     "vercel-build": "node scripts/deploy.js",
     "netlify-build": "node scripts/netlify-build.js",
@@ -93,11 +94,24 @@
   },
   "engines": {
     "node": ">=18.20.0",
-    "npm": ">=8.0.0"
+    "pnpm": ">=10.0.0"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.1",
     "eslint": "^9.39.4",
     "prettier": "^3.8.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@applemusic-like-lyrics/core",
+      "@applemusic-like-lyrics/lyric",
+      "@applemusic-like-lyrics/vue",
+      "@parcel/watcher",
+      "@swc/core",
+      "bcrypt",
+      "core-js",
+      "esbuild",
+      "unrs-resolver"
+    ]
   }
 }

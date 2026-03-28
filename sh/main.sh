@@ -141,7 +141,7 @@ cmd_deps() {
     echo -e "${BLUE}重新安装依赖...${NC}"
     
     rm -rf node_modules
-    npm install
+    pnpm install --frozen-lockfile || pnpm install
     
     echo -e "${GREEN}✓ 依赖重装完成${NC}"
 }
@@ -151,7 +151,7 @@ cmd_build() {
     check_project
     echo -e "${BLUE}重新编译项目...${NC}"
     
-    npm run build
+    pnpm run build
     
     echo -e "${GREEN}✓ 编译完成${NC}"
 }
@@ -174,11 +174,11 @@ cmd_reinstall() {
     
     echo -e "${YELLOW}[2/4] 重装依赖...${NC}"
     rm -rf node_modules
-    npm install
+    pnpm install --frozen-lockfile || pnpm install
     echo -e "${GREEN}✓ 依赖重装完成${NC}"
     
     echo -e "${YELLOW}[3/4] 重新编译...${NC}"
-    npm run build
+    pnpm run build
     echo -e "${GREEN}✓ 编译完成${NC}"
     
     echo -e "${YELLOW}[4/4] 启动服务...${NC}"
