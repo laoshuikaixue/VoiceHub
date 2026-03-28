@@ -1,14 +1,42 @@
 <template>
   <div class="login-form">
     <div class="form-header">
-      <h2>{{ isBindMode ? '绑定账号' : '欢迎回来' }}</h2>
-      <p v-if="isBindMode">即将绑定 {{ providerName }} 账号: {{ providerUsername }}</p>
+      <h2>{{ getFormTitle }}</h2>
+      <p v-if="isBindMode && !showCreateMode">即将绑定 {{ providerName }} 账号: {{ providerUsername }}</p>
+      <p v-else-if="isBindMode && showCreateMode">通过 {{ providerName }} 创建新账户</p>
       <p v-else>登录您的VoiceHub账户</p>
     </div>
 
+    <!-- OAuth 账号创建/绑定模式选择器 -->
+    <div v-if="isBindMode" class="mode-selector">
+      <button
+        :class="['mode-btn', { active: !showCreateMode }]"
+        type="button"
+        @click="showCreateMode = false"
+      >
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M11 16l-6-6m0 0l6-6m-6 6h12.5a4.5 4.5 0 010 9H11" />
+        </svg>
+        绑定现有账户
+      </button>
+      <button
+        :class="['mode-btn', { active: showCreateMode }]"
+        type="button"
+        @click="showCreateMode = true"
+      >
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M18 9v3m0 0v3m0-3h3m0 0h3m-20.5-12h16a4.5 4.5 0 014.5 4.5v12a4.5 4.5 0 01-4.5 4.5h-16a4.5 4.5 0 01-4.5-4.5v-12a4.5 4.5 0 014.5-4.5z" />
+        </svg>
+        创建新账户
+      </button>
+    </div>
+
     <form :class="['auth-form', { 'has-error': !!error }]" @submit.prevent="handleLogin">
+      <!-- 用户名字段 - 所有模式都需要 -->
       <div class="form-group">
-        <label for="username">账号名</label>
+        <label for="username">
+          {{ showCreateMode ? '设置用户名' : '账号名' }}
+        </label>
         <div class="input-wrapper">
           <svg
             class="input-icon"
@@ -24,16 +52,20 @@
             id="username"
             v-model="username"
             :class="{ 'input-error': error }"
-            placeholder="请输入账号名"
+            :placeholder="showCreateMode ? '3-30个字符，可使用英文、数字、下划线、连字符' : '请输入账号名'"
             required
             type="text"
             @input="error = ''"
           >
         </div>
+        <p v-if="showCreateMode" class="hint-text">用户名不能重复，注册后无法修改</p>
       </div>
 
+      <!-- 密码字段 -->
       <div class="form-group">
-        <label for="password">密码</label>
+        <label for="password">
+          {{ showCreateMode ? '设置密码' : '密码' }}
+        </label>
         <div class="input-wrapper">
           <svg
             class="input-icon"
@@ -51,13 +83,59 @@
             v-model="password"
             :class="{ 'input-error': error }"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="请输入密码"
+            :placeholder="showCreateMode ? '至少8个字符' : '请输入密码'"
             required
             @input="error = ''"
           >
           <button class="password-toggle" type="button" @click="showPassword = !showPassword">
             <svg
               v-if="showPassword"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+              />
+              <line x1="1" x2="23" y1="1" y2="23" />
+            </svg>
+            <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+        </div>
+        <p v-if="showCreateMode" class="hint-text">密码强度：包含大小写字母、数字和特殊字符更安全</p>
+      </div>
+
+      <!-- 确认密码字段 - 仅在创建模式下显示 -->
+      <div v-if="showCreateMode" class="form-group">
+        <label for="confirmPassword">确认密码</label>
+        <div class="input-wrapper">
+          <svg
+            class="input-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
+            <circle cx="12" cy="16" r="1" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <input
+            id="confirmPassword"
+            v-model="confirmPassword"
+            :class="{ 'input-error': error }"
+            :type="showConfirmPassword ? 'text' : 'password'"
+            placeholder="请再次输入密码"
+            required
+            @input="error = ''"
+          >
+          <button class="password-toggle" type="button" @click="showConfirmPassword = !showConfirmPassword">
+            <svg
+              v-if="showConfirmPassword"
               fill="none"
               stroke="currentColor"
               stroke-width="2"
@@ -171,17 +249,26 @@ const providerName = computed(() => {
   return getProviderDisplayName(provider)
 })
 
+const getFormTitle = computed(() => {
+  if (!isBindMode.value) return '欢迎回来'
+  if (!showCreateMode.value) return '绑定账号'
+  return '创建新账户'
+})
+
 const username = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const error = ref('')
 const loading = ref(false)
 const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 const isWebAuthnSupported = ref(false)
 const show2FA = ref(false)
 const userId2FA = ref(0)
 const methods2FA = ref<string[]>([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
+const showCreateMode = ref(false)
 
 const auth = useAuth()
 
@@ -215,11 +302,21 @@ const handleLogin = async () => {
     return
   }
 
+  // 创建账户模式的验证
+  if (isBindMode.value && showCreateMode.value) {
+    if (!confirmPassword.value) {
+      error.value = '请填写完整的注册信息'
+      return
+    }
+    return handleRegisterOAuth()
+  }
+
   error.value = ''
   loading.value = true
 
   try {
-    if (isBindMode.value) {
+    if (isBindMode.value && !showCreateMode.value) {
+      // 绑定现有账户
       await $fetch('/api/auth/bind', {
         method: 'POST',
         body: {
@@ -232,6 +329,7 @@ const handleLogin = async () => {
       await auth.initAuth()
       await navigateTo('/')
     } else {
+      // 普通登录
       const response = await auth.login(username.value, password.value)
 
       if (response.requires2FA) {
@@ -256,6 +354,58 @@ const handleLogin = async () => {
     // 密码错误时清空密码字段
     if (error.value.includes('密码') || error.value.includes('错误')) {
       password.value = ''
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleRegisterOAuth = async () => {
+  // 验证用户名
+  if (username.value.length < 3 || username.value.length > 30) {
+    error.value = '用户名长度需要在3-30个字符之间'
+    return
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(username.value)) {
+    error.value = '用户名仅可包含英文、数字、下划线和连字符'
+    return
+  }
+
+  // 验证密码
+  if (password.value.length < 8) {
+    error.value = '密码长度至少为8个字符'
+    return
+  }
+
+  if (password.value !== confirmPassword.value) {
+    error.value = '两次输入的密码不一致'
+    return
+  }
+
+  error.value = ''
+  loading.value = true
+
+  try {
+    const response = await $fetch('/api/auth/oauth-register', {
+      method: 'POST',
+      body: {
+        username: username.value,
+        password: password.value,
+        confirmPassword: confirmPassword.value
+      }
+    })
+
+    if (response.success) {
+      // 账户创建成功，刷新认证状态
+      await auth.initAuth()
+      await navigateTo('/')
+    }
+  } catch (err) {
+    error.value = err.message || '注册失败，请稍后重试'
+    // 用户名冲突时清空用户名
+    if (error.value.includes('用户名')) {
+      username.value = ''
     }
   } finally {
     loading.value = false
@@ -647,5 +797,72 @@ const handleWebAuthnLogin = async () => {
     padding: 14px;
     font-size: 16px;
   }
+
+  .mode-selector {
+    gap: 8px;
+  }
+
+  .mode-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .mode-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.mode-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  border: 2px solid var(--input-border);
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.mode-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: all 0.2s ease;
+}
+
+.mode-btn:hover:not(.active) {
+  background: var(--surface-tertiary);
+  border-color: var(--input-border-focus);
+  color: var(--text-primary);
+}
+
+.mode-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.mode-btn.active svg {
+  color: white;
+}
+
+.hint-text {
+  font-size: 12px;
+  color: var(--text-quaternary);
+  margin: -4px 0 0 0;
+  line-height: 1.4;
 }
 </style>

@@ -87,6 +87,8 @@
           </div>
         </div>
       </section>
+  <!-- OAuth 第三方登录配置 -->
+  <OAuthConfigManager v-model="formData" class="lg:col-span-2" />
 
       <!-- 视觉识别 -->
       <section :class="cardClass">
@@ -341,6 +343,7 @@ import {
   AlertCircle
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
 
@@ -381,6 +384,32 @@ const formData = ref({
   monthlySubmissionLimit: null,
   showBlacklistKeywords: false,
   hideStudentInfo: true
+,  oauthRedirectUri: '',
+  oauthStateSecret: '',
+  githubOAuthEnabled: false,
+  githubClientId: '',
+  githubClientSecret: '',
+  casdoorOAuthEnabled: false,
+  casdoorServerUrl: '',
+  casdoorClientId: '',
+  casdoorClientSecret: '',
+  casdoorOrganizationName: '',
+  googleOAuthEnabled: false,
+  googleClientId: '',
+  googleClientSecret: '',
+  customOAuthEnabled: false,
+  customOAuthDisplayName: '',
+  customOAuthAuthorizeUrl: '',
+  customOAuthTokenUrl: '',
+  customOAuthUserInfoUrl: '',
+  customOAuthScope: '',
+  customOAuthClientId: '',
+  customOAuthClientSecret: '',
+  customOAuthUserIdField: '',
+  customOAuthUsernameField: '',
+  customOAuthNameField: '',
+  customOAuthEmailField: '',
+  customOAuthAvatarField: ''
 })
 
 const originalData = ref({})
@@ -439,6 +468,32 @@ const loadConfig = async () => {
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true
+    ,      oauthRedirectUri: data.oauthRedirectUri || '',
+          oauthStateSecret: data.oauthStateSecret || '',
+          githubOAuthEnabled: !!data.githubOAuthEnabled,
+          githubClientId: data.githubClientId || '',
+          githubClientSecret: data.githubClientSecret || '',
+          casdoorOAuthEnabled: !!data.casdoorOAuthEnabled,
+          casdoorServerUrl: data.casdoorServerUrl || '',
+          casdoorClientId: data.casdoorClientId || '',
+          casdoorClientSecret: data.casdoorClientSecret || '',
+          casdoorOrganizationName: data.casdoorOrganizationName || '',
+          googleOAuthEnabled: !!data.googleOAuthEnabled,
+          googleClientId: data.googleClientId || '',
+              googleClientSecret: data.googleClientSecret || '',
+              customOAuthEnabled: !!data.customOAuthEnabled,
+              customOAuthDisplayName: data.customOAuthDisplayName || '',
+              customOAuthAuthorizeUrl: data.customOAuthAuthorizeUrl || '',
+              customOAuthTokenUrl: data.customOAuthTokenUrl || '',
+              customOAuthUserInfoUrl: data.customOAuthUserInfoUrl || '',
+              customOAuthScope: data.customOAuthScope || '',
+              customOAuthClientId: data.customOAuthClientId || '',
+              customOAuthClientSecret: data.customOAuthClientSecret || '',
+              customOAuthUserIdField: data.customOAuthUserIdField || '',
+              customOAuthUsernameField: data.customOAuthUsernameField || '',
+              customOAuthNameField: data.customOAuthNameField || '',
+              customOAuthEmailField: data.customOAuthEmailField || '',
+              customOAuthAvatarField: data.customOAuthAvatarField || ''
     }
 
     originalData.value = JSON.parse(JSON.stringify(formData.value))
@@ -476,7 +531,28 @@ const saveConfig = async () => {
       body: JSON.stringify(configToSave)
     })
 
-    if (!response.ok) throw new Error('保存配置失败')
+    if (!response.ok) {
+      let message = '保存配置失败'
+      try {
+        const errorData = await response.json()
+        console.error('API错误响应:', errorData)
+        // 尝试多个可能的错误字段 - Nitro 将错误消息放在 data.error 中
+        if (errorData?.data?.error) {
+          message = errorData.data.error
+        } else if (errorData?.message) {
+          message = errorData.message
+        } else if (errorData?.statusMessage && errorData.statusMessage !== 'Error') {
+          message = errorData.statusMessage
+        } else if (errorData?.data?.message) {
+          message = errorData.data.message
+        } else if (errorData?.error) {
+          message = errorData.error
+        }
+      } catch (parseError) {
+        console.error('无法解析API错误响应:', parseError)
+      }
+      throw new Error(message)
+    }
 
     saveSuccess.value = true
     originalData.value = JSON.parse(JSON.stringify(formData.value))
@@ -487,7 +563,12 @@ const saveConfig = async () => {
     }, 3000)
   } catch (error) {
     console.error('保存配置失败:', error)
-    showNotification('保存配置失败，请重试', 'error')
+    let message = '保存配置失败，请重试'
+    if (error?.message) {
+      message = error.message
+    }
+    console.log('显示给用户的错误信息:', message)
+    showNotification(message, 'error')
   } finally {
     saving.value = false
   }

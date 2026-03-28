@@ -25,7 +25,12 @@ const publicFields = [
   'enableSubmissionRemarks',
   'enableRequestTimeLimitation',
   'forceBlockAllRequests',
-  'smtpEnabled'
+  'smtpEnabled',
+  'githubOAuthEnabled',
+  'casdoorOAuthEnabled',
+  'googleOAuthEnabled',
+  'customOAuthEnabled',
+  'customOAuthDisplayName'
 ]
 
 const filterPublicSettings = (data: any) => {
@@ -75,7 +80,12 @@ export default defineEventHandler(async (event) => {
           showBlacklistKeywords: false,
           hideStudentInfo: true,
           enableCollaborativeSubmission: true,
-          enableSubmissionRemarks: false
+          enableSubmissionRemarks: false,
+          githubOAuthEnabled: false,
+          casdoorOAuthEnabled: false,
+          googleOAuthEnabled: false,
+          customOAuthEnabled: false,
+          customOAuthDisplayName: null
         })
         .returning()
 
