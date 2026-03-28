@@ -607,9 +607,7 @@
                 class="flex items-center gap-2 mt-2 px-1"
               >
                 <span class="text-[10px] font-bold text-blue-500"
-                  >已选择: {{ (showEditModal ? selectedEditUser : selectedUser).name }} (@{{
-                    (showEditModal ? selectedEditUser : selectedUser).username
-                  }})</span
+                  >已选择: {{ getSelectedUserLabel(showEditModal ? selectedEditUser : selectedUser) }}</span
                 >
                 <button
                   class="text-zinc-600 hover:text-zinc-400"
@@ -1241,6 +1239,12 @@ const getCollaboratorDisplayName = (user) => {
   return user?.displayName || user?.name || user?.username || '未知用户'
 }
 
+const getSelectedUserLabel = (user) => {
+  if (!user) return '未知用户'
+  const usernameSuffix = user.username ? ` (@${user.username})` : ''
+  return `${user.name}${usernameSuffix}`
+}
+
 const openSubmissionRemark = (song) => {
   if (!song?.submissionNote) return
   submissionRemarkDialog.value = {
@@ -1494,7 +1498,7 @@ const editSong = (song) => {
     selectedEditUser.value = {
       id: song.requesterId || song.requester_id || song.requester,
       name: song.requester_name || song.requester || '未知',
-      username: song.requester_username || ''
+      username: song.requester_username || song.user?.username || song.requester?.username || ''
     }
     editUserSearchQuery.value = song.requester_name || song.requester || ''
   } else {

@@ -35,10 +35,6 @@ const pageViewRouteName = computed(() => {
     return route.name
   }
 
-  if (route.path === '/') {
-    return 'index'
-  }
-
   return route.path.split('/').filter(Boolean).join('-') || 'index'
 })
 
