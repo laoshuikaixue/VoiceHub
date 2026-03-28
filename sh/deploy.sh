@@ -23,6 +23,7 @@ PROJECT_DIR="/opt/voicehub"
 
 ensure_pnpm() {
     export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
     mkdir -p "$PNPM_HOME"
     export PATH="$PNPM_HOME:$PATH"
 
@@ -51,16 +52,31 @@ ensure_pnpm() {
 }
 
 persist_pm2_binary() {
-    hash -r
+    sudo tee /usr/local/bin/pm2 > /dev/null << 'EOF'
+#!/bin/bash
+set -e
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+export PATH="$PNPM_HOME:$PATH"
 
-    if ! command -v pm2 &> /dev/null && [[ -x "$PNPM_HOME/pm2" ]]; then
-        export PATH="$PNPM_HOME:$PATH"
-        hash -r
-    fi
+if ! command -v corepack &> /dev/null; then
+    echo "错误: corepack 不可用，请重新运行部署脚本" >&2
+    exit 1
+fi
 
-    if command -v pm2 &> /dev/null; then
-        sudo ln -sf "$(command -v pm2)" /usr/local/bin/pm2
-    fi
+corepack enable > /dev/null 2>&1 || true
+
+PM2_ROOT="$(pnpm root -g 2>/dev/null || true)"
+PM2_BIN="$PM2_ROOT/pm2/bin/pm2"
+
+if [[ ! -f "$PM2_BIN" ]]; then
+    echo "错误: PM2 未正确安装，请重新运行部署脚本" >&2
+    exit 1
+fi
+
+exec node "$PM2_BIN" "$@"
+EOF
+    sudo chmod +x /usr/local/bin/pm2
 }
 
 echo -e "${BLUE}========================================${NC}"
@@ -126,8 +142,6 @@ if [[ "$NODE_NEED_INSTALL" == "true" ]]; then
     echo -e "${GREEN}✓ Node.js 安装完成: $(node -v)${NC}"
 fi
 
-ensure_pnpm
-
 echo ""
 
 # ============================================
@@ -140,11 +154,9 @@ echo -e "${BLUE}  n - 使用官方源 (https://registry.npmjs.org)${NC}"
 read -p "请选择 (y/n): " USE_TAOBAO
 
 if [[ "$USE_TAOBAO" == "y" || "$USE_TAOBAO" == "Y" ]]; then
-    pnpm config set registry https://registry.npmmirror.com
-    echo -e "${GREEN}✓ 已切换为淘宝镜像源${NC}"
+    PNPM_REGISTRY="https://registry.npmmirror.com"
 else
-    pnpm config set registry https://registry.npmjs.org
-    echo -e "${GREEN}✓ 已使用官方 pnpm 源${NC}"
+    PNPM_REGISTRY="https://registry.npmjs.org"
 fi
 
 echo ""
@@ -187,6 +199,13 @@ cd "$PROJECT_DIR"
 echo ""
 
 ensure_pnpm
+
+pnpm config set registry "$PNPM_REGISTRY"
+if [[ "$USE_TAOBAO" == "y" || "$USE_TAOBAO" == "Y" ]]; then
+    echo -e "${GREEN}✓ 已切换为淘宝镜像源${NC}"
+else
+    echo -e "${GREEN}✓ 已使用官方 pnpm 源${NC}"
+fi
 
 # ============================================
 # 步骤 5: 配置 .env 文件

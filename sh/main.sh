@@ -26,6 +26,7 @@ DIRECT_LOG_FILE="$DIRECT_LOG_DIR/voicehub-out.log"
 
 ensure_pnpm() {
     export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
     mkdir -p "$PNPM_HOME"
     export PATH="$PNPM_HOME:$PATH"
 
@@ -51,6 +52,47 @@ ensure_pnpm() {
         echo -e "${RED}错误: pnpm 不可用${NC}"
         exit 1
     fi
+}
+
+has_working_pm2() {
+    local pm2_root
+    local pm2_bin
+
+    pm2_root=$(pnpm root -g 2>/dev/null || true)
+    pm2_bin="$pm2_root/pm2/bin/pm2"
+
+    if [[ -f "$pm2_bin" ]]; then
+        node "$pm2_bin" -v > /dev/null 2>&1
+        return $?
+    fi
+
+    if command -v pm2 &> /dev/null; then
+        pm2 -v > /dev/null 2>&1
+        return $?
+    fi
+
+    return 1
+}
+
+run_pm2() {
+    local pm2_root
+    local pm2_bin
+
+    pm2_root=$(pnpm root -g 2>/dev/null || true)
+    pm2_bin="$pm2_root/pm2/bin/pm2"
+
+    if [[ -f "$pm2_bin" ]]; then
+        node "$pm2_bin" "$@"
+        return $?
+    fi
+
+    if command -v pm2 &> /dev/null; then
+        pm2 "$@"
+        return $?
+    fi
+
+    echo -e "${RED}错误: PM2 不可用，请重新运行部署脚本修复 PM2${NC}"
+    return 1
 }
 
 is_direct_service_running() {
@@ -156,11 +198,11 @@ cmd_status() {
     local service_type=$(detect_service_manager)
     
     if [[ "$service_type" == "pm2" ]]; then
-        if command -v pm2 &> /dev/null && pm2 list | grep -q "voicehub"; then
+        if has_working_pm2 && run_pm2 list | grep -q "voicehub"; then
             echo -e "${GREEN}PM2 服务状态:${NC}"
-            pm2 list | grep voicehub
+            run_pm2 list | grep voicehub
         else
-            echo -e "${YELLOW}PM2 服务未运行${NC}"
+            echo -e "${YELLOW}PM2 服务未运行或 PM2 命令异常${NC}"
         fi
     elif [[ "$service_type" == "systemd" ]]; then
         echo -e "${GREEN}systemctl 服务状态:${NC}"
@@ -188,9 +230,9 @@ cmd_start() {
     
     if [[ "$service_type" == "pm2" ]]; then
         if [[ -f "ecosystem.config.cjs" ]]; then
-            pm2 start ecosystem.config.cjs
+            run_pm2 start ecosystem.config.cjs
         else
-            pm2 start ecosystem.config.js
+            run_pm2 start ecosystem.config.js
         fi
         echo -e "${GREEN}✓ PM2 服务已启动${NC}"
     elif [[ "$service_type" == "systemd" ]]; then
@@ -212,7 +254,7 @@ cmd_stop() {
     local service_type=$(detect_service_manager)
     
     if [[ "$service_type" == "pm2" ]]; then
-        pm2 stop voicehub
+        run_pm2 stop voicehub
         echo -e "${GREEN}✓ PM2 服务已停止${NC}"
     elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl stop voicehub
@@ -232,7 +274,7 @@ cmd_restart() {
     local service_type=$(detect_service_manager)
     
     if [[ "$service_type" == "pm2" ]]; then
-        pm2 restart voicehub
+        run_pm2 restart voicehub
         echo -e "${GREEN}✓ PM2 服务已重启${NC}"
     elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl restart voicehub
@@ -319,7 +361,7 @@ cmd_logs() {
     local service_type=$(detect_service_manager)
     
     if [[ "$service_type" == "pm2" ]]; then
-        pm2 logs voicehub
+        run_pm2 logs voicehub
     elif [[ "$service_type" == "systemd" ]]; then
         sudo journalctl -u voicehub -f
     elif [[ "$service_type" == "direct" ]]; then
