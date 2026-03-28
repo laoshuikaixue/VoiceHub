@@ -20,6 +20,9 @@ NC='\033[0m' # No Color
 
 # 默认安装目录
 PROJECT_DIR="/opt/voicehub"
+DIRECT_LOG_DIR="$PROJECT_DIR/logs"
+DIRECT_PID_FILE="$DIRECT_LOG_DIR/voicehub.pid"
+DIRECT_LOG_FILE="$DIRECT_LOG_DIR/voicehub-out.log"
 
 ensure_pnpm() {
     export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
@@ -50,6 +53,77 @@ ensure_pnpm() {
     fi
 }
 
+is_direct_service_running() {
+    if [[ ! -f "$DIRECT_PID_FILE" ]]; then
+        return 1
+    fi
+
+    local pid
+    pid=$(cat "$DIRECT_PID_FILE" 2>/dev/null)
+
+    if [[ -z "$pid" ]]; then
+        rm -f "$DIRECT_PID_FILE"
+        return 1
+    fi
+
+    if kill -0 "$pid" 2>/dev/null; then
+        return 0
+    fi
+
+    rm -f "$DIRECT_PID_FILE"
+    return 1
+}
+
+start_direct_service() {
+    mkdir -p "$DIRECT_LOG_DIR"
+
+    if is_direct_service_running; then
+        echo -e "${YELLOW}VoiceHub 已在直接运行模式下启动${NC}"
+        return 0
+    fi
+
+    if [[ ! -f "$PROJECT_DIR/.output/server/index.mjs" ]]; then
+        echo -e "${RED}错误: 未找到构建产物，请先执行 voicehub build${NC}"
+        exit 1
+    fi
+
+    nohup node "$PROJECT_DIR/.output/server/index.mjs" >> "$DIRECT_LOG_FILE" 2>&1 &
+    local pid=$!
+    echo "$pid" > "$DIRECT_PID_FILE"
+    sleep 2
+
+    if is_direct_service_running; then
+        echo -e "${GREEN}✓ 直接运行模式已启动 (PID: $pid)${NC}"
+    else
+        echo -e "${RED}错误: 直接运行模式启动失败，请查看日志: $DIRECT_LOG_FILE${NC}"
+        exit 1
+    fi
+}
+
+stop_direct_service() {
+    if ! is_direct_service_running; then
+        echo -e "${YELLOW}直接运行模式未启动${NC}"
+        return 0
+    fi
+
+    local pid
+    pid=$(cat "$DIRECT_PID_FILE")
+    kill "$pid" 2>/dev/null || true
+
+    for _ in {1..10}; do
+        if ! kill -0 "$pid" 2>/dev/null; then
+            rm -f "$DIRECT_PID_FILE"
+            echo -e "${GREEN}✓ 直接运行模式已停止${NC}"
+            return 0
+        fi
+        sleep 1
+    done
+
+    kill -9 "$pid" 2>/dev/null || true
+    rm -f "$DIRECT_PID_FILE"
+    echo -e "${GREEN}✓ 直接运行模式已强制停止${NC}"
+}
+
 # 检查项目目录
 check_project() {
     if [[ ! -d "$PROJECT_DIR" ]]; then
@@ -67,6 +141,8 @@ detect_service_manager() {
         echo "pm2"
     elif [[ -f "/etc/systemd/system/voicehub.service" ]]; then
         echo "systemd"
+    elif [[ -f "$PROJECT_DIR/.output/server/index.mjs" ]]; then
+        echo "direct"
     else
         echo "none"
     fi
@@ -89,6 +165,15 @@ cmd_status() {
     elif [[ "$service_type" == "systemd" ]]; then
         echo -e "${GREEN}systemctl 服务状态:${NC}"
         sudo systemctl status voicehub
+    elif [[ "$service_type" == "direct" ]]; then
+        if is_direct_service_running; then
+            echo -e "${GREEN}直接运行模式状态: 运行中${NC}"
+            echo -e "${BLUE}PID: $(cat "$DIRECT_PID_FILE")${NC}"
+            echo -e "${BLUE}日志: $DIRECT_LOG_FILE${NC}"
+        else
+            echo -e "${YELLOW}直接运行模式未启动${NC}"
+            echo -e "${BLUE}可使用 voicehub start 启动${NC}"
+        fi
     else
         echo -e "${YELLOW}未检测到服务配置${NC}"
     fi
@@ -111,6 +196,8 @@ cmd_start() {
     elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl start voicehub
         echo -e "${GREEN}✓ systemctl 服务已启动${NC}"
+    elif [[ "$service_type" == "direct" ]]; then
+        start_direct_service
     else
         echo -e "${YELLOW}未找到服务配置，请先运行部署脚本配置服务${NC}"
         exit 1
@@ -130,6 +217,8 @@ cmd_stop() {
     elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl stop voicehub
         echo -e "${GREEN}✓ systemctl 服务已停止${NC}"
+    elif [[ "$service_type" == "direct" ]]; then
+        stop_direct_service
     else
         echo -e "${YELLOW}未找到服务配置${NC}"
     fi
@@ -148,6 +237,9 @@ cmd_restart() {
     elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl restart voicehub
         echo -e "${GREEN}✓ systemctl 服务已重启${NC}"
+    elif [[ "$service_type" == "direct" ]]; then
+        stop_direct_service
+        start_direct_service
     else
         echo -e "${YELLOW}未找到服务配置，请先运行部署脚本配置服务${NC}"
         exit 1
@@ -230,6 +322,10 @@ cmd_logs() {
         pm2 logs voicehub
     elif [[ "$service_type" == "systemd" ]]; then
         sudo journalctl -u voicehub -f
+    elif [[ "$service_type" == "direct" ]]; then
+        mkdir -p "$DIRECT_LOG_DIR"
+        touch "$DIRECT_LOG_FILE"
+        tail -f "$DIRECT_LOG_FILE"
     else
         echo -e "${YELLOW}未找到服务配置，无法查看日志${NC}"
         exit 1
