@@ -50,7 +50,7 @@ function ensureDrizzleFiles() {
 
 function isEmptyDatabase() {
   try {
-    const output = execSync('npx drizzle-kit introspect --config=drizzle.config.ts', {
+    const output = execSync('pnpm exec drizzle-kit introspect --config=drizzle.config.ts', {
       stdio: 'pipe',
       env: NON_INTERACTIVE_ENV,
       encoding: 'utf8'
@@ -69,7 +69,7 @@ function isEmptyDatabase() {
 function checkSchemaConsistency() {
   try {
     // 使用 drizzle-kit introspect 获取当前数据库schema
-    const output = execSync('npx drizzle-kit introspect --config=drizzle.config.ts', {
+    const output = execSync('pnpm exec drizzle-kit introspect --config=drizzle.config.ts', {
       stdio: 'pipe',
       env: NON_INTERACTIVE_ENV,
       encoding: 'utf8'
@@ -113,7 +113,7 @@ function main() {
   const emptyDb = isEmptyDatabase()
   if (emptyDb) {
     log('🆕 检测到空库，执行迁移 (migrate)...', 'cyan')
-    if (!safeExec('npm run db:migrate', { env: NON_INTERACTIVE_ENV })) {
+    if (!safeExec('pnpm run db:migrate', { env: NON_INTERACTIVE_ENV })) {
       err('数据库迁移失败')
       process.exit(1)
     }
@@ -126,7 +126,7 @@ function main() {
 
     if (!schemaConsistent) {
       warn('数据库schema不完整，尝试使用 push --force 进行修复...', 'cyan')
-      const pushCommand = 'npx drizzle-kit push --force --config=drizzle.config.ts'
+      const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
       if (
         !safeExec(pushCommand, {
           env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
@@ -140,7 +140,7 @@ function main() {
       log('🔁 数据库schema一致，尝试执行 migrate 同步...', 'cyan')
 
       // 尝试执行 migrate
-      const migrateSuccess = safeExec('npm run db:migrate', {
+      const migrateSuccess = safeExec('pnpm run db:migrate', {
         env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
       })
 
@@ -152,13 +152,13 @@ function main() {
 
         // 在 CI 环境下，push 命令如果遇到重命名等歧义可能会弹出交互式提示
         // 确保 DRIZZLE_KIT_NON_INTERACTIVE 已设置
-        const pushCommand = 'npx drizzle-kit push --force --config=drizzle.config.ts'
+        const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
         if (
           !safeExec(pushCommand, {
             env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
           })
         ) {
-          err('数据库同步完全失败。请检查数据库连接或手动运行 npx drizzle-kit push 以解决歧义。')
+          err('数据库同步完全失败。请检查数据库连接或手动运行 pnpm exec drizzle-kit push 以解决歧义。')
           process.exit(1)
         }
         ok('强制同步 (push) 成功')

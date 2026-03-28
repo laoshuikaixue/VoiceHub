@@ -78,27 +78,27 @@ async function netlifyBuild() {
       safeExec('rm -rf node_modules')
     }
 
-    if (fileExists('package-lock.json')) {
-      if (safeExec('npm ci')) {
+    if (fileExists('pnpm-lock.yaml')) {
+      if (safeExec('pnpm install --frozen-lockfile')) {
         installed = true
-        logSuccess('依赖安装完成 (npm ci)')
+        logSuccess('依赖安装完成 (pnpm install --frozen-lockfile)')
       } else {
-        logWarning('npm ci 安装失败，准备回退到 npm install...')
+        logWarning('pnpm install --frozen-lockfile 安装失败，准备回退到 pnpm install...')
       }
     } else {
-      logWarning('未检测到 package-lock.json，跳过 npm ci，直接使用 npm install...')
+      logWarning('未检测到 pnpm-lock.yaml，跳过冻结锁文件安装，直接使用 pnpm install...')
     }
 
     if (!installed) {
-      if (!safeExec('npm install')) {
+      if (!safeExec('pnpm install')) {
         throw new Error('依赖安装失败')
       }
-      logSuccess('依赖安装完成 (npm install)')
+      logSuccess('依赖安装完成 (pnpm install)')
     }
 
     // 验证 Drizzle 依赖
-    if (!safeExec('npm list drizzle-orm drizzle-kit')) {
-      if (!safeExec('npm install drizzle-orm drizzle-kit')) {
+    if (!safeExec('pnpm list drizzle-orm drizzle-kit')) {
+      if (!safeExec('pnpm add drizzle-orm drizzle-kit')) {
         throw new Error('Drizzle 依赖安装失败')
       }
     }
@@ -125,7 +125,7 @@ async function netlifyBuild() {
       // 检查管理员账户
       if (fileExists('scripts/create-admin.js')) {
         logStep('👤', '检查管理员账户...')
-        safeExec('npm run create-admin', { env })
+        safeExec('pnpm run create-admin', { env })
       }
     } else {
       logWarning('未设置 DATABASE_URL')
@@ -137,7 +137,7 @@ async function netlifyBuild() {
       ...process.env,
       NODE_OPTIONS: process.env.NODE_OPTIONS || DEFAULT_NODE_OPTIONS
     }
-    if (!safeExec('npx nuxt build', { env: buildEnv })) {
+    if (!safeExec('pnpm exec nuxt build', { env: buildEnv })) {
       throw new Error('构建失败')
     }
     logSuccess('构建完成')

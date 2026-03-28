@@ -1,5 +1,5 @@
 [build]
-  command = "npm run netlify-build"
+  command = "pnpm run netlify-build"
   publish = "dist"
 
 [build.environment]
