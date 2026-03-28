@@ -620,6 +620,70 @@
               </div>
             </div>
 
+            <div v-if="showEditModal" class="space-y-2">
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                >联合投稿人</label
+              >
+              <div class="space-y-3 user-search-container">
+                <div
+                  v-if="selectedEditCollaborators.length > 0"
+                  class="flex flex-wrap gap-2"
+                >
+                  <span
+                    v-for="collaborator in selectedEditCollaborators"
+                    :key="collaborator.id"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300"
+                  >
+                    {{ getCollaboratorDisplayName(collaborator) }}
+                    <button
+                      class="text-zinc-500 hover:text-red-400 transition-colors"
+                      @click="removeEditCollaborator(collaborator.id)"
+                    >
+                      <X :size="12" />
+                    </button>
+                  </span>
+                </div>
+                <div class="relative">
+                  <input
+                    v-model="editCollaboratorSearchQuery"
+                    type="text"
+                    placeholder="搜索并添加联合投稿人"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                    @focus="showEditCollaboratorDropdown = true"
+                    @input="searchEditCollaborators()"
+                  >
+                  <div
+                    v-if="editCollaboratorSearchLoading"
+                    class="absolute right-4 top-1/2 -translate-y-1/2"
+                  >
+                    <div
+                      class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
+                    />
+                  </div>
+                  <div
+                    v-if="showEditCollaboratorDropdown && filteredEditCollaborators.length > 0"
+                    class="absolute z-10 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden max-h-48 overflow-y-auto"
+                  >
+                    <div
+                      v-for="user in filteredEditCollaborators.slice(0, 10)"
+                      :key="user.id"
+                      class="px-4 py-3 hover:bg-zinc-800 cursor-pointer transition-colors flex items-center justify-between group"
+                      @click="selectEditCollaborator(user)"
+                    >
+                      <div class="flex flex-col">
+                        <span class="text-sm font-bold text-zinc-200">{{ user.name }}</span>
+                        <span class="text-[10px] text-zinc-500">@{{ user.username }}</span>
+                      </div>
+                      <Plus :size="14" class="text-blue-500 opacity-70 group-hover:opacity-100" />
+                    </div>
+                  </div>
+                </div>
+                <p class="text-[10px] text-zinc-600 font-medium px-1">
+                  支持添加多个联合投稿人，保存后立即生效
+                </p>
+              </div>
+            </div>
+
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
                 >学期</label
@@ -642,6 +706,64 @@
               />
             </div>
 
+
+            <div v-if="showEditModal" class="space-y-3">
+              <div class="flex items-center justify-between gap-3 px-1">
+                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                  >歌曲备注</label
+                >
+                <button
+                  :disabled="!canClearEditSubmissionNote && !submissionNoteClearRequested"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-black tracking-widest uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  :class="
+                    submissionNoteClearRequested
+                      ? 'border-zinc-700 bg-zinc-950 text-zinc-300 hover:border-zinc-600'
+                      : 'border-amber-500/20 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                  "
+                  @click="
+                    submissionNoteClearRequested
+                      ? cancelClearSubmissionNote()
+                      : requestClearSubmissionNote()
+                  "
+                >
+                  {{ submissionNoteClearRequested ? '撤销清空' : '清空备注' }}
+                </button>
+              </div>
+              <textarea
+                v-model="editForm.submissionNote"
+                :disabled="submissionNoteClearRequested"
+                placeholder="填写歌曲备注"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[120px] resize-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <div
+                v-if="submissionNoteClearRequested"
+                class="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"
+              >
+                <div class="text-xs font-bold text-amber-300">
+                  保存后将清空当前备注，可填写理由并发送通知
+                </div>
+                <textarea
+                  v-model="submissionNoteClearReason"
+                  placeholder="请输入清空备注的理由，例如：备注内容违规"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-amber-500/30 min-h-[96px] resize-none transition-all"
+                />
+                <label class="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    v-model="notifyOnSubmissionNoteClear"
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-amber-500"
+                  >
+                  <div>
+                    <span class="text-xs font-bold text-zinc-300 group-hover:text-amber-300 transition-colors"
+                      >清空后发送通知</span
+                    >
+                    <p class="text-[10px] text-zinc-600 font-medium">
+                      将通知主投稿人和当前联合投稿人
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-zinc-800/50">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
@@ -855,7 +977,8 @@ const statusOptions = [
   { label: '全部状态', value: 'all' },
   { label: '待排期', value: 'pending' },
   { label: '已排期', value: 'scheduled' },
-  { label: '已播放', value: 'played' }
+  { label: '已播放', value: 'played' },
+  { label: '有备注', value: 'has-note' }
 ]
 
 const sortOptions = [
@@ -908,11 +1031,16 @@ const editForm = ref({
   artist: '',
   requester: '',
   semester: '',
+  submissionNote: '',
   musicPlatform: '',
   musicId: '',
   cover: '',
   playUrl: ''
 })
+const originalEditSubmissionNote = ref('')
+const submissionNoteClearRequested = ref(false)
+const submissionNoteClearReason = ref('')
+const notifyOnSubmissionNoteClear = ref(true)
 
 // 添加歌曲相关
 const showAddSongModal = ref(false)
@@ -1000,6 +1128,8 @@ const filteredSongs = computed(() => {
         case 'played':
           // 已播放
           return song.played
+        case 'has-note':
+          return Boolean(song.submissionNote && song.submissionNote.trim())
         default:
           return true
       }
@@ -1085,6 +1215,10 @@ const canSubmitAddForm = computed(() => {
   return true
 })
 
+const canClearEditSubmissionNote = computed(() => {
+  return Boolean(originalEditSubmissionNote.value || editForm.value.submissionNote)
+})
+
 // 方法
 const formatDate = (dateString) => {
   const date = new Date(dateString)
@@ -1101,6 +1235,10 @@ const getStatusText = (song) => {
   if (song.played) return '已播放'
   if (song.scheduled) return '待播放'
   return '未排期'
+}
+
+const getCollaboratorDisplayName = (user) => {
+  return user?.displayName || user?.name || user?.username || '未知用户'
 }
 
 const openSubmissionRemark = (song) => {
@@ -1339,21 +1477,26 @@ const editSong = (song) => {
     id: song.id,
     title: song.title || '',
     artist: song.artist || '',
-    requester: song.requester_id || song.requester || '',
+    requester: song.requesterId || song.requester_id || song.requester || '',
     semester: song.semester || '',
+    submissionNote: song.submissionNote || '',
     musicPlatform: song.musicPlatform || '',
     musicId: song.musicId || '',
     cover: song.cover || '',
     playUrl: song.playUrl || ''
   }
+  originalEditSubmissionNote.value = song.submissionNote || ''
+  submissionNoteClearRequested.value = false
+  submissionNoteClearReason.value = ''
+  notifyOnSubmissionNoteClear.value = true
 
-  if (song.requester_name) {
+  if (song.requesterId || song.requester_id || song.requester_name || song.requester) {
     selectedEditUser.value = {
-      id: song.requester_id || song.requester,
-      name: song.requester_name,
+      id: song.requesterId || song.requester_id || song.requester,
+      name: song.requester_name || song.requester || '未知',
       username: song.requester_username || ''
     }
-    editUserSearchQuery.value = song.requester_name
+    editUserSearchQuery.value = song.requester_name || song.requester || ''
   } else {
     clearSelectedEditUser()
   }
@@ -1370,6 +1513,11 @@ const editSong = (song) => {
 const saveEditSong = async () => {
   if (!editForm.value.title || !editForm.value.artist) {
     showNotification('请填写歌曲名称和歌手', 'error')
+    return
+  }
+
+  if (submissionNoteClearRequested.value && notifyOnSubmissionNoteClear.value && !submissionNoteClearReason.value.trim()) {
+    showNotification('发送通知时请填写清空备注的理由', 'error')
     return
   }
 
@@ -1397,6 +1545,10 @@ const saveEditSong = async () => {
       requester: editForm.value.requester,
       collaborators: selectedEditCollaborators.value.map((u) => u.id),
       semester: editForm.value.semester,
+      submissionNote: submissionNoteClearRequested.value ? null : editForm.value.submissionNote,
+      clearSubmissionNote: submissionNoteClearRequested.value,
+      submissionNoteClearReason: submissionNoteClearReason.value.trim(),
+      notifyOnSubmissionNoteClear: submissionNoteClearRequested.value && notifyOnSubmissionNoteClear.value,
       musicPlatform: editForm.value.musicPlatform || null,
       musicId: editForm.value.musicId || null,
       cover: editForm.value.cover || null,
@@ -1429,16 +1581,37 @@ const cancelEditSong = () => {
     artist: '',
     requester: '',
     semester: '',
+    submissionNote: '',
     musicPlatform: '',
     musicId: '',
     cover: '',
     playUrl: ''
   }
+  originalEditSubmissionNote.value = ''
+  submissionNoteClearRequested.value = false
+  submissionNoteClearReason.value = ''
+  notifyOnSubmissionNoteClear.value = true
   editCoverValidation.value = { valid: true, error: '', validating: false }
   editPlayUrlValidation.value = { valid: true, error: '', validating: false }
   clearSelectedEditUser()
   selectedEditCollaborators.value = []
   editCollaboratorSearchQuery.value = ''
+}
+
+const requestClearSubmissionNote = () => {
+  if (!canClearEditSubmissionNote.value) {
+    return
+  }
+
+  submissionNoteClearRequested.value = true
+  submissionNoteClearReason.value = ''
+  notifyOnSubmissionNoteClear.value = true
+}
+
+const cancelClearSubmissionNote = () => {
+  submissionNoteClearRequested.value = false
+  submissionNoteClearReason.value = ''
+  notifyOnSubmissionNoteClear.value = true
 }
 
 const openAddSongModal = () => {
