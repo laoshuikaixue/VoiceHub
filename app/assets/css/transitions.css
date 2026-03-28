@@ -21,12 +21,6 @@
   will-change: transform, opacity, filter;
 }
 
-.page-view[data-route='dashboard'] {
-  animation-duration: 0.65s;
-  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
-  animation-name: page-view-dashboard-enter;
-}
-
 .page-view[data-route='index'] {
   animation-duration: 0.75s;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -44,19 +38,6 @@
   }
 }
 
-@keyframes page-view-dashboard-enter {
-  0% {
-    opacity: 0;
-    transform: translateX(100px) scale(0.95);
-    filter: blur(4px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-    filter: blur(0);
-  }
-}
-
 @keyframes page-view-index-enter {
   0% {
     opacity: 0;
@@ -68,24 +49,6 @@
     transform: translateY(0) scale(1);
     filter: blur(0);
   }
-}
-
-/* 后台页面特殊过渡 */
-.page-enter-active[data-route='dashboard'],
-.page-leave-active[data-route='dashboard'] {
-  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.page-enter-from[data-route='dashboard'] {
-  opacity: 0;
-  transform: translateX(100px) scale(0.95);
-  filter: blur(4px);
-}
-
-.page-leave-to[data-route='dashboard'] {
-  opacity: 0;
-  transform: translateX(-100px) scale(1.05);
-  filter: blur(4px);
 }
 
 /* 首页特殊过渡 */
@@ -221,7 +184,6 @@
   }
 
   .page-view,
-  .page-view[data-route='dashboard'],
   .page-view[data-route='index'] {
     animation-duration: 0.3s;
   }
@@ -263,7 +225,6 @@
   }
 
   .page-view,
-  .page-view[data-route='dashboard'],
   .page-view[data-route='index'] {
     animation-duration: 0.1s;
     animation-name: page-view-reduced-enter;
