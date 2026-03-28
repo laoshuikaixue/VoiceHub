@@ -607,9 +607,10 @@
                 class="flex items-center gap-2 mt-2 px-1"
               >
                 <span class="text-[10px] font-bold text-blue-500"
-                  >已选择: {{ (showEditModal ? selectedEditUser : selectedUser).name }} (@{{
-                    (showEditModal ? selectedEditUser : selectedUser).username
-                  }})</span
+                  >已选择: {{ (showEditModal ? selectedEditUser : selectedUser).name }}
+                  <template v-if="(showEditModal ? selectedEditUser : selectedUser).username">
+                    (@{{ (showEditModal ? selectedEditUser : selectedUser).username }})
+                  </template></span
                 >
                 <button
                   class="text-zinc-600 hover:text-zinc-400"
@@ -744,7 +745,7 @@
                 </div>
                 <textarea
                   v-model="submissionNoteClearReason"
-                  placeholder="请输入清空备注的理由，例如：备注内容违规"
+                  placeholder="可选：请输入清空备注的理由，例如：备注内容违规"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-amber-500/30 min-h-[96px] resize-none transition-all"
                 />
                 <label class="flex items-center gap-3 cursor-pointer group">
@@ -1494,7 +1495,7 @@ const editSong = (song) => {
     selectedEditUser.value = {
       id: song.requesterId || song.requester_id || song.requester,
       name: song.requester_name || song.requester || '未知',
-      username: song.requester_username || ''
+      username: song.requester_username || song.user?.username || song.requester?.username || ''
     }
     editUserSearchQuery.value = song.requester_name || song.requester || ''
   } else {
@@ -1513,11 +1514,6 @@ const editSong = (song) => {
 const saveEditSong = async () => {
   if (!editForm.value.title || !editForm.value.artist) {
     showNotification('请填写歌曲名称和歌手', 'error')
-    return
-  }
-
-  if (submissionNoteClearRequested.value && notifyOnSubmissionNoteClear.value && !submissionNoteClearReason.value.trim()) {
-    showNotification('发送通知时请填写清空备注的理由', 'error')
     return
   }
 
