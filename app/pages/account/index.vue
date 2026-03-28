@@ -175,6 +175,6 @@ const roleName = computed(() => {
 })
 
 const goBack = () => {
-  router.back()
+  navigateTo('/')
 }
 </script>

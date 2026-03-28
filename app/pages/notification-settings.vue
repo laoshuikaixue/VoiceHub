@@ -508,9 +508,7 @@ const showNotification = (message, type = 'info') => {
 
 // 返回主页
 const goBack = () => {
-  if (typeof window !== 'undefined') {
-    window.history.back()
-  }
+  navigateTo('/')
 }
 
 // 页面初始化

@@ -223,9 +223,9 @@ export const useMusicSources = () => {
     if (isServerInChina.value !== null) return
 
     try {
-      const { data } = await useFetch('/api/system/location')
-      if (data.value && data.value.success) {
-        isServerInChina.value = data.value.data.isInChina
+      const data = await $fetch('/api/system/location')
+      if (data && data.success) {
+        isServerInChina.value = data.data.isInChina
         console.log(`[useMusicSources] 服务器位置检测: ${isServerInChina.value ? '中国' : '海外'}`)
       }
     } catch (e) {

@@ -10,7 +10,7 @@ const REQUEST_DEDUP_TIMEOUT = 5000 // 5秒
 
 export const useRequestDedup = () => {
   // 正在进行的请求（用于去重）
-  const pendingRequests = ref<Map<string, PendingRequest>>(new Map())
+  const pendingRequests = new Map<string, PendingRequest>()
 
   // 生成请求键
   const generateRequestKey = (type: string, params?: Record<string, any>): string => {
@@ -29,13 +29,13 @@ export const useRequestDedup = () => {
     const now = Date.now()
     const keysToDelete: string[] = []
 
-    pendingRequests.value.forEach((request, key) => {
+    pendingRequests.forEach((request, key) => {
       if (now - request.timestamp > REQUEST_DEDUP_TIMEOUT) {
         keysToDelete.push(key)
       }
     })
 
-    keysToDelete.forEach((key) => pendingRequests.value.delete(key))
+    keysToDelete.forEach((key) => pendingRequests.delete(key))
   }
 
   // 带去重的请求函数
@@ -50,20 +50,20 @@ export const useRequestDedup = () => {
     cleanupPendingRequests()
 
     // 检查是否有相同的请求正在进行
-    const pendingRequest = pendingRequests.value.get(requestKey)
+    const pendingRequest = pendingRequests.get(requestKey)
     if (pendingRequest) {
       try {
         return await pendingRequest.promise
       } catch (error) {
         // 如果请求失败，移除pending状态
-        pendingRequests.value.delete(requestKey)
+        pendingRequests.delete(requestKey)
         throw error
       }
     }
 
     // 创建新的请求
     const promise = requestFn()
-    pendingRequests.value.set(requestKey, {
+    pendingRequests.set(requestKey, {
       promise,
       timestamp: Date.now()
     })
@@ -72,25 +72,25 @@ export const useRequestDedup = () => {
       const data = await promise
 
       // 移除pending状态
-      pendingRequests.value.delete(requestKey)
+      pendingRequests.delete(requestKey)
 
       return data
     } catch (error) {
       // 请求失败时移除pending状态
-      pendingRequests.value.delete(requestKey)
+      pendingRequests.delete(requestKey)
       throw error
     }
   }
 
   // 清除所有pending请求
   const clearAllPendingRequests = (): void => {
-    pendingRequests.value.clear()
+    pendingRequests.clear()
   }
 
   // 获取pending请求统计
   const getPendingStats = () => {
     return {
-      totalPendingRequests: pendingRequests.value.size,
+      totalPendingRequests: pendingRequests.size,
       pendingByType: {} as Record<string, number>
     }
   }
