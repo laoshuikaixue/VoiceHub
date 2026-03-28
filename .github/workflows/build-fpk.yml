@@ -87,6 +87,7 @@ jobs:
 
       - name: 写入 app/ui/config
         run: |
+          mkdir -p voicehub/app/ui
           cat > voicehub/app/ui/config <<'UICONFIG'
           {
             ".url": {
@@ -105,6 +106,7 @@ jobs:
 
       - name: 下载仓库图标
         run: |
+          mkdir -p voicehub/app/ui/images
           wget -q "https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/public/images/logo.png" -O voicehub/app/ui/images/icon-64.png
           cp voicehub/app/ui/images/icon-64.png voicehub/app/ui/images/icon-256.png
           cp voicehub/app/ui/images/icon-64.png voicehub/ICON.PNG
