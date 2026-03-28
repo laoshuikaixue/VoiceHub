@@ -773,8 +773,6 @@ export const useMusicSources = () => {
         }
       }
 
-      const hasNeteaseLogin = !!cookie
-
       // 定义音源尝试顺序
       const sourcesToTry: Array<{ source: MusicSource; type: 'netease' | 'tencent' | 'bilibili' }> =
         []
@@ -796,19 +794,16 @@ export const useMusicSources = () => {
           sourcesToTry.push({ source: v2, type: 'tencent' })
         }
       } else {
-        // 网易云音乐平台（默认）：未登录优先 vkeys，已登录优先 netease-backup
+        // 网易云音乐平台（默认）：优先使用netease-backup系列，然后vkeys，最后其他
 
         const neteaseSource = enabledSources.find((source) => source.id.includes('netease-backup'))
+        if (neteaseSource) {
+          sourcesToTry.push({ source: neteaseSource, type: 'netease' })
+        }
+
         const vkeysSource = enabledSources.find((source) => source.id === 'vkeys')
-
-        const orderedSources = hasNeteaseLogin
-          ? [neteaseSource, vkeysSource]
-          : [vkeysSource, neteaseSource]
-
-        for (const source of orderedSources) {
-          if (source) {
-            sourcesToTry.push({ source, type: 'netease' })
-          }
+        if (vkeysSource) {
+          sourcesToTry.push({ source: vkeysSource, type: 'netease' })
         }
 
         // 添加 Meting API 备用源
@@ -978,26 +973,21 @@ export const useMusicSources = () => {
             }
           } else {
             // 网易云备用API
-            let neteaseQuality = 4
+            let level = 'exhigh'
 
             // 优先使用传入的 quality 参数
             if (quality !== undefined && quality !== null) {
-              neteaseQuality = Number(quality)
+              level = mapQualityToLevel(Number(quality))
             } else {
               // 否则回退到全局设置
               try {
                 const { getQuality } = await import('./useAudioQuality')
-                neteaseQuality = getQuality('netease')
+                const neteaseQuality = getQuality('netease')
+                level = mapQualityToLevel(neteaseQuality)
               } catch (error) {
                 // 无法获取音质设置，使用默认音质
               }
             }
-
-            if (!hasNeteaseLogin && neteaseQuality > 4) {
-              neteaseQuality = 4
-            }
-
-            const level = mapQualityToLevel(neteaseQuality)
 
             // 如果提供了cookie，添加到请求参数中
             const params: any = {
