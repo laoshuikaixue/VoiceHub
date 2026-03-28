@@ -70,8 +70,6 @@ export const useNotifications = () => {
           totalPages.value = data.pagination.totalPages
           totalCount.value = data.pagination.totalCount
           pageSize.value = data.pagination.limit
-          hasNextPage.value = data.pagination.hasNextPage
-          hasPrevPage.value = data.pagination.hasPrevPage
         }
       }
     } catch (err: any) {
@@ -94,8 +92,6 @@ export const useNotifications = () => {
     currentPage.value = 1
     totalPages.value = 0
     totalCount.value = 0
-    hasNextPage.value = false
-    hasPrevPage.value = false
   }
 
   // 分页导航方法

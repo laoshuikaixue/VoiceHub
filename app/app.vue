@@ -13,7 +13,9 @@
     />
 
     <main class="main-content">
-      <NuxtPage />
+      <div :key="route.path" :data-route="pageViewRouteName" class="page-view">
+        <NuxtPage />
+      </div>
     </main>
   </div>
 </template>
@@ -28,6 +30,17 @@ import { useRoute } from 'vue-router'
 // 获取运行时配置
 const config = useRuntimeConfig()
 const route = useRoute()
+const pageViewRouteName = computed(() => {
+  if (typeof route.name === 'string' && route.name) {
+    return route.name
+  }
+
+  if (route.path === '/') {
+    return 'index'
+  }
+
+  return route.path.split('/').filter(Boolean).join('-') || 'index'
+})
 
 // 通知容器引用
 const notificationContainer = ref(null)
