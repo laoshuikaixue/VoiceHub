@@ -1,0 +1,131 @@
+# .github/workflows/build-fpk.yml
+# VoiceHub 飞牛 fnOS FPK 安装包自动构建
+# 手动触发，版本号自动从 package.json 读取
+
+name: Build VoiceHub FPK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-fpk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 读取版本号 & 安装 fnpack
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          echo "APP_VER=$VER" >> "$GITHUB_ENV"
+          echo "📦 版本: $VER"
+
+          wget -q https://static2.fnnas.com/fnpack/fnpack-1.2.1-linux-amd64 -O /usr/local/bin/fnpack
+          chmod +x /usr/local/bin/fnpack
+
+      - name: 创建 FPK 目录
+        run: |
+          fnpack create voicehub --template docker
+          echo "📁 模板结构:"
+          find voicehub -type f | sort
+
+      - name: 写入 manifest
+        run: |
+          cat > voicehub/manifest <<EOF
+          appname=voicehub
+          version=${APP_VER}
+          display_name=VoiceHub
+          desc=基于 Nuxt 4 的低成本校园广播站点歌系统，支持点歌投票、排期管理、权限控制和打印导出。
+          platform=all
+          source=thirdparty
+          maintainer=laoshuikaixue
+          maintainer_url=https://github.com/laoshuikaixue
+          os_min_version=0.9.0
+          desktop_uidir=ui
+          desktop_applaunchname=voicehub.APPLICATION
+          service_port=3000
+          checkport=false
+          disable_authorization_path=true
+          EOF
+          sed -i 's/^[[:space:]]*//' voicehub/manifest
+
+      - name: 从仓库读取 docker-compose-prebuild-nju.yml 并写入
+        run: |
+          # 从项目根目录读取仓库内的 compose 文件
+          SRC_COMPOSE="docker-compose/docker-compose-prebuild-nju.yml"
+          # 目标路径
+          DST_COMPOSE="voicehub/app/docker/docker-compose.yaml"
+          
+          # 复制内容（保留原有格式）
+          cat "$SRC_COMPOSE" > "$DST_COMPOSE"
+          
+          echo "✅ 已从仓库读取: $SRC_COMPOSE 并写入目标: $DST_COMPOSE"
+
+      - name: 写入 cmd/main
+        run: |
+          cat > voicehub/cmd/main <<'SCRIPT'
+          #!/bin/bash
+          FILE_PATH="${TRIM_APPDEST}/docker/docker-compose.yaml"
+          is_docker_running() {
+            local name
+            [ -f "$FILE_PATH" ] || return 1
+            name=$(grep "container_name" "$FILE_PATH" | head -1 | awk -F ':' '{print $2}' | xargs)
+            [ -n "$name" ] || return 1
+            docker inspect "$name" 2>/dev/null | grep -q '"Status": "running",'
+          }
+          case $1 in
+            start)  exit 0 ;;
+            stop)   exit 0 ;;
+            status) is_docker_running && exit 0 || exit 3 ;;
+            *)      exit 1 ;;
+          esac
+          SCRIPT
+          chmod +x voicehub/cmd/main
+
+      - name: 写入 app/ui/config
+        run: |
+          mkdir -p voicehub/app/ui
+          cat > voicehub/app/ui/config <<'UICONFIG'
+          {
+            ".url": {
+              "voicehub.APPLICATION": {
+                "title": "VoiceHub",
+                "icon": "images/icon-{0}.png",
+                "type": "url",
+                "protocol": "http",
+                "port": "${TRIM_SERVICE_PORT:-3000}",
+                "url": "/",
+                "allUsers": true
+              }
+            }
+          }
+          UICONFIG
+
+      - name: 下载仓库图标
+        run: |
+          mkdir -p voicehub/app/ui/images
+          wget -q "https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/public/images/logo.png" -O voicehub/app/ui/images/icon-64.png
+          cp voicehub/app/ui/images/icon-64.png voicehub/app/ui/images/icon-256.png
+          cp voicehub/app/ui/images/icon-64.png voicehub/ICON.PNG
+          cp voicehub/app/ui/images/icon-256.png voicehub/ICON_256.PNG
+          echo "✅ 图标就绪 ($(wc -c < voicehub/ICON.PNG) bytes)"
+
+      - name: 最终目录 & 打包
+        run: |
+          echo "📦 FPK 结构:"
+          find voicehub -type f | sort
+          echo "---"
+          cd voicehub
+          fnpack build
+          ls -lh *.fpk 2>/dev/null || { echo "❌ 打包失败"; exit 1; }
+          mv *.fpk ../
+
+      - name: 上传 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: voicehub-fpk-${{ env.APP_VER }}
+          path: "*.fpk"
+          retention-days: 30
