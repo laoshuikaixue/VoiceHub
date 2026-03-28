@@ -20,6 +20,35 @@ NC='\033[0m' # No Color
 # 默认安装目录
 PROJECT_DIR="/opt/voicehub"
 
+ensure_pnpm() {
+    export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    mkdir -p "$PNPM_HOME"
+    export PATH="$PNPM_HOME:$PATH"
+
+    if ! command -v corepack &> /dev/null; then
+        npm install -g corepack
+        hash -r
+    fi
+
+    corepack enable
+
+    local package_manager=""
+    if [[ -f "$PROJECT_DIR/package.json" ]]; then
+        package_manager=$(node -p "try { JSON.parse(require('fs').readFileSync('$PROJECT_DIR/package.json', 'utf8')).packageManager || '' } catch { '' }")
+    fi
+
+    if [[ -n "$package_manager" ]]; then
+        corepack prepare "$package_manager" --activate
+    fi
+
+    hash -r
+
+    if ! command -v pnpm &> /dev/null; then
+        echo -e "${RED}错误: pnpm 不可用${NC}"
+        exit 1
+    fi
+}
+
 # 检测服务管理器类型
 detect_service_manager() {
     if [[ -f "$PROJECT_DIR/ecosystem.config.cjs" || -f "$PROJECT_DIR/ecosystem.config.js" ]]; then
@@ -72,6 +101,8 @@ fi
 
 echo -e "${GREEN}✓ 代码更新完成${NC}"
 echo ""
+
+ensure_pnpm
 
 # ============================================
 # 步骤 3: pnpm install 更新依赖

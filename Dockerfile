@@ -22,7 +22,6 @@ COPY scripts ./scripts
 # 安装所有依赖
 RUN set -eux; \
     corepack enable; \
-    corepack prepare pnpm@10.29.3 --activate; \
     pnpm config set fetch-retries 5; \
     pnpm config set fetch-retry-mintimeout 20000; \
     pnpm config set fetch-retry-maxtimeout 120000; \

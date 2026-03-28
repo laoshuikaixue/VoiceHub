@@ -20,7 +20,48 @@ NC='\033[0m' # No Color
 # 项目配置
 REPO_URL="https://github.com/laoshuikaixue/VoiceHub.git"
 PROJECT_DIR="/opt/voicehub"
-PNPM_VERSION="10.29.3"
+
+ensure_pnpm() {
+    export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    mkdir -p "$PNPM_HOME"
+    export PATH="$PNPM_HOME:$PATH"
+
+    if ! command -v corepack &> /dev/null; then
+        sudo npm install -g corepack
+        hash -r
+    fi
+
+    corepack enable
+
+    local package_manager=""
+    if [[ -f "$PROJECT_DIR/package.json" ]]; then
+        package_manager=$(node -p "try { JSON.parse(require('fs').readFileSync('$PROJECT_DIR/package.json', 'utf8')).packageManager || '' } catch { '' }")
+    fi
+
+    if [[ -n "$package_manager" ]]; then
+        corepack prepare "$package_manager" --activate
+    fi
+
+    hash -r
+
+    if ! command -v pnpm &> /dev/null; then
+        echo -e "${RED}错误: pnpm 不可用${NC}"
+        exit 1
+    fi
+}
+
+persist_pm2_binary() {
+    hash -r
+
+    if ! command -v pm2 &> /dev/null && [[ -x "$PNPM_HOME/pm2" ]]; then
+        export PATH="$PNPM_HOME:$PATH"
+        hash -r
+    fi
+
+    if command -v pm2 &> /dev/null; then
+        sudo ln -sf "$(command -v pm2)" /usr/local/bin/pm2
+    fi
+}
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}       VoiceHub 一键部署脚本${NC}"
@@ -85,11 +126,7 @@ if [[ "$NODE_NEED_INSTALL" == "true" ]]; then
     echo -e "${GREEN}✓ Node.js 安装完成: $(node -v)${NC}"
 fi
 
-export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
-mkdir -p "$PNPM_HOME"
-export PATH="$PNPM_HOME:$PATH"
-corepack enable
-corepack prepare "pnpm@${PNPM_VERSION}" --activate
+ensure_pnpm
 
 echo ""
 
@@ -148,6 +185,8 @@ fi
 
 cd "$PROJECT_DIR"
 echo ""
+
+ensure_pnpm
 
 # ============================================
 # 步骤 5: 配置 .env 文件
@@ -314,9 +353,13 @@ if [[ "$SERVICE_CHOICE" == "1" ]]; then
     # 检查并安装 pm2
     if ! command -v pm2 &> /dev/null; then
         echo -e "${YELLOW}正在安装 PM2...${NC}"
-        pnpm add -g pm2
+        if ! pnpm add -g pm2; then
+            sudo env "PNPM_HOME=$PNPM_HOME" PATH="$PNPM_HOME:$PATH" pnpm add -g pm2
+        fi
+        persist_pm2_binary
         echo -e "${GREEN}✓ PM2 安装完成${NC}"
     else
+        persist_pm2_binary
         echo -e "${GREEN}✓ PM2 已安装${NC}"
     fi
     

@@ -21,6 +21,35 @@ NC='\033[0m' # No Color
 # 默认安装目录
 PROJECT_DIR="/opt/voicehub"
 
+ensure_pnpm() {
+    export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    mkdir -p "$PNPM_HOME"
+    export PATH="$PNPM_HOME:$PATH"
+
+    if ! command -v corepack &> /dev/null; then
+        sudo npm install -g corepack
+        hash -r
+    fi
+
+    corepack enable
+
+    local package_manager=""
+    if [[ -f "$PROJECT_DIR/package.json" ]]; then
+        package_manager=$(node -p "try { JSON.parse(require('fs').readFileSync('$PROJECT_DIR/package.json', 'utf8')).packageManager || '' } catch { '' }")
+    fi
+
+    if [[ -n "$package_manager" ]]; then
+        corepack prepare "$package_manager" --activate
+    fi
+
+    hash -r
+
+    if ! command -v pnpm &> /dev/null; then
+        echo -e "${RED}错误: pnpm 不可用${NC}"
+        exit 1
+    fi
+}
+
 # 检查项目目录
 check_project() {
     if [[ ! -d "$PROJECT_DIR" ]]; then
@@ -29,6 +58,7 @@ check_project() {
         exit 1
     fi
     cd "$PROJECT_DIR"
+    ensure_pnpm
 }
 
 # 检测服务管理器类型
