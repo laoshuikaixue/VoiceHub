@@ -123,6 +123,8 @@ export default defineEventHandler(async (event) => {
           : null
     }
 
+    const currentRequesterId = updateData.requesterId || existingSong.requesterId
+
     // 更新歌曲
     const updatedSongResult = await db
       .update(songs)
@@ -139,7 +141,6 @@ export default defineEventHandler(async (event) => {
         .where(eq(songCollaborators.songId, songId))
 
       const existingCollaboratorUserIds = existingCollaborators.map((c) => c.userId)
-      const currentRequesterId = updateData.requesterId || existingSong.requesterId
       const newCollaboratorIds = [
         ...new Set(
           body.collaborators
@@ -202,7 +203,7 @@ export default defineEventHandler(async (event) => {
         .where(eq(songCollaborators.songId, songId))
 
       const notifyUserIds = [
-        existingSong.requesterId,
+        currentRequesterId,
         ...latestCollaborators.map((collaborator) => collaborator.userId)
       ].filter((userId): userId is number => Number.isInteger(userId) && userId > 0)
 
