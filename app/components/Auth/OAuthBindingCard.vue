@@ -6,30 +6,30 @@
     </div>
 
     <div v-else class="space-y-4">
-      <!-- GitHub -->
-      <div v-if="config.public.oauth.github" :class="itemClass">
+      <div v-for="provider in enabledProviders" :key="provider.key" :class="itemClass">
         <div class="flex items-center gap-4">
           <div
             class="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-zinc-800 text-zinc-100"
           >
-            <AuthProvidersGitHubIcon class="w-5 h-5" />
+            <AuthProvidersGitHubIcon v-if="provider.key === 'github'" class="w-5 h-5" />
+            <AuthProvidersCasdoorIcon v-else-if="provider.key === 'casdoor'" class="w-5 h-5" />
+            <AuthProvidersGoogleIcon v-else-if="provider.key === 'google'" class="w-5 h-5" />
+            <Shield v-else :size="20" />
           </div>
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-zinc-200">{{
-              getProviderDisplayName('github')
-            }}</span>
-            <span v-if="githubIdentity" class="text-[11px] text-blue-500 font-medium mt-0.5">{{
-              githubIdentity.providerUsername
+            <span class="text-sm font-bold text-zinc-200">{{ provider.name || getProviderDisplayName(provider.key) }}</span>
+            <span v-if="getIdentityByProvider(provider.key)" class="text-[11px] text-blue-500 font-medium mt-0.5">{{
+              getIdentityByProvider(provider.key).providerUsername
             }}</span>
             <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
           </div>
         </div>
 
         <button
-          v-if="githubIdentity"
+          v-if="getIdentityByProvider(provider.key)"
           class="px-4 py-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all disabled:opacity-50"
           :disabled="actionLoading"
-          @click="confirmUnbind('github')"
+          @click="confirmUnbind(provider.key)"
         >
           {{ actionLoading ? '处理中...' : '解绑' }}
         </button>
@@ -37,81 +37,7 @@
           v-else
           class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
-          @click="handleBind('github')"
-        >
-          {{ actionLoading ? '跳转中...' : '立即绑定' }}
-        </button>
-      </div>
-
-      <!-- Casdoor (如果启用) -->
-      <div v-if="config.public.oauth.casdoor" :class="itemClass">
-        <div class="flex items-center gap-4">
-          <div
-            class="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-zinc-800 text-zinc-100"
-          >
-            <Shield :size="20" />
-          </div>
-          <div class="flex flex-col">
-            <span class="text-sm font-bold text-zinc-200">{{
-              getProviderDisplayName('casdoor')
-            }}</span>
-            <span v-if="casdoorIdentity" class="text-[11px] text-blue-500 font-medium mt-0.5">{{
-              casdoorIdentity.providerUsername
-            }}</span>
-            <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
-          </div>
-        </div>
-
-        <button
-          v-if="casdoorIdentity"
-          class="px-4 py-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all disabled:opacity-50"
-          :disabled="actionLoading"
-          @click="confirmUnbind('casdoor')"
-        >
-          {{ actionLoading ? '处理中...' : '解绑' }}
-        </button>
-        <button
-          v-else
-          class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
-          :disabled="actionLoading"
-          @click="handleBind('casdoor')"
-        >
-          {{ actionLoading ? '跳转中...' : '立即绑定' }}
-        </button>
-      </div>
-
-      <!-- Google (如果启用) -->
-      <div v-if="config.public.oauth.google" :class="itemClass">
-        <div class="flex items-center gap-4">
-          <div
-            class="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-zinc-800 text-zinc-100"
-          >
-            <AuthProvidersGoogleIcon class="w-5 h-5" />
-          </div>
-          <div class="flex flex-col">
-            <span class="text-sm font-bold text-zinc-200">{{
-              getProviderDisplayName('google')
-            }}</span>
-            <span v-if="googleIdentity" class="text-[11px] text-blue-500 font-medium mt-0.5">{{
-              googleIdentity.providerUsername
-            }}</span>
-            <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
-          </div>
-        </div>
-
-        <button
-          v-if="googleIdentity"
-          class="px-4 py-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all disabled:opacity-50"
-          :disabled="actionLoading"
-          @click="confirmUnbind('google')"
-        >
-          {{ actionLoading ? '处理中...' : '解绑' }}
-        </button>
-        <button
-          v-else
-          class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
-          :disabled="actionLoading"
-          @click="handleBind('google')"
+          @click="handleBind(provider.key)"
         >
           {{ actionLoading ? '跳转中...' : '立即绑定' }}
         </button>
@@ -262,7 +188,7 @@ import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { startRegistration, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 
-const config = useRuntimeConfig()
+const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
 const identities = ref([])
 const loading = ref(true)
@@ -347,9 +273,16 @@ const confirmDialog = ref({
 const itemClass =
   'flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all group'
 
-const githubIdentity = computed(() => identities.value.find((i) => i.provider === 'github'))
-const casdoorIdentity = computed(() => identities.value.find((i) => i.provider === 'casdoor'))
-const googleIdentity = computed(() => identities.value.find((i) => i.provider === 'google'))
+const enabledProviders = computed(() => oauthProviders.value || [])
+
+const getProviderName = (provider: string) => {
+  const matched = enabledProviders.value.find((item: any) => item.key === provider)
+  return matched?.name || getProviderDisplayName(provider)
+}
+
+const getIdentityByProvider = (provider: string) =>
+  identities.value.find((item: any) => item.provider === provider)
+
 const webauthnIdentities = computed(() => identities.value.filter((i) => i.provider === 'webauthn'))
 
 const fetchIdentities = async () => {
@@ -370,7 +303,7 @@ const handleBind = (provider) => {
 }
 
 const confirmUnbind = (provider) => {
-  const providerName = getProviderDisplayName(provider)
+  const providerName = getProviderName(provider)
 
   confirmDialog.value = {
     title: '解除绑定',
@@ -460,6 +393,7 @@ const handleWebAuthnRegister = async () => {
 }
 
 onMounted(async () => {
+  await refreshSiteConfig()
   fetchIdentities()
   
   isSecureContext.value = window.isSecureContext

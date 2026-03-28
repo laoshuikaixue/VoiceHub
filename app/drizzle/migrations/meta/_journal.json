@@ -106,6 +106,13 @@
       "when": 1773927000000,
       "tag": "20260319133000_add_submission_remarks",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1774700000000,
+      "tag": "20260328120000_add_custom_oauth_provider",
+      "breakpoints": true
     }
   ]
 }

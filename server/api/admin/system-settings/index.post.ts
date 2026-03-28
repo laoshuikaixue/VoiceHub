@@ -241,6 +241,200 @@ export default defineEventHandler(async (event) => {
       updateData.smtpFromName = body.smtpFromName
     }
 
+    // OAuth 配置字段
+    if (body.oauthRedirectUri !== undefined) {
+      if (body.oauthRedirectUri !== null && body.oauthRedirectUri !== '') {
+        try {
+          const uri = new URL(body.oauthRedirectUri)
+          if (!uri.pathname.includes('/auth/') || !uri.pathname.includes('/callback')) {
+            throw createError({
+              statusCode: 400,
+              message: 'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/auth/[provider]/callback'
+            })
+          }
+        } catch (error: any) {
+          if (error?.statusCode === 400) throw error
+          throw createError({
+            statusCode: 400,
+            message: 'oauthRedirectUri 不是合法URL，示例：https://yourdomain.com/auth/[provider]/callback'
+          })
+        }
+      }
+      updateData.oauthRedirectUri = body.oauthRedirectUri
+    }
+
+    if (body.oauthStateSecret !== undefined && body.oauthStateSecret !== '••••••••••••••••') {
+      updateData.oauthStateSecret = body.oauthStateSecret
+    }
+
+    // GitHub OAuth
+    if (body.githubOAuthEnabled !== undefined) {
+      if (typeof body.githubOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'githubOAuthEnabled 必须是布尔值'
+        })
+      }
+      updateData.githubOAuthEnabled = body.githubOAuthEnabled
+    }
+
+    if (body.githubClientId !== undefined) {
+      updateData.githubClientId = body.githubClientId
+    }
+
+    if (body.githubClientSecret !== undefined && body.githubClientSecret !== '••••••••••••••••') {
+      updateData.githubClientSecret = body.githubClientSecret
+    }
+
+    // Casdoor OAuth
+    if (body.casdoorOAuthEnabled !== undefined) {
+      if (typeof body.casdoorOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'casdoorOAuthEnabled 必须是布尔值'
+        })
+      }
+      updateData.casdoorOAuthEnabled = body.casdoorOAuthEnabled
+    }
+
+    if (body.casdoorServerUrl !== undefined) {
+      updateData.casdoorServerUrl = body.casdoorServerUrl
+    }
+
+    if (body.casdoorClientId !== undefined) {
+      updateData.casdoorClientId = body.casdoorClientId
+    }
+
+    if (body.casdoorClientSecret !== undefined && body.casdoorClientSecret !== '••••••••••••••••') {
+      updateData.casdoorClientSecret = body.casdoorClientSecret
+    }
+
+    if (body.casdoorOrganizationName !== undefined) {
+      updateData.casdoorOrganizationName = body.casdoorOrganizationName
+    }
+
+    // Google OAuth
+    if (body.googleOAuthEnabled !== undefined) {
+      if (typeof body.googleOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'googleOAuthEnabled 必须是布尔值'
+        })
+      }
+      updateData.googleOAuthEnabled = body.googleOAuthEnabled
+    }
+
+    if (body.googleClientId !== undefined) {
+      updateData.googleClientId = body.googleClientId
+    }
+
+    if (body.googleClientSecret !== undefined && body.googleClientSecret !== '••••••••••••••••') {
+      updateData.googleClientSecret = body.googleClientSecret
+    }
+
+    // Custom OAuth2
+    if (body.customOAuthEnabled !== undefined) {
+      if (typeof body.customOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'customOAuthEnabled 必须是布尔值'
+        })
+      }
+      updateData.customOAuthEnabled = body.customOAuthEnabled
+    }
+
+    if (body.customOAuthDisplayName !== undefined) {
+      updateData.customOAuthDisplayName = body.customOAuthDisplayName
+    }
+
+    if (body.customOAuthAuthorizeUrl !== undefined) {
+      if (body.customOAuthAuthorizeUrl) {
+        try {
+          new URL(body.customOAuthAuthorizeUrl)
+        } catch {
+          throw createError({ statusCode: 400, message: 'customOAuthAuthorizeUrl 不是合法URL' })
+        }
+      }
+      updateData.customOAuthAuthorizeUrl = body.customOAuthAuthorizeUrl
+    }
+
+    if (body.customOAuthTokenUrl !== undefined) {
+      if (body.customOAuthTokenUrl) {
+        try {
+          new URL(body.customOAuthTokenUrl)
+        } catch {
+          throw createError({ statusCode: 400, message: 'customOAuthTokenUrl 不是合法URL' })
+        }
+      }
+      updateData.customOAuthTokenUrl = body.customOAuthTokenUrl
+    }
+
+    if (body.customOAuthUserInfoUrl !== undefined) {
+      if (body.customOAuthUserInfoUrl) {
+        try {
+          new URL(body.customOAuthUserInfoUrl)
+        } catch {
+          throw createError({ statusCode: 400, message: 'customOAuthUserInfoUrl 不是合法URL' })
+        }
+      }
+      updateData.customOAuthUserInfoUrl = body.customOAuthUserInfoUrl
+    }
+
+    if (body.customOAuthScope !== undefined) {
+      updateData.customOAuthScope = body.customOAuthScope
+    }
+
+    if (body.customOAuthClientId !== undefined) {
+      updateData.customOAuthClientId = body.customOAuthClientId
+    }
+
+    if (
+      body.customOAuthClientSecret !== undefined
+      && body.customOAuthClientSecret !== '••••••••••••••••'
+    ) {
+      updateData.customOAuthClientSecret = body.customOAuthClientSecret
+    }
+
+    if (body.customOAuthUserIdField !== undefined) {
+      updateData.customOAuthUserIdField = body.customOAuthUserIdField
+    }
+
+    if (body.customOAuthUsernameField !== undefined) {
+      updateData.customOAuthUsernameField = body.customOAuthUsernameField
+    }
+
+    if (body.customOAuthNameField !== undefined) {
+      updateData.customOAuthNameField = body.customOAuthNameField
+    }
+
+    if (body.customOAuthEmailField !== undefined) {
+      updateData.customOAuthEmailField = body.customOAuthEmailField
+    }
+
+    if (body.customOAuthAvatarField !== undefined) {
+      updateData.customOAuthAvatarField = body.customOAuthAvatarField
+    }
+
+    if (body.customOAuthEnabled === true) {
+      const requiredFields = [
+        { key: 'customOAuthAuthorizeUrl', label: '授权地址' },
+        { key: 'customOAuthTokenUrl', label: '令牌地址' },
+        { key: 'customOAuthUserInfoUrl', label: '用户信息地址' },
+        { key: 'customOAuthClientId', label: 'Client ID' },
+        { key: 'customOAuthClientSecret', label: 'Client Secret' }
+      ]
+
+      for (const field of requiredFields) {
+        const value = body[field.key]
+        if (typeof value !== 'string' || !value.trim()) {
+          throw createError({
+            statusCode: 400,
+            message: `启用第三方 OAuth2 时必须填写${field.label}`
+          })
+        }
+      }
+    }
+
     // 验证每日、每周和每月限额三选一逻辑
     const limitSettings = [
       body.dailySubmissionLimit,
@@ -301,7 +495,33 @@ export default defineEventHandler(async (event) => {
           smtpUsername: updateData.smtpUsername ?? null,
           smtpPassword: updateData.smtpPassword ?? null,
           smtpFromEmail: updateData.smtpFromEmail ?? null,
-          smtpFromName: updateData.smtpFromName ?? '校园广播站'
+          smtpFromName: updateData.smtpFromName ?? '校园广播站',
+          oauthRedirectUri: updateData.oauthRedirectUri ?? null,
+          oauthStateSecret: updateData.oauthStateSecret ?? null,
+          githubOAuthEnabled: updateData.githubOAuthEnabled ?? false,
+          githubClientId: updateData.githubClientId ?? null,
+          githubClientSecret: updateData.githubClientSecret ?? null,
+          casdoorOAuthEnabled: updateData.casdoorOAuthEnabled ?? false,
+          casdoorServerUrl: updateData.casdoorServerUrl ?? null,
+          casdoorClientId: updateData.casdoorClientId ?? null,
+          casdoorClientSecret: updateData.casdoorClientSecret ?? null,
+          casdoorOrganizationName: updateData.casdoorOrganizationName ?? null,
+          googleOAuthEnabled: updateData.googleOAuthEnabled ?? false,
+          googleClientId: updateData.googleClientId ?? null,
+          googleClientSecret: updateData.googleClientSecret ?? null,
+          customOAuthEnabled: updateData.customOAuthEnabled ?? false,
+          customOAuthDisplayName: updateData.customOAuthDisplayName ?? null,
+          customOAuthAuthorizeUrl: updateData.customOAuthAuthorizeUrl ?? null,
+          customOAuthTokenUrl: updateData.customOAuthTokenUrl ?? null,
+          customOAuthUserInfoUrl: updateData.customOAuthUserInfoUrl ?? null,
+          customOAuthScope: updateData.customOAuthScope ?? null,
+          customOAuthClientId: updateData.customOAuthClientId ?? null,
+          customOAuthClientSecret: updateData.customOAuthClientSecret ?? null,
+          customOAuthUserIdField: updateData.customOAuthUserIdField ?? null,
+          customOAuthUsernameField: updateData.customOAuthUsernameField ?? null,
+          customOAuthNameField: updateData.customOAuthNameField ?? null,
+          customOAuthEmailField: updateData.customOAuthEmailField ?? null,
+          customOAuthAvatarField: updateData.customOAuthAvatarField ?? null
         })
         .returning()
       settings = newSettingsResult[0]
@@ -346,3 +566,4 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
+

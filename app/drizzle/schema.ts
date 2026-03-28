@@ -156,6 +156,39 @@ export const systemSettings = pgTable('SystemSettings', {
   enableReplayRequests: boolean('enableReplayRequests').default(false).notNull(),
   enableCollaborativeSubmission: boolean('enableCollaborativeSubmission').default(true).notNull(),
   enableSubmissionRemarks: boolean('enableSubmissionRemarks').default(false).notNull(),
+
+  // OAuth 配置
+  oauthRedirectUri: text('oauthRedirectUri'),
+  oauthStateSecret: text('oauthStateSecret'),
+  oauthProviders: text('oauthProviders').default('[]'),
+  // GitHub OAuth
+  githubOAuthEnabled: boolean('githubOAuthEnabled').default(false).notNull(),
+  githubClientId: text('githubClientId'),
+  githubClientSecret: text('githubClientSecret'),
+  // Casdoor OAuth
+  casdoorOAuthEnabled: boolean('casdoorOAuthEnabled').default(false).notNull(),
+  casdoorServerUrl: text('casdoorServerUrl'),
+  casdoorClientId: text('casdoorClientId'),
+  casdoorClientSecret: text('casdoorClientSecret'),
+  casdoorOrganizationName: text('casdoorOrganizationName'),
+  // Google OAuth
+  googleOAuthEnabled: boolean('googleOAuthEnabled').default(false).notNull(),
+  googleClientId: text('googleClientId'),
+  googleClientSecret: text('googleClientSecret'),
+  // Custom OAuth2
+  customOAuthEnabled: boolean('customOAuthEnabled').default(false).notNull(),
+  customOAuthDisplayName: text('customOAuthDisplayName'),
+  customOAuthAuthorizeUrl: text('customOAuthAuthorizeUrl'),
+  customOAuthTokenUrl: text('customOAuthTokenUrl'),
+  customOAuthUserInfoUrl: text('customOAuthUserInfoUrl'),
+  customOAuthScope: text('customOAuthScope'),
+  customOAuthClientId: text('customOAuthClientId'),
+  customOAuthClientSecret: text('customOAuthClientSecret'),
+  customOAuthUserIdField: text('customOAuthUserIdField'),
+  customOAuthUsernameField: text('customOAuthUsernameField'),
+  customOAuthNameField: text('customOAuthNameField'),
+  customOAuthEmailField: text('customOAuthEmailField'),
+  customOAuthAvatarField: text('customOAuthAvatarField'),
 });
 
 // 歌曲黑名单表

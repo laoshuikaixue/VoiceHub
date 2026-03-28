@@ -22,6 +22,11 @@
 
 - **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐、QQ音乐和哔哩哔哩搜索，可选择期望播出时段
 - **多平台登录支持**：
+  - **OAuth 账户系统**：支持通过 GitHub、Casdoor 等 OAuth 提供商快速创建和登录账户
+    - **直接创建账户**：用户可通过 OAuth 认证直接创建新账户，无需预设用户名和密码
+    - **账户绑定**：已有账户的用户可将 OAuth 身份绑定到现有账户，实现多平台统一登录
+    - **WebAuthn 支持**：支持 Windows Hello、生物识别和硬件安全密钥（如 YubiKey）登录
+    - **双因素认证（2FA）**：支持 TOTP 和邮箱验证，增强账户安全性
   - **网易云音乐登录**：支持扫码登录，登录后可搜索个人歌单、收藏及播客电台内容
     - **一键添加到歌单**：登录后支持将排期中的网易云音乐歌曲一键添加到个人歌单
     - **从歌单投稿**：支持从个人歌单中直接投稿歌曲到系统
@@ -38,7 +43,17 @@
 ### 👥 用户管理
 
 - **用户管理**：管理员添加用户，支持按年级班级分类
+- **账户创建方式**：
+  - 管理员直接添加账户
+  - 用户通过 OAuth 快速创建账户
+  - 用户通过传统用户名/密码注册
 - **权限控制**：多级权限管理，支持普通用户、管理员、超级管理员
+- **账户安全**：
+  - bcrypt 密码加密
+  - 双因素认证（TOTP、邮箱验证）
+  - WebAuthn 支持（生物识别、硬件密钥）
+  - 账户锁定和风险控制
+- **身份关联**：支持将多个 OAuth 身份绑定到同一账户，实现统一登录
 - **黑名单管理**：支持歌曲和艺术家黑名单，自动过滤不当内容
 
 ### 📅 排期管理
@@ -446,13 +461,43 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 ## 环境变量说明
 
-| 变量名          | 必填 | 说明                              | 示例值                                                                 |
-|--------------|----|---------------------------------|---------------------------------------------------------------------|
-| DATABASE_URL | 是  | PostgreSQL数据库连接字符串              | `postgresql://username:password@host:port/database?sslmode=require` |
-| JWT_SECRET   | 是  | JWT令牌签名密钥，建议使用强随机字符串            | `your-very-secure-jwt-secret-key`                                   |
-| NODE_ENV     | 否  | 运行环境，development或production     | `production`                                                        |
-| REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                                |
-| NITRO_PRESET | 否  | Nitro预设                         | `vercel`                                                            |
+| 变量名               | 必填 | 说明                              | 示例值                                                                 |
+|------------------|----|---------------------------------|---------------------------------------------------------------------|
+| DATABASE_URL     | 是  | PostgreSQL数据库连接字符串              | `postgresql://username:password@host:port/database?sslmode=require` |
+| JWT_SECRET       | 是  | JWT令牌签名密钥，建议使用强随机字符串            | `your-very-secure-jwt-secret-key`                                   |
+| NODE_ENV         | 否  | 运行环境，development或production     | `production`                                                        |
+| REDIS_URL        | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                                |
+| NITRO_PRESET     | 否  | Nitro预设                         | `vercel`                                                            |
+| OAUTH_STATE_SECRET | 是* | OAuth状态参数加密密钥（启用OAuth时必填）        | `your-oauth-state-secret-key`                                       |
+| OAUTH_REDIRECT_URI | 是* | OAuth重定向URI（启用OAuth时必填）          | `https://yourdomain.com/auth/[provider]/callback`                   |
+
+*启用OAuth第三方登录时这两个变量为必填
+
+## OAuth 配置
+
+系统支持通过 OAuth 提供商（如 GitHub、Casdoor 等）快速创建账户和登录。配置 OAuth：
+
+1. **配置环境变量**：
+   ```env
+   OAUTH_STATE_SECRET="your-secure-random-key"
+   OAUTH_REDIRECT_URI="https://yourdomain.com/auth/[provider]/callback"
+   ```
+
+2. **OAuth 提供商配置**：
+   在 OAuth 提供商的开发者控制台配置重定向 URI，确保与上述配置一致
+
+3. **账户创建流程**：
+   - 用户点击 OAuth 登录按钮
+   - 完成 OAuth 认证后，若身份未关联，用户可选择：
+     - 创建新账户：设置用户名和密码，直接创建新账户
+     - 绑定现有账户：输入现有用户名和密码进行绑定
+   - 成功后自动登录
+
+4. **安全特性**：
+   - 所有密码使用 bcrypt 加密
+   - OAuth 状态参数使用 AES 加密校验
+   - 绑定令牌有 10 分钟有效期
+   - 支持账户锁定和风险控制
 
 ## 项目结构
 

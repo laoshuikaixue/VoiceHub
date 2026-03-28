@@ -1,4 +1,21 @@
 import { createError } from 'h3'
+import type { ProviderRuntimeConfig } from '~~/server/services/oauthConfigService'
+
+const getObjectByPath = (source: any, path?: string): any => {
+  if (!source || !path) return undefined
+  return path
+    .split('.')
+    .reduce((acc, key) => (acc !== null && acc !== undefined ? acc[key] : undefined), source)
+}
+
+const firstStringValue = (values: any[]): string | undefined => {
+  for (const value of values) {
+    if (value === null || value === undefined) continue
+    if (typeof value === 'string' && value.trim()) return value.trim()
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  }
+  return undefined
+}
 
 export interface OAuthUserInfo {
   id: string
@@ -12,32 +29,32 @@ export interface OAuthStrategy {
   /**
    * 获取授权跳转 URL
    */
-  getAuthorizeUrl(redirectUri: string, state: string): string
+  getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig): string
 
   /**
    * 使用 code 换取 access_token
    */
-  exchangeToken(code: string, redirectUri: string): Promise<string>
+  exchangeToken(code: string, redirectUri: string, config?: ProviderRuntimeConfig): Promise<string>
 
   /**
    * 获取用户信息
    */
-  getUserInfo(accessToken: string): Promise<OAuthUserInfo>
+  getUserInfo(accessToken: string, config?: ProviderRuntimeConfig): Promise<OAuthUserInfo>
 }
 
 // GitHub 策略实现
 const githubStrategy: OAuthStrategy = {
-  getAuthorizeUrl(redirectUri: string, state: string) {
-    const clientId = process.env.GITHUB_CLIENT_ID
+  getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig) {
+    const clientId = config?.clientId || process.env.GITHUB_CLIENT_ID
     if (!clientId)
       throw createError({ statusCode: 500, message: 'GitHub Client ID not configured' })
 
     return `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=${encodeURIComponent(state)}`
   },
 
-  async exchangeToken(code: string, redirectUri: string) {
-    const clientId = process.env.GITHUB_CLIENT_ID
-    const clientSecret = process.env.GITHUB_CLIENT_SECRET
+  async exchangeToken(code: string, redirectUri: string, config?: ProviderRuntimeConfig) {
+    const clientId = config?.clientId || process.env.GITHUB_CLIENT_ID
+    const clientSecret = config?.clientSecret || process.env.GITHUB_CLIENT_SECRET
 
     if (!clientId || !clientSecret) {
       throw createError({ statusCode: 500, message: 'GitHub config missing' })
@@ -94,19 +111,19 @@ const githubStrategy: OAuthStrategy = {
 
 // Casdoor 策略实现
 const casdoorStrategy: OAuthStrategy = {
-  getAuthorizeUrl(redirectUri: string, state: string) {
-    const clientId = process.env.CASDOOR_CLIENT_ID
-    const endpoint = process.env.CASDOOR_ENDPOINT
+  getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig) {
+    const clientId = config?.clientId || process.env.CASDOOR_CLIENT_ID
+    const endpoint = config?.endpoint || process.env.CASDOOR_ENDPOINT
     if (!clientId || !endpoint)
       throw createError({ statusCode: 500, message: 'Casdoor config missing' })
 
     return `${endpoint}/login/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read&state=${encodeURIComponent(state)}`
   },
 
-  async exchangeToken(code: string, redirectUri: string) {
-    const clientId = process.env.CASDOOR_CLIENT_ID
-    const clientSecret = process.env.CASDOOR_CLIENT_SECRET
-    const endpoint = process.env.CASDOOR_ENDPOINT
+  async exchangeToken(code: string, redirectUri: string, config?: ProviderRuntimeConfig) {
+    const clientId = config?.clientId || process.env.CASDOOR_CLIENT_ID
+    const clientSecret = config?.clientSecret || process.env.CASDOOR_CLIENT_SECRET
+    const endpoint = config?.endpoint || process.env.CASDOOR_ENDPOINT
 
     if (!clientId || !clientSecret || !endpoint) {
       throw createError({ statusCode: 500, message: 'Casdoor config missing' })
@@ -142,8 +159,8 @@ const casdoorStrategy: OAuthStrategy = {
     }
   },
 
-  async getUserInfo(accessToken: string) {
-    const endpoint = process.env.CASDOOR_ENDPOINT
+  async getUserInfo(accessToken: string, config?: ProviderRuntimeConfig) {
+    const endpoint = config?.endpoint || process.env.CASDOOR_ENDPOINT
     if (!endpoint) throw createError({ statusCode: 500, message: 'Casdoor config missing' })
 
     let userInfo: any = {}
@@ -177,17 +194,17 @@ const casdoorStrategy: OAuthStrategy = {
 
 // Google 策略实现
 const googleStrategy: OAuthStrategy = {
-  getAuthorizeUrl(redirectUri: string, state: string) {
-    const clientId = process.env.GOOGLE_CLIENT_ID
+  getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig) {
+    const clientId = config?.clientId || process.env.GOOGLE_CLIENT_ID
     if (!clientId)
       throw createError({ statusCode: 500, message: 'Google Client ID not configured' })
 
     return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&state=${encodeURIComponent(state)}`
   },
 
-  async exchangeToken(code: string, redirectUri: string) {
-    const clientId = process.env.GOOGLE_CLIENT_ID
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  async exchangeToken(code: string, redirectUri: string, config?: ProviderRuntimeConfig) {
+    const clientId = config?.clientId || process.env.GOOGLE_CLIENT_ID
+    const clientSecret = config?.clientSecret || process.env.GOOGLE_CLIENT_SECRET
 
     if (!clientId || !clientSecret) {
       throw createError({ statusCode: 500, message: 'Google config missing' })
@@ -243,11 +260,129 @@ const googleStrategy: OAuthStrategy = {
   }
 }
 
+const customOAuth2Strategy: OAuthStrategy = {
+  getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig) {
+    const authorizeUrl = config?.authorizeUrl
+    const clientId = config?.clientId
+    const scope = config?.scope?.trim() || 'openid profile email'
+
+    if (!authorizeUrl || !clientId) {
+      throw createError({ statusCode: 500, message: 'Custom OAuth2 config missing' })
+    }
+
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope,
+      state
+    })
+
+    return `${authorizeUrl}${authorizeUrl.includes('?') ? '&' : '?'}${params.toString()}`
+  },
+
+  async exchangeToken(code: string, redirectUri: string, config?: ProviderRuntimeConfig) {
+    const tokenUrl = config?.tokenUrl
+    const clientId = config?.clientId
+    const clientSecret = config?.clientSecret
+
+    if (!tokenUrl || !clientId || !clientSecret) {
+      throw createError({ statusCode: 500, message: 'Custom OAuth2 config missing' })
+    }
+
+    try {
+      const body = new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri
+      })
+
+      const tokenResponse = await $fetch<any>(tokenUrl, {
+        method: 'POST',
+        body,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      })
+
+      if (tokenResponse?.error) {
+        throw new Error(tokenResponse.error_description || tokenResponse.error || '授权失败，请重试')
+      }
+
+      if (!tokenResponse?.access_token) {
+        throw new Error('未能获取访问令牌')
+      }
+      return tokenResponse.access_token
+    } catch (e: any) {
+      console.error('Custom OAuth2 token exchange failed', e.message || e)
+      const errorMessage = e?.data?.error_description || e?.message || '令牌请求失败'
+      throw new Error(errorMessage)
+    }
+  },
+
+  async getUserInfo(accessToken: string, config?: ProviderRuntimeConfig) {
+    const userInfoUrl = config?.userInfoUrl
+    if (!userInfoUrl) {
+      throw createError({ statusCode: 500, message: 'Custom OAuth2 config missing' })
+    }
+
+    try {
+      const userInfo = await $fetch<any>(userInfoUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
+
+      const id = firstStringValue([
+        getObjectByPath(userInfo, config?.userIdField),
+        getObjectByPath(userInfo, 'id'),
+        getObjectByPath(userInfo, 'sub')
+      ])
+
+      if (!id) {
+        throw new Error('用户信息中缺少唯一标识字段，请配置用户 ID 字段')
+      }
+
+      const username = firstStringValue([
+        getObjectByPath(userInfo, config?.usernameField),
+        getObjectByPath(userInfo, 'username'),
+        getObjectByPath(userInfo, 'preferred_username'),
+        getObjectByPath(userInfo, 'email'),
+        getObjectByPath(userInfo, 'name'),
+        id
+      ])
+
+      return {
+        id,
+        username: username || id,
+        name: firstStringValue([
+          getObjectByPath(userInfo, config?.nameField),
+          getObjectByPath(userInfo, 'name')
+        ]),
+        email: firstStringValue([
+          getObjectByPath(userInfo, config?.emailField),
+          getObjectByPath(userInfo, 'email')
+        ]),
+        avatar: firstStringValue([
+          getObjectByPath(userInfo, config?.avatarField),
+          getObjectByPath(userInfo, 'avatar'),
+          getObjectByPath(userInfo, 'picture')
+        ])
+      }
+    } catch (e: any) {
+      console.error('Custom OAuth2 user info failed', e)
+      throw new Error(e?.message || '获取用户信息失败')
+    }
+  }
+}
+
 // 策略注册表
 const strategies: Record<string, OAuthStrategy> = {
   github: githubStrategy,
   casdoor: casdoorStrategy,
-  google: googleStrategy
+  google: googleStrategy,
+  oauth2: customOAuth2Strategy
 }
 
 export const getOAuthStrategy = (provider: string): OAuthStrategy => {

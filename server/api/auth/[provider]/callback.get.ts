@@ -4,6 +4,12 @@ import { db, eq, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
+import {
+  getOAuthBaseConfig,
+  getProviderRuntimeConfig,
+  isOAuthProviderEnabled,
+  isSupportedOAuthProvider
+} from '~~/server/services/oauthConfigService'
 
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
@@ -15,12 +21,33 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing provider' })
   }
 
+  if (!isSupportedOAuthProvider(provider)) {
+    throw createError({ statusCode: 400, message: '当前仅支持 GitHub / Casdoor / Google / 第三方 OAuth2' })
+  }
+
+  const enabled = await isOAuthProviderEnabled(provider)
+  if (!enabled) {
+    return sendRedirect(
+      event,
+      `/auth/error?code=PROVIDER_DISABLED&message=${encodeURIComponent('该 OAuth 登录方式未启用')}`
+    )
+  }
+
   if (!code || !stateStr) {
     throw createError({ statusCode: 400, message: 'Missing code or state' })
   }
 
   // 1. 验证 State
   const csrfCookie = getCookie(event, 'oauth_csrf')
+  console.log(`[OAuth] ${provider} callback - CSRF cookie received:`, !!csrfCookie)
+  
+  if (!csrfCookie) {
+    console.error(`[OAuth] ${provider} callback - CSRF cookie missing. Available cookies:`, getCookies(event))
+    throw createError({
+      statusCode: 400,
+      message: 'CSRF验证失败：Cookie丢失，请从登录页面重新开始'
+    })
+  }
 
   // 获取 Origin
   const headers = getRequestHeaders(event)
@@ -28,8 +55,14 @@ export default defineEventHandler(async (event) => {
   const host = headers['host']
   const origin = `${protocol}://${host}`
 
-  const state = parseState(stateStr, origin, csrfCookie)
+  console.log(`[OAuth] ${provider} callback - Current Origin:`, origin, 'Host:', host, 'Protocol:', protocol)
+
+  const { stateSecret, redirectUriTemplate } = await getOAuthBaseConfig()
+  const providerConfig = await getProviderRuntimeConfig(provider)
+
+  const state = parseState(stateStr, origin, csrfCookie, stateSecret)
   if (!state) {
+    console.error(`[OAuth] ${provider} callback - State validation failed. State:`, stateStr.substring(0, 20) + '...')
     throw createError({ statusCode: 400, message: 'Invalid or expired state' })
   }
 
@@ -37,12 +70,12 @@ export default defineEventHandler(async (event) => {
   deleteCookie(event, 'oauth_csrf')
 
   const strategy = getOAuthStrategy(provider)
-  const redirectUri = getRedirectUri(provider)
+  const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 
   // 2. 使用 Code 换取 Token
   let accessToken = ''
   try {
-    accessToken = await strategy.exchangeToken(code, redirectUri)
+    accessToken = await strategy.exchangeToken(code, redirectUri, providerConfig)
   } catch (e: any) {
     console.error(`[OAuth] ${provider} token exchange failed:`, e.message)
     return sendRedirect(
@@ -54,7 +87,7 @@ export default defineEventHandler(async (event) => {
   // 3. 获取用户信息
   let userInfo
   try {
-    userInfo = await strategy.getUserInfo(accessToken)
+    userInfo = await strategy.getUserInfo(accessToken, providerConfig)
   } catch (e: any) {
     console.error(`[OAuth] ${provider} get user info failed:`, e.message)
     return sendRedirect(
