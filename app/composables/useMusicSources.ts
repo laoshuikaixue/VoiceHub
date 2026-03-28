@@ -983,7 +983,6 @@ export const useMusicSources = () => {
             }
           } else {
             // 网易云备用API
-            let level = 'exhigh'
             let neteaseQuality: number | null = null
 
             // 优先使用传入的 quality 参数
@@ -999,13 +998,15 @@ export const useMusicSources = () => {
               }
             }
 
-            if (neteaseQuality !== null && !isNaN(neteaseQuality)) {
-              level = mapQualityToLevel(neteaseQuality)
+            if (
+              neteaseQuality === null ||
+              Number.isNaN(neteaseQuality) ||
+              (!hasNeteaseLogin && neteaseQuality > 4)
+            ) {
+              neteaseQuality = 4
             }
 
-            if (!hasNeteaseLogin && (neteaseQuality === null || isNaN(neteaseQuality) || neteaseQuality > 4)) {
-              level = 'exhigh'
-            }
+            const level = mapQualityToLevel(neteaseQuality)
 
             // 如果提供了cookie，添加到请求参数中
             const params: any = {
