@@ -453,6 +453,7 @@ VoiceHub 实现了细粒度的权限控制系统：
 | NODE_ENV     | 否  | 运行环境，development或production     | `production`                                                        |
 | REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                                |
 | NITRO_PRESET | 否  | Nitro预设                         | `vercel`                                                            |
+| NUXT_PUBLIC_HOST | 否  | 用于 CORS 和反向代理的主机名验证 | `your-app.com`                                                            |
 
 ## 项目结构
 

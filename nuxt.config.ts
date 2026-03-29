@@ -45,6 +45,7 @@ export default defineNuxtConfig({
     redisUrl: process.env.REDIS_URL || '',
     // 公共键（会暴露到客户端）
     public: {
+      host: process.env.NUXT_PUBLIC_HOST || '', // 用于 CORS 和反向代理的主机名验证
       apiBase: '/api',
       oauth: {
         github: !!process.env.GITHUB_CLIENT_ID,

@@ -19,10 +19,21 @@ export default defineEventHandler((event) => {
     try {
       const url = new URL(sourceUrl)
       
-      // 获取当前请求的 hostname，优先从 x-forwarded-host 获取，以兼容反向代理部署
-      const forwardedHost = getHeader(event, 'x-forwarded-host')
-      const hostHeader = forwardedHost ? forwardedHost.split(',')[0].trim() : getHeader(event, 'host') || ''
-      const requestHostname = hostHeader.split(':')[0] || getRequestURL(event).hostname
+      // 获取当前请求的 hostname，优先使用配置中可信的主机名，防止 x-forwarded-host 伪造攻击
+      const config = useRuntimeConfig(event)
+      const configuredHost = config.public?.host as string | undefined
+      
+      let requestHostname = getRequestURL(event).hostname
+      if (configuredHost) {
+        // 如果配置了host，提取出hostname部分（可能配置了端口号）
+        requestHostname = configuredHost.split(':')[0]
+      } else {
+        // 只有在未配置公网主机名时，才回退到 host 请求头
+        const hostHeader = getHeader(event, 'host') || ''
+        if (hostHeader) {
+          requestHostname = hostHeader.split(':')[0]
+        }
+      }
       
       const isLocalhost = (h: string) => h === 'localhost' || h === '127.0.0.1' || h === '[::1]'
       
