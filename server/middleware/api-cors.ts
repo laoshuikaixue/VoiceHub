@@ -18,23 +18,30 @@ export default defineEventHandler((event) => {
   if (sourceUrl) {
     try {
       const url = new URL(sourceUrl)
-      
+
+      const extractHostname = (value: string) => {
+        const normalizedValue = value.includes('://') ? value : `http://${value}`
+        return new URL(normalizedValue).hostname
+      }
+
       // 获取当前请求的 hostname，优先使用配置中可信的主机名，防止 x-forwarded-host 伪造攻击
       const config = useRuntimeConfig(event)
       const configuredHost = config.public?.host as string | undefined
-      
-      let requestHostname = getRequestURL(event).hostname
+
+      let requestHostname: string
       if (configuredHost) {
-        // 如果配置了host，提取出hostname部分（可能配置了端口号）
-        requestHostname = configuredHost.split(':')[0]
+        requestHostname = extractHostname(configuredHost)
       } else {
         // 只有在未配置公网主机名时，才回退到 host 请求头
-        const hostHeader = getHeader(event, 'host') || ''
+        const hostHeader = getHeader(event, 'host')
         if (hostHeader) {
-          requestHostname = hostHeader.split(':')[0]
+          requestHostname = extractHostname(hostHeader)
+        } else {
+          // 缺少 Host 请求头，这是一个异常情况，应该拒绝请求
+          throw createError({ statusCode: 400, message: 'Bad Request: 缺少Host请求头' })
         }
       }
-      
+
       const isLocalhost = (h: string) => h === 'localhost' || h === '127.0.0.1' || h === '[::1]'
       
       // 如果来源域与当前域不一致，则拒绝请求
@@ -47,8 +54,8 @@ export default defineEventHandler((event) => {
         })
       }
     } catch (e: any) {
-      // 如果是我们主动抛出的403错误，则重新抛出
-      if (e?.statusCode === 403) {
+      // 如果是我们主动抛出的 HTTP 错误，则重新抛出
+      if (typeof e?.statusCode === 'number') {
         throw e
       }
       // 对于其他错误（如无效的URL），这是一个错误的请求
@@ -58,8 +65,8 @@ export default defineEventHandler((event) => {
         message: 'Bad Request: Origin或Referer头无效'
       })
     }
-  } else if (secFetchSite === 'same-origin' || secFetchSite === 'same-site') {
-    // 允许没有 Origin/Referer 但明确标记为同源的请求 (如某些浏览器隐私模式或插件环境)
+  } else if (secFetchSite === 'same-origin') {
+    // 允许没有 Origin/Referer 但明确标记为同源的请求
     return
   } else {
     // 拦截没有来源信息的受保护API请求
