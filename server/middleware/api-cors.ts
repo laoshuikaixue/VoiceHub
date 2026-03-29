@@ -53,9 +53,14 @@ export default defineEventHandler((event) => {
           message: 'Forbidden: 内部API不允许跨域请求'
         })
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // 如果是我们主动抛出的 HTTP 错误，则重新抛出
-      if (typeof e?.statusCode === 'number') {
+      if (
+        typeof e === 'object' &&
+        e !== null &&
+        'statusCode' in e &&
+        typeof e.statusCode === 'number'
+      ) {
         throw e
       }
       // 对于其他错误（如无效的URL），这是一个错误的请求
