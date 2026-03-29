@@ -51,6 +51,15 @@
   }
 }
 
+@keyframes page-view-mobile-enter {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 /* 首页特殊过渡 */
 .page-enter-active[data-route='index'],
 .page-leave-active[data-route='index'] {
@@ -186,6 +195,8 @@
   .page-view,
   .page-view[data-route='index'] {
     animation-duration: 0.3s;
+    animation-name: page-view-mobile-enter;
+    will-change: opacity;
   }
 
   .slide-left-enter-active,
