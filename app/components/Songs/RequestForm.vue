@@ -297,6 +297,7 @@
                     </button>
                     <button
                       class="action-btn-compact"
+                      aria-label="导出Cookie数据"
                       title="导出Cookie数据"
                       type="button"
                       @click="handleExportData"
@@ -305,6 +306,7 @@
                     </button>
                     <button
                       class="action-btn-compact text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                      aria-label="退出登录"
                       title="退出登录"
                       type="button"
                       @click="handleLogoutNetease"

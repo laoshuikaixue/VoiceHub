@@ -26,7 +26,7 @@ export default defineEventHandler((event) => {
 
       // 获取当前请求的 hostname，优先使用配置中可信的主机名，防止 x-forwarded-host 伪造攻击
       const config = useRuntimeConfig(event)
-      const configuredHost = config.public?.host as string | undefined
+      const configuredHost = config.public?.host
 
       let requestHostname: string
       if (configuredHost) {
