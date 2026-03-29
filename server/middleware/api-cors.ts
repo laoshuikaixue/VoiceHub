@@ -12,16 +12,23 @@ export default defineEventHandler((event) => {
   // CORS 限制：禁止站外网站调用
   const origin = getHeader(event, 'origin')
   const referer = getHeader(event, 'referer')
+  const secFetchSite = getHeader(event, 'sec-fetch-site')
   const sourceUrl = origin || referer
 
   if (sourceUrl) {
     try {
       const url = new URL(sourceUrl)
-      // 获取当前请求的 hostname
-      const requestHostname = getRequestURL(event).hostname
+      
+      // 获取当前请求的 hostname，优先从 x-forwarded-host 获取，以兼容反向代理部署
+      const forwardedHost = getHeader(event, 'x-forwarded-host')
+      const hostHeader = forwardedHost ? forwardedHost.split(',')[0].trim() : getHeader(event, 'host') || ''
+      const requestHostname = hostHeader.split(':')[0] || getRequestURL(event).hostname
+      
+      const isLocalhost = (h: string) => h === 'localhost' || h === '127.0.0.1' || h === '[::1]'
       
       // 如果来源域与当前域不一致，则拒绝请求
-      if (url.hostname !== requestHostname) {
+      // 注意：允许 localhost 和 127.0.0.1 之间的互访
+      if (url.hostname !== requestHostname && !(isLocalhost(url.hostname) && isLocalhost(requestHostname))) {
         console.warn(`[CORS Middleware] 拦截跨域请求: 来源 ${url.hostname}, 期望 ${requestHostname}, 路径 ${pathname}`)
         throw createError({
           statusCode: 403,
@@ -40,9 +47,12 @@ export default defineEventHandler((event) => {
         message: 'Bad Request: Origin或Referer头无效'
       })
     }
+  } else if (secFetchSite === 'same-origin' || secFetchSite === 'same-site') {
+    // 允许没有 Origin/Referer 但明确标记为同源的请求 (如某些浏览器隐私模式或插件环境)
+    return
   } else {
     // 拦截没有来源信息的受保护API请求
-    console.warn(`[CORS Middleware] 拦截无Origin/Referer头的请求: 路径 ${pathname}`)
+    console.warn(`[CORS Middleware] 拦截无Origin/Referer头的请求: 路径 ${pathname}, sec-fetch-site: ${secFetchSite || 'none'}`)
     throw createError({
       statusCode: 403,
       message: 'Forbidden: 访问此API必须提供Origin或Referer头'

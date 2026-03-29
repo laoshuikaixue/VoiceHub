@@ -553,7 +553,7 @@
           <div v-if="enableSubmissionRemarks" class="form-group">
             <div class="input-wrapper">
               <div class="flex items-center justify-between mb-2">
-                <label class="text-[12px] font-bold text-zinc-300">投稿备注留言</label>
+                <label for="submission-note" class="text-[12px] font-bold text-zinc-300">投稿备注留言</label>
                 <label class="custom-checkbox-wrapper">
                   <input
                     v-model="submissionNotePublic"
@@ -569,6 +569,7 @@
                 </label>
               </div>
               <textarea
+                id="submission-note"
                 v-model="submissionNote"
                 maxlength="300"
                 class="w-full min-h-[60px] rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
