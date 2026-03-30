@@ -182,7 +182,7 @@ docker-compose up -d
 
 #### 方式二：使用预构建镜像
 
-如果你已有 PostgreSQL 数据库，可以直接使用预构建的镜像。
+如果你 **已有** PostgreSQL 数据库，可以直接使用预构建的镜像。
 
 使用 GitHub 镜像源：
 
@@ -210,7 +210,7 @@ docker run -d \
 
 #### 方式三：本地构建镜像
 
-如果需要自定义构建，可以本地构建镜像。
+如果需要自定义构建，可以本地构建镜像，也需要 **已有的** PostgreSQL 数据库。
 
 ```bash
 git clone https://github.com/laoshuikaixue/VoiceHub.git
