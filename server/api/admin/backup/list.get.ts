@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足'
+        message: '权限不足'
       })
     }
 
@@ -149,7 +149,7 @@ export default defineEventHandler(async (event) => {
     console.error('获取备份文件列表失败:', error)
     throw createError({
       statusCode: 500,
-      statusMessage: '获取备份文件列表失败'
+      message: '获取备份文件列表失败'
     })
   }
 })

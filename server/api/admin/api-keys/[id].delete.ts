@@ -6,12 +6,12 @@ import { eq } from 'drizzle-orm'
  * DELETE /api/admin/api-keys/[id]
  */
 export default defineEventHandler(async (event) => {
-  // 检查用户权限 - 只有超级管理员可以管理API Key
+  // 检查用户权限 - 只有超级管理员可以管理 API Key
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
     throw createError({
       statusCode: 403,
-      statusMessage: '只有超级管理员可以管理API Key'
+      message: '只有超级管理员可以管理 API Key'
     })
   }
 
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   if (!apiKeyId) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'API Key ID不能为空'
+      message: 'API Key ID 不能为空'
     })
   }
 
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     if (existingApiKey.length === 0) {
       throw createError({
         statusCode: 404,
-        statusMessage: 'API Key不存在'
+        message: 'API Key 不存在'
       })
     }
 
@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: `删除API Key失败: ${error.message}`
+      message: `删除 API Key 失败：${error.message}`
     })
   }
 })
