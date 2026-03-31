@@ -106,26 +106,26 @@ async function deploy() {
       logStep('📦', '安装依赖...')
       let installed = false
 
-      // 优先尝试 npm ci
-      if (fileExists('package-lock.json')) {
-        log('尝试使用 npm ci 安装...', 'cyan')
-        if (safeExec('npm ci')) {
+      // 优先尝试 pnpm install --frozen-lockfile
+      if (fileExists('pnpm-lock.yaml')) {
+        log('尝试使用 pnpm install --frozen-lockfile 安装...', 'cyan')
+        if (safeExec('pnpm install --frozen-lockfile')) {
           installed = true
-          logSuccess('依赖安装完成 (npm ci)')
+          logSuccess('依赖安装完成 (pnpm install --frozen-lockfile)')
         } else {
-          logWarning('npm ci 安装失败，准备回退到 npm install...')
+          logWarning('pnpm install --frozen-lockfile 安装失败，准备回退到 pnpm install...')
         }
       } else {
-        logWarning('未检测到 package-lock.json，跳过 npm ci，直接使用 npm install...')
+        logWarning('未检测到 pnpm-lock.yaml，跳过冻结锁文件安装，直接使用 pnpm install...')
       }
 
-      // 如果 npm ci 没运行或失败，使用 npm install
+      // 如果冻结锁文件安装没运行或失败，使用 pnpm install
       if (!installed) {
-        log('正在使用 npm install 安装...', 'cyan')
-        if (!safeExec('npm install')) {
+        log('正在使用 pnpm install 安装...', 'cyan')
+        if (!safeExec('pnpm install')) {
           throw new Error('依赖安装失败')
         }
-        logSuccess('依赖安装完成 (npm install)')
+        logSuccess('依赖安装完成 (pnpm install)')
       }
     }
 
@@ -166,7 +166,7 @@ async function deploy() {
     // 4. 创建管理员账户
     if (fileExists('scripts/create-admin.js') && dbSyncSuccess) {
       logStep('👤', '检查管理员账户...')
-      safeExec('npm run create-admin')
+      safeExec('pnpm run create-admin')
     }
 
     // 5. 构建应用
@@ -178,7 +178,7 @@ async function deploy() {
         ...process.env,
         NODE_OPTIONS: process.env.NODE_OPTIONS || DEFAULT_NODE_OPTIONS
       }
-      if (!safeExec('npx nuxt build', { env: buildEnv })) {
+      if (!safeExec('pnpm exec nuxt build', { env: buildEnv })) {
         throw new Error('应用构建失败')
       }
       logSuccess('应用构建完成')

@@ -20,6 +20,77 @@ NC='\033[0m' # No Color
 # 默认安装目录
 PROJECT_DIR="/opt/voicehub"
 
+ensure_pnpm() {
+    export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+    mkdir -p "$PNPM_HOME"
+    export PATH="$PNPM_HOME:$PATH"
+
+    if ! command -v corepack &> /dev/null; then
+        npm install -g corepack
+        hash -r
+    fi
+
+    corepack enable
+
+    local package_manager=""
+    if [[ -f "$PROJECT_DIR/package.json" ]]; then
+        package_manager=$(node -p "try { JSON.parse(require('fs').readFileSync('$PROJECT_DIR/package.json', 'utf8')).packageManager || '' } catch { '' }")
+    fi
+
+    if [[ -n "$package_manager" ]]; then
+        corepack prepare "$package_manager" --activate
+    fi
+
+    hash -r
+
+    if ! command -v pnpm &> /dev/null; then
+        echo -e "${RED}错误: pnpm 不可用${NC}"
+        exit 1
+    fi
+}
+
+has_working_pm2() {
+    local pm2_root
+    local pm2_bin
+
+    pm2_root=$(pnpm root -g 2>/dev/null || true)
+    pm2_bin="$pm2_root/pm2/bin/pm2"
+
+    if [[ -f "$pm2_bin" ]]; then
+        node "$pm2_bin" -v > /dev/null 2>&1
+        return $?
+    fi
+
+    if command -v pm2 &> /dev/null; then
+        pm2 -v > /dev/null 2>&1
+        return $?
+    fi
+
+    return 1
+}
+
+run_pm2() {
+    local pm2_root
+    local pm2_bin
+
+    pm2_root=$(pnpm root -g 2>/dev/null || true)
+    pm2_bin="$pm2_root/pm2/bin/pm2"
+
+    if [[ -f "$pm2_bin" ]]; then
+        node "$pm2_bin" "$@"
+        return $?
+    fi
+
+    if command -v pm2 &> /dev/null; then
+        pm2 "$@"
+        return $?
+    fi
+
+    echo -e "${RED}错误: PM2 不可用，请重新运行部署脚本修复 PM2${NC}"
+    return 1
+}
+
 # 检测服务管理器类型
 detect_service_manager() {
     if [[ -f "$PROJECT_DIR/ecosystem.config.cjs" || -f "$PROJECT_DIR/ecosystem.config.js" ]]; then
@@ -73,14 +144,16 @@ fi
 echo -e "${GREEN}✓ 代码更新完成${NC}"
 echo ""
 
+ensure_pnpm
+
 # ============================================
-# 步骤 3: npm install 更新依赖
+# 步骤 3: pnpm install 更新依赖
 # ============================================
 echo -e "${YELLOW}[3/6] 更新依赖...${NC}"
-echo -e "执行: npm install"
+echo -e "执行: pnpm install --frozen-lockfile"
 echo ""
 
-npm install
+pnpm install --frozen-lockfile || pnpm install
 
 echo -e "${GREEN}✓ 依赖更新完成${NC}"
 echo ""
@@ -89,16 +162,16 @@ echo ""
 # 步骤 4: 重新部署
 # ============================================
 echo -e "${YELLOW}[4/6] 重新部署项目...${NC}"
-echo -e "执行: npm run deploy"
+echo -e "执行: pnpm run deploy"
 echo ""
 
-# 尝试执行 npm run deploy (包含数据库迁移、管理员创建、构建)
-if npm run deploy; then
+# 尝试执行 pnpm run deploy (包含数据库迁移、管理员创建、构建)
+if pnpm run deploy; then
     echo -e "${GREEN}✓ 部署更新脚本执行成功${NC}"
 else
     echo -e "${RED}部署更新脚本执行失败，尝试仅执行构建...${NC}"
     echo -e "${YELLOW}注意: 数据库迁移可能未完成，请检查日志${NC}"
-    npm run build
+    pnpm run build
 fi
 
 echo -e "${GREEN}✓ 项目更新构建完成${NC}"
@@ -114,7 +187,7 @@ service_type=$(detect_service_manager)
 
 if [[ "$service_type" == "pm2" ]]; then
     echo -e "${BLUE}检测到 PM2 服务，正在重启...${NC}"
-    pm2 restart voicehub
+    run_pm2 restart voicehub
     echo -e "${GREEN}✓ PM2 服务已重启${NC}"
 elif [[ "$service_type" == "systemd" ]]; then
     echo -e "${BLUE}检测到 systemctl 服务，正在重启...${NC}"
@@ -134,7 +207,11 @@ echo -e "${YELLOW}[6/6] 服务状态...${NC}"
 echo ""
 
 if [[ "$service_type" == "pm2" ]]; then
-    pm2 list | grep voicehub
+    if has_working_pm2; then
+        run_pm2 list | grep voicehub
+    else
+        echo -e "${YELLOW}PM2 命令异常，请重新运行部署脚本修复 PM2${NC}"
+    fi
 elif [[ "$service_type" == "systemd" ]]; then
     sudo systemctl status voicehub
 else
@@ -153,7 +230,7 @@ echo ""
 echo -e "${BLUE}项目目录: $PROJECT_DIR${NC}"
 echo ""
 echo -e "${YELLOW}提示: 如需查看日志，请运行:${NC}"
-if command -v pm2 &> /dev/null; then
+if has_working_pm2; then
     echo -e "${YELLOW}  pm2 logs voicehub${NC}"
 else
     echo -e "${YELLOW}  sudo journalctl -u voicehub -f${NC}"

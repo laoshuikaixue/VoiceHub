@@ -223,17 +223,20 @@ const handleLoginSuccess = async (cookie: string) => {
 
     const userInfo = {
       cookie,
-      uid: res.data?.profile?.userId,
-      nickname: res.data?.profile?.nickname,
-      avatarUrl: res.data?.profile?.avatarUrl,
-      userName: res.data?.profile?.nickname
+      user: {
+        userId: res.data?.profile?.userId,
+        id: res.data?.profile?.userId,
+        nickname: res.data?.profile?.nickname,
+        avatarUrl: res.data?.profile?.avatarUrl,
+        userName: res.data?.profile?.nickname
+      }
     }
 
     emit('login-success', userInfo)
     handleClose()
   } catch (err) {
     console.error('获取用户信息失败:', err)
-    emit('login-success', { cookie })
+    emit('login-success', { cookie, user: null })
     handleClose()
   }
 }

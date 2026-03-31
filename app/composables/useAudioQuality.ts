@@ -94,11 +94,6 @@ export function useAudioQuality() {
       platform = 'netease'
     }
 
-    // 如果是网易云且未登录，强制返回 HQ 极高音质 (exhigh)
-    if (platform === 'netease' && !isNeteaseLoggedIn.value) {
-      return 4 // exhigh
-    }
-
     return audioQuality.value[platform] || DEFAULT_QUALITY[platform]
   }
 
@@ -107,12 +102,6 @@ export function useAudioQuality() {
     // 处理 netease-podcast 别名
     if (platform === 'netease-podcast') {
       platform = 'netease'
-    }
-
-    // 如果是网易云且未登录，只返回默认选项（HQ 极高音质）
-    if (platform === 'netease' && !isNeteaseLoggedIn.value) {
-      // 修改为"默认"标签，实际值为 4 (exhigh)
-      return [{ value: 4, label: '默认', description: '未登录状态默认音质' }]
     }
 
     return QUALITY_OPTIONS[platform] || []

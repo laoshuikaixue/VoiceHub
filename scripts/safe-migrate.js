@@ -68,7 +68,7 @@ async function handleDataConflicts() {
     log('检查数据库连接...', 'cyan')
 
     // 简单的连接测试
-    if (!safeExec('cd .. && npx drizzle-kit check --config=drizzle.config.ts', { stdio: 'pipe' })) {
+    if (!safeExec('cd .. && pnpm exec drizzle-kit check --config=drizzle.config.ts', { stdio: 'pipe' })) {
       logWarning('数据库schema检查失败，将尝试强制同步')
     }
 
@@ -108,7 +108,7 @@ async function safeMigrate() {
     async function runGenerateWithAutoConfirm(env) {
       return new Promise((resolve) => {
         const { spawn } = require('child_process')
-        const child = spawn('npm', ['run', 'db:generate'], {
+        const child = spawn('pnpm', ['run', 'db:generate'], {
           env,
           shell: true
         })
@@ -181,7 +181,7 @@ async function safeMigrate() {
     let isEmptyDatabase = false
     try {
       const checkResult = execSync(
-        'cd .. && npx drizzle-kit introspect --config=drizzle.config.ts',
+        'cd .. && pnpm exec drizzle-kit introspect --config=drizzle.config.ts',
         {
           stdio: 'pipe',
           env,
@@ -205,20 +205,20 @@ async function safeMigrate() {
     if (isEmptyDatabase) {
       log('🆕 检测到全新部署，执行标准迁移...', 'cyan')
       // 对于全新部署，直接使用migrate避免交互式提示
-      if (!safeExec('cd .. && npm run db:migrate', { env })) {
+      if (!safeExec('cd .. && pnpm run db:migrate', { env })) {
         throw new Error('数据库迁移失败')
       }
       logSuccess('全新数据库迁移成功')
     } else {
       log('🔄 检测到现有数据库，执行schema同步...', 'cyan')
       // 对于现有数据库，使用push进行增量更新
-      if (safeExec('cd .. && npx drizzle-kit push --force --config=drizzle.config.ts', { env })) {
+      if (safeExec('cd .. && pnpm exec drizzle-kit push --force --config=drizzle.config.ts', { env })) {
         logSuccess('数据库schema同步成功')
       } else {
         logWarning('schema同步失败，尝试标准迁移...')
 
         // 7. 执行迁移（作为后备）
-        if (!safeExec('cd .. && npm run db:migrate', { env })) {
+        if (!safeExec('cd .. && pnpm run db:migrate', { env })) {
           throw new Error('数据库迁移完全失败')
         }
         logSuccess('数据库迁移成功')

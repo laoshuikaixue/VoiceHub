@@ -223,9 +223,9 @@ export const useMusicSources = () => {
     if (isServerInChina.value !== null) return
 
     try {
-      const { data } = await useFetch('/api/system/location')
-      if (data.value && data.value.success) {
-        isServerInChina.value = data.value.data.isInChina
+      const data = await $fetch('/api/system/location')
+      if (data && data.success) {
+        isServerInChina.value = data.data.isInChina
         console.log(`[useMusicSources] 服务器位置检测: ${isServerInChina.value ? '中国' : '海外'}`)
       }
     } catch (e) {
@@ -773,6 +773,10 @@ export const useMusicSources = () => {
         }
       }
 
+      const hasNeteaseLogin = !!cookie
+      const requestedQuality =
+        quality !== undefined && quality !== null && quality !== '' ? Number(quality) : NaN
+
       // 定义音源尝试顺序
       const sourcesToTry: Array<{ source: MusicSource; type: 'netease' | 'tencent' | 'bilibili' }> =
         []
@@ -794,16 +798,18 @@ export const useMusicSources = () => {
           sourcesToTry.push({ source: v2, type: 'tencent' })
         }
       } else {
-        // 网易云音乐平台（默认）：优先使用netease-backup系列，然后vkeys，最后其他
-
+        // 网易云音乐平台（默认）：未登录优先 vkeys，已登录优先 netease-backup
         const neteaseSource = enabledSources.find((source) => source.id.includes('netease-backup'))
-        if (neteaseSource) {
-          sourcesToTry.push({ source: neteaseSource, type: 'netease' })
-        }
-
         const vkeysSource = enabledSources.find((source) => source.id === 'vkeys')
-        if (vkeysSource) {
-          sourcesToTry.push({ source: vkeysSource, type: 'netease' })
+
+        const orderedSources = hasNeteaseLogin
+          ? [neteaseSource, vkeysSource]
+          : [vkeysSource, neteaseSource]
+
+        for (const source of orderedSources) {
+          if (source) {
+            sourcesToTry.push({ source, type: 'netease' })
+          }
         }
 
         // 添加 Meting API 备用源
@@ -834,23 +840,27 @@ export const useMusicSources = () => {
             url = result.url
           } else if (source.id === 'vkeys') {
             // Vkeys API
-            const numQuality =
-              quality !== undefined && quality !== null && quality !== '' ? Number(quality) : NaN
-            const vkeysQuality =
-              type === 'tencent'
-                ? !isNaN(numQuality)
-                  ? numQuality
-                  : 8
-                : !isNaN(numQuality)
-                  ? numQuality
-                  : 0
             const endpoint = type === 'tencent' ? 'tencent' : 'netease'
-            const vkeysUrl = `${source.baseUrl}/${endpoint}?id=${idParam}&quality=${vkeysQuality}`
+            const qualityCandidates =
+              type === 'tencent'
+                ? [!isNaN(requestedQuality) ? requestedQuality : 8]
+                : [
+                    ...new Set(
+                      [
+                        !isNaN(requestedQuality) ? requestedQuality : 0,
+                        !hasNeteaseLogin && requestedQuality > 4 ? 4 : null
+                      ].filter((value): value is number => typeof value === 'number')
+                    )
+                  ]
 
-            const vkeysResp = await $fetch(vkeysUrl, { timeout: source.timeout || 8000 })
+            for (const candidateQuality of qualityCandidates) {
+              const vkeysUrl = `${source.baseUrl}/${endpoint}?id=${idParam}&quality=${candidateQuality}`
+              const vkeysResp = await $fetch(vkeysUrl, { timeout: source.timeout || 8000 })
 
-            if (vkeysResp?.code === 200 && vkeysResp?.data?.url) {
-              url = String(vkeysResp.data.url)
+              if (vkeysResp?.code === 200 && vkeysResp?.data?.url) {
+                url = String(vkeysResp.data.url)
+                break
+              }
             }
           } else if (source.id === 'vkeys-v3') {
             // Vkeys v3：先获取歌曲信息与音质列表，再按可用音质选择并调用 v2 获取可播放URL
@@ -973,21 +983,30 @@ export const useMusicSources = () => {
             }
           } else {
             // 网易云备用API
-            let level = 'exhigh'
+            let neteaseQuality: number | null = null
 
             // 优先使用传入的 quality 参数
             if (quality !== undefined && quality !== null) {
-              level = mapQualityToLevel(Number(quality))
+              neteaseQuality = Number(quality)
             } else {
               // 否则回退到全局设置
               try {
                 const { getQuality } = await import('./useAudioQuality')
-                const neteaseQuality = getQuality('netease')
-                level = mapQualityToLevel(neteaseQuality)
+                neteaseQuality = Number(getQuality('netease'))
               } catch (error) {
                 // 无法获取音质设置，使用默认音质
               }
             }
+
+            if (
+              neteaseQuality === null ||
+              Number.isNaN(neteaseQuality) ||
+              (!hasNeteaseLogin && neteaseQuality > 4)
+            ) {
+              neteaseQuality = 4
+            }
+
+            const level = mapQualityToLevel(neteaseQuality)
 
             // 如果提供了cookie，添加到请求参数中
             const params: any = {

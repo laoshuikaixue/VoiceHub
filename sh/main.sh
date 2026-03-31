@@ -20,6 +20,151 @@ NC='\033[0m' # No Color
 
 # 默认安装目录
 PROJECT_DIR="/opt/voicehub"
+DIRECT_LOG_DIR="$PROJECT_DIR/logs"
+DIRECT_PID_FILE="$DIRECT_LOG_DIR/voicehub.pid"
+DIRECT_LOG_FILE="$DIRECT_LOG_DIR/voicehub-out.log"
+
+ensure_pnpm() {
+    export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+    mkdir -p "$PNPM_HOME"
+    export PATH="$PNPM_HOME:$PATH"
+
+    if ! command -v corepack &> /dev/null; then
+        sudo npm install -g corepack
+        hash -r
+    fi
+
+    corepack enable
+
+    local package_manager=""
+    if [[ -f "$PROJECT_DIR/package.json" ]]; then
+        package_manager=$(node -p "try { JSON.parse(require('fs').readFileSync('$PROJECT_DIR/package.json', 'utf8')).packageManager || '' } catch { '' }")
+    fi
+
+    if [[ -n "$package_manager" ]]; then
+        corepack prepare "$package_manager" --activate
+    fi
+
+    hash -r
+
+    if ! command -v pnpm &> /dev/null; then
+        echo -e "${RED}错误: pnpm 不可用${NC}"
+        exit 1
+    fi
+}
+
+has_working_pm2() {
+    local pm2_root
+    local pm2_bin
+
+    pm2_root=$(pnpm root -g 2>/dev/null || true)
+    pm2_bin="$pm2_root/pm2/bin/pm2"
+
+    if [[ -f "$pm2_bin" ]]; then
+        node "$pm2_bin" -v > /dev/null 2>&1
+        return $?
+    fi
+
+    if command -v pm2 &> /dev/null; then
+        pm2 -v > /dev/null 2>&1
+        return $?
+    fi
+
+    return 1
+}
+
+run_pm2() {
+    local pm2_root
+    local pm2_bin
+
+    pm2_root=$(pnpm root -g 2>/dev/null || true)
+    pm2_bin="$pm2_root/pm2/bin/pm2"
+
+    if [[ -f "$pm2_bin" ]]; then
+        node "$pm2_bin" "$@"
+        return $?
+    fi
+
+    if command -v pm2 &> /dev/null; then
+        pm2 "$@"
+        return $?
+    fi
+
+    echo -e "${RED}错误: PM2 不可用，请重新运行部署脚本修复 PM2${NC}"
+    return 1
+}
+
+is_direct_service_running() {
+    if [[ ! -f "$DIRECT_PID_FILE" ]]; then
+        return 1
+    fi
+
+    local pid
+    pid=$(cat "$DIRECT_PID_FILE" 2>/dev/null)
+
+    if [[ -z "$pid" ]]; then
+        rm -f "$DIRECT_PID_FILE"
+        return 1
+    fi
+
+    if kill -0 "$pid" 2>/dev/null; then
+        return 0
+    fi
+
+    rm -f "$DIRECT_PID_FILE"
+    return 1
+}
+
+start_direct_service() {
+    mkdir -p "$DIRECT_LOG_DIR"
+
+    if is_direct_service_running; then
+        echo -e "${YELLOW}VoiceHub 已在直接运行模式下启动${NC}"
+        return 0
+    fi
+
+    if [[ ! -f "$PROJECT_DIR/.output/server/index.mjs" ]]; then
+        echo -e "${RED}错误: 未找到构建产物，请先执行 voicehub build${NC}"
+        exit 1
+    fi
+
+    nohup node "$PROJECT_DIR/.output/server/index.mjs" >> "$DIRECT_LOG_FILE" 2>&1 &
+    local pid=$!
+    echo "$pid" > "$DIRECT_PID_FILE"
+    sleep 2
+
+    if is_direct_service_running; then
+        echo -e "${GREEN}✓ 直接运行模式已启动 (PID: $pid)${NC}"
+    else
+        echo -e "${RED}错误: 直接运行模式启动失败，请查看日志: $DIRECT_LOG_FILE${NC}"
+        exit 1
+    fi
+}
+
+stop_direct_service() {
+    if ! is_direct_service_running; then
+        echo -e "${YELLOW}直接运行模式未启动${NC}"
+        return 0
+    fi
+
+    local pid
+    pid=$(cat "$DIRECT_PID_FILE")
+    kill "$pid" 2>/dev/null || true
+
+    for _ in {1..10}; do
+        if ! kill -0 "$pid" 2>/dev/null; then
+            rm -f "$DIRECT_PID_FILE"
+            echo -e "${GREEN}✓ 直接运行模式已停止${NC}"
+            return 0
+        fi
+        sleep 1
+    done
+
+    kill -9 "$pid" 2>/dev/null || true
+    rm -f "$DIRECT_PID_FILE"
+    echo -e "${GREEN}✓ 直接运行模式已强制停止${NC}"
+}
 
 # 检查项目目录
 check_project() {
@@ -29,6 +174,7 @@ check_project() {
         exit 1
     fi
     cd "$PROJECT_DIR"
+    ensure_pnpm
 }
 
 # 检测服务管理器类型
@@ -37,6 +183,8 @@ detect_service_manager() {
         echo "pm2"
     elif [[ -f "/etc/systemd/system/voicehub.service" ]]; then
         echo "systemd"
+    elif [[ -f "$PROJECT_DIR/.output/server/index.mjs" ]]; then
+        echo "direct"
     else
         echo "none"
     fi
@@ -50,15 +198,24 @@ cmd_status() {
     local service_type=$(detect_service_manager)
     
     if [[ "$service_type" == "pm2" ]]; then
-        if command -v pm2 &> /dev/null && pm2 list | grep -q "voicehub"; then
+        if has_working_pm2 && run_pm2 list | grep -q "voicehub"; then
             echo -e "${GREEN}PM2 服务状态:${NC}"
-            pm2 list | grep voicehub
+            run_pm2 list | grep voicehub
         else
-            echo -e "${YELLOW}PM2 服务未运行${NC}"
+            echo -e "${YELLOW}PM2 服务未运行或 PM2 命令异常${NC}"
         fi
     elif [[ "$service_type" == "systemd" ]]; then
         echo -e "${GREEN}systemctl 服务状态:${NC}"
         sudo systemctl status voicehub
+    elif [[ "$service_type" == "direct" ]]; then
+        if is_direct_service_running; then
+            echo -e "${GREEN}直接运行模式状态: 运行中${NC}"
+            echo -e "${BLUE}PID: $(cat "$DIRECT_PID_FILE")${NC}"
+            echo -e "${BLUE}日志: $DIRECT_LOG_FILE${NC}"
+        else
+            echo -e "${YELLOW}直接运行模式未启动${NC}"
+            echo -e "${BLUE}可使用 voicehub start 启动${NC}"
+        fi
     else
         echo -e "${YELLOW}未检测到服务配置${NC}"
     fi
@@ -73,14 +230,16 @@ cmd_start() {
     
     if [[ "$service_type" == "pm2" ]]; then
         if [[ -f "ecosystem.config.cjs" ]]; then
-            pm2 start ecosystem.config.cjs
+            run_pm2 start ecosystem.config.cjs
         else
-            pm2 start ecosystem.config.js
+            run_pm2 start ecosystem.config.js
         fi
         echo -e "${GREEN}✓ PM2 服务已启动${NC}"
     elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl start voicehub
         echo -e "${GREEN}✓ systemctl 服务已启动${NC}"
+    elif [[ "$service_type" == "direct" ]]; then
+        start_direct_service
     else
         echo -e "${YELLOW}未找到服务配置，请先运行部署脚本配置服务${NC}"
         exit 1
@@ -95,11 +254,13 @@ cmd_stop() {
     local service_type=$(detect_service_manager)
     
     if [[ "$service_type" == "pm2" ]]; then
-        pm2 stop voicehub
+        run_pm2 stop voicehub
         echo -e "${GREEN}✓ PM2 服务已停止${NC}"
     elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl stop voicehub
         echo -e "${GREEN}✓ systemctl 服务已停止${NC}"
+    elif [[ "$service_type" == "direct" ]]; then
+        stop_direct_service
     else
         echo -e "${YELLOW}未找到服务配置${NC}"
     fi
@@ -113,11 +274,14 @@ cmd_restart() {
     local service_type=$(detect_service_manager)
     
     if [[ "$service_type" == "pm2" ]]; then
-        pm2 restart voicehub
+        run_pm2 restart voicehub
         echo -e "${GREEN}✓ PM2 服务已重启${NC}"
     elif [[ "$service_type" == "systemd" ]]; then
         sudo systemctl restart voicehub
         echo -e "${GREEN}✓ systemctl 服务已重启${NC}"
+    elif [[ "$service_type" == "direct" ]]; then
+        stop_direct_service
+        start_direct_service
     else
         echo -e "${YELLOW}未找到服务配置，请先运行部署脚本配置服务${NC}"
         exit 1
@@ -141,7 +305,7 @@ cmd_deps() {
     echo -e "${BLUE}重新安装依赖...${NC}"
     
     rm -rf node_modules
-    npm install
+    pnpm install --frozen-lockfile || pnpm install
     
     echo -e "${GREEN}✓ 依赖重装完成${NC}"
 }
@@ -151,7 +315,7 @@ cmd_build() {
     check_project
     echo -e "${BLUE}重新编译项目...${NC}"
     
-    npm run build
+    pnpm run build
     
     echo -e "${GREEN}✓ 编译完成${NC}"
 }
@@ -174,11 +338,11 @@ cmd_reinstall() {
     
     echo -e "${YELLOW}[2/4] 重装依赖...${NC}"
     rm -rf node_modules
-    npm install
+    pnpm install --frozen-lockfile || pnpm install
     echo -e "${GREEN}✓ 依赖重装完成${NC}"
     
     echo -e "${YELLOW}[3/4] 重新编译...${NC}"
-    npm run build
+    pnpm run build
     echo -e "${GREEN}✓ 编译完成${NC}"
     
     echo -e "${YELLOW}[4/4] 启动服务...${NC}"
@@ -197,9 +361,13 @@ cmd_logs() {
     local service_type=$(detect_service_manager)
     
     if [[ "$service_type" == "pm2" ]]; then
-        pm2 logs voicehub
+        run_pm2 logs voicehub
     elif [[ "$service_type" == "systemd" ]]; then
         sudo journalctl -u voicehub -f
+    elif [[ "$service_type" == "direct" ]]; then
+        mkdir -p "$DIRECT_LOG_DIR"
+        touch "$DIRECT_LOG_FILE"
+        tail -f "$DIRECT_LOG_FILE"
     else
         echo -e "${YELLOW}未找到服务配置，无法查看日志${NC}"
         exit 1
