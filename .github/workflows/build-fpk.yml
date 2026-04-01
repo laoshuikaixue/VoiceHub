@@ -61,10 +61,16 @@ jobs:
           
           # 创建目录
           mkdir -p voicehub/app/docker
-          # 复制内容（保留原有格式）
-          cat "$SRC_COMPOSE" > "$DST_COMPOSE"
           
-          echo "✅ 已从仓库读取: $SRC_COMPOSE 并写入目标: $DST_COMPOSE"
+          # 复制内容并进行修改：
+          # 1. 移除 postgres 服务的端口映射，以避免 fnOS 5432 端口冲突
+          # 2. 确保容器间通过 service name 互相访问
+          # 这里使用 sed 逻辑：找到 postgres: 行，然后删除其后的 ports: 及其映射行
+          # 考虑到 YAML 结构，我们更精确地删除 '5432:5432' 这一行及其上一行 'ports:'
+          sed '/postgres:/,/restart:/ { /ports:/d; /5432:5432/d }' "$SRC_COMPOSE" > "$DST_COMPOSE"
+          
+          echo "✅ 已处理 compose 文件：移除数据库端口暴露，仅限容器内互联"
+          cat "$DST_COMPOSE"
 
       - name: 最终目录 & 打包
         run: |
