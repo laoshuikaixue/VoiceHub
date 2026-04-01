@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
     console.error('检查数据库状态失败:', error)
     throw createError({
       statusCode: 500,
-      statusMessage: '检查数据库状态失败: ' + error.message
+      message: '检查数据库状态失败：' + error.message
     })
   }
 })

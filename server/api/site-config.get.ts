@@ -98,7 +98,7 @@ export default defineEventHandler(async (event) => {
     console.error('获取系统设置失败:', error)
     throw createError({
       statusCode: 500,
-      statusMessage: '获取系统设置失败'
+      message: '获取系统设置失败'
     })
   }
 })

@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({
       statusCode: 401,
-      statusMessage: '未登录'
+      message: '未登录'
     })
   }
 
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   if (!songId || typeof accept !== 'boolean') {
     throw createError({
       statusCode: 400,
-      statusMessage: '参数错误'
+      message: '参数错误'
     })
   }
 
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
     if (!collabRecord) {
       throw createError({
         statusCode: 404,
-        statusMessage: '未找到待处理的邀请'
+        message: '未找到待处理的邀请'
       })
     }
 
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
     if (error.statusCode) throw error
     throw createError({
       statusCode: 500,
-      statusMessage: '处理邀请失败'
+      message: '处理邀请失败'
     })
   }
 })

@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足'
+        message: '权限不足'
       })
     }
 
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
       keepExtensions: true,
       maxFileSize: 100 * 1024 * 1024, // 100MB
       filter: ({ mimetype, originalFilename }) => {
-        // 只允许JSON文件
+        // 只允许 JSON 文件
         return (
           mimetype === 'application/json' ||
           (originalFilename && originalFilename.endsWith('.json'))
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
     if (!files.file || !files.file[0]) {
       throw createError({
         statusCode: 400,
-        statusMessage: '请选择要上传的备份文件'
+        message: '请选择要上传的备份文件'
       })
     }
 
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
       await fs.unlink(uploadedFile.filepath)
       throw createError({
         statusCode: 400,
-        statusMessage: '备份文件格式无效'
+        message: '备份文件格式无效'
       })
     }
 
@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
       await fs.unlink(uploadedFile.filepath)
       throw createError({
         statusCode: 400,
-        statusMessage: '不是有效的备份文件'
+        message: '不是有效的备份文件'
       })
     }
 
@@ -106,7 +106,7 @@ export default defineEventHandler(async (event) => {
     // 重新保存文件
     await fs.writeFile(newFilepath, JSON.stringify(backupData, null, 2), 'utf8')
 
-    console.log(`管理员 ${user.username} 上传了备份文件: ${newFilename}`)
+    console.log(`管理员 ${user.username} 上传了备份文件：${newFilename}`)
 
     // 获取文件信息
     const stats = await fs.stat(newFilepath)
@@ -127,7 +127,7 @@ export default defineEventHandler(async (event) => {
     console.error('上传备份文件失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || '上传备份文件失败'
+      message: error.message || '上传备份文件失败'
     })
   }
 })

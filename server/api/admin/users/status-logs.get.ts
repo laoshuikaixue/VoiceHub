@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '没有权限访问'
+        message: '没有权限访问'
       })
     }
 
@@ -190,7 +190,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '获取状态变更日志失败: ' + error.message
+      message: '获取状态变更日志失败: ' + error.message
     })
   }
 })

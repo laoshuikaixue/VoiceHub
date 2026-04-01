@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
-      statusMessage: '需要歌曲管理员及以上权限'
+      message: '需要歌曲管理员及以上权限'
     })
   }
 
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     if (!scheduleId) {
       throw createError({
         statusCode: 400,
-        statusMessage: '缺少排期ID'
+        message: '缺少排期 ID'
       })
     }
 

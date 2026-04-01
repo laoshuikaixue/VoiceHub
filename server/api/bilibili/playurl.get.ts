@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
   if (!bvid) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Missing id parameter'
+      message: 'Missing id parameter'
     })
   }
 
@@ -89,7 +89,7 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || 'Failed to fetch bilibili track url'
+      message: error.message || 'Failed to fetch bilibili track url'
     })
   }
 })

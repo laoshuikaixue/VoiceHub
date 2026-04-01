@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '没有权限访问'
+        message: '没有权限访问'
       })
     }
 
@@ -22,21 +22,21 @@ export default defineEventHandler(async (event) => {
     if (!Array.isArray(userIds) || userIds.length === 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: '用户ID列表不能为空'
+        message: '用户ID列表不能为空'
       })
     }
 
     if (!status || !['active', 'withdrawn'].includes(status)) {
       throw createError({
         statusCode: 400,
-        statusMessage: '状态必须为 active 或 withdrawn'
+        message: '状态必须为 active 或 withdrawn'
       })
     }
 
     if (!reason || reason.trim().length === 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: '变更原因为必填项'
+        message: '变更原因为必填项'
       })
     }
 
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
     if (validUserIds.length === 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: '没有有效的用户ID'
+        message: '没有有效的用户ID'
       })
     }
 
@@ -70,7 +70,7 @@ export default defineEventHandler(async (event) => {
     if (existingUsers.length === 0) {
       throw createError({
         statusCode: 404,
-        statusMessage: '没有找到可更新的学生用户'
+        message: '没有找到可更新的学生用户'
       })
     }
 
@@ -80,7 +80,7 @@ export default defineEventHandler(async (event) => {
     if (usersToUpdate.length === 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: '所选用户的状态均无需变更'
+        message: '所选用户的状态均无需变更'
       })
     }
 
@@ -151,7 +151,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '批量更新用户状态失败: ' + error.message
+      message: '批量更新用户状态失败: ' + error.message
     })
   }
 })

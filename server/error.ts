@@ -39,7 +39,7 @@ const errorHandler: NitroErrorHandler = async (error, event) => {
   if (error.statusCode) {
     return {
       statusCode: error.statusCode,
-      statusMessage: error.statusMessage || 'Error',
+      message: error.message || 'Error',
       data: {
         error: error.message,
         timestamp: new Date().toISOString()

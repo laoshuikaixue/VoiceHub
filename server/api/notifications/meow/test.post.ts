@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       throw createError({
         statusCode: 401,
-        statusMessage: '未授权访问'
+        message: '未授权访问'
       })
     }
 
@@ -31,14 +31,14 @@ export default defineEventHandler(async (event) => {
     if (!userData) {
       throw createError({
         statusCode: 404,
-        statusMessage: '用户不存在'
+        message: '用户不存在'
       })
     }
 
     if (!userData.meowNickname) {
       throw createError({
         statusCode: 400,
-        statusMessage: '尚未绑定 MeoW 账号'
+        message: '尚未绑定 MeoW 账号'
       })
     }
 
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     if (!response.ok) {
       throw createError({
         statusCode: 500,
-        statusMessage: '发送测试通知失败'
+        message: '发送测试通知失败'
       })
     }
 
@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
     if (result.status !== 200) {
       throw createError({
         statusCode: 500,
-        statusMessage: result.message || '发送测试通知失败'
+        message: result.message || '发送测试通知失败'
       })
     }
 
@@ -84,7 +84,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '发送测试通知失败，请稍后重试'
+      message: '发送测试通知失败，请稍后重试'
     })
   }
 })

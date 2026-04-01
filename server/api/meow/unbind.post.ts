@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       throw createError({
         statusCode: 401,
-        statusMessage: '请先登录'
+        message: '请先登录'
       })
     }
 
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     if (!userRecord) {
       throw createError({
         statusCode: 404,
-        statusMessage: '用户不存在'
+        message: '用户不存在'
       })
     }
 
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     if (!userRecord.meowNickname) {
       throw createError({
         statusCode: 400,
-        statusMessage: '您尚未绑定 MeoW 账号'
+        message: '您尚未绑定 MeoW 账号'
       })
     }
 
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '解绑失败，请稍后重试'
+      message: '解绑失败，请稍后重试'
     })
   }
 })

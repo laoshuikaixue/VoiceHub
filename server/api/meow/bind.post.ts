@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       throw createError({
         statusCode: 401,
-        statusMessage: '请先登录'
+        message: '请先登录'
       })
     }
 
@@ -33,14 +33,14 @@ export default defineEventHandler(async (event) => {
       if (!storedData) {
         throw createError({
           statusCode: 400,
-          statusMessage: '验证码已过期，请重新发送'
+          message: '验证码已过期，请重新发送'
         })
       }
 
       if (storedData.userId !== userId) {
         throw createError({
           statusCode: 400,
-          statusMessage: '验证码不匹配'
+          message: '验证码不匹配'
         })
       }
 
@@ -48,14 +48,14 @@ export default defineEventHandler(async (event) => {
         verificationCodes.delete(meowId)
         throw createError({
           statusCode: 400,
-          statusMessage: '验证码已过期，请重新发送'
+          message: '验证码已过期，请重新发送'
         })
       }
 
       if (storedData.code !== verificationCode) {
         throw createError({
           statusCode: 400,
-          statusMessage: '验证码错误'
+          message: '验证码错误'
         })
       }
 
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
       if (!meowId || !meowId.trim()) {
         throw createError({
           statusCode: 400,
-          statusMessage: '请输入 MeoW 用户 ID'
+          message: '请输入 MeoW 用户 ID'
         })
       }
 
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
       if (meowId.includes('/')) {
         throw createError({
           statusCode: 400,
-          statusMessage: '用户 ID 不能包含斜杠'
+          message: '用户 ID 不能包含斜杠'
         })
       }
 
@@ -101,7 +101,7 @@ export default defineEventHandler(async (event) => {
       if (!userExists) {
         throw createError({
           statusCode: 404,
-          statusMessage: '用户不存在'
+          message: '用户不存在'
         })
       }
 
@@ -169,7 +169,7 @@ export default defineEventHandler(async (event) => {
         console.error('发送 MeoW 验证码失败:', error)
         throw createError({
           statusCode: 500,
-          statusMessage: '发送验证码失败，请检查 MeoW ID 是否正确或稍后重试'
+          message: '发送验证码失败，请检查 MeoW ID 是否正确或稍后重试'
         })
       }
     }
@@ -177,7 +177,7 @@ export default defineEventHandler(async (event) => {
     // 如果不是有效的操作
     throw createError({
       statusCode: 400,
-      statusMessage: '无效的操作'
+      message: '无效的操作'
     })
   } catch (error) {
     console.error('MeoW 绑定失败:', error)
@@ -188,7 +188,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '绑定失败，请稍后重试'
+      message: '绑定失败，请稍后重试'
     })
   }
 })
