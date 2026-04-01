@@ -12,6 +12,12 @@
         </a>
       </span>
       <span v-if="gonganNumber" class="footer-item">
+        <img
+          v-if="showBeianIcon"
+          src="/images/beian.png"
+          alt="备案图标"
+          class="beian-icon"
+        >
         <a
           :href="gonganLink || 'https://beian.mps.gov.cn/'"
           class="icp-link"
@@ -52,7 +58,7 @@ import { getCopyrightOwner, getSystemName, getRepoUrl } from '@/utils/core/secur
 import packageJson from '~~/package.json'
 
 // 使用 useSiteConfig composable 获取配置
-const { siteTitle, icp: icpNumber, gonganNumber } = useSiteConfig()
+const { siteTitle, icp: icpNumber, gonganNumber, showBeianIcon } = useSiteConfig()
 const config = useRuntimeConfig()
 
 // 自动生成公安联网备案链接
@@ -151,6 +157,14 @@ onMounted(() => {
 
 .netlify-badge:hover img {
   opacity: 1;
+}
+
+.beian-icon {
+  height: 14px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 4px;
+  display: inline-block;
 }
 
 @media (max-width: 768px) {

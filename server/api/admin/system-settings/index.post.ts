@@ -78,6 +78,16 @@ export default defineEventHandler(async (event) => {
       updateData.gonganNumber = body.gonganNumber
     }
 
+    if (body.showBeianIcon !== undefined) {
+      if (typeof body.showBeianIcon !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'showBeianIcon 必须是布尔值'
+        })
+      }
+      updateData.showBeianIcon = body.showBeianIcon
+    }
+
     if (body.enableSubmissionLimit !== undefined) {
       if (typeof body.enableSubmissionLimit !== 'boolean') {
         throw createError({

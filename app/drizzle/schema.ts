@@ -136,6 +136,7 @@ export const systemSettings = pgTable('SystemSettings', {
   submissionGuidelines: text('submissionGuidelines'),
   icpNumber: text('icpNumber'),
   gonganNumber: text('gonganNumber'),
+  showBeianIcon: boolean('showBeianIcon').default(false).notNull(),
   enableSubmissionLimit: boolean('enableSubmissionLimit').default(false).notNull(),
   dailySubmissionLimit: integer('dailySubmissionLimit'),
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
