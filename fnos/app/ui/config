@@ -1,0 +1,13 @@
+{
+  ".url": {
+    "voicehub.APPLICATION": {
+      "title": "VoiceHub",
+      "icon": "images/icon-{0}.png",
+      "type": "url",
+      "protocol": "http",
+      "port": "${TRIM_SERVICE_PORT:-3000}",
+      "url": "/",
+      "allUsers": true
+    }
+  }
+}

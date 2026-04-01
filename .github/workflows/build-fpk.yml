@@ -5,6 +5,9 @@
 name: Build VoiceHub FPK
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -32,25 +35,22 @@ jobs:
           echo "📁 模板结构:"
           find voicehub -type f | sort
 
-      - name: 写入 manifest
+      - name: 写入 manifest & 准备图标
         run: |
-          cat > voicehub/manifest <<EOF
-          appname=voicehub
-          version=${APP_VER}
-          display_name=VoiceHub
-          desc=基于 Nuxt 4 的低成本校园广播站点歌系统，支持点歌投票、排期管理、权限控制和打印导出。
-          platform=all
-          source=thirdparty
-          maintainer=laoshuikaixue
-          maintainer_url=https://github.com/laoshuikaixue
-          os_min_version=0.9.0
-          desktop_uidir=ui
-          desktop_applaunchname=voicehub.APPLICATION
-          service_port=3000
-          checkport=false
-          disable_authorization_path=true
-          EOF
-          sed -i 's/^[[:space:]]*//' voicehub/manifest
+          # 复制仓库中的 fnos 模板
+          cp -r fnos/* voicehub/
+          
+          # 从 public 目录复制图标到构建目录
+          mkdir -p voicehub/app/ui/images
+          cp public/images/logo.png voicehub/app/ui/images/icon-64.png
+          cp public/images/logo.png voicehub/app/ui/images/icon-256.png
+          cp public/images/logo.png voicehub/ICON.PNG
+          cp public/images/logo.png voicehub/ICON_256.PNG
+          
+          # 更新版本号
+          sed -i "s/^version=.*/version=${APP_VER}/" voicehub/manifest
+          chmod +x voicehub/cmd/main
+          echo "✅ manifest, cmd/main & icons 已就绪"
 
       - name: 从仓库读取 docker-compose-prebuild-nju.yml 并写入
         run: |
@@ -59,59 +59,12 @@ jobs:
           # 目标路径
           DST_COMPOSE="voicehub/app/docker/docker-compose.yaml"
           
+          # 创建目录
+          mkdir -p voicehub/app/docker
           # 复制内容（保留原有格式）
           cat "$SRC_COMPOSE" > "$DST_COMPOSE"
           
           echo "✅ 已从仓库读取: $SRC_COMPOSE 并写入目标: $DST_COMPOSE"
-
-      - name: 写入 cmd/main
-        run: |
-          cat > voicehub/cmd/main <<'SCRIPT'
-          #!/bin/bash
-          FILE_PATH="${TRIM_APPDEST}/docker/docker-compose.yaml"
-          is_docker_running() {
-            local name
-            [ -f "$FILE_PATH" ] || return 1
-            name=$(grep "container_name" "$FILE_PATH" | head -1 | awk -F ':' '{print $2}' | xargs)
-            [ -n "$name" ] || return 1
-            docker inspect "$name" 2>/dev/null | grep -q '"Status": "running",'
-          }
-          case $1 in
-            start)  exit 0 ;;
-            stop)   exit 0 ;;
-            status) is_docker_running && exit 0 || exit 3 ;;
-            *)      exit 1 ;;
-          esac
-          SCRIPT
-          chmod +x voicehub/cmd/main
-
-      - name: 写入 app/ui/config
-        run: |
-          mkdir -p voicehub/app/ui
-          cat > voicehub/app/ui/config <<'UICONFIG'
-          {
-            ".url": {
-              "voicehub.APPLICATION": {
-                "title": "VoiceHub",
-                "icon": "images/icon-{0}.png",
-                "type": "url",
-                "protocol": "http",
-                "port": "${TRIM_SERVICE_PORT:-3000}",
-                "url": "/",
-                "allUsers": true
-              }
-            }
-          }
-          UICONFIG
-
-      - name: 下载仓库图标
-        run: |
-          mkdir -p voicehub/app/ui/images
-          wget -q "https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/public/images/logo.png" -O voicehub/app/ui/images/icon-64.png
-          cp voicehub/app/ui/images/icon-64.png voicehub/app/ui/images/icon-256.png
-          cp voicehub/app/ui/images/icon-64.png voicehub/ICON.PNG
-          cp voicehub/app/ui/images/icon-256.png voicehub/ICON_256.PNG
-          echo "✅ 图标就绪 ($(wc -c < voicehub/ICON.PNG) bytes)"
 
       - name: 最终目录 & 打包
         run: |
