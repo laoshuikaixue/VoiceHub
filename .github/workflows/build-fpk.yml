@@ -66,7 +66,25 @@ jobs:
           # 1. 移除 postgres 服务的端口映射，以避免 fnOS 5432 端口冲突
           # 2. 移除 voicehub 服务的代码挂载 (.:/app)，避免覆盖镜像内的预构建代码导致 MODULE_NOT_FOUND
           # 3. 确保容器间通过 service name 互联
-          sed '/postgres:/,/restart:/ { /ports:/d; /5432:5432/d }; /voicehub:/,/restart:/ { /volumes:/d; /\.\/app/d; /\/app\/node_modules/d }' "$SRC_COMPOSE" > "$DST_COMPOSE"
+          # 直接使用 awk 工具更精确地过滤掉整个 volumes 块和 ports 块中我们不想要的行，或者删除空块
+          awk '
+            /^[[:space:]]+volumes:/ { in_volumes=1; print; next }
+            /^[[:space:]]+ports:/ { in_ports=1; print; next }
+            /^[[:space:]]+restart:/ { in_volumes=0; in_ports=0; print; next }
+            /^[[:space:]]+[a-zA-Z0-9_]+:/ { in_volumes=0; in_ports=0; print; next }
+            
+            in_volumes && /^[[:space:]]+-[[:space:]]+.:\/app/ { next }
+            in_volumes && /^[[:space:]]+-[[:space:]]+\/app\/node_modules/ { next }
+            in_ports && /^[[:space:]]+-[[:space:]]+.5432:5432./ { next }
+            
+            { print }
+          ' "$SRC_COMPOSE" > "$DST_COMPOSE.tmp"
+          
+          # 清理由于上述删除可能产生的空的 volumes: 或 ports: 标签
+          # 使用 grep 检查下一行是否是配置项或空行
+          sed -E '/^[[:space:]]+volumes:[[:space:]]*$/{N;/\n[[:space:]]+-/!d}' "$DST_COMPOSE.tmp" > "$DST_COMPOSE.tmp2"
+          sed -E '/^[[:space:]]+ports:[[:space:]]*$/{N;/\n[[:space:]]+-/!d}' "$DST_COMPOSE.tmp2" > "$DST_COMPOSE"
+          rm "$DST_COMPOSE.tmp" "$DST_COMPOSE.tmp2"
           
           echo "✅ 已处理 compose 文件：移除数据库端口暴露 & 移除应用代码挂载"
           cat "$DST_COMPOSE"
