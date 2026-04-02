@@ -1,5 +1,5 @@
 appname=voicehub
-version=1.5.6.7
+version=0.0.0.0
 display_name=VoiceHub
 desc=基于 Nuxt 4 的低成本校园广播站点歌系统，支持点歌投票、排期管理、权限控制和打印导出。
 platform=all
