@@ -143,7 +143,7 @@
                 >设置账户状态</span
               >
               <span class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed"
-                >批量设置学生账户状态为毕业生或退学</span
+                >批量设置选中学生的账户状态</span
               >
             </label>
           </div>
@@ -588,8 +588,9 @@ const targetStatus = ref('')
 const statusReason = ref('')
 
 const statusOptions = [
-  { label: '毕业生', value: 'graduate' },
-  { label: '退学', value: 'withdrawn' }
+  { label: '正常访问', value: 'active' },
+  { label: '限制访问 (毕业生)', value: 'graduate' },
+  { label: '限制访问 (退学)', value: 'withdrawn' }
 ]
 
 // Excel批量更新相关

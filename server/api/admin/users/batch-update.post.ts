@@ -12,7 +12,8 @@ const batchUpdateSchema = z.object({
         userId: z.number().int().positive(),
         grade: z.string().optional(),
         class: z.string().optional(),
-        username: z.string().optional()
+        username: z.string().optional(),
+        status: z.enum(['active', 'withdrawn', 'graduate']).optional()
       })
     )
     .min(1)
@@ -123,6 +124,10 @@ export default defineEventHandler(async (event) => {
           }
 
           updateData.username = newUsername
+        }
+
+        if (update.status !== undefined) {
+          updateData.status = update.status
         }
 
         // 如果没有要更新的字段，跳过
