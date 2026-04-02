@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
+import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -145,13 +146,6 @@ export default defineEventHandler(async (event) => {
     const totalPages = Math.ceil(total / limitNum)
     const hasNextPage = pageNum < totalPages
     const hasPrevPage = pageNum > 1
-
-    const getStatusText = (status: string) => {
-      if (status === 'active') return '正常'
-      if (status === 'withdrawn') return '退学'
-      if (status === 'graduate') return '毕业生'
-      return status
-    }
 
     return {
       success: true,

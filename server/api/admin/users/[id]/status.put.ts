@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -107,10 +108,9 @@ export default defineEventHandler(async (event) => {
       console.warn('[Cache] 清除缓存失败:', cacheError)
     }
 
-    const statusText = status === 'active' ? '正常' : status === 'withdrawn' ? '退学' : '毕业生'
     return {
       success: true,
-      message: `用户状态已更新为${statusText}`,
+      message: `用户状态已更新为${getStatusText(status)}`,
       data: {
         userId: parseInt(userId),
         oldStatus,
