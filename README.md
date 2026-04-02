@@ -881,27 +881,24 @@ VoiceHub/
 │   │   ├── native_tx.ts    # 腾讯音乐原生API
 │   │   ├── native_wy.ts    # 网易云音乐原生API
 │   │   ├── oauth-strategies.ts # OAuth策略配置
-│   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── oauth-token.ts  # OAuth令牌工具
+│   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── open-api-cache.ts # 开放API缓存
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── redis.ts        # Redis连接和操作工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
-│   │   └── twoFactorStore.ts # 双重认证存储工具
+│   │   ├── twoFactorStore.ts # 双重认证存储工具
+│   │   ├── user.ts         # 用户相关工具函数
+│   │   ├── webauthn-config.ts # WebAuthn配置工具
+│   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   ├── workers/            # 服务端工作进程
 │   │   └── audioEncoderWorker.js # 音频编码工作进程
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义
-├── utils/                 # 客户端工具函数
-│   ├── __tests__/          # 工具函数测试目录
-│   ├── musicSources.ts     # 音乐源配置和管理工具
-│   ├── musicUrl.ts         # 音乐URL处理工具
-│   ├── oauth.ts            # OAuth工具函数
-│   └── url.ts              # URL处理工具（HTTPS转换等）
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
 ├── .vercelignore          # Vercel部署忽略文件
