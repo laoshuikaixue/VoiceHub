@@ -81,6 +81,13 @@ export default defineEventHandler(async (event) => {
     const hasNextPage = pageNum < totalPages
     const hasPrevPage = pageNum > 1
 
+    const getStatusText = (status: string) => {
+      if (status === 'active') return '正常'
+      if (status === 'withdrawn') return '退学'
+      if (status === 'graduate') return '毕业生'
+      return status
+    }
+
     return {
       success: true,
       user: existingUser[0],
@@ -88,8 +95,8 @@ export default defineEventHandler(async (event) => {
         id: log.id,
         oldStatus: log.oldStatus,
         newStatus: log.newStatus,
-        oldStatusDisplay: log.oldStatus === 'active' ? '正常' : '退学',
-        newStatusDisplay: log.newStatus === 'active' ? '正常' : '退学',
+        oldStatusDisplay: getStatusText(log.oldStatus || ''),
+        newStatusDisplay: getStatusText(log.newStatus || ''),
         reason: log.reason,
         createdAt: log.createdAt,
         operator: {

@@ -26,10 +26,10 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    if (!status || !['active', 'withdrawn'].includes(status)) {
+    if (!status || !['active', 'withdrawn', 'graduate'].includes(status)) {
       throw createError({
         statusCode: 400,
-        statusMessage: '状态必须为 active 或 withdrawn'
+        statusMessage: '状态必须为 active, withdrawn 或 graduate'
       })
     }
 
@@ -131,9 +131,10 @@ export default defineEventHandler(async (event) => {
       console.warn('[Cache] 清除缓存失败:', cacheError)
     }
 
+    const statusText = status === 'active' ? '正常' : status === 'withdrawn' ? '退学' : '毕业生'
     return {
       success: true,
-      message: `成功更新 ${results.length} 个用户的状态为${status === 'active' ? '正常' : '退学'}`,
+      message: `成功更新 ${results.length} 个用户的状态为${statusText}`,
       data: {
         totalRequested: validUserIds.length,
         totalUpdated: results.length,
