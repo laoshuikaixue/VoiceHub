@@ -157,8 +157,15 @@
               </span>
             </div>
 
-            <!-- 右侧占位 -->
-            <div class="right-placeholder" />
+            <!-- 右侧播放模式切换 -->
+            <span
+              class="lyrics-btn music-icon"
+              :class="{ active: control.playMode.value !== 'off' }"
+              :title="playModeTitle"
+              @click="cyclePlayMode"
+            >
+              <Icon :name="playModeIcon" size="20" />
+            </span>
           </div>
         </div>
 
@@ -697,10 +704,16 @@ const handleError = async (error) => {
 }
 
 const handleEnded = () => {
+  // 在执行 onEnded（可能会切换到下一首）之前，记录当前是否还有下一首
+  const hasNextBeforeEnded = sync.globalAudioPlayer.hasNext.value
+
   control.onEnded()
-  // 只有在播放模式为 'off' 时才关闭全屏歌词模态
-  // 单曲循环和列表播放模式下应该保持歌词页面打开
-  if (control.playMode.value === 'off') {
+  
+  // 只有在播放模式为 'off'，或者在 'order' 模式且没有下一首歌时才关闭全屏歌词模态
+  const isOffMode = control.playMode.value === 'off'
+  const isOrderFinished = control.playMode.value === 'order' && !hasNextBeforeEnded
+  
+  if (isOffMode || isOrderFinished) {
     showFullscreenLyrics.value = false
   }
   emit('ended')
@@ -851,6 +864,47 @@ const rightTimeText = computed(() => {
 // 切换音质设置显示
 const toggleQualitySettings = () => {
   showQualitySettings.value = !showQualitySettings.value
+}
+
+// 播放模式计算属性
+const playModeIcon = computed(() => {
+  switch (control.playMode.value) {
+    case 'loopOne':
+      return 'repeat-one'
+    case 'order':
+      return 'order'
+    case 'off':
+    default:
+      // 单曲播放（播放完退出）
+      return 'play-circle'
+  }
+})
+
+const playModeTitle = computed(() => {
+  switch (control.playMode.value) {
+    case 'loopOne':
+      return '单曲循环'
+    case 'order':
+      return '列表循环'
+    case 'off':
+    default:
+      return '单曲播放'
+  }
+})
+
+// 切换播放模式
+const cyclePlayMode = () => {
+  const current = control.playMode.value
+  if (current === 'order') {
+    control.setPlayMode('loopOne')
+    if (window.$showNotification) window.$showNotification('已切换为单曲循环', 'info')
+  } else if (current === 'loopOne') {
+    control.setPlayMode('off')
+    if (window.$showNotification) window.$showNotification('已切换为单曲播放', 'info')
+  } else {
+    control.setPlayMode('order')
+    if (window.$showNotification) window.$showNotification('已切换为列表循环', 'info')
+  }
 }
 
 // 关闭音质设置

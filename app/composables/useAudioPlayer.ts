@@ -137,13 +137,25 @@ export function useAudioPlayer() {
             isPlaying.value = true
             return true
           } else {
-            console.warn(`跳过第${nextIndex + 1}首歌曲：无法获取播放链接，可能是付费内容`)
+            const msg = `无法获取《${nextSong.title}》的播放链接，已自动跳过`
+            console.warn(msg)
+            if (window.$showNotification) {
+              window.$showNotification(msg, 'warning')
+            }
           }
         } catch (error) {
-          console.warn(`跳过第${nextIndex + 1}首歌曲：获取播放URL失败`, error)
+          const msg = `《${nextSong.title}》获取播放链接失败，已自动跳过`
+          console.warn(msg, error)
+          if (window.$showNotification) {
+            window.$showNotification(msg, 'error')
+          }
         }
       } else {
-        console.warn(`跳过第${nextIndex + 1}首歌曲：缺少音乐平台或ID信息`)
+        const msg = `《${nextSong.title}》缺少播放信息，已自动跳过`
+        console.warn(msg)
+        if (window.$showNotification) {
+          window.$showNotification(msg, 'warning')
+        }
       }
 
       // 尝试下一首
@@ -265,6 +277,49 @@ export function useAudioPlayer() {
     return currentPlaylist.value.length > 0 && currentPlaylistIndex.value > 0
   })
 
+  // 提前预加载下一首歌曲的URL
+  let isPrefetching = false
+  const prefetchNextSong = async () => {
+    if (isPrefetching || !hasNext.value) return false
+    
+    const nextIndex = currentPlaylistIndex.value + 1
+    const nextSong = currentPlaylist.value[nextIndex]?.song
+    
+    if (!nextSong || nextSong.musicUrl || !nextSong.musicPlatform || !nextSong.musicId) {
+      return false
+    }
+
+    isPrefetching = true
+    try {
+      const { getMusicUrl } = await import('~/utils/musicUrl')
+
+      const isPodcast =
+        nextSong.musicPlatform === 'netease-podcast' ||
+        nextSong.sourceInfo?.type === 'voice' ||
+        (nextSong.sourceInfo?.source === 'netease-backup' &&
+          nextSong.sourceInfo?.type === 'voice')
+      const options = isPodcast ? { unblock: false } : {}
+
+      const url = await getMusicUrl(
+        nextSong.musicPlatform,
+        nextSong.musicId,
+        nextSong.playUrl,
+        options
+      )
+      
+      if (url) {
+        nextSong.musicUrl = url
+        console.log(`成功预加载下一首歌曲: ${nextSong.title}`)
+      }
+    } catch (error) {
+      console.warn(`预加载下一首歌曲《${nextSong.title}》失败:`, error)
+      // 注意：这里不显示错误通知，失败会在真正尝试播放时处理并提示
+    } finally {
+      isPrefetching = false
+    }
+    return true
+  }
+
   // 获取当前播放列表
   const getCurrentPlaylist = () => {
     return readonly(currentPlaylist)
@@ -333,6 +388,7 @@ export function useAudioPlayer() {
     getProgress,
     hasNext,
     hasPrevious,
+    prefetchNextSong,
     getCurrentPlaylist,
     getCurrentPlaylistIndex
   }
