@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
+import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -157,8 +158,8 @@ export default defineEventHandler(async (event) => {
         },
         oldStatus: log.oldStatus,
         newStatus: log.newStatus,
-        oldStatusDisplay: log.oldStatus === 'active' ? '正常' : '退学',
-        newStatusDisplay: log.newStatus === 'active' ? '正常' : '退学',
+        oldStatusDisplay: getStatusText(log.oldStatus || ''),
+        newStatusDisplay: getStatusText(log.newStatus || ''),
         reason: log.reason,
         createdAt: log.createdAt,
         operator: {

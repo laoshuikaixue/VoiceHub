@@ -125,6 +125,7 @@ export default defineEventHandler(async (event) => {
         grade: users.grade,
         class: users.class,
         role: users.role,
+        status: users.status,
         passwordChangedAt: users.passwordChangedAt
       })
       .from(users)
@@ -133,8 +134,8 @@ export default defineEventHandler(async (event) => {
 
     const user = userResult[0] || null
 
-    // 用户不存在时token无效
-    if (!user) {
+    // 用户不存在或状态异常时token无效
+    if (!user || user.status !== 'active') {
       const isSecure =
         getRequestURL(event).protocol === 'https:' ||
         getRequestHeader(event, 'x-forwarded-proto') === 'https'
@@ -145,11 +146,20 @@ export default defineEventHandler(async (event) => {
         maxAge: 0,
         path: '/'
       })
+      
+      const errorMessage = !user 
+        ? '用户不存在，请重新登录' 
+        : user.status === 'withdrawn' 
+          ? '该账号已注销' 
+          : user.status === 'graduate' 
+            ? '该账号已毕业，限制访问' 
+            : '该账号已被禁用'
+
       return sendError(
         event,
         createError({
           statusCode: 401,
-          message: '用户不存在，请重新登录'
+          message: errorMessage
         })
       )
     }

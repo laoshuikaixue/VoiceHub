@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, eq, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -26,10 +27,10 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    if (!status || !['active', 'withdrawn'].includes(status)) {
+    if (!status || !['active', 'withdrawn', 'graduate'].includes(status)) {
       throw createError({
         statusCode: 400,
-        statusMessage: '状态必须为 active 或 withdrawn'
+        statusMessage: '状态必须为 active, withdrawn 或 graduate'
       })
     }
 
@@ -133,7 +134,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      message: `成功更新 ${results.length} 个用户的状态为${status === 'active' ? '正常' : '退学'}`,
+      message: `成功更新 ${results.length} 个用户的状态为${getStatusText(status)}`,
       data: {
         totalRequested: validUserIds.length,
         totalUpdated: results.length,

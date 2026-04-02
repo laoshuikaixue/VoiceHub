@@ -41,7 +41,7 @@
 
         <div class="flex-1 overflow-y-auto p-8 pt-6 custom-scrollbar space-y-8">
           <!-- 更新方式选择 -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <label
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
@@ -111,11 +111,46 @@
                 >通过 Excel 文件精确匹配并批量修改学生信息</span
               >
             </label>
+
+            <label
+              :class="[
+                'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
+                updateType === 'status-batch'
+                  ? 'bg-amber-500/5 border-amber-500/50 ring-4 ring-amber-500/10'
+                  : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
+              ]"
+            >
+              <input v-model="updateType" type="radio" value="status-batch" class="sr-only" >
+              <div class="flex items-center justify-between mb-3">
+                <div
+                  :class="[
+                    'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
+                    updateType === 'status-batch'
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-zinc-800 text-zinc-500 group-hover:text-zinc-300'
+                  ]"
+                >
+                  <ShieldAlert :size="18" />
+                </div>
+                <div
+                  v-if="updateType === 'status-batch'"
+                  class="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center"
+                >
+                  <Check :size="12" class="text-white" />
+                </div>
+              </div>
+              <span class="text-sm font-black text-zinc-200 uppercase tracking-widest"
+                >设置账户状态</span
+              >
+              <span class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed"
+                >批量设置选中学生的账户状态</span
+              >
+            </label>
           </div>
 
-          <!-- 仅更新年级面板 -->
+          <!-- 学生选择面板 (年级更新和状态更新共用) -->
           <div
-            v-if="updateType === 'grade-only'"
+            v-if="['grade-only', 'status-batch'].includes(updateType)"
             class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             <div class="p-6 bg-zinc-950/50 border border-zinc-800/50 rounded-xl space-y-6">
@@ -203,7 +238,8 @@
               </div>
             </div>
 
-            <div class="p-6 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-6">
+            <!-- 目标年级设置 -->
+            <div v-if="updateType === 'grade-only'" class="p-6 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-6">
               <div
                 class="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest"
               >
@@ -238,6 +274,39 @@
                   >
                   <span class="text-xs font-bold text-zinc-300">保持原有班级不变</span>
                 </label>
+              </div>
+            </div>
+
+            <!-- 目标状态设置 -->
+            <div v-if="updateType === 'status-batch'" class="p-6 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-6">
+              <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
+                <Save :size="14" />
+                目标状态设置
+              </div>
+              <div class="grid grid-cols-1 gap-6">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">选择账户状态</label>
+                  <CustomSelect
+                    v-model="targetStatus"
+                    :options="statusOptions"
+                    label-key="label"
+                    value-key="value"
+                    placeholder="请选择目标状态"
+                    class-name="w-full"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">变更原因说明</label>
+                  <div class="relative group">
+                    <MessageSquare class="absolute left-4 top-3 text-zinc-700 group-focus-within:text-amber-500 transition-colors" :size="16" />
+                    <textarea
+                      v-model="statusReason"
+                      rows="2"
+                      placeholder="例如: 2025届学生统一毕业"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500/30 transition-all text-zinc-200 resize-none"
+                    ></textarea>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -455,7 +524,9 @@
               'flex-[2] px-6 py-4 text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg active:scale-95',
               updateType === 'excel-batch'
                 ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20'
-                : 'bg-purple-600 hover:bg-purple-500 shadow-purple-900/20'
+                : updateType === 'status-batch'
+                  ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-900/20'
+                  : 'bg-purple-600 hover:bg-purple-500 shadow-purple-900/20'
             ]"
             @click="performUpdate"
           >
@@ -486,7 +557,9 @@ import {
   Info,
   AlertCircle,
   RefreshCw,
-  CheckCircle2
+  CheckCircle2,
+  ShieldAlert,
+  MessageSquare
 } from 'lucide-vue-next'
 
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -509,6 +582,16 @@ const classFilter = ref('')
 const selectedUserIds = ref([])
 const targetGrade = ref('')
 const keepClass = ref(true)
+
+// 状态批量更新相关
+const targetStatus = ref('')
+const statusReason = ref('')
+
+const statusOptions = [
+  { label: '正常访问', value: 'active' },
+  { label: '限制访问 (毕业生)', value: 'graduate' },
+  { label: '限制访问 (退学)', value: 'withdrawn' }
+]
 
 // Excel批量更新相关
 const isDragOver = ref(false)
@@ -583,6 +666,8 @@ const canUpdate = computed(() => {
     return selectedUserIds.value.length > 0 && targetGrade.value.trim()
   } else if (updateType.value === 'excel-batch') {
     return excelPreviewData.value.length > 0 && excelPreviewData.value.some((row) => !row.error)
+  } else if (updateType.value === 'status-batch') {
+    return selectedUserIds.value.length > 0 && targetStatus.value && statusReason.value.trim()
   }
   return false
 })
@@ -766,6 +851,8 @@ const performUpdate = async () => {
       await performGradeUpdate()
     } else if (updateType.value === 'excel-batch') {
       await performExcelUpdate()
+    } else if (updateType.value === 'status-batch') {
+      await performStatusUpdate()
     }
 
     emit('update-success')
@@ -820,6 +907,22 @@ const performExcelUpdate = async () => {
   }
 }
 
+const performStatusUpdate = async () => {
+  const response = await $fetch('/api/admin/users/batch-status', {
+    method: 'PUT',
+    body: {
+      userIds: selectedUserIds.value,
+      status: targetStatus.value,
+      reason: statusReason.value.trim()
+    },
+    ...auth.getAuthConfig()
+  })
+
+  if (!response.success) {
+    throw new Error(response.message || '批量更新状态失败')
+  }
+}
+
 // 获取所有学生用户数据
 const fetchAllStudents = async () => {
   try {
@@ -857,6 +960,8 @@ watch(
       // 重置状态
       selectedUserIds.value = []
       excelPreviewData.value = []
+      targetStatus.value = ''
+      statusReason.value = ''
       error.value = ''
     }
   }

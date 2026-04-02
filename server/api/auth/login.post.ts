@@ -115,6 +115,11 @@ export default defineEventHandler(async (event) => {
         statusCode: 403,
         message: '该账号已注销'
       })
+    } else if (user.status === 'graduate') {
+      throw createError({
+        statusCode: 403,
+        message: '该账号已毕业，限制访问'
+      })
     } else if (user.status === 'banned') {
       throw createError({
         statusCode: 403,

@@ -113,10 +113,10 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证status字段的有效性
-    if (status && !['active', 'withdrawn'].includes(status)) {
+    if (status && !['active', 'withdrawn', 'graduate'].includes(status)) {
       throw createError({
         statusCode: 400,
-        statusMessage: '用户状态只能是active或withdrawn'
+        statusMessage: '用户状态只能是 active, withdrawn 或 graduate'
       })
     }
 
