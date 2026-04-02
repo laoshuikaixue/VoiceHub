@@ -4,8 +4,10 @@
  * @returns 中文显示文本
  */
 export function getStatusText(status: string | null | undefined): string {
-  if (status === 'active') return '正常'
-  if (status === 'withdrawn') return '退学'
-  if (status === 'graduate') return '毕业生'
-  return status || '未知'
+  const statusMap: Record<string, string> = {
+    active: '正常',
+    withdrawn: '退学',
+    graduate: '毕业生',
+  };
+  return status ? (statusMap[status] || status) : '未知';
 }
