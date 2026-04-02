@@ -26,8 +26,8 @@ const isLoadingTrack = ref(false)
 const progressBarRef = ref<HTMLElement | null>(null)
 const hasUserInteracted = ref(false)
 
-// 播放模式: 'off' (播放完退出) | 'order' (顺序播放) | 'loopOne' (单曲循环)
-const playMode = ref<'off' | 'order' | 'loopOne'>('off')
+// 播放模式: 'off' (单曲播放完退出) | 'order' (顺序播放列表) | 'loopOne' (单曲循环)
+const playMode = ref<'off' | 'order' | 'loopOne'>('order')
 
 // 共享歌词实例
 const lyrics = useLyrics()
@@ -587,12 +587,20 @@ export const useAudioPlayerControl = () => {
   }
 
   // 音频事件处理
+  let hasPrefetchedForCurrentSong = false
+  
   const onTimeUpdate = (currentTimeValue: number) => {
     if (isDragging.value) return
 
     currentTime.value = currentTimeValue
     if (duration.value > 0) {
       progress.value = (currentTimeValue / duration.value) * 100
+      
+      // 距离结束还有15秒时，提前预加载下一首
+      if (!hasPrefetchedForCurrentSong && duration.value - currentTimeValue <= 15) {
+        hasPrefetchedForCurrentSong = true
+        globalAudioPlayer.prefetchNextSong()
+      }
     }
 
     // 更新歌词时间
@@ -603,6 +611,7 @@ export const useAudioPlayerControl = () => {
   const onLoaded = (durationValue: number) => {
     duration.value = durationValue
     hasError.value = false
+    hasPrefetchedForCurrentSong = false // 重置预加载标志
   }
 
   const onError = (error: any) => {
