@@ -28,8 +28,7 @@ RUN set -eux; \
     pnpm install --frozen-lockfile || ( \
       rm -rf node_modules; \
       pnpm install --no-frozen-lockfile || ( \
-        # 如果在国内构建镜像，可以启用下面的 pnpm 镜像源来加速依赖安装
-        # pnpm config set registry https://registry.npmmirror.com; \
+        pnpm config set registry https://registry.npmmirror.com; \
         pnpm install --no-frozen-lockfile \
       ) \
     )

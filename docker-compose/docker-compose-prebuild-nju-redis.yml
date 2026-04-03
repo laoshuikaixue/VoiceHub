@@ -8,10 +8,11 @@ services:
       - JWT_SECRET=your-jwt-secret-here
       - NODE_ENV=production
       - REDIS_URL=redis://default:your-redis-password-here@redis:6379
-      - SKIP_BUILD=true
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
+    volumes:
+      - .:/app
+      - /app/node_modules
     restart: unless-stopped
 
   postgres:
@@ -24,11 +25,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - '5432:5432'
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U user -d voicehub']
-      interval: 5s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
 
   redis:
