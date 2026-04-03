@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { db } from '~/drizzle/db'
 import { CacheService } from '~~/server/services/cacheService'
-import { users } from '~/drizzle/schema'
+import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, eq, inArray, ne } from 'drizzle-orm'
 
 // 请求体验证模式
@@ -12,7 +12,8 @@ const batchUpdateSchema = z.object({
         userId: z.number().int().positive(),
         grade: z.string().optional(),
         class: z.string().optional(),
-        username: z.string().optional()
+        username: z.string().optional(),
+        status: z.enum(['active', 'withdrawn', 'graduate']).optional()
       })
     )
     .min(1)
@@ -62,7 +63,8 @@ export default defineEventHandler(async (event) => {
         id: users.id,
         name: users.name,
         username: users.username,
-        role: users.role
+        role: users.role,
+        status: users.status
       })
       .from(users)
       .where(and(inArray(users.id, userIds), eq(users.role, 'USER')))
@@ -125,25 +127,53 @@ export default defineEventHandler(async (event) => {
           updateData.username = newUsername
         }
 
+        if (update.status !== undefined) {
+          const currentUserStatus = existingUsers.find((u) => u.id === update.userId)?.status
+          if (update.status !== currentUserStatus) {
+            updateData.status = update.status
+            updateData.statusChangedAt = new Date()
+            updateData.statusChangedBy = currentUser.id
+          }
+        }
+
         // 如果没有要更新的字段，跳过
         if (Object.keys(updateData).length === 0) {
           continue
         }
 
-        // 更新用户信息
-        const updatedUserResult = await db
-          .update(users)
-          .set(updateData)
-          .where(eq(users.id, update.userId))
-          .returning({
-            id: users.id,
-            name: users.name,
-            username: users.username,
-            grade: users.grade,
-            class: users.class
-          })
+        let updatedUser
+        
+        // 使用事务确保更新和日志记录的原子性
+        await db.transaction(async (tx) => {
+          // 更新用户信息
+          const updatedUserResult = await tx
+            .update(users)
+            .set(updateData)
+            .where(eq(users.id, update.userId))
+            .returning({
+              id: users.id,
+              name: users.name,
+              username: users.username,
+              grade: users.grade,
+              class: users.class,
+              status: users.status
+            })
 
-        const updatedUser = updatedUserResult[0]
+          updatedUser = updatedUserResult[0]
+
+          // 记录状态变更日志
+          if (updateData.status) {
+            const currentUserStatus = existingUsers.find((u) => u.id === update.userId)?.status
+            await tx.insert(userStatusLogs).values({
+              userId: update.userId,
+              oldStatus: currentUserStatus,
+              newStatus: updateData.status,
+              reason: `管理员${currentUser.name || currentUser.username}批量更新用户状态`,
+              operatorId: currentUser.id,
+              createdAt: new Date()
+            })
+          }
+        })
 
         updateResults.push(updatedUser)
       } catch (error) {

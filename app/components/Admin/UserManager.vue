@@ -195,10 +195,24 @@
                     正常
                   </div>
                   <div
-                    v-else
+                    v-else-if="user.status === 'withdrawn'"
                     class="flex items-center gap-1.5 text-red-500 font-black uppercase text-[10px] tracking-widest"
                   >
                     <div class="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    退学
+                  </div>
+                  <div
+                    v-else-if="user.status === 'graduate'"
+                    class="flex items-center gap-1.5 text-amber-500 font-black uppercase text-[10px] tracking-widest"
+                  >
+                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    毕业
+                  </div>
+                  <div
+                    v-else
+                    class="flex items-center gap-1.5 text-zinc-500 font-black uppercase text-[10px] tracking-widest"
+                  >
+                    <div class="w-1.5 h-1.5 rounded-full bg-zinc-500" />
                     禁用
                   </div>
                 </td>
@@ -291,10 +305,24 @@
                   正常
                 </div>
                 <div
-                  v-else
+                  v-else-if="user.status === 'withdrawn'"
                   class="flex items-center gap-1.5 text-red-500 font-black uppercase text-[10px] tracking-widest"
                 >
                   <div class="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  退学
+                </div>
+                <div
+                  v-else-if="user.status === 'graduate'"
+                  class="flex items-center gap-1.5 text-amber-500 font-black uppercase text-[10px] tracking-widest"
+                >
+                  <div class="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  毕业
+                </div>
+                <div
+                  v-else
+                  class="flex items-center gap-1.5 text-zinc-500 font-black uppercase text-[10px] tracking-widest"
+                >
+                  <div class="w-1.5 h-1.5 rounded-full bg-zinc-500" />
                   禁用
                 </div>
                 <p class="text-[10px] font-black text-zinc-700 uppercase mt-1">账户状态</p>
@@ -1374,12 +1402,14 @@ const roleFilterOptions = computed(() => [{ name: '', displayName: '全部角色
 const statusFilterOptions = [
   { label: '全部状态', value: '' },
   { label: '正常', value: 'active' },
-  { label: '退学', value: 'withdrawn' }
+  { label: '退学', value: 'withdrawn' },
+  { label: '毕业生', value: 'graduate' }
 ]
 
 const userStatusOptions = [
   { label: '正常访问', value: 'active' },
-  { label: '限制访问 (退学)', value: 'withdrawn' }
+  { label: '限制访问 (退学)', value: 'withdrawn' },
+  { label: '限制访问 (毕业生)', value: 'graduate' }
 ]
 
 // 模态框状态
@@ -1537,7 +1567,8 @@ const getRoleDisplayName = (role) => {
 const getStatusClass = (status) => {
   const classes = {
     active: 'status-active',
-    withdrawn: 'status-withdrawn'
+    withdrawn: 'status-withdrawn',
+    graduate: 'status-graduate'
   }
   return classes[status] || 'status-active'
 }
@@ -1545,7 +1576,8 @@ const getStatusClass = (status) => {
 const getStatusDisplayName = (status) => {
   const names = {
     active: '正常',
-    withdrawn: '退学'
+    withdrawn: '退学',
+    graduate: '毕业生'
   }
   return names[status] || '正常'
 }

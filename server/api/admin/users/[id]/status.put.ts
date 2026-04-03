@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -11,7 +12,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        message: '没有权限访问'
+        statusMessage: '没有权限访问'
       })
     }
 
@@ -20,17 +21,17 @@ export default defineEventHandler(async (event) => {
     const { status, reason } = body
 
     // 验证必填字段
-    if (!status || !['active', 'withdrawn'].includes(status)) {
+    if (!status || !['active', 'withdrawn', 'graduate'].includes(status)) {
       throw createError({
         statusCode: 400,
-        message: '状态必须为 active 或 withdrawn'
+        statusMessage: '状态必须为 active, withdrawn 或 graduate'
       })
     }
 
     if (!reason || reason.trim().length === 0) {
       throw createError({
         statusCode: 400,
-        message: '变更原因为必填项'
+        statusMessage: '变更原因为必填项'
       })
     }
 
@@ -50,7 +51,7 @@ export default defineEventHandler(async (event) => {
     if (existingUser.length === 0) {
       throw createError({
         statusCode: 404,
-        message: '用户不存在'
+        statusMessage: '用户不存在'
       })
     }
 
@@ -60,7 +61,7 @@ export default defineEventHandler(async (event) => {
     if (targetUser.role !== 'USER') {
       throw createError({
         statusCode: 400,
-        message: '只能修改学生用户的状态'
+        statusMessage: '只能修改学生用户的状态'
       })
     }
 
@@ -68,7 +69,7 @@ export default defineEventHandler(async (event) => {
     if (targetUser.status === status) {
       throw createError({
         statusCode: 400,
-        message: '用户状态未发生变化'
+        statusMessage: '用户状态未发生变化'
       })
     }
 
@@ -109,7 +110,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      message: `用户状态已更新为${status === 'active' ? '正常' : '退学'}`,
+      message: `用户状态已更新为${getStatusText(status)}`,
       data: {
         userId: parseInt(userId),
         oldStatus,
@@ -127,7 +128,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      message: '更新用户状态失败：' + error.message
+      statusMessage: '更新用户状态失败: ' + error.message
     })
   }
 })

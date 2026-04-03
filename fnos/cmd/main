@@ -1,0 +1,16 @@
+#!/bin/bash
+FILE_PATH="${TRIM_APPDEST}/docker/docker-compose.yaml"
+# 检查 Docker 容器是否正在运行
+is_docker_running() {
+  local name
+  [ -f "$FILE_PATH" ] || return 1
+  name=$(grep '^[[:space:]]*container_name:' "$FILE_PATH" | head -1 | cut -d ':' -f 2- | xargs)
+  [ -n "$name" ] || return 1
+  [ "$(docker inspect -f '{{.State.Running}}' "$name" 2>/dev/null)" = "true" ]
+}
+case $1 in
+  start)  exit 0 ;;
+  stop)   exit 0 ;;
+  status) is_docker_running && exit 0 || exit 3 ;;
+  *)      exit 1 ;;
+esac

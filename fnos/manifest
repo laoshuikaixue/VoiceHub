@@ -1,0 +1,14 @@
+appname=voicehub
+version=0.0.0.0
+display_name=VoiceHub
+desc=基于 Nuxt 4 的低成本校园广播站点歌系统，支持点歌投票、排期管理、权限控制和打印导出。
+platform=all
+source=thirdparty
+maintainer=laoshuikaixue
+maintainer_url=https://github.com/laoshuikaixue
+os_min_version=0.9.0
+desktop_uidir=ui
+desktop_applaunchname=voicehub.APPLICATION
+service_port=3000
+checkport=false
+disable_authorization_path=true

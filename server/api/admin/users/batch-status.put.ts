@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, eq, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -11,7 +12,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        message: '没有权限访问'
+        statusMessage: '没有权限访问'
       })
     }
 
@@ -22,21 +23,21 @@ export default defineEventHandler(async (event) => {
     if (!Array.isArray(userIds) || userIds.length === 0) {
       throw createError({
         statusCode: 400,
-        message: '用户ID列表不能为空'
+        statusMessage: '用户ID列表不能为空'
       })
     }
 
-    if (!status || !['active', 'withdrawn'].includes(status)) {
+    if (!status || !['active', 'withdrawn', 'graduate'].includes(status)) {
       throw createError({
         statusCode: 400,
-        message: '状态必须为 active 或 withdrawn'
+        statusMessage: '状态必须为 active, withdrawn 或 graduate'
       })
     }
 
     if (!reason || reason.trim().length === 0) {
       throw createError({
         statusCode: 400,
-        message: '变更原因为必填项'
+        statusMessage: '变更原因为必填项'
       })
     }
 
@@ -51,7 +52,7 @@ export default defineEventHandler(async (event) => {
     if (validUserIds.length === 0) {
       throw createError({
         statusCode: 400,
-        message: '没有有效的用户ID'
+        statusMessage: '没有有效的用户ID'
       })
     }
 
@@ -70,7 +71,7 @@ export default defineEventHandler(async (event) => {
     if (existingUsers.length === 0) {
       throw createError({
         statusCode: 404,
-        message: '没有找到可更新的学生用户'
+        statusMessage: '没有找到可更新的学生用户'
       })
     }
 
@@ -80,7 +81,7 @@ export default defineEventHandler(async (event) => {
     if (usersToUpdate.length === 0) {
       throw createError({
         statusCode: 400,
-        message: '所选用户的状态均无需变更'
+        statusMessage: '所选用户的状态均无需变更'
       })
     }
 
@@ -133,7 +134,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      message: `成功更新 ${results.length} 个用户的状态为${status === 'active' ? '正常' : '退学'}`,
+      message: `成功更新 ${results.length} 个用户的状态为${getStatusText(status)}`,
       data: {
         totalRequested: validUserIds.length,
         totalUpdated: results.length,
@@ -151,7 +152,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      message: '批量更新用户状态失败: ' + error.message
+      statusMessage: '批量更新用户状态失败: ' + error.message
     })
   }
 })
