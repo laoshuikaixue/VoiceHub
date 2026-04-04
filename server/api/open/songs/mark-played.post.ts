@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
         playedAt: isUnmark ? null : getBeijingTime()
       })
       .where(condition)
-      .returning()
+      .returning({ id: songs.id })
 
     // 获取实际更新的歌曲ID列表
     const updatedSongIds = updatedSongsResult.map(s => s.id)
