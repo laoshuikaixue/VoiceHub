@@ -2,45 +2,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { cacheService } from '../services/cacheService'
 import { isRedisReady } from '../utils/redis'
-
-// 过滤敏感字段，只返回公开配置
-const publicFields = [
-  'siteTitle',
-  'siteLogoUrl',
-  'schoolLogoHomeUrl',
-  'schoolLogoPrintUrl',
-  'siteDescription',
-  'submissionGuidelines',
-  'icpNumber',
-  'gonganNumber',
-  'showBeianIcon',
-  'enablePlayTimeSelection',
-  'enableSubmissionLimit',
-  'dailySubmissionLimit',
-  'weeklySubmissionLimit',
-  'monthlySubmissionLimit',
-  'showBlacklistKeywords',
-  'hideStudentInfo',
-  'enableReplayRequests',
-  'enableCollaborativeSubmission',
-  'enableSubmissionRemarks',
-  'enableRequestTimeLimitation',
-  'forceBlockAllRequests',
-  'smtpEnabled'
-]
-
-const filterPublicSettings = (data: any) => {
-  if (!data) {
-    return {}
-  }
-  const result: Record<string, any> = {}
-  for (const key of publicFields) {
-    if (Object.prototype.hasOwnProperty.call(data, key)) {
-      result[key] = data[key]
-    }
-  }
-  return result
-}
+import { SYSTEM_SETTINGS_DEFAULTS, filterPublicSettings } from '../utils/system-settings-defaults'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -58,28 +20,9 @@ export default defineEventHandler(async (event) => {
     let settings = settingsResult[0] || null
 
     if (!settings) {
-      // 如果不存在，创建默认设置
       const newSettings = await db
         .insert(systemSettings)
-        .values({
-          enablePlayTimeSelection: false,
-          siteTitle: 'VoiceHub',
-          siteLogoUrl: '/favicon.ico',
-          schoolLogoHomeUrl: null,
-          schoolLogoPrintUrl: null,
-          siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
-          submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
-          icpNumber: null,
-          gonganNumber: null,
-          showBeianIcon: false,
-          enableSubmissionLimit: false,
-          dailySubmissionLimit: null,
-          weeklySubmissionLimit: null,
-          showBlacklistKeywords: false,
-          hideStudentInfo: true,
-          enableCollaborativeSubmission: true,
-          enableSubmissionRemarks: false
-        })
+        .values(SYSTEM_SETTINGS_DEFAULTS)
         .returning()
 
       settings = newSettings[0]
