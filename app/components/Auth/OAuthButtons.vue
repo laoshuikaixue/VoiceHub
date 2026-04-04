@@ -26,40 +26,40 @@
 <script setup lang="ts">
 import { Shield } from 'lucide-vue-next'
 
-const { oauthProviders, refreshSiteConfig } = useSiteConfig();
+const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 
 onMounted(async () => {
-  await refreshSiteConfig();
-});
+  await refreshSiteConfig()
+})
 
-const enabledProviders = computed(() => oauthProviders.value || []);
+const enabledProviders = computed(() => oauthProviders.value || [])
 
 const hasEnabledProviders = computed(() => {
-  return enabledProviders.value.length > 0;
-});
+  return enabledProviders.value.length > 0
+})
 
 const providerButtonClass = (key: string) => {
   const baseClass =
     'w-12 h-12 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] flex items-center justify-center cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[var(--bg-tertiary)]'
 
   if (key === 'github') {
-    return `${baseClass} hover:bg-[#24292e] hover:text-white hover:border-[#24292e]`;
+    return `${baseClass} hover:bg-[#24292e] hover:text-white hover:border-[#24292e]`
   }
   if (key === 'casdoor') {
-    return `${baseClass} hover:border-[#67c23a]`;
+    return `${baseClass} hover:border-[#67c23a]`
   }
   if (key === 'google') {
-    return `${baseClass} hover:bg-white hover:text-black hover:border-[#dadce0]`;
+    return `${baseClass} hover:bg-white hover:text-black hover:border-[#dadce0]`
   }
   if (key === 'oauth2') {
-    return `${baseClass} hover:bg-[#0f766e] hover:text-white hover:border-[#0f766e]`;
+    return `${baseClass} hover:bg-[#0f766e] hover:text-white hover:border-[#0f766e]`
   }
 
-  return `${baseClass} hover:border-blue-500/40 hover:text-blue-400`;
-};
+  return `${baseClass} hover:border-blue-500/40 hover:text-blue-400`
+}
 
 const loginWith = (provider: string) => {
   // 外部导航到 API 端点
-  navigateTo(`/api/auth/${provider}`, { external: true });
-};
+  navigateTo(`/api/auth/${provider}`, { external: true })
+}
 </script>

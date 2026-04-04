@@ -56,6 +56,7 @@ export default defineEventHandler(async (event) => {
     const result = await db.transaction(async (tx) => {
       // 加密密码
       const hashedPassword = await bcrypt.hash(password, 10)
+      const now = getBeijingTime()
 
       // 创建用户
       const insertedUser = (await tx
@@ -65,8 +66,9 @@ export default defineEventHandler(async (event) => {
           password: hashedPassword,
           role: 'USER',
           status: 'active',
-          createdAt: getBeijingTime(),
-          updatedAt: getBeijingTime(),
+          createdAt: now,
+          updatedAt: now,
+          passwordChangedAt: now,
           forcePasswordChange: false
         })
         .returning({ id: users.id }))[0]
