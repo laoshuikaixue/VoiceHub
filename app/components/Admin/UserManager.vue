@@ -2100,12 +2100,15 @@ const handleFileUpload = async (event) => {
 }
 
 // 下载导入模板
-const downloadImportTemplate = () => {
+const downloadImportTemplate = async () => {
   if (!window.XLSX) {
-    if (window.$showNotification) {
-      window.$showNotification('Excel处理库未加载，请稍后重试', 'warning')
+    await loadXLSX()
+    if (!window.XLSX) {
+      if (window.$showNotification) {
+        window.$showNotification('Excel处理库加载失败，请刷新页面后重试', 'error')
+      }
+      return
     }
-    return
   }
 
   const templateData = [
@@ -2127,39 +2130,54 @@ const importUsers = async () => {
   importError.value = ''
   importSuccess.value = ''
 
+  const dataToImport = [...previewData.value]
+  const batchSize = 50
+  const totalBatches = Math.ceil(dataToImport.length / batchSize)
+  let totalCreated = 0
+  let totalFailed = 0
+
   try {
-    const batchSize = 50
-    let totalCreated = 0
-    let totalFailed = 0
+    for (let i = 0; i < dataToImport.length; i += batchSize) {
+      const batch = dataToImport.slice(i, i + batchSize)
+      const currentBatch = Math.floor(i / batchSize) + 1
 
-    for (let i = 0; i < previewData.value.length; i += batchSize) {
-      const batch = previewData.value.slice(i, i + batchSize)
+      importSuccess.value = `正在导入：正在处理第 ${currentBatch} / ${totalBatches} 批数据...`
 
-      const result = await $fetch('/api/admin/users/batch', {
-        method: 'POST',
-        body: {
-          users: batch
-        },
-        ...auth.getAuthConfig()
-      })
+      try {
+        const result = await $fetch('/api/admin/users/batch', {
+          method: 'POST',
+          body: {
+            users: batch
+          },
+          ...auth.getAuthConfig()
+        })
 
-      totalCreated += result.created || 0
-      totalFailed += result.failed || 0
+        totalCreated += result.created || 0
+        totalFailed += result.failed || 0
+      } catch (batchErr) {
+        console.error(`第 ${currentBatch} 批导入失败:`, batchErr)
+        totalFailed += batch.length
+      }
     }
 
     await loadUsers()
 
-    importSuccess.value = `成功导入 ${totalCreated} 个用户，${totalFailed} 个用户导入失败`
+    if (totalCreated > 0 || totalFailed === 0) {
+      importSuccess.value = `成功导入 ${totalCreated} 个用户，${totalFailed} 个用户导入失败`
+      previewData.value = []
 
-    previewData.value = []
-
-    setTimeout(() => {
-      if (importSuccess.value) {
-        closeImportModal()
-      }
-    }, 3000)
+      setTimeout(() => {
+        if (importSuccess.value) {
+          closeImportModal()
+        }
+      }, 3000)
+    } else {
+      importError.value = '导入失败，请检查数据格式后重试'
+      importSuccess.value = ''
+    }
   } catch (err) {
-    importError.value = err.message || '导入用户失败'
+    importError.value = `导入过程中发生错误 (已成功导入 ${totalCreated} 个): ${err.message || '未知错误'}`
+    importSuccess.value = ''
     console.error('导入用户出错:', err)
   } finally {
     importLoading.value = false
