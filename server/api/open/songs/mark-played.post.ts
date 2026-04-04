@@ -5,17 +5,19 @@ import { songs, songReplayRequests } from '~/drizzle/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { z } from 'zod'
+
+const markPlayedSchema = z.object({
+  songId: z.number().optional(),
+  songIds: z.array(z.number()).optional(),
+  unmark: z.boolean().optional()
+})
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
+  const validatedData = markPlayedSchema.parse(body)
 
-  let songIds: number[] = []
-
-  if (body.songId) {
-    songIds = [body.songId]
-  } else if (body.songIds && Array.isArray(body.songIds)) {
-    songIds = body.songIds
-  }
+  const songIds = validatedData.songId ? [validatedData.songId] : (validatedData.songIds || [])
 
   if (songIds.length === 0) {
     throw createError({
@@ -25,7 +27,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查是否是撤回操作
-  const isUnmark = body.unmark === true
+  const isUnmark = validatedData.unmark === true
 
   // 构建更新条件：只更新状态不符合预期的歌曲
   // 如果是标记为已播放(!isUnmark)，则只更新 played = false 的歌曲
