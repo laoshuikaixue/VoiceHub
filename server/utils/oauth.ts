@@ -124,8 +124,6 @@ export const parseState = (
                 console.error(`OAuth state domain mismatch: ${expectedBase} vs ${payloadBase}`)
                 return null
               }
-              
-              console.log(`OAuth state origin mismatch but github.dev domain matches: ${expectedHost} vs ${payloadHost}`)
             }
           } else {
             // 对于非白名单环境，要求 host 完全相同

@@ -391,9 +391,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { AlertCircle, Shield } from 'lucide-vue-next'
-import { computed } from 'vue'
 
 const props = defineProps({
   modelValue: {

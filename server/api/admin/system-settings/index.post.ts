@@ -248,10 +248,14 @@ export default defineEventHandler(async (event) => {
 
     // OAuth 配置字段
     if (body.oauthRedirectUri !== undefined) {
-      if (body.oauthRedirectUri !== null && body.oauthRedirectUri !== '') {
+      const normalizedOauthRedirectUri =
+        typeof body.oauthRedirectUri === 'string' ? body.oauthRedirectUri.trim() : body.oauthRedirectUri
+
+      if (normalizedOauthRedirectUri !== null && normalizedOauthRedirectUri !== '') {
         try {
-          const uri = new URL(body.oauthRedirectUri)
-          if (!uri.pathname.includes('/auth/') || !uri.pathname.includes('/callback')) {
+          const uri = new URL(normalizedOauthRedirectUri)
+          const validPathPattern = /^\/auth\/[^/]+\/callback\/?$/
+          if (!validPathPattern.test(uri.pathname)) {
             throw createError({
               statusCode: 400,
               message: 'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/auth/[provider]/callback'
@@ -265,7 +269,7 @@ export default defineEventHandler(async (event) => {
           })
         }
       }
-      updateData.oauthRedirectUri = body.oauthRedirectUri
+      updateData.oauthRedirectUri = normalizedOauthRedirectUri === '' ? null : normalizedOauthRedirectUri
     }
 
     if (body.oauthStateSecret !== undefined && body.oauthStateSecret !== SECRET_FIELD_MASK) {
@@ -273,7 +277,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const nextOauthRedirectUri =
-      body.oauthRedirectUri !== undefined ? body.oauthRedirectUri : settings?.oauthRedirectUri
+      body.oauthRedirectUri !== undefined ? updateData.oauthRedirectUri : settings?.oauthRedirectUri
     const nextOauthStateSecret =
       body.oauthStateSecret !== undefined && body.oauthStateSecret !== SECRET_FIELD_MASK
         ? body.oauthStateSecret
