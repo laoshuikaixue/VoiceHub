@@ -2519,13 +2519,16 @@ const handleManualSubmit = async () => {
       return
     }
     // 构建歌曲数据对象
+    // 如果手动填入了 playUrl，则不保留平台标识符
+    const trimmedPlayUrl = manualPlayUrl.value?.trim() || ''
+    const hasManualPlayUrl = !!trimmedPlayUrl
     const songData = {
       title: title.value,
       artist: manualArtist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
-      cover: manualCover.value || '',
-      playUrl: manualPlayUrl.value || '',
-      musicPlatform: platform.value,
+      cover: manualCover.value?.trim() || '',
+      playUrl: trimmedPlayUrl,
+      musicPlatform: hasManualPlayUrl ? null : platform.value,
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value
