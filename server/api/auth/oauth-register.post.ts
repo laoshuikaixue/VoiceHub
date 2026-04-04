@@ -2,7 +2,6 @@ import bcrypt from 'bcrypt'
 import { db, users, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
-import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 
@@ -32,8 +31,6 @@ export default defineEventHandler(async (event) => {
   if (validationError) {
     throw createError({ statusCode: 400, message: validationError })
   }
-
-  const clientIp = getClientIP(event)
 
   // 检查用户名是否已存在
   const existingUser = await db.query.users.findFirst({

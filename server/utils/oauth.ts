@@ -81,9 +81,12 @@ export const parseState = (
         const expectedPort = expectedUrl.port
         const payloadPort = payloadUrl.port
         
-        // 完全相同则直接通过
+        // hostname 相同时也要校验端口一致，避免同 host 不同端口被接受
         if (expectedHost === payloadHost) {
-          // 通过
+          if (expectedPort !== payloadPort) {
+            console.error(`OAuth state port mismatch: ${expectedPort} vs ${payloadPort}`)
+            return null
+          }
         } else {
           // host 不同 - 检查是否为已知的需要兼容的环境
           // 仅在 *.github.dev（Codespaces 环境）中允许不同的子域名
