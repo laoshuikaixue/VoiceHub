@@ -264,7 +264,6 @@
       <div
         v-if="showAddForm || editingRequestTime"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm"
-        @click.self="cancelForm"
       >
         <div
           class="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden"

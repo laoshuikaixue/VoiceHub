@@ -434,7 +434,6 @@
       <div
         v-if="showAddModal || editingUser"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-        @click="closeModal"
       >
         <div
           class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl"
@@ -626,7 +625,6 @@
       <div
         v-if="resetPasswordUser"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-        @click="closeResetPassword"
       >
         <div
           class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl"
@@ -723,7 +721,6 @@
       <div
         v-if="showImportModal"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-        @click="closeImportModal"
       >
         <div
           class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
