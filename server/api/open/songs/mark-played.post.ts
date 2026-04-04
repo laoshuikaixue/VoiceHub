@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const validatedData = markPlayedSchema.parse(body)
 
-  const songIds = validatedData.songId ? [validatedData.songId] : (validatedData.songIds || [])
+  const songIds = validatedData.songId !== undefined ? [validatedData.songId] : (validatedData.songIds || [])
 
   if (songIds.length === 0) {
     throw createError({
