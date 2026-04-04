@@ -1437,6 +1437,7 @@ const togglePlaySong = async (song) => {
       audioPlayer.playSong({ ...song, musicUrl: null }, playlist, songIndex)
     }
   }
+}
 
 // 获取歌曲所在的时段
 const getCurrentTimeSlot = (song) => {
