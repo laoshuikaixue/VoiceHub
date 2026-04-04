@@ -788,14 +788,28 @@
                   </table>
                 </div>
 
-                <div
-                  class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-[10px] text-blue-400/80 leading-relaxed"
-                >
-                  <strong>支持的角色：</strong>
-                  <span v-if="isSuperAdmin"
-                    >USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）</span
+                <div class="flex items-center justify-between gap-4">
+                  <div
+                    class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-[10px] text-blue-400/80 leading-relaxed flex-1"
                   >
-                  <span v-else>USER（普通用户）、SONG_ADMIN（歌曲管理员）</span>
+                    <strong>支持的角色：</strong>
+                    <span v-if="isSuperAdmin"
+                      >USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）</span
+                    >
+                    <span v-else>USER（普通用户）、SONG_ADMIN（歌曲管理员）</span>
+                  </div>
+                  <button
+                    class="px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl transition-all flex items-center gap-2 group shrink-0"
+                    @click="downloadImportTemplate"
+                  >
+                    <Download
+                      :size="16"
+                      class="text-emerald-500 group-hover:scale-110 transition-transform"
+                    />
+                    <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest"
+                      >下载模板</span
+                    >
+                  </button>
                 </div>
               </div>
 
@@ -2085,6 +2099,29 @@ const handleFileUpload = async (event) => {
   }
 }
 
+// 下载导入模板
+const downloadImportTemplate = async () => {
+  if (!window.XLSX) {
+    await loadXLSX()
+    if (!window.XLSX) {
+      if (window.$showNotification) {
+        window.$showNotification('Excel处理库加载失败，请刷新页面后重试', 'error')
+      }
+      return
+    }
+  }
+
+  const templateData = [
+    { 姓名: '张三', 账号名: 'zhangsan', 密码: '123456', 角色: 'USER', 年级: '高一', 班级: '1班' },
+    { 姓名: '李四', 账号名: 'lisi', 密码: '123456', 角色: 'USER', 年级: '高一', 班级: '2班' }
+  ]
+
+  const ws = window.XLSX.utils.json_to_sheet(templateData)
+  const wb = window.XLSX.utils.book_new()
+  window.XLSX.utils.book_append_sheet(wb, ws, '用户导入模板')
+  window.XLSX.writeFile(wb, '用户批量导入模板.xlsx')
+}
+
 // 批量导入用户
 const importUsers = async () => {
   if (previewData.value.length === 0) return
@@ -2093,32 +2130,54 @@ const importUsers = async () => {
   importError.value = ''
   importSuccess.value = ''
 
-  try {
-    // 调用API批量导入用户
-    const result = await $fetch('/api/admin/users/batch', {
-      method: 'POST',
-      body: {
-        users: previewData.value
-      },
-      ...auth.getAuthConfig()
-    })
+  const dataToImport = [...previewData.value]
+  const batchSize = 50
+  const totalBatches = Math.ceil(dataToImport.length / batchSize)
+  let totalCreated = 0
+  let totalFailed = 0
 
-    // 更新用户列表
+  try {
+    for (let i = 0; i < dataToImport.length; i += batchSize) {
+      const batch = dataToImport.slice(i, i + batchSize)
+      const currentBatch = Math.floor(i / batchSize) + 1
+
+      importSuccess.value = `正在导入：正在处理第 ${currentBatch} / ${totalBatches} 批数据...`
+
+      try {
+        const result = await $fetch('/api/admin/users/batch', {
+          method: 'POST',
+          body: {
+            users: batch
+          },
+          ...auth.getAuthConfig()
+        })
+
+        totalCreated += result.created || 0
+        totalFailed += result.failed || 0
+      } catch (batchErr) {
+        console.error(`第 ${currentBatch} 批导入失败:`, batchErr)
+        totalFailed += batch.length
+      }
+    }
+
     await loadUsers()
 
-    importSuccess.value = `成功导入 ${result.created} 个用户，${result.failed} 个用户导入失败`
+    if (totalCreated > 0 || totalFailed === 0) {
+      importSuccess.value = `成功导入 ${totalCreated} 个用户，${totalFailed} 个用户导入失败`
+      previewData.value = []
 
-    // 清空预览数据
-    previewData.value = []
-
-    // 3秒后关闭导入对话框
-    setTimeout(() => {
-      if (importSuccess.value) {
-        closeImportModal()
-      }
-    }, 3000)
+      setTimeout(() => {
+        if (importSuccess.value) {
+          closeImportModal()
+        }
+      }, 3000)
+    } else {
+      importError.value = '导入失败，请检查数据格式后重试'
+      importSuccess.value = ''
+    }
   } catch (err) {
-    importError.value = err.message || '导入用户失败'
+    importError.value = `导入过程中发生错误 (已成功导入 ${totalCreated} 个): ${err.message || '未知错误'}`
+    importSuccess.value = ''
     console.error('导入用户出错:', err)
   } finally {
     importLoading.value = false
