@@ -255,6 +255,7 @@ export default defineNuxtConfig({
       exclude: ['@applemusic-like-lyrics/vue', '@applemusic-like-lyrics/lyric']
     },
     build: {
+      target: 'esnext',
       sourcemap: false,
       rollupOptions: {
         output: {
