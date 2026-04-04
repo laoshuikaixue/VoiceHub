@@ -736,6 +736,21 @@
                 placeholder="填写歌曲备注"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[120px] resize-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              <label class="flex items-center gap-3 cursor-pointer group px-1">
+                <input
+                  v-model="editForm.submissionNotePublic"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-blue-500"
+                >
+                <div>
+                  <span class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors"
+                    >公开备注留言</span
+                  >
+                  <p class="text-[10px] text-zinc-600 font-medium">
+                    公开后其他用户可以看到此备注留言
+                  </p>
+                </div>
+              </label>
               <div
                 v-if="submissionNoteClearRequested"
                 class="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"
@@ -1033,6 +1048,7 @@ const editForm = ref({
   requester: '',
   semester: '',
   submissionNote: '',
+  submissionNotePublic: false,
   musicPlatform: '',
   musicId: '',
   cover: '',
@@ -1481,6 +1497,7 @@ const editSong = (song) => {
     requester: song.requesterId || song.requester_id || song.requester || '',
     semester: song.semester || '',
     submissionNote: song.submissionNote || '',
+    submissionNotePublic: song.submissionNotePublic === true,
     musicPlatform: song.musicPlatform || '',
     musicId: song.musicId || '',
     cover: song.cover || '',
@@ -1542,6 +1559,7 @@ const saveEditSong = async () => {
       collaborators: selectedEditCollaborators.value.map((u) => u.id),
       semester: editForm.value.semester,
       submissionNote: submissionNoteClearRequested.value ? null : editForm.value.submissionNote,
+      submissionNotePublic: editForm.value.submissionNotePublic,
       clearSubmissionNote: submissionNoteClearRequested.value,
       submissionNoteClearReason: submissionNoteClearReason.value.trim(),
       notifyOnSubmissionNoteClear: submissionNoteClearRequested.value && notifyOnSubmissionNoteClear.value,
@@ -1578,6 +1596,7 @@ const cancelEditSong = () => {
     requester: '',
     semester: '',
     submissionNote: '',
+    submissionNotePublic: false,
     musicPlatform: '',
     musicId: '',
     cover: '',

@@ -123,6 +123,10 @@ export default defineEventHandler(async (event) => {
           : null
     }
 
+    if ('submissionNotePublic' in body) {
+      updateData.submissionNotePublic = body.submissionNotePublic === true
+    }
+
     const currentRequesterId = updateData.requesterId || existingSong.requesterId
 
     // 更新歌曲
