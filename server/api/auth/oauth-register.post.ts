@@ -94,9 +94,11 @@ export default defineEventHandler(async (event) => {
     const token = JWTEnhanced.generateToken(result.id, 'USER')
 
     // 自动判断是否需要secure
+    const forwardedProtoHeader = (getRequestHeader(event, 'x-forwarded-proto') || '').toString()
+    const forwardedProto = forwardedProtoHeader.split(',')[0]?.trim().toLowerCase()
     const isSecure =
       getRequestURL(event).protocol === 'https:' ||
-      getRequestHeader(event, 'x-forwarded-proto') === 'https'
+      forwardedProto === 'https'
 
     // 设置cookie
     setCookie(event, 'auth-token', token, {

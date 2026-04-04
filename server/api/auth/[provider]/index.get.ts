@@ -36,6 +36,25 @@ export default defineEventHandler(async (event) => {
 
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 
+  // CSRF Cookie 绑定在当前 host 上，若回调地址源站不一致会导致回调时拿不到 Cookie
+  try {
+    const redirectUrl = new URL(redirectUri)
+    if (redirectUrl.host !== host || redirectUrl.protocol !== `${protocol}:`) {
+      throw createError({
+        statusCode: 400,
+        message: 'OAuth 回调地址与当前请求源站不一致，请在管理员后台将 OAuth 重定向 URI 配置为当前站点域名'
+      })
+    }
+  } catch (error: any) {
+    if (error?.statusCode) {
+      throw error
+    }
+    throw createError({
+      statusCode: 400,
+      message: 'OAuth 重定向 URI 配置无效，请在管理员后台检查配置'
+    })
+  }
+
   const { state, csrf } = generateState(origin, provider, stateSecret)
 
   // 在开发环境 (HTTP) 中，必须将 secure 设置为 false，否则浏览器会拒绝设置 cookie
