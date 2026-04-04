@@ -120,7 +120,7 @@
           >
             <button
               class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"
-              :disabled="loadingViewId === apiKey.id"
+              :disabled="loadingViewId !== null || loadingEditId !== null"
               @click="viewApiKey(apiKey)"
             >
               <RefreshCw v-if="loadingViewId === apiKey.id" :size="14" class="animate-spin" />
@@ -128,7 +128,7 @@
             </button>
             <button
               class="p-2 text-zinc-500 hover:text-amber-400 transition-colors"
-              :disabled="loadingEditId === apiKey.id"
+              :disabled="loadingViewId !== null || loadingEditId !== null"
               @click="editApiKey(apiKey)"
             >
               <RefreshCw v-if="loadingEditId === apiKey.id" :size="14" class="animate-spin" />
@@ -136,6 +136,7 @@
             </button>
             <button
               class="p-2 text-zinc-500 hover:text-red-400 transition-colors"
+              :disabled="loadingViewId !== null || loadingEditId !== null"
               @click="deleteApiKey(apiKey)"
             >
               <Trash2 :size="14" />
@@ -880,7 +881,7 @@ const cancelDelete = () => {
 }
 
 const viewApiKey = async (apiKey) => {
-  if (loadingViewId.value) return
+  if (loadingViewId.value !== null || loadingEditId.value !== null) return
   loadingViewId.value = apiKey.id
   try {
     const response = await $fetch(`/api/admin/api-keys/${apiKey.id}`)
@@ -898,7 +899,7 @@ const viewApiKey = async (apiKey) => {
 }
 
 const editApiKey = async (apiKey) => {
-  if (loadingEditId.value) return
+  if (loadingEditId.value !== null || loadingViewId.value !== null) return
   loadingEditId.value = apiKey.id
   try {
     const response = await $fetch(`/api/admin/api-keys/${apiKey.id}`)
