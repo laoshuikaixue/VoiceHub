@@ -671,8 +671,6 @@ const handleError = async (error) => {
 
   const fallbackResult = openFallbackLinkForFailedSong()
   if (fallbackResult !== 'none') {
-    console.log('[AudioPlayer] 显示 fallback 弹窗，立即设置错误状态停止重试')
-    // 立即设置错误状态，阻止 loadSong 的重试
     control.hasError.value = true
     control.isPlaying.value = false
     control.isLoadingTrack.value = false
@@ -1044,13 +1042,10 @@ const handleLyricSeek = async (time) => {
 const stopPlaying = () => {
   if (isClosing.value) return
 
-  console.log('[Fallback] 关闭播放器，重置 lock 和重试状态')
-  // 重置 fallback lock 和增强错误处理状态，下次重新播放时从头开始
   lastOpenedFallbackSongId.value = null
   isFallbackHandling.value = false
   enhanced.resetRetryState()
 
-  // 立即停止音频播放和同步状态，确保用户点击关闭时音乐立即停止
   control.stop()
   sync.syncStopToGlobal()
 

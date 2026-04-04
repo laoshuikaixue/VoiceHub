@@ -298,35 +298,20 @@ export const useAudioPlayerControl = () => {
 
       return true
     } catch (error) {
-      console.error('加载歌曲失败:', error)
-
-      // 重试逻辑 - 如果已经设置了错误状态（比如显示了 fallback 弹窗），就不再重试
+      // 重试逻辑（针对网络抖动等临时错误）
       if (
         retryCount < 2 &&
         !hasError.value &&
         typeof songUrlOrSong === 'object' &&
         songUrlOrSong?.musicPlatform
       ) {
-        // 等待一小段时间，让 handleError 有机会设置 hasError 状态
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        
-        // 再次检查 hasError 状态
-        if (hasError.value) {
-          console.log('检测到错误状态已设置（可能显示了 fallback 弹窗），停止重试')
-          return false
-        }
-        
-        console.log(`第 ${retryCount + 1} 次重试加载歌曲...`)
-        await new Promise((resolve) => setTimeout(resolve, 900)) // 总共等待1秒后重试
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        if (hasError.value) return false
         return await loadSong(songUrlOrSong, retryCount + 1)
       }
 
       hasError.value = true
       isLoadingNewSong.value = false
-
-      // 不在这里显示错误通知，让 handleError 统一处理
-      // 这样可以避免 fallback 弹窗和错误通知同时出现
-
       return false
     }
   }

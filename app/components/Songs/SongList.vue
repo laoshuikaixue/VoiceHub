@@ -1062,58 +1062,39 @@ const getFirstChar = (title) => {
 }
 
 // 播放歌曲的辅助函数，处理 URL 获取和播放列表构建
-// 提取此函数以避免在 togglePlaySong 中重复相同的错误处理逻辑
 const playSongWithUrlFetching = async (song) => {
+  let url = null
   try {
-    const url = await getMusicUrl(song)
-
-    const playableSong = {
-      ...song,
-      musicUrl: url || null
-    }
-
-    // 构建播放列表并设置当前歌曲索引
-    const playlist = await buildPlayablePlaylist(song)
-    const currentIndex = playlist.findIndex((item) => item.id === song.id)
-    audioPlayer.playSong(playableSong, playlist, currentIndex)
-
-    // 对于哔哩哔哩视频，即使没有 URL 也允许播放
-    if (!url && !isBilibiliSong(song)) {
-      if (window.$showNotification) {
-        window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
-      }
-      return
-    }
-
-    // 后台预取后续歌曲的播放链接（不阻塞当前播放）
-    ;(async () => {
-      for (let i = currentIndex + 1; i < playlist.length; i++) {
-        const s = playlist[i]
-        if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
-          try {
-            s.musicUrl = await getMusicUrl(s)
-          } catch (error) {
-            console.warn(`后台预取失败: ${s.title}`, error)
-            s.musicUrl = null
-          }
-        }
-      }
-    })()
+    url = await getMusicUrl(song)
   } catch (error) {
-    const playableSong = {
-      ...song,
-      musicUrl: null
-    }
-    const playlist = await buildPlayablePlaylist(song)
-    const currentIndex = playlist.findIndex((item) => item.id === song.id)
-    audioPlayer.playSong(playableSong, playlist, currentIndex)
-
     if (!isBilibiliSong(song)) {
       if (window.$showNotification) {
         window.$showNotification('获取音乐播放链接失败', 'error')
       }
     }
   }
+
+  const playableSong = { ...song, musicUrl: url || null }
+  const playlist = await buildPlayablePlaylist(song)
+  const currentIndex = playlist.findIndex((item) => item.id === song.id)
+  audioPlayer.playSong(playableSong, playlist, currentIndex)
+
+  if (!url && !isBilibiliSong(song)) return
+
+  // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+  ;(async () => {
+    for (let i = currentIndex + 1; i < playlist.length; i++) {
+      const s = playlist[i]
+      if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
+        try {
+          s.musicUrl = await getMusicUrl(s)
+        } catch (error) {
+          console.warn(`后台预取失败: ${s.title}`, error)
+          s.musicUrl = null
+        }
+      }
+    }
+  })()
 }
 
 // 切换歌曲播放/暂停

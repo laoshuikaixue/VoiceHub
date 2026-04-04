@@ -1370,105 +1370,71 @@ const togglePlaySong = async (song) => {
 
   // 如果有平台和ID信息或playUrl，动态获取URL
   if ((song.musicPlatform && song.musicId) || song.playUrl) {
+    const buildPlaylistForSong = (targetSong) => {
+      const currentTimeSlot = getCurrentTimeSlot(targetSong)
+      let playlist = []
+      let songIndex = 0
+      if (currentTimeSlot && currentTimeSlot.songs) {
+        playlist = currentTimeSlot.songs.map((s) => ({
+          id: s.id,
+          title: s.title,
+          artist: s.artist,
+          cover: s.cover,
+          musicUrl: s.musicUrl || null,
+          musicPlatform: s.musicPlatform,
+          musicId: s.musicId,
+          playUrl: s.playUrl || null,
+          sourceInfo: s.sourceInfo
+        }))
+        songIndex = playlist.findIndex((s) => s.id === targetSong.id)
+        if (songIndex === -1) songIndex = 0
+      }
+      return { playlist, songIndex }
+    }
+
     try {
       const url = await getMusicUrl(song)
       if (url || isBilibiliSong(song)) {
-        // 构建当前时段的播放列表
-        const currentTimeSlot = getCurrentTimeSlot(song)
-        let playlist = []
-        let songIndex = 0
-
-        if (currentTimeSlot && currentTimeSlot.songs) {
-          // 构建播放列表但不阻塞当前播放，后续后台预取
-          playlist = currentTimeSlot.songs.map((s) => ({
-            id: s.id,
-            title: s.title,
-            artist: s.artist,
-            cover: s.cover,
-            musicUrl: s.musicUrl || null,
-            musicPlatform: s.musicPlatform,
-            musicId: s.musicId,
-            playUrl: s.playUrl || null,
-            sourceInfo: s.sourceInfo
-          }))
-
-          // 找到当前歌曲在播放列表中的索引
-          songIndex = playlist.findIndex((s) => s.id === song.id)
-          if (songIndex === -1) songIndex = 0
-
-          // 后台预取后续歌曲的播放链接（不阻塞当前播放）
-          ;(async () => {
-            for (let i = songIndex + 1; i < playlist.length; i++) {
-              const s = playlist[i]
-              if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
-                try {
-                  s.musicUrl = await getMusicUrl(s)
-                } catch (error) {
-                  console.warn(`后台预取失败: ${s.title}`, error)
-                  s.musicUrl = null
-                }
-              }
-            }
-          })()
-        }
+        const { playlist, songIndex } = buildPlaylistForSong(song)
 
         const playableSong = {
           ...song,
           musicUrl: url || null
         }
 
-        // 更新播放列表中当前歌曲的URL
         if (playlist.length > 0 && songIndex >= 0) {
           playlist[songIndex] = playableSong
         }
+
+        // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+        ;(async () => {
+          for (let i = songIndex + 1; i < playlist.length; i++) {
+            const s = playlist[i]
+            if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
+              try {
+                s.musicUrl = await getMusicUrl(s)
+              } catch (error) {
+                console.warn(`后台预取失败: ${s.title}`, error)
+                s.musicUrl = null
+              }
+            }
+          }
+        })()
 
         audioPlayer.playSong(playableSong, playlist, songIndex)
       } else {
         if (window.$showNotification) {
           window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
         }
-        
-        const playableSong = {
-          ...song,
-          musicUrl: null
-        }
-        audioPlayer.playSong(playableSong, [], -1)
+        audioPlayer.playSong({ ...song, musicUrl: null }, [], -1)
       }
     } catch (error) {
-        console.error('获取音乐URL失败:', error)
-        if (window.$showNotification) {
-          window.$showNotification('获取音乐播放链接失败', 'error')
-        }
-        
-        // 即使失败也调用 playSong 以触发播放器的错误处理流程
-        const playableSong = {
-          ...song,
-          musicUrl: null
-        }
-        
-        // 构建当前时段的播放列表
-        const currentTimeSlot = getCurrentTimeSlot(song)
-        let playlist = []
-        let songIndex = 0
-        
-        if (currentTimeSlot && currentTimeSlot.songs) {
-          playlist = currentTimeSlot.songs.map((s) => ({
-            id: s.id,
-            title: s.title,
-            artist: s.artist,
-            cover: s.cover,
-            musicUrl: s.musicUrl || null,
-            musicPlatform: s.musicPlatform,
-            musicId: s.musicId,
-            playUrl: s.playUrl || null,
-            sourceInfo: s.sourceInfo
-          }))
-          songIndex = playlist.findIndex((s) => s.id === song.id)
-          if (songIndex === -1) songIndex = 0
-        }
-        
-        audioPlayer.playSong(playableSong, playlist, songIndex)
+      console.error('获取音乐URL失败:', error)
+      if (window.$showNotification) {
+        window.$showNotification('获取音乐播放链接失败', 'error')
       }
+      const { playlist, songIndex } = buildPlaylistForSong(song)
+      audioPlayer.playSong({ ...song, musicUrl: null }, playlist, songIndex)
     }
   }
 
