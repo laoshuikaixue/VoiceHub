@@ -8,7 +8,7 @@
 
     <form :class="['auth-form', { 'has-error': !!error }]" @submit.prevent="handleLogin">
       <div class="form-group">
-        <label for="username">账号名</label>
+        <label for="username">用户名</label>
         <div class="input-wrapper">
           <svg
             class="input-icon"
@@ -24,7 +24,7 @@
             id="username"
             v-model="username"
             :class="{ 'input-error': error }"
-            placeholder="请输入账号名"
+            placeholder="请输入用户名"
             required
             type="text"
             @input="error = ''"

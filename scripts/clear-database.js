@@ -97,7 +97,7 @@ async function main() {
       .returning()
 
     console.log('默认超级管理员账户已创建:')
-    console.log('账号名: admin')
+    console.log('用户名: admin')
     console.log('密码: admin123')
     console.log(`管理员ID: ${admin.id}`)
 

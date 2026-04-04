@@ -765,7 +765,7 @@
                     <thead class="bg-zinc-900 text-zinc-400 uppercase tracking-tighter">
                       <tr>
                         <th class="px-3 py-2 border-b border-zinc-800">姓名</th>
-                        <th class="px-3 py-2 border-b border-zinc-800">账号名</th>
+                        <th class="px-3 py-2 border-b border-zinc-800">用户名</th>
                         <th class="px-3 py-2 border-b border-zinc-800">密码</th>
                         <th class="px-3 py-2 border-b border-zinc-800">角色</th>
                         <th class="px-3 py-2 border-b border-zinc-800">年级</th>
@@ -2109,8 +2109,8 @@ const downloadImportTemplate = async () => {
   }
 
   const templateData = [
-    { 姓名: '张三', 账号名: 'zhangsan', 密码: '123456', 角色: 'USER', 年级: '高一', 班级: '1班' },
-    { 姓名: '李四', 账号名: 'lisi', 密码: '123456', 角色: 'USER', 年级: '高一', 班级: '2班' }
+    { 姓名: '张三', 用户名: 'zhangsan', 密码: '123456', 角色: 'USER', 年级: '高一', 班级: '1班' },
+    { 姓名: '李四', 用户名: 'lisi', 密码: '123456', 角色: 'USER', 年级: '高一', 班级: '2班' }
   ]
 
   const ws = window.XLSX.utils.json_to_sheet(templateData)
