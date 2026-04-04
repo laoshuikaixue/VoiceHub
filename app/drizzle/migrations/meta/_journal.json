@@ -113,6 +113,13 @@
       "when": 1775136952492,
       "tag": "20260402133552_remarkable_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1775310943895,
+      "tag": "20260404135543_add_show_beian_icon",
+      "breakpoints": true
     }
   ]
 }
