@@ -59,6 +59,8 @@ export function useAudioPlayer() {
 
     // 如果是同一首歌，则开始播放（不切换状态，由调用方决定）
     if (currentSong.value && currentSong.value.id === song.id) {
+      // 保持当前歌曲的引用更新，以便获取可能更新的 URL 等信息
+      currentSong.value = song
       isPlaying.value = true
       return true
     }

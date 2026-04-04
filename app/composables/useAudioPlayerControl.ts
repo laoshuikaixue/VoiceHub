@@ -298,28 +298,20 @@ export const useAudioPlayerControl = () => {
 
       return true
     } catch (error) {
-      console.error('加载歌曲失败:', error)
-
-      // 重试逻辑
-      if (retryCount < 2 && typeof songUrlOrSong === 'object' && songUrlOrSong?.musicPlatform) {
-        console.log(`第 ${retryCount + 1} 次重试加载歌曲...`)
-        await new Promise((resolve) => setTimeout(resolve, 1000)) // 等待1秒后重试
+      // 重试逻辑（针对网络抖动等临时错误）
+      if (
+        retryCount < 2 &&
+        !hasError.value &&
+        typeof songUrlOrSong === 'object' &&
+        songUrlOrSong?.musicPlatform
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        if (hasError.value) return false
         return await loadSong(songUrlOrSong, retryCount + 1)
       }
 
       hasError.value = true
       isLoadingNewSong.value = false
-
-      // 显示详细错误信息
-      let errorMessage = '加载歌曲失败'
-      if (error instanceof Error) {
-        errorMessage = error.message
-      }
-
-      if (window.$showNotification) {
-        window.$showNotification(errorMessage, 'error')
-      }
-
       return false
     }
   }
