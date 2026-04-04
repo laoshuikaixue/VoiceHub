@@ -13,7 +13,7 @@ export interface OAuthState {
 export const generateState = (
   targetOrigin: string,
   provider?: string,
-  secretKey: string
+  secretKey?: string
 ): { state: string; csrf: string } => {
   if (!secretKey) {
     throw createError({
@@ -39,7 +39,7 @@ export const parseState = (
   stateStr: string,
   expectedOrigin?: string,
   expectedCsrf?: string,
-  secretKey: string
+  secretKey?: string
 ): OAuthState | null => {
   try {
     if (!secretKey) return null
@@ -70,7 +70,7 @@ export const parseState = (
         }
         
         // 判断是否为相同的源站
-        // 对于localhost和*.github.dev之类的，允许不同的subdomain
+        // 默认要求 host 完全相同，仅对特定白名单环境（如 *.github.dev）允许子域名变化
         const expectedHost = expectedUrl.host
         const payloadHost = payloadUrl.host
         
@@ -78,30 +78,47 @@ export const parseState = (
         if (expectedHost === payloadHost) {
           // 通过
         } else {
-          // 不同的host - 在Codespaces中这很正常
-          // 只要是相同的基础域名即可通过（例如都是.github.dev）
-          const expectedParts = expectedHost.split('.')
-          const payloadParts = payloadHost.split('.')
+          // host 不同 - 检查是否为已知的需要兼容的环境
+          // 仅在 *.github.dev（Codespaces 环境）中允许不同的子域名
+          const isExpectedGitHubDev = expectedHost.endsWith('.github.dev') || expectedHost === 'localhost' || expectedHost.includes('127.0.0.1')
+          const isPayloadGitHubDev = payloadHost.endsWith('.github.dev') || payloadHost === 'localhost' || payloadHost.includes('127.0.0.1')
           
-          // 如果是localhost，要求完全相同
-          if (expectedHost.includes('localhost') || payloadHost.includes('localhost')) {
-            if (expectedHost !== payloadHost) {
-              console.error(`OAuth state host mismatch (localhost): ${expectedHost} vs ${payloadHost}`)
-              return null
+          if (isExpectedGitHubDev && isPayloadGitHubDev) {
+            // 在 Codespaces 等环境中，允许子域名变化（例如端口号变化导致的 subdomain 变化）
+            // 但仍需要验证基础域名相同（.github.dev）
+            const expectedParts = expectedHost.split('.')
+            const payloadParts = payloadHost.split('.')
+            
+            // 对于 localhost, 要求完全相同
+            if (expectedHost.includes('localhost') || payloadHost.includes('localhost')) {
+              if (expectedHost !== payloadHost) {
+                console.error(`OAuth state host mismatch (localhost): ${expectedHost} vs ${payloadHost}`)
+                return null
+              }
+            } else if (expectedHost.includes('127.0.0.1') || payloadHost.includes('127.0.0.1')) {
+              // 对于 127.0.0.1，也要求完全相同
+              if (expectedHost !== payloadHost) {
+                console.error(`OAuth state host mismatch (127.0.0.1): ${expectedHost} vs ${payloadHost}`)
+                return null
+              }
+            } else {
+              // 对于 *.github.dev，允许不同的子域名，但要求基础部分相同
+              // 例如：crispy-funicular-q77p479p56r9hx7vr-3000.app.github.dev 
+              // 和 crispy-funicular-q77p479p56r9hx7vr.app.github.dev 都可以通过
+              const expectedBase = expectedParts.slice(-3).join('.')
+              const payloadBase = payloadParts.slice(-3).join('.')
+              
+              if (expectedBase !== payloadBase) {
+                console.error(`OAuth state domain mismatch: ${expectedBase} vs ${payloadBase}`)
+                return null
+              }
+              
+              console.log(`OAuth state origin mismatch but github.dev domain matches: ${expectedHost} vs ${payloadHost}`)
             }
           } else {
-            // 对于其他情况，允许不同的subdomain，但要求基础域名相同
-            // 例如：crispy-funicular-q77p479p56r9hx7vr-3000.app.github.dev 
-            // 和 crispy-funicular-q77p479p56r9hx7vr.app.github.dev 都可以通过
-            const expectedDomain = expectedParts.slice(-2).join('.')
-            const payloadDomain = payloadParts.slice(-2).join('.')
-            
-            if (expectedDomain !== payloadDomain) {
-              console.error(`OAuth state domain mismatch: ${expectedDomain} vs ${payloadDomain}`)
-              return null
-            }
-            
-            console.log(`OAuth state origin mismatch but domain matches: ${expectedHost} vs ${payloadHost}`)
+            // 对于非白名单环境，要求 host 完全相同
+            console.error(`OAuth state host mismatch: ${expectedHost} vs ${payloadHost}`)
+            return null
           }
         }
       } catch (e) {
@@ -123,7 +140,7 @@ export const parseState = (
   }
 }
 
-export const getRedirectUri = (provider: string, redirectUriTemplate: string): string => {
+export const getRedirectUri = (provider: string, redirectUriTemplate?: string): string => {
   let redirectUri = redirectUriTemplate
   if (!redirectUri) {
     throw createError({

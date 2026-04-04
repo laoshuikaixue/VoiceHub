@@ -113,6 +113,13 @@
       "when": 1774700000000,
       "tag": "20260328120000_add_custom_oauth_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1774700600000,
+      "tag": "20260328121000_add_oauth_system_settings_columns",
+      "breakpoints": true
     }
   ]
 }

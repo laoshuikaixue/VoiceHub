@@ -383,7 +383,7 @@
       <AlertCircle class="text-amber-500 shrink-0 mt-0.5" :size="14" />
       <div class="text-[10px] text-zinc-500 leading-relaxed space-y-1">
         <p>• 请确保 OAuth 重定向 URI 与 OAuth 提供商配置中的回调地址完全匹配</p>
-        <p>• 密钥信息会被加密存储，仅在服务端使用</p>
+        <p>• 密钥信息仅在服务端使用，不会在前端页面中返回</p>
         <p>• 修改 OAuth 配置后，用户可能需要重新登录</p>
       </div>
     </div>

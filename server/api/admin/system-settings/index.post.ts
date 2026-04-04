@@ -243,7 +243,7 @@ export default defineEventHandler(async (event) => {
 
     // 获取当前设置，用于验证更新后的 OAuth 组合配置
     const settingsResult = await db.select().from(systemSettings).limit(1)
-    const settings = settingsResult[0]
+    let settings = settingsResult[0]
 
     // OAuth 配置字段
     if (body.oauthRedirectUri !== undefined) {

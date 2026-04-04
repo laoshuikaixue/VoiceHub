@@ -1,6 +1,7 @@
 ALTER TABLE "SystemSettings"
   ADD COLUMN "oauthRedirectUri" text,
   ADD COLUMN "oauthStateSecret" text,
+  ADD COLUMN "oauthProviders" text DEFAULT '[]',
   ADD COLUMN "githubOAuthEnabled" boolean DEFAULT false NOT NULL,
   ADD COLUMN "githubClientId" text,
   ADD COLUMN "githubClientSecret" text,

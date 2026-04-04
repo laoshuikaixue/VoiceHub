@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
     // 注意：不设置 domain，让浏览器使用当前 host
   })
   
-  console.log(`[OAuth] ${provider} authorize - CSRF cookie set. CSRF:`, csrf.substring(0, 8) + '...')
+  console.log(`[OAuth] ${provider} authorize - CSRF cookie set`)
 
   const url = strategy.getAuthorizeUrl(redirectUri, state, providerConfig)
 

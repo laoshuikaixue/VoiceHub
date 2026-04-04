@@ -468,23 +468,24 @@ VoiceHub 实现了细粒度的权限控制系统：
 | NODE_ENV         | 否  | 运行环境，development或production     | `production`                                                        |
 | REDIS_URL        | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                                |
 | NITRO_PRESET     | 否  | Nitro预设                         | `vercel`                                                            |
-| OAUTH_STATE_SECRET | 是* | OAuth状态参数加密密钥（启用OAuth时必填）        | `your-oauth-state-secret-key`                                       |
-| OAUTH_REDIRECT_URI | 是* | OAuth重定向URI（启用OAuth时必填）          | `https://yourdomain.com/auth/[provider]/callback`                   |
-
-*启用OAuth第三方登录时这两个变量为必填
 
 ## OAuth 配置
 
-系统支持通过 OAuth 提供商（如 GitHub、Casdoor 等）快速创建账户和登录。配置 OAuth：
+系统支持通过 OAuth 提供商（如 GitHub、Casdoor、Google 等）快速创建账户和登录。OAuth 配置已改为通过管理员后台管理，无需环境变量：
 
-1. **配置环境变量**：
-   ```env
-   OAUTH_STATE_SECRET="your-secure-random-key"
-   OAUTH_REDIRECT_URI="https://yourdomain.com/auth/[provider]/callback"
-   ```
+1. **在管理员后台配置**：
+   - 导航到系统设置 > OAuth 配置
+   - 配置基础设置：
+     - **OAuth 重定向 URI**：`https://yourdomain.com/auth/[provider]/callback`
+     - **OAuth State 密钥**：强随机字符串，用于 state 参数加密
+   - 启用需要的 OAuth 提供商并填写相应凭证：
+     - GitHub：Client ID / Secret
+     - Casdoor：Server URL / Client ID / Secret / Organization Name
+     - Google：Client ID / Secret
+     - 第三方 OAuth2：完整的 OAuth 端点和字段映射
 
 2. **OAuth 提供商配置**：
-   在 OAuth 提供商的开发者控制台配置重定向 URI，确保与上述配置一致
+   在 OAuth 提供商的开发者控制台配置重定向 URI，确保与后台配置一致
 
 3. **账户创建流程**：
    - 用户点击 OAuth 登录按钮
