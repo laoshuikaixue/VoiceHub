@@ -20,7 +20,7 @@ const updateApiKeySchema = z.object({
   expiresAt: z.string().optional().nullable(),
 
   permissions: z
-    .array(z.enum(['schedules:read', 'songs:read']))
+    .array(z.enum(['schedules:read', 'songs:read', 'songs:write']))
     .min(1, '至少需要选择一个权限')
     .optional()
 })

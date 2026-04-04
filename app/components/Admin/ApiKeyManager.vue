@@ -693,6 +693,11 @@ const availablePermissions = [
     value: 'songs:read',
     label: '歌曲查询',
     description: '查看歌曲列表和详情'
+  },
+  {
+    value: 'songs:write',
+    label: '歌曲管理',
+    description: '更新歌曲状态（如标记为已播放）'
   }
 ]
 
