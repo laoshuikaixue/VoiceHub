@@ -30,7 +30,7 @@
             <!-- 文字内容 -->
             <div class="space-y-2 mb-8">
               <h4 class="text-xl font-black text-zinc-100 tracking-tight">{{ title }}</h4>
-              <p class="text-sm text-zinc-500 leading-relaxed font-medium">
+              <p class="text-sm text-zinc-500 leading-relaxed font-medium whitespace-pre-line">
                 {{ message }}
               </p>
               

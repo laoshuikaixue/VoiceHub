@@ -406,18 +406,10 @@ const openFallbackLinkForFailedSong = (): 'none' | 'dialog' | 'opened' => {
 
   lastOpenedFallbackSongId.value = song.id
 
-  const openedWindow = window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
-  if (!openedWindow) {
-    fallbackOpenDialogUrl.value = fallbackUrl
-    fallbackOpenDialogMessage.value = '播放地址不可直接播放，是否在新标签页打开原始链接？'
-    showFallbackOpenDialog.value = true
-    return 'dialog'
-  }
-
-  if (window.$showNotification) {
-    window.$showNotification('播放地址不可直接播放，已为你打开原始链接', 'warning')
-  }
-  return 'opened'
+  fallbackOpenDialogUrl.value = fallbackUrl
+  fallbackOpenDialogMessage.value = `播放地址不可直接播放，是否在新标签页打开原始链接？\n\n即将跳转的网址：\n${fallbackUrl}`
+  showFallbackOpenDialog.value = true
+  return 'dialog'
 }
 
 const handleFallbackDialogConfirm = () => {
