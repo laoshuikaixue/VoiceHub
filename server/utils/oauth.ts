@@ -41,9 +41,14 @@ export const parseState = (
   expectedCsrf?: string,
   secretKey?: string
 ): OAuthState | null => {
-  try {
-    if (!secretKey) return null
+  if (!secretKey) {
+    throw createError({
+      statusCode: 500,
+      message: 'OAuth State 密钥未配置，请在管理员后台配置 OAuth State 密钥'
+    })
+  }
 
+  try {
     const bytes = CryptoJS.AES.decrypt(stateStr, secretKey)
     const json = bytes.toString(CryptoJS.enc.Utf8)
     if (!json) return null

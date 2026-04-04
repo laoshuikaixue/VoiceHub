@@ -33,8 +33,6 @@ export default defineEventHandler(async (event) => {
   const host = headers['host']
   const origin = `${protocol}://${host}`
 
-  console.log(`[OAuth] ${provider} authorize - Origin:`, origin, 'Host:', host, 'Protocol:', protocol)
-
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 
   const { state, csrf } = generateState(origin, provider, stateSecret)
@@ -53,8 +51,6 @@ export default defineEventHandler(async (event) => {
     // 注意：不设置 domain，让浏览器使用当前 host
   })
   
-  console.log(`[OAuth] ${provider} authorize - CSRF cookie set`)
-
   const url = strategy.getAuthorizeUrl(redirectUri, state, providerConfig)
 
   return sendRedirect(event, url)

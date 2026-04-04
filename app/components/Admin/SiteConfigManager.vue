@@ -383,8 +383,8 @@ const formData = ref({
   weeklySubmissionLimit: null,
   monthlySubmissionLimit: null,
   showBlacklistKeywords: false,
-  hideStudentInfo: true
-,  oauthRedirectUri: '',
+  hideStudentInfo: true,
+  oauthRedirectUri: '',
   oauthStateSecret: '',
   githubOAuthEnabled: false,
   githubClientId: '',
@@ -467,33 +467,33 @@ const loadConfig = async () => {
       weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
-      hideStudentInfo: data.hideStudentInfo ?? true
-    ,      oauthRedirectUri: data.oauthRedirectUri || '',
-          oauthStateSecret: data.oauthStateSecret || '',
-          githubOAuthEnabled: !!data.githubOAuthEnabled,
-          githubClientId: data.githubClientId || '',
-          githubClientSecret: data.githubClientSecret || '',
-          casdoorOAuthEnabled: !!data.casdoorOAuthEnabled,
-          casdoorServerUrl: data.casdoorServerUrl || '',
-          casdoorClientId: data.casdoorClientId || '',
-          casdoorClientSecret: data.casdoorClientSecret || '',
-          casdoorOrganizationName: data.casdoorOrganizationName || '',
-          googleOAuthEnabled: !!data.googleOAuthEnabled,
-          googleClientId: data.googleClientId || '',
-              googleClientSecret: data.googleClientSecret || '',
-              customOAuthEnabled: !!data.customOAuthEnabled,
-              customOAuthDisplayName: data.customOAuthDisplayName || '',
-              customOAuthAuthorizeUrl: data.customOAuthAuthorizeUrl || '',
-              customOAuthTokenUrl: data.customOAuthTokenUrl || '',
-              customOAuthUserInfoUrl: data.customOAuthUserInfoUrl || '',
-              customOAuthScope: data.customOAuthScope || '',
-              customOAuthClientId: data.customOAuthClientId || '',
-              customOAuthClientSecret: data.customOAuthClientSecret || '',
-              customOAuthUserIdField: data.customOAuthUserIdField || '',
-              customOAuthUsernameField: data.customOAuthUsernameField || '',
-              customOAuthNameField: data.customOAuthNameField || '',
-              customOAuthEmailField: data.customOAuthEmailField || '',
-              customOAuthAvatarField: data.customOAuthAvatarField || ''
+      hideStudentInfo: data.hideStudentInfo ?? true,
+      oauthRedirectUri: data.oauthRedirectUri || '',
+      oauthStateSecret: data.oauthStateSecret || '',
+      githubOAuthEnabled: !!data.githubOAuthEnabled,
+      githubClientId: data.githubClientId || '',
+      githubClientSecret: data.githubClientSecret || '',
+      casdoorOAuthEnabled: !!data.casdoorOAuthEnabled,
+      casdoorServerUrl: data.casdoorServerUrl || '',
+      casdoorClientId: data.casdoorClientId || '',
+      casdoorClientSecret: data.casdoorClientSecret || '',
+      casdoorOrganizationName: data.casdoorOrganizationName || '',
+      googleOAuthEnabled: !!data.googleOAuthEnabled,
+      googleClientId: data.googleClientId || '',
+      googleClientSecret: data.googleClientSecret || '',
+      customOAuthEnabled: !!data.customOAuthEnabled,
+      customOAuthDisplayName: data.customOAuthDisplayName || '',
+      customOAuthAuthorizeUrl: data.customOAuthAuthorizeUrl || '',
+      customOAuthTokenUrl: data.customOAuthTokenUrl || '',
+      customOAuthUserInfoUrl: data.customOAuthUserInfoUrl || '',
+      customOAuthScope: data.customOAuthScope || '',
+      customOAuthClientId: data.customOAuthClientId || '',
+      customOAuthClientSecret: data.customOAuthClientSecret || '',
+      customOAuthUserIdField: data.customOAuthUserIdField || '',
+      customOAuthUsernameField: data.customOAuthUsernameField || '',
+      customOAuthNameField: data.customOAuthNameField || '',
+      customOAuthEmailField: data.customOAuthEmailField || '',
+      customOAuthAvatarField: data.customOAuthAvatarField || ''
     }
 
     originalData.value = JSON.parse(JSON.stringify(formData.value))
@@ -567,7 +567,6 @@ const saveConfig = async () => {
     if (error?.message) {
       message = error.message
     }
-    console.log('显示给用户的错误信息:', message)
     showNotification(message, 'error')
   } finally {
     saving.value = false

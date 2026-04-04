@@ -39,14 +39,8 @@ export default defineEventHandler(async (event) => {
 
   // 1. 验证 State
   const csrfCookie = getCookie(event, 'oauth_csrf')
-  console.log(`[OAuth] ${provider} callback - CSRF cookie received:`, !!csrfCookie)
   
   if (!csrfCookie) {
-    const cookieNames = Object.keys(getCookies(event) || {})
-    console.error(
-      `[OAuth] ${provider} callback - CSRF cookie missing. Available cookie names:`,
-      cookieNames
-    )
     throw createError({
       statusCode: 400,
       message: 'CSRF验证失败：Cookie丢失，请从登录页面重新开始'
@@ -59,14 +53,11 @@ export default defineEventHandler(async (event) => {
   const host = headers['host']
   const origin = `${protocol}://${host}`
 
-  console.log(`[OAuth] ${provider} callback - Current Origin:`, origin, 'Host:', host, 'Protocol:', protocol)
-
   const { stateSecret, redirectUriTemplate } = await getOAuthBaseConfig()
   const providerConfig = await getProviderRuntimeConfig(provider)
 
   const state = parseState(stateStr, origin, csrfCookie, stateSecret)
   if (!state) {
-    console.error(`[OAuth] ${provider} callback - State validation failed. State:`, stateStr.substring(0, 20) + '...')
     throw createError({ statusCode: 400, message: 'Invalid or expired state' })
   }
 
