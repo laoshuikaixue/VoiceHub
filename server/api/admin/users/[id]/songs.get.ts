@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     if (!currentUser) {
       throw createError({
         statusCode: 401,
-        statusMessage: '未授权访问'
+        message: '未授权访问'
       })
     }
 
@@ -18,16 +18,16 @@ export default defineEventHandler(async (event) => {
     if (!allowedRoles.includes(currentUser.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足'
+        message: '权限不足'
       })
     }
 
-    // 获取用户ID
+    // 获取用户 ID
     const userId = parseInt(getRouterParam(event, 'id') as string)
     if (!userId || isNaN(userId)) {
       throw createError({
         statusCode: 400,
-        statusMessage: '无效的用户ID'
+        message: '无效的用户 ID'
       })
     }
 
@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       throw createError({
         statusCode: 404,
-        statusMessage: '用户不存在'
+        message: '用户不存在'
       })
     }
 
@@ -266,7 +266,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '服务器内部错误'
+      message: '服务器内部错误'
     })
   }
 })

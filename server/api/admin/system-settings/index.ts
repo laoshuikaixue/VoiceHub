@@ -47,6 +47,7 @@ export default defineEventHandler(async (event) => {
           submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
           icpNumber: null,
           gonganNumber: null,
+          showBeianIcon: false,
           enableSubmissionLimit: false,
           dailySubmissionLimit: null,
           weeklySubmissionLimit: null,

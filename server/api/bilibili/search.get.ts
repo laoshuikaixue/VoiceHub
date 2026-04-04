@@ -147,7 +147,7 @@ export default defineEventHandler(async (event) => {
     console.error('Bilibili search error:', error)
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || 'Bilibili search failed'
+      message: error.message || 'Bilibili search failed'
     })
   }
 })

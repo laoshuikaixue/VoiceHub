@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '需要管理员权限'
+        message: '需要管理员权限'
       })
     }
 

@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({
       statusCode: 401,
-      statusMessage: '未授权'
+      message: '未授权'
     })
   }
 
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   if (!body.currentPassword || !body.newPassword) {
     throw createError({
       statusCode: 400,
-      statusMessage: '当前密码和新密码都是必需的'
+      message: '当前密码和新密码都是必需的'
     })
   }
 
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
     if (!userDetails) {
       throw createError({
         statusCode: 404,
-        statusMessage: '用户不存在'
+        message: '用户不存在'
       })
     }
 
@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
 
       throw createError({
         statusCode: 400,
-        statusMessage: '当前密码不正确'
+        message: '当前密码不正确'
       })
     }
 
@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
     if (isSamePassword) {
       throw createError({
         statusCode: 400,
-        statusMessage: '新密码不能与当前密码相同'
+        message: '新密码不能与当前密码相同'
       })
     }
 
@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
     // 创建错误响应
     throw createError({
       statusCode: 500,
-      statusMessage: '修改密码失败: ' + (error.message || '未知错误')
+      message: '修改密码失败: ' + (error.message || '未知错误')
     })
   }
 })

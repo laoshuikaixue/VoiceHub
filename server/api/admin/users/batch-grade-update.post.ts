@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     if (event.node.req.method !== 'POST') {
       throw createError({
         statusCode: 405,
-        statusMessage: 'Method Not Allowed'
+        message: 'Method Not Allowed'
       })
     }
 
@@ -21,21 +21,21 @@ export default defineEventHandler(async (event) => {
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'userIds is required and must be a non-empty array'
+        message: 'userIds is required and must be a non-empty array'
       })
     }
 
     if (!targetGrade || typeof targetGrade !== 'string') {
       throw createError({
         statusCode: 400,
-        statusMessage: 'targetGrade is required and must be a string'
+        message: 'targetGrade is required and must be a string'
       })
     }
 
     if (typeof keepClass !== 'boolean') {
       throw createError({
         statusCode: 400,
-        statusMessage: 'keepClass is required and must be a boolean'
+        message: 'keepClass is required and must be a boolean'
       })
     }
 
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     if (!currentUser) {
       throw createError({
         statusCode: 401,
-        statusMessage: 'Authentication required'
+        message: 'Authentication required'
       })
     }
 
@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
     if (!['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: 'Insufficient permissions'
+        message: 'Insufficient permissions'
       })
     }
 
@@ -149,7 +149,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: 'Internal Server Error'
+      message: 'Internal Server Error'
     })
   }
 })

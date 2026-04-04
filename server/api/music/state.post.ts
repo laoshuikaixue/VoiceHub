@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     if (!body || typeof body !== 'object') {
       throw createError({
         statusCode: 400,
-        statusMessage: '无效的请求数据'
+        message: '无效的请求数据'
       })
     }
 
@@ -87,13 +87,13 @@ export default defineEventHandler(async (event) => {
       default:
         throw createError({
           statusCode: 400,
-          statusMessage: '不支持的操作类型'
+          message: '不支持的操作类型'
         })
     }
 
     throw createError({
       statusCode: 400,
-      statusMessage: '无效的请求数据'
+      message: '无效的请求数据'
     })
   } catch (error: any) {
     console.error('Music state update error:', error)
@@ -104,7 +104,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '服务器内部错误'
+      message: '服务器内部错误'
     })
   }
 })

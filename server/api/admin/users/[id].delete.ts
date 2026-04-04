@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '没有权限访问'
+        message: '没有权限访问'
       })
     }
 
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     if (!existingUser) {
       throw createError({
         statusCode: 404,
-        statusMessage: '用户不存在'
+        message: '用户不存在'
       })
     }
 
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     if (existingUser.id === 1) {
       throw createError({
         statusCode: 403,
-        statusMessage: '无法删除系统初始超级管理员'
+        message: '无法删除系统初始超级管理员'
       })
     }
 
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
     if (String(existingUser.id) === String(user.id)) {
       throw createError({
         statusCode: 400,
-        statusMessage: '不能删除自己的账户'
+        message: '不能删除自己的账户'
       })
     }
 
@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
     if (existingUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足：普通管理员无法删除超级管理员'
+        message: '权限不足：普通管理员无法删除超级管理员'
       })
     }
 
@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '删除用户失败: ' + error.message
+      message: '删除用户失败：' + error.message
     })
   }
 })

@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '没有权限访问'
+        message: '没有权限访问'
       })
     }
 
@@ -19,12 +19,12 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event)
     const { page = '1', limit = '20' } = query
 
-    // 验证用户ID
+    // 验证用户 ID
     const numUserId = parseInt(userId)
     if (isNaN(numUserId) || numUserId <= 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: '无效的用户ID'
+        message: '无效的用户 ID'
       })
     }
 
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
     if (existingUser.length === 0) {
       throw createError({
         statusCode: 404,
-        statusMessage: '用户不存在'
+        message: '用户不存在'
       })
     }
 
@@ -117,7 +117,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '获取用户状态变更日志失败: ' + error.message
+      message: '获取用户状态变更日志失败：' + error.message
     })
   }
 })

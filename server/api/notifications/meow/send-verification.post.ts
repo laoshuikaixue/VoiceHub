@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     if (!nickname || !verificationCode) {
       throw createError({
         statusCode: 400,
-        statusMessage: '昵称和验证码不能为空'
+        message: '昵称和验证码不能为空'
       })
     }
 
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     if (nickname.includes('/')) {
       throw createError({
         statusCode: 400,
-        statusMessage: '昵称不能包含斜杠'
+        message: '昵称不能包含斜杠'
       })
     }
 
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
     if (!response.ok) {
       throw createError({
         statusCode: 500,
-        statusMessage: '发送验证码失败，请检查昵称是否正确'
+        message: '发送验证码失败，请检查昵称是否正确'
       })
     }
 
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
     if (result.status !== 200) {
       throw createError({
         statusCode: 500,
-        statusMessage: result.message || '发送验证码失败'
+        message: result.message || '发送验证码失败'
       })
     }
 
@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '发送验证码失败，请稍后重试'
+      message: '发送验证码失败，请稍后重试'
     })
   }
 })

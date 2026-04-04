@@ -76,6 +76,7 @@ export const useSiteConfig = () => {
   )
   const icp = computed(() => siteConfig.value.icpNumber || '')
   const gonganNumber = computed(() => siteConfig.value.gonganNumber || '')
+  const showBeianIcon = computed(() => siteConfig.value.showBeianIcon || false)
   const enableReplayRequests = computed(() => siteConfig.value.enableReplayRequests || false)
   const enableCollaborativeSubmission = computed(
     () => siteConfig.value.enableCollaborativeSubmission !== false
@@ -108,6 +109,7 @@ export const useSiteConfig = () => {
     guidelines,
     icp,
     gonganNumber,
+    showBeianIcon,
     enableReplayRequests,
     enableCollaborativeSubmission,
     enableSubmissionRemarks,

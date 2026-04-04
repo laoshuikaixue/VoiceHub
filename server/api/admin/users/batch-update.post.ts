@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
     if (!currentUser) {
       throw createError({
         statusCode: 401,
-        statusMessage: 'Authentication required'
+        message: 'Authentication required'
       })
     }
 
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     if (!['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: 'Insufficient permissions'
+        message: 'Insufficient permissions'
       })
     }
 
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
     if (!validationResult.success) {
       throw createError({
         statusCode: 400,
-        statusMessage:
+        message:
           '请求参数无效: ' + validationResult.error.errors.map((e) => e.message).join(', ')
       })
     }
@@ -76,7 +76,7 @@ export default defineEventHandler(async (event) => {
     if (missingUserIds.length > 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: `以下用户ID不存在或不是学生: ${missingUserIds.join(', ')}`
+        message: `以下用户ID不存在或不是学生: ${missingUserIds.join(', ')}`
       })
     }
 
@@ -228,7 +228,7 @@ export default defineEventHandler(async (event) => {
     // 未知错误
     throw createError({
       statusCode: 500,
-      statusMessage: '批量更新用户失败: ' + error.message
+      message: '批量更新用户失败: ' + error.message
     })
   }
 })

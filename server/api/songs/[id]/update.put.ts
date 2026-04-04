@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     if (event.node.req.method !== 'PUT') {
       throw createError({
         statusCode: 405,
-        statusMessage: 'Method Not Allowed'
+        message: 'Method Not Allowed'
       })
     }
 
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       throw createError({
         statusCode: 401,
-        statusMessage: '未授权访问'
+        message: '未授权访问'
       })
     }
 
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足'
+        message: '权限不足'
       })
     }
 
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     if (!songId) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Invalid song ID'
+        message: 'Invalid song ID'
       })
     }
 
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
     if (!title || !artist) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Title and artist are required'
+        message: 'Title and artist are required'
       })
     }
 
@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
     if (!existingSong) {
       throw createError({
         statusCode: 404,
-        statusMessage: '歌曲不存在'
+        message: '歌曲不存在'
       })
     }
 
@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
         if (requesterUser.length === 0) {
           throw createError({
             statusCode: 404,
-            statusMessage: '投稿人用户不存在'
+            message: '投稿人用户不存在'
           })
         }
 
@@ -269,7 +269,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || 'Internal server error'
+      message: error.message || 'Internal server error'
     })
   }
 })

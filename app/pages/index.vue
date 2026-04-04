@@ -1413,7 +1413,7 @@ const handleCollaborationReply = async (notification, accept) => {
   } catch (error) {
     console.error('处理联合投稿邀请失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(error.statusMessage || '操作失败', 'error')
+      window.$showNotification(error.message || error.statusMessage || '操作失败', 'error')
     }
   } finally {
     notification.processing = false

@@ -889,6 +889,7 @@ VoiceHub/
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
+│   │   ├── system-settings-defaults.ts # 系统设置默认值
 │   │   ├── twoFactorStore.ts # 双重认证存储工具
 │   │   ├── user.ts         # 用户相关工具函数
 │   │   ├── webauthn-config.ts # WebAuthn配置工具

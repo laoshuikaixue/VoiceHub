@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     if (!token) {
       throw createError({
         statusCode: 401,
-        statusMessage: '未提供认证令牌'
+        message: '未提供认证令牌'
       })
     }
 
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
     if (!dbUser) {
       throw createError({
         statusCode: 401,
-        statusMessage: '用户不存在'
+        message: '用户不存在'
       })
     }
 
@@ -132,7 +132,7 @@ export default defineEventHandler(async (event) => {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
       throw createError({
         statusCode: 401,
-        statusMessage: '令牌无效或已过期'
+        message: '令牌无效或已过期'
       })
     }
 

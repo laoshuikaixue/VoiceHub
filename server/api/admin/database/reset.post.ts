@@ -77,7 +77,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足'
+        message: '权限不足'
       })
     }
 
@@ -240,7 +240,7 @@ export default defineEventHandler(async (event) => {
       console.error('重置数据库失败:', error)
       throw createError({
         statusCode: 500,
-        statusMessage: `重置数据库失败: ${error.message}`
+        message: `重置数据库失败：${error.message}`
       })
     }
 
@@ -248,7 +248,7 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || '服务器内部错误'
+      message: error.message || '服务器内部错误'
     })
   }
 })

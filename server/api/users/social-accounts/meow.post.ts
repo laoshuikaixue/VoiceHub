@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       throw createError({
         statusCode: 401,
-        statusMessage: '未授权访问'
+        message: '未授权访问'
       })
     }
 
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     if (!nickname) {
       throw createError({
         statusCode: 400,
-        statusMessage: '昵称不能为空'
+        message: '昵称不能为空'
       })
     }
 
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     if (nickname.includes('/')) {
       throw createError({
         statusCode: 400,
-        statusMessage: '昵称不能包含斜杠'
+        message: '昵称不能包含斜杠'
       })
     }
 
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     if (!userData) {
       throw createError({
         statusCode: 404,
-        statusMessage: '用户不存在'
+        message: '用户不存在'
       })
     }
 
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '绑定失败，请稍后重试'
+      message: '绑定失败，请稍后重试'
     })
   }
 })
