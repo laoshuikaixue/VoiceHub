@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { SYSTEM_SETTINGS_DEFAULTS } from '../../utils/system-settings-defaults'
+import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
