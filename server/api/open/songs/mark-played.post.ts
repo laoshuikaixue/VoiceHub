@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
         .update(songReplayRequests)
         .set({
           status: newStatus,
-          updatedAt: new Date()
+          updatedAt: getBeijingTime()
         })
         .where(
           and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, targetStatus))
