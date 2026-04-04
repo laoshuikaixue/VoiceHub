@@ -246,7 +246,8 @@
       confirm-text="立即打开"
       cancel-text="稍后处理"
       @confirm="handleFallbackDialogConfirm"
-      @close="showFallbackOpenDialog = false"
+      @cancel="handleFallbackDialogCancel"
+      @close="handleFallbackDialogCancel"
     />
   </div>
 </template>
@@ -404,8 +405,6 @@ const openFallbackLinkForFailedSong = (): 'none' | 'dialog' | 'opened' => {
   const fallbackUrl = resolveFallbackUrl()
   if (!fallbackUrl) return 'none'
 
-  lastOpenedFallbackSongId.value = song.id
-
   fallbackOpenDialogUrl.value = fallbackUrl
   fallbackOpenDialogMessage.value = `播放地址不可直接播放，是否在新标签页打开原始链接？\n\n即将跳转的网址：\n${fallbackUrl}`
   showFallbackOpenDialog.value = true
@@ -426,11 +425,23 @@ const handleFallbackDialogConfirm = () => {
     return
   }
 
+  // 只有在成功确认并打开后才设置 lock
+  const song = activeSong.value
+  if (song?.id) {
+    lastOpenedFallbackSongId.value = song.id
+  }
+
   showFallbackOpenDialog.value = false
   fallbackOpenDialogUrl.value = ''
   if (window.$showNotification) {
     window.$showNotification('已为你打开原始链接', 'success')
   }
+}
+
+const handleFallbackDialogCancel = () => {
+  showFallbackOpenDialog.value = false
+  fallbackOpenDialogUrl.value = ''
+  // 不设置 lock，允许用户下次再次触发
 }
 
 watch(
