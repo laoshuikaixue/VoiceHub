@@ -55,36 +55,45 @@ persist_pm2_binary() {
         return 0
     fi
 
+    if ! grep -q "VoiceHub PM2 Wrapper" /usr/local/bin/pm2 2>/dev/null; then
+        echo -e "${YELLOW}跳过 pm2 脚本更新：当前 pm2 非 VoiceHub 管理${NC}"
+        return 0
+    fi
+
     echo -e "${YELLOW}正在更新系统 pm2 脚本...${NC}"
 
     sudo tee /usr/local/bin/pm2 > /dev/null << 'EOF'
 #!/bin/bash
+# VoiceHub PM2 Wrapper - Managed by VoiceHub deployment
 set -e
 
 export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-mkdir -p "$PNPM_HOME"
 export PATH="$PNPM_HOME:$PATH"
 
-if ! command -v corepack &> /dev/null; then
-    echo "错误: corepack 不可用，请重新运行部署脚本" >&2
-    exit 1
-fi
-
-corepack enable > /dev/null 2>&1 || true
-
-if [[ -f "/opt/voicehub/package.json" ]]; then
-    package_manager=$(node -p "try { JSON.parse(require('fs').readFileSync('/opt/voicehub/package.json', 'utf8')).packageManager || '' } catch { '' }" 2>/dev/null || true)
-    if [[ -n "$package_manager" ]]; then
-        corepack prepare "$package_manager" --activate > /dev/null 2>&1 || true
-    fi
-fi
-
-hash -r 2>/dev/null || true
-
 if ! command -v pnpm &> /dev/null; then
-    echo "错误: pnpm 不可用，请检查 corepack 配置或重新运行部署脚本" >&2
-    exit 1
+    mkdir -p "$PNPM_HOME"
+    
+    if ! command -v corepack &> /dev/null; then
+        echo "错误: corepack 不可用，请重新运行部署脚本" >&2
+        exit 1
+    fi
+    
+    corepack enable > /dev/null 2>&1 || true
+    
+    if [[ -f "/opt/voicehub/package.json" ]]; then
+        package_manager=$(node -p "try { JSON.parse(require('fs').readFileSync('/opt/voicehub/package.json', 'utf8')).packageManager || '' } catch { '' }" 2>/dev/null || true)
+        if [[ -n "$package_manager" ]]; then
+            corepack prepare "$package_manager" --activate > /dev/null 2>&1 || true
+        fi
+    fi
+    
+    hash -r 2>/dev/null || true
+    
+    if ! command -v pnpm &> /dev/null; then
+        echo "错误: pnpm 不可用，请检查 corepack 配置或重新运行部署脚本" >&2
+        exit 1
+    fi
 fi
 
 PM2_ROOT="$(pnpm root -g 2>/dev/null || true)"
