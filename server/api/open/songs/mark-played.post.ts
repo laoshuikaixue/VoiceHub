@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
         .where(
           and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, targetStatus))
         )
-        .returning()
+        .returning({ id: songReplayRequests.id })
 
       if (updatedRequests.length > 0) {
         const logMessage = !isUnmark
