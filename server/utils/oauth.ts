@@ -75,9 +75,11 @@ export const parseState = (
         }
         
         // 判断是否为相同的源站
-        // 默认要求 host 完全相同，仅对特定白名单环境（如 *.github.dev）允许子域名变化
-        const expectedHost = expectedUrl.host
-        const payloadHost = payloadUrl.host
+        // 使用 hostname 避免端口导致误判，端口单独比较
+        const expectedHost = expectedUrl.hostname
+        const payloadHost = payloadUrl.hostname
+        const expectedPort = expectedUrl.port
+        const payloadPort = payloadUrl.port
         
         // 完全相同则直接通过
         if (expectedHost === payloadHost) {
@@ -85,8 +87,10 @@ export const parseState = (
         } else {
           // host 不同 - 检查是否为已知的需要兼容的环境
           // 仅在 *.github.dev（Codespaces 环境）中允许不同的子域名
-          const isExpectedGitHubDev = expectedHost.endsWith('.github.dev') || expectedHost === 'localhost' || expectedHost.includes('127.0.0.1')
-          const isPayloadGitHubDev = payloadHost.endsWith('.github.dev') || payloadHost === 'localhost' || payloadHost.includes('127.0.0.1')
+          const isExpectedGitHubDev =
+            expectedHost.endsWith('.github.dev') || expectedHost === 'localhost' || expectedHost === '127.0.0.1'
+          const isPayloadGitHubDev =
+            payloadHost.endsWith('.github.dev') || payloadHost === 'localhost' || payloadHost === '127.0.0.1'
           
           if (isExpectedGitHubDev && isPayloadGitHubDev) {
             // 在 Codespaces 等环境中，允许子域名变化（例如端口号变化导致的 subdomain 变化）
@@ -95,15 +99,15 @@ export const parseState = (
             const payloadParts = payloadHost.split('.')
             
             // 对于 localhost, 要求完全相同
-            if (expectedHost.includes('localhost') || payloadHost.includes('localhost')) {
-              if (expectedHost !== payloadHost) {
-                console.error(`OAuth state host mismatch (localhost): ${expectedHost} vs ${payloadHost}`)
+            if (expectedHost === 'localhost' || payloadHost === 'localhost') {
+              if (expectedHost !== payloadHost || expectedPort !== payloadPort) {
+                console.error(`OAuth state host/port mismatch (localhost): ${expectedHost}:${expectedPort} vs ${payloadHost}:${payloadPort}`)
                 return null
               }
-            } else if (expectedHost.includes('127.0.0.1') || payloadHost.includes('127.0.0.1')) {
+            } else if (expectedHost === '127.0.0.1' || payloadHost === '127.0.0.1') {
               // 对于 127.0.0.1，也要求完全相同
-              if (expectedHost !== payloadHost) {
-                console.error(`OAuth state host mismatch (127.0.0.1): ${expectedHost} vs ${payloadHost}`)
+              if (expectedHost !== payloadHost || expectedPort !== payloadPort) {
+                console.error(`OAuth state host/port mismatch (127.0.0.1): ${expectedHost}:${expectedPort} vs ${payloadHost}:${payloadPort}`)
                 return null
               }
             } else {

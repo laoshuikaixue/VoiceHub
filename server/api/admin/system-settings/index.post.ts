@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -229,7 +230,7 @@ export default defineEventHandler(async (event) => {
       updateData.smtpUsername = body.smtpUsername
     }
 
-    if (body.smtpPassword !== undefined && body.smtpPassword !== '****************') {
+    if (body.smtpPassword !== undefined && body.smtpPassword !== SMTP_PASSWORD_MASK) {
       updateData.smtpPassword = body.smtpPassword
     }
 
@@ -267,14 +268,14 @@ export default defineEventHandler(async (event) => {
       updateData.oauthRedirectUri = body.oauthRedirectUri
     }
 
-    if (body.oauthStateSecret !== undefined && body.oauthStateSecret !== '••••••••••••••••') {
+    if (body.oauthStateSecret !== undefined && body.oauthStateSecret !== SECRET_FIELD_MASK) {
       updateData.oauthStateSecret = body.oauthStateSecret
     }
 
     const nextOauthRedirectUri =
       body.oauthRedirectUri !== undefined ? body.oauthRedirectUri : settings?.oauthRedirectUri
     const nextOauthStateSecret =
-      body.oauthStateSecret !== undefined && body.oauthStateSecret !== '••••••••••••••••'
+      body.oauthStateSecret !== undefined && body.oauthStateSecret !== SECRET_FIELD_MASK
         ? body.oauthStateSecret
         : settings?.oauthStateSecret
     const nextGithubOAuthEnabled =
@@ -317,7 +318,7 @@ export default defineEventHandler(async (event) => {
       updateData.githubClientId = body.githubClientId
     }
 
-    if (body.githubClientSecret !== undefined && body.githubClientSecret !== '••••••••••••••••') {
+    if (body.githubClientSecret !== undefined && body.githubClientSecret !== SECRET_FIELD_MASK) {
       updateData.githubClientSecret = body.githubClientSecret
     }
 
@@ -340,7 +341,7 @@ export default defineEventHandler(async (event) => {
       updateData.casdoorClientId = body.casdoorClientId
     }
 
-    if (body.casdoorClientSecret !== undefined && body.casdoorClientSecret !== '••••••••••••••••') {
+    if (body.casdoorClientSecret !== undefined && body.casdoorClientSecret !== SECRET_FIELD_MASK) {
       updateData.casdoorClientSecret = body.casdoorClientSecret
     }
 
@@ -363,7 +364,7 @@ export default defineEventHandler(async (event) => {
       updateData.googleClientId = body.googleClientId
     }
 
-    if (body.googleClientSecret !== undefined && body.googleClientSecret !== '••••••••••••••••') {
+    if (body.googleClientSecret !== undefined && body.googleClientSecret !== SECRET_FIELD_MASK) {
       updateData.googleClientSecret = body.googleClientSecret
     }
 
@@ -425,7 +426,7 @@ export default defineEventHandler(async (event) => {
 
     if (
       body.customOAuthClientSecret !== undefined
-      && body.customOAuthClientSecret !== '••••••••••••••••'
+      && body.customOAuthClientSecret !== SECRET_FIELD_MASK
     ) {
       updateData.customOAuthClientSecret = body.customOAuthClientSecret
     }
@@ -583,7 +584,7 @@ export default defineEventHandler(async (event) => {
       console.warn('[SMTP] SMTP配置重载失败:', smtpError)
     }
 
-    return settings
+    return maskSystemSettingsSecrets(settings)
   } catch (error) {
     console.error('更新系统设置失败:', error)
 
