@@ -14,24 +14,6 @@ const markPlayedSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '需要登录才能标记歌曲'
-    })
-  }
-
-  // 检查是否是管理员
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员可以标记歌曲为已播放'
-    })
-  }
-
   const body = await readBody(event)
   const validatedDataResult = markPlayedSchema.safeParse(body)
 
@@ -84,7 +66,7 @@ export default defineEventHandler(async (event) => {
         .update(songReplayRequests)
         .set({
           status: newStatus,
-          updatedAt: new Date()
+          updatedAt: getBeijingTime()
         })
         .where(
           and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, targetStatus))

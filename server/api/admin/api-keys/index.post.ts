@@ -16,7 +16,7 @@ const createApiKeySchema = z.object({
     .optional(),
   expiresAt: z.union([z.string(), z.null(), z.undefined()]).optional(),
 
-  permissions: z.array(z.enum(['schedules:read', 'songs:read'])).min(1, '至少需要选择一个权限')
+  permissions: z.array(z.enum(['schedules:read', 'songs:read', 'songs:write'])).min(1, '至少需要选择一个权限')
 })
 
 export default defineEventHandler(async (event) => {
