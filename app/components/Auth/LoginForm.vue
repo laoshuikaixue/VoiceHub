@@ -238,6 +238,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { getProviderDisplayName } from '~/utils/oauth'
+import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { Fingerprint } from 'lucide-vue-next'
 
@@ -361,25 +362,14 @@ const handleLogin = async () => {
 }
 
 const handleRegisterOAuth = async () => {
-  // 验证用户名
-  if (username.value.length < 3 || username.value.length > 30) {
-    error.value = '用户名长度需要在3-30个字符之间'
-    return
-  }
+  const validationError = validateOAuthRegisterCredentials(
+    username.value,
+    password.value,
+    confirmPassword.value
+  )
 
-  if (!/^[a-zA-Z0-9_-]+$/.test(username.value)) {
-    error.value = '用户名仅可包含英文、数字、下划线和连字符'
-    return
-  }
-
-  // 验证密码
-  if (password.value.length < 8) {
-    error.value = '密码长度至少为8个字符'
-    return
-  }
-
-  if (password.value !== confirmPassword.value) {
-    error.value = '两次输入的密码不一致'
+  if (validationError) {
+    error.value = validationError
     return
   }
 

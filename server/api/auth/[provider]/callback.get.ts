@@ -42,7 +42,11 @@ export default defineEventHandler(async (event) => {
   console.log(`[OAuth] ${provider} callback - CSRF cookie received:`, !!csrfCookie)
   
   if (!csrfCookie) {
-    console.error(`[OAuth] ${provider} callback - CSRF cookie missing. Available cookies:`, getCookies(event))
+    const cookieNames = Object.keys(getCookies(event) || {})
+    console.error(
+      `[OAuth] ${provider} callback - CSRF cookie missing. Available cookie names:`,
+      cookieNames
+    )
     throw createError({
       statusCode: 400,
       message: 'CSRF验证失败：Cookie丢失，请从登录页面重新开始'

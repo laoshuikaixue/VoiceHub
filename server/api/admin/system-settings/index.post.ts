@@ -241,6 +241,10 @@ export default defineEventHandler(async (event) => {
       updateData.smtpFromName = body.smtpFromName
     }
 
+    // 获取当前设置，用于验证更新后的 OAuth 组合配置
+    const settingsResult = await db.select().from(systemSettings).limit(1)
+    const settings = settingsResult[0]
+
     // OAuth 配置字段
     if (body.oauthRedirectUri !== undefined) {
       if (body.oauthRedirectUri !== null && body.oauthRedirectUri !== '') {
@@ -265,6 +269,37 @@ export default defineEventHandler(async (event) => {
 
     if (body.oauthStateSecret !== undefined && body.oauthStateSecret !== '••••••••••••••••') {
       updateData.oauthStateSecret = body.oauthStateSecret
+    }
+
+    const nextOauthRedirectUri =
+      body.oauthRedirectUri !== undefined ? body.oauthRedirectUri : settings?.oauthRedirectUri
+    const nextOauthStateSecret =
+      body.oauthStateSecret !== undefined && body.oauthStateSecret !== '••••••••••••••••'
+        ? body.oauthStateSecret
+        : settings?.oauthStateSecret
+    const nextGithubOAuthEnabled =
+      body.githubOAuthEnabled !== undefined ? body.githubOAuthEnabled : settings?.githubOAuthEnabled ?? false
+    const nextCasdoorOAuthEnabled =
+      body.casdoorOAuthEnabled !== undefined
+        ? body.casdoorOAuthEnabled
+        : settings?.casdoorOAuthEnabled ?? false
+    const nextGoogleOAuthEnabled =
+      body.googleOAuthEnabled !== undefined ? body.googleOAuthEnabled : settings?.googleOAuthEnabled ?? false
+    const nextCustomOAuthEnabled =
+      body.customOAuthEnabled !== undefined ? body.customOAuthEnabled : settings?.customOAuthEnabled ?? false
+
+    if (
+      nextGithubOAuthEnabled ||
+      nextCasdoorOAuthEnabled ||
+      nextGoogleOAuthEnabled ||
+      nextCustomOAuthEnabled
+    ) {
+      if (!nextOauthRedirectUri || !nextOauthStateSecret) {
+        throw createError({
+          statusCode: 400,
+          message: '启用 OAuth 登录方式前，请先在管理员后台配置 OAuth 重定向 URI 和 OAuth State 密钥'
+        })
+      }
     }
 
     // GitHub OAuth
@@ -448,10 +483,6 @@ export default defineEventHandler(async (event) => {
         message: '每日限额、每周限额和每月限额只能选择其中一种，其他必须设置为空'
       })
     }
-
-    // 获取当前设置，如果不存在则创建
-    const settingsResult = await db.select().from(systemSettings).limit(1)
-    let settings = settingsResult[0]
 
     if (!settings) {
       // 如果不存在，创建新设置

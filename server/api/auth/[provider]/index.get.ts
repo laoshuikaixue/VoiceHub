@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
   setCookie(event, 'oauth_csrf', csrf, {
     httpOnly: true,
     secure: isHttps,
-    sameSite: isHttps ? 'strict' : 'lax',
+    sameSite: 'lax',
     maxAge: 60 * 10, // 10分钟
     path: '/'
     // 注意：不设置 domain，让浏览器使用当前 host

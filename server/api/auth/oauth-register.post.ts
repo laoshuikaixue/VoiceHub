@@ -4,6 +4,7 @@ import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -27,24 +28,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '用户名、密码不能为空' })
   }
 
-  // 验证用户名格式
-  if (username.length < 3 || username.length > 30) {
-    throw createError({ statusCode: 400, message: '用户名长度需要在3-30个字符之间' })
-  }
-
-  // 验证用户名仅包含字母、数字、下划线、连字符
-  if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-    throw createError({ statusCode: 400, message: '用户名仅可包含英文、数字、下划线和连字符' })
-  }
-
-  // 验证密码长度
-  if (password.length < 8) {
-    throw createError({ statusCode: 400, message: '密码长度至少为8个字符' })
-  }
-
-  // 验证密码一致性
-  if (password !== confirmPassword) {
-    throw createError({ statusCode: 400, message: '两次输入的密码不一致' })
+  const validationError = validateOAuthRegisterCredentials(username, password, confirmPassword)
+  if (validationError) {
+    throw createError({ statusCode: 400, message: validationError })
   }
 
   const clientIp = getClientIP(event)
@@ -75,24 +61,21 @@ export default defineEventHandler(async (event) => {
       const hashedPassword = await bcrypt.hash(password, 10)
 
       // 创建用户
-      const userId = await tx.insert(users).values({
-        username,
-        password: hashedPassword,
-        role: 'USER',
-        status: 'active',
-        createdAt: getBeijingTime(),
-        updatedAt: getBeijingTime(),
-        forcePasswordChange: false
-      })
-
-      // 获取插入的用户ID
-      const insertedUser = await tx.query.users.findFirst({
-        where: (t, { eq }) => eq(t.username, username),
-        columns: { id: true }
-      })
+      const insertedUser = (await tx
+        .insert(users)
+        .values({
+          username,
+          password: hashedPassword,
+          role: 'USER',
+          status: 'active',
+          createdAt: getBeijingTime(),
+          updatedAt: getBeijingTime(),
+          forcePasswordChange: false
+        })
+        .returning({ id: users.id }))[0]
 
       if (!insertedUser) {
-        throw new Error('Failed to retrieve created user')
+        throw new Error('Failed to create user')
       }
 
       // 关联OAuth身份

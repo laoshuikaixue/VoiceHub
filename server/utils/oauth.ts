@@ -1,5 +1,6 @@
 import CryptoJS from 'crypto-js'
 import { randomBytes } from 'node:crypto'
+import { createError } from 'h3'
 
 export interface OAuthState {
   target: string
@@ -12,10 +13,9 @@ export interface OAuthState {
 export const generateState = (
   targetOrigin: string,
   provider?: string,
-  secretKey?: string
+  secretKey: string
 ): { state: string; csrf: string } => {
-  const key = secretKey || process.env.OAUTH_STATE_SECRET
-  if (!key) {
+  if (!secretKey) {
     throw createError({
       statusCode: 500,
       message: 'OAuth State 密钥未配置，请在管理员后台配置 OAuth State 密钥'
@@ -30,7 +30,7 @@ export const generateState = (
     provider
   }
   const json = JSON.stringify(payload)
-  const state = CryptoJS.AES.encrypt(json, key).toString()
+  const state = CryptoJS.AES.encrypt(json, secretKey).toString()
   return { state, csrf }
 }
 
@@ -39,13 +39,12 @@ export const parseState = (
   stateStr: string,
   expectedOrigin?: string,
   expectedCsrf?: string,
-  secretKey?: string
+  secretKey: string
 ): OAuthState | null => {
   try {
-    const key = secretKey || process.env.OAUTH_STATE_SECRET
-    if (!key) return null
+    if (!secretKey) return null
 
-    const bytes = CryptoJS.AES.decrypt(stateStr, key)
+    const bytes = CryptoJS.AES.decrypt(stateStr, secretKey)
     const json = bytes.toString(CryptoJS.enc.Utf8)
     if (!json) return null
 
@@ -124,8 +123,8 @@ export const parseState = (
   }
 }
 
-export const getRedirectUri = (provider: string, redirectUriTemplate?: string): string => {
-  let redirectUri = redirectUriTemplate || process.env.OAUTH_REDIRECT_URI
+export const getRedirectUri = (provider: string, redirectUriTemplate: string): string => {
+  let redirectUri = redirectUriTemplate
   if (!redirectUri) {
     throw createError({
       statusCode: 500,
