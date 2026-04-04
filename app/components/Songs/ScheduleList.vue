@@ -1427,15 +1427,50 @@ const togglePlaySong = async (song) => {
         if (window.$showNotification) {
           window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
         }
+        
+        const playableSong = {
+          ...song,
+          musicUrl: null
+        }
+        audioPlayer.playSong(playableSong, [], -1)
       }
     } catch (error) {
-      console.error('获取音乐URL失败:', error)
-      if (window.$showNotification) {
-        window.$showNotification('获取音乐播放链接失败', 'error')
+        console.error('获取音乐URL失败:', error)
+        if (window.$showNotification) {
+          window.$showNotification('获取音乐播放链接失败', 'error')
+        }
+        
+        // 即使失败也调用 playSong 以触发播放器的错误处理流程
+        const playableSong = {
+          ...song,
+          musicUrl: null
+        }
+        
+        // 构建当前时段的播放列表
+        const currentTimeSlot = getCurrentTimeSlot(song)
+        let playlist = []
+        let songIndex = 0
+        
+        if (currentTimeSlot && currentTimeSlot.songs) {
+          playlist = currentTimeSlot.songs.map((s) => ({
+            id: s.id,
+            title: s.title,
+            artist: s.artist,
+            cover: s.cover,
+            musicUrl: s.musicUrl || null,
+            musicPlatform: s.musicPlatform,
+            musicId: s.musicId,
+            playUrl: s.playUrl || null,
+            sourceInfo: s.sourceInfo
+          }))
+          songIndex = playlist.findIndex((s) => s.id === song.id)
+          if (songIndex === -1) songIndex = 0
+        }
+        
+        audioPlayer.playSong(playableSong, playlist, songIndex)
       }
     }
   }
-}
 
 // 获取歌曲所在的时段
 const getCurrentTimeSlot = (song) => {

@@ -1067,14 +1067,6 @@ const playSongWithUrlFetching = async (song) => {
   try {
     const url = await getMusicUrl(song)
 
-    // 对于哔哩哔哩视频，即使没有 URL 也允许播放
-    if (!url && !isBilibiliSong(song)) {
-      if (window.$showNotification) {
-        window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
-      }
-      return
-    }
-
     const playableSong = {
       ...song,
       musicUrl: url || null
@@ -1084,6 +1076,14 @@ const playSongWithUrlFetching = async (song) => {
     const playlist = await buildPlayablePlaylist(song)
     const currentIndex = playlist.findIndex((item) => item.id === song.id)
     audioPlayer.playSong(playableSong, playlist, currentIndex)
+
+    // 对于哔哩哔哩视频，即使没有 URL 也允许播放
+    if (!url && !isBilibiliSong(song)) {
+      if (window.$showNotification) {
+        window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
+      }
+      return
+    }
 
     // 后台预取后续歌曲的播放链接（不阻塞当前播放）
     ;(async () => {
@@ -1100,16 +1100,15 @@ const playSongWithUrlFetching = async (song) => {
       }
     })()
   } catch (error) {
-    // 对于哔哩哔哩视频，即使获取失败也允许播放
-    if (isBilibiliSong(song)) {
-      const playableSong = {
-        ...song,
-        musicUrl: null
-      }
-      const playlist = await buildPlayablePlaylist(song)
-      const currentIndex = playlist.findIndex((item) => item.id === song.id)
-      audioPlayer.playSong(playableSong, playlist, currentIndex)
-    } else {
+    const playableSong = {
+      ...song,
+      musicUrl: null
+    }
+    const playlist = await buildPlayablePlaylist(song)
+    const currentIndex = playlist.findIndex((item) => item.id === song.id)
+    audioPlayer.playSong(playableSong, playlist, currentIndex)
+
+    if (!isBilibiliSong(song)) {
       if (window.$showNotification) {
         window.$showNotification('获取音乐播放链接失败', 'error')
       }

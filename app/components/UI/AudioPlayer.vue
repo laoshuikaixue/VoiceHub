@@ -247,7 +247,6 @@
       cancel-text="稍后处理"
       @confirm="handleFallbackDialogConfirm"
       @cancel="handleFallbackDialogCancel"
-      @close="handleFallbackDialogCancel"
     />
   </div>
 </template>
@@ -319,6 +318,7 @@ const lastOpenedFallbackSongId = ref<string | number | null>(null)
 const showFallbackOpenDialog = ref(false)
 const fallbackOpenDialogUrl = ref('')
 const fallbackOpenDialogMessage = ref('播放地址不可直接播放，是否在新标签页打开原始链接？')
+const isFallbackHandling = ref(false) // 标记正在处理 fallback，阻止重试逻辑
 
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
@@ -401,10 +401,12 @@ const openFallbackLinkForFailedSong = (): 'none' | 'dialog' | 'opened' => {
   const song = activeSong.value
   if (!song?.id) return 'none'
   if (lastOpenedFallbackSongId.value === song.id) return 'none'
+  if (showFallbackOpenDialog.value) return 'dialog'
 
   const fallbackUrl = resolveFallbackUrl()
   if (!fallbackUrl) return 'none'
 
+  isFallbackHandling.value = true
   fallbackOpenDialogUrl.value = fallbackUrl
   fallbackOpenDialogMessage.value = `播放地址不可直接播放，是否在新标签页打开原始链接？\n\n即将跳转的网址：\n${fallbackUrl}`
   showFallbackOpenDialog.value = true
@@ -414,6 +416,7 @@ const openFallbackLinkForFailedSong = (): 'none' | 'dialog' | 'opened' => {
 const handleFallbackDialogConfirm = () => {
   if (!fallbackOpenDialogUrl.value) {
     showFallbackOpenDialog.value = false
+    isFallbackHandling.value = false
     return
   }
 
@@ -425,7 +428,6 @@ const handleFallbackDialogConfirm = () => {
     return
   }
 
-  // 只有在成功确认并打开后才设置 lock
   const song = activeSong.value
   if (song?.id) {
     lastOpenedFallbackSongId.value = song.id
@@ -433,6 +435,7 @@ const handleFallbackDialogConfirm = () => {
 
   showFallbackOpenDialog.value = false
   fallbackOpenDialogUrl.value = ''
+  isFallbackHandling.value = false
   if (window.$showNotification) {
     window.$showNotification('已为你打开原始链接', 'success')
   }
@@ -441,7 +444,7 @@ const handleFallbackDialogConfirm = () => {
 const handleFallbackDialogCancel = () => {
   showFallbackOpenDialog.value = false
   fallbackOpenDialogUrl.value = ''
-  // 不设置 lock，允许用户下次再次触发
+  isFallbackHandling.value = false
 }
 
 watch(
@@ -449,6 +452,8 @@ watch(
   (newId, oldId) => {
     if (newId !== oldId) {
       lastOpenedFallbackSongId.value = null
+      isFallbackHandling.value = false
+      enhanced.resetRetryState()
     }
   }
 )
@@ -626,6 +631,9 @@ const handleLoaded = async () => {
 }
 
 const handleError = async (error) => {
+  // 如果正在处理 fallback，直接返回，不走重试逻辑
+  if (isFallbackHandling.value) return
+
   // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
   if (isBilibiliSong(activeSong.value)) {
     // 如果是播放列表模式，且不是手动单曲播放模式，则自动跳过
@@ -663,6 +671,8 @@ const handleError = async (error) => {
 
   const fallbackResult = openFallbackLinkForFailedSong()
   if (fallbackResult !== 'none') {
+    console.log('[AudioPlayer] 显示 fallback 弹窗，立即设置错误状态停止重试')
+    // 立即设置错误状态，阻止 loadSong 的重试
     control.hasError.value = true
     control.isPlaying.value = false
     control.isLoadingTrack.value = false
@@ -1034,6 +1044,12 @@ const handleLyricSeek = async (time) => {
 const stopPlaying = () => {
   if (isClosing.value) return
 
+  console.log('[Fallback] 关闭播放器，重置 lock 和重试状态')
+  // 重置 fallback lock 和增强错误处理状态，下次重新播放时从头开始
+  lastOpenedFallbackSongId.value = null
+  isFallbackHandling.value = false
+  enhanced.resetRetryState()
+
   // 立即停止音频播放和同步状态，确保用户点击关闭时音乐立即停止
   control.stop()
   sync.syncStopToGlobal()
@@ -1075,6 +1091,8 @@ watch(
       if (loadSuccess) {
         sync.setGlobalPlaylist(newSong, props.playlist)
         await control.play()
+      } else {
+        handleError(new Error('加载歌曲失败'))
       }
     }
   },
@@ -1089,12 +1107,48 @@ watch(
 
     isSyncingFromGlobal.value = true
 
+    if (newPlayingStatus && (isClosing.value || isClosed.value)) {
+      // 从关闭状态唤醒
+      isClosed.value = false
+      isClosing.value = false
+      
+      // 如果当前处于错误状态，尝试重新加载
+      if (control.hasError.value && props.song) {
+        control.loadSong(props.song).then((success) => {
+          if (success) {
+            control.play()
+          } else {
+            handleError(new Error('加载歌曲失败'))
+          }
+          nextTick(() => {
+            isSyncingFromGlobal.value = false
+          })
+        })
+      } else {
+        control.play()
+        nextTick(() => {
+          isSyncingFromGlobal.value = false
+        })
+      }
+      return
+    }
+
     if (!newPlayingStatus && control.isPlaying.value) {
       control.pause()
     } else if (newPlayingStatus && !control.isPlaying.value) {
       const currentGlobalSong = sync.globalAudioPlayer.getCurrentSong().value
       if (currentGlobalSong && props.song && currentGlobalSong.id === props.song.id) {
-        control.play()
+        if (control.hasError.value) {
+          control.loadSong(props.song).then((success) => {
+            if (success) {
+              control.play()
+            } else {
+              handleError(new Error('加载歌曲失败'))
+            }
+          })
+        } else {
+          control.play()
+        }
       }
     }
 
