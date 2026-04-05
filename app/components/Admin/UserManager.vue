@@ -164,17 +164,17 @@
                 </td>
                 <td class="px-6 py-5">
                   <span
-                    v-if="user.role === 'super_admin'"
+                    v-if="user.role === 'SUPER_ADMIN'"
                     class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest"
                     >超级管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'admin'"
+                    v-else-if="user.role === 'ADMIN'"
                     class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest"
                     >管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'song_admin'"
+                    v-else-if="user.role === 'SONG_ADMIN'"
                     class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
                     >歌曲管理</span
                   >
@@ -336,17 +336,17 @@
                 </p>
                 <div>
                   <span
-                    v-if="user.role === 'super_admin'"
+                    v-if="user.role === 'SUPER_ADMIN'"
                     class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest"
                     >超级管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'admin'"
+                    v-else-if="user.role === 'ADMIN'"
                     class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest"
                     >管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'song_admin'"
+                    v-else-if="user.role === 'SONG_ADMIN'"
                     class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
                     >歌曲管理</span
                   >
