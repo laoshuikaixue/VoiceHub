@@ -2056,8 +2056,6 @@ const handleFileUpload = async (event) => {
         
         importStartRow.value = startRow
 
-        importStartRow.value = startRow
-
         const userData = []
 
         for (let i = startRow; i < jsonData.length; i++) {
