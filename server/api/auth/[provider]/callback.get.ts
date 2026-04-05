@@ -12,6 +12,7 @@ import {
 } from '~~/server/services/oauthConfigService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
+import type { H3Event } from 'h3'
 import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils'
 
 export default defineEventHandler(async (event) => {
@@ -98,7 +99,7 @@ export default defineEventHandler(async (event) => {
 })
 
 async function handleUserLoginOrBind(
-  event: any,
+  event: H3Event,
   provider: string,
   providerUserId: string,
   providerUsername: string
