@@ -21,7 +21,7 @@ COPY scripts ./scripts
 
 # 安装所有依赖
 RUN set -eux; \
-    corepack enable; \
+    npm install -g pnpm@10.29.3; \
     pnpm config set fetch-retries 5; \
     pnpm config set fetch-retry-mintimeout 20000; \
     pnpm config set fetch-retry-maxtimeout 120000; \
@@ -54,6 +54,9 @@ FROM runtime-${TARGETARCH} AS runtime
 
 USER root
 WORKDIR /app
+
+# 安装 pnpm
+RUN npm install -g pnpm@10.29.3
 
 # 从构建阶段复制必要文件
 COPY --from=builder /app/package.json ./
