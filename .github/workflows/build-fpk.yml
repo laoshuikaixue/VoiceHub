@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   build-fpk:
+    if: github.repository == 'laoshuikaixue/VoiceHub'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
