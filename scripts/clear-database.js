@@ -59,7 +59,7 @@ async function resetAutoIncrementSequences() {
         if (maxId === 0) {
           await db.execute(sql.raw(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`))
         } else {
-          const newSequenceValue = maxId + 1
+          const newSequenceValue = maxId
           await db.execute(sql.raw(`SELECT setval('${sequenceName}', ${newSequenceValue})`))
         }
       } else {
@@ -129,8 +129,8 @@ async function main() {
         sequenceNameResult.rows?.[0]?.sequence_name || sequenceNameResult[0]?.sequence_name
 
       if (sequenceName) {
-        const nextId = admin.id + 1
-        await db.execute(sql.raw(`SELECT setval('${sequenceName}', ${nextId}, false)`))
+        const nextId = admin.id
+        await db.execute(sql.raw(`SELECT setval('${sequenceName}', ${nextId})`))
       }
     } catch (error) {
       console.warn(`调整User表序列失败: ${error.message}`)
