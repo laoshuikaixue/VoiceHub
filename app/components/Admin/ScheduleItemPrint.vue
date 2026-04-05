@@ -102,6 +102,7 @@ const handleImageError = (event) => {
   align-items: center;
   width: 100%;
   gap: 12px;
+  min-width: 0;
 }
 
 .sequence-number {
@@ -194,6 +195,7 @@ const handleImageError = (event) => {
   font-weight: normal;
   margin-left: 4px;
   vertical-align: middle;
+  flex-shrink: 0;
 }
 
 .song-artist {
@@ -211,15 +213,21 @@ const handleImageError = (event) => {
   font-size: 12px;
   color: #666;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .label {
   font-weight: 500;
   margin-right: 4px;
+  flex-shrink: 0;
 }
 
 .value {
   color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 打印样式 */
