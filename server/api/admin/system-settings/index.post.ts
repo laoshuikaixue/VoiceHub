@@ -258,6 +258,16 @@ export default defineEventHandler(async (event) => {
     let settings = settingsResult[0]
 
     // OAuth 配置字段
+    if (body.allowOAuthRegistration !== undefined) {
+      if (typeof body.allowOAuthRegistration !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'allowOAuthRegistration 必须是布尔值'
+        })
+      }
+      updateData.allowOAuthRegistration = body.allowOAuthRegistration
+    }
+
     if (body.oauthRedirectUri !== undefined) {
       const normalizedOauthRedirectUri =
         typeof body.oauthRedirectUri === 'string' ? body.oauthRedirectUri.trim() : body.oauthRedirectUri

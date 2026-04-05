@@ -8,7 +8,7 @@
     </div>
 
     <!-- OAuth 账号创建/绑定模式选择器 -->
-    <div v-if="isBindMode" class="mode-selector">
+    <div v-if="isBindMode && allowOAuthRegistration" class="mode-selector">
       <button
         :class="['mode-btn', { active: !showCreateMode }]"
         type="button"
@@ -237,10 +237,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { Fingerprint } from 'lucide-vue-next'
+
+const { allowOAuthRegistration, fetchSiteConfig } = useSiteConfig()
 
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
@@ -282,6 +285,7 @@ const handle2FASuccess = async () => {
 }
 
 onMounted(async () => {
+  await fetchSiteConfig()
   const isApiSupported = browserSupportsWebAuthn()
   let isPlatformAuthenticatorAvailable = false
 

@@ -34,7 +34,8 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   smtpUsername: null,
   smtpPassword: null,
   smtpFromEmail: null,
-  smtpFromName: '校园广播站'
+  smtpFromName: '校园广播站',
+  allowOAuthRegistration: false
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [
@@ -60,6 +61,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'enableRequestTimeLimitation',
   'forceBlockAllRequests',
   'smtpEnabled',
+  'allowOAuthRegistration',
   'githubOAuthEnabled',
   'casdoorOAuthEnabled',
   'googleOAuthEnabled',

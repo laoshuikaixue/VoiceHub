@@ -6,6 +6,12 @@ import { getBeijingTime } from '~/utils/timeUtils'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 
 export default defineEventHandler(async (event) => {
+  // 检查是否允许 OAuth 注册
+  const config = await db.query.systemSettings.findFirst()
+  if (!config?.allowOAuthRegistration) {
+    throw createError({ statusCode: 403, message: '系统已关闭第三方账号注册功能，请登录现有账号进行绑定' })
+  }
+
   const body = await readBody(event)
   const { username, password, confirmPassword } = body
   const bindingToken = getCookie(event, 'binding-token')

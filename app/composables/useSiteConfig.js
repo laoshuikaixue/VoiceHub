@@ -61,6 +61,7 @@ export const useSiteConfig = () => {
         enableReplayRequests: false,
         enableCollaborativeSubmission: true,
         enableSubmissionRemarks: false,
+        allowOAuthRegistration: false,
         githubOAuthEnabled: false,
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
@@ -92,6 +93,7 @@ export const useSiteConfig = () => {
     () => siteConfig.value.enableCollaborativeSubmission !== false
   )
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
+  const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
   const oauth = computed(() => ({
     github: !!siteConfig.value.githubOAuthEnabled,
@@ -149,6 +151,7 @@ export const useSiteConfig = () => {
     enableReplayRequests,
     enableCollaborativeSubmission,
     enableSubmissionRemarks,
+    allowOAuthRegistration,
     smtpEnabled,
     oauth,
     oauthProviders,

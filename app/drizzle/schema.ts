@@ -159,6 +159,7 @@ export const systemSettings = pgTable('SystemSettings', {
   enableSubmissionRemarks: boolean('enableSubmissionRemarks').default(false).notNull(),
 
   // OAuth 配置
+  allowOAuthRegistration: boolean('allowOAuthRegistration').default(false).notNull(),
   oauthRedirectUri: text('oauthRedirectUri'),
   oauthStateSecret: text('oauthStateSecret'),
   oauthProviders: text('oauthProviders').default('[]'),

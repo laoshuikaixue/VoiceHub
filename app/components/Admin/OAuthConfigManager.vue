@@ -8,7 +8,31 @@
 
     <!-- 基础配置 -->
     <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
-      <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">基础设置</h4>
+      <div class="flex items-center justify-between">
+        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">基础设置</h4>
+      </div>
+
+      <div class="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
+        <div>
+          <label :class="labelClass">允许第三方注册</label>
+          <p class="text-[10px] text-zinc-600 mt-1">开启后，允许用户通过 OAuth 创建新账号；关闭时，仅允许绑定已有账号</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span
+            :class="[
+              'text-[10px] font-bold',
+              formData.allowOAuthRegistration ? 'text-green-500' : 'text-zinc-500'
+            ]"
+          >
+            {{ formData.allowOAuthRegistration ? '已允许' : '未允许' }}
+          </span>
+          <input
+            v-model="formData.allowOAuthRegistration"
+            type="checkbox"
+            class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
+          >
+        </div>
+      </div>
 
       <div>
         <label :class="labelClass">OAuth 重定向 URI</label>
