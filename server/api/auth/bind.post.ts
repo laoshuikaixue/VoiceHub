@@ -12,6 +12,7 @@ import {
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { and } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { isSecureRequest } from '~~/server/utils/request-utils'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -89,9 +90,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const isSecure =
-      getRequestURL(event).protocol === 'https:' ||
-      getRequestHeader(event, 'x-forwarded-proto') === 'https'
+    const isSecure = isSecureRequest(event)
 
     setCookie(event, 'pre-auth-token', tempToken, {
       httpOnly: true,
@@ -159,9 +158,7 @@ export default defineEventHandler(async (event) => {
 
   // 登录
   const token = JWTEnhanced.generateToken(user.id, user.role)
-  const isSecure =
-    getRequestURL(event).protocol === 'https:' ||
-    getRequestHeader(event, 'x-forwarded-proto') === 'https'
+  const isSecure = isSecureRequest(event)
   setCookie(event, 'auth-token', token, {
     httpOnly: true,
     secure: isSecure,

@@ -13,6 +13,7 @@ import {
 import { and } from 'drizzle-orm'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils'
 
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
@@ -51,15 +52,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 获取 Origin
-  const headers = getRequestHeaders(event)
-  const forwardedProto = (headers['x-forwarded-proto'] || '').toString()
-  const requestProto = getRequestURL(event).protocol.replace(/:$/, '').toLowerCase()
-  const normalizedForwardedProto = forwardedProto
-    ? forwardedProto.split(',')[0].trim().toLowerCase().replace(/:$/, '')
-    : ''
-  const protocol = normalizedForwardedProto || requestProto
-  const host = headers['host']
-  const origin = `${protocol}://${host}`
+  const origin = getRequestOrigin(event)
 
   const { stateSecret, redirectUriTemplate } = await getOAuthBaseConfig()
   const providerConfig = await getProviderRuntimeConfig(provider)
@@ -111,9 +104,7 @@ async function handleUserLoginOrBind(
   providerUserId: string,
   providerUsername: string
 ) {
-  const isSecure =
-    getRequestURL(event).protocol === 'https:' ||
-    getRequestHeader(event, 'x-forwarded-proto') === 'https'
+  const isSecure = isSecureRequest(event)
 
   // 4. 检查是否已登录（绑定模式）
   const authToken = getCookie(event, 'auth-token')

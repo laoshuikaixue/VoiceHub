@@ -6,6 +6,7 @@ import {
   isOAuthProviderEnabled,
   isSupportedOAuthProvider
 } from '~~/server/services/oauthConfigService'
+import { getRequestOrigin, getSafeRequestProtocol } from '~~/server/utils/request-utils'
 
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
@@ -28,14 +29,9 @@ export default defineEventHandler(async (event) => {
   const strategy = getOAuthStrategy(provider)
 
   // 获取 Origin
-  const headers = getRequestHeaders(event)
-  const forwardedProto = (headers['x-forwarded-proto'] || '').toString()
-  const requestProto = getRequestURL(event).protocol.replace(/:$/, '').toLowerCase()
-  const protocol = forwardedProto
-    ? forwardedProto.split(',')[0].trim().toLowerCase().replace(/:$/, '')
-    : requestProto
-  const host = headers['host']
-  const origin = `${protocol}://${host}`
+  const origin = getRequestOrigin(event)
+  const protocol = getSafeRequestProtocol(event)
+  const host = getRequestHeaders(event)['host'] || getRequestURL(event).host
 
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 

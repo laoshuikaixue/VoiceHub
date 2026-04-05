@@ -4,6 +4,7 @@ import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
+import { isSecureRequest } from '~~/server/utils/request-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
@@ -104,11 +105,7 @@ export default defineEventHandler(async (event) => {
     const token = JWTEnhanced.generateToken(result.id, 'USER')
 
     // 自动判断是否需要secure
-    const forwardedProtoHeader = (getRequestHeader(event, 'x-forwarded-proto') || '').toString()
-    const forwardedProto = forwardedProtoHeader.split(',')[0]?.trim().toLowerCase()
-    const isSecure =
-      getRequestURL(event).protocol === 'https:' ||
-      forwardedProto === 'https'
+    const isSecure = isSecureRequest(event)
 
     // 设置cookie
     setCookie(event, 'auth-token', token, {
