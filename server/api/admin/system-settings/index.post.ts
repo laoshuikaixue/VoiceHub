@@ -275,8 +275,8 @@ export default defineEventHandler(async (event) => {
       if (normalizedOauthRedirectUri !== null && normalizedOauthRedirectUri !== '') {
         try {
           const uri = new URL(normalizedOauthRedirectUri)
-          // 同时兼容旧的 /auth 路径和当前实际生效的 /api/auth 路径。
-          const validPathPattern = /^(?:\/api)?\/auth\/[^/]+\/callback\/?$/
+          // 支持 broker 回调 (包含 /callback 或 /api/auth/[provider]/callback 结构)
+          const validPathPattern = /(?:\/api)?\/auth\/[^/]+\/callback\/?$|\/callback\/?$/
           if (!validPathPattern.test(uri.pathname)) {
             throw createError({
               statusCode: 400,

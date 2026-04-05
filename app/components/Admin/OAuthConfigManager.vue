@@ -406,9 +406,11 @@
     <div class="mt-6 p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3">
       <AlertCircle class="text-amber-500 shrink-0 mt-0.5" :size="14" />
       <div class="text-[10px] text-zinc-500 leading-relaxed space-y-1">
-        <p>• 请确保 OAuth 重定向 URI 与 OAuth 提供商配置中的回调地址完全匹配</p>
-        <p>• 密钥信息仅在服务端使用，不会在前端页面中返回</p>
-        <p>• 修改 OAuth 配置后，用户可能需要重新登录</p>
+        <p>
+          在 Vercel 等平台进行多环境部署时，GitHub OAuth App 等提供商通常只能配置单一的回调地址。为了解决这个问题，项目可以使用 
+          <a href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker" target="_blank" class="text-blue-500 hover:underline">VoiceHub-Auth-Broker</a> 
+          中间件作为统一的回调入口。该中间件能根据 <code>state</code> 参数动态转发回调请求到正确的部署环境，从而实现单个 OAuth App 支持无限个预览/生产环境。详情请参考该项目文档。
+        </p>
       </div>
     </div>
   </section>
