@@ -176,12 +176,12 @@
                   <span
                     v-else-if="user.role === 'SONG_ADMIN'"
                     class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
-                    >歌曲管理</span
+                    >歌曲管理员</span
                   >
                   <span
                     v-else
                     class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest"
-                    >用户</span
+                    >普通用户</span
                   >
                 </td>
                 <td class="px-6 py-5">
@@ -348,12 +348,12 @@
                   <span
                     v-else-if="user.role === 'SONG_ADMIN'"
                     class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
-                    >歌曲管理</span
+                    >歌曲管理员</span
                   >
                   <span
                     v-else
                     class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest"
-                    >用户</span
+                    >普通用户</span
                   >
                 </div>
               </div>
