@@ -495,6 +495,7 @@ VoiceHub/
 │   │   │   ├── ScheduleItemPrint.vue  # 排期项目打印
 │   │   │   ├── ScheduleManager.vue    # 排期管理
 │   │   │   ├── SchedulePrinter.vue    # 排期打印功能
+│   │   │   ├── ScheduleTablePrint.vue # 排期表格打印功能
 │   │   │   ├── SemesterManager.vue    # 学期管理
 │   │   │   ├── Sidebar.vue            # 管理后台侧边栏
 │   │   │   ├── SiteConfigManager.vue  # 站点配置管理
