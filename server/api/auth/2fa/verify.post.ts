@@ -4,6 +4,7 @@ import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
+import { isSecureRequest } from '~~/server/utils/request-utils'
 import otplib from 'otplib'
 
 const { authenticator } = otplib
@@ -141,10 +142,8 @@ export default defineEventHandler(async (event) => {
 
   // 生成Token
   const authToken = JWTEnhanced.generateToken(user.id, user.role)
-  
-  const isSecure =
-      getRequestURL(event).protocol === 'https:' ||
-      getRequestHeader(event, 'x-forwarded-proto') === 'https'
+
+  const isSecure = isSecureRequest(event)
 
   setCookie(event, 'auth-token', authToken, {
       httpOnly: true,

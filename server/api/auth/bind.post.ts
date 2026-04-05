@@ -61,6 +61,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, message: '该账号已毕业，限制访问' })
   }
 
+  if (user.status !== 'active') {
+    throw createError({ statusCode: 403, message: '该账号当前不可用' })
+  }
+
   if (isUserBlocked(user.id)) {
     const remaining = getUserBlockRemainingTime(user.id)
     throw createError({ statusCode: 423, message: `账户处于风险控制期，请在 ${remaining} 分钟后重试` })
