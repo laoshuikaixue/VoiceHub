@@ -164,24 +164,24 @@
                 </td>
                 <td class="px-6 py-5">
                   <span
-                    v-if="user.role === 'super_admin'"
+                    v-if="user.role === 'SUPER_ADMIN'"
                     class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest"
                     >超级管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'admin'"
+                    v-else-if="user.role === 'ADMIN'"
                     class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest"
                     >管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'song_admin'"
+                    v-else-if="user.role === 'SONG_ADMIN'"
                     class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
-                    >歌曲管理</span
+                    >歌曲管理员</span
                   >
                   <span
                     v-else
                     class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest"
-                    >用户</span
+                    >普通用户</span
                   >
                 </td>
                 <td class="px-6 py-5">
@@ -336,24 +336,24 @@
                 </p>
                 <div>
                   <span
-                    v-if="user.role === 'super_admin'"
+                    v-if="user.role === 'SUPER_ADMIN'"
                     class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest"
                     >超级管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'admin'"
+                    v-else-if="user.role === 'ADMIN'"
                     class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest"
                     >管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'song_admin'"
+                    v-else-if="user.role === 'SONG_ADMIN'"
                     class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
-                    >歌曲管理</span
+                    >歌曲管理员</span
                   >
                   <span
                     v-else
                     class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest"
-                    >用户</span
+                    >普通用户</span
                   >
                 </div>
               </div>
@@ -2053,6 +2053,8 @@ const handleFileUpload = async (event) => {
             console.log('未检测到标题行，从第一行开始解析')
           }
         }
+        
+        importStartRow.value = startRow
 
         importStartRow.value = startRow
 
