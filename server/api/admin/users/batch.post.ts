@@ -4,6 +4,20 @@ import { users } from '~/drizzle/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { cacheService } from '../../../services/cacheService'
 
+interface UserData {
+  name: string
+  username: string
+  password: string
+  role?: string
+  status?: 'active' | 'withdrawn' | 'graduate'
+  grade?: string
+  class?: string
+}
+
+interface ValidUserData extends UserData {
+  index: number
+}
+
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
   const user = event.context.user
@@ -31,7 +45,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 1. 预处理数据：过滤必填字段，提取要查询的用户名
-  const validUsers: any[] = []
+  const validUsers: ValidUserData[] = []
   const usernamesToQuery: string[] = []
 
   for (let i = 0; i < body.users.length; i++) {
@@ -68,7 +82,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 3. 过滤掉已存在的用户
-  const usersToInsertData: any[] = []
+  const usersToInsertData: ValidUserData[] = []
   for (const userData of validUsers) {
     if (existingUsernames.has(userData.username)) {
       results.failed++
@@ -93,12 +107,13 @@ export default defineEventHandler(async (event) => {
       // 角色权限控制
       let validRole = 'USER' // 默认角色
       if (userData.role) {
-        if (user.role === 'SUPER_ADMIN') {
-          const allowedRoles = ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN']
-          if (allowedRoles.includes(userData.role)) validRole = userData.role
-        } else if (user.role === 'ADMIN') {
-          const allowedRoles = ['USER', 'SONG_ADMIN']
-          if (allowedRoles.includes(userData.role)) validRole = userData.role
+        const rolePermissions: Record<string, string[]> = {
+          SUPER_ADMIN: ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'],
+          ADMIN: ['USER', 'SONG_ADMIN']
+        }
+        const allowedRoles = rolePermissions[user.role]
+        if (allowedRoles?.includes(userData.role)) {
+          validRole = userData.role
         }
       }
 

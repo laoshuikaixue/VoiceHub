@@ -1441,6 +1441,7 @@ const importError = ref('')
 const importSuccess = ref('')
 const previewData = ref([])
 const xlsxLoaded = ref(false)
+const importStartRow = ref(0)
 
 // 批量更新状态
 const showBatchUpdateModal = ref(false)
@@ -2040,6 +2041,8 @@ const handleFileUpload = async (event) => {
             console.log('未检测到标题行，从第一行开始解析')
           }
         }
+        
+        importStartRow.value = startRow
 
         const userData = []
 
@@ -2119,6 +2122,14 @@ const downloadImportTemplate = async () => {
   window.XLSX.writeFile(wb, '用户批量导入模板.xlsx')
 }
 
+// 格式化导入错误的辅助函数
+const formatImportErrors = (errors) => {
+  return errors.map(e => {
+    const namePart = e.name || e.username ? ` (${e.name || e.username})` : ''
+    return `第${e.rowNum || '?'}行${namePart}: ${e.reason}`
+  }).join('\n')
+}
+
 // 批量导入用户
 const importUsers = async () => {
   if (previewData.value.length === 0) return
@@ -2156,7 +2167,7 @@ const importUsers = async () => {
         if (result.errors && result.errors.length > 0) {
           const batchErrors = result.errors.map(e => ({
             ...e,
-            rowNum: i + e.index + 2 // Excel第一行是标题，所以+2
+            rowNum: i + e.index + importStartRow.value + 1 // 正确计算行号
           }))
           allErrors.push(...batchErrors)
         }
@@ -2172,10 +2183,7 @@ const importUsers = async () => {
     if (totalCreated > 0 || totalFailed === 0) {
       importSuccess.value = `成功导入 ${totalCreated} 个用户，${totalFailed} 个用户导入失败`
       if (allErrors.length > 0) {
-        importError.value = '部分导入失败原因：\n' + allErrors.map(e => {
-          const namePart = e.name || e.username ? ` (${e.name || e.username})` : ''
-          return `第${e.rowNum || '?'}行${namePart}: ${e.reason}`
-        }).join('\n')
+        importError.value = '部分导入失败原因：\n' + formatImportErrors(allErrors)
       }
       previewData.value = []
 
@@ -2185,10 +2193,7 @@ const importUsers = async () => {
         }
       }, 3000)
     } else {
-      importError.value = '导入失败，请检查数据格式后重试。\n失败原因：\n' + allErrors.map(e => {
-        const namePart = e.name || e.username ? ` (${e.name || e.username})` : ''
-        return `第${e.rowNum || '?'}行${namePart}: ${e.reason}`
-      }).join('\n')
+      importError.value = '导入失败，请检查数据格式后重试。\n失败原因：\n' + formatImportErrors(allErrors)
       importSuccess.value = ''
     }
   } catch (err) {
