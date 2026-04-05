@@ -9,6 +9,13 @@ export interface OAuthState {
   provider?: string
 }
 
+const normalizePort = (url: URL): string => {
+  if (url.port) return url.port
+  if (url.protocol === 'https:') return '443'
+  if (url.protocol === 'http:') return '80'
+  return ''
+}
+
 // 生成 OAuth 状态参数
 export const generateState = (
   targetOrigin: string,
@@ -78,8 +85,8 @@ export const parseState = (
         // 使用 hostname 避免端口导致误判，端口单独比较
         const expectedHost = expectedUrl.hostname
         const payloadHost = payloadUrl.hostname
-        const expectedPort = expectedUrl.port
-        const payloadPort = payloadUrl.port
+        const expectedPort = normalizePort(expectedUrl)
+        const payloadPort = normalizePort(payloadUrl)
         
         // hostname 相同时也要校验端口一致，避免同 host 不同端口被接受
         if (expectedHost === payloadHost) {

@@ -59,7 +59,12 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'enableSubmissionRemarks',
   'enableRequestTimeLimitation',
   'forceBlockAllRequests',
-  'smtpEnabled'
+  'smtpEnabled',
+  'githubOAuthEnabled',
+  'casdoorOAuthEnabled',
+  'googleOAuthEnabled',
+  'customOAuthEnabled',
+  'customOAuthDisplayName'
 ]
 
 export const filterPublicSettings = (data: any) => {
