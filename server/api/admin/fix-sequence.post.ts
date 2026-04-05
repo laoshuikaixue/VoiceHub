@@ -5,12 +5,12 @@ import { sql } from 'drizzle-orm'
 async function fixTableSequence(table: string, dbTableName: string) {
   try {
     // 获取表的最大ID
-    const maxIdResult = await db.execute(sql.raw(`SELECT MAX(id) as max_id FROM "${dbTableName}"`))
+    const maxIdResult = await db.execute(sql`SELECT MAX(id) as max_id FROM ${sql.identifier(dbTableName)}`)
     const maxId = Number((maxIdResult as any).rows?.[0]?.max_id || (maxIdResult as any)[0]?.max_id || 0)
 
     // 获取序列名称
     const sequenceNameResult = await db.execute(
-      sql.raw(`SELECT pg_get_serial_sequence('"${dbTableName}"', 'id') as sequence_name`)
+      sql`SELECT pg_get_serial_sequence(${dbTableName}, 'id') as sequence_name`
     )
     const sequenceName = (sequenceNameResult as any).rows?.[0]?.sequence_name || (sequenceNameResult as any)[0]?.sequence_name
 
@@ -24,7 +24,7 @@ async function fixTableSequence(table: string, dbTableName: string) {
 
     if (maxId === 0) {
       // 表为空，重置序列为 1
-      await db.execute(sql.raw(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`))
+      await db.execute(sql`ALTER SEQUENCE ${sql.identifier(sequenceName)} RESTART WITH 1`)
       return {
         success: true,
         table: table,
@@ -39,7 +39,7 @@ async function fixTableSequence(table: string, dbTableName: string) {
     }
 
     // 获取当前序列值
-    const currentSeqResult = await db.execute(sql.raw(`SELECT last_value FROM ${sequenceName}`))
+    const currentSeqResult = await db.execute(sql`SELECT last_value FROM ${sql.identifier(sequenceName)}`)
     const currentSeqValue = Number((currentSeqResult as any).rows?.[0]?.last_value || (currentSeqResult as any)[0]?.last_value || 0)
 
     // 重置序列值到最大ID
@@ -60,7 +60,7 @@ async function fixTableSequence(table: string, dbTableName: string) {
       }
     }
 
-    await db.execute(sql.raw(`SELECT setval('${sequenceName}', ${newSequenceValue})`))
+    await db.execute(sql`SELECT setval(${sequenceName}, ${newSequenceValue})`)
 
     return {
       success: true,

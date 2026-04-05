@@ -51,24 +51,24 @@ async function resetAutoIncrementSequences() {
     try {
       // 获取表的最大ID
       const maxIdResult = await db.execute(
-        sql.raw(`SELECT MAX(id) as max_id FROM "${table.dbName}"`)
+        sql`SELECT MAX(id) as max_id FROM ${sql.identifier(table.dbName)}`
       )
       const maxId = Number((maxIdResult as any).rows?.[0]?.max_id || (maxIdResult as any)[0]?.max_id || 0)
 
       // 获取序列名称
       const sequenceNameResult = await db.execute(
-        sql.raw(`SELECT pg_get_serial_sequence('"${table.dbName}"', 'id') as sequence_name`)
+        sql`SELECT pg_get_serial_sequence(${table.dbName}, 'id') as sequence_name`
       )
       const sequenceName = (sequenceNameResult as any).rows?.[0]?.sequence_name || (sequenceNameResult as any)[0]?.sequence_name
 
       if (sequenceName) {
         if (maxId === 0) {
           // 表为空，重置序列到 1
-          await db.execute(sql.raw(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`))
+          await db.execute(sql`ALTER SEQUENCE ${sql.identifier(sequenceName)} RESTART WITH 1`)
         } else {
           // 表不为空（例如保留了管理员用户），重置序列到最大ID
           const newSequenceValue = maxId
-          await db.execute(sql.raw(`SELECT setval('${sequenceName}', ${newSequenceValue})`))
+          await db.execute(sql`SELECT setval(${sequenceName}, ${newSequenceValue})`)
         }
         results.push({ table: table.name, success: true })
       } else {
