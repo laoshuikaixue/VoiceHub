@@ -10,6 +10,15 @@
     <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
       <div class="flex items-center justify-between">
         <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">基础设置</h4>
+        <button
+          v-if="envData.hasBaseConfig"
+          type="button"
+          class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
+          @click="importEnvData('base')"
+        >
+          <Download :size="12" />
+          导入环境配置
+        </button>
       </div>
 
       <div class="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
@@ -74,7 +83,7 @@
         <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">GitHub OAuth</h4>
         <div class="flex items-center gap-4">
           <button
-            v-if="envData.githubClientId"
+            v-if="envData.hasGithubConfig"
             type="button"
             class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
             @click="importEnvData('github')"
@@ -138,7 +147,7 @@
         <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Casdoor OAuth</h4>
         <div class="flex items-center gap-4">
           <button
-            v-if="envData.casdoorClientId"
+            v-if="envData.hasCasdoorConfig"
             type="button"
             class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
             @click="importEnvData('casdoor')"
@@ -222,7 +231,7 @@
         <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Google OAuth</h4>
         <div class="flex items-center gap-4">
           <button
-            v-if="envData.googleClientId"
+            v-if="envData.hasGoogleConfig"
             type="button"
             class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
             @click="importEnvData('google')"
@@ -480,7 +489,12 @@ const formData = computed({
   set: (val) => emits('update:modelValue', val)
 })
 
-const envData = ref({})
+const envData = ref({
+  hasBaseConfig: false,
+  hasGithubConfig: false,
+  hasCasdoorConfig: false,
+  hasGoogleConfig: false
+})
 
 const fetchEnvData = async () => {
   try {
@@ -491,18 +505,18 @@ const fetchEnvData = async () => {
   }
 }
 
-const importEnvData = (provider) => {
-  if (provider === 'github') {
-    formData.value.githubClientId = envData.value.githubClientId
-    formData.value.githubClientSecret = envData.value.githubClientSecret
-  } else if (provider === 'casdoor') {
-    formData.value.casdoorServerUrl = envData.value.casdoorServerUrl
-    formData.value.casdoorClientId = envData.value.casdoorClientId
-    formData.value.casdoorClientSecret = envData.value.casdoorClientSecret
-    formData.value.casdoorOrganizationName = envData.value.casdoorOrganizationName
-  } else if (provider === 'google') {
-    formData.value.googleClientId = envData.value.googleClientId
-    formData.value.googleClientSecret = envData.value.googleClientSecret
+const importEnvData = async (provider) => {
+  try {
+    const data = await $fetch('/api/admin/system-settings/env-oauth-import', {
+      method: 'POST',
+      body: { provider }
+    })
+    formData.value = {
+      ...formData.value,
+      ...data
+    }
+  } catch (e) {
+    console.error('导入环境配置失败:', e)
   }
 }
 

@@ -7,7 +7,8 @@ import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { randomInt } from 'crypto'
 
 export default defineEventHandler(async (event) => {
-  const { userId: reqUserId, token, email } = await readBody(event)
+  const { userId: reqUserId, token: rawToken, email } = await readBody(event)
+  const token = rawToken || getCookie(event, 'pre-auth-token')
 
   // 必须提供预认证令牌
   if (!token) {
@@ -22,6 +23,7 @@ export default defineEventHandler(async (event) => {
     }
     userId = decoded.userId
   } catch (e) {
+    deleteCookie(event, 'pre-auth-token')
     throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
   }
 

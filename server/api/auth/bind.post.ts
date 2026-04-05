@@ -4,10 +4,14 @@ import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import {
   isAccountLocked,
+  isUserBlocked,
+  getUserBlockRemainingTime,
   recordLoginFailure,
   recordLoginSuccess
 } from '~~/server/services/securityService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { and } from 'drizzle-orm'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -48,6 +52,64 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: '用户名或密码错误' })
   }
 
+  if (user.status === 'withdrawn') {
+    throw createError({ statusCode: 403, message: '该账号已注销' })
+  }
+
+  if (user.status === 'graduate') {
+    throw createError({ statusCode: 403, message: '该账号已毕业，限制访问' })
+  }
+
+  if (isUserBlocked(user.id)) {
+    const remaining = getUserBlockRemainingTime(user.id)
+    throw createError({ statusCode: 423, message: `账户处于风险控制期，请在 ${remaining} 分钟后重试` })
+  }
+
+  const totpIdentity = await db.query.userIdentities.findFirst({
+    where: and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'totp'))
+  })
+
+  if (totpIdentity) {
+    const tempToken = JWTEnhanced.sign(
+      {
+        userId: user.id,
+        type: 'pre-auth',
+        scope: '2fa_pending'
+      },
+      { expiresIn: '5m' }
+    )
+    const methods = ['totp']
+    let maskedEmail = ''
+
+    if (user.email && user.emailVerified) {
+      methods.push('email')
+      const [local, domain] = user.email.split('@')
+      if (local && domain) {
+        maskedEmail = local.length <= 2 ? `***@${domain}` : `${local.slice(0, 2)}****@${domain}`
+      }
+    }
+
+    const isSecure =
+      getRequestURL(event).protocol === 'https:' ||
+      getRequestHeader(event, 'x-forwarded-proto') === 'https'
+
+    setCookie(event, 'pre-auth-token', tempToken, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'lax',
+      maxAge: 60 * 5,
+      path: '/'
+    })
+
+    return {
+      success: true,
+      requires2FA: true,
+      userId: user.id,
+      methods,
+      maskedEmail
+    }
+  }
+
   // 绑定
   try {
     await db.transaction(async (tx) => {
@@ -57,7 +119,9 @@ export default defineEventHandler(async (event) => {
       })
 
       if (existing) {
-        // 已经被绑定，不需要再次插入
+        if (existing.userId !== user.id) {
+          throw createError({ statusCode: 409, message: '该第三方账号已被其他用户绑定' })
+        }
         return
       }
 
@@ -85,11 +149,22 @@ export default defineEventHandler(async (event) => {
 
   recordLoginSuccess(username, clientIp)
 
+  await db
+    .update(users)
+    .set({
+      lastLogin: getBeijingTime(),
+      lastLoginIp: clientIp
+    })
+    .where(eq(users.id, user.id))
+
   // 登录
   const token = JWTEnhanced.generateToken(user.id, user.role)
+  const isSecure =
+    getRequestURL(event).protocol === 'https:' ||
+    getRequestHeader(event, 'x-forwarded-proto') === 'https'
   setCookie(event, 'auth-token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7,
     path: '/'
@@ -97,6 +172,7 @@ export default defineEventHandler(async (event) => {
 
   // 清除绑定令牌
   deleteCookie(event, 'binding-token')
+  deleteCookie(event, 'pre-auth-token')
 
   return { success: true }
 })

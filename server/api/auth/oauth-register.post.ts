@@ -76,7 +76,7 @@ export default defineEventHandler(async (event) => {
           createdAt: now,
           updatedAt: now,
           passwordChangedAt: now,
-          lastLoginAt: now,
+          lastLogin: now,
           forcePasswordChange: false
         })
         .returning({ id: users.id }))[0]

@@ -75,10 +75,10 @@
             stroke-width="2"
             viewBox="0 0 24 24"
           >
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
           <input
             id="name"
@@ -380,12 +380,21 @@ const handle2FASuccess = async () => {
 
 onMounted(async () => {
   await fetchSiteConfig()
-  const isApiSupported = browserSupportsWebAuthn()
-  let isPlatformAuthenticatorAvailable = false
+  if (route.query.oauth2fa === '1') {
+    userId2FA.value = Number(route.query.userId || 0)
+    methods2FA.value = String(route.query.methods || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+    tempToken2FA.value = ''
+    maskedEmail2FA.value = String(route.query.maskedEmail || '')
+    show2FA.value = userId2FA.value > 0 && methods2FA.value.length > 0
+  }
 
+  const isApiSupported = browserSupportsWebAuthn()
   if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
     try {
-      isPlatformAuthenticatorAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+      await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
     } catch (e) {
       console.warn('WebAuthn 平台认证器检查失败:', e)
     }
@@ -415,8 +424,7 @@ const handleLogin = async () => {
 
   try {
     if (isBindMode.value && !showCreateMode.value) {
-      // 绑定现有账户
-      await $fetch('/api/auth/bind', {
+      const response = await $fetch('/api/auth/bind', {
         method: 'POST',
         body: {
           username: username.value,
@@ -424,7 +432,15 @@ const handleLogin = async () => {
         }
       })
 
-      // 绑定成功后刷新认证状态
+      if (response.requires2FA) {
+        userId2FA.value = response.userId
+        methods2FA.value = response.methods
+        tempToken2FA.value = response.tempToken || ''
+        maskedEmail2FA.value = response.maskedEmail || ''
+        show2FA.value = true
+        return
+      }
+
       await auth.initAuth()
       await navigateTo('/')
     } else {

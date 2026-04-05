@@ -1,6 +1,6 @@
 import { parseState, getRedirectUri } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
-import { db, eq, userIdentities } from '~/drizzle/db'
+import { db, eq, userIdentities, users } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
@@ -10,6 +10,9 @@ import {
   isOAuthProviderEnabled,
   isSupportedOAuthProvider
 } from '~~/server/services/oauthConfigService'
+import { and } from 'drizzle-orm'
+import { getClientIP } from '~~/server/utils/ip-utils'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
@@ -108,6 +111,10 @@ async function handleUserLoginOrBind(
   providerUserId: string,
   providerUsername: string
 ) {
+  const isSecure =
+    getRequestURL(event).protocol === 'https:' ||
+    getRequestHeader(event, 'x-forwarded-proto') === 'https'
+
   // 4. 检查是否已登录（绑定模式）
   const authToken = getCookie(event, 'auth-token')
   let currentUser: any = null
@@ -138,7 +145,17 @@ async function handleUserLoginOrBind(
         return sendRedirect(event, '/account?error=' + encodeURIComponent('该账号已被其他用户绑定'))
       }
     } else {
-      // 未被绑定，直接绑定到当前用户
+      const currentUserRecord = await db.query.users.findFirst({
+        where: eq(users.id, currentUser.userId)
+      })
+
+      if (!currentUserRecord || currentUserRecord.status !== 'active') {
+        return sendRedirect(
+          event,
+          '/account?error=' + encodeURIComponent('当前账号状态异常，暂时无法绑定第三方账号')
+        )
+      }
+
       await db.insert(userIdentities).values({
         userId: currentUser.userId,
         provider: provider,
@@ -174,11 +191,56 @@ async function handleUserLoginOrBind(
       )
     }
 
-    // 登录
+    const totpIdentity = await db.query.userIdentities.findFirst({
+      where: and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'totp'))
+    })
+
+    if (totpIdentity) {
+      const tempToken = JWTEnhanced.sign(
+        {
+          userId: user.id,
+          type: 'pre-auth',
+          scope: '2fa_pending'
+        },
+        { expiresIn: '5m' }
+      )
+      const methods = ['totp']
+      let maskedEmail = ''
+
+      if (user.email && user.emailVerified) {
+        methods.push('email')
+        const [local, domain] = user.email.split('@')
+        if (local && domain) {
+          maskedEmail = local.length <= 2 ? `***@${domain}` : `${local.slice(0, 2)}****@${domain}`
+        }
+      }
+
+      setCookie(event, 'pre-auth-token', tempToken, {
+        httpOnly: true,
+        secure: isSecure,
+        sameSite: 'lax',
+        maxAge: 60 * 5,
+        path: '/'
+      })
+
+      return sendRedirect(
+        event,
+        `/login?oauth2fa=1&userId=${user.id}&methods=${encodeURIComponent(methods.join(','))}&maskedEmail=${encodeURIComponent(maskedEmail)}`
+      )
+    }
+
+    await db
+      .update(users)
+      .set({
+        lastLogin: getBeijingTime(),
+        lastLoginIp: getClientIP(event)
+      })
+      .where(eq(users.id, user.id))
+
     const token = JWTEnhanced.generateToken(existingIdentity.user.id, existingIdentity.user.role)
     setCookie(event, 'auth-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
       path: '/'
@@ -195,7 +257,7 @@ async function handleUserLoginOrBind(
     // 将绑定令牌存入 cookie
     setCookie(event, 'binding-token', bindingToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 60 * 10, // 10分钟
       path: '/'
