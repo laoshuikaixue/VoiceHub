@@ -841,10 +841,10 @@
 
               <div
                 v-if="importError"
-                class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs"
+                class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-3 text-red-400 text-xs items-start"
               >
-                <AlertCircle :size="16" />
-                {{ importError }}
+                <AlertCircle :size="16" class="mt-0.5 shrink-0" />
+                <div class="whitespace-pre-wrap leading-relaxed">{{ importError }}</div>
               </div>
 
               <div
@@ -1441,6 +1441,7 @@ const importError = ref('')
 const importSuccess = ref('')
 const previewData = ref([])
 const xlsxLoaded = ref(false)
+const importStartRow = ref(0)
 
 // 批量更新状态
 const showBatchUpdateModal = ref(false)
@@ -2040,6 +2041,8 @@ const handleFileUpload = async (event) => {
             console.log('未检测到标题行，从第一行开始解析')
           }
         }
+        
+        importStartRow.value = startRow
 
         const userData = []
 
@@ -2119,6 +2122,14 @@ const downloadImportTemplate = async () => {
   window.XLSX.writeFile(wb, '用户批量导入模板.xlsx')
 }
 
+// 格式化导入错误的辅助函数
+const formatImportErrors = (errors) => {
+  return errors.map(e => {
+    const namePart = e.name || e.username ? ` (${e.name || e.username})` : ''
+    return `第${e.rowNum || '?'}行${namePart}: ${e.reason}`
+  }).join('\n')
+}
+
 // 批量导入用户
 const importUsers = async () => {
   if (previewData.value.length === 0) return
@@ -2132,6 +2143,7 @@ const importUsers = async () => {
   const totalBatches = Math.ceil(dataToImport.length / batchSize)
   let totalCreated = 0
   let totalFailed = 0
+  const allErrors = []
 
   try {
     for (let i = 0; i < dataToImport.length; i += batchSize) {
@@ -2151,9 +2163,18 @@ const importUsers = async () => {
 
         totalCreated += result.created || 0
         totalFailed += result.failed || 0
+        
+        if (result.errors && result.errors.length > 0) {
+          const batchErrors = result.errors.map(e => ({
+            ...e,
+            rowNum: i + e.index + importStartRow.value + 1 // 正确计算行号
+          }))
+          allErrors.push(...batchErrors)
+        }
       } catch (batchErr) {
         console.error(`第 ${currentBatch} 批导入失败:`, batchErr)
         totalFailed += batch.length
+        allErrors.push({ reason: `第 ${currentBatch} 批请求失败: ${batchErr.message}` })
       }
     }
 
@@ -2161,15 +2182,18 @@ const importUsers = async () => {
 
     if (totalCreated > 0 || totalFailed === 0) {
       importSuccess.value = `成功导入 ${totalCreated} 个用户，${totalFailed} 个用户导入失败`
+      if (allErrors.length > 0) {
+        importError.value = '部分导入失败原因：\n' + formatImportErrors(allErrors)
+      }
       previewData.value = []
 
       setTimeout(() => {
-        if (importSuccess.value) {
+        if (importSuccess.value && allErrors.length === 0) {
           closeImportModal()
         }
       }, 3000)
     } else {
-      importError.value = '导入失败，请检查数据格式后重试'
+      importError.value = '导入失败，请检查数据格式后重试。\n失败原因：\n' + formatImportErrors(allErrors)
       importSuccess.value = ''
     }
   } catch (err) {
