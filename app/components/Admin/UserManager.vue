@@ -841,10 +841,10 @@
 
               <div
                 v-if="importError"
-                class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs"
+                class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-3 text-red-400 text-xs items-start"
               >
-                <AlertCircle :size="16" />
-                {{ importError }}
+                <AlertCircle :size="16" class="mt-0.5 shrink-0" />
+                <div class="whitespace-pre-wrap leading-relaxed">{{ importError }}</div>
               </div>
 
               <!-- 进度条 -->
@@ -1449,9 +1449,9 @@ const importLoading = ref(false)
 const importError = ref('')
 const previewData = ref([])
 const xlsxLoaded = ref(false)
+const importStartRow = ref(0)
 const importProgress = ref(0)
 const importProgressText = ref('')
-const importStartRow = ref(0)
 
 // 批量更新状态
 const showBatchUpdateModal = ref(false)
@@ -2054,6 +2054,8 @@ const handleFileUpload = async (event) => {
           }
         }
 
+        importStartRow.value = startRow
+
         const userData = []
 
         for (let i = startRow; i < jsonData.length; i++) {
@@ -2132,6 +2134,14 @@ const downloadImportTemplate = async () => {
   window.XLSX.writeFile(wb, '用户批量导入模板.xlsx')
 }
 
+// 格式化导入错误的辅助函数
+const formatImportErrors = (errors) => {
+  return errors.map(e => {
+    const namePart = e.name || e.username ? ` (${e.name || e.username})` : ''
+    return `第${e.rowNum || '?'}行${namePart}: ${e.reason}`
+  }).join('\n')
+}
+
 // 批量导入用户
 const importUsers = async () => {
   if (previewData.value.length === 0) return
@@ -2146,7 +2156,7 @@ const importUsers = async () => {
   const totalBatches = Math.ceil(dataToImport.length / batchSize)
   let totalCreated = 0
   let totalFailed = 0
-  let allErrors = []
+  const allErrors = []
 
   try {
     for (let i = 0; i < dataToImport.length; i += batchSize) {
@@ -2167,16 +2177,18 @@ const importUsers = async () => {
 
         totalCreated += result.created || 0
         totalFailed += result.failed || 0
+        
         if (result.errors && result.errors.length > 0) {
-          allErrors.push(...result.errors)
+          const batchErrors = result.errors.map(e => ({
+            ...e,
+            rowNum: i + e.index + importStartRow.value + 1 // 正确计算行号
+          }))
+          allErrors.push(...batchErrors)
         }
       } catch (batchErr) {
         console.error(`第 ${currentBatch} 批导入失败:`, batchErr)
         totalFailed += batch.length
-        allErrors.push({
-          row: i + 1,
-          message: batchErr.data?.message || batchErr.message || '该批次导入请求失败'
-        })
+        allErrors.push({ reason: `第 ${currentBatch} 批请求失败: ${batchErr.message}` })
       }
     }
 
@@ -2185,6 +2197,7 @@ const importUsers = async () => {
     if (totalCreated > 0 || totalFailed === 0) {
       importProgressText.value = `导入完成：成功导入 ${totalCreated} 个，失败 ${totalFailed} 个`
       importProgress.value = 100
+      
       if (allErrors.length > 0) {
         importError.value = '部分导入失败原因：\n' + formatImportErrors(allErrors)
       }
@@ -2206,33 +2219,6 @@ const importUsers = async () => {
   } finally {
     importLoading.value = false
   }
-}
-
-// 格式化导入错误信息
-const formatImportErrors = (errors) => {
-  if (!errors || errors.length === 0) return ''
-  
-  // 限制显示的错误数量，避免信息过长
-  const maxDisplayErrors = 10
-  const displayErrors = errors.slice(0, maxDisplayErrors)
-  
-  let result = displayErrors.map(e => {
-    // 处理带行号的错误
-    if (e.row !== undefined) {
-      return `第 ${e.row + importStartRow.value} 行: ${e.message}`
-    }
-    // 处理特定用户的错误
-    if (e.username) {
-      return `用户 ${e.username}: ${e.error}`
-    }
-    return e.message || e.error || '未知错误'
-  }).join('\n')
-  
-  if (errors.length > maxDisplayErrors) {
-    result += `\n... 以及其他 ${errors.length - maxDisplayErrors} 个错误`
-  }
-  
-  return result
 }
 
 // 状态日志相关方法
