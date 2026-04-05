@@ -383,16 +383,6 @@ const handle2FASuccess = async () => {
 
 onMounted(async () => {
   await fetchSiteConfig()
-  if (route.query.oauth2fa === '1') {
-    userId2FA.value = Number(route.query.userId || 0)
-    methods2FA.value = String(route.query.methods || '')
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean)
-    tempToken2FA.value = ''
-    maskedEmail2FA.value = String(route.query.maskedEmail || '')
-    show2FA.value = userId2FA.value > 0 && methods2FA.value.length > 0
-  }
 
   const isApiSupported = browserSupportsWebAuthn()
   if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {

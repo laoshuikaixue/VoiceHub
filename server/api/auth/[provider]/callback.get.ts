@@ -1,6 +1,6 @@
 import { parseState, getRedirectUri } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
-import { db, eq, userIdentities, users } from '~/drizzle/db'
+import { db, eq, users } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
@@ -10,7 +10,6 @@ import {
   isOAuthProviderEnabled,
   isSupportedOAuthProvider
 } from '~~/server/services/oauthConfigService'
-import { and } from 'drizzle-orm'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils'
@@ -185,44 +184,6 @@ async function handleUserLoginOrBind(
       return sendRedirect(
         event,
         `/auth/error?code=ACCOUNT_BLOCKED&message=${encodeURIComponent(`账户处于风险控制期，请在 ${remaining} 分钟后重试`)}`
-      )
-    }
-
-    const totpIdentity = await db.query.userIdentities.findFirst({
-      where: and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'totp'))
-    })
-
-    if (totpIdentity) {
-      const tempToken = JWTEnhanced.sign(
-        {
-          userId: user.id,
-          type: 'pre-auth',
-          scope: '2fa_pending'
-        },
-        { expiresIn: '5m' }
-      )
-      const methods = ['totp']
-      let maskedEmail = ''
-
-      if (user.email && user.emailVerified) {
-        methods.push('email')
-        const [local, domain] = user.email.split('@')
-        if (local && domain) {
-          maskedEmail = local.length <= 2 ? `***@${domain}` : `${local.slice(0, 2)}****@${domain}`
-        }
-      }
-
-      setCookie(event, 'pre-auth-token', tempToken, {
-        httpOnly: true,
-        secure: isSecure,
-        sameSite: 'lax',
-        maxAge: 60 * 5,
-        path: '/'
-      })
-
-      return sendRedirect(
-        event,
-        `/login?oauth2fa=1&userId=${user.id}&methods=${encodeURIComponent(methods.join(','))}&maskedEmail=${encodeURIComponent(maskedEmail)}`
       )
     }
 
