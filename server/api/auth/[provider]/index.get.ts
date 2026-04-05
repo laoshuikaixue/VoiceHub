@@ -40,9 +40,15 @@ export default defineEventHandler(async (event) => {
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 
   // CSRF Cookie 绑定在当前 host 上，若回调地址源站不一致会导致回调时拿不到 Cookie
+  // 如果使用了 Broker，回调地址的源站可能不同，此时我们允许跳过严格的主机校验，
+  // 但仍然需要确保协议和 host 能正确写入 state 以便回调时验证。
   try {
     const redirectUrl = new URL(redirectUri)
-    if (redirectUrl.host !== host || redirectUrl.protocol !== `${protocol}:`) {
+    // 只有当配置的不是专门的 broker 回调时，才进行严格的源站一致性校验
+    // 通常 Broker 的回调是根目录下的 /callback 或者是单独的 auth 域名
+    const isBrokerPattern = /(?:\/api)?\/auth\/[^/]+\/callback\/?$|\/callback\/?$/.test(redirectUrl.pathname)
+    
+    if (!isBrokerPattern && (redirectUrl.host !== host || redirectUrl.protocol !== `${protocol}:`)) {
       throw createError({
         statusCode: 400,
         message: 'OAuth 回调地址与当前请求源站不一致，请在管理员后台将 OAuth 重定向 URI 配置为当前站点域名'

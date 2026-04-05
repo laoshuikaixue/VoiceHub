@@ -1233,7 +1233,9 @@ psql -h localhost -U username -d database_name < backup.sql
 
 ### OAuth 平台扩展指南
 
-VoiceHub 采用策略模式（Strategy Pattern）实现了灵活的 OAuth 扩展机制，允许开发者轻松接入新的第三方登录平台。
+VoiceHub 采用配置化与策略模式（Strategy Pattern）相结合的灵活 OAuth 扩展机制，所有 OAuth 提供商及认证设置现均已迁移至管理员后台界面。你可以直接在后台动态配置，无需修改环境变量和重启服务。
+
+对于想要通过代码深度定制 OAuth 行为（如自定义用户信息解析逻辑等）的开发者，可参考以下机制：
 
 #### 扩展步骤
 
@@ -1303,39 +1305,21 @@ const strategies: Record<string, OAuthStrategy> = {
 }
 ```
 
-##### 3. 配置环境变量
+##### 3. 完成！
 
-在 `.env` 文件中添加新平台所需的配置（如 Client ID 和 Secret）：
-
-```bash
-GOOGLE_CLIENT_ID="your-client-id"
-GOOGLE_CLIENT_SECRET="your-client-secret"
-```
-
-##### 4. 完成！
-
-现在，你可以通过 `/api/auth/google` 访问新的登录流程，VoiceHub 会自动处理路由分发、State 校验、CSRF 保护和用户绑定逻辑。
+现在，你可以在管理员后台的 **站点配置 -> OAuth 第三方登录配置** 中直接填写该平台的信息并启用它。系统会自动处理路由分发、State 校验、CSRF 保护和用户绑定逻辑。
 
 #### Casdoor 配置说明
 
 项目已内置对 [Casdoor](https://casdoor.org/) 的支持。Casdoor 是一个开源的 UI 优先的身份认证管理系统 (IAM)，支持 OAuth 2.0、OIDC 等多种协议。
 
-要启用 Casdoor 登录，只需在 `.env` 文件中配置以下环境变量：
+要启用 Casdoor 登录，只需进入管理员后台的 **站点配置 -> OAuth 第三方登录配置**，开启 Casdoor 选项，并填入以下信息：
+- **Casdoor 服务器 URL** (如 `https://your-casdoor-domain.com`)
+- **Casdoor Client ID**
+- **Casdoor Client Secret**
+- **Casdoor 组织名称**
 
-```bash
-# Casdoor 配置
-CASDOOR_ENDPOINT="https://your-casdoor-domain.com" # Casdoor 服务地址
-CASDOOR_CLIENT_ID="your-client-id"                 # 应用 Client ID
-CASDOOR_CLIENT_SECRET="your-client-secret"         # 应用 Client Secret
-```
-
-配置完成后，系统会自动识别并启用 Casdoor 登录策略。
-
-#### 多环境部署与回调地址代理
-
-在 Vercel 等平台进行多环境部署时，GitHub OAuth App 通常只能配置单一的回调地址。为了解决这个问题，项目可以使用 [VoiceHub-Auth-Broker](https://github.com/laoshuikaixue/VoiceHub-Auth-Broker) 中间件，具体使用方法可见仓库内的文档。
-
-该中间件可以作为统一的回调入口，根据 `state` 参数动态转发回调请求到正确的部署环境，从而实现一个 GitHub OAuth App 支持无限个预览/生产环境。详情请参考该项目文档。
+配置保存后，系统会立即启用 Casdoor 登录策略。
 
 #### 前端图标配置
 
