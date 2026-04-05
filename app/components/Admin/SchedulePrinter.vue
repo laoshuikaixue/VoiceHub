@@ -1681,8 +1681,6 @@ watch(
   margin-bottom: 24px;
 }
 
-/* 网格排布样式 - 已废弃 */
-
 .schedule-table-wrapper {
   margin-bottom: 24px;
 }
