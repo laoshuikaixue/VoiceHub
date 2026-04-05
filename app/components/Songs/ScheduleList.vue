@@ -595,12 +595,12 @@ import { Music, X, User, RefreshCw, Trash2, Check, Plus, Loader2 } from 'lucide-
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioQuality } from '~/composables/useAudioQuality'
-import { useMusicSources } from '~/composables/useMusicSources'
 import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import {
   addSongsToPlaylist,
@@ -626,7 +626,7 @@ const props = defineProps({
 
 // 音频播放相关 - 使用全局音频播放器
 const audioPlayer = useAudioPlayer()
-const { getQuality, checkNeteaseLoginStatus: updateGlobalNeteaseStatus } = useAudioQuality()
+const { checkNeteaseLoginStatus: updateGlobalNeteaseStatus } = useAudioQuality()
 
 // 获取播放时段启用状态
 const { playTimeEnabled } = useSongs()
@@ -1370,69 +1370,71 @@ const togglePlaySong = async (song) => {
 
   // 如果有平台和ID信息或playUrl，动态获取URL
   if ((song.musicPlatform && song.musicId) || song.playUrl) {
+    const buildPlaylistForSong = (targetSong) => {
+      const currentTimeSlot = getCurrentTimeSlot(targetSong)
+      let playlist = []
+      let songIndex = 0
+      if (currentTimeSlot && currentTimeSlot.songs) {
+        playlist = currentTimeSlot.songs.map((s) => ({
+          id: s.id,
+          title: s.title,
+          artist: s.artist,
+          cover: s.cover,
+          musicUrl: s.musicUrl || null,
+          musicPlatform: s.musicPlatform,
+          musicId: s.musicId,
+          playUrl: s.playUrl || null,
+          sourceInfo: s.sourceInfo
+        }))
+        songIndex = playlist.findIndex((s) => s.id === targetSong.id)
+        if (songIndex === -1) songIndex = 0
+      }
+      return { playlist, songIndex }
+    }
+
     try {
       const url = await getMusicUrl(song)
       if (url || isBilibiliSong(song)) {
-        // 构建当前时段的播放列表
-        const currentTimeSlot = getCurrentTimeSlot(song)
-        let playlist = []
-        let songIndex = 0
-
-        if (currentTimeSlot && currentTimeSlot.songs) {
-          // 构建播放列表但不阻塞当前播放，后续后台预取
-          playlist = currentTimeSlot.songs.map((s) => ({
-            id: s.id,
-            title: s.title,
-            artist: s.artist,
-            cover: s.cover,
-            musicUrl: s.musicUrl || null,
-            musicPlatform: s.musicPlatform,
-            musicId: s.musicId,
-            playUrl: s.playUrl || null,
-            sourceInfo: s.sourceInfo
-          }))
-
-          // 找到当前歌曲在播放列表中的索引
-          songIndex = playlist.findIndex((s) => s.id === song.id)
-          if (songIndex === -1) songIndex = 0
-
-          // 后台预取后续歌曲的播放链接（不阻塞当前播放）
-          ;(async () => {
-            for (let i = songIndex + 1; i < playlist.length; i++) {
-              const s = playlist[i]
-              if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
-                try {
-                  s.musicUrl = await getMusicUrl(s)
-                } catch (error) {
-                  console.warn(`后台预取失败: ${s.title}`, error)
-                  s.musicUrl = null
-                }
-              }
-            }
-          })()
-        }
+        const { playlist, songIndex } = buildPlaylistForSong(song)
 
         const playableSong = {
           ...song,
           musicUrl: url || null
         }
 
-        // 更新播放列表中当前歌曲的URL
         if (playlist.length > 0 && songIndex >= 0) {
           playlist[songIndex] = playableSong
         }
+
+        // 后台预取后续歌曲的播放链接（不阻塞当前播放）
+        ;(async () => {
+          for (let i = songIndex + 1; i < playlist.length; i++) {
+            const s = playlist[i]
+            if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
+              try {
+                s.musicUrl = await getMusicUrl(s)
+              } catch (error) {
+                console.warn(`后台预取失败: ${s.title}`, error)
+                s.musicUrl = null
+              }
+            }
+          }
+        })()
 
         audioPlayer.playSong(playableSong, playlist, songIndex)
       } else {
         if (window.$showNotification) {
           window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
         }
+        audioPlayer.playSong({ ...song, musicUrl: null }, [], -1)
       }
     } catch (error) {
       console.error('获取音乐URL失败:', error)
       if (window.$showNotification) {
         window.$showNotification('获取音乐播放链接失败', 'error')
       }
+      const { playlist, songIndex } = buildPlaylistForSong(song)
+      audioPlayer.playSong({ ...song, musicUrl: null }, playlist, songIndex)
     }
   }
 }
@@ -1467,64 +1469,14 @@ const getMusicUrl = async (song) => {
     throw new Error('歌曲缺少音乐平台或音乐ID信息，无法获取播放链接')
   }
 
-  const { getSongUrl } = useMusicSources()
-
-  const quality = getQuality(platform)
-
-  // 使用统一组件的音源选择逻辑
-  console.log(
-    `[ScheduleList] 使用统一音源选择逻辑获取播放链接: platform=${platform}, musicId=${musicId}`
-  )
-
   // 检查是否为播客内容
   const isPodcast =
     platform === 'netease-podcast' ||
     sourceInfo?.type === 'voice' ||
     (sourceInfo?.source === 'netease-backup' && sourceInfo?.type === 'voice')
 
-  // 如果是播客内容，强制 unblock=false
   const options = isPodcast ? { unblock: false } : {}
-
-  const result = await getSongUrl(musicId, quality, platform, undefined, options)
-  if (result?.success && result.url) {
-    console.log('[ScheduleList] 统一音源选择获取音乐URL成功')
-    return result.url
-  }
-  console.warn('[ScheduleList] 统一音源选择未返回有效链接，回退到直接调用 vkeys')
-
-  // 回退到 vkeys
-  let apiUrl
-  if (platform === 'netease') {
-    apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
-  } else if (platform === 'tencent') {
-    apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
-  } else {
-    throw new Error('不支持的音乐平台')
-  }
-
-  const response = await fetch(apiUrl, {
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-  })
-
-  if (!response.ok) {
-    throw new Error('vkeys API请求失败')
-  }
-
-  const data = await response.json()
-  if (data.code === 200 && data.data && data.data.url) {
-    // 将HTTP URL改为HTTPS
-    let url = data.data.url
-    if (url.startsWith('http://')) {
-      url = url.replace('http://', 'https://')
-    }
-    console.log('[ScheduleList] vkeys API获取音乐URL成功')
-    return url
-  }
-
-  throw new Error('所有音源都无法获取音乐播放链接')
+  return resolveMusicUrl(platform, musicId, undefined, options)
 }
 
 // 判断当前是否正在播放指定ID的歌曲

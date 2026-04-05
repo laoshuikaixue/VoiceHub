@@ -25,6 +25,29 @@ import {
 } from '~/drizzle/schema'
 import { ne, sql } from 'drizzle-orm'
 
+function getFirstRow<T>(result: any): T | undefined {
+  return result?.rows?.[0] ?? result?.[0]
+}
+
+function quoteIdentifierPart(value: string) {
+  const normalized =
+    value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1).replace(/""/g, '"') : value
+
+  return `"${normalized.replace(/"/g, '""')}"`
+}
+
+function toQualifiedIdentifier(value: string) {
+  return sql.raw(value.split('.').map(quoteIdentifierPart).join('.'))
+}
+
+function toPgRelationName(value: string) {
+  return value.split('.').map(quoteIdentifierPart).join('.')
+}
+
+function toRegclass(value: string) {
+  return sql.raw(`'${value.replace(/'/g, "''")}'::regclass`)
+}
+
 // 重置所有表的自增序列
 async function resetAutoIncrementSequences() {
   const tables = [
@@ -49,15 +72,25 @@ async function resetAutoIncrementSequences() {
 
   for (const table of tables) {
     try {
+      // 获取表的最大ID
+      const maxIdResult = await db.execute(
+        sql`SELECT MAX(id) as max_id FROM ${toQualifiedIdentifier(table.dbName)}`
+      )
+      const maxId = Number(getFirstRow<{ max_id: number | string | null }>(maxIdResult)?.max_id || 0)
+
       // 获取序列名称
       const sequenceNameResult = await db.execute(
-        sql.raw(`SELECT pg_get_serial_sequence('"${table.dbName}"', 'id') as sequence_name`)
+        sql`SELECT pg_get_serial_sequence(${toPgRelationName(table.dbName)}, 'id') as sequence_name`
       )
-      const sequenceName = (sequenceNameResult as any)[0]?.sequence_name
+      const sequenceName = getFirstRow<{ sequence_name: string | null }>(sequenceNameResult)?.sequence_name
 
       if (sequenceName) {
-        // 重置序列值到 1
-        await db.execute(sql.raw(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`))
+        if (maxId === 0) {
+          await db.execute(sql`ALTER SEQUENCE ${toQualifiedIdentifier(sequenceName)} RESTART WITH 1`)
+        } else {
+          const newSequenceValue = maxId
+          await db.execute(sql`SELECT setval(${toRegclass(sequenceName)}, ${newSequenceValue})`)
+        }
         results.push({ table: table.name, success: true })
       } else {
         results.push({ table: table.name, success: false, message: 'Sequence not found' })
@@ -77,7 +110,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足'
+        message: '权限不足'
       })
     }
 
@@ -240,7 +273,7 @@ export default defineEventHandler(async (event) => {
       console.error('重置数据库失败:', error)
       throw createError({
         statusCode: 500,
-        statusMessage: `重置数据库失败: ${error.message}`
+        message: `重置数据库失败：${error.message}`
       })
     }
 
@@ -248,7 +281,7 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || '服务器内部错误'
+      message: error.message || '服务器内部错误'
     })
   }
 })

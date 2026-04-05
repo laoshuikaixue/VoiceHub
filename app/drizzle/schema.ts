@@ -3,7 +3,7 @@ import {relations} from 'drizzle-orm';
 
 // 枚举定义
 export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
-export const userStatusEnum = pgEnum('user_status', ['active', 'withdrawn']);
+export const userStatusEnum = pgEnum('user_status', ['active', 'withdrawn', 'graduate']);
 export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
 export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);
 
@@ -136,6 +136,7 @@ export const systemSettings = pgTable('SystemSettings', {
   submissionGuidelines: text('submissionGuidelines'),
   icpNumber: text('icpNumber'),
   gonganNumber: text('gonganNumber'),
+  showBeianIcon: boolean('showBeianIcon').default(false).notNull(),
   enableSubmissionLimit: boolean('enableSubmissionLimit').default(false).notNull(),
   dailySubmissionLimit: integer('dailySubmissionLimit'),
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),

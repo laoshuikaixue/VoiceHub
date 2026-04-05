@@ -27,10 +27,15 @@ export const useSongPlayer = () => {
 
     try {
       let url = null
-      // 哔哩哔哩不需要获取 URL，播放器会处理
-      if (!isBilibiliSong(song)) {
+
+      // 如果有手动填入的 playUrl，优先使用它（统一处理所有平台）
+      if (song.playUrl && song.playUrl.trim()) {
+        url = song.playUrl.trim()
+      } else if (!isBilibiliSong(song)) {
+        // 如果不是哔哩哔哩歌曲且没有手动 playUrl，通过 API 获取 URL
         url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
       }
+      // 如果是哔哩哔哩歌曲且没有手动 playUrl，url 保持为 null，播放器会处理
 
       const playableSong: PlayableSong = {
         ...song,
@@ -42,6 +47,13 @@ export const useSongPlayer = () => {
       console.error('播放失败:', error)
       const errorMessage = error instanceof Error ? error.message : String(error)
       showToast('播放失败: ' + errorMessage, 'error')
+      
+      // 即使获取 URL 失败，也应该调用 playSong 以触发播放器的错误处理和弹窗逻辑
+      const playableSong: PlayableSong = {
+        ...song,
+        musicUrl: null
+      }
+      audioPlayer.playSong(playableSong, [playableSong])
     }
   }
 

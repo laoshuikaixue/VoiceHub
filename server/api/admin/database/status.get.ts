@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     if (!authResult.success) {
       throw createError({
         statusCode: 401,
-        statusMessage: authResult.message
+        message: authResult.message
       })
     }
 
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
     console.error('Database status API error:', error)
     throw createError({
       statusCode: 500,
-      statusMessage: 'Internal Server Error'
+      message: 'Internal Server Error'
     })
   }
 })

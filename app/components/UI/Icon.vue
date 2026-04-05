@@ -23,10 +23,16 @@
       />
     </g>
 
-    <!-- 暂停图标 -->
+    <!-- 播放/暂停 -->
     <g v-else-if="name === 'pause'">
       <rect fill="currentColor" height="16" width="4" x="6" y="4" />
       <rect fill="currentColor" height="16" width="4" x="14" y="4" />
+    </g>
+
+    <!-- 播放圈图标 (单曲播放等使用) -->
+    <g v-else-if="name === 'play-circle'">
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="10 8 16 12 10 16 10 8" />
     </g>
 
     <!-- 停止图标 -->

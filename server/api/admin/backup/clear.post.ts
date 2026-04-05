@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
   if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
-      statusMessage: '权限不足'
+      message: '权限不足'
     })
   }
 
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
   if (user.role !== 'SUPER_ADMIN') {
     throw createError({
       statusCode: 403,
-      statusMessage: '只有超级管理员可以清空数据库'
+      message: '只有超级管理员可以清空数据库'
     })
   }
 
@@ -169,7 +169,7 @@ export default defineEventHandler(async (event) => {
     console.error('清空数据失败:', error)
     throw createError({
       statusCode: 500,
-      statusMessage: '清空数据失败: ' + error.message
+      message: '清空数据失败：' + error.message
     })
   }
 })

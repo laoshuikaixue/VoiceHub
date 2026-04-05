@@ -22,13 +22,13 @@ export default defineEventHandler(async (event) => {
     if (error instanceof Error && error.message.includes('认证')) {
       throw createError({
         statusCode: 401,
-        statusMessage: 'Unauthorized'
+        message: 'Unauthorized'
       })
     }
 
     throw createError({
       statusCode: 500,
-      statusMessage: error instanceof Error ? error.message : 'Cleanup failed'
+      message: error instanceof Error ? error.message : 'Cleanup failed'
     })
   }
 })

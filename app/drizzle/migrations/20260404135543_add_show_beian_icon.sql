@@ -1,0 +1,1 @@
+ALTER TABLE "SystemSettings" ADD COLUMN "showBeianIcon" boolean DEFAULT false NOT NULL;

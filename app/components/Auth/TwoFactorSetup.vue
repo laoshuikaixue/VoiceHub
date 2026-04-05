@@ -145,15 +145,13 @@ const { showToast } = useToast()
 const startSetup = async () => {
   try {
     loading.value = true
-    const { data, error } = await useFetch('/api/user/2fa/generate', {
+    const data = await $fetch('/api/user/2fa/generate', {
       method: 'POST'
     })
 
-    if (error.value) throw error.value
-
-    if (data.value) {
-      qrCodeUrl.value = data.value.qrCode
-      secret.value = data.value.secret
+    if (data) {
+      qrCodeUrl.value = data.qrCode
+      secret.value = data.secret
       showSetup.value = true
       verificationCode.value = ''
     }

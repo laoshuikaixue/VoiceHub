@@ -72,9 +72,24 @@
             <input
               v-model="formData.gonganNumber"
               type="text"
-              placeholder="请输入公安备案号 (如：陕公网安备61011302001964号)"
+              placeholder="请输入公安备案号 (如：陕公网安备 61011302001964 号)"
               :class="inputClass"
             >
+          </div>
+          <div class="pt-2">
+            <div
+              class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            >
+              <div>
+                <p class="text-xs font-bold text-zinc-200">显示备案图标</p>
+                <p class="text-[10px] text-zinc-500 mt-0.5">在公安联网备案号前显示备案图标</p>
+              </div>
+              <input
+                v-model="formData.showBeianIcon"
+                type="checkbox"
+                class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+              >
+            </div>
           </div>
           <div>
             <label :class="labelClass">站点描述</label>
@@ -375,6 +390,7 @@ const formData = ref({
   submissionGuidelines: '',
   icpNumber: '',
   gonganNumber: '',
+  showBeianIcon: false,
   enableCollaborativeSubmission: true,
   enableSubmissionRemarks: false,
   enableReplayRequests: false,
@@ -459,6 +475,7 @@ const loadConfig = async () => {
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
       icpNumber: data.icpNumber || '',
       gonganNumber: data.gonganNumber || '',
+      showBeianIcon: !!data.showBeianIcon,
       enableCollaborativeSubmission: data.enableCollaborativeSubmission !== false,
       enableSubmissionRemarks: !!data.enableSubmissionRemarks,
       enableReplayRequests: !!data.enableReplayRequests,

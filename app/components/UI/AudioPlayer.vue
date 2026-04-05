@@ -157,8 +157,15 @@
               </span>
             </div>
 
-            <!-- 右侧占位 -->
-            <div class="right-placeholder" />
+            <!-- 右侧播放模式切换 -->
+            <span
+              class="lyrics-btn music-icon"
+              :class="{ active: control.playMode.value !== 'off' }"
+              :title="playModeTitle"
+              @click="cyclePlayMode"
+            >
+              <Icon :name="playModeIcon" size="20" />
+            </span>
           </div>
         </div>
 
@@ -239,7 +246,7 @@
       confirm-text="立即打开"
       cancel-text="稍后处理"
       @confirm="handleFallbackDialogConfirm"
-      @close="showFallbackOpenDialog = false"
+      @cancel="handleFallbackDialogCancel"
     />
   </div>
 </template>
@@ -311,6 +318,7 @@ const lastOpenedFallbackSongId = ref<string | number | null>(null)
 const showFallbackOpenDialog = ref(false)
 const fallbackOpenDialogUrl = ref('')
 const fallbackOpenDialogMessage = ref('播放地址不可直接播放，是否在新标签页打开原始链接？')
+const isFallbackHandling = ref(false) // 标记正在处理 fallback，阻止重试逻辑
 
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
@@ -393,29 +401,22 @@ const openFallbackLinkForFailedSong = (): 'none' | 'dialog' | 'opened' => {
   const song = activeSong.value
   if (!song?.id) return 'none'
   if (lastOpenedFallbackSongId.value === song.id) return 'none'
+  if (showFallbackOpenDialog.value) return 'dialog'
 
   const fallbackUrl = resolveFallbackUrl()
   if (!fallbackUrl) return 'none'
 
-  lastOpenedFallbackSongId.value = song.id
-
-  const openedWindow = window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
-  if (!openedWindow) {
-    fallbackOpenDialogUrl.value = fallbackUrl
-    fallbackOpenDialogMessage.value = '播放地址不可直接播放，是否在新标签页打开原始链接？'
-    showFallbackOpenDialog.value = true
-    return 'dialog'
-  }
-
-  if (window.$showNotification) {
-    window.$showNotification('播放地址不可直接播放，已为你打开原始链接', 'warning')
-  }
-  return 'opened'
+  isFallbackHandling.value = true
+  fallbackOpenDialogUrl.value = fallbackUrl
+  fallbackOpenDialogMessage.value = `播放地址不可直接播放，是否在新标签页打开原始链接？\n\n即将跳转的网址：\n${fallbackUrl}`
+  showFallbackOpenDialog.value = true
+  return 'dialog'
 }
 
 const handleFallbackDialogConfirm = () => {
   if (!fallbackOpenDialogUrl.value) {
     showFallbackOpenDialog.value = false
+    isFallbackHandling.value = false
     return
   }
 
@@ -427,11 +428,23 @@ const handleFallbackDialogConfirm = () => {
     return
   }
 
+  const song = activeSong.value
+  if (song?.id) {
+    lastOpenedFallbackSongId.value = song.id
+  }
+
   showFallbackOpenDialog.value = false
   fallbackOpenDialogUrl.value = ''
+  isFallbackHandling.value = false
   if (window.$showNotification) {
     window.$showNotification('已为你打开原始链接', 'success')
   }
+}
+
+const handleFallbackDialogCancel = () => {
+  showFallbackOpenDialog.value = false
+  fallbackOpenDialogUrl.value = ''
+  isFallbackHandling.value = false
 }
 
 watch(
@@ -439,6 +452,8 @@ watch(
   (newId, oldId) => {
     if (newId !== oldId) {
       lastOpenedFallbackSongId.value = null
+      isFallbackHandling.value = false
+      enhanced.resetRetryState()
     }
   }
 )
@@ -616,6 +631,9 @@ const handleLoaded = async () => {
 }
 
 const handleError = async (error) => {
+  // 如果正在处理 fallback，直接返回，不走重试逻辑
+  if (isFallbackHandling.value) return
+
   // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
   if (isBilibiliSong(activeSong.value)) {
     // 如果是播放列表模式，且不是手动单曲播放模式，则自动跳过
@@ -697,10 +715,16 @@ const handleError = async (error) => {
 }
 
 const handleEnded = () => {
+  // 在执行 onEnded（可能会切换到下一首）之前，记录当前是否还有下一首
+  const hasNextBeforeEnded = sync.globalAudioPlayer.hasNext.value
+
   control.onEnded()
-  // 只有在播放模式为 'off' 时才关闭全屏歌词模态
-  // 单曲循环和列表播放模式下应该保持歌词页面打开
-  if (control.playMode.value === 'off') {
+  
+  // 只有在播放模式为 'off'，或者在 'order' 模式且没有下一首歌时才关闭全屏歌词模态
+  const isOffMode = control.playMode.value === 'off'
+  const isOrderFinished = control.playMode.value === 'order' && !hasNextBeforeEnded
+  
+  if (isOffMode || isOrderFinished) {
     showFullscreenLyrics.value = false
   }
   emit('ended')
@@ -853,6 +877,47 @@ const toggleQualitySettings = () => {
   showQualitySettings.value = !showQualitySettings.value
 }
 
+// 播放模式计算属性
+const playModeIcon = computed(() => {
+  switch (control.playMode.value) {
+    case 'loopOne':
+      return 'repeat-one'
+    case 'order':
+      return 'order'
+    case 'off':
+    default:
+      // 单曲播放（播放完退出）
+      return 'play-circle'
+  }
+})
+
+const playModeTitle = computed(() => {
+  switch (control.playMode.value) {
+    case 'loopOne':
+      return '单曲循环'
+    case 'order':
+      return '列表循环'
+    case 'off':
+    default:
+      return '单曲播放'
+  }
+})
+
+// 切换播放模式
+const cyclePlayMode = () => {
+  const current = control.playMode.value
+  if (current === 'order') {
+    control.setPlayMode('loopOne')
+    if (window.$showNotification) window.$showNotification('已切换为单曲循环', 'info')
+  } else if (current === 'loopOne') {
+    control.setPlayMode('off')
+    if (window.$showNotification) window.$showNotification('已切换为单曲播放', 'info')
+  } else {
+    control.setPlayMode('order')
+    if (window.$showNotification) window.$showNotification('已切换为列表循环', 'info')
+  }
+}
+
 // 关闭音质设置
 const closeQualitySettings = () => {
   showQualitySettings.value = false
@@ -977,7 +1042,10 @@ const handleLyricSeek = async (time) => {
 const stopPlaying = () => {
   if (isClosing.value) return
 
-  // 立即停止音频播放和同步状态，确保用户点击关闭时音乐立即停止
+  lastOpenedFallbackSongId.value = null
+  isFallbackHandling.value = false
+  enhanced.resetRetryState()
+
   control.stop()
   sync.syncStopToGlobal()
 
@@ -1018,6 +1086,8 @@ watch(
       if (loadSuccess) {
         sync.setGlobalPlaylist(newSong, props.playlist)
         await control.play()
+      } else {
+        handleError(new Error('加载歌曲失败'))
       }
     }
   },
@@ -1032,12 +1102,48 @@ watch(
 
     isSyncingFromGlobal.value = true
 
+    if (newPlayingStatus && (isClosing.value || isClosed.value)) {
+      // 从关闭状态唤醒
+      isClosed.value = false
+      isClosing.value = false
+      
+      // 如果当前处于错误状态，尝试重新加载
+      if (control.hasError.value && props.song) {
+        control.loadSong(props.song).then((success) => {
+          if (success) {
+            control.play()
+          } else {
+            handleError(new Error('加载歌曲失败'))
+          }
+          nextTick(() => {
+            isSyncingFromGlobal.value = false
+          })
+        })
+      } else {
+        control.play()
+        nextTick(() => {
+          isSyncingFromGlobal.value = false
+        })
+      }
+      return
+    }
+
     if (!newPlayingStatus && control.isPlaying.value) {
       control.pause()
     } else if (newPlayingStatus && !control.isPlaying.value) {
       const currentGlobalSong = sync.globalAudioPlayer.getCurrentSong().value
       if (currentGlobalSong && props.song && currentGlobalSong.id === props.song.id) {
-        control.play()
+        if (control.hasError.value) {
+          control.loadSong(props.song).then((success) => {
+            if (success) {
+              control.play()
+            } else {
+              handleError(new Error('加载歌曲失败'))
+            }
+          })
+        } else {
+          control.play()
+        }
       }
     }
 

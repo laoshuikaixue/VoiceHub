@@ -115,7 +115,7 @@ git pull origin main
 
 ```bash
 # 安装最新依赖
-npm install
+pnpm install --frozen-lockfile
 ```
 
 ### 3.4 数据库迁移
@@ -127,10 +127,10 @@ npm install
 node scripts/db-sync.js
 
 # 方式 2：手动执行迁移
-npm run db:migrate
+pnpm run db:migrate
 
 # 方式 3：如果迁移失败，且确信可以覆盖（仅开发环境）
-# npm run db:push
+# pnpm run db:push
 ```
 
 **迁移说明**：
@@ -146,7 +146,7 @@ npm run db:migrate
 rm -rf .nuxt .output
 
 # 构建生产版本
-npm run build
+pnpm run build
 ```
 
 构建完成后，会在 `.output` 目录生成生产环境文件。
@@ -172,10 +172,10 @@ pm2 status
 
 ```bash
 # 安装 PM2
-npm install -g pm2
+pnpm add -g pm2
 
 # 启动应用
-pm2 start npm --name voicehub -- run start
+pm2 start pnpm --name voicehub -- run start
 
 # 设置开机自启
 pm2 startup
@@ -199,8 +199,8 @@ sudo journalctl -u voicehub -f
 
 ```bash
 # 生产模式启动
-npm run start
+pnpm run start
 
 # 或使用 nohup 后台运行
-nohup npm run start > voicehub.log 2>&1 &
+nohup pnpm run start > voicehub.log 2>&1 &
 ```

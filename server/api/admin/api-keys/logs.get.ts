@@ -5,12 +5,12 @@ import { ApiLogService } from '~~/server/services/apiLogService'
  * GET /api/admin/api-keys/logs
  */
 export default defineEventHandler(async (event) => {
-  // 检查用户权限 - 只有超级管理员可以查看API日志
+  // 检查用户权限 - 只有超级管理员可以查看 API 日志
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
     throw createError({
       statusCode: 403,
-      statusMessage: '只有超级管理员可以查看API日志'
+      message: '只有超级管理员可以查看 API 日志'
     })
   }
 
@@ -62,10 +62,10 @@ export default defineEventHandler(async (event) => {
       stats: stats.basic
     }
   } catch (error) {
-    console.error('获取API访问日志失败:', error)
+    console.error('获取 API 访问日志失败:', error)
     throw createError({
       statusCode: 500,
-      statusMessage: '获取API访问日志失败'
+      message: '获取 API 访问日志失败'
     })
   }
 })

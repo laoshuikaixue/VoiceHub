@@ -16,21 +16,20 @@ FROM builder-${TARGETARCH} AS builder
 WORKDIR /app
 
 # 复制依赖文件和 scripts 目录
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 COPY scripts ./scripts
 
 # 安装所有依赖
 RUN set -eux; \
-    npm config set fund false; \
-    npm config set audit false; \
-    npm config set fetch-retries 5; \
-    npm config set fetch-retry-mintimeout 20000; \
-    npm config set fetch-retry-maxtimeout 120000; \
-    npm ci --no-audit --no-fund || ( \
+    npm install -g pnpm@10.29.3; \
+    pnpm config set fetch-retries 5; \
+    pnpm config set fetch-retry-mintimeout 20000; \
+    pnpm config set fetch-retry-maxtimeout 120000; \
+    pnpm install --frozen-lockfile || ( \
       rm -rf node_modules; \
-      npm install --no-audit --no-fund --legacy-peer-deps || ( \
-        npm config set registry https://registry.npmmirror.com; \
-        npm install --no-audit --no-fund --legacy-peer-deps \
+      pnpm install --no-frozen-lockfile || ( \
+        pnpm config set registry https://registry.npmmirror.com; \
+        pnpm install --no-frozen-lockfile \
       ) \
     )
 
@@ -38,7 +37,7 @@ RUN set -eux; \
 COPY . .
 
 # 构建应用
-RUN npm run build
+RUN pnpm run build
 
 # ==========================================
 # 第二阶段：运行阶段
@@ -56,8 +55,12 @@ FROM runtime-${TARGETARCH} AS runtime
 USER root
 WORKDIR /app
 
+# 安装 pnpm
+RUN npm install -g pnpm@10.29.3
+
 # 从构建阶段复制必要文件
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/pnpm-lock.yaml ./
 COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.output ./.output

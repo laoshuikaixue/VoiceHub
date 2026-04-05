@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
+import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -10,7 +11,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '没有权限访问'
+        message: '没有权限访问'
       })
     }
 
@@ -157,8 +158,8 @@ export default defineEventHandler(async (event) => {
         },
         oldStatus: log.oldStatus,
         newStatus: log.newStatus,
-        oldStatusDisplay: log.oldStatus === 'active' ? '正常' : '退学',
-        newStatusDisplay: log.newStatus === 'active' ? '正常' : '退学',
+        oldStatusDisplay: getStatusText(log.oldStatus || ''),
+        newStatusDisplay: getStatusText(log.newStatus || ''),
         reason: log.reason,
         createdAt: log.createdAt,
         operator: {
@@ -190,7 +191,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '获取状态变更日志失败: ' + error.message
+      message: '获取状态变更日志失败: ' + error.message
     })
   }
 })

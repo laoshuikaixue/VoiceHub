@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足'
+        message: '权限不足'
       })
     }
 
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     if (!filename) {
       throw createError({
         statusCode: 400,
-        statusMessage: '请指定文件名'
+        message: '请指定文件名'
       })
     }
 
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
       throw createError({
         statusCode: 400,
-        statusMessage: '无效的文件名'
+        message: '无效的文件名'
       })
     }
 
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
     if (!filename.endsWith('.json')) {
       throw createError({
         statusCode: 400,
-        statusMessage: '只能删除JSON格式的备份文件'
+        message: '只能删除 JSON 格式的备份文件'
       })
     }
 
@@ -47,14 +47,14 @@ export default defineEventHandler(async (event) => {
     } catch {
       throw createError({
         statusCode: 404,
-        statusMessage: '备份文件不存在'
+        message: '备份文件不存在'
       })
     }
 
     // 删除文件
     await fs.unlink(filepath)
 
-    console.log(`管理员 ${user.username} 删除了备份文件: ${filename}`)
+    console.log(`管理员 ${user.username} 删除了备份文件：${filename}`)
 
     return {
       success: true,
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
     console.error('删除备份文件失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || '删除备份文件失败'
+      message: error.message || '删除备份文件失败'
     })
   }
 })

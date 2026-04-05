@@ -6,12 +6,12 @@ import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
  * GET /api/admin/api-keys
  */
 export default defineEventHandler(async (event) => {
-  // 检查用户权限 - 只有超级管理员可以管理API Key
+  // 检查用户权限 - 只有超级管理员可以管理 API Key
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
     throw createError({
       statusCode: 403,
-      statusMessage: '只有超级管理员可以管理API Key'
+      message: '只有超级管理员可以管理 API Key'
     })
   }
 
@@ -193,7 +193,7 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     throw createError({
       statusCode: 500,
-      statusMessage: `获取API Key列表失败: ${error.message}`
+      message: `获取 API Key 列表失败：${error.message}`
     })
   }
 })

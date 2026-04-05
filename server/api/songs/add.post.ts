@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     if (event.node.req.method !== 'POST') {
       throw createError({
         statusCode: 405,
-        statusMessage: 'Method Not Allowed'
+        message: 'Method Not Allowed'
       })
     }
 
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       throw createError({
         statusCode: 401,
-        statusMessage: '未授权访问'
+        message: '未授权访问'
       })
     }
 
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足'
+        message: '权限不足'
       })
     }
 
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     if (!title || !artist) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Title and artist are required'
+        message: 'Title and artist are required'
       })
     }
 
@@ -83,7 +83,7 @@ export default defineEventHandler(async (event) => {
     if (existingSong) {
       throw createError({
         statusCode: 409,
-        statusMessage: 'Song already exists'
+        message: 'Song already exists'
       })
     }
 
@@ -146,7 +146,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || 'Internal server error'
+      message: error.message || 'Internal server error'
     })
   }
 })

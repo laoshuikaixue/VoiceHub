@@ -2,6 +2,7 @@
  * 数据库清空脚本
  * 这个脚本会清空所有表的数据，但保留表结构
  */
+import { sql } from 'drizzle-orm'
 import {
   apiKeyPermissions,
   apiKeys,
@@ -21,6 +22,29 @@ import {
   votes
 } from '../app/drizzle/db.ts'
 import bcrypt from 'bcrypt'
+
+function getFirstRow(result) {
+  return result?.rows?.[0] ?? result?.[0]
+}
+
+function quoteIdentifierPart(value) {
+  const normalized =
+    value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1).replace(/""/g, '"') : value
+
+  return `"${normalized.replace(/"/g, '""')}"`
+}
+
+function toQualifiedIdentifier(value) {
+  return sql.raw(value.split('.').map(quoteIdentifierPart).join('.'))
+}
+
+function toPgRelationName(value) {
+  return value.split('.').map(quoteIdentifierPart).join('.')
+}
+
+function toRegclass(value) {
+  return sql.raw(`'${value.replace(/'/g, "''")}'::regclass`)
+}
 
 // 重置所有表的自增序列
 async function resetAutoIncrementSequences() {
@@ -43,9 +67,26 @@ async function resetAutoIncrementSequences() {
 
   for (const table of tables) {
     try {
-      // PostgreSQL 重置序列的 SQL 命令
-      const sequenceName = `"${table}_id_seq"`
-      await db.execute(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`)
+      const maxIdResult = await db.execute(
+        sql`SELECT MAX(id) as max_id FROM ${toQualifiedIdentifier(table)}`
+      )
+      const maxId = Number(getFirstRow(maxIdResult)?.max_id || 0)
+
+      const sequenceNameResult = await db.execute(
+        sql`SELECT pg_get_serial_sequence(${toPgRelationName(table)}, 'id') as sequence_name`
+      )
+      const sequenceName = getFirstRow(sequenceNameResult)?.sequence_name
+
+      if (sequenceName) {
+        if (maxId === 0) {
+          await db.execute(sql`ALTER SEQUENCE ${toQualifiedIdentifier(sequenceName)} RESTART WITH 1`)
+        } else {
+          const newSequenceValue = maxId
+          await db.execute(sql`SELECT setval(${toRegclass(sequenceName)}, ${newSequenceValue})`)
+        }
+      } else {
+        console.warn(`未找到表 ${table} 的序列`)
+      }
     } catch (error) {
       console.warn(`重置 ${table} 表序列失败: ${error.message}`)
     }
@@ -103,8 +144,15 @@ async function main() {
 
     // 调整User表的自增序列，确保下一个用户从admin.id + 1开始
     try {
-      const nextId = admin.id + 1
-      await db.execute(`ALTER SEQUENCE "User_id_seq" RESTART WITH ${nextId}`)
+      const sequenceNameResult = await db.execute(
+        sql`SELECT pg_get_serial_sequence(${toPgRelationName('User')}, 'id') as sequence_name`
+      )
+      const sequenceName = getFirstRow(sequenceNameResult)?.sequence_name
+
+      if (sequenceName) {
+        const nextId = admin.id
+        await db.execute(sql`SELECT setval(${toRegclass(sequenceName)}, ${nextId})`)
+      }
     } catch (error) {
       console.warn(`调整User表序列失败: ${error.message}`)
     }

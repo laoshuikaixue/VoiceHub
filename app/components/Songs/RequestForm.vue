@@ -230,34 +230,6 @@
 
             <!-- 网易云音乐登录状态和选项 -->
             <div v-if="platform === 'netease'" class="netease-options">
-              <div class="netease-header">
-                <div class="netease-badge">
-                  <span class="netease-dot" />
-                  <span class="netease-title">网易云音乐账号</span>
-                </div>
-                <div class="header-actions">
-                  <button
-                    v-if="isNeteaseLoggedIn"
-                    class="header-btn"
-                    title="导出Cookie数据"
-                    type="button"
-                    @click="handleExportData"
-                  >
-                    <Icon :size="14" name="download" />
-                    导出
-                  </button>
-                  <button
-                    v-if="isNeteaseLoggedIn"
-                    class="logout-btn"
-                    type="button"
-                    @click="handleLogoutNetease"
-                  >
-                    <Icon :size="14" name="logout" />
-                    退出
-                  </button>
-                </div>
-              </div>
-
               <!-- 加载中状态 -->
               <div v-if="checkingNeteaseLogin" class="netease-loading-state">
                 <div class="loading-content">
@@ -269,8 +241,7 @@
               <!-- 未登录状态 -->
               <div v-else-if="!isNeteaseLoggedIn" class="login-entry">
                 <div class="login-desc">
-                  <p class="login-title">登录网易云音乐</p>
-                  <p class="login-hint">支持搜索您的个人歌单、收藏及播客内容</p>
+                  <p class="login-title">登录网易云获取完整体验</p>
                 </div>
                 <div class="login-actions">
                   <button class="login-btn" type="button" @click="showLoginModal = true">
@@ -313,7 +284,7 @@
                       @click="showRecentSongsModal = true"
                     >
                       <Icon :size="14" name="history" />
-                      <span>最近播放</span>
+                      <span>最近</span>
                     </button>
                     <button
                       class="action-btn-compact"
@@ -322,7 +293,25 @@
                       @click="showPlaylistModal = true"
                     >
                       <Icon :size="14" name="playlist" />
-                      <span>从歌单投稿</span>
+                      <span>歌单</span>
+                    </button>
+                    <button
+                      class="action-btn-compact"
+                      aria-label="导出Cookie数据"
+                      title="导出Cookie数据"
+                      type="button"
+                      @click="handleExportData"
+                    >
+                      <Icon :size="14" name="download" />
+                    </button>
+                    <button
+                      class="action-btn-compact text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                      aria-label="退出登录"
+                      title="退出登录"
+                      type="button"
+                      @click="handleLogoutNetease"
+                    >
+                      <Icon :size="14" name="logout" />
                     </button>
                   </div>
                 </div>
@@ -547,45 +536,49 @@
           </div>
         </div>
 
-        <!-- 播出时段选择 -->
-        <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
-          <div class="input-wrapper">
-            <CustomSelect
-              v-model="preferredPlayTimeId"
-              :options="formattedPlayTimes"
-              label="期望播出时段"
-              label-key="displayName"
-              value-key="id"
-              placeholder="选择时段"
-            />
-          </div>
-        </div>
-
-        <div v-if="enableSubmissionRemarks" class="form-group">
-          <div class="input-wrapper">
-            <div class="flex items-center justify-between mb-2">
-              <label class="text-[12px] font-bold text-zinc-300">投稿备注留言</label>
-              <label class="custom-checkbox-wrapper">
-                <input
-                  v-model="submissionNotePublic"
-                  type="checkbox"
-                  class="custom-checkbox-input"
-                >
-                <span class="custom-checkbox-box">
-                  <svg class="custom-checkbox-icon" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </span>
-                <span class="custom-checkbox-text">公开给已登录用户</span>
-              </label>
+        <!-- 表单底行：播出时段和备注 -->
+        <div class="form-row">
+          <!-- 播出时段选择 -->
+          <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
+            <div class="input-wrapper">
+              <CustomSelect
+                v-model="preferredPlayTimeId"
+                :options="formattedPlayTimes"
+                label="期望播出时段"
+                label-key="displayName"
+                value-key="id"
+                placeholder="选择时段"
+              />
             </div>
-            <textarea
-              v-model="submissionNote"
-              maxlength="300"
-              class="w-full min-h-[96px] rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
-            />
-            <div class="mt-2 flex justify-end text-[11px] text-zinc-500">
-              <span>{{ submissionNote.length }}/300</span>
+          </div>
+
+          <div v-if="enableSubmissionRemarks" class="form-group">
+            <div class="input-wrapper">
+              <div class="flex items-center justify-between mb-2">
+                <label for="submission-note" class="text-[12px] font-bold text-zinc-300">投稿备注留言</label>
+                <label class="custom-checkbox-wrapper">
+                  <input
+                    v-model="submissionNotePublic"
+                    type="checkbox"
+                    class="custom-checkbox-input"
+                  >
+                  <span class="custom-checkbox-box">
+                    <svg class="custom-checkbox-icon" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                  <span class="custom-checkbox-text">公开给已登录用户</span>
+                </label>
+              </div>
+              <textarea
+                id="submission-note"
+                v-model="submissionNote"
+                maxlength="300"
+                class="w-full min-h-[60px] rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
+              />
+              <div class="mt-1 flex justify-end text-[11px] text-zinc-500">
+                <span>{{ submissionNote.length }}/300</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2526,13 +2519,16 @@ const handleManualSubmit = async () => {
       return
     }
     // 构建歌曲数据对象
+    // 如果手动填入了 playUrl，则不保留平台标识符
+    const trimmedPlayUrl = manualPlayUrl.value?.trim() || ''
+    const hasManualPlayUrl = !!trimmedPlayUrl
     const songData = {
       title: title.value,
       artist: manualArtist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
-      cover: manualCover.value || '',
-      playUrl: manualPlayUrl.value || '',
-      musicPlatform: platform.value,
+      cover: manualCover.value?.trim() || '',
+      playUrl: trimmedPlayUrl,
+      musicPlatform: hasManualPlayUrl ? null : platform.value,
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value
@@ -3182,8 +3178,8 @@ defineExpose({
 .submission-status-horizontal {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -3317,104 +3313,66 @@ defineExpose({
 /* 平台选择按钮样式 */
 .platform-selection-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .platform-selection {
   display: flex;
-  gap: 1rem;
-  align-items: flex-start;
+  gap: 0.5rem;
+  align-items: center;
 }
 
-/* 网易云音乐登录选项 */
+/* 网易云音乐登录选项 - 内联风格 */
 .netease-options {
   position: relative;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  padding: 0.4rem 0.75rem; /* 稍微缩小内边距 */
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  border: none;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem; /* 缩小间距 */
-  overflow: hidden;
-  transition: all 0.3s ease;
+  gap: 0;
+  flex: 1;
+  min-width: 300px;
+  justify-content: center;
 }
 
 .netease-options:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: transparent;
+  border-color: transparent;
 }
 
 .netease-options::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #ef4444, #f87171, #ef4444);
-  opacity: 0.6;
-}
-
-.netease-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.netease-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.netease-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #c20c0c;
-  box-shadow: 0 0 8px rgba(194, 12, 12, 0.6);
-}
-
-.netease-title {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 600;
-  font-size: 13px;
-  color: #ffffff;
+  display: none;
 }
 
 .login-entry {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
-  background: rgba(255, 255, 255, 0.02);
-  padding: 0.6rem 0.85rem;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: all 0.3s ease;
-}
-
-.login-entry:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: transparent;
+  padding: 0;
+  border: none;
 }
 
 .login-desc {
-  flex: 1;
-  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .login-title {
   font-size: 13px;
-  font-weight: 600;
-  color: #ffffff;
+  font-weight: 500;
+  color: #a1a1aa;
   margin: 0;
-  letter-spacing: 0.02em;
 }
 
 .login-hint {
@@ -3772,7 +3730,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 0.75rem 1.25rem 1.25rem 1.25rem; /* 稍微缩小内边距 */
+  padding: 0.5rem 1rem 1rem 1rem;
   position: relative;
   z-index: 1;
 }
@@ -3978,9 +3936,9 @@ defineExpose({
 .similar-song-alert {
   background: #21242d;
   border-radius: 10px;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -4948,11 +4906,16 @@ defineExpose({
   }
 
   /* 移动端平台选择按钮 */
+  .platform-selection-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
   .platform-selection {
     background: rgba(0, 0, 0, 0.2);
     padding: 4px;
     border-radius: 12px;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     display: flex;
     overflow: visible;
   }
@@ -5194,25 +5157,26 @@ defineExpose({
 
 /* 网易云音乐账号加载状态样式 */
 .netease-loading-state {
-  padding: 20px;
+  padding: 0;
   background-color: transparent;
-  border-radius: 8px;
+  border-radius: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 10px 0;
+  justify-content: flex-end;
+  margin: 0;
   border: none;
+  height: 32px; /* 匹配旁边按钮的高度 */
 }
 
 .loading-content {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .netease-loading-state .loading-spinner {
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
   border: 2px solid rgba(239, 68, 68, 0.2);
   border-top-color: #ef4444;
   border-radius: 50%;
@@ -5220,8 +5184,8 @@ defineExpose({
 }
 
 .netease-loading-state .loading-text {
-  color: #ef4444;
-  font-size: 14px;
+  color: #a1a1aa;
+  font-size: 13px;
   font-weight: 500;
   margin: 0;
 }

@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '没有权限访问'
+        message: '没有权限访问'
       })
     }
 
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     if (!name || !username) {
       throw createError({
         statusCode: 400,
-        statusMessage: '姓名和用户名为必填项'
+        message: '姓名和用户名为必填项'
       })
     }
 
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
     if (existingUser.length === 0) {
       throw createError({
         statusCode: 404,
-        statusMessage: '用户不存在'
+        message: '用户不存在'
       })
     }
 
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
     if (targetUser.id === 1) {
       throw createError({
         statusCode: 403,
-        statusMessage: '无法修改系统初始超级管理员'
+        message: '无法修改系统初始超级管理员'
       })
     }
 
@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
     if (String(userId) === String(user.id)) {
       throw createError({
         statusCode: 400,
-        statusMessage: '禁止在用户管理中修改自己的账户'
+        message: '禁止在用户管理中修改自己的账户'
       })
     }
 
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
     if (targetUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足：普通管理员无法修改超级管理员信息'
+        message: '权限不足：普通管理员无法修改超级管理员信息'
       })
     }
 
@@ -80,7 +80,7 @@ export default defineEventHandler(async (event) => {
       if (duplicateUser.length > 0) {
         throw createError({
           statusCode: 400,
-          statusMessage: '用户名已被其他用户使用'
+          message: '用户名已被其他用户使用'
         })
       }
     }
@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
         } else {
           throw createError({
             statusCode: 403,
-            statusMessage: '管理员只能设置用户和歌曲管理员角色'
+            message: '管理员只能设置用户和歌曲管理员角色'
           })
         }
       }
@@ -107,16 +107,16 @@ export default defineEventHandler(async (event) => {
       else {
         throw createError({
           statusCode: 403,
-          statusMessage: '没有权限设置用户角色'
+          message: '没有权限设置用户角色'
         })
       }
     }
 
     // 验证status字段的有效性
-    if (status && !['active', 'withdrawn'].includes(status)) {
+    if (status && !['active', 'withdrawn', 'graduate'].includes(status)) {
       throw createError({
         statusCode: 400,
-        statusMessage: '用户状态只能是active或withdrawn'
+        message: '用户状态只能是 active, withdrawn 或 graduate'
       })
     }
 
@@ -199,7 +199,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '更新用户失败: ' + error.message
+      message: '更新用户失败: ' + error.message
     })
   }
 })

@@ -164,24 +164,24 @@
                 </td>
                 <td class="px-6 py-5">
                   <span
-                    v-if="user.role === 'super_admin'"
+                    v-if="user.role === 'SUPER_ADMIN'"
                     class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest"
                     >超级管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'admin'"
+                    v-else-if="user.role === 'ADMIN'"
                     class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest"
                     >管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'song_admin'"
+                    v-else-if="user.role === 'SONG_ADMIN'"
                     class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
-                    >歌曲管理</span
+                    >歌曲管理员</span
                   >
                   <span
                     v-else
                     class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest"
-                    >用户</span
+                    >普通用户</span
                   >
                 </td>
                 <td class="px-6 py-5">
@@ -195,10 +195,24 @@
                     正常
                   </div>
                   <div
-                    v-else
+                    v-else-if="user.status === 'withdrawn'"
                     class="flex items-center gap-1.5 text-red-500 font-black uppercase text-[10px] tracking-widest"
                   >
                     <div class="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    退学
+                  </div>
+                  <div
+                    v-else-if="user.status === 'graduate'"
+                    class="flex items-center gap-1.5 text-amber-500 font-black uppercase text-[10px] tracking-widest"
+                  >
+                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    毕业
+                  </div>
+                  <div
+                    v-else
+                    class="flex items-center gap-1.5 text-zinc-500 font-black uppercase text-[10px] tracking-widest"
+                  >
+                    <div class="w-1.5 h-1.5 rounded-full bg-zinc-500" />
                     禁用
                   </div>
                 </td>
@@ -291,10 +305,24 @@
                   正常
                 </div>
                 <div
-                  v-else
+                  v-else-if="user.status === 'withdrawn'"
                   class="flex items-center gap-1.5 text-red-500 font-black uppercase text-[10px] tracking-widest"
                 >
                   <div class="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  退学
+                </div>
+                <div
+                  v-else-if="user.status === 'graduate'"
+                  class="flex items-center gap-1.5 text-amber-500 font-black uppercase text-[10px] tracking-widest"
+                >
+                  <div class="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  毕业
+                </div>
+                <div
+                  v-else
+                  class="flex items-center gap-1.5 text-zinc-500 font-black uppercase text-[10px] tracking-widest"
+                >
+                  <div class="w-1.5 h-1.5 rounded-full bg-zinc-500" />
                   禁用
                 </div>
                 <p class="text-[10px] font-black text-zinc-700 uppercase mt-1">账户状态</p>
@@ -308,24 +336,24 @@
                 </p>
                 <div>
                   <span
-                    v-if="user.role === 'super_admin'"
+                    v-if="user.role === 'SUPER_ADMIN'"
                     class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest"
                     >超级管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'admin'"
+                    v-else-if="user.role === 'ADMIN'"
                     class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest"
                     >管理员</span
                   >
                   <span
-                    v-else-if="user.role === 'song_admin'"
+                    v-else-if="user.role === 'SONG_ADMIN'"
                     class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
-                    >歌曲管理</span
+                    >歌曲管理员</span
                   >
                   <span
                     v-else
                     class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest"
-                    >用户</span
+                    >普通用户</span
                   >
                 </div>
               </div>
@@ -406,7 +434,6 @@
       <div
         v-if="showAddModal || editingUser"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-        @click="closeModal"
       >
         <div
           class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl"
@@ -598,7 +625,6 @@
       <div
         v-if="resetPasswordUser"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-        @click="closeResetPassword"
       >
         <div
           class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl"
@@ -695,7 +721,6 @@
       <div
         v-if="showImportModal"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-        @click="closeImportModal"
       >
         <div
           class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
@@ -760,14 +785,28 @@
                   </table>
                 </div>
 
-                <div
-                  class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-[10px] text-blue-400/80 leading-relaxed"
-                >
-                  <strong>支持的角色：</strong>
-                  <span v-if="isSuperAdmin"
-                    >USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）</span
+                <div class="flex items-center justify-between gap-4">
+                  <div
+                    class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-[10px] text-blue-400/80 leading-relaxed flex-1"
                   >
-                  <span v-else>USER（普通用户）、SONG_ADMIN（歌曲管理员）</span>
+                    <strong>支持的角色：</strong>
+                    <span v-if="isSuperAdmin"
+                      >USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）</span
+                    >
+                    <span v-else>USER（普通用户）、SONG_ADMIN（歌曲管理员）</span>
+                  </div>
+                  <button
+                    class="px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl transition-all flex items-center gap-2 group shrink-0"
+                    @click="downloadImportTemplate"
+                  >
+                    <Download
+                      :size="16"
+                      class="text-emerald-500 group-hover:scale-110 transition-transform"
+                    />
+                    <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest"
+                      >下载模板</span
+                    >
+                  </button>
                 </div>
               </div>
 
@@ -802,10 +841,10 @@
 
               <div
                 v-if="importError"
-                class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs"
+                class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-3 text-red-400 text-xs items-start"
               >
-                <AlertCircle :size="16" />
-                {{ importError }}
+                <AlertCircle :size="16" class="mt-0.5 shrink-0" />
+                <div class="whitespace-pre-wrap leading-relaxed">{{ importError }}</div>
               </div>
 
               <div
@@ -1374,12 +1413,14 @@ const roleFilterOptions = computed(() => [{ name: '', displayName: '全部角色
 const statusFilterOptions = [
   { label: '全部状态', value: '' },
   { label: '正常', value: 'active' },
-  { label: '退学', value: 'withdrawn' }
+  { label: '退学', value: 'withdrawn' },
+  { label: '毕业生', value: 'graduate' }
 ]
 
 const userStatusOptions = [
   { label: '正常访问', value: 'active' },
-  { label: '限制访问 (退学)', value: 'withdrawn' }
+  { label: '限制访问 (退学)', value: 'withdrawn' },
+  { label: '限制访问 (毕业生)', value: 'graduate' }
 ]
 
 // 模态框状态
@@ -1400,6 +1441,7 @@ const importError = ref('')
 const importSuccess = ref('')
 const previewData = ref([])
 const xlsxLoaded = ref(false)
+const importStartRow = ref(0)
 
 // 批量更新状态
 const showBatchUpdateModal = ref(false)
@@ -1537,7 +1579,8 @@ const getRoleDisplayName = (role) => {
 const getStatusClass = (status) => {
   const classes = {
     active: 'status-active',
-    withdrawn: 'status-withdrawn'
+    withdrawn: 'status-withdrawn',
+    graduate: 'status-graduate'
   }
   return classes[status] || 'status-active'
 }
@@ -1545,7 +1588,8 @@ const getStatusClass = (status) => {
 const getStatusDisplayName = (status) => {
   const names = {
     active: '正常',
-    withdrawn: '退学'
+    withdrawn: '退学',
+    graduate: '毕业生'
   }
   return names[status] || '正常'
 }
@@ -1997,6 +2041,8 @@ const handleFileUpload = async (event) => {
             console.log('未检测到标题行，从第一行开始解析')
           }
         }
+        
+        importStartRow.value = startRow
 
         const userData = []
 
@@ -2053,6 +2099,37 @@ const handleFileUpload = async (event) => {
   }
 }
 
+// 下载导入模板
+const downloadImportTemplate = async () => {
+  if (!window.XLSX) {
+    await loadXLSX()
+    if (!window.XLSX) {
+      if (window.$showNotification) {
+        window.$showNotification('Excel处理库加载失败，请刷新页面后重试', 'error')
+      }
+      return
+    }
+  }
+
+  const templateData = [
+    { 姓名: '张三', 账号名: 'zhangsan', 密码: '123456', 角色: 'USER', 年级: '高一', 班级: '1班' },
+    { 姓名: '李四', 账号名: 'lisi', 密码: '123456', 角色: 'USER', 年级: '高一', 班级: '2班' }
+  ]
+
+  const ws = window.XLSX.utils.json_to_sheet(templateData)
+  const wb = window.XLSX.utils.book_new()
+  window.XLSX.utils.book_append_sheet(wb, ws, '用户导入模板')
+  window.XLSX.writeFile(wb, '用户批量导入模板.xlsx')
+}
+
+// 格式化导入错误的辅助函数
+const formatImportErrors = (errors) => {
+  return errors.map(e => {
+    const namePart = e.name || e.username ? ` (${e.name || e.username})` : ''
+    return `第${e.rowNum || '?'}行${namePart}: ${e.reason}`
+  }).join('\n')
+}
+
 // 批量导入用户
 const importUsers = async () => {
   if (previewData.value.length === 0) return
@@ -2061,32 +2138,67 @@ const importUsers = async () => {
   importError.value = ''
   importSuccess.value = ''
 
-  try {
-    // 调用API批量导入用户
-    const result = await $fetch('/api/admin/users/batch', {
-      method: 'POST',
-      body: {
-        users: previewData.value
-      },
-      ...auth.getAuthConfig()
-    })
+  const dataToImport = [...previewData.value]
+  const batchSize = 50
+  const totalBatches = Math.ceil(dataToImport.length / batchSize)
+  let totalCreated = 0
+  let totalFailed = 0
+  const allErrors = []
 
-    // 更新用户列表
+  try {
+    for (let i = 0; i < dataToImport.length; i += batchSize) {
+      const batch = dataToImport.slice(i, i + batchSize)
+      const currentBatch = Math.floor(i / batchSize) + 1
+
+      importSuccess.value = `正在导入：正在处理第 ${currentBatch} / ${totalBatches} 批数据...`
+
+      try {
+        const result = await $fetch('/api/admin/users/batch', {
+          method: 'POST',
+          body: {
+            users: batch
+          },
+          ...auth.getAuthConfig()
+        })
+
+        totalCreated += result.created || 0
+        totalFailed += result.failed || 0
+        
+        if (result.errors && result.errors.length > 0) {
+          const batchErrors = result.errors.map(e => ({
+            ...e,
+            rowNum: i + e.index + importStartRow.value + 1 // 正确计算行号
+          }))
+          allErrors.push(...batchErrors)
+        }
+      } catch (batchErr) {
+        console.error(`第 ${currentBatch} 批导入失败:`, batchErr)
+        totalFailed += batch.length
+        allErrors.push({ reason: `第 ${currentBatch} 批请求失败: ${batchErr.message}` })
+      }
+    }
+
     await loadUsers()
 
-    importSuccess.value = `成功导入 ${result.created} 个用户，${result.failed} 个用户导入失败`
-
-    // 清空预览数据
-    previewData.value = []
-
-    // 3秒后关闭导入对话框
-    setTimeout(() => {
-      if (importSuccess.value) {
-        closeImportModal()
+    if (totalCreated > 0 || totalFailed === 0) {
+      importSuccess.value = `成功导入 ${totalCreated} 个用户，${totalFailed} 个用户导入失败`
+      if (allErrors.length > 0) {
+        importError.value = '部分导入失败原因：\n' + formatImportErrors(allErrors)
       }
-    }, 3000)
+      previewData.value = []
+
+      setTimeout(() => {
+        if (importSuccess.value && allErrors.length === 0) {
+          closeImportModal()
+        }
+      }, 3000)
+    } else {
+      importError.value = '导入失败，请检查数据格式后重试。\n失败原因：\n' + formatImportErrors(allErrors)
+      importSuccess.value = ''
+    }
   } catch (err) {
-    importError.value = err.message || '导入用户失败'
+    importError.value = `导入过程中发生错误 (已成功导入 ${totalCreated} 个): ${err.message || '未知错误'}`
+    importSuccess.value = ''
     console.error('导入用户出错:', err)
   } finally {
     importLoading.value = false

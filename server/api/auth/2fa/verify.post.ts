@@ -38,6 +38,10 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({ statusCode: 404, message: '用户不存在' })
   }
+  
+  if (user.status !== 'active') {
+    throw createError({ statusCode: 403, message: '账号已被禁用或限制访问' })
+  }
 
   let verified = false
 

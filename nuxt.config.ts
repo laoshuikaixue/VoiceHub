@@ -45,6 +45,7 @@ export default defineNuxtConfig({
     redisUrl: process.env.REDIS_URL || '',
     // 公共键（会暴露到客户端）
     public: {
+      host: process.env.NUXT_PUBLIC_HOST || '', // 用于 CORS 和反向代理的主机名验证
       apiBase: '/api',
       oauth: {
         github: !!process.env.GITHUB_CLIENT_ID,
@@ -61,8 +62,6 @@ export default defineNuxtConfig({
 
   // 配置环境变量
   app: {
-    pageTransition: { name: 'page', mode: 'out-in' },
-    layoutTransition: { name: 'layout', mode: 'out-in' },
     head: {
       title: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
       meta: [
@@ -256,6 +255,7 @@ export default defineNuxtConfig({
       exclude: ['@applemusic-like-lyrics/vue', '@applemusic-like-lyrics/lyric']
     },
     build: {
+      target: 'esnext',
       sourcemap: false,
       rollupOptions: {
         output: {

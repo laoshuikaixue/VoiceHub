@@ -1,0 +1,107 @@
+# .github/workflows/build-fpk.yml
+# VoiceHub 飞牛 fnOS FPK 安装包自动构建
+# 手动触发，版本号自动从 package.json 读取
+
+name: Build VoiceHub FPK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-fpk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: 读取版本号 & 安装 fnpack
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          echo "APP_VER=$VER" >> "$GITHUB_ENV"
+          echo "📦 版本: $VER"
+
+          wget -q https://static2.fnnas.com/fnpack/fnpack-1.2.1-linux-amd64 -O /usr/local/bin/fnpack
+          chmod +x /usr/local/bin/fnpack
+
+      - name: 创建 FPK 目录
+        run: |
+          fnpack create voicehub --template docker
+          echo "📁 模板结构:"
+          find voicehub -type f | sort
+
+      - name: 写入 manifest & 准备图标
+        run: |
+          # 复制仓库中的 fnos 模板
+          cp -r fnos/* voicehub/
+          
+          # 从 public 目录复制图标到构建目录
+          mkdir -p voicehub/app/ui/images
+          cp public/images/logo.png voicehub/app/ui/images/icon-64.png
+          cp public/images/logo.png voicehub/app/ui/images/icon-256.png
+          cp public/images/logo.png voicehub/ICON.PNG
+          cp public/images/logo.png voicehub/ICON_256.PNG
+          
+          # 更新版本号
+          sed -i "s/^version=.*/version=${APP_VER}/" voicehub/manifest
+          chmod +x voicehub/cmd/main
+          echo "✅ manifest, cmd/main & icons 已就绪"
+
+      - name: 从仓库读取 docker-compose-prebuild-nju.yml 并写入
+        run: |
+          # 从项目根目录读取仓库内的 compose 文件
+          SRC_COMPOSE="docker-compose/docker-compose-prebuild-nju.yml"
+          # 目标路径
+          DST_COMPOSE="voicehub/app/docker/docker-compose.yaml"
+          
+          # 创建目录
+          mkdir -p voicehub/app/docker
+          
+          # 复制内容并进行修改：
+          # 1. 移除 postgres 服务的端口映射，以避免 fnOS 5432 端口冲突
+          # 2. 移除 voicehub 服务的代码挂载 (.:/app)，避免覆盖镜像内的预构建代码导致 MODULE_NOT_FOUND
+          # 3. 确保容器间通过 service name 互联
+          # 直接使用 awk 工具更精确地过滤掉整个 volumes 块和 ports 块中我们不想要的行，或者删除空块
+          awk '
+            /^[[:space:]]+volumes:/ { in_volumes=1; print; next }
+            /^[[:space:]]+ports:/ { in_ports=1; print; next }
+            /^[[:space:]]+restart:/ { in_volumes=0; in_ports=0; print; next }
+            /^[[:space:]]+[a-zA-Z0-9_]+:/ { in_volumes=0; in_ports=0; print; next }
+            
+            in_volumes && /^[[:space:]]+-[[:space:]]+.:\/app/ { next }
+            in_volumes && /^[[:space:]]+-[[:space:]]+\/app\/node_modules/ { next }
+            in_ports && /^[[:space:]]+-[[:space:]]+.5432:5432./ { next }
+            
+            { print }
+          ' "$SRC_COMPOSE" > "$DST_COMPOSE.tmp"
+          
+          # 清理由于上述删除可能产生的空的 volumes: 或 ports: 标签
+          # 使用 grep 检查下一行是否是配置项或空行
+          sed -E '/^[[:space:]]+volumes:[[:space:]]*$/{N;/\n[[:space:]]+-/!d}' "$DST_COMPOSE.tmp" > "$DST_COMPOSE.tmp2"
+          sed -E '/^[[:space:]]+ports:[[:space:]]*$/{N;/\n[[:space:]]+-/!d}' "$DST_COMPOSE.tmp2" > "$DST_COMPOSE"
+          rm "$DST_COMPOSE.tmp" "$DST_COMPOSE.tmp2"
+          
+          echo "✅ 已处理 compose 文件：移除数据库端口暴露 & 移除应用代码挂载"
+          cat "$DST_COMPOSE"
+
+      - name: 最终目录 & 打包
+        run: |
+          echo "📦 FPK 结构:"
+          find voicehub -type f | sort
+          echo "---"
+          cd voicehub
+          fnpack build
+          ls -lh *.fpk 2>/dev/null || { echo "❌ 打包失败"; exit 1; }
+          mv *.fpk ../
+
+      - name: 上传 Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: voicehub-fpk-${{ env.APP_VER }}
+          path: "*.fpk"
+          retention-days: 30

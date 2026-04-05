@@ -39,6 +39,11 @@ export async function getMusicUrl(
   // 优先使用 options 中的 quality，否则使用全局设置
   const quality =
     options?.quality !== undefined ? options.quality : getQuality(platform)
+  const isNeteasePlatform = platform === 'netease' || platform === 'netease-podcast'
+  const hasNeteaseLogin =
+    isNeteasePlatform &&
+    typeof window !== 'undefined' &&
+    !!window.localStorage.getItem('netease_cookie')
 
   let finalMusicId = musicId
   let bilibiliCid: string | undefined
@@ -72,34 +77,47 @@ export async function getMusicUrl(
   }
 
   // 回退到 vkeys
-  let apiUrl: string
-  if (platform === 'netease' || platform === 'netease-podcast') {
-    apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
-  } else if (platform === 'tencent') {
-    apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
-  } else {
+  const normalizedQuality = Number(quality)
+  const qualityCandidates =
+    isNeteasePlatform
+      ? !hasNeteaseLogin && normalizedQuality > 4
+        ? [...new Set([normalizedQuality, 4])]
+        : [Number.isNaN(normalizedQuality) ? 0 : normalizedQuality]
+      : [Number.isNaN(normalizedQuality) ? 8 : normalizedQuality]
+
+  const endpoint =
+    platform === 'netease' || platform === 'netease-podcast'
+      ? 'netease'
+      : platform === 'tencent'
+        ? 'tencent'
+        : null
+
+  if (!endpoint) {
     throw new Error('不支持的音乐平台')
   }
 
-  const response = await fetch(apiUrl, {
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-  })
+  for (const candidateQuality of qualityCandidates) {
+    const apiUrl = `https://api.vkeys.cn/v2/music/${endpoint}?id=${musicId}&quality=${candidateQuality}`
+    const response = await fetch(apiUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    })
 
-  if (!response.ok) {
-    throw new Error(`vkeys API请求失败: ${response.status} ${response.statusText}`)
-  }
-
-  const data = await response.json()
-  if (data.code === 200 && data.data && data.data.url) {
-    // 将HTTP URL改为HTTPS
-    let url = data.data.url
-    if (url.startsWith('http://')) {
-      url = url.replace('http://', 'https://')
+    if (!response.ok) {
+      continue
     }
-    return url
+
+    const data = await response.json()
+    if (data.code === 200 && data.data && data.data.url) {
+      // 将HTTP URL改为HTTPS
+      let url = data.data.url
+      if (url.startsWith('http://')) {
+        url = url.replace('http://', 'https://')
+      }
+      return url
+    }
   }
 
   // vkeys API返回了响应但没有有效的播放链接

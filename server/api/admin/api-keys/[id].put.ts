@@ -20,18 +20,18 @@ const updateApiKeySchema = z.object({
   expiresAt: z.string().optional().nullable(),
 
   permissions: z
-    .array(z.enum(['schedules:read', 'songs:read']))
+    .array(z.enum(['schedules:read', 'songs:read', 'songs:write']))
     .min(1, '至少需要选择一个权限')
     .optional()
 })
 
 export default defineEventHandler(async (event) => {
-  // 检查用户权限 - 只有超级管理员可以管理API Key
+  // 检查用户权限 - 只有超级管理员可以管理 API Key
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
     throw createError({
       statusCode: 403,
-      statusMessage: '只有超级管理员可以管理API Key'
+      message: '只有超级管理员可以管理 API Key'
     })
   }
 
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
   if (!apiKeyId) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'API Key ID不能为空'
+      message: 'API Key ID 不能为空'
     })
   }
 
@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
     if (existingApiKey.length === 0) {
       throw createError({
         statusCode: 404,
-        statusMessage: 'API Key不存在'
+        message: 'API Key 不存在'
       })
     }
 
@@ -82,14 +82,14 @@ export default defineEventHandler(async (event) => {
             if (isNaN(expiresAt.getTime())) {
               throw createError({
                 statusCode: 400,
-                statusMessage: '无效的过期时间格式'
+                message: '无效的过期时间格式'
               })
             }
             // 验证过期时间不能是过去的时间
             if (expiresAt <= getBeijingTime()) {
               throw createError({
                 statusCode: 400,
-                statusMessage: '过期时间不能是过去的时间'
+                message: '过期时间不能是过去的时间'
               })
             }
           }
@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
           }
           throw createError({
             statusCode: 400,
-            statusMessage: '无效的过期时间格式'
+            message: '无效的过期时间格式'
           })
         }
       }
@@ -147,17 +147,17 @@ export default defineEventHandler(async (event) => {
       throw error
     }
 
-    // 处理Zod验证错误
+    // 处理 Zod 验证错误
     if (error.name === 'ZodError') {
       throw createError({
         statusCode: 400,
-        statusMessage: `请求参数验证失败: ${error.errors.map((e: any) => e.message).join(', ')}`
+        message: `请求参数验证失败：${error.errors.map((e: any) => e.message).join(', ')}`
       })
     }
 
     throw createError({
       statusCode: 500,
-      statusMessage: `更新API Key失败: ${error.message}`
+      message: `更新 API Key 失败：${error.message}`
     })
   }
 })

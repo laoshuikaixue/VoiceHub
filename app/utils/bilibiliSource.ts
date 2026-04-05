@@ -26,10 +26,16 @@ export function parseBilibiliId(id: string | number): ParsedBilibiliId {
  */
 export function isBilibiliSong(song: any): boolean {
   if (!song) return false
-  
+
+  // 如果有手动填入的 playUrl，则不认为是哔哩哔哩歌曲
+  // 因为手动投稿的歌曲可能来自任何平台，应该直接使用 playUrl 播放
+  if (song.playUrl && song.playUrl.trim()) {
+    return false
+  }
+
   const musicPlatform = song.musicPlatform || song.actualMusicPlatform || ''
   const musicId = String(song.musicId || song.id || '')
-  
+
   return (
     musicPlatform === 'bilibili' ||
     musicId.startsWith('BV') ||

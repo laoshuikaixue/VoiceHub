@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { songs, users, songCollaborators, collaborationLogs } from '~/drizzle/schema'
 import { eq, or } from 'drizzle-orm'
 import { cacheService } from '~~/server/services/cacheService'
+import { createSubmissionNoteClearedNotification } from '~~/server/services/notificationService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -9,7 +10,7 @@ export default defineEventHandler(async (event) => {
     if (event.node.req.method !== 'PUT') {
       throw createError({
         statusCode: 405,
-        statusMessage: 'Method Not Allowed'
+        message: 'Method Not Allowed'
       })
     }
 
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       throw createError({
         statusCode: 401,
-        statusMessage: '未授权访问'
+        message: '未授权访问'
       })
     }
 
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
     if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足'
+        message: '权限不足'
       })
     }
 
@@ -35,23 +36,34 @@ export default defineEventHandler(async (event) => {
     if (!songId) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Invalid song ID'
+        message: 'Invalid song ID'
       })
     }
 
     // 获取请求体
     const body = await readBody(event)
     const { title, artist, requester, semester, musicPlatform, musicId, cover, playUrl } = body
+    const ipAddress =
+      (event.node.req.headers['x-forwarded-for'] as string) || event.node.req.socket.remoteAddress
 
     // 验证必填字段
     if (!title || !artist) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Title and artist are required'
+        message: 'Title and artist are required'
       })
     }
 
-    // 准备更新数据
+    const existingSongResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
+    const existingSong = existingSongResult[0]
+
+    if (!existingSong) {
+      throw createError({
+        statusCode: 404,
+        message: '歌曲不存在'
+      })
+    }
+
     const updateData = {
       title: title.trim(),
       artist: artist.trim(),
@@ -87,7 +99,7 @@ export default defineEventHandler(async (event) => {
         if (requesterUser.length === 0) {
           throw createError({
             statusCode: 404,
-            statusMessage: '投稿人用户不存在'
+            message: '投稿人用户不存在'
           })
         }
 
@@ -97,6 +109,26 @@ export default defineEventHandler(async (event) => {
       // 如果投稿人为空值，则跳过处理，保持原有投稿人不变
     }
 
+    const shouldClearSubmissionNote = body.clearSubmissionNote === true
+    const submissionNoteClearReason =
+      typeof body.submissionNoteClearReason === 'string' ? body.submissionNoteClearReason.trim() : ''
+    const shouldNotifySubmissionNoteClear = body.notifyOnSubmissionNoteClear === true
+
+    if (shouldClearSubmissionNote) {
+      updateData.submissionNote = null
+    } else if ('submissionNote' in body) {
+      updateData.submissionNote =
+        typeof body.submissionNote === 'string' && body.submissionNote.trim()
+          ? body.submissionNote.trim()
+          : null
+    }
+
+    if ('submissionNotePublic' in body) {
+      updateData.submissionNotePublic = body.submissionNotePublic === true
+    }
+
+    const currentRequesterId = updateData.requesterId || existingSong.requesterId
+
     // 更新歌曲
     const updatedSongResult = await db
       .update(songs)
@@ -104,15 +136,8 @@ export default defineEventHandler(async (event) => {
       .where(eq(songs.id, songId))
       .returning()
 
-    if (updatedSongResult.length === 0) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: '歌曲不存在'
-      })
-    }
-
     // 处理联合投稿人
-    if (body.collaborators && Array.isArray(body.collaborators)) {
+    if ('collaborators' in body && Array.isArray(body.collaborators)) {
       // 获取现有联合投稿人
       const existingCollaborators = await db
         .select()
@@ -120,7 +145,13 @@ export default defineEventHandler(async (event) => {
         .where(eq(songCollaborators.songId, songId))
 
       const existingCollaboratorUserIds = existingCollaborators.map((c) => c.userId)
-      const newCollaboratorIds = body.collaborators
+      const newCollaboratorIds = [
+        ...new Set(
+          body.collaborators
+            .map((id: number | string) => Number(id))
+            .filter((id: number) => Number.isInteger(id) && id > 0 && id !== currentRequesterId)
+        )
+      ]
 
       // 需要添加的
       const toAdd = newCollaboratorIds.filter(
@@ -148,9 +179,7 @@ export default defineEventHandler(async (event) => {
             collaboratorId: newCollab.id,
             action: 'ADMIN_ADD',
             operatorId: user.id,
-            ipAddress:
-              (event.node.req.headers['x-forwarded-for'] as string) ||
-              event.node.req.socket.remoteAddress
+            ipAddress
           })
         }
       }
@@ -164,11 +193,32 @@ export default defineEventHandler(async (event) => {
           collaboratorId: collab.id,
           action: 'ADMIN_REMOVE',
           operatorId: user.id,
-          ipAddress:
-            (event.node.req.headers['x-forwarded-for'] as string) ||
-            event.node.req.socket.remoteAddress
+          ipAddress
         })
       }
+    }
+
+    if (shouldClearSubmissionNote && existingSong.submissionNote && shouldNotifySubmissionNoteClear) {
+      const latestCollaborators = await db
+        .select({
+          userId: songCollaborators.userId
+        })
+        .from(songCollaborators)
+        .where(eq(songCollaborators.songId, songId))
+
+      const notifyUserIds = [
+        currentRequesterId,
+        ...latestCollaborators.map((collaborator) => collaborator.userId)
+      ].filter((userId): userId is number => Number.isInteger(userId) && userId > 0)
+
+      createSubmissionNoteClearedNotification(
+        notifyUserIds,
+        { title: updatedSongResult[0].title, artist: updatedSongResult[0].artist },
+        submissionNoteClearReason,
+        ipAddress
+      ).catch((error) => {
+        console.error('发送歌曲备注清空通知失败:', error)
+      })
     }
 
     // 获取完整的歌曲信息（包含投稿人）
@@ -182,6 +232,8 @@ export default defineEventHandler(async (event) => {
         musicId: songs.musicId,
         cover: songs.cover,
         playUrl: songs.playUrl,
+        submissionNote: songs.submissionNote,
+        submissionNotePublic: songs.submissionNotePublic,
         requesterId: songs.requesterId,
         createdAt: songs.createdAt,
         updatedAt: songs.updatedAt,
@@ -217,7 +269,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || 'Internal server error'
+      message: error.message || 'Internal server error'
     })
   }
 })

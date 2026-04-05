@@ -156,6 +156,12 @@ async function handleUserLoginOrBind(
         `/auth/error?code=ACCOUNT_WITHDRAWN&message=${encodeURIComponent('账号已注销')}`
       )
     }
+    if (user.status === 'graduate') {
+      return sendRedirect(
+        event,
+        `/auth/error?code=ACCOUNT_GRADUATED&message=${encodeURIComponent('该账号已毕业，限制访问')}`
+      )
+    }
     if (isUserBlocked(user.id)) {
       const remaining = getUserBlockRemainingTime(user.id)
       return sendRedirect(

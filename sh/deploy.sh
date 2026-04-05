@@ -21,6 +21,84 @@ NC='\033[0m' # No Color
 REPO_URL="https://github.com/laoshuikaixue/VoiceHub.git"
 PROJECT_DIR="/opt/voicehub"
 
+ensure_pnpm() {
+    export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+    mkdir -p "$PNPM_HOME"
+    export PATH="$PNPM_HOME:$PATH"
+
+    if ! command -v corepack &> /dev/null; then
+        sudo npm install -g corepack
+        hash -r
+    fi
+
+    corepack enable
+
+    local package_manager=""
+    if [[ -f "$PROJECT_DIR/package.json" ]]; then
+        package_manager=$(node -p "try { JSON.parse(require('fs').readFileSync('$PROJECT_DIR/package.json', 'utf8')).packageManager || '' } catch { '' }")
+    fi
+
+    if [[ -n "$package_manager" ]]; then
+        corepack prepare "$package_manager" --activate
+    fi
+
+    hash -r
+
+    if ! command -v pnpm &> /dev/null; then
+        echo -e "${RED}错误: pnpm 不可用${NC}"
+        exit 1
+    fi
+}
+
+persist_pm2_binary() {
+    sudo tee /usr/local/bin/pm2 > /dev/null << 'EOF'
+#!/bin/bash
+# VoiceHub PM2 Wrapper - Managed by VoiceHub deployment
+set -e
+
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+export PATH="$PNPM_HOME:$PATH"
+
+if ! command -v pnpm &> /dev/null; then
+    mkdir -p "$PNPM_HOME"
+    
+    if ! command -v corepack &> /dev/null; then
+        echo "错误: corepack 不可用，请重新运行部署脚本" >&2
+        exit 1
+    fi
+    
+    corepack enable > /dev/null 2>&1 || true
+    
+    if [[ -f "/opt/voicehub/package.json" ]]; then
+        package_manager=$(node -p "try { JSON.parse(require('fs').readFileSync('/opt/voicehub/package.json', 'utf8')).packageManager || '' } catch { '' }" 2>/dev/null || true)
+        if [[ -n "$package_manager" ]]; then
+            corepack prepare "$package_manager" --activate > /dev/null 2>&1 || true
+        fi
+    fi
+    
+    hash -r 2>/dev/null || true
+    
+    if ! command -v pnpm &> /dev/null; then
+        echo "错误: pnpm 不可用，请检查 corepack 配置或重新运行部署脚本" >&2
+        exit 1
+    fi
+fi
+
+PM2_ROOT="$(pnpm root -g 2>/dev/null || true)"
+PM2_BIN="$PM2_ROOT/pm2/bin/pm2"
+
+if [[ ! -f "$PM2_BIN" ]]; then
+    echo "错误: PM2 未正确安装，请重新运行部署脚本" >&2
+    exit 1
+fi
+
+exec node "$PM2_BIN" "$@"
+EOF
+    sudo chmod +x /usr/local/bin/pm2
+}
+
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}       VoiceHub 一键部署脚本${NC}"
 echo -e "${BLUE}========================================${NC}"
@@ -87,20 +165,18 @@ fi
 echo ""
 
 # ============================================
-# 步骤 3: 询问是否切换 npm 国内源
+# 步骤 3: 询问是否切换 pnpm 国内源
 # ============================================
-echo -e "${YELLOW}[3/9] npm 镜像源配置${NC}"
-echo -e "是否需要将 npm 切换为国内淘宝源？"
+echo -e "${YELLOW}[3/9] pnpm 镜像源配置${NC}"
+echo -e "是否需要将 pnpm 切换为国内淘宝源？"
 echo -e "${BLUE}  y - 使用淘宝镜像 (https://registry.npmmirror.com)${NC}"
 echo -e "${BLUE}  n - 使用官方源 (https://registry.npmjs.org)${NC}"
 read -p "请选择 (y/n): " USE_TAOBAO
 
 if [[ "$USE_TAOBAO" == "y" || "$USE_TAOBAO" == "Y" ]]; then
-    npm config set registry https://registry.npmmirror.com
-    echo -e "${GREEN}✓ 已切换为淘宝镜像源${NC}"
+    PNPM_REGISTRY="https://registry.npmmirror.com"
 else
-    npm config set registry https://registry.npmjs.org
-    echo -e "${GREEN}✓ 已使用官方 npm 源${NC}"
+    PNPM_REGISTRY="https://registry.npmjs.org"
 fi
 
 echo ""
@@ -141,6 +217,15 @@ fi
 
 cd "$PROJECT_DIR"
 echo ""
+
+ensure_pnpm
+
+pnpm config set registry "$PNPM_REGISTRY"
+if [[ "$USE_TAOBAO" == "y" || "$USE_TAOBAO" == "Y" ]]; then
+    echo -e "${GREEN}✓ 已切换为淘宝镜像源${NC}"
+else
+    echo -e "${GREEN}✓ 已使用官方 pnpm 源${NC}"
+fi
 
 # ============================================
 # 步骤 5: 配置 .env 文件
@@ -258,14 +343,14 @@ fi
 echo ""
 
 # ============================================
-# 步骤 6: npm install
+# 步骤 6: pnpm install
 # ============================================
 echo -e "${YELLOW}[6/9] 安装项目依赖...${NC}"
-echo -e "执行: npm install"
+echo -e "执行: pnpm install --frozen-lockfile"
 echo ""
 
 cd "$PROJECT_DIR"
-npm install
+pnpm install --frozen-lockfile || pnpm install
 
 echo -e "${GREEN}✓ 依赖安装完成${NC}"
 echo ""
@@ -274,16 +359,16 @@ echo ""
 # 步骤 7: 部署 (数据库迁移 + 构建)
 # ============================================
 echo -e "${YELLOW}[7/9] 执行部署脚本...${NC}"
-echo -e "执行: npm run deploy"
+echo -e "执行: pnpm run deploy"
 echo ""
 
-# 尝试执行 npm run deploy (包含数据库迁移、管理员创建、构建)
-if npm run deploy; then
+# 尝试执行 pnpm run deploy (包含数据库迁移、管理员创建、构建)
+if pnpm run deploy; then
     echo -e "${GREEN}✓ 部署脚本执行成功${NC}"
 else
     echo -e "${RED}部署脚本执行失败，尝试仅执行构建...${NC}"
     echo -e "${YELLOW}注意: 数据库迁移可能未完成，请检查日志${NC}"
-    npm run build
+    pnpm run build
 fi
 
 echo -e "${GREEN}✓ 项目准备完成${NC}"
@@ -307,9 +392,13 @@ if [[ "$SERVICE_CHOICE" == "1" ]]; then
     # 检查并安装 pm2
     if ! command -v pm2 &> /dev/null; then
         echo -e "${YELLOW}正在安装 PM2...${NC}"
-        sudo npm install -g pm2
+        if ! pnpm add -g pm2; then
+            sudo env "PNPM_HOME=$PNPM_HOME" PATH="$PNPM_HOME:$PATH" pnpm add -g pm2
+        fi
+        persist_pm2_binary
         echo -e "${GREEN}✓ PM2 安装完成${NC}"
     else
+        persist_pm2_binary
         echo -e "${GREEN}✓ PM2 已安装${NC}"
     fi
     
@@ -477,7 +566,7 @@ elif [[ "$SERVICE_CHOICE" == "2" ]]; then
     echo -e "  sudo systemctl restart voicehub  - 重启服务"
     echo -e "  sudo systemctl stop voicehub     - 停止服务"
 else
-    echo -e "${BLUE}启动命令: npm run dev (开发) 或 npm run start (生产)${NC}"
+    echo -e "${BLUE}启动命令: pnpm run dev (开发) 或 pnpm run start (生产)${NC}"
 fi
 
 echo ""

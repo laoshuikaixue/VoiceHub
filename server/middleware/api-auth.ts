@@ -335,6 +335,10 @@ function getRequiredPermission(pathname: string, method: string): string | null 
     return 'schedules:read'
   }
 
+  if (pathname.startsWith('/api/open/songs/mark-played')) {
+    return 'songs:write'
+  }
+
   if (pathname.startsWith('/api/open/songs')) {
     return 'songs:read'
   }

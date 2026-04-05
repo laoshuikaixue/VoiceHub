@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
   if (!imageUrl) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Missing image URL parameter'
+      message: 'Missing image URL parameter'
     })
   }
 
@@ -123,7 +123,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: `${errorMessage}: ${error.message}`
+      message: `${errorMessage}: ${error.message}`
     })
   }
 })

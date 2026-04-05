@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '权限不足'
+        message: '权限不足'
       })
     }
 
@@ -440,7 +440,7 @@ export default defineEventHandler(async (event) => {
         console.error(`备份表 ${tableName} 失败:`, error)
         throw createError({
           statusCode: 500,
-          statusMessage: `备份表 ${tableName} 失败: ${error.message}`
+          message: `备份表 ${tableName} 失败：${error.message}`
         })
       }
     }
@@ -533,7 +533,7 @@ export default defineEventHandler(async (event) => {
     console.error('创建数据库备份失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || '创建数据库备份失败'
+      message: error.message || '创建数据库备份失败'
     })
   }
 })

@@ -69,6 +69,12 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // 状态验证
+    let validStatus = 'active'
+    if (body.status && ['active', 'withdrawn', 'graduate'].includes(body.status)) {
+      validStatus = body.status
+    }
+
     // 创建用户
     const newUserResult = await db
       .insert(users)
@@ -77,6 +83,7 @@ export default defineEventHandler(async (event) => {
         username: body.username,
         password: hashedPassword,
         role: validRole,
+        status: validStatus as 'active' | 'withdrawn' | 'graduate',
         grade: body.grade,
         class: body.class
       })
@@ -85,6 +92,7 @@ export default defineEventHandler(async (event) => {
         name: users.name,
         username: users.username,
         role: users.role,
+        status: users.status,
         grade: users.grade,
         class: users.class,
         createdAt: users.createdAt,

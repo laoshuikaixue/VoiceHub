@@ -120,18 +120,23 @@
           >
             <button
               class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"
+              :disabled="loadingViewId !== null || loadingEditId !== null"
               @click="viewApiKey(apiKey)"
             >
-              <Eye :size="14" />
+              <RefreshCw v-if="loadingViewId === apiKey.id" :size="14" class="animate-spin" />
+              <Eye v-else :size="14" />
             </button>
             <button
               class="p-2 text-zinc-500 hover:text-amber-400 transition-colors"
+              :disabled="loadingViewId !== null || loadingEditId !== null"
               @click="editApiKey(apiKey)"
             >
-              <Edit2 :size="14" />
+              <RefreshCw v-if="loadingEditId === apiKey.id" :size="14" class="animate-spin" />
+              <Edit2 v-else :size="14" />
             </button>
             <button
               class="p-2 text-zinc-500 hover:text-red-400 transition-colors"
+              :disabled="loadingViewId !== null || loadingEditId !== null"
               @click="deleteApiKey(apiKey)"
             >
               <Trash2 :size="14" />
@@ -192,7 +197,10 @@
         v-if="showCreateModal || showEditModal || showViewModal || showSuccessModal"
         class="fixed inset-0 z-[100] flex items-center justify-center p-4"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeModals" />
+        <div
+          class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          @click="handleBackdropClick"
+        />
 
         <!-- 创建/编辑模态框 -->
         <div
@@ -635,6 +643,8 @@ const newApiKey = ref(null)
 const loadingLogs = ref(false)
 const apiLogs = ref([])
 const copied = ref(false)
+const loadingEditId = ref(null)
+const loadingViewId = ref(null)
 
 // 文本映射
 const statusFilterText = ref('全部状态')
@@ -693,6 +703,11 @@ const availablePermissions = [
     value: 'songs:read',
     label: '歌曲查询',
     description: '查看歌曲列表和详情'
+  },
+  {
+    value: 'songs:write',
+    label: '歌曲管理',
+    description: '更新歌曲状态'
   }
 ]
 
@@ -866,35 +881,38 @@ const cancelDelete = () => {
 }
 
 const viewApiKey = async (apiKey) => {
+  if (loadingViewId.value !== null || loadingEditId.value !== null) return
+  loadingViewId.value = apiKey.id
   try {
     const response = await $fetch(`/api/admin/api-keys/${apiKey.id}`)
     if (response.success) {
       selectedApiKey.value = response.data
       showViewModal.value = true
-      // 加载API使用日志
       await loadApiLogs(1)
     }
   } catch (error) {
     console.error('获取API密钥详情失败:', error)
     toast.error('获取API密钥详情失败')
+  } finally {
+    loadingViewId.value = null
   }
 }
 
 const editApiKey = async (apiKey) => {
+  if (loadingEditId.value !== null || loadingViewId.value !== null) return
+  loadingEditId.value = apiKey.id
   try {
     const response = await $fetch(`/api/admin/api-keys/${apiKey.id}`)
     if (response.success) {
       selectedApiKey.value = response.data
 
-      // 填充表单
       form.name = response.data.name
       form.description = response.data.description || ''
 
-      // 处理过期时间显示
       if (response.data.expiresAt) {
         const date = new Date(response.data.expiresAt)
         expiresAtText.value = `到期: ${date.toLocaleDateString()}`
-        form.expiresAt = 'keep' // 特殊值，表示不修改过期时间
+        form.expiresAt = 'keep'
       } else {
         expiresAtText.value = '永不过期'
         form.expiresAt = ''
@@ -908,6 +926,8 @@ const editApiKey = async (apiKey) => {
   } catch (error) {
     console.error('获取API密钥详情失败:', error)
     toast.error('获取API密钥详情失败')
+  } finally {
+    loadingEditId.value = null
   }
 }
 
@@ -957,7 +977,6 @@ const closeModals = () => {
   showSuccessModal.value = false
   selectedApiKey.value = null
   newApiKey.value = null
-  // 重置日志相关状态
   apiLogs.value = []
   loadingLogs.value = false
   logsPagination.value = {
@@ -967,6 +986,13 @@ const closeModals = () => {
     totalPages: 0
   }
   resetForm()
+}
+
+const handleBackdropClick = () => {
+  if (showCreateModal.value || showEditModal.value) {
+    return
+  }
+  closeModals()
 }
 
 const resetForm = () => {
