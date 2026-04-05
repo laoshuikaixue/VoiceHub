@@ -31,6 +31,8 @@
           {{ schedule.song.title }}
           <!-- 重播标识 -->
           <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge-print"> 重播 </span>
+          <!-- 跨学期标识 -->
+          <span v-if="settings.currentSemester && schedule.song.semester && schedule.song.semester !== settings.currentSemester" class="cross-semester-badge-print"> 跨学期 </span>
         </div>
         <div v-if="settings.showArtist" class="song-artist">
           {{ schedule.song.artist }}
@@ -178,6 +180,20 @@ const handleImageError = (event) => {
   font-size: 10px;
   font-weight: bold;
   flex-shrink: 0;
+}
+
+/* 跨学期标识 */
+.cross-semester-badge-print {
+  display: inline-block;
+  padding: 1px 4px;
+  background: #fff3e0;
+  border: 1px solid #f48fb1;
+  color: #9c27b0;
+  font-size: 10px;
+  border-radius: 2px;
+  font-weight: normal;
+  margin-left: 4px;
+  vertical-align: middle;
 }
 
 .song-artist {

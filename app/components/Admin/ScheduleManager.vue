@@ -1225,12 +1225,12 @@ const allUnscheduledSongs = computed(() => {
     if (isScheduledInCurrentView) return false
 
     if (activeTab.value === 'replay' || activeTab.value === 'all') {
-      // 重播申请和所有歌曲模式不需要检查 played 状态，只要当前视图没排上就行
-      return true
-    } else {
-      // 普通投稿需未播放，且未在任何日期的排期中
-      return !song.played && !scheduledSongIds.value.has(song.id)
-    }
+            // 重播申请和所有歌曲模式不需要检查 played 状态，只要当前视图没排上就行
+            return true
+          } else {
+            // 普通投稿需未播放，且未在任何日期的排期中
+            return !song.played && !song.scheduled && !scheduledSongIds.value.has(song.id)
+          }
   })
 
   // 搜索过滤
@@ -1652,13 +1652,12 @@ const loadData = async () => {
     // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
     const semester = selectedSemester.value === '全部' ? undefined : selectedSemester.value
 
-    // 播放列表应该始终显示当前学期的歌曲（或者全部，如果未设置当前学期），不受待排歌曲学期选择的影响
-    const playlistSemester = semesterService?.currentSemester?.value?.name
-
+    // 播放列表应该显示所有学期的排期，不受待排歌曲学期选择的影响
+    // 因为在界面上我们是按日期（selectedDate）来过滤显示排期的
     // 并行加载数据
     await Promise.all([
       songsService.fetchSongs(false, semester, false, true),
-      songsService.fetchPublicSchedules(false, playlistSemester, false, true),
+      songsService.fetchPublicSchedules(false, undefined, false, true),
       loadPlayTimes(),
       loadDrafts(), // 加载草稿列表
       fetchReplayRequests() // 加载重播申请
