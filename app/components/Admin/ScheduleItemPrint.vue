@@ -186,9 +186,9 @@ const handleImageError = (event) => {
 .cross-semester-badge-print {
   display: inline-block;
   padding: 1px 4px;
-  background: #fff3e0;
-  border: 1px solid #f48fb1;
-  color: #9c27b0;
+  background: #f5f5f5;
+  border: 1px solid #d9d9d9;
+  color: #666;
   font-size: 10px;
   border-radius: 2px;
   font-weight: normal;
