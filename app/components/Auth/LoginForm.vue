@@ -392,9 +392,10 @@ const handleRegisterOAuth = async () => {
       await navigateTo('/')
     }
   } catch (err) {
-    error.value = err.message || '注册失败，请稍后重试'
-    // 用户名冲突时清空用户名
-    if (error.value.includes('用户名')) {
+    const apiError = err as { data?: { message?: string }, message?: string, statusCode?: number }
+    error.value = apiError.data?.message || apiError.message || '注册失败，请稍后重试'
+    // 当发生用户名冲突时 (HTTP 409 Conflict)，清空用户名字段
+    if (apiError.statusCode === 409) {
       username.value = ''
     }
   } finally {
