@@ -1035,6 +1035,11 @@ const updateSubmissionNotePublic = async (isPublic) => {
       localScheduledSongs.value[localScheduledIndex].song.submissionNotePublic = isPublic
     }
 
+    const publicScheduleIndex = publicSchedules.value.findIndex(s => s.song && s.song.id === dialogData.songId)
+    if (publicScheduleIndex !== -1) {
+      publicSchedules.value[publicScheduleIndex].song.submissionNotePublic = isPublic
+    }
+
     if (window.$showNotification) {
       window.$showNotification('备注留言可见性已更新', 'success')
     }
