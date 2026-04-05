@@ -2,6 +2,7 @@
  * 数据库清空脚本
  * 这个脚本会清空所有表的数据，但保留表结构
  */
+import { sql } from 'drizzle-orm'
 import {
   apiKeyPermissions,
   apiKeys,
@@ -43,9 +44,27 @@ async function resetAutoIncrementSequences() {
 
   for (const table of tables) {
     try {
-      // PostgreSQL 重置序列的 SQL 命令
-      const sequenceName = `"${table}_id_seq"`
-      await db.execute(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`)
+      // 获取表的最大ID
+      const maxIdResult = await db.execute(sql.raw(`SELECT MAX(id) as max_id FROM "${table}"`))
+      const maxId = Number(maxIdResult.rows?.[0]?.max_id || maxIdResult[0]?.max_id || 0)
+
+      // PostgreSQL 获取序列名称并重置
+      const sequenceNameResult = await db.execute(
+        sql.raw(`SELECT pg_get_serial_sequence('"${table}"', 'id') as sequence_name`)
+      )
+      const sequenceName =
+        sequenceNameResult.rows?.[0]?.sequence_name || sequenceNameResult[0]?.sequence_name
+
+      if (sequenceName) {
+        if (maxId === 0) {
+          await db.execute(sql.raw(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`))
+        } else {
+          const newSequenceValue = maxId + 1
+          await db.execute(sql.raw(`SELECT setval('${sequenceName}', ${newSequenceValue})`))
+        }
+      } else {
+        console.warn(`未找到表 ${table} 的序列`)
+      }
     } catch (error) {
       console.warn(`重置 ${table} 表序列失败: ${error.message}`)
     }
@@ -103,8 +122,16 @@ async function main() {
 
     // 调整User表的自增序列，确保下一个用户从admin.id + 1开始
     try {
-      const nextId = admin.id + 1
-      await db.execute(`ALTER SEQUENCE "User_id_seq" RESTART WITH ${nextId}`)
+      const sequenceNameResult = await db.execute(
+        sql.raw(`SELECT pg_get_serial_sequence('"User"', 'id') as sequence_name`)
+      )
+      const sequenceName =
+        sequenceNameResult.rows?.[0]?.sequence_name || sequenceNameResult[0]?.sequence_name
+
+      if (sequenceName) {
+        const nextId = admin.id + 1
+        await db.execute(sql.raw(`SELECT setval('${sequenceName}', ${nextId}, false)`))
+      }
     } catch (error) {
       console.warn(`调整User表序列失败: ${error.message}`)
     }

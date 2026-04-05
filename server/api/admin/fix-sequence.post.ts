@@ -8,19 +8,6 @@ async function fixTableSequence(table: string, dbTableName: string) {
     const maxIdResult = await db.execute(sql.raw(`SELECT MAX(id) as max_id FROM "${dbTableName}"`))
     const maxId = Number((maxIdResult as any)[0]?.max_id || 0)
 
-    if (maxId === 0) {
-      return {
-        success: true,
-        table: table,
-        message: `表 ${table} 为空，无需修复序列`,
-        data: {
-          table: table,
-          maxId: 0,
-          skipped: true
-        }
-      }
-    }
-
     // 获取序列名称
     const sequenceNameResult = await db.execute(
       sql.raw(`SELECT pg_get_serial_sequence('"${dbTableName}"', 'id') as sequence_name`)
@@ -32,6 +19,22 @@ async function fixTableSequence(table: string, dbTableName: string) {
         success: false,
         table: table,
         error: `无法找到表 ${table}.id 的序列`
+      }
+    }
+
+    if (maxId === 0) {
+      // 表为空，重置序列为 1
+      await db.execute(sql.raw(`ALTER SEQUENCE ${sequenceName} RESTART WITH 1`))
+      return {
+        success: true,
+        table: table,
+        message: `表 ${table} 为空，序列已重置为 1`,
+        data: {
+          table: table,
+          maxId: 0,
+          newSequenceValue: 1,
+          sequenceName: sequenceName
+        }
       }
     }
 
