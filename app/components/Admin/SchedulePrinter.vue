@@ -392,6 +392,10 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
 import logoPng from '~~/public/images/logo.png'
 
+// 学期管理
+import { useSemesters } from '~/composables/useSemesters'
+const { currentSemester, fetchCurrentSemester } = useSemesters()
+
 // 权限检查
 const { canPrintSchedule } = usePermissions()
 
@@ -429,7 +433,8 @@ const settings = ref({
   showSequence: true,
   showSchoolLogo: false,
   showPlayTime: true,
-  remark: ''
+  remark: '',
+  currentSemester: ''
 })
 
 const paperSizeOptions = [
@@ -1365,7 +1370,9 @@ const exportImage = async () => {
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
+  await fetchCurrentSemester()
+  settings.value.currentSemester = currentSemester.value?.name
   loadSchedules()
 })
 
