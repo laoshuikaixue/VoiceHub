@@ -1451,6 +1451,7 @@ const previewData = ref([])
 const xlsxLoaded = ref(false)
 const importProgress = ref(0)
 const importProgressText = ref('')
+const importStartRow = ref(0)
 
 // 批量更新状态
 const showBatchUpdateModal = ref(false)
@@ -2145,6 +2146,7 @@ const importUsers = async () => {
   const totalBatches = Math.ceil(dataToImport.length / batchSize)
   let totalCreated = 0
   let totalFailed = 0
+  let allErrors = []
 
   try {
     for (let i = 0; i < dataToImport.length; i += batchSize) {
@@ -2165,9 +2167,16 @@ const importUsers = async () => {
 
         totalCreated += result.created || 0
         totalFailed += result.failed || 0
+        if (result.errors && result.errors.length > 0) {
+          allErrors.push(...result.errors)
+        }
       } catch (batchErr) {
         console.error(`第 ${currentBatch} 批导入失败:`, batchErr)
         totalFailed += batch.length
+        allErrors.push({
+          row: i + 1,
+          message: batchErr.data?.message || batchErr.message || '该批次导入请求失败'
+        })
       }
     }
 
@@ -2176,15 +2185,18 @@ const importUsers = async () => {
     if (totalCreated > 0 || totalFailed === 0) {
       importProgressText.value = `导入完成：成功导入 ${totalCreated} 个，失败 ${totalFailed} 个`
       importProgress.value = 100
+      if (allErrors.length > 0) {
+        importError.value = '部分导入失败原因：\n' + formatImportErrors(allErrors)
+      }
       previewData.value = []
 
       setTimeout(() => {
-        if (importProgressText.value) {
+        if (importProgressText.value && allErrors.length === 0) {
           closeImportModal()
         }
       }, 3000)
     } else {
-      importError.value = '导入失败，请检查数据格式后重试'
+      importError.value = '导入失败，请检查数据格式后重试。\n失败原因：\n' + formatImportErrors(allErrors)
       importProgressText.value = ''
     }
   } catch (err) {
@@ -2194,6 +2206,33 @@ const importUsers = async () => {
   } finally {
     importLoading.value = false
   }
+}
+
+// 格式化导入错误信息
+const formatImportErrors = (errors) => {
+  if (!errors || errors.length === 0) return ''
+  
+  // 限制显示的错误数量，避免信息过长
+  const maxDisplayErrors = 10
+  const displayErrors = errors.slice(0, maxDisplayErrors)
+  
+  let result = displayErrors.map(e => {
+    // 处理带行号的错误
+    if (e.row !== undefined) {
+      return `第 ${e.row + importStartRow.value} 行: ${e.message}`
+    }
+    // 处理特定用户的错误
+    if (e.username) {
+      return `用户 ${e.username}: ${e.error}`
+    }
+    return e.message || e.error || '未知错误'
+  }).join('\n')
+  
+  if (errors.length > maxDisplayErrors) {
+    result += `\n... 以及其他 ${errors.length - maxDisplayErrors} 个错误`
+  }
+  
+  return result
 }
 
 // 状态日志相关方法
