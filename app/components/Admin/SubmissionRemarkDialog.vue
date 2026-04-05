@@ -25,12 +25,14 @@
         <div class="p-8 space-y-4">
           <div class="flex items-center gap-3">
             <p class="text-xs text-zinc-500 font-medium">{{ songTitle }}</p>
-            <label class="flex items-center gap-2 cursor-pointer group">
+            <label for="is-public-checkbox" class="flex items-center gap-2 cursor-pointer group" :class="{ 'opacity-50': isUpdatingPublic }">
               <input
+                id="is-public-checkbox"
                 type="checkbox"
                 :checked="isPublic"
+                :disabled="isUpdatingPublic"
                 @change="$emit('update:isPublic', $event.target.checked)"
-                class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-blue-500"
+                class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-blue-500 cursor-pointer disabled:cursor-not-allowed"
               >
               <span
                 :class="[
@@ -42,6 +44,7 @@
               >
                 {{ isPublic ? '公开备注' : '仅管理员可见' }}
               </span>
+              <span v-if="isUpdatingPublic" class="text-[10px] text-zinc-500 animate-pulse">更新中...</span>
             </label>
           </div>
           <div class="bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-4">
@@ -74,6 +77,10 @@ defineProps({
   isPublic: {
     type: Boolean,
     default: true
+  },
+  isUpdatingPublic: {
+    type: Boolean,
+    default: false
   }
 })
 

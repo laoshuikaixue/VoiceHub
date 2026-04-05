@@ -371,6 +371,7 @@
       :song-title="submissionRemarkDialog.songTitle"
       :content="submissionRemarkDialog.content"
       :is-public="submissionRemarkDialog.isPublic"
+      :is-updating-public="submissionRemarkDialog.isUpdatingPublic"
       @close="submissionRemarkDialog.show = false"
       @update:is-public="updateSubmissionNotePublic"
     />
@@ -1041,7 +1042,8 @@ const submissionRemarkDialog = ref({
   artist: '',
   songTitle: '',
   content: '',
-  isPublic: false
+  isPublic: false,
+  isUpdatingPublic: false
 })
 
 // 驳回歌曲相关
@@ -1291,22 +1293,23 @@ const openSubmissionRemark = (song) => {
 
 const updateSubmissionNotePublic = async (isPublic) => {
   const dialogData = submissionRemarkDialog.value
-  if (!dialogData.songId) return
-  
+  if (!dialogData.songId || dialogData.isUpdatingPublic) return
+
+  dialogData.isUpdatingPublic = true
   dialogData.isPublic = isPublic
-  
+
   try {
     await adminService.updateSong(dialogData.songId, {
       title: dialogData.title,
       artist: dialogData.artist,
       submissionNotePublic: isPublic
     })
-    
+
     const songIndex = songs.value.findIndex(s => s.id === dialogData.songId)
     if (songIndex !== -1) {
       songs.value[songIndex].submissionNotePublic = isPublic
     }
-    
+
     if (window.$showNotification) {
       window.$showNotification('备注留言可见性已更新', 'success')
     }
@@ -1316,6 +1319,8 @@ const updateSubmissionNotePublic = async (isPublic) => {
       window.$showNotification('更新备注可见性失败', 'error')
     }
     dialogData.isPublic = !isPublic
+  } finally {
+    dialogData.isUpdatingPublic = false
   }
 }
 
