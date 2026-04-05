@@ -1,4 +1,3 @@
-import jwt from 'jsonwebtoken'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { executeRedisCommand, isRedisReady } from '../../utils/redis'
@@ -8,19 +7,15 @@ import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
-    const token =
-      getCookie(event, 'auth-token') || getHeader(event, 'authorization')?.replace('Bearer ', '')
-
-    if (!token) {
+    const authUser = event.context.user
+    if (!authUser) {
       throw createError({
         statusCode: 401,
         message: '未提供认证令牌'
       })
     }
 
-    // 验证JWT令牌
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number }
-    const userId = decoded.userId
+    const userId = authUser.id
 
     // 优先从Redis缓存获取用户认证状态
     if (isRedisReady()) {
@@ -129,13 +124,6 @@ export default defineEventHandler(async (event) => {
       valid: true
     }
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      throw createError({
-        statusCode: 401,
-        message: '令牌无效或已过期'
-      })
-    }
-
     throw error
   }
 })

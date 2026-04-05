@@ -18,7 +18,12 @@ const siteConfig = ref({
   siteDescription: '',
   submissionGuidelines: '',
   icpNumber: '',
-  gonganNumber: ''
+  gonganNumber: '',
+  githubOAuthEnabled: false,
+  casdoorOAuthEnabled: false,
+  googleOAuthEnabled: false,
+  customOAuthEnabled: false,
+  customOAuthDisplayName: ''
 })
 
 const isLoaded = ref(false)
@@ -55,7 +60,13 @@ export const useSiteConfig = () => {
         gonganNumber: '',
         enableReplayRequests: false,
         enableCollaborativeSubmission: true,
-        enableSubmissionRemarks: false
+        enableSubmissionRemarks: false,
+        allowOAuthRegistration: false,
+        githubOAuthEnabled: false,
+        casdoorOAuthEnabled: false,
+        googleOAuthEnabled: false,
+        customOAuthEnabled: false,
+        customOAuthDisplayName: ''
       }
       isLoaded.value = true
     } finally {
@@ -82,7 +93,34 @@ export const useSiteConfig = () => {
     () => siteConfig.value.enableCollaborativeSubmission !== false
   )
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
+  const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
+  const oauth = computed(() => ({
+    github: !!siteConfig.value.githubOAuthEnabled,
+    casdoor: !!siteConfig.value.casdoorOAuthEnabled,
+    google: !!siteConfig.value.googleOAuthEnabled,
+    oauth2: !!siteConfig.value.customOAuthEnabled
+  }))
+
+  const oauthProviders = computed(() => {
+    const providers = []
+    if (siteConfig.value.githubOAuthEnabled) {
+      providers.push({ key: 'github', name: 'GitHub' })
+    }
+    if (siteConfig.value.casdoorOAuthEnabled) {
+      providers.push({ key: 'casdoor', name: 'Casdoor' })
+    }
+    if (siteConfig.value.googleOAuthEnabled) {
+      providers.push({ key: 'google', name: 'Google' })
+    }
+    if (siteConfig.value.customOAuthEnabled) {
+      providers.push({
+        key: 'oauth2',
+        name: siteConfig.value.customOAuthDisplayName || '第三方 OAuth'
+      })
+    }
+    return providers
+  })
 
   // 初始化配置（仅在客户端执行）
   const initSiteConfig = async () => {
@@ -113,7 +151,10 @@ export const useSiteConfig = () => {
     enableReplayRequests,
     enableCollaborativeSubmission,
     enableSubmissionRemarks,
+    allowOAuthRegistration,
     smtpEnabled,
+    oauth,
+    oauthProviders,
     fetchSiteConfig,
     initSiteConfig,
     refreshSiteConfig

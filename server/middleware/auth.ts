@@ -2,6 +2,8 @@ import { JWTEnhanced } from '../utils/jwt-enhanced'
 import { db, users } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
 import { isUserBlocked, getUserBlockRemainingTime } from '../services/securityService'
+import { isSupportedOAuthProvider } from '../services/oauthConfigService'
+import { isSecureRequest } from '../utils/request-utils'
 
 export default defineEventHandler(async (event) => {
   // 清除用户上下文
@@ -21,7 +23,9 @@ export default defineEventHandler(async (event) => {
   const publicApiPaths = [
     '/api/auth/login',
     '/api/auth/bind', // 账号绑定
-    '/api/auth/verify', // verify端点自行处理token验证
+    '/api/auth/oauth-register',
+    '/api/auth/2fa/verify',
+    '/api/auth/2fa/send-email',
     '/api/semesters/current',
     '/api/play-times',
     '/api/schedules/public',
@@ -49,25 +53,14 @@ export default defineEventHandler(async (event) => {
   // 但排除已知的受保护/特定 Auth 端点
   if (pathname.startsWith('/api/auth/')) {
     const segments = pathname.split('/')
-    // segments: ['', 'api', 'auth', 'provider', 'callback'?]
     const provider = segments[3]
+    const isProviderIndexPath = segments.length === 4 && isSupportedOAuthProvider(provider || '')
+    const isProviderCallbackPath =
+      segments.length === 5 &&
+      segments[4] === 'callback' &&
+      isSupportedOAuthProvider(provider || '')
 
-    // 已知的受保护或非OAuth的Auth端点
-    const nonOAuthEndpoints = [
-      'identities',
-      'logout',
-      'change-password',
-      'set-initial-password',
-      'unbind',
-      // login, bind, verify 已经在 publicApiPaths 中处理，这里列出是为了完整性或防止意外匹配
-      'login',
-      'bind',
-      'verify',
-      'webauthn'
-    ]
-
-    if (provider && !nonOAuthEndpoints.includes(provider)) {
-      // 这是一个 OAuth 提供商路径 (例如 /api/auth/casdoor)
+    if (isProviderIndexPath || isProviderCallbackPath) {
       return
     }
   }
@@ -104,9 +97,7 @@ export default defineEventHandler(async (event) => {
 
     // 如果生成了新token，更新cookie
     if (newToken) {
-      const isSecure =
-        getRequestURL(event).protocol === 'https:' ||
-        getRequestHeader(event, 'x-forwarded-proto') === 'https'
+      const isSecure = isSecureRequest(event)
       setCookie(event, 'auth-token', newToken, {
         httpOnly: true,
         secure: isSecure,
@@ -136,9 +127,7 @@ export default defineEventHandler(async (event) => {
 
     // 用户不存在或状态异常时token无效
     if (!user || user.status !== 'active') {
-      const isSecure =
-        getRequestURL(event).protocol === 'https:' ||
-        getRequestHeader(event, 'x-forwarded-proto') === 'https'
+      const isSecure = isSecureRequest(event)
       setCookie(event, 'auth-token', '', {
         httpOnly: true,
         secure: isSecure,
@@ -168,9 +157,7 @@ export default defineEventHandler(async (event) => {
     if (user.passwordChangedAt && decoded.iat) {
       const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
       if (decoded.iat < passwordChangedTime) {
-        const isSecure =
-          getRequestURL(event).protocol === 'https:' ||
-          getRequestHeader(event, 'x-forwarded-proto') === 'https'
+        const isSecure = isSecureRequest(event)
         setCookie(event, 'auth-token', '', {
           httpOnly: true,
           secure: isSecure,

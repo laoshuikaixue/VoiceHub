@@ -1,0 +1,15 @@
+ALTER TABLE "SystemSettings"
+  ADD COLUMN "oauthRedirectUri" text,
+  ADD COLUMN "oauthStateSecret" text,
+  ADD COLUMN "oauthProviders" text DEFAULT '[]',
+  ADD COLUMN "githubOAuthEnabled" boolean DEFAULT false NOT NULL,
+  ADD COLUMN "githubClientId" text,
+  ADD COLUMN "githubClientSecret" text,
+  ADD COLUMN "casdoorOAuthEnabled" boolean DEFAULT false NOT NULL,
+  ADD COLUMN "casdoorServerUrl" text,
+  ADD COLUMN "casdoorClientId" text,
+  ADD COLUMN "casdoorClientSecret" text,
+  ADD COLUMN "casdoorOrganizationName" text,
+  ADD COLUMN "googleOAuthEnabled" boolean DEFAULT false NOT NULL,
+  ADD COLUMN "googleClientId" text,
+  ADD COLUMN "googleClientSecret" text;

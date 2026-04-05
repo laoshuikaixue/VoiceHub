@@ -22,6 +22,11 @@
 
 - **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐、QQ音乐和哔哩哔哩搜索，可选择期望播出时段
 - **多平台登录支持**：
+  - **OAuth 账户系统**：支持通过 GitHub、Casdoor 等 OAuth 提供商快速创建和登录账户
+    - **直接创建账户**：用户通过 OAuth 认证后可创建新账户，但仍需设置本地用户名和密码
+    - **账户绑定**：已有账户的用户可将 OAuth 身份绑定到现有账户，实现多平台统一登录
+    - **WebAuthn 支持**：支持 Windows Hello、生物识别和硬件安全密钥（如 YubiKey）登录
+    - **双因素认证（2FA）**：支持 TOTP 和邮箱验证，增强账户安全性
   - **网易云音乐登录**：支持扫码登录，登录后可搜索个人歌单、收藏及播客电台内容
     - **一键添加到歌单**：登录后支持将排期中的网易云音乐歌曲一键添加到个人歌单
     - **从歌单投稿**：支持从个人歌单中直接投稿歌曲到系统
@@ -38,7 +43,17 @@
 ### 👥 用户管理
 
 - **用户管理**：管理员添加用户，支持按年级班级分类
+- **账户创建方式**：
+  - 管理员直接添加账户
+  - 用户通过 OAuth 快速创建账户
+  - 用户通过传统用户名/密码注册
 - **权限控制**：多级权限管理，支持普通用户、管理员、超级管理员
+- **账户安全**：
+  - bcrypt 密码加密
+  - 双因素认证（TOTP、邮箱验证）
+  - WebAuthn 支持（生物识别、硬件密钥）
+  - 账户锁定和风险控制
+- **身份关联**：支持将多个 OAuth 身份绑定到同一账户，实现统一登录
 - **黑名单管理**：支持歌曲和艺术家黑名单，自动过滤不当内容
 
 ### 📅 排期管理
@@ -460,6 +475,37 @@ VoiceHub 实现了细粒度的权限控制系统：
 | NITRO_PRESET | 否  | Nitro预设                         | `vercel`                                                            |
 | NUXT_PUBLIC_HOST | 否  | 用于 CORS 和反向代理的主机名验证 | `your-app.com`                                                            |
 
+## OAuth 配置
+
+系统支持通过 OAuth 提供商（如 GitHub、Casdoor、Google 等）快速创建账户和登录：
+
+1. **在管理员后台配置**：
+  - 导航到系统设置 > OAuth 配置
+  - 配置基础设置：
+    - **OAuth 重定向 URI**：`https://yourdomain.com/api/auth/[provider]/callback`
+    - **OAuth State 密钥**：强随机字符串，用于 state 参数加密
+  - 启用需要的 OAuth 提供商并填写相应凭证：
+    - GitHub：Client ID / Secret
+    - Casdoor：Server URL / Client ID / Secret / Organization Name
+    - Google：Client ID / Secret
+    - 第三方 OAuth2：完整的 OAuth 端点和字段映射
+
+2. **OAuth 提供商配置**：
+  在 OAuth 提供商的开发者控制台配置重定向 URI，确保与后台配置一致
+
+3. **账户创建流程**：
+  - 用户点击 OAuth 登录按钮
+  - 完成 OAuth 认证后，若身份未关联，用户可选择：
+    - 创建新账户：设置用户名和密码，直接创建新账户
+    - 绑定现有账户：输入现有用户名和密码进行绑定
+  - 成功后自动登录
+
+4. **安全特性**：
+  - 所有密码使用 bcrypt 加密
+  - OAuth 状态参数使用 AES 加密校验
+  - 绑定令牌有 10 分钟有效期
+  - 支持账户锁定和风险控制
+
 ## 项目结构
 
 ```
@@ -488,8 +534,10 @@ VoiceHub/
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
 │   │   │   ├── NotificationSender.vue # 通知发送管理
+│   │   │   ├── OAuthConfigManager.vue # OAuth 配置管理
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   │   ├── PlayTimeManager.vue    # 播放时间管理
+│   │   │   ├── ProviderConfigSection.vue # OAuth 提供商配置组件
 │   │   │   ├── RequestTimeManager.vue # 点歌时间管理
 │   │   │   ├── ScheduleForm.vue       # 排期表单
 │   │   │   ├── ScheduleItemPrint.vue  # 排期项目打印
@@ -512,8 +560,10 @@ VoiceHub/
 │   │   │   ├── Providers/     # 第三方登录提供商组件
 │   │   │   │   ├── Casdoor/   # Casdoor登录组件
 │   │   │   │   │   └── Icon.vue # Casdoor图标
-│   │   │   │   └── GitHub/    # GitHub登录组件
-│   │   │   │       └── Icon.vue # GitHub图标
+│   │   │   │   ├── GitHub/    # GitHub登录组件
+│   │   │   │   │   └── Icon.vue # GitHub图标
+│   │   │   │   └── Google/    # Google登录组件
+│   │   │   │       └── Icon.vue # Google图标
 │   │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   │   ├── LoginForm.vue         # 登录表单
 │   │   │   ├── OAuthBindingCard.vue  # OAuth绑定卡片
@@ -526,11 +576,14 @@ VoiceHub/
 │   │   │   └── NotificationSettings.vue # 通知设置
 │   │   ├── Player/            # 播放器相关组件
 │   │   │   └── PlayerLyric/   # 播放器歌词子组件
+│   │   │       ├── AMLyric.vue        # Apple Music风格歌词
+│   │   │       └── DefaultLyric.vue   # 默认风格歌词
 │   │   ├── Songs/             # 歌曲相关组件
 │   │   │   ├── BilibiliEpisodesModal.vue # Bilibili剧集选择弹窗
 │   │   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
 │   │   │   ├── ImportSongsModal.vue   # 导入歌曲弹窗
 │   │   │   ├── NeteaseLoginModal.vue  # 网易云音乐登录弹窗
+│   │   │   ├── NeteaseUploadDialog.vue # 网易云云盘上传弹窗
 │   │   │   ├── PlaylistSelectionModal.vue # 歌单选择弹窗
 │   │   │   ├── PodcastEpisodesModal.vue # 播客节目弹窗
 │   │   │   ├── RecentSongsModal.vue   # 最近播放弹窗
@@ -548,11 +601,12 @@ VoiceHub/
 │   │   │   │   ├── ErrorBoundary.vue  # 错误边界组件
 │   │   │   │   ├── LoadingState.vue   # 加载状态组件
 │   │   │   │   ├── Pagination.vue     # 翻页组件
+│   │   │   │   ├── Popover.vue        # 弹出框组件
 │   │   │   │   ├── SearchFilter.vue   # 搜索过滤组件
 │   │   │   │   └── StatCard.vue       # 统计卡片组件
 │   │   │   ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件
 │   │   │   ├── AudioPlayer.vue        # 主音频播放器组件
-│   │   │   ├── BilibiliframeModal.vue # Bilibili视频预览弹窗
+│   │   │   ├── BilibiliIframeModal.vue # Bilibili视频预览弹窗
 │   │   │   ├── ConfirmDialog.vue      # 确认对话框
 │   │   │   ├── Icon.vue               # 图标组件
 │   │   │   ├── LyricsModal.vue        # 全屏歌词模态框组件
@@ -592,7 +646,6 @@ VoiceHub/
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
 │   │   ├── useSongs.ts         # 歌曲管理hooks
 │   │   ├── useToast.ts         # Toast提示hooks
-│   │   └── useWebAuthn.ts      # WebAuthn 认证 hooks
 │   ├── drizzle/               # 数据库相关
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
@@ -633,14 +686,12 @@ VoiceHub/
 │       │   ├── lyricStripper.ts # 歌词清理
 │       │   ├── parseLrc.ts    # LRC格式解析
 │       │   └── qrc-parser.ts  # QRC格式解析
-│       ├── musicSdk/          # 音乐SDK工具
-│       │   ├── tx/            # QQ音乐SDK
-│       │   └── wy/            # 网易云音乐SDK
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── lyricAdapter.ts    # 歌词适配器
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
 │       ├── neteaseApi.ts      # 网易云音乐API
+│       ├── oauth-register.ts  # OAuth注册工具
 │       ├── oauth.ts           # OAuth工具
 │       ├── timeUtils.ts       # 时间工具
 │       └── url.ts             # URL处理工具
@@ -656,7 +707,9 @@ VoiceHub/
 │   │   │   │   └── logs.get.ts      # API使用日志
 │   │   │   ├── backup/              # 备份管理API
 │   │   │   │   ├── delete/          # 删除备份子目录
+│   │   │   │   │   └── [filename].delete.ts
 │   │   │   │   ├── download/        # 下载备份子目录
+│   │   │   │   │   └── [filename].get.ts
 │   │   │   │   ├── clear.post.ts    # 清空备份历史
 │   │   │   │   ├── download.get.ts  # 下载备份
 │   │   │   │   ├── export.post.ts   # 创建备份
@@ -727,8 +780,11 @@ VoiceHub/
 │   │   │   │   ├── trends.get.ts    # 趋势分析
 │   │   │   │   └── user-engagement.get.ts # 用户参与度统计
 │   │   │   ├── system-settings/     # 系统设置API
+│   │   │   │   ├── env-oauth-import.post.ts # 导入环境变量OAuth配置
+│   │   │   │   ├── env-oauth.get.ts # 获取环境变量OAuth配置
 │   │   │   │   ├── index.post.ts    # 更新系统设置
-│   │   │   │   └── index.ts         # 获取系统设置
+│   │   │   │   ├── index.ts         # 获取系统设置
+│   │   │   │   └── secretMask.ts    # 密钥脱敏工具
 │   │   │   └── users/               # 用户管理API
 │   │   │       ├── [id]/            # 用户详情操作子目录
 │   │   │       │   ├── reset-password.post.ts # 重置用户密码
@@ -769,6 +825,7 @@ VoiceHub/
 │   │   │   ├── identities.get.ts     # 获取已绑定身份列表
 │   │   │   ├── login.post.ts        # 用户登录
 │   │   │   ├── logout.post.ts       # 用户登出
+│   │   │   ├── oauth-register.post.ts # OAuth用户注册
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
 │   │   │   ├── unbind.post.ts        # 解绑社交账号
 │   │   │   └── verify.get.ts        # 验证Token并获取用户信息
@@ -800,6 +857,8 @@ VoiceHub/
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
 │   │   ├── open/           # 开放API（无需认证）
+│   │   │   ├── songs/               # 歌曲相关开放API
+│   │   │   │   └── mark-played.post.ts # 标记歌曲已播放（供外部调用）
 │   │   │   ├── schedules.get.ts     # 获取公开排期
 │   │   │   └── songs.get.ts         # 获取公开歌曲列表
 │   │   ├── play-times/     # 播放时间API
@@ -873,8 +932,6 @@ VoiceHub/
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
-│   │   ├── __tests__/      # 工具函数测试目录
-│   │   ├── musicSdk/       # 音乐SDK工具
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── cache-helpers.ts # 缓存辅助工具
 │   │   ├── database-health.ts # 数据库健康检查
@@ -892,6 +949,7 @@ VoiceHub/
 │   │   ├── open-api-cache.ts # 开放API缓存
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── redis.ts        # Redis连接和操作工具
+│   │   ├── request-utils.ts # 请求处理通用工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
@@ -949,7 +1007,6 @@ VoiceHub/
 - **`app/utils/`**: 客户端工具函数
   - **`core/`**: 核心工具（安全等）
   - **`lyric/`**: 歌词处理工具集
-  - **`musicSdk/`**: 音乐平台SDK工具
 
 #### 服务端目录 (server/)
 
@@ -964,7 +1021,6 @@ VoiceHub/
 - **`server/plugins/`**: 服务端插件（错误处理等）
 - **`server/services/`**: 业务逻辑服务层
 - **`server/utils/`**: 服务端工具函数
-  - **`musicSdk/`**: 音乐平台SDK服务端工具
 
 #### 静态资源
 
@@ -1188,7 +1244,9 @@ psql -h localhost -U username -d database_name < backup.sql
 
 ### OAuth 平台扩展指南
 
-VoiceHub 采用策略模式（Strategy Pattern）实现了灵活的 OAuth 扩展机制，允许开发者轻松接入新的第三方登录平台。
+VoiceHub 采用配置化与策略模式（Strategy Pattern）相结合的灵活 OAuth 扩展机制，所有 OAuth 提供商及认证设置现均已迁移至管理员后台界面。你可以直接在后台动态配置，无需修改环境变量和重启服务。
+
+对于想要通过代码深度定制 OAuth 行为（如自定义用户信息解析逻辑等）的开发者，可参考以下机制：
 
 #### 扩展步骤
 
@@ -1258,39 +1316,21 @@ const strategies: Record<string, OAuthStrategy> = {
 }
 ```
 
-##### 3. 配置环境变量
+##### 3. 完成！
 
-在 `.env` 文件中添加新平台所需的配置（如 Client ID 和 Secret）：
-
-```bash
-GOOGLE_CLIENT_ID="your-client-id"
-GOOGLE_CLIENT_SECRET="your-client-secret"
-```
-
-##### 4. 完成！
-
-现在，你可以通过 `/api/auth/google` 访问新的登录流程，VoiceHub 会自动处理路由分发、State 校验、CSRF 保护和用户绑定逻辑。
+现在，你可以在管理员后台的 **站点配置 -> OAuth 第三方登录配置** 中直接填写该平台的信息并启用它。系统会自动处理路由分发、State 校验、CSRF 保护和用户绑定逻辑。
 
 #### Casdoor 配置说明
 
 项目已内置对 [Casdoor](https://casdoor.org/) 的支持。Casdoor 是一个开源的 UI 优先的身份认证管理系统 (IAM)，支持 OAuth 2.0、OIDC 等多种协议。
 
-要启用 Casdoor 登录，只需在 `.env` 文件中配置以下环境变量：
+要启用 Casdoor 登录，只需进入管理员后台的 **站点配置 -> OAuth 第三方登录配置**，开启 Casdoor 选项，并填入以下信息：
+- **Casdoor 服务器 URL** (如 `https://your-casdoor-domain.com`)
+- **Casdoor Client ID**
+- **Casdoor Client Secret**
+- **Casdoor 组织名称**
 
-```bash
-# Casdoor 配置
-CASDOOR_ENDPOINT="https://your-casdoor-domain.com" # Casdoor 服务地址
-CASDOOR_CLIENT_ID="your-client-id"                 # 应用 Client ID
-CASDOOR_CLIENT_SECRET="your-client-secret"         # 应用 Client Secret
-```
-
-配置完成后，系统会自动识别并启用 Casdoor 登录策略。
-
-#### 多环境部署与回调地址代理
-
-在 Vercel 等平台进行多环境部署时，GitHub OAuth App 通常只能配置单一的回调地址。为了解决这个问题，项目可以使用 [VoiceHub-Auth-Broker](https://github.com/laoshuikaixue/VoiceHub-Auth-Broker) 中间件，具体使用方法可见仓库内的文档。
-
-该中间件可以作为统一的回调入口，根据 `state` 参数动态转发回调请求到正确的部署环境，从而实现一个 GitHub OAuth App 支持无限个预览/生产环境。详情请参考该项目文档。
+配置保存后，系统会立即启用 Casdoor 登录策略。
 
 #### 前端图标配置
 

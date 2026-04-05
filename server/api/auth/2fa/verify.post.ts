@@ -1,14 +1,18 @@
-import otplib from 'otplib'
-const { authenticator } = otplib
 import { db, userIdentities, eq, and, users } from '~/drizzle/db'
 import { twoFactorCodes } from '~~/server/utils/twoFactorStore'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { verifyBindingToken } from '~~/server/utils/oauth-token'
+import { isSecureRequest } from '~~/server/utils/request-utils'
+import otplib from 'otplib'
+
+const { authenticator } = otplib
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { code, type, token } = body
+  const { code, type } = body
+  const token = body.token || getCookie(event, 'pre-auth-token')
 
   if (!code || !type) {
     throw createError({ statusCode: 400, message: '缺少必要参数' })
@@ -25,6 +29,7 @@ export default defineEventHandler(async (event) => {
       }
       targetUserId = decoded.userId
     } catch (e) {
+      deleteCookie(event, 'pre-auth-token')
       throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
     }
   } else {
@@ -90,6 +95,42 @@ export default defineEventHandler(async (event) => {
 
   // 验证通过，更新登录信息
   const clientIp = getClientIP(event)
+
+  const bindingToken = getCookie(event, 'binding-token')
+  if (bindingToken) {
+    let bindingPayload
+    try {
+      bindingPayload = verifyBindingToken(bindingToken)
+    } catch (e) {
+      deleteCookie(event, 'binding-token')
+      deleteCookie(event, 'pre-auth-token')
+      throw createError({ statusCode: 400, message: '绑定会话已失效，请重新发起绑定' })
+    }
+
+    await db.transaction(async (tx) => {
+      const existing = await tx.query.userIdentities.findFirst({
+        where: (t, { eq, and }) =>
+          and(
+            eq(t.provider, bindingPayload.provider),
+            eq(t.providerUserId, bindingPayload.providerUserId)
+          )
+      })
+
+      if (existing && existing.userId !== user.id) {
+        throw createError({ statusCode: 409, message: '该第三方账号已被其他用户绑定' })
+      }
+
+      if (!existing) {
+        await tx.insert(userIdentities).values({
+          userId: user.id,
+          provider: bindingPayload.provider,
+          providerUserId: bindingPayload.providerUserId,
+          providerUsername: bindingPayload.providerUsername,
+          createdAt: getBeijingTime()
+        })
+      }
+    })
+  }
   
   await db.update(users)
     .set({
@@ -101,10 +142,8 @@ export default defineEventHandler(async (event) => {
 
   // 生成Token
   const authToken = JWTEnhanced.generateToken(user.id, user.role)
-  
-  const isSecure =
-      getRequestURL(event).protocol === 'https:' ||
-      getRequestHeader(event, 'x-forwarded-proto') === 'https'
+
+  const isSecure = isSecureRequest(event)
 
   setCookie(event, 'auth-token', authToken, {
       httpOnly: true,
@@ -113,6 +152,9 @@ export default defineEventHandler(async (event) => {
       maxAge: 60 * 60 * 24 * 7,
       path: '/'
   })
+
+  deleteCookie(event, 'pre-auth-token')
+  deleteCookie(event, 'binding-token')
 
   return {
       success: true,

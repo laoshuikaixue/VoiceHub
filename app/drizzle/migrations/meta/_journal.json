@@ -110,15 +110,36 @@
     {
       "idx": 15,
       "version": "7",
-      "when": 1775136952492,
-      "tag": "20260402133552_remarkable_star_brand",
+      "when": 1774700000000,
+      "tag": "20260328120000_add_custom_oauth_provider",
       "breakpoints": true
     },
     {
       "idx": 16,
       "version": "7",
+      "when": 1774700600000,
+      "tag": "20260328121000_add_oauth_system_settings_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1775136952492,
+      "tag": "20260402133552_remarkable_star_brand",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
       "when": 1775310943895,
       "tag": "20260404135543_add_show_beian_icon",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1775393214709,
+      "tag": "20260405124654_add_allow_oauth_registration",
       "breakpoints": true
     }
   ]

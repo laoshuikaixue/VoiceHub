@@ -37,7 +37,9 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event)
-    const { tables = 'all', includeSystemData = true } = body
+    const { tables = 'all' } = body
+    const includeSystemData =
+      typeof body.includeSystemData === 'boolean' ? body.includeSystemData : tables !== 'users'
 
     console.log('开始创建数据库备份...')
 

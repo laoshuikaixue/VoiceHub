@@ -127,10 +127,10 @@ const auth = useAuth()
 const router = useRouter()
 const route = useRoute()
 const { showToast } = useToast()
-const config = useRuntimeConfig()
+const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 
 const hasOAuthProviders = computed(() => {
-  return config.public.oauth.github || config.public.oauth.casdoor || config.public.oauth.google
+  return oauthProviders.value.length > 0
 })
 
 const avatarError = ref(false)
@@ -145,6 +145,8 @@ watch(
 
 // 处理来自 OAuth 回调的消息
 onMounted(() => {
+  refreshSiteConfig()
+
   if (route.query.message) {
     showToast(route.query.message, 'success')
     router.replace({ query: { ...route.query, message: undefined, error: undefined } })

@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
 import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
 
 export default defineEventHandler(async (event) => {
@@ -240,7 +241,7 @@ export default defineEventHandler(async (event) => {
       updateData.smtpUsername = body.smtpUsername
     }
 
-    if (body.smtpPassword !== undefined && body.smtpPassword !== '****************') {
+    if (body.smtpPassword !== undefined && body.smtpPassword !== SMTP_PASSWORD_MASK) {
       updateData.smtpPassword = body.smtpPassword
     }
 
@@ -250,6 +251,269 @@ export default defineEventHandler(async (event) => {
 
     if (body.smtpFromName !== undefined) {
       updateData.smtpFromName = body.smtpFromName
+    }
+
+    // 获取当前设置，用于验证更新后的 OAuth 组合配置
+    const settingsResult = await db.select().from(systemSettings).limit(1)
+    let settings = settingsResult[0]
+
+    // OAuth 配置字段
+    if (body.allowOAuthRegistration !== undefined) {
+      if (typeof body.allowOAuthRegistration !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'allowOAuthRegistration 必须是布尔值'
+        })
+      }
+      updateData.allowOAuthRegistration = body.allowOAuthRegistration
+    }
+
+    if (body.oauthRedirectUri !== undefined) {
+      const normalizedOauthRedirectUri =
+        typeof body.oauthRedirectUri === 'string' ? body.oauthRedirectUri.trim() : body.oauthRedirectUri
+
+      if (normalizedOauthRedirectUri !== null && normalizedOauthRedirectUri !== '') {
+        try {
+          const uri = new URL(normalizedOauthRedirectUri)
+          // 支持 broker 回调 (包含 /callback 或 /api/auth/[provider]/callback 结构)
+          const validPathPattern = /(?:\/api)?\/auth\/[^/]+\/callback\/?$|\/callback\/?$/
+          if (!validPathPattern.test(uri.pathname)) {
+            throw createError({
+              statusCode: 400,
+              message: 'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/api/auth/[provider]/callback'
+            })
+          }
+        } catch (error: any) {
+          if (error?.statusCode === 400) throw error
+          throw createError({
+            statusCode: 400,
+            message: 'oauthRedirectUri 不是合法URL，示例：https://yourdomain.com/api/auth/[provider]/callback'
+          })
+        }
+      }
+      updateData.oauthRedirectUri = normalizedOauthRedirectUri === '' ? null : normalizedOauthRedirectUri
+    }
+
+    if (body.oauthStateSecret !== undefined && body.oauthStateSecret !== SECRET_FIELD_MASK) {
+      updateData.oauthStateSecret = body.oauthStateSecret
+    }
+
+    const nextOauthRedirectUri =
+      body.oauthRedirectUri !== undefined ? updateData.oauthRedirectUri : settings?.oauthRedirectUri
+    const nextOauthStateSecret =
+      body.oauthStateSecret !== undefined && body.oauthStateSecret !== SECRET_FIELD_MASK
+        ? body.oauthStateSecret
+        : settings?.oauthStateSecret
+    const nextGithubOAuthEnabled =
+      body.githubOAuthEnabled !== undefined ? body.githubOAuthEnabled : settings?.githubOAuthEnabled ?? false
+    const nextCasdoorOAuthEnabled =
+      body.casdoorOAuthEnabled !== undefined
+        ? body.casdoorOAuthEnabled
+        : settings?.casdoorOAuthEnabled ?? false
+    const nextGoogleOAuthEnabled =
+      body.googleOAuthEnabled !== undefined ? body.googleOAuthEnabled : settings?.googleOAuthEnabled ?? false
+    const nextCustomOAuthEnabled =
+      body.customOAuthEnabled !== undefined ? body.customOAuthEnabled : settings?.customOAuthEnabled ?? false
+
+    if (
+      nextGithubOAuthEnabled ||
+      nextCasdoorOAuthEnabled ||
+      nextGoogleOAuthEnabled ||
+      nextCustomOAuthEnabled
+    ) {
+      if (!nextOauthRedirectUri || !nextOauthStateSecret) {
+        throw createError({
+          statusCode: 400,
+          message: '启用 OAuth 登录方式前，请先在管理员后台配置 OAuth 重定向 URI 和 OAuth State 密钥'
+        })
+      }
+    }
+
+    // GitHub OAuth
+    if (body.githubOAuthEnabled !== undefined) {
+      if (typeof body.githubOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'githubOAuthEnabled 必须是布尔值'
+        })
+      }
+      if (body.githubOAuthEnabled && (!body.githubClientId && !settings?.githubClientId)) {
+        throw createError({ statusCode: 400, message: '启用 GitHub 登录时必须提供 Client ID' })
+      }
+      if (body.githubOAuthEnabled && (!body.githubClientSecret && !settings?.githubClientSecret)) {
+        throw createError({ statusCode: 400, message: '启用 GitHub 登录时必须提供 Client Secret' })
+      }
+      updateData.githubOAuthEnabled = body.githubOAuthEnabled
+    }
+
+    if (body.githubClientId !== undefined) {
+      updateData.githubClientId = body.githubClientId
+    }
+
+    if (body.githubClientSecret !== undefined && body.githubClientSecret !== SECRET_FIELD_MASK) {
+      updateData.githubClientSecret = body.githubClientSecret
+    }
+
+    // Casdoor OAuth
+    if (body.casdoorOAuthEnabled !== undefined) {
+      if (typeof body.casdoorOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'casdoorOAuthEnabled 必须是布尔值'
+        })
+      }
+      if (body.casdoorOAuthEnabled && (!body.casdoorServerUrl && !settings?.casdoorServerUrl)) {
+        throw createError({ statusCode: 400, message: '启用 Casdoor 登录时必须提供服务器 URL' })
+      }
+      if (body.casdoorOAuthEnabled && (!body.casdoorClientId && !settings?.casdoorClientId)) {
+        throw createError({ statusCode: 400, message: '启用 Casdoor 登录时必须提供 Client ID' })
+      }
+      if (body.casdoorOAuthEnabled && (!body.casdoorClientSecret && !settings?.casdoorClientSecret)) {
+        throw createError({ statusCode: 400, message: '启用 Casdoor 登录时必须提供 Client Secret' })
+      }
+      if (body.casdoorOAuthEnabled && (!body.casdoorOrganizationName && !settings?.casdoorOrganizationName)) {
+        throw createError({ statusCode: 400, message: '启用 Casdoor 登录时必须提供组织名称' })
+      }
+      updateData.casdoorOAuthEnabled = body.casdoorOAuthEnabled
+    }
+
+    if (body.casdoorServerUrl !== undefined) {
+      updateData.casdoorServerUrl = body.casdoorServerUrl
+    }
+
+    if (body.casdoorClientId !== undefined) {
+      updateData.casdoorClientId = body.casdoorClientId
+    }
+
+    if (body.casdoorClientSecret !== undefined && body.casdoorClientSecret !== SECRET_FIELD_MASK) {
+      updateData.casdoorClientSecret = body.casdoorClientSecret
+    }
+
+    if (body.casdoorOrganizationName !== undefined) {
+      updateData.casdoorOrganizationName = body.casdoorOrganizationName
+    }
+
+    // Google OAuth
+    if (body.googleOAuthEnabled !== undefined) {
+      if (typeof body.googleOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'googleOAuthEnabled 必须是布尔值'
+        })
+      }
+      if (body.googleOAuthEnabled && (!body.googleClientId && !settings?.googleClientId)) {
+        throw createError({ statusCode: 400, message: '启用 Google 登录时必须提供 Client ID' })
+      }
+      if (body.googleOAuthEnabled && (!body.googleClientSecret && !settings?.googleClientSecret)) {
+        throw createError({ statusCode: 400, message: '启用 Google 登录时必须提供 Client Secret' })
+      }
+      updateData.googleOAuthEnabled = body.googleOAuthEnabled
+    }
+
+    if (body.googleClientId !== undefined) {
+      updateData.googleClientId = body.googleClientId
+    }
+
+    if (body.googleClientSecret !== undefined && body.googleClientSecret !== SECRET_FIELD_MASK) {
+      updateData.googleClientSecret = body.googleClientSecret
+    }
+
+    // Custom OAuth2
+    if (body.customOAuthEnabled !== undefined) {
+      if (typeof body.customOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'customOAuthEnabled 必须是布尔值'
+        })
+      }
+      if (body.customOAuthEnabled) {
+        const requiredCustomFields = [
+          { key: 'customOAuthAuthorizeUrl', label: '授权端点 URL' },
+          { key: 'customOAuthTokenUrl', label: 'Token 端点 URL' },
+          { key: 'customOAuthUserInfoUrl', label: '用户信息端点 URL' },
+          { key: 'customOAuthClientId', label: 'Client ID' },
+          { key: 'customOAuthClientSecret', label: 'Client Secret' },
+          { key: 'customOAuthUserIdField', label: '用户 ID 字段名' }
+        ]
+        for (const field of requiredCustomFields) {
+          if (!body[field.key] && !settings?.[field.key]) {
+            throw createError({ statusCode: 400, message: `启用自定义 OAuth2 登录时必须提供 ${field.label}` })
+          }
+        }
+      }
+      updateData.customOAuthEnabled = body.customOAuthEnabled
+    }
+
+    if (body.customOAuthDisplayName !== undefined) {
+      updateData.customOAuthDisplayName = body.customOAuthDisplayName
+    }
+
+    if (body.customOAuthAuthorizeUrl !== undefined) {
+      if (body.customOAuthAuthorizeUrl) {
+        try {
+          new URL(body.customOAuthAuthorizeUrl)
+        } catch {
+          throw createError({ statusCode: 400, message: 'customOAuthAuthorizeUrl 不是合法URL' })
+        }
+      }
+      updateData.customOAuthAuthorizeUrl = body.customOAuthAuthorizeUrl
+    }
+
+    if (body.customOAuthTokenUrl !== undefined) {
+      if (body.customOAuthTokenUrl) {
+        try {
+          new URL(body.customOAuthTokenUrl)
+        } catch {
+          throw createError({ statusCode: 400, message: 'customOAuthTokenUrl 不是合法URL' })
+        }
+      }
+      updateData.customOAuthTokenUrl = body.customOAuthTokenUrl
+    }
+
+    if (body.customOAuthUserInfoUrl !== undefined) {
+      if (body.customOAuthUserInfoUrl) {
+        try {
+          new URL(body.customOAuthUserInfoUrl)
+        } catch {
+          throw createError({ statusCode: 400, message: 'customOAuthUserInfoUrl 不是合法URL' })
+        }
+      }
+      updateData.customOAuthUserInfoUrl = body.customOAuthUserInfoUrl
+    }
+
+    if (body.customOAuthScope !== undefined) {
+      updateData.customOAuthScope = body.customOAuthScope
+    }
+
+    if (body.customOAuthClientId !== undefined) {
+      updateData.customOAuthClientId = body.customOAuthClientId
+    }
+
+    if (
+      body.customOAuthClientSecret !== undefined
+      && body.customOAuthClientSecret !== SECRET_FIELD_MASK
+    ) {
+      updateData.customOAuthClientSecret = body.customOAuthClientSecret
+    }
+
+    if (body.customOAuthUserIdField !== undefined) {
+      updateData.customOAuthUserIdField = body.customOAuthUserIdField
+    }
+
+    if (body.customOAuthUsernameField !== undefined) {
+      updateData.customOAuthUsernameField = body.customOAuthUsernameField
+    }
+
+    if (body.customOAuthNameField !== undefined) {
+      updateData.customOAuthNameField = body.customOAuthNameField
+    }
+
+    if (body.customOAuthEmailField !== undefined) {
+      updateData.customOAuthEmailField = body.customOAuthEmailField
+    }
+
+    if (body.customOAuthAvatarField !== undefined) {
+      updateData.customOAuthAvatarField = body.customOAuthAvatarField
     }
 
     // 验证每日、每周和每月限额三选一逻辑
@@ -265,10 +529,6 @@ export default defineEventHandler(async (event) => {
         message: '每日限额、每周限额和每月限额只能选择其中一种，其他必须设置为空'
       })
     }
-
-    // 获取当前设置，如果不存在则创建
-    const settingsResult = await db.select().from(systemSettings).limit(1)
-    let settings = settingsResult[0]
 
     if (!settings) {
       const newSettingsResult = await db
@@ -303,7 +563,7 @@ export default defineEventHandler(async (event) => {
       console.warn('[SMTP] SMTP配置重载失败:', smtpError)
     }
 
-    return settings
+    return maskSystemSettingsSecrets(settings)
   } catch (error) {
     console.error('更新系统设置失败:', error)
 
@@ -317,3 +577,4 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
+

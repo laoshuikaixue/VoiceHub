@@ -141,23 +141,6 @@
         </div>
       </section>
 
-      <!-- 投稿须知 -->
-      <section
-        class="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6"
-      >
-        <h3
-          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
-        >
-          <FileText :size="16" class="text-emerald-500" /> 投稿须知
-        </h3>
-        <textarea
-          v-model="formData.submissionGuidelines"
-          :rows="6"
-          placeholder="请输入投稿须知内容"
-          :class="[inputClass, 'font-mono text-xs leading-relaxed min-h-[150px]']"
-        />
-      </section>
-
       <!-- 投稿逻辑设置 -->
       <section :class="cardClass">
         <h3
@@ -338,6 +321,26 @@
           </div>
         </div>
       </section>
+
+      <!-- 投稿须知 -->
+      <section
+        class="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6"
+      >
+        <h3
+          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
+        >
+          <FileText :size="16" class="text-emerald-500" /> 投稿须知
+        </h3>
+        <textarea
+          v-model="formData.submissionGuidelines"
+          :rows="6"
+          placeholder="请输入投稿须知内容"
+          :class="[inputClass, 'font-mono text-xs leading-relaxed min-h-[150px]']"
+        />
+      </section>
+
+      <!-- OAuth 第三方登录配置 -->
+      <OAuthConfigManager v-model="formData" class="lg:col-span-2" />
     </div>
   </div>
 </template>
@@ -356,6 +359,7 @@ import {
   AlertCircle
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
 
@@ -396,7 +400,34 @@ const formData = ref({
   weeklySubmissionLimit: null,
   monthlySubmissionLimit: null,
   showBlacklistKeywords: false,
-  hideStudentInfo: true
+  hideStudentInfo: true,
+  allowOAuthRegistration: false,
+  oauthRedirectUri: '',
+  oauthStateSecret: '',
+  githubOAuthEnabled: false,
+  githubClientId: '',
+  githubClientSecret: '',
+  casdoorOAuthEnabled: false,
+  casdoorServerUrl: '',
+  casdoorClientId: '',
+  casdoorClientSecret: '',
+  casdoorOrganizationName: '',
+  googleOAuthEnabled: false,
+  googleClientId: '',
+  googleClientSecret: '',
+  customOAuthEnabled: false,
+  customOAuthDisplayName: '',
+  customOAuthAuthorizeUrl: '',
+  customOAuthTokenUrl: '',
+  customOAuthUserInfoUrl: '',
+  customOAuthScope: '',
+  customOAuthClientId: '',
+  customOAuthClientSecret: '',
+  customOAuthUserIdField: '',
+  customOAuthUsernameField: '',
+  customOAuthNameField: '',
+  customOAuthEmailField: '',
+  customOAuthAvatarField: ''
 })
 
 const originalData = ref({})
@@ -455,7 +486,34 @@ const loadConfig = async () => {
       weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
-      hideStudentInfo: data.hideStudentInfo ?? true
+      hideStudentInfo: data.hideStudentInfo ?? true,
+      allowOAuthRegistration: !!data.allowOAuthRegistration,
+      oauthRedirectUri: data.oauthRedirectUri || '',
+      oauthStateSecret: data.oauthStateSecret || '',
+      githubOAuthEnabled: !!data.githubOAuthEnabled,
+      githubClientId: data.githubClientId || '',
+      githubClientSecret: data.githubClientSecret || '',
+      casdoorOAuthEnabled: !!data.casdoorOAuthEnabled,
+      casdoorServerUrl: data.casdoorServerUrl || '',
+      casdoorClientId: data.casdoorClientId || '',
+      casdoorClientSecret: data.casdoorClientSecret || '',
+      casdoorOrganizationName: data.casdoorOrganizationName || '',
+      googleOAuthEnabled: !!data.googleOAuthEnabled,
+      googleClientId: data.googleClientId || '',
+      googleClientSecret: data.googleClientSecret || '',
+      customOAuthEnabled: !!data.customOAuthEnabled,
+      customOAuthDisplayName: data.customOAuthDisplayName || '',
+      customOAuthAuthorizeUrl: data.customOAuthAuthorizeUrl || '',
+      customOAuthTokenUrl: data.customOAuthTokenUrl || '',
+      customOAuthUserInfoUrl: data.customOAuthUserInfoUrl || '',
+      customOAuthScope: data.customOAuthScope || '',
+      customOAuthClientId: data.customOAuthClientId || '',
+      customOAuthClientSecret: data.customOAuthClientSecret || '',
+      customOAuthUserIdField: data.customOAuthUserIdField || '',
+      customOAuthUsernameField: data.customOAuthUsernameField || '',
+      customOAuthNameField: data.customOAuthNameField || '',
+      customOAuthEmailField: data.customOAuthEmailField || '',
+      customOAuthAvatarField: data.customOAuthAvatarField || ''
     }
 
     originalData.value = JSON.parse(JSON.stringify(formData.value))
@@ -493,7 +551,27 @@ const saveConfig = async () => {
       body: JSON.stringify(configToSave)
     })
 
-    if (!response.ok) throw new Error('保存配置失败')
+    if (!response.ok) {
+      let message = '保存配置失败'
+      try {
+        const errorData = await response.json()
+        console.error('API错误响应:', errorData)
+
+        const getErrorMessage = (err) => {
+          if (err?.data?.error) return err.data.error
+          if (err?.message) return err.message
+          if (err?.statusMessage && err.statusMessage !== 'Error') return err.statusMessage
+          if (err?.data?.message) return err.data.message
+          if (err?.error) return err.error
+          return null
+        }
+
+        message = getErrorMessage(errorData) || '保存配置失败'
+      } catch (parseError) {
+        console.error('无法解析API错误响应:', parseError)
+      }
+      throw new Error(message)
+    }
 
     saveSuccess.value = true
     originalData.value = JSON.parse(JSON.stringify(formData.value))
@@ -504,7 +582,11 @@ const saveConfig = async () => {
     }, 3000)
   } catch (error) {
     console.error('保存配置失败:', error)
-    showNotification('保存配置失败，请重试', 'error')
+    let message = '保存配置失败，请重试'
+    if (error?.message) {
+      message = error.message
+    }
+    showNotification(message, 'error')
   } finally {
     saving.value = false
   }

@@ -1,9 +1,19 @@
 import { parseState, getRedirectUri } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
-import { db, eq, userIdentities } from '~/drizzle/db'
+import { db, eq, users } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
+import {
+  getOAuthBaseConfig,
+  getProviderRuntimeConfig,
+  isOAuthProviderEnabled,
+  isSupportedOAuthProvider
+} from '~~/server/services/oauthConfigService'
+import { getClientIP } from '~~/server/utils/ip-utils'
+import { getBeijingTime } from '~/utils/timeUtils'
+import type { H3Event } from 'h3'
+import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils'
 
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
@@ -15,20 +25,39 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing provider' })
   }
 
+  if (!isSupportedOAuthProvider(provider)) {
+    throw createError({ statusCode: 400, message: '当前仅支持 GitHub / Casdoor / Google / 第三方 OAuth2' })
+  }
+
+  const enabled = await isOAuthProviderEnabled(provider)
+  if (!enabled) {
+    return sendRedirect(
+      event,
+      `/auth/error?code=PROVIDER_DISABLED&message=${encodeURIComponent('该 OAuth 登录方式未启用')}`
+    )
+  }
+
   if (!code || !stateStr) {
     throw createError({ statusCode: 400, message: 'Missing code or state' })
   }
 
   // 1. 验证 State
   const csrfCookie = getCookie(event, 'oauth_csrf')
+  
+  if (!csrfCookie) {
+    throw createError({
+      statusCode: 400,
+      message: 'CSRF验证失败：Cookie丢失，请从登录页面重新开始'
+    })
+  }
 
   // 获取 Origin
-  const headers = getRequestHeaders(event)
-  const protocol = headers['x-forwarded-proto'] || 'http'
-  const host = headers['host']
-  const origin = `${protocol}://${host}`
+  const origin = getRequestOrigin(event)
 
-  const state = parseState(stateStr, origin, csrfCookie)
+  const { stateSecret, redirectUriTemplate } = await getOAuthBaseConfig()
+  const providerConfig = await getProviderRuntimeConfig(provider)
+
+  const state = parseState(stateStr, origin, csrfCookie, stateSecret)
   if (!state) {
     throw createError({ statusCode: 400, message: 'Invalid or expired state' })
   }
@@ -37,12 +66,12 @@ export default defineEventHandler(async (event) => {
   deleteCookie(event, 'oauth_csrf')
 
   const strategy = getOAuthStrategy(provider)
-  const redirectUri = getRedirectUri(provider)
+  const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 
   // 2. 使用 Code 换取 Token
   let accessToken = ''
   try {
-    accessToken = await strategy.exchangeToken(code, redirectUri)
+    accessToken = await strategy.exchangeToken(code, redirectUri, providerConfig)
   } catch (e: any) {
     console.error(`[OAuth] ${provider} token exchange failed:`, e.message)
     return sendRedirect(
@@ -54,7 +83,7 @@ export default defineEventHandler(async (event) => {
   // 3. 获取用户信息
   let userInfo
   try {
-    userInfo = await strategy.getUserInfo(accessToken)
+    userInfo = await strategy.getUserInfo(accessToken, providerConfig)
   } catch (e: any) {
     console.error(`[OAuth] ${provider} get user info failed:`, e.message)
     return sendRedirect(
@@ -70,11 +99,13 @@ export default defineEventHandler(async (event) => {
 })
 
 async function handleUserLoginOrBind(
-  event: any,
+  event: H3Event,
   provider: string,
   providerUserId: string,
   providerUsername: string
 ) {
+  const isSecure = isSecureRequest(event)
+
   // 4. 检查是否已登录（绑定模式）
   const authToken = getCookie(event, 'auth-token')
   let currentUser: any = null
@@ -105,7 +136,17 @@ async function handleUserLoginOrBind(
         return sendRedirect(event, '/account?error=' + encodeURIComponent('该账号已被其他用户绑定'))
       }
     } else {
-      // 未被绑定，直接绑定到当前用户
+      const currentUserRecord = await db.query.users.findFirst({
+        where: eq(users.id, currentUser.userId)
+      })
+
+      if (!currentUserRecord || currentUserRecord.status !== 'active') {
+        return sendRedirect(
+          event,
+          '/account?error=' + encodeURIComponent('当前账号状态异常，暂时无法绑定第三方账号')
+        )
+      }
+
       await db.insert(userIdentities).values({
         userId: currentUser.userId,
         provider: provider,
@@ -133,6 +174,12 @@ async function handleUserLoginOrBind(
         `/auth/error?code=ACCOUNT_GRADUATED&message=${encodeURIComponent('该账号已毕业，限制访问')}`
       )
     }
+    if (user.status !== 'active') {
+      return sendRedirect(
+        event,
+        `/auth/error?code=ACCOUNT_DISABLED&message=${encodeURIComponent('该账号当前不可用')}`
+      )
+    }
     if (isUserBlocked(user.id)) {
       const remaining = getUserBlockRemainingTime(user.id)
       return sendRedirect(
@@ -141,11 +188,18 @@ async function handleUserLoginOrBind(
       )
     }
 
-    // 登录
+    await db
+      .update(users)
+      .set({
+        lastLogin: getBeijingTime(),
+        lastLoginIp: getClientIP(event)
+      })
+      .where(eq(users.id, user.id))
+
     const token = JWTEnhanced.generateToken(existingIdentity.user.id, existingIdentity.user.role)
     setCookie(event, 'auth-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
       path: '/'
@@ -162,7 +216,7 @@ async function handleUserLoginOrBind(
     // 将绑定令牌存入 cookie
     setCookie(event, 'binding-token', bindingToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 60 * 10, // 10分钟
       path: '/'
