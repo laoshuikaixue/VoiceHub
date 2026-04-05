@@ -25,6 +25,29 @@ import {
 } from '~/drizzle/schema'
 import { ne, sql } from 'drizzle-orm'
 
+function getFirstRow<T>(result: any): T | undefined {
+  return result?.rows?.[0] ?? result?.[0]
+}
+
+function quoteIdentifierPart(value: string) {
+  const normalized =
+    value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1).replace(/""/g, '"') : value
+
+  return `"${normalized.replace(/"/g, '""')}"`
+}
+
+function toQualifiedIdentifier(value: string) {
+  return sql.raw(value.split('.').map(quoteIdentifierPart).join('.'))
+}
+
+function toPgRelationName(value: string) {
+  return value.split('.').map(quoteIdentifierPart).join('.')
+}
+
+function toRegclass(value: string) {
+  return sql.raw(`'${value.replace(/'/g, "''")}'::regclass`)
+}
+
 // 重置所有表的自增序列
 async function resetAutoIncrementSequences() {
   const tables = [
@@ -51,24 +74,22 @@ async function resetAutoIncrementSequences() {
     try {
       // 获取表的最大ID
       const maxIdResult = await db.execute(
-        sql`SELECT MAX(id) as max_id FROM ${sql.identifier(table.dbName)}`
+        sql`SELECT MAX(id) as max_id FROM ${toQualifiedIdentifier(table.dbName)}`
       )
-      const maxId = Number((maxIdResult as any).rows?.[0]?.max_id || (maxIdResult as any)[0]?.max_id || 0)
+      const maxId = Number(getFirstRow<{ max_id: number | string | null }>(maxIdResult)?.max_id || 0)
 
       // 获取序列名称
       const sequenceNameResult = await db.execute(
-        sql`SELECT pg_get_serial_sequence(${table.dbName}, 'id') as sequence_name`
+        sql`SELECT pg_get_serial_sequence(${toPgRelationName(table.dbName)}, 'id') as sequence_name`
       )
-      const sequenceName = (sequenceNameResult as any).rows?.[0]?.sequence_name || (sequenceNameResult as any)[0]?.sequence_name
+      const sequenceName = getFirstRow<{ sequence_name: string | null }>(sequenceNameResult)?.sequence_name
 
       if (sequenceName) {
         if (maxId === 0) {
-          // 表为空，重置序列到 1
-          await db.execute(sql`ALTER SEQUENCE ${sql.identifier(sequenceName)} RESTART WITH 1`)
+          await db.execute(sql`ALTER SEQUENCE ${toQualifiedIdentifier(sequenceName)} RESTART WITH 1`)
         } else {
-          // 表不为空（例如保留了管理员用户），重置序列到最大ID
           const newSequenceValue = maxId
-          await db.execute(sql`SELECT setval(${sequenceName}, ${newSequenceValue})`)
+          await db.execute(sql`SELECT setval(${toRegclass(sequenceName)}, ${newSequenceValue})`)
         }
         results.push({ table: table.name, success: true })
       } else {

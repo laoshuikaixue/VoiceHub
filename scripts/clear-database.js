@@ -23,6 +23,29 @@ import {
 } from '../app/drizzle/db.ts'
 import bcrypt from 'bcrypt'
 
+function getFirstRow(result) {
+  return result?.rows?.[0] ?? result?.[0]
+}
+
+function quoteIdentifierPart(value) {
+  const normalized =
+    value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1).replace(/""/g, '"') : value
+
+  return `"${normalized.replace(/"/g, '""')}"`
+}
+
+function toQualifiedIdentifier(value) {
+  return sql.raw(value.split('.').map(quoteIdentifierPart).join('.'))
+}
+
+function toPgRelationName(value) {
+  return value.split('.').map(quoteIdentifierPart).join('.')
+}
+
+function toRegclass(value) {
+  return sql.raw(`'${value.replace(/'/g, "''")}'::regclass`)
+}
+
 // 重置所有表的自增序列
 async function resetAutoIncrementSequences() {
   const tables = [
@@ -44,23 +67,22 @@ async function resetAutoIncrementSequences() {
 
   for (const table of tables) {
     try {
-      // 获取表的最大ID
-      const maxIdResult = await db.execute(sql`SELECT MAX(id) as max_id FROM ${sql.identifier(table)}`)
-      const maxId = Number(maxIdResult.rows?.[0]?.max_id || maxIdResult[0]?.max_id || 0)
-
-      // PostgreSQL 获取序列名称并重置
-      const sequenceNameResult = await db.execute(
-        sql`SELECT pg_get_serial_sequence(${table}, 'id') as sequence_name`
+      const maxIdResult = await db.execute(
+        sql`SELECT MAX(id) as max_id FROM ${toQualifiedIdentifier(table)}`
       )
-      const sequenceName =
-        sequenceNameResult.rows?.[0]?.sequence_name || sequenceNameResult[0]?.sequence_name
+      const maxId = Number(getFirstRow(maxIdResult)?.max_id || 0)
+
+      const sequenceNameResult = await db.execute(
+        sql`SELECT pg_get_serial_sequence(${toPgRelationName(table)}, 'id') as sequence_name`
+      )
+      const sequenceName = getFirstRow(sequenceNameResult)?.sequence_name
 
       if (sequenceName) {
         if (maxId === 0) {
-          await db.execute(sql`ALTER SEQUENCE ${sql.identifier(sequenceName)} RESTART WITH 1`)
+          await db.execute(sql`ALTER SEQUENCE ${toQualifiedIdentifier(sequenceName)} RESTART WITH 1`)
         } else {
           const newSequenceValue = maxId
-          await db.execute(sql`SELECT setval(${sequenceName}, ${newSequenceValue})`)
+          await db.execute(sql`SELECT setval(${toRegclass(sequenceName)}, ${newSequenceValue})`)
         }
       } else {
         console.warn(`未找到表 ${table} 的序列`)
@@ -123,14 +145,13 @@ async function main() {
     // 调整User表的自增序列，确保下一个用户从admin.id + 1开始
     try {
       const sequenceNameResult = await db.execute(
-        sql`SELECT pg_get_serial_sequence('User', 'id') as sequence_name`
+        sql`SELECT pg_get_serial_sequence(${toPgRelationName('User')}, 'id') as sequence_name`
       )
-      const sequenceName =
-        sequenceNameResult.rows?.[0]?.sequence_name || sequenceNameResult[0]?.sequence_name
+      const sequenceName = getFirstRow(sequenceNameResult)?.sequence_name
 
       if (sequenceName) {
         const nextId = admin.id
-        await db.execute(sql`SELECT setval(${sequenceName}, ${nextId})`)
+        await db.execute(sql`SELECT setval(${toRegclass(sequenceName)}, ${nextId})`)
       }
     } catch (error) {
       console.warn(`调整User表序列失败: ${error.message}`)

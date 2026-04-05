@@ -1,18 +1,43 @@
 import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
 
+function getFirstRow<T>(result: any): T | undefined {
+  return result?.rows?.[0] ?? result?.[0]
+}
+
+function quoteIdentifierPart(value: string) {
+  const normalized =
+    value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1).replace(/""/g, '"') : value
+
+  return `"${normalized.replace(/"/g, '""')}"`
+}
+
+function toQualifiedIdentifier(value: string) {
+  return sql.raw(value.split('.').map(quoteIdentifierPart).join('.'))
+}
+
+function toPgRelationName(value: string) {
+  return value.split('.').map(quoteIdentifierPart).join('.')
+}
+
+function toRegclass(value: string) {
+  return sql.raw(`'${value.replace(/'/g, "''")}'::regclass`)
+}
+
 // 修复单个表的序列
 async function fixTableSequence(table: string, dbTableName: string) {
   try {
     // 获取表的最大ID
-    const maxIdResult = await db.execute(sql`SELECT MAX(id) as max_id FROM ${sql.identifier(dbTableName)}`)
-    const maxId = Number((maxIdResult as any).rows?.[0]?.max_id || (maxIdResult as any)[0]?.max_id || 0)
+    const maxIdResult = await db.execute(
+      sql`SELECT MAX(id) as max_id FROM ${toQualifiedIdentifier(dbTableName)}`
+    )
+    const maxId = Number(getFirstRow<{ max_id: number | string | null }>(maxIdResult)?.max_id || 0)
 
     // 获取序列名称
     const sequenceNameResult = await db.execute(
-      sql`SELECT pg_get_serial_sequence(${dbTableName}, 'id') as sequence_name`
+      sql`SELECT pg_get_serial_sequence(${toPgRelationName(dbTableName)}, 'id') as sequence_name`
     )
-    const sequenceName = (sequenceNameResult as any).rows?.[0]?.sequence_name || (sequenceNameResult as any)[0]?.sequence_name
+    const sequenceName = getFirstRow<{ sequence_name: string | null }>(sequenceNameResult)?.sequence_name
 
     if (!sequenceName) {
       return {
@@ -23,8 +48,7 @@ async function fixTableSequence(table: string, dbTableName: string) {
     }
 
     if (maxId === 0) {
-      // 表为空，重置序列为 1
-      await db.execute(sql`ALTER SEQUENCE ${sql.identifier(sequenceName)} RESTART WITH 1`)
+      await db.execute(sql`ALTER SEQUENCE ${toQualifiedIdentifier(sequenceName)} RESTART WITH 1`)
       return {
         success: true,
         table: table,
@@ -38,29 +62,14 @@ async function fixTableSequence(table: string, dbTableName: string) {
       }
     }
 
-    // 获取当前序列值
-    const currentSeqResult = await db.execute(sql`SELECT last_value FROM ${sql.identifier(sequenceName)}`)
-    const currentSeqValue = Number((currentSeqResult as any).rows?.[0]?.last_value || (currentSeqResult as any)[0]?.last_value || 0)
-
-    // 重置序列值到最大ID
+    const currentSeqResult = await db.execute(
+      sql`SELECT last_value FROM ${toQualifiedIdentifier(sequenceName)}`
+    )
+    const currentSeqValue = Number(
+      getFirstRow<{ last_value: number | string }>(currentSeqResult)?.last_value || 0
+    )
     const newSequenceValue = maxId
-
-    // 检查序列是否已经正确
-    if (currentSeqValue >= newSequenceValue && currentSeqValue > 0) {
-      return {
-        success: true,
-        table: table,
-        message: `表 ${table} 序列值已正确，无需修复`,
-        data: {
-          table: table,
-          maxId: maxId,
-          currentSequenceValue: currentSeqValue,
-          alreadyCorrect: true
-        }
-      }
-    }
-
-    await db.execute(sql`SELECT setval(${sequenceName}, ${newSequenceValue})`)
+    await db.execute(sql`SELECT setval(${toRegclass(sequenceName)}, ${newSequenceValue})`)
 
     return {
       success: true,
