@@ -55,7 +55,8 @@ export const usePermissions = () => {
           'blacklist',
           'site-config',
           'database',
-          'api-keys'
+          'api-keys',
+          'data-analysis'
         ]
       case 'ADMIN':
         return ['overview', 'schedule', 'print', 'songs', 'users', 'playtimes', 'request-times', 'semesters', 'data-analysis']

@@ -48,6 +48,7 @@ const ROLES = {
       'users', // 用户管理
       'notifications', // 通知管理
       'playtimes', // 播出时段
+      'request-times', // 投稿时段
       'semesters', // 学期管理
       'blacklist', // 黑名单管理
       'site-config', // 站点配置
