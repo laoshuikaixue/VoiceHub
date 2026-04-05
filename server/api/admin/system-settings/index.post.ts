@@ -265,18 +265,19 @@ export default defineEventHandler(async (event) => {
       if (normalizedOauthRedirectUri !== null && normalizedOauthRedirectUri !== '') {
         try {
           const uri = new URL(normalizedOauthRedirectUri)
-          const validPathPattern = /^\/auth\/[^/]+\/callback\/?$/
+          // 同时兼容旧的 /auth 路径和当前实际生效的 /api/auth 路径。
+          const validPathPattern = /^(?:\/api)?\/auth\/[^/]+\/callback\/?$/
           if (!validPathPattern.test(uri.pathname)) {
             throw createError({
               statusCode: 400,
-              message: 'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/auth/[provider]/callback'
+              message: 'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/api/auth/[provider]/callback'
             })
           }
         } catch (error: any) {
           if (error?.statusCode === 400) throw error
           throw createError({
             statusCode: 400,
-            message: 'oauthRedirectUri 不是合法URL，示例：https://yourdomain.com/auth/[provider]/callback'
+            message: 'oauthRedirectUri 不是合法URL，示例：https://yourdomain.com/api/auth/[provider]/callback'
           })
         }
       }

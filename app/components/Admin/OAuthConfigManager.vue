@@ -13,12 +13,12 @@
       <div>
         <label :class="labelClass">OAuth 重定向 URI</label>
         <p class="text-[10px] text-zinc-600 px-1 mb-2">
-          例: <code class="bg-zinc-950 px-2 py-1 rounded">https://yourdomain.com/auth/[provider]/callback</code>
+          例: <code class="bg-zinc-950 px-2 py-1 rounded">https://yourdomain.com/api/auth/[provider]/callback</code>
         </p>
         <input
           v-model="formData.oauthRedirectUri"
           type="text"
-          placeholder="https://yourdomain.com/auth/[provider]/callback"
+          placeholder="https://yourdomain.com/api/auth/[provider]/callback"
           :class="inputClass"
         >
       </div>

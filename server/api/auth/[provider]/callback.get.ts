@@ -50,7 +50,11 @@ export default defineEventHandler(async (event) => {
   // 获取 Origin
   const headers = getRequestHeaders(event)
   const forwardedProto = (headers['x-forwarded-proto'] || '').toString()
-  const protocol = forwardedProto ? forwardedProto.split(',')[0].trim() : 'http'
+  const requestProto = getRequestURL(event).protocol.replace(/:$/, '').toLowerCase()
+  const normalizedForwardedProto = forwardedProto
+    ? forwardedProto.split(',')[0].trim().toLowerCase().replace(/:$/, '')
+    : ''
+  const protocol = normalizedForwardedProto || requestProto
   const host = headers['host']
   const origin = `${protocol}://${host}`
 
