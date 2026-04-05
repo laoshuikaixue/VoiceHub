@@ -320,6 +320,53 @@
           </div>
 
           <div class="results-content">
+            <!-- 播出时段和备注 - 移动到搜索结果上方 -->
+            <div v-if="(playTimeSelectionEnabled && playTimes.length > 0) || enableSubmissionRemarks" class="form-row">
+              <!-- 播出时段选择 -->
+              <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
+                <div class="input-wrapper">
+                  <CustomSelect
+                    v-model="preferredPlayTimeId"
+                    :options="formattedPlayTimes"
+                    label="期望播出时段"
+                    label-key="displayName"
+                    value-key="id"
+                    placeholder="选择时段"
+                  />
+                </div>
+              </div>
+
+              <div v-if="enableSubmissionRemarks" class="form-group">
+                <div class="input-wrapper">
+                  <div class="flex items-center justify-between mb-2">
+                    <label for="submission-note" class="text-[12px] font-bold text-zinc-300">投稿备注留言</label>
+                    <label class="custom-checkbox-wrapper">
+                      <input
+                        v-model="submissionNotePublic"
+                        type="checkbox"
+                        class="custom-checkbox-input"
+                      >
+                      <span class="custom-checkbox-box">
+                        <svg class="custom-checkbox-icon" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </span>
+                      <span class="custom-checkbox-text">公开给已登录用户</span>
+                    </label>
+                  </div>
+                  <textarea
+                    id="submission-note"
+                    v-model="submissionNote"
+                    maxlength="300"
+                    class="w-full min-h-[60px] rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
+                  />
+                  <div class="mt-1 flex justify-end text-[11px] text-zinc-500">
+                    <span>{{ submissionNote.length }}/300</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
               <div class="loading-spinner" />
@@ -533,53 +580,6 @@
                 </div>
               </div>
             </Transition>
-          </div>
-        </div>
-
-        <!-- 表单底行：播出时段和备注 -->
-        <div class="form-row">
-          <!-- 播出时段选择 -->
-          <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
-            <div class="input-wrapper">
-              <CustomSelect
-                v-model="preferredPlayTimeId"
-                :options="formattedPlayTimes"
-                label="期望播出时段"
-                label-key="displayName"
-                value-key="id"
-                placeholder="选择时段"
-              />
-            </div>
-          </div>
-
-          <div v-if="enableSubmissionRemarks" class="form-group">
-            <div class="input-wrapper">
-              <div class="flex items-center justify-between mb-2">
-                <label for="submission-note" class="text-[12px] font-bold text-zinc-300">投稿备注留言</label>
-                <label class="custom-checkbox-wrapper">
-                  <input
-                    v-model="submissionNotePublic"
-                    type="checkbox"
-                    class="custom-checkbox-input"
-                  >
-                  <span class="custom-checkbox-box">
-                    <svg class="custom-checkbox-icon" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </span>
-                  <span class="custom-checkbox-text">公开给已登录用户</span>
-                </label>
-              </div>
-              <textarea
-                id="submission-note"
-                v-model="submissionNote"
-                maxlength="300"
-                class="w-full min-h-[60px] rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
-              />
-              <div class="mt-1 flex justify-end text-[11px] text-zinc-500">
-                <span>{{ submissionNote.length }}/300</span>
-              </div>
-            </div>
           </div>
         </div>
       </form>

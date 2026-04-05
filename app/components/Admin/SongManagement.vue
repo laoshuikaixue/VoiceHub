@@ -238,6 +238,14 @@
                 >
                   <MessageSquare :size="12" />
                 </button>
+                <span
+                  v-if="song.hasSubmissionNote && song.submissionNote"
+                  class="ml-2 text-xs text-blue-400/80 truncate max-w-[200px] cursor-pointer hover:text-blue-400 transition-colors font-normal"
+                  title="查看备注留言"
+                  @click.stop="openSubmissionRemark(song)"
+                >
+                  {{ song.submissionNote.length > 25 ? song.submissionNote.substring(0, 25) + '...' : song.submissionNote }}
+                </span>
               </h4>
               <p class="text-xs text-zinc-500 font-medium truncate mt-0.5">{{ song.artist }}</p>
               <span
@@ -363,7 +371,9 @@
       :song-title="submissionRemarkDialog.songTitle"
       :content="submissionRemarkDialog.content"
       :is-public="submissionRemarkDialog.isPublic"
+      :is-updating-public="submissionRemarkDialog.isUpdatingPublic"
       @close="submissionRemarkDialog.show = false"
+      @update:is-public="updateSubmissionNotePublic"
     />
 
     <!-- 驳回歌曲对话框 -->
@@ -1027,9 +1037,13 @@ const showDownloadDialog = ref(false)
 const selectedSongsForDownload = ref([])
 const submissionRemarkDialog = ref({
   show: false,
+  songId: null,
+  title: '',
+  artist: '',
   songTitle: '',
   content: '',
-  isPublic: false
+  isPublic: false,
+  isUpdatingPublic: false
 })
 
 // 驳回歌曲相关
@@ -1268,9 +1282,45 @@ const openSubmissionRemark = (song) => {
   if (!song?.submissionNote) return
   submissionRemarkDialog.value = {
     show: true,
+    songId: song.id,
+    title: song.title,
+    artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,
     content: song.submissionNote,
     isPublic: song.submissionNotePublic === true
+  }
+}
+
+const updateSubmissionNotePublic = async (isPublic) => {
+  const dialogData = submissionRemarkDialog.value
+  if (!dialogData.songId || dialogData.isUpdatingPublic) return
+
+  dialogData.isUpdatingPublic = true
+  dialogData.isPublic = isPublic
+
+  try {
+    await adminService.updateSong(dialogData.songId, {
+      title: dialogData.title,
+      artist: dialogData.artist,
+      submissionNotePublic: isPublic
+    })
+
+    const songIndex = songs.value.findIndex(s => s.id === dialogData.songId)
+    if (songIndex !== -1) {
+      songs.value[songIndex].submissionNotePublic = isPublic
+    }
+
+    if (window.$showNotification) {
+      window.$showNotification('备注留言可见性已更新', 'success')
+    }
+  } catch (error) {
+    console.error('更新备注可见性失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('更新备注可见性失败', 'error')
+    }
+    dialogData.isPublic = !isPublic
+  } finally {
+    dialogData.isUpdatingPublic = false
   }
 }
 

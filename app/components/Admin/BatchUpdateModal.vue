@@ -508,6 +508,23 @@
             <AlertCircle :size="16" />
             {{ error }}
           </div>
+
+          <!-- 进度条 -->
+          <div
+            v-if="updateType === 'excel-batch' && updateProgressText"
+            class="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-black text-emerald-400 uppercase tracking-widest">{{ updateProgressText }}</span>
+              <span class="text-xs font-black text-emerald-400">{{ updateProgress }}%</span>
+            </div>
+            <div class="h-2 bg-zinc-900 rounded-full overflow-hidden">
+              <div
+                class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-300 ease-out rounded-full"
+                :style="{ width: updateProgress + '%' }"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- 底部按钮 -->
@@ -597,6 +614,12 @@ const statusOptions = [
 const isDragOver = ref(false)
 const excelPreviewData = ref([])
 const fileInput = ref(null)
+
+// 批量更新进度
+const updateProgress = ref(0)
+const updateProgressText = ref('')
+const updateTotalBatches = ref(0)
+const updateCurrentBatch = ref(0)
 
 // 所有用户的年级班级信息
 const allGrades = ref([])
@@ -830,7 +853,20 @@ const loadXLSX = async () => {
   })
 }
 
-const downloadTemplate = () => {
+const downloadTemplate = async () => {
+  if (typeof window.XLSX === 'undefined') {
+    try {
+      await loadXLSX()
+    } catch (err) {
+      if (window.$showNotification) {
+        window.$showNotification('Excel处理库加载失败，请刷新页面后重试', 'error')
+      } else {
+        alert('Excel处理库加载失败，请刷新页面后重试')
+      }
+      return
+    }
+  }
+
   const templateData = [
     { 用户名: 'student001', 姓名: '张三', 年级: '2025', 班级: '1班', 新用户名: 'new_student001' },
     { 用户名: 'student002', 姓名: '李四', 年级: '2025', 班级: '2班', 新用户名: '' }
@@ -849,14 +885,23 @@ const performUpdate = async () => {
 
     if (updateType.value === 'grade-only') {
       await performGradeUpdate()
+      emit('update-success')
+      emit('close')
     } else if (updateType.value === 'excel-batch') {
       await performExcelUpdate()
+      excelPreviewData.value = []
+      emit('update-success')
+      // 等待 3 秒让用户看到进度条完成状态
+      setTimeout(() => {
+        if (updateProgressText.value) {
+          emit('close')
+        }
+      }, 3000)
     } else if (updateType.value === 'status-batch') {
       await performStatusUpdate()
+      emit('update-success')
+      emit('close')
     }
-
-    emit('update-success')
-    emit('close')
   } catch (err) {
     console.error('批量更新失败:', err)
     error.value = '批量更新失败: ' + err.message
@@ -888,10 +933,20 @@ const performExcelUpdate = async () => {
     throw new Error('没有有效的更新数据')
   }
 
-  // 分批更新，避免请求过大
+  updateProgress.value = 0
+  updateTotalBatches.value = Math.ceil(validUpdates.length / 50)
+  updateCurrentBatch.value = 0
+
   const batchSize = 50
+  let totalUpdated = 0
+  let totalFailed = 0
+
   for (let i = 0; i < validUpdates.length; i += batchSize) {
     const batch = validUpdates.slice(i, i + batchSize)
+    updateCurrentBatch.value = Math.floor(i / batchSize) + 1
+    updateProgressText.value = `正在更新：正在处理第 ${updateCurrentBatch.value} / ${updateTotalBatches.value} 批数据...`
+    updateProgress.value = Math.round((updateCurrentBatch.value / updateTotalBatches.value) * 100)
+
     const updates = batch.map((row) => ({
       userId: row.userId,
       grade: row.newGrade ? String(row.newGrade).trim() : undefined,
@@ -899,12 +954,26 @@ const performExcelUpdate = async () => {
       username: row.newUsername ? String(row.newUsername).trim() : undefined
     }))
 
-    await $fetch('/api/admin/users/batch-update', {
-      method: 'POST',
-      body: { updates },
-      ...auth.getAuthConfig()
-    })
+    try {
+      const result = await $fetch('/api/admin/users/batch-update', {
+        method: 'POST',
+        body: { updates },
+        ...auth.getAuthConfig()
+      })
+      if (result && result.data && result.data.summary) {
+        totalUpdated += result.data.summary.success || 0
+        totalFailed += result.data.summary.failed || 0
+      } else {
+        totalUpdated += batch.length
+      }
+    } catch (err) {
+      console.error(`第 ${updateCurrentBatch.value} 批更新失败:`, err)
+      totalFailed += batch.length
+    }
   }
+
+  updateProgressText.value = `更新完成：成功 ${totalUpdated} 个，失败 ${totalFailed} 个`
+  updateProgress.value = 100
 }
 
 const performStatusUpdate = async () => {
@@ -963,6 +1032,10 @@ watch(
       targetStatus.value = ''
       statusReason.value = ''
       error.value = ''
+      updateProgress.value = 0
+      updateProgressText.value = ''
+      updateTotalBatches.value = 0
+      updateCurrentBatch.value = 0
     }
   }
 )
