@@ -331,29 +331,32 @@ const passwordStrength = computed(() => {
   if (!password.value) return { width: '0%', colorClass: '', textColorClass: '', text: '' }
 
   let score = 0
+  const value = password.value
+  if (value.length >= 8) score++
+  if (/[a-z]/.test(value)) score++
+  if (/[A-Z]/.test(value)) score++
+  if (/[0-9]/.test(value)) score++
+  if (/[^A-Za-z0-9]/.test(value)) score++
 
-  if (password.value.length >= 8) score += 25
-  if (/[A-Z]/.test(password.value)) score += 25
-  if (/[a-z]/.test(password.value)) score += 25
-  if (/[0-9]/.test(password.value) && /[^A-Za-z0-9]/.test(password.value)) score += 25
+  const scorePercentage = (score / 5) * 100
 
-  if (score < 50) {
+  if (score < 3) {
     return {
-      width: `${score || 10}%`,
+      width: `${scorePercentage || 10}%`,
       colorClass: 'bg-rose-500',
       textColorClass: 'text-rose-500',
       text: '弱'
     }
-  } else if (score < 75) {
+  } else if (score < 4) {
     return {
-      width: `${score}%`,
+      width: `${scorePercentage}%`,
       colorClass: 'bg-amber-500',
       textColorClass: 'text-amber-500',
       text: '中等'
     }
-  } else if (score < 100) {
+  } else if (score < 5) {
     return {
-      width: `${score}%`,
+      width: `${scorePercentage}%`,
       colorClass: 'bg-blue-500',
       textColorClass: 'text-blue-500',
       text: '强'

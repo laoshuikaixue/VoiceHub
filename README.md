@@ -534,8 +534,10 @@ VoiceHub/
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
 │   │   │   ├── NotificationSender.vue # 通知发送管理
+│   │   │   ├── OAuthConfigManager.vue # OAuth 配置管理
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   │   ├── PlayTimeManager.vue    # 播放时间管理
+│   │   │   ├── ProviderConfigSection.vue # OAuth 提供商配置组件
 │   │   │   ├── RequestTimeManager.vue # 点歌时间管理
 │   │   │   ├── ScheduleForm.vue       # 排期表单
 │   │   │   ├── ScheduleItemPrint.vue  # 排期项目打印
@@ -557,8 +559,10 @@ VoiceHub/
 │   │   │   ├── Providers/     # 第三方登录提供商组件
 │   │   │   │   ├── Casdoor/   # Casdoor登录组件
 │   │   │   │   │   └── Icon.vue # Casdoor图标
-│   │   │   │   └── GitHub/    # GitHub登录组件
-│   │   │   │       └── Icon.vue # GitHub图标
+│   │   │   │   ├── GitHub/    # GitHub登录组件
+│   │   │   │   │   └── Icon.vue # GitHub图标
+│   │   │   │   └── Google/    # Google登录组件
+│   │   │   │       └── Icon.vue # Google图标
 │   │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   │   ├── LoginForm.vue         # 登录表单
 │   │   │   ├── OAuthBindingCard.vue  # OAuth绑定卡片
@@ -571,11 +575,14 @@ VoiceHub/
 │   │   │   └── NotificationSettings.vue # 通知设置
 │   │   ├── Player/            # 播放器相关组件
 │   │   │   └── PlayerLyric/   # 播放器歌词子组件
+│   │   │       ├── AMLyric.vue        # Apple Music风格歌词
+│   │   │       └── DefaultLyric.vue   # 默认风格歌词
 │   │   ├── Songs/             # 歌曲相关组件
 │   │   │   ├── BilibiliEpisodesModal.vue # Bilibili剧集选择弹窗
 │   │   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
 │   │   │   ├── ImportSongsModal.vue   # 导入歌曲弹窗
 │   │   │   ├── NeteaseLoginModal.vue  # 网易云音乐登录弹窗
+│   │   │   ├── NeteaseUploadDialog.vue # 网易云云盘上传弹窗
 │   │   │   ├── PlaylistSelectionModal.vue # 歌单选择弹窗
 │   │   │   ├── PodcastEpisodesModal.vue # 播客节目弹窗
 │   │   │   ├── RecentSongsModal.vue   # 最近播放弹窗
@@ -593,11 +600,12 @@ VoiceHub/
 │   │   │   │   ├── ErrorBoundary.vue  # 错误边界组件
 │   │   │   │   ├── LoadingState.vue   # 加载状态组件
 │   │   │   │   ├── Pagination.vue     # 翻页组件
+│   │   │   │   ├── Popover.vue        # 弹出框组件
 │   │   │   │   ├── SearchFilter.vue   # 搜索过滤组件
 │   │   │   │   └── StatCard.vue       # 统计卡片组件
 │   │   │   ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件
 │   │   │   ├── AudioPlayer.vue        # 主音频播放器组件
-│   │   │   ├── BilibiliframeModal.vue # Bilibili视频预览弹窗
+│   │   │   ├── BilibiliIframeModal.vue # Bilibili视频预览弹窗
 │   │   │   ├── ConfirmDialog.vue      # 确认对话框
 │   │   │   ├── Icon.vue               # 图标组件
 │   │   │   ├── LyricsModal.vue        # 全屏歌词模态框组件
@@ -637,7 +645,6 @@ VoiceHub/
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
 │   │   ├── useSongs.ts         # 歌曲管理hooks
 │   │   ├── useToast.ts         # Toast提示hooks
-│   │   └── useWebAuthn.ts      # WebAuthn 认证 hooks
 │   ├── drizzle/               # 数据库相关
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
@@ -678,14 +685,12 @@ VoiceHub/
 │       │   ├── lyricStripper.ts # 歌词清理
 │       │   ├── parseLrc.ts    # LRC格式解析
 │       │   └── qrc-parser.ts  # QRC格式解析
-│       ├── musicSdk/          # 音乐SDK工具
-│       │   ├── tx/            # QQ音乐SDK
-│       │   └── wy/            # 网易云音乐SDK
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── lyricAdapter.ts    # 歌词适配器
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
 │       ├── neteaseApi.ts      # 网易云音乐API
+│       ├── oauth-register.ts  # OAuth注册工具
 │       ├── oauth.ts           # OAuth工具
 │       ├── timeUtils.ts       # 时间工具
 │       └── url.ts             # URL处理工具
@@ -701,7 +706,9 @@ VoiceHub/
 │   │   │   │   └── logs.get.ts      # API使用日志
 │   │   │   ├── backup/              # 备份管理API
 │   │   │   │   ├── delete/          # 删除备份子目录
+│   │   │   │   │   └── [filename].delete.ts
 │   │   │   │   ├── download/        # 下载备份子目录
+│   │   │   │   │   └── [filename].get.ts
 │   │   │   │   ├── clear.post.ts    # 清空备份历史
 │   │   │   │   ├── download.get.ts  # 下载备份
 │   │   │   │   ├── export.post.ts   # 创建备份
@@ -772,8 +779,11 @@ VoiceHub/
 │   │   │   │   ├── trends.get.ts    # 趋势分析
 │   │   │   │   └── user-engagement.get.ts # 用户参与度统计
 │   │   │   ├── system-settings/     # 系统设置API
+│   │   │   │   ├── env-oauth-import.post.ts # 导入环境变量OAuth配置
+│   │   │   │   ├── env-oauth.get.ts # 获取环境变量OAuth配置
 │   │   │   │   ├── index.post.ts    # 更新系统设置
-│   │   │   │   └── index.ts         # 获取系统设置
+│   │   │   │   ├── index.ts         # 获取系统设置
+│   │   │   │   └── secretMask.ts    # 密钥脱敏工具
 │   │   │   └── users/               # 用户管理API
 │   │   │       ├── [id]/            # 用户详情操作子目录
 │   │   │       │   ├── reset-password.post.ts # 重置用户密码
@@ -814,6 +824,7 @@ VoiceHub/
 │   │   │   ├── identities.get.ts     # 获取已绑定身份列表
 │   │   │   ├── login.post.ts        # 用户登录
 │   │   │   ├── logout.post.ts       # 用户登出
+│   │   │   ├── oauth-register.post.ts # OAuth用户注册
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
 │   │   │   ├── unbind.post.ts        # 解绑社交账号
 │   │   │   └── verify.get.ts        # 验证Token并获取用户信息
@@ -845,6 +856,8 @@ VoiceHub/
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
 │   │   ├── open/           # 开放API（无需认证）
+│   │   │   ├── songs/               # 歌曲相关开放API
+│   │   │   │   └── mark-played.post.ts # 标记歌曲已播放（供外部调用）
 │   │   │   ├── schedules.get.ts     # 获取公开排期
 │   │   │   └── songs.get.ts         # 获取公开歌曲列表
 │   │   ├── play-times/     # 播放时间API
@@ -918,8 +931,6 @@ VoiceHub/
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
-│   │   ├── __tests__/      # 工具函数测试目录
-│   │   ├── musicSdk/       # 音乐SDK工具
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── cache-helpers.ts # 缓存辅助工具
 │   │   ├── database-health.ts # 数据库健康检查
@@ -994,7 +1005,6 @@ VoiceHub/
 - **`app/utils/`**: 客户端工具函数
   - **`core/`**: 核心工具（安全等）
   - **`lyric/`**: 歌词处理工具集
-  - **`musicSdk/`**: 音乐平台SDK工具
 
 #### 服务端目录 (server/)
 
@@ -1009,7 +1019,6 @@ VoiceHub/
 - **`server/plugins/`**: 服务端插件（错误处理等）
 - **`server/services/`**: 业务逻辑服务层
 - **`server/utils/`**: 服务端工具函数
-  - **`musicSdk/`**: 音乐平台SDK服务端工具
 
 #### 静态资源
 

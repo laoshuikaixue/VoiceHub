@@ -77,103 +77,22 @@
       </div>
     </div>
 
-    <!-- GitHub OAuth -->
-    <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
-      <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">GitHub OAuth</h4>
-        <div class="flex items-center gap-4">
-          <button
-            v-if="envData.hasGithubConfig"
-            type="button"
-            class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
-            @click="importEnvData('github')"
-          >
-            <Download :size="12" />
-            导入环境配置
-          </button>
-          <div class="flex items-center gap-2">
-            <span
-              :class="[
-                'text-[10px] font-bold',
-                formData.githubOAuthEnabled ? 'text-green-500' : 'text-red-500'
-              ]"
-            >
-              {{ formData.githubOAuthEnabled ? '已启用' : '未启用' }}
-            </span>
-            <input
-              v-model="formData.githubOAuthEnabled"
-              type="checkbox"
-              class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
-            >
-          </div>
-        </div>
-      </div>
-
-      <div v-if="formData.githubOAuthEnabled" class="space-y-4">
-        <div>
-          <label :class="labelClass">GitHub Client ID</label>
-          <input
-            v-model="formData.githubClientId"
-            type="text"
-            placeholder="输入 GitHub Client ID"
-            :class="inputClass"
-          >
-        </div>
-
-        <div>
-          <label :class="labelClass">GitHub Client Secret</label>
-          <div class="flex gap-2">
-            <input
-              v-model="formData.githubClientSecret"
-              :type="showSecrets.github ? 'text' : 'password'"
-              :placeholder="showSecrets.github ? '输入 GitHub Client Secret' : '••••••••••••••••'"
-              :class="inputClass"
-            >
-            <button
-              type="button"
-              class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
-              @click="showSecrets.github = !showSecrets.github"
-            >
-              {{ showSecrets.github ? '隐藏' : '显示' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Casdoor OAuth -->
-    <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
-      <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Casdoor OAuth</h4>
-        <div class="flex items-center gap-4">
-          <button
-            v-if="envData.hasCasdoorConfig"
-            type="button"
-            class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
-            @click="importEnvData('casdoor')"
-          >
-            <Download :size="12" />
-            导入环境配置
-          </button>
-          <div class="flex items-center gap-2">
-            <span
-              :class="[
-                'text-[10px] font-bold',
-                formData.casdoorOAuthEnabled ? 'text-green-500' : 'text-red-500'
-              ]"
-            >
-              {{ formData.casdoorOAuthEnabled ? '已启用' : '未启用' }}
-            </span>
-            <input
-              v-model="formData.casdoorOAuthEnabled"
-              type="checkbox"
-              class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
-            >
-          </div>
-        </div>
-      </div>
-
-      <div v-if="formData.casdoorOAuthEnabled" class="space-y-4">
+    <!-- 循环渲染的基础 OAuth 提供商配置 -->
+    <AdminProviderConfigSection
+      v-for="provider in oauthProviders"
+      :key="provider.id"
+      :title="provider.title"
+      :has-env-config="provider.hasEnvConfig"
+      v-model:enabled="formData[provider.enabledKey]"
+      v-model:clientId="formData[provider.clientIdKey]"
+      v-model:clientSecret="formData[provider.clientSecretKey]"
+      :client-id-label="provider.clientIdLabel"
+      :client-id-placeholder="provider.clientIdPlaceholder"
+      :client-secret-label="provider.clientSecretLabel"
+      :client-secret-placeholder="provider.clientSecretPlaceholder"
+      @import-env="importEnvData(provider.id)"
+    >
+      <template #before-fields v-if="provider.id === 'casdoor'">
         <div>
           <label :class="labelClass">Casdoor 服务器 URL</label>
           <input
@@ -183,36 +102,8 @@
             :class="inputClass"
           >
         </div>
-
-        <div>
-          <label :class="labelClass">Casdoor Client ID</label>
-          <input
-            v-model="formData.casdoorClientId"
-            type="text"
-            placeholder="输入 Client ID"
-            :class="inputClass"
-          >
-        </div>
-
-        <div>
-          <label :class="labelClass">Casdoor Client Secret</label>
-          <div class="flex gap-2">
-            <input
-              v-model="formData.casdoorClientSecret"
-              :type="showSecrets.casdoor ? 'text' : 'password'"
-              :placeholder="showSecrets.casdoor ? '输入 Client Secret' : '••••••••••••••••'"
-              :class="inputClass"
-            >
-            <button
-              type="button"
-              class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
-              @click="showSecrets.casdoor = !showSecrets.casdoor"
-            >
-              {{ showSecrets.casdoor ? '隐藏' : '显示' }}
-            </button>
-          </div>
-        </div>
-
+      </template>
+      <template #after-fields v-if="provider.id === 'casdoor'">
         <div>
           <label :class="labelClass">Casdoor 组织名称</label>
           <input
@@ -222,72 +113,8 @@
             :class="inputClass"
           >
         </div>
-      </div>
-    </div>
-
-    <!-- Google OAuth -->
-    <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
-      <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Google OAuth</h4>
-        <div class="flex items-center gap-4">
-          <button
-            v-if="envData.hasGoogleConfig"
-            type="button"
-            class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
-            @click="importEnvData('google')"
-          >
-            <Download :size="12" />
-            导入环境配置
-          </button>
-          <div class="flex items-center gap-2">
-            <span
-              :class="[
-                'text-[10px] font-bold',
-                formData.googleOAuthEnabled ? 'text-green-500' : 'text-red-500'
-              ]"
-            >
-              {{ formData.googleOAuthEnabled ? '已启用' : '未启用' }}
-            </span>
-            <input
-              v-model="formData.googleOAuthEnabled"
-              type="checkbox"
-              class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
-            >
-          </div>
-        </div>
-      </div>
-
-      <div v-if="formData.googleOAuthEnabled" class="space-y-4">
-        <div>
-          <label :class="labelClass">Google Client ID</label>
-          <input
-            v-model="formData.googleClientId"
-            type="text"
-            placeholder="输入 Google Client ID（xxx.apps.googleusercontent.com）"
-            :class="inputClass"
-          >
-        </div>
-
-        <div>
-          <label :class="labelClass">Google Client Secret</label>
-          <div class="flex gap-2">
-            <input
-              v-model="formData.googleClientSecret"
-              :type="showSecrets.google ? 'text' : 'password'"
-              :placeholder="showSecrets.google ? '输入 Google Client Secret' : '••••••••••••••••'"
-              :class="inputClass"
-            >
-            <button
-              type="button"
-              class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
-              @click="showSecrets.google = !showSecrets.google"
-            >
-              {{ showSecrets.google ? '隐藏' : '显示' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      </template>
+    </AdminProviderConfigSection>
 
     <!-- Custom OAuth2 -->
     <div class="space-y-4">
@@ -461,6 +288,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { AlertCircle, Shield, Download } from 'lucide-vue-next'
+import { useToast } from '~/composables/useToast'
 
 const props = defineProps({
   modelValue: {
@@ -471,6 +299,8 @@ const props = defineProps({
 
 const emits = defineEmits(['update:modelValue'])
 
+const { showToast } = useToast()
+
 const inputClass =
   'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'
@@ -478,9 +308,6 @@ const cardClass = 'bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-
 
 const showSecrets = ref({
   state: false,
-  github: false,
-  casdoor: false,
-  google: false,
   custom: false
 })
 
@@ -495,6 +322,45 @@ const envData = ref({
   hasCasdoorConfig: false,
   hasGoogleConfig: false
 })
+
+const oauthProviders = computed(() => [
+  {
+    id: 'github',
+    title: 'GitHub OAuth',
+    hasEnvConfig: envData.value.hasGithubConfig,
+    enabledKey: 'githubOAuthEnabled',
+    clientIdKey: 'githubClientId',
+    clientSecretKey: 'githubClientSecret',
+    clientIdLabel: 'GitHub Client ID',
+    clientIdPlaceholder: '输入 GitHub Client ID',
+    clientSecretLabel: 'GitHub Client Secret',
+    clientSecretPlaceholder: '输入 GitHub Client Secret',
+  },
+  {
+    id: 'casdoor',
+    title: 'Casdoor OAuth',
+    hasEnvConfig: envData.value.hasCasdoorConfig,
+    enabledKey: 'casdoorOAuthEnabled',
+    clientIdKey: 'casdoorClientId',
+    clientSecretKey: 'casdoorClientSecret',
+    clientIdLabel: 'Casdoor Client ID',
+    clientIdPlaceholder: '输入 Client ID',
+    clientSecretLabel: 'Casdoor Client Secret',
+    clientSecretPlaceholder: '输入 Client Secret',
+  },
+  {
+    id: 'google',
+    title: 'Google OAuth',
+    hasEnvConfig: envData.value.hasGoogleConfig,
+    enabledKey: 'googleOAuthEnabled',
+    clientIdKey: 'googleClientId',
+    clientSecretKey: 'googleClientSecret',
+    clientIdLabel: 'Google Client ID',
+    clientIdPlaceholder: '输入 Google Client ID（xxx.apps.googleusercontent.com）',
+    clientSecretLabel: 'Google Client Secret',
+    clientSecretPlaceholder: '输入 Google Client Secret',
+  }
+])
 
 const fetchEnvData = async () => {
   try {
@@ -517,6 +383,7 @@ const importEnvData = async (provider) => {
     }
   } catch (e) {
     console.error('导入环境配置失败:', e)
+    showToast('导入环境配置失败', 'error')
   }
 }
 
