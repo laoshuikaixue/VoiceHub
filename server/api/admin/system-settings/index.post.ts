@@ -337,6 +337,12 @@ export default defineEventHandler(async (event) => {
           message: 'githubOAuthEnabled 必须是布尔值'
         })
       }
+      if (body.githubOAuthEnabled && (!body.githubClientId && !settings?.githubClientId)) {
+        throw createError({ statusCode: 400, message: '启用 GitHub 登录时必须提供 Client ID' })
+      }
+      if (body.githubOAuthEnabled && (!body.githubClientSecret && !settings?.githubClientSecret)) {
+        throw createError({ statusCode: 400, message: '启用 GitHub 登录时必须提供 Client Secret' })
+      }
       updateData.githubOAuthEnabled = body.githubOAuthEnabled
     }
 
@@ -355,6 +361,18 @@ export default defineEventHandler(async (event) => {
           statusCode: 400,
           message: 'casdoorOAuthEnabled 必须是布尔值'
         })
+      }
+      if (body.casdoorOAuthEnabled && (!body.casdoorServerUrl && !settings?.casdoorServerUrl)) {
+        throw createError({ statusCode: 400, message: '启用 Casdoor 登录时必须提供服务器 URL' })
+      }
+      if (body.casdoorOAuthEnabled && (!body.casdoorClientId && !settings?.casdoorClientId)) {
+        throw createError({ statusCode: 400, message: '启用 Casdoor 登录时必须提供 Client ID' })
+      }
+      if (body.casdoorOAuthEnabled && (!body.casdoorClientSecret && !settings?.casdoorClientSecret)) {
+        throw createError({ statusCode: 400, message: '启用 Casdoor 登录时必须提供 Client Secret' })
+      }
+      if (body.casdoorOAuthEnabled && (!body.casdoorOrganizationName && !settings?.casdoorOrganizationName)) {
+        throw createError({ statusCode: 400, message: '启用 Casdoor 登录时必须提供组织名称' })
       }
       updateData.casdoorOAuthEnabled = body.casdoorOAuthEnabled
     }
@@ -383,6 +401,12 @@ export default defineEventHandler(async (event) => {
           message: 'googleOAuthEnabled 必须是布尔值'
         })
       }
+      if (body.googleOAuthEnabled && (!body.googleClientId && !settings?.googleClientId)) {
+        throw createError({ statusCode: 400, message: '启用 Google 登录时必须提供 Client ID' })
+      }
+      if (body.googleOAuthEnabled && (!body.googleClientSecret && !settings?.googleClientSecret)) {
+        throw createError({ statusCode: 400, message: '启用 Google 登录时必须提供 Client Secret' })
+      }
       updateData.googleOAuthEnabled = body.googleOAuthEnabled
     }
 
@@ -401,6 +425,21 @@ export default defineEventHandler(async (event) => {
           statusCode: 400,
           message: 'customOAuthEnabled 必须是布尔值'
         })
+      }
+      if (body.customOAuthEnabled) {
+        const requiredCustomFields = [
+          { key: 'customOAuthAuthorizeUrl', label: '授权端点 URL' },
+          { key: 'customOAuthTokenUrl', label: 'Token 端点 URL' },
+          { key: 'customOAuthUserInfoUrl', label: '用户信息端点 URL' },
+          { key: 'customOAuthClientId', label: 'Client ID' },
+          { key: 'customOAuthClientSecret', label: 'Client Secret' },
+          { key: 'customOAuthUserIdField', label: '用户 ID 字段名' }
+        ]
+        for (const field of requiredCustomFields) {
+          if (!body[field.key] && !settings?.[field.key]) {
+            throw createError({ statusCode: 400, message: `启用自定义 OAuth2 登录时必须提供 ${field.label}` })
+          }
+        }
       }
       updateData.customOAuthEnabled = body.customOAuthEnabled
     }
