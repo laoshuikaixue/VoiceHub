@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '只有管理员才能更新系统设置'

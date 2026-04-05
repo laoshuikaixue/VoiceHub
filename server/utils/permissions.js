@@ -10,9 +10,14 @@ const ROLES = {
     displayName: '歌曲管理员',
     description: '负责歌曲和排期管理',
     pages: [
+      'overview', // 数据概览
       'schedule', // 排期管理
       'print', // 打印排期
-      'songs' // 歌曲管理
+      'songs', // 歌曲管理
+      'playtimes', // 播出时段
+      'request-times', // 投稿时段
+      'semesters', // 学期管理
+      'data-analysis' // 数据分析
     ],
     canAccessAdmin: true
   },
@@ -25,6 +30,9 @@ const ROLES = {
       'print', // 打印排期
       'songs', // 歌曲管理
       'users', // 用户管理
+      'playtimes', // 播出时段
+      'request-times', // 投稿时段
+      'semesters', // 学期管理
       'data-analysis' // 数据分析
     ],
     canAccessAdmin: true

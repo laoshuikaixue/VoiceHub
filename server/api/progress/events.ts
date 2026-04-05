@@ -93,7 +93,7 @@ export default defineEventHandler(async (event) => {
       select: { id: true, role: true }
     })
 
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
         message: '需要管理员权限'

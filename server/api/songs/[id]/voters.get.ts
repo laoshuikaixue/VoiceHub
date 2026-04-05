@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查管理员权限
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
         message: '只有管理员才能查看投票人员列表'
