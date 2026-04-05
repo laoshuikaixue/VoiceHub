@@ -4,7 +4,7 @@ import { desc, eq, sql, and, or } from 'drizzle-orm'
 export default defineEventHandler(async (event) => {
   // 1. 检查权限
   const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     throw createError({ statusCode: 403, message: '权限不足' })
   }
 
