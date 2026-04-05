@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { username, password, confirmPassword } = body
+  const { username, name, password, confirmPassword } = body
   const bindingToken = getCookie(event, 'binding-token')
 
   if (!bindingToken) {
@@ -29,8 +29,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // 验证输入
-  if (!username || !password || !confirmPassword) {
-    throw createError({ statusCode: 400, message: '用户名、密码不能为空' })
+  if (!username || !name || !password || !confirmPassword) {
+    throw createError({ statusCode: 400, message: '姓名、用户名、密码不能为空' })
   }
 
   const validationError = validateOAuthRegisterCredentials(username, password, confirmPassword)
@@ -69,6 +69,7 @@ export default defineEventHandler(async (event) => {
         .insert(users)
         .values({
           username,
+          name,
           password: hashedPassword,
           role: 'USER',
           status: 'active',

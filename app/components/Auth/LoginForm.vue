@@ -25,7 +25,10 @@
         @click="showCreateMode = true"
       >
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M18 9v3m0 0v3m0-3h3m0 0h3m-20.5-12h16a4.5 4.5 0 014.5 4.5v12a4.5 4.5 0 01-4.5 4.5h-16a4.5 4.5 0 01-4.5-4.5v-12a4.5 4.5 0 014.5-4.5z" />
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="8.5" cy="7" r="4" />
+          <line x1="20" y1="8" x2="20" y2="14" />
+          <line x1="23" y1="11" x2="17" y2="11" />
         </svg>
         创建新账户
       </button>
@@ -59,6 +62,34 @@
           >
         </div>
         <p v-if="showCreateMode" class="hint-text">用户名不能重复，注册后无法修改</p>
+      </div>
+
+      <!-- 姓名字段 - 仅创建模式 -->
+      <div v-if="showCreateMode" class="form-group">
+        <label for="name">真实姓名</label>
+        <div class="input-wrapper">
+          <svg
+            class="input-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <input
+            id="name"
+            v-model="name"
+            :class="{ 'input-error': error }"
+            placeholder="请输入您的真实姓名"
+            required
+            type="text"
+            @input="error = ''"
+          >
+        </div>
       </div>
 
       <!-- 密码字段 -->
@@ -106,7 +137,28 @@
             </svg>
           </button>
         </div>
-        <p v-if="showCreateMode" class="hint-text">密码强度：包含大小写字母、数字和特殊字符更安全</p>
+        
+        <!-- 密码强度指示器 -->
+        <div v-if="showCreateMode && password" class="px-1 pt-1 space-y-2 mt-1">
+          <div class="h-1 w-full bg-[var(--input-border)] rounded-full overflow-hidden">
+            <div
+              class="h-full transition-all duration-500"
+              :class="passwordStrength.colorClass"
+              :style="{ width: passwordStrength.width }"
+            />
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] font-black uppercase tracking-widest text-[var(--text-tertiary)]"
+              >密码强度</span
+            >
+            <span
+              class="text-[10px] font-black uppercase tracking-widest"
+              :class="passwordStrength.textColorClass"
+            >
+              {{ passwordStrength.text }}
+            </span>
+          </div>
+        </div>
       </div>
 
       <!-- 确认密码字段 - 仅在创建模式下显示 -->
@@ -260,6 +312,7 @@ const getFormTitle = computed(() => {
 })
 
 const username = ref('')
+const name = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const error = ref('')
@@ -273,6 +326,47 @@ const methods2FA = ref<string[]>([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
 const showCreateMode = ref(false)
+
+const passwordStrength = computed(() => {
+  if (!password.value) return { width: '0%', colorClass: '', textColorClass: '', text: '' }
+
+  let score = 0
+
+  if (password.value.length >= 8) score += 25
+  if (/[A-Z]/.test(password.value)) score += 25
+  if (/[a-z]/.test(password.value)) score += 25
+  if (/[0-9]/.test(password.value) && /[^A-Za-z0-9]/.test(password.value)) score += 25
+
+  if (score < 50) {
+    return {
+      width: `${score || 10}%`,
+      colorClass: 'bg-rose-500',
+      textColorClass: 'text-rose-500',
+      text: '弱'
+    }
+  } else if (score < 75) {
+    return {
+      width: `${score}%`,
+      colorClass: 'bg-amber-500',
+      textColorClass: 'text-amber-500',
+      text: '中等'
+    }
+  } else if (score < 100) {
+    return {
+      width: `${score}%`,
+      colorClass: 'bg-blue-500',
+      textColorClass: 'text-blue-500',
+      text: '强'
+    }
+  } else {
+    return {
+      width: '100%',
+      colorClass: 'bg-emerald-500',
+      textColorClass: 'text-emerald-500',
+      text: '极强'
+    }
+  }
+})
 
 const auth = useAuth()
 
@@ -309,7 +403,7 @@ const handleLogin = async () => {
 
   // 创建账户模式的验证
   if (isBindMode.value && showCreateMode.value) {
-    if (!confirmPassword.value) {
+    if (!name.value || !confirmPassword.value) {
       error.value = '请填写完整的注册信息'
       return
     }
@@ -385,6 +479,7 @@ const handleRegisterOAuth = async () => {
       method: 'POST',
       body: {
         username: username.value,
+        name: name.value,
         password: password.value,
         confirmPassword: confirmPassword.value
       }
