@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const updateData: any = {
+    const updateData: Partial<typeof songs.$inferInsert> = {
       title: title.trim(),
       artist: artist.trim(),
     }
