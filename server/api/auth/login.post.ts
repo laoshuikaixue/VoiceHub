@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     if (!body.username || !body.password) {
       throw createError({
         statusCode: 400,
-        message: '账号名和密码不能为空'
+        message: '用户名和密码不能为空'
       })
     }
 

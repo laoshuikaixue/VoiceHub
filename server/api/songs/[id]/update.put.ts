@@ -64,15 +64,16 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const updateData = {
+    const updateData: Partial<typeof songs.$inferInsert> = {
       title: title.trim(),
       artist: artist.trim(),
-      semester: semester || null,
-      musicPlatform: musicPlatform || null,
-      musicId: musicId || null,
-      cover: cover || null,
-      playUrl: playUrl || null
     }
+
+    if (body.semester !== undefined) updateData.semester = body.semester || null
+    if (body.musicPlatform !== undefined) updateData.musicPlatform = body.musicPlatform || null
+    if (body.musicId !== undefined) updateData.musicId = body.musicId || null
+    if (body.cover !== undefined) updateData.cover = body.cover || null
+    if (body.playUrl !== undefined) updateData.playUrl = body.playUrl || null
 
     // 处理投稿人
     if ('requester' in body) {

@@ -119,7 +119,7 @@
 - **数据库**：使用 Drizzle ORM + Neon Database，提供类型安全和高性能的数据库操作
 - **认证**：标准 JWT 认证系统
 - **缓存**：可选的 Redis 缓存层，提升系统响应速度
-- **部署**：支持 Vercel、Netlify、EdgeOne 等 Serverless 平台一键部署
+- **部署**：支持 Vercel、Netlify、EdgeOne 等 Serverless 平台一键部署，并提供 Docker、Linux 一键脚本及飞牛 FnOS (fpk安装包) 等多种部署方式
 
 ## 部署指南
 
@@ -264,6 +264,11 @@ bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh
 
 **日常管理：**
 部署完成后，可使用 `voicehub` 命令进行日常管理（需在部署时安装）
+
+### 飞牛 (FnOS) 部署
+
+VoiceHub 现已支持飞牛 OS (FnOS) 的 `.fpk` 安装包。
+- 从 [GitHub Actions](https://github.com/laoshuikaixue/VoiceHub/actions/workflows/build-fpk.yml) 获取最新版本
 
 ### 本地开发部署
 

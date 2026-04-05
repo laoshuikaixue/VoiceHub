@@ -338,6 +338,14 @@
                       >
                         <MessageSquare :size="12" />
                       </button>
+                      <span
+                        v-if="song.hasSubmissionNote && song.submissionNote"
+                        class="text-xs text-blue-400/80 truncate max-w-[200px] cursor-pointer hover:text-blue-400 transition-colors"
+                        title="查看备注留言"
+                        @click.stop="openSubmissionRemark(song)"
+                      >
+                        {{ song.submissionNote.length > 25 ? song.submissionNote.substring(0, 25) + '...' : song.submissionNote }}
+                      </span>
                     </div>
                     <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
                     <div class="text-[10px] text-zinc-500 truncate flex items-center gap-1">
@@ -597,6 +605,14 @@
                       >
                         <MessageSquare :size="12" />
                       </button>
+                      <span
+                        v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
+                        class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
+                        title="查看备注留言"
+                        @click.stop="openSubmissionRemark(schedule.song)"
+                      >
+                        {{ schedule.song.submissionNote.length > 25 ? schedule.song.submissionNote.substring(0, 25) + '...' : schedule.song.submissionNote }}
+                      </span>
                       <!-- 重播标识 -->
                       <span
                         v-if="schedule.song.replayRequestCount > 0"
@@ -873,7 +889,9 @@
     :song-title="submissionRemarkDialog.songTitle"
     :content="submissionRemarkDialog.content"
     :is-public="submissionRemarkDialog.isPublic"
+    :is-updating-public="submissionRemarkDialog.isUpdatingPublic"
     @close="submissionRemarkDialog.show = false"
+    @update:is-public="updateSubmissionNotePublic"
   />
 </template>
 
@@ -955,9 +973,13 @@ const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
 const submissionRemarkDialog = ref({
   show: false,
+  songId: null,
+  title: '',
+  artist: '',
   songTitle: '',
   content: '',
-  isPublic: true
+  isPublic: true,
+  isUpdatingPublic: false
 })
 
 const openReplayModal = (song) => {
@@ -978,9 +1000,57 @@ const openSubmissionRemark = (song) => {
   if (!song?.submissionNote) return
   submissionRemarkDialog.value = {
     show: true,
+    songId: song.id,
+    title: song.title,
+    artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,
     content: song.submissionNote,
     isPublic: song.submissionNotePublic === true
+  }
+}
+
+const updateSubmissionNotePublic = async (isPublic) => {
+  const dialogData = submissionRemarkDialog.value
+  if (!dialogData.songId || dialogData.isUpdatingPublic) return
+
+  dialogData.isUpdatingPublic = true
+  dialogData.isPublic = isPublic
+
+  try {
+    await adminService.updateSong(dialogData.songId, {
+      title: dialogData.title,
+      artist: dialogData.artist,
+      submissionNotePublic: isPublic
+    })
+
+    if (songsService && songsService.songs && songsService.songs.value) {
+      const songIndex = songsService.songs.value.findIndex(s => s.id === dialogData.songId)
+      if (songIndex !== -1) {
+        songsService.songs.value[songIndex].submissionNotePublic = isPublic
+      }
+    }
+
+    const localScheduledIndex = localScheduledSongs.value.findIndex(s => s.song && s.song.id === dialogData.songId)
+    if (localScheduledIndex !== -1) {
+      localScheduledSongs.value[localScheduledIndex].song.submissionNotePublic = isPublic
+    }
+
+    const publicScheduleIndex = publicSchedules.value.findIndex(s => s.song && s.song.id === dialogData.songId)
+    if (publicScheduleIndex !== -1) {
+      publicSchedules.value[publicScheduleIndex].song.submissionNotePublic = isPublic
+    }
+
+    if (window.$showNotification) {
+      window.$showNotification('备注留言可见性已更新', 'success')
+    }
+  } catch (error) {
+    console.error('更新备注可见性失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('更新备注可见性失败', 'error')
+    }
+    dialogData.isPublic = !isPublic
+  } finally {
+    dialogData.isUpdatingPublic = false
   }
 }
 
