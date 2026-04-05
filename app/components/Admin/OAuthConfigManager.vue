@@ -53,16 +53,16 @@
         <div class="flex gap-2">
           <input
             v-model="formData.oauthStateSecret"
-            :type="showStateSecret ? 'text' : 'password'"
+            :type="showSecrets.state ? 'text' : 'password'"
             placeholder="输入强随机字符串"
             :class="inputClass"
           >
           <button
             type="button"
             class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
-            @click="showStateSecret = !showStateSecret"
+            @click="showSecrets.state = !showSecrets.state"
           >
-            {{ showStateSecret ? '隐藏' : '显示' }}
+            {{ showSecrets.state ? '隐藏' : '显示' }}
           </button>
         </div>
       </div>
@@ -72,20 +72,31 @@
     <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
       <div class="flex items-center justify-between">
         <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">GitHub OAuth</h4>
-        <div class="flex items-center gap-2">
-          <span
-            :class="[
-              'text-[10px] font-bold',
-              formData.githubOAuthEnabled ? 'text-green-500' : 'text-red-500'
-            ]"
+        <div class="flex items-center gap-4">
+          <button
+            v-if="envData.githubClientId"
+            type="button"
+            class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
+            @click="importEnvData('github')"
           >
-            {{ formData.githubOAuthEnabled ? '已启用' : '未启用' }}
-          </span>
-          <input
-            v-model="formData.githubOAuthEnabled"
-            type="checkbox"
-            class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
-          >
+            <Download :size="12" />
+            导入环境配置
+          </button>
+          <div class="flex items-center gap-2">
+            <span
+              :class="[
+                'text-[10px] font-bold',
+                formData.githubOAuthEnabled ? 'text-green-500' : 'text-red-500'
+              ]"
+            >
+              {{ formData.githubOAuthEnabled ? '已启用' : '未启用' }}
+            </span>
+            <input
+              v-model="formData.githubOAuthEnabled"
+              type="checkbox"
+              class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
+            >
+          </div>
         </div>
       </div>
 
@@ -105,16 +116,16 @@
           <div class="flex gap-2">
             <input
               v-model="formData.githubClientSecret"
-              :type="showGithubSecret ? 'text' : 'password'"
-              :placeholder="showGithubSecret ? '输入 GitHub Client Secret' : '••••••••••••••••'"
+              :type="showSecrets.github ? 'text' : 'password'"
+              :placeholder="showSecrets.github ? '输入 GitHub Client Secret' : '••••••••••••••••'"
               :class="inputClass"
             >
             <button
               type="button"
               class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
-              @click="showGithubSecret = !showGithubSecret"
+              @click="showSecrets.github = !showSecrets.github"
             >
-              {{ showGithubSecret ? '隐藏' : '显示' }}
+              {{ showSecrets.github ? '隐藏' : '显示' }}
             </button>
           </div>
         </div>
@@ -125,20 +136,31 @@
     <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
       <div class="flex items-center justify-between">
         <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Casdoor OAuth</h4>
-        <div class="flex items-center gap-2">
-          <span
-            :class="[
-              'text-[10px] font-bold',
-              formData.casdoorOAuthEnabled ? 'text-green-500' : 'text-red-500'
-            ]"
+        <div class="flex items-center gap-4">
+          <button
+            v-if="envData.casdoorClientId"
+            type="button"
+            class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
+            @click="importEnvData('casdoor')"
           >
-            {{ formData.casdoorOAuthEnabled ? '已启用' : '未启用' }}
-          </span>
-          <input
-            v-model="formData.casdoorOAuthEnabled"
-            type="checkbox"
-            class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
-          >
+            <Download :size="12" />
+            导入环境配置
+          </button>
+          <div class="flex items-center gap-2">
+            <span
+              :class="[
+                'text-[10px] font-bold',
+                formData.casdoorOAuthEnabled ? 'text-green-500' : 'text-red-500'
+              ]"
+            >
+              {{ formData.casdoorOAuthEnabled ? '已启用' : '未启用' }}
+            </span>
+            <input
+              v-model="formData.casdoorOAuthEnabled"
+              type="checkbox"
+              class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
+            >
+          </div>
         </div>
       </div>
 
@@ -168,16 +190,16 @@
           <div class="flex gap-2">
             <input
               v-model="formData.casdoorClientSecret"
-              :type="showCasdoorSecret ? 'text' : 'password'"
-              :placeholder="showCasdoorSecret ? '输入 Client Secret' : '••••••••••••••••'"
+              :type="showSecrets.casdoor ? 'text' : 'password'"
+              :placeholder="showSecrets.casdoor ? '输入 Client Secret' : '••••••••••••••••'"
               :class="inputClass"
             >
             <button
               type="button"
               class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
-              @click="showCasdoorSecret = !showCasdoorSecret"
+              @click="showSecrets.casdoor = !showSecrets.casdoor"
             >
-              {{ showCasdoorSecret ? '隐藏' : '显示' }}
+              {{ showSecrets.casdoor ? '隐藏' : '显示' }}
             </button>
           </div>
         </div>
@@ -198,20 +220,31 @@
     <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
       <div class="flex items-center justify-between">
         <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Google OAuth</h4>
-        <div class="flex items-center gap-2">
-          <span
-            :class="[
-              'text-[10px] font-bold',
-              formData.googleOAuthEnabled ? 'text-green-500' : 'text-red-500'
-            ]"
+        <div class="flex items-center gap-4">
+          <button
+            v-if="envData.googleClientId"
+            type="button"
+            class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
+            @click="importEnvData('google')"
           >
-            {{ formData.googleOAuthEnabled ? '已启用' : '未启用' }}
-          </span>
-          <input
-            v-model="formData.googleOAuthEnabled"
-            type="checkbox"
-            class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
-          >
+            <Download :size="12" />
+            导入环境配置
+          </button>
+          <div class="flex items-center gap-2">
+            <span
+              :class="[
+                'text-[10px] font-bold',
+                formData.googleOAuthEnabled ? 'text-green-500' : 'text-red-500'
+              ]"
+            >
+              {{ formData.googleOAuthEnabled ? '已启用' : '未启用' }}
+            </span>
+            <input
+              v-model="formData.googleOAuthEnabled"
+              type="checkbox"
+              class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
+            >
+          </div>
         </div>
       </div>
 
@@ -231,16 +264,16 @@
           <div class="flex gap-2">
             <input
               v-model="formData.googleClientSecret"
-              :type="showGoogleSecret ? 'text' : 'password'"
-              :placeholder="showGoogleSecret ? '输入 Google Client Secret' : '••••••••••••••••'"
+              :type="showSecrets.google ? 'text' : 'password'"
+              :placeholder="showSecrets.google ? '输入 Google Client Secret' : '••••••••••••••••'"
               :class="inputClass"
             >
             <button
               type="button"
               class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
-              @click="showGoogleSecret = !showGoogleSecret"
+              @click="showSecrets.google = !showSecrets.google"
             >
-              {{ showGoogleSecret ? '隐藏' : '显示' }}
+              {{ showSecrets.google ? '隐藏' : '显示' }}
             </button>
           </div>
         </div>
@@ -334,16 +367,16 @@
           <div class="flex gap-2">
             <input
               v-model="formData.customOAuthClientSecret"
-              :type="showCustomSecret ? 'text' : 'password'"
-              :placeholder="showCustomSecret ? '输入 Client Secret' : '••••••••••••••••'"
+              :type="showSecrets.custom ? 'text' : 'password'"
+              :placeholder="showSecrets.custom ? '输入 Client Secret' : '••••••••••••••••'"
               :class="inputClass"
             >
             <button
               type="button"
               class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
-              @click="showCustomSecret = !showCustomSecret"
+              @click="showSecrets.custom = !showSecrets.custom"
             >
-              {{ showCustomSecret ? '隐藏' : '显示' }}
+              {{ showSecrets.custom ? '隐藏' : '显示' }}
             </button>
           </div>
         </div>
@@ -417,8 +450,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { AlertCircle, Shield } from 'lucide-vue-next'
+import { computed, ref, onMounted } from 'vue'
+import { AlertCircle, Shield, Download } from 'lucide-vue-next'
 
 const props = defineProps({
   modelValue: {
@@ -434,14 +467,46 @@ const inputClass =
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'
 const cardClass = 'bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6'
 
-const showStateSecret = ref(false)
-const showGithubSecret = ref(false)
-const showCasdoorSecret = ref(false)
-const showGoogleSecret = ref(false)
-const showCustomSecret = ref(false)
+const showSecrets = ref({
+  state: false,
+  github: false,
+  casdoor: false,
+  google: false,
+  custom: false
+})
 
 const formData = computed({
   get: () => props.modelValue,
   set: (val) => emits('update:modelValue', val)
+})
+
+const envData = ref({})
+
+const fetchEnvData = async () => {
+  try {
+    const data = await $fetch('/api/admin/system-settings/env-oauth')
+    envData.value = data
+  } catch (e) {
+    console.error('获取环境变量失败:', e)
+  }
+}
+
+const importEnvData = (provider) => {
+  if (provider === 'github') {
+    formData.value.githubClientId = envData.value.githubClientId
+    formData.value.githubClientSecret = envData.value.githubClientSecret
+  } else if (provider === 'casdoor') {
+    formData.value.casdoorServerUrl = envData.value.casdoorServerUrl
+    formData.value.casdoorClientId = envData.value.casdoorClientId
+    formData.value.casdoorClientSecret = envData.value.casdoorClientSecret
+    formData.value.casdoorOrganizationName = envData.value.casdoorOrganizationName
+  } else if (provider === 'google') {
+    formData.value.googleClientId = envData.value.googleClientId
+    formData.value.googleClientSecret = envData.value.googleClientSecret
+  }
+}
+
+onMounted(() => {
+  fetchEnvData()
 })
 </script>

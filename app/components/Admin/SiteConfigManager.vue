@@ -556,18 +556,17 @@ const saveConfig = async () => {
       try {
         const errorData = await response.json()
         console.error('API错误响应:', errorData)
-        // 尝试多个可能的错误字段 - Nitro 将错误消息放在 data.error 中
-        if (errorData?.data?.error) {
-          message = errorData.data.error
-        } else if (errorData?.message) {
-          message = errorData.message
-        } else if (errorData?.statusMessage && errorData.statusMessage !== 'Error') {
-          message = errorData.statusMessage
-        } else if (errorData?.data?.message) {
-          message = errorData.data.message
-        } else if (errorData?.error) {
-          message = errorData.error
+
+        const getErrorMessage = (err) => {
+          if (err?.data?.error) return err.data.error
+          if (err?.message) return err.message
+          if (err?.statusMessage && err.statusMessage !== 'Error') return err.statusMessage
+          if (err?.data?.message) return err.data.message
+          if (err?.error) return err.error
+          return null
         }
+
+        message = getErrorMessage(errorData) || '保存配置失败'
       } catch (parseError) {
         console.error('无法解析API错误响应:', parseError)
       }

@@ -516,26 +516,6 @@ export default defineEventHandler(async (event) => {
       updateData.customOAuthAvatarField = body.customOAuthAvatarField
     }
 
-    if (body.customOAuthEnabled === true) {
-      const requiredFields = [
-        { key: 'customOAuthAuthorizeUrl', label: '授权地址' },
-        { key: 'customOAuthTokenUrl', label: '令牌地址' },
-        { key: 'customOAuthUserInfoUrl', label: '用户信息地址' },
-        { key: 'customOAuthClientId', label: 'Client ID' },
-        { key: 'customOAuthClientSecret', label: 'Client Secret' }
-      ]
-
-      for (const field of requiredFields) {
-        const value = body[field.key]
-        if (typeof value !== 'string' || !value.trim()) {
-          throw createError({
-            statusCode: 400,
-            message: `启用第三方 OAuth2 时必须填写${field.label}`
-          })
-        }
-      }
-    }
-
     // 验证每日、每周和每月限额三选一逻辑
     const limitSettings = [
       body.dailySubmissionLimit,

@@ -477,12 +477,12 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 ## OAuth 配置
 
-系统支持通过 OAuth 提供商（如 GitHub、Casdoor、Google 等）快速创建账户和登录。OAuth 配置已改为通过管理员后台管理，无需环境变量：
+系统支持通过 OAuth 提供商（如 GitHub、Casdoor、Google 等）快速创建账户和登录：
 
 1. **在管理员后台配置**：
   - 导航到系统设置 > OAuth 配置
   - 配置基础设置：
-    - **OAuth 重定向 URI**：`https://yourdomain.com/auth/[provider]/callback`
+    - **OAuth 重定向 URI**：`https://yourdomain.com/api/auth/[provider]/callback`
     - **OAuth State 密钥**：强随机字符串，用于 state 参数加密
   - 启用需要的 OAuth 提供商并填写相应凭证：
     - GitHub：Client ID / Secret
