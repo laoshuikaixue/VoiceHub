@@ -308,12 +308,12 @@ const handleImageError = (event) => {
   .schedule-timetable th {
     background: #f0f0f0 !important;
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
   .playtime-header-row {
     background: #e3f2fd !important;
     -webkit-print-color-adjust: exact;
-    color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 </style>
