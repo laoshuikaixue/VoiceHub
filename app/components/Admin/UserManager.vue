@@ -847,12 +847,21 @@
                 {{ importError }}
               </div>
 
+              <!-- 进度条 -->
               <div
-                v-if="importSuccess"
-                class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-3 text-emerald-400 text-xs"
+                v-if="importProgressText"
+                class="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
               >
-                <CheckCircle2 :size="16" />
-                {{ importSuccess }}
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-black text-emerald-400 uppercase tracking-widest">{{ importProgressText }}</span>
+                  <span class="text-xs font-black text-emerald-400">{{ importProgress }}%</span>
+                </div>
+                <div class="h-2 bg-zinc-900 rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-300 ease-out rounded-full"
+                    :style="{ width: importProgress + '%' }"
+                  />
+                </div>
               </div>
 
               <div v-if="previewData.length > 0" class="space-y-3">
@@ -1438,9 +1447,10 @@ const passwordError = ref('')
 const showImportModal = ref(false)
 const importLoading = ref(false)
 const importError = ref('')
-const importSuccess = ref('')
 const previewData = ref([])
 const xlsxLoaded = ref(false)
+const importProgress = ref(0)
+const importProgressText = ref('')
 
 // 批量更新状态
 const showBatchUpdateModal = ref(false)
@@ -1915,7 +1925,8 @@ const loadUsers = async (page = 1, limit = 100) => {
 const closeImportModal = () => {
   showImportModal.value = false
   importError.value = ''
-  importSuccess.value = ''
+  importProgress.value = 0
+  importProgressText.value = ''
   previewData.value = []
   // 清空文件输入
   const fileInput = document.getElementById('file-upload')
@@ -1980,7 +1991,8 @@ const handleFileUpload = async (event) => {
   if (!file) return
 
   importError.value = ''
-  importSuccess.value = ''
+  importProgressText.value = ''
+  importProgress.value = 0
   previewData.value = []
 
   // 确保XLSX库已加载
@@ -2125,7 +2137,8 @@ const importUsers = async () => {
 
   importLoading.value = true
   importError.value = ''
-  importSuccess.value = ''
+  importProgress.value = 0
+  importProgressText.value = ''
 
   const dataToImport = [...previewData.value]
   const batchSize = 50
@@ -2138,7 +2151,8 @@ const importUsers = async () => {
       const batch = dataToImport.slice(i, i + batchSize)
       const currentBatch = Math.floor(i / batchSize) + 1
 
-      importSuccess.value = `正在导入：正在处理第 ${currentBatch} / ${totalBatches} 批数据...`
+      importProgressText.value = `正在导入：正在处理第 ${currentBatch} / ${totalBatches} 批数据...`
+      importProgress.value = Math.round((currentBatch / totalBatches) * 100)
 
       try {
         const result = await $fetch('/api/admin/users/batch', {
@@ -2160,21 +2174,22 @@ const importUsers = async () => {
     await loadUsers()
 
     if (totalCreated > 0 || totalFailed === 0) {
-      importSuccess.value = `成功导入 ${totalCreated} 个用户，${totalFailed} 个用户导入失败`
+      importProgressText.value = `导入完成：成功导入 ${totalCreated} 个，失败 ${totalFailed} 个`
+      importProgress.value = 100
       previewData.value = []
 
       setTimeout(() => {
-        if (importSuccess.value) {
+        if (importProgressText.value) {
           closeImportModal()
         }
       }, 3000)
     } else {
       importError.value = '导入失败，请检查数据格式后重试'
-      importSuccess.value = ''
+      importProgressText.value = ''
     }
   } catch (err) {
     importError.value = `导入过程中发生错误 (已成功导入 ${totalCreated} 个): ${err.message || '未知错误'}`
-    importSuccess.value = ''
+    importProgressText.value = ''
     console.error('导入用户出错:', err)
   } finally {
     importLoading.value = false

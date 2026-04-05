@@ -253,9 +253,7 @@ bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh
 ### 飞牛 (FnOS) 部署
 
 VoiceHub 现已支持飞牛 OS (FnOS) 的 `.fpk` 安装包。
-- **正式版**：前往 [Releases](https://github.com/laoshuikaixue/VoiceHub/releases) 下载安装包
-- **测试版**：从 [GitHub Actions](https://github.com/laoshuikaixue/VoiceHub/actions/workflows/build-fpk.yml) 获取最新测试版
-- **官方应用商店**：敬请期待！
+- 从 [GitHub Actions](https://github.com/laoshuikaixue/VoiceHub/actions/workflows/build-fpk.yml) 获取最新版本
 
 ### 本地开发部署
 
