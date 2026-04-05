@@ -102,8 +102,6 @@
           </div>
         </div>
       </section>
-  <!-- OAuth 第三方登录配置 -->
-  <OAuthConfigManager v-model="formData" class="lg:col-span-2" />
 
       <!-- 视觉识别 -->
       <section :class="cardClass">
@@ -141,23 +139,6 @@
             >
           </div>
         </div>
-      </section>
-
-      <!-- 投稿须知 -->
-      <section
-        class="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6"
-      >
-        <h3
-          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
-        >
-          <FileText :size="16" class="text-emerald-500" /> 投稿须知
-        </h3>
-        <textarea
-          v-model="formData.submissionGuidelines"
-          :rows="6"
-          placeholder="请输入投稿须知内容"
-          :class="[inputClass, 'font-mono text-xs leading-relaxed min-h-[150px]']"
-        />
       </section>
 
       <!-- 投稿逻辑设置 -->
@@ -340,6 +321,26 @@
           </div>
         </div>
       </section>
+
+      <!-- 投稿须知 -->
+      <section
+        class="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6"
+      >
+        <h3
+          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
+        >
+          <FileText :size="16" class="text-emerald-500" /> 投稿须知
+        </h3>
+        <textarea
+          v-model="formData.submissionGuidelines"
+          :rows="6"
+          placeholder="请输入投稿须知内容"
+          :class="[inputClass, 'font-mono text-xs leading-relaxed min-h-[150px]']"
+        />
+      </section>
+
+      <!-- OAuth 第三方登录配置 -->
+      <OAuthConfigManager v-model="formData" class="lg:col-span-2" />
     </div>
   </div>
 </template>
