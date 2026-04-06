@@ -95,6 +95,7 @@ const handleImageError = (event) => {
   padding: 8px 0;
   border-bottom: 1px solid #e5e5e5;
   page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 .item-content {
