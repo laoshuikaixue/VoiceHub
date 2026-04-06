@@ -25,13 +25,11 @@
         <div class="title">
           <!-- 封面 -->
           <div
-            class="cover-container"
+            class="cover-container clickable"
             @click.stop="
-              isMobile
-                ? isBilibiliSong(activeSong)
-                  ? openBilibiliVideo()
-                  : toggleLyrics()
-                : null
+              isBilibiliSong(activeSong)
+                ? openBilibiliVideo()
+                : toggleLyrics()
             "
           >
             <template v-if="activeSong && activeSong.cover && !coverError">
@@ -45,6 +43,11 @@
             </template>
             <div v-else class="text-cover">
               {{ getFirstChar(activeSong?.title || '') }}
+            </div>
+            
+            <!-- 悬浮展开提示遮罩 -->
+            <div class="cover-hover-overlay">
+              <Icon :name="isBilibiliSong(activeSong) ? 'video' : 'maximize-2'" size="18" />
             </div>
           </div>
 
@@ -109,18 +112,17 @@
 
           <!-- 控制按钮区域 -->
           <div class="controls-frame">
-            <!-- 左侧歌词按钮 -->
-            <span
-              v-if="isBilibiliSong(activeSong)"
-              class="lyrics-btn music-icon"
-              title="观看视频"
-              @click="openBilibiliVideo"
-            >
-              <Icon name="video" size="20" />
-            </span>
-            <span v-else class="lyrics-btn music-icon" title="歌词" @click="toggleLyrics">
-              <Icon name="music" size="20" />
-            </span>
+            <!-- 左侧播放模式切换 -->
+            <div class="left-actions-group">
+              <span
+                class="lyrics-btn music-icon"
+                :class="{ active: control.playMode.value !== 'off' }"
+                :title="playModeTitle"
+                @click="cyclePlayMode"
+              >
+                <Icon :name="playModeIcon" size="20" />
+              </span>
+            </div>
 
             <!-- 中央播放控制 -->
             <div class="center-controls">
@@ -157,15 +159,11 @@
               </span>
             </div>
 
-            <!-- 右侧播放模式切换 -->
-            <span
-              class="lyrics-btn music-icon"
-              :class="{ active: control.playMode.value !== 'off' }"
-              :title="playModeTitle"
-              @click="cyclePlayMode"
-            >
-              <Icon :name="playModeIcon" size="20" />
-            </span>
+            <!-- 右侧操作区域 -->
+            <div class="right-actions-group">
+              <!-- 音量控制 -->
+              <VolumeControl />
+            </div>
           </div>
         </div>
 
@@ -256,6 +254,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import AppleMusicLyrics from './AppleMusicLyrics.vue'
 import LyricsModal from './LyricsModal.vue'
 import AudioElement from './AudioPlayer/AudioElement.vue'
+import VolumeControl from './AudioPlayer/VolumeControl.vue'
 import BilibiliIframeModal from './BilibiliIframeModal.vue'
 import Icon from './Icon.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -1824,10 +1823,49 @@ const getFirstChar = (text) => {
   position: relative;
 }
 
+.cover-container.clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cover-container.clickable:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.cover-container.clickable:hover .cover-hover-overlay {
+  opacity: 1;
+}
+
+.cover-container.clickable:hover .player-cover,
+.cover-container.clickable:hover .text-cover {
+  transform: scale(1.1);
+}
+
+.cover-container.clickable:active {
+  transform: scale(0.95);
+}
+
 .player-cover {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.cover-hover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .text-cover {
@@ -1844,6 +1882,7 @@ const getFirstChar = (text) => {
   font-family:
     'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
     sans-serif;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* 歌曲信息文本 */
@@ -2160,6 +2199,14 @@ const getFirstChar = (text) => {
 }
 
 /* 右侧操作区域 */
+.left-actions-group,
+.right-actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 39px;
+}
+
 .right-actions {
   width: 44px;
   height: 44px;

@@ -9,6 +9,9 @@ const isPlaying = ref(false)
 const progress = ref(0)
 const currentTime = ref(0)
 const duration = ref(0)
+const volume = ref(1) // 0.0 到 1.0
+const isMuted = ref(false)
+const preMuteVolume = ref(1)
 const hasError = ref(false)
 const coverError = ref(false)
 const showQualitySettings = ref(false)
@@ -707,6 +710,9 @@ export const useAudioPlayerControl = () => {
   // 设置音频播放器引用
   const setAudioPlayerRef = (element: HTMLAudioElement | null) => {
     audioPlayer.value = element
+    if (element) {
+      element.volume = volume.value
+    }
   }
 
   // 清理资源
@@ -792,6 +798,25 @@ export const useAudioPlayerControl = () => {
     return false
   }
 
+  // 音量控制
+  const setVolume = (val: number) => {
+    const newVolume = Math.max(0, Math.min(1, val))
+    volume.value = newVolume
+    isMuted.value = newVolume === 0
+    if (audioPlayer.value) {
+      audioPlayer.value.volume = newVolume
+    }
+  }
+
+  const toggleMute = () => {
+    if (isMuted.value) {
+      setVolume(preMuteVolume.value > 0 ? preMuteVolume.value : 1)
+    } else {
+      preMuteVolume.value = volume.value
+      setVolume(0)
+    }
+  }
+
   return {
     // 状态
     audioPlayer,
@@ -799,6 +824,8 @@ export const useAudioPlayerControl = () => {
     progress,
     currentTime,
     duration,
+    volume,
+    isMuted,
     hasError,
     coverError,
     showQualitySettings,
@@ -820,6 +847,8 @@ export const useAudioPlayerControl = () => {
     togglePlay,
     loadSong,
     forceUpdatePosition,
+    setVolume,
+    toggleMute,
 
     // 音频事件处理
     onTimeUpdate,
