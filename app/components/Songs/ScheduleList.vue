@@ -764,6 +764,21 @@ const scrollToDateItem = async (index) => {
 }
 
 // 提取日期选择逻辑到独立函数
+const toLocalMidnightTimestamp = (dateStr) => {
+  const dateParts = dateStr.split('-')
+  if (dateParts.length !== 3) return null
+
+  const year = Number(dateParts[0])
+  const month = Number(dateParts[1])
+  const day = Number(dateParts[2])
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return null
+  }
+
+  return new Date(year, month - 1, day, 0, 0, 0, 0).getTime()
+}
+
 const findAndSelectTodayOrClosestDate = async () => {
   if (availableDates.value.length === 0) return
 
@@ -795,17 +810,9 @@ const findAndSelectTodayOrClosestDate = async () => {
 
     // 查找今天或之后最近的日期
     availableDates.value.forEach((dateStr, index) => {
-      const dateParts = dateStr.split('-')
-      const date = new Date(
-        parseInt(dateParts[0]),
-        parseInt(dateParts[1]) - 1,
-        parseInt(dateParts[2]),
-        0,
-        0,
-        0,
-        0
-      )
-      const diff = date.getTime() - todayMidnightTime
+      const dateTime = toLocalMidnightTimestamp(dateStr)
+      if (dateTime === null) return
+      const diff = dateTime - todayMidnightTime
 
       // 优先选择今天或未来的日期
       if (diff >= 0 && diff < minFutureDiff) {
@@ -823,17 +830,9 @@ const findAndSelectTodayOrClosestDate = async () => {
       let minPastDiff = Number.MAX_SAFE_INTEGER
 
       availableDates.value.forEach((dateStr, index) => {
-        const dateParts = dateStr.split('-')
-        const date = new Date(
-          parseInt(dateParts[0]),
-          parseInt(dateParts[1]) - 1,
-          parseInt(dateParts[2]),
-          0,
-          0,
-          0,
-          0
-        )
-        const diff = todayMidnightTime - date.getTime()
+        const dateTime = toLocalMidnightTimestamp(dateStr)
+        if (dateTime === null) return
+        const diff = todayMidnightTime - dateTime
 
         if (diff > 0 && diff < minPastDiff) {
           minPastDiff = diff
