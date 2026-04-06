@@ -765,14 +765,22 @@ const scrollToDateItem = async (index) => {
 
 // 统一解析 YYYY-MM-DD 格式的本地日期
 const parseLocalDateParts = (dateStr) => {
-  const dateParts = dateStr.split('-')
-  if (dateParts.length !== 3) return null
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr)
+  if (!match) return null
 
-  const year = parseInt(dateParts[0], 10)
-  const month = parseInt(dateParts[1], 10)
-  const day = parseInt(dateParts[2], 10)
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const date = new Date(year, month - 1, day)
 
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
     return null
   }
 
@@ -805,15 +813,8 @@ const findAndSelectTodayOrClosestDate = async () => {
   } else {
     // 如果今天没有排期，用时间戳找到最接近今天的日期
     // 使用午夜时间戳来比较，避免时间部分的影响
-    const todayMidnightTime = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-      0,
-      0,
-      0,
-      0
-    ).getTime()
+    const todayMidnightTime = toLocalMidnightTimestamp(todayStr)
+    if (todayMidnightTime === null) return
     let closestFutureIndex = -1
     let minFutureDiff = Number.MAX_SAFE_INTEGER
 
