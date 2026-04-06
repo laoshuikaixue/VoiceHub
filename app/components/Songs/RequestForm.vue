@@ -320,7 +320,7 @@
           </div>
 
           <div class="results-content">
-            <!-- 播出时段和备注 - 移动到搜索结果上方 -->
+            <!-- 播出时段和备注 -->
             <div v-if="playTimeSelectionEnabled || enableSubmissionRemarks" class="form-row">
               <!-- 播出时段选择 -->
               <div v-if="playTimeSelectionEnabled" class="form-group">

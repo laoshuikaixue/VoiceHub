@@ -2059,7 +2059,7 @@ onMounted(async () => {
     selectedSemester.value = currentSemester.value.name
   }
 
-  const { fetchPlayTimes, playTimes, formatPlayTimeDisplay: formatter } = useSongs()
+  const { fetchPlayTimes, playTimes, formatPlayTimeDisplay: formatter } = songsService
   formatPlayTimeDisplay = formatter
   await fetchPlayTimes()
   availablePlayTimes.value = [...(playTimes.value || [])]
