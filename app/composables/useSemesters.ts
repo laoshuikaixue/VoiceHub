@@ -130,6 +130,10 @@ export function useSemesters() {
   // 创建学期
   const createSemester = async (semesterData: { name: string; isActive?: boolean }) => {
     const { isAuthenticated, getAuthConfig } = useAuth()
+    const payload = {
+      ...semesterData,
+      name: semesterData.name.trim()
+    }
 
     if (!isAuthenticated.value) {
       error.value = '需要登录才能创建学期'
@@ -147,7 +151,7 @@ export function useSemesters() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(semesterData),
+        body: JSON.stringify(payload),
         ...authConfig
       })
 
@@ -162,7 +166,7 @@ export function useSemesters() {
       await fetchSemesters()
 
       // 如果设置为活跃学期，也更新当前学期
-      if (semesterData.isActive) {
+      if (payload.isActive) {
         await fetchCurrentSemester()
       }
 
@@ -217,6 +221,59 @@ export function useSemesters() {
       return true
     } catch (err: any) {
       error.value = err.message || '设置活跃学期失败'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 更新学期名称
+  const updateSemester = async (semesterId: number, semesterData: { name: string }) => {
+    const { isAuthenticated, getAuthConfig } = useAuth()
+    const payload = {
+      ...semesterData,
+      name: semesterData.name.trim()
+    }
+
+    if (!isAuthenticated.value) {
+      error.value = '需要登录才能更新学期'
+      return false
+    }
+
+    loading.value = true
+    error.value = ''
+
+    try {
+      const authConfig = getAuthConfig()
+
+      const response = await fetch(`/api/admin/semesters/${semesterId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+        ...authConfig
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || '更新学期失败')
+      }
+
+      // 更新学期列表
+      await fetchSemesters()
+      
+      // 如果更新的是当前学期，需要刷新当前学期数据
+      if (currentSemester.value?.id === semesterId) {
+        await fetchCurrentSemester()
+      }
+
+      // 触发全局学期更新事件
+      triggerSemesterUpdate()
+
+      return true
+    } catch (err: any) {
+      error.value = err.message || '更新学期失败'
       return false
     } finally {
       loading.value = false
@@ -298,6 +355,7 @@ export function useSemesters() {
     fetchSemesterOptions,
     createSemester,
     setActiveSemester,
+    updateSemester,
     deleteSemester,
     triggerSemesterUpdate,
     // 导出持久化工具函数
