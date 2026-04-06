@@ -772,9 +772,24 @@ const findAndSelectTodayOrClosestDate = async () => {
 
   let selectedIndex = 0
 
-  // 在宽屏模式下，优先显示最近的日期（今天或之后最近的日期）
-  if (!isMobile.value) {
-    const todayTime = today.getTime()
+  // 统一逻辑：所有设备先尝试直接字符串匹配找"今天"
+  const todayIndex = availableDates.value.findIndex((date) => date === todayStr)
+
+  if (todayIndex >= 0) {
+    // 如果找到今天的日期，则选择它
+    selectedIndex = todayIndex
+  } else {
+    // 如果今天没有排期，用时间戳找到最接近今天的日期
+    // 使用午夜时间戳来比较，避免时间部分的影响
+    const todayMidnightTime = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      0,
+      0,
+      0,
+      0
+    ).getTime()
     let closestFutureIndex = -1
     let minFutureDiff = Number.MAX_SAFE_INTEGER
 
@@ -784,9 +799,13 @@ const findAndSelectTodayOrClosestDate = async () => {
       const date = new Date(
         parseInt(dateParts[0]),
         parseInt(dateParts[1]) - 1,
-        parseInt(dateParts[2])
+        parseInt(dateParts[2]),
+        0,
+        0,
+        0,
+        0
       )
-      const diff = date.getTime() - todayTime
+      const diff = date.getTime() - todayMidnightTime
 
       // 优先选择今天或未来的日期
       if (diff >= 0 && diff < minFutureDiff) {
@@ -808,9 +827,13 @@ const findAndSelectTodayOrClosestDate = async () => {
         const date = new Date(
           parseInt(dateParts[0]),
           parseInt(dateParts[1]) - 1,
-          parseInt(dateParts[2])
+          parseInt(dateParts[2]),
+          0,
+          0,
+          0,
+          0
         )
-        const diff = todayTime - date.getTime()
+        const diff = todayMidnightTime - date.getTime()
 
         if (diff > 0 && diff < minPastDiff) {
           minPastDiff = diff
@@ -820,38 +843,6 @@ const findAndSelectTodayOrClosestDate = async () => {
 
       if (closestPastIndex >= 0) {
         selectedIndex = closestPastIndex
-      }
-    }
-  } else {
-    // 移动端保持原有逻辑：优先选择今天
-    const todayIndex = availableDates.value.findIndex((date) => date === todayStr)
-
-    if (todayIndex >= 0) {
-      // 如果找到今天的日期，则选择它
-      selectedIndex = todayIndex
-    } else {
-      // 如果今天没有排期，找到最接近今天的日期
-      const todayTime = today.getTime()
-      let closestDate = -1
-      let minDiff = Number.MAX_SAFE_INTEGER
-
-      availableDates.value.forEach((dateStr, index) => {
-        const dateParts = dateStr.split('-')
-        const date = new Date(
-          parseInt(dateParts[0]),
-          parseInt(dateParts[1]) - 1,
-          parseInt(dateParts[2])
-        )
-        const diff = Math.abs(date.getTime() - todayTime)
-
-        if (diff < minDiff) {
-          minDiff = diff
-          closestDate = index
-        }
-      })
-
-      if (closestDate >= 0) {
-        selectedIndex = closestDate
       }
     }
   }
