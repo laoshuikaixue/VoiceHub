@@ -213,30 +213,33 @@
             :class="{ 'mobile-hidden': isMobile && currentMobilePage === 1 }"
           >
             <div class="control-buttons" @touchstart.stop @touchmove.stop @touchend.stop>
-              <button
-                class="control-btn secondary-btn"
-                :class="{ active: playMode === 'order' }"
-                @click="togglePlayMode('order')"
-              >
-                <Icon name="order" size="20" />
-              </button>
-              <button :disabled="!hasPrevious" class="control-btn" @click="previousSong">
-                <Icon name="skip-back" size="28" />
-              </button>
-              <button class="play-pause-btn" @click="togglePlayPause">
-                <div v-if="isLoadingTrack" class="loading-spinner" />
-                <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="32" />
-              </button>
-              <button :disabled="!hasNext" class="control-btn" @click="nextSong">
-                <Icon name="skip-forward" size="28" />
-              </button>
-              <button
-                class="control-btn secondary-btn"
-                :class="{ active: playMode === 'loopOne' }"
-                @click="togglePlayMode('loopOne')"
-              >
-                <Icon name="repeat-one" size="20" />
-              </button>
+              <div class="left-control">
+                <button
+                  class="control-btn secondary-btn"
+                  :class="{ active: playMode !== 'off' }"
+                  :title="playModeTitle"
+                  @click="cyclePlayMode"
+                >
+                  <Icon :name="playModeIcon" size="20" />
+                </button>
+              </div>
+
+              <div class="center-control">
+                <button :disabled="!hasPrevious" class="control-btn" @click="previousSong">
+                  <Icon name="skip-back" size="28" />
+                </button>
+                <button class="play-pause-btn" @click="togglePlayPause">
+                  <div v-if="isLoadingTrack" class="loading-spinner" />
+                  <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="32" />
+                </button>
+                <button :disabled="!hasNext" class="control-btn" @click="nextSong">
+                  <Icon name="skip-forward" size="28" />
+                </button>
+              </div>
+
+              <div class="right-control">
+                <VolumeControl />
+              </div>
             </div>
 
             <!-- 进度条 -->
@@ -277,6 +280,7 @@ import { convertToHttps } from '~/utils/url'
 import AMLyric from '~/components/Player/PlayerLyric/AMLyric.vue'
 import DefaultLyric from '~/components/Player/PlayerLyric/DefaultLyric.vue'
 import Popover from '~/components/UI/Common/Popover.vue'
+import VolumeControl from '~/components/UI/AudioPlayer/VolumeControl.vue'
 
 const props = defineProps({
   isVisible: {
@@ -641,11 +645,41 @@ const nextSong = () => {
   audioPlayer.playNext()
 }
 
-const togglePlayMode = (mode) => {
-  if (audioPlayerControl.playMode.value === mode) {
-    audioPlayerControl.playMode.value = 'off'
+const playModeIcon = computed(() => {
+  switch (audioPlayerControl.playMode.value) {
+    case 'loopOne':
+      return 'repeat-one'
+    case 'order':
+      return 'order'
+    case 'off':
+    default:
+      return 'play-circle'
+  }
+})
+
+const playModeTitle = computed(() => {
+  switch (audioPlayerControl.playMode.value) {
+    case 'loopOne':
+      return '单曲循环'
+    case 'order':
+      return '列表循环'
+    case 'off':
+    default:
+      return '单曲播放'
+  }
+})
+
+const cyclePlayMode = () => {
+  const current = audioPlayerControl.playMode.value
+  if (current === 'order') {
+    audioPlayerControl.setPlayMode('loopOne')
+    if (window.$showNotification) window.$showNotification('已切换为单曲循环', 'info')
+  } else if (current === 'loopOne') {
+    audioPlayerControl.setPlayMode('off')
+    if (window.$showNotification) window.$showNotification('已切换为单曲播放', 'info')
   } else {
-    audioPlayerControl.playMode.value = mode
+    audioPlayerControl.setPlayMode('order')
+    if (window.$showNotification) window.$showNotification('已切换为列表循环', 'info')
   }
 }
 
@@ -1363,9 +1397,28 @@ onUnmounted(() => {
 .control-buttons {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 2.5rem;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
   position: relative;
+}
+
+.center-control {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.left-control,
+.right-control {
+  width: 44px;
+  display: flex;
+  justify-content: center;
+  z-index: 10;
 }
 
 .control-btn {
@@ -1870,6 +1923,10 @@ onUnmounted(() => {
     width: 100%;
     padding: 0;
     gap: 0;
+  }
+
+  .center-control {
+    gap: 30px;
   }
 
   .control-btn {

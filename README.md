@@ -594,7 +594,8 @@ VoiceHub/
 │   │   │   ├── AudioPlayer/   # 音频播放器组件模块
 │   │   │   │   ├── AudioElement.vue   # 音频元素组件
 │   │   │   │   ├── PlayerControls.vue # 播放器控制组件
-│   │   │   │   └── PlayerInfo.vue     # 播放器信息组件
+│   │   │   │   ├── PlayerInfo.vue     # 播放器信息组件
+│   │   │   │   └── VolumeControl.vue  # 播放器音量控制组件
 │   │   │   ├── Common/        # 通用UI组件
 │   │   │   │   ├── CustomSelect.vue   # 自定义选择器
 │   │   │   │   ├── DataTable.vue      # 通用数据表格组件
