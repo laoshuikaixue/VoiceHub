@@ -809,8 +809,9 @@ export const useAudioPlayerControl = () => {
   }
 
   const toggleMute = () => {
-    if (isMuted.value) {
-      setVolume(preMuteVolume.value > 0 ? preMuteVolume.value : 1)
+    if (isMuted.value || volume.value === 0) {
+      // 恢复时，如果记录的音量为0（或极其接近0），则默认恢复到 10% (0.1) 的音量
+      setVolume(preMuteVolume.value > 0.01 ? preMuteVolume.value : 0.1)
     } else {
       preMuteVolume.value = volume.value
       setVolume(0)
