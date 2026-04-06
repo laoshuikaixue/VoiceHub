@@ -500,6 +500,17 @@ const contentOptions = [
   { key: 'showSequence', label: '播放顺序' }
 ]
 
+const paperWidths = {
+  A4: { portrait: 800, landscape: 1132 },
+  A3: { portrait: 1132, landscape: 1600 },
+  Letter: { portrait: 800, landscape: 1034 },
+  Legal: { portrait: 800, landscape: 1318 }
+}
+
+const getPaperWidth = (paperSize, orientation) => {
+  return paperWidths[paperSize]?.[orientation] || paperWidths.A4.portrait
+}
+
 // 计算属性
 const itemsPerPage = computed(() => {
   const baseItems = settings.value.paperSize === 'A4' ? 20 : 30
@@ -824,17 +835,8 @@ const exportPDFForPrint = async (action = 'print') => {
   const pdfHeight = pdf.internal.pageSize.getHeight()
 
   // 计算容器尺寸，与 generateAndDownloadImage 保持一致
-  let containerWidth = 800
   const s = settings.value
-  if (s.paperSize === 'A4') {
-    containerWidth = s.orientation === 'landscape' ? 1132 : 800
-  } else if (s.paperSize === 'A3') {
-    containerWidth = s.orientation === 'landscape' ? 1600 : 1132
-  } else if (s.paperSize === 'Letter') {
-    containerWidth = s.orientation === 'landscape' ? 1034 : 800
-  } else if (s.paperSize === 'Legal') {
-    containerWidth = s.orientation === 'landscape' ? 1318 : 800
-  }
+  const containerWidth = getPaperWidth(s.paperSize, s.orientation)
 
   // 保持宽高比
   const ratio = pdfHeight / pdfWidth
@@ -933,11 +935,7 @@ const exportPDFForPrint = async (action = 'print') => {
 
       // 创建内容区域
       const cw = applyScopeAttributes(document.createElement('div'))
-      cw.className = sourceContent ? sourceContent.className : `schedule-content layout-${settings.value.layoutStyle}`
-
-      if (!cw.classList.contains(`layout-${settings.value.layoutStyle}`)) {
-        cw.classList.add(`layout-${settings.value.layoutStyle}`)
-      }
+      cw.className = `schedule-content layout-${settings.value.layoutStyle}`
 
       cw.style.margin = '0'
       cw.style.padding = '0'
@@ -1257,18 +1255,8 @@ const preprocessImages = async (element) => {
 
 const generateAndDownloadImage = async (sourceElement, filename, preProcessCallback = null) => {
   // 根据设置计算固定宽度，而不是依赖 offsetWidth (在移动端可能受屏幕宽度限制而不准确)
-  let targetWidth = 800 // 默认为 A4 Portrait 宽度
   const s = settings.value
-
-  if (s.paperSize === 'A4') {
-    targetWidth = s.orientation === 'landscape' ? 1132 : 800
-  } else if (s.paperSize === 'A3') {
-    targetWidth = s.orientation === 'landscape' ? 1600 : 1132
-  } else if (s.paperSize === 'Letter') {
-    targetWidth = s.orientation === 'landscape' ? 1034 : 800
-  } else if (s.paperSize === 'Legal') {
-    targetWidth = s.orientation === 'landscape' ? 1318 : 800
-  }
+  const targetWidth = getPaperWidth(s.paperSize, s.orientation)
 
   const imageContainer = document.createElement('div')
   imageContainer.style.cssText = `
@@ -1293,7 +1281,7 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
 
   const scheduleContent = clonedPage.querySelector('.schedule-content')
   if (scheduleContent) {
-    scheduleContent.classList.add(`layout-${s.layoutStyle}`)
+    scheduleContent.className = `schedule-content layout-${s.layoutStyle}`
   }
 
   // 使用 setProperty 避免覆盖其他重要样式
