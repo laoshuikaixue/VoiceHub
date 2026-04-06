@@ -518,6 +518,7 @@ const {
 const showModal = ref(false)
 const isEditing = ref(false)
 const editSemesterId = ref(null)
+const originalSemesterName = ref('')
 
 const showDeleteDialog = ref(false)
 const deleteTargetId = ref(null)
@@ -603,6 +604,12 @@ const handleSubmit = async () => {
   const normalizedName = semesterForm.value.name.trim()
   if (!normalizedName) return
 
+  if (isEditing.value && normalizedName === originalSemesterName.value) {
+    showNotification('学期名称未发生变化', 'info')
+    closeModal()
+    return
+  }
+
   submitting.value = true
   try {
     if (isEditing.value && editSemesterId.value) {
@@ -642,6 +649,7 @@ const closeModal = () => {
   showModal.value = false
   isEditing.value = false
   editSemesterId.value = null
+  originalSemesterName.value = ''
   semesterForm.value = {
     name: '',
     isActive: false
@@ -681,6 +689,7 @@ const openModal = () => {
 const openEditModal = (sem) => {
   isEditing.value = true
   editSemesterId.value = sem.id
+  originalSemesterName.value = sem.name
   semesterForm.value.name = sem.name
   semesterForm.value.isActive = sem.isActive
   showModal.value = true
