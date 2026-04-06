@@ -63,7 +63,7 @@ const isMobile = ref(false)
 const showSlider = ref(false)
 const sliderRef = ref<HTMLElement | null>(null)
 const isDragging = ref(false)
-let hideTimer: number | null = null
+const hideTimer = ref<number | null>(null)
 
 const volumePercentage = computed(() => {
   return (control.volume.value || 0) * 100
@@ -93,19 +93,21 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
   document.removeEventListener('click', handleClickOutside)
-  clearTimeout(hideTimer!)
+  if (hideTimer.value !== null) {
+    clearTimeout(hideTimer.value)
+  }
 })
 
 // PC端 Hover 效果
 const handleMouseEnter = () => {
   if (isMobile.value || isDragging.value) return
-  if (hideTimer) clearTimeout(hideTimer)
+  if (hideTimer.value !== null) clearTimeout(hideTimer.value)
   showSlider.value = true
 }
 
 const handleMouseLeave = () => {
   if (isMobile.value || isDragging.value) return
-  hideTimer = window.setTimeout(() => {
+  hideTimer.value = window.setTimeout(() => {
     showSlider.value = false
   }, 300)
 }
@@ -157,7 +159,7 @@ const startDrag = (e: MouseEvent) => {
     document.removeEventListener('mouseup', onMouseUp)
     // 如果鼠标已经离开区域，隐藏 slider
     if (!isMobile.value) {
-      hideTimer = window.setTimeout(() => {
+      hideTimer.value = window.setTimeout(() => {
         showSlider.value = false
       }, 500)
     }
