@@ -801,6 +801,12 @@ export const useAudioPlayerControl = () => {
   // 音量控制
   const setVolume = (val: number) => {
     const newVolume = Math.max(0, Math.min(1, val))
+    
+    // 当用户手动调节非0音量时，记录为下一次取消静音的恢复值
+    if (newVolume > 0) {
+      preMuteVolume.value = newVolume
+    }
+    
     volume.value = newVolume
     isMuted.value = newVolume === 0
     if (audioPlayer.value) {
@@ -810,9 +816,11 @@ export const useAudioPlayerControl = () => {
 
   const toggleMute = () => {
     if (isMuted.value || volume.value === 0) {
-      // 恢复时，如果记录的音量为0（或极其接近0），则默认恢复到 10% (0.1) 的音量
+      // 取消静音：如果用户手动把音量拉到 0 后又点击了恢复，此时记录的 preMuteVolume 会被用来恢复
+      // 但如果连 preMuteVolume 记录的值都极小(如初始状态就是0)，那就默认恢复到 10%
       setVolume(preMuteVolume.value > 0.01 ? preMuteVolume.value : 0.1)
     } else {
+      // 触发静音前，再更新一次历史音量
       preMuteVolume.value = volume.value
       setVolume(0)
     }
