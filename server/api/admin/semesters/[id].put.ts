@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { semesters, songs } from '~/drizzle/schema'
 import { eq, and, ne } from 'drizzle-orm'
+import { cacheService } from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -30,8 +31,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
+  const nextName = typeof body.name === 'string' ? body.name.trim() : ''
 
-  if (!body.name) {
+  if (!nextName) {
     throw createError({
       statusCode: 400,
       message: '学期名称不能为空'
@@ -58,7 +60,7 @@ export default defineEventHandler(async (event) => {
     .from(semesters)
     .where(
       and(
-        eq(semesters.name, body.name),
+        eq(semesters.name, nextName),
         ne(semesters.id, semesterId)
       )
     )
@@ -73,11 +75,15 @@ export default defineEventHandler(async (event) => {
 
   const oldName = currentSemesterResult[0].name
 
+  if (oldName === nextName) {
+    return currentSemesterResult[0]
+  }
+
   // 更新学期名称及关联歌曲数据
   const result = await db.transaction(async (tx) => {
     const updateResult = await tx
       .update(semesters)
-      .set({ name: body.name })
+      .set({ name: nextName })
       .where(eq(semesters.id, semesterId))
       .returning()
 
@@ -85,12 +91,18 @@ export default defineEventHandler(async (event) => {
       // 同步更新歌曲表中的学期名称引用
       await tx
         .update(songs)
-        .set({ semester: body.name })
+        .set({ semester: nextName })
         .where(eq(songs.semester, oldName))
     }
 
     return updateResult[0]
   })
+
+  await Promise.all([
+    cacheService.clearSongsCache(),
+    cacheService.clearSchedulesCache(),
+    cacheService.clearStatsCache()
+  ])
 
   return result
 })

@@ -130,6 +130,10 @@ export function useSemesters() {
   // 创建学期
   const createSemester = async (semesterData: { name: string; isActive?: boolean }) => {
     const { isAuthenticated, getAuthConfig } = useAuth()
+    const payload = {
+      ...semesterData,
+      name: semesterData.name.trim()
+    }
 
     if (!isAuthenticated.value) {
       error.value = '需要登录才能创建学期'
@@ -147,7 +151,7 @@ export function useSemesters() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(semesterData),
+        body: JSON.stringify(payload),
         ...authConfig
       })
 
@@ -162,7 +166,7 @@ export function useSemesters() {
       await fetchSemesters()
 
       // 如果设置为活跃学期，也更新当前学期
-      if (semesterData.isActive) {
+      if (payload.isActive) {
         await fetchCurrentSemester()
       }
 
@@ -226,6 +230,10 @@ export function useSemesters() {
   // 更新学期名称
   const updateSemester = async (semesterId: number, semesterData: { name: string }) => {
     const { isAuthenticated, getAuthConfig } = useAuth()
+    const payload = {
+      ...semesterData,
+      name: semesterData.name.trim()
+    }
 
     if (!isAuthenticated.value) {
       error.value = '需要登录才能更新学期'
@@ -243,7 +251,7 @@ export function useSemesters() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(semesterData),
+        body: JSON.stringify(payload),
         ...authConfig
       })
 

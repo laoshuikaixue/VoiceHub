@@ -316,8 +316,8 @@
               <button
                 :disabled="loading"
                 class="p-2.5 text-zinc-700 hover:text-blue-400 hover:bg-blue-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                @click="openEditModal(sem)"
                 title="修改学期"
+                @click="openEditModal(sem)"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -338,8 +338,8 @@
                 v-if="!sem.isActive"
                 :disabled="loading"
                 class="p-2.5 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                @click="deleteSemester(sem.id)"
                 title="删除学期"
+                @click="deleteSemester(sem.id)"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -600,14 +600,15 @@ const confirmDelete = async () => {
 
 // 处理表单提交
 const handleSubmit = async () => {
-  if (!semesterForm.value.name.trim()) return
+  const normalizedName = semesterForm.value.name.trim()
+  if (!normalizedName) return
 
   submitting.value = true
   try {
     if (isEditing.value && editSemesterId.value) {
       // 修改学期
       const success = await updateSemester(editSemesterId.value, {
-        name: semesterForm.value.name
+        name: normalizedName
       })
       if (success) {
         showNotification('学期修改成功！', 'success')
@@ -618,7 +619,7 @@ const handleSubmit = async () => {
     } else {
       // 创建学期
       const result = await createSemester({
-        name: semesterForm.value.name,
+        name: normalizedName,
         isActive: semesterForm.value.isActive
       })
       if (result) {

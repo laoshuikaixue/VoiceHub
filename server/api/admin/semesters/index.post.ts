@@ -21,8 +21,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
+  const name = typeof body.name === 'string' ? body.name.trim() : ''
 
-  if (!body.name) {
+  if (!name) {
     throw createError({
       statusCode: 400,
       message: '学期名称不能为空'
@@ -33,7 +34,7 @@ export default defineEventHandler(async (event) => {
   const existingSemesterResult = await db
     .select()
     .from(semesters)
-    .where(eq(semesters.name, body.name))
+    .where(eq(semesters.name, name))
     .limit(1)
   const existingSemester = existingSemesterResult[0]
 
@@ -61,7 +62,7 @@ export default defineEventHandler(async (event) => {
   const semesterResult = await db
     .insert(semesters)
     .values({
-      name: body.name,
+      name,
       isActive: shouldBeActive || false
     })
     .returning()
