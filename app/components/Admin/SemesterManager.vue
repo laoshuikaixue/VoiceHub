@@ -10,7 +10,7 @@
       </div>
       <button
         class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
-        @click="openAddModal"
+        @click="openModal"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -153,7 +153,7 @@
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
           <p class="text-sm font-bold text-zinc-600">未设置当前活跃学期</p>
-          <button class="text-xs text-blue-500 font-black hover:underline" @click="openAddModal">
+          <button class="text-xs text-blue-500 font-black hover:underline" @click="openModal">
             立即创建
           </button>
         </div>
@@ -290,53 +290,76 @@
                 </svg>
                 <span class="text-[10px] font-black uppercase tracking-widest">当前学期</span>
               </div>
-              <template v-else>
-                <button
-                  :disabled="loading"
-                  class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[10px] font-black rounded-xl border border-zinc-700 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
-                  @click="setActive(sem.id)"
+              <button
+                v-else
+                :disabled="loading"
+                class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[10px] font-black rounded-xl border border-zinc-700 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="setActive(sem.id)"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
-                  </svg>
-                  设为当前
-                </button>
-                <button
-                  :disabled="loading"
-                  class="p-2.5 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  @click="deleteSemester(sem.id)"
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+                设为当前
+              </button>
+
+              <button
+                :disabled="loading"
+                class="p-2.5 text-zinc-700 hover:text-blue-400 hover:bg-blue-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="openEditModal(sem)"
+                title="修改学期"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <polyline points="3 6 5 6 21 6" />
-                    <path
-                      d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                    />
-                    <line x1="10" y1="11" x2="10" y2="17" />
-                    <line x1="14" y1="11" x2="14" y2="17" />
-                  </svg>
-                </button>
-              </template>
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+              </button>
+
+              <button
+                v-if="!sem.isActive"
+                :disabled="loading"
+                class="p-2.5 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="deleteSemester(sem.id)"
+                title="删除学期"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path
+                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                  />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -350,9 +373,9 @@
       </div>
     </div>
 
-    <!-- 添加学期弹窗 -->
+    <!-- 添加/修改学期弹窗 -->
     <div
-      v-if="showAddModal"
+      v-if="showModal"
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
     >
       <div
@@ -361,10 +384,12 @@
       >
         <div class="p-8 space-y-6">
           <div class="flex items-center justify-between">
-            <h3 class="text-xl font-black text-white tracking-tight">添加新学期</h3>
+            <h3 class="text-xl font-black text-white tracking-tight">
+              {{ isEditing ? '修改学期' : '添加新学期' }}
+            </h3>
             <button
               class="p-2 text-zinc-500 hover:text-white transition-colors"
-              @click="closeAddModal"
+              @click="closeModal"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -389,16 +414,16 @@
                 >学期名称</label
               >
               <input
-                v-model="newSemester.name"
+                v-model="semesterForm.name"
                 type="text"
                 placeholder="例如: 2025学年第一学期"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 font-bold transition-all"
               >
             </div>
 
-            <label class="flex items-center gap-3 cursor-pointer group px-1">
+            <label v-if="!isEditing" class="flex items-center gap-3 cursor-pointer group px-1">
               <input
-                v-model="newSemester.isActive"
+                v-model="semesterForm.isActive"
                 type="checkbox"
                 class="w-4.5 h-4.5 rounded-lg border-zinc-800 bg-zinc-950 accent-blue-600 transition-all"
               >
@@ -440,16 +465,16 @@
         <div class="p-6 bg-zinc-800/50 border-t border-zinc-800 flex gap-3 justify-end">
           <button
             class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors"
-            @click="closeAddModal"
+            @click="closeModal"
           >
             取消
           </button>
           <button
-            :disabled="submitting || !newSemester.name.trim()"
+            :disabled="submitting || !semesterForm.name.trim()"
             class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:opacity-50 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95"
-            @click="handleAddSemester"
+            @click="handleSubmit"
           >
-            {{ submitting ? '创建中...' : '创建学期' }}
+            {{ submitting ? (isEditing ? '保存中...' : '创建中...') : (isEditing ? '保存修改' : '创建学期') }}
           </button>
         </div>
       </div>
@@ -486,15 +511,19 @@ const {
   fetchCurrentSemester,
   createSemester,
   setActiveSemester,
+  updateSemester,
   deleteSemester: deleteSemesterAPI
 } = useSemesters()
 
-const showAddModal = ref(false)
+const showModal = ref(false)
+const isEditing = ref(false)
+const editSemesterId = ref(null)
+
 const showDeleteDialog = ref(false)
 const deleteTargetId = ref(null)
 const deleteTargetName = ref('')
 const submitting = ref(false)
-const newSemester = ref({
+const semesterForm = ref({
   name: '',
   isActive: false
 })
@@ -569,34 +598,50 @@ const confirmDelete = async () => {
   deleteTargetName.value = ''
 }
 
-// 处理添加学期
-const handleAddSemester = async () => {
-  if (!newSemester.value.name.trim()) return
+// 处理表单提交
+const handleSubmit = async () => {
+  if (!semesterForm.value.name.trim()) return
 
   submitting.value = true
   try {
-    const result = await createSemester({
-      name: newSemester.value.name,
-      isActive: newSemester.value.isActive
-    })
-    if (result) {
-      showNotification('学期创建成功！', 'success')
-      closeAddModal()
+    if (isEditing.value && editSemesterId.value) {
+      // 修改学期
+      const success = await updateSemester(editSemesterId.value, {
+        name: semesterForm.value.name
+      })
+      if (success) {
+        showNotification('学期修改成功！', 'success')
+        closeModal()
+      } else {
+        showNotification(error.value || '修改学期失败', 'error')
+      }
     } else {
-      showNotification(error.value || '创建学期失败', 'error')
+      // 创建学期
+      const result = await createSemester({
+        name: semesterForm.value.name,
+        isActive: semesterForm.value.isActive
+      })
+      if (result) {
+        showNotification('学期创建成功！', 'success')
+        closeModal()
+      } else {
+        showNotification(error.value || '创建学期失败', 'error')
+      }
     }
   } catch (err) {
-    console.error('创建学期失败:', err)
-    showNotification(err.message || '创建学期失败', 'error')
+    console.error(isEditing.value ? '修改学期失败:' : '创建学期失败:', err)
+    showNotification(err.message || (isEditing.value ? '修改学期失败' : '创建学期失败'), 'error')
   } finally {
     submitting.value = false
   }
 }
 
-// 关闭添加弹窗
-const closeAddModal = () => {
-  showAddModal.value = false
-  newSemester.value = {
+// 关闭弹窗
+const closeModal = () => {
+  showModal.value = false
+  isEditing.value = false
+  editSemesterId.value = null
+  semesterForm.value = {
     name: '',
     isActive: false
   }
@@ -624,9 +669,20 @@ const getRecommendedName = () => {
   return `${academicYear}学年${term}`
 }
 
-const openAddModal = () => {
-  newSemester.value.name = getRecommendedName()
-  showAddModal.value = true
+const openModal = () => {
+  isEditing.value = false
+  editSemesterId.value = null
+  semesterForm.value.name = getRecommendedName()
+  semesterForm.value.isActive = false
+  showModal.value = true
+}
+
+const openEditModal = (sem) => {
+  isEditing.value = true
+  editSemesterId.value = sem.id
+  semesterForm.value.name = sem.name
+  semesterForm.value.isActive = sem.isActive
+  showModal.value = true
 }
 
 // 组件挂载时获取数据

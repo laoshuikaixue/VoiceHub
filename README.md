@@ -759,6 +759,7 @@ VoiceHub/
 │   │   │   ├── schedule.post.ts     # 创建排期
 │   │   │   ├── semesters/           # 学期管理API
 │   │   │   │   ├── [id].delete.ts   # 删除学期
+│   │   │   │   ├── [id].put.ts      # 更新学期
 │   │   │   │   ├── index.get.ts     # 获取学期列表
 │   │   │   │   ├── index.post.ts    # 创建学期
 │   │   │   │   └── set-active.post.ts # 设置活跃学期
