@@ -763,18 +763,27 @@ const scrollToDateItem = async (index) => {
   })
 }
 
-// 提取日期选择逻辑到独立函数
-const toLocalMidnightTimestamp = (dateStr) => {
+// 统一解析 YYYY-MM-DD 格式的本地日期
+const parseLocalDateParts = (dateStr) => {
   const dateParts = dateStr.split('-')
   if (dateParts.length !== 3) return null
 
-  const year = Number(dateParts[0])
-  const month = Number(dateParts[1])
-  const day = Number(dateParts[2])
+  const year = parseInt(dateParts[0], 10)
+  const month = parseInt(dateParts[1], 10)
+  const day = parseInt(dateParts[2], 10)
 
   if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
     return null
   }
+
+  return { year, month, day }
+}
+
+// 提取日期选择逻辑到独立函数
+const toLocalMidnightTimestamp = (dateStr) => {
+  const parsedDate = parseLocalDateParts(dateStr)
+  if (!parsedDate) return null
+  const { year, month, day } = parsedDate
 
   return new Date(year, month - 1, day, 0, 0, 0, 0).getTime()
 }
@@ -975,15 +984,12 @@ const resetDate = () => {
 // 格式化日期
 const formatDate = (dateStr, isMobile = false) => {
   try {
-    // 解析日期字符串
-    const parts = dateStr.split('-')
-    if (parts.length !== 3) {
+    const parsedDate = parseLocalDateParts(dateStr)
+    if (!parsedDate) {
       throw new Error('无效的日期格式')
     }
 
-    const year = parseInt(parts[0])
-    const month = parseInt(parts[1])
-    const day = parseInt(parts[2])
+    const { year, month, day } = parsedDate
 
     // 创建日期对象
     const date = new Date(year, month - 1, day)
