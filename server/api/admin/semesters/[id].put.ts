@@ -1,5 +1,5 @@
 import { db } from '~/drizzle/db'
-import { semesters } from '~/drizzle/schema'
+import { semesters, songs } from '~/drizzle/schema'
 import { eq, and, ne } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
@@ -71,12 +71,26 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 更新学期名称
-  const updateResult = await db
-    .update(semesters)
-    .set({ name: body.name })
-    .where(eq(semesters.id, semesterId))
-    .returning()
+  const oldName = currentSemesterResult[0].name
 
-  return updateResult[0]
+  // 更新学期名称及关联歌曲数据
+  const result = await db.transaction(async (tx) => {
+    const updateResult = await tx
+      .update(semesters)
+      .set({ name: body.name })
+      .where(eq(semesters.id, semesterId))
+      .returning()
+
+    if (updateResult.length > 0) {
+      // 同步更新歌曲表中的学期名称引用
+      await tx
+        .update(songs)
+        .set({ semester: body.name })
+        .where(eq(songs.semester, oldName))
+    }
+
+    return updateResult[0]
+  })
+
+  return result
 })
