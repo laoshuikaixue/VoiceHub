@@ -369,16 +369,13 @@
                       </div>
 
                       <!-- 如果只有一个时段或没有时段，直接显示歌曲列表 -->
-                      <div v-else>
-                        <!-- 经典排布 -->
-                        <div class="schedule-list">
-                          <div
-                            v-for="schedule in dateGroup.allSchedules"
-                            :key="schedule.id"
-                            class="schedule-item"
-                          >
-                            <ScheduleItemPrint :schedule="schedule" :settings="settings" />
-                          </div>
+                      <div v-else class="schedule-list">
+                        <div
+                          v-for="schedule in dateGroup.allSchedules"
+                          :key="schedule.id"
+                          class="schedule-item"
+                        >
+                          <ScheduleItemPrint :schedule="schedule" :settings="settings" />
                         </div>
                       </div>
                     </div>
@@ -826,18 +823,26 @@ const exportPDFForPrint = async (action = 'print') => {
   const pdfWidth = pdf.internal.pageSize.getWidth()
   const pdfHeight = pdf.internal.pageSize.getHeight()
 
-  // 计算容器尺寸 (使用 A4 纸比例的像素值，确保清晰度)
-  // A4 @ 96dpi approx 794x1123. Use 2x for better quality?
-  // No, let's match standard pixel width for A4 usually used in web (794px).
-  // The scale factor will be handled by toPng pixelRatio.
-  const containerWidth = settings.value.paperSize === 'A4' ? 794 : 1123
+  // 计算容器尺寸，与 generateAndDownloadImage 保持一致
+  let containerWidth = 800
+  const s = settings.value
+  if (s.paperSize === 'A4') {
+    containerWidth = s.orientation === 'landscape' ? 1132 : 800
+  } else if (s.paperSize === 'A3') {
+    containerWidth = s.orientation === 'landscape' ? 1600 : 1132
+  } else if (s.paperSize === 'Letter') {
+    containerWidth = s.orientation === 'landscape' ? 1034 : 800
+  } else if (s.paperSize === 'Legal') {
+    containerWidth = s.orientation === 'landscape' ? 1318 : 800
+  }
+
   // 保持宽高比
   const ratio = pdfHeight / pdfWidth
   const containerHeight = Math.floor(containerWidth * ratio)
 
   // 创建分页容器（模拟单页纸张）
   const pageContainer = document.createElement('div')
-  pageContainer.className = 'print-page' // 复用样式类
+  pageContainer.className = `print-page orientation-${settings.value.orientation}`
   pageContainer.style.cssText = `
     position: fixed;
     left: 0;
@@ -871,6 +876,19 @@ const exportPDFForPrint = async (action = 'print') => {
       throw new Error('排期内容结构不符合分页要求')
     }
 
+    const scopeAttributeNames = originalPrintPage
+      .getAttributeNames()
+      .filter((name) => name.startsWith('data-v-'))
+
+    const applyScopeAttributes = (el) => {
+      scopeAttributeNames.forEach((name) => {
+        el.setAttribute(name, '')
+      })
+      return el
+    }
+
+    applyScopeAttributes(pageContainer)
+
     // 辅助：渲染当前页并添加到PDF
     const renderPage = async (isFirst) => {
       applyForceStyles(pageContainer)
@@ -901,6 +919,7 @@ const exportPDFForPrint = async (action = 'print') => {
 
     // 辅助：重置页面容器（添加页眉页脚）
     let currentContentWrapper = null
+    let currentGroupedContent = null
 
     const resetPageContainer = () => {
       pageContainer.innerHTML = ''
@@ -913,12 +932,27 @@ const exportPDFForPrint = async (action = 'print') => {
       }
 
       // 创建内容区域
-      const cw = document.createElement('div')
-      cw.className = 'schedule-content'
+      const cw = applyScopeAttributes(document.createElement('div'))
+      cw.className = sourceContent ? sourceContent.className : `schedule-content layout-${settings.value.layoutStyle}`
+
+      if (!cw.classList.contains(`layout-${settings.value.layoutStyle}`)) {
+        cw.classList.add(`layout-${settings.value.layoutStyle}`)
+      }
+
       cw.style.margin = '0'
       cw.style.padding = '0'
       pageContainer.appendChild(cw)
       currentContentWrapper = cw
+
+      const sourceGrouped = sourceContent?.querySelector('.grouped-content')
+      if (sourceGrouped) {
+        const gw = applyScopeAttributes(document.createElement('div'))
+        gw.className = sourceGrouped.className
+        cw.appendChild(gw)
+        currentGroupedContent = gw
+      } else {
+        currentGroupedContent = cw
+      }
 
       // 添加 Footer (绝对定位到底部)
       if (sourceFooter) {
@@ -956,15 +990,15 @@ const exportPDFForPrint = async (action = 'print') => {
         const groupTitle = group.querySelector('.group-title').cloneNode(true)
         groupClone.appendChild(groupTitle)
 
-        currentContentWrapper.appendChild(groupClone)
+        currentGroupedContent.appendChild(groupClone)
 
         // 检查标题是否溢出（极少见）
         if (checkOverflow()) {
-          currentContentWrapper.removeChild(groupClone)
+          currentGroupedContent.removeChild(groupClone)
           await renderPage(isFirstPage)
           isFirstPage = false
           resetPageContainer()
-          currentContentWrapper.appendChild(groupClone)
+          currentGroupedContent.appendChild(groupClone)
         }
 
         // 2. 遍历 Date Group 的子元素 (Playtime Groups 或 Schedule List)
@@ -975,7 +1009,7 @@ const exportPDFForPrint = async (action = 'print') => {
         for (const child of children) {
           if (child.classList.contains('playtime-groups')) {
             // 处理时段组
-            const ptWrapper = document.createElement('div')
+            const ptWrapper = applyScopeAttributes(document.createElement('div'))
             ptWrapper.className = 'playtime-groups'
             groupClone.appendChild(ptWrapper)
 
@@ -989,7 +1023,7 @@ const exportPDFForPrint = async (action = 'print') => {
               const sourceList = ptGroup.querySelector('.schedule-list')
 
               if (sourceList) {
-                const listWrapper = document.createElement('div')
+                const listWrapper = applyScopeAttributes(document.createElement('div'))
                 listWrapper.className = 'schedule-list'
                 ptGroupClone.appendChild(listWrapper)
 
@@ -1010,9 +1044,9 @@ const exportPDFForPrint = async (action = 'print') => {
                     // 在新页面重建路径
                     const newGroup = group.cloneNode(false)
                     newGroup.appendChild(group.querySelector('.group-title').cloneNode(true))
-                    currentContentWrapper.appendChild(newGroup)
+                    currentGroupedContent.appendChild(newGroup)
 
-                    const newPtWrapper = document.createElement('div')
+                    const newPtWrapper = applyScopeAttributes(document.createElement('div'))
                     newPtWrapper.className = 'playtime-groups'
                     newGroup.appendChild(newPtWrapper)
 
@@ -1020,7 +1054,7 @@ const exportPDFForPrint = async (action = 'print') => {
                     newPtGroup.appendChild(ptGroup.querySelector('.playtime-title').cloneNode(true))
                     newPtWrapper.appendChild(newPtGroup)
 
-                    const newListWrapper = document.createElement('div')
+                    const newListWrapper = applyScopeAttributes(document.createElement('div'))
                     newListWrapper.className = 'schedule-list'
                     newPtGroup.appendChild(newListWrapper)
 
@@ -1033,7 +1067,7 @@ const exportPDFForPrint = async (action = 'print') => {
             }
           } else if (child.classList.contains('schedule-list')) {
             // 处理直接列表
-            const listWrapper = document.createElement('div')
+            const listWrapper = applyScopeAttributes(document.createElement('div'))
             listWrapper.className = 'schedule-list'
             groupClone.appendChild(listWrapper)
 
@@ -1054,9 +1088,9 @@ const exportPDFForPrint = async (action = 'print') => {
                 // 重建路径
                 const newGroup = group.cloneNode(false)
                 newGroup.appendChild(group.querySelector('.group-title').cloneNode(true))
-                currentContentWrapper.appendChild(newGroup)
+                currentGroupedContent.appendChild(newGroup)
 
-                const newListWrapper = document.createElement('div')
+                const newListWrapper = applyScopeAttributes(document.createElement('div'))
                 newListWrapper.className = 'schedule-list'
                 newGroup.appendChild(newListWrapper)
 
@@ -1069,7 +1103,7 @@ const exportPDFForPrint = async (action = 'print') => {
       }
     } else if (directTableWrapper) {
       // 处理顶层表格（timetable）
-      const tableWrapper = document.createElement('div')
+      const tableWrapper = applyScopeAttributes(document.createElement('div'))
       tableWrapper.className = 'schedule-table-wrapper'
       currentContentWrapper.appendChild(tableWrapper)
 
@@ -1083,7 +1117,7 @@ const exportPDFForPrint = async (action = 'print') => {
 
         const tbodies = sourceTable.querySelectorAll('tbody')
         for (const sourceTbody of tbodies) {
-          const tbodyClone = document.createElement('tbody')
+          const tbodyClone = applyScopeAttributes(document.createElement('tbody'))
           tableClone.appendChild(tbodyClone)
           let currentTbody = tbodyClone
 
@@ -1099,7 +1133,7 @@ const exportPDFForPrint = async (action = 'print') => {
               resetPageContainer()
 
               // 重建路径
-              const newTableWrapper = document.createElement('div')
+              const newTableWrapper = applyScopeAttributes(document.createElement('div'))
               newTableWrapper.className = 'schedule-table-wrapper'
               currentContentWrapper.appendChild(newTableWrapper)
 
@@ -1107,7 +1141,7 @@ const exportPDFForPrint = async (action = 'print') => {
               newTableWrapper.appendChild(newTable)
               if (thead) newTable.appendChild(thead.cloneNode(true))
 
-              const newTbody = document.createElement('tbody')
+              const newTbody = applyScopeAttributes(document.createElement('tbody'))
               newTable.appendChild(newTbody)
 
               newTbody.appendChild(rowClone)
@@ -1253,6 +1287,14 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
     `
 
   const clonedPage = sourceElement.cloneNode(true)
+
+  // 强制应用当前的横竖排样式，防止因为源节点（可能是响应式的）没有这个类名
+  clonedPage.classList.add(`orientation-${s.orientation}`)
+  
+  const scheduleContent = clonedPage.querySelector('.schedule-content')
+  if (scheduleContent) {
+    scheduleContent.classList.add(`layout-${s.layoutStyle}`)
+  }
 
   // 使用 setProperty 避免覆盖其他重要样式
   clonedPage.style.setProperty('background', 'white', 'important')
@@ -1596,6 +1638,7 @@ watch(
   text-align: center;
   padding: 60px 20px;
   color: #666;
+  column-span: all;
 }
 
 .no-data-icon {
@@ -1625,10 +1668,14 @@ watch(
   margin: 0 auto;
 }
 
+.date-group {
+  margin-bottom: 24px;
+}
+
 .group-title {
   font-size: 16px;
   font-weight: bold;
-  margin: 24px 0 12px 0;
+  margin: 0 0 12px 0;
   padding: 8px 12px;
   border-bottom: 2px solid #ddd;
   background: #f8f9fa;
@@ -1659,10 +1706,14 @@ watch(
   margin-left: 20px;
 }
 
+.playtime-group {
+  margin-bottom: 16px;
+}
+
 .playtime-title {
   font-size: 14px;
   font-weight: bold;
-  margin: 16px 0 8px 0;
+  margin: 0 0 8px 0;
   padding: 6px 10px;
   background: #f0f8ff;
   border-left: 3px solid #2196f3;
