@@ -268,6 +268,12 @@
                   value-key="name"
                   @update:model-value="handleSemesterSelect"
                 />
+                <CustomSelect
+                  v-if="playTimeEnabled"
+                  v-model="selectedFilterPlayTime"
+                  label="期望时段"
+                  :options="filterPlayTimeOptions"
+                />
                 <div class="grid grid-cols-2 gap-2">
                   <CustomSelect v-model="selectedGrade" label="年级" :options="availableGrades" />
                   <CustomSelect v-model="songSortOption" label="排序" :options="sortOptions" />
@@ -1111,6 +1117,25 @@ const isDraftMode = ref(false)
 const playTimes = ref([])
 const playTimeEnabled = ref(false)
 const selectedPlayTime = ref('')
+const selectedFilterPlayTime = ref('all')
+
+// 待排歌曲的播出时段筛选选项
+const filterPlayTimeOptions = computed(() => {
+  const options = [
+    { label: '全部时段', value: 'all' },
+    { label: '未指定时段', value: 'none' }
+  ]
+  if (playTimes.value) {
+    playTimes.value.forEach((pt) => {
+      let label = pt.name
+      if (pt.startTime || pt.endTime) {
+        label += ` (${formatPlayTimeRange(pt)})`
+      }
+      options.push({ label, value: pt.id })
+    })
+  }
+  return options
+})
 
 // 播出时段选项
 const playTimeOptions = computed(() => {
@@ -1253,6 +1278,16 @@ const allUnscheduledSongs = computed(() => {
     unscheduledSongs = unscheduledSongs.filter(
       (song) => song.requesterGrade === selectedGrade.value
     )
+  }
+
+  // 播出时段过滤
+  if (selectedFilterPlayTime.value !== 'all') {
+    unscheduledSongs = unscheduledSongs.filter((song) => {
+      if (selectedFilterPlayTime.value === 'none') {
+        return !song.preferredPlayTimeId
+      }
+      return song.preferredPlayTimeId === selectedFilterPlayTime.value
+    })
   }
 
   return [...unscheduledSongs].sort((a, b) => {
@@ -1600,6 +1635,11 @@ watch(selectedGrade, () => {
   resetAllPages()
 })
 
+// 监听期望时段筛选变化，重置分页
+watch(selectedFilterPlayTime, () => {
+  resetAllPages()
+})
+
 // 加载重播申请
 const fetchReplayRequests = async () => {
   try {
@@ -1711,7 +1751,13 @@ const formatPlayTimeRange = (playTime) => {
 const getPlayTimeName = (playTimeId) => {
   if (!playTimeId || !playTimes.value) return ''
   const playTime = playTimes.value.find((pt) => pt.id === playTimeId)
-  return playTime ? playTime.name : ''
+  if (!playTime) return ''
+  
+  let label = playTime.name
+  if (playTime.startTime || playTime.endTime) {
+    label += ` (${formatPlayTimeRange(playTime)})`
+  }
+  return label
 }
 
 // 加载学期列表

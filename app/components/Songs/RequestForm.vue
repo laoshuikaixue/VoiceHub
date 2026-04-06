@@ -320,10 +320,10 @@
           </div>
 
           <div class="results-content">
-            <!-- 播出时段和备注 - 移动到搜索结果上方 -->
-            <div v-if="(playTimeSelectionEnabled && playTimes.length > 0) || enableSubmissionRemarks" class="form-row">
+            <!-- 播出时段和备注 -->
+            <div v-if="playTimeSelectionEnabled || enableSubmissionRemarks" class="form-row">
               <!-- 播出时段选择 -->
-              <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
+              <div v-if="playTimeSelectionEnabled" class="form-group">
                 <div class="input-wrapper">
                   <CustomSelect
                     v-model="preferredPlayTimeId"
@@ -1371,10 +1371,14 @@ const enabledPlayTimes = computed(() => {
 })
 
 const formattedPlayTimes = computed(() => {
-  return enabledPlayTimes.value.map((pt) => ({
+  const options = enabledPlayTimes.value.map((pt) => ({
     ...pt,
     displayName: pt.startTime || pt.endTime ? `${pt.name} (${formatPlayTimeRange(pt)})` : pt.name
   }))
+  return [
+    { id: '', displayName: '不指定时段' },
+    ...options
+  ]
 })
 
 // 格式化播出时段时间范围
