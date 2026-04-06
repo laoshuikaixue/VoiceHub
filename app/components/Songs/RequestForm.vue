@@ -321,9 +321,9 @@
 
           <div class="results-content">
             <!-- 播出时段和备注 - 移动到搜索结果上方 -->
-            <div v-if="(playTimeSelectionEnabled && playTimes.length > 0) || enableSubmissionRemarks" class="form-row">
+            <div v-if="playTimeSelectionEnabled || enableSubmissionRemarks" class="form-row">
               <!-- 播出时段选择 -->
-              <div v-if="playTimeSelectionEnabled && playTimes.length > 0" class="form-group">
+              <div v-if="playTimeSelectionEnabled" class="form-group">
                 <div class="input-wrapper">
                   <CustomSelect
                     v-model="preferredPlayTimeId"
