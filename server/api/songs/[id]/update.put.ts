@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
 
     // 获取请求体
     const body = await readBody(event)
-    const { title, artist, requester, semester, musicPlatform, musicId, cover, playUrl } = body
+    const { title, artist, requester, semester, musicPlatform, musicId, cover, playUrl, preferredPlayTimeId } = body
     const ipAddress =
       (event.node.req.headers['x-forwarded-for'] as string) || event.node.req.socket.remoteAddress
 
@@ -70,6 +70,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (body.semester !== undefined) updateData.semester = body.semester || null
+    if (body.preferredPlayTimeId !== undefined) updateData.preferredPlayTimeId = body.preferredPlayTimeId || null
     if (body.musicPlatform !== undefined) updateData.musicPlatform = body.musicPlatform || null
     if (body.musicId !== undefined) updateData.musicId = body.musicId || null
     if (body.cover !== undefined) updateData.cover = body.cover || null

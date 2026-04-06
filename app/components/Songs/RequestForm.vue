@@ -1371,10 +1371,14 @@ const enabledPlayTimes = computed(() => {
 })
 
 const formattedPlayTimes = computed(() => {
-  return enabledPlayTimes.value.map((pt) => ({
+  const options = enabledPlayTimes.value.map((pt) => ({
     ...pt,
     displayName: pt.startTime || pt.endTime ? `${pt.name} (${formatPlayTimeRange(pt)})` : pt.name
   }))
+  return [
+    { id: '', displayName: '不指定时段' },
+    ...options
+  ]
 })
 
 // 格式化播出时段时间范围
