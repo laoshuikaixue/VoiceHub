@@ -1,4 +1,4 @@
-# 支持: linux/amd64, linux/arm64, linux/arm/v7
+# 支持: linux/amd64, linux/arm64, linux/arm/v7, linux/386, linux/arm/v5
 
 # ==========================================
 # 第一阶段：构建阶段
@@ -7,8 +7,10 @@
 FROM node:24-alpine AS builder-amd64
 FROM node:24-alpine AS builder-arm64
 FROM arm32v7/node:22-alpine AS builder-arm
-# FROM s390x/node:24-alpine AS builder-s390x
-# FROM ppc64le/node:24-slim AS builder-ppc64le
+# FROM snowdreamtech/node:22-alpine3.22 AS builder-s390x
+FROM snowdreamtech/node:22-alpine3.22 AS builder-ppc64le
+# FROM snowdreamtech/node:22-alpine3.22 AS builder-386
+FROM snowdreamtech/node:22-alpine3.22 AS builder-armv5
 
 # 根据 TARGETARCH 选择对应的构建镜像
 FROM builder-${TARGETARCH} AS builder
@@ -46,8 +48,10 @@ RUN pnpm run build
 FROM node:24-alpine AS runtime-amd64
 FROM node:24-alpine AS runtime-arm64
 FROM arm32v7/node:22-alpine AS runtime-arm
-# FROM s390x/node:24-alpine AS runtime-s390x
-# FROM ppc64le/node:24-slim AS runtime-ppc64le
+# FROM snowdreamtech/node:22-alpine3.22 AS runtime-s390x
+FROM snowdreamtech/node:22-alpine3.22 AS runtime-ppc64le
+# FROM snowdreamtech/node:22-alpine3.22 AS runtime-386
+FROM snowdreamtech/node:22-alpine3.22 AS runtime-armv5
 
 # 根据 TARGETARCH 选择对应的运行时镜像
 FROM runtime-${TARGETARCH} AS runtime
