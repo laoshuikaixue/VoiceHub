@@ -1524,7 +1524,25 @@ const exportImage = async () => {
 const SETTINGS_STORAGE_KEY = 'voicehub_print_settings'
 
 // 排除不保存的字段
-const EXCLUDED_FIELDS = ['startDate', 'endDate', 'remark']
+const EXCLUDED_FIELDS = ['startDate', 'endDate', 'remark', 'currentSemester']
+
+// 防抖函数
+function debounce(func, wait) {
+  let timeout
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+}
+
+// 防抖保存设置（500ms 延迟，避免频繁写入）
+const debouncedSaveSettings = debounce(() => {
+  saveSettings()
+}, 500)
 
 // 从 localStorage 加载保存的设置
 const loadSavedSettings = () => {
@@ -1532,11 +1550,13 @@ const loadSavedSettings = () => {
     const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY)
     if (savedSettings) {
       const parsed = JSON.parse(savedSettings)
-      Object.keys(parsed).forEach((key) => {
-        if (key in settings.value && !EXCLUDED_FIELDS.includes(key)) {
-          settings.value[key] = parsed[key]
-        }
-      })
+      if (parsed && typeof parsed === 'object') {
+        Object.keys(parsed).forEach((key) => {
+          if (key in settings.value && !EXCLUDED_FIELDS.includes(key)) {
+            settings.value[key] = parsed[key]
+          }
+        })
+      }
     }
   } catch (error) {
     console.warn('加载保存的打印设置失败:', error)
@@ -1575,7 +1595,7 @@ onMounted(async () => {
 watch(
   settings,
   () => {
-    saveSettings()
+    debouncedSaveSettings()
   },
   { deep: true }
 )
