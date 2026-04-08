@@ -134,7 +134,12 @@
                 <button
                   v-for="range in dateRanges"
                   :key="range.value"
-                  class="px-2 py-1 bg-zinc-800/50 hover:bg-zinc-800 text-[10px] text-zinc-400 rounded-md transition-colors border border-zinc-800"
+                  :class="[
+                    'px-2 py-1 text-[10px] rounded-md transition-colors border',
+                    settings.dateRangePreset === range.value
+                      ? 'bg-blue-600/20 border-blue-500/50 text-blue-400'
+                      : 'bg-zinc-800/50 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                  ]"
                   @click="setDateRange(range.value)"
                 >
                   {{ range.label }}
@@ -465,6 +470,7 @@ const settings = ref({
   layoutStyle: 'classic',
   startDate: '',
   endDate: '',
+  dateRangePreset: '',
   showCover: false,
   showTitle: true,
   showArtist: true,
@@ -589,8 +595,8 @@ const formatDateRange = () => {
   return fullRange
 }
 
-// 设置日期范围
-const setDateRange = (type) => {
+// 根据预设类型计算日期范围
+const calculateDateRange = (type) => {
   const today = new Date()
   const start = new Date(today)
   const end = new Date(today)
@@ -601,25 +607,19 @@ const setDateRange = (type) => {
     start.setDate(today.getDate() + 1)
     end.setDate(today.getDate() + 1)
   } else if (type === 'thisWeek') {
-    const day = today.getDay() // Sunday is 0, Monday is 1...
-    // 假设周一为一周的开始
+    const day = today.getDay()
     const diffToMon = day === 0 ? 6 : day - 1
     start.setDate(today.getDate() - diffToMon)
-
-    // 重新创建一个日期对象来计算结束日期，避免引用问题
     end.setTime(start.getTime())
     end.setDate(start.getDate() + 6)
   } else if (type === 'nextWeek') {
     const day = today.getDay()
     const diffToMon = day === 0 ? 6 : day - 1
     start.setDate(today.getDate() - diffToMon + 7)
-
-    // 重新创建一个日期对象来计算结束日期
     end.setTime(start.getTime())
     end.setDate(start.getDate() + 6)
   }
 
-  // 转换为本地日期的 YYYY-MM-DD 格式，避免时区导致的日期偏差
   const formatDateStr = (date) => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -627,8 +627,18 @@ const setDateRange = (type) => {
     return `${year}-${month}-${day}`
   }
 
-  settings.value.startDate = formatDateStr(start)
-  settings.value.endDate = formatDateStr(end)
+  return {
+    startDate: formatDateStr(start),
+    endDate: formatDateStr(end)
+  }
+}
+
+// 设置日期范围
+const setDateRange = (type) => {
+  const { startDate, endDate } = calculateDateRange(type)
+  settings.value.startDate = startDate
+  settings.value.endDate = endDate
+  settings.value.dateRangePreset = type
 }
 
 // 格式化播出时段显示文本
@@ -1510,18 +1520,62 @@ const exportImage = async () => {
   }
 }
 
+// localStorage 键名
+const SETTINGS_STORAGE_KEY = 'voicehub_print_settings'
+
+// 排除不保存的字段
+const EXCLUDED_FIELDS = ['startDate', 'endDate', 'remark']
+
+// 从 localStorage 加载保存的设置
+const loadSavedSettings = () => {
+  try {
+    const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY)
+    if (savedSettings) {
+      const parsed = JSON.parse(savedSettings)
+      Object.keys(parsed).forEach((key) => {
+        if (key in settings.value && !EXCLUDED_FIELDS.includes(key)) {
+          settings.value[key] = parsed[key]
+        }
+      })
+    }
+  } catch (error) {
+    console.warn('加载保存的打印设置失败:', error)
+  }
+}
+
+// 将设置保存到 localStorage
+const saveSettings = () => {
+  try {
+    const settingsToSave = {}
+    Object.keys(settings.value).forEach((key) => {
+      if (!EXCLUDED_FIELDS.includes(key)) {
+        settingsToSave[key] = settings.value[key]
+      }
+    })
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave))
+  } catch (error) {
+    console.warn('保存打印设置失败:', error)
+  }
+}
+
 // 生命周期
 onMounted(async () => {
   await fetchCurrentSemester()
   settings.value.currentSemester = currentSemester.value?.name
+  loadSavedSettings()
+  if (settings.value.dateRangePreset) {
+    const { startDate, endDate } = calculateDateRange(settings.value.dateRangePreset)
+    settings.value.startDate = startDate
+    settings.value.endDate = endDate
+  }
   loadSchedules()
 })
 
-// 监听设置变化，自动保存或刷新（如果需要）
+// 监听设置变化，自动保存到 localStorage
 watch(
   settings,
   () => {
-    // 可以保存设置到 localStorage
+    saveSettings()
   },
   { deep: true }
 )
