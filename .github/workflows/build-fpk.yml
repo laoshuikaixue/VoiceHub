@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build-fpk:
-    if: github.repository == 'laoshuikaixue/VoiceHub'
+    if: github.repository == 'laoshuikaixue/VoiceHub' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
