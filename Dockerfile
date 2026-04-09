@@ -10,7 +10,6 @@ FROM arm32v7/node:22-alpine AS builder-arm
 # FROM snowdreamtech/node:22-alpine3.22 AS builder-s390x
 FROM snowdreamtech/node:22-alpine3.22 AS builder-ppc64le
 # FROM snowdreamtech/node:22-alpine3.22 AS builder-386
-FROM snowdreamtech/node:22-alpine3.22 AS builder-armv5
 
 # 根据 TARGETARCH 选择对应的构建镜像
 FROM builder-${TARGETARCH} AS builder
@@ -51,7 +50,6 @@ FROM arm32v7/node:22-alpine AS builder-arm
 # FROM snowdreamtech/node:22-alpine3.22 AS runtime-s390x
 FROM snowdreamtech/node:22-alpine3.22 AS runtime-ppc64le
 # FROM snowdreamtech/node:22-alpine3.22 AS runtime-386
-FROM snowdreamtech/node:22-alpine3.22 AS runtime-armv5
 
 # 根据 TARGETARCH 选择对应的运行时镜像
 FROM runtime-${TARGETARCH} AS runtime
