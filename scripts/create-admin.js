@@ -4,7 +4,7 @@ import { config } from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { client, db, notificationSettings, systemSettings, users } from '../app/drizzle/db.ts'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
