@@ -26,7 +26,6 @@ RUN set -eux; \
     pnpm config set fetch-retries 5; \
     pnpm config set fetch-retry-mintimeout 20000; \
     pnpm config set fetch-retry-maxtimeout 120000; \
-    pnpm pkg set resolutions.bcrypt=bcryptjs@2.4.3; \
     pnpm install --frozen-lockfile || ( \
       rm -rf node_modules; \
       pnpm install --no-frozen-lockfile || ( \
