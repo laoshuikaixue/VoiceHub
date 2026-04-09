@@ -6,7 +6,7 @@
 # 预定义各架构的构建镜像
 FROM node:24-alpine AS builder-amd64
 FROM node:24-alpine AS builder-arm64
-FROM snowdreamtech/node:22-alpine3.22 AS builder-arm
+FROM arm32v7/node:22-alpine AS builder-arm
 # FROM snowdreamtech/node:22-alpine3.22 AS builder-s390x
 FROM snowdreamtech/node:22-alpine3.22 AS builder-ppc64le
 # FROM snowdreamtech/node:22-alpine3.22 AS builder-386
@@ -47,7 +47,7 @@ RUN pnpm run build
 # 预定义各架构的运行时镜像
 FROM node:24-alpine AS runtime-amd64
 FROM node:24-alpine AS runtime-arm64
-FROM snowdreamtech/node:22-alpine3.22 AS runtime-arm
+FROM arm32v7/node:22-alpine AS builder-arm
 # FROM snowdreamtech/node:22-alpine3.22 AS runtime-s390x
 FROM snowdreamtech/node:22-alpine3.22 AS runtime-ppc64le
 # FROM snowdreamtech/node:22-alpine3.22 AS runtime-386
