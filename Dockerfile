@@ -8,7 +8,7 @@ FROM node:24-alpine AS builder-amd64
 FROM node:24-alpine AS builder-arm64
 FROM arm32v7/node:22-alpine AS builder-arm
 FROM node:20-alpine AS runtime-armv6
-# FROM snowdreamtech/node:22-alpine3.22 AS builder-s390x
+FROM snowdreamtech/node:22-alpine3.22 AS builder-s390x
 FROM snowdreamtech/node:22-alpine3.22 AS builder-ppc64le
 # FROM snowdreamtech/node:22-alpine3.22 AS builder-386
 
@@ -27,6 +27,10 @@ RUN set -eux; \
     pnpm config set fetch-retries 5; \
     pnpm config set fetch-retry-mintimeout 20000; \
     pnpm config set fetch-retry-maxtimeout 120000; \
+    if [ "$TARGETARCH" = "ppc64le" ] || [ "$TARGETARCH" = "s390x" ]; then \
+      echo "Detected $TARGETARCH architecture, replacing bcrypt with bcryptjs"; \
+      pnpm pkg set resolutions.bcrypt=bcryptjs@2.4.3; \
+    fi; \
     pnpm install --frozen-lockfile || ( \
       rm -rf node_modules; \
       pnpm install --no-frozen-lockfile || ( \
@@ -49,7 +53,7 @@ FROM node:24-alpine AS runtime-amd64
 FROM node:24-alpine AS runtime-arm64
 FROM arm32v7/node:22-alpine AS runtime-arm
 FROM node:20-alpine AS runtime-armv6
-# FROM snowdreamtech/node:22-alpine3.22 AS runtime-s390x
+FROM snowdreamtech/node:22-alpine3.22 AS runtime-s390x
 FROM snowdreamtech/node:22-alpine3.22 AS runtime-ppc64le
 # FROM snowdreamtech/node:22-alpine3.22 AS runtime-386
 
