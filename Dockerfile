@@ -1,4 +1,4 @@
-# 支持: linux/amd64, linux/arm64, linux/arm/v7, linux/ppc64le
+# 支持: linux/amd64, linux/arm64, linux/arm/v7, linux/arm/v6, linux/ppc64le
 
 # ==========================================
 # 第一阶段：构建阶段
@@ -7,6 +7,7 @@
 FROM node:24-alpine AS builder-amd64
 FROM node:24-alpine AS builder-arm64
 FROM arm32v7/node:22-alpine AS builder-arm
+FROM node:20-alpine AS runtime-armv6
 # FROM snowdreamtech/node:22-alpine3.22 AS builder-s390x
 FROM snowdreamtech/node:22-alpine3.22 AS builder-ppc64le
 # FROM snowdreamtech/node:22-alpine3.22 AS builder-386
@@ -47,6 +48,7 @@ RUN pnpm run build
 FROM node:24-alpine AS runtime-amd64
 FROM node:24-alpine AS runtime-arm64
 FROM arm32v7/node:22-alpine AS runtime-arm
+FROM node:20-alpine AS runtime-armv6
 # FROM snowdreamtech/node:22-alpine3.22 AS runtime-s390x
 FROM snowdreamtech/node:22-alpine3.22 AS runtime-ppc64le
 # FROM snowdreamtech/node:22-alpine3.22 AS runtime-386
