@@ -3,7 +3,7 @@
   "version": "1.5.7",
   "description": "校园广播站点歌管理系统 - 基于数据库存储的现代化点歌、排期和播放管理平台",
   "private": true,
-  "packageManager": "pnpm@10.29.3",
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
   "type": "module",
   "scripts": {
     "build": "node --max-old-space-size=6144 ./node_modules/nuxt/bin/nuxt.mjs build",
@@ -33,6 +33,7 @@
   "dependencies": {
     "@applemusic-like-lyrics/lyric": "^0.3.0",
     "@applemusic-like-lyrics/vue": "^0.3.1",
+    "@aws-sdk/client-s3": "^3.1028.0",
     "@breezystack/lamejs": "^1.2.7",
     "@neteasecloudmusicapienhanced/api": "^4.31.0",
     "@netlify/functions": "^2.8.2",

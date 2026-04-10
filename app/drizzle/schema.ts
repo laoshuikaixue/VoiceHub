@@ -486,6 +486,64 @@ export const emailTemplates = pgTable('EmailTemplate', {
   updatedByUserId: integer('updatedByUserId'),
 });
 
+// 备份调度配置表
+export const backupSchedules = pgTable('backup_schedules', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  enabled: boolean('enabled').default(true).notNull(),
+  scheduleType: varchar('schedule_type', { length: 50 }).notNull(),
+  scheduleTime: text('schedule_time'),
+  scheduleDay: integer('schedule_day'),
+  cronExpression: varchar('cron_expression', { length: 100 }),
+  backupType: varchar('backup_type', { length: 50 }).default('all').notNull(),
+  includeSystemData: boolean('include_system_data').default(true).notNull(),
+  uploadEnabled: boolean('upload_enabled').default(false).notNull(),
+  uploadType: varchar('upload_type', { length: 50 }),
+  s3Endpoint: varchar('s3_endpoint', { length: 500 }),
+  s3Bucket: varchar('s3_bucket', { length: 255 }),
+  s3AccessKey: varchar('s3_access_key', { length: 255 }),
+  s3SecretKey: varchar('s3_secret_key', { length: 255 }),
+  s3Region: varchar('s3_region', { length: 100 }),
+  webdavUrl: varchar('webdav_url', { length: 500 }),
+  webdavUsername: varchar('webdav_username', { length: 255 }),
+  webdavPassword: varchar('webdav_password', { length: 255 }),
+  retentionType: varchar('retention_type', { length: 50 }),
+  retentionValue: integer('retention_value').default(7),
+  createdBy: integer('created_by'),
+});
+
+// 备份历史记录表
+export const backupHistory = pgTable('backup_history', {
+  id: serial('id').primaryKey(),
+  scheduleId: integer('schedule_id').references(() => backupSchedules.id, { onDelete: 'set null' }),
+  filename: varchar('filename', { length: 255 }).notNull(),
+  fileSize: bigint('file_size', { mode: 'number' }),
+  status: varchar('status', { length: 50 }).notNull(),
+  errorMessage: text('error_message'),
+  checksum: varchar('checksum', { length: 64 }),
+  localPath: varchar('local_path', { length: 500 }),
+  remotePath: varchar('remote_path', { length: 500 }),
+  executedAt: timestamp('executedAt').defaultNow().notNull(),
+});
+
+// 备份调度关系定义
+export const backupSchedulesRelations = relations(backupSchedules, ({ one, many }) => ({
+  createdByUser: one(users, {
+    fields: [backupSchedules.createdBy],
+    references: [users.id],
+  }),
+  history: many(backupHistory),
+}));
+
+export const backupHistoryRelations = relations(backupHistory, ({ one }) => ({
+  schedule: one(backupSchedules, {
+    fields: [backupHistory.scheduleId],
+    references: [backupSchedules.id],
+  }),
+}));
+
 // 导出所有表的类型
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -526,3 +584,7 @@ export type NewEmailTemplate = typeof emailTemplates.$inferInsert;export type Re
 export type NewRequestTime = typeof requestTimes.$inferInsert;
 export type UserIdentity = typeof userIdentities.$inferSelect;
 export type NewUserIdentity = typeof userIdentities.$inferInsert;
+export type BackupSchedule = typeof backupSchedules.$inferSelect;
+export type NewBackupSchedule = typeof backupSchedules.$inferInsert;
+export type BackupHistory = typeof backupHistory.$inferSelect;
+export type NewBackupHistory = typeof backupHistory.$inferInsert;
