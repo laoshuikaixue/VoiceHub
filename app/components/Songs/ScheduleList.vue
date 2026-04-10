@@ -253,6 +253,17 @@
                               }}
                             </span>
                           </span>
+                          <span
+                            v-if="schedule.song.musicPlatform"
+                            :title="`音乐来源: ${getMusicPlatformDisplay(schedule.song.musicPlatform)?.name || schedule.song.musicPlatform}`"
+                            class="music-platform-tag"
+                            :style="{
+                              '--platform-color': getMusicPlatformDisplay(schedule.song.musicPlatform)?.color || '#666'
+                            }"
+                          >
+                            {{ getMusicPlatformDisplay(schedule.song.musicPlatform)?.icon }}
+                            {{ getMusicPlatformDisplay(schedule.song.musicPlatform)?.name }}
+                          </span>
                         </div>
                       </div>
 
@@ -1065,6 +1076,20 @@ const handleImageError = (event, song) => {
 const getFirstChar = (title) => {
   if (!title) return '音'
   return title.trim().charAt(0)
+}
+
+// 获取音乐平台的显示名称和图标
+const getMusicPlatformDisplay = (platform) => {
+  if (!platform) return null
+
+  const platformMap = {
+    'netease': { name: '网易云', icon: '🎵', color: '#C20C0C' },
+    'netease-podcast': { name: '网易云播客', icon: '🎙️', color: '#C20C0C' },
+    'tencent': { name: 'QQ音乐', icon: '🎵', color: '#00B42A' },
+    'bilibili': { name: '哔哩哔哩', icon: '📺', color: '#FB7299' }
+  }
+
+  return platformMap[platform] || { name: platform, icon: '🎵', color: null }
 }
 
 const checkNeteaseLoginStatus = () => {
@@ -2809,6 +2834,33 @@ const vRipple = {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.music-platform-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: 'MiSans', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--platform-color);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--platform-color);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.music-platform-tag:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.02);
 }
 
 /* 重播申请人数样式 */
