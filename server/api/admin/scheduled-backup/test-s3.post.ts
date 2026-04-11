@@ -37,11 +37,13 @@ export default defineEventHandler(async (event) => {
   const result = await s3Service.testConnection()
 
   let files: string[] = []
+  let directories: string[] = []
   if (result.success) {
     const prefix = parseResult.data.s3Path?.replace(/^\//, '') || 'backups'
     const listResult = await s3Service.listFiles(prefix + '/')
     if (listResult.success) {
       files = listResult.files
+      directories = listResult.directories
     }
   }
 
@@ -49,6 +51,7 @@ export default defineEventHandler(async (event) => {
     success: result.success,
     message: result.success ? 'S3 连接成功' : 'S3 连接失败',
     errorMessage: result.errorMessage,
-    files
+    files,
+    directories
   }
 })

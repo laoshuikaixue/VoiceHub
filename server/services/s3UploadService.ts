@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command, ListObjectsV2CommandInput } from '@aws-sdk/client-s3'
 import { createHash } from 'crypto'
 import { promises as fs } from 'fs'
 import path from 'path'
@@ -273,28 +273,46 @@ export class S3UploadService {
   /**
    * 列出 S3 桶中的备份文件
    */
-  async listFiles(prefix?: string): Promise<{ success: boolean; files: string[]; errorMessage?: string }> {
+  async listFiles(prefix?: string): Promise<{ success: boolean; files: string[]; directories: string[]; errorMessage?: string }> {
     if (!this.s3Client || !this.config) {
       return {
         success: false,
         files: [],
+        directories: [],
         errorMessage: 'S3 client not initialized'
       }
     }
 
-    try {
-      const command = new ListObjectsV2Command({
-        Bucket: this.config.bucket,
-        Prefix: prefix || 'backups/'
-      })
+    const cleanPrefix = prefix ? prefix.replace(/^\/+|\/+$/g, '') : ''
+    const s3Prefix = cleanPrefix ? cleanPrefix + '/' : ''
 
+    try {
+      const listParams: ListObjectsV2CommandInput = {
+        Bucket: this.config.bucket,
+        Delimiter: '/'
+      }
+      if (s3Prefix) {
+        listParams.Prefix = s3Prefix
+      }
+
+      console.log('[S3UploadService] Listing files with params:', JSON.stringify(listParams))
+
+      const command = new ListObjectsV2Command(listParams)
       const response = await this.s3Client.send(command)
 
-      const files = (response.Contents || []).map((obj) => obj.Key || '').filter(Boolean)
+      const directories = (response.CommonPrefixes || []).map((obj) => {
+        const p = obj.Prefix || ''
+        return p.replace(s3Prefix, '').replace(/\/$/, '')
+      }).filter(Boolean)
+      const files = (response.Contents || []).map((obj) => {
+        const k = obj.Key || ''
+        return k.replace(s3Prefix, '')
+      }).filter(Boolean)
 
       return {
         success: true,
-        files
+        files,
+        directories
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -302,6 +320,7 @@ export class S3UploadService {
       return {
         success: false,
         files: [],
+        directories: [],
         errorMessage
       }
     }

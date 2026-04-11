@@ -658,18 +658,32 @@
                   placeholder="Secret Key"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
                 >
-                <input
-                  v-model="scheduledBackupForm.s3Path"
-                  type="text"
-                  placeholder="存储路径 (例如: /backups)"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
-                >
+                <div class="flex gap-2">
+                  <input
+                    v-model="scheduledBackupForm.s3Path"
+                    type="text"
+                    placeholder="存储路径 (例如: backups)"
+                    class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                  >
+                  <button
+                    :disabled="scheduledBackupTestingConnection"
+                    class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all shrink-0"
+                    title="浏览路径"
+                    @click="browseS3Path"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                  </button>
+                </div>
                 <button
                   :disabled="scheduledBackupTestingConnection"
-                  class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all"
+                  class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2"
                   @click="testScheduledBackupS3Connection"
                 >
-                  {{ scheduledBackupTestingConnection ? '测试中...' : '测试 S3 连接' }}
+                  <span v-if="scheduledBackupTestingConnection" class="flex items-center gap-2">
+                    <RefreshCw class="w-3 h-3 animate-spin" /> 测试中...</span>
+                  <span v-else>测试 S3 连接</span>
                 </button>
               </div>
 
@@ -875,6 +889,88 @@
       </div>
     </div>
 
+    <!-- S3 浏览模态框 -->
+    <div
+      v-if="showS3BrowseModal"
+      class="fixed inset-0 z-[110] flex items-center justify-center p-4"
+    >
+      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showS3BrowseModal = false" />
+      <div
+        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[70vh] flex flex-col"
+      >
+        <div class="px-6 py-4 border-b border-zinc-800 flex items-center justify-between shrink-0">
+          <h3 class="text-lg font-black text-zinc-100 tracking-tight">选择 S3 存储路径</h3>
+          <button
+            class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
+            @click="showS3BrowseModal = false"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="px-6 py-3 border-b border-zinc-800 bg-zinc-950/50 shrink-0">
+          <div class="flex items-center gap-2">
+            <button
+              v-if="getParentPath(s3BrowsePath)"
+              class="p-1.5 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-zinc-200"
+              title="返回上级"
+              @click="navigateS3Path(getParentPath(s3BrowsePath))"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <span class="text-xs text-zinc-400 font-mono flex-1 truncate">{{ s3BrowsePath }}</span>
+          </div>
+        </div>
+
+        <div class="p-4 overflow-y-auto flex-1 min-h-[200px]">
+          <div v-if="s3BrowseLoading" class="flex items-center justify-center py-8">
+            <RefreshCw class="w-6 h-6 text-zinc-500 animate-spin" />
+          </div>
+          <div v-else-if="s3BrowseError" class="text-center py-8">
+            <p class="text-sm text-rose-400">{{ s3BrowseError }}</p>
+          </div>
+          <div v-else-if="s3BrowseFiles.length === 0 && s3BrowseDirectories.length === 0" class="text-center py-8">
+            <p class="text-sm text-zinc-500">目录为空</p>
+          </div>
+          <div v-else class="space-y-1">
+            <button
+              v-for="dir in s3BrowseDirectories"
+              :key="dir"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:bg-zinc-800 text-zinc-300"
+              @click="navigateS3Path(dir)"
+            >
+              <svg class="w-4 h-4 shrink-0 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              <span class="text-xs truncate">{{ dir.split('/').pop() || dir }}</span>
+            </button>
+            <button
+              v-for="file in s3BrowseFiles"
+              :key="file"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:bg-zinc-800 text-zinc-300"
+              @click="navigateS3Path(file)"
+            >
+              <svg class="w-4 h-4 shrink-0 text-zinc-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span class="text-xs truncate">{{ file.split('/').pop() || file }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-zinc-800 bg-zinc-950/50 shrink-0">
+          <button
+            class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all"
+            @click="selectS3Path"
+          >
+            选择此目录
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- WebDAV 浏览模态框 -->
     <div
       v-if="showWebDAVBrowseModal"
@@ -917,23 +1013,31 @@
           <div v-else-if="webdavBrowseError" class="text-center py-8">
             <p class="text-sm text-rose-400">{{ webdavBrowseError }}</p>
           </div>
-          <div v-else-if="webdavBrowseFiles.length === 0" class="text-center py-8">
+          <div v-else-if="webdavBrowseFiles.length === 0 && webdavBrowseDirectories.length === 0" class="text-center py-8">
             <p class="text-sm text-zinc-500">目录为空</p>
           </div>
           <div v-else class="space-y-1">
             <button
+              v-for="dir in webdavBrowseDirectories"
+              :key="dir"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:bg-zinc-800 text-zinc-300"
+              @click="navigateWebDAVPath(dir)"
+            >
+              <svg class="w-4 h-4 shrink-0 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              <span class="text-xs truncate">{{ dir }}</span>
+            </button>
+            <button
               v-for="file in webdavBrowseFiles"
               :key="file"
-              :class="[
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all',
-                file === webdavBrowsePath ? 'bg-blue-600/20 text-blue-400' : 'hover:bg-zinc-800 text-zinc-300'
-              ]"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:bg-zinc-800 text-zinc-300"
               @click="navigateWebDAVPath(file)"
             >
-              <svg class="w-4 h-4 shrink-0" :class="file.endsWith('/') ? 'text-amber-400' : 'text-zinc-500'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path :d="file.endsWith('/') ? 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' : 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'" />
+              <svg class="w-4 h-4 shrink-0 text-zinc-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span class="text-xs truncate">{{ file.split('/').pop() || file }}</span>
+              <span class="text-xs truncate">{{ file }}</span>
             </button>
           </div>
         </div>
@@ -976,7 +1080,14 @@ const scheduledBackupTestingConnection = ref(false)
 const webdavBrowseLoading = ref(false)
 const webdavBrowsePath = ref('')
 const webdavBrowseFiles = ref([])
+const webdavBrowseDirectories = ref([])
 const webdavBrowseError = ref('')
+const s3BrowseLoading = ref(false)
+const s3BrowsePath = ref('')
+const s3BrowseFiles = ref([])
+const s3BrowseDirectories = ref([])
+const s3BrowseError = ref('')
+const showS3BrowseModal = ref(false)
 
 const scheduledBackupDefaultForm = () => ({
   name: '',
@@ -1251,8 +1362,14 @@ const browseWebDAVPath = async () => {
   }
 }
 
-const navigateWebDAVPath = async (path) => {
-  webdavBrowsePath.value = path
+const navigateWebDAVPath = async (input) => {
+  let fullPath
+  if (input.startsWith('/')) {
+    fullPath = input
+  } else {
+    fullPath = webdavBrowsePath.value === '/' ? `/${input}` : `${webdavBrowsePath.value}/${input}`
+  }
+  webdavBrowsePath.value = fullPath
   webdavBrowseFiles.value = []
   webdavBrowseError.value = ''
   webdavBrowseLoading.value = true
@@ -1264,18 +1381,19 @@ const navigateWebDAVPath = async (path) => {
         url: scheduledBackupForm.value.webdavUrl,
         username: scheduledBackupForm.value.webdavUsername,
         password: scheduledBackupForm.value.webdavPassword,
-        path: path
+        path: fullPath
       }
     })
 
     if (response.success) {
       webdavBrowseFiles.value = response.files || []
-      webdavBrowsePath.value = response.currentPath || path
+      webdavBrowseDirectories.value = response.directories || []
+      webdavBrowsePath.value = response.currentPath || fullPath
     } else {
       webdavBrowseError.value = response.errorMessage || '浏览失败'
     }
   } catch (error) {
-    console.error('Navigate WebDAV failed:', error)
+    console.error('Browse WebDAV failed:', error)
     webdavBrowseError.value = error.data?.message || error.message || '浏览失败'
   } finally {
     webdavBrowseLoading.value = false
@@ -1287,11 +1405,102 @@ const selectWebDAVPath = () => {
   showWebDAVBrowseModal.value = false
 }
 
+const browseS3Path = async () => {
+  if (!scheduledBackupForm.value.s3Endpoint || !scheduledBackupForm.value.s3Bucket || !scheduledBackupForm.value.s3AccessKey || !scheduledBackupForm.value.s3SecretKey) {
+    showNotification('请先填写 S3 配置信息', 'warning')
+    return
+  }
+
+  s3BrowsePath.value = scheduledBackupForm.value.s3Path || 'backups'
+  s3BrowseFiles.value = []
+  s3BrowseDirectories.value = []
+  s3BrowseError.value = ''
+  s3BrowseLoading.value = true
+  showS3BrowseModal.value = true
+
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/browse-s3', {
+      method: 'POST',
+      body: {
+        endpoint: scheduledBackupForm.value.s3Endpoint,
+        bucket: scheduledBackupForm.value.s3Bucket,
+        accessKey: scheduledBackupForm.value.s3AccessKey,
+        secretKey: scheduledBackupForm.value.s3SecretKey,
+        region: scheduledBackupForm.value.s3Region || 'us-east-1',
+        path: s3BrowsePath.value
+      }
+    })
+
+    if (response.success) {
+      s3BrowseFiles.value = response.files || []
+      s3BrowseDirectories.value = response.directories || []
+      s3BrowsePath.value = response.currentPath || s3BrowsePath.value
+    } else {
+      s3BrowseError.value = response.errorMessage || '浏览失败'
+    }
+  } catch (error) {
+    console.error('Browse S3 failed:', error)
+    s3BrowseError.value = error.data?.message || error.message || '浏览失败'
+  } finally {
+    s3BrowseLoading.value = false
+  }
+}
+
+const navigateS3Path = async (input) => {
+  let fullPath
+  if (input.startsWith('/')) {
+    fullPath = input
+  } else {
+    fullPath = s3BrowsePath.value
+      ? (s3BrowsePath.value === '/' ? `/${input}` : `${s3BrowsePath.value}/${input}`)
+      : input
+  }
+  s3BrowsePath.value = fullPath
+  s3BrowseFiles.value = []
+  s3BrowseDirectories.value = []
+  s3BrowseError.value = ''
+  s3BrowseLoading.value = true
+
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/browse-s3', {
+      method: 'POST',
+      body: {
+        endpoint: scheduledBackupForm.value.s3Endpoint,
+        bucket: scheduledBackupForm.value.s3Bucket,
+        accessKey: scheduledBackupForm.value.s3AccessKey,
+        secretKey: scheduledBackupForm.value.s3SecretKey,
+        region: scheduledBackupForm.value.s3Region || 'us-east-1',
+        path: fullPath
+      }
+    })
+
+    if (response.success) {
+      s3BrowseFiles.value = response.files || []
+      s3BrowseDirectories.value = response.directories || []
+      s3BrowsePath.value = response.currentPath || fullPath
+    } else {
+      s3BrowseError.value = response.errorMessage || '浏览失败'
+    }
+  } catch (error) {
+    console.error('Browse S3 failed:', error)
+    s3BrowseError.value = error.data?.message || error.message || '浏览失败'
+  } finally {
+    s3BrowseLoading.value = false
+  }
+}
+
+const selectS3Path = () => {
+  scheduledBackupForm.value.s3Path = s3BrowsePath.value
+  showS3BrowseModal.value = false
+}
+
 const getParentPath = (path) => {
-  if (path === '/' || !path) return null
-  const parts = path.split('/').filter(Boolean)
+  if (!path || path === '/') return null
+  const normalizedPath = path.endsWith('/') ? path.slice(0, -1) : path
+  const parts = normalizedPath.split('/').filter(Boolean)
+  if (parts.length === 0) return null
   parts.pop()
-  return '/' + parts.join('/')
+  return parts.length === 0 ? '/' : '/' + parts.join('/')
 }
 
 const getScheduleTimeText = (schedule) => {

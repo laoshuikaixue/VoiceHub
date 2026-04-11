@@ -233,11 +233,12 @@ export class WebDAVUploadService {
   /**
    * 列出目录中的文件
    */
-  async listFiles(remotePath: string = '/backups'): Promise<{ success: boolean; files: string[]; errorMessage?: string }> {
+  async listFiles(remotePath: string = '/backups'): Promise<{ success: boolean; files: string[]; directories: string[]; errorMessage?: string }> {
     if (!this.config) {
       return {
         success: false,
         files: [],
+        directories: [],
         errorMessage: 'WebDAV client not initialized'
       }
     }
@@ -249,15 +250,17 @@ export class WebDAVUploadService {
       })
 
       if (result.status >= 200 && result.status < 300 && result.body) {
-        const { files, directories } = this.parsePropfindResponse(result.body)
+        const { files, directories } = this.parsePropfindResponse(result.body, remotePath)
         return {
           success: true,
-          files: [...directories, ...files]
+          files,
+          directories
         }
       } else {
         return {
           success: false,
           files: [],
+          directories: [],
           errorMessage: `List failed: ${result.status} ${result.statusText}`
         }
       }
@@ -268,6 +271,7 @@ export class WebDAVUploadService {
       return {
         success: false,
         files: [],
+        directories: [],
         errorMessage
       }
     }
@@ -276,23 +280,28 @@ export class WebDAVUploadService {
   /**
    * 解析 PROPFIND 响应，移除 WebDAV 基础路径
    */
-  private parsePropfindResponse(xml: string): { files: string[]; directories: string[] } {
+  private parsePropfindResponse(xml: string, remotePath: string): { files: string[]; directories: string[] } {
     const files: string[] = []
     const directories: string[] = []
     const hrefRegex = /<D:href>([^<]+)<\/D:href>/gi
     let match
 
     const basePath = new URL(this.config!.url).pathname.replace(/\/$/, '')
+    const normalizedRemotePath = remotePath.endsWith('/') ? remotePath : remotePath + '/'
 
     while ((match = hrefRegex.exec(xml)) !== null) {
       const href = decodeURIComponent(match[1])
       const fullPath = href.startsWith(basePath) ? href.slice(basePath.length) || '/' : href
       if (fullPath === '/' || fullPath === basePath) continue
+      if (fullPath === normalizedRemotePath || fullPath === remotePath) continue
+
+      const name = fullPath.endsWith('/') ? fullPath.slice(0, -1) : fullPath
+      const displayName = name.split('/').pop() || name
 
       if (fullPath.endsWith('/')) {
-        directories.push(fullPath.slice(0, -1) + '/')
+        directories.push(displayName)
       } else {
-        files.push(fullPath)
+        files.push(displayName)
       }
     }
 

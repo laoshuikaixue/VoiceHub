@@ -1,13 +1,15 @@
 import { defineEventHandler, readBody } from 'h3'
-import { getWebDAVUploadService } from '~~/server/services/webdavUploadService'
+import { getS3UploadService } from '~~/server/services/s3UploadService'
 import { createError } from 'h3'
 import { z } from 'zod'
 
-const browseSchema = z.object({
-  url: z.string().url().max(500),
-  username: z.string().min(1).max(255),
-  password: z.string().min(1).max(255),
-  path: z.string().max(1000).default('/backups')
+const browseS3Schema = z.object({
+  endpoint: z.string().url().max(500),
+  bucket: z.string().min(1).max(255),
+  accessKey: z.string().min(1).max(255),
+  secretKey: z.string().min(1).max(255),
+  region: z.string().max(100).default('us-east-1'),
+  path: z.string().max(1000).default('backups')
 })
 
 export default defineEventHandler(async (event) => {
@@ -20,7 +22,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const result = browseSchema.safeParse(body)
+  const result = browseS3Schema.safeParse(body)
 
   if (!result.success) {
     throw createError({
@@ -29,13 +31,13 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { url, username, password, path } = result.data
+  const { endpoint, bucket, accessKey, secretKey, region, path } = result.data
 
-  const webdavService = getWebDAVUploadService()
-  webdavService.initialize({ url, username, password })
+  const s3Service = getS3UploadService()
+  s3Service.initialize({ endpoint, bucket, accessKey, secretKey, region })
 
   try {
-    const listResult = await webdavService.listFiles(path)
+    const listResult = await s3Service.listFiles(path)
 
     return {
       success: listResult.success,
@@ -45,7 +47,7 @@ export default defineEventHandler(async (event) => {
       errorMessage: listResult.errorMessage
     }
   } catch (error) {
-    console.error('Browse WebDAV failed:', error)
+    console.error('Browse S3 failed:', error)
     return {
       success: false,
       files: [],
