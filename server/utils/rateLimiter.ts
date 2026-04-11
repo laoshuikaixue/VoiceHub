@@ -58,11 +58,19 @@ export function cleanupRateLimits(force = false) {
     }
   }
 
-  // 如果强制清理且没有过期数据可删，则删除最早插入的记录（利用 Map 的插入顺序特性）
+  // 如果强制清理且没有过期数据可删，则一次性删除 10% 的最早插入记录
+  // 避免高并发下 Map 始终满载导致频繁触发清理逻辑
   if (force && deletedCount === 0 && store.size > 0) {
-    const firstKey = store.keys().next().value
-    if (firstKey !== undefined) {
-      store.delete(firstKey)
+    const itemsToDelete = Math.ceil(MAX_STORE_SIZE * 0.1)
+    const keys = store.keys()
+    
+    for (let i = 0; i < itemsToDelete; i++) {
+      const key = keys.next().value
+      if (key !== undefined) {
+        store.delete(key)
+      } else {
+        break
+      }
     }
   }
 }

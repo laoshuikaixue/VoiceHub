@@ -35,10 +35,10 @@ export default defineEventHandler(async (event) => {
     // 如果未提供邮箱，则进入第一步：检查账号并返回掩码邮箱
     if (!email) {
       if (!user) {
-        throw createError({ statusCode: 404, message: '账号不存在' })
+        throw createError({ statusCode: 404, message: '找不到该账号名，请检查是否拼写错误' })
       }
       if (!user.email) {
-        throw createError({ statusCode: 400, message: '该账号未绑定邮箱，无法通过此方式找回密码' })
+        throw createError({ statusCode: 400, message: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。' })
       }
       
       // 生成掩码邮箱 (例如: a***b@gmail.com)
