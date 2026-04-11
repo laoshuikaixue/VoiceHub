@@ -26,6 +26,8 @@ export default defineEventHandler(async (event) => {
     '/api/auth/oauth-register',
     '/api/auth/2fa/verify',
     '/api/auth/2fa/send-email',
+    '/api/auth/forgot-password', // 找回密码
+    '/api/auth/reset-password', // 重置密码
     '/api/semesters/current',
     '/api/play-times',
     '/api/schedules/public',

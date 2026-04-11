@@ -662,9 +662,11 @@ VoiceHub/
 │   │   │   └── error.vue      # 认证错误页面
 │   │   ├── change-password.vue # 修改密码页面
 │   │   ├── dashboard.vue       # 用户仪表盘
+│   │   ├── forgot-password.vue # 找回密码页面
 │   │   ├── index.vue           # 首页
 │   │   ├── login.vue           # 登录页面
 │   │   ├── notification-settings.vue # 通知设置页面
+│   │   ├── reset-password.vue  # 重置密码页面
 │   │   └── year-review.vue     # 年度回顾页面
 │   ├── plugins/               # Nuxt插件
 │   │   ├── auth.client.ts      # 客户端认证插件
@@ -825,10 +827,12 @@ VoiceHub/
 │   │   │   │   └── index.get.ts      # OAuth授权跳转
 │   │   │   ├── bind.post.ts          # 绑定社交账号
 │   │   │   ├── change-password.post.ts # 修改密码
+│   │   │   ├── forgot-password.post.ts # 找回密码
 │   │   │   ├── identities.get.ts     # 获取已绑定身份列表
 │   │   │   ├── login.post.ts        # 用户登录
 │   │   │   ├── logout.post.ts       # 用户登出
 │   │   │   ├── oauth-register.post.ts # OAuth用户注册
+│   │   │   ├── reset-password.post.ts # 重置密码
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
 │   │   │   ├── unbind.post.ts        # 解绑社交账号
 │   │   │   └── verify.get.ts        # 验证Token并获取用户信息

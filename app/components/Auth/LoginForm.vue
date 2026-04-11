@@ -94,9 +94,12 @@
 
       <!-- 密码字段 -->
       <div class="form-group">
-        <label for="password">
-          {{ showCreateMode ? '设置密码' : '密码' }}
-        </label>
+        <div class="flex justify-between items-center w-full mb-2">
+          <label for="password" style="margin-bottom: 0;">{{ showCreateMode ? '设置密码' : '密码' }}</label>
+          <NuxtLink v-if="!showCreateMode && !isBindMode && smtpEnabled" to="/forgot-password" class="text-xs text-[var(--primary)] hover:opacity-80 transition-opacity" style="line-height: 1;">
+            忘记密码？
+          </NuxtLink>
+        </div>
         <div class="input-wrapper">
           <svg
             class="input-icon"
@@ -294,8 +297,9 @@ import { getProviderDisplayName } from '~/utils/oauth'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { Fingerprint } from 'lucide-vue-next'
+import { usePasswordStrength } from '~/composables/usePasswordStrength'
 
-const { allowOAuthRegistration, fetchSiteConfig } = useSiteConfig()
+const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled } = useSiteConfig()
 
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
@@ -327,49 +331,7 @@ const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
 const showCreateMode = ref(false)
 
-const passwordStrength = computed(() => {
-  if (!password.value) return { width: '0%', colorClass: '', textColorClass: '', text: '' }
-
-  let score = 0
-  const value = password.value
-  if (value.length >= 8) score++
-  if (/[a-z]/.test(value)) score++
-  if (/[A-Z]/.test(value)) score++
-  if (/[0-9]/.test(value)) score++
-  if (/[^A-Za-z0-9]/.test(value)) score++
-
-  const scorePercentage = (score / 5) * 100
-
-  if (score < 3) {
-    return {
-      width: `${scorePercentage || 10}%`,
-      colorClass: 'bg-rose-500',
-      textColorClass: 'text-rose-500',
-      text: '弱'
-    }
-  } else if (score < 4) {
-    return {
-      width: `${scorePercentage}%`,
-      colorClass: 'bg-amber-500',
-      textColorClass: 'text-amber-500',
-      text: '中等'
-    }
-  } else if (score < 5) {
-    return {
-      width: `${scorePercentage}%`,
-      colorClass: 'bg-blue-500',
-      textColorClass: 'text-blue-500',
-      text: '强'
-    }
-  } else {
-    return {
-      width: '100%',
-      colorClass: 'bg-emerald-500',
-      textColorClass: 'text-emerald-500',
-      text: '极强'
-    }
-  }
-})
+const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
 
