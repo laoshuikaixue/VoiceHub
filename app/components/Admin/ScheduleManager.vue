@@ -508,6 +508,17 @@
                     >迁移日期</span
                   >
                 </button>
+                <button
+                  :disabled="localScheduledSongs.length === 0"
+                  class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-red-400 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="clearScheduleList"
+                >
+                  <Trash2 class="w-3.5 h-3.5" />
+                  <span
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
+                    >清空列表</span
+                  >
+                </button>
               </div>
               <div class="h-6 w-[1px] bg-zinc-800 mx-1" />
               <button
@@ -739,6 +750,13 @@
               <ArrowRight class="w-5 h-5" />
             </button>
             <button
+              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-red-400 rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="localScheduledSongs.length === 0"
+              @click="clearScheduleList"
+            >
+              <Trash2 class="w-5 h-5" />
+            </button>
+            <button
               class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
               title="仅发布排期"
               @click="publishSchedule"
@@ -930,7 +948,8 @@ import {
   Minus,
   CircleDot,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  Trash2
 } from 'lucide-vue-next'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
@@ -2247,6 +2266,31 @@ const markAllAsPlayed = async () => {
       }
     } finally {
       loading.value = false
+    }
+  }
+
+  showConfirmDialog.value = true
+}
+
+// 清空排期列表
+const clearScheduleList = () => {
+  if (localScheduledSongs.value.length === 0) return
+
+  confirmDialogTitle.value = '清空播放列表'
+  confirmDialogMessage.value = '确定要清空当前的播放顺序列表吗？未保存的修改将会丢失。'
+  confirmDialogType.value = 'danger'
+  confirmDialogConfirmText.value = '确认清空'
+
+  confirmAction.value = async () => {
+    localScheduledSongs.value.forEach(schedule => {
+      if (schedule.song) {
+        scheduledSongIds.value.delete(schedule.song.id)
+      }
+    })
+    localScheduledSongs.value = []
+    hasChanges.value = true
+    if (window.$showNotification) {
+      window.$showNotification('播放列表已清空，请记得保存修改', 'success')
     }
   }
 
