@@ -211,7 +211,7 @@
                 <button
                   :class="[
                     'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
-                    currentLimitType === 'daily'
+                    activeLimitTab === 'daily'
                       ? 'bg-zinc-800 text-blue-400 shadow-sm'
                       : 'text-zinc-600 hover:text-zinc-400'
                   ]"
@@ -222,7 +222,7 @@
                 <button
                   :class="[
                     'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
-                    currentLimitType === 'weekly'
+                    activeLimitTab === 'weekly'
                       ? 'bg-zinc-800 text-blue-400 shadow-sm'
                       : 'text-zinc-600 hover:text-zinc-400'
                   ]"
@@ -233,7 +233,7 @@
                 <button
                   :class="[
                     'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
-                    currentLimitType === 'monthly'
+                    activeLimitTab === 'monthly'
                       ? 'bg-zinc-800 text-blue-400 shadow-sm'
                       : 'text-zinc-600 hover:text-zinc-400'
                   ]"
@@ -245,7 +245,7 @@
 
               <div>
                 <label :class="labelClass"
-                  >{{ currentLimitType === 'daily' ? '单日' : (currentLimitType === 'weekly' ? '单周' : '单月') }}投稿上限</label
+                  >{{ activeLimitTab === 'daily' ? '单日' : (activeLimitTab === 'weekly' ? '单周' : '单月') }}投稿上限</label
                 >
                 <div class="relative">
                   <input
@@ -433,22 +433,30 @@ const formData = ref({
 const originalData = ref({})
 
 // 当前限额类型和值的快捷访问
-const currentLimitType = computed(() => {
-  if (formData.value.monthlySubmissionLimit !== null) return 'monthly'
-  return formData.value.weeklySubmissionLimit !== null ? 'weekly' : 'daily'
-})
+const activeLimitTab = ref('daily')
+
+// 根据数据中的限额值同步当前激活的标签页
+const syncActiveLimitTab = (data) => {
+  if (data.monthlySubmissionLimit != null) {
+    activeLimitTab.value = 'monthly'
+  } else if (data.weeklySubmissionLimit != null) {
+    activeLimitTab.value = 'weekly'
+  } else {
+    activeLimitTab.value = 'daily'
+  }
+}
 
 const currentLimitValue = computed({
   get: () => {
-    if (currentLimitType.value === 'monthly') return formData.value.monthlySubmissionLimit
-    return currentLimitType.value === 'daily'
+    if (activeLimitTab.value === 'monthly') return formData.value.monthlySubmissionLimit
+    return activeLimitTab.value === 'daily'
       ? formData.value.dailySubmissionLimit
       : formData.value.weeklySubmissionLimit
   },
   set: (val) => {
-    if (currentLimitType.value === 'monthly') {
+    if (activeLimitTab.value === 'monthly') {
       formData.value.monthlySubmissionLimit = val
-    } else if (currentLimitType.value === 'daily') {
+    } else if (activeLimitTab.value === 'daily') {
       formData.value.dailySubmissionLimit = val
     } else {
       formData.value.weeklySubmissionLimit = val
@@ -467,6 +475,8 @@ const loadConfig = async () => {
     if (!response.ok) throw new Error('获取配置失败')
 
     const data = await response.json()
+
+    syncActiveLimitTab(data)
 
     formData.value = {
       siteTitle: data.siteTitle || '',
@@ -537,11 +547,11 @@ const saveConfig = async () => {
         (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines,
       // 确保根据限额类型处理空值
       dailySubmissionLimit:
-        currentLimitType.value === 'daily' ? formData.value.dailySubmissionLimit : null,
+        activeLimitTab.value === 'daily' ? formData.value.dailySubmissionLimit : null,
       weeklySubmissionLimit:
-        currentLimitType.value === 'weekly' ? formData.value.weeklySubmissionLimit : null,
+        activeLimitTab.value === 'weekly' ? formData.value.weeklySubmissionLimit : null,
       monthlySubmissionLimit:
-        currentLimitType.value === 'monthly' ? formData.value.monthlySubmissionLimit : null
+        activeLimitTab.value === 'monthly' ? formData.value.monthlySubmissionLimit : null
     }
 
     const response = await fetch('/api/admin/system-settings', {
@@ -574,6 +584,7 @@ const saveConfig = async () => {
     }
 
     saveSuccess.value = true
+    formData.value = { ...configToSave }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     showNotification('配置保存成功！', 'success')
 
@@ -594,18 +605,12 @@ const saveConfig = async () => {
 
 // 处理限额类型变化
 const handleLimitTypeChange = (type) => {
+  activeLimitTab.value = type
   const limits = {
     daily: { key: 'dailySubmissionLimit', default: 5 },
     weekly: { key: 'weeklySubmissionLimit', default: 20 },
     monthly: { key: 'monthlySubmissionLimit', default: 50 }
   }
-
-  // 将非当前类型的限额设为 null
-  Object.keys(limits).forEach((limitType) => {
-    if (limitType !== type) {
-      formData.value[limits[limitType].key] = null
-    }
-  })
 
   // 如果当前类型的限额为 null，则设置默认值
   const targetLimit = limits[type]
@@ -617,6 +622,7 @@ const handleLimitTypeChange = (type) => {
 // 重置表单
 const resetForm = () => {
   formData.value = JSON.parse(JSON.stringify(originalData.value))
+  syncActiveLimitTab(formData.value)
 }
 
 onMounted(loadConfig)
