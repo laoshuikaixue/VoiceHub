@@ -136,6 +136,7 @@ const sortedPlayTimes = computed(() => {
 })
 
 const hasPlayTimes = computed(() => {
+  if (!props.settings.showPlayTime) return false
   const keys = Object.keys(playTimesMap.value)
   if (keys.length > 1) return true
   if (keys.length === 1 && keys[0] !== '未指定时段') return true

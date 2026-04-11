@@ -1535,19 +1535,6 @@ const retrySemesterFetch = () => {
   fetchAvailableSemesters()
 }
 
-// 防抖函数实现
-function debounce(func, wait) {
-  let timeout
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout)
-      func(...args)
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
-}
-
 // 当组件销毁时不需要特殊处理，音频播放由全局管理
 
 // 波纹效果指令
