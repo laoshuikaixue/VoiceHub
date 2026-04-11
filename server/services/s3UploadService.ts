@@ -252,7 +252,7 @@ export class S3UploadService {
    * 从调度配置创建 S3 服务并执行上传
    */
   async uploadFromSchedule(
-    schedule: Pick<BackupSchedule, 's3Endpoint' | 's3Bucket' | 's3AccessKey' | 's3SecretKey' | 's3Region'>,
+    schedule: Pick<BackupSchedule, 's3Endpoint' | 's3Bucket' | 's3AccessKey' | 's3SecretKey' | 's3Region' | 's3Path'>,
     localPath: string,
     remotePath?: string
   ): Promise<S3UploadResult> {
@@ -264,7 +264,81 @@ export class S3UploadService {
       region: schedule.s3Region || 'us-east-1'
     })
 
-    return this.uploadFile(localPath, remotePath)
+    const s3Path = schedule.s3Path || '/backups'
+    const uploadPath = remotePath || `${s3Path.replace(/^\//, '')}/${path.basename(localPath)}`
+
+    return this.uploadFile(localPath, uploadPath)
+  }
+
+  /**
+   * 列出 S3 桶中的备份文件
+   */
+  async listFiles(prefix?: string): Promise<{ success: boolean; files: string[]; errorMessage?: string }> {
+    if (!this.s3Client || !this.config) {
+      return {
+        success: false,
+        files: [],
+        errorMessage: 'S3 client not initialized'
+      }
+    }
+
+    try {
+      const command = new ListObjectsV2Command({
+        Bucket: this.config.bucket,
+        Prefix: prefix || 'backups/'
+      })
+
+      const response = await this.s3Client.send(command)
+
+      const files = (response.Contents || []).map((obj) => obj.Key || '').filter(Boolean)
+
+      return {
+        success: true,
+        files
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error('[S3UploadService] List files failed:', error)
+      return {
+        success: false,
+        files: [],
+        errorMessage
+      }
+    }
+  }
+
+  /**
+   * 从 S3 删除文件
+   */
+  async deleteFile(remotePath: string): Promise<{ success: boolean; errorMessage?: string }> {
+    if (!this.s3Client || !this.config) {
+      return {
+        success: false,
+        errorMessage: 'S3 client not initialized'
+      }
+    }
+
+    try {
+      const command = new DeleteObjectCommand({
+        Bucket: this.config.bucket,
+        Key: remotePath
+      })
+
+      await this.s3Client.send(command)
+
+      console.log(`[S3UploadService] File deleted: ${remotePath}`)
+
+      return {
+        success: true
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error('[S3UploadService] Delete failed:', error)
+      return {
+        success: false,
+        errorMessage
+      }
+    }
   }
 }
 

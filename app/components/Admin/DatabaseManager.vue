@@ -777,6 +777,12 @@
                   placeholder="Secret Key"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
                 >
+                <input
+                  v-model="scheduledBackupForm.s3Path"
+                  type="text"
+                  placeholder="存储路径 (例如: /backups)"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                >
                 <button
                   :disabled="scheduledBackupTestingConnection"
                   class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all"
@@ -805,6 +811,24 @@
                   placeholder="密码"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
                 >
+                <div class="flex gap-2">
+                  <input
+                    v-model="scheduledBackupForm.webdavPath"
+                    type="text"
+                    placeholder="上传路径 (例如: /backups)"
+                    class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                  >
+                  <button
+                    :disabled="scheduledBackupTestingConnection"
+                    class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all shrink-0"
+                    title="浏览路径"
+                    @click="browseWebDAVPath"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                  </button>
+                </div>
                 <button
                   :disabled="scheduledBackupTestingConnection"
                   class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all"
@@ -970,6 +994,80 @@
         </div>
       </div>
     </div>
+
+    <!-- WebDAV 浏览模态框 -->
+    <div
+      v-if="showWebDAVBrowseModal"
+      class="fixed inset-0 z-[110] flex items-center justify-center p-4"
+    >
+      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showWebDAVBrowseModal = false" />
+      <div
+        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[70vh] flex flex-col"
+      >
+        <div class="px-6 py-4 border-b border-zinc-800 flex items-center justify-between shrink-0">
+          <h3 class="text-lg font-black text-zinc-100 tracking-tight">选择上传路径</h3>
+          <button
+            class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
+            @click="showWebDAVBrowseModal = false"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="px-6 py-3 border-b border-zinc-800 bg-zinc-950/50 shrink-0">
+          <div class="flex items-center gap-2">
+            <button
+              v-if="getParentPath(webdavBrowsePath)"
+              class="p-1.5 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-zinc-200"
+              title="返回上级"
+              @click="navigateWebDAVPath(getParentPath(webdavBrowsePath))"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <span class="text-xs text-zinc-400 font-mono flex-1 truncate">{{ webdavBrowsePath }}</span>
+          </div>
+        </div>
+
+        <div class="p-4 overflow-y-auto flex-1 min-h-[200px]">
+          <div v-if="webdavBrowseLoading" class="flex items-center justify-center py-8">
+            <RefreshCw class="w-6 h-6 text-zinc-500 animate-spin" />
+          </div>
+          <div v-else-if="webdavBrowseError" class="text-center py-8">
+            <p class="text-sm text-rose-400">{{ webdavBrowseError }}</p>
+          </div>
+          <div v-else-if="webdavBrowseFiles.length === 0" class="text-center py-8">
+            <p class="text-sm text-zinc-500">目录为空</p>
+          </div>
+          <div v-else class="space-y-1">
+            <button
+              v-for="file in webdavBrowseFiles"
+              :key="file"
+              :class="[
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all',
+                file === webdavBrowsePath ? 'bg-blue-600/20 text-blue-400' : 'hover:bg-zinc-800 text-zinc-300'
+              ]"
+              @click="navigateWebDAVPath(file)"
+            >
+              <svg class="w-4 h-4 shrink-0" :class="file.endsWith('/') ? 'text-amber-400' : 'text-zinc-500'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path :d="file.endsWith('/') ? 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' : 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'" />
+              </svg>
+              <span class="text-xs truncate">{{ file.split('/').pop() || file }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-zinc-800 bg-zinc-950/50 shrink-0">
+          <button
+            class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all"
+            @click="selectWebDAVPath"
+          >
+            选择此目录
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -990,10 +1088,15 @@ const scheduledBackupHistory = ref([])
 const showScheduledBackupModal = ref(false)
 const showScheduledBackupHistoryModal = ref(false)
 const showDeleteScheduledBackupModal = ref(false)
+const showWebDAVBrowseModal = ref(false)
 const editingScheduledBackup = ref(null)
 const scheduledBackupToDelete = ref(null)
 const scheduledBackupSaving = ref(false)
 const scheduledBackupTestingConnection = ref(false)
+const webdavBrowseLoading = ref(false)
+const webdavBrowsePath = ref('')
+const webdavBrowseFiles = ref([])
+const webdavBrowseError = ref('')
 
 const scheduledBackupDefaultForm = () => ({
   name: '',
@@ -1011,9 +1114,11 @@ const scheduledBackupDefaultForm = () => ({
   s3Region: 'us-east-1',
   s3AccessKey: '',
   s3SecretKey: '',
+  s3Path: '/backups',
   webdavUrl: '',
   webdavUsername: '',
   webdavPassword: '',
+  webdavPath: '/backups',
   retentionType: 'days',
   retentionValue: 7
 })
@@ -1067,9 +1172,11 @@ const openScheduledBackupModal = (schedule = null) => {
       s3Region: schedule.s3Region || 'us-east-1',
       s3AccessKey: schedule.s3AccessKey || '',
       s3SecretKey: schedule.s3SecretKey || '',
+      s3Path: schedule.s3Path || '/backups',
       webdavUrl: schedule.webdavUrl || '',
       webdavUsername: schedule.webdavUsername || '',
       webdavPassword: schedule.webdavPassword || '',
+      webdavPath: schedule.webdavPath || '/backups',
       retentionType: schedule.retentionType || '',
       retentionValue: schedule.retentionValue || 7
     }
@@ -1206,13 +1313,15 @@ const testScheduledBackupS3Connection = async () => {
         bucket: scheduledBackupForm.value.s3Bucket,
         region: scheduledBackupForm.value.s3Region,
         accessKey: scheduledBackupForm.value.s3AccessKey,
-        secretKey: scheduledBackupForm.value.s3SecretKey
+        secretKey: scheduledBackupForm.value.s3SecretKey,
+        s3Path: scheduledBackupForm.value.s3Path
       }
     })
     showNotification(response.message, response.success ? 'success' : 'error')
   } catch (error) {
     console.error('测试 S3 连接失败:', error)
-    showNotification('连接测试失败', 'error')
+    const errorMessage = error.data?.message || error.message || '连接测试失败'
+    showNotification(errorMessage, 'error')
   } finally {
     scheduledBackupTestingConnection.value = false
   }
@@ -1232,10 +1341,91 @@ const testScheduledBackupWebDAVConnection = async () => {
     showNotification(response.message, response.success ? 'success' : 'error')
   } catch (error) {
     console.error('测试 WebDAV 连接失败:', error)
-    showNotification('连接测试失败', 'error')
+    const errorMessage = error.data?.message || error.message || '连接测试失败'
+    showNotification(errorMessage, 'error')
   } finally {
     scheduledBackupTestingConnection.value = false
   }
+}
+
+const browseWebDAVPath = async () => {
+  if (!scheduledBackupForm.value.webdavUrl || !scheduledBackupForm.value.webdavUsername || !scheduledBackupForm.value.webdavPassword) {
+    showNotification('请先填写 WebDAV 服务器信息', 'warning')
+    return
+  }
+
+  webdavBrowsePath.value = scheduledBackupForm.value.webdavPath || '/backups'
+  webdavBrowseFiles.value = []
+  webdavBrowseError.value = ''
+  webdavBrowseLoading.value = true
+  showWebDAVBrowseModal.value = true
+
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/browse-webdav', {
+      method: 'POST',
+      body: {
+        url: scheduledBackupForm.value.webdavUrl,
+        username: scheduledBackupForm.value.webdavUsername,
+        password: scheduledBackupForm.value.webdavPassword,
+        path: webdavBrowsePath.value
+      }
+    })
+
+    if (response.success) {
+      webdavBrowseFiles.value = response.files || []
+      webdavBrowsePath.value = response.currentPath || webdavBrowsePath.value
+    } else {
+      webdavBrowseError.value = response.errorMessage || '浏览失败'
+    }
+  } catch (error) {
+    console.error('Browse WebDAV failed:', error)
+    webdavBrowseError.value = error.data?.message || error.message || '浏览失败'
+  } finally {
+    webdavBrowseLoading.value = false
+  }
+}
+
+const navigateWebDAVPath = async (path) => {
+  webdavBrowsePath.value = path
+  webdavBrowseFiles.value = []
+  webdavBrowseError.value = ''
+  webdavBrowseLoading.value = true
+
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/browse-webdav', {
+      method: 'POST',
+      body: {
+        url: scheduledBackupForm.value.webdavUrl,
+        username: scheduledBackupForm.value.webdavUsername,
+        password: scheduledBackupForm.value.webdavPassword,
+        path: path
+      }
+    })
+
+    if (response.success) {
+      webdavBrowseFiles.value = response.files || []
+      webdavBrowsePath.value = response.currentPath || path
+    } else {
+      webdavBrowseError.value = response.errorMessage || '浏览失败'
+    }
+  } catch (error) {
+    console.error('Navigate WebDAV failed:', error)
+    webdavBrowseError.value = error.data?.message || error.message || '浏览失败'
+  } finally {
+    webdavBrowseLoading.value = false
+  }
+}
+
+const selectWebDAVPath = () => {
+  scheduledBackupForm.value.webdavPath = webdavBrowsePath.value
+  showWebDAVBrowseModal.value = false
+}
+
+const getParentPath = (path) => {
+  if (path === '/' || !path) return null
+  const parts = path.split('/').filter(Boolean)
+  parts.pop()
+  return '/' + parts.join('/')
 }
 
 const getScheduleTimeText = (schedule) => {

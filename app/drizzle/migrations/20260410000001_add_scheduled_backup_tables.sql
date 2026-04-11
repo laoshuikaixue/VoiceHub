@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS "backup_schedules" (
     "webdav_url" varchar(500),
     "webdav_username" varchar(255),
     "webdav_password" varchar(255),
+    "webdav_path" varchar(1000) DEFAULT '/backups',
     "retention_type" varchar(50),
     "retention_value" integer DEFAULT 7,
     "created_by" integer,

@@ -307,3 +307,51 @@ export const userIdentity = pgTable("UserIdentity", {
 		}).onDelete("cascade"),
 	unique("UserIdentity_provider_providerUserId_unique").on(table.providerUserId, table.provider),
 ]);
+
+export const backupSchedules = pgTable("backup_schedules", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	enabled: boolean().default(true).notNull(),
+	scheduleType: varchar("schedule_type", { length: 50 }).notNull(),
+	scheduleTime: text("schedule_time"),
+	scheduleDay: integer("schedule_day"),
+	cronExpression: varchar("cron_expression", { length: 100 }),
+	backupType: varchar("backup_type", { length: 50 }).default('all').notNull(),
+	includeSystemData: boolean("include_system_data").default(true).notNull(),
+	uploadEnabled: boolean("upload_enabled").default(false).notNull(),
+	uploadType: varchar("upload_type", { length: 50 }),
+	s3Endpoint: varchar("s3_endpoint", { length: 500 }),
+	s3Bucket: varchar("s3_bucket", { length: 255 }),
+	s3AccessKey: varchar("s3_access_key", { length: 255 }),
+	s3SecretKey: varchar("s3_secret_key", { length: 255 }),
+	s3Region: varchar("s3_region", { length: 100 }),
+	webdavUrl: varchar("webdav_url", { length: 500 }),
+	webdavUsername: varchar("webdav_username", { length: 255 }),
+	webdavPassword: varchar("webdav_password", { length: 255 }),
+	retentionType: varchar("retention_type", { length: 50 }),
+	retentionValue: integer("retention_value").default(7),
+	createdBy: integer("created_by"),
+	webdavPath: varchar("webdav_path", { length: 1000 }).default('/backups'),
+});
+
+export const backupHistory = pgTable("backup_history", {
+	id: serial().primaryKey().notNull(),
+	scheduleId: integer("schedule_id"),
+	filename: varchar({ length: 255 }).notNull(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	fileSize: bigint("file_size", { mode: "number" }),
+	status: varchar({ length: 50 }).notNull(),
+	errorMessage: text("error_message"),
+	checksum: varchar({ length: 64 }),
+	localPath: varchar("local_path", { length: 500 }),
+	remotePath: varchar("remote_path", { length: 500 }),
+	executedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.scheduleId],
+			foreignColumns: [backupSchedules.id],
+			name: "backup_history_schedule_id_backup_schedules_id_fk"
+		}).onDelete("set null"),
+]);

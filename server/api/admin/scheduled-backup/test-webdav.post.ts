@@ -4,9 +4,9 @@ import { createError } from 'h3'
 import { z } from 'zod'
 
 const testWebDAVSchema = z.object({
-  url: z.string().url().max(500),
-  username: z.string().min(1).max(255),
-  password: z.string().min(1).max(255)
+  url: z.string({ message: 'WebDAV URL 格式不正确' }).url('WebDAV URL 必须是以 http:// 或 https:// 开头的有效 URL'),
+  username: z.string().min(1, '用户名不能为空').max(255),
+  password: z.string().min(1, '密码不能为空').max(255)
 })
 
 export default defineEventHandler(async (event) => {
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   if (!parseResult.success) {
     throw createError({
       statusCode: 400,
-      message: `参数错误: ${parseResult.error.errors.map((e) => e.message).join(', ')}`
+      message: `参数错误: ${parseResult.error.issues.map((e) => e.message).join(', ')}`
     })
   }
 

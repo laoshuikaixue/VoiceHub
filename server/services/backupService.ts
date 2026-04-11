@@ -8,6 +8,8 @@ import {
   type BackupSchedule
 } from '~/drizzle/schema'
 import { eq, desc, and, lte, or } from 'drizzle-orm'
+import { getS3UploadService } from './s3UploadService'
+import { getWebDAVUploadService } from './webdavUploadService'
 
 export interface BackupResult {
   success: boolean
@@ -88,6 +90,10 @@ export class BackupService {
       })
 
       console.log(`[BackupService] Backup created: ${filename} (${fileSize} bytes)`)
+
+      if (scheduleId) {
+        await this.applyRetentionPolicy(scheduleId)
+      }
 
       return {
         success: true,
@@ -264,13 +270,30 @@ export class BackupService {
     }
 
     try {
-      const conditions = scheduleId ? eq(backupHistory.scheduleId, scheduleId) : undefined
       const schedulesList = scheduleId
         ? await db.select().from(backupSchedules).where(eq(backupSchedules.id, scheduleId))
         : await db.select().from(backupSchedules)
 
       for (const schedule of schedulesList) {
-        if (!schedule.retentionType || !schedule.retentionValue) continue
+        console.log(`[BackupService] Checking retention for schedule ${schedule.id}: type=${schedule.retentionType}, value=${schedule.retentionValue}, enabled=${schedule.enabled}`)
+
+        if (!schedule.retentionType || schedule.retentionValue === null || schedule.retentionValue === undefined) {
+          console.log(`[BackupService] Schedule ${schedule.id}: No retention policy configured, skipping`)
+          continue
+        }
+
+        const retentionValue = typeof schedule.retentionValue === 'string' ? parseInt(schedule.retentionValue, 10) : schedule.retentionValue
+
+        if (schedule.retentionType === 'days') {
+          const cutoffDate = new Date()
+          cutoffDate.setDate(cutoffDate.getDate() - retentionValue)
+          console.log(`[BackupService] Schedule ${schedule.id}: Checking days retention, cutoff=${cutoffDate.toISOString()}`)
+        } else if (schedule.retentionType === 'count') {
+          console.log(`[BackupService] Schedule ${schedule.id}: Checking count retention, keep=${retentionValue}`)
+        } else {
+          console.log(`[BackupService] Schedule ${schedule.id}: Unknown retention type: ${schedule.retentionType}`)
+          continue
+        }
 
         const historyRecords = await db
           .select()
@@ -278,21 +301,60 @@ export class BackupService {
           .where(eq(backupHistory.scheduleId, schedule.id))
           .orderBy(desc(backupHistory.executedAt))
 
+        console.log(`[BackupService] Schedule ${schedule.id}: Found ${historyRecords.length} history records`)
+
         let recordsToDelete: typeof historyRecords = []
 
         if (schedule.retentionType === 'days') {
           const cutoffDate = new Date()
-          cutoffDate.setDate(cutoffDate.getDate() - schedule.retentionValue)
+          cutoffDate.setDate(cutoffDate.getDate() - retentionValue)
           recordsToDelete = historyRecords.filter((record) => new Date(record.executedAt) < cutoffDate)
         } else if (schedule.retentionType === 'count') {
-          recordsToDelete = historyRecords.slice(schedule.retentionValue)
+          recordsToDelete = historyRecords.slice(retentionValue)
         }
+
+        console.log(`[BackupService] Schedule ${schedule.id}: Will delete ${recordsToDelete.length} records`)
 
         for (const record of recordsToDelete) {
           try {
             if (record.localPath) {
               await fs.unlink(record.localPath)
             }
+
+            if (schedule.uploadEnabled && schedule.uploadType === 's3' && schedule.s3Endpoint) {
+              const s3Service = getS3UploadService()
+              s3Service.initialize({
+                endpoint: schedule.s3Endpoint,
+                bucket: schedule.s3Bucket || '',
+                accessKey: schedule.s3AccessKey || '',
+                secretKey: schedule.s3SecretKey || '',
+                region: schedule.s3Region || 'us-east-1'
+              })
+              const s3Path = schedule.s3Path || '/backups'
+              const remotePath = `${s3Path.replace(/^\//, '')}/${record.filename}`
+              try {
+                await s3Service.deleteFile(remotePath)
+              } catch (err) {
+                console.log(`[BackupService] S3 file may not exist: ${remotePath}`)
+              }
+            }
+
+            if (schedule.uploadEnabled && schedule.uploadType === 'webdav' && schedule.webdavUrl) {
+              const webdavService = getWebDAVUploadService()
+              webdavService.initialize({
+                url: schedule.webdavUrl,
+                username: schedule.webdavUsername || '',
+                password: schedule.webdavPassword || ''
+              })
+              const webdavPath = schedule.webdavPath || '/backups'
+              const remotePath = `${webdavPath.replace(/\/$/, '')}/${record.filename}`
+              try {
+                await webdavService.deleteFile(remotePath)
+              } catch (err) {
+                console.log(`[BackupService] WebDAV file may not exist: ${remotePath}`)
+              }
+            }
+
             await db.delete(backupHistory).where(eq(backupHistory.id, record.id))
             result.deletedCount++
             result.deletedFiles.push(record.filename)

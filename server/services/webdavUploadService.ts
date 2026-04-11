@@ -57,7 +57,6 @@ export class WebDAVUploadService {
       method,
       headers: {
         Authorization: `Basic ${auth}`,
-        'Content-Type': 'application/json',
         ...headers
       },
       body
@@ -114,7 +113,7 @@ export class WebDAVUploadService {
       await this.ensureDirectory(finalRemotePath)
 
       const result = await this.request('PUT', finalRemotePath, fileContent, {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/octet-stream'
       })
 
       if (result.status >= 200 && result.status < 300) {
@@ -242,8 +241,10 @@ export class WebDAVUploadService {
     }
 
     try {
-      const result = await this.request('PROPFIND', remotePath, undefined, {
-        Depth: '1'
+      const propfindBody = '<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:displayname/><d:resourcetype/></d:prop></d:propfind>'
+      const result = await this.request('PROPFIND', remotePath, Buffer.from(propfindBody), {
+        Depth: '1',
+        'Content-Type': 'text/xml'
       })
 
       if (result.status >= 200 && result.status < 300 && result.body) {

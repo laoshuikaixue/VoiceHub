@@ -5,7 +5,7 @@ import { createError } from 'h3'
 import { z } from 'zod'
 
 const createScheduleSchema = z.object({
-  name: z.string().min(1).max(255),
+  name: z.string().min(1, '名称不能为空').max(255),
   enabled: z.boolean().default(true),
   scheduleType: z.enum(['daily', 'weekly', 'monthly', 'cron']),
   scheduleTime: z.string().optional(),
@@ -20,9 +20,11 @@ const createScheduleSchema = z.object({
   s3AccessKey: z.string().max(255).optional(),
   s3SecretKey: z.string().max(255).optional(),
   s3Region: z.string().max(100).optional(),
+  s3Path: z.string().max(1000).optional(),
   webdavUrl: z.string().max(500).optional(),
   webdavUsername: z.string().max(255).optional(),
   webdavPassword: z.string().max(255).optional(),
+  webdavPath: z.string().max(1000).optional(),
   retentionType: z.enum(['days', 'count']).optional(),
   retentionValue: z.number().int().positive().default(7)
 })
@@ -42,7 +44,7 @@ export default defineEventHandler(async (event) => {
   if (!parseResult.success) {
     throw createError({
       statusCode: 400,
-      message: `参数错误: ${parseResult.error.errors.map((e) => e.message).join(', ')}`
+      message: `参数错误: ${parseResult.error.issues.map((e) => e.message).join(', ')}`
     })
   }
 
