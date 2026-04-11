@@ -97,16 +97,14 @@ export default defineEventHandler(async (event) => {
 
   // 异步发送通知
   if (!isUnmark && updatedSongIds.length > 0) {
-    const clientIP = getClientIP(event)
-
-    event.waitUntil(
-      Promise.allSettled(updatedSongIds.map(songId =>
-        createSongPlayedNotification(songId, clientIP).catch((err) => {
-          console.error(`发送歌曲(${songId})已播放通知失败:`, err)
-        })
-      ))
-    )
-  }
+      event.waitUntil(
+        Promise.allSettled(updatedSongIds.map(songId =>
+          createSongPlayedNotification(songId).catch((err) => {
+            console.error(`发送歌曲(${songId})已播放通知失败:`, err)
+          })
+        ))
+      )
+    }
 
   return {
     message: isUnmark ? '歌曲已成功撤回已播放状态' : '歌曲已成功标记为已播放',

@@ -47,7 +47,6 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const clientIP = getClientIP(event)
     const moveResult = await db.transaction(async (tx) => {
       const existingOnToDate = await tx
         .select({ id: schedules.id })
@@ -101,7 +100,7 @@ export default defineEventHandler(async (event) => {
 
     const notificationsToSend = moveResult.movedSongs.map((item) => {
       const message = `您投稿的歌曲《${item.songTitle}》原定于 ${fromDate} 播放，已调整至 ${toDate}。`
-      return createSystemNotification(item.requesterId, '排期调整通知', message, clientIP)
+      return createSystemNotification(item.requesterId, '排期调整通知', message)
     })
 
     if (notificationsToSend.length > 0) {

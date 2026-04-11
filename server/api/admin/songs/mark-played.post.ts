@@ -115,11 +115,9 @@ export default defineEventHandler(async (event) => {
 
   // 异步发送通知
   if (!isUnmark && updatedSongIds.length > 0) {
-    const clientIP = getClientIP(event)
-
     event.waitUntil(
       Promise.allSettled(updatedSongIds.map(songId =>
-        createSongPlayedNotification(songId, clientIP).catch((err) => {
+        createSongPlayedNotification(songId).catch((err) => {
           console.error(`发送歌曲(${songId})已播放通知失败:`, err)
         })
       ))

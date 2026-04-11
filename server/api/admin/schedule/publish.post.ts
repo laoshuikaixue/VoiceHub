@@ -103,8 +103,7 @@ export default defineEventHandler(async (event) => {
         title: draft.song.title,
         artist: draft.song.artist,
         playDate: draft.playDate
-      },
-      clientIP
+      }
     )
 
     // 将该歌曲的所有待处理重播申请标记为已完成

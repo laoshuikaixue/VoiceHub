@@ -183,7 +183,7 @@ export default defineEventHandler(async (event) => {
 
       // 发送通知（异步，不阻塞响应）
       if (song.requesterId !== user.id) {
-        createSongVotedNotification(body.songId, user.id, clientIP).catch(() => {
+        createSongVotedNotification(body.songId, user.id).catch(() => {
           // 发送通知失败不影响主流程
         })
       }
