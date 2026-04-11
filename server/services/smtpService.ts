@@ -65,22 +65,22 @@ export class SmtpService {
       {{#if playTimeName}}
       <p>播出时段：<strong>{{playTimeName}}</strong>{{#if playTimeRange}}（{{playTimeRange}}）{{/if}}</p>
       {{/if}}
-      {{#if message}}
-      <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
-      {{/if}}
     `,
     songPlayed: `
       <p>您投稿的歌曲《{{songTitle}}》已播放。</p>
-      {{#if message}}
-      <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
-      {{/if}}
     `,
     songVoted: `
       <p>您投稿的歌曲《{{songTitle}}》获得了新的投票。</p>
       <p>当前共有 <strong>{{votesCount}}</strong> 个投票。</p>
-      {{#if message}}
-      <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
+    `,
+    songRejected: `
+      <p>您投稿的歌曲《{{songTitle}}》已被管理员驳回。</p>
+      {{#if reason}}
+      <p>驳回原因：<strong>{{reason}}</strong></p>
       {{/if}}
+    `,
+    collaborationInvite: `
+      <p>用户 <strong>{{inviterName}}</strong> 邀请您共同投稿歌曲《{{songTitle}}》。</p>
     `
   }
 
@@ -124,6 +124,18 @@ export class SmtpService {
       name: '收到新投票',
       subject: '收到新投票 | {{siteTitle}}通知推送',
       contentType: 'songVoted',
+      headerSubtitle: '通知推送'
+    },
+    'notification.songRejected': {
+      name: '歌曲被驳回',
+      subject: '歌曲被驳回 | {{siteTitle}}通知推送',
+      contentType: 'songRejected',
+      headerSubtitle: '通知推送'
+    },
+    'notification.collaborationInvite': {
+      name: '收到联合投稿邀请',
+      subject: '收到联合投稿邀请 | {{siteTitle}}通知推送',
+      contentType: 'collaborationInvite',
       headerSubtitle: '通知推送'
     }
   }
@@ -389,12 +401,12 @@ export class SmtpService {
         // 若模板缺失，退回到简单包装（传入已格式化的IP）
         const mergedData = await this.prepareTemplateData(templateData)
         const fallbackHtml = this.generateEmailTemplate(
-          data.title || '通知',
-          data.message || '',
+          data.title || data.fallbackTitle || '通知',
+          data.message || data.fallbackMessage || '',
           data.actionUrl,
           formattedIP
         )
-        const fallbackSubject = `${data.title || '通知'} | ${mergedData.siteTitle}通知推送`
+        const fallbackSubject = `${data.title || data.fallbackTitle || '通知'} | ${mergedData.siteTitle}通知推送`
         return await this.sendMail(to, fallbackSubject, fallbackHtml, undefined, ipAddress)
       }
       return await this.sendMail(to, subject, html, undefined, ipAddress)
@@ -604,7 +616,18 @@ export async function sendEmailNotificationToUser(
 
     // 使用指定模板，否则回退通用模板
     if (templateKey) {
-      return await smtpService.renderAndSend(user.email, templateKey, templateData || {}, ipAddress)
+      return await smtpService.renderAndSend(
+        user.email,
+        templateKey,
+        {
+          fallbackTitle: notificationTitle,
+          fallbackMessage: notificationMessage,
+          message: notificationMessage,
+          actionUrl: url,
+          ...(templateData || {})
+        },
+        ipAddress
+      )
     }
     return await smtpService.renderAndSend(
       user.email,
