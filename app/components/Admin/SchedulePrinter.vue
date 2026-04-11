@@ -1542,7 +1542,10 @@ const loadSavedSettings = () => {
       if (parsed && typeof parsed === 'object') {
         Object.keys(parsed).forEach((key) => {
           if (key in settings.value && !EXCLUDED_FIELDS.includes(key)) {
-            settings.value[key] = parsed[key]
+            // 类型校验：只在存储的值与默认值类型相同时才赋值
+            if (typeof parsed[key] === typeof settings.value[key]) {
+              settings.value[key] = parsed[key]
+            }
           }
         })
       }
@@ -1582,15 +1585,21 @@ onMounted(async () => {
 
 // 监听设置变化，自动保存到 localStorage
 watch(
-  settings,
-  (newVal) => {
+  () => [settings.value.startDate, settings.value.endDate],
+  ([newStart, newEnd]) => {
     // 如果日期与当前预设不匹配，则清除预设状态
-    if (newVal.dateRangePreset) {
-      const { startDate, endDate } = calculateDateRange(newVal.dateRangePreset)
-      if (newVal.startDate !== startDate || newVal.endDate !== endDate) {
-        newVal.dateRangePreset = ''
+    if (settings.value.dateRangePreset) {
+      const { startDate, endDate } = calculateDateRange(settings.value.dateRangePreset)
+      if (newStart !== startDate || newEnd !== endDate) {
+        settings.value.dateRangePreset = ''
       }
     }
+  }
+)
+
+watch(
+  settings,
+  () => {
     debouncedSaveSettings()
   },
   { deep: true }
