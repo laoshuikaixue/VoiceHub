@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { db, users, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'

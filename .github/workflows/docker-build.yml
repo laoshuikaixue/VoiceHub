@@ -18,7 +18,7 @@ env:
 
 jobs:
   build-and-push:
-    if: github.repository == 'laoshuikaixue/VoiceHub'
+    if: github.repository == 'laoshuikaixue/VoiceHub' ||github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: '0'
 
       # 提取版本号并处理成不同格式
       - name: Extract version from package.json
@@ -44,11 +46,8 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
-        with:
-          platforms: arm,arm64
 
       - name: Set up Docker Buildx
-        id: buildx
         uses: docker/setup-buildx-action@v4
 
       - name: Log in to the Container registry
@@ -80,6 +79,6 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
           cache-from: type=gha
           cache-to: type=gha,mode=max
