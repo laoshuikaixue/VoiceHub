@@ -55,8 +55,12 @@ export const parseState = (
     })
   }
 
+  // 修复 base64 中的 '+' 在 URL 传输中被错误解析为空格的问题
+  // 某些 OAuth 提供商或浏览器环境可能会导致 URL 查询参数中的 '+' 号变成空格
+  const sanitizedStateStr = stateStr.replace(/ /g, '+')
+
   try {
-    const bytes = CryptoJS.AES.decrypt(stateStr, secretKey)
+    const bytes = CryptoJS.AES.decrypt(sanitizedStateStr, secretKey)
     const json = bytes.toString(CryptoJS.enc.Utf8)
     if (!json) return null
 
