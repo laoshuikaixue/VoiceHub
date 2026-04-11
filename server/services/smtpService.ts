@@ -209,12 +209,14 @@ export class SmtpService {
       }
 
       // 根据端口和安全设置调整配置
+      const isDevelopment = process.env.NODE_ENV === 'development'
+      
       if (port === 587 && !secure) {
         // STARTTLS - 端口587通常使用STARTTLS
         transporterConfig.requireTLS = true
         transporterConfig.tls = {
-          // 不验证服务器证书（用于测试环境）
-          rejectUnauthorized: false
+          // 仅在开发环境中跳过证书校验，生产环境必须校验
+          rejectUnauthorized: !isDevelopment
         }
       } else if (port === 465) {
         // SSL/TLS - 端口465必须使用SSL
@@ -223,7 +225,8 @@ export class SmtpService {
         // 通常不加密
         transporterConfig.secure = false
         transporterConfig.tls = {
-          rejectUnauthorized: false
+          // 仅在开发环境中跳过证书校验
+          rejectUnauthorized: !isDevelopment
         }
       }
 

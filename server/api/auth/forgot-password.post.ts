@@ -71,11 +71,20 @@ export default defineEventHandler(async (event) => {
       }
       const token = JWTEnhanced.sign(payload, { expiresIn: '15m' })
 
-      // 修复 Host Header Injection 风险，使用安全的获取方式
-      const host = getRequestHost(event)
-      const finalProtocol = getRequestProtocol(event)
+      // 修复 Host Header Injection 风险，优先使用环境变量中配置的主机名
+      const config = useRuntimeConfig()
+      let resetLink = ''
       
-      const resetLink = `${finalProtocol}://${host}/reset-password?token=${token}`
+      if (config.public.host) {
+        // 如果配置了主机名，则直接使用
+        const protocol = config.public.host.startsWith('http') ? '' : (process.env.NODE_ENV === 'production' ? 'https://' : 'http://')
+        resetLink = `${protocol}${config.public.host}/reset-password?token=${token}`
+      } else {
+        // 降级回退：使用安全的请求头获取方式
+        const host = getRequestHost(event)
+        const finalProtocol = getRequestProtocol(event)
+        resetLink = `${finalProtocol}://${host}/reset-password?token=${token}`
+      }
 
       const smtp = SmtpService.getInstance()
       
