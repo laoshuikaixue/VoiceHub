@@ -7,15 +7,10 @@ import { z } from 'zod'
 const createScheduleSchema = z.object({
   name: z.string().min(1, '名称不能为空').max(255),
   enabled: z.boolean().default(true),
-  scheduleType: z.enum(['daily', 'weekly', 'monthly', 'cron']),
-  scheduleTime: z.string().optional(),
-  scheduleDay: z.number().int().min(0).max(31).optional(),
-  cronExpression: z.string().max(100).optional(),
   includeSongs: z.boolean().default(true),
   includeUsers: z.boolean().default(true),
   includeSystemData: z.boolean().default(true),
-  uploadEnabled: z.boolean().default(false),
-  uploadType: z.enum(['s3', 'webdav']).optional(),
+  uploadType: z.enum(['s3', 'webdav']),
   s3Endpoint: z.string().max(500).optional(),
   s3Bucket: z.string().max(255).optional(),
   s3AccessKey: z.string().max(255).optional(),
@@ -28,6 +23,17 @@ const createScheduleSchema = z.object({
   webdavPath: z.string().max(1000).optional(),
   retentionType: z.enum(['days', 'count']).optional(),
   retentionValue: z.number().int().positive().default(7)
+}).superRefine((data, ctx) => {
+  if (data.uploadType === 's3') {
+    if (!data.s3Endpoint) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'S3 Endpoint 不能为空' })
+    if (!data.s3Bucket) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'S3 Bucket 不能为空' })
+    if (!data.s3AccessKey) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'S3 Access Key 不能为空' })
+    if (!data.s3SecretKey) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'S3 Secret Key 不能为空' })
+  } else if (data.uploadType === 'webdav') {
+    if (!data.webdavUrl) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'WebDAV URL 不能为空' })
+    if (!data.webdavUsername) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'WebDAV 用户名不能为空' })
+    if (!data.webdavPassword) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'WebDAV 密码不能为空' })
+  }
 })
 
 export default defineEventHandler(async (event) => {
@@ -51,21 +57,7 @@ export default defineEventHandler(async (event) => {
 
   const data = parseResult.data
 
-  if (data.scheduleType !== 'cron' && !data.scheduleTime) {
-    throw createError({
-      statusCode: 400,
-      message: '请指定调度时间'
-    })
-  }
-
-  if (data.scheduleType === 'cron' && !data.cronExpression) {
-    throw createError({
-      statusCode: 400,
-      message: '请指定 cron 表达式'
-    })
-  }
-
-  if (data.uploadEnabled && !data.uploadType) {
+  if (!data.uploadType) {
     throw createError({
       statusCode: 400,
       message: '请选择上传类型（S3 或 WebDAV）'
@@ -91,24 +83,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const backupService = getBackupService()
-  const scheduler = getBackupScheduler()
 
   const schedule = await backupService.createSchedule({
     ...data,
     createdBy: user.id
-  })
-
-  scheduler.addTask({
-    id: schedule.id,
-    name: schedule.name,
-    scheduleType: schedule.scheduleType as 'daily' | 'weekly' | 'monthly' | 'cron',
-    scheduleTime: schedule.scheduleTime || undefined,
-    scheduleDay: schedule.scheduleDay || undefined,
-    cronExpression: schedule.cronExpression || undefined,
-    enabled: schedule.enabled,
-    callback: async () => {
-      console.log(`[API] Executing scheduled backup: ${schedule.name} (ID: ${schedule.id})`)
-    }
   })
 
   return {

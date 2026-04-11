@@ -352,7 +352,7 @@ export class BackupService {
               await fs.unlink(record.localPath)
             }
 
-            if (schedule.uploadEnabled && schedule.uploadType === 's3' && schedule.s3Endpoint) {
+            if (schedule.uploadType === 's3' && schedule.s3Endpoint) {
               const s3Service = getS3UploadService()
               s3Service.initialize({
                 endpoint: schedule.s3Endpoint,
@@ -370,7 +370,7 @@ export class BackupService {
               }
             }
 
-            if (schedule.uploadEnabled && schedule.uploadType === 'webdav' && schedule.webdavUrl) {
+            if (schedule.uploadType === 'webdav' && schedule.webdavUrl) {
               const webdavService = getWebDAVUploadService()
               webdavService.initialize({
                 url: schedule.webdavUrl,
@@ -437,14 +437,14 @@ export class BackupService {
   }
 
   /**
-   * 获取备份调度列表
+   * 获取备份配置列表
    */
   async getSchedules(): Promise<typeof backupSchedules.$inferSelect[]> {
     return db.select().from(backupSchedules).orderBy(desc(backupSchedules.createdAt))
   }
 
   /**
-   * 获取单个调度
+   * 获取单个备份配置
    */
   async getSchedule(id: number): Promise<typeof backupSchedules.$inferSelect | null> {
     const results = await db.select().from(backupSchedules).where(eq(backupSchedules.id, id))
@@ -452,7 +452,7 @@ export class BackupService {
   }
 
   /**
-   * 创建调度
+   * 创建备份配置
    */
   async createSchedule(data: Omit<typeof backupSchedules.$inferInsert, 'id' | 'createdAt' | 'updatedAt'>): Promise<typeof backupSchedules.$inferSelect> {
     const [schedule] = await db.insert(backupSchedules).values(data).returning()
@@ -460,7 +460,7 @@ export class BackupService {
   }
 
   /**
-   * 更新调度
+   * 更新备份配置
    */
   async updateSchedule(id: number, data: Partial<Omit<typeof backupSchedules.$inferInsert, 'id' | 'createdAt'>>): Promise<typeof backupSchedules.$inferSelect | null> {
     const [schedule] = await db
@@ -472,7 +472,7 @@ export class BackupService {
   }
 
   /**
-   * 删除调度
+   * 删除备份配置
    */
   async deleteSchedule(id: number): Promise<boolean> {
     const result = await db.delete(backupSchedules).where(eq(backupSchedules.id, id))
@@ -480,7 +480,7 @@ export class BackupService {
   }
 
   /**
-   * 启用/禁用调度
+   * 启用/禁用备份配置
    */
   async setScheduleEnabled(id: number, enabled: boolean): Promise<boolean> {
     const result = await db
@@ -509,7 +509,7 @@ export class BackupService {
   }
 
   /**
-   * 获取所有启用的调度
+   * 获取所有启用的备份配置
    */
   async getEnabledSchedules(): Promise<typeof backupSchedules.$inferSelect[]> {
     return db.select().from(backupSchedules).where(eq(backupSchedules.enabled, true))

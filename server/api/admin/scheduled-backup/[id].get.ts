@@ -17,29 +17,23 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      message: '无效的调度 ID'
+      message: '无效的备份配置 ID'
     })
   }
 
   const backupService = getBackupService()
-  const scheduler = getBackupScheduler()
 
   const schedule = await backupService.getSchedule(id)
 
   if (!schedule) {
     throw createError({
       statusCode: 404,
-      message: '调度不存在'
+      message: '备份配置不存在'
     })
   }
 
-  const task = scheduler.getTask(id)
-
   return {
     success: true,
-    data: {
-      ...schedule,
-      nextRun: task?.nextRun || null
-    }
+    data: schedule
   }
 })

@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      message: '无效的调度 ID'
+      message: '无效的备份配置 ID'
     })
   }
 
@@ -37,22 +37,20 @@ export default defineEventHandler(async (event) => {
   }
 
   const backupService = getBackupService()
-  const scheduler = getBackupScheduler()
 
   const existingSchedule = await backupService.getSchedule(id)
   if (!existingSchedule) {
     throw createError({
       statusCode: 404,
-      message: '调度不存在'
+      message: '备份配置不存在'
     })
   }
 
   const enabled = parseResult.data.enabled
   await backupService.setScheduleEnabled(id, enabled)
-  scheduler.setTaskEnabled(id, enabled)
 
   return {
     success: true,
-    message: enabled ? '调度已启用' : '调度已禁用'
+    message: enabled ? '备份已启用' : '备份已禁用'
   }
 })

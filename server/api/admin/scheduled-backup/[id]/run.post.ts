@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      message: '无效的调度 ID'
+      message: '无效的备份配置 ID'
     })
   }
 
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   if (!schedule) {
     throw createError({
       statusCode: 404,
-      message: '调度不存在'
+      message: '备份配置不存在'
     })
   }
 
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  if (schedule.uploadEnabled && schedule.uploadType && result.localPath) {
+  if (schedule.uploadType && result.localPath) {
     let uploadSuccess = false
 
     if (schedule.uploadType === 's3') {

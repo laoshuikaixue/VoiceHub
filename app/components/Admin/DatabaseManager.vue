@@ -8,7 +8,7 @@
       </p>
     </div>
 
-    <!-- 定时备份管理 -->
+    <!-- 远程备份管理 -->
     <div class="space-y-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -16,8 +16,8 @@
             <Shield class="w-5 h-5 text-blue-400" />
           </div>
           <div>
-            <h3 class="text-base font-bold text-zinc-100">定时备份</h3>
-            <p class="text-[10px] text-zinc-500">设置自动备份计划，支持上传到 S3 或 WebDAV</p>
+            <h3 class="text-base font-bold text-zinc-100">远程备份</h3>
+            <p class="text-[10px] text-zinc-500">设置备份计划，上传到 S3 或 WebDAV</p>
           </div>
         </div>
         <button
@@ -25,11 +25,11 @@
           @click="openScheduledBackupModal()"
         >
           <Plus class="w-4 h-4" />
-          新建调度
+          新建备份
         </button>
       </div>
 
-      <!-- 调度列表 -->
+      <!-- 备份列表 -->
       <div v-if="scheduledBackupsLoading" class="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-8 text-center">
         <RefreshCw class="w-6 h-6 text-zinc-500 animate-spin mx-auto" />
         <p class="text-xs text-zinc-500 mt-2">加载中...</p>
@@ -37,8 +37,8 @@
 
       <div v-else-if="scheduledBackups.length === 0" class="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-8 text-center">
         <Shield class="w-8 h-8 text-zinc-700 mx-auto mb-3" />
-        <h5 class="text-sm font-bold text-zinc-400">暂无备份调度</h5>
-        <p class="text-[10px] text-zinc-600 mt-1">点击上方按钮创建第一个定时备份任务</p>
+        <h5 class="text-sm font-bold text-zinc-400">暂无备份配置</h5>
+        <p class="text-[10px] text-zinc-600 mt-1">点击上方按钮创建备份配置</p>
       </div>
 
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -65,7 +65,7 @@
             <div class="flex items-center gap-1">
               <button
                 class="p-1.5 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 hover:text-zinc-200"
-                title="立即执行"
+                title="执行备份"
                 @click="runScheduledBackupNow(schedule.id)"
               >
                 <Play class="w-3.5 h-3.5" />
@@ -89,19 +89,12 @@
 
           <div class="space-y-1.5 text-[11px]">
             <div class="flex items-center gap-2 text-zinc-400">
-              <Clock class="w-3.5 h-3.5 text-zinc-600" />
+              <CheckCircle class="w-3.5 h-3.5 text-zinc-600" />
               <span>{{ getScheduleTimeText(schedule) }}</span>
             </div>
             <div class="flex items-center gap-2 text-zinc-500">
-              <CheckCircle class="w-3.5 h-3.5 text-zinc-600" />
-              <span>{{ getBackupTypeText(schedule) }}</span>
-              <span v-if="schedule.uploadEnabled" class="text-blue-400">
-                | {{ schedule.uploadType === 's3' ? '→ S3' : '→ WebDAV' }}
-              </span>
-            </div>
-            <div v-if="schedule.nextRun" class="flex items-center gap-2 text-zinc-500">
-              <XCircle class="w-3.5 h-3.5 text-zinc-600" />
-              <span>下次: {{ formatScheduleDateTime(schedule.nextRun) }}</span>
+              <span>{{ schedule.uploadType === 's3' ? 'S3' : 'WebDAV' }}</span>
+              <span class="text-blue-400">| {{ schedule.retentionType === 'days' ? `保留${schedule.retentionValue}天` : `保留${schedule.retentionValue}个` }}</span>
             </div>
           </div>
 
@@ -549,7 +542,7 @@
       </div>
     </div>
 
-    <!-- 定时备份创建/编辑模态框 -->
+    <!-- 远程备份创建/编辑模态框 -->
     <div
       v-if="showScheduledBackupModal"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -560,7 +553,7 @@
       >
         <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between shrink-0">
           <h3 class="text-xl font-black text-zinc-100 tracking-tight">
-            {{ editingScheduledBackup ? '编辑备份调度' : '新建备份调度' }}
+            {{ editingScheduledBackup ? '编辑备份' : '新建备份' }}
           </h3>
           <button
             class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
@@ -572,103 +565,13 @@
 
         <div class="p-8 space-y-6 overflow-y-auto flex-1">
           <div class="space-y-2">
-            <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">调度名称</label>
+            <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">备份名称</label>
             <input
               v-model="scheduledBackupForm.name"
               type="text"
-              placeholder="例如：每日凌晨备份"
+              placeholder="例如：数据库备份"
               class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/40"
             >
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">调度类型</label>
-            <div class="grid grid-cols-4 gap-2">
-              <button
-                v-for="type in [
-                  { value: 'daily', label: '每日' },
-                  { value: 'weekly', label: '每周' },
-                  { value: 'monthly', label: '每月' },
-                  { value: 'cron', label: 'Cron' }
-                ]"
-                :key="type.value"
-                :class="[
-                  'py-2.5 px-3 rounded-xl text-xs font-bold transition-all border',
-                  scheduledBackupForm.scheduleType === type.value
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                ]"
-                @click="scheduledBackupForm.scheduleType = type.value"
-              >
-                {{ type.label }}
-              </button>
-            </div>
-          </div>
-
-          <div v-if="scheduledBackupForm.scheduleType === 'daily'" class="space-y-2">
-            <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">执行时间</label>
-            <input
-              v-model="scheduledBackupForm.scheduleTime"
-              type="time"
-              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/40"
-            >
-          </div>
-
-          <div v-if="scheduledBackupForm.scheduleType === 'weekly'" class="grid grid-cols-2 gap-3">
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">执行时间</label>
-              <input
-                v-model="scheduledBackupForm.scheduleTime"
-                type="time"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/40"
-              >
-            </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">星期</label>
-              <select
-                v-model="scheduledBackupForm.scheduleDay"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/40"
-              >
-                <option :value="0">星期日</option>
-                <option :value="1">星期一</option>
-                <option :value="2">星期二</option>
-                <option :value="3">星期三</option>
-                <option :value="4">星期四</option>
-                <option :value="5">星期五</option>
-                <option :value="6">星期六</option>
-              </select>
-            </div>
-          </div>
-
-          <div v-if="scheduledBackupForm.scheduleType === 'monthly'" class="grid grid-cols-2 gap-3">
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">执行时间</label>
-              <input
-                v-model="scheduledBackupForm.scheduleTime"
-                type="time"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/40"
-              >
-            </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">日期</label>
-              <select
-                v-model="scheduledBackupForm.scheduleDay"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/40"
-              >
-                <option v-for="day in 31" :key="day" :value="day">{{ day }} 日</option>
-              </select>
-            </div>
-          </div>
-
-          <div v-if="scheduledBackupForm.scheduleType === 'cron'" class="space-y-2">
-            <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">Cron 表达式</label>
-            <input
-              v-model="scheduledBackupForm.cronExpression"
-              type="text"
-              placeholder="例如: 0 2 * * * (每天凌晨2点)"
-              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/40 font-mono"
-            >
-            <p class="text-[10px] text-zinc-600 px-1">格式: 分 时 日 月 周</p>
           </div>
 
           <div class="space-y-2">
@@ -699,43 +602,32 @@
           </div>
 
           <div class="space-y-3">
-            <div class="flex items-center gap-3">
-              <input
-                v-model="scheduledBackupForm.uploadEnabled"
-                type="checkbox"
-                id="uploadEnabled"
-                class="w-4 h-4 rounded border-zinc-700 bg-zinc-900 accent-blue-600"
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                :class="[
+                  'py-2 px-3 rounded-xl text-xs font-bold transition-all border',
+                  scheduledBackupForm.uploadType === 's3'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                ]"
+                @click="scheduledBackupForm.uploadType = 's3'"
               >
-              <label for="uploadEnabled" class="text-xs text-zinc-300 font-bold">启用远程上传</label>
+                S3 / 兼容存储
+              </button>
+              <button
+                :class="[
+                  'py-2 px-3 rounded-xl text-xs font-bold transition-all border',
+                  scheduledBackupForm.uploadType === 'webdav'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                ]"
+                @click="scheduledBackupForm.uploadType = 'webdav'"
+              >
+                WebDAV
+              </button>
             </div>
 
-            <div v-if="scheduledBackupForm.uploadEnabled" class="space-y-3 pl-7">
-              <div class="grid grid-cols-2 gap-2">
-                <button
-                  :class="[
-                    'py-2 px-3 rounded-xl text-xs font-bold transition-all border',
-                    scheduledBackupForm.uploadType === 's3'
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                  ]"
-                  @click="scheduledBackupForm.uploadType = 's3'"
-                >
-                  S3 / 兼容存储
-                </button>
-                <button
-                  :class="[
-                    'py-2 px-3 rounded-xl text-xs font-bold transition-all border',
-                    scheduledBackupForm.uploadType === 'webdav'
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                  ]"
-                  @click="scheduledBackupForm.uploadType = 'webdav'"
-                >
-                  WebDAV
-                </button>
-              </div>
-
-              <div v-if="scheduledBackupForm.uploadType === 's3'" class="space-y-3">
+            <div v-if="scheduledBackupForm.uploadType === 's3'" class="space-y-3">
                 <input
                   v-model="scheduledBackupForm.s3Endpoint"
                   type="text"
@@ -827,7 +719,6 @@
                 </button>
               </div>
             </div>
-          </div>
 
           <div class="space-y-2">
             <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">保留策略</label>
@@ -889,13 +780,13 @@
             class="px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="saveScheduledBackup"
           >
-            {{ scheduledBackupSaving ? '保存中...' : (editingScheduledBackup ? '保存修改' : '创建调度') }}
+            {{ scheduledBackupSaving ? '保存中...' : (editingScheduledBackup ? '保存修改' : '创建备份') }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 定时备份历史模态框 -->
+    <!-- 远程备份历史模态框 -->
     <div
       v-if="showScheduledBackupHistoryModal"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -949,7 +840,7 @@
       </div>
     </div>
 
-    <!-- 删除定时备份确认模态框 -->
+    <!-- 删除远程备份确认模态框 -->
     <div
       v-if="showDeleteScheduledBackupModal"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -964,7 +855,7 @@
           </div>
           <h4 class="text-lg font-black text-zinc-100 mb-2">确认删除</h4>
           <p class="text-sm text-zinc-500 mb-6">
-            确定要删除备份调度 "{{ scheduledBackupToDelete?.name }}" 吗？此操作不可恢复。
+            确定要删除备份配置 "{{ scheduledBackupToDelete?.name }}" 吗？此操作不可恢复。
           </p>
           <div class="flex gap-3">
             <button
@@ -1070,7 +961,7 @@ import { useAuth } from '~/composables/useAuth'
 const { showToast: showNotification } = useToast()
 const auth = useAuth()
 
-// ==================== 定时备份相关 ====================
+// ==================== 远程备份相关 ====================
 const scheduledBackups = ref([])
 const scheduledBackupsLoading = ref(false)
 const scheduledBackupHistory = ref([])
@@ -1090,14 +981,9 @@ const webdavBrowseError = ref('')
 const scheduledBackupDefaultForm = () => ({
   name: '',
   enabled: true,
-  scheduleType: 'daily',
-  scheduleTime: '02:00',
-  scheduleDay: 1,
-  cronExpression: '',
   includeSongs: true,
   includeUsers: true,
   includeSystemData: true,
-  uploadEnabled: false,
   uploadType: 's3',
   s3Endpoint: '',
   s3Bucket: '',
@@ -1123,8 +1009,8 @@ const loadScheduledBackups = async () => {
       scheduledBackups.value = response.data || []
     }
   } catch (error) {
-    console.error('加载调度失败:', error)
-    showNotification('加载备份调度失败', 'error')
+    console.error('加载备份失败:', error)
+    showNotification('加载备份配置失败', 'error')
   } finally {
     scheduledBackupsLoading.value = false
   }
@@ -1149,14 +1035,9 @@ const openScheduledBackupModal = (schedule = null) => {
     scheduledBackupForm.value = {
       name: schedule.name,
       enabled: schedule.enabled,
-      scheduleType: schedule.scheduleType,
-      scheduleTime: schedule.scheduleTime || '02:00',
-      scheduleDay: schedule.scheduleDay || 1,
-      cronExpression: schedule.cronExpression || '',
       includeSongs: schedule.includeSongs ?? true,
       includeUsers: schedule.includeUsers ?? true,
       includeSystemData: schedule.includeSystemData,
-      uploadEnabled: schedule.uploadEnabled,
       uploadType: schedule.uploadType || 's3',
       s3Endpoint: schedule.s3Endpoint || '',
       s3Bucket: schedule.s3Bucket || '',
@@ -1186,12 +1067,7 @@ const closeScheduledBackupModal = () => {
 
 const saveScheduledBackup = async () => {
   if (!scheduledBackupForm.value.name.trim()) {
-    showNotification('请输入调度名称', 'warning')
-    return
-  }
-
-  if (scheduledBackupForm.value.scheduleType === 'cron' && !scheduledBackupForm.value.cronExpression) {
-    showNotification('请输入 cron 表达式', 'warning')
+    showNotification('请输入备份名称', 'warning')
     return
   }
 
@@ -1199,8 +1075,7 @@ const saveScheduledBackup = async () => {
 
   try {
     const payload = {
-      ...scheduledBackupForm.value,
-      scheduleDay: scheduledBackupForm.value.scheduleDay ? parseInt(scheduledBackupForm.value.scheduleDay) : undefined
+      ...scheduledBackupForm.value
     }
 
     let response
@@ -1217,14 +1092,14 @@ const saveScheduledBackup = async () => {
     }
 
     if (response.success) {
-      showNotification(editingScheduledBackup.value ? '调度已更新' : '调度已创建', 'success')
+      showNotification(editingScheduledBackup.value ? '备份已更新' : '备份已创建', 'success')
       closeScheduledBackupModal()
       await loadScheduledBackups()
     } else {
       showNotification(response.message || '操作失败', 'error')
     }
   } catch (error) {
-    console.error('保存调度失败:', error)
+    console.error('保存备份失败:', error)
     showNotification('保存失败: ' + (error.data?.message || error.message), 'error')
   } finally {
     scheduledBackupSaving.value = false
@@ -1239,11 +1114,11 @@ const toggleScheduledBackup = async (id, enabled) => {
     })
 
     if (response.success) {
-      showNotification(enabled ? '调度已启用' : '调度已禁用', 'success')
+      showNotification(enabled ? '备份已启用' : '备份已禁用', 'success')
       await loadScheduledBackups()
     }
   } catch (error) {
-    console.error('切换调度状态失败:', error)
+    console.error('切换备份状态失败:', error)
     showNotification('操作失败', 'error')
     await loadScheduledBackups()
   }
@@ -1283,13 +1158,13 @@ const deleteScheduledBackup = async () => {
     })
 
     if (response.success) {
-      showNotification('调度已删除', 'success')
+      showNotification('备份已删除', 'success')
       showDeleteScheduledBackupModal.value = false
       scheduledBackupToDelete.value = null
       await loadScheduledBackups()
     }
   } catch (error) {
-    console.error('删除调度失败:', error)
+    console.error('删除备份失败:', error)
     showNotification('删除失败', 'error')
   }
 }
@@ -1419,27 +1294,12 @@ const getParentPath = (path) => {
   return '/' + parts.join('/')
 }
 
-const getBackupTypeText = (schedule) => {
-  const types = []
-  if (schedule.includeSongs) types.push('歌曲数据')
-  if (schedule.includeUsers) types.push('用户数据')
-  if (schedule.includeSystemData) types.push('系统配置')
-  return types.length > 0 ? types.join(' + ') : '未选择'
-}
-
 const getScheduleTimeText = (schedule) => {
-  if (schedule.scheduleType === 'cron') {
-    return `Cron: ${schedule.cronExpression}`
-  }
-  const time = schedule.scheduleTime || ''
-  if (schedule.scheduleType === 'weekly') {
-    const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-    return `${time} ${days[schedule.scheduleDay] || ''}`
-  }
-  if (schedule.scheduleType === 'monthly') {
-    return `${time} 每月 ${schedule.scheduleDay}日`
-  }
-  return `${time} 每天`
+  const parts = []
+  if (schedule.includeSongs) parts.push('歌曲')
+  if (schedule.includeUsers) parts.push('用户')
+  if (schedule.includeSystemData) parts.push('系统')
+  return parts.join(' + ') || '未选择内容'
 }
 
 const formatScheduleDateTime = (dateStr) => {

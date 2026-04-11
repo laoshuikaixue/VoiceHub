@@ -2,7 +2,7 @@ import type { BackupSchedule } from '~/drizzle/schema'
 
 /**
  * 备份调度器工具类
- * 支持解析 cron 表达式并计算下次执行时间
+ * 用于手动备份模式（定时触发已禁用）
  */
 
 export interface ScheduledTask {

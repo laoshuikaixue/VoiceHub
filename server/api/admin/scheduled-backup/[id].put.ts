@@ -7,14 +7,9 @@ import { z } from 'zod'
 const updateScheduleSchema = z.object({
   name: z.string().min(1, '名称不能为空').max(255).optional(),
   enabled: z.boolean().optional(),
-  scheduleType: z.enum(['daily', 'weekly', 'monthly', 'cron']).optional(),
-  scheduleTime: z.string().optional(),
-  scheduleDay: z.number().int().min(0).max(31).optional(),
-  cronExpression: z.string().max(100).optional(),
   includeSongs: z.boolean().optional(),
   includeUsers: z.boolean().optional(),
   includeSystemData: z.boolean().optional(),
-  uploadEnabled: z.boolean().optional(),
   uploadType: z.enum(['s3', 'webdav']).optional(),
   s3Endpoint: z.string().max(500).optional(),
   s3Bucket: z.string().max(255).optional(),
@@ -28,6 +23,17 @@ const updateScheduleSchema = z.object({
   webdavPath: z.string().max(1000).optional(),
   retentionType: z.enum(['days', 'count']).optional(),
   retentionValue: z.number().int().positive().optional()
+}).superRefine((data, ctx) => {
+  if (data.uploadType === 's3' && (data.s3Endpoint || data.s3Bucket || data.s3AccessKey || data.s3SecretKey)) {
+    if (!data.s3Endpoint) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'S3 Endpoint 不能为空' })
+    if (!data.s3Bucket) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'S3 Bucket 不能为空' })
+    if (!data.s3AccessKey) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'S3 Access Key 不能为空' })
+    if (!data.s3SecretKey) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'S3 Secret Key 不能为空' })
+  } else if (data.uploadType === 'webdav' && (data.webdavUrl || data.webdavUsername || data.webdavPassword)) {
+    if (!data.webdavUrl) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'WebDAV URL 不能为空' })
+    if (!data.webdavUsername) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'WebDAV 用户名不能为空' })
+    if (!data.webdavPassword) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'WebDAV 密码不能为空' })
+  }
 })
 
 export default defineEventHandler(async (event) => {
@@ -44,7 +50,7 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      message: '无效的调度 ID'
+      message: '无效的备份配置 ID'
     })
   }
 
@@ -59,32 +65,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const backupService = getBackupService()
-  const scheduler = getBackupScheduler()
 
   const existingSchedule = await backupService.getSchedule(id)
   if (!existingSchedule) {
     throw createError({
       statusCode: 404,
-      message: '调度不存在'
+      message: '备份配置不存在'
     })
   }
 
   const updatedSchedule = await backupService.updateSchedule(id, parseResult.data)
-
-  if (updatedSchedule) {
-    scheduler.updateTask({
-      id: updatedSchedule.id,
-      name: updatedSchedule.name,
-      scheduleType: updatedSchedule.scheduleType as 'daily' | 'weekly' | 'monthly' | 'cron',
-      scheduleTime: updatedSchedule.scheduleTime || undefined,
-      scheduleDay: updatedSchedule.scheduleDay || undefined,
-      cronExpression: updatedSchedule.cronExpression || undefined,
-      enabled: updatedSchedule.enabled,
-      callback: async () => {
-        console.log(`[API] Executing scheduled backup: ${updatedSchedule.name} (ID: ${updatedSchedule.id})`)
-      }
-    })
-  }
 
   return {
     success: true,
