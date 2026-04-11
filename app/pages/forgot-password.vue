@@ -84,7 +84,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
 const { siteTitle, initSiteConfig } = useSiteConfig()
@@ -96,11 +96,12 @@ const error = ref('')
 const success = ref(false)
 const successMessage = ref('')
 
+useHead({
+  title: () => siteTitle.value ? `找回密码 | ${siteTitle.value}` : '找回密码'
+})
+
 onMounted(async () => {
   await initSiteConfig()
-  if (typeof document !== 'undefined' && siteTitle.value) {
-    document.title = `找回密码 | ${siteTitle.value}`
-  }
 })
 
 const handleSubmit = async () => {

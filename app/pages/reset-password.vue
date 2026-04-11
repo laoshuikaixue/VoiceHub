@@ -135,7 +135,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
@@ -155,11 +155,12 @@ const successMessage = ref('')
 
 const passwordStrength = usePasswordStrength(password)
 
+useHead({
+  title: () => siteTitle.value ? `重置密码 | ${siteTitle.value}` : '重置密码'
+})
+
 onMounted(async () => {
   await initSiteConfig()
-  if (typeof document !== 'undefined' && siteTitle.value) {
-    document.title = `重置密码 | ${siteTitle.value}`
-  }
 })
 
 const handleSubmit = async () => {
