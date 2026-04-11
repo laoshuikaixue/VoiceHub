@@ -145,78 +145,7 @@ export class S3UploadService {
       }
     }
   }
-
-  /**
-   * 删除 S3 上的文件
-   */
-  async deleteFile(remotePath: string): Promise<{ success: boolean; errorMessage?: string }> {
-    if (!this.s3Client || !this.config) {
-      return {
-        success: false,
-        errorMessage: 'S3 client not initialized'
-      }
-    }
-
-    try {
-      const command = new DeleteObjectCommand({
-        Bucket: this.config.bucket,
-        Key: remotePath
-      })
-
-      await this.s3Client.send(command)
-
-      console.log(`[S3UploadService] File deleted: ${remotePath}`)
-
-      return { success: true }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error('[S3UploadService] Delete failed:', error)
-
-      return {
-        success: false,
-        errorMessage
-      }
-    }
-  }
-
-  /**
-   * 列出 S3 存储桶中的文件
-   */
-  async listFiles(prefix?: string): Promise<{ success: boolean; files: string[]; errorMessage?: string }> {
-    if (!this.s3Client || !this.config) {
-      return {
-        success: false,
-        files: [],
-        errorMessage: 'S3 client not initialized'
-      }
-    }
-
-    try {
-      const command = new ListObjectsV2Command({
-        Bucket: this.config.bucket,
-        Prefix: prefix || 'backups/'
-      })
-
-      const response = await this.s3Client.send(command)
-
-      const files = (response.Contents || []).map((obj) => obj.Key || '').filter(Boolean)
-
-      return {
-        success: true,
-        files
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error('[S3UploadService] List failed:', error)
-
-      return {
-        success: false,
-        files: [],
-        errorMessage
-      }
-    }
-  }
-
+  
   /**
    * 测试 S3 连接
    */

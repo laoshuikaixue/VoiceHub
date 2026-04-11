@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm"
 export const blacklistType = pgEnum("BlacklistType", ['SONG', 'KEYWORD'])
 export const collaboratorStatus = pgEnum("collaborator_status", ['PENDING', 'ACCEPTED', 'REJECTED'])
 export const replayRequestStatus = pgEnum("replay_request_status", ['PENDING', 'FULFILLED', 'REJECTED'])
-export const userStatus = pgEnum("user_status", ['active', 'withdrawn', 'graduate'])
+export const userStatus = pgEnum("user_status", ['active', 'withdrawn'])
 
 
 export const emailTemplate = pgTable("EmailTemplate", {

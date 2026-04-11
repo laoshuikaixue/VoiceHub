@@ -256,6 +256,13 @@ export class BackupScheduler {
     task.nextRun = nextRun
     const delay = nextRun.getTime() - Date.now()
 
+    const MAX_TIMEOUT_DELAY = 2147483647
+
+    if (delay > MAX_TIMEOUT_DELAY) {
+      console.log(`[BackupScheduler] Task ${task.id} (${task.name}) delay exceeds maximum timeout, relying on polling`)
+      return
+    }
+
     const timer = setTimeout(async () => {
       try {
         await task.callback()
@@ -263,12 +270,12 @@ export class BackupScheduler {
         console.error(`[BackupScheduler] Task ${task.id} (${task.name}) failed:`, error)
       }
 
-        if (this.tasks.has(task.id) && this.tasks.get(task.id)?.enabled) {
-          this.scheduleTask(this.tasks.get(task.id)!)
-        }
-      }, delay)
+      if (this.tasks.has(task.id) && this.tasks.get(task.id)?.enabled) {
+        this.scheduleTask(this.tasks.get(task.id)!)
+      }
+    }, delay)
 
-      this.timers.set(task.id, timer)
+    this.timers.set(task.id, timer)
   }
 
   /**

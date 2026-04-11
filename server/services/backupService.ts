@@ -1,13 +1,13 @@
 import { createHash } from 'crypto'
+import { createWriteStream } from 'fs'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { db } from '~/drizzle/db'
 import {
   backupHistory,
-  backupSchedules,
-  type BackupSchedule
+  backupSchedules
 } from '~/drizzle/schema'
-import { eq, desc, and, lte, or } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 import { getS3UploadService } from './s3UploadService'
 import { getWebDAVUploadService } from './webdavUploadService'
 
@@ -62,6 +62,9 @@ export class BackupService {
   ): Promise<BackupResult> {
     const { scheduleId, includeSongs = true, includeUsers = true, includeSystemData = true } = options
 
+    let fileSize = 0
+    let checksum = ''
+
     try {
       await this.initBackupDir()
 
@@ -85,13 +88,14 @@ export class BackupService {
       const filename = `backup-${backupType}-${timestamp}.json`
       const filepath = path.join(this.backupDir, filename)
 
-      const backupData = await this.gatherBackupData({ includeSongs, includeUsers, includeSystemData })
-      const content = JSON.stringify(backupData, null, 2)
+      const metadata = this.getBackupMetadata({ includeSongs, includeUsers, includeSystemData })
+      const dataStream = this.gatherBackupData({ includeSongs, includeUsers, includeSystemData })
 
-      await fs.writeFile(filepath, content, 'utf8')
+      await this.writeJsonStream(filepath, metadata.metadata, dataStream)
 
-      const fileSize = Buffer.byteLength(content, 'utf8')
-      const checksum = createHash('sha256').update(content).digest('hex')
+      const fileSizeCalc = await fs.stat(filepath)
+      fileSize = fileSizeCalc.size
+      checksum = await this.calculateChecksum(filepath)
 
       let historyId: number | undefined
       await db.insert(backupHistory).values({
@@ -146,11 +150,44 @@ export class BackupService {
   }
 
   /**
-   * 收集备份数据
+   * 计算文件 SHA256 校验和
    */
-  private async gatherBackupData(options: { includeSongs: boolean; includeUsers: boolean; includeSystemData: boolean }): Promise<Record<string, unknown>> {
+  private async calculateChecksum(filepath: string): Promise<string> {
+    const content = await fs.readFile(filepath, 'utf8')
+    return createHash('sha256').update(content).digest('hex')
+  }
+
+  /**
+   * 流式写入 JSON 数据到文件
+   */
+  private async writeJsonStream(
+    filepath: string,
+    metadata: Record<string, unknown>,
+    dataStream: AsyncGenerator<{ tableName: string; data: unknown[] }>
+  ): Promise<void> {
+    const writeStream = createWriteStream(filepath, { encoding: 'utf8' })
+
+    const header = JSON.stringify({ metadata }) + '\n'
+    writeStream.write(header)
+
+    for await (const chunk of dataStream) {
+      const line = JSON.stringify({ [chunk.tableName]: chunk.data }) + '\n'
+      writeStream.write(line)
+    }
+
+    writeStream.end()
+    await new Promise<void>((resolve, reject) => {
+      writeStream.on('finish', resolve)
+      writeStream.on('error', reject)
+    })
+  }
+
+  /**
+   * 收集备份数据（生成器模式，分批次返回数据以减少内存占用）
+   */
+  private async *gatherBackupData(options: { includeSongs: boolean; includeUsers: boolean; includeSystemData: boolean }): AsyncGenerator<{ tableName: string; data: unknown[] }> {
     const { includeSongs, includeUsers, includeSystemData } = options
-    const { 
+    const {
       apiKeys,
       apiKeyPermissions,
       apiLogs,
@@ -173,26 +210,16 @@ export class BackupService {
       votes
     } = await import('~/drizzle/schema')
 
-    const metadata = {
-      version: '1.1',
-      timestamp: new Date().toISOString(),
-      includeSongs,
-      includeUsers,
-      includeSystemData,
-      tables: [] as string[]
-    }
-
-    const data: Record<string, unknown[]> = {}
-
     if (includeUsers) {
       const usersData = await db.select().from(users)
       const settingsData = await db.select().from(notificationSettings)
-      
-      data.users = usersData.map((user) => ({
+
+      const processedUsers = usersData.map((user) => ({
         ...user,
         notificationSettings: settingsData.filter((setting) => setting.userId === user.id)
       }))
-      metadata.tables.push('users')
+
+      yield { tableName: 'users', data: processedUsers }
     }
 
     if (includeSongs) {
@@ -210,58 +237,34 @@ export class BackupService {
       const userStatusLogsData = await db.select().from(userStatusLogs)
       const requestTimesData = await db.select().from(requestTimes)
 
-      data.songs = songsData.map((song) => ({
+      const processedSongs = songsData.map((song) => ({
         ...song,
         votes: votesData.filter((vote) => vote.songId === song.id),
         schedules: schedulesData.filter((schedule) => schedule.songId === song.id),
         collaborators: songCollaboratorsData.filter((collab) => collab.songId === song.id),
         replayRequests: songReplayRequestsData.filter((req) => req.songId === song.id)
       }))
-      metadata.tables.push('songs')
 
-      data.playTimes = playTimesData
-      metadata.tables.push('playTimes')
-
-      data.schedules = schedulesData
-      metadata.tables.push('schedules')
-
-      data.semesters = semestersData
-      metadata.tables.push('semesters')
-
-      data.notifications = notificationsData
-      metadata.tables.push('notifications')
-
-      data.songBlacklists = songBlacklistsData
-      metadata.tables.push('songBlacklists')
-
-      data.userIdentities = userIdentitiesData
-      metadata.tables.push('userIdentities')
-
-      data.userStatusLogs = userStatusLogsData
-      metadata.tables.push('userStatusLogs')
-
-      data.requestTimes = requestTimesData
-      metadata.tables.push('requestTimes')
-
-      data.songCollaborators = songCollaboratorsData
-      metadata.tables.push('songCollaborators')
-
-      data.collaborationLogs = collaborationLogsData
-      metadata.tables.push('collaborationLogs')
-
-      data.songReplayRequests = songReplayRequestsData
-      metadata.tables.push('songReplayRequests')
+      yield { tableName: 'songs', data: processedSongs }
+      yield { tableName: 'playTimes', data: playTimesData }
+      yield { tableName: 'schedules', data: schedulesData }
+      yield { tableName: 'semesters', data: semestersData }
+      yield { tableName: 'notifications', data: notificationsData }
+      yield { tableName: 'songBlacklists', data: songBlacklistsData }
+      yield { tableName: 'userIdentities', data: userIdentitiesData }
+      yield { tableName: 'userStatusLogs', data: userStatusLogsData }
+      yield { tableName: 'requestTimes', data: requestTimesData }
+      yield { tableName: 'songCollaborators', data: songCollaboratorsData }
+      yield { tableName: 'collaborationLogs', data: collaborationLogsData }
+      yield { tableName: 'songReplayRequests', data: songReplayRequestsData }
     }
 
     if (includeSystemData) {
       const systemSettingsData = await db.select().from(systemSettings)
       const emailTemplatesData = await db.select().from(emailTemplates)
-      
-      data.systemSettings = systemSettingsData
-      metadata.tables.push('systemSettings')
 
-      data.emailTemplates = emailTemplatesData
-      metadata.tables.push('emailTemplates')
+      yield { tableName: 'systemSettings', data: systemSettingsData }
+      yield { tableName: 'emailTemplates', data: emailTemplatesData }
     }
 
     if (includeSongs) {
@@ -269,15 +272,40 @@ export class BackupService {
       const apiKeyPermissionsData = await db.select().from(apiKeyPermissions)
       const apiLogsData = await db.select().from(apiLogs)
 
-      data.apiKeys = apiKeysData
-      data.apiKeyPermissions = apiKeyPermissionsData
-      data.apiLogs = apiLogsData
-      metadata.tables.push('apiKeys', 'apiKeyPermissions', 'apiLogs')
+      yield { tableName: 'apiKeys', data: apiKeysData }
+      yield { tableName: 'apiKeyPermissions', data: apiKeyPermissionsData }
+      yield { tableName: 'apiLogs', data: apiLogsData }
+    }
+  }
+
+  /**
+   * 获取备份元数据（用于流式写入前的初始化）
+   */
+  private getBackupMetadata(options: { includeSongs: boolean; includeUsers: boolean; includeSystemData: boolean }): { metadata: Record<string, unknown>; tables: string[] } {
+    const { includeSongs, includeUsers, includeSystemData } = options
+
+    const tables: string[] = []
+    if (includeUsers) tables.push('users')
+    if (includeSongs) {
+      tables.push('songs', 'playTimes', 'schedules', 'semesters', 'notifications', 'songBlacklists', 'userIdentities', 'userStatusLogs', 'requestTimes', 'songCollaborators', 'collaborationLogs', 'songReplayRequests')
+    }
+    if (includeSystemData) {
+      tables.push('systemSettings', 'emailTemplates')
+    }
+    if (includeSongs) {
+      tables.push('apiKeys', 'apiKeyPermissions', 'apiLogs')
     }
 
     return {
-      metadata,
-      data
+      metadata: {
+        version: '1.1',
+        timestamp: new Date().toISOString(),
+        includeSongs,
+        includeUsers,
+        includeSystemData,
+        tables
+      },
+      tables
     }
   }
 
@@ -346,21 +374,36 @@ export class BackupService {
 
         console.log(`[BackupService] Schedule ${schedule.id}: Will delete ${recordsToDelete.length} records`)
 
+        let s3Service: ReturnType<typeof getS3UploadService> | null = null
+        let webdavService: ReturnType<typeof getWebDAVUploadService> | null = null
+
+        if (schedule.uploadType === 's3' && schedule.s3Endpoint) {
+          s3Service = getS3UploadService()
+          s3Service.initialize({
+            endpoint: schedule.s3Endpoint,
+            bucket: schedule.s3Bucket || '',
+            accessKey: schedule.s3AccessKey || '',
+            secretKey: schedule.s3SecretKey || '',
+            region: schedule.s3Region || 'us-east-1'
+          })
+        }
+
+        if (schedule.uploadType === 'webdav' && schedule.webdavUrl) {
+          webdavService = getWebDAVUploadService()
+          webdavService.initialize({
+            url: schedule.webdavUrl,
+            username: schedule.webdavUsername || '',
+            password: schedule.webdavPassword || ''
+          })
+        }
+
         for (const record of recordsToDelete) {
           try {
             if (record.localPath) {
               await fs.unlink(record.localPath)
             }
 
-            if (schedule.uploadType === 's3' && schedule.s3Endpoint) {
-              const s3Service = getS3UploadService()
-              s3Service.initialize({
-                endpoint: schedule.s3Endpoint,
-                bucket: schedule.s3Bucket || '',
-                accessKey: schedule.s3AccessKey || '',
-                secretKey: schedule.s3SecretKey || '',
-                region: schedule.s3Region || 'us-east-1'
-              })
+            if (s3Service) {
               const s3Path = schedule.s3Path || '/backups'
               const remotePath = `${s3Path.replace(/^\//, '')}/${record.filename}`
               try {
@@ -370,13 +413,7 @@ export class BackupService {
               }
             }
 
-            if (schedule.uploadType === 'webdav' && schedule.webdavUrl) {
-              const webdavService = getWebDAVUploadService()
-              webdavService.initialize({
-                url: schedule.webdavUrl,
-                username: schedule.webdavUsername || '',
-                password: schedule.webdavPassword || ''
-              })
+            if (webdavService) {
               const webdavPath = schedule.webdavPath || '/backups'
               const remotePath = `${webdavPath.replace(/\/$/, '')}/${record.filename}`
               try {
@@ -456,6 +493,9 @@ export class BackupService {
    */
   async createSchedule(data: Omit<typeof backupSchedules.$inferInsert, 'id' | 'createdAt' | 'updatedAt'>): Promise<typeof backupSchedules.$inferSelect> {
     const [schedule] = await db.insert(backupSchedules).values(data).returning()
+    if (!schedule) {
+      throw new Error('Failed to create backup schedule')
+    }
     return schedule
   }
 
@@ -476,7 +516,7 @@ export class BackupService {
    */
   async deleteSchedule(id: number): Promise<boolean> {
     const result = await db.delete(backupSchedules).where(eq(backupSchedules.id, id))
-    return result.rowCount > 0
+    return result.length > 0
   }
 
   /**
@@ -487,7 +527,7 @@ export class BackupService {
       .update(backupSchedules)
       .set({ enabled, updatedAt: new Date() })
       .where(eq(backupSchedules.id, id))
-    return result.rowCount > 0
+    return result.length > 0
   }
 
   /**
@@ -505,7 +545,7 @@ export class BackupService {
     }
 
     const result = await db.delete(backupHistory).where(eq(backupHistory.id, id))
-    return result.rowCount > 0
+    return result.length > 0
   }
 
   /**
