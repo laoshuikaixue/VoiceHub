@@ -1167,7 +1167,38 @@ const exportPDFForPrint = async (action = 'print') => {
 
     if (action === 'print') {
       pdf.autoPrint()
-      window.open(pdf.output('bloburl'), '_blank')
+      const blobUrl = pdf.output('bloburl')
+
+      const iframe = document.createElement('iframe')
+      iframe.style.position = 'fixed'
+      iframe.style.right = '0'
+      iframe.style.bottom = '0'
+      iframe.style.width = '1px'
+      iframe.style.height = '1px'
+      iframe.style.opacity = '0.01'
+      iframe.style.border = 'none'
+
+      iframe.onload = () => {
+        setTimeout(() => {
+          try {
+            iframe.contentWindow?.focus()
+            iframe.contentWindow?.print()
+          } catch (e) {
+            console.warn('iframe 显式打印失败，依赖 autoPrint 或降级', e)
+          }
+        }, 500)
+      }
+
+      iframe.src = blobUrl
+      document.body.appendChild(iframe)
+
+      // 清理资源
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe)
+        }
+        URL.revokeObjectURL(blobUrl)
+      }, 300000)
     } else {
       const filename = `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
       pdf.save(filename)
