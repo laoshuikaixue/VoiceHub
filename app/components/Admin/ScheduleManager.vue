@@ -21,8 +21,8 @@
 
         <div
           ref="dateSelector"
-          class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 scroll-smooth overscroll-x-contain"
-          style="overscroll-behavior-x: contain; touch-action: pan-x"
+          class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 overscroll-x-contain"
+          style="overscroll-behavior-x: contain; touch-action: pan-x;"
         >
           <button
             v-for="date in availableDates"
@@ -1165,7 +1165,7 @@ const availableSemesters = ref([])
 const selectedSemester = ref('')
 
 // 日期范围（用于无限滚动）
-const dateRange = ref({ start: -15, end: 15 })
+const dateRange = ref({ start: -30, end: 30 })
 
 // 手动日期选择
 const showManualDatePicker = ref(false)
@@ -1345,30 +1345,71 @@ const checkWindowSize = () => {
   isDesktop.value = window.innerWidth >= 1024
 }
 
-// 处理日期选择器滚轮事件
-const handleDateSelectorWheel = (event) => {
-  event.preventDefault()
+let targetScrollLeft = null
+let animationFrameId = null
 
-  const scrollAmount = 200
-  const currentScroll = dateSelector.value.scrollLeft
+// 自定义平滑滚动动画
+const smoothScrollTo = (element, target, duration = 300) => {
+  if (!element) return
 
-  if (event.deltaY > 0) {
-    // 向下滚动，向右移动
-    dateSelector.value.scrollTo({
-      left: currentScroll + scrollAmount,
-      behavior: 'smooth'
-    })
-  } else {
-    // 向上滚动，向左移动
-    dateSelector.value.scrollTo({
-      left: currentScroll - scrollAmount,
-      behavior: 'smooth'
-    })
+  const start = element.scrollLeft
+  const distance = target - start
+  let startTime = null
+
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
   }
 
-  setTimeout(() => {
-    updateScrollButtonState()
-  }, 300)
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3)
+
+  const animation = (currentTime) => {
+    if (!startTime) startTime = currentTime
+    const timeElapsed = currentTime - startTime
+    const progress = Math.min(timeElapsed / duration, 1)
+
+    element.scrollLeft = start + distance * easeOutCubic(progress)
+
+    if (timeElapsed < duration) {
+      animationFrameId = requestAnimationFrame(animation)
+    } else {
+      targetScrollLeft = null
+      animationFrameId = null
+    }
+  }
+
+  animationFrameId = requestAnimationFrame(animation)
+}
+
+// 处理日期选择器滚轮事件
+const handleDateSelectorWheel = (event) => {
+  if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+    return
+  }
+
+  event.preventDefault()
+
+  const isTouchpad = Math.abs(event.deltaY) < 50
+
+  if (isTouchpad) {
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId)
+      animationFrameId = null
+      targetScrollLeft = null
+    }
+    dateSelector.value.scrollLeft += event.deltaY
+  } else {
+    if (targetScrollLeft === null) {
+      targetScrollLeft = dateSelector.value.scrollLeft
+    }
+    
+    const scrollAmount = event.deltaY > 0 ? 150 : -150
+    targetScrollLeft += scrollAmount
+    
+    const maxScroll = dateSelector.value.scrollWidth - dateSelector.value.clientWidth
+    targetScrollLeft = Math.max(0, Math.min(targetScrollLeft, maxScroll))
+
+    smoothScrollTo(dateSelector.value, targetScrollLeft)
+  }
 }
 
 // 滚动日期选择器
@@ -1378,40 +1419,68 @@ const scrollDates = (direction) => {
   const scrollAmount = 200
   const currentScroll = dateSelector.value.scrollLeft
 
-  dateSelector.value.scrollTo({
-    left: direction === 'right' ? currentScroll + scrollAmount : currentScroll - scrollAmount,
-    behavior: 'smooth'
-  })
+  if (targetScrollLeft === null) {
+    targetScrollLeft = currentScroll
+  }
 
-  setTimeout(() => {
-    updateScrollButtonState()
-  }, 300)
+  targetScrollLeft = direction === 'right' ? targetScrollLeft + scrollAmount : targetScrollLeft - scrollAmount
+  
+  const maxScroll = dateSelector.value.scrollWidth - dateSelector.value.clientWidth
+  targetScrollLeft = Math.max(0, Math.min(targetScrollLeft, maxScroll))
+
+  smoothScrollTo(dateSelector.value, targetScrollLeft, 400)
 }
+
+let scrollTimeout = null
 
 // 更新滚动按钮状态并加载更多日期
 const updateScrollButtonState = () => {
   if (!dateSelector.value) return
 
-  const { scrollLeft, scrollWidth, clientWidth } = dateSelector.value
-
-  // 接近左边界，加载更多过去日期
-  if (scrollLeft < 50) {
-    const oldScrollWidth = scrollWidth
-    dateRange.value.start -= 7
-    nextTick(() => {
-      const newScrollWidth = dateSelector.value.scrollWidth
-      dateSelector.value.scrollLeft += newScrollWidth - oldScrollWidth
-    })
-  }
-
-  // 接近右边界，加载更多未来日期
-  if (scrollWidth - scrollLeft - clientWidth < 50) {
-    dateRange.value.end += 7
-  }
-
-  // 无限滚动模式下，除非有特定限制，否则按钮始终可用
   isFirstDateVisible.value = false
   isLastDateVisible.value = false
+
+  const { scrollLeft, scrollWidth, clientWidth } = dateSelector.value
+
+  if (scrollLeft >= 50 && scrollWidth - scrollLeft - clientWidth >= 50) {
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout)
+      scrollTimeout = null
+    }
+    return
+  }
+
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+  }
+
+  scrollTimeout = setTimeout(async () => {
+    if (!dateSelector.value) return
+
+    const currentScrollLeft = dateSelector.value.scrollLeft
+    const currentScrollWidth = dateSelector.value.scrollWidth
+    const currentClientWidth = dateSelector.value.clientWidth
+
+    if (currentScrollLeft < 50) {
+      const oldScrollWidth = currentScrollWidth
+      dateRange.value.start -= 14
+      
+      await nextTick()
+      
+      const newScrollWidth = dateSelector.value.scrollWidth
+      
+      const delta = newScrollWidth - oldScrollWidth
+      dateSelector.value.scrollLeft = currentScrollLeft + delta
+      
+      // 补偿正在进行的平滑滚动动画目标，避免跳跃或回弹
+      if (targetScrollLeft !== null) {
+        targetScrollLeft += delta
+      }
+    }
+    else if (currentScrollWidth - currentScrollLeft - currentClientWidth < 50) {
+      dateRange.value.end += 14
+    }
+  }, 150)
 }
 
 // 确认对话框处理
@@ -1536,7 +1605,21 @@ const scrollToDateElement = (behavior = 'smooth') => {
 
   const el = dateSelector.value.querySelector(`[data-date="${selectedDate.value}"]`)
   if (el) {
-    el.scrollIntoView({ behavior, block: 'nearest', inline: 'center' })
+    if (behavior === 'smooth') {
+      const listRect = dateSelector.value.getBoundingClientRect()
+      const elRect = el.getBoundingClientRect()
+      const scrollLeft = dateSelector.value.scrollLeft
+      
+      let target = scrollLeft + (elRect.left - listRect.left) - (listRect.width / 2) + (elRect.width / 2)
+      
+      const maxScroll = dateSelector.value.scrollWidth - dateSelector.value.clientWidth
+      target = Math.max(0, Math.min(target, maxScroll))
+      
+      targetScrollLeft = target
+      smoothScrollTo(dateSelector.value, target, 400)
+    } else {
+      el.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' })
+    }
   }
 }
 
@@ -1553,6 +1636,16 @@ onUnmounted(() => {
     dateSelector.value.removeEventListener('scroll', updateScrollButtonState)
   }
   window.removeEventListener('resize', checkWindowSize)
+
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+    scrollTimeout = null
+  }
 })
 
 // 打开手动日期选择器
