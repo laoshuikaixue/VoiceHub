@@ -106,6 +106,8 @@ export const song = pgTable("Song", {
 	musicPlatform: text(),
 	musicId: text(),
 	hitRequestId: integer(),
+	submissionNote: text(),
+	submissionNotePublic: boolean().default(false).notNull(),
 });
 
 export const songBlacklist = pgTable("SongBlacklist", {
@@ -150,6 +152,59 @@ export const systemSettings = pgTable("SystemSettings", {
 	monthlySubmissionLimit: integer(),
 	gonganNumber: text(),
 	enableCollaborativeSubmission: boolean().default(true).notNull(),
+	enableSubmissionRemarks: boolean().default(false).notNull(),
+	showBeianIcon: boolean().default(false).notNull(),
+	allowOauthRegistration: boolean().default(false).notNull(),
+	oauthRedirectUri: text(),
+	oauthStateSecret: text(),
+	oauthProviders: text().default('[]'),
+	githubOauthEnabled: boolean().default(false).notNull(),
+	githubClientId: text(),
+	githubClientSecret: text(),
+	casdoorOauthEnabled: boolean().default(false).notNull(),
+	casdoorServerUrl: text(),
+	casdoorClientId: text(),
+	casdoorClientSecret: text(),
+	casdoorOrganizationName: text(),
+	googleOauthEnabled: boolean().default(false).notNull(),
+	googleClientId: text(),
+	googleClientSecret: text(),
+	customOauthEnabled: boolean().default(false).notNull(),
+	customOauthDisplayName: text(),
+	customOauthAuthorizeUrl: text(),
+	customOauthTokenUrl: text(),
+	customOauthUserInfoUrl: text(),
+	customOauthScope: text(),
+	customOauthClientId: text(),
+	customOauthClientSecret: text(),
+	customOauthUserIdField: text(),
+	customOauthUsernameField: text(),
+	customOauthNameField: text(),
+	customOauthEmailField: text(),
+	customOauthAvatarField: text(),
+});
+
+export const user = pgTable("User", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	username: text().notNull(),
+	name: text(),
+	grade: text(),
+	class: text(),
+	role: text().default('USER').notNull(),
+	password: text().notNull(),
+	email: text(),
+	emailVerified: boolean().default(false),
+	lastLogin: timestamp({ mode: 'string' }),
+	lastLoginIp: text(),
+	passwordChangedAt: timestamp({ mode: 'string' }),
+	forcePasswordChange: boolean().default(true).notNull(),
+	meowNickname: text(),
+	meowBoundAt: timestamp({ mode: 'string' }),
+	status: userStatus().default('active').notNull(),
+	statusChangedAt: timestamp({ mode: 'string' }).defaultNow(),
+	statusChangedBy: integer(),
 });
 
 export const vote = pgTable("Vote", {
@@ -224,7 +279,7 @@ export const songReplayRequests = pgTable("song_replay_requests", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	status: replayRequestStatus().default('PENDING').notNull(),
 }, (table) => [
-	unique("song_replay_requests_song_id_user_id_unique").on(table.songId, table.userId),
+	unique("song_replay_requests_song_id_user_id_unique").on(table.userId, table.songId),
 ]);
 
 export const userStatusLogs = pgTable("user_status_logs", {
@@ -235,29 +290,6 @@ export const userStatusLogs = pgTable("user_status_logs", {
 	reason: text(),
 	operatorId: integer("operator_id"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-});
-
-export const user = pgTable("User", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	username: text().notNull(),
-	name: text(),
-	grade: text(),
-	class: text(),
-	role: text().default('USER').notNull(),
-	password: text().notNull(),
-	email: text(),
-	emailVerified: boolean().default(false),
-	lastLogin: timestamp({ mode: 'string' }),
-	lastLoginIp: text(),
-	passwordChangedAt: timestamp({ mode: 'string' }),
-	forcePasswordChange: boolean().default(true).notNull(),
-	meowNickname: text(),
-	meowBoundAt: timestamp({ mode: 'string' }),
-	status: userStatus().default('active').notNull(),
-	statusChangedAt: timestamp({ mode: 'string' }).defaultNow(),
-	statusChangedBy: integer(),
 });
 
 export const userIdentity = pgTable("UserIdentity", {
@@ -273,12 +305,55 @@ export const userIdentity = pgTable("UserIdentity", {
 			foreignColumns: [user.id],
 			name: "UserIdentity_userId_User_id_fk"
 		}).onDelete("cascade"),
-	unique("UserIdentity_provider_providerUserId_unique").on(table.provider, table.providerUserId),
+	unique("UserIdentity_provider_providerUserId_unique").on(table.providerUserId, table.provider),
 ]);
 
-export const drizzleMigrations = pgTable("__drizzle_migrations__", {
+export const backupSchedules = pgTable("backup_schedules", {
 	id: serial().primaryKey().notNull(),
-	hash: text().notNull(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	createdAt: bigint("created_at", { mode: "number" }),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	enabled: boolean().default(true).notNull(),
+	scheduleType: varchar("schedule_type", { length: 50 }).notNull(),
+	scheduleTime: text("schedule_time"),
+	scheduleDay: integer("schedule_day"),
+	cronExpression: varchar("cron_expression", { length: 100 }),
+	includeSystemData: boolean("include_system_data").default(true).notNull(),
+	uploadEnabled: boolean("upload_enabled").default(false).notNull(),
+	uploadType: varchar("upload_type", { length: 50 }),
+	s3Endpoint: varchar("s3_endpoint", { length: 500 }),
+	s3Bucket: varchar("s3_bucket", { length: 255 }),
+	s3AccessKey: varchar("s3_access_key", { length: 255 }),
+	s3SecretKey: varchar("s3_secret_key", { length: 255 }),
+	s3Region: varchar("s3_region", { length: 100 }),
+	webdavUrl: varchar("webdav_url", { length: 500 }),
+	webdavUsername: varchar("webdav_username", { length: 255 }),
+	webdavPassword: varchar("webdav_password", { length: 255 }),
+	retentionType: varchar("retention_type", { length: 50 }),
+	retentionValue: integer("retention_value").default(7),
+	createdBy: integer("created_by"),
+	webdavPath: varchar("webdav_path", { length: 1000 }).default('/backups'),
+	s3Path: varchar("s3_path", { length: 1000 }).default('/backups'),
+	includeSongs: boolean("include_songs").default(true).notNull(),
+	includeUsers: boolean("include_users").default(true).notNull(),
 });
+
+export const backupHistory = pgTable("backup_history", {
+	id: serial().primaryKey().notNull(),
+	scheduleId: integer("schedule_id"),
+	filename: varchar({ length: 255 }).notNull(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	fileSize: bigint("file_size", { mode: "number" }),
+	status: varchar({ length: 50 }).notNull(),
+	errorMessage: text("error_message"),
+	checksum: varchar({ length: 64 }),
+	localPath: varchar("local_path", { length: 500 }),
+	remotePath: varchar("remote_path", { length: 500 }),
+	executedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.scheduleId],
+			foreignColumns: [backupSchedules.id],
+			name: "backup_history_schedule_id_backup_schedules_id_fk"
+		}).onDelete("set null"),
+]);

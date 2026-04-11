@@ -8,6 +8,117 @@
       </p>
     </div>
 
+    <!-- 远程备份管理 -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 rounded-xl bg-blue-600/10 border border-blue-500/20">
+            <Shield class="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-zinc-100">远程备份</h3>
+            <p class="text-[10px] text-zinc-500">设置备份计划，上传到 S3 或 WebDAV</p>
+          </div>
+        </div>
+        <button
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all active:scale-95 flex items-center gap-2"
+          @click="openScheduledBackupModal()"
+        >
+          <Plus class="w-4 h-4" />
+          新建备份
+        </button>
+      </div>
+
+      <!-- 备份列表 -->
+      <div v-if="scheduledBackupsLoading" class="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-8 text-center">
+        <RefreshCw class="w-6 h-6 text-zinc-500 animate-spin mx-auto" />
+        <p class="text-xs text-zinc-500 mt-2">加载中...</p>
+      </div>
+
+      <div v-else-if="scheduledBackups.length === 0" class="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-8 text-center">
+        <Shield class="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+        <h5 class="text-sm font-bold text-zinc-400">暂无备份配置</h5>
+        <p class="text-[10px] text-zinc-600 mt-1">点击上方按钮创建备份配置</p>
+      </div>
+
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          v-for="schedule in scheduledBackups"
+          :key="schedule.id"
+          :class="[
+            'group relative bg-zinc-900/40 border rounded-2xl p-5 transition-all hover:border-zinc-700',
+            schedule.enabled ? 'border-zinc-800' : 'border-zinc-800/50 opacity-60'
+          ]"
+        >
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <h5 class="text-sm font-bold text-zinc-200">{{ schedule.name }}</h5>
+              <span
+                :class="[
+                  'px-1.5 py-0.5 text-[9px] font-black uppercase rounded',
+                  schedule.enabled ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                ]"
+              >
+                {{ schedule.enabled ? '启用' : '禁用' }}
+              </span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button
+                class="p-1.5 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 hover:text-zinc-200"
+                title="执行备份"
+                @click="runScheduledBackupNow(schedule.id)"
+              >
+                <Play class="w-3.5 h-3.5" />
+              </button>
+              <button
+                class="p-1.5 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 hover:text-zinc-200"
+                title="编辑"
+                @click="openScheduledBackupModal(schedule)"
+              >
+                <Edit2 class="w-3.5 h-3.5" />
+              </button>
+              <button
+                class="p-1.5 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-500 hover:text-rose-400"
+                title="删除"
+                @click="confirmDeleteScheduledBackup(schedule)"
+              >
+                <Trash class="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-1.5 text-[11px]">
+            <div class="flex items-center gap-2 text-zinc-400">
+              <CheckCircle class="w-3.5 h-3.5 text-zinc-600" />
+              <span>{{ getScheduleTimeText(schedule) }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-zinc-500">
+              <span>{{ schedule.uploadType === 's3' ? 'S3' : 'WebDAV' }}</span>
+              <span class="text-blue-400">| {{ schedule.retentionType === 'days' ? `保留${schedule.retentionValue}天` : `保留${schedule.retentionValue}个` }}</span>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-3 border-t border-zinc-800 flex items-center justify-between">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="schedule.enabled"
+                class="sr-only peer"
+                @change="toggleScheduledBackup(schedule.id, !schedule.enabled)"
+              >
+              <div class="w-8 h-4 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-400 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:after:bg-white"></div>
+            </label>
+            <button
+              class="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors"
+              @click="loadScheduledBackupHistory(schedule.id)"
+            >
+              查看历史
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 操作卡片网格 -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div
@@ -430,18 +541,991 @@
         </div>
       </div>
     </div>
+
+    <!-- 远程备份创建/编辑模态框 -->
+    <div
+      v-if="showScheduledBackupModal"
+      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    >
+      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="closeScheduledBackupModal" />
+      <div
+        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col"
+      >
+        <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between shrink-0">
+          <h3 class="text-xl font-black text-zinc-100 tracking-tight">
+            {{ editingScheduledBackup ? '编辑备份' : '新建备份' }}
+          </h3>
+          <button
+            class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
+            @click="closeScheduledBackupModal"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="p-8 space-y-6 overflow-y-auto flex-1">
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">备份名称</label>
+            <input
+              v-model="scheduledBackupForm.name"
+              type="text"
+              placeholder="例如：数据库备份"
+              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/40"
+            >
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">备份内容</label>
+            <div class="space-y-2">
+              <label
+                v-for="(item, i) in backupOptions"
+                :key="i"
+                class="flex items-start gap-4 p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700 transition-all group"
+              >
+                <div class="shrink-0 mt-0.5">
+                  <input
+                    v-model="scheduledBackupForm[item.key]"
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600"
+                  >
+                </div>
+                <div>
+                  <p
+                    class="text-xs font-bold text-zinc-200 group-hover:text-blue-400 transition-colors"
+                  >
+                    {{ item.label }}
+                  </p>
+                  <p class="text-[10px] text-zinc-600 font-medium mt-0.5">{{ item.desc }}</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                :class="[
+                  'py-2 px-3 rounded-xl text-xs font-bold transition-all border',
+                  scheduledBackupForm.uploadType === 's3'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                ]"
+                @click="scheduledBackupForm.uploadType = 's3'"
+              >
+                S3 / 兼容存储
+              </button>
+              <button
+                :class="[
+                  'py-2 px-3 rounded-xl text-xs font-bold transition-all border',
+                  scheduledBackupForm.uploadType === 'webdav'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                ]"
+                @click="scheduledBackupForm.uploadType = 'webdav'"
+              >
+                WebDAV
+              </button>
+            </div>
+
+            <div v-if="scheduledBackupForm.uploadType === 's3'" class="space-y-3">
+                <input
+                  v-model="scheduledBackupForm.s3Endpoint"
+                  type="text"
+                  placeholder="Endpoint (例如: https://s3.example.com)"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                >
+                <input
+                  v-model="scheduledBackupForm.s3Bucket"
+                  type="text"
+                  placeholder="Bucket 名称"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                >
+                <input
+                  v-model="scheduledBackupForm.s3Region"
+                  type="text"
+                  placeholder="区域 (例如: us-east-1)"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                >
+                <input
+                  v-model="scheduledBackupForm.s3AccessKey"
+                  type="text"
+                  placeholder="Access Key"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                >
+                <input
+                  v-model="scheduledBackupForm.s3SecretKey"
+                  type="password"
+                  placeholder="Secret Key"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                >
+                <div class="flex gap-2">
+                  <input
+                    v-model="scheduledBackupForm.s3Path"
+                    type="text"
+                    placeholder="存储路径 (例如: backups)"
+                    class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                  >
+                  <button
+                    :disabled="scheduledBackupTestingConnection"
+                    class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all shrink-0"
+                    title="浏览路径"
+                    @click="browseS3Path"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                  </button>
+                </div>
+                <button
+                  :disabled="scheduledBackupTestingConnection"
+                  class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                  @click="testScheduledBackupS3Connection"
+                >
+                  <span v-if="scheduledBackupTestingConnection" class="flex items-center gap-2">
+                    <RefreshCw class="w-3 h-3 animate-spin" /> 测试中...</span>
+                  <span v-else>测试 S3 连接</span>
+                </button>
+              </div>
+
+              <div v-if="scheduledBackupForm.uploadType === 'webdav'" class="space-y-3">
+                <input
+                  v-model="scheduledBackupForm.webdavUrl"
+                  type="text"
+                  placeholder="服务器 URL (例如: https://webdav.example.com)"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                >
+                <input
+                  v-model="scheduledBackupForm.webdavUsername"
+                  type="text"
+                  placeholder="用户名"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                >
+                <input
+                  v-model="scheduledBackupForm.webdavPassword"
+                  type="password"
+                  placeholder="密码"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                >
+                <div class="flex gap-2">
+                  <input
+                    v-model="scheduledBackupForm.webdavPath"
+                    type="text"
+                    placeholder="上传路径 (例如: /backups)"
+                    class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40"
+                  >
+                  <button
+                    :disabled="scheduledBackupTestingConnection"
+                    class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all shrink-0"
+                    title="浏览路径"
+                    @click="browseWebDAVPath"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                  </button>
+                </div>
+                <button
+                  :disabled="scheduledBackupTestingConnection"
+                  class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all"
+                  @click="testScheduledBackupWebDAVConnection"
+                >
+                  {{ scheduledBackupTestingConnection ? '测试中...' : '测试 WebDAV 连接' }}
+                </button>
+              </div>
+            </div>
+
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">保留策略</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                :class="[
+                  'py-2.5 px-3 rounded-xl text-xs font-bold transition-all border',
+                  scheduledBackupForm.retentionType === ''
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                ]"
+                @click="scheduledBackupForm.retentionType = ''"
+              >
+                不限制
+              </button>
+              <button
+                :class="[
+                  'py-2.5 px-3 rounded-xl text-xs font-bold transition-all border',
+                  scheduledBackupForm.retentionType === 'days'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                ]"
+                @click="scheduledBackupForm.retentionType = 'days'"
+              >
+                按天数
+              </button>
+              <button
+                :class="[
+                  'py-2.5 px-3 rounded-xl text-xs font-bold transition-all border',
+                  scheduledBackupForm.retentionType === 'count'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                ]"
+                @click="scheduledBackupForm.retentionType = 'count'"
+              >
+                按数量
+              </button>
+            </div>
+            <input
+              v-if="scheduledBackupForm.retentionType"
+              v-model.number="scheduledBackupForm.retentionValue"
+              type="number"
+              min="1"
+              :placeholder="scheduledBackupForm.retentionType === 'days' ? '保留天数' : '保留数量'"
+              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/40 mt-2"
+            >
+          </div>
+        </div>
+
+        <div class="px-8 py-6 bg-zinc-950/50 border-t border-zinc-800 flex gap-3 justify-end shrink-0">
+          <button
+            class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest"
+            @click="closeScheduledBackupModal"
+          >
+            取消
+          </button>
+          <button
+            :disabled="scheduledBackupSaving"
+            class="px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="saveScheduledBackup"
+          >
+            {{ scheduledBackupSaving ? '保存中...' : (editingScheduledBackup ? '保存修改' : '创建备份') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 远程备份历史模态框 -->
+    <div
+      v-if="showScheduledBackupHistoryModal"
+      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    >
+      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showScheduledBackupHistoryModal = false" />
+      <div
+        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[80vh] flex flex-col"
+      >
+        <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between shrink-0">
+          <h3 class="text-xl font-black text-zinc-100 tracking-tight">备份历史</h3>
+          <button
+            class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
+            @click="showScheduledBackupHistoryModal = false"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto flex-1">
+          <div v-if="scheduledBackupHistory.length === 0" class="text-center py-8">
+            <p class="text-zinc-500 text-sm">暂无备份记录</p>
+          </div>
+          <table v-else class="w-full">
+            <thead>
+              <tr class="border-b border-zinc-800">
+                <th class="text-left text-[10px] font-black text-zinc-600 uppercase tracking-widest pb-3">文件名</th>
+                <th class="text-left text-[10px] font-black text-zinc-600 uppercase tracking-widest pb-3">状态</th>
+                <th class="text-left text-[10px] font-black text-zinc-600 uppercase tracking-widest pb-3">时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="record in scheduledBackupHistory" :key="record.id" class="border-b border-zinc-800/50">
+                <td class="py-3 text-xs text-zinc-300">{{ record.filename }}</td>
+                <td class="py-3">
+                  <span
+                    :class="[
+                      'px-2 py-0.5 text-[10px] font-bold rounded',
+                      record.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' :
+                      record.status === 'failed' ? 'bg-rose-500/10 text-rose-400' :
+                      'bg-zinc-800 text-zinc-400'
+                    ]"
+                  >
+                    {{ record.status === 'success' ? '成功' : record.status === 'failed' ? '失败' : record.status }}
+                  </span>
+                </td>
+                <td class="py-3 text-xs text-zinc-500">{{ formatScheduleDateTime(record.executedAt) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 删除远程备份确认模态框 -->
+    <div
+      v-if="showDeleteScheduledBackupModal"
+      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    >
+      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showDeleteScheduledBackupModal = false" />
+      <div
+        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
+      >
+        <div class="p-8 text-center">
+          <div class="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-4">
+            <Trash class="w-8 h-8 text-rose-500" />
+          </div>
+          <h4 class="text-lg font-black text-zinc-100 mb-2">确认删除</h4>
+          <p class="text-sm text-zinc-500 mb-6">
+            确定要删除备份配置 "{{ scheduledBackupToDelete?.name }}" 吗？此操作不可恢复。
+          </p>
+          <div class="flex gap-3">
+            <button
+              class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all"
+              @click="showDeleteScheduledBackupModal = false"
+            >
+              取消
+            </button>
+            <button
+              class="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition-all"
+              @click="deleteScheduledBackup"
+            >
+              确认删除
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S3 浏览模态框 -->
+    <div
+      v-if="showS3BrowseModal"
+      class="fixed inset-0 z-[110] flex items-center justify-center p-4"
+    >
+      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showS3BrowseModal = false" />
+      <div
+        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[70vh] flex flex-col"
+      >
+        <div class="px-6 py-4 border-b border-zinc-800 flex items-center justify-between shrink-0">
+          <h3 class="text-lg font-black text-zinc-100 tracking-tight">选择 S3 存储路径</h3>
+          <button
+            class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
+            @click="showS3BrowseModal = false"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="px-6 py-3 border-b border-zinc-800 bg-zinc-950/50 shrink-0">
+          <div class="flex items-center gap-2">
+            <button
+              v-if="getParentPath(s3BrowsePath)"
+              class="p-1.5 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-zinc-200"
+              title="返回上级"
+              @click="navigateS3Path(getParentPath(s3BrowsePath))"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <span class="text-xs text-zinc-400 font-mono flex-1 truncate">{{ s3BrowsePath }}</span>
+          </div>
+        </div>
+
+        <div class="p-4 overflow-y-auto flex-1 min-h-[200px]">
+          <div v-if="s3BrowseLoading" class="flex items-center justify-center py-8">
+            <RefreshCw class="w-6 h-6 text-zinc-500 animate-spin" />
+          </div>
+          <div v-else-if="s3BrowseError" class="text-center py-8">
+            <p class="text-sm text-rose-400">{{ s3BrowseError }}</p>
+          </div>
+          <div v-else-if="s3BrowseFiles.length === 0 && s3BrowseDirectories.length === 0" class="text-center py-8">
+            <p class="text-sm text-zinc-500">目录为空</p>
+          </div>
+          <div v-else class="space-y-1">
+            <button
+              v-for="dir in s3BrowseDirectories"
+              :key="dir"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:bg-zinc-800 text-zinc-300"
+              @click="navigateS3Path(dir)"
+            >
+              <svg class="w-4 h-4 shrink-0 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              <span class="text-xs truncate">{{ dir.split('/').pop() || dir }}</span>
+            </button>
+            <button
+              v-for="file in s3BrowseFiles"
+              :key="file"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:bg-zinc-800 text-zinc-300"
+              @click="navigateS3Path(file)"
+            >
+              <svg class="w-4 h-4 shrink-0 text-zinc-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span class="text-xs truncate">{{ file.split('/').pop() || file }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-zinc-800 bg-zinc-950/50 shrink-0">
+          <button
+            class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all"
+            @click="selectS3Path"
+          >
+            选择此目录
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WebDAV 浏览模态框 -->
+    <div
+      v-if="showWebDAVBrowseModal"
+      class="fixed inset-0 z-[110] flex items-center justify-center p-4"
+    >
+      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showWebDAVBrowseModal = false" />
+      <div
+        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[70vh] flex flex-col"
+      >
+        <div class="px-6 py-4 border-b border-zinc-800 flex items-center justify-between shrink-0">
+          <h3 class="text-lg font-black text-zinc-100 tracking-tight">选择上传路径</h3>
+          <button
+            class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
+            @click="showWebDAVBrowseModal = false"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="px-6 py-3 border-b border-zinc-800 bg-zinc-950/50 shrink-0">
+          <div class="flex items-center gap-2">
+            <button
+              v-if="getParentPath(webdavBrowsePath)"
+              class="p-1.5 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-zinc-200"
+              title="返回上级"
+              @click="navigateWebDAVPath(getParentPath(webdavBrowsePath))"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <span class="text-xs text-zinc-400 font-mono flex-1 truncate">{{ webdavBrowsePath }}</span>
+          </div>
+        </div>
+
+        <div class="p-4 overflow-y-auto flex-1 min-h-[200px]">
+          <div v-if="webdavBrowseLoading" class="flex items-center justify-center py-8">
+            <RefreshCw class="w-6 h-6 text-zinc-500 animate-spin" />
+          </div>
+          <div v-else-if="webdavBrowseError" class="text-center py-8">
+            <p class="text-sm text-rose-400">{{ webdavBrowseError }}</p>
+          </div>
+          <div v-else-if="webdavBrowseFiles.length === 0 && webdavBrowseDirectories.length === 0" class="text-center py-8">
+            <p class="text-sm text-zinc-500">目录为空</p>
+          </div>
+          <div v-else class="space-y-1">
+            <button
+              v-for="dir in webdavBrowseDirectories"
+              :key="dir"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:bg-zinc-800 text-zinc-300"
+              @click="navigateWebDAVPath(dir)"
+            >
+              <svg class="w-4 h-4 shrink-0 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              <span class="text-xs truncate">{{ dir }}</span>
+            </button>
+            <button
+              v-for="file in webdavBrowseFiles"
+              :key="file"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:bg-zinc-800 text-zinc-300"
+              @click="navigateWebDAVPath(file)"
+            >
+              <svg class="w-4 h-4 shrink-0 text-zinc-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span class="text-xs truncate">{{ file }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-zinc-800 bg-zinc-950/50 shrink-0">
+          <button
+            class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all"
+            @click="selectWebDAVPath"
+          >
+            选择此目录
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { Download, Upload, RotateCw, Trash2, AlertCircle, X } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
+import { Download, Upload, RotateCw, Trash2, AlertCircle, X, Shield, Play, Edit2, Trash, CheckCircle, XCircle, Clock, RefreshCw, Plus } from 'lucide-vue-next'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'
 
 const { showToast: showNotification } = useToast()
 const auth = useAuth()
+
+// ==================== 远程备份相关 ====================
+const scheduledBackups = ref([])
+const scheduledBackupsLoading = ref(false)
+const scheduledBackupHistory = ref([])
+const showScheduledBackupModal = ref(false)
+const showScheduledBackupHistoryModal = ref(false)
+const showDeleteScheduledBackupModal = ref(false)
+const showWebDAVBrowseModal = ref(false)
+const editingScheduledBackup = ref(null)
+const scheduledBackupToDelete = ref(null)
+const scheduledBackupSaving = ref(false)
+const scheduledBackupTestingConnection = ref(false)
+const webdavBrowseLoading = ref(false)
+const webdavBrowsePath = ref('')
+const webdavBrowseFiles = ref([])
+const webdavBrowseDirectories = ref([])
+const webdavBrowseError = ref('')
+const s3BrowseLoading = ref(false)
+const s3BrowsePath = ref('')
+const s3BrowseFiles = ref([])
+const s3BrowseDirectories = ref([])
+const s3BrowseError = ref('')
+const showS3BrowseModal = ref(false)
+
+const scheduledBackupDefaultForm = () => ({
+  name: '',
+  enabled: true,
+  includeSongs: true,
+  includeUsers: true,
+  includeSystemData: true,
+  uploadType: 's3',
+  s3Endpoint: '',
+  s3Bucket: '',
+  s3Region: 'us-east-1',
+  s3AccessKey: '',
+  s3SecretKey: '',
+  s3Path: '/backups',
+  webdavUrl: '',
+  webdavUsername: '',
+  webdavPassword: '',
+  webdavPath: '/backups',
+  retentionType: 'days',
+  retentionValue: 7
+})
+
+const scheduledBackupForm = ref(scheduledBackupDefaultForm())
+
+const loadScheduledBackups = async () => {
+  scheduledBackupsLoading.value = true
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup')
+    if (response.success) {
+      scheduledBackups.value = response.data || []
+    }
+  } catch (error) {
+    console.error('加载备份失败:', error)
+    showNotification('加载备份配置失败', 'error')
+  } finally {
+    scheduledBackupsLoading.value = false
+  }
+}
+
+const loadScheduledBackupHistory = async (scheduleId = null) => {
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/history')
+    if (response.success) {
+      scheduledBackupHistory.value = (response.data || []).filter(h => !scheduleId || h.scheduleId === scheduleId)
+      showScheduledBackupHistoryModal.value = true
+    }
+  } catch (error) {
+    console.error('加载历史失败:', error)
+    showNotification('加载备份历史失败', 'error')
+  }
+}
+
+const openScheduledBackupModal = (schedule = null) => {
+  if (schedule) {
+    editingScheduledBackup.value = schedule
+    scheduledBackupForm.value = {
+      name: schedule.name,
+      enabled: schedule.enabled,
+      includeSongs: schedule.includeSongs ?? true,
+      includeUsers: schedule.includeUsers ?? true,
+      includeSystemData: schedule.includeSystemData,
+      uploadType: schedule.uploadType || 's3',
+      s3Endpoint: schedule.s3Endpoint || '',
+      s3Bucket: schedule.s3Bucket || '',
+      s3Region: schedule.s3Region || 'us-east-1',
+      s3AccessKey: schedule.s3AccessKey || '',
+      s3SecretKey: schedule.s3SecretKey || '',
+      s3Path: schedule.s3Path || '/backups',
+      webdavUrl: schedule.webdavUrl || '',
+      webdavUsername: schedule.webdavUsername || '',
+      webdavPassword: schedule.webdavPassword || '',
+      webdavPath: schedule.webdavPath || '/backups',
+      retentionType: schedule.retentionType || '',
+      retentionValue: schedule.retentionValue || 7
+    }
+  } else {
+    editingScheduledBackup.value = null
+    scheduledBackupForm.value = scheduledBackupDefaultForm()
+  }
+  showScheduledBackupModal.value = true
+}
+
+const closeScheduledBackupModal = () => {
+  showScheduledBackupModal.value = false
+  editingScheduledBackup.value = null
+  scheduledBackupForm.value = scheduledBackupDefaultForm()
+}
+
+const saveScheduledBackup = async () => {
+  if (!scheduledBackupForm.value.name.trim()) {
+    showNotification('请输入备份名称', 'warning')
+    return
+  }
+
+  scheduledBackupSaving.value = true
+
+  try {
+    const payload = {
+      ...scheduledBackupForm.value
+    }
+
+    let response
+    if (editingScheduledBackup.value) {
+      response = await $fetch(`/api/admin/scheduled-backup/${editingScheduledBackup.value.id}`, {
+        method: 'PUT',
+        body: payload
+      })
+    } else {
+      response = await $fetch('/api/admin/scheduled-backup', {
+        method: 'POST',
+        body: payload
+      })
+    }
+
+    if (response.success) {
+      showNotification(editingScheduledBackup.value ? '备份已更新' : '备份已创建', 'success')
+      closeScheduledBackupModal()
+      await loadScheduledBackups()
+    } else {
+      showNotification(response.message || '操作失败', 'error')
+    }
+  } catch (error) {
+    console.error('保存备份失败:', error)
+    showNotification('保存失败: ' + (error.data?.message || error.message), 'error')
+  } finally {
+    scheduledBackupSaving.value = false
+  }
+}
+
+const toggleScheduledBackup = async (id, enabled) => {
+  try {
+    const response = await $fetch(`/api/admin/scheduled-backup/${id}/toggle`, {
+      method: 'POST',
+      body: { enabled }
+    })
+
+    if (response.success) {
+      showNotification(enabled ? '备份已启用' : '备份已禁用', 'success')
+      await loadScheduledBackups()
+    }
+  } catch (error) {
+    console.error('切换备份状态失败:', error)
+    showNotification('操作失败', 'error')
+    await loadScheduledBackups()
+  }
+}
+
+const runScheduledBackupNow = async (id) => {
+  if (!confirm('确定要立即执行备份吗？')) return
+
+  try {
+    showNotification('备份开始执行...', 'info')
+    const response = await $fetch(`/api/admin/scheduled-backup/${id}/run`, {
+      method: 'POST'
+    })
+
+    if (response.success) {
+      showNotification('备份执行成功', 'success')
+    } else {
+      showNotification(response.message || '备份执行失败', 'error')
+    }
+  } catch (error) {
+    console.error('执行备份失败:', error)
+    showNotification('执行失败: ' + (error.data?.message || error.message), 'error')
+  }
+}
+
+const confirmDeleteScheduledBackup = (schedule) => {
+  scheduledBackupToDelete.value = schedule
+  showDeleteScheduledBackupModal.value = true
+}
+
+const deleteScheduledBackup = async () => {
+  if (!scheduledBackupToDelete.value) return
+
+  try {
+    const response = await $fetch(`/api/admin/scheduled-backup/${scheduledBackupToDelete.value.id}`, {
+      method: 'DELETE'
+    })
+
+    if (response.success) {
+      showNotification('备份已删除', 'success')
+      showDeleteScheduledBackupModal.value = false
+      scheduledBackupToDelete.value = null
+      await loadScheduledBackups()
+    }
+  } catch (error) {
+    console.error('删除备份失败:', error)
+    showNotification('删除失败', 'error')
+  }
+}
+
+const testScheduledBackupS3Connection = async () => {
+  scheduledBackupTestingConnection.value = true
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/test-s3', {
+      method: 'POST',
+      body: {
+        endpoint: scheduledBackupForm.value.s3Endpoint,
+        bucket: scheduledBackupForm.value.s3Bucket,
+        region: scheduledBackupForm.value.s3Region,
+        accessKey: scheduledBackupForm.value.s3AccessKey,
+        secretKey: scheduledBackupForm.value.s3SecretKey,
+        s3Path: scheduledBackupForm.value.s3Path
+      }
+    })
+    showNotification(response.message, response.success ? 'success' : 'error')
+  } catch (error) {
+    console.error('测试 S3 连接失败:', error)
+    const errorMessage = error.data?.message || error.message || '连接测试失败'
+    showNotification(errorMessage, 'error')
+  } finally {
+    scheduledBackupTestingConnection.value = false
+  }
+}
+
+const testScheduledBackupWebDAVConnection = async () => {
+  scheduledBackupTestingConnection.value = true
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/test-webdav', {
+      method: 'POST',
+      body: {
+        url: scheduledBackupForm.value.webdavUrl,
+        username: scheduledBackupForm.value.webdavUsername,
+        password: scheduledBackupForm.value.webdavPassword
+      }
+    })
+    showNotification(response.message, response.success ? 'success' : 'error')
+  } catch (error) {
+    console.error('测试 WebDAV 连接失败:', error)
+    const errorMessage = error.data?.message || error.message || '连接测试失败'
+    showNotification(errorMessage, 'error')
+  } finally {
+    scheduledBackupTestingConnection.value = false
+  }
+}
+
+const browseWebDAVPath = async () => {
+  if (!scheduledBackupForm.value.webdavUrl || !scheduledBackupForm.value.webdavUsername || !scheduledBackupForm.value.webdavPassword) {
+    showNotification('请先填写 WebDAV 服务器信息', 'warning')
+    return
+  }
+
+  webdavBrowsePath.value = scheduledBackupForm.value.webdavPath || '/backups'
+  webdavBrowseFiles.value = []
+  webdavBrowseError.value = ''
+  webdavBrowseLoading.value = true
+  showWebDAVBrowseModal.value = true
+
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/browse-webdav', {
+      method: 'POST',
+      body: {
+        url: scheduledBackupForm.value.webdavUrl,
+        username: scheduledBackupForm.value.webdavUsername,
+        password: scheduledBackupForm.value.webdavPassword,
+        path: webdavBrowsePath.value
+      }
+    })
+
+    if (response.success) {
+      webdavBrowseFiles.value = response.files || []
+      webdavBrowsePath.value = response.currentPath || webdavBrowsePath.value
+    } else {
+      webdavBrowseError.value = response.errorMessage || '浏览失败'
+    }
+  } catch (error) {
+    console.error('Browse WebDAV failed:', error)
+    webdavBrowseError.value = error.data?.message || error.message || '浏览失败'
+  } finally {
+    webdavBrowseLoading.value = false
+  }
+}
+
+const navigateWebDAVPath = async (input) => {
+  let fullPath
+  if (input.startsWith('/')) {
+    fullPath = input
+  } else {
+    fullPath = webdavBrowsePath.value === '/' ? `/${input}` : `${webdavBrowsePath.value}/${input}`
+  }
+  webdavBrowsePath.value = fullPath
+  webdavBrowseFiles.value = []
+  webdavBrowseError.value = ''
+  webdavBrowseLoading.value = true
+
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/browse-webdav', {
+      method: 'POST',
+      body: {
+        url: scheduledBackupForm.value.webdavUrl,
+        username: scheduledBackupForm.value.webdavUsername,
+        password: scheduledBackupForm.value.webdavPassword,
+        path: fullPath
+      }
+    })
+
+    if (response.success) {
+      webdavBrowseFiles.value = response.files || []
+      webdavBrowseDirectories.value = response.directories || []
+      webdavBrowsePath.value = response.currentPath || fullPath
+    } else {
+      webdavBrowseError.value = response.errorMessage || '浏览失败'
+    }
+  } catch (error) {
+    console.error('Browse WebDAV failed:', error)
+    webdavBrowseError.value = error.data?.message || error.message || '浏览失败'
+  } finally {
+    webdavBrowseLoading.value = false
+  }
+}
+
+const selectWebDAVPath = () => {
+  scheduledBackupForm.value.webdavPath = webdavBrowsePath.value
+  showWebDAVBrowseModal.value = false
+}
+
+const browseS3Path = async () => {
+  if (!scheduledBackupForm.value.s3Endpoint || !scheduledBackupForm.value.s3Bucket || !scheduledBackupForm.value.s3AccessKey || !scheduledBackupForm.value.s3SecretKey) {
+    showNotification('请先填写 S3 配置信息', 'warning')
+    return
+  }
+
+  s3BrowsePath.value = scheduledBackupForm.value.s3Path || 'backups'
+  s3BrowseFiles.value = []
+  s3BrowseDirectories.value = []
+  s3BrowseError.value = ''
+  s3BrowseLoading.value = true
+  showS3BrowseModal.value = true
+
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/browse-s3', {
+      method: 'POST',
+      body: {
+        endpoint: scheduledBackupForm.value.s3Endpoint,
+        bucket: scheduledBackupForm.value.s3Bucket,
+        accessKey: scheduledBackupForm.value.s3AccessKey,
+        secretKey: scheduledBackupForm.value.s3SecretKey,
+        region: scheduledBackupForm.value.s3Region || 'us-east-1',
+        path: s3BrowsePath.value
+      }
+    })
+
+    if (response.success) {
+      s3BrowseFiles.value = response.files || []
+      s3BrowseDirectories.value = response.directories || []
+      s3BrowsePath.value = response.currentPath || s3BrowsePath.value
+    } else {
+      s3BrowseError.value = response.errorMessage || '浏览失败'
+    }
+  } catch (error) {
+    console.error('Browse S3 failed:', error)
+    s3BrowseError.value = error.data?.message || error.message || '浏览失败'
+  } finally {
+    s3BrowseLoading.value = false
+  }
+}
+
+const navigateS3Path = async (input) => {
+  let fullPath
+  if (input.startsWith('/')) {
+    fullPath = input
+  } else {
+    fullPath = s3BrowsePath.value
+      ? (s3BrowsePath.value === '/' ? `/${input}` : `${s3BrowsePath.value}/${input}`)
+      : input
+  }
+  s3BrowsePath.value = fullPath
+  s3BrowseFiles.value = []
+  s3BrowseDirectories.value = []
+  s3BrowseError.value = ''
+  s3BrowseLoading.value = true
+
+  try {
+    const response = await $fetch('/api/admin/scheduled-backup/browse-s3', {
+      method: 'POST',
+      body: {
+        endpoint: scheduledBackupForm.value.s3Endpoint,
+        bucket: scheduledBackupForm.value.s3Bucket,
+        accessKey: scheduledBackupForm.value.s3AccessKey,
+        secretKey: scheduledBackupForm.value.s3SecretKey,
+        region: scheduledBackupForm.value.s3Region || 'us-east-1',
+        path: fullPath
+      }
+    })
+
+    if (response.success) {
+      s3BrowseFiles.value = response.files || []
+      s3BrowseDirectories.value = response.directories || []
+      s3BrowsePath.value = response.currentPath || fullPath
+    } else {
+      s3BrowseError.value = response.errorMessage || '浏览失败'
+    }
+  } catch (error) {
+    console.error('Browse S3 failed:', error)
+    s3BrowseError.value = error.data?.message || error.message || '浏览失败'
+  } finally {
+    s3BrowseLoading.value = false
+  }
+}
+
+const selectS3Path = () => {
+  scheduledBackupForm.value.s3Path = s3BrowsePath.value
+  showS3BrowseModal.value = false
+}
+
+const getParentPath = (path) => {
+  if (!path || path === '/') return null
+  const normalizedPath = path.endsWith('/') ? path.slice(0, -1) : path
+  const parts = normalizedPath.split('/').filter(Boolean)
+  if (parts.length === 0) return null
+  parts.pop()
+  return parts.length === 0 ? '/' : '/' + parts.join('/')
+}
+
+const getScheduleTimeText = (schedule) => {
+  const parts = []
+  if (schedule.includeSongs) parts.push('歌曲')
+  if (schedule.includeUsers) parts.push('用户')
+  if (schedule.includeSystemData) parts.push('系统')
+  return parts.join(' + ') || '未选择内容'
+}
+
+const formatScheduleDateTime = (dateStr) => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return date.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// 初始化加载
+onMounted(() => {
+  loadScheduledBackups()
+})
 
 // 状态
 const activeModal = ref('none')

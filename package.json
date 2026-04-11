@@ -33,6 +33,7 @@
   "dependencies": {
     "@applemusic-like-lyrics/lyric": "^0.3.0",
     "@applemusic-like-lyrics/vue": "^0.3.2",
+    "@aws-sdk/client-s3": "^3.1029.0",
     "@breezystack/lamejs": "^1.2.7",
     "@neteasecloudmusicapienhanced/api": "^4.31.0",
     "@netlify/functions": "^2.8.2",
